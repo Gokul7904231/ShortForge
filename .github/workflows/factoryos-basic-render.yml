@@ -98,10 +98,9 @@ jobs:
                       json.dump(manifest, f)
                   print(f'Job manifest fetched: {out} keys={list(manifest.keys())[:10]}')
           except Exception as e:
-              print(f'Fetch fallback: {e}')
-              out = os.path.join(ws, 'payload.json')
-              with open(out, 'w') as f:
-                  json.dump({'jobId': job_id, 'topic': 'FactoryOS Short', 'contentType': 'QUIZ_SHORTS', 'quizData': None}, f)
+              print(f'::error::Fetch manifest failed: {e}')
+              import sys
+              sys.exit(1)
           "
 
       - name: Execute Render Engine (create_short.py)
@@ -145,10 +144,18 @@ jobs:
             exit 1
           fi
           echo "Validating with ffprobe..."
-          ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=codec_name,width,height -of json "$OUTPUT_MP4" > "$WORKSPACE_DIR/probe.json" || true
-          cat "$WORKSPACE_DIR/probe.json" || true
+          ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=codec_name,width,height -of json "$OUTPUT_MP4" > "$WORKSPACE_DIR/probe.json"
+          if [ $? -ne 0 ] || [ ! -s "$WORKSPACE_DIR/probe.json" ]; then
+            echo "::error::ffprobe validation failed for $OUTPUT_MP4"
+            exit 1
+          fi
+          cat "$WORKSPACE_DIR/probe.json"
+          SHA256_HASH=$(sha256sum "$OUTPUT_MP4" | awk '{print $1}')
+          echo "SHA256_HASH=$SHA256_HASH" >> $GITHUB_ENV
+          DURATION=$(python3 -c "import json; print(json.load(open('$WORKSPACE_DIR/probe.json')).get('format',{}).get('duration', '0'))")
+          echo "DURATION=$DURATION" >> $GITHUB_ENV
           echo "FILE_SIZE_MB=$(awk \"BEGIN{printf \\\"%.2f\\\", $FILE_SIZE/1048576}\")" >> $GITHUB_ENV
-          echo "MP4 validated: $FILE_SIZE bytes"
+          echo "MP4 validated: $FILE_SIZE bytes, $DURATION seconds, sha256: $SHA256_HASH"
 
       - name: Upload Artifact to Persistent Storage
         id: upload_storage
@@ -156,11 +163,7 @@ jobs:
         env:
           B2_BUCKET: ${{ secrets.B2_BUCKET_NAME || 'factoryos-renders' }}
         run: |
-          # Cloudinary upload already done inside create_short.py; this step publishes probe for callback
-          if [ -f "$WORKSPACE_DIR/probe.json" ]; then
-            echo "VIDEO_URL=https://storage.factoryos.app/renders/${JOB_ID}.mp4" >> $GITHUB_ENV
-          fi
-          echo "Upload phase complete (Cloudinary handled in-engine)"
+          echo "Upload phase complete (Managed in engine and storage resolver)"
 
       - name: Callback Control Plane with Completion Status
         if: always()
@@ -170,29 +173,34 @@ jobs:
           RENDER_STATUS: ${{ steps.validate_mp4.outcome == 'success' && 'completed' || 'failed' }}
         run: |
           python3 -c "
-          import urllib.request, json, os
+          import urllib.request, json, os, pathlib
           url = f\"{os.environ['CONTROL_PLANE_URL'].rstrip('/')}/api/rendering/callback\"
           status = os.environ.get('RENDER_STATUS','failed')
           job_id = os.environ['JOB_ID']
           token = os.environ['EXECUTION_TOKEN']
-          # Try to read videoUrl from result.json produced by create_short.py
-          import pathlib, json as _j
           ws = os.environ['WORKSPACE_DIR']
-          video_url = os.environ.get('VIDEO_URL') or f\"https://storage.factoryos.app/renders/{job_id}.mp4\"
+          video_url = None
           for p in [f\"{ws}/{job_id}/result.json\", f\"{ws}/result.json\"]:
               try:
-                  import pathlib
                   pp = pathlib.Path(p)
                   if pp.exists():
-                      j = _j.loads(pp.read_text())
-                      if j.get('videoUrl'): video_url = j['videoUrl']; break
+                      j = json.loads(pp.read_text())
+                      if j.get('videoUrl'):
+                          video_url = j['videoUrl']
+                          break
               except: pass
+
+          if status == 'completed' and not video_url:
+              print('::error::No verified videoUrl found in engine result.json; marking callback failed')
+              status = 'failed'
+
           body = {
               'jobId': job_id,
               'status': status,
-              'videoUrl': video_url if status=='completed' else None,
-              'videoSizeMb': float(os.environ.get('FILE_SIZE_MB','4.2')) if status=='completed' else 0.0,
-              'renderDurationSeconds': 30,
+              'videoUrl': video_url if status == 'completed' else None,
+              'videoSizeMb': float(os.environ.get('FILE_SIZE_MB', '0')) if status == 'completed' else 0.0,
+              'renderDurationSeconds': float(os.environ.get('DURATION', '0')) if status == 'completed' else 0.0,
+              'artifactSha256': os.environ.get('SHA256_HASH') if status == 'completed' else None,
               'executionToken': token,
           }
           headers = {'Content-Type':'application/json','Authorization':f\"Bearer {os.environ['WORKER_SECRET']}\",'x-execution-token': token}

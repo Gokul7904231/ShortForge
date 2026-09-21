@@ -1,0 +1,34 @@
+{
+  "canonicalId": "floor04_media_synthesis",
+  "label": "Floor 04: Media Synthesis",
+  "type": "FLOOR",
+  "status": "VERIFIED",
+  "truthLevel": "VERIFIED",
+  "producer": "floor04_media_synthesis",
+  "consumers": ["floor05_timeline_composition"],
+  "dependencies": ["floor03_asset_realization"],
+  "recoveryState": {
+    "recovered": false
+  },
+  "evidenceRefs": [
+    "ev_file_art_audio_01",
+    "ev_sha256_art_audio_01",
+    "ev_probe_audio_01"
+  ],
+  "artifactRefs": [
+    "data/artifacts/audio/voice.wav"
+  ],
+  "browserEvidenceRefs": [],
+  "timestamps": {
+    "startedAt": "2026-09-09T10:00:15.000Z",
+    "completedAt": "2026-09-09T10:00:22.000Z",
+    "durationMs": 7000
+  },
+  "currentProjectionView": "MISSION_OVERVIEW",
+  "metadata": {
+    "floorNumber": 4,
+    "voiceEngine": "chime_v2",
+    "artifactPath": "data/artifacts/audio/voice.wav"
+  },
+  "resolved": true
+}

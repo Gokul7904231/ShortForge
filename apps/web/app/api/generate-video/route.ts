@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@clerk/nextjs/server";
 import crypto from "crypto";
 
 import { saveJobManifest } from "@/lib/jobs-history";
@@ -46,6 +45,11 @@ const GenerateVideoRequestSchema = z.object({
   ratio: z.string().optional(),
   provider: z.string().optional(),
   quizContext: z.any().optional(),
+  templateId: z.string().optional(),
+  templateVersion: z.string().optional(),
+  contentEngine: z.string().optional(),
+  formatFamily: z.string().optional(),
+  userInputs: z.record(z.string(), z.any()).optional(),
   // YouTube Shorts target duration (clamped server-side to 30–60 s)
   durationSeconds: z.number().optional(),
 });
@@ -394,6 +398,11 @@ export async function POST(req: Request) {
           userId,
           topic: parsed.data.topic,
           style: parsed.data.style,
+          templateId: parsed.data.templateId,
+          templateVersion: parsed.data.templateVersion,
+          contentEngine: parsed.data.contentEngine,
+          formatFamily: parsed.data.formatFamily,
+          userInputs: parsed.data.userInputs,
           renderProfile: finalPayload.renderProfile,
           contentType: finalPayload.contentType,
           quizData: finalPayload.quizData,

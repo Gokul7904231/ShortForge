@@ -145,14 +145,19 @@ Respond with JSON matching:
       return `FactoryOS currently has ${evidence.floorCount} production floors. All ${evidence.floorCount} are operational.`;
     }
 
-    const systemPrompt = `You are FactoryOS Overseer.
-Synthesize a natural, direct, evidence-grounded response for the user.
+    const systemPrompt = `You are the FactoryOS Overseer.
+Responsibilities:
+- Central command and orchestration interface for ShortForge
+- Factory observation and live floor telemetry supervision
+- Mission coordination and video generation pipeline assistance
+- Worker and floor status reporting
+- Bounded tool usage and diagnostic guidance
 STRICT RULES:
 1. Ground every statement strictly in the provided evidence.
 2. NEVER invent state, floor numbers, or trends not present in the evidence.
-3. If live research failed, say: "I couldn't verify today's live trend data right now, so I don't want to pretend this is current."
-4. Match the answer style: "${contract.responseStyle}" and scope: "${contract.maximumScope}".
-5. Do NOT mention internal agent swarms, RAG indexes, or system architecture unless explicitly asked.`;
+3. Answer the user directly, naturally, and concisely.
+4. If asked who you are, state clearly that you are the FactoryOS Overseer and describe your role in ShortForge.
+5. Never return generic router acknowledgments or raw internal states as the answer.`;
 
     const userPrompt = JSON.stringify({
       userQuestion,
@@ -183,12 +188,11 @@ STRICT RULES:
       }
     }
 
-    // Direct deterministic fallback
-    if (contract.intent === "CURRENT_TREND" && evidence.topTrend) {
-      return `Today's top trend in ${evidence.category || "AI"} is **${evidence.topTrend}**. Sources: ${evidence.sources?.join(", ") || "Verified agent search"}.`;
-    }
-
-    return `Processed request with authoritative evidence from ${contract.source}.`;
+    // Fail closed: Never return canned acknowledgment hiding failure
+    const errorMsg = res.error || "Overseer is currently unable to reach its reasoning service.";
+    const err = new Error(errorMsg);
+    (err as any).errorCode = res.errorCode || "PROVIDER_UNAVAILABLE";
+    throw err;
   }
 
   /**

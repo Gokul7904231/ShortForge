@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0.0",
+  "missionId": "browser-shortforge-001",
+  "runId": "run_browser_1788944482432",
+  "createdAt": "2026-09-09T14:20:00.000Z",
+  "nodes": [
+    {
+      "id": "node_ui_action_input",
+      "type": "UI_STATE",
+      "label": "User Submits Chat Query",
+      "truthLevel": "OBSERVED",
+      "status": "COMPLETED",
+      "metadata": {
+        "selector": "#overseer-input"
+      }
+    },
+    {
+      "id": "node_network_request_500",
+      "type": "FAILURE",
+      "label": "POST /api/overseer/presence/interact 500",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED",
+      "metadata": {
+        "status": 500,
+        "endpoint": "/api/overseer/presence/interact"
+      }
+    },
+    {
+      "id": "node_console_exception",
+      "type": "FAILURE",
+      "label": "Console TypeError: Cognition Failure",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED",
+      "metadata": {
+        "level": "error"
+      }
+    },
+    {
+      "id": "node_dom_toast_error",
+      "type": "UI_STATE",
+      "label": "DOM Toast: Connection Failed Banner",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED",
+      "metadata": {
+        "toastText": "Connection failed"
+      }
+    },
+    {
+      "id": "node_screenshot_artifact",
+      "type": "ARTIFACT",
+      "label": "Screenshot Digest: 585859a0f00f0caa...",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED",
+      "metadata": {
+        "filePath": "data/evidence/screenshots/run_browser_1788944482432_ev_browser_shot_1788944504915_ut7az.png",
+        "digest": "585859a0f00f0caaa87532d887a718b53cf5ad830f0f35a4d6f76e330ad3d16c"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_action_to_network",
+      "from": "node_ui_action_input",
+      "to": "node_network_request_500",
+      "type": "UI_ACTION",
+      "truthLevel": "OBSERVED",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "edge_network_to_console",
+      "from": "node_network_request_500",
+      "to": "node_console_exception",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED"
+    },
+    {
+      "id": "edge_console_to_dom",
+      "from": "node_console_exception",
+      "to": "node_dom_toast_error",
+      "type": "UI_ACTION",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED"
+    },
+    {
+      "id": "edge_dom_to_screenshot",
+      "from": "node_dom_toast_error",
+      "to": "node_screenshot_artifact",
+      "type": "VERIFICATION",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    }
+  ]
+}

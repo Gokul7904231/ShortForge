@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "missionId": "golden-short-001",
+  "runId": "run_overseer_operational_1788944000000",
+  "createdAt": "2026-09-09T14:10:00.000Z",
+  "nodes": [
+    {
+      "id": "floor04_media_synthesis",
+      "type": "FLOOR",
+      "label": "Floor 04 Media Synthesis",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED",
+      "metadata": {
+        "recovered": true,
+        "activeEngine": "LOCAL_PCM_WAV"
+      }
+    },
+    {
+      "id": "floor05_timeline_composition",
+      "type": "FLOOR",
+      "label": "Floor 05 Timeline Composition",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED",
+      "metadata": {
+        "blocker": true,
+        "reason": "Missing font asset for video captions"
+      }
+    },
+    {
+      "id": "node_browser_ui",
+      "type": "UI_STATE",
+      "label": "Overseer Chat Interface",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED",
+      "metadata": {
+        "degraded": true,
+        "endpoint": "/api/overseer/presence/interact"
+      }
+    },
+    {
+      "id": "decision_engage_fallback_font",
+      "type": "DECISION",
+      "label": "Fallback to System Monospace Font",
+      "truthLevel": "ASSERTED",
+      "status": "PLANNED"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_f4_to_f5",
+      "from": "floor04_media_synthesis",
+      "to": "floor05_timeline_composition",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "OBSERVED"
+    },
+    {
+      "id": "edge_f5_to_decision",
+      "from": "floor05_timeline_composition",
+      "to": "decision_engage_fallback_font",
+      "type": "RECOVERY",
+      "truthLevel": "ASSERTED",
+      "status": "PLANNED"
+    }
+  ]
+}

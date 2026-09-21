@@ -28,11 +28,23 @@ export async function POST(request: NextRequest) {
       const topic = payload?.topic || "Science & Technology Trivia";
       const mission = await controller.missionManager.createMission({
         goal: `Produce 30s Quiz Short: "${topic}"`,
-        objective: `Execute 9-stage content generation pipeline for topic: ${topic}`,
+        objective: `Execute 7-Floor FactoryOS pipeline for topic: ${topic}`,
         constraints: ["MAX_DURATION_30S", "VALIDATE_QUIZ_FACTS"],
-        scope: { floorIds: ["floor01_strategy", "floor02_scripting", "floor03_asset_realization"] },
+        scope: {
+          topic,
+          floorIds: [
+            "floor01_strategy",
+            "floor02_scripting",
+            "floor03_asset_realization",
+            "floor04_media_synthesis",
+            "floor05_timeline_composition",
+            "floor06_rendering",
+            "floor07_compliance",
+          ],
+        },
       });
       await controller.missionManager.startMission(mission.missionId);
+      await controller.overseer.dispatchMission(mission);
 
       return NextResponse.json({
         success: true,
@@ -42,7 +54,7 @@ export async function POST(request: NextRequest) {
           status: "DISPATCHED",
           action: "CREATE_QUIZ_SHORT",
           topic,
-          message: `Created and dispatched quiz production mission ${mission.missionId} for "${topic}".`,
+          message: `Created and dispatched 7-Floor quiz production mission ${mission.missionId} for "${topic}".`,
         },
       });
     }

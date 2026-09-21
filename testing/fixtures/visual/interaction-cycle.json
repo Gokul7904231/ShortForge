@@ -1,0 +1,24 @@
+{
+  "cycleId": "cycle_composition_render_retry",
+  "entryNodeId": "floor05_timeline_composition",
+  "memberNodeIds": [
+    "floor05_timeline_composition",
+    "floor06_rendering",
+    "node_render_failure",
+    "node_render_recovery"
+  ],
+  "cycleEdgeIds": [
+    "edge_f5_f6",
+    "edge_f6_fail",
+    "edge_fail_recovery",
+    "edge_recovery_f5_retry"
+  ],
+  "recoveryEdgeIds": [
+    "edge_recovery_f5_retry"
+  ],
+  "iterationCount": 2,
+  "evidenceRefs": [
+    "ev_retry_ledger_01",
+    "ev_recovery_patch_01"
+  ]
+}

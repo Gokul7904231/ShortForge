@@ -40,7 +40,7 @@ export class GoogleProviderPlugin extends BaseProviderPlugin {
         const modelName = rawModelName.replace("google/", "");
 
         const google = createGoogleGenerativeAI({
-          apiKey: this.apiKey,
+          apiKey: (params as any).apiKey || this.apiKey,
         });
 
         const { text, usage } = await generateText({

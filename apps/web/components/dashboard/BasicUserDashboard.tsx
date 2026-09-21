@@ -11,6 +11,7 @@ import BrandIcon from "@/components/BrandIcon";
 import Link from "next/link";
 import { useFactoryStore } from "@/lib/factory-store";
 import { useOSStore } from "@/lib/os-store";
+import { projectCreatorJobStatus } from "@/lib/presentation/JobStatusProjection";
 
 interface BasicUserDashboardProps {
   userRole: string;
@@ -203,7 +204,7 @@ export default function BasicUserDashboard({ userRole, userEmail }: BasicUserDas
                 {/* Pipeline Progress Indicator — real status only, never fake 2/3 */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs text-[#667085] dark:text-[#A8B2C1]">
-                    <span>Stage: <strong className="text-[#111827] dark:text-[#F5F7FA]">{(job as any).stage || (job as any).detailedStatus || job.status}</strong></span>
+                    <span>Stage: <strong className="text-[#111827] dark:text-[#F5F7FA]">{projectCreatorJobStatus(job.status, (job as any).stage || (job as any).detailedStatus || (job as any).currentStep).label}</strong></span>
                     <span className="font-mono">{(job as any).progress != null || (job as any).progress_percentage != null ? `${Math.round((job as any).progress ?? (job as any).progress_percentage)}%` : "In Progress"}</span>
                   </div>
                   <div className="w-full bg-black/[0.04] dark:bg-[#070D18] h-2 rounded-full overflow-hidden">
@@ -278,6 +279,7 @@ export default function BasicUserDashboard({ userRole, userEmail }: BasicUserDas
               const isCompleted = (job.status as string) === "completed" || (job.status as string) === "rendered";
               const isFailed = (job.status as string) === "failed";
               const driveUrl = (job as any).driveUrl;
+              const projection = projectCreatorJobStatus(job.status, (job as any).stage || (job as any).detailedStatus || (job as any).currentStep);
 
               return (
                 <div key={job.id} className="bg-white dark:bg-[#0A1220] border border-black/[0.06] dark:border-white/[0.08] rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4">
@@ -286,21 +288,12 @@ export default function BasicUserDashboard({ userRole, userEmail }: BasicUserDas
                       <span className="px-2.5 py-0.5 rounded-md bg-black/[0.03] dark:bg-[#0E1728] border border-black/[0.06] dark:border-white/[0.08] text-[#667085] dark:text-[#A8B2C1] text-[10px] font-semibold uppercase tracking-wider">
                         {(job as any).contentType || "QUIZ_SHORTS"}
                       </span>
-                      {isCompleted && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#19C37D]/10 text-[#19C37D] text-[10px] font-semibold flex items-center gap-1 border border-[#19C37D]/20">
-                          <CheckCircle2 className="w-3 h-3" /> Ready
-                        </span>
-                      )}
-                      {isFailed && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A67]/10 text-[#FF5A67] text-[10px] font-semibold flex items-center gap-1 border border-[#FF5A67]/20">
-                          <AlertCircle className="w-3 h-3" /> Failed
-                        </span>
-                      )}
-                      {!isCompleted && !isFailed && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#1677FF]/10 text-[#1677FF] text-[10px] font-semibold flex items-center gap-1 border border-[#1677FF]/20">
-                          <RefreshCw className="w-3 h-3 animate-spin" /> Processing
-                        </span>
-                      )}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 ${projection.badgeClass}`}>
+                        {projection.isInProgress && <RefreshCw className="w-3 h-3 animate-spin" />}
+                        {projection.isError && <AlertCircle className="w-3 h-3" />}
+                        {projection.label === "Ready" && <CheckCircle2 className="w-3 h-3" />}
+                        <span>{projection.label}</span>
+                      </span>
                     </div>
 
                     <h3 className="text-sm font-bold text-[#111827] dark:text-[#F5F7FA] leading-snug line-clamp-2">{job.topic}</h3>

@@ -1,0 +1,58 @@
+{
+  "edgeId": "edge_f4_f5_voice_handoff",
+  "fromNodeId": "floor04_media_synthesis",
+  "toNodeId": "floor05_timeline_composition",
+  "fromLabel": "Floor 04: Media Synthesis",
+  "toLabel": "Floor 05: Timeline Composition",
+  "relationshipType": "ARTIFACT_PRODUCED",
+  "plannedRelationship": "ARTIFACT_PRODUCED",
+  "observedRelationship": "ARTIFACT_PRODUCED",
+  "truthLevel": "VERIFIED",
+  "executionSequence": [
+    {
+      "step": "Floor 04: Media Synthesis execution initiated",
+      "status": "OBSERVED",
+      "truthLevel": "OBSERVED"
+    },
+    {
+      "step": "Floor 04: Media Synthesis execution concluded",
+      "status": "VERIFIED",
+      "truthLevel": "VERIFIED"
+    },
+    {
+      "step": "Artifact 'voice.wav' physically persisted (144284 bytes)",
+      "status": "VERIFIED",
+      "truthLevel": "PHYSICAL"
+    },
+    {
+      "step": "Floor 05: Timeline Composition consumed inputs / started",
+      "status": "VERIFIED",
+      "truthLevel": "VERIFIED"
+    }
+  ],
+  "artifactTransferred": {
+    "artifactId": "art_audio_01",
+    "name": "voice.wav",
+    "path": "data/artifacts/audio/voice.wav",
+    "byteLength": 144284,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "mimeType": "audio/wav"
+  },
+  "producer": "floor04_media_synthesis",
+  "consumer": "floor05_timeline_composition",
+  "verification": {
+    "verified": true,
+    "verifier": "FactoryOS Verification Engine",
+    "probeRef": "ev_probe_audio_01",
+    "hardGatesPassed": 3
+  },
+  "evidenceRefs": [
+    "ev_file_art_audio_01",
+    "ev_sha256_art_audio_01",
+    "ev_probe_audio_01"
+  ],
+  "recoveryEvents": [],
+  "deliveryConsequences": [],
+  "resolved": true,
+  "rationale": "Edge 'edge_f4_f5_voice_handoff' represents ARTIFACT_PRODUCED between Floor 04 and Floor 05. Status is VERIFIED with 3 verification probes confirming correctness."
+}

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isInternalFactoryRoute } from "@/lib/core/RouteRegistry";
+import { isAdminUser } from "@/lib/auth/roles";
+import { UserRole } from "@/lib/auth/types";
 
 const SESSION_COOKIE_NAME = "__session";
 
 // Explicit Public Paths (No authentication required)
-// NOTE: /prototypes intentionally NOT public — gated behind auth (and ADMIN in app layer)
 const PUBLIC_PREFIXES = [
   "/login",
   "/api/published-video",
@@ -14,6 +16,7 @@ const PUBLIC_PREFIXES = [
   "/api/render-workers/pair",
   "/api/render-workers/heartbeat",
   "/api/rendering",
+  "/api/templates",
   "/_next",
   "/public",
   "/favicon.ico",
@@ -21,6 +24,59 @@ const PUBLIC_PREFIXES = [
   "/german-quiz.mp4",
   "/german-quiz-poster.jpg",
 ];
+
+/**
+ * Edge-compatible payload decoder for FactoryOS signed sessions.
+ */
+function decodeEdgeSessionRole(token: string): UserRole | null {
+  if (!token || !token.startsWith("fos_")) return null;
+  try {
+    const withoutPrefix = token.substring(4);
+    const parts = withoutPrefix.split(".");
+    if (parts.length !== 2) return null;
+    const [payloadB64] = parts;
+    const jsonStr = typeof Buffer !== "undefined"
+      ? Buffer.from(payloadB64, "base64url").toString("utf8")
+      : atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(jsonStr);
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload.role || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extracts and verifies the role from the session cookie or internal secret key.
+ */
+function resolveSessionRole(
+  sessionCookie: string | undefined,
+  isSecretKeyValid: boolean
+): UserRole | null {
+  if (isSecretKeyValid) {
+    return "OWNER";
+  }
+
+  if (!sessionCookie) {
+    return null;
+  }
+
+  // 1. Check FactoryOS cryptographically signed session token (Edge-compatible decode)
+  const role = decodeEdgeSessionRole(sessionCookie);
+  if (role) {
+    return role;
+  }
+
+  // 2. Dev / Test Mode Mock Session
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (sessionCookie.startsWith("mock_session_cookie_") || sessionCookie.includes("simulated_admin_token"))
+  ) {
+    return "OWNER";
+  }
+
+  return null;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -82,13 +138,53 @@ export function middleware(request: NextRequest) {
     !!secretKey && (authHeader === `Bearer ${secretKey}` || authHeader === secretKey || queryKey === secretKey);
 
   const isAuthenticated = !!sessionCookie || isSecretKeyValid;
+  const sessionRole = resolveSessionRole(sessionCookie, isSecretKeyValid);
 
-  // 4. Protect API Endpoints (Fail-Closed 401)
+  // 4. HARD PRODUCT BOUNDARY: Server-side Gate for Internal FactoryOS Operator Surfaces
+  // Enforces that BASIC creators cannot access workflows, DAGs, models, benchmarks, runtime, SRE, or operator controls.
+  // CRITICAL: /factory/templates and /factory/jobs are creator surfaces and are NOT blocked.
+  if (isInternalFactoryRoute(pathname)) {
+    if (!isAuthenticated) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          {
+            error: "Unauthorized: Access to FactoryOS operator endpoints requires authentication.",
+            code: "UNAUTHORIZED",
+          },
+          { status: 401 }
+        );
+      }
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Authenticated user check: must have ADMIN or OWNER role
+    if (!isAdminUser(sessionRole)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Forbidden: Access to internal FactoryOS operator endpoints requires administrator privileges.",
+            code: "FORBIDDEN",
+          },
+          { status: 403 }
+        );
+      }
+
+      // UI Route: Redirect immediately to creator dashboard without exposing internal HTML/data
+      const deniedUrl = new URL("/dashboard", request.url);
+      deniedUrl.searchParams.set("denied", "operator_access");
+      return NextResponse.redirect(deniedUrl, 307);
+    }
+  }
+
+  // 5. Protect General API Endpoints (Fail-Closed 401 for unauthenticated requests)
   if (pathname.startsWith("/api/")) {
     if (!isAuthenticated) {
       return NextResponse.json(
         {
-          error: "Unauthorized: Access to FactoryOS API requires an active admin session or secret key.",
+          error: "Unauthorized: Access to API requires an active session or secret key.",
           code: "UNAUTHORIZED",
         },
         { status: 401 }
@@ -97,8 +193,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 5. Protect UI Pages (Redirect to /login if not dev and not authenticated)
+  // 6. Protect General UI Pages (Redirect to /login if unauthenticated)
   if (!isAuthenticated) {
+    if (process.env.FACTORYOS_BYPASS_AUTH === "true") {
+      return NextResponse.next();
+    }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);

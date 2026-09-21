@@ -168,6 +168,15 @@ export class TaskDAGExecutor {
             await this.leaseManager.acquire(node.taskId, node.assignedAgentId || "dag_worker", 60000, node.attemptCount);
           }
 
+          // Collect outputs from upstream dependencies
+          const dependencyOutputs: Record<string, any> = {};
+          for (const depId of node.dependencies) {
+            if (dag.nodes[depId]?.result) {
+              dependencyOutputs[depId] = dag.nodes[depId].result;
+            }
+          }
+          (node as any).dependencyOutputs = dependencyOutputs;
+
           const executor = executors[node.requiredAgentType] || executors["TOOL"] || (async () => ({ status: "OK" }));
 
           try {

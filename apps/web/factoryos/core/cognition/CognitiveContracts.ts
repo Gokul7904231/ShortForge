@@ -110,4 +110,12 @@ export interface CognitiveResponse<T = any> {
     totalTokens: number;
   };
   error?: string;
+  errorCode?: string;
+  diagnostics?: {
+    chatRequestStarted: string;
+    chatRequestId: string;
+    modelCallStarted: string;
+    modelCallCompleted: string;
+    responseParsed: boolean;
+  };
 }

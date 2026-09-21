@@ -1,0 +1,73 @@
+{
+  "project_id": "demo_01_text",
+  "title": "Text Short Demo",
+  "output_path": "testing/artifacts/output_01_text.mp4",
+  "output": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "safe_area": {
+    "top": 160,
+    "bottom": 320,
+    "left": 60,
+    "right": 120
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_hook",
+      "template_id": "facts.rapid-facts.v1",
+      "narration_text": "Did you know that honey never spoils?",
+      "duration_seconds": 2.0,
+      "shots": [
+        {
+          "id": "shot_hook",
+          "recipe_id": "KINETIC_HOOK",
+          "start_seconds": 0.0,
+          "duration_seconds": 2.0,
+          "props": {
+            "headline": "HONEY NEVER SPOILS",
+            "background_type": "DEEP_INDIGO"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_stat",
+      "template_id": "facts.rapid-facts.v1",
+      "narration_text": "Archaeologists found 3,000 year old honey in Egyptian tombs that is still edible.",
+      "duration_seconds": 2.5,
+      "shots": [
+        {
+          "id": "shot_stat",
+          "recipe_id": "BIG_NUMBER",
+          "start_seconds": 0.0,
+          "duration_seconds": 2.5,
+          "props": {
+            "number": "3,000 YEARS",
+            "label": "EDIBLE IN TOMBS",
+            "background_type": "AMBER_HISTORY"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_outro",
+      "template_id": "facts.rapid-facts.v1",
+      "narration_text": "Follow FactoryOS for daily mind-blowing facts.",
+      "duration_seconds": 2.0,
+      "shots": [
+        {
+          "id": "shot_outro",
+          "recipe_id": "OUTRO_CTA",
+          "start_seconds": 0.0,
+          "duration_seconds": 2.0,
+          "props": {
+            "headline": "FOLLOW FOR MORE",
+            "background_type": "DEEP_INDIGO"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -105,7 +105,11 @@ class AIProviderRegistryClass {
   }
 
   getPlugin(id: string): AIProviderPlugin | undefined {
-    return this.plugins.get(id);
+    if (this.plugins.has(id)) return this.plugins.get(id);
+    const lower = (id || "").toLowerCase();
+    if (lower === "gemini") return this.plugins.get("google") || this.plugins.get("gemini");
+    if (lower === "google") return this.plugins.get("gemini") || this.plugins.get("google");
+    return undefined;
   }
 
   getAllPlugins(): AIProviderPlugin[] {

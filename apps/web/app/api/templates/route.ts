@@ -1,33 +1,64 @@
 import { NextResponse } from "next/server";
-import { EngineDiscovery } from "@/lib/core/EngineDiscovery";
 import path from "path";
 import fs from "fs";
+import { TemplateRegistry } from "@/lib/templates/registry/TemplateRegistry";
+import { ContentCategory, CapabilityStatus } from "@/lib/templates/schemas/TemplateSchema";
 
 export const dynamic = "force-dynamic";
 
-const INITIAL_TEMPLATES = [
-  { id: "quiz-fast", name: "Quick Quiz (Fast)", category: "Interactive", description: "Rapid quiz generation optimized for speed. Best for bulk creation.", tags: ["fast", "quiz"], stepCount: 8, renderProfile: "FAST_QUIZ", version: "1.0", prompt: "Generate trivia questions on {topic}...", variables: "topic, difficulty", isOfficial: true },
-  { id: "story-cinematic", name: "Cinematic Story", category: "Narrative", description: "High-quality narrative story with longer scenes and cinematic pacing.", tags: ["quality", "story"], stepCount: 8, renderProfile: "CINEMATIC", version: "1.0", prompt: "Create a narrative about {character}...", variables: "character, setting", isOfficial: true },
-  { id: "motivation-viral", name: "Viral Motivation", category: "Aesthetic", description: "Hook-optimized motivational content targeting high engagement.", tags: ["viral", "fast"], stepCount: 8, renderProfile: "VIRAL_SHORT", version: "1.0", prompt: "Generate high impact quotes on {theme}...", variables: "theme, backgroundStyle", isOfficial: true },
-  { id: "gk-educational", name: "Educational GK", category: "Trivia", description: "General knowledge content with educational tone and clear explanations.", tags: ["quality"], stepCount: 8, renderProfile: "EDUCATIONAL", version: "1.0", prompt: "Teach us 3 facts about {subject}...", variables: "subject", isOfficial: true },
-  { id: "science-deep", name: "Deep Space Mystery", category: "Community", description: "Fascinating space phenomena facts with dramatic narration.", tags: ["viral", "community"], stepCount: 8, renderProfile: "CINEMATIC", version: "1.2", prompt: "Explore the secrets of {phenomenon}...", variables: "phenomenon", isCommunity: true },
-];
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    // Make sure we scan custom ones
-    await EngineDiscovery.discoverAll();
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get("category") as ContentCategory | null;
+    const status = searchParams.get("status") as CapabilityStatus | null;
+    const search = searchParams.get("search");
 
+    const registry = TemplateRegistry.getInstance();
+
+    // Also load and migrate any saved custom templates
     const dataDir = path.resolve(process.cwd(), "data");
-    const filePath = path.join(dataDir, "custom-templates.json");
-    let customTemplates = [];
-    if (fs.existsSync(filePath)) {
-      customTemplates = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    const customFilePath = path.join(dataDir, "custom-templates.json");
+    if (fs.existsSync(customFilePath)) {
+      try {
+        const rawCustom = JSON.parse(fs.readFileSync(customFilePath, "utf-8"));
+        if (Array.isArray(rawCustom)) {
+          for (const item of rawCustom) {
+            if (item.identity && item.storyStructure) {
+              registry.registerTemplate(item);
+            } else {
+              const migrated = registry.migrateLegacyTemplate(item);
+              registry.registerTemplate(migrated);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[TemplatesAPI] Failed to parse custom-templates.json:", err);
+      }
     }
+
+    const templates = registry.listTemplates({
+      category: category || undefined,
+      capabilityStatus: status || undefined,
+      search: search || undefined
+    });
+
+    // Provide dual-format: modern rich TemplateDefinition + backwards compatible fields
+    const formatted = templates.map(t => ({
+      ...t,
+      // Backwards compatible fields
+      id: t.identity.id,
+      name: t.identity.name,
+      prompt: t.inputContract.promptSeed || t.description,
+      variables: t.inputContract.variables.map(v => v.name).join(", "),
+      stepCount: t.storyStructure.length,
+      isOfficial: t.identity.isSystem,
+      version: t.identity.version
+    }));
 
     return NextResponse.json({
       success: true,
-      templates: [...INITIAL_TEMPLATES, ...customTemplates]
+      count: formatted.length,
+      templates: formatted
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -37,43 +68,60 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, category, description, prompt, variables, version } = body;
-    if (!name) {
-      return NextResponse.json({ success: false, error: "Template name is required" }, { status: 400 });
+    const registry = TemplateRegistry.getInstance();
+
+    let templateDef;
+    if (body.identity && body.storyStructure) {
+      templateDef = body;
+    } else {
+      // Migrate legacy custom builder submission
+      templateDef = registry.migrateLegacyTemplate({
+        id: body.id || `custom_${Date.now()}`,
+        name: body.name,
+        category: body.category,
+        description: body.description,
+        promptSeed: body.prompt || body.promptSeed,
+        version: body.version || "1.0.0"
+      });
     }
 
-    const id = `custom_${Math.random().toString(36).substring(2, 9)}`;
-    const newTemplate = {
-      id,
-      name,
-      category,
-      description,
-      tags: ["custom"],
-      stepCount: 8,
-      renderProfile: "CUSTOM_PROFILE",
-      version: version || "1.0",
-      prompt,
-      variables,
-    };
+    const regResult = registry.registerTemplate(templateDef);
+    if (!regResult.success) {
+      return NextResponse.json({ success: false, error: regResult.error }, { status: 400 });
+    }
 
-    EngineDiscovery.registerDynamicTemplate(newTemplate);
+    // Persist to custom-templates.json
+    const dataDir = path.resolve(process.cwd(), "data");
+    osEnsureDir(dataDir);
+    const customFilePath = path.join(dataDir, "custom-templates.json");
+    let existingCustom: any[] = [];
+    if (fs.existsSync(customFilePath)) {
+      try {
+        existingCustom = JSON.parse(fs.readFileSync(customFilePath, "utf-8"));
+      } catch {}
+    }
+    existingCustom.push(templateDef);
+    fs.writeFileSync(customFilePath, JSON.stringify(existingCustom, null, 2), "utf-8");
 
-    return NextResponse.json({ success: true, template: newTemplate });
+    return NextResponse.json({
+      success: true,
+      template: {
+        ...templateDef,
+        id: templateDef.identity.id,
+        name: templateDef.identity.name,
+        prompt: templateDef.inputContract.promptSeed,
+        variables: templateDef.inputContract.variables.map((v: any) => v.name).join(", "),
+        stepCount: templateDef.storyStructure.length,
+        version: templateDef.identity.version
+      }
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
 
-export async function DELETE(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ success: false, error: "ID is required" }, { status: 400 });
-    }
-    EngineDiscovery.deleteDynamicTemplate(id);
-    return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+function osEnsureDir(dir: string) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 }

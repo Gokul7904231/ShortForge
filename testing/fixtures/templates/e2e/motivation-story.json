@@ -1,0 +1,11 @@
+{
+  "templateId": "motivation.story-to-lesson.v1",
+  "templateVersion": "1.0.0",
+  "contentEngine": "MOTIVATION",
+  "formatFamily": "Philosophical Storytelling",
+  "topic": "The Iron Law of Discipline",
+  "userInputs": {
+    "theme": "The Iron Law of Discipline",
+    "protagonist": "Marcus Aurelius"
+  }
+}

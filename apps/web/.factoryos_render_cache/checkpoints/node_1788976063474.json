@@ -1,0 +1,17 @@
+{
+  "run_id": "node_1788976063474",
+  "project_id": "e2e_history_1788976063473",
+  "intent_hash": "48bf35ae50414467ae4025c3971a5ee4bbe27a1b16d8f439eee8288738514317",
+  "composition_hash": "520aff484e24332985a921e0614cd4e10f07eb520b607b6d53b2f1b089794e28",
+  "total_scenes": 6,
+  "completed_scenes": [
+    "scene_01_beat_01_hook"
+  ],
+  "scene_artifacts": {
+    "scene_01_beat_01_hook": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\c4030fc8f567463b64f28d3423269217041d23a4e45847c790c876ae178749e4.mp4"
+  },
+  "stage": "SCENES_RENDERING",
+  "error": null,
+  "created_at": "2026-09-09T17:47:44Z",
+  "updated_at": "2026-09-09T17:49:29Z"
+}

@@ -1,0 +1,25 @@
+{
+  "run_id": "node_1788976841190",
+  "project_id": "e2e_motivation_1788976841190",
+  "intent_hash": "79bdef974179319457bc20c165bb74dcf5fb5148dc6e40dbb32bb2cf07ae5426",
+  "composition_hash": "9dd2868b73131af6fb71f1cda3870889a41c3e30dfef63bebd9b4474eb7da24e",
+  "total_scenes": 5,
+  "completed_scenes": [
+    "scene_01_beat_01_hook",
+    "scene_02_beat_02_struggle",
+    "scene_03_beat_03_rule",
+    "scene_04_beat_04_lesson",
+    "scene_05_beat_05_cta"
+  ],
+  "scene_artifacts": {
+    "scene_01_beat_01_hook": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\8000e424c068b1689fff19c744e7cc720fa6a3c0f12b0b57fe751d8cc44415c9.mp4",
+    "scene_02_beat_02_struggle": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\82419317ce50a4bbdde5f1957c7ae805bbc4618f61ed347852a11d5eee9880c6.mp4",
+    "scene_03_beat_03_rule": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\b938e08f050cbdc1c80c570abd6e2da1e7398fcd669879d737e8f8bd09b6ff0d.mp4",
+    "scene_04_beat_04_lesson": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\7a43542a6152e65f781690b6dbc126f556cca292474b0382e1018d99f70eec67.mp4",
+    "scene_05_beat_05_cta": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\1596afb76c082fbe23545c6cde8dca6b19edc2c7ff4e59de37a8198f37eb241a.mp4"
+  },
+  "stage": "COMPLETED",
+  "error": null,
+  "created_at": "2026-09-09T18:00:41Z",
+  "updated_at": "2026-09-09T18:00:41Z"
+}

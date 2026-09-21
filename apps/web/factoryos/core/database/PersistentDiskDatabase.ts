@@ -86,7 +86,19 @@ export class DiskWorldStateRepository implements IWorldStateRepository {
   async saveState(state: WorldState): Promise<void> {
     const tmp = `${this.file}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(state, null, 2), "utf-8");
-    fs.renameSync(tmp, this.file);
+    try {
+      if (fs.existsSync(this.file)) {
+        fs.unlinkSync(this.file);
+      }
+      fs.renameSync(tmp, this.file);
+    } catch {
+      try {
+        fs.copyFileSync(tmp, this.file);
+        fs.unlinkSync(tmp);
+      } catch {
+        fs.writeFileSync(this.file, JSON.stringify(state, null, 2), "utf-8");
+      }
+    }
   }
 
   async getStateHistory(limit: number = 50): Promise<WorldState[]> {

@@ -5,6 +5,8 @@
 import { UserRole } from "./types";
 import { ROLE_HIERARCHY } from "./constants";
 
+export type { UserRole };
+
 export function isRoleAtLeast(currentRole: UserRole, requiredRole: UserRole): boolean {
   const currentWeight = ROLE_HIERARCHY[currentRole] || 0;
   const requiredWeight = ROLE_HIERARCHY[requiredRole] || 0;

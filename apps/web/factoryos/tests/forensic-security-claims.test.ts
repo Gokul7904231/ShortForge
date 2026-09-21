@@ -14,6 +14,8 @@ import {
 } from "../../lib/quota/quota-service";
 import { AutonomousFactoryController } from "../core/controller/AutonomousFactoryController";
 import crypto from "crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 // Simulated user context for multi-tenant tests
 let currentMockUser = {
@@ -253,6 +255,15 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
         executionToken: token,
       });
 
+      // Seed a real physical video artifact for this job so forensic media validation succeeds
+      const renderDir = path.join(process.cwd(), "data", "renders");
+      if (!fs.existsSync(renderDir)) fs.mkdirSync(renderDir, { recursive: true });
+      const fixtureVideo = path.join(process.cwd(), "public", "german-quiz.mp4");
+      const localJobArtifactPath = path.join(renderDir, `${jobId}.mp4`);
+      if (fs.existsSync(fixtureVideo)) {
+        fs.copyFileSync(fixtureVideo, localJobArtifactPath);
+      }
+
       const cbPayload = {
         jobId,
         status: "completed",
@@ -293,6 +304,10 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
       // Invariant: Completed quota remains 1, NOT 2
       const quota2 = await getUserQuota(userId, "BASIC");
       expect(quota2.completed).toBe(1);
+
+      if (fs.existsSync(localJobArtifactPath)) {
+        fs.unlinkSync(localJobArtifactPath);
+      }
     });
   });
 

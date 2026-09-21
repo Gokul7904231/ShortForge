@@ -190,7 +190,16 @@ export abstract class BaseProviderPlugin implements AIProviderPlugin {
       } catch (err: any) {
         console.warn(`[BaseProviderPlugin] [${this.id}] Attempt ${attempt} failed: ${err.message}`);
         
-        if (attempt >= maxAttempts || err?.name === "AbortError" || signal?.aborted) {
+        const errMsg = String(err?.message || "");
+        const isFatalError =
+          err?.isRetryable === false ||
+          errMsg.includes("API key not valid") ||
+          errMsg.includes("API_KEY_INVALID") ||
+          errMsg.includes("Insufficient credits") ||
+          errMsg.includes("402") ||
+          errMsg.includes("401");
+
+        if (attempt >= maxAttempts || isFatalError || err?.name === "AbortError" || signal?.aborted) {
           this.updateFailureMetrics();
           throw err;
         }

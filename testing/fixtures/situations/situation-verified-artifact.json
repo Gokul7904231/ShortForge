@@ -1,0 +1,102 @@
+{
+  "id": "sit_verified_artifact_004",
+  "missionId": "golden-short-001",
+  "runId": "run_golden_short_001_1788944000000",
+  "schemaVersion": "1.0.0",
+  "sender": {
+    "agentId": "agent_compliance_f7",
+    "role": "ComplianceVerifier",
+    "floorId": "floor07_compliance"
+  },
+  "recipients": [
+    "agent_overseer",
+    "agent_delivery_manager"
+  ],
+  "type": "VERIFICATION",
+  "priority": "NORMAL",
+  "text": "Floor 06 rendering pipeline completed. Master MP4 artifact physically verified with SHA-256 and compliance probe passed.",
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "nodes": [
+      {
+        "id": "floor06_rendering",
+        "label": "Floor 06 Rendering",
+        "type": "FLOOR",
+        "status": "COMPLETED",
+        "metadata": {
+          "floorNumber": 6
+        }
+      },
+      {
+        "id": "artifact_master_mp4",
+        "label": "Master MP4 Video Artifact",
+        "type": "ARTIFACT",
+        "status": "COMPLETED",
+        "metadata": {
+          "filePath": "data/outbox/golden-short-001.mp4",
+          "sizeBytes": 2048576
+        }
+      },
+      {
+        "id": "verification_compliance_gate",
+        "label": "F7 Hard Gate Verification",
+        "type": "VERIFICATION",
+        "status": "COMPLETED",
+        "metadata": {
+          "hardGatesPassed": 7
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_f6_to_mp4",
+        "from": "floor06_rendering",
+        "to": "artifact_master_mp4",
+        "type": "ARTIFACT_PRODUCED",
+        "label": "Generates MP4"
+      },
+      {
+        "id": "edge_mp4_to_f7",
+        "from": "artifact_master_mp4",
+        "to": "verification_compliance_gate",
+        "type": "VERIFICATION",
+        "label": "Probe Audit"
+      }
+    ],
+    "focus": [
+      "artifact_master_mp4",
+      "verification_compliance_gate"
+    ],
+    "emphasis": [
+      {
+        "targetId": "artifact_master_mp4",
+        "visualWeight": "PRIMARY",
+        "reason": "Production output artifact verified"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidenceId": "ev_mp4_physical_file",
+      "type": "ARTIFACT",
+      "truthLevel": "PHYSICAL",
+      "uriOrPath": "data/outbox/golden-short-001.mp4",
+      "digest": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "description": "Physical MP4 byte existence on filesystem (2,048,576 bytes)"
+    },
+    {
+      "evidenceId": "ev_f7_sha256_probe",
+      "type": "VERIFICATION_PROBE",
+      "truthLevel": "VERIFIED",
+      "digest": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "description": "SHA-256 integrity probe confirmed hash matches filesystem digest"
+    },
+    {
+      "evidenceId": "ev_f7_compliance_gates",
+      "type": "VERIFICATION_PROBE",
+      "truthLevel": "VERIFIED",
+      "description": "F7 compliance suite: 7/7 hard gates passed (aspect ratio 9:16, audio sync, duration 45s)"
+    }
+  ],
+  "createdAt": "2026-09-09T14:40:00.000Z"
+}

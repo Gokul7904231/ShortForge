@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" class="factoryos-graph" role="img" aria-label="Evidence Proof Drilldown: F4 Voice Synthesis (PCM WAV)">
+  <defs>
+    <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#71717a" />
+    </marker>
+    <marker id="arrow-critical" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-verified" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#10b981" />
+    </marker>
+    <filter id="focal-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3b82f6" flood-opacity="0.6" />
+    </filter>
+    <filter id="alert-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ef4444" flood-opacity="0.8" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#09090b" />
+  <g class="graph-header" transform="translate(40, 35)">
+    <text x="0" y="0" font-family="monospace" font-size="16" font-weight="bold" fill="#f4f4f5">Evidence Proof Drilldown: F4 Voice Synthesis (PCM WAV)</text>
+    <text x="0" y="18" font-family="monospace" font-size="11" fill="#a1a1aa">Grounding trace proving truth status &apos;OBSERVED&apos;</text>
+  </g>
+  <g class="graph-edges">
+    <path id="edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis" data-edge-id="edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis" data-canonical-id="edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis" d="M 280 104 C 325 104, 325 104, 370 104" fill="none" stroke="#10b981" stroke-width="1.5"  marker-end="url(#arrow-verified)" class="edge-path" />
+    <path id="edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis_hit" data-edge-id="edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis" data-canonical-id="edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis" d="M 280 104 C 325 104, 325 104, 370 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_ev_ev_f4_wav_bytes_to_floor04_media_synthesis" />
+    <text x="325" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">supports [PHYSICAL]</text>
+  </g>
+  <g class="graph-nodes">
+    <g id="ev_f4_wav_bytes" data-node-id="ev_f4_wav_bytes" data-canonical-id="ev_f4_wav_bytes" data-node-type="EVIDENCE" data-status="COMPLETED" data-truth="PHYSICAL" class="graph-node" transform="translate(60, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node ev_f4_wav_bytes: Local PCM WAV file byte existence: 1,411,200 bytes" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">EVIDENCE</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#a855f7">⬡ PHYS</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Local PCM WAV file byte e…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#10b981">COMPLETED • 1 EV</text>
+    </g>
+    <g id="floor04_media_synthesis" data-node-id="floor04_media_synthesis" data-canonical-id="floor04_media_synthesis" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(370, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor04_media_synthesis: F4 Voice Synthesis (PCM WAV)" filter="url(#focal-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3b82f6" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F4 Voice Synthesis (PCM W…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+  </g>
+</svg>

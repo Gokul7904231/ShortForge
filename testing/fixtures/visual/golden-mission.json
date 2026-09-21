@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "1.0.0",
+  "missionId": "golden-short-001",
+  "runId": "run_golden_short_001_1788944000000",
+  "createdAt": "2026-09-09T14:00:00.000Z",
+  "nodes": [
+    {
+      "id": "node_mission",
+      "type": "MISSION",
+      "label": "Golden Short 001 Mission",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "node_goal",
+      "type": "GOAL",
+      "label": "30s Vertical Space Exploration Short",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor00_analyst",
+      "type": "FLOOR",
+      "label": "F0 Research & Topic Analysis",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor01_strategy",
+      "type": "FLOOR",
+      "label": "F1 Content Strategy & Angle",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor02_scripting",
+      "type": "FLOOR",
+      "label": "F2 Scripting & Visual Beats",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor03_asset_realization",
+      "type": "FLOOR",
+      "label": "F3 Visual Asset Generation",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor04_media_synthesis",
+      "type": "FLOOR",
+      "label": "F4 Voice Synthesis (PCM WAV)",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor05_timeline_composition",
+      "type": "FLOOR",
+      "label": "F5 Timeline Audio-Visual Sync",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor06_rendering",
+      "type": "FLOOR",
+      "label": "F6 FFmpeg Master Rendering",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "floor07_compliance",
+      "type": "FLOOR",
+      "label": "F7 Media Probe & Verification",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "node_delivery",
+      "type": "DELIVERY",
+      "label": "Local Outbox Delivery (Verified)",
+      "truthLevel": "PHYSICAL",
+      "status": "VERIFIED"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_mission_to_goal",
+      "from": "node_mission",
+      "to": "node_goal",
+      "type": "PLANNED_DEPENDENCY",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_goal_to_f0",
+      "from": "node_goal",
+      "to": "floor00_analyst",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f0_to_f1",
+      "from": "floor00_analyst",
+      "to": "floor01_strategy",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f1_to_f2",
+      "from": "floor01_strategy",
+      "to": "floor02_scripting",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f2_to_f3",
+      "from": "floor02_scripting",
+      "to": "floor03_asset_realization",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f3_to_f4",
+      "from": "floor03_asset_realization",
+      "to": "floor04_media_synthesis",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f4_to_f5",
+      "from": "floor04_media_synthesis",
+      "to": "floor05_timeline_composition",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f5_to_f6",
+      "from": "floor05_timeline_composition",
+      "to": "floor06_rendering",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f6_to_f7",
+      "from": "floor06_rendering",
+      "to": "floor07_compliance",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "edge_f7_to_delivery",
+      "from": "floor07_compliance",
+      "to": "node_delivery",
+      "type": "DELIVERY",
+      "truthLevel": "VERIFIED",
+      "status": "VERIFIED"
+    }
+  ]
+}

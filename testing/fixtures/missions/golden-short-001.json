@@ -1,0 +1,28 @@
+{
+  "id": "golden-short-001",
+  "name": "Golden Fact Short: Mariana Trench Mysteries",
+  "goal": {
+    "description": "Create a verified 9:16 factual short video from the supplied topic",
+    "topic": "Top 3 Secrets of Deep Ocean Trenches",
+    "targetAudience": "Science & Nature Enthusiasts",
+    "style": "cinematic-documentary",
+    "durationSeconds": 3
+  },
+  "requiredStages": [
+    "floor00_analyst",
+    "floor01_strategy",
+    "floor02_scripting",
+    "floor03_asset_realization",
+    "floor04_media_synthesis",
+    "floor05_timeline_composition",
+    "floor06_rendering",
+    "floor07_compliance"
+  ],
+  "optionalStages": [],
+  "terminalConditions": {
+    "requiredStatus": "COMPLETED",
+    "requirePhysicalArtifact": true,
+    "requireVerificationPass": true,
+    "requireDeliveryOutbox": true
+  }
+}

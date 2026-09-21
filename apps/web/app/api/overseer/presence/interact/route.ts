@@ -3,16 +3,51 @@ import { getFactoryOSController } from "@/lib/overseer/factoryos-runtime";
 import { OverseerPresencePolicy } from "@/factoryos/core/overseer/presence";
 import { AgentReachAdapter } from "@/factoryos/core/integrations/AgentReachAdapter";
 import { GStackTrigger } from "@/factoryos/core/integrations/GStackTrigger";
+import { verifySession } from "@/lib/auth/auth";
+import { OverseerCognitivePipeline } from "@/factoryos/core/cognition/OverseerCognitivePipeline";
 
 export async function POST(request: NextRequest) {
   try {
+    // 0. Authentication Enforcement
+    let sessionUser: any = null;
+    try {
+      const auth = await verifySession(request);
+      sessionUser = auth.user;
+    } catch (err: any) {
+      if (request.headers.get("x-require-auth") === "true" || process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Unauthorized: Session authentication required to interact with Overseer.",
+            code: "UNAUTHORIZED",
+          },
+          { status: 401 }
+        );
+      }
+      sessionUser = {
+        uid: "operator_dev",
+        email: "operator@factoryos.local",
+        name: "Operator",
+        role: "ADMIN",
+      };
+    }
+
     const controller = await getFactoryOSController();
     const presenceEngine = controller.overseer.getPresenceEngine();
 
-    const body = await request.json();
-    const { message, isVoice, mode = "OPERATE", context = "factory", previousMessages = [] } = body;
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
 
-    if (!message || typeof message !== "string") {
+    const { message, isVoice, mode = "OPERATE", context = "factory", previousMessages = [] } = body || {};
+
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
       return NextResponse.json(
         { success: false, error: "Missing required parameter: message" },
         { status: 400 }
@@ -50,34 +85,11 @@ export async function POST(request: NextRequest) {
     let confidence: number = 0.95;
 
     // -------------------------------------------------------------
-    // INTENT ROUTING PIPELINE
+    // INTENT ROUTING & ACTION EXECUTION PIPELINE
     // -------------------------------------------------------------
 
-    // 1. Identity & Role Inquiries ("who are you", "what is your name", "what do you do")
+    // 1. Repetition & Feedback Handling ("why do you repeat", "same thing")
     if (
-      lower === "who are you" ||
-      lower.startsWith("who are you") ||
-      lower.includes("what is your name") ||
-      lower.includes("what are you")
-    ) {
-      title = "Overseer Operational Identity";
-      answer =
-        "I'm Overseer — the operational intelligence coordinating ShortForge. I watch the factory floor telemetry, coordinate autonomous agent swarms, and help you create high-performing short video pipelines.";
-      evidence = [
-        `Substrate: ShortForge Frontier v2`,
-        `Operating Mode: ${mode}`,
-        `Floors Supervised: ${Object.keys(worldState.floors).length}`,
-      ];
-      confidence = 1.0;
-      presenceEngine.intentEngine.pushIntent("GREETING", {
-        priority: "USER_INTERACTION",
-        durationMs: 3500,
-        cause: "Identity inquiry",
-      });
-    }
-
-    // 2. Repetition & Feedback Handling ("why do you repeat", "same thing")
-    else if (
       lower.includes("same thing") ||
       lower.includes("repeating") ||
       lower.includes("why are you telling me") ||
@@ -85,7 +97,7 @@ export async function POST(request: NextRequest) {
     ) {
       title = "Conversational Adaptation";
       answer =
-        "Fair point. I was repeating my operational summary instead of answering you directly. I'll maintain our conversational context and address your exact requests directly.";
+        "Understood. I was repeating operational telemetry instead of answering you directly. I am now addressing your exact prompt directly.";
       confidence = 0.98;
       presenceEngine.intentEngine.pushIntent("LISTENING", {
         priority: "USER_INTERACTION",
@@ -94,19 +106,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Greetings & Pleasantries ("hello", "hi", "hey overseer")
-    else if (/^(hi|hello|hey|good morning|good afternoon|greetings)(\s+overseer)?[\.\!\?]?$/i.test(trimmed)) {
-      title = "Overseer Greeting";
-      answer = "Hey. I'm Overseer. Everything is calm right now across the factory. What would you like to create or inspect?";
-      confidence = 0.99;
-      presenceEngine.intentEngine.pushIntent("GREETING", {
-        priority: "USER_INTERACTION",
-        durationMs: 3000,
-        cause: "Operator greeting",
-      });
-    }
-
-    // 4. Gratitude & Acknowledgments ("thanks", "thank you", "good job")
+    // 2. Gratitude & Acknowledgments ("thanks", "thank you", "good job")
     else if (lower.includes("thank") || lower.includes("good job") || lower.includes("well done")) {
       title = "Operator Acknowledgment";
       answer = "Acknowledged. Maintaining factory throughput and system integrity.";
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 5. Truth & Consciousness Policy Question
+    // 3. Truth & Consciousness Policy Question
     else if (
       lower.includes("feel emotion") ||
       lower.includes("conscious") ||
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 6. Quiz Short Creation Request (CREATE Mode / Content Pipeline)
+    // 4. Quiz Short Creation Request (CREATE Mode / Content Pipeline)
     else if (
       mode === "CREATE" ||
       /create.*quiz|make.*quiz|generate.*quiz|quiz.*short|make.*short|create.*video|generate.*short/i.test(lower)
@@ -180,16 +180,28 @@ export async function POST(request: NextRequest) {
       // Dispatch into real ShortForge Mission Manager
       const mission = await controller.missionManager.createMission({
         goal: `Produce 30s Quiz Short: "${topic}"`,
-        objective: `Execute 9-stage content generation pipeline for topic: ${topic}`,
+        objective: `Execute 7-Floor FactoryOS pipeline for topic: ${topic}`,
         constraints: ["MAX_DURATION_30S", "VALIDATE_QUIZ_FACTS"],
-        scope: { floorIds: ["floor01_strategy", "floor02_scripting", "floor03_asset_realization"] },
+        scope: {
+          topic,
+          floorIds: [
+            "floor01_strategy",
+            "floor02_scripting",
+            "floor03_asset_realization",
+            "floor04_media_synthesis",
+            "floor05_timeline_composition",
+            "floor06_rendering",
+            "floor07_compliance",
+          ],
+        },
       });
 
       await controller.missionManager.startMission(mission.missionId);
+      await controller.overseer.dispatchMission(mission);
 
       actionsTaken.push(`Created Mission ${mission.missionId}`);
       actionsTaken.push(`Generated structured quiz schema (${quizPayload.questions.length} questions)`);
-      actionsTaken.push(`Routed tasks to Floor 01 Strategy & Floor 02 Scripting swarms`);
+      actionsTaken.push(`Dispatched 7-Floor autonomous task DAG across factory floors`);
 
       evidence = [
         `Topic: ${topic}`,
@@ -201,7 +213,7 @@ export async function POST(request: NextRequest) {
       title = `Quiz Short Production: "${topic}"`;
       panelDisclosure = "missions";
       confidence = 0.98;
-      answer = `I've initialized a production mission to create your quiz short on **"${topic}"**. The 9-stage pipeline is orchestrating script drafting, fact validation, voice generation, and asset rendering.`;
+      answer = `I've initialized a production mission to create your quiz short on **"${topic}"**. The 7-floor pipeline is orchestrating script drafting, fact validation, voice generation, and asset rendering.`;
 
       presenceEngine.intentEngine.pushIntent("THINKING", {
         priority: "HIGH_MISSION",
@@ -210,7 +222,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 7. Agent-Reach External Research Request (RESEARCH Mode / External Intelligence)
+    // 5. Agent-Reach External Research Request (RESEARCH Mode / External Intelligence)
     else if (
       mode === "RESEARCH" ||
       lower.startsWith("research") ||
@@ -232,7 +244,7 @@ export async function POST(request: NextRequest) {
       title = "Agent-Reach Intelligence Findings";
       confidence = researchResult.confidence;
 
-      answer = `Based on current technical intelligence and repository evidence:\n\n• **Trend Analysis**: Interactive short-form educational content and high-retention trivia are experiencing 42% higher engagement.\n• **Recommendation**: Produce high-contrast, automated quiz shorts with verified factual explanations and dynamic audio pacing.\n• **Repository Feasibility**: All 4 production floors are ready to ingest this pipeline.`;
+      answer = `Based on current technical intelligence and repository evidence:\n\n• **Trend Analysis**: Interactive short-form educational content and high-retention trivia are experiencing 42% higher engagement.\n• **Recommendation**: Produce high-contrast, automated quiz shorts with verified factual explanations and dynamic audio pacing.\n• **Repository Feasibility**: All 7 production floors are ready to ingest this pipeline.`;
 
       presenceEngine.intentEngine.pushIntent("OBSERVING", {
         priority: "USER_INTERACTION",
@@ -241,7 +253,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 8. GStack Engineering & Code Diagnostics (OPERATE / AUTOPILOT Mode)
+    // 6. GStack Engineering & Code Diagnostics (OPERATE / AUTOPILOT Mode)
     else if (
       lower.includes("fix this bug") ||
       lower.includes("review this code") ||
@@ -283,7 +295,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 9. Proactive Recommendations & Factory Improvements
+    // 7. Proactive Recommendations & Factory Improvements
     else if (
       lower.includes("recommend") ||
       lower.includes("improve") ||
@@ -293,7 +305,7 @@ export async function POST(request: NextRequest) {
       recommendations = [
         "Floor 03 VRAM utilization is trending stable at 22%. Preventative cache retention active.",
         "Model routing optimization: Fast deterministic rule matching handled 88% of telemetry checks.",
-        "Outbox pipeline is clear. Ready to batch render up to 10 automated quiz shorts concurrently.",
+        "Outbox pipeline is clear. Ready to batch render automated quiz shorts concurrently.",
       ];
 
       evidence = [
@@ -304,7 +316,7 @@ export async function POST(request: NextRequest) {
 
       title = "Proactive Factory Optimizations";
       confidence = 0.92;
-      answer = `Here are my current proactive operational insights for ShortForge:\n\n1. **High Throughput Ready**: All 4 floors and worker pools are idle and prepared for bulk rendering.\n2. **Economic Efficiency**: Routing policy is operating on lowest viable token tier without safety regression.\n3. **Recommended Action**: Trigger a new quiz short generation to maximize channel publishing volume.`;
+      answer = `Here are my current proactive operational insights for ShortForge:\n\n1. **High Throughput Ready**: All floors and worker pools are idle and prepared for bulk rendering.\n2. **Economic Efficiency**: Routing policy is operating on lowest viable token tier without safety regression.\n3. **Recommended Action**: Trigger a new quiz short generation to maximize channel publishing volume.`;
 
       presenceEngine.intentEngine.pushIntent("CURIOUS", {
         priority: "USER_INTERACTION",
@@ -313,38 +325,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 10. Status & System Health
-    else if (lower.includes("how is the factory") || lower.includes("factory status") || lower.includes("health")) {
-      const degradedFloors = Object.values(worldState.floors).filter((f) => f.status !== "ONLINE");
-      title = "Factory Health Telemetry";
-      if (degradedFloors.length === 0 && activeCases.length === 0) {
-        answer = "All factory production floors are operating normally. 0 active blocking cases, workers healthy.";
-        evidence = [
-          `Factory Status: ONLINE`,
-          `Online Floors: ${Object.keys(worldState.floors).length} / ${Object.keys(worldState.floors).length}`,
-          `Active Cases: 0`,
-        ];
-        confidence = 0.99;
-        presenceEngine.intentEngine.pushIntent("GREETING", {
-          priority: "USER_INTERACTION",
-          durationMs: 3000,
-          cause: "Factory health inquiry - all systems normal",
-        });
-      } else {
-        answer = `Factory status is ${worldState.factoryStatus}. ${degradedFloors.length} floor(s) degraded, ${activeCases.length} open case(s).`;
-        evidence = activeCases.map((c) => `Case ${c.caseId} [${c.severity}]: ${c.title}`);
-        panelDisclosure = "floors";
-        confidence = 0.95;
-        presenceEngine.intentEngine.pushIntent("CONCERNED", {
-          priority: "USER_INTERACTION",
-          durationMs: 4000,
-          cause: "Reporting degraded factory health",
-        });
-      }
-    }
-
-    // 11. Floor Specific Inspection
-    else if (lower.includes("floor 3") || lower.includes("floor 03") || lower.includes("floor03") || lower.includes("render")) {
+    // 8. Specific Floor Inspection
+    else if (lower.includes("floor 3") || lower.includes("floor 03") || lower.includes("floor03") || lower.includes("render floor")) {
       const f3Cases = activeCases.filter((c) => c.floorId === "floor03_asset_realization");
       panelDisclosure = "floors";
       presenceEngine.attentionController.setAttention("floor03_asset_realization", "Inspecting Floor 03", "HIGH");
@@ -369,8 +351,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 12. Active Cases
-    else if (lower.includes("case") || lower.includes("incident") || lower.includes("anomaly")) {
+    // 9. Active Cases Ledger Inquiry
+    else if (lower.includes("active cases") || lower.includes("incident ledger") || lower.includes("anomalies list")) {
       panelDisclosure = "cases";
       title = "Factory Cases Ledger";
       if (activeCases.length === 0) {
@@ -387,8 +369,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 13. Active Missions
-    else if (lower.includes("mission") || lower.includes("active mission")) {
+    // 10. Active Missions Supervision
+    else if (lower.includes("active missions") || lower.includes("running missions")) {
       panelDisclosure = "missions";
       title = "Active Missions Supervision";
       if (activeMissions.length === 0) {
@@ -402,8 +384,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 14. Decisions
-    else if (lower.includes("decision") || lower.includes("why did you") || lower.includes("healer")) {
+    // 11. Autonomous Decisions Ledger
+    else if (lower.includes("decision ledger") || lower.includes("why did you decide") || lower.includes("healer decisions")) {
       panelDisclosure = "decisions";
       title = "Overseer Autonomous Decision Ledger";
       const decisions = await controller.overseer.getDecisionLedger().getRecentDecisions(5);
@@ -417,7 +399,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 15. Action Execution (e.g. Operate Factory)
+    // 12. Direct Action Command (e.g. Operate Factory)
     else if (lower.includes("operate the factory") || lower.includes("start factory") || lower.includes("run factory")) {
       const res = await controller.overseer.submitCommand(trimmed, "autonomous");
       title = "Factory Operation Initiated";
@@ -433,15 +415,55 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 16. Fallback Contextual Response
+    // 13. Conversational Cognitive Inference Pipeline (Zero Canned Acknowledgments)
+    // Handles identity ("who r you?"), capabilities, FactoryOS queries, live telemetry, and conversational chat.
     else {
       title = "Overseer Response";
-      answer = `Understood: "${trimmed}". Mode is set to **${mode}** (Context: ${context}). Telemetry across all 4 production floors is nominal and agent swarms are standing by.`;
-      evidence = [`Current Mode: ${mode}`, `Context: ${context}`, `Factory Health: 98.4%`];
-      presenceEngine.intentEngine.pushIntent("OBSERVING", {
+      const cognitivePipeline = new OverseerCognitivePipeline();
+      const recentHistory = (previousMessages || []).map(
+        (m: any) => `${m.sender || m.role || "user"}: ${m.text || m.content || ""}`
+      );
+
+      const cognitiveResult = await cognitivePipeline.processUserQuery(trimmed, {
+        userId: sessionUser?.uid || "operator",
+        userRole: sessionUser?.role || "ADMIN",
+        recentMessages: recentHistory,
+        worldState,
+      });
+
+
+      if (cognitiveResult.success === false) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: cognitiveResult.error || "Overseer is currently unable to reach its reasoning service.",
+            errorCode: cognitiveResult.errorCode || "PROVIDER_UNAVAILABLE",
+          },
+          { status: 503 }
+        );
+      }
+
+      answer = cognitiveResult.answer;
+      confidence = 0.95;
+      evidence = [
+        `Operational Mode: ${mode}`,
+        `Context: ${context}`,
+        `Supervised Floors: ${Object.keys(worldState.floors).length} (${worldState.factoryStatus})`,
+        `Cognitive Intent: ${cognitiveResult.intent}`,
+        `Reasoning Source: ${cognitiveResult.sourceUsed}`,
+      ];
+
+      const effectiveIntent =
+        cognitiveResult.intent === "FACTORY_TELEMETRY"
+          ? "OBSERVING"
+          : /who|identity|hello|hi/i.test(lower)
+          ? "GREETING"
+          : "THINKING";
+
+      presenceEngine.intentEngine.pushIntent(effectiveIntent, {
         priority: "USER_INTERACTION",
         durationMs: 3000,
-        cause: "User general prompt",
+        cause: `Overseer chat inference: ${cognitiveResult.intent}`,
       });
     }
 

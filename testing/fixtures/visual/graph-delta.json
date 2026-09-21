@@ -1,0 +1,80 @@
+{
+  "baseline": {
+    "schemaVersion": "1.0.0",
+    "missionId": "golden-short-001",
+    "runId": "run_baseline_101",
+    "createdAt": "2026-09-09T12:00:00.000Z",
+    "nodes": [
+      {
+        "id": "floor04_media_synthesis",
+        "type": "FLOOR",
+        "label": "Floor 04 Media Synthesis",
+        "truthLevel": "OBSERVED",
+        "status": "FAILED"
+      },
+      {
+        "id": "gemini_voice_provider",
+        "type": "FAILURE",
+        "label": "Gemini TTS Provider",
+        "truthLevel": "OBSERVED",
+        "status": "FAILED"
+      },
+      {
+        "id": "deprecated_legacy_cache",
+        "type": "ARTIFACT",
+        "label": "Legacy Audio Cache",
+        "truthLevel": "OBSERVED",
+        "status": "FAILED"
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_f4_to_gemini",
+        "from": "floor04_media_synthesis",
+        "to": "gemini_voice_provider",
+        "type": "EXECUTION_SEQUENCE",
+        "truthLevel": "OBSERVED",
+        "status": "FAILED"
+      }
+    ]
+  },
+  "candidate": {
+    "schemaVersion": "1.0.0",
+    "missionId": "golden-short-001",
+    "runId": "run_candidate_102",
+    "createdAt": "2026-09-09T14:00:00.000Z",
+    "nodes": [
+      {
+        "id": "floor04_media_synthesis",
+        "type": "FLOOR",
+        "label": "Floor 04 Media Synthesis",
+        "truthLevel": "OBSERVED",
+        "status": "VERIFIED"
+      },
+      {
+        "id": "gemini_voice_provider",
+        "type": "FAILURE",
+        "label": "Gemini TTS Provider",
+        "truthLevel": "OBSERVED",
+        "status": "FAILED"
+      },
+      {
+        "id": "local_pcm_wav_fallback",
+        "type": "RECOVERY",
+        "label": "Local PCM Audio Fallback",
+        "truthLevel": "VERIFIED",
+        "status": "VERIFIED"
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_f4_to_fallback",
+        "from": "floor04_media_synthesis",
+        "to": "local_pcm_wav_fallback",
+        "type": "RECOVERY",
+        "truthLevel": "VERIFIED",
+        "status": "VERIFIED"
+      }
+    ]
+  }
+}

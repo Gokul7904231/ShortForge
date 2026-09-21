@@ -1,17 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase-admin";
 import { UniversalProviderSDK } from "@/lib/providers/UniversalProviderSDK";
 import { encrypt } from "@/lib/providers/crypto";
 import { AIProviderRegistry } from "@/ai/capability-registry";
-
 import { AIDoctor } from "@/lib/core/AIDoctor";
+import { verifyAuthAndRole } from "@/lib/auth/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await verifyAuthAndRole(request, "ADMIN");
     const report = await AIDoctor.getLatestReport();
-    const snapshot = await db.collection("providers").get();
+    let snapshotDocs: any[] = [];
+    try {
+      const snapshot = await db.collection("providers").get();
+      snapshotDocs = snapshot.docs;
+    } catch (e: any) {
+      console.warn("[API /providers] Firestore read skipped:", e?.message);
+    }
     
-    const providersList = snapshot.docs.map((doc) => {
+    const providersList = snapshotDocs.map((doc) => {
       const data = doc.data();
       const reportStatus = report.providerReports.find(r => r.id === doc.id) || {
         status: "OFFLINE" as const,
@@ -101,12 +108,14 @@ export async function GET() {
     return NextResponse.json({ success: true, providers: providersList });
   } catch (err: any) {
     console.error("[API /providers] Error listing providers:", err.message);
-    return NextResponse.json({ success: false, error: err.message }, { status: 550 });
+    const status = err.status || (err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500);
+    return NextResponse.json({ success: false, error: err.message }, { status });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    await verifyAuthAndRole(request, "ADMIN");
     const body = await request.json();
     const { id, name, apiKey, baseUrl, modelEndpoint, optionalHeaders } = body;
 
@@ -127,7 +136,7 @@ export async function POST(request: Request) {
     };
 
     // Save metadata and encrypted key to Firestore
-    await db.collection("providers").doc(id).set(docData, { merge: true });
+    await db?.collection("providers").doc(id).set(docData, { merge: true });
 
     // Instantly load/register in the live registry
     await UniversalProviderSDK.register({
@@ -142,6 +151,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: `Provider "${name}" registered successfully.` });
   } catch (err: any) {
     console.error("[API /providers] Save failed:", err.message);
-    return NextResponse.json({ success: false, error: err.message }, { status: 550 });
+    const status = err.status || (err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500);
+    return NextResponse.json({ success: false, error: err.message }, { status });
   }
 }

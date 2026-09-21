@@ -1,0 +1,126 @@
+{
+  "id": "sit_browser_failure_002",
+  "missionId": "browser-shortforge-001",
+  "runId": "run_browser_1788944482432",
+  "schemaVersion": "1.0.0",
+  "sender": {
+    "agentId": "agent_browser_investigator",
+    "role": "ForensicDetector"
+  },
+  "recipients": [
+    "agent_slayer_general",
+    "agent_overseer"
+  ],
+  "type": "INVESTIGATION",
+  "priority": "HIGH",
+  "text": "Overseer chat request failed.",
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "nodes": [
+      {
+        "id": "node_ui_action_chat",
+        "label": "User Submit Chat Message",
+        "type": "UI_STATE",
+        "status": "RUNNING",
+        "metadata": {
+          "selector": "#overseer-input"
+        }
+      },
+      {
+        "id": "node_network_500",
+        "label": "POST /api/overseer/presence/interact 500",
+        "type": "FAILURE",
+        "status": "FAILED",
+        "metadata": {
+          "status": 500,
+          "endpoint": "/api/overseer/presence/interact"
+        }
+      },
+      {
+        "id": "node_console_typeerror",
+        "label": "TypeError: Failed to execute cognition",
+        "type": "FAILURE",
+        "status": "FAILED",
+        "metadata": {
+          "level": "error"
+        }
+      },
+      {
+        "id": "node_ui_failure",
+        "label": "Chat UI Degraded Banner",
+        "type": "UI_STATE",
+        "status": "FAILED",
+        "metadata": {
+          "banner": "Connection failed"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_action_to_net",
+        "from": "node_ui_action_chat",
+        "to": "node_network_500",
+        "type": "UI_ACTION",
+        "label": "Network Dispatch"
+      },
+      {
+        "id": "edge_net_to_console",
+        "from": "node_network_500",
+        "to": "node_console_typeerror",
+        "type": "ESCALATION",
+        "label": "Triggers Unhandled Rejection"
+      },
+      {
+        "id": "edge_console_to_ui",
+        "from": "node_console_typeerror",
+        "to": "node_ui_failure",
+        "type": "UI_ACTION",
+        "label": "Displays Error State"
+      }
+    ],
+    "focus": [
+      "node_network_500",
+      "node_console_typeerror"
+    ],
+    "emphasis": [
+      {
+        "targetId": "node_network_500",
+        "visualWeight": "ALERT",
+        "reason": "Backend 500 HTTP response"
+      }
+    ],
+    "viewHints": {
+      "preferredView": "FORENSIC"
+    }
+  },
+  "evidence": [
+    {
+      "evidenceId": "ev_browser_net_500",
+      "type": "BROWSER_OBSERVATION",
+      "truthLevel": "OBSERVED",
+      "uriOrPath": "/api/overseer/presence/interact",
+      "description": "Browser network failure: POST /api/overseer/presence/interact returned status 500 Internal Server Error"
+    },
+    {
+      "evidenceId": "ev_browser_console_typeerror",
+      "type": "BROWSER_OBSERVATION",
+      "truthLevel": "OBSERVED",
+      "description": "Browser console error: TypeError: Failed to execute cognition in OverseerCognitionClient"
+    },
+    {
+      "evidenceId": "ev_browser_dom_error_state",
+      "type": "BROWSER_OBSERVATION",
+      "truthLevel": "OBSERVED",
+      "description": "Browser DOM inspection: detected error toast with text 'Connection failed'"
+    },
+    {
+      "evidenceId": "ev_browser_screenshot_digest",
+      "type": "BROWSER_OBSERVATION",
+      "truthLevel": "VERIFIED",
+      "digest": "585859a0f00f0caaa87532d887a718b53cf5ad830f0f35a4d6f76e330ad3d16c",
+      "uriOrPath": "data/evidence/screenshots/run_browser_1788944482432_ev_browser_shot_1788944504915_ut7az.png",
+      "description": "Browser screenshot captured showing degraded chat UI banner"
+    }
+  ],
+  "createdAt": "2026-09-09T14:35:00.000Z"
+}

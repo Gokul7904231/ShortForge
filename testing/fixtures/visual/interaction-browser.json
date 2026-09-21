@@ -1,0 +1,19 @@
+{
+  "evidenceId": "br_ev_net_500_01",
+  "kind": "NETWORK",
+  "executionMode": "LIVE_BROWSER",
+  "truthLevel": "OBSERVED",
+  "timestamp": "2026-09-09T08:14:02.120Z",
+  "sourcePage": "http://localhost:3000/overseer",
+  "requestUrl": "http://localhost:3000/api/chat?session=[REDACTED]",
+  "statusCode": 500,
+  "domState": "Internal Server Error: synthesis pipeline failed on Floor 04",
+  "screenshotPath": "data/evidence/screenshots/chat_error_500.png",
+  "screenshotDigest": "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0",
+  "performanceMetric": {
+    "navigationTimeMs": 1420,
+    "memoryUsedMB": 68
+  },
+  "redactedKeysCount": 1,
+  "resolved": true
+}

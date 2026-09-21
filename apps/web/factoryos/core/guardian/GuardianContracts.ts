@@ -28,7 +28,8 @@ export type GuardianActionType =
   | "QUARANTINE_WORKER"
   | "THROTTLE_CONCURRENCY"
   | "CACHE_RESET"
-  | "ESCALATE";
+  | "ESCALATE"
+  | "RUN_LOCAL_DIAGNOSTIC";
 
 export interface GuardianDecision {
   action: GuardianActionType;

@@ -1,0 +1,19 @@
+{
+  "run_id": "run_test_render_int_1788973884967",
+  "project_id": "test_render_int_1788973884967",
+  "intent_hash": "3926d7669ee2d67c997c5c7474426b19c8e3e508032361753e8b3b481fd8df8a",
+  "composition_hash": "804c8afe64daa8806e0758913e4a34b1386a8efd830e4177399e42a0635ae95e",
+  "total_scenes": 2,
+  "completed_scenes": [
+    "scene_01",
+    "scene_02"
+  ],
+  "scene_artifacts": {
+    "scene_01": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\.factoryos_render_cache\\content\\9a8b43eb0e1b959bcf399cfc85fe1344f69ab6c267abb4a749f2993cace68e02.mp4",
+    "scene_02": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\.factoryos_render_cache\\content\\861a4d2c7b3ea6504b58e59bf5a6758293f1676382232436245c7e8a028681de.mp4"
+  },
+  "stage": "COMPLETED",
+  "error": null,
+  "created_at": "2026-09-09T17:11:25Z",
+  "updated_at": "2026-09-09T17:11:31Z"
+}

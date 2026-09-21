@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3440 500" width="3440" height="500" class="factoryos-graph" role="img" aria-label="Mission Overview: golden-short-001">
+  <defs>
+    <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#71717a" />
+    </marker>
+    <marker id="arrow-critical" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-verified" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#10b981" />
+    </marker>
+    <filter id="focal-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3b82f6" flood-opacity="0.6" />
+    </filter>
+    <filter id="alert-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ef4444" flood-opacity="0.8" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#09090b" />
+  <g class="graph-header" transform="translate(40, 35)">
+    <text x="0" y="0" font-family="monospace" font-size="16" font-weight="bold" fill="#f4f4f5">Mission Overview: golden-short-001</text>
+    <text x="0" y="18" font-family="monospace" font-size="11" fill="#a1a1aa">Canonical execution pipeline with truth badges and evidence grounding</text>
+  </g>
+  <g class="graph-edges">
+    <path id="edge_mission_to_goal" data-edge-id="edge_mission_to_goal" data-canonical-id="edge_mission_to_goal" d="M 280 104 C 325 104, 325 104, 370 104" fill="none" stroke="#10b981" stroke-width="1.5"  marker-end="url(#arrow-verified)" class="edge-path" />
+    <path id="edge_mission_to_goal_hit" data-edge-id="edge_mission_to_goal" data-canonical-id="edge_mission_to_goal" d="M 280 104 C 325 104, 325 104, 370 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_mission_to_goal" />
+    <text x="325" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">planned dependency</text>
+    <path id="edge_goal_to_f0" data-edge-id="edge_goal_to_f0" data-canonical-id="edge_goal_to_f0" d="M 590 104 C 635 104, 635 104, 680 104" fill="none" stroke="#10b981" stroke-width="1.5"  marker-end="url(#arrow-verified)" class="edge-path" />
+    <path id="edge_goal_to_f0_hit" data-edge-id="edge_goal_to_f0" data-canonical-id="edge_goal_to_f0" d="M 590 104 C 635 104, 635 104, 680 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_goal_to_f0" />
+    <text x="635" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f0_to_f1" data-edge-id="edge_f0_to_f1" data-canonical-id="edge_f0_to_f1" d="M 900 104 C 945 104, 945 104, 990 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f0_to_f1_hit" data-edge-id="edge_f0_to_f1" data-canonical-id="edge_f0_to_f1" d="M 900 104 C 945 104, 945 104, 990 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f0_to_f1" />
+    <text x="945" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f1_to_f2" data-edge-id="edge_f1_to_f2" data-canonical-id="edge_f1_to_f2" d="M 1210 104 C 1255 104, 1255 104, 1300 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f1_to_f2_hit" data-edge-id="edge_f1_to_f2" data-canonical-id="edge_f1_to_f2" d="M 1210 104 C 1255 104, 1255 104, 1300 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f1_to_f2" />
+    <text x="1255" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f2_to_f3" data-edge-id="edge_f2_to_f3" data-canonical-id="edge_f2_to_f3" d="M 1520 104 C 1565 104, 1565 104, 1610 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f2_to_f3_hit" data-edge-id="edge_f2_to_f3" data-canonical-id="edge_f2_to_f3" d="M 1520 104 C 1565 104, 1565 104, 1610 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f2_to_f3" />
+    <text x="1565" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f3_to_f4" data-edge-id="edge_f3_to_f4" data-canonical-id="edge_f3_to_f4" d="M 1830 104 C 1875 104, 1875 104, 1920 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f3_to_f4_hit" data-edge-id="edge_f3_to_f4" data-canonical-id="edge_f3_to_f4" d="M 1830 104 C 1875 104, 1875 104, 1920 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f3_to_f4" />
+    <text x="1875" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f4_to_f5" data-edge-id="edge_f4_to_f5" data-canonical-id="edge_f4_to_f5" d="M 2140 104 C 2185 104, 2185 104, 2230 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f4_to_f5_hit" data-edge-id="edge_f4_to_f5" data-canonical-id="edge_f4_to_f5" d="M 2140 104 C 2185 104, 2185 104, 2230 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f4_to_f5" />
+    <text x="2185" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f5_to_f6" data-edge-id="edge_f5_to_f6" data-canonical-id="edge_f5_to_f6" d="M 2450 104 C 2495 104, 2495 104, 2540 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f5_to_f6_hit" data-edge-id="edge_f5_to_f6" data-canonical-id="edge_f5_to_f6" d="M 2450 104 C 2495 104, 2495 104, 2540 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f5_to_f6" />
+    <text x="2495" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f6_to_f7" data-edge-id="edge_f6_to_f7" data-canonical-id="edge_f6_to_f7" d="M 2760 104 C 2805 104, 2805 104, 2850 104" fill="none" stroke="#52525b" stroke-width="1.5"  marker-end="url(#arrow-default)" class="edge-path" />
+    <path id="edge_f6_to_f7_hit" data-edge-id="edge_f6_to_f7" data-canonical-id="edge_f6_to_f7" d="M 2760 104 C 2805 104, 2805 104, 2850 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f6_to_f7" />
+    <text x="2805" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">execution sequence</text>
+    <path id="edge_f7_to_delivery" data-edge-id="edge_f7_to_delivery" data-canonical-id="edge_f7_to_delivery" d="M 3070 104 C 3115 104, 3115 104, 3160 104" fill="none" stroke="#10b981" stroke-width="1.5"  marker-end="url(#arrow-verified)" class="edge-path" />
+    <path id="edge_f7_to_delivery_hit" data-edge-id="edge_f7_to_delivery" data-canonical-id="edge_f7_to_delivery" d="M 3070 104 C 3115 104, 3115 104, 3160 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f7_to_delivery" />
+    <text x="3115" y="98" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">delivery</text>
+  </g>
+  <g class="graph-nodes">
+    <g id="node_mission" data-node-id="node_mission" data-canonical-id="node_mission" data-node-type="MISSION" data-status="VERIFIED" data-truth="VERIFIED" class="graph-node" transform="translate(60, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node node_mission: Golden Short 001 Mission" filter="url(#focal-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3b82f6" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">MISSION</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#10b981">✓ VERIFIED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Golden Short 001 Mission</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="node_goal" data-node-id="node_goal" data-canonical-id="node_goal" data-node-type="GOAL" data-status="VERIFIED" data-truth="VERIFIED" class="graph-node" transform="translate(370, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node node_goal: 30s Vertical Space Exploration Short" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">GOAL</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#10b981">✓ VERIFIED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">30s Vertical Space Explor…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="floor00_analyst" data-node-id="floor00_analyst" data-canonical-id="floor00_analyst" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(680, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor00_analyst: F0 Research &amp; Topic Analysis" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F0 Research &amp; Topic Analy…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="floor01_strategy" data-node-id="floor01_strategy" data-canonical-id="floor01_strategy" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(990, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor01_strategy: F1 Content Strategy &amp; Angle" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F1 Content Strategy &amp; Ang…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="floor02_scripting" data-node-id="floor02_scripting" data-canonical-id="floor02_scripting" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(1300, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor02_scripting: F2 Scripting &amp; Visual Beats" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F2 Scripting &amp; Visual Bea…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="floor03_asset_realization" data-node-id="floor03_asset_realization" data-canonical-id="floor03_asset_realization" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(1610, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor03_asset_realization: F3 Visual Asset Generation" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F3 Visual Asset Generation</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="floor04_media_synthesis" data-node-id="floor04_media_synthesis" data-canonical-id="floor04_media_synthesis" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(1920, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor04_media_synthesis: F4 Voice Synthesis (PCM WAV)" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F4 Voice Synthesis (PCM W…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED • 1 EV</text>
+    </g>
+    <g id="floor05_timeline_composition" data-node-id="floor05_timeline_composition" data-canonical-id="floor05_timeline_composition" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(2230, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor05_timeline_composition: F5 Timeline Audio-Visual Sync" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F5 Timeline Audio-Visual …</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="floor06_rendering" data-node-id="floor06_rendering" data-canonical-id="floor06_rendering" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(2540, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor06_rendering: F6 FFmpeg Master Rendering" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">👁 OBSERVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F6 FFmpeg Master Rendering</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED • 1 EV</text>
+    </g>
+    <g id="floor07_compliance" data-node-id="floor07_compliance" data-canonical-id="floor07_compliance" data-node-type="FLOOR" data-status="VERIFIED" data-truth="VERIFIED" class="graph-node" transform="translate(2850, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor07_compliance: F7 Media Probe &amp; Verification" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#10b981">✓ VERIFIED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">F7 Media Probe &amp; Verifica…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED • 1 EV</text>
+    </g>
+    <g id="node_delivery" data-node-id="node_delivery" data-canonical-id="node_delivery" data-node-type="DELIVERY" data-status="VERIFIED" data-truth="PHYSICAL" class="graph-node" transform="translate(3160, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node node_delivery: Local Outbox Delivery (Verified)" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">DELIVERY</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#a855f7">⬡ PHYS</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Local Outbox Delivery (Ve…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+  </g>
+</svg>

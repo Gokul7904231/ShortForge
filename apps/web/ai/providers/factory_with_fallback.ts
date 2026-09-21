@@ -15,8 +15,16 @@ import { zaiProvider } from "./zai";
 export { googleProvider, groqProvider, openRouterProvider, pollinationsProvider, zaiProvider };
 
 export function getProviderWithFallback(providerId: string) {
-  const plugin = AIProviderRegistry.getPlugin(providerId);
+  const norm = (providerId || "").toLowerCase();
+  const targetId = norm === "gemini" ? "google" : norm;
+  const plugin = AIProviderRegistry.getPlugin(targetId) || AIProviderRegistry.getPlugin(providerId);
   if (plugin) return plugin;
-  // Fallback to OpenRouter
-  return AIProviderRegistry.getPlugin("openrouter");
+
+  // Cascading fallback to available providers
+  return (
+    AIProviderRegistry.getPlugin("google") ||
+    AIProviderRegistry.getPlugin("groq") ||
+    AIProviderRegistry.getPlugin("pollinations") ||
+    AIProviderRegistry.getPlugin("openrouter")
+  );
 }

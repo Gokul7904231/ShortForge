@@ -4,12 +4,14 @@
  */
 
 export type FloorId =
+  | "floor00_analyst"
   | "floor01_strategy"
   | "floor02_scripting"
   | "floor03_asset_realization"
   | "floor04_media_synthesis"
   | "floor05_timeline_composition"
-  | "floor06_rendering";
+  | "floor06_rendering"
+  | "floor07_compliance";
 
 export type FloorExecutionStatus =
   | "PENDING"
@@ -25,8 +27,11 @@ export type FloorExecutionStatus =
 export type ExecutionInitiator =
   | "user"
   | "overseer"
+  | "guardian"
   | "retry"
   | "healer"
+  | "slayer"
+  | "system"
   | "manual-admin"
   | "system-recovery";
 

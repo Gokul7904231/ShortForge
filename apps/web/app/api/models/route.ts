@@ -1,10 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { AIDoctor } from "@/lib/core/AIDoctor";
+import { verifyAuthAndRole } from "@/lib/auth/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Internal FactoryOS API: Requires ADMIN or OWNER role
+    await verifyAuthAndRole(request, "ADMIN");
+
     const passportFile = path.resolve(process.cwd(), "data", "model-passports.json");
     if (!fs.existsSync(passportFile)) {
       // Re-run diagnostics to generate if missing
@@ -15,6 +19,10 @@ export async function GET() {
     const passports = JSON.parse(raw);
     return NextResponse.json({ success: true, models: passports });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    console.error("[API /api/models] Caught error:", err?.name, err?.status, err?.message);
+    const status =
+      err.status ||
+      (err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500);
+    return NextResponse.json({ success: false, error: err.message }, { status });
   }
 }

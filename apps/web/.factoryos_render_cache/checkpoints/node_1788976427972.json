@@ -1,0 +1,25 @@
+{
+  "run_id": "node_1788976427972",
+  "project_id": "e2e_news_1788976427971",
+  "intent_hash": "2bd800faa3bed4931a8d379870e621a83c4444634217177279814bf96fcb8c13",
+  "composition_hash": "64b1c005dcb3ea3abaec598d065fba56f4fcedda601a80f3594e09a44acebf68",
+  "total_scenes": 5,
+  "completed_scenes": [
+    "scene_01_beat_01_hook",
+    "scene_02_beat_02_source",
+    "scene_03_beat_03_impact",
+    "scene_04_beat_04_why",
+    "scene_05_beat_05_cta"
+  ],
+  "scene_artifacts": {
+    "scene_01_beat_01_hook": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\1780c26c0ff691c1f657afcbd9a1116752428e339bd26d942ccb2695ab430ca8.mp4",
+    "scene_02_beat_02_source": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\23eeb0e1440a1f3e2fbc80fa87df9c3ce904c3f8142dab177a187a1c3b83bc83.mp4",
+    "scene_03_beat_03_impact": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\33b8cc9ba3a5efd6d4edaf990082a8228b874fc883b5a8b49ea523d98f12e74d.mp4",
+    "scene_04_beat_04_why": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\5418e9beb4c7e7b0a9c18c4f6dcd4aca1388a7eeb6b28ea514f6bdbb81419da2.mp4",
+    "scene_05_beat_05_cta": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\apps\\web\\.factoryos_render_cache\\content\\14a95efa531858868783d8ff6ecd81b4d7a1242b3ab1b1cbd1061ea6b9f7b799.mp4"
+  },
+  "stage": "COMPLETED",
+  "error": null,
+  "created_at": "2026-09-09T17:53:48Z",
+  "updated_at": "2026-09-09T17:54:04Z"
+}

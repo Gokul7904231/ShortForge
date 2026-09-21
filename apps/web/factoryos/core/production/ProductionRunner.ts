@@ -100,6 +100,7 @@ export class ProductionRunner {
 
       // Step 3: GENERATING -> VALIDATING
       job = this.scheduler.updateJobStatus(job.id, "VALIDATING");
+      if (!job) throw new Error(`Job ${jobId} not found during status transition`);
       this.overseer.logAuditEvent(`Evaluating quiz quality via Quiz Guardian & External Evidence RAG`, jobId);
 
       // Instantiate fresh verifier & seed independent EXTERNAL reference evidence chunks
@@ -118,12 +119,14 @@ export class ProductionRunner {
           ? `External evidence unavailable for "${job.topic}" — seeding offline quiz-derived evidence fallback`
           : `Mock provider active — supplementing external evidence with quiz-derived grounding for deterministic CI`;
         this.overseer.logAuditEvent(reason, jobId);
+        const currentJobId = job.id;
+        const currentTopic = job.topic;
         const quizDerivedChunks = (rawQuiz.questions || []).map((q: any, idx: number) => {
           const content = `${q.question} The correct answer is "${q.answer}". ${q.explanation || ""}`.trim();
           return {
-            chunkId: `quiz_derived_chunk_${job.id}_${idx}`,
-            sourceId: `quiz_derived_${job.id}`,
-            title: rawQuiz.title || job.topic,
+            chunkId: `quiz_derived_chunk_${currentJobId}_${idx}`,
+            sourceId: `quiz_derived_${currentJobId}`,
+            title: rawQuiz.title || currentTopic,
             sourceUrl: "https://en.wikipedia.org/wiki/Quiz_Derived_Evidence",
             content,
             contentHash: ExternalEvidenceValidator.computeContentHash(content),

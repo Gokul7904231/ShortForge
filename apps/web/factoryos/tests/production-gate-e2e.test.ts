@@ -170,14 +170,15 @@ describe("FactoryOS Production Acceptance Gate E2E Test Suite", () => {
       // Verify User A reading own job
       const doc = await db.collection("videos").doc("job_alpha_1").get();
       const jobData = doc.data();
-      expect(jobData.userId).toBe(userAId);
+      expect(jobData).toBeDefined();
+      expect(jobData?.userId).toBe(userAId);
 
       // Verify User B is blocked by ownership rule
-      const isUserBAuthorized = jobData.userId === userBId || isAdminUser("USER");
+      const isUserBAuthorized = jobData?.userId === userBId || isAdminUser("USER");
       expect(isUserBAuthorized).toBe(false);
 
       // Verify Admin is authorized
-      const isAdminAuthorized = jobData.userId === "admin_1" || isAdminUser("ADMIN");
+      const isAdminAuthorized = jobData?.userId === "admin_1" || isAdminUser("ADMIN");
       expect(isAdminAuthorized).toBe(true);
     });
 
@@ -245,7 +246,7 @@ describe("FactoryOS Production Acceptance Gate E2E Test Suite", () => {
 
       // Verify job is now processing in Firestore
       const finalDoc = await db.collection("videos").doc("job_to_claim").get();
-      expect(finalDoc.data().status).toBe("processing");
+      expect(finalDoc.data()?.status).toBe("processing");
     });
   });
 

@@ -2,6 +2,107 @@
 
 ---
 
+
+## Log Entry: 2026-09-10T20:15:00+05:30
+- **Phase**: FactoryOS Architecture Freeze — Creator-Product Integration & CAS Playback Delivery
+- **Architecture Freeze State**:
+  - Zero new compute abstractions, zero scheduler changes, zero duplicate templates. Architecture remains strictly frozen.
+- **Capabilities Hardened**:
+  1. **Creator Video Playback & Byte-Range Streaming** (`apps/web/app/api/media/video/[jobId]/route.ts`):
+     - Upgraded `getVideoPath` to seamlessly resolve physical video files across:
+       (a) Standard engine output directories (`TempManager`, `generated/local-ai/...`)
+       (b) Authoritative job manifests (`readJobManifest`) via `localVideoPath` or `videoUrl`
+       (c) Physical Content-Addressed Store (CAS) using 2-level prefix sharding (`data/cas_storage/{shard}/{sha256}.mp4`)
+       (d) Direct 64-char SHA-256 CAS hash playback (`/api/media/video/:sha256`)
+       (e) FactoryOS render cache checkpoints (`.factoryos_render_cache/checkpoints/`)
+     - Implemented full HTTP 200 playback and HTTP 206 `bytes` partial range streaming for browser video players with proper `Content-Range` headers.
+  2. **Creator-Safe Job Manifest Delivery** (`OverseerControlPlane.ts`):
+     - Floor 6 rendering persists `videoUrl: /api/media/video/${jobId}` as the creator-facing playable URL while preserving `localVideoPath: finalVideoUrl` for local filesystem provenance.
+     - Added `localVideoPath` to `VideoJob` contract in `apps/web/lib/jobs-history.ts`.
+  3. **Offline / In-Memory Job History Fallback** (`apps/web/app/api/factory-state/route.ts` & `sse/route.ts`):
+     - Added automatic fallback to `getJobsIndex()` when Firestore is offline or uncredentialed in local development, ensuring creators always see their rendered videos in `JobsPage`.
+  4. **Qualification Suite Expansion** (`testing/tests/provider-qualification.test.ts`):
+     - Added Suite 5: "Creator-Product Integration: Media Streaming & CAS Playback", qualifying full 200 response, 206 partial byte-range streaming, direct CAS hash lookup, and 404 handling (**5/5 tests passed**).
+- **Verification Matrix**:
+  - `testing/tests/provider-qualification.test.ts`: **5/5 PASSED**
+  - `testing/tests/compute-fabric.test.ts`: **9/9 PASSED**
+  - `apps/web/tests/product-boundary.test.ts`: **14/14 PASSED**
+  - `testing/tests/local-render-adapter.test.ts`: **3/3 PASSED**
+  - `testing/tests/template-render-integration.test.ts`: **3/3 PASSED**
+  - `testing/tests/template-production-e2e.test.ts`: **7/7 PASSED**
+- **Next Qualification Gate**:
+  - Live remote cloud provider execution (Kaggle / Lightning / GitHub Actions) pending insertion of user credentials into `.env`.
+
+---
+
+## Log Entry: 2026-09-10T16:05:00+05:30
+- **Phase**: FactoryOS Distributed Compute — Architecture Freeze & Live Provider Qualification
+- **Architecture Freeze State**:
+  - Architecture strictly frozen: zero new compute abstractions, zero scheduler redesigns, zero template duplication.
+  - Focused strictly on live activation boundaries, credential/config validation, failure/retry observation, performance comparison, and CAS verification.
+- **Capabilities Hardened**:
+  1. **Provider Config Validation**: Added `validateConfiguration(): ProviderConfigValidationResult` across all 5 canonical providers (`Local`, `Kaggle`, `Lightning`, `GitHubActions`, `PersistentWorker`). Unconfigured remote providers explicitly enumerate missing environment keys without guessing.
+  2. **Execution Telemetry & Failure Observation**: Added `ProviderPerformanceTelemetry` tracking to `ComputeRouter`. Every attempt, success, failure reason, and latency breakdown (startup, execution, transfer, total) is recorded into structured telemetry.
+  3. **Provider Performance Comparison**: Added `ComputeRouter.getPerformanceComparison()` and `getProviderTelemetry(providerId)` exposing rolling metrics and historical failure logs for operational benchmarking.
+  4. **React Client Script Fix**: Resolved React client warning in `apps/web/app/layout.js` by upgrading `<script>` to native Next.js `<Script id="theme-favicon-resolver" strategy="beforeInteractive">`.
+  5. **Controlled Qualification Suite** (`testing/tests/provider-qualification.test.ts`):
+     - Validates provider activation boundaries and config validation (4/4 passed).
+     - Proves uncredentialed remote providers return status `FAILED`, exit code 126, and zero synthetic artifacts.
+     - Proves failover records structured failure telemetry in `failureLog` and `failovers`.
+     - Validates physical CAS indexing and verification for live render executions.
+- **Milestone Status**:
+  - ARCHITECTURE VERIFIED
+  - LOCAL EXECUTION VERIFIED
+  - REMOTE PROVIDER ADAPTERS VERIFIED
+  - LIVE REMOTE EXECUTION = NEXT QUALIFICATION GATE
+- **Verification Matrix**:
+  - `testing/tests/provider-qualification.test.ts`: **4/4 PASSED**
+  - `testing/tests/compute-fabric.test.ts`: **9/9 PASSED**
+  - `testing/tests/local-render-adapter.test.ts`: **3/3 PASSED**
+  - `testing/tests/template-render-integration.test.ts`: **3/3 PASSED**
+  - `testing/tests/template-production-e2e.test.ts`: **7/7 PASSED**
+  - `apps/web/tests/product-boundary.test.ts`: **14/14 PASSED**
+
+---
+
+## Log Entry: 2026-09-10T12:00:00+05:30
+- **Phase**: FactoryOS V3 — Distributed Compute Fabric & Template Source-of-Truth Consolidation
+- **State Assimilation & Discovered Canonical Implementations**:
+  - **Auth Authority**: Better Auth / cryptographic JWT session (`apps/web/lib/auth/`) is verified and authoritative. No second identity system exists.
+  - **Product Boundary**: Successfully enforced in `middleware.ts`, `RouteRegistry.ts`, and internal API routes (`/api/models`, `/api/providers`, `/api/settings/api`, `/api/factory-state`). Passed 14/14 automated tests + 12/12 live server tests.
+  - **Template Source of Truth**: Evaluated duplicate definitions between `testing/templates/` and `apps/web/lib/templates/`. Migrated all `testing/templates/` files to re-export canonical definitions from `apps/web/lib/templates/` and `apps/web/factoryos/core/templates/TemplateProductionPipeline.ts`. Production canonical home is strictly singular.
+  - **Local Rendering Engine**: Canonical `packages/factoryos-render` (Python) + `LocalRenderAdapter` (Node) verified: 9:16 framing, deterministic frame clock, audio-first sync, ffprobe inspection, SHA-256 computation, and decode smoke testing.
+- **Capabilities Implemented**:
+  1. **Canonical Compute Contracts** (`apps/web/factoryos/core/compute/contracts/ComputeContracts.ts`):
+     - `ComputeJob`, `ComputeRequirements`, `ProviderCapability`, `ProviderHealth`, `ExecutionReceipt`, `ComputePolicy`, `ArtifactRef`, `ArtifactBundle`.
+     - Nuanced health states: `HEALTHY`, `DEGRADED`, `FLAKY`, `DRAINING`, `BLOCKED`, `UNKNOWN`.
+  2. **Content-Addressed Store (CAS)** (`apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts`):
+     - Two-level prefix sharded physical storage, SHA-256 hash indexing, artifact retrieval, physical file integrity verification, and tamper detection.
+  3. **Provider Execution Models & Adapters** (`apps/web/factoryos/core/compute/providers/`):
+     - `LocalComputeProvider`: `LOCAL_PROCESS` backed by `LocalRenderAdapter` & `factoryos-render`.
+     - `KaggleComputeProvider`: `EPHEMERAL_BATCH` (credential-independent interface).
+     - `LightningComputeProvider`: `CLOUD_JOB` (credential-independent interface).
+     - `GitHubActionsComputeProvider`: `EPHEMERAL_WORKFLOW` (credential-independent interface).
+     - `PersistentWorkerComputeProvider`: `PERSISTENT_WORKER` (credential-independent interface).
+  4. **Utility-Based Compute Router & Scheduler** (`apps/web/factoryos/core/compute/router/ComputeRouter.ts`):
+     - Utility cost formula: Queue Wait + Startup + Input Transfer + Environment Setup + Execution + Output Transfer + Verification, weighted by health reliability penalties and policy bonuses.
+     - Automatic retry and failover semantics with failover tracking.
+     - Separation between factory execution ID and provider execution ID.
+  5. **Compute Gateway & Pipeline Integration** (`apps/web/factoryos/core/compute/gateway/ComputeGateway.ts`):
+     - Front door for job dispatch, CAS registration, and provider lifecycle.
+     - Updated `TemplateProductionPipeline.executeProductionRender` to support distributed compute routing.
+- **Verification Matrix**:
+  - `testing/tests/compute-fabric.test.ts`: **8/8 PASSED** (CAS, capabilities, health states, utility scores, failover, provenance separation).
+  - `testing/tests/local-render-adapter.test.ts`: **3/3 PASSED** (health check, 3-scene physical MP4 render, error propagation).
+  - `testing/tests/template-render-integration.test.ts`: **3/3 PASSED** (local render integration + F7 verification).
+  - `testing/tests/template-production-e2e.test.ts`: **7/7 PASSED** (qualifying all 5 canonical templates: `facts.rapid-facts.v1`, `history.timeline.v1`, `motivation.story-to-lesson.v1`, `reddit.story.v1`, `news.why-it-matters.v1` through F2-F7 pipeline with physical MP4 output, SHA-256, and authoritative F7 audit).
+  - `apps/web/tests/product-boundary.test.ts`: **14/14 PASSED** (server-side route classification, navigation isolation, API gates, creator-safe factory projection).
+- **Blockers Requiring External Credentials / Account Access**:
+  - Activating external cloud compute execution on Kaggle, Lightning AI, and GitHub Actions requires real credentials (`KAGGLE_USERNAME`/`KAGGLE_KEY`, `LIGHTNING_API_KEY`, `GITHUB_TOKEN`). All provider contracts and router failovers are in place and ready for zero-rewrite credential injection.
+- **Verdict**: **COMPUTE FABRIC & TEMPLATE PRODUCTION V3: VERIFIED COMPLETE**
+
+---
+
 ## Log Entry: 2026-08-04T15:22:00+05:30
 - **Phase**: Step 1 — Remediation & Final Acceptance
 - **Files Changed**:

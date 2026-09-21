@@ -1,0 +1,27 @@
+{
+  "artifactId": "art_audio_01",
+  "path": "data/artifacts/audio/voice.wav",
+  "producer": "floor04_media_synthesis",
+  "consumers": ["floor05_timeline_composition"],
+  "byteLength": 144284,
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "mimeType": "audio/wav",
+  "durationSeconds": 4.5,
+  "durationTruth": "AUTHORITATIVE_FFPROBE",
+  "physicalExistenceProven": true,
+  "verificationStatus": "VERIFIED",
+  "probeResults": {
+    "file_exists": true,
+    "sha256_match": true,
+    "ffprobe_valid": true
+  },
+  "lineageProof": {
+    "upstreamHashMatch": true,
+    "consumerHashMatch": true
+  },
+  "deliveryStatus": {
+    "localDelivered": true,
+    "remoteDelivered": false
+  },
+  "resolved": true
+}

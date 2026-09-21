@@ -301,7 +301,7 @@ describe("FactoryOS Phase 2 — Real Production Execution & End-to-End DAG Verif
   it("6. Fail-Closed Safety: Missing Azure Worker in Control Plane mode fails closed without silent local rendering", async () => {
     const prevUrl = process.env.BASIC_RENDER_API_URL;
     delete process.env.BASIC_RENDER_API_URL;
-    process.env.NODE_ENV = "production";
+    (process.env as any).NODE_ENV = "production";
 
     try {
       const req = new Request("http://localhost:3000/api/generate-video", {
@@ -329,7 +329,7 @@ describe("FactoryOS Phase 2 — Real Production Execution & End-to-End DAG Verif
       expect(activeCases).toBeDefined();
     } finally {
       process.env.BASIC_RENDER_API_URL = prevUrl;
-      process.env.NODE_ENV = "test";
+      (process.env as any).NODE_ENV = "test";
     }
   });
 });

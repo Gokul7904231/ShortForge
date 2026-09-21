@@ -399,7 +399,7 @@ WorkflowStepRegistry.register("voice", async (context) => {
     const clipReports: any[] = [];
     const failures: string[] = [];
     await Promise.all(
-      narrativeScenes.map(async (scene, i) => {
+      narrativeScenes.map(async (scene: any, i: number) => {
         let filename = "";
         if (scene.isHook) filename = "hook_voice.wav";
         else if (scene.isOutro) filename = "outro_voice.wav";

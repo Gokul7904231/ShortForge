@@ -15,8 +15,8 @@ export const dynamic = "force-dynamic";
 async function getAggregateState(req?: NextRequest) {
   // 1. Fetch Video Jobs from Firestore — scoped by userId for non-admins (IDOR mitigation)
   let jobs: any[] = [];
+  let authenticatedUser: any = null;
   try {
-    let authenticatedUser: any = null;
     if (req) {
       try {
         const { user } = await verifySession(req as any);
@@ -45,6 +45,26 @@ async function getAggregateState(req?: NextRequest) {
     });
   } catch (e: any) {
     console.warn("[SSE /factory-state/sse] Firestore jobs read skipped:", e.message);
+  }
+
+  if (jobs.length === 0) {
+    try {
+      const { getJobsIndex } = await import("@/lib/jobs-history");
+      const effectiveUser = authenticatedUser && !isAdminUser(authenticatedUser.role) ? authenticatedUser.uid : "anonymous";
+      const localJobs = await getJobsIndex(effectiveUser);
+      if (localJobs && localJobs.length > 0) {
+        jobs = localJobs.slice(0, 50).map((data: any) => ({
+          id: data.id || data.jobId,
+          jobId: data.jobId || data.id,
+          topic: data.topic || "Unknown Topic",
+          status: data.status || "queued",
+          createdAt: data.createdAt || new Date().toISOString(),
+          renderDurationSeconds: data.renderDurationSeconds || 0,
+          videoUrl: data.videoUrl || (data.status === "completed" ? `/api/media/video/${data.id || data.jobId}` : null),
+          telemetry: data.telemetry || null,
+        }));
+      }
+    } catch {}
   }
 
   // 2. Queue stats

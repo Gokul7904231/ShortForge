@@ -52,14 +52,20 @@ export const AIJudgeConsensus = {
           }
         );
         const parsed = JSON.parse(typeof result === "string" ? result : JSON.stringify(result));
+        const hook = Number(parsed.hookScore);
+        const scene = Number(parsed.sceneScore);
+        const grammar = Number(parsed.grammarScore);
+        if (isNaN(hook) || isNaN(scene) || isNaN(grammar)) {
+          throw new Error(`[AIJudgeConsensus] Invalid score payload received from judge ${modelId}`);
+        }
         return {
-          hookScore: Number(parsed.hookScore || 7),
-          sceneScore: Number(parsed.sceneScore || 7),
-          grammarScore: Number(parsed.grammarScore || 7),
+          hookScore: hook,
+          sceneScore: scene,
+          grammarScore: grammar,
         };
       } catch (err: any) {
-        console.warn(`[AIJudgeConsensus] Judge ${modelId} failed: ${err.message}. Using default fallback scores.`);
-        return { hookScore: 7, sceneScore: 7, grammarScore: 7 };
+        console.error(`[AIJudgeConsensus] Judge ${modelId} failed: ${err.message}.`);
+        throw err;
       }
     });
 

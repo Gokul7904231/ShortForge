@@ -115,7 +115,7 @@ export default function HeroSection() {
           <div className="lg:col-span-7 space-y-8 text-left">
             
             {/* Frontier Category Badge */}
-            <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white border border-[#e8e8ed] text-xs font-text text-[#1d1d1f] shadow-xs reveal ${mounted ? "visible" : ""}`}>
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white border border-[#e8e8ed] text-xs font-text text-[#1d1d1f] shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#34c759] animate-pulse" />
               <span className="text-[#86868b] font-medium">NOW LIVE:</span>
               <span className="text-[#1d1d1f] font-semibold tracking-wide">QUIZ SHORTS GENERATION</span>
@@ -123,20 +123,54 @@ export default function HeroSection() {
             </div>
 
             {/* Main Headline */}
-            <h1 className={`text-4xl sm:text-6xl lg:text-[72px] font-bold text-[#1d1d1f] font-display tracking-[-0.035em] leading-[1.04] reveal reveal-d1 ${mounted ? "visible" : ""}`}>
+            <h1 className="text-4xl sm:text-6xl lg:text-[72px] font-bold text-[#1d1d1f] font-display tracking-[-0.035em] leading-[1.04]">
               YOUR IDEA. <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0071e3] via-sky-600 to-indigo-600 font-bold">
                 INTO PRODUCTION.
               </span>
             </h1>
 
-            {/* Supporting Copy */}
-            <p className={`text-lg sm:text-xl font-text text-[#6e6e73] max-w-2xl leading-relaxed tracking-apple-body reveal reveal-d2 ${mounted ? "visible" : ""}`}>
-              ShortForge is an autonomous production system — <span className="text-[#1d1d1f] font-semibold">Quiz Shorts are live today</span>. Give the factory a topic and it orchestrates scripting, visuals, voice and mux into a finished 9:16 short. <span className="text-[#86868b]">Other formats — Facts, Stories, History & more — coming soon.</span>
+            {/* Concise Product Explanation */}
+            <p className="text-lg sm:text-xl font-text text-[#6e6e73] max-w-2xl leading-relaxed tracking-apple-body">
+              <strong className="text-[#1d1d1f] font-semibold">ShortForge</strong> is an autonomous AI video-production platform. Give the factory a natural brief and it orchestrates the entire lifecycle — from script and voice to rendered, validated 9:16 shorts.
             </p>
 
+            {/* Core Workflow Pipeline Ribbon */}
+            <div className="space-y-2 pt-1">
+              <span className="text-[11px] font-text uppercase tracking-widest text-[#86868b] font-bold">
+                CORE PRODUCTION WORKFLOW
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5 p-3 rounded-2xl bg-white border border-[#e8e8ed] shadow-xs">
+                {[
+                  { name: "Idea", highlight: false },
+                  { name: "Script", highlight: false },
+                  { name: "Voice", highlight: false },
+                  { name: "Visuals", highlight: false },
+                  { name: "Subtitles", highlight: false },
+                  { name: "Render", highlight: false },
+                  { name: "Validate", highlight: false },
+                  { name: "Deliver", highlight: true },
+                ].map((step, idx, arr) => (
+                  <React.Fragment key={step.name}>
+                    <span
+                      className={`px-2.5 py-1 rounded-lg text-xs font-text font-semibold transition-colors ${
+                        step.highlight
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-[#f5f5f7] text-[#1d1d1f] border border-[#e8e8ed]"
+                      }`}
+                    >
+                      {step.name}
+                    </span>
+                    {idx < arr.length - 1 && (
+                      <span className="text-[#86868b] font-bold text-xs select-none">→</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
             {/* Action Buttons */}
-            <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-5 pt-2 reveal reveal-d3 ${mounted ? "visible" : ""}`}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-5 pt-2">
               <Link
                 href="/login"
                 className="px-9 py-4 rounded-2xl bg-[#0071e3] hover:bg-[#0066cc] text-white font-text text-base font-semibold tracking-wide transition-[transform,background-color,box-shadow] duration-160 ease-out shadow-xl shadow-sky-500/20 flex items-center justify-center gap-3 min-h-[52px] active:scale-[0.97]"

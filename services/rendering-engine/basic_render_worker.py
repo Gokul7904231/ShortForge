@@ -430,16 +430,8 @@ class BasicRenderWorker:
                 "sha256": sha256_hash,
             }
         except Exception as e:
-            log("Validation", f"ffprobe warning: {e}. Falling back to basic validation.")
-            return {
-                "sizeBytes": size_bytes,
-                "sizeMb": size_mb,
-                "durationSeconds": 30.0,
-                "width": 1080,
-                "height": 1920,
-                "codec": "h264",
-                "sha256": sha256_hash,
-            }
+            log("Validation", f"ffprobe validation failed: {e}")
+            raise RuntimeError(f"Physical media validation failed via ffprobe: {e}")
 
     def _render_baseline_ffmpeg(self, job: dict, workspace: Path) -> Path:
         """Fast fallback baseline generator if create_short.py encounters an issue."""

@@ -12,6 +12,9 @@ import {
   getUserQuota,
 } from "../../lib/quota/quota-service";
 import crypto from "crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { execSync } from "node:child_process";
 
 // Mock external Clerk Auth to support multi-user testing
 let currentMockUser: { uid: string; role: string } = {
@@ -178,7 +181,10 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
       expect(mission).toBeDefined();
 
       // Wait for Overseer TaskDAGExecutor to process Floors 01-06
-      await new Promise((r) => setTimeout(r, 250));
+      for (let i = 0; i < 40; i++) {
+        if (azureDispatchCount >= 1) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
 
       // 6-11. Verify Floor completion in WorldState
       const worldState = controller.worldState.getState();
@@ -191,6 +197,14 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
       expect(localSceneRenderPoolCount).toBe(0);
 
       // 15. Execute Callback
+      const renderDir = path.join(process.cwd(), "data", "renders");
+      if (!fs.existsSync(renderDir)) fs.mkdirSync(renderDir, { recursive: true });
+      const testMp4 = path.join(renderDir, `${jobId}.mp4`);
+      execSync(
+        `ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=1 -f lavfi -i anullsrc=r=44100:cl=stereo -c:v libx264 -pix_fmt yuv420p -c:a aac -t 1 "${testMp4}"`,
+        { stdio: "ignore" }
+      );
+
       const callbackReq = new NextRequest("http://localhost:3000/api/rendering/callback", {
         method: "POST",
         headers: {
@@ -222,6 +236,16 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
 
       expect(timelineLog.length).toBeGreaterThanOrEqual(4);
     } finally {
+      const renderDir = path.join(process.cwd(), "data", "renders");
+      // Clean up any generated test mp4
+      try {
+        const files = fs.readdirSync(renderDir);
+        for (const file of files) {
+          if (file.endsWith(".mp4")) {
+            try { fs.unlinkSync(path.join(renderDir, file)); } catch {}
+          }
+        }
+      } catch {}
       global.fetch = originalFetch;
     }
   });
@@ -319,6 +343,9 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
     expect(slayerExecution.requestExecutionId).toBeDefined();
 
     // 3. Healer
+    const { RemoteRenderStateMachine } = await import("../core/rendering/RemoteRenderStateMachine");
+    RemoteRenderStateMachine.getInstance().registerJob({ jobId: "job_test_healer_01" });
+
     const healerCandidates = controller.capabilityRegistry.findCandidates("RENDER_TIMEOUT");
     expect(healerCandidates.length).toBeGreaterThan(0);
     const healerExecution = await controller.capabilityRegistry.execute({
@@ -328,7 +355,7 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
       jobId: "job_test_healer_01",
       anomalyType: "RENDER_TIMEOUT",
       symptoms: ["Azure VM worker connection reset"],
-      inputData: { retryCount: 1 },
+      inputData: { jobId: "job_test_healer_01", retryCount: 1 },
       initiatedBy: "guardian",
       timestamp: new Date().toISOString(),
     });

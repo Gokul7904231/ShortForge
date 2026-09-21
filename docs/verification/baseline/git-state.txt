@@ -1,0 +1,42 @@
+Branch: chore/rename-shortforge
+Commit: 44c9c2c8f40562144e2f0506021c078d0c8de6f3
+
+Modified files (staged / unstaged):
+- apps/web/app/api/factory-state/route.ts
+- apps/web/app/api/factory-state/sse/route.ts
+- apps/web/app/api/media/video/[jobId]/route.ts
+- apps/web/app/api/models/route.ts
+- apps/web/app/api/providers/route.ts
+- apps/web/app/layout.js
+- apps/web/factoryos/AUTONOMOUS-WORKLOG.md
+- apps/web/factoryos/core/overseer/OverseerControlPlane.ts
+- apps/web/factoryos/core/overseer/OverseerThinkingController.ts
+- apps/web/factoryos/core/templates/TemplateProductionPipeline.ts
+- apps/web/lib/auth/firebase-admin.ts
+- apps/web/lib/jobs-history.ts
+- apps/web/middleware.ts
+- testing/templates/TemplateProductionPipeline.ts
+- testing/templates/definitions/CanonicalTemplates.ts
+- testing/templates/providers/ProviderRouter.ts
+- testing/templates/registry/TemplateRegistry.ts
+- testing/templates/schemas/TemplateSchema.ts
+- testing/templates/shots/ShotRecipeLibrary.ts
+- testing/tests/local-render-adapter.test.ts
+- walkthrough.md
+
+Untracked files (Newly implemented intelligence, compute, and knowledge systems):
+- .factoryos/
+- apps/web/factoryos/core/compute/
+- apps/web/factoryos/core/intelligence/
+- apps/web/factoryos/tests/concurrency-write.test.ts
+- apps/web/factoryos/tests/intelligence-benchmark.test.ts
+- apps/web/factoryos/tests/intelligence-layer.test.ts
+- apps/web/factoryos/tests/okf-knowledge-vault.test.ts
+- apps/web/factoryos/tests/overseer-intelligence-integration.test.ts
+- apps/web/factoryos/tests/shortforge-evaluation-scenarios.test.ts
+- apps/web/factoryos/tests/structural-intelligence.test.ts
+- docs/architecture/shortforge-reentry-audit.md
+- graphify-out/
+- knowledge/
+- testing/tests/compute-fabric.test.ts
+- testing/tests/provider-qualification.test.ts

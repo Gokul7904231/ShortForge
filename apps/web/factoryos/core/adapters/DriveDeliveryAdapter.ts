@@ -92,10 +92,24 @@ export class DriveDeliveryAdapter {
       } else {
         console.log(`[DriveDeliveryAdapter] Drive connection not active for user (${connection.status}: ${connection.error || "unconfigured"}). Storing artifact in LOCAL_OUTBOX for job ${job.id}.`);
 
+        let targetOutboxPath = record.videoFilePath;
+        let fileSha256 = "";
+        if (fs.existsSync(record.videoFilePath)) {
+          targetOutboxPath = path.join(this.outboxDir, path.basename(record.videoFilePath));
+          if (targetOutboxPath !== record.videoFilePath && !fs.existsSync(targetOutboxPath)) {
+            fs.copyFileSync(record.videoFilePath, targetOutboxPath);
+          }
+          const buffer = fs.readFileSync(targetOutboxPath);
+          const crypto = await import("crypto");
+          fileSha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+        }
+
         const artifact: DeliveryArtifact = {
           deliveryMethod: "LOCAL_OUTBOX",
           verified: true,
           uploadedAt: new Date().toISOString(),
+          storageUrl: targetOutboxPath,
+          sha256: fileSha256,
         };
 
         record.status = "UPLOADED";

@@ -51,7 +51,7 @@ describe("FactoryOS — Azure Admin Rendering & Tier Isolation Test Suite", () =
     const basicJobId = `job_test_basic_${Date.now()}`;
     createdJobIds.push(basicJobId);
 
-    const userRole = "USER";
+    const userRole: string = "USER";
     const isAdminOrOwner = userRole === "ADMIN" || userRole === "OWNER";
     const tier = isAdminOrOwner ? "ADMIN" : "BASIC";
     const targetWorkerPool = isAdminOrOwner ? "azure" : "basic-fastapi";

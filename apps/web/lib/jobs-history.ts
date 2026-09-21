@@ -7,6 +7,7 @@ export interface VideoJob {
   script: string;
   contentType: "MOTIVATIONAL" | "FACTS" | "STORY" | "QUIZ_SHORTS";
   videoUrl: string | null;
+  localVideoPath?: string | null;
   cloudinaryPublicId: string | null;
   status: "queued" | "processing" | "completed" | "failed" | "purged";
   createdAt: any;
@@ -23,6 +24,17 @@ export interface VideoJob {
   scenes?: any;
   error?: string;
   errorMessage?: string;
+  missionId?: string;
+  executionToken?: string;
+  executionAuthority?: string;
+  tier?: string;
+  targetWorkerPool?: string;
+  duration?: number;
+  downloadUrl?: string;
+  completedAt?: string;
+  updatedAt?: string;
+  remoteState?: string;
+  artifactSha256?: string;
 }
 
 const inMemoryJobs = new Map<string, VideoJob>();

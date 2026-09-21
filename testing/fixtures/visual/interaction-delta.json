@@ -1,0 +1,28 @@
+{
+  "subjectId": "floor04_voice",
+  "deltaType": "MODIFIED",
+  "before": {
+    "status": "FAILED",
+    "truthLevel": "ASSERTED",
+    "metadata": {
+      "error": "Synthesis API 500 timeout"
+    }
+  },
+  "delta": {
+    "statusChange": "FAILED → VERIFIED",
+    "truthLevelChange": "ASSERTED → VERIFIED",
+    "changedEvidenceRefs": [
+      "ev_probe_audio_01",
+      "ev_sha256_art_audio_01"
+    ]
+  },
+  "after": {
+    "status": "VERIFIED",
+    "truthLevel": "VERIFIED",
+    "metadata": {
+      "recoveryEngine": "chime_local_v2",
+      "recovered": true
+    }
+  },
+  "resolved": true
+}

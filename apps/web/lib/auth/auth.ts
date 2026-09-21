@@ -10,6 +10,8 @@ import { AdminUser, UserRole } from "./types";
 import { UnauthorizedError, ForbiddenError, AccountDisabledError } from "./errors";
 import { UserRepository } from "./user-repository";
 
+export { UnauthorizedError, ForbiddenError, AccountDisabledError };
+
 /**
  * Step 1: Verify Authentication (Session Cookie or Internal Secret Key)
  */
@@ -38,9 +40,9 @@ export async function verifySession(request: NextRequest | Request): Promise<{ u
   let cookieValue: string | undefined;
   if ("cookies" in request && typeof request.cookies.get === "function") {
     cookieValue = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  } else {
-    const cookieHeader = headers.get("cookie") || "";
-    const match = cookieHeader.match(new RegExp(`(?:^|; )${SESSION_COOKIE_NAME}=([^;]*)`));
+  } else if ("headers" in request) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]*)`));
     cookieValue = match ? decodeURIComponent(match[1]) : undefined;
   }
 
@@ -52,13 +54,14 @@ export async function verifySession(request: NextRequest | Request): Promise<{ u
   const { uid, email, sessionRole } = await verifySessionCookieServer(cookieValue);
   const cleanEmail = email.toLowerCase().trim();
   
-  // Fast path for bootstrap Owner
-  const bootstrapOwnerEmail = (process.env.BOOTSTRAP_OWNER_EMAIL || "gokul32499@gmail.com").toLowerCase().trim();
-  if (uid === "mock_owner_uid" || cleanEmail === bootstrapOwnerEmail || cleanEmail === "gokul32499@gmail.com") {
+  // Fast path for bootstrap Owner (Strictly controlled via BOOTSTRAP_OWNER_EMAIL or non-production mock)
+  const bootstrapOwnerEmail = (process.env.BOOTSTRAP_OWNER_EMAIL || (process.env.NODE_ENV !== "production" ? "gokul32499@gmail.com" : "")).toLowerCase().trim();
+  const isDevMock = process.env.NODE_ENV !== "production" && uid === "mock_owner_uid";
+  if (isDevMock || (bootstrapOwnerEmail && cleanEmail === bootstrapOwnerEmail)) {
     const adminUser: AdminUser = {
       uid: uid || "mock_owner_uid",
-      email: cleanEmail,
-      name: "Gokul (Owner)",
+      email: cleanEmail || bootstrapOwnerEmail,
+      name: "Owner Admin",
       role: "OWNER",
       active: true,
       disabled: false,
@@ -107,8 +110,8 @@ export async function verifySession(request: NextRequest | Request): Promise<{ u
   } else {
     // 2. Fallback to legacy/bootstrap admin lookup
     adminUser = await getAdminByUid(uid, cleanEmail);
-    if (adminUser && sessionRole === "USER") {
-      adminUser.role = "USER";
+    if (adminUser && sessionRole) {
+      adminUser.role = sessionRole;
     }
   }
 
@@ -148,13 +151,17 @@ export function verifyRole(user: AdminUser, requiredRole?: UserRole): void {
 /**
  * Combined Auth Guard for API Route Handlers (verifySession -> verifyRole -> execute)
  */
-export async function verifyAuthAndRole(
+export async function verifyAuthAndRole<T = AdminUser>(
   request: NextRequest | Request,
-  requiredRole?: UserRole
-): Promise<AdminUser> {
+  requiredRole?: UserRole,
+  handler?: (user: AdminUser) => Promise<T> | T
+): Promise<T> {
   const { user } = await verifySession(request);
   verifyRole(user, requiredRole);
-  return user;
+  if (handler) {
+    return await handler(user);
+  }
+  return user as unknown as T;
 }
 
 /**
