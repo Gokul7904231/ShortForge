@@ -1,18 +1,22 @@
 /**
- * FactoryOS YouTube Monetization Guardian — Policy Store
- * Holds versioned policy snapshots and provides resolution by version and publication date.
+ * FactoryOS YouTube Monetization Guardian — YouTube Policy Store
+ * Durable, versioned storage for YouTube policy intermediate representations (IR) and snapshots.
+ * Supports date-aware active rule resolution for past, today, and future publication targets.
+ * Invariant: CLAIM <= EVIDENCE. Missing rule is a policy integrity failure; no fallback fabrication.
  */
 
+import { PolicyRuleDefinition, PolicyApplicabilityClock, PolicyEffect } from "./YouTubePolicyIR";
+import { PolicySnapshot, YouTubePolicySnapshotManager } from "./YouTubePolicySnapshot";
 import { PolicySourceRegistry } from "./PolicySourceRegistry";
-import { PolicyRuleDefinition } from "./YouTubePolicyIR";
-import { PolicySnapshot, YouTubePolicySnapshotManager, PolicyFreshnessState } from "./YouTubePolicySnapshot";
+import { PolicyActivationPipeline } from "./PolicyActivationPipeline";
+import { PolicyEvaluationContext, PolicyEvaluationContextBuilder } from "./PolicyEvaluationContext";
 
 export class YouTubePolicyStore {
   private static instance: YouTubePolicyStore | null = null;
   private snapshots: Map<string, PolicySnapshot> = new Map();
   private latestVersion: string = "2026.09.15";
 
-  public constructor() {
+  private constructor() {
     this.initializeCanonicalSnapshots();
   }
 
@@ -43,6 +47,8 @@ export class YouTubePolicyStore {
         description: "Requires active, non-stale policy snapshot retrieved from official YouTube/Google documentation.",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: { customConditionCode: "SNAPSHOT_STATE_CURRENT" },
         affectedStagesOnFailure: ["F07"],
@@ -50,7 +56,7 @@ export class YouTubePolicyStore {
         forbiddenShallowRepairs: ["override_stale_flag"],
       },
 
-      // G01: Channel Readiness
+      // G01: Channel Readiness — Prerequisites
       {
         ruleId: "YT.CHANNEL.YPP_PREREQUISITES",
         gateId: "G01_CHANNEL_READINESS",
@@ -59,6 +65,8 @@ export class YouTubePolicyStore {
         description: "Requires 2-Step Verification, advanced features enabled, AdSense account linked, and good standing.",
         severity: "EXTERNAL_REVIEW",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "CHANNEL_STATE",
+        policyEffect: "MONETIZATION_ELIGIBILITY",
         effectiveFrom: "2024-01-01",
         condition: {
           requiresTwoStepVerification: true,
@@ -67,6 +75,51 @@ export class YouTubePolicyStore {
         },
         affectedStagesOnFailure: ["F07"],
         suggestedRemediationAction: "Complete YouTube Studio channel verification and link approved AdSense account.",
+        forbiddenShallowRepairs: ["mock_channel_status"],
+      },
+
+      // G01: Channel Readiness — Current YPP Ads / Premium Audience Thresholds
+      {
+        ruleId: "YT.CHANNEL.YPP_AUDIENCE_THRESHOLDS",
+        gateId: "G01_CHANNEL_READINESS",
+        sourceDocumentId: "src_yt_ypp_eligibility",
+        title: "YPP Ads & Premium Revenue Sharing Thresholds",
+        description: "Requires 1,000 subscribers AND either 4,000 valid public watch hours in past 12 months OR 10 million valid public Shorts views in past 90 days.",
+        severity: "EXTERNAL_REVIEW",
+        evaluationMethod: "DETERMINISTIC",
+        appliesBy: "YPP_APPLICATION_DATE",
+        policyEffect: "MONETIZATION_ELIGIBILITY",
+        effectiveFrom: "2024-01-01",
+        effectiveTo: "2027-02-01",
+        condition: {
+          minSubscribers: 1000,
+          minWatchHours: 4000,
+          minShortsViews: 10000000,
+        },
+        affectedStagesOnFailure: ["F07"],
+        suggestedRemediationAction: "Reach required 1,000 subscribers and 4k watch hours or 10M Shorts views before applying.",
+        forbiddenShallowRepairs: ["mock_channel_status"],
+      },
+
+      // G01: Channel Readiness — Scheduled Feb 1, 2027 YPP Threshold Shift for New Creators
+      {
+        ruleId: "YT.CHANNEL.YPP_FUTURE_THRESHOLDS_2027",
+        gateId: "G01_CHANNEL_READINESS",
+        sourceDocumentId: "src_yt_policy_updates",
+        title: "Scheduled 2027 YPP New Creator Thresholds",
+        description: "Starting February 1, 2027, new creator entry thresholds require 1,000 subscribers AND either 8,000 watch hours OR 20 million Shorts views.",
+        severity: "EXTERNAL_REVIEW",
+        evaluationMethod: "DETERMINISTIC",
+        appliesBy: "YPP_APPLICATION_DATE",
+        policyEffect: "MONETIZATION_ELIGIBILITY",
+        effectiveFrom: "2027-02-01",
+        condition: {
+          minSubscribers: 1000,
+          minWatchHours: 8000,
+          minShortsViews: 20000000,
+        },
+        affectedStagesOnFailure: ["F07"],
+        suggestedRemediationAction: "Prepare channel volume for higher 2027 entry threshold (8k watch hours / 20M shorts views).",
         forbiddenShallowRepairs: ["mock_channel_status"],
       },
 
@@ -79,6 +132,8 @@ export class YouTubePolicyStore {
         description: "Zero tolerance for hate speech, harassment, severe violence, sexually explicit content, or dangerous acts.",
         severity: "BLOCKING",
         evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: { customConditionCode: "COMMUNITY_SAFETY_PASS" },
         affectedStagesOnFailure: ["F01", "F02", "F03"],
@@ -95,6 +150,8 @@ export class YouTubePolicyStore {
         description: "Prohibits mass-produced, template-cloned, or interchangeable content lacking substantive distinctness.",
         severity: "REPAIRABLE",
         evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "MONETIZATION_ELIGIBILITY",
         effectiveFrom: "2024-06-01",
         condition: {
           minEditorialDistinctness: 0.35,
@@ -118,85 +175,99 @@ export class YouTubePolicyStore {
         gateId: "G04_REUSED_CONTENT",
         sourceDocumentId: "src_yt_channel_monetization",
         title: "Reused Content Policy with Transformative Requirement",
-        description: "Content reusing existing material must provide significant original commentary, analysis, or narrative value.",
+        description: "Content that repurposes existing material must add significant original commentary, analysis, or narrative value.",
         severity: "REPAIRABLE",
         evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "MONETIZATION_ELIGIBILITY",
         effectiveFrom: "2024-06-01",
         condition: {
           requireTransformativeValue: true,
         },
         affectedStagesOnFailure: ["F01", "F02"],
-        suggestedRemediationAction: "Add original editorial commentary, synthesis, and unique narrative voice.",
-        forbiddenShallowRepairs: ["pitch-shift-only", "border-overlay-only", "speed-change-only"],
+        suggestedRemediationAction: "Add authoritative critical commentary, counterpoint analysis, or substantive educational synthesis.",
+        forbiddenShallowRepairs: [
+          "mirroring_video",
+          "speeding_up_clips",
+          "simple_reaction_cuts",
+        ],
       },
 
-      // G05: Commercial Rights & Copyright
+      // G05: Commercial Rights & Licensing Provenance
       {
-        ruleId: "YT.RIGHTS.COMMERCIAL_CLEARANCE",
+        ruleId: "YT.RIGHTS.COMMERCIAL_PROVENANCE",
         gateId: "G05_COMMERCIAL_RIGHTS",
         sourceDocumentId: "src_yt_copyright_commercial",
-        title: "Commercial Use Clearance & Asset Provenance",
-        description: "All non-original visual and audio assets must possess verifiable commercial license evidence.",
+        title: "Commercial Rights & Full Asset Licensing Clearance",
+        description: "Requires verifiable commercial license or original synthetic provenance for all video, audio, voice, and graphic assets.",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: {
           requiresCommercialLicense: true,
         },
         affectedStagesOnFailure: ["F03", "F04"],
-        suggestedRemediationAction: "Replace un-cleared assets with verified commercial stock or original syntheses.",
-        forbiddenShallowRepairs: ["omit_license_field"],
+        suggestedRemediationAction: "Replace third-party assets with licensed stock or fully original synthesized assets.",
+        forbiddenShallowRepairs: ["fair-use-assertion-without-proof"],
       },
 
       // G06: Advertiser Suitability
       {
-        ruleId: "YT.ADVERTISER.CONTEXTUAL_SUITABILITY",
+        ruleId: "YT.ADS.SUITABILITY_STANDARD",
         gateId: "G06_ADVERTISER_SUITABILITY",
         sourceDocumentId: "src_yt_advertiser_friendly",
-        title: "Advertiser-Friendly Content Suitability",
-        description: "Evaluates video, audio, title, thumbnail, description, and tags for brand safety and contextual framing.",
-        severity: "REPAIRABLE",
-        evaluationMethod: "CONTEXTUAL_AI",
+        title: "Advertiser-Friendly Content Guidelines",
+        description: "Content must meet advertiser suitability across profanity, violence, adult themes, and sensitive topics.",
+        severity: "EXTERNAL_REVIEW",
+        evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "ADVERTISER_REVIEW",
         effectiveFrom: "2026-09-01",
-        condition: { customConditionCode: "AD_SAFE_CONTEXTUAL" },
-        affectedStagesOnFailure: ["F02", "F03", "F05"],
-        suggestedRemediationAction: "Reframe sensitive topic with objective, educational tone or replace graphic visual assets.",
-        forbiddenShallowRepairs: ["mute-audio-only"],
+        condition: { customConditionCode: "AD_SUITABILITY_PASS" },
+        affectedStagesOnFailure: ["F01", "F02", "F03"],
+        suggestedRemediationAction: "Tone down sensitive wording, remove explicit imagery, and avoid graphic depictions.",
+        forbiddenShallowRepairs: ["beep-only-censor"],
       },
 
-      // G07: AI Disclosure
+      // G07: AI & Synthetic Media Disclosure
       {
-        ruleId: "YT.AI.DISCLOSURE_REQUIREMENT",
+        ruleId: "YT.AI.SYNTHETIC_DISCLOSURE",
         gateId: "G07_AI_DISCLOSURE",
         sourceDocumentId: "src_yt_ai_disclosure",
-        title: "Realistic Altered or Synthetic Media Disclosure",
-        description: "Determines whether realistic synthetic media is present. Triggers upload disclosure instructions.",
+        title: "Altered or Synthetic Content Disclosure Gate",
+        description: "Enforces platform disclosure requirement for realistic synthetic media. Mandates setting status.containsSyntheticMedia.",
         severity: "WARNING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "UPLOAD_DATE",
+        policyEffect: "DISCLOSURE_REQUIRED",
         effectiveFrom: "2024-03-18",
         condition: {
           requiresAiDisclosureIfRealistic: true,
         },
         affectedStagesOnFailure: ["F07"],
-        suggestedRemediationAction: "Flag upload metadata with altered_synthetic_content=true.",
-        forbiddenShallowRepairs: [],
+        suggestedRemediationAction: "Set containsSyntheticMedia=true in YouTube Data API upload manifest.",
+        forbiddenShallowRepairs: ["uncheck_synthetic_box"],
       },
 
-      // G08: Spam and Deceptive Practices
+      // G08: Spam, Scams & Deceptive Practices
       {
-        ruleId: "YT.SPAM.DECEPTIVE_CLAIMS",
+        ruleId: "YT.SPAM.DECEPTIVE_PRACTICES",
         gateId: "G08_SPAM_DECEPTION",
         sourceDocumentId: "src_yt_spam_deception",
-        title: "Spam, Scams, and Deceptive Metadata",
-        description: "Blocks misleading titles, false thumbnail promises, deceptive medical/financial claims, or keyword stuffing.",
+        title: "Anti-Spam & Honest Promise Delivery",
+        description: "Zero tolerance for clickbait promises, fraudulent investment schemes, fabricated medical claims, or deceptive URLs.",
         severity: "BLOCKING",
         evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: {
           forbidDeceptiveClaims: true,
         },
         affectedStagesOnFailure: ["F01", "F02", "F07"],
-        suggestedRemediationAction: "Align title and thumbnail strictly with verified script evidence and topic reality.",
+        suggestedRemediationAction: "Align hook with substantive payoff and eliminate unverified sensational claims.",
         forbiddenShallowRepairs: ["title-length-reduction-only"],
       },
 
@@ -209,6 +280,8 @@ export class YouTubePolicyStore {
         description: "Verifies ShortForge automation does not employ artificial view bots, metric purchasing, or spoofed signals.",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: {
           forbidFakeEngagementAutomation: true,
@@ -224,9 +297,11 @@ export class YouTubePolicyStore {
         gateId: "G10_METADATA_PACKAGING",
         sourceDocumentId: "src_yt_spam_deception",
         title: "Metadata & Packaging Alignment",
-        description: "Ensures title, description, tags, and hashtags accurately reflect video content without misleading tags.",
+        description: "Ensures title, description, tags, and hashtags accurately reflect video content without misleading tags or tag-stuffing in description.",
         severity: "REPAIRABLE",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: { customConditionCode: "METADATA_ACCURACY_CHECK" },
         affectedStagesOnFailure: ["F02", "F07"],
@@ -243,6 +318,8 @@ export class YouTubePolicyStore {
         description: "When content targets children, requires positive role-modeling, learning enrichment, and non-commercialization.",
         severity: "WARNING",
         evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "EXTERNAL_REVIEW",
         effectiveFrom: "2023-11-01",
         condition: { customConditionCode: "KIDS_QUALITY_PASS" },
         affectedStagesOnFailure: ["F01", "F02"],
@@ -259,6 +336,8 @@ export class YouTubePolicyStore {
         description: "Shorts must be qualifying square (1:1) or vertical (9:16) format with maximum duration of 180 seconds (3 minutes).",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "UPLOAD_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-10-15",
         condition: {
           maxDurationSeconds: 180,
@@ -275,15 +354,18 @@ export class YouTubePolicyStore {
         gateId: "G12_SHORTS_ELIGIBILITY",
         sourceDocumentId: "src_yt_policy_updates",
         title: "Shorts > 60s Content ID Claim Revenue Rule",
-        description: "Shorts longer than 1 minute with active Content ID claims are blocked from creator revenue share per September 24, 2026 update.",
-        severity: "BLOCKING",
+        description: "Starting September 24, 2026, new Shorts longer than 60s and up to 180s with active Content ID claims may remain playable on YouTube; creator revenue share may be redirected to claimant.",
+        severity: "WARNING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "UPLOAD_DATE",
+        policyEffect: "REVENUE_IMPACT",
         effectiveFrom: "2026-09-24", // DATE AWARE! Active only on or after this date
         condition: {
+          maxDurationSeconds: 180,
           contentIdClaimThresholdSeconds: 60,
         },
         affectedStagesOnFailure: ["F04", "F05"],
-        suggestedRemediationAction: "Replace claimed audio or trim duration under 60s to prevent Content ID claim block.",
+        suggestedRemediationAction: "Review claimed audio: claimant may receive monetization revenue.",
         forbiddenShallowRepairs: ["pitch_shift_audio"],
       },
 
@@ -296,6 +378,8 @@ export class YouTubePolicyStore {
         description: "Monitors topic overconcentration, identical hook families, and structural fatigue across rolling channel history.",
         severity: "REPAIRABLE",
         evaluationMethod: "HYBRID",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "MONETIZATION_ELIGIBILITY",
         effectiveFrom: "2024-01-01",
         condition: {
           maxCreativeSimilarity: 0.70,
@@ -314,6 +398,8 @@ export class YouTubePolicyStore {
         description: "Ensures every gate finding has attached CAS/cryptographic evidence and labels AI inference vs physical measurements.",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
+        appliesBy: "PUBLICATION_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-01-01",
         condition: { customConditionCode: "EVIDENCE_INTEGRITY_PASS" },
         affectedStagesOnFailure: ["F07"],
@@ -336,9 +422,13 @@ export class YouTubePolicyStore {
   }
 
   /**
-   * Registers or updates a snapshot in the store.
+   * Registers or updates a snapshot in the store after candidate validation.
    */
   public registerSnapshot(snapshot: PolicySnapshot): void {
+    const validation = PolicyActivationPipeline.validateCandidateRules(snapshot.rules);
+    if (!validation.valid) {
+      throw new Error(`Cannot register invalid policy snapshot: ${validation.errors.join("; ")}`);
+    }
     this.snapshots.set(snapshot.policyVersion, snapshot);
     if (snapshot.policyVersion > this.latestVersion) {
       this.latestVersion = snapshot.policyVersion;
@@ -354,14 +444,26 @@ export class YouTubePolicyStore {
 
   /**
    * Retrieves the active snapshot for a specified publication intent date.
-   * If publication date is in the future, resolves applicable snapshot and active rules.
    */
   public getSnapshotForPublication(publicationIntentAt?: string): PolicySnapshot {
-    const targetDate = publicationIntentAt ? new Date(publicationIntentAt) : new Date();
+    return this.resolveSnapshotForPublication(publicationIntentAt);
+  }
+
+  /**
+   * Resolves snapshot based on effectiveAt, expiresAt, and retrievedAt.
+   */
+  public resolveSnapshotForPublication(publicationIntentAt?: string): PolicySnapshot {
     const latest = this.snapshots.get(this.latestVersion);
     if (!latest) {
-      throw new Error(`No policy snapshot registered for latest version ${this.latestVersion}`);
+      throw new Error(`No policy snapshot registered for version ${this.latestVersion}`);
     }
+
+    // Verify freshness SLA
+    const freshness = PolicyActivationPipeline.evaluateFreshness(latest, publicationIntentAt);
+    if (freshness.state === "INVALID" || freshness.state === "UNAVAILABLE") {
+      throw new Error(`Policy snapshot ${this.latestVersion} is unusable: ${freshness.explanation}`);
+    }
+
     return latest;
   }
 
@@ -378,6 +480,30 @@ export class YouTubePolicyStore {
       if (rule.effectiveTo) {
         const to = new Date(rule.effectiveTo).getTime();
         if (pubDate >= to) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Returns active rules evaluated against specific policy clocks in PolicyEvaluationContext.
+   */
+  public getActiveRulesForContext(
+    snapshot: PolicySnapshot,
+    context: PolicyEvaluationContext
+  ): readonly PolicyRuleDefinition[] {
+    return snapshot.rules.filter((rule) => {
+      const clockTimeStr = PolicyEvaluationContextBuilder.resolveTimestampForRule(rule.appliesBy, context);
+      const clockTime = new Date(clockTimeStr).getTime();
+      const from = new Date(rule.effectiveFrom).getTime();
+      if (clockTime < from) {
+        return false;
+      }
+      if (rule.effectiveTo) {
+        const to = new Date(rule.effectiveTo).getTime();
+        if (clockTime >= to) {
           return false;
         }
       }

@@ -1,38 +1,37 @@
 /**
- * FactoryOS YouTube Monetization Guardian — Generic Policy Evaluator
- * Evaluates candidate content and channel context against versioned, effective-date aware policy rules.
+ * FactoryOS YouTube Monetization Guardian — Policy Evaluator Interfaces
+ * Strongly typed interfaces for candidate videos, channels, findings, and evaluation results.
  */
 
 import { ContentGenome } from "../../../creative/ContentGenome";
 import { MediaProbeMeasurements } from "../../VerificationEngine";
-import { MonetizationReadinessState } from "../MonetizationReadinessEvaluator";
-import { PolicyRuleDefinition, PolicyGateId, ProductionStage, RuleSeverity } from "./YouTubePolicyIR";
-import { PolicySnapshot } from "./YouTubePolicySnapshot";
-
-export interface ChannelContext {
-  readonly channelId: string;
-  readonly isTwoStepVerificationEnabled: boolean;
-  readonly hasAdvancedFeaturesAccess: boolean;
-  readonly hasLinkedAdSense: boolean;
-  readonly yppStatus: "CHANNEL_READY_TO_APPLY" | "ACCEPTED_INTO_YPP" | "CURRENTLY_MONETIZING" | "NOT_YET_ELIGIBLE" | "RESTRICTED" | "UNKNOWN";
-  readonly subscriberCount: number;
-  readonly validWatchHoursLast365Days: number;
-  readonly shortsViewsLast90Days: number;
-  readonly activeCommunityGuidelinesStrikes: number;
-  readonly countryRegion: string;
-  readonly isChannelThemeConsistent: boolean;
-  readonly recentGenomes?: readonly ContentGenome[];
-}
+import { MonetizationReadinessState, ReleaseStatus, PolicyEffect } from "../contracts/F07ReleaseContracts";
+import { PolicyGateId, PolicyRuleDefinition, ProductionStage, RuleSeverity } from "./YouTubePolicyIR";
+import { EvidenceRef } from "../evidence/EvidenceRef";
 
 export interface VideoAssetRecord {
   readonly assetId: string;
-  readonly role: string; // "VIDEO_BROLL" | "AUDIO_BED" | "VOICE" | "IMAGE" | "LOGO" | "FLAG"
+  readonly type: "VIDEO" | "AUDIO" | "VOICE" | "IMAGE" | "MUSIC";
   readonly source: string;
-  readonly license: string;
   readonly isCommercialSafe: boolean;
   readonly isOriginalSynthesis: boolean;
-  readonly expirationDate?: string;
-  readonly rightsEvidenceSnippet?: string;
+  readonly licenseType?: string;
+  readonly licenseExpiresAt?: string;
+}
+
+export interface ChannelContext {
+  readonly channelId: string;
+  readonly channelName: string;
+  readonly yppStatus: "CHANNEL_READY_TO_APPLY" | "ACCEPTED_INTO_YPP" | "CURRENTLY_MONETIZING" | "NOT_YET_ELIGIBLE";
+  readonly isTwoStepVerificationEnabled: boolean;
+  readonly hasAdvancedFeaturesAccess: boolean;
+  readonly hasLinkedAdSense: boolean;
+  readonly activeCommunityGuidelinesStrikes: number;
+  readonly subscriberCount: number;
+  readonly validWatchHoursLast365Days: number;
+  readonly shortsViewsLast90Days: number;
+  readonly recentGenomes?: readonly ContentGenome[];
+  readonly coverage?: "FULL" | "PARTIAL" | "SHORTFORGE_ONLY" | "UNKNOWN";
 }
 
 export interface CandidateVideoContext {
@@ -52,6 +51,7 @@ export interface CandidateVideoContext {
   readonly isRealisticallySynthetic?: boolean;
   readonly isAiGenerated?: boolean;
   readonly isAutomatedEngagementUsed?: boolean;
+  readonly selfDeclaredMadeForKids?: boolean;
   readonly sensitiveTopicSignals?: readonly string[];
   readonly factualClaimsCount?: number;
   readonly verifiedFactualClaimsCount?: number;
@@ -65,6 +65,7 @@ export interface GateEvaluationFinding {
   readonly observedSignal: any;
   readonly explanation: string;
   readonly evidence: readonly string[];
+  readonly evidenceRefs?: readonly EvidenceRef[];
   readonly affectedStages: readonly ProductionStage[];
   readonly suggestedRemediation?: string;
   readonly forbiddenShallowRepairs?: readonly string[];
@@ -81,6 +82,8 @@ export interface PolicyEvaluationResult {
   readonly evaluationAt: string;
   readonly publicationIntentAt: string;
   readonly overallOutcome: MonetizationReadinessState;
+  readonly releaseStatus?: ReleaseStatus;
+  readonly activePolicyEffects?: readonly PolicyEffect[];
   readonly gateFindings: readonly GateEvaluationFinding[];
   readonly blockingFindings: readonly GateEvaluationFinding[];
   readonly repairableFindings: readonly GateEvaluationFinding[];
@@ -92,21 +95,21 @@ export interface PolicyEvaluationResult {
 
 export class YouTubePolicyEvaluator {
   /**
-   * Filters rules by publication-intent date.
+   * Filters active rules from snapshot for a given publication date.
    */
   public static filterActiveRules(
     rules: readonly PolicyRuleDefinition[],
-    publicationIntentAt: string
+    publicationDateIso: string
   ): readonly PolicyRuleDefinition[] {
-    const pubTimestamp = new Date(publicationIntentAt).getTime();
+    const pubDate = new Date(publicationDateIso).getTime();
     return rules.filter((rule) => {
-      const fromTime = new Date(rule.effectiveFrom).getTime();
-      if (pubTimestamp < fromTime) {
+      const from = new Date(rule.effectiveFrom).getTime();
+      if (pubDate < from) {
         return false;
       }
       if (rule.effectiveTo) {
-        const toTime = new Date(rule.effectiveTo).getTime();
-        if (pubTimestamp >= toTime) {
+        const to = new Date(rule.effectiveTo).getTime();
+        if (pubDate >= to) {
           return false;
         }
       }

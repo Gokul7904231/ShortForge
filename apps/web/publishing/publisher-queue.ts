@@ -17,6 +17,7 @@ import { PublishingRegistry } from "./publishing-registry";
 import type { PublishPayload, PublishResult } from "./publishing-provider";
 import { db } from "../lib/firebase-admin";
 import { PublishJobDB, MetricsDB, type PublishJobRow } from "../lib/queue-db";
+import { PublicationAuthorizationService } from "./authorization/PublicationAuthorizationService";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -185,6 +186,32 @@ class PublisherQueueClass {
     platform: string;
     payload: PublishPayload;
   }): PublishQueueJob {
+    // Invariant: NO VALID F07 RELEASE AUTHORIZATION = NO PUBLICATION
+    if (input.platform === "youtube" || input.platform === "youtube-dryrun") {
+      const auth = input.payload.authorization;
+      if (!auth) {
+        throw new Error(
+          `[PublisherQueue] Cannot enqueue publish job: Invariant 'NO VALID F07 RELEASE AUTHORIZATION = NO PUBLICATION' violated. Missing ReleaseAuthorization for platform '${input.platform}'.`
+        );
+      }
+      const canonicalParams = {
+        jobId: input.jobId,
+        title: input.payload.title,
+        description: input.payload.description,
+        tags: input.payload.tags,
+        privacyStatus: input.payload.privacyStatus || (auth.scope.allowedPrivacy as any) || "unlisted",
+        publishAt: input.payload.publishAt || auth.scope.publishAt,
+        containsSyntheticMedia: input.payload.containsSyntheticMedia ?? auth.scope.containsSyntheticMedia,
+        selfDeclaredMadeForKids: input.payload.selfDeclaredMadeForKids ?? auth.scope.selfDeclaredMadeForKids,
+        channelId: input.payload.channelId || auth.targetChannelId,
+        platform: "youtube",
+      };
+      const check = PublicationAuthorizationService.getInstance().verifyAuthorization(auth, canonicalParams);
+      if (!check.valid) {
+        throw new Error(`[PublisherQueue] Invalid ReleaseAuthorization (${check.code}): ${check.error}`);
+      }
+    }
+
     // Idempotency: don't re-enqueue the same jobId+platform combination
     const existing = this.queue.find(
       (j) => j.jobId === input.jobId && j.platform === input.platform
@@ -271,6 +298,40 @@ class PublisherQueueClass {
       { publishJobId: job.id, platform: job.platform, jobId: job.jobId },
       job.id
     );
+
+    // JIT authorization revalidation immediately before calling provider
+    if (job.platform === "youtube" || job.platform === "youtube-dryrun") {
+      const auth = job.payload.authorization;
+      const canonicalParams = {
+        jobId: job.jobId,
+        title: job.payload.title,
+        description: job.payload.description,
+        tags: job.payload.tags,
+        privacyStatus: job.payload.privacyStatus || (auth?.scope.allowedPrivacy as any) || "unlisted",
+        publishAt: job.payload.publishAt || auth?.scope.publishAt,
+        containsSyntheticMedia: job.payload.containsSyntheticMedia ?? auth?.scope.containsSyntheticMedia,
+        selfDeclaredMadeForKids: job.payload.selfDeclaredMadeForKids ?? auth?.scope.selfDeclaredMadeForKids,
+        channelId: job.payload.channelId || auth?.targetChannelId || "",
+        platform: "youtube",
+      };
+      const jitCheck = PublicationAuthorizationService.getInstance().revalidateImmediatelyBeforePublish(
+        auth,
+        canonicalParams,
+        { uploadSessionUri: job.payload.uploadSessionUri }
+      );
+      if (!jitCheck.valid) {
+        const errMsg = `JIT ReleaseAuthorization Revalidation Failed (${jitCheck.code}): ${jitCheck.error}`;
+        console.error(`[PublisherQueue] ${errMsg}`);
+        job.status = "dead";
+        job.lastError = errMsg;
+        this.queue = this.queue.filter((j) => j.id !== job.id);
+        this.deadLetterQueue.push(job);
+        PublishJobDB.updateStatus(job.id, "dead", { last_error: errMsg });
+        EventBus.publish("publish.failed", { publishJobId: job.id, error: errMsg }, job.id);
+        this.processing.delete(job.id);
+        return;
+      }
+    }
 
     try {
       const provider = PublishingRegistry.getProvider(job.platform);

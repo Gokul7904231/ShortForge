@@ -4,7 +4,8 @@
  * across dimensions based on channel history to avoid template repetition.
  */
 
-import { ContentGenome, HookType, NarrativeStructure, StoryType, VisualGrammar, computeGenomeHash } from "../../../creative/ContentGenome";
+import * as crypto from "crypto";
+import { ContentGenome, HookType, NarrativeStructure, StoryType, VisualGrammar } from "../../../creative/ContentGenome";
 
 export interface CreativeVariationOption {
   readonly optionId: string;
@@ -19,7 +20,8 @@ export interface CreativeVariationOption {
 export interface VariationPlan {
   readonly topic: string;
   readonly contentEngine: string;
-  readonly recommendedOption: CreativeVariationOption;
+  readonly status: "PLANNED" | "NO_VALID_VARIATION";
+  readonly recommendedOption: CreativeVariationOption | null;
   readonly alternativeOptions: readonly CreativeVariationOption[];
   readonly channelHistoryEvaluatedCount: number;
 }
@@ -77,16 +79,24 @@ export class VariationPlanner {
     ];
 
     // Pick recommended option that avoids recent channel hook and structure saturation
-    let recommended = candidates.find((c) => !recentHooks.has(c.hookType) && !recentStructures.has(c.narrativeStructure));
+    const recommended = candidates.find((c) => !recentHooks.has(c.hookType) && !recentStructures.has(c.narrativeStructure));
     if (!recommended) {
-      recommended = candidates[0];
+      return {
+        topic,
+        contentEngine,
+        status: "NO_VALID_VARIATION",
+        recommendedOption: null,
+        alternativeOptions: Object.freeze([]),
+        channelHistoryEvaluatedCount: recentHistory.length,
+      };
     }
 
-    const alternatives = candidates.filter((c) => c.optionId !== recommended!.optionId);
+    const alternatives = candidates.filter((c) => c.optionId !== recommended.optionId);
 
     return {
       topic,
       contentEngine,
+      status: "PLANNED",
       recommendedOption: recommended,
       alternativeOptions: Object.freeze(alternatives),
       channelHistoryEvaluatedCount: recentHistory.length,
@@ -103,7 +113,7 @@ export class VariationPlanner {
     durationSeconds?: number;
     factualClaims?: any[];
   }): ContentGenome {
-    const scriptHash = `hash_${params.option.optionId}_${params.scriptText.length}`;
+    const scriptHash = crypto.createHash("sha256").update(params.scriptText, "utf8").digest("hex");
     const genome: ContentGenome = {
       topic: params.topic,
       thesis: params.option.thesisAngle,

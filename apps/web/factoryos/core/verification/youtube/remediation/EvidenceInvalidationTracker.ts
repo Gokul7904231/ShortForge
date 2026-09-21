@@ -4,6 +4,7 @@
  * INVARIANT: No stale PASS is allowed to survive a material upstream revision.
  */
 
+import * as crypto from "crypto";
 import { ProductionStage } from "../policy/YouTubePolicyIR";
 
 export type RevisionStatus = "VALID" | "STALE" | "SUPERSEDED";
@@ -47,7 +48,7 @@ export class EvidenceInvalidationTracker {
    */
   public registerEvidence(stage: ProductionStage, artifactHash: string): EvidenceRevision {
     const rev: EvidenceRevision = {
-      revisionId: `rev_ev_${stage}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      revisionId: `rev_ev_${stage}_${crypto.randomUUID()}`,
       stage,
       artifactHash,
       status: "VALID",

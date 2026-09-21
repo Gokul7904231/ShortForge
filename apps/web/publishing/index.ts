@@ -7,6 +7,7 @@
 
 import { PublishingRegistry } from "./publishing-registry";
 import { YouTubeProvider } from "./providers/youtube";
+import { DryRunYouTubeProvider } from "./providers/dryrun-youtube";
 import { TikTokProvider, InstagramProvider, XProvider, FacebookProvider } from "./providers/social-platforms";
 
 let initialized = false;
@@ -17,6 +18,7 @@ export function initPublishingProviders(): void {
 
   console.log("[Publishing] Bootstrapping publishing providers...");
   PublishingRegistry.register(YouTubeProvider);
+  PublishingRegistry.register(DryRunYouTubeProvider);
   PublishingRegistry.register(TikTokProvider);
   PublishingRegistry.register(InstagramProvider);
   PublishingRegistry.register(XProvider);
@@ -33,6 +35,7 @@ initPublishingProviders();
 export {
   PublishingRegistry,
   YouTubeProvider,
+  DryRunYouTubeProvider,
   TikTokProvider,
   InstagramProvider,
   XProvider,

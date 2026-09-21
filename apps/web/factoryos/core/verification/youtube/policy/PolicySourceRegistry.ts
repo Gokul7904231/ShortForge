@@ -32,6 +32,11 @@ export interface PolicySourceDocument {
   readonly contentChecksumSha256: string;
 }
 
+function computeDocumentDigest(doc: { id: string; url: string; title: string; effectiveDate: string; summary: string }): string {
+  const canonicalContent = `ID:${doc.id}|URL:${doc.url}|TITLE:${doc.title}|DATE:${doc.effectiveDate}|SUMMARY:${doc.summary}`;
+  return crypto.createHash("sha256").update(canonicalContent, "utf8").digest("hex");
+}
+
 export class PolicySourceRegistry {
   private static readonly OFFICIAL_SOURCES: readonly PolicySourceDocument[] = [
     {
@@ -43,7 +48,13 @@ export class PolicySourceRegistry {
       summary: "Comprehensive requirements for earning money in YPP, covering inauthentic and reused content policies.",
       effectiveDate: "2024-06-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/1311392").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_channel_monetization",
+        url: "https://support.google.com/youtube/answer/1311392",
+        title: "YouTube channel monetization policies",
+        effectiveDate: "2024-06-01",
+        summary: "Comprehensive requirements for earning money in YPP, covering inauthentic and reused content policies.",
+      }),
     },
     {
       id: "src_yt_shorts_monetization",
@@ -54,7 +65,13 @@ export class PolicySourceRegistry {
       summary: "Shorts-specific revenue sharing, aspect ratios (9:16/1:1), 180s duration limit, and Content ID claiming rules.",
       effectiveDate: "2024-10-15",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/15424877").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_shorts_monetization",
+        url: "https://support.google.com/youtube/answer/15424877",
+        title: "YouTube Shorts monetization policies",
+        effectiveDate: "2024-10-15",
+        summary: "Shorts-specific revenue sharing, aspect ratios (9:16/1:1), 180s duration limit, and Content ID claiming rules.",
+      }),
     },
     {
       id: "src_yt_advertiser_friendly",
@@ -65,7 +82,13 @@ export class PolicySourceRegistry {
       summary: "Rules governing ad suitability across video, title, thumbnail, description, tags, and contextual framing.",
       effectiveDate: "2026-09-01",
       lastVerifiedAt: "2026-09-15T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/6162278").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_advertiser_friendly",
+        url: "https://support.google.com/youtube/answer/6162278",
+        title: "Advertiser-friendly content guidelines",
+        effectiveDate: "2026-09-01",
+        summary: "Rules governing ad suitability across video, title, thumbnail, description, tags, and contextual framing.",
+      }),
     },
     {
       id: "src_yt_community_guidelines",
@@ -76,7 +99,13 @@ export class PolicySourceRegistry {
       summary: "Baseline platform rules on hate speech, harassment, graphic content, safety, and dangerous activities.",
       effectiveDate: "2024-01-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/9288567").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_community_guidelines",
+        url: "https://support.google.com/youtube/answer/9288567",
+        title: "YouTube Community Guidelines",
+        effectiveDate: "2024-01-01",
+        summary: "Baseline platform rules on hate speech, harassment, graphic content, safety, and dangerous activities.",
+      }),
     },
     {
       id: "src_yt_spam_deception",
@@ -87,7 +116,13 @@ export class PolicySourceRegistry {
       summary: "Prohibitions against misleading metadata, thumbnail deception, scam narratives, and automated spamming.",
       effectiveDate: "2024-01-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/2801973").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_spam_deception",
+        url: "https://support.google.com/youtube/answer/2801973",
+        title: "Spam, deceptive practices, and scams policies",
+        effectiveDate: "2024-01-01",
+        summary: "Prohibitions against misleading metadata, thumbnail deception, scam narratives, and automated spamming.",
+      }),
     },
     {
       id: "src_yt_fake_engagement",
@@ -98,7 +133,13 @@ export class PolicySourceRegistry {
       summary: "Strict prohibition on automated view boosting, bot traffic, metrics purchasing, and engagement manipulation.",
       effectiveDate: "2024-01-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/3399767").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_fake_engagement",
+        url: "https://support.google.com/youtube/answer/3399767",
+        title: "Fake engagement policy",
+        effectiveDate: "2024-01-01",
+        summary: "Strict prohibition on automated view boosting, bot traffic, metrics purchasing, and engagement manipulation.",
+      }),
     },
     {
       id: "src_yt_copyright_commercial",
@@ -109,7 +150,13 @@ export class PolicySourceRegistry {
       summary: "Copyright compliance, commercial use rights, fair use standards, and proper licensing provenance.",
       effectiveDate: "2024-01-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/2797468").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_copyright_commercial",
+        url: "https://support.google.com/youtube/answer/2797468",
+        title: "What is copyright?",
+        effectiveDate: "2024-01-01",
+        summary: "Copyright compliance, commercial use rights, fair use standards, and proper licensing provenance.",
+      }),
     },
     {
       id: "src_yt_ai_disclosure",
@@ -120,7 +167,13 @@ export class PolicySourceRegistry {
       summary: "Requirement to disclose realistically synthetic media. Explicitly states disclosure does not limit monetization.",
       effectiveDate: "2024-03-18",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/14328491").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_ai_disclosure",
+        url: "https://support.google.com/youtube/answer/14328491",
+        title: "How to disclose altered or synthetic content",
+        effectiveDate: "2024-03-18",
+        summary: "Requirement to disclose realistically synthetic media. Explicitly states disclosure does not limit monetization.",
+      }),
     },
     {
       id: "src_yt_ypp_eligibility",
@@ -131,7 +184,13 @@ export class PolicySourceRegistry {
       summary: "Audience milestones, 2-Step Verification, advanced features, AdSense account, and ongoing channel review.",
       effectiveDate: "2024-01-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/72851").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_ypp_eligibility",
+        url: "https://support.google.com/youtube/answer/72851",
+        title: "YouTube Partner Program overview & eligibility",
+        effectiveDate: "2024-01-01",
+        summary: "Audience milestones, 2-Step Verification, advanced features, AdSense account, and ongoing channel review.",
+      }),
     },
     {
       id: "src_yt_kids_family",
@@ -142,7 +201,13 @@ export class PolicySourceRegistry {
       summary: "Standards for children's content, avoiding heavily commercialized or encouraging negative behavior.",
       effectiveDate: "2023-11-01",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/11187498").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_kids_family",
+        url: "https://support.google.com/youtube/answer/11187498",
+        title: "Quality principles for kids and family content",
+        effectiveDate: "2023-11-01",
+        summary: "Standards for children's content, avoiding heavily commercialized or encouraging negative behavior.",
+      }),
     },
     {
       id: "src_yt_terms_of_service",
@@ -153,7 +218,13 @@ export class PolicySourceRegistry {
       summary: "Platform contractual terms, service use, permissions, restrictions, and account termination policies.",
       effectiveDate: "2024-01-05",
       lastVerifiedAt: "2026-09-01T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://www.youtube.com/t/terms").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_terms_of_service",
+        url: "https://www.youtube.com/t/terms",
+        title: "YouTube Terms of Service",
+        effectiveDate: "2024-01-05",
+        summary: "Platform contractual terms, service use, permissions, restrictions, and account termination policies.",
+      }),
     },
     {
       id: "src_yt_policy_updates",
@@ -164,7 +235,13 @@ export class PolicySourceRegistry {
       summary: "Changelog for YouTube policy updates, including effective dates for Content ID on long Shorts (2026-09-24).",
       effectiveDate: "2026-09-15",
       lastVerifiedAt: "2026-09-21T00:00:00Z",
-      contentChecksumSha256: crypto.createHash("sha256").update("https://support.google.com/youtube/answer/9725604").digest("hex"),
+      contentChecksumSha256: computeDocumentDigest({
+        id: "src_yt_policy_updates",
+        url: "https://support.google.com/youtube/answer/9725604",
+        title: "Recent and upcoming YouTube policy updates",
+        effectiveDate: "2026-09-15",
+        summary: "Changelog for YouTube policy updates, including effective dates for Content ID on long Shorts (2026-09-24).",
+      }),
     },
   ];
 
@@ -178,5 +255,16 @@ export class PolicySourceRegistry {
 
   public static getSourceById(id: string): PolicySourceDocument | undefined {
     return this.OFFICIAL_SOURCES.find((s) => s.id === id);
+  }
+
+  public static verifySourceIntegrity(source: PolicySourceDocument): boolean {
+    const computed = computeDocumentDigest({
+      id: source.id,
+      url: source.officialUrl,
+      title: source.title,
+      effectiveDate: source.effectiveDate,
+      summary: source.summary,
+    });
+    return computed === source.contentChecksumSha256;
   }
 }

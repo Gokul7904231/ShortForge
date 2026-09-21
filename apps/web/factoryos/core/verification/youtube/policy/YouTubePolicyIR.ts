@@ -26,6 +26,22 @@ export type EvaluationMethod = "DETERMINISTIC" | "CONTEXTUAL_AI" | "HYBRID";
 
 export type ProductionStage = "F00" | "F01" | "F02" | "F03" | "F04" | "F05" | "F06" | "F07";
 
+export type PolicyApplicabilityClock =
+  | "UPLOAD_DATE"
+  | "PUBLICATION_DATE"
+  | "CHANNEL_STATE"
+  | "YPP_APPLICATION_DATE";
+
+export type PolicyEffect =
+  | "BLOCK_PUBLICATION"
+  | "BLOCK_UPLOAD"
+  | "PLAYBACK_IMPACT"
+  | "REVENUE_IMPACT"
+  | "MONETIZATION_ELIGIBILITY"
+  | "ADVERTISER_REVIEW"
+  | "DISCLOSURE_REQUIRED"
+  | "EXTERNAL_REVIEW";
+
 export interface PolicyRuleCondition {
   readonly maxDurationSeconds?: number;
   readonly allowedAspectRatios?: string[];
@@ -40,6 +56,9 @@ export interface PolicyRuleCondition {
   readonly forbidFakeEngagementAutomation?: boolean;
   readonly requiresAiDisclosureIfRealistic?: boolean;
   readonly contentIdClaimThresholdSeconds?: number;
+  readonly minSubscribers?: number;
+  readonly minWatchHours?: number;
+  readonly minShortsViews?: number;
   readonly customConditionCode?: string;
 }
 
@@ -51,6 +70,8 @@ export interface PolicyRuleDefinition {
   readonly description: string;
   readonly severity: RuleSeverity;
   readonly evaluationMethod: EvaluationMethod;
+  readonly appliesBy: PolicyApplicabilityClock;
+  readonly policyEffect: PolicyEffect;
   readonly effectiveFrom: string; // ISO date string (YYYY-MM-DD)
   readonly effectiveTo?: string;  // ISO date string if superseded
   readonly condition: PolicyRuleCondition;
@@ -63,6 +84,5 @@ export interface PolicyPackIR {
   readonly packName: "youtube";
   readonly version: string;
   readonly generatedAt: string;
-  readonly effectiveAt: string;
   readonly rules: readonly PolicyRuleDefinition[];
 }

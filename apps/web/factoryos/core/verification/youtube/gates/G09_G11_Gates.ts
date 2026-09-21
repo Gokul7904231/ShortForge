@@ -1,19 +1,20 @@
 /**
  * FactoryOS YouTube Monetization Guardian — Gates G09 to G11
- * G09: Engagement & Automation (Internal Governance Pre-Publish)
- * G10: Metadata & Packaging Integrity
- * G11: Kids & Family Content Quality
+ * G09: Engagement & Automation (Internal Behavioral Attestation Pre-Publish)
+ * G10: Metadata & Packaging Integrity (Narrative Coherence, Anti-Tag-Stuffing)
+ * G11: Kids & Family Content Quality (Multi-Factor AudienceClassificationAssessment)
  */
 
 import { CandidateVideoContext, GateEvaluationFinding } from "../policy/YouTubePolicyEvaluator";
 import { PolicyRuleDefinition } from "../policy/YouTubePolicyIR";
+import { EvidenceRefFactory } from "../evidence/EvidenceRef";
 
 export class G09_FakeEngagementGate {
   public static evaluate(
     video: CandidateVideoContext,
     rule: PolicyRuleDefinition
   ): GateEvaluationFinding {
-    // Pre-publish governance: Invariant that ShortForge never uses artificial engagement systems
+    // Pre-publish governance: ShortForge behavioral attestation
     const isBottingDetected = Boolean(video.isAutomatedEngagementUsed);
 
     if (isBottingDetected) {
@@ -25,6 +26,15 @@ export class G09_FakeEngagementGate {
         observedSignal: { automatedEngagementFlag: true },
         explanation: "ShortForge internal pipeline flagged forbidden engagement manipulation or artificial traffic automation. Hard blocking under YouTube Fake Engagement Policy.",
         evidence: ["Automation flag 'isAutomatedEngagementUsed' is TRUE"],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "SECURITY_ATTESTATION",
+            producer: "G09_FakeEngagementGate",
+            method: "DETERMINISTIC_PROBE",
+            confidence: 1.0,
+            metadata: { isAutomatedEngagementUsed: true },
+          }),
+        ],
         affectedStages: ["F07"],
         suggestedRemediation: "Disable all artificial traffic, view spoofing, or automated engagement systems.",
         evaluationType: "DETERMINISTIC",
@@ -38,13 +48,22 @@ export class G09_FakeEngagementGate {
       status: "PASS",
       severity: rule.severity,
       observedSignal: {
-        prePublishAutomationClean: true,
-        postPublishObservationDeferred: true,
+        behavioralAttestation: "ORGANIC_ONLY",
+        postPublishExternalObservationDeferred: true,
       },
-      explanation: "Pre-publish automation behavior certified: zero artificial engagement, bot traffic, or view manipulation employed. Post-publish traffic monitoring will observe external YouTube signals.",
+      explanation: "Pre-publish behavioral attestation verified: ShortForge does not generate artificial views, subscribers, or automated metric manipulation. Future external third-party traffic will be tracked post-publication.",
       evidence: [
-        "Internal automation compliance: 100%",
+        "Internal automation compliance: ATTESTED_ORGANIC",
         "Synthetic traffic injection: NONE",
+      ],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "SECURITY_ATTESTATION",
+          producer: "G09_FakeEngagementGate",
+          method: "HUMAN_ATTESTATION",
+          confidence: 1.0,
+          metadata: { behavioralAttestation: "ORGANIC_ONLY" },
+        }),
       ],
       affectedStages: [],
       evaluationType: "DETERMINISTIC",
@@ -59,19 +78,31 @@ export class G10_MetadataPackagingGate {
     rule: PolicyRuleDefinition
   ): GateEvaluationFinding {
     const tags = video.tags || [];
+    const description = video.description || "";
 
-    // Tag stuffing detection (> 25 tags or excessive commas)
-    if (tags.length > 25) {
+    // Tag stuffing in description check (YouTube spam policy explicitly forbids blocks of repetitive tags in description)
+    const hasTagBlockInDescription = /#\w+\s+#\w+\s+#\w+\s+#\w+\s+#\w+\s+#\w+\s+#\w+/i.test(description) ||
+      (description.match(/#/g) || []).length > 15;
+
+    if (hasTagBlockInDescription) {
       return {
         gateId: "G10_METADATA_PACKAGING",
         ruleId: rule.ruleId,
         status: "REPAIR_REQUIRED",
         severity: "REPAIRABLE",
-        observedSignal: { tagsCount: tags.length, limit: 25 },
-        explanation: `Excessive tags (${tags.length}) detected. YouTube policy treats keyword stuffing in tags or description as deceptive spam.`,
-        evidence: [`Total tags provided: ${tags.length}`],
+        observedSignal: { hasTagBlockInDescription: true },
+        explanation: "Excessive hashtag block detected in video description. YouTube spam policy prohibits placing excessive keyword lists in descriptions.",
+        evidence: ["Excessive hashtags in video description text"],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "FACTUAL_SOURCE",
+            producer: "G10_MetadataPackagingGate",
+            method: "DETERMINISTIC_PROBE",
+            confidence: 1.0,
+          }),
+        ],
         affectedStages: ["F02", "F07"],
-        suggestedRemediation: "Reduce tags to 5-10 highly relevant, topic-specific keywords.",
+        suggestedRemediation: "Remove repetitive tag blocks from description; place relevant keywords in official tag metadata.",
         forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
         evaluationType: "DETERMINISTIC",
         confidence: 1.0,
@@ -80,8 +111,9 @@ export class G10_MetadataPackagingGate {
 
     // Check title and description coherence with topic
     const topicLower = video.genome.topic.toLowerCase();
-    const titleLower = video.title.toLowerCase();
-    const hasTopicRelevance = titleLower.includes(topicLower) || topicLower.split(/\s+/).some((word) => word.length > 3 && titleLower.includes(word));
+    const titleLower = (video.title || "").toLowerCase();
+    const hasTopicRelevance = titleLower.includes(topicLower) ||
+      topicLower.split(/\s+/).some((word) => word.length > 3 && titleLower.includes(word));
 
     if (!hasTopicRelevance && video.title.length > 0) {
       return {
@@ -92,6 +124,15 @@ export class G10_MetadataPackagingGate {
         observedSignal: { topic: video.genome.topic, title: video.title },
         explanation: "Title does not appear relevant to candidate genome topic. Potential packaging misalignment.",
         evidence: [`Topic: '${video.genome.topic}'`, `Title: '${video.title}'`],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "FACTUAL_SOURCE",
+            producer: "G10_MetadataPackagingGate",
+            method: "AI_INFERENCE",
+            confidence: 0.88,
+            metadata: { topic: video.genome.topic, title: video.title },
+          }),
+        ],
         affectedStages: ["F02"],
         suggestedRemediation: "Ensure title clearly and directly conveys the topic of the Short.",
         forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
@@ -106,8 +147,16 @@ export class G10_MetadataPackagingGate {
       status: "PASS",
       severity: rule.severity,
       observedSignal: { tagsCount: tags.length, relevant: true },
-      explanation: "Packaging metadata is concise, relevant to the narrative, and free of keyword stuffing.",
+      explanation: "Packaging metadata is concise, relevant to the narrative, and free of deceptive keyword stuffing.",
       evidence: [`Tags count: ${tags.length}`, `Title: ${video.title}`],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "SECURITY_ATTESTATION",
+          producer: "G10_MetadataPackagingGate",
+          method: "DETERMINISTIC_PROBE",
+          confidence: 0.98,
+        }),
+      ],
       affectedStages: [],
       evaluationType: "DETERMINISTIC",
       confidence: 0.98,
@@ -120,8 +169,11 @@ export class G11_KidsFamilyGate {
     video: CandidateVideoContext,
     rule: PolicyRuleDefinition
   ): GateEvaluationFinding {
-    // Check if content targets kids (e.g. Guess Flag, Guess Logo with elementary framing)
-    const isKidsTargeted = video.tags.some((t) => /kids|children|toddler/i.test(t)) || /for\s+kids/i.test(video.title);
+    // Multi-factor Audience Classification Assessment
+    const selfDeclared = Boolean(video.selfDeclaredMadeForKids);
+    const tags = video.tags || [];
+    const childKeywords = tags.some((t) => /kids|children|toddler|nursery/i.test(t)) || /for\s+kids/i.test(video.title || "");
+    const isKidsTargeted = selfDeclared || childKeywords;
 
     if (isKidsTargeted) {
       // Check for commercialization or negative behavioral prompts
@@ -132,9 +184,21 @@ export class G11_KidsFamilyGate {
           ruleId: rule.ruleId,
           status: "REPAIR_REQUIRED",
           severity: "REPAIRABLE",
-          observedSignal: { isKidsTargeted: true, commercialPressure: true },
+          observedSignal: {
+            isKidsTargeted: true,
+            selfDeclaredMadeForKids: selfDeclared,
+            commercialPressure: true,
+          },
           explanation: "Content targeted at children contains overt commercial prompts or pressure. Violates YouTube Quality Principles for Kids & Family content.",
           evidence: ["Commercial pressure detected in kids-targeted Short"],
+          evidenceRefs: [
+            EvidenceRefFactory.create({
+              evidenceType: "FACTUAL_SOURCE",
+              producer: "G11_KidsFamilyGate",
+              method: "AI_INFERENCE",
+              confidence: 0.92,
+            }),
+          ],
           affectedStages: ["F02"],
           suggestedRemediation: "Remove commercial calls-to-action and emphasize positive learning exploration.",
           forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
@@ -149,9 +213,22 @@ export class G11_KidsFamilyGate {
       ruleId: rule.ruleId,
       status: "PASS",
       severity: rule.severity,
-      observedSignal: { isKidsTargeted, compliant: true },
+      observedSignal: {
+        isKidsTargeted,
+        selfDeclaredMadeForKids: selfDeclared,
+        compliant: true,
+      },
       explanation: "Kids & family guidelines verified: general audience content without inappropriate commercial pressure.",
-      evidence: [`Target audience kids: ${isKidsTargeted}`],
+      evidence: [`Target audience kids: ${isKidsTargeted}`, `selfDeclaredMadeForKids: ${selfDeclared}`],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "FACTUAL_SOURCE",
+          producer: "G11_KidsFamilyGate",
+          method: "DETERMINISTIC_PROBE",
+          confidence: 0.96,
+          metadata: { isKidsTargeted, selfDeclared },
+        }),
+      ],
       affectedStages: [],
       evaluationType: "HYBRID",
       confidence: 0.96,

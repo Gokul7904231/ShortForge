@@ -142,24 +142,26 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     expect(resultToday.blockingFindings.length).toBe(0);
   });
 
-  it("3. Date Boundary Crossing — Scheduled publication on Sept 25, 2026 BLOCKS 110s Short with Content ID claim", () => {
+  it("3. Date Boundary Crossing — Scheduled publication on Sept 25, 2026 applies Content ID revenue rule (may remain playable)", () => {
     // Same video, but creator schedules publication for Sept 25, 2026 (AFTER effective date 2026-09-24)
     const resultScheduledPostSept24 = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
       publicationIntentAt: "2026-09-25T08:00:00Z", // Post-Sept 24 effective date!
+      uploadIntentAt: "2026-09-25T08:00:00Z",
     });
 
-    expect(resultScheduledPostSept24.overallOutcome).toBe("BLOCKED");
-    expect(resultScheduledPostSept24.publishAllowed).toBe(false);
+    // Post-Sept 24 transition: may remain playable, but revenue impact active
+    expect(resultScheduledPostSept24.publishAllowed).toBe(true);
+    expect(resultScheduledPostSept24.activePolicyEffects).toContain("REVENUE_IMPACT");
 
     const g12ContentId = resultScheduledPostSept24.gateFindings.find(
       (f) => f.gateId === "G12_SHORTS_ELIGIBILITY" && f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
     );
-    expect(g12ContentId?.status).toBe("BLOCKED");
-    expect(g12ContentId?.severity).toBe("BLOCKING");
-    expect(g12ContentId?.explanation).toContain("Shorts longer than 60s with active Content ID claims are ineligible");
-    expect(g12ContentId?.suggestedRemediation).toContain("Replace claimed audio bed");
+    expect(g12ContentId).toBeDefined();
+    expect(g12ContentId?.severity).toBe("WARNING");
+    expect(g12ContentId?.explanation).toContain("may remain playable");
+    expect(g12ContentId?.explanation).toContain("Playback and revenue are not guaranteed");
   });
 
   it("4. Content ID Claim Replacement — replacing claimed audio with original narration bed PASSES post-Sept 24", () => {

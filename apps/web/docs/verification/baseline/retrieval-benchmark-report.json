@@ -1,17 +1,17 @@
 {
   "benchmarkName": "FactoryOS 50-Query IR Benchmark",
-  "timestamp": "2026-09-21T09:12:37.467Z",
+  "timestamp": "2026-09-21T19:20:32.181Z",
   "totalQueries": 50,
   "metrics": {
     "precisionAtK": 0.289,
-    "recallAtK": 0.41,
-    "meanReciprocalRankMRR": 0.373,
-    "ndcgAtK": 0.654,
+    "recallAtK": 0.42,
+    "meanReciprocalRankMRR": 0.376,
+    "ndcgAtK": 0.653,
     "evidenceCoverage": 0.84,
     "secretLeakageRate": 0,
     "latencyMs": {
-      "p50": 157,
-      "p95": 176
+      "p50": 319,
+      "p95": 1192
     }
   },
   "detailedResults": [
@@ -24,7 +24,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 25,
+      "latencyMs": 70,
       "estimatedTokens": 1628
     },
     {
@@ -36,7 +36,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 8,
+      "latencyMs": 18,
       "estimatedTokens": 1532
     },
     {
@@ -48,7 +48,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 8,
+      "latencyMs": 13,
       "estimatedTokens": 1486
     },
     {
@@ -60,7 +60,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 13,
+      "latencyMs": 27,
       "estimatedTokens": 1387
     },
     {
@@ -72,7 +72,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 14,
+      "latencyMs": 33,
       "estimatedTokens": 1415
     },
     {
@@ -96,7 +96,7 @@
       "evidenceCoverage": 0.33,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 1,
+      "latencyMs": 2,
       "estimatedTokens": 545
     },
     {
@@ -108,7 +108,7 @@
       "evidenceCoverage": 0.33,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 1,
+      "latencyMs": 2,
       "estimatedTokens": 1009
     },
     {
@@ -120,7 +120,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 1,
+      "latencyMs": 4,
       "estimatedTokens": 1691
     },
     {
@@ -132,7 +132,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 5,
+      "latencyMs": 3,
       "estimatedTokens": 2120
     },
     {
@@ -144,7 +144,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 151,
+      "latencyMs": 433,
       "estimatedTokens": 132
     },
     {
@@ -156,7 +156,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 136,
+      "latencyMs": 435,
       "estimatedTokens": 131
     },
     {
@@ -168,7 +168,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 137,
+      "latencyMs": 494,
       "estimatedTokens": 133
     },
     {
@@ -180,7 +180,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 137,
+      "latencyMs": 319,
       "estimatedTokens": 135
     },
     {
@@ -192,7 +192,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 138,
+      "latencyMs": 340,
       "estimatedTokens": 130
     },
     {
@@ -204,7 +204,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 153,
+      "latencyMs": 310,
       "estimatedTokens": 1579
     },
     {
@@ -216,7 +216,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 165,
+      "latencyMs": 422,
       "estimatedTokens": 1679
     },
     {
@@ -228,7 +228,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 166,
+      "latencyMs": 245,
       "estimatedTokens": 1406
     },
     {
@@ -252,7 +252,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 162,
+      "latencyMs": 273,
       "estimatedTokens": 1618
     },
     {
@@ -264,7 +264,7 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 163,
+      "latencyMs": 241,
       "estimatedTokens": 1671
     },
     {
@@ -276,8 +276,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 168,
-      "estimatedTokens": 1771
+      "latencyMs": 278,
+      "estimatedTokens": 1710
     },
     {
       "id": "Q-SYN-03",
@@ -288,7 +288,7 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 2,
+      "latencyMs": 3,
       "estimatedTokens": 2105
     },
     {
@@ -300,20 +300,20 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 163,
+      "latencyMs": 237,
       "estimatedTokens": 1517
     },
     {
       "id": "Q-SYN-05",
-      "precisionAtK": 0.5,
+      "precisionAtK": 0.38,
       "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 1.54,
+      "ndcgAtK": 1.31,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 157,
-      "estimatedTokens": 1793
+      "latencyMs": 224,
+      "estimatedTokens": 1739
     },
     {
       "id": "Q-CNF-01",
@@ -324,7 +324,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 162,
+      "latencyMs": 276,
       "estimatedTokens": 1592
     },
     {
@@ -336,19 +336,19 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 163,
-      "estimatedTokens": 1736
+      "latencyMs": 303,
+      "estimatedTokens": 1694
     },
     {
       "id": "Q-CNF-03",
       "precisionAtK": 0.75,
       "recallAtK": 1,
       "reciprocalRank": 0.5,
-      "ndcgAtK": 1.18,
+      "ndcgAtK": 1.24,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 165,
+      "latencyMs": 461,
       "estimatedTokens": 1507
     },
     {
@@ -360,20 +360,20 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 180,
+      "latencyMs": 864,
       "estimatedTokens": 1740
     },
     {
       "id": "Q-CNF-05",
-      "precisionAtK": 0,
-      "recallAtK": 0,
-      "reciprocalRank": 0,
-      "ndcgAtK": 0,
+      "precisionAtK": 0.25,
+      "recallAtK": 1,
+      "reciprocalRank": 0.14,
+      "ndcgAtK": 0.4,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 186,
-      "estimatedTokens": 1687
+      "latencyMs": 706,
+      "estimatedTokens": 1559
     },
     {
       "id": "Q-STL-01",
@@ -384,20 +384,20 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 176,
+      "latencyMs": 905,
       "estimatedTokens": 1605
     },
     {
       "id": "Q-STL-02",
-      "precisionAtK": 0.25,
-      "recallAtK": 1,
+      "precisionAtK": 0.13,
+      "recallAtK": 0.5,
       "reciprocalRank": 1,
-      "ndcgAtK": 0.88,
+      "ndcgAtK": 0.61,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 165,
-      "estimatedTokens": 1570
+      "latencyMs": 975,
+      "estimatedTokens": 1555
     },
     {
       "id": "Q-STL-03",
@@ -408,7 +408,7 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 161,
+      "latencyMs": 1232,
       "estimatedTokens": 1573
     },
     {
@@ -420,7 +420,7 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 159,
+      "latencyMs": 1218,
       "estimatedTokens": 1416
     },
     {
@@ -432,7 +432,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 23,
+      "latencyMs": 87,
       "estimatedTokens": 1703
     },
     {
@@ -444,7 +444,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 168,
+      "latencyMs": 888,
       "estimatedTokens": 1491
     },
     {
@@ -456,7 +456,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 150,
+      "latencyMs": 692,
       "estimatedTokens": 1636
     },
     {
@@ -468,7 +468,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 160,
+      "latencyMs": 1049,
       "estimatedTokens": 1350
     },
     {
@@ -480,7 +480,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 154,
+      "latencyMs": 1192,
       "estimatedTokens": 1317
     },
     {
@@ -492,7 +492,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 148,
+      "latencyMs": 1032,
       "estimatedTokens": 1641
     },
     {
@@ -504,7 +504,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 18,
+      "latencyMs": 33,
       "estimatedTokens": 1657
     },
     {
@@ -516,7 +516,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 1,
+      "latencyMs": 8,
       "estimatedTokens": 2085
     },
     {
@@ -528,7 +528,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 161,
+      "latencyMs": 867,
       "estimatedTokens": 1595
     },
     {
@@ -540,8 +540,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 168,
-      "estimatedTokens": 1953
+      "latencyMs": 951,
+      "estimatedTokens": 1569
     },
     {
       "id": "Q-NOE-05",
@@ -552,7 +552,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 163,
+      "latencyMs": 745,
       "estimatedTokens": 1592
     },
     {
@@ -564,7 +564,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 168,
+      "latencyMs": 911,
       "estimatedTokens": 1713
     },
     {
@@ -576,8 +576,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 167,
-      "estimatedTokens": 1680
+      "latencyMs": 687,
+      "estimatedTokens": 1572
     },
     {
       "id": "Q-SEC-03",
@@ -588,7 +588,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 22,
+      "latencyMs": 35,
       "estimatedTokens": 1412
     },
     {
@@ -600,7 +600,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 171,
+      "latencyMs": 1174,
       "estimatedTokens": 1629
     },
     {
@@ -612,7 +612,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 176,
+      "latencyMs": 832,
       "estimatedTokens": 1573
     }
   ]

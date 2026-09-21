@@ -26,6 +26,7 @@ export interface ReleaseGuardianParams {
   readonly publicationIntentAt?: string;
   readonly localMediaPath?: string;
   readonly artifactSha256?: string;
+  readonly artifactCasRef?: string;
 }
 
 export class F07ReleaseGuardian {
@@ -129,6 +130,7 @@ export class F07ReleaseGuardian {
     return VerificationReceiptBuilder.build({
       artifactId: video.videoId,
       artifactSha256,
+      artifactCasRef: params.artifactCasRef || `cas://${artifactSha256}`,
       policyVersion: snapshot.policyVersion,
       policySnapshotHash: snapshot.snapshotHashSha256,
       policyRetrievedAt: snapshot.retrievedAt,

@@ -9,8 +9,10 @@
 // Publish Payload
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ReleaseAuthorization } from "../factoryos/core/verification/youtube/contracts/F07ReleaseContracts";
+
 export interface PublishPayload {
-  /** Drive or Cloudinary video URL. */
+  /** Drive, CAS or Cloudinary video URL. */
   videoUrl: string;
   /** Download link (used when platform needs direct file access). */
   downloadLink?: string;
@@ -28,6 +30,24 @@ export interface PublishPayload {
   jobId: string;
   /** Arbitrary platform-specific overrides. */
   platformOverrides?: Record<string, any>;
+  /** F07 Release Authorization capability (MANDATORY for YouTube) */
+  authorization?: ReleaseAuthorization;
+  /** CAS Artifact SHA-256 for verified content streaming */
+  videoArtifactHash?: string;
+  /** Resumable upload session URI for network recovery */
+  uploadSessionUri?: string;
+  /** Target channel ID */
+  channelId?: string;
+  /** Privacy status */
+  privacyStatus?: "private" | "unlisted" | "public";
+  /** Scheduled publish timestamp */
+  publishAt?: string;
+  /** Synthetic AI media disclosure */
+  containsSyntheticMedia?: boolean;
+  /** Made for kids declaration */
+  selfDeclaredMadeForKids?: boolean;
+  /** Direct CAS stream provider */
+  casStreamProvider?: () => NodeJS.ReadableStream;
 }
 
 export interface PublishResult {

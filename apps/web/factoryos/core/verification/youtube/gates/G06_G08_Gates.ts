@@ -1,12 +1,13 @@
 /**
  * FactoryOS YouTube Monetization Guardian — Gates G06 to G08
- * G06: Advertiser Suitability (Contextual + Multimodal)
- * G07: AI & Synthetic Media Disclosure (Upload Instructions, Not Monetization Penalty)
- * G08: Spam & Deceptive Practices (Deterministic + Contextual)
+ * G06: Advertiser Suitability (AdvertiserSuitabilityAssessment)
+ * G07: AI & Synthetic Media Disclosure (status.containsSyntheticMedia Data API Mapping)
+ * G08: Spam & Deceptive Practices (Holistic Narrative Coherence & Scams Check)
  */
 
 import { CandidateVideoContext, GateEvaluationFinding } from "../policy/YouTubePolicyEvaluator";
 import { PolicyRuleDefinition } from "../policy/YouTubePolicyIR";
+import { EvidenceRefFactory } from "../evidence/EvidenceRef";
 
 export class G06_AdvertiserSuitabilityGate {
   public static evaluate(
@@ -14,7 +15,7 @@ export class G06_AdvertiserSuitabilityGate {
     rule: PolicyRuleDefinition
   ): GateEvaluationFinding {
     const sensitiveSignals = video.sensitiveTopicSignals || [];
-    const packageText = `${video.title} ${video.description} ${video.tags.join(" ")} ${video.scriptText}`.toLowerCase();
+    const packageText = `${video.title} ${video.description || ""} ${(video.tags || []).join(" ")} ${video.scriptText}`.toLowerCase();
 
     // Graphic or shocking content check
     const graphicKeywords = ["gore", "bloodbath", "decapitation", "mutilation", "gruesome corpse"];
@@ -25,9 +26,21 @@ export class G06_AdvertiserSuitabilityGate {
           ruleId: rule.ruleId,
           status: "REPAIR_REQUIRED",
           severity: "REPAIRABLE",
-          observedSignal: { graphicPatternDetected: word },
+          observedSignal: {
+            graphicPatternDetected: word,
+            advertiserSuitabilityAssessment: "LIKELY_NO_ADS",
+          },
           explanation: `Graphic violence or shocking imagery references detected ('${word}'). Exceeds advertiser-friendly baseline threshold for general ad serving.`,
           evidence: [`Detected pattern: '${word}' in packaging or script`],
+          evidenceRefs: [
+            EvidenceRefFactory.create({
+              evidenceType: "FACTUAL_SOURCE",
+              producer: "G06_AdvertiserSuitabilityGate",
+              method: "DETERMINISTIC_PROBE",
+              confidence: 0.95,
+              metadata: { pattern: word, assessment: "LIKELY_NO_ADS" },
+            }),
+          ],
           affectedStages: ["F02", "F03"],
           suggestedRemediation: "Remove sensational or graphic descriptions; reframe with objective, educational historical context.",
           forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
@@ -39,7 +52,6 @@ export class G06_AdvertiserSuitabilityGate {
 
     // Contextual sensitivity: sensitive topic with educational framing
     if (sensitiveSignals.length > 0) {
-      // If historical or psychology engine, contextual treatment may be suitable but warrants review
       const isEducationalEngine = ["History", "Psychology", "News", "GK"].includes(video.contentEngine);
       if (isEducationalEngine) {
         return {
@@ -50,9 +62,20 @@ export class G06_AdvertiserSuitabilityGate {
           observedSignal: {
             sensitiveSignals,
             contextualEngine: video.contentEngine,
+            advertiserSuitabilityAssessment: "HUMAN_REVIEW",
           },
-          explanation: `Content touches sensitive topic (${sensitiveSignals.join(", ")}) in an educational context (${video.contentEngine}). Requires operator review or ad-suitability confirmation before monetization deployment.`,
+          explanation: `Content touches sensitive topic (${sensitiveSignals.join(", ")}) in an educational context (${video.contentEngine}). ` +
+            "Per YouTube ad guidelines, contextual treatment matters. Requires operator review or ad-suitability confirmation.",
           evidence: sensitiveSignals,
+          evidenceRefs: [
+            EvidenceRefFactory.create({
+              evidenceType: "FACTUAL_SOURCE",
+              producer: "G06_AdvertiserSuitabilityGate",
+              method: "AI_INFERENCE",
+              confidence: 0.85,
+              metadata: { sensitiveSignals, assessment: "HUMAN_REVIEW" },
+            }),
+          ],
           affectedStages: ["F07"],
           suggestedRemediation: "Confirm tone is objective and non-sensational, or request manual review in YouTube Studio.",
           evaluationType: "AI_INFERRED",
@@ -68,13 +91,22 @@ export class G06_AdvertiserSuitabilityGate {
       severity: rule.severity,
       observedSignal: {
         packageEvaluated: true,
-        adSuitability: "GENERAL_AUDIENCE",
+        advertiserSuitabilityAssessment: "PASS",
       },
       explanation: "Metadata, visual assets, audio bed, and narrative meet YouTube advertiser-friendly content guidelines.",
       evidence: [
         `Title: ${video.title}`,
         `Content Engine: ${video.contentEngine}`,
         "No yellow-dollar or limited-ad triggers detected",
+      ],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "SECURITY_ATTESTATION",
+          producer: "G06_AdvertiserSuitabilityGate",
+          method: "DETERMINISTIC_PROBE",
+          confidence: 0.96,
+          metadata: { assessment: "PASS" },
+        }),
       ],
       affectedStages: [],
       evaluationType: "HYBRID",
@@ -99,40 +131,55 @@ export class G07_AIDisclosureGate {
         status: "PASS", // Passes gate with required upload disclosure metadata
         severity: "WARNING",
         observedSignal: {
-          isRealisticallySynthetic: true,
+          containsSyntheticMedia: true,
+          statusContainsSyntheticMedia: true,
           disclosureRequired: true,
-          uploadInstruction: {
-            alteredOrSyntheticMedia: true,
-            disclosureReason: "Realistic synthetic depiction of scenes/people",
-          },
         },
-        explanation: "Content contains realistically synthetic or meaningfully altered media. Disclosure is required in YouTube Studio upload metadata. Note: Official YouTube policy explicitly confirms that disclosure does NOT impact monetization eligibility.",
+        explanation: "Content contains realistically synthetic depictions of people or real-world events. YouTube Data API upload field 'status.containsSyntheticMedia' must be set to true. Disclosure does not limit monetization eligibility.",
         evidence: [
-          "Synthetic realism signal: TRUE",
-          "Generated upload instruction: altered_or_synthetic_content=true",
+          "Realistically synthetic depiction detected",
+          "YouTube Data API status.containsSyntheticMedia: TRUE",
+        ],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "FACTUAL_SOURCE",
+            producer: "G07_AIDisclosureGate",
+            method: "DETERMINISTIC_PROBE",
+            confidence: 1.0,
+            metadata: { containsSyntheticMedia: true },
+          }),
         ],
         affectedStages: ["F07"],
-        suggestedRemediation: "Ensure YouTube upload payload includes 'hasAlteredContent=true' flag in video metadata.",
-        forbiddenShallowRepairs: [],
+        suggestedRemediation: "Ensure YouTube Data API manifest sets status.containsSyntheticMedia = true.",
+        forbiddenShallowRepairs: ["uncheck_synthetic_box"],
         evaluationType: "DETERMINISTIC",
         confidence: 1.0,
       };
     }
 
-    // Stylized, animated, diagrammatic, or coding content does not require synthetic disclosure
     return {
       gateId: "G07_AI_DISCLOSURE",
       ruleId: rule.ruleId,
       status: "PASS",
       severity: rule.severity,
       observedSignal: {
-        isRealisticallySynthetic: false,
+        containsSyntheticMedia: false,
+        statusContainsSyntheticMedia: false,
         disclosureRequired: false,
       },
-      explanation: "Content is non-realistic (stylized animation, kinetic typography, code snippets, or documentary diagram). No YouTube altered-content disclosure required.",
+      explanation: "Content is stylistically animation/motion graphics or non-realistic synthesis. Platform synthetic media disclosure not required.",
       evidence: [
-        `Visual grammar: ${video.genome.visualGrammar}`,
-        "Realistic synthetic person/event: FALSE",
+        "Content format: animated/illustrative or non-deceptive synthetic",
+        "YouTube Data API status.containsSyntheticMedia: FALSE",
+      ],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "FACTUAL_SOURCE",
+          producer: "G07_AIDisclosureGate",
+          method: "DETERMINISTIC_PROBE",
+          confidence: 1.0,
+          metadata: { containsSyntheticMedia: false },
+        }),
       ],
       affectedStages: [],
       evaluationType: "DETERMINISTIC",
@@ -146,18 +193,26 @@ export class G08_SpamDeceptionGate {
     video: CandidateVideoContext,
     rule: PolicyRuleDefinition
   ): GateEvaluationFinding {
-    const title = video.title.trim();
+    const title = video.title ? video.title.trim() : "";
 
-    // 1. Deterministic Hard Rules
-    if (!title || title.length < 5) {
+    // 1. Missing Title check
+    if (!title || title.length === 0) {
       return {
         gateId: "G08_SPAM_DECEPTION",
         ruleId: rule.ruleId,
         status: "BLOCKED",
         severity: "BLOCKING",
-        observedSignal: { titleLength: title.length },
-        explanation: "Title is missing or excessively brief. Violates basic YouTube metadata integrity standards.",
-        evidence: [`Title observed: '${title}'`],
+        observedSignal: { titleLength: 0 },
+        explanation: "Title is missing. Violates basic YouTube metadata integrity standards.",
+        evidence: ["Title is empty"],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "SECURITY_ATTESTATION",
+            producer: "G08_SpamDeceptionGate",
+            method: "DETERMINISTIC_PROBE",
+            confidence: 1.0,
+          }),
+        ],
         affectedStages: ["F02", "F07"],
         suggestedRemediation: "Provide an accurate, descriptive title reflecting video content.",
         forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
@@ -166,6 +221,7 @@ export class G08_SpamDeceptionGate {
       };
     }
 
+    // 2. Scam / Deception Check
     if (/free\s+money|get\s+rich\s+quick|crypto\s+giveaway|double\s+your\s+bitcoin/i.test(title)) {
       return {
         gateId: "G08_SPAM_DECEPTION",
@@ -175,6 +231,15 @@ export class G08_SpamDeceptionGate {
         observedSignal: { deceptiveScamPattern: true },
         explanation: "Title contains known scam or deceptive monetization solicitation patterns. Violates YouTube Spam and Scams policy.",
         evidence: [`Pattern match in title: '${title}'`],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "SECURITY_ATTESTATION",
+            producer: "G08_SpamDeceptionGate",
+            method: "DETERMINISTIC_PROBE",
+            confidence: 1.0,
+            metadata: { title },
+          }),
+        ],
         affectedStages: ["F02", "F07"],
         suggestedRemediation: "Remove spam or deceptive financial claims completely.",
         forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
@@ -183,8 +248,7 @@ export class G08_SpamDeceptionGate {
       };
     }
 
-    // 2. Contextual Claim Analysis
-    // Check if title makes an extreme factual claim (e.g. "Cure for aging discovered") unbacked by factual claims
+    // 3. Contextual Narrative Coherence Check
     const isExtremeClaim = /discovered\s+immortality|cures?\s+all\s+cancer|secret\s+aliens?\s+confirmed/i.test(title);
     const verifiedClaims = video.verifiedFactualClaimsCount ?? 0;
     if (isExtremeClaim && verifiedClaims === 0) {
@@ -202,6 +266,15 @@ export class G08_SpamDeceptionGate {
           `Title: ${title}`,
           `Verified factual claims: ${verifiedClaims}`,
         ],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "FACTUAL_SOURCE",
+            producer: "G08_SpamDeceptionGate",
+            method: "DETERMINISTIC_PROBE",
+            confidence: 0.90,
+            metadata: { title, verifiedClaims },
+          }),
+        ],
         affectedStages: ["F01", "F02"],
         suggestedRemediation: "Align title claims directly with verified scientific or historical evidence.",
         forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
@@ -217,7 +290,15 @@ export class G08_SpamDeceptionGate {
       severity: rule.severity,
       observedSignal: { spamScore: 0.0, deceptiveMetadata: false },
       explanation: "Title, tags, and claims are non-deceptive and grounded in video narrative.",
-      evidence: [`Title: ${title}`, `Tags count: ${video.tags.length}`],
+      evidence: [`Title: ${title}`, `Tags count: ${(video.tags || []).length}`],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "SECURITY_ATTESTATION",
+          producer: "G08_SpamDeceptionGate",
+          method: "DETERMINISTIC_PROBE",
+          confidence: 0.96,
+        }),
+      ],
       affectedStages: [],
       evaluationType: "HYBRID",
       confidence: 0.96,
