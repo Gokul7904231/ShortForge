@@ -96,6 +96,14 @@ data/voice-cache/
 **/data/voice-cache/
 data/scene-cache/
 **/data/scene-cache/
+data/cas_storage/
+**/data/cas_storage/
+data/evidence/screenshots/
+**/data/evidence/screenshots/
+data/overseer imgs/
+**/data/overseer imgs/
+apps/web/local-ai/output/
+**/local-ai/output/
 .factoryos/
 **/.factoryos/
 .factoryos_render_cache/
@@ -103,6 +111,7 @@ data/scene-cache/
 graphify-out/
 *.db
 *.db-journal
+
 
 # development & audit tools
 .unlighthouse/

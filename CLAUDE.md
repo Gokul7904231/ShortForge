@@ -11,7 +11,7 @@ ShortForge (rebrand of FactoryOS — infra names `factoryos` preserved) — AI S
 - **Pipeline Stages** (`services/pipeline/floor01_*` … `floor06_*` + `guardian/`) — domain slices of the assembly line (hexagonal `app/`)
 - **Compliance Gate** (`archive/floor07_compliance_2026-08-23/`) — FastAPI quality gate — **archived, not in live path**
 
-Live path: `apps/web POST /api/generate-video` (Zod + atomic quota + scriptAgent) → `saveJobManifest + SQLiteRenderQueue.enqueue + executionToken` → warm pool `POST {BASIC_RENDER_API_URL}/api/render/jobs` (sub-60s) or `repository_dispatch` → `services/rendering-engine/scripts/create_short.py` → FFmpeg/Pillow/edge-tts/whisper → ffprobe → Cloudinary/Firestore → `POST /api/rendering/callback` (`timingSafeEqual`, idempotent) → `GET /api/job-status/[id]` poll + SSE. See `docs/ARCHITECTURE.md` (authoritative, 698 lines).
+Live path: `apps/web POST /api/generate-video` (Zod + atomic quota + scriptAgent) → `saveJobManifest + SQLiteRenderQueue.enqueue + executionToken` → warm pool `POST {BASIC_RENDER_API_URL}/api/render/jobs` (sub-60s) or `repository_dispatch` → `services/rendering-engine/scripts/create_short.py` → FFmpeg/Pillow/edge-tts/whisper → ffprobe → Cloudinary/Firestore → `POST /api/rendering/callback` (`timingSafeEqual`, idempotent) → `GET /api/job-status/[id]` poll + SSE. See [`docs/architecture/current.md`](docs/architecture/current.md) and [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md).
 
 ## Repository Structure
 
@@ -51,12 +51,16 @@ aishorts/   (monorepo — git ls-files is source of truth; gen-v/ and floors/ on
 │       ├── floor01_strategy/  floor02_scripting/  floor03_asset_realization/
 │       ├── floor04_media_synthesis/  floor05_timeline_composition/  floor06_rendering/
 │       └── guardian/                 # Watchdog, Decision Ledger, CircuitBreaker
-├── docs/
-│   ├── ARCHITECTURE.md               # Authoritative live design (698 lines) — read this first
-│   ├── architecture/                 # AUTHENTICATION.md · BASIC_CLOUD_RENDERING.md · BYOLM.md
+├── docs/                             # Canonical Documentation Authority (docs/README.md)
+│   ├── architecture/                 # current.md · system-overview.md · authentication.md
+│   ├── factoryos/                    # agent-contracts.md · event-contracts.md · hierarchy.md
+│   ├── compute/                      # basic-cloud-rendering.md
+│   ├── intelligence/                 # byolm.md
+│   ├── security/                     # threat-model.md · strix-security-workflow.md
+│   ├── deployment/                   # auth-migration.md · local-ai-setup.md
+│   ├── verification/                 # requirements/traceability-matrix.md · f07/ · reports/
 │   ├── akb/                          # Architecture Knowledge Base (EA-001, RA-007, …)
-│   ├── deployment/                   # AUTH_MIGRATION.md · LOCAL_AI_SETUP.md
-│   └── factoryos/                    # frontier-v2-*, overseer-*, STRIX_SECURITY_WORKFLOW.md
+│   └── archive/                      # Historical reports and superseded drafts
 ├── archive/floor07_compliance_2026-08-23/ # Archived Compliance Gate — Poetry, Hexagonal (docker-compose: api+postgres+redis)
 ├── .github/workflows/                # ci.yml · factoryos-render-worker.yml (cron * * * * *) · factoryos-basic-render.yml
 ├── firebase.json  vercel.json  commitlint.config.js  LICENSE (MIT)

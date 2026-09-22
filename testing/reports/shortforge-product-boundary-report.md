@@ -29,7 +29,7 @@ Prior to this boundary separation, several internal operator systems were expose
 
 ## 3. Explicit Route Classification
 
-Per architectural requirements, a blanket `/factory/*` restriction was **strictly avoided**, because `/factory/templates` and `/factory/jobs` are legitimate creator surfaces. Explicit classification was centralized in [`apps/web/lib/core/RouteRegistry.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/lib/core/RouteRegistry.ts):
+Per architectural requirements, a blanket `/factory/*` restriction was **strictly avoided**, because `/factory/templates` and `/factory/jobs` are legitimate creator surfaces. Explicit classification was centralized in [`apps/web/lib/core/RouteRegistry.ts`](apps/web/lib/core/RouteRegistry.ts):
 
 | Route | Surface | Min Role | Description |
 |---|---|---|---|
@@ -72,9 +72,9 @@ Client-side UI hiding is strictly treated as defense-in-depth. Server-side autho
    - Creator routes like `/factory/templates` and `/factory/jobs` pass through unimpeded.
 
 2. **Internal API Protection**:
-   - [`/api/models`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/app/api/models/route.ts): Enforced via `verifyAuthAndRole(request, "ADMIN")`. Returns 403 to non-admins with no model passport data.
-   - [`/api/providers`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/app/api/providers/route.ts): Enforced via `verifyAuthAndRole(request, "ADMIN")`.
-   - [`/api/settings/api`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/app/api/settings/api/route.ts) & test endpoint: Enforced via `verifyAuthAndRole(request, "ADMIN")`.
+   - [`/api/models`](apps/web/app/api/models/route.ts): Enforced via `verifyAuthAndRole(request, "ADMIN")`. Returns 403 to non-admins with no model passport data.
+   - [`/api/providers`](apps/web/app/api/providers/route.ts): Enforced via `verifyAuthAndRole(request, "ADMIN")`.
+   - [`/api/settings/api`](apps/web/app/api/settings/api/route.ts) & test endpoint: Enforced via `verifyAuthAndRole(request, "ADMIN")`.
 
 3. **Creator-Safe Projection on `/api/factory-state`**:
    - When requested by non-admins, returns `surface: "creator"`, exposing only personal generation jobs, engine availability, and pipeline readiness.
@@ -100,7 +100,7 @@ Client-side UI hiding is strictly treated as defense-in-depth. Server-side autho
 
 ## 6. Creator Status Projection
 
-Underlying execution stages (F1-F7, DAG nodes, worker phases) are translated via [`apps/web/lib/presentation/JobStatusProjection.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/lib/presentation/JobStatusProjection.ts):
+Underlying execution stages (F1-F7, DAG nodes, worker phases) are translated via [`apps/web/lib/presentation/JobStatusProjection.ts`](apps/web/lib/presentation/JobStatusProjection.ts):
 
 | Internal State / Floor | Creator Projected Status |
 |---|---|
