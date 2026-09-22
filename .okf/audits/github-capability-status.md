@@ -18,7 +18,7 @@
 | **2. Prime Agent** | Multi-agent task hierarchy & autonomous delegation | `CONCEPT_ONLY` | **PARTIAL** | **YES** | **YES** | **NO** | **YES** | Architecture inspired `AutonomousFactoryController.ts` task node DAG; no upstream code used. |
 | **3. Ruflo** | Agent swarms, watchdog heartbeats, lease management | `CLEAN_ROOM_REIMPLEMENTATION` | **YES** | **YES** | **YES** | **NO** | **YES** | `apps/web/factoryos/core/guardian/GuardianKernel.ts`, `SlayerZoneLeases.ts`. Verified in `phase7-agent-heartbeat.test.ts`. |
 | **4. ElizaOS** | Conversational personality & multi-channel presence | `CONCEPT_ONLY` | **PARTIAL** | **YES** | **YES** | **NO** | **YES** | Inspired Overseer system prompt persona and dynamic interaction in `OverseerCognitionProvider.ts`. |
-| **5. OpenMAIC** (`openmaic-orchestrator`) | Multi-agent interactive conversation graph | `CONCEPT_ONLY` | **NO** | **NO** | **NO** | **NO** | **NO** | Referenced in `.ofk/research/repo-research-ledger.md` as reference only; no direct implementation in codebase. |
+| **5. OpenMAIC** (`openmaic-orchestrator`) | Multi-agent interactive conversation graph | `CONCEPT_ONLY` | **NO** | **NO** | **NO** | **NO** | **NO** | Referenced in `.okf/research/repo-research-ledger.md` as reference only; no direct implementation in codebase. |
 | **6. Lightpanda** (`lightpanda-io/browser`) | Machine browser for AI agents; low-memory headless execution | `ISOLATED_PROVIDER` | **YES** | **YES** | **YES** | **NO** | **NO (Staging)** | `apps/web/factoryos/core/research/LightpandaBrowserAdapter.ts`. Network boundary adapter (HTTP JSON-RPC). Zero AGPL code in bundle. Falls back to clean-room DOM parser. |
 | **7. Camofox Browser** (`camofox-browser`) | Anti-fingerprinting proxy architecture for egress web research | `CONCEPT_ONLY` | **NO** | **NO** | **NO** | **NO** | **NO** | Referenced in `ReachSubsystem.ts` architectural comments; not implemented as executable code. |
 | **8. Voice Studio** (`voice-studio-ref`) | Multi-engine voice fallback chains & preflight audio benchmarking | `CLEAN_ROOM_REIMPLEMENTATION` | **YES** | **YES** | **YES** | **YES (Edge TTS)** | **YES** | `apps/web/factoryos/core/voice/VoiceFabric.ts`. Native multi-provider engine with degraded fallback tracking. Verified in `voice-provider-failure-matrix.test.ts`. |
@@ -33,7 +33,7 @@
 | **17. Varlock** | Secret lifecycle management & credential isolation | `CLEAN_ROOM_REIMPLEMENTATION` | **YES** | **YES** | **YES** | **NO** | **YES** | `detectCredentialState()` in `VoiceFabric.ts` and redaction guards across Overseer logging. |
 | **18. public-apis** | Free public data endpoints for grounding evidence | `CONCEPT_ONLY` | **YES** | **YES** | **YES** | **YES** | **YES** | Wikipedia API search in `ExternalEvidenceRetriever.ts` for unauthenticated grounding. |
 | **19. AgentTube** | Headless browser video rendering optimization | `CONCEPT_ONLY` | **NO** | **NO** | **NO** | **NO** | **NO** | Replaced by deterministic FFmpeg rendering architecture. |
-| **20. Additional .ofk Repositories** | Various architecture reference patterns | `CONCEPT_ONLY` | **NO** | **NO** | **NO** | **NO** | **NO** | Listed in `.ofk/` ledger as theoretical background only. |
+| **20. Additional .okf Repositories** | Various architecture reference patterns | `CONCEPT_ONLY` | **NO** | **NO** | **NO** | **NO** | **NO** | Listed in `.okf/` ledger as theoretical background only. |
 
 ---
 

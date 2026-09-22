@@ -39,7 +39,7 @@ describe("FactoryOS Frontier v3 — Overseer Cognitive Runtime & Intent Routing 
     expect(res.answer).not.toContain("RAG");
   });
 
-  it("3. Document Lookup: routes to DOCUMENT_LOOKUP and retrieves from .ofk knowledge pack", async () => {
+  it("3. Document Lookup: routes to DOCUMENT_LOOKUP and retrieves from .okf knowledge pack", async () => {
     const res = await pipeline.processUserQuery("What does our brand guide say?", {
       userId: "u1",
       userRole: "CREATOR",

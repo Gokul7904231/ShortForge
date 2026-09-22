@@ -309,7 +309,7 @@ export class OverseerCognitionClient {
         requiresLiveResearch = true;
       } else if (userPromptLower.includes("brand guide") || userPromptLower.includes("document") || userPromptLower.includes("doc")) {
         intent = "DOCUMENT_LOOKUP";
-        sourceClass = "OFK_KNOWLEDGE";
+        sourceClass = "OKF_KNOWLEDGE";
         responseMode = "DIRECT_FACT";
       } else if (userPromptLower.includes("quota") || userPromptLower.includes("credit") || userPromptLower.includes("balance")) {
         intent = "QUOTA";

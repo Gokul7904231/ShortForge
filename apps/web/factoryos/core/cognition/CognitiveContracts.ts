@@ -32,6 +32,7 @@ export type CognitiveResponseMode =
 export type SourceClass =
   | "FACTORY_TELEMETRY"
   | "AGENT_REACH"
+  | "OKF_KNOWLEDGE"
   | "OFK_KNOWLEDGE"
   | "QUOTA_SERVICE"
   | "MISSION_DATABASE"

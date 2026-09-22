@@ -26,7 +26,7 @@
 - **Branch**: `chore/rename-shortforge`
 - **HEAD Commit**: `44c9c2c feature: enable persistent hero video autoplay and add factoryos contracts`
 - **Working Tree**: Modified files in `apps/web/`, `docs/`, `services/rendering-engine/`.
-- **Untracked Directories**: `.ofk/`, `apps/web/app/api/fabric/`, `apps/web/factoryos/core/rendering/`, `apps/web/factoryos/core/voice/`, etc.
+- **Untracked Directories**: `.okf/`, `apps/web/app/api/fabric/`, `apps/web/factoryos/core/rendering/`, `apps/web/factoryos/core/voice/`, etc.
 
 ### Build & Typecheck Gates
 | Gate | Command | Duration | Exit Code | Invariants Checked |
@@ -121,8 +121,8 @@ Outbox / Delivery (Google Drive Adapter)
 | 44 | **Code Intelligence** | — | — | **1 (RESEARCHED / CONCEPT ONLY)** | No AST self-rewriting in production. |
 | 45 | **Self-Improvement / Autonomy** | `factoryos/core/controller/` | `autonomous-e2e.test.ts` | **4 (PARTIALLY IMPLEMENTED)** | Autonomous retry and fallback routing work; model self-training is not started. |
 | 46 | **CI/CD** | `.github/workflows/` | GitHub Actions runs | **6 (INTEGRATED)** | Typecheck, build, render keepalive, and CI validation pipelines active. |
-| 47 | **Open-Source Governance** | `.ofk/research/repo-research-ledger.md` | Audit logs | **9 (PRODUCTION READY)** | Clean-room reimplementations; strict AGPL isolation boundaries enforced. |
-| 48 | **.ofk Documentation** | `.ofk/` | Documentation inspection | **9 (PRODUCTION READY)** | Complete architectural provenance, security models, floor specifications. |
+| 47 | **Open-Source Governance** | `.okf/research/repo-research-ledger.md` | Audit logs | **9 (PRODUCTION READY)** | Clean-room reimplementations; strict AGPL isolation boundaries enforced. |
+| 48 | **.okf Documentation** | `.okf/` | Documentation inspection | **9 (PRODUCTION READY)** | Complete architectural provenance, security models, floor specifications. |
 | 49 | **Security & RBAC** | `lib/auth/roles.ts`, `factoryos/core/cognitive/` | `auth-security-complete.test.ts` | **7 (TEST VERIFIED)** | Role-based authorization (`CREATOR`, `OPERATOR`, `GUARDIAN`, `OVERSEER`, `ADMIN`). |
 | 50 | **Failure Recovery** | `factoryos/core/recovery/` | `process-crash-recovery.test.ts`, `chaos-recovery.test.ts` | **7 (TEST VERIFIED)** | Crash recovery, checkpoint restoration, watchdog restarts. |
 | 51 | **Distributed Execution** | Azure VM + Local Worker | `live-azure-daemon-e2e.test.ts` | **7 (TEST VERIFIED)** | At-least-once task delivery with idempotent callback processing. |

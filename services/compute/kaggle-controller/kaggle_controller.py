@@ -305,7 +305,7 @@ def main():
 
         metadata = {
             "id": kernel_id,
-            "title": f"ShortForge Real Kaggle — {args.job_id}",
+            "title": kernel_slug,
             "code_file": "worker.py",
             "language": "python",
             "kernel_type": "script",

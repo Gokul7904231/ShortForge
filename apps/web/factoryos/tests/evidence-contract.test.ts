@@ -42,7 +42,7 @@ describe("FactoryOS — Zero-Placeholder Evidence Contract Suite", () => {
     expect(ev.type).toBe("DOCUMENT");
     expect(ev.state).toBe("EMPTY");
     expect(ev.data).toBeNull();
-    expect(ev.error).toContain("No .ofk or workspace document");
+    expect(ev.error).toContain("No .okf or workspace document");
   });
 
   it("04: MissionStateService scopes video status to authenticated user", async () => {

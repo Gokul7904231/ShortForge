@@ -24,7 +24,7 @@ function checkFfmpeg(): boolean {
 describe("FactoryOS Second-Wave Remediation — Real Artifact Pipeline & Forensic Governance", () => {
   const hasFfmpeg = checkFfmpeg();
   let generatedArtifact: RenderArtifact;
-  const testOutputDir = path.resolve(process.cwd(), ".ofk", "renders");
+  const testOutputDir = path.resolve(process.cwd(), ".okf", "renders");
 
   beforeAll(() => {
     if (!fs.existsSync(testOutputDir)) {
