@@ -10,19 +10,19 @@
 
 | Component | File / Path | Coverage / Status | Real / Mock / Proxy |
 |---|---|---|---|
-| **Core Runtime** | [FactoryRuntime.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/runtime/FactoryRuntime.ts) | Verified (100% type-safe) | REAL |
-| **Workflow Execution** | [WorkflowRunner.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/runtime/WorkflowRunner.ts) | Verified (concurrency safe) | REAL |
-| **State Machine** | [StateMachine.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/state/StateMachine.ts) | Verified (terminal checks) | REAL |
-| **Checkpoints** | [InMemoryCheckpointStore.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/checkpoint/CheckpointStore.ts) | Verified (isolation clone) | REAL |
-| **Tool Registry** | [ToolRegistry.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/tools/ToolRegistry.ts) | Verified (non-duplication) | REAL |
-| **Tool Executor** | [ToolExecutor.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/tools/ToolExecutor.ts) | Verified (least-privilege check) | REAL |
-| **Vector Retrieval** | [LocalVectorEmbeddingProvider.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/rag/vector/LocalVectorEmbeddingProvider.ts) | ONNX Dense Embeddings (384d) | REAL |
-| **Graph Retrieval** | [GraphRetrieverImpl.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/rag/graph/GraphRetrieverImpl.ts) | Cycle-proof BFS traversal | REAL |
-| **Hybrid Retrieval** | [EvidenceFusion.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/rag/hybrid/EvidenceFusion.ts) | Linear score fusion capped 1.0 | REAL |
-| **Evaluation Guardian** | [EvaluationGuardianImpl.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/guardian/EvaluationGuardianImpl.ts) | Deterministic metric scoring | REAL |
-| **Repair Engine** | [LocalRepairEngine.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/repair/LocalRepairEngine.ts) | Bounded attempts loop | REAL |
-| **Safe Overseer** | [OverseerImpl.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/overseer/OverseerImpl.ts) | Supervisory control plane | REAL |
-| **Observability Telemetry** | [ObservabilityManager.ts](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/observability/ObservabilityManager.ts) | Traces, Logs, Metrics collection | REAL |
+| **Core Runtime** | [FactoryRuntime.ts](gen-v/factoryos/core/runtime/FactoryRuntime.ts) | Verified (100% type-safe) | REAL |
+| **Workflow Execution** | [WorkflowRunner.ts](gen-v/factoryos/core/runtime/WorkflowRunner.ts) | Verified (concurrency safe) | REAL |
+| **State Machine** | [StateMachine.ts](gen-v/factoryos/core/state/StateMachine.ts) | Verified (terminal checks) | REAL |
+| **Checkpoints** | [InMemoryCheckpointStore.ts](gen-v/factoryos/core/checkpoint/CheckpointStore.ts) | Verified (isolation clone) | REAL |
+| **Tool Registry** | [ToolRegistry.ts](gen-v/factoryos/core/tools/ToolRegistry.ts) | Verified (non-duplication) | REAL |
+| **Tool Executor** | [ToolExecutor.ts](gen-v/factoryos/core/tools/ToolExecutor.ts) | Verified (least-privilege check) | REAL |
+| **Vector Retrieval** | [LocalVectorEmbeddingProvider.ts](gen-v/factoryos/core/rag/vector/LocalVectorEmbeddingProvider.ts) | ONNX Dense Embeddings (384d) | REAL |
+| **Graph Retrieval** | [GraphRetrieverImpl.ts](gen-v/factoryos/core/rag/graph/GraphRetrieverImpl.ts) | Cycle-proof BFS traversal | REAL |
+| **Hybrid Retrieval** | [EvidenceFusion.ts](gen-v/factoryos/core/rag/hybrid/EvidenceFusion.ts) | Linear score fusion capped 1.0 | REAL |
+| **Evaluation Guardian** | [EvaluationGuardianImpl.ts](gen-v/factoryos/core/guardian/EvaluationGuardianImpl.ts) | Deterministic metric scoring | REAL |
+| **Repair Engine** | [LocalRepairEngine.ts](gen-v/factoryos/core/repair/LocalRepairEngine.ts) | Bounded attempts loop | REAL |
+| **Safe Overseer** | [OverseerImpl.ts](gen-v/factoryos/core/overseer/OverseerImpl.ts) | Supervisory control plane | REAL |
+| **Observability Telemetry** | [ObservabilityManager.ts](gen-v/factoryos/core/observability/ObservabilityManager.ts) | Traces, Logs, Metrics collection | REAL |
 
 ---
 

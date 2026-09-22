@@ -197,7 +197,7 @@ All recipes conform to strict 9:16 vertical safe areas (Top: 160px, Bottom: 320p
 ```text
 === FactoryOS Render Engine Diagnostics (v0.1.0) ===
 OS: Windows (AMD64)
-Python: 3.13.3 (C:\Users\ASUS\AppData\Local\Programs\Python\Python313\python.exe)
+Python: 3.13.3 (python.exe)
 FFmpeg: ffmpeg version 8.1.2-full_build-www.gyan.dev
 Pillow: 11.3.0
 Disk: 31.64 GB available in current workspace
