@@ -1,0 +1,59 @@
+rules:
+  - id: shortforge-client-trusted-role
+    languages: [typescript, javascript]
+    message: "Potential client-trusted role assignment. Ensure role is derived from verified server session, not client body."
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: $ROLE = $REQ.role
+          - pattern: $ROLE = $BODY.role
+
+  - id: shortforge-client-trusted-userid
+    languages: [typescript, javascript]
+    message: "Potential client-trusted userId parameter. Verify against authenticated session UID."
+    severity: WARNING
+    patterns:
+      - pattern: $USERID = $BODY.userId
+
+  - id: shortforge-dangerous-fetch-ssrf
+    languages: [typescript, javascript]
+    message: "Dynamic fetch call with potential unvalidated remote target. Validate target hostname against allowed allowlist."
+    severity: WARNING
+    patterns:
+      - pattern: fetch($URL, $OPTIONS)
+      - pattern-not: fetch("/api/..." , ...)
+      - pattern-not: fetch("http://localhost:..." , ...)
+      - pattern-not: fetch(`${process.env.BASIC_RENDER_API_URL}...` , ...)
+
+  - id: shortforge-credential-logging
+    languages: [typescript, javascript]
+    message: "Potential sensitive credential logging. Avoid logging secrets, tokens, or API keys."
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: console.log(..., $KEY.apiKey, ...)
+          - pattern: console.log(..., $KEY.secret, ...)
+          - pattern: console.log(..., $KEY.token, ...)
+          - pattern: console.log(..., $KEY.password, ...)
+          - pattern: console.error(..., $KEY.apiKey, ...)
+          - pattern: console.warn(..., $KEY.apiKey, ...)
+
+  - id: shortforge-command-execution
+    languages: [typescript, javascript]
+    message: "Process execution sink detected. Ensure arguments are strictly parameterized."
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: spawn($CMD, ...)
+
+  - id: shortforge-path-traversal
+    languages: [typescript, javascript]
+    message: "Filesystem operation with dynamic path. Ensure path is sanitized against directory traversal."
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: fs.readFileSync(path.join($DIR, $USER_INPUT), ...)
+          - pattern: fs.writeFileSync(path.join($DIR, $USER_INPUT), ...)
+          - pattern: fs.unlinkSync(path.join($DIR, $USER_INPUT), ...)

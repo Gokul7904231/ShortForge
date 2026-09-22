@@ -9,10 +9,17 @@ import {
   Brain,
   Cpu,
   RefreshCw,
+  KeyRound,
+  Sliders,
+  Search,
 } from "lucide-react";
 import { OverseerActivity, type ActivityEvent } from "./OverseerActivity";
+import { AnalystResearchPanel } from "../../factoryos/AnalystResearchPanel";
+import { VoiceFabricPanel } from "../../factoryos/VoiceFabricPanel";
+import { RenderFabricPanel } from "../../factoryos/RenderFabricPanel";
+import { CapabilityRegistryPanel } from "../../factoryos/CapabilityRegistryPanel";
 
-export type DisclosurePanel = "floors" | "missions" | "cases" | "decisions" | "activity";
+export type DisclosurePanel = "floors" | "capabilities" | "fabrics" | "missions" | "cases" | "decisions" | "activity";
 
 export interface OperationalStateData {
   floors?: Array<{
@@ -50,6 +57,14 @@ export interface OperationalStateData {
     timestamp: string;
   }>;
   activity?: ActivityEvent[];
+  subsystems?: {
+    capabilities?: any[];
+    voiceFabric?: any;
+    renderFabric?: any;
+    evolutionBrain?: any;
+    contentGenome?: any;
+    researchRuntime?: any;
+  };
 }
 
 interface ProgressiveDisclosureProps {
@@ -77,12 +92,7 @@ export const OverseerProgressiveDisclosure: React.FC<ProgressiveDisclosureProps>
 
   if (!activePanel) return null;
 
-  const floors = stateData?.floors || [
-    { floorId: "floor01_strategy", name: "FLOOR 01 — STRATEGY", status: "ONLINE", workersCount: 1 },
-    { floorId: "floor02_scripting", name: "FLOOR 02 — SCRIPTING", status: "ONLINE", workersCount: 2 },
-    { floorId: "floor03_asset_realization", name: "FLOOR 03 — ASSET REALIZATION", status: "ONLINE", workersCount: 4 },
-    { floorId: "floor07_compliance", name: "FLOOR 07 — COMPLIANCE", status: "ONLINE", workersCount: 1 },
-  ];
+  const floors = stateData?.floors || [];
 
   const missions = stateData?.missions || [];
   const cases = stateData?.cases || [];
@@ -134,6 +144,8 @@ export const OverseerProgressiveDisclosure: React.FC<ProgressiveDisclosureProps>
       <div className="flex items-center gap-1.5 pb-2 border-b border-white/[0.06] overflow-x-auto text-xs font-mono">
         {[
           { id: "floors", label: "Floors", icon: Layers, count: floors.length },
+          { id: "capabilities", label: "Capabilities", icon: KeyRound, count: stateData?.subsystems?.capabilities?.length ?? 0 },
+          { id: "fabrics", label: "Fabrics", icon: Sliders, count: (stateData?.subsystems as any)?.fabrics?.length ?? undefined },
           { id: "missions", label: "Missions", icon: Target, count: missions.length },
           { id: "cases", label: "Cases", icon: ShieldAlert, count: cases.length },
           { id: "decisions", label: "Decisions", icon: Brain, count: decisions.length },
@@ -154,9 +166,11 @@ export const OverseerProgressiveDisclosure: React.FC<ProgressiveDisclosureProps>
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
-              <span className={`text-[10px] px-1 py-0.2 rounded ${isActive ? "bg-white/20 text-white" : "bg-[#0A1220] text-[#667085]"}`}>
-                {tab.count}
-              </span>
+              {tab.count !== undefined && (
+                <span className={`text-[10px] px-1 py-0.2 rounded ${isActive ? "bg-white/20 text-white" : "bg-[#0A1220] text-[#667085]"}`}>
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -198,10 +212,31 @@ export const OverseerProgressiveDisclosure: React.FC<ProgressiveDisclosureProps>
                 </div>
               );
             })}
+            <div className="pt-2 border-t border-white/[0.06]">
+              <span className="text-[10px] font-mono text-[#667085] uppercase tracking-wider block mb-2">
+                Floor 00 — Research & Intelligence Seam
+              </span>
+              <AnalystResearchPanel />
+            </div>
           </div>
         )}
 
-        {/* 2. MISSIONS TAB */}
+        {/* 2. CAPABILITIES TAB */}
+        {selectedTab === "capabilities" && (
+          <div className="space-y-3">
+            <CapabilityRegistryPanel capabilities={stateData?.subsystems?.capabilities} />
+          </div>
+        )}
+
+        {/* 3. FABRICS TAB */}
+        {selectedTab === "fabrics" && (
+          <div className="space-y-4">
+            <VoiceFabricPanel />
+            <RenderFabricPanel />
+          </div>
+        )}
+
+        {/* 4. MISSIONS TAB */}
         {selectedTab === "missions" && (
           <div className="space-y-3">
             {missions.length === 0 ? (

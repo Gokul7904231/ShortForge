@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["factoryos/tests/**/*.test.ts", "tests/**/*.test.ts", "shortforge/tests/**/*.test.ts"],
+    include: ["factoryos/tests/**/*.test.ts", "tests/**/*.test.ts", "shortforge/tests/**/*.test.ts", "../../testing/tests/**/*.test.ts"],
     environment: "node",
     globals: false,
     reporters: ["verbose"],

@@ -32,6 +32,8 @@ export interface DeliveryArtifact {
   uploadedAt?: string;
   deliveryMethod: "GOOGLE_DRIVE" | "LOCAL_OUTBOX";
   verified: boolean;
+  storageUrl?: string;
+  sha256?: string;
 }
 
 export interface ProductionJob {

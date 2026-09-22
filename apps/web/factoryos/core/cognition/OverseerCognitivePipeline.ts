@@ -31,6 +31,9 @@ export interface PipelineExecutionResult {
   }>;
   review?: ResponseReview;
   clarificationRequired?: boolean;
+  success?: boolean;
+  error?: string;
+  errorCode?: string;
 }
 
 export class OverseerCognitivePipeline {
@@ -102,7 +105,28 @@ export class OverseerCognitivePipeline {
     });
 
     // Stage 4: Cognitive Evidence Synthesis
-    let answer = await this.cognitive.synthesize(message, contract, evidence, toolOutputs);
+    let answer = "";
+    try {
+      answer = await this.cognitive.synthesize(message, contract, evidence, toolOutputs);
+    } catch (err: any) {
+      traces.push({
+        stage: "SYNTHESIS",
+        detail: `Synthesis failed: ${err.message}`,
+        timestamp: new Date().toISOString(),
+      });
+      return {
+        intent: classification.intent,
+        answer: "Overseer is currently unable to reach its reasoning service.",
+        sourceUsed: "COGNITIVE_ERROR",
+        evidence,
+        evidenceRecord,
+        traces,
+        clarificationRequired: false,
+        success: false,
+        error: err.message,
+        errorCode: err.errorCode || "PROVIDER_UNAVAILABLE",
+      };
+    }
 
     traces.push({
       stage: "SYNTHESIS",
@@ -111,37 +135,51 @@ export class OverseerCognitivePipeline {
     });
 
     // Stage 5: Response Review (Max 1 controlled rewrite)
-    const review = await this.cognitive.review(message, answer, evidence, contract);
-    if (review.shouldRewrite && review.rewriteGuidance) {
-      traces.push({
-        stage: "REVIEW",
-        detail: `Rewriting response due to review guidance: ${review.rewriteGuidance}`,
-        timestamp: new Date().toISOString(),
-      });
-      answer = await this.cognitive.synthesize(
-        `${message} (Guidance: ${review.rewriteGuidance})`,
-        contract,
-        evidence,
-        toolOutputs
-      );
-    } else {
-      traces.push({
-        stage: "REVIEW",
-        detail: `Review passed: topicAdherent=${review.topicAdherent}, factuallyGrounded=${review.factuallyGrounded}`,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    try {
+      const review = await this.cognitive.review(message, answer, evidence, contract);
+      if (review.shouldRewrite && review.rewriteGuidance) {
+        traces.push({
+          stage: "REVIEW",
+          detail: `Rewriting response due to review guidance: ${review.rewriteGuidance}`,
+          timestamp: new Date().toISOString(),
+        });
+        answer = await this.cognitive.synthesize(
+          `${message} (Guidance: ${review.rewriteGuidance})`,
+          contract,
+          evidence,
+          toolOutputs
+        );
+      } else {
+        traces.push({
+          stage: "REVIEW",
+          detail: `Review passed: topicAdherent=${review.topicAdherent}, factuallyGrounded=${review.factuallyGrounded}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
-    return {
-      intent: classification.intent,
-      answer,
-      sourceUsed,
-      evidence,
-      evidenceRecord,
-      traces,
-      review,
-      clarificationRequired: false,
-    };
+      return {
+        intent: classification.intent,
+        answer,
+        sourceUsed,
+        evidence,
+        evidenceRecord,
+        traces,
+        review,
+        clarificationRequired: false,
+        success: true,
+      };
+    } catch {
+      return {
+        intent: classification.intent,
+        answer,
+        sourceUsed,
+        evidence,
+        evidenceRecord,
+        traces,
+        clarificationRequired: false,
+        success: true,
+      };
+    }
   }
 
   private buildAnswerContract(message: string, classification: IntentClassification): AnswerContract {

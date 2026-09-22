@@ -49,6 +49,26 @@ export async function GET(request: Request) {
       console.warn("[API /factory-state] Firestore jobs read skipped:", e.message);
     }
 
+    if (jobs.length === 0) {
+      try {
+        const { getJobsIndex } = await import("@/lib/jobs-history");
+        const effectiveUser = authenticatedUser && !isAdminUser(authenticatedUser.role) ? authenticatedUser.uid : "anonymous";
+        const localJobs = await getJobsIndex(effectiveUser);
+        if (localJobs && localJobs.length > 0) {
+          jobs = localJobs.slice(0, 50).map((data: any) => ({
+            id: data.id || data.jobId,
+            jobId: data.jobId || data.id,
+            topic: data.topic || "Unknown Topic",
+            status: data.status || "queued",
+            createdAt: data.createdAt || new Date().toISOString(),
+            renderDurationSeconds: data.renderDurationSeconds || 0,
+            videoUrl: data.videoUrl || (data.status === "completed" ? `/api/media/video/${data.id || data.jobId}` : null),
+            telemetry: data.telemetry || null,
+          }));
+        }
+      } catch {}
+    }
+
     // 2. Queue stats
     let storageQueue: any[] = [];
     let storageDead: any[] = [];
@@ -119,8 +139,31 @@ export async function GET(request: Request) {
       }
     } catch {}
 
+    const isOperator = authenticatedUser && isAdminUser(authenticatedUser.role);
+
+    // 1. For BASIC / CREATOR users: Return EXCLUSIVELY creator-safe projection (Correction 4)
+    if (!isOperator) {
+      return NextResponse.json({
+        success: true,
+        surface: "creator",
+        timestamp: Date.now(),
+        jobs,
+        jobsSummary: {
+          total: totalJobsCount,
+          completed: completedCount,
+          failed: failedCount,
+          running: runningCount,
+          queued: queuedCount,
+        },
+        activeEngines,
+        pipelineReady: true,
+      });
+    }
+
+    // 2. For OPERATOR / ADMIN users: Return full FactoryOS control plane telemetry
     return NextResponse.json({
       success: true,
+      surface: "factory",
       timestamp: Date.now(),
       system: {
         cpuUsagePct,

@@ -35,11 +35,20 @@ export class GroqProviderPlugin extends BaseProviderPlugin {
     this.chatAdapter = {
       id: "groq-chat",
       generateText: async (params, signal) => {
-        const rawModelName = params.model || "llama3-8b-8192";
-        const modelName = rawModelName.replace("groq/", "");
+        let rawModelName = params.model || process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
+        let modelName = rawModelName.replace("groq/", "");
+        if (
+          modelName.includes("llama3-8b") ||
+          modelName.includes("llama3-70b") ||
+          modelName.includes("llama-3.1") ||
+          modelName.includes("llama-3.3") ||
+          modelName.includes("gpt-oss")
+        ) {
+          modelName = "qwen/qwen3.8-27b";
+        }
 
         const groq = createOpenAI({
-          apiKey: this.apiKey,
+          apiKey: (params as any).apiKey || this.apiKey,
           baseURL: this.baseUrl,
         });
 

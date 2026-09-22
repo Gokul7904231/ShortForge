@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0.0",
+  "missionId": "golden-short-001",
+  "runId": "run_slayer_forensic_1788944000000",
+  "createdAt": "2026-09-09T14:15:00.000Z",
+  "nodes": [
+    {
+      "id": "node_anomaly_gemini_504",
+      "type": "FAILURE",
+      "label": "Gemini TTS 504 Gateway Timeout",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED",
+      "metadata": {
+        "rootCauseCandidate": true,
+        "errorCode": 504
+      }
+    },
+    {
+      "id": "floor04_media_synthesis",
+      "type": "FLOOR",
+      "label": "Floor 04 Media Synthesis",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED"
+    },
+    {
+      "id": "floor05_timeline_composition",
+      "type": "FLOOR",
+      "label": "Floor 05 Timeline (Downstream Impact)",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED"
+    },
+    {
+      "id": "node_recovery_local_wav",
+      "type": "RECOVERY",
+      "label": "Local PCM Audio Fallback",
+      "truthLevel": "VERIFIED",
+      "status": "COMPLETED",
+      "metadata": {
+        "recovered": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_cause_to_f4",
+      "from": "node_anomaly_gemini_504",
+      "to": "floor04_media_synthesis",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED"
+    },
+    {
+      "id": "edge_f4_to_downstream",
+      "from": "floor04_media_synthesis",
+      "to": "floor05_timeline_composition",
+      "type": "EXECUTION_SEQUENCE",
+      "truthLevel": "OBSERVED",
+      "status": "FAILED"
+    },
+    {
+      "id": "edge_f4_to_recovery",
+      "from": "floor04_media_synthesis",
+      "to": "node_recovery_local_wav",
+      "type": "RECOVERY",
+      "truthLevel": "VERIFIED",
+      "status": "COMPLETED"
+    }
+  ]
+}

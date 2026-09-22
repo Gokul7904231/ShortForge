@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" class="factoryos-graph" role="img" aria-label="Graph Delta: run_baseline_101 ➔ run_candidate_102">
+  <defs>
+    <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#71717a" />
+    </marker>
+    <marker id="arrow-critical" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-verified" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#10b981" />
+    </marker>
+    <filter id="focal-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3b82f6" flood-opacity="0.6" />
+    </filter>
+    <filter id="alert-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ef4444" flood-opacity="0.8" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#09090b" />
+  <g class="graph-header" transform="translate(40, 35)">
+    <text x="0" y="0" font-family="monospace" font-size="16" font-weight="bold" fill="#f4f4f5">Graph Delta: run_baseline_101 ➔ run_candidate_102</text>
+    <text x="0" y="18" font-family="monospace" font-size="11" fill="#a1a1aa">Before/After comparison: 1 added, 1 removed, 1 modified</text>
+  </g>
+  <g class="graph-edges">
+    <path id="edge_f4_to_fallback" data-edge-id="edge_f4_to_fallback" data-canonical-id="edge_f4_to_fallback" d="M 280 237 C 325 237, 325 104, 370 104" fill="none" stroke="#10b981" stroke-width="1.5"  marker-end="url(#arrow-verified)" class="edge-path" />
+    <path id="edge_f4_to_fallback_hit" data-edge-id="edge_f4_to_fallback" data-canonical-id="edge_f4_to_fallback" d="M 280 237 C 325 237, 325 104, 370 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f4_to_fallback" />
+    <text x="325" y="164.5" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">RECOVERY</text>
+  </g>
+  <g class="graph-nodes">
+    <g id="deprecated_legacy_cache" data-node-id="deprecated_legacy_cache" data-canonical-id="deprecated_legacy_cache" data-node-type="ARTIFACT" data-status="FAILED" data-truth="OBSERVED" class="graph-node" transform="translate(60, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node deprecated_legacy_cache: Legacy Audio Cache [- REMOVED]" filter="url(#alert-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#ef4444" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#ef4444" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">ARTIFACT</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">- REMOVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Legacy Audio Cache [- REM…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#ef4444">FAILED </text>
+    </g>
+    <g id="floor04_media_synthesis" data-node-id="floor04_media_synthesis" data-canonical-id="floor04_media_synthesis" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(60, 193)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor04_media_synthesis: Floor 04 Media Synthesis [~ MODIFIED]" filter="url(#focal-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3b82f6" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">~ MODIFIED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Floor 04 Media Synthesis …</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="gemini_voice_provider" data-node-id="gemini_voice_provider" data-canonical-id="gemini_voice_provider" data-node-type="FAILURE" data-status="FAILED" data-truth="OBSERVED" class="graph-node" transform="translate(60, 326)" cursor="pointer" role="button" tabindex="0" aria-label="Node gemini_voice_provider: Gemini TTS Provider [UNCHANGED]" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#ef4444" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FAILURE</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">UNCHANGED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Gemini TTS Provider [UNCH…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#ef4444">FAILED </text>
+    </g>
+    <g id="local_pcm_wav_fallback" data-node-id="local_pcm_wav_fallback" data-canonical-id="local_pcm_wav_fallback" data-node-type="RECOVERY" data-status="VERIFIED" data-truth="VERIFIED" class="graph-node" transform="translate(370, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node local_pcm_wav_fallback: Local PCM Audio Fallback [+ ADDED]" filter="url(#focal-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3b82f6" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">RECOVERY</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#10b981">+ ADDED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Local PCM Audio Fallback …</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+  </g>
+</svg>

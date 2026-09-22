@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { db } from "@/lib/firebase-admin";
 import { finalizeGenerationSlot, releaseGenerationSlot } from "@/lib/quota/quota-service";
+import { RemoteRenderStateMachine } from "@/factoryos/core/rendering/RemoteRenderStateMachine";
+import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
+import { VerificationEngine } from "@/factoryos/core/verification/VerificationEngine";
 
 import { readJobManifest, saveJobManifest } from "@/lib/jobs-history";
 
@@ -30,6 +35,7 @@ export async function POST(request: NextRequest) {
     const {
       jobId,
       status,
+      attemptId,
       videoUrl,
       videoSizeMb,
       renderDurationSeconds,
@@ -82,8 +88,29 @@ export async function POST(request: NextRequest) {
 
     const userId = jobData.userId || "anonymous";
 
-    // 2. Idempotency Check: Repeated callback for already completed job
-    if (jobData.status === "completed" && status === "completed") {
+    // 2. Remote Render State Machine — Attempt Monotonicity & Idempotency
+    const stateMachine = RemoteRenderStateMachine.getInstance();
+    if (!stateMachine.getJob(jobId)) {
+      stateMachine.registerJob({
+        jobId,
+        attemptId: (jobData as any).attemptId || 1,
+      });
+    }
+    const smResult = stateMachine.handleCallback(jobId, attemptId, {
+      status,
+      videoUrl,
+      artifactSha256,
+      error,
+    });
+
+    if (!smResult.accepted) {
+      return NextResponse.json(
+        { success: false, error: smResult.reason, currentAttempt: smResult.currentAttempt },
+        { status: 409 }
+      );
+    }
+
+    if (smResult.idempotent || (jobData.status === "completed" && status === "completed")) {
       return NextResponse.json({
         success: true,
         jobId,
@@ -98,17 +125,103 @@ export async function POST(request: NextRequest) {
 
     // 3. Handle Status Transitions & Idempotent Quota Reconciliations
     if (status === "completed") {
-      const now = new Date().toISOString();
-      const finalVideoUrl =
-        videoUrl ||
-        driveUrl ||
-        jobData.videoUrl ||
-        `https://storage.factoryos.app/renders/${jobId}.mp4`;
+      const candidateUrl = videoUrl || driveUrl;
+      if (!candidateUrl) {
+        return NextResponse.json(
+          { success: false, error: "Completion rejected: No physical videoUrl or driveUrl provided." },
+          { status: 400 }
+        );
+      }
 
-      const finalSizeMb =
-        videoSizeMb || (fileSize ? Number((fileSize / (1024 * 1024)).toFixed(2)) : jobData.videoSizeMb || 4.2);
-      const finalDuration =
-        renderDurationSeconds || duration || jobData.renderDurationSeconds || 30;
+      // First check if a physical local artifact exists for this job in data/renders/
+      const renderDir = path.join(process.cwd(), "data", "renders");
+      const localJobArtifactPath = path.join(renderDir, `${jobId}.mp4`);
+
+      const resolver = new ArtifactResolver();
+      let resolvedArtifact;
+      try {
+        let location;
+        if (candidateUrl.startsWith("file://") || !candidateUrl.startsWith("http")) {
+          location = { kind: "LOCAL" as const, path: candidateUrl.replace(/^file:\/\//, "") };
+        } else if (fs.existsSync(localJobArtifactPath)) {
+          // Local rendered artifact matches this job
+          location = { kind: "LOCAL" as const, path: localJobArtifactPath };
+        } else {
+          location = { kind: "REMOTE" as const, uri: candidateUrl, provider: "REMOTE_WORKER" };
+        }
+
+        resolvedArtifact = await resolver.resolve({
+          artifactId: `art_cb_${jobId}`,
+          jobId,
+          location,
+          mimeType: "video/mp4",
+          sha256: artifactSha256 || undefined,
+        });
+      } catch (resolveErr: any) {
+        const errorMsg = `Artifact resolution failed: ${resolveErr.message}`;
+        await saveJobManifest(jobId, {
+          status: "failed",
+          error: errorMsg,
+        } as any);
+        await releaseGenerationSlot(userId, jobId);
+        return NextResponse.json(
+          { success: false, status: "failed", error: errorMsg },
+          { status: 422 }
+        );
+      }
+
+      // Authoritative F7 Physical Media Verification
+      let audit;
+      try {
+        audit = await VerificationEngine.auditMediaArtifact({
+          jobId,
+          videoUrl: resolvedArtifact.localPath,
+          scriptText: (jobData as any).script || (jobData as any).topic || "Narrative text",
+          sceneCount: (jobData as any).scenes?.length || 1,
+        });
+      } catch (auditErr: any) {
+        const errorMsg = `F7 audit exception: ${auditErr.message}`;
+        await saveJobManifest(jobId, {
+          status: "failed",
+          error: errorMsg,
+        } as any);
+        await releaseGenerationSlot(userId, jobId);
+        if (resolvedArtifact.isTempDownload && fs.existsSync(resolvedArtifact.localPath)) {
+          try { fs.unlinkSync(resolvedArtifact.localPath); } catch {}
+        }
+        return NextResponse.json(
+          { success: false, status: "failed", error: errorMsg },
+          { status: 422 }
+        );
+      }
+
+      if (!audit.passed || audit.overallStatus !== "PASSED") {
+        const failureReasons = audit.failures?.length ? audit.failures.join("; ") : "Physical media verification failed";
+        await saveJobManifest(jobId, {
+          status: "failed",
+          error: `F7 physical media verification failed: ${failureReasons}`,
+          verificationReport: audit,
+        } as any);
+        await releaseGenerationSlot(userId, jobId);
+        if (resolvedArtifact.isTempDownload && fs.existsSync(resolvedArtifact.localPath)) {
+          try { fs.unlinkSync(resolvedArtifact.localPath); } catch {}
+        }
+        return NextResponse.json(
+          {
+            success: false,
+            status: "failed",
+            error: `F7 physical media verification failed: ${failureReasons}`,
+            hardGates: audit.hardGates,
+          },
+          { status: 422 }
+        );
+      }
+
+      const now = new Date().toISOString();
+      const finalVideoUrl = candidateUrl;
+      const finalSizeMb = Number((resolvedArtifact.byteLength / (1024 * 1024)).toFixed(2));
+      const finalDuration = audit.measurements.videoDuration || audit.measurements.audioDuration || 0;
+      const finalSha256 = resolvedArtifact.verifiedSha256;
 
       await saveJobManifest(jobId, {
         status: "completed",
@@ -119,7 +232,7 @@ export async function POST(request: NextRequest) {
         driveFileId: driveFileId || (jobData as any).driveFileId || null,
         driveUrl: driveUrl || (jobData as any).driveUrl || null,
         filename: filename || (jobData as any).filename || `${jobId}.mp4`,
-        artifactSha256: artifactSha256 || (jobData as any).artifactSha256 || null,
+        artifactSha256: finalSha256,
         workerCredentialVersion: workerCredentialVersion || null,
         fallbackUsed: Boolean(fallbackUsed),
         fallbackReason: fallbackReason || null,
@@ -127,8 +240,18 @@ export async function POST(request: NextRequest) {
         renderDurationSeconds: finalDuration,
         completedAt: now,
         telemetry: telemetry || null,
+        verificationAudit: {
+          passed: audit.passed,
+          score: audit.overallScore,
+          measurements: audit.measurements,
+        },
         updatedAt: now,
       } as any);
+
+      // Clean up temp download if applicable
+      if (resolvedArtifact.isTempDownload && fs.existsSync(resolvedArtifact.localPath)) {
+        try { fs.unlinkSync(resolvedArtifact.localPath); } catch {}
+      }
 
       // 🔒 Finalize Quota Slot Consumption (Idempotent)
       await finalizeGenerationSlot(userId, jobId);

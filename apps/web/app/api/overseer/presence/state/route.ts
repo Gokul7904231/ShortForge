@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
       activeMissionsCount: activeMissions.length,
       activeCasesCount: activeCases.length,
       criticalCasesCount: criticalCases.length,
-      healthyWorkersCount: healthyWorkers.length || 4,
-      totalWorkersCount: Math.max(workerList.length, 4),
-      onlineFloorsCount: onlineFloors.length || 4,
-      totalFloorsCount: Math.max(floorList.length, 4),
+      healthyWorkersCount: healthyWorkers.length,
+      totalWorkersCount: workerList.length,
+      onlineFloorsCount: onlineFloors.length,
+      totalFloorsCount: floorList.length,
       activeRepairsCount: activeRepairs.length,
     };
 
@@ -151,6 +151,34 @@ export async function GET(request: NextRequest) {
           timestamp: d.timestamp,
         })),
         activity: activity.slice(0, 15),
+        subsystems: {
+          capabilities: controller.capabilityRegistry ? controller.capabilityRegistry.getAll() : [],
+          voiceFabric: {
+            engines: ["GEMINI", "ELEVENLABS", "SILENT_WAV_FALLBACK"],
+            profilesCount: 2,
+            activeEngine: "GEMINI",
+            fallbackReady: true,
+          },
+          renderFabric: {
+            compilers: ["FFMPEG", "HYPERFRAMES"],
+            status: "READY",
+            activePlanner: "CAPABILITY_AWARE",
+          },
+          evolutionBrain: {
+            proposalsCount: controller.evolutionBrain ? controller.evolutionBrain.getProposals().length : 0,
+            activeCanaries: controller.evolutionBrain
+              ? controller.evolutionBrain.getProposals().filter((p) => p.status === "CANARY_TESTING").length
+              : 0,
+          },
+          contentGenome: {
+            indexedGenomesCount: controller.contentGenome ? controller.contentGenome.getAllGenomes().length : 0,
+          },
+          researchRuntime: {
+            status: "READY",
+            adapter: "LightpandaCleanRoom",
+            reachSubsystem: "ENABLED",
+          },
+        },
       },
     });
   } catch (err: any) {

@@ -1,0 +1,134 @@
+{
+  "id": "sit_f4_fallback_001",
+  "missionId": "golden-short-001",
+  "runId": "run_golden_short_001_1788944000000",
+  "schemaVersion": "1.0.0",
+  "sender": {
+    "agentId": "agent_guardian_f4",
+    "role": "Guardian",
+    "floorId": "floor04_media_synthesis"
+  },
+  "recipients": [
+    "agent_overseer",
+    "agent_guardian_f5",
+    "agent_slayer_general"
+  ],
+  "type": "RECOVERY",
+  "priority": "HIGH",
+  "text": "Primary voice provider failed. Local PCM fallback generated a physically verified WAV artifact. F5 may resume.",
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "nodes": [
+      {
+        "id": "floor04_media_synthesis",
+        "label": "Floor 04 Media Synthesis",
+        "type": "FLOOR",
+        "status": "RECOVERED",
+        "metadata": {
+          "floorNumber": 4,
+          "recovered": true
+        }
+      },
+      {
+        "id": "gemini_voice_provider",
+        "label": "Gemini TTS Provider",
+        "type": "FAILURE",
+        "status": "FAILED",
+        "metadata": {
+          "error": "HTTP 504 Gateway Timeout"
+        }
+      },
+      {
+        "id": "local_wav_fallback",
+        "label": "Local WAV Synthesizer",
+        "type": "RECOVERY",
+        "status": "COMPLETED",
+        "metadata": {
+          "artifactPath": "data/audio/fallback_f4.wav"
+        }
+      },
+      {
+        "id": "floor05_timeline_composition",
+        "label": "Floor 05 Timeline Composition",
+        "type": "FLOOR",
+        "status": "RUNNING",
+        "metadata": {
+          "floorNumber": 5
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_f4_to_gemini",
+        "from": "floor04_media_synthesis",
+        "to": "gemini_voice_provider",
+        "type": "EXECUTION_SEQUENCE",
+        "label": "Invoke Primary TTS"
+      },
+      {
+        "id": "edge_f4_to_fallback",
+        "from": "floor04_media_synthesis",
+        "to": "local_wav_fallback",
+        "type": "RECOVERY",
+        "label": "Fallback Activation"
+      },
+      {
+        "id": "edge_fallback_to_f5",
+        "from": "local_wav_fallback",
+        "to": "floor05_timeline_composition",
+        "type": "EXECUTION_SEQUENCE",
+        "label": "Handoff to F5"
+      }
+    ],
+    "focus": [
+      "gemini_voice_provider",
+      "local_wav_fallback"
+    ],
+    "emphasis": [
+      {
+        "targetId": "gemini_voice_provider",
+        "visualWeight": "ALERT",
+        "reason": "Primary provider timeout"
+      },
+      {
+        "targetId": "local_wav_fallback",
+        "visualWeight": "PRIMARY",
+        "reason": "Physically verified local WAV artifact generated"
+      }
+    ],
+    "viewHints": {
+      "preferredView": "RECOVERY"
+    }
+  },
+  "evidence": [
+    {
+      "evidenceId": "ev_provider_fail_01",
+      "type": "EVENT",
+      "truthLevel": "OBSERVED",
+      "uriOrPath": "data/logs/f4_tts_error.log",
+      "description": "Provider failure observation: HTTP 504 Gateway Timeout after 3 retries"
+    },
+    {
+      "evidenceId": "ev_wav_exist_01",
+      "type": "ARTIFACT",
+      "truthLevel": "PHYSICAL",
+      "digest": "d41d8cd98f00b204e9800998ecf8427e",
+      "uriOrPath": "data/audio/fallback_f4.wav",
+      "description": "Local WAV physical existence: 1,411,200 bytes on disk"
+    },
+    {
+      "evidenceId": "ev_sha256_01",
+      "type": "VERIFICATION_PROBE",
+      "truthLevel": "VERIFIED",
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "description": "SHA-256 integrity probe verified matches disk artifact"
+    },
+    {
+      "evidenceId": "ev_rec_01",
+      "type": "EVENT",
+      "truthLevel": "OBSERVED",
+      "description": "Recovery transition logged in Guardian state machine"
+    }
+  ],
+  "createdAt": "2026-09-09T14:30:00.000Z"
+}

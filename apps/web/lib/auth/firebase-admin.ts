@@ -5,6 +5,7 @@
 import * as admin from "firebase-admin";
 import { AdminUser, UserRole } from "./types";
 import { ALLOWED_BOOTSTRAP_OWNER_EMAIL } from "./constants";
+import { UnauthorizedError } from "./errors";
 
 const hasAdminCredentials = !!(
   process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.FIREBASE_PROJECT_ID
@@ -169,10 +170,13 @@ export async function verifySessionCookieServer(sessionCookie: string): Promise<
     }
   }
 
-  // 3. Dev / Vitest Mock Verification
-  if (sessionCookie.startsWith("mock_session_cookie_") || sessionCookie.includes("simulated_admin_token")) {
+  // 3. Dev / Vitest Mock Verification (Strictly non-production only)
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (sessionCookie.startsWith("mock_session_cookie_") || sessionCookie.includes("simulated_admin_token"))
+  ) {
     return { uid: "mock_owner_uid", email: ALLOWED_BOOTSTRAP_OWNER_EMAIL, sessionRole: "OWNER" };
   }
 
-  throw new Error("Invalid or expired session cookie");
+  throw new UnauthorizedError("Invalid or expired session cookie");
 }

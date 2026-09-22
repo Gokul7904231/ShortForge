@@ -1,0 +1,14 @@
+{
+  "jobId": "job_run_golden-short-001_mttphqiu",
+  "videoFilePath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\renders\\job_run_golden-short-001_mttphqiu.mp4",
+  "status": "UPLOADED",
+  "attempts": 1,
+  "lastAttemptAt": "2026-09-09T06:17:16.192Z",
+  "deliveryArtifact": {
+    "deliveryMethod": "LOCAL_OUTBOX",
+    "verified": true,
+    "uploadedAt": "2026-09-09T06:17:16.201Z",
+    "storageUrl": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\outbox\\job_run_golden-short-001_mttphqiu.mp4",
+    "sha256": "641597da4cde6b6c956fea7c75951ec78fe43dae3f7b4a15ca9fcc0bad41d373"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "templateId": "history.timeline.v1",
+  "templateVersion": "1.0.0",
+  "contentEngine": "HISTORY",
+  "formatFamily": "Timeline Documentary",
+  "topic": "The Fall of Constantinople",
+  "userInputs": {
+    "historicalEvent": "The Fall of Constantinople",
+    "keyYear": "1453"
+  }
+}

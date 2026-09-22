@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graph Delta: run_baseline_101 ➔ run_candidate_102 — FactoryOS Visual Inspector</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-elevated: #27272a;
+      --border: #3f3f46;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --primary: #3b82f6;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      z-index: 10;
+    }
+    .brand { font-size: 13px; font-weight: bold; letter-spacing: 1px; color: var(--text); }
+    .brand span { color: var(--primary); }
+    .toolbar { display: flex; align-items: center; gap: 8px; }
+    .btn {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn:hover { background: #3f3f46; }
+    .btn.active { background: var(--primary); border-color: var(--primary); }
+    .search-box {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 10px;
+      color: var(--text);
+      font-size: 11px;
+      font-family: inherit;
+      width: 180px;
+    }
+    .layout-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .canvas-viewport {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      user-select: none;
+      background: #09090b;
+    }
+    .canvas-viewport:active { cursor: grabbing; }
+    .graph-transform-layer {
+      transform-origin: 0 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .inspector-panel {
+      width: 380px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      font-size: 12px;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.5);
+      z-index: 5;
+    }
+    .panel-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .info-row { display: flex; flex-direction: column; gap: 4px; }
+    .info-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+    .info-val { font-size: 12px; color: var(--text); word-break: break-all; }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .badge-truth { background: #3f3f46; color: #38bdf8; }
+    .badge-status { background: #27272a; border: 1px solid var(--border); }
+    .evidence-pill {
+      background: #27272a;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+    .mismatch-banner {
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.4;
+      margin-top: 6px;
+      border-left: 3px solid;
+    }
+    .mismatch-banner.size-mismatch {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
+    .mismatch-banner.digest-mismatch {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: #f59e0b;
+      color: #fcd34d;
+    }
+    .mismatch-banner.receipt-mismatch {
+      background: rgba(217, 70, 239, 0.15);
+      border-color: #d946ef;
+      color: #f0abfc;
+    }
+    .audit-card {
+      background: #18181b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 6px;
+    }
+    .audit-header {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .audit-row {
+      font-size: 11px;
+      margin-bottom: 3px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .audit-row span.label {
+      color: var(--text-muted);
+    }
+    .audit-row span.val {
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .graph-node:hover rect { stroke: var(--primary) !important; stroke-width: 2px !important; }
+    .node-dimmed { opacity: 0.25; }
+    .node-highlighted rect { stroke: #38bdf8 !important; stroke-width: 3px !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">FACTORY<span>OS</span> // GRAPH VISUALIZATION V1</div>
+    <div class="toolbar">
+      <input type="text" id="searchInput" class="search-box" placeholder="Search node ID or label..." aria-label="Search nodes" />
+      <button class="btn" id="btnZoomIn">Zoom +</button>
+      <button class="btn" id="btnZoomOut">Zoom -</button>
+      <button class="btn" id="btnResetZoom">Reset</button>
+      <button class="btn" id="btnToggleInspector">Inspector</button>
+    </div>
+  </header>
+
+  <div class="layout-container">
+    <div class="canvas-viewport" id="viewport">
+      <div class="graph-transform-layer" id="graphContainer">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" class="factoryos-graph" role="img" aria-label="Graph Delta: run_baseline_101 ➔ run_candidate_102">
+  <defs>
+    <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#71717a" />
+    </marker>
+    <marker id="arrow-critical" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-verified" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#10b981" />
+    </marker>
+    <filter id="focal-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3b82f6" flood-opacity="0.6" />
+    </filter>
+    <filter id="alert-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ef4444" flood-opacity="0.8" />
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#09090b" />
+  <g class="graph-header" transform="translate(40, 35)">
+    <text x="0" y="0" font-family="monospace" font-size="16" font-weight="bold" fill="#f4f4f5">Graph Delta: run_baseline_101 ➔ run_candidate_102</text>
+    <text x="0" y="18" font-family="monospace" font-size="11" fill="#a1a1aa">Before/After comparison: 1 added, 1 removed, 1 modified</text>
+  </g>
+  <g class="graph-edges">
+    <path id="edge_f4_to_fallback" data-edge-id="edge_f4_to_fallback" data-canonical-id="edge_f4_to_fallback" d="M 280 237 C 325 237, 325 104, 370 104" fill="none" stroke="#10b981" stroke-width="1.5"  marker-end="url(#arrow-verified)" class="edge-path" />
+    <path id="edge_f4_to_fallback_hit" data-edge-id="edge_f4_to_fallback" data-canonical-id="edge_f4_to_fallback" d="M 280 237 C 325 237, 325 104, 370 104" fill="none" stroke="transparent" stroke-width="14" class="edge-hit-target" cursor="pointer" role="button" tabindex="0" aria-label="Explain edge edge_f4_to_fallback" />
+    <text x="325" y="164.5" text-anchor="middle" font-family="monospace" font-size="9" fill="#71717a" class="edge-label">RECOVERY</text>
+  </g>
+  <g class="graph-nodes">
+    <g id="deprecated_legacy_cache" data-node-id="deprecated_legacy_cache" data-canonical-id="deprecated_legacy_cache" data-node-type="ARTIFACT" data-status="FAILED" data-truth="OBSERVED" class="graph-node" transform="translate(60, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node deprecated_legacy_cache: Legacy Audio Cache [- REMOVED]" filter="url(#alert-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#ef4444" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#ef4444" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">ARTIFACT</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">- REMOVED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Legacy Audio Cache [- REM…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#ef4444">FAILED </text>
+    </g>
+    <g id="floor04_media_synthesis" data-node-id="floor04_media_synthesis" data-canonical-id="floor04_media_synthesis" data-node-type="FLOOR" data-status="VERIFIED" data-truth="OBSERVED" class="graph-node" transform="translate(60, 193)" cursor="pointer" role="button" tabindex="0" aria-label="Node floor04_media_synthesis: Floor 04 Media Synthesis [~ MODIFIED]" filter="url(#focal-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3b82f6" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FLOOR</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">~ MODIFIED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Floor 04 Media Synthesis …</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+    <g id="gemini_voice_provider" data-node-id="gemini_voice_provider" data-canonical-id="gemini_voice_provider" data-node-type="FAILURE" data-status="FAILED" data-truth="OBSERVED" class="graph-node" transform="translate(60, 326)" cursor="pointer" role="button" tabindex="0" aria-label="Node gemini_voice_provider: Gemini TTS Provider [UNCHANGED]" >
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3f3f46" stroke-width="1"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#ef4444" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">FAILURE</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#06b6d4">UNCHANGED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Gemini TTS Provider [UNCH…</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#ef4444">FAILED </text>
+    </g>
+    <g id="local_pcm_wav_fallback" data-node-id="local_pcm_wav_fallback" data-canonical-id="local_pcm_wav_fallback" data-node-type="RECOVERY" data-status="VERIFIED" data-truth="VERIFIED" class="graph-node" transform="translate(370, 60)" cursor="pointer" role="button" tabindex="0" aria-label="Node local_pcm_wav_fallback: Local PCM Audio Fallback [+ ADDED]" filter="url(#focal-glow)">
+      <rect width="220" height="88" rx="8" fill="#18181b" stroke="#3b82f6" stroke-width="2"  />
+      <line x1="0" y1="84" x2="220" y2="84" stroke="#71717a" stroke-width="4" stroke-linecap="round" />
+      <text x="10" y="18" font-family="monospace" font-size="9" font-weight="bold" fill="#a1a1aa" letter-spacing="0.5">RECOVERY</text>
+      <text x="210" y="18" text-anchor="end" font-family="monospace" font-size="9" font-weight="bold" fill="#10b981">+ ADDED</text>
+      <text x="10" y="42" font-family="monospace" font-size="11" font-weight="bold" fill="#f4f4f5">Local PCM Audio Fallback …</text>
+      <text x="10" y="64" font-family="monospace" font-size="9" fill="#71717a">VERIFIED </text>
+    </g>
+  </g>
+</svg>
+      </div>
+    </div>
+
+    <aside class="inspector-panel" id="inspector">
+      <div class="panel-title">Node & Evidence Inspector</div>
+      <div id="inspectorContent">
+        <p style="color: var(--text-muted); line-height: 1.5;">Click any graph node or edge to inspect canonical ID, truth level, evidence grounding, and upstream/downstream connections.</p>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const irData = {"schemaVersion":"1.0.0","viewType":"DELTA_COMPARISON","title":"Graph Delta: run_baseline_101 ➔ run_candidate_102","subtitle":"Before/After comparison: 1 added, 1 removed, 1 modified","missionId":"golden-short-001","runId":"run_candidate_102","nodes":[{"id":"floor04_media_synthesis","label":"Floor 04 Media Synthesis [~ MODIFIED]","type":"FLOOR","status":"VERIFIED","truthLevel":"OBSERVED","evidenceRefs":[],"metadata":{"deltaTag":"~ MODIFIED"},"visualHints":{"isFocal":true,"emphasis":"PRIMARY","icon":"git-commit","shape":"RECT","badge":"~ MODIFIED","order":0}},{"id":"gemini_voice_provider","label":"Gemini TTS Provider [UNCHANGED]","type":"FAILURE","status":"FAILED","truthLevel":"OBSERVED","evidenceRefs":[],"metadata":{"deltaTag":"UNCHANGED"},"visualHints":{"isFocal":false,"emphasis":"MUTED","icon":"git-commit","shape":"RECT","badge":"UNCHANGED","order":1}},{"id":"local_pcm_wav_fallback","label":"Local PCM Audio Fallback [+ ADDED]","type":"RECOVERY","status":"VERIFIED","truthLevel":"VERIFIED","evidenceRefs":[],"metadata":{"deltaTag":"+ ADDED"},"visualHints":{"isFocal":true,"emphasis":"PRIMARY","icon":"plus-circle","shape":"RECT","badge":"+ ADDED","order":2}},{"id":"deprecated_legacy_cache","label":"Legacy Audio Cache [- REMOVED]","type":"ARTIFACT","status":"FAILED","truthLevel":"OBSERVED","evidenceRefs":[],"metadata":{"deltaTag":"- REMOVED"},"visualHints":{"isFocal":true,"emphasis":"CRITICAL","icon":"minus-circle","shape":"DIAMOND","badge":"- REMOVED","order":3}}],"edges":[{"id":"edge_f4_to_fallback","from":"floor04_media_synthesis","to":"local_pcm_wav_fallback","type":"RECOVERY","label":"RECOVERY","truthLevel":"VERIFIED","status":"VERIFIED","visualHints":{"style":"solid","color":"#3f3f46","marker":"arrow"}}],"groups":[],"focus":["floor04_media_synthesis","local_pcm_wav_fallback","deprecated_legacy_cache"],"emphasis":[{"targetId":"floor04_media_synthesis","visualWeight":"PRIMARY","reason":"Node status/truth modified"},{"targetId":"local_pcm_wav_fallback","visualWeight":"PRIMARY","reason":"Node added in candidate run"},{"targetId":"deprecated_legacy_cache","visualWeight":"CRITICAL","reason":"Node removed in candidate run"}],"collapsedGroups":[],"annotations":[{"targetId":"floor04_media_synthesis","text":"Topological divergence detected between runs","type":"WARNING"}],"complexityBudget":{"maxNodes":20,"currentNodes":4,"budgetExceeded":false,"action":"NONE"},"chapters":[{"id":"ch_delta","title":"Run Comparison Delta","description":"Structural and state evolution between baseline and candidate","focalNodeIds":["floor04_media_synthesis","local_pcm_wav_fallback","deprecated_legacy_cache"],"visibleEdgeIds":["edge_f4_to_fallback"]}],"generatedAt":"2026-09-21T09:10:36.353Z"};
+
+    // Pan & Zoom
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    const container = document.getElementById("graphContainer");
+    const viewport = document.getElementById("viewport");
+    const inspectorContent = document.getElementById("inspectorContent");
+
+    function updateTransform() {
+      container.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+
+    viewport.addEventListener("mousedown", (e) => {
+      if (e.target.closest(".graph-node")) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener("mouseup", () => { isDragging = false; });
+
+    viewport.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      scale = Math.max(0.2, Math.min(3, scale * zoomFactor));
+      updateTransform();
+    }, { passive: false });
+
+    document.getElementById("btnZoomIn").addEventListener("click", () => { scale = Math.min(3, scale * 1.2); updateTransform(); });
+    document.getElementById("btnZoomOut").addEventListener("click", () => { scale = Math.max(0.2, scale / 1.2); updateTransform(); });
+    document.getElementById("btnResetZoom").addEventListener("click", () => { scale = 1; panX = 0; panY = 0; updateTransform(); });
+
+    // Node and Edge Selection & Inspector
+    const nodeElements = document.querySelectorAll(".graph-node");
+    const edgeHitElements = document.querySelectorAll(".edge-hit-target");
+    let currentSelection = { type: null, id: null };
+
+    nodeElements.forEach(el => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const nodeId = el.getAttribute("data-canonical-id") || el.getAttribute("data-node-id");
+        selectNode(nodeId);
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          selectNode(el.getAttribute("data-canonical-id") || el.getAttribute("data-node-id"));
+        }
+      });
+    });
+
+    edgeHitElements.forEach(el => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const edgeId = el.getAttribute("data-canonical-id") || el.getAttribute("data-edge-id");
+        selectEdge(edgeId);
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          selectEdge(el.getAttribute("data-canonical-id") || el.getAttribute("data-edge-id"));
+        }
+      });
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        clearSelection();
+      }
+    });
+
+    function clearSelection() {
+      currentSelection = { type: null, id: null };
+      nodeElements.forEach(n => { n.classList.remove("node-highlighted", "node-dimmed"); });
+      document.querySelectorAll(".edge-path").forEach(p => { p.setAttribute("stroke-width", "1.5"); });
+      inspectorContent.innerHTML = '<p style="color: var(--text-muted); line-height: 1.5;">Click any graph node or edge to inspect canonical ID, truth level, evidence grounding, and upstream/downstream connections. Press [Esc] to clear selection, [Enter/Space] to inspect.</p>';
+    }
+
+    function selectNode(nodeId) {
+      const node = irData.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+      currentSelection = { type: "NODE", id: nodeId };
+
+      // Highlight in SVG
+      nodeElements.forEach(n => {
+        if (n.getAttribute("data-canonical-id") === nodeId || n.getAttribute("data-node-id") === nodeId) {
+          n.classList.add("node-highlighted");
+          n.classList.remove("node-dimmed");
+        } else {
+          n.classList.remove("node-highlighted");
+          n.classList.add("node-dimmed");
+        }
+      });
+
+      // Render Inspector Content
+      const evHtml = (node.evidenceRefs && node.evidenceRefs.length > 0)
+        ? node.evidenceRefs.map(ev => '<div class="evidence-pill"><strong>' + escapeHtml(ev) + '</strong></div>').join("")
+        : '<p style="color: var(--text-muted)">No direct evidence records linked.</p>';
+
+      let artifactAuditHtml = '';
+      const meta = node.metadata || {};
+      const isArtifactNode = node.type === "ARTIFACT" || meta.byteLength !== undefined || meta.reportedByteLength !== undefined || meta.physicalByteLength !== undefined;
+      if (isArtifactNode) {
+        const physSize = meta.physicalByteLength !== undefined ? Number(meta.physicalByteLength).toLocaleString() + ' bytes' : null;
+        const recSize = meta.receiptByteLength !== undefined ? Number(meta.receiptByteLength).toLocaleString() + ' bytes' : null;
+        const repSize = meta.reportedByteLength !== undefined ? Number(meta.reportedByteLength).toLocaleString() + ' bytes' : (meta.byteLength !== undefined ? Number(meta.byteLength).toLocaleString() + ' bytes' : null);
+
+        const physSha = meta.physicalSha256 || null;
+        const recSha = meta.receiptSha256 || null;
+        const repSha = meta.reportedSha256 || meta.sha256 || null;
+
+        artifactAuditHtml += '<div class="info-row"><div class="info-label">Artifact Measurement Audit</div><div class="audit-card">';
+        artifactAuditHtml += '<div class="audit-header">SIZE MEASUREMENTS</div>';
+        if (physSize) artifactAuditHtml += '<div class="audit-row"><span class="label">PHYSICAL:</span><span class="val">' + escapeHtml(physSize) + '</span></div>';
+        if (recSize) artifactAuditHtml += '<div class="audit-row"><span class="label">RECEIPT-BACKED:</span><span class="val">' + escapeHtml(recSize) + '</span></div>';
+        if (repSize) artifactAuditHtml += '<div class="audit-row"><span class="label">REPORTED:</span><span class="val">' + escapeHtml(repSize) + '</span></div>';
+        if (!physSize && !recSize && !repSize) artifactAuditHtml += '<div class="audit-row"><span class="label">SIZE:</span><span class="val">UNKNOWN</span></div>';
+
+        artifactAuditHtml += '<div class="audit-header" style="margin-top:6px;">SHA-256 DIGEST</div>';
+        if (physSha) artifactAuditHtml += '<div class="audit-row"><span class="label">PHYSICAL:</span><span class="val">' + escapeHtml(physSha) + '</span></div>';
+        if (recSha) artifactAuditHtml += '<div class="audit-row"><span class="label">RECEIPT-BACKED:</span><span class="val">' + escapeHtml(recSha) + '</span></div>';
+        if (repSha) artifactAuditHtml += '<div class="audit-row"><span class="label">REPORTED:</span><span class="val">' + escapeHtml(repSha) + '</span></div>';
+        if (!physSha && !recSha && !repSha) artifactAuditHtml += '<div class="audit-row"><span class="label">SHA-256:</span><span class="val">UNKNOWN</span></div>';
+
+        if (meta.sizeMismatchDetected || (physSize && repSize && physSize !== repSize)) {
+          artifactAuditHtml += '<div class="mismatch-banner size-mismatch"><strong>SIZE MISMATCH</strong><br/>REPORTED: ' + escapeHtml(repSize || 'UNKNOWN') + '<br/>PHYSICAL: ' + escapeHtml(physSize || 'UNKNOWN') + '</div>';
+        }
+        if (meta.hashMismatchDetected || (physSha && repSha && physSha.toLowerCase() !== repSha.toLowerCase())) {
+          artifactAuditHtml += '<div class="mismatch-banner digest-mismatch"><strong>DIGEST MISMATCH</strong><br/>REPORTED: ' + escapeHtml(repSha || 'UNKNOWN') + '<br/>PHYSICAL: ' + escapeHtml(physSha || 'UNKNOWN') + '</div>';
+        }
+        if (meta.receiptMismatchDetected) {
+          artifactAuditHtml += '<div class="mismatch-banner receipt-mismatch"><strong>RECEIPT MISMATCH</strong><br/>RECEIPT: ' + escapeHtml(recSha || 'UNKNOWN') + '<br/>PHYSICAL: ' + escapeHtml(physSha || 'UNKNOWN') + '</div>';
+        }
+        artifactAuditHtml += '</div></div>';
+      }
+
+      inspectorContent.innerHTML = 
+        '<div class="info-row">' +
+          '<div class="info-label">Canonical Identity</div>' +
+          '<div class="info-val"><strong data-testid="selected-canonical-id">' + escapeHtml(node.id) + '</strong></div>' +
+        '</div>' +
+        '<div class="info-row">' +
+          '<div class="info-label">Node Label</div>' +
+          '<div class="info-val">' + escapeHtml(node.label) + '</div>' +
+        '</div>' +
+        '<div class="info-row">' +
+          '<div class="info-label">Type & Truth Level</div>' +
+          '<div class="info-val">' +
+            '<span class="badge badge-status">' + escapeHtml(node.type) + '</span> ' +
+            '<span class="badge badge-truth">' + escapeHtml(node.truthLevel) + '</span> ' +
+            '<span class="badge badge-status">' + escapeHtml(node.status) + '</span>' +
+          '</div>' +
+        '</div>' +
+        artifactAuditHtml +
+        '<div class="info-row">' +
+          '<div class="info-label">Canonical Evidence Grounding (' + (node.evidenceRefs ? node.evidenceRefs.length : 0) + ')</div>' +
+          '<div>' + evHtml + '</div>' +
+        '</div>';
+    }
+
+    function selectEdge(edgeId) {
+      const edge = irData.edges.find(e => e.id === edgeId);
+      if (!edge) return;
+      currentSelection = { type: "EDGE", id: edgeId };
+
+      // Highlight in SVG
+      document.querySelectorAll(".edge-path").forEach(p => {
+        if (p.getAttribute("data-canonical-id") === edgeId || p.getAttribute("data-edge-id") === edgeId) {
+          p.setAttribute("stroke-width", "3.5");
+        } else {
+          p.setAttribute("stroke-width", "1");
+        }
+      });
+
+      const evHtml = (edge.evidenceRefs && edge.evidenceRefs.length > 0)
+        ? edge.evidenceRefs.map(ev => '<div class="evidence-pill"><strong>' + escapeHtml(ev) + '</strong></div>').join("")
+        : '<p style="color: var(--text-muted)">Grounded by mission execution telemetry.</p>';
+
+      let edgeWarningHtml = '';
+      if (edge.type === "EVIDENCE_SUPPORT" || (edge.metadata && edge.metadata.isPresentationOnly)) {
+        edgeWarningHtml = 
+          '<div class="info-row">' +
+            '<div class="info-label">Presentation Warning</div>' +
+            '<div class="info-val" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 8px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 11px; line-height: 1.4;">' +
+              '<strong>PRESENTATION RELATION:</strong> ' + escapeHtml((edge.metadata && edge.metadata.presentationRelation) || "Evidence shown because it supports selected subject") + '<br/>' +
+              '<strong>AUTHORITATIVE RELATION:</strong> ' + escapeHtml((edge.metadata && edge.metadata.authoritativeRelation) || "EvidenceGraph relationship: PROVES_ARTIFACT_INTEGRITY") +
+            '</div>' +
+          '</div>';
+      }
+
+      inspectorContent.innerHTML = 
+        '<div class="info-row">' +
+          '<div class="info-label">Selected Edge</div>' +
+          '<div class="info-val"><strong data-testid="selected-edge-id">' + escapeHtml(edge.id) + '</strong></div>' +
+        '</div>' +
+        '<div class="info-row">' +
+          '<div class="info-label">Relationship</div>' +
+          '<div class="info-val">' + escapeHtml(edge.from) + ' → ' + escapeHtml(edge.to) + '</div>' +
+        '</div>' +
+        '<div class="info-row">' +
+          '<div class="info-label">Type & Truth Level</div>' +
+          '<div class="info-val">' +
+            '<span class="badge badge-status">' + escapeHtml(edge.type) + '</span> ' +
+            '<span class="badge badge-truth">' + escapeHtml(edge.truthLevel) + '</span> ' +
+            '<span class="badge badge-status">' + escapeHtml(edge.status) + '</span>' +
+          '</div>' +
+        '</div>' +
+        edgeWarningHtml +
+        '<div class="info-row">' +
+          '<div class="info-label">Explain Edge (Authoritative Grounding)</div>' +
+          '<div>' + evHtml + '</div>' +
+        '</div>';
+    }
+
+    viewport.addEventListener("click", () => {
+      clearSelection();
+    });
+
+    // Search filter
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const term = e.target.value.trim().toLowerCase();
+      if (!term) {
+        nodeElements.forEach(n => n.classList.remove("node-dimmed", "node-highlighted"));
+        return;
+      }
+      nodeElements.forEach(n => {
+        const id = (n.getAttribute("data-canonical-id") || n.getAttribute("data-node-id") || "").toLowerCase();
+        const text = n.textContent.toLowerCase();
+        if (id.includes(term) || text.includes(term)) {
+          n.classList.remove("node-dimmed");
+          n.classList.add("node-highlighted");
+        } else {
+          n.classList.add("node-dimmed");
+          n.classList.remove("node-highlighted");
+        }
+      });
+    });
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

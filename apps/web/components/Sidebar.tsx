@@ -74,10 +74,12 @@ export default function Sidebar() {
   }, [initSSE, fetchState]);
 
   const visibleSections = getNavigationForRole(effectiveRole);
+  const creatorSections = visibleSections.filter((s) => s.surface === "creator");
+  const factorySections = visibleSections.filter((s) => s.surface === "factory");
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(
     Object.fromEntries(
-      ROUTE_SECTIONS.map((s) => [s.id, ["factory", "engines"].includes(s.id)])
+      ROUTE_SECTIONS.map((s) => [s.id, ["engines", "library", "factory-ops"].includes(s.id)])
     )
   );
 
@@ -88,6 +90,110 @@ export default function Sidebar() {
   const sidebarVariants = {
     open: { width: 240, transition: { duration: 0.2, ease: "easeInOut" as const } },
     collapsed: { width: 64, transition: { duration: 0.2, ease: "easeInOut" as const } },
+  };
+
+  const renderSection = (section: any) => {
+    const SectionIcon = getIcon(section.icon);
+    const isExpanded = expandedSections[section.id];
+    
+    // Dynamically compute the sub-routes to include active engines
+    let sectionRoutes = section.routes;
+    if (section.id === "engines" && activeEngines.length > 0) {
+      const staticHrefs = new Set(section.routes.map((r: any) => r.href));
+      const dynamicRoutes: RouteEntry[] = activeEngines
+        .filter((id: string) => !staticHrefs.has(`/engines/${id}`))
+        .map((id: string) => {
+          const label = id
+            .split("-")
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+          return {
+            id: `engines-${id}`,
+            label,
+            href: `/engines/${id}`,
+            section: "Engines",
+            surface: "creator",
+            icon: "Cpu",
+            description: `Custom content generation engine: ${label}`
+          };
+        });
+      sectionRoutes = [...section.routes, ...dynamicRoutes];
+    }
+
+    const hasActiveItem = sectionRoutes.some((r: any) => pathname === r.href || pathname.startsWith(r.href + "/"));
+
+    return (
+      <div key={section.id} className="space-y-0.5">
+        {sidebarOpen ? (
+          <button
+            onClick={() => toggleSection(section.id)}
+            className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-wider font-bold transition-colors cursor-pointer ${
+              hasActiveItem ? "text-[#111827] dark:text-[#F5F7FA]" : "text-[#667085] dark:text-[#A7B0BC] hover:text-[#111827] dark:hover:text-[#F5F7FA] hover:bg-black/[0.04] dark:hover:bg-[#08101B]"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <SectionIcon className="w-3.5 h-3.5" />
+              <span>{section.title}</span>
+            </span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        ) : (
+          <div className="w-full flex items-center justify-center py-2 text-[#667085] dark:text-[#A7B0BC]">
+            <SectionIcon className="w-4 h-4" />
+          </div>
+        )}
+
+        <AnimatePresence initial={false}>
+          {(!sidebarOpen || isExpanded) && (
+            <motion.div
+              initial={sidebarOpen ? { height: 0, opacity: 0 } : { height: "auto", opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+              className="overflow-hidden space-y-0.5 pl-1"
+            >
+              {sectionRoutes.map((route: any) => {
+                const RouteIcon = getIcon(route.icon);
+                const isActive = pathname === route.href || pathname.startsWith(route.href + "/");
+                const isEngineSection = section.id === "engines";
+                const isAdmin = ["ADMIN", "OWNER", "SUPERADMIN"].includes(effectiveRole?.toUpperCase());
+                const isComingSoonEngine = !isAdmin && isEngineSection && !["engines-index", "engines-quiz"].includes(route.id) && route.href.startsWith("/engines/");
+                return (
+                  <Link
+                    key={route.id}
+                    href={route.href}
+                    aria-disabled={isComingSoonEngine}
+                    tabIndex={isComingSoonEngine ? -1 : 0}
+                    onClick={(e) => { if (isComingSoonEngine) e.preventDefault(); }}
+                    onMouseEnter={() => { if (!isComingSoonEngine) router.prefetch(route.href); }}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-xs ${
+                      isComingSoonEngine
+                        ? "text-[#86868b] opacity-60 cursor-not-allowed"
+                        : isActive
+                        ? "bg-[#1769E8]/10 text-[#1769E8] font-bold border border-[#1769E8]/20"
+                        : "text-[#667085] dark:text-[#A7B0BC] hover:text-[#111827] dark:hover:text-[#F5F7FA] hover:bg-black/[0.04] dark:hover:bg-[#08101B]"
+                    } ${!sidebarOpen ? "justify-center" : ""}`}
+                    title={isComingSoonEngine ? "Coming soon — Quiz Shorts is live now" : (!sidebarOpen ? route.label : undefined)}
+                  >
+                    <RouteIcon className={`w-4 h-4 flex-shrink-0 ${isComingSoonEngine ? "text-[#86868b]" : isActive ? "text-[#1769E8]" : "text-[#667085] dark:text-[#A7B0BC]"}`} />
+                    {sidebarOpen && (
+                      <span className="truncate flex items-center gap-1.5">
+                        {route.label}
+                        {isComingSoonEngine && <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600">SOON</span>}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
   };
 
   return (
@@ -115,7 +221,7 @@ export default function Sidebar() {
           </div>
           {sidebarOpen && (
             <span className="text-sm font-semibold text-[#111827] dark:text-[#F5F7FA] tracking-tight whitespace-nowrap">
-              ShortsFactory <span className="text-[10px] text-[#1769E8] font-semibold">OS</span>
+              ShortForge
             </span>
           )}
         </Link>
@@ -163,109 +269,31 @@ export default function Sidebar() {
           {sidebarOpen && <span>Dashboard</span>}
         </Link>
 
-        {/* Dynamic Sections from RouteRegistry */}
-        {visibleSections.map((section) => {
-          const SectionIcon = getIcon(section.icon);
-          const isExpanded = expandedSections[section.id];
-          
-          // Dynamically compute the sub-routes to include active engines
-          let sectionRoutes = section.routes;
-          if (section.id === "engines" && activeEngines.length > 0) {
-            const staticHrefs = new Set(section.routes.map(r => r.href));
-            const dynamicRoutes: RouteEntry[] = activeEngines
-              .filter(id => !staticHrefs.has(`/engines/${id}`))
-              .map(id => {
-                const label = id
-                  .split("-")
-                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ");
-                return {
-                  id: `engines-${id}`,
-                  label,
-                  href: `/engines/${id}`,
-                  section: "Engines",
-                  icon: "Cpu",
-                  description: `Custom content generation engine: ${label}`
-                };
-              });
-            sectionRoutes = [...section.routes, ...dynamicRoutes];
-          }
+        {/* Creator Sections from RouteRegistry */}
+        {creatorSections.map((section) => renderSection(section))}
 
-          const hasActiveItem = sectionRoutes.some((r) => pathname === r.href || pathname.startsWith(r.href + "/"));
+        {/* FactoryOS Control Plane — Only for ADMIN / OWNER (Correction 6 & 18) */}
+        {factorySections.length > 0 && (
+          <div className="pt-3 mt-2 border-t border-black/[0.08] dark:border-white/[0.08] space-y-2">
+            {sidebarOpen ? (
+              <div className="px-3 py-1 flex items-center justify-between select-none">
+                <span className="text-[9px] uppercase tracking-wider font-bold text-[#1769E8] flex items-center gap-1.5">
+                  <Hexagon className="w-3.5 h-3.5 text-[#1769E8]" />
+                  FactoryOS Control Plane
+                </span>
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-[#1769E8]/10 text-[#1769E8] border border-[#1769E8]/20">
+                  ADMIN
+                </span>
+              </div>
+            ) : (
+              <div className="w-full flex items-center justify-center py-1">
+                <div className="w-6 h-[1px] bg-black/[0.1] dark:bg-white/[0.1]" />
+              </div>
+            )}
 
-          return (
-            <div key={section.id} className="space-y-0.5">
-              {sidebarOpen ? (
-                <button
-                  onClick={() => toggleSection(section.id)}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-wider font-bold transition-colors cursor-pointer ${
-                    hasActiveItem ? "text-[#111827] dark:text-[#F5F7FA]" : "text-[#667085] dark:text-[#A7B0BC] hover:text-[#111827] dark:hover:text-[#F5F7FA] hover:bg-black/[0.04] dark:hover:bg-[#08101B]"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <SectionIcon className="w-3.5 h-3.5" />
-                    <span>{section.title}</span>
-                  </span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      isExpanded ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-              ) : (
-                <div className="w-full flex items-center justify-center py-2 text-[#667085] dark:text-[#A7B0BC]">
-                  <SectionIcon className="w-4 h-4" />
-                </div>
-              )}
-
-              <AnimatePresence initial={false}>
-                {(!sidebarOpen || isExpanded) && (
-                  <motion.div
-                    initial={sidebarOpen ? { height: 0, opacity: 0 } : { height: "auto", opacity: 1 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.15, ease: "easeInOut" }}
-                    className="overflow-hidden space-y-0.5 pl-1"
-                  >
-                    {sectionRoutes.map((route) => {
-                      const RouteIcon = getIcon(route.icon);
-                      const isActive = pathname === route.href || pathname.startsWith(route.href + "/");
-                      const isEngineSection = section.id === "engines";
-                      const isAdmin = ["ADMIN", "OWNER", "SUPERADMIN"].includes(effectiveRole?.toUpperCase());
-                      const isComingSoonEngine = !isAdmin && isEngineSection && !["engines-index", "engines-quiz"].includes(route.id) && route.href.startsWith("/engines/");
-                      return (
-                        <Link
-                          key={route.id}
-                          href={route.href}
-                          aria-disabled={isComingSoonEngine}
-                          tabIndex={isComingSoonEngine ? -1 : 0}
-                          onClick={(e) => { if (isComingSoonEngine) e.preventDefault(); }}
-                          onMouseEnter={() => { if (!isComingSoonEngine) router.prefetch(route.href); }}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-xs ${
-                            isComingSoonEngine
-                              ? "text-[#86868b] opacity-60 cursor-not-allowed"
-                              : isActive
-                              ? "bg-[#1769E8]/10 text-[#1769E8] font-bold border border-[#1769E8]/20"
-                              : "text-[#667085] dark:text-[#A7B0BC] hover:text-[#111827] dark:hover:text-[#F5F7FA] hover:bg-black/[0.04] dark:hover:bg-[#08101B]"
-                          } ${!sidebarOpen ? "justify-center" : ""}`}
-                          title={isComingSoonEngine ? "Coming soon — Quiz Shorts is live now" : (!sidebarOpen ? route.label : undefined)}
-                        >
-                          <RouteIcon className={`w-4 h-4 flex-shrink-0 ${isComingSoonEngine ? "text-[#86868b]" : isActive ? "text-[#1769E8]" : "text-[#667085] dark:text-[#A7B0BC]"}`} />
-                          {sidebarOpen && (
-                            <span className="truncate flex items-center gap-1.5">
-                              {route.label}
-                              {isComingSoonEngine && <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600">SOON</span>}
-                            </span>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
+            {factorySections.map((section) => renderSection(section))}
+          </div>
+        )}
 
         {/* Settings Link */}
         <Link

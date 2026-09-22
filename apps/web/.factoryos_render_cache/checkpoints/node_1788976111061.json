@@ -1,0 +1,13 @@
+{
+  "run_id": "node_1788976111061",
+  "project_id": "e2e_motivation_1788976111058",
+  "intent_hash": "c90a7edf012d657770e570f921667bec58431f6a27a8abfdbd37a36670d33992",
+  "composition_hash": "525d24890f6ee4800376488fcc34f3b00e1011f43f6d3c3957ca7f073b3a1e16",
+  "total_scenes": 5,
+  "completed_scenes": [],
+  "scene_artifacts": {},
+  "stage": "SCENES_RENDERING",
+  "error": null,
+  "created_at": "2026-09-09T17:48:32Z",
+  "updated_at": "2026-09-09T17:48:32Z"
+}

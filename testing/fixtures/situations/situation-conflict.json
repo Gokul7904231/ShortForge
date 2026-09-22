@@ -1,0 +1,65 @@
+{
+  "id": "sit_f4_conflict_003",
+  "missionId": "golden-short-001",
+  "runId": "run_golden_short_001_1788944000000",
+  "schemaVersion": "1.0.0",
+  "sender": {
+    "agentId": "agent_sentinel_watchdog",
+    "role": "Watchdog",
+    "floorId": "floor04_media_synthesis"
+  },
+  "recipients": [
+    "agent_overseer",
+    "agent_slayer_general"
+  ],
+  "type": "FAILURE",
+  "priority": "CRITICAL",
+  "text": "Floor 04 synthesis reported unrecoverable failure. Audio buffer depleted.",
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "nodes": [
+      {
+        "id": "floor04_media_synthesis",
+        "label": "Floor 04 Media Synthesis",
+        "type": "FLOOR",
+        "status": "FAILED",
+        "metadata": {
+          "reason": "Watchdog heartbeat timeout"
+        }
+      },
+      {
+        "id": "failure_audio_depleted",
+        "label": "Audio Pipeline Underflow",
+        "type": "FAILURE",
+        "status": "FAILED"
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_f4_to_underflow",
+        "from": "floor04_media_synthesis",
+        "to": "failure_audio_depleted",
+        "type": "ESCALATION"
+      }
+    ],
+    "focus": [
+      "floor04_media_synthesis"
+    ],
+    "emphasis": [
+      {
+        "targetId": "floor04_media_synthesis",
+        "visualWeight": "ALERT",
+        "reason": "Watchdog declares failure"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidenceId": "ev_watchdog_f4_fail",
+      "type": "EVENT",
+      "truthLevel": "OBSERVED",
+      "description": "Watchdog observation: 0 bytes audio delivered on floor04 within deadline"
+    }
+  ],
+  "createdAt": "2026-09-09T14:31:00.000Z"
+}

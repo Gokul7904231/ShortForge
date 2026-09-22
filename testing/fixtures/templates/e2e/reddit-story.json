@@ -1,0 +1,11 @@
+{
+  "templateId": "reddit.story.v1",
+  "templateVersion": "1.0.0",
+  "contentEngine": "REDDIT",
+  "formatFamily": "First-Person Confessional",
+  "topic": "Walking Out on My Business Partner",
+  "userInputs": {
+    "subreddit": "AmItheAsshole",
+    "postTitle": "AITA for terminating a 7-figure partnership on signing day?"
+  }
+}

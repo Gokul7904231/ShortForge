@@ -53,7 +53,24 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { jobId, platforms, videoUrl, title, description, tags, thumbnailUrl, engine, immediate } = body ?? {};
+    const {
+      jobId,
+      platforms,
+      videoUrl,
+      title,
+      description,
+      tags,
+      thumbnailUrl,
+      engine,
+      immediate,
+      authorization,
+      channelId,
+      privacyStatus,
+      publishAt,
+      containsSyntheticMedia,
+      selfDeclaredMadeForKids,
+      videoArtifactHash,
+    } = body ?? {};
 
     if (!jobId || !platforms || !videoUrl || !title) {
       return NextResponse.json(
@@ -62,10 +79,37 @@ export async function POST(req: Request) {
       );
     }
 
-    const payload = { jobId, videoUrl, title, description, tags, thumbnailUrl, engine };
+    // Fail-Closed Guard: YouTube publications REQUIRE authentic ReleaseAuthorization capability
+    const includesYouTube = platforms.includes("youtube") || platforms.includes("youtube-dryrun");
+    if (includesYouTube && !authorization) {
+      return NextResponse.json(
+        {
+          error:
+            "NO_VALID_F07_RELEASE_AUTHORIZATION: Cannot publish to YouTube without an unforgeable ReleaseAuthorization capability.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const payload = {
+      jobId,
+      videoUrl,
+      title,
+      description,
+      tags,
+      thumbnailUrl,
+      engine,
+      authorization,
+      channelId,
+      privacyStatus,
+      publishAt,
+      containsSyntheticMedia,
+      selfDeclaredMadeForKids,
+      videoArtifactHash,
+    };
 
     if (immediate) {
-      // Direct publish — bypass queue
+      // Direct publish with fail-closed provider execution
       const results = await Promise.allSettled(
         platforms.map(async (platform: string) => {
           const provider = PublishingRegistry.getProvider(platform);

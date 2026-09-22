@@ -76,6 +76,8 @@ temp/
 # Allow essential UI assets in public/
 !apps/web/public/demo-short.mp4
 !**/apps/web/public/demo-short.mp4
+!apps/web/public/german-quiz.mp4
+!**/apps/web/public/german-quiz.mp4
 !**/public/*.png
 !**/public/*.jpg
 !**/public/*.svg
@@ -84,12 +86,21 @@ temp/
 # generated test databases & renders
 data/renders/
 **/data/renders/
+data/audio/
+**/data/audio/
+data/outbox/
+**/data/outbox/
 data/test_*/
 **/data/test_*/
 data/voice-cache/
 **/data/voice-cache/
 data/scene-cache/
 **/data/scene-cache/
+.factoryos/
+**/.factoryos/
+.factoryos_render_cache/
+**/.factoryos_render_cache/
+graphify-out/
 *.db
 *.db-journal
 

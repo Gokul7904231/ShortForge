@@ -22,6 +22,8 @@ export interface VideoJob {
   createdAt: string;
   renderDurationSeconds?: number;
   videoUrl?: string | null;
+  remoteState?: string;
+  artifactSha256?: string;
   telemetry?: any;
 }
 

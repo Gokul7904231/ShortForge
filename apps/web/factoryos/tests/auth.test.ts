@@ -229,6 +229,9 @@ describe("FactoryOS v1 — Production Authentication & Authorization Suite", () 
         {
           id: "usr_gokul_owner",
           email: "gokul32499@gmail.com",
+          normalizedEmail: "gokul32499@gmail.com",
+          passwordHash: "mock_hash",
+          passwordSalt: "mock_salt",
           role: "OWNER",
           status: "ACTIVE",
           createdAt: new Date().toISOString(),
@@ -249,6 +252,9 @@ describe("FactoryOS v1 — Production Authentication & Authorization Suite", () 
         {
           id: "usr_gokul_owner",
           email: "gokul32499@gmail.com",
+          normalizedEmail: "gokul32499@gmail.com",
+          passwordHash: "mock_hash",
+          passwordSalt: "mock_salt",
           role: "OWNER",
           status: "ACTIVE",
           createdAt: new Date().toISOString(),

@@ -32,6 +32,11 @@ import { GuardianManager } from "../guardian/GuardianManager";
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
 import { InstructorSubsystem } from "../instructor/InstructorSubsystem";
 import { FactoryProjectionService } from "../projection/FactoryProjectionService";
+import { VoiceFabric } from "../voice/VoiceFabric";
+import { RenderFabric } from "../rendering/RenderFabric";
+import { EvolutionBrainSeam } from "../evolution/EvolutionBrainSeam";
+import { ContentGenomeTracker } from "../artifacts/ContentGenome";
+import { ResearchRuntime } from "../research/ResearchRuntime";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -71,6 +76,11 @@ export class AutonomousFactoryController {
   public capabilityRegistry!: CapabilityRegistry;
   public instructorSubsystem!: InstructorSubsystem;
   public projectionService!: FactoryProjectionService;
+  public voiceFabric: VoiceFabric = new VoiceFabric();
+  public renderFabric: RenderFabric = new RenderFabric();
+  public evolutionBrain: EvolutionBrainSeam = new EvolutionBrainSeam();
+  public contentGenome: ContentGenomeTracker = new ContentGenomeTracker();
+  public researchRuntime: ResearchRuntime = new ResearchRuntime();
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -271,7 +281,11 @@ export class AutonomousFactoryController {
 
   async startMission(params: any) {
     const mission = await this.missionManager.createMission(params);
-    return this.missionManager.startMission(mission.missionId);
+    const started = await this.missionManager.startMission(mission.missionId);
+    if (this.overseer) {
+      await this.overseer.dispatchMission(started);
+    }
+    return started;
   }
 
   async stop(): Promise<void> {

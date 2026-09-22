@@ -1,0 +1,11 @@
+{
+  "templateId": "facts.rapid-facts.v1",
+  "templateVersion": "1.0.0",
+  "contentEngine": "FACTS",
+  "formatFamily": "Rapid Fire Information",
+  "topic": "Deep Sea Hydrothermal Vents",
+  "userInputs": {
+    "topic": "Deep Sea Hydrothermal Vents",
+    "factCount": 3
+  }
+}

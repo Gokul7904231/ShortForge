@@ -1,0 +1,11 @@
+{
+  "templateId": "news.why-it-matters.v1",
+  "templateVersion": "1.0.0",
+  "contentEngine": "NEWS",
+  "formatFamily": "Evidence-Grounded Explainer",
+  "topic": "Global Semiconductor Subsidies Directive",
+  "userInputs": {
+    "headline": "Historic Global Semiconductor Accord Finalized",
+    "source": "Reuters"
+  }
+}

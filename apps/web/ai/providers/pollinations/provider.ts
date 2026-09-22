@@ -35,7 +35,7 @@ export class PollinationsProviderPlugin extends BaseProviderPlugin {
     this.chatAdapter = {
       id: "pollinations-chat",
       generateText: async (params, signal) => {
-        const modelName = params.model ? params.model.replace("pollinations/", "") : "qwen-2.5-coder-32b";
+        const modelName = params.model ? params.model.replace("pollinations/", "") : "openai";
         const body = PollinationsMapper.mapTextParams(params, modelName);
         
         const headers: Record<string, string> = { "Content-Type": "application/json" };

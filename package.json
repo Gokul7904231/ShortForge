@@ -10,6 +10,8 @@
     "husky": "^9.1.7"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:mission": "npx tsx testing/cli/mission.ts",
+    "test:all": "npx tsx testing/cli/test.ts"
   }
 }

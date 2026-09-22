@@ -347,7 +347,7 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
                   id: stateData.missions[0].missionId,
                   topic: stateData.missions[0].goal || "Automated Short Render",
                   stage: stateData.missions[0].status || "Rendering",
-                  progressPct: stateData.missions[0].progress?.percentComplete || 70,
+                  progressPct: stateData.missions[0].progress?.percentComplete ?? 0,
                 }
               : null
           }

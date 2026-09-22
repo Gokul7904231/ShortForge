@@ -5,7 +5,7 @@ import { OverseerCognitivePipeline } from "@/factoryos/core/cognition/OverseerCo
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyAuthAndRole(request);
+    const user = await verifyAuthAndRole(request, "ADMIN");
     const isAdmin = user.role === "OWNER" || user.role === "ADMIN";
 
     const providers = await ApiConfigManager.getProviders();
@@ -20,14 +20,14 @@ export async function GET(request: NextRequest) {
     });
   } catch (err: any) {
     console.error("[API /settings/api GET] Error:", err.message);
-    const status = err.status || err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500;
+    const status = err.status || (err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500);
     return NextResponse.json({ success: false, error: err.message }, { status });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await verifyAuthAndRole(request);
+    const user = await verifyAuthAndRole(request, "ADMIN");
     const isAdmin = user.role === "OWNER" || user.role === "ADMIN";
 
     const body = await request.json();
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (err: any) {
     console.error("[API /settings/api POST] Error:", err.message);
-    const status = err.status || err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500;
+    const status = err.status || (err.name === "UnauthorizedError" ? 401 : err.name === "ForbiddenError" ? 403 : 500);
     return NextResponse.json({ success: false, error: err.message }, { status });
   }
 }

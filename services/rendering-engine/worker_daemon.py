@@ -475,15 +475,8 @@ def validate_mp4(mp4_path: Path) -> dict:
             "codec": stream.get("codec_name", "h264"),
         }
     except Exception as e:
-        log("Artifact", f"ffprobe validation warning: {e}. Fallback to basic file validation.")
-        return {
-            "sizeBytes": size_bytes,
-            "sizeMb": round(size_bytes / (1024 * 1024), 2),
-            "durationSeconds": 45.0,
-            "width": 1080,
-            "height": 1920,
-            "codec": "h264",
-        }
+        log("Artifact", f"ffprobe validation failed: {e}")
+        raise RuntimeError(f"Physical media validation failed via ffprobe: {e}")
 
 def execute_render(job: dict, workspace: Path) -> Path:
     job_id = job.get("jobId") or job.get("id")

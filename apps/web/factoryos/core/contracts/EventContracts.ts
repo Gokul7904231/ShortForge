@@ -63,7 +63,13 @@ export type EventTopic =
   | "QUEUE_CONGESTION"
   | "GUARDIAN_ESCALATION"
   | "GUARDIAN_HEARTBEAT"
-  | "FLOOR_STATUS_CHANGED";
+  | "FLOOR_STATUS_CHANGED"
+  | "TASK_STARTED"
+  | "TASK_PROGRESS"
+  | "DELIVERY_COMPLETED"
+  | "SITUATION_RECORD_DISPATCHED"
+  | "SITUATION_RECORD_CONFLICT";
+
 
 export interface EventEnvelope<T = Record<string, unknown>> {
   readonly eventId: string;

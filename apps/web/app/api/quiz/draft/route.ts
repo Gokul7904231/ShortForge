@@ -97,18 +97,31 @@ export async function POST(req: Request) {
       else if (tier !== "BASIC") console.log(`[Quiz Draft API] PRO/ADMIN geo LLM for ${countryCode} tier=${tier}`);
       else console.log(`[Quiz Draft API] Generating Geo Quiz draft (LLM) for Country: "${countryCode}"...`);
 
-      const draft = await scriptAgent({
-        topic,
-        durationSeconds,
-        style,
-        contentType: "QUIZ_SHORTS",
-        renderProfile: "FAST_QUIZ",
-        apiKey: resolvedApiKey,
-        provider: resolvedProvider,
-      });
+      let draft: any;
+      try {
+        draft = await scriptAgent({
+          topic,
+          durationSeconds,
+          style,
+          contentType: "QUIZ_SHORTS",
+          renderProfile: "FAST_QUIZ",
+          apiKey: resolvedApiKey,
+          provider: resolvedProvider,
+        });
 
-      if (!draft || !Array.isArray(draft.questions) || draft.questions.length === 0) {
-        throw new Error(`Failed to generate Geo Quiz for country code: ${countryCode}.`);
+        if (!draft || !Array.isArray(draft.questions) || draft.questions.length === 0) {
+          throw new Error(`Failed to generate Geo Quiz for country code: ${countryCode}.`);
+        }
+      } catch (llmErr: any) {
+        console.warn(`[Quiz Draft API] LLM draft generation failed (${llmErr?.message}), checking hardcoded fallback for ${countryCode}...`);
+        if (hasHardcodedCountry(countryCode)) {
+          const fallbackUid = draftUser?.uid || "fallback-user";
+          const { set, index } = await peekNextSet(fallbackUid, countryCode);
+          const resp = toDraftResponse(set, countryCode, countryName, durationSeconds, index);
+          console.log(`[Quiz Draft API] Successfully fell back to hardcoded ${resp.meta.setLabel} for ${countryCode}`);
+          return NextResponse.json(resp);
+        }
+        throw llmErr;
       }
 
       const questions = draft.questions.map((q: any, idx: number) => {

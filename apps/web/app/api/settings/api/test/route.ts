@@ -7,8 +7,8 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // 🔐 Must be logged in (ADMIN or EDITOR)
-    const user = await verifyAuthAndRole(request);
+    // 🔐 Must be logged in as ADMIN or OWNER
+    const user = await verifyAuthAndRole(request, "ADMIN");
 
     const body = await request.json();
     const { providerId, apiKey: rawKey, baseUrl: overrideUrl, mode, localType, isCognitiveTest } = body;

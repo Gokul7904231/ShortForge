@@ -43,11 +43,13 @@ export interface RenderJobOutputConfig {
 }
 
 export interface RenderJobDeliveryConfig {
-  target: DeliveryTarget;
+  target?: DeliveryTarget;
   authMode?: "OAUTH_USER" | "SERVICE_ACCOUNT_SHARED_DRIVE";
   folderId?: string;
   artifactVersion?: string;
-  allowFallback: DeliveryFallbackConfig;
+  allowFallback?: DeliveryFallbackConfig;
+  download?: boolean;
+  googleDrive?: boolean;
 }
 
 export interface RenderArtifactMeta {

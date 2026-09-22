@@ -1,0 +1,10 @@
+Node: v24.19.0
+Python: 3.13.3
+Operating System: Windows
+Powershell: 5.1 / Core
+Git HEAD: 44c9c2c8f40562144e2f0506021c078d0c8de6f3
+Current Branch: chore/rename-shortforge
+Timestamp: 2026-09-20T23:03:00+05:30
+TypeScript (global/npx): 7.0.2
+Next.js: 16.2.12 (Turbopack)
+Vitest: 4.1.0

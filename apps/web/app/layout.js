@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/providers";
+import Script from "next/script";
 
 export const metadata = {
   title: "ShortForge — Forge viral Shorts",
@@ -27,7 +28,9 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon-black.png" media="(prefers-color-scheme: light)" />
         <link rel="icon" href="/favicon-white.png" media="(prefers-color-scheme: dark)" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-        <script
+        <Script
+          id="theme-favicon-resolver"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               try {

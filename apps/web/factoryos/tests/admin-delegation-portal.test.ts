@@ -55,13 +55,13 @@ describe("FactoryOS — Admin Portal Toggle & Time-Limited Delegation Suite", ()
   });
 
   it("3. Admin Delegation & Time Allocation via UserRepository", async () => {
-    const { hash, salt } = await hashPassword("SecretPass123!");
+    const { passwordHash, passwordSalt } = await hashPassword("SecretPass123!");
     
     // Create basic user
     const testUser = await UserRepository.create({
       email: "operator@example.com",
-      passwordHash: hash,
-      passwordSalt: salt,
+      passwordHash,
+      passwordSalt,
       role: "USER",
     });
 

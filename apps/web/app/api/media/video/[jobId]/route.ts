@@ -3,14 +3,14 @@ import path from "path";
 import fs from "fs";
 import { TempManager } from "@/lib/core/TempManager";
 
-function getVideoPath(jobId: string) {
+async function getVideoPath(jobId: string): Promise<string | null> {
   const root = process.cwd();
   
-  // Check our standard dynamic workflow engine output location first!
+  // 1. Check our standard dynamic workflow engine output location first
   const tempPath = path.join(TempManager.getTempDir(jobId), "final_video.mp4");
   if (fs.existsSync(tempPath)) return tempPath;
 
-  // Use Turbopack ignore comments to prevent bundling these dynamic paths
+  // 2. Check local engine directories
   const baseDir1 = path.join(/*turbopackIgnore: true*/ root, "generated", "local-ai", "output", jobId);
   const baseDir2 = path.join(/*turbopackIgnore: true*/ root, "local-ai", "output", jobId);
 
@@ -20,7 +20,6 @@ function getVideoPath(jobId: string) {
     const finalMp4 = path.join(/*turbopackIgnore: true*/ baseDir, "final.mp4");
     if (fs.existsSync(finalMp4)) return finalMp4;
 
-    // Fallback (older scaffold may not have generated final.mp4)
     const possible = ["final/final.mp4", "outputs/final/final.mp4", "output/final.mp4"];
     for (const rel of possible) {
       const p = path.join(/*turbopackIgnore: true*/ baseDir, rel);
@@ -28,8 +27,64 @@ function getVideoPath(jobId: string) {
     }
   }
 
-  // default fallback path
-  return tempPath;
+  // 3. Check authoritative Job Manifest (FactoryOS & Compute Fabric renders)
+  try {
+    const { readJobManifest } = await import("@/lib/jobs-history");
+    const manifest = await readJobManifest(jobId);
+    if (manifest?.localVideoPath && fs.existsSync(manifest.localVideoPath)) {
+      return manifest.localVideoPath;
+    }
+    if (manifest?.videoUrl && !manifest.videoUrl.startsWith("http") && !manifest.videoUrl.startsWith("/api") && fs.existsSync(manifest.videoUrl)) {
+      return manifest.videoUrl;
+    }
+    if (manifest?.artifactSha256) {
+      const shard = manifest.artifactSha256.substring(0, 2);
+      const possibleCas = [
+        path.join(root, "data", "cas_storage", shard, `${manifest.artifactSha256}.mp4`),
+        path.join(root, "data", "cas_storage", shard, manifest.artifactSha256),
+        path.join(root, "apps", "web", "data", "cas_storage", shard, `${manifest.artifactSha256}.mp4`),
+      ];
+      for (const p of possibleCas) {
+        if (fs.existsSync(p)) return p;
+      }
+    }
+  } catch {}
+
+  // 4. Check CAS storage directly by hash
+  const cleanHash = jobId.replace(/^cas_/, "");
+  if (/^[a-f0-9]{64}$/i.test(cleanHash)) {
+    const shard = cleanHash.substring(0, 2);
+    const possibleCas = [
+      path.join(root, "data", "cas_storage", shard, `${cleanHash}.mp4`),
+      path.join(root, "data", "cas_storage", shard, cleanHash),
+      path.join(root, "apps", "web", "data", "cas_storage", shard, `${cleanHash}.mp4`),
+    ];
+    for (const p of possibleCas) {
+      if (fs.existsSync(p)) return p;
+    }
+  }
+
+  // 5. Check FactoryOS render cache checkpoints
+  try {
+    const checkpointDirs = [
+      path.join(root, ".factoryos_render_cache", "checkpoints"),
+      path.join(root, "apps", "web", ".factoryos_render_cache", "checkpoints"),
+    ];
+    for (const cpDir of checkpointDirs) {
+      if (fs.existsSync(cpDir)) {
+        const files = fs.readdirSync(cpDir);
+        const matching = files.find(f => f.includes(jobId) && f.endsWith(".json"));
+        if (matching) {
+          const cpData = JSON.parse(fs.readFileSync(path.join(cpDir, matching), "utf-8"));
+          if (cpData.output_path && fs.existsSync(cpData.output_path)) {
+            return cpData.output_path;
+          }
+        }
+      }
+    }
+  } catch {}
+
+  return null;
 }
 
 export async function GET(
@@ -39,8 +94,8 @@ export async function GET(
   const { jobId } = await params;
   if (!jobId) return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
 
-  const videoPath = getVideoPath(jobId);
-  if (!fs.existsSync(videoPath)) {
+  const videoPath = await getVideoPath(jobId);
+  if (!videoPath || !fs.existsSync(videoPath)) {
     return NextResponse.json(
       { error: "Video not found", jobId },
       { status: 404 }

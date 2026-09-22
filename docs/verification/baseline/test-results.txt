@@ -1,0 +1,22 @@
+CANONICAL TEST SUITE (npx tsx testing/cli/test.ts):
+Exit Code: 0 (SUCCESS)
+Summary:
+- FactoryOS Visualization V2 Correctness Suite: 53/53 passed
+- Visual Demonstrations (Demo 1 & Demo 2): 100% delivered SVGs
+- Canonical Golden Mission Pipeline: PASS (Exit 0)
+- Outbox job delivery enqueued cleanly.
+
+FACTORYOS VITEST SUITE (npm --prefix apps/web run test -- --run):
+Exit Code: 1 (FAILURES DETECTED)
+Summary:
+- Test Files: 195 passed | 16 failed (211 total)
+- Tests: 1031 passed | 11 failed | 1 skipped (1043 total)
+- Passing: All 9 newly implemented Intelligence + Compute suites pass (39/39 tests).
+- Failing Suites & Exact Root Causes:
+  1. auth.test.ts: Expected 307 redirect, received 200 (auth middleware routing change).
+  2. e2e-factoryos-production-execution.test.ts: Expected 200 from callback, received 422 (callback payload validation/signing schema).
+  3. forensic-security-claims.test.ts: Expected 200 on callback, received 422.
+  4. full-separation-e2e.test.ts: Nav ID mismatch (navigation definitions renamed 'sre' routes).
+  5. production-gate-e2e.test.ts: Nav ID mismatch.
+  6. live-azure-staging-smoke.test.ts: UND_ERR_CONNECT_TIMEOUT to external endpoint render-api.gokul.software (staging server unreachable/offline).
+  7. real-e2e-mission-run.test.ts: ENOENT on temporary video file path in FFmpegRenderCompiler during local synthetic test.

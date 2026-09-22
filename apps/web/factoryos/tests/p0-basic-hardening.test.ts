@@ -134,9 +134,12 @@ describe("FactoryOS P0 Fixes & Basic UX Hardening Suite", () => {
       const jobId = data.jobId;
 
       // Allow background Overseer Floor 06 to attempt dispatch, fail closed, and release quota
-      await new Promise((r) => setTimeout(r, 250));
+      let manifest = await readJobManifest(jobId);
+      for (let i = 0; i < 60 && manifest?.status !== "failed"; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        manifest = await readJobManifest(jobId);
+      }
 
-      const manifest = await readJobManifest(jobId);
       expect(manifest?.status).toBe("failed");
       expect(manifest?.error).toContain("Azure render dispatch failed");
 

@@ -100,6 +100,7 @@ export interface MissionScope {
   readonly floorIds?: string[];
   readonly workerIds?: string[];
   readonly agentIds?: string[];
+  readonly [key: string]: unknown;
 }
 
 export interface MissionCompletionResult {
