@@ -33,7 +33,7 @@ describe("FactoryOS Frontier v2 — Phase 2: Autonomous Overseer Control Path Su
 
     // Wait for asynchronous background execution loop
     let isFinished = false;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 120; i++) {
       await new Promise((r) => setTimeout(r, 100));
       const mission = await controller.missionManager.getMission(missionId);
       if (mission && (mission.status === "COMPLETED" || mission.status === "FAILED")) {

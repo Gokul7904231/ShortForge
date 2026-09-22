@@ -134,10 +134,12 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
   });
 
   it("2. Tamper Evident Signature — altering receipt payload breaks signature verification", async () => {
+    const artifactSha = "b".repeat(64);
     const receipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
       publicationIntentAt: "2026-09-21T12:00:00Z",
+      artifactSha256: artifactSha,
     });
 
     // Reconstruct canonical payload for signature check
@@ -176,6 +178,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
       video: candidateVideo,
       channel: cleanChannel,
       publicationIntentAt: "2026-09-21T12:00:00Z",
+      artifactSha256: "c".repeat(64),
     });
 
     const part = receipt.evidencePartition;
@@ -190,6 +193,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
       video: candidateVideo,
       channel: cleanChannel,
       publicationIntentAt: "2026-09-21T12:00:00Z",
+      artifactSha256: "d".repeat(64),
     });
 
     // Valid values for overallOutcome are strictly bounded
@@ -207,5 +211,72 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     // Never produces "MONETIZABLE = TRUE" or guaranteed future platform payouts
     expect((receipt as any).isMonetizationGuaranteed).toBeUndefined();
     expect((receipt as any).monetizable).toBeUndefined();
+  });
+
+  it("5. Zero Synthetic Fallback — missing or empty artifactSha256 fails closed without physical bytes", async () => {
+    const receipt = await guardian.verifyRelease({
+      video: candidateVideo,
+      channel: cleanChannel,
+      publicationIntentAt: "2026-09-21T12:00:00Z",
+      // artifactSha256 deliberately omitted and no localMediaPath provided
+    });
+
+    expect(receipt.youtubePolicy.publishAllowed).toBe(false);
+    expect(receipt.youtubePolicy.overallOutcome).toBe("BLOCKED");
+    expect(receipt.youtubePolicy.publishBlockReason).toContain("Missing or empty placeholder artifact SHA-256 identity");
+  });
+
+  it("6. DryRun YouTube Provider Quarantine — strictly blocked in production and tagged isSimulated: true", async () => {
+    const { DryRunYouTubeProvider } = await import("../../publishing/providers/dryrun-youtube");
+    const { PublicationAuthorizationService } = await import("../../publishing/authorization/PublicationAuthorizationService");
+
+    const authService = PublicationAuthorizationService.getInstance();
+    const canonicalParams = {
+      jobId: "job_quarantine_test",
+      title: "Test Video",
+      description: "Test Description",
+      tags: ["test"],
+      privacyStatus: "unlisted" as const,
+      channelId: cleanChannel.channelId,
+      platform: "youtube",
+    };
+    const validReceipt = await guardian.verifyRelease({
+      video: candidateVideo,
+      channel: cleanChannel,
+      publicationIntentAt: "2026-09-21T12:00:00Z",
+      artifactSha256: "d".repeat(64),
+    });
+    const auth = authService.issueAuthorization({
+      receipt: validReceipt,
+      canonicalPayload: canonicalParams,
+      targetPlatform: "youtube",
+    });
+
+    const validPayload = {
+      ...canonicalParams,
+      videoUrl: "cas://vid1",
+      authorization: auth,
+    };
+
+    // 1. In production, must throw fatal quarantine error
+    const oldEnv = process.env.NODE_ENV;
+    const oldAllow = process.env.ALLOW_SIMULATED_PUBLISHING;
+    try {
+      process.env.NODE_ENV = "production";
+      delete process.env.ALLOW_SIMULATED_PUBLISHING;
+
+      await expect(DryRunYouTubeProvider.publish(validPayload)).rejects.toThrow(
+        /Simulated publishing provider is strictly quarantined in production/
+      );
+    } finally {
+      process.env.NODE_ENV = oldEnv;
+      process.env.ALLOW_SIMULATED_PUBLISHING = oldAllow;
+    }
+
+    // 2. In non-production, returns isSimulated: true
+    const result = await DryRunYouTubeProvider.publish(validPayload);
+    expect(result.success).toBe(true);
+    expect(result.isSimulated).toBe(true);
+    expect(result.postId).toContain("dryrun_yt_");
   });
 });

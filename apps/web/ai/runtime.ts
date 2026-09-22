@@ -1,6 +1,13 @@
 import crypto from "crypto";
 import { AICapability } from "./capability-registry";
 import { IntelligentRouter, AIProfile } from "./intelligent-router";
+import {
+  CallGate,
+  CallGateDecision,
+  RetryClassifier,
+  TokenEconomyEvent,
+  TokenEconomyLedger,
+} from "./economy/TokenEconomy";
 
 export interface RuntimeTrace {
   traceId: string;
@@ -23,6 +30,11 @@ export interface RuntimeOptions {
   subtask?: string;
   maxCostLimit?: number;
   requireLocal?: boolean;
+  contextHash?: string;
+  stateHash?: string;
+  deterministicValue?: unknown;
+  cacheTtlMs?: number;
+  maxRetries?: number;
 }
 
 class AIRuntimeEngineClass {
@@ -34,10 +46,11 @@ class AIRuntimeEngineClass {
     enableAnalytics: true,
     enableMemory: true,
     enableStreaming: false,
+    enableCallGate: true,
   };
 
   /**
-   * Executes an AI capability with tracing, cancellation signals, and timeout guards.
+   * Executes an AI capability with CallGate gating, RetryClassifier resilience, and TokenEconomy telemetry.
    */
   async execute(
     capability: AICapability,
@@ -49,6 +62,52 @@ class AIRuntimeEngineClass {
     const spanId = `sp_${crypto.randomBytes(6).toString("hex")}`;
     const startTime = Date.now();
 
+    // 1. CallGate Evaluation (Ponytail Economy: Delete Unnecessary Work)
+    if (this.flags.enableCallGate) {
+      const gateDecision = CallGate.evaluate({
+        operation: `${capability}:${version}`,
+        capability,
+        prompt: params.prompt,
+        contextHash: options.contextHash,
+        stateHash: options.stateHash,
+        deterministicValue: options.deterministicValue,
+      });
+
+      if (!gateDecision.allowCall) {
+        console.log(
+          `[AIRuntime] [${traceId}] CallGate skipped call (${gateDecision.skipReason}). Zero tokens consumed.`
+        );
+
+        // Record zero-cost skipped event
+        TokenEconomyLedger.getInstance().recordEvent({
+          eventId: `ev_${traceId}_skip`,
+          traceId,
+          operation: `${capability}:${version}`,
+          capability,
+          provider: "CALL_GATE",
+          model: "NONE",
+          estimatedInputTokens: Math.ceil(params.prompt.length / 4),
+          estimatedOutputTokens: 0,
+          cachedTokens: gateDecision.skipReason === "CACHE_HIT" ? Math.ceil(params.prompt.length / 4) : 0,
+          totalTokens: 0,
+          costUSD: 0.0,
+          latencyMs: Date.now() - startTime,
+          retryCount: 0,
+          callSkipped: true,
+          skipReason: gateDecision.skipReason,
+          contextHash: options.contextHash || "none",
+          promptHash: gateDecision.promptHash,
+          decisionType: "GENERATION",
+          decisionProvider: gateDecision.skipReason === "DETERMINISTIC_ANSWER_EXISTS" ? "DETERMINISTIC" : "LOCAL",
+          fallbackUsed: false,
+          escalated: false,
+          timestamp: new Date().toISOString(),
+        });
+
+        return gateDecision.deterministicResponse ?? gateDecision.cachedResponse;
+      }
+    }
+
     const trace: RuntimeTrace = {
       traceId,
       spanId,
@@ -59,95 +118,147 @@ class AIRuntimeEngineClass {
 
     console.log(`[AIRuntime] [${traceId}:${spanId}] Starting execution for ${capability} (${version})`);
 
-    // Setup Timeout & Cancellation guards
-    const abortController = new AbortController();
-    
-    // Link parent signal if provided
-    const parentSignal = options.signal;
-    const parentListener = () => {
-      console.log(`[AIRuntime] [${traceId}] Parent cancellation requested. Aborting runtime...`);
-      abortController.abort();
-    };
+    let currentAttempt = 1;
+    const maxAttempts = (options.maxRetries ?? 3) + 1;
+    let lastError: any = null;
 
-    if (parentSignal) {
-      if (parentSignal.aborted) {
-        throw new DOMException("Execution aborted by parent signal", "AbortError");
-      }
-      parentSignal.addEventListener("abort", parentListener);
-    }
+    while (currentAttempt <= maxAttempts) {
+      // Setup Timeout & Cancellation guards
+      const abortController = new AbortController();
 
-    let timeoutId: NodeJS.Timeout | null = null;
-    const timeoutMs = options.timeoutMs ?? Number(process.env.AI_EXECUTION_TIMEOUT_MS ?? "30000");
+      // Link parent signal if provided
+      const parentSignal = options.signal;
+      const parentListener = () => {
+        console.log(`[AIRuntime] [${traceId}] Parent cancellation requested. Aborting runtime...`);
+        abortController.abort();
+      };
 
-    if (timeoutMs > 0) {
-      timeoutId = setTimeout(() => {
-        console.warn(`[AIRuntime] [${traceId}] Timeout of ${timeoutMs}ms exceeded. Triggering abort...`);
-        abortController.abort(new Error("TimeoutExceeded"));
-      }, timeoutMs);
-    }
-
-    try {
-      // Execute through Router + Registry layers
-      const executePromise = IntelligentRouter.routeExecute(
-        {
-          capability,
-          subtask: options.subtask,
-          maxCostLimit: options.maxCostLimit,
-          requireLocal: options.requireLocal || !this.flags.enableLocalAI,
-        },
-        {
-          ...params,
-          // Propagate abort controller signal to execution adapters
-          // (They must respect the controller abort signal for network cancel)
+      if (parentSignal) {
+        if (parentSignal.aborted) {
+          throw new DOMException("Execution aborted by parent signal", "AbortError");
         }
-      );
+        parentSignal.addEventListener("abort", parentListener);
+      }
 
-      // We race the executePromise or listen to abort events
-      const abortPromise = new Promise((_, reject) => {
-        abortController.signal.addEventListener("abort", () => {
-          const reason = abortController.signal.reason;
-          if (reason?.message === "TimeoutExceeded") {
-            reject(new Error(`[AIRuntime] Execution timed out after ${timeoutMs}ms`));
-          } else {
-            reject(new DOMException("Execution cancelled by user request", "AbortError"));
+      let timeoutId: NodeJS.Timeout | null = null;
+      const timeoutMs = options.timeoutMs ?? Number(process.env.AI_EXECUTION_TIMEOUT_MS ?? "30000");
+
+      if (timeoutMs > 0) {
+        timeoutId = setTimeout(() => {
+          console.warn(`[AIRuntime] [${traceId}] Timeout of ${timeoutMs}ms exceeded. Triggering abort...`);
+          abortController.abort(new Error("TimeoutExceeded"));
+        }, timeoutMs);
+      }
+
+      try {
+        const executePromise = IntelligentRouter.routeExecute(
+          {
+            capability,
+            subtask: options.subtask,
+            maxCostLimit: options.maxCostLimit,
+            requireLocal: options.requireLocal || !this.flags.enableLocalAI,
+          },
+          {
+            ...params,
           }
+        );
+
+        const abortPromise = new Promise((_, reject) => {
+          abortController.signal.addEventListener("abort", () => {
+            const reason = abortController.signal.reason;
+            if (reason?.message === "TimeoutExceeded") {
+              reject(new Error(`[AIRuntime] Execution timed out after ${timeoutMs}ms`));
+            } else {
+              reject(new DOMException("Execution cancelled by user request", "AbortError"));
+            }
+          });
         });
-      });
 
-      const result = await Promise.race([executePromise, abortPromise]);
+        const result = await Promise.race([executePromise, abortPromise]);
 
-      // Complete Trace
-      const endTime = Date.now();
-      trace.endTime = endTime;
-      trace.duration = endTime - startTime;
-      trace.success = true;
-      
-      console.log(`[AIRuntime] [${traceId}] Completed execution successfully in ${trace.duration}ms`);
-      return result;
+        // Complete Trace
+        const endTime = Date.now();
+        trace.endTime = endTime;
+        trace.duration = endTime - startTime;
+        trace.success = true;
 
-    } catch (err: any) {
-      const endTime = Date.now();
-      trace.endTime = endTime;
-      trace.duration = endTime - startTime;
-      trace.success = false;
-      trace.error = err.message || String(err);
+        // Record in CallGate cache
+        CallGate.recordCache(
+          capability,
+          params.prompt,
+          result,
+          options.contextHash,
+          options.cacheTtlMs ?? 300000
+        );
 
-      console.error(`[AIRuntime] [${traceId}] Execution failed: ${trace.error}`);
-      throw err;
-    } finally {
-      // Clean up guards
-      if (timeoutId) clearTimeout(timeoutId);
-      if (parentSignal) parentSignal.removeEventListener("abort", parentListener);
-      
-      // Publish tracing event to telemetry logs
-      this.logTelemetryTrace(trace);
+        // Estimate token economy
+        const estInput = Math.ceil(params.prompt.length / 4);
+        const estOutput = result ? Math.ceil(JSON.stringify(result).length / 4) : 0;
+        const totalTokens = estInput + estOutput;
+        const estCostUSD = (estInput * 0.0000015) + (estOutput * 0.000002);
+
+        TokenEconomyLedger.getInstance().recordEvent({
+          eventId: `ev_${traceId}_${currentAttempt}`,
+          traceId,
+          operation: `${capability}:${version}`,
+          capability,
+          provider: "ROUTER_DEFAULT",
+          model: "DEFAULT",
+          estimatedInputTokens: estInput,
+          estimatedOutputTokens: estOutput,
+          cachedTokens: 0,
+          totalTokens,
+          costUSD: estCostUSD,
+          latencyMs: trace.duration,
+          retryCount: currentAttempt - 1,
+          callSkipped: false,
+          contextHash: options.contextHash || "none",
+          promptHash: CallGate.hashPrompt(params.prompt),
+          decisionType: "GENERATION",
+          decisionProvider: "LLM",
+          fallbackUsed: currentAttempt > 1,
+          escalated: false,
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log(`[AIRuntime] [${traceId}] Completed execution successfully in ${trace.duration}ms`);
+        return result;
+      } catch (err: any) {
+        lastError = err;
+        const classification = RetryClassifier.classify(err, currentAttempt);
+
+        console.warn(
+          `[AIRuntime] [${traceId}] Attempt ${currentAttempt} failed with ${classification.failureType}. Retryable=${classification.shouldRetry}`
+        );
+
+        if (classification.shouldRetry && currentAttempt < maxAttempts) {
+          currentAttempt++;
+          if (classification.backoffMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, classification.backoffMs));
+          }
+          continue;
+        }
+
+        const endTime = Date.now();
+        trace.endTime = endTime;
+        trace.duration = endTime - startTime;
+        trace.success = false;
+        trace.error = err.message || String(err);
+
+        console.error(`[AIRuntime] [${traceId}] Execution permanently failed: ${trace.error}`);
+        throw err;
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (parentSignal) parentSignal.removeEventListener("abort", parentListener);
+        this.logTelemetryTrace(trace);
+      }
     }
+
+    throw lastError;
   }
 
   private logTelemetryTrace(trace: RuntimeTrace) {
     if (!this.flags.enableAnalytics) return;
-    
-    // Write telemetry to console for debugging (and future OpenTelemetry / APM connector)
     console.log(
       `[TELEMETRY TRACE] ${JSON.stringify({
         traceId: trace.traceId,

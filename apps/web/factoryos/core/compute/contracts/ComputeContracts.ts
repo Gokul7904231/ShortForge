@@ -7,7 +7,14 @@
 
 export type ComputeWorkloadType = "RENDER" | "AUDIO" | "INFERENCE" | "VERIFICATION";
 
-export type ProviderType = "LOCAL" | "KAGGLE" | "LIGHTNING" | "GITHUB_ACTIONS" | "PERSISTENT_WORKER";
+export type ProviderType =
+  | "LOCAL"
+  | "KAGGLE"
+  | "LIGHTNING"
+  | "GITHUB_ACTIONS"
+  | "PERSISTENT_WORKER"
+  | "RUNPOD"
+  | "VAST";
 
 export type ProviderExecutionModel =
   | "LOCAL_PROCESS"
@@ -154,3 +161,61 @@ export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
   shortVideoThresholdSeconds: 60,
   allowSimulatedInTest: false,
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider Adapter Contract v2 (Heterogeneous Cloud Lifecycle)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ComputeInstanceSpec {
+  instanceId?: string;
+  providerType: ProviderType;
+  gpuRequired?: boolean;
+  minVramMb?: number;
+  cpuCores?: number;
+  memoryMb?: number;
+  maxDurationSeconds?: number;
+  environmentVariables?: Record<string, string>;
+  workerPayload?: Record<string, any>;
+}
+
+export type ComputeInstanceState =
+  | "PROVISIONING"
+  | "BOOTING"
+  | "READY"
+  | "BUSY"
+  | "TERMINATING"
+  | "TERMINATED"
+  | "ERROR";
+
+export interface ComputeInstanceStatus {
+  instanceId: string;
+  state: ComputeInstanceState;
+  endpointUri?: string;
+  workerId?: string;
+  startedAt?: string;
+  uptimeSeconds?: number;
+  error?: string;
+}
+
+export interface IComputeProviderV2 {
+  readonly id: string;
+  readonly type: ProviderType;
+  readonly executionModel: ProviderExecutionModel;
+
+  getCapability(): Promise<ProviderCapability>;
+  getHealth(): Promise<ProviderHealth>;
+  isAvailable(): Promise<boolean>;
+
+  // Lifecycle v2
+  provision(spec: ComputeInstanceSpec): Promise<ComputeInstanceStatus>;
+  waitReady(instanceId: string, timeoutMs?: number): Promise<boolean>;
+  registerWorker?(workerInfo: Record<string, any>): Promise<{ token: string; acknowledged: boolean }>;
+  dispatch(job: ComputeJob, instanceId?: string, onProgress?: (msg: string) => void): Promise<ExecutionReceipt>;
+  getStatus(instanceId: string): Promise<ComputeInstanceStatus>;
+  terminate(instanceId: string): Promise<void>;
+
+  // Backward compatibility
+  executeJob(job: ComputeJob, onProgress?: (msg: string) => void): Promise<ExecutionReceipt>;
+  cancelJob?(executionId: string): Promise<void>;
+  validateConfiguration?(): ProviderConfigValidationResult;
+}

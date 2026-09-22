@@ -33,6 +33,22 @@ export interface ContextCapsule {
   readonly compiledAt: string;
 }
 
+export interface ContextCapsuleV2 {
+  readonly contextId: string;
+  readonly contextVersion: number;
+  readonly contextHash: string; // SHA-256 of canonical serialized payload
+  readonly stateVersion: string;
+  readonly stateFingerprint: string;
+  readonly sourceVersions: Record<string, string>;
+  readonly createdAt: string;
+  readonly expiresAt: string;
+  readonly estimatedTokens: number;
+  readonly actualTokens?: number;
+  readonly truncated: boolean;
+  readonly redactionState: "CLEAN" | "REDACTED";
+  readonly payload: Record<string, unknown>;
+}
+
 export interface IContextCompiler {
   compile(params: {
     taskId: string;
@@ -41,4 +57,14 @@ export interface IContextCompiler {
     currentState?: Record<string, unknown>;
     budgetPolicy?: Partial<ContextBudgetPolicy>;
   }): ContextCapsule;
+
+  compileV2(params: {
+    taskId: string;
+    query: string;
+    evidenceItems: EvidenceItem[];
+    currentState?: Record<string, unknown>;
+    stateVersion?: string;
+    sourceVersions?: Record<string, string>;
+    budgetPolicy?: Partial<ContextBudgetPolicy>;
+  }): ContextCapsuleV2;
 }

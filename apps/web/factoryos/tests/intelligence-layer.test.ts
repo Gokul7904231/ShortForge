@@ -128,6 +128,52 @@ describe("FactoryOS — Intelligence Layer (Retrieval, Compiler, Writer)", () =>
     expect(capsule.evidence[0].snippet).toContain("[REDACTED_SECRET]");
   });
 
+  it("ContextCompiler.compileV2 emits deterministic canonical ContextCapsuleV2", () => {
+    const rawItems = [
+      {
+        id: "ev1",
+        sourceType: "KNOWLEDGE" as const,
+        sourceId: "adr-1",
+        titleOrPath: "decisions/adr-1.md",
+        relevance: 0.9,
+        authority: "AUTHORITATIVE" as const,
+        freshness: new Date().toISOString(),
+        epistemicStatus: "sourced" as const,
+        verification: "verified" as const,
+        snippet: "Configured runtime environment parameters.",
+      },
+    ];
+
+    // Case A: State with keys in one order
+    const stateA = { b: "val_b", a: "val_a", nested: { z: 1, y: 2 } };
+    const capA = contextCompiler.compileV2({
+      taskId: "t1",
+      query: "Check config",
+      evidenceItems: rawItems,
+      currentState: stateA,
+      stateVersion: "2.1.0",
+    });
+
+    // Case B: State with keys in different order
+    const stateB = { nested: { y: 2, z: 1 }, a: "val_a", b: "val_b" };
+    const capB = contextCompiler.compileV2({
+      taskId: "t1",
+      query: "Check config",
+      evidenceItems: rawItems,
+      currentState: stateB,
+      stateVersion: "2.1.0",
+    });
+
+    expect(capA.contextVersion).toBe(2);
+    expect(capA.contextHash).toHaveLength(64);
+    expect(capA.stateFingerprint).toHaveLength(64);
+    // Deterministic Canonicalization Invariant
+    expect(capA.stateFingerprint).toBe(capB.stateFingerprint);
+    expect(capA.contextHash).toBe(capB.contextHash);
+    expect(capA.estimatedTokens).toBeGreaterThan(0);
+    expect(capA.redactionState).toBe("CLEAN");
+  });
+
   it("MemoryWriter enforces policy: accepts verified decisions, rejects noise", async () => {
     // 1. Rejects debug noise
     const debugProposal = {

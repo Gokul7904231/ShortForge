@@ -15,6 +15,14 @@ export class DryRunYouTubePublishingProvider implements PublishingProvider {
   readonly name = "YouTube (Dry-Run / Test Mode)";
 
   async publish(payload: PublishPayload): Promise<PublishResult> {
+    // Strict Quarantine: Prevent simulated publishing from ever running in production by accident
+    if (process.env.NODE_ENV === "production" && process.env.ALLOW_SIMULATED_PUBLISHING !== "true") {
+      throw new Error(
+        "[YouTube-DryRun] FATAL: Simulated publishing provider is strictly quarantined in production. " +
+        "Set ALLOW_SIMULATED_PUBLISHING=true if performing an explicit staging validation."
+      );
+    }
+
     const auth = payload.authorization;
     if (!auth) {
       throw new Error(
@@ -57,6 +65,7 @@ export class DryRunYouTubePublishingProvider implements PublishingProvider {
       postId: dryRunVideoId,
       postUrl: `https://youtube.com/watch?v=${dryRunVideoId}`,
       publishedAt: new Date().toISOString(),
+      isSimulated: true,
     };
   }
 
