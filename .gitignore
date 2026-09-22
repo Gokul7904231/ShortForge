@@ -118,6 +118,8 @@ graphify-out/
 **/.unlighthouse/
 .claude/
 **/.claude/
+.kilo/
+**/.kilo/
 .aider*
 used_artifacts/
 **/used_artifacts/
@@ -134,3 +136,8 @@ gen-v-deploy/
 # legacy bottle leftovers (physical dirs remain until manual cleanup)
 floors/
 gen-v/
+
+# smoke test outputs
+kaggle-output/
+**/kaggle-output/
+

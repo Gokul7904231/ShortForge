@@ -1,13 +1,15 @@
-﻿import hashlib
+import hashlib
 import json
-import os
+import shutil
 import subprocess
 import time
 from pathlib import Path
 
 
+KERNEL_ID = "gokulkumara/shortforge-kaggle-gpu-smoke-test"
+
 OUTPUT_DIR = Path("/kaggle/working")
-VIDEO_PATH = OUTPUT_DIR / "shortforge-kaggle-smoke.mp4"
+VIDEO_PATH = OUTPUT_DIR / "shortforge-kaggle-gpu-smoke.mp4"
 RECEIPT_PATH = OUTPUT_DIR / "shortforge-receipt.json"
 
 
@@ -33,47 +35,116 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-print("=== ShortForge Kaggle GPU Smoke Test ===")
+print("=== ShortForge Kaggle GPU Render Test ===")
 
-print("\n[1] Checking GPU...")
-gpu_code, gpu_output = run_command(
-    [
-        "nvidia-smi",
-        "--query-gpu=name,memory.total,driver_version",
-        "--format=csv,noheader",
-    ]
-)
+# ---------------------------------------------------------
+# 1. GPU detection
+# ---------------------------------------------------------
+print("\n[1] NVIDIA GPU")
+
+nvidia_smi = shutil.which("nvidia-smi")
+
+if not nvidia_smi:
+    raise RuntimeError("nvidia-smi not found")
+
+gpu_code, gpu_output = run_command([
+    nvidia_smi,
+    "--query-gpu=index,name,memory.total,driver_version",
+    "--format=csv,noheader",
+])
 
 if gpu_code != 0:
-    raise RuntimeError("GPU check failed")
+    raise RuntimeError("nvidia-smi failed")
 
-print("\n[2] Checking FFmpeg...")
-ffmpeg_code, ffmpeg_output = run_command(["ffmpeg", "-version"])
+gpu_lines = [
+    line.strip()
+    for line in gpu_output.splitlines()
+    if line.strip()
+]
 
-if ffmpeg_code != 0:
-    raise RuntimeError("FFmpeg check failed")
+print(f"Detected GPUs: {len(gpu_lines)}")
 
-print("\n[3] Rendering test MP4...")
+if len(gpu_lines) < 1:
+    raise RuntimeError("No NVIDIA GPUs detected")
+
+
+# ---------------------------------------------------------
+# 2. FFmpeg / NVENC capability
+# ---------------------------------------------------------
+print("\n[2] FFmpeg")
+
+ffmpeg_path = shutil.which("ffmpeg")
+
+if not ffmpeg_path:
+    raise RuntimeError("ffmpeg not found")
+
+ffmpeg_version_code, ffmpeg_version = run_command([
+    ffmpeg_path,
+    "-version",
+])
+
+if ffmpeg_version_code != 0:
+    raise RuntimeError("FFmpeg version check failed")
+
+
+print("\n[3] Checking NVENC support")
+
+encoder_code, encoder_output = run_command([
+    ffmpeg_path,
+    "-hide_banner",
+    "-encoders",
+])
+
+nvenc_available = "h264_nvenc" in encoder_output
+
+print("h264_nvenc available =", nvenc_available)
+
+encoder = "h264_nvenc" if nvenc_available else "libx264"
+
+if not nvenc_available:
+    print("WARNING: NVENC unavailable; falling back to libx264 CPU encoding")
+
+
+# ---------------------------------------------------------
+# 3. Render
+# ---------------------------------------------------------
+print("\n[4] Rendering")
 
 render_command = [
-    "ffmpeg",
+    ffmpeg_path,
     "-y",
     "-f",
     "lavfi",
     "-i",
-    "color=c=black:s=1080x1920:r=30",
+    "testsrc2=size=1080x1920:rate=30",
     "-f",
     "lavfi",
     "-i",
     "anullsrc=r=48000:cl=stereo",
     "-t",
     "5",
-    "-c:v",
-    "libx264",
-    "-preset",
-    "veryfast",
-    "-pix_fmt",
-    "yuv420p",
+]
+
+if encoder == "h264_nvenc":
+    render_command += [
+        "-c:v",
+        "h264_nvenc",
+        "-preset",
+        "p4",
+        "-pix_fmt",
+        "yuv420p",
+    ]
+else:
+    render_command += [
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-pix_fmt",
+        "yuv420p",
+    ]
+
+render_command += [
     "-c:a",
     "aac",
     "-shortest",
@@ -86,26 +157,37 @@ if render_code != 0:
     raise RuntimeError("FFmpeg render failed")
 
 if not VIDEO_PATH.exists():
-    raise RuntimeError("Expected MP4 was not created")
+    raise RuntimeError("Rendered MP4 was not created")
+
+
+# ---------------------------------------------------------
+# 4. Physical artifact verification
+# ---------------------------------------------------------
+print("\n[5] Artifact verification")
 
 byte_length = VIDEO_PATH.stat().st_size
-sha256 = sha256_file(VIDEO_PATH)
 
 if byte_length <= 0:
     raise RuntimeError("Rendered MP4 is empty")
 
-print("\n[4] Writing receipt...")
+sha256 = sha256_file(VIDEO_PATH)
 
+
+# ---------------------------------------------------------
+# 5. Receipt
+# ---------------------------------------------------------
 receipt = {
     "provider": "kaggle",
-    "kernel_id": "gokulyt/shortforge-kaggle-smoke",
+    "kernel_id": KERNEL_ID,
     "status": "completed",
-    "gpu_check": {
-        "success": gpu_code == 0,
-        "output": gpu_output.strip(),
+    "gpu": {
+        "detected": True,
+        "count": len(gpu_lines),
+        "devices": gpu_lines,
     },
-    "ffmpeg_check": {
-        "success": ffmpeg_code == 0,
+    "ffmpeg": {
+        "encoder_selected": encoder,
+        "nvenc_available": nvenc_available,
     },
     "artifact": {
         "filename": VIDEO_PATH.name,
@@ -121,8 +203,9 @@ RECEIPT_PATH.write_text(
     encoding="utf-8",
 )
 
-print("\n=== SMOKE TEST COMPLETE ===")
-print(f"Artifact: {VIDEO_PATH}")
-print(f"Bytes:    {byte_length}")
-print(f"SHA-256:  {sha256}")
-print(f"Receipt:  {RECEIPT_PATH}")
+print("\n=== GPU RENDER TEST COMPLETE ===")
+print("Kernel:", KERNEL_ID)
+print("Encoder:", encoder)
+print("Bytes:", byte_length)
+print("SHA-256:", sha256)
+print("Receipt:", RECEIPT_PATH)

@@ -1,5 +1,5 @@
 {
-  "id": "gokulyt/shortforge-kaggle-gpu-smoke-test",
+  "id": "gokulkumara/shortforge-kaggle-gpu-smoke-test",
   "title": "ShortForge Kaggle GPU Smoke Test",
   "code_file": "worker.py",
   "language": "python",
