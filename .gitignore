@@ -118,6 +118,8 @@ graphify-out/
 **/.unlighthouse/
 .claude/
 **/.claude/
+.kilo/
+**/.kilo/
 .aider*
 used_artifacts/
 **/used_artifacts/
