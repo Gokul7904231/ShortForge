@@ -81,9 +81,9 @@ export class HistoryProvider implements IHistoryProvider {
         revisions.push({
           documentId,
           revisionId: "current",
-          timestamp: doc.frontmatter.updated_at,
-          status: doc.frontmatter.status,
-          changeSummary: `Document in state ${doc.frontmatter.status}, created at ${doc.frontmatter.created_at}`,
+          timestamp: doc.frontmatter.updated_at || new Date().toISOString(),
+          status: doc.frontmatter.status || "UNKNOWN",
+          changeSummary: `Document in state ${doc.frontmatter.status || "UNKNOWN"}, created at ${doc.frontmatter.created_at}`,
         });
       }
     }

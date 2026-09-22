@@ -68,6 +68,8 @@ export interface ReleaseAuthorization {
   readonly evidenceVersion: string;
   readonly status: "ACTIVE" | "CONSUMED" | "INVALIDATED";
   readonly expiresAt: string;
+  readonly consumedAt?: string;
+  readonly uploadSessionUri?: string;
   readonly invalidatedAt?: string;
   readonly invalidatedBy?: string;
   readonly invalidationReason?: string;

@@ -4,6 +4,9 @@
  */
 
 import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { F07TrustedKeyStore } from "./F07TrustedKeyStore";
 
 export interface KeyPairInfo {
   readonly keyId: string;
@@ -22,20 +25,57 @@ export class F07CryptoSigner {
     this.keyId = "f07_guardian_root_v1";
     this.keyVersion = 1;
 
-    // Use environment key if provided, else generate stable Ed25519 keypair
+    // 1. Environment keys take highest precedence
     if (process.env.F07_SIGNING_PRIVATE_KEY_PEM && process.env.F07_SIGNING_PUBLIC_KEY_PEM) {
       this.privateKey = crypto.createPrivateKey(process.env.F07_SIGNING_PRIVATE_KEY_PEM);
       this.publicKey = crypto.createPublicKey(process.env.F07_SIGNING_PUBLIC_KEY_PEM);
     } else {
-      // Deterministic fallback seed for development/test reproducibility if not provided
-      const seed = crypto.createHash("sha256").update("factoryos_f07_release_guardian_authority_v1").digest();
-      const keyPair = crypto.generateKeyPairSync("ed25519", {
-        privateKeyEncoding: { type: "pkcs8", format: "pem" },
-        publicKeyEncoding: { type: "spki", format: "pem" },
-      });
-      this.privateKey = crypto.createPrivateKey(keyPair.privateKey);
-      this.publicKey = crypto.createPublicKey(keyPair.publicKey);
+      // 2. Load or persist stable durable keypair on disk to survive process restarts
+      const keysDir = path.resolve(process.cwd(), "data", "keys");
+      const privPath = path.join(keysDir, `${this.keyId}.priv.pem`);
+      const pubPath = path.join(keysDir, `${this.keyId}.pub.pem`);
+
+      if (fs.existsSync(privPath) && fs.existsSync(pubPath)) {
+        try {
+          const privPem = fs.readFileSync(privPath, "utf8");
+          const pubPem = fs.readFileSync(pubPath, "utf8");
+          this.privateKey = crypto.createPrivateKey(privPem);
+          this.publicKey = crypto.createPublicKey(pubPem);
+        } catch {
+          // Fallback to generation if file corrupted
+          const keyPair = crypto.generateKeyPairSync("ed25519", {
+            privateKeyEncoding: { type: "pkcs8", format: "pem" },
+            publicKeyEncoding: { type: "spki", format: "pem" },
+          });
+          this.privateKey = crypto.createPrivateKey(keyPair.privateKey);
+          this.publicKey = crypto.createPublicKey(keyPair.publicKey);
+        }
+      } else {
+        if (!fs.existsSync(keysDir)) {
+          fs.mkdirSync(keysDir, { recursive: true });
+        }
+        const keyPair = crypto.generateKeyPairSync("ed25519", {
+          privateKeyEncoding: { type: "pkcs8", format: "pem" },
+          publicKeyEncoding: { type: "spki", format: "pem" },
+        });
+        this.privateKey = crypto.createPrivateKey(keyPair.privateKey);
+        this.publicKey = crypto.createPublicKey(keyPair.publicKey);
+        try {
+          fs.writeFileSync(privPath, keyPair.privateKey, "utf8");
+          fs.writeFileSync(pubPath, keyPair.publicKey, "utf8");
+        } catch {}
+      }
     }
+
+    // Register active root key into trusted key store
+    F07TrustedKeyStore.getInstance().registerTrustedKey({
+      keyId: this.keyId,
+      keyVersion: this.keyVersion,
+      publicKeyPem: this.publicKey.export({ type: "spki", format: "pem" }).toString(),
+      status: "ACTIVE",
+      addedAt: new Date().toISOString(),
+      description: "Authoritative F07 Release Guardian root key",
+    });
   }
 
   public static getInstance(): F07CryptoSigner {
@@ -58,16 +98,18 @@ export class F07CryptoSigner {
   }
 
   /**
-   * Deterministic canonical JSON serialization: recursively sorts all keys.
+   * Deterministic canonical JSON serialization: recursively sorts all keys and normalizes undefined values.
    */
   public static canonicalize(obj: any): string {
-    if (obj === null || typeof obj !== "object") {
-      return JSON.stringify(obj);
+    if (obj === undefined || obj === null || typeof obj !== "object") {
+      return JSON.stringify(obj ?? null);
     }
     if (Array.isArray(obj)) {
       return "[" + obj.map((item) => F07CryptoSigner.canonicalize(item)).join(",") + "]";
     }
-    const sortedKeys = Object.keys(obj).sort();
+    const sortedKeys = Object.keys(obj)
+      .filter((key) => obj[key] !== undefined)
+      .sort();
     const pairs = sortedKeys.map((key) => {
       const val = obj[key];
       return JSON.stringify(key) + ":" + F07CryptoSigner.canonicalize(val);
@@ -107,8 +149,12 @@ export class F07CryptoSigner {
   /**
    * Static verify helper.
    */
-  public static verify(obj: any, signatureHex: string, customPublicKey?: crypto.KeyObject): boolean {
-    return F07CryptoSigner.getInstance().verify(obj, signatureHex, customPublicKey);
+  public static verify(
+    obj: any,
+    signatureHex: string,
+    optionsOrKey?: crypto.KeyObject | { signerKeyId?: string; customPublicKey?: crypto.KeyObject }
+  ): boolean {
+    return F07CryptoSigner.getInstance().verify(obj, signatureHex, optionsOrKey);
   }
 
   /**
@@ -127,12 +173,35 @@ export class F07CryptoSigner {
   }
 
   /**
-   * Verifies Ed25519 hex signature over canonicalized payload.
+   * Verifies Ed25519 hex signature over canonicalized payload using trusted key.
    */
-  public verify(obj: any, signatureHex: string, customPublicKey?: crypto.KeyObject): boolean {
+  public verify(
+    obj: any,
+    signatureHex: string,
+    optionsOrKey?: crypto.KeyObject | { signerKeyId?: string; customPublicKey?: crypto.KeyObject }
+  ): boolean {
     try {
+      let pubKey: crypto.KeyObject | null = null;
+      if (optionsOrKey && typeof (optionsOrKey as any).export === "function") {
+        pubKey = optionsOrKey as crypto.KeyObject;
+      } else if (optionsOrKey && typeof optionsOrKey === "object") {
+        const opts = optionsOrKey as { signerKeyId?: string; customPublicKey?: crypto.KeyObject };
+        if (opts.customPublicKey) {
+          pubKey = opts.customPublicKey;
+        } else if (opts.signerKeyId) {
+          const trustStore = F07TrustedKeyStore.getInstance();
+          if (!trustStore.isKeyTrusted(opts.signerKeyId)) {
+            return false; // Unknown or revoked key identity
+          }
+          pubKey = trustStore.getPublicKey(opts.signerKeyId);
+        }
+      }
+
+      if (!pubKey) {
+        pubKey = this.publicKey;
+      }
+
       const canonical = F07CryptoSigner.canonicalize(obj);
-      const pubKey = customPublicKey || this.publicKey;
       return crypto.verify(
         null,
         Buffer.from(canonical, "utf8"),

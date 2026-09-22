@@ -151,7 +151,6 @@ describe("Phase 9 — Failure-Injection Campaign & Self-Healing Governance", () 
     const evidence = recordVerificationEvidence({
       capability: "CAS Tamper Detection",
       verificationLevel: "INTEGRATION_VERIFIED",
-      environment: "Node v24 + Windows Local Filesystem",
       command: "vitest run failure-injection-campaign.test.ts",
       testName: "Scenario D: CAS Tampering & Hash Collision Attack Detection",
       runId: `run_tamper_${Date.now()}`,

@@ -111,6 +111,8 @@ describe("YouTube Policy Engine — Snapshots, Versioning, Diffs & Date-Aware IR
       description: "Test future rule",
       severity: "WARNING" as const,
       evaluationMethod: "DETERMINISTIC" as const,
+      appliesBy: "PUBLICATION_DATE" as const,
+      policyEffect: "PLAYBACK_IMPACT" as const,
       effectiveFrom: "2026-10-01",
       condition: {},
       affectedStagesOnFailure: ["F07" as const],

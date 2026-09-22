@@ -16,6 +16,7 @@ import * as path from "path";
 import { F07CryptoSigner } from "../../factoryos/core/verification/youtube/crypto/F07CryptoSigner";
 import { ReleaseAuthorization, ReleaseAuthorizationScope, AuthorizedPublication } from "../../factoryos/core/verification/youtube/contracts/F07ReleaseContracts";
 import { VerificationReceipt, VerificationReceiptVerifier } from "../../factoryos/core/verification/youtube/VerificationReceipt";
+import { DurableAuthorizationStore } from "./DurableAuthorizationStore";
 
 export interface SanitizePublishPayloadParams {
   jobId: string;
@@ -54,16 +55,22 @@ export interface AuthorizationVerificationResult {
 
 export class PublicationAuthorizationService {
   private static instance: PublicationAuthorizationService;
-  private authorizations = new Map<string, ReleaseAuthorization>();
-  private consumedSessionUris = new Map<string, string>(); // authId -> uploadSessionUri
+  private durableStore: DurableAuthorizationStore;
+  private consumedSessionUris = new Map<string, string>(); // authId -> uploadSessionUri cache
 
-  private constructor() {}
+  private constructor() {
+    this.durableStore = DurableAuthorizationStore.getInstance();
+  }
 
   public static getInstance(): PublicationAuthorizationService {
     if (!PublicationAuthorizationService.instance) {
       PublicationAuthorizationService.instance = new PublicationAuthorizationService();
     }
     return PublicationAuthorizationService.instance;
+  }
+
+  public static resetInstanceForTesting(): void {
+    PublicationAuthorizationService.instance = new PublicationAuthorizationService();
   }
 
   /**
@@ -177,7 +184,8 @@ export class PublicationAuthorizationService {
       signerKeyId,
     };
 
-    this.authorizations.set(authorizationId, auth);
+    // Persist to durable store
+    this.durableStore.save(auth);
     return auth;
   }
 
@@ -198,14 +206,18 @@ export class PublicationAuthorizationService {
       return { valid: false, code: "UNAUTHORIZED_PLATFORM", error: `Authorization is for '${auth.targetPlatform}', expected 'youtube'.` };
     }
 
-    // 2. Verify status
+    // 2. Check durable storage status
+    const stored = this.durableStore.get(auth.authorizationId);
+    const effectiveStatus = stored ? stored.status : auth.status;
+    const storedSessionUri = stored?.uploadSessionUri || this.consumedSessionUris.get(auth.authorizationId);
+
     const isResumingSession = Boolean(
       options?.allowResumableSessionUri &&
-      this.consumedSessionUris.get(auth.authorizationId) === options.allowResumableSessionUri
+      storedSessionUri === options.allowResumableSessionUri
     );
 
-    if (auth.status !== "ACTIVE" && !isResumingSession) {
-      return { valid: false, code: "NOT_ACTIVE", error: `Authorization status is '${auth.status}', must be 'ACTIVE'.` };
+    if (effectiveStatus !== "ACTIVE" && !isResumingSession) {
+      return { valid: false, code: "NOT_ACTIVE", error: `Authorization status is '${effectiveStatus}', must be 'ACTIVE'.` };
     }
 
     // 3. Verify expiration
@@ -225,14 +237,29 @@ export class PublicationAuthorizationService {
       };
     }
 
-    // 5. Verify Ed25519 digital signature
-    const { signature, signerKeyId, invalidatedAt, invalidatedBy, invalidationReason, ...unsignedBody } = auth;
-    const isSignatureValid = F07CryptoSigner.verify({ ...unsignedBody, status: "ACTIVE" }, signature);
+    // 5. Verify Ed25519 digital signature with trusted signer identity
+    const {
+      signature,
+      signerKeyId,
+      invalidatedAt,
+      invalidatedBy,
+      invalidationReason,
+      uploadSessionUri,
+      consumedAt,
+      ...unsignedBody
+    } = auth as any;
+
+    const isSignatureValid = F07CryptoSigner.verify(
+      { ...unsignedBody, status: "ACTIVE" },
+      signature,
+      { signerKeyId: signerKeyId || (auth as any).signerKeyId }
+    );
+
     if (!isSignatureValid) {
       return {
         valid: false,
         code: "SIGNATURE_INVALID",
-        error: "ReleaseAuthorization Ed25519 cryptographic signature verification failed. Token is forged or corrupted.",
+        error: "ReleaseAuthorization Ed25519 cryptographic signature verification failed. Token is forged, corrupted, or signed by an untrusted key.",
       };
     }
 
@@ -254,12 +281,11 @@ export class PublicationAuthorizationService {
       return basicCheck;
     }
 
-    // Check if recorded in local authority store
-    const stored = this.authorizations.get(auth!.authorizationId);
+    // Check durable store status directly
+    const stored = this.durableStore.get(auth!.authorizationId);
     if (stored && stored.status !== "ACTIVE") {
       // Check if resuming upload session
-      if (context?.uploadSessionUri && this.consumedSessionUris.get(auth!.authorizationId) === context.uploadSessionUri) {
-        // Resuming previously registered session: allowed
+      if (context?.uploadSessionUri && (stored.uploadSessionUri === context.uploadSessionUri || this.consumedSessionUris.get(auth!.authorizationId) === context.uploadSessionUri)) {
         return { valid: true, code: "VALID" };
       }
       return {
@@ -273,51 +299,34 @@ export class PublicationAuthorizationService {
   }
 
   /**
-   * Consumes an authorization upon publication initiation/completion (atomic state transition).
+   * Consumes an authorization upon publication initiation/completion (atomic durable state transition).
    */
-  public consumeAuthorization(authorizationId: string, uploadSessionUri?: string): void {
-    const stored = this.authorizations.get(authorizationId);
-    if (stored) {
-      const consumed: ReleaseAuthorization = {
-        ...stored,
-        status: "CONSUMED",
-      };
-      this.authorizations.set(authorizationId, consumed);
-      if (uploadSessionUri) {
-        this.consumedSessionUris.set(authorizationId, uploadSessionUri);
-      }
+  public consumeAuthorization(authorizationId: string, uploadSessionUri?: string): boolean {
+    if (uploadSessionUri) {
+      this.consumedSessionUris.set(authorizationId, uploadSessionUri);
     }
+    return this.durableStore.consume(authorizationId, uploadSessionUri);
   }
 
   /**
    * Invalidate an authorization if an upstream defect or policy revocation occurs.
    */
-  public invalidateAuthorization(authorizationId: string, reason: string): void {
-    const stored = this.authorizations.get(authorizationId);
-    if (stored) {
-      const invalidated: ReleaseAuthorization = {
-        ...stored,
-        status: "INVALIDATED",
-        invalidatedAt: new Date().toISOString(),
-        invalidatedBy: "F07_RELEASE_GUARDIAN",
-        invalidationReason: reason,
-      };
-      this.authorizations.set(authorizationId, invalidated);
-    }
+  public invalidateAuthorization(authorizationId: string, reason: string): boolean {
+    return this.durableStore.invalidate(authorizationId, reason);
   }
 
   /**
-   * Retrieves an authorization from memory.
+   * Retrieves an authorization from durable store.
    */
   public getAuthorization(authorizationId: string): ReleaseAuthorization | undefined {
-    return this.authorizations.get(authorizationId);
+    return this.durableStore.get(authorizationId);
   }
 
   /**
-   * Clears in-memory authorizations (for test suite isolation).
+   * Clears authorizations (for test suite isolation).
    */
   public clear(): void {
-    this.authorizations.clear();
+    this.durableStore.clear();
     this.consumedSessionUris.clear();
   }
 }

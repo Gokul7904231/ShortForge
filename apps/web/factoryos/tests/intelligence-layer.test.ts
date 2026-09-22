@@ -67,7 +67,7 @@ describe("FactoryOS — Intelligence Layer (Retrieval, Compiler, Writer)", () =>
         id: "adr-lightning",
         type: "decision",
         title: "Lightning Render Decision",
-        status: "active",
+        status: "stable",
         created_at: "2026-09-20T10:00:00Z",
         updated_at: "2026-09-20T10:00:00Z",
         tags: ["rendering"],
@@ -178,9 +178,17 @@ describe("FactoryOS — Intelligence Layer (Retrieval, Compiler, Writer)", () =>
     const graphDoctorOut = await cli.runCommand(["graph", "doctor"]);
     expect(graphDoctorOut).toContain("=== FACTORY GRAPH DOCTOR ===");
 
-    const graphRefreshOut = await cli.runCommand(["graph", "refresh"]);
-    expect(graphRefreshOut).toContain("=== FACTORY GRAPH REFRESH ===");
-    expect(graphRefreshOut).toContain("Snapshot ID:");
+    const mockGraphPath = path.join(testVaultDir, "graph.json");
+    fs.writeFileSync(mockGraphPath, JSON.stringify({ nodes: [{ id: "n1", label: "Node 1" }], links: [] }));
+    process.env.GRAPHIFY_OUTPUT_PATH = mockGraphPath;
+
+    try {
+      const graphRefreshOut = await cli.runCommand(["graph", "refresh"]);
+      expect(graphRefreshOut).toContain("=== FACTORY GRAPH REFRESH ===");
+      expect(graphRefreshOut).toContain("Snapshot ID:");
+    } finally {
+      delete process.env.GRAPHIFY_OUTPUT_PATH;
+    }
 
     const knowValidateOut = await cli.runCommand(["knowledge", "validate"]);
     expect(knowValidateOut).toContain("=== FACTORY KNOWLEDGE VALIDATE ===");

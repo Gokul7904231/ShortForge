@@ -9,8 +9,9 @@ import { NextResponse } from "next/server";
 import "../../../../publishing/index";
 import { PublisherQueue } from "../../../../publishing/publisher-queue";
 import { PublishingRegistry } from "../../../../publishing/publishing-registry";
+import { verifySession, UnauthorizedError, ForbiddenError } from "../../../../lib/auth/auth";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const stats = PublisherQueue.getStats();
     const healthReports = await Promise.allSettled(
@@ -52,6 +53,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // 1. Enforce API Caller Authentication (P0-G)
+    await verifySession(req);
+
     const body = await req.json();
     const {
       jobId,
@@ -79,13 +83,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fail-Closed Guard: YouTube publications REQUIRE authentic ReleaseAuthorization capability
-    const includesYouTube = platforms.includes("youtube") || platforms.includes("youtube-dryrun");
-    if (includesYouTube && !authorization) {
+    // 2. Fail-Closed Guard: All publications REQUIRE authentic ReleaseAuthorization capability (P0-A)
+    if (!authorization) {
       return NextResponse.json(
         {
           error:
-            "NO_VALID_F07_RELEASE_AUTHORIZATION: Cannot publish to YouTube without an unforgeable ReleaseAuthorization capability.",
+            "NO_VALID_F07_RELEASE_AUTHORIZATION: Cannot publish to any platform without an unforgeable ReleaseAuthorization capability.",
         },
         { status: 403 }
       );
@@ -138,12 +141,21 @@ export async function POST(req: Request) {
       jobs: jobs.map((j) => ({ id: j.id, platform: j.platform, status: j.status })),
     });
   } catch (err: any) {
+    if (err instanceof UnauthorizedError || err.name === "UnauthorizedError") {
+      return NextResponse.json({ error: err.message }, { status: 401 });
+    }
+    if (err instanceof ForbiddenError || err.name === "ForbiddenError") {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
   try {
+    // 1. Enforce API Caller Authentication (P0-G)
+    await verifySession(req);
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -154,6 +166,12 @@ export async function DELETE(req: Request) {
     }
     return NextResponse.json({ success: true, retried: true, id });
   } catch (err: any) {
+    if (err instanceof UnauthorizedError || err.name === "UnauthorizedError") {
+      return NextResponse.json({ error: err.message }, { status: 401 });
+    }
+    if (err instanceof ForbiddenError || err.name === "ForbiddenError") {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

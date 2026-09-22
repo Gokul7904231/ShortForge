@@ -1,80 +1,114 @@
-# ShortForge / FactoryOS — F07 Final Architecture Map
+# ShortForge / FactoryOS — Final Architecture Map
 
-## 1. System Overview & Executive Boundary Summary
-The **F07 YouTube Monetization & Content Integrity Guardian** serves as the authoritative, fail-closed release boundary of ShortForge / FactoryOS.
+**Target Branch**: `chore/rename-shortforge`  
+**Evaluation Standard**: CLAIM <= EVIDENCE  
+**Last Updated**: 2026-09-22T12:50:00Z  
+
+---
+
+## 1. End-to-End System Topology
 
 ```
-[Production Pipeline / Floors 1-6]
-                 │
-                 ▼
-[F07 Release Guardian] ── Evaluates G00 - G14 Gates (15 Total)
-                 │     ── Multi-Clock Temporal Context
-                 │     ── Content-Addressed Storage (CAS) Hash
-                 │     ── Computes Monetization Readiness State
-                 ▼
-     [Verification Receipt] (Ed25519 Cryptographically Signed)
-                 │
-                 ▼
-[Publication Authorization Service]
-                 │     ── Binds to Canonical Sanitized Payload Hash
-                 │     ── Issues Unforgeable ReleaseAuthorization Capability (Ed25519 Signed)
-                 ▼
-[Publisher Queue / Publishing Router]
-                 │     ── Strict Ingress Guard: Rejects Any Missing/Tampered Authorization
-                 │     ── JIT Revalidation immediately prior to remote side effect
-                 ▼
-[YouTube Provider / DryRun YouTube Provider]
-                       ── Zero Simulated Success (Missing Credentials Fail Closed via AUTH_NOT_CONFIGURED)
-                       ── Resumable Session Reconciliation
++-----------------------------------------------------------------------------------------+
+|                                    USER INTERACTION                                     |
+|  Web UI / Dashboard / API Requests (/api/factory/execute, /api/publish/queue)          |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                                   AUTH & RBAC GATEWAY                                   |
+|  verifySession(req) -> Owner / Admin / Editor Authorization Boundary                    |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                                   FACTORYOS OVERSEER                                    |
+|  Mission Decomposition, Thinking Controller, Context Capsules, Floor Scheduling         |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                                  PRODUCTION FLOORS F01-F06                              |
+|  F01: Research & Trend Ingestion (Reddit, YouTube Trends, Web Search)                  |
+|  F02: Script Generation (Topic, Persona, Hook, Duration Constraints)                   |
+|  F03: Audio & Voice Fabric (TTS Synthesis, Voice Cloning, Audio Tracks)                 |
+|  F04: Visual & Asset Realization (Image Gen, B-Roll, Shot Recipes, Video Clamps)       |
+|  F05: Timeline Synthesis & Assembly (Scene Graph, Caption Layers, Dynamic Transitions)  |
+|  F06: Distributed Render Fabric (Local FFmpeg, ROCm/AMD, Ephemeral Worker Pool)         |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                               CONTENT ADDRESSED STORAGE (CAS)                           |
+|  Physical Bytes Stream -> SHA-256 Digest -> Sharded Immutable CAS (data/cas_storage/)   |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                  F07 YOUTUBE MONETIZATION & CONTENT INTEGRITY GUARDIAN                  |
+|  * Physical Media Probe (Container, Stream Geometry, Codecs, Audio Sync, Decode Smoke)  |
+|  * Gates G00-G14 Evaluation (Policy Freshness, Community Safety, Inauthentic Content,  |
+|    Commercial Rights, Synthetic Media, Shorts 180s Boundary, Lineage Reconciliation)   |
+|  * Invalidation Tracker & ReMaker Remediation Planner (if findings detected)            |
+|  * Deterministic Canonical Serialization & Ed25519 Detached Receipt Signature           |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                           DURABLE RELEASE AUTHORIZATION STORE                           |
+|  * SQLite `release_authorizations` (WAL Mode, Row Locking)                              |
+|  * Binds: artifactSha256, targetChannelId, targetPlatform, canonicalPayloadHash         |
+|  * Status: ACTIVE -> CONSUMED | INVALIDATED                                             |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                                 PUBLISHER QUEUE & OUTBOX                                |
+|  * Transactional Outbox (data/queues.db) with Monotonic Priority & Retry Backoff        |
+|  * Replay & Idempotency Defense (Idempotency Key & Session Tracking)                   |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                            JUST-IN-TIME (JIT) SAFETY BOUNDARY                           |
+|  * Re-verifies Ed25519 signature against F07TrustedKeyStore                             |
+|  * Re-verifies active status in DurableAuthorizationStore                               |
+|  * Re-verifies canonicalPayloadHash == computeCanonicalPayloadHash(actualPayload)       |
+|  * Atomically claims token (`UPDATE ... SET status='CONSUMED' WHERE status='ACTIVE'`)   |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                                EXTERNAL PLATFORM PROVIDERS                              |
+|  * YouTube Provider (Resumable Upload, Status Reconciliation, Zero Fake Success)        |
+|  * Google Drive Provider (Multipart / Direct Upload, Server Verification via files.get) |
++-----------------------------------------------------------------------------------------+
+                                           |
+                                           v
++-----------------------------------------------------------------------------------------+
+|                            EXTERNAL PLATFORM RECONCILIATION                             |
+|  * HTTP 308 Session Probe (Offset Recovery & Duplicate Prevention)                       |
+|  * Platform Status Verification (videos.list / files.get)                               |
+|  * Durable Audit Logging & Memory Learning Loop                                         |
++-----------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Core Subsystems & Component Locations
+## 2. Directory Layout & Key Modules
 
-| Subsystem | Source Path | Status | Verification Evidence |
-| :--- | :--- | :--- | :--- |
-| **F07 Release Contracts** | [`apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts) | `UNIT-VERIFIED` | Type assertions & contracts verified in invariant tests #1, #5, #16 |
-| **F07 Cryptographic Engine** | [`apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts) | `UNIT-VERIFIED` | Ed25519 signing/verification & canonical serialization proven in invariant tests #14, #16 |
-| **Evidence Ref Factory** | [`apps/web/factoryos/core/verification/youtube/evidence/EvidenceRef.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/evidence/EvidenceRef.ts) | `UNIT-VERIFIED` | Proven in `youtube-evidence-receipt.test.ts` and invariant test #13 |
-| **Policy Source Registry** | [`apps/web/factoryos/core/verification/youtube/policy/PolicySourceRegistry.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/policy/PolicySourceRegistry.ts) | `UNIT-VERIFIED` | SHA-256 digests of official docs proven in invariant test #10 |
-| **Temporal Policy Context** | [`apps/web/factoryos/core/verification/youtube/policy/PolicyEvaluationContext.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/policy/PolicyEvaluationContext.ts) | `UNIT-VERIFIED` | Multi-clock time routing proven in invariant test #11 and `youtube-policy-refresh.test.ts` |
-| **Policy Activation Pipeline** | [`apps/web/factoryos/core/verification/youtube/policy/PolicyActivationPipeline.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/policy/PolicyActivationPipeline.ts) | `UNIT-VERIFIED` | Freshness, schema validation, and snapshot promotion proven in invariant test #4 |
-| **Gates G00 - G14 (15 Gates)** | [`apps/web/factoryos/core/verification/youtube/gates/`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/gates/) | `UNIT-VERIFIED` | Proven across all 6 test suites and invariant tests #3, #6, #12, #23, #24 |
-| **Effect Aggregator** | [`apps/web/factoryos/core/verification/youtube/gates/EffectAggregator.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/gates/EffectAggregator.ts) | `UNIT-VERIFIED` | Clean separation of upload safety, monetization readiness, advertiser suitability in invariant test #5 |
-| **F07 Release Guardian** | [`apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts) | `INTEGRATION-VERIFIED` | Proven in `youtube-remediation.test.ts` test #4 and invariant tests #14, #15 |
-| **Publication Authorization Service** | [`apps/web/publishing/authorization/PublicationAuthorizationService.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/publishing/authorization/PublicationAuthorizationService.ts) | `INTEGRATION-VERIFIED` | Ed25519 signature, canonical payload hash binding, atomic transitions, resumable session reconciliation, JIT revalidation in invariant tests #16, #17, #18, #19, #21 |
-| **Publisher Queue & Ingress Gate** | [`apps/web/publishing/publisher-queue.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/publishing/publisher-queue.ts) | `INTEGRATION-VERIFIED` | Rejection of unauthorized publish jobs proven in invariant test #2 |
-| **YouTube Production Provider** | [`apps/web/publishing/providers/youtube.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/publishing/providers/youtube.ts) | `E2E-VERIFIED` | Zero fake production success (`AUTH_NOT_CONFIGURED`), fail-closed authorization check, resumable session support in invariant tests #2, #20 |
-| **DryRun YouTube Provider** | [`apps/web/publishing/providers/dryrun-youtube.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/publishing/providers/dryrun-youtube.ts) | `UNIT-VERIFIED` | Explicitly isolated simulation provider; passes JIT revalidation without polluting production path in invariant test #20 |
-| **Artifact Lineage & Invalidation** | [`apps/web/factoryos/core/verification/youtube/remediation/ArtifactLineageGraph.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/verification/youtube/remediation/ArtifactLineageGraph.ts) | `UNIT-VERIFIED` | DAG topological sort & cascade evidence invalidation proven in invariant test #26 |
-
----
-
-## 3. The 15 Authoritative Verification Gates
-
-| Gate ID | Gate Name | Evaluation Mode | Primary Risk Controlled |
-| :--- | :--- | :--- | :--- |
-| **G00** | Policy Freshness Gate | Deterministic | Stale/expired policy snapshot evaluation |
-| **G01** | Channel Readiness Gate | Platform API / Hybrid | YPP status, 2FA, strikes, advanced features |
-| **G02** | Community Guidelines Gate | Deterministic & Inferred | Safety, strikes, self-harm, hate, harassment |
-| **G03** | Inauthentic Content Gate | Hybrid & AI Inferred | Channel repetition, semantic clustering, duplicate narration |
-| **G04** | Repetitive / Reused Gate | Deterministic Probe | Exact script hash clones, template duplication |
-| **G05** | Commercial Rights Gate | Deterministic | Missing audio/visual commercial usage licenses |
-| **G06** | Advertiser Suitability Gate | Deterministic & Inferred | Yellow-dollar profanity, violence, sensitive topics |
-| **G07** | Synthetic Media Disclosure Gate | Deterministic | AI transparency, realistic likeness disclosure |
-| **G08** | Spam & Deception Gate | Deterministic & Inferred | Misleading hooks, thumbnail-title mismatch |
-| **G09** | Engagement Automation Gate | Deterministic & Platform | Artificial views, engagement exchange schemes |
-| **G10** | Metadata Packaging Gate | Deterministic & Hybrid | Keyword stuffing, tag spam, clickbait descriptions |
-| **G11** | Factual Integrity Gate | Hybrid & Inferred | Hallucinated factual claims on high-risk topics |
-| **G12** | Shorts Eligibility Gate | Deterministic Probe | 0 < duration <= 180s, vertical geometry (9:16/1:1), Sept 24 2026 Content ID rules |
-| **G13** | Content Engine Scope Gate | Deterministic | Enforces strictly the 11 approved engines; rejects clipping |
-| **G14** | Evidence Reconciliation Gate | Deterministic Cryptographic | Cross-gate evidence consistency & CAS hash verification |
-
----
-
-## 4. Architectural Invariant Enforcement Summary
-1. **CLAIM <= EVIDENCE**: Claims must map to cryptographic artifacts or deterministic measurements.
-2. **NO VALID F07 RELEASE AUTHORIZATION = NO PUBLICATION**: The queue, the API route, and the YouTube providers fail closed without a signed active capability.
-3. **POLICY AS DATA**: All YouTube policies are versioned JSON IR with official documentation content hashes.
-4. **NO FAKE PRODUCTION SUCCESS**: The YouTube provider fails closed with `AUTH_NOT_CONFIGURED` if client secrets are missing.
+* `apps/web/factoryos/core/verification/youtube/`:
+  * `F07ReleaseGuardian.ts`: Main gatekeeper orchestrating F00-F14, CAS binding, and authorization issuance.
+  * `VerificationReceipt.ts`: Immutable verification receipt construction and Ed25519 signing.
+  * `F07TrustedKeyStore.ts`: Signer trust management and key revocation store.
+  * `DurableAuthorizationStore.ts`: SQLite-backed state machine for release capabilities.
+  * `gates/`: G00 through G14 gate implementations.
+  * `policy/`: Date-aware policy store and AST rule evaluation.
+  * `remediation/`: ReMaker remediation planner and `ArtifactLineageGraph` DAG.
+* `apps/web/publishing/providers/`:
+  * `youtube.ts`: Hardened YouTube Data API provider with JIT re-verification.
+  * `social-platforms.ts`: Sealed publication router with no mock bypasses.
+* `apps/web/storage/providers/`:
+  * `google-drive.ts`: Production Google Drive integration with OAuth2 refresh tokens.
+* `apps/web/factoryos/core/compute/cas/`:
+  * `ContentAddressedStore.ts`: Two-level sharded CAS store with atomic file renaming.

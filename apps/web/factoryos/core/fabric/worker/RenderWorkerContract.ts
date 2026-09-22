@@ -15,9 +15,9 @@ export interface IRenderWorker {
   readonly workerId: string;
   getState(): WorkerState;
   getCapabilities(): Promise<WorkerCapability>;
-  heartbeat(): Promise<{ acknowledged: boolean; state: WorkerState }>;
-  claim(job: RenderJob): Promise<{ attempt: RenderAttempt; fencingToken: number }>;
-  execute(job: RenderJob, attempt: RenderAttempt): Promise<{ success: boolean; error?: string }>;
-  drain(): Promise<void>;
-  shutdown(): Promise<void>;
+  heartbeat?(): Promise<{ acknowledged: boolean; state: WorkerState }>;
+  claim?(job: RenderJob): Promise<{ attempt: RenderAttempt; fencingToken: number }>;
+  execute(job: RenderJob, attempt: RenderAttempt): Promise<{ success: boolean; error?: string; artifactReference?: any }>;
+  drain?(): Promise<void>;
+  shutdown?(): Promise<void>;
 }

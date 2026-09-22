@@ -156,7 +156,6 @@ describe("Phase 8 — Real Render Vertical Slice Proof", () => {
     const evidence = recordVerificationEvidence({
       capability: "Real Render Vertical Slice",
       verificationLevel: "E2E_VERIFIED",
-      environment: "Node v24 + Python 3.13 + FFmpeg 8.1.2 + Windows",
       command: "vitest run real-render-vertical-slice.test.ts",
       testName: "Phase 8 — Real Render Vertical Slice Proof",
       runId,
@@ -175,7 +174,7 @@ describe("Phase 8 — Real Render Vertical Slice Proof", () => {
         width: 1080,
         height: 1920,
       },
-      result: "PASSED",
+      result: "PASS",
     });
 
     expect(evidence.verificationLevel).toBe("E2E_VERIFIED");

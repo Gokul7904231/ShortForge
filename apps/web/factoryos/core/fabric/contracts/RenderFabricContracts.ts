@@ -40,14 +40,14 @@ export interface WorkerCapability {
   readonly gpuModel: string;
   readonly vramMb: number;
   readonly gpuCount: number;
-  readonly cpuCores: number;
-  readonly memoryMb: number;
+  readonly cpuCores?: number;
+  readonly memoryMb?: number;
   readonly rocmVersion?: string;
   readonly cudaVersion?: string;
   readonly ffmpegAvailable: boolean;
-  readonly supportedCodecs: string[];
+  readonly supportedCodecs?: string[];
   readonly supportedWorkloads?: string[];
-  readonly maxConcurrency: number;
+  readonly maxConcurrency?: number;
   readonly estimatedRemainingLifetimeSeconds: number;
   readonly isEphemeral: boolean;
 }
@@ -56,10 +56,12 @@ export interface RenderJobRequirements {
   readonly minVramMb?: number;
   readonly gpuRequired: boolean;
   readonly preferredGpuVendor?: GpuVendor;
-  readonly estimatedDurationSeconds: number;
-  readonly timeoutMs: number;
+  readonly estimatedDurationSeconds?: number;
+  readonly timeoutMs?: number;
   readonly safetyMarginSeconds?: number;
   readonly priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  readonly requiresFfmpeg?: boolean;
+  readonly supportedWorkloads?: string[];
 }
 
 export interface ArtifactManifest {
@@ -124,7 +126,7 @@ export interface RenderAttempt {
   readonly workerId: string;
   readonly fencingToken: number;
   state: RenderJobState;
-  leaseExpiresAt: string;
+  leaseExpiresAt?: string;
   readonly startedAt: string;
   finishedAt?: string;
   error?: string;

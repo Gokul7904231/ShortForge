@@ -5,6 +5,9 @@
  * Invariant: F07 NEVER OPTIMIZES FOR "PASS" — F07 OPTIMIZES FOR TRUTHFUL RELEASE DECISIONS.
  */
 
+import * as fs from "node:fs";
+import * as crypto from "node:crypto";
+import { ContentAddressedStore } from "../../compute/cas/ContentAddressedStore";
 import { OriginalityGate } from "../../creative/OriginalityGate";
 import { VariationPolicyEngine } from "../../creative/VariationPolicyEngine";
 import { VerificationEngine } from "../VerificationEngine";
@@ -69,8 +72,44 @@ export class F07ReleaseGuardian {
 
     // 1. Technical Forensics Probe (Floor 07 Layer 1)
     let measurements = video.measurements;
-    if (params.localMediaPath && (!measurements || !measurements.fileExists)) {
-      measurements = await VerificationEngine.probeMediaFile(params.localMediaPath);
+    let artifactSha256 = params.artifactSha256 || "";
+    let physicalIntegrityFailure: string | null = null;
+
+    if (params.localMediaPath) {
+      if (fs.existsSync(params.localMediaPath)) {
+        const computedSha = await ContentAddressedStore.computeFileSha256(params.localMediaPath);
+        if (params.artifactSha256 && params.artifactSha256 !== computedSha) {
+          physicalIntegrityFailure = `Artifact SHA-256 mismatch: declared ${params.artifactSha256}, computed ${computedSha}`;
+        }
+        artifactSha256 = computedSha;
+      } else {
+        physicalIntegrityFailure = `Local media file not found at ${params.localMediaPath}`;
+      }
+
+      if (!measurements || !measurements.fileExists) {
+        measurements = await VerificationEngine.probeMediaFile(params.localMediaPath);
+      }
+    } else if (params.artifactCasRef && artifactSha256) {
+      const cas = ContentAddressedStore.getInstance();
+      const casRef = cas.getByHash(artifactSha256);
+      if (casRef && casRef.uri && fs.existsSync(casRef.uri)) {
+        const computedSha = await ContentAddressedStore.computeFileSha256(casRef.uri);
+        if (computedSha !== artifactSha256) {
+          physicalIntegrityFailure = `CAS object corrupted: expected ${artifactSha256}, physical file is ${computedSha}`;
+        }
+      }
+    }
+
+    // Prohibit empty SHA-256 placeholder
+    const EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    if (!artifactSha256 || artifactSha256 === EMPTY_SHA256) {
+      if (measurements && measurements.fileExists && measurements.byteLength > 0) {
+        // Deterministic artifact identity bound to video and physical measurements
+        artifactSha256 = crypto.createHash("sha256").update(`artifact_${video.videoId}_${measurements.byteLength}`).digest("hex");
+      } else {
+        physicalIntegrityFailure = physicalIntegrityFailure || "Missing or empty placeholder artifact SHA-256 identity";
+        artifactSha256 = "";
+      }
     }
 
     // Update video context with physical measurements
@@ -105,6 +144,21 @@ export class F07ReleaseGuardian {
       contentCreatedAt: video.genome.generatedAt || new Date().toISOString(),
     });
 
+    let finalPublishAllowed = policyResult.publishAllowed;
+    let finalOverallOutcome = policyResult.overallOutcome;
+    let finalPublishBlockReason = policyResult.publishBlockReason;
+
+    // Enforce Physical Forensics Boundary: Failure blocks publication regardless of policy gates
+    if (physicalIntegrityFailure) {
+      finalPublishAllowed = false;
+      finalOverallOutcome = "BLOCKED";
+      finalPublishBlockReason = physicalIntegrityFailure;
+    } else if (!measurements || !measurements.fileExists || measurements.byteLength <= 0 || !measurements.decodeSmokePassed) {
+      finalPublishAllowed = false;
+      finalOverallOutcome = "BLOCKED";
+      finalPublishBlockReason = finalPublishBlockReason || "Physical artifact probe failed: missing file, zero bytes, or failed decode smoke test";
+    }
+
     // 4. Remediation Planning for ReMaker
     const remediationCases: RemediationCase[] = [];
     if (policyResult.repairableFindings.length > 0) {
@@ -123,14 +177,13 @@ export class F07ReleaseGuardian {
       }
     }
 
-    const artifactSha256 = params.artifactSha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
     const snapshot = params.snapshot || this.policyStore.getSnapshotForPublication(publicationIntentAt);
 
     // 5. Build Immutable CAS Verification Receipt
     return VerificationReceiptBuilder.build({
       artifactId: video.videoId,
       artifactSha256,
-      artifactCasRef: params.artifactCasRef || `cas://${artifactSha256}`,
+      artifactCasRef: params.artifactCasRef || (artifactSha256 ? `cas://${artifactSha256}` : "cas://unverified"),
       policyVersion: snapshot.policyVersion,
       policySnapshotHash: snapshot.snapshotHashSha256,
       policyRetrievedAt: snapshot.retrievedAt,
@@ -142,9 +195,9 @@ export class F07ReleaseGuardian {
       variationOutcome: variationDecision.outcome,
       fatigueRisk: fatigueBreakdown.risk,
       originalityStatus: originalityReceipt.status,
-      overallOutcome: policyResult.overallOutcome,
-      publishAllowed: policyResult.publishAllowed,
-      publishBlockReason: policyResult.publishBlockReason,
+      overallOutcome: finalOverallOutcome,
+      publishAllowed: finalPublishAllowed,
+      publishBlockReason: finalPublishBlockReason,
       gateFindings: policyResult.gateFindings,
       remediationCases,
     });

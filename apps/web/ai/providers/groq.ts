@@ -6,7 +6,13 @@ import {
   AICapability,
 } from "../capability-registry";
 import { BaseProviderPlugin } from "./base-provider";
-import { createOpenAI } from "@ai-sdk/openai";
+let createOpenAI: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  createOpenAI = require("@ai-sdk/openai").createOpenAI;
+} catch {
+  createOpenAI = null;
+}
 import { generateText } from "ai";
 
 export class GroqProviderPlugin extends BaseProviderPlugin {

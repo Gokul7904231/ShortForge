@@ -690,6 +690,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
       forbiddenShallowRepairs: ["font-change-only", "crop-only change"],
       evaluationType: "HYBRID" as const,
       confidence: 0.9,
+      observedSignal: 0.78,
     };
 
     const remCase = YouTubeRemediationPlanner.planRemediation(finding);

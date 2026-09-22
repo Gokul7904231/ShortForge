@@ -1,10 +1,5 @@
-/**
- * FactoryOS YouTube Monetization Guardian — Artifact Lineage Graph
- * Implements Directed Acyclic Graph (DAG) tracking of artifact provenance across production floors.
- * Enables cascade invalidation of downstream artifacts and evidence when an upstream stage is repaired.
- * INVARIANT: No stale PASS is allowed to survive a material upstream revision.
- */
-
+import * as fs from "node:fs";
+import * as path from "node:path";
 import * as crypto from "crypto";
 import { ProductionStage } from "../policy/YouTubePolicyIR";
 import { EvidenceRef } from "../evidence/EvidenceRef";
@@ -13,6 +8,7 @@ export type ArtifactStatus = "VALID" | "INVALID" | "SUPERSEDED";
 
 export interface ArtifactNode {
   readonly artifactId: string;
+  readonly revision: number;
   readonly stage: ProductionStage;
   readonly sha256: string;
   readonly parentArtifactIds: readonly string[];
@@ -26,9 +22,75 @@ export interface ArtifactNode {
 export class ArtifactLineageGraph {
   private nodes = new Map<string, ArtifactNode>();
   private childrenMap = new Map<string, Set<string>>();
+  private storageFile: string | null = null;
+
+  public constructor(storageFile?: string) {
+    if (storageFile) {
+      this.storageFile = storageFile;
+      this.load();
+    } else {
+      const defaultDir = path.resolve(process.cwd(), "data");
+      if (fs.existsSync(defaultDir)) {
+        this.storageFile = path.join(defaultDir, "artifact_lineage.json");
+        this.load();
+      }
+    }
+  }
+
+  private load(): void {
+    if (!this.storageFile || !fs.existsSync(this.storageFile)) return;
+    try {
+      const raw = fs.readFileSync(this.storageFile, "utf8");
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.nodes)) {
+        for (const node of data.nodes) {
+          this.nodes.set(node.artifactId, node);
+          for (const parentId of node.parentArtifactIds || []) {
+            if (!this.childrenMap.has(parentId)) {
+              this.childrenMap.set(parentId, new Set());
+            }
+            this.childrenMap.get(parentId)!.add(node.artifactId);
+          }
+        }
+      }
+    } catch {
+      // Non-blocking load
+    }
+  }
+
+  private save(): void {
+    if (!this.storageFile) return;
+    try {
+      const data = {
+        updatedAt: new Date().toISOString(),
+        nodes: Array.from(this.nodes.values()),
+      };
+      const dir = path.dirname(this.storageFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(this.storageFile, JSON.stringify(data, null, 2), "utf8");
+    } catch {
+      // Non-blocking save
+    }
+  }
 
   /**
-   * Registers a new artifact in the lineage graph with optional parents and evidence links.
+   * Checks whether adding parent relationships would introduce a cycle into the DAG.
+   */
+  public wouldCreateCycle(artifactId: string, parentIds: readonly string[]): boolean {
+    for (const parentId of parentIds) {
+      if (parentId === artifactId) return true;
+      const ancestors = this.getLineage(parentId);
+      if (ancestors.some((a) => a.artifactId === artifactId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Registers a new artifact in the lineage graph with cycle rejection.
    */
   public registerArtifact(params: {
     stage: ProductionStage;
@@ -36,12 +98,21 @@ export class ArtifactLineageGraph {
     parentArtifactIds?: readonly string[];
     associatedEvidenceRefs?: readonly EvidenceRef[];
     artifactId?: string;
+    revision?: number;
   }): ArtifactNode {
     const artifactId = params.artifactId || `art_${params.stage.toLowerCase()}_${crypto.randomUUID()}`;
     const parentIds = params.parentArtifactIds || [];
 
+    // Cycle detection: Reject cyclic dependencies (e.g. A -> B -> C -> A)
+    if (this.wouldCreateCycle(artifactId, parentIds)) {
+      throw new Error(
+        `[ArtifactLineageGraph] Cycle detected: Artifact '${artifactId}' would create a cycle in the lineage DAG with parents [${parentIds.join(", ")}]`
+      );
+    }
+
     const node: ArtifactNode = {
       artifactId,
+      revision: params.revision ?? 1,
       stage: params.stage,
       sha256: params.sha256,
       parentArtifactIds: Object.freeze([...parentIds]),
@@ -60,6 +131,7 @@ export class ArtifactLineageGraph {
       this.childrenMap.get(parentId)!.add(artifactId);
     }
 
+    this.save();
     return node;
   }
 
@@ -115,6 +187,7 @@ export class ArtifactLineageGraph {
       }
     }
 
+    this.save();
     return Object.freeze(invalidatedIds);
   }
 

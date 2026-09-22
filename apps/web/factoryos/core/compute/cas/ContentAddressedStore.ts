@@ -15,7 +15,7 @@ export class ContentAddressedStore {
   private storageDir: string;
   private index: Map<string, ArtifactRef> = new Map();
 
-  private constructor(customDir?: string) {
+  public constructor(customDir?: string) {
     this.storageDir = customDir || path.resolve(process.cwd(), "data", "cas_storage");
     if (!fs.existsSync(this.storageDir)) {
       fs.mkdirSync(this.storageDir, { recursive: true });

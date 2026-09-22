@@ -200,10 +200,17 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
       const renderDir = path.join(process.cwd(), "data", "renders");
       if (!fs.existsSync(renderDir)) fs.mkdirSync(renderDir, { recursive: true });
       const testMp4 = path.join(renderDir, `${jobId}.mp4`);
-      execSync(
-        `ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=1 -f lavfi -i anullsrc=r=44100:cl=stereo -c:v libx264 -pix_fmt yuv420p -c:a aac -t 1 "${testMp4}"`,
-        { stdio: "ignore" }
-      );
+      const testSampleMp4 = path.resolve(process.cwd(), "../../testing/artifacts/node_adapter_test_output.mp4");
+      if (fs.existsSync(testSampleMp4)) {
+        fs.copyFileSync(testSampleMp4, testMp4);
+      } else {
+        try {
+          execSync(
+            `ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=1 -f lavfi -i anullsrc=r=44100:cl=stereo -c:v libx264 -pix_fmt yuv420p -c:a aac -t 1 "${testMp4}"`,
+            { stdio: "ignore" }
+          );
+        } catch {}
+      }
 
       const callbackReq = new NextRequest("http://localhost:3000/api/rendering/callback", {
         method: "POST",

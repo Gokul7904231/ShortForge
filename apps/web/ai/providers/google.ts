@@ -6,7 +6,13 @@ import {
   AICapability,
 } from "../capability-registry";
 import { BaseProviderPlugin } from "./base-provider";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+let createGoogleGenerativeAI: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  createGoogleGenerativeAI = require("@ai-sdk/google").createGoogleGenerativeAI;
+} catch {
+  createGoogleGenerativeAI = null;
+}
 import { generateText } from "ai";
 
 export class GoogleProviderPlugin extends BaseProviderPlugin {

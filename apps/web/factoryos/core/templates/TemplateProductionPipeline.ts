@@ -582,7 +582,7 @@ export class TemplateProductionPipeline {
       const sceneId = `scene_${String(i + 1).padStart(2, '0')}_${beat.beatId}`;
 
       // Resolve shot recipe contract from ShotRecipeLibrary
-      const recipeContract = SHOT_RECIPES[beat.shotRecipeId] || SHOT_RECIPES.IMAGE_WITH_CAPTION;
+      const recipeContract = (SHOT_RECIPES as Record<string, any>)[beat.shotRecipeId] || SHOT_RECIPES.IMAGE_WITH_CAPTION;
       const shotRecipeId = recipeContract.id;
 
       // Extract asset requirements from recipe
@@ -685,7 +685,7 @@ export class TemplateProductionPipeline {
         errors.push(`Scene "${s.sceneId}" missing shotRecipeId`);
         continue;
       }
-      if (!SHOT_RECIPES[s.shotRecipeId]) {
+      if (!(SHOT_RECIPES as Record<string, any>)[s.shotRecipeId]) {
         errors.push(`Scene "${s.sceneId}" references unrecognized shotRecipeId: ${s.shotRecipeId}`);
       }
       if (!s.narration || s.narration.trim().length === 0) {

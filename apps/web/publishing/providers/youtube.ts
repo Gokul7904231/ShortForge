@@ -47,6 +47,29 @@ export class YouTubePublishingProvider implements PublishingProvider {
       platform: this.id,
     };
 
+    // Scheduling invariant check
+    if (canonicalParams.publishAt) {
+      const publishTimestamp = new Date(canonicalParams.publishAt).getTime();
+      if (isNaN(publishTimestamp)) {
+        throw new Error(`[YouTube] Invalid publishAt ISO format: ${canonicalParams.publishAt}`);
+      }
+      if (publishTimestamp <= Date.now()) {
+        throw new Error(`[YouTube] Scheduled publishAt must be in the future: ${canonicalParams.publishAt}`);
+      }
+      if (canonicalParams.privacyStatus !== "private") {
+        throw new Error(
+          `[YouTube] Platform Invariant Violation: Scheduled videos (publishAt) must have privacyStatus set to 'private', received '${canonicalParams.privacyStatus}'`
+        );
+      }
+    }
+
+    // Title length constraint: reject instead of silent truncation to maintain payload fidelity
+    if (canonicalParams.title.length > 100) {
+      throw new Error(
+        `[YouTube] Title length (${canonicalParams.title.length}) exceeds YouTube maximum of 100 characters. Silent truncation is forbidden under payload fidelity.`
+      );
+    }
+
     // JIT revalidation immediately before first remote publication side effect
     const authService = PublicationAuthorizationService.getInstance();
     const jitCheck = authService.revalidateImmediatelyBeforePublish(auth, canonicalParams, {
@@ -77,40 +100,28 @@ export class YouTubePublishingProvider implements PublishingProvider {
       };
     }
 
-    // ── Phase 3: Stream Media from CAS or Local Storage ───────────────────────
+    // ── Phase 3: Stream Media Strictly from Immutable CAS ─────────────────────
     let mediaStream: NodeJS.ReadableStream | null = null;
-    let tempLocalPath: string | null = null;
+
+    if (payload.casStreamProvider) {
+      mediaStream = payload.casStreamProvider();
+    } else {
+      const hash = payload.videoArtifactHash || auth.artifactSha256;
+      if (!hash) {
+        throw new Error("[YouTube] Missing artifact SHA-256 in publication payload and release authorization.");
+      }
+      const cas = ContentAddressedStore.getInstance();
+      const ref = cas.getByHash(hash);
+      if (!ref || !ref.uri || !fs.existsSync(ref.uri)) {
+        throw new Error(
+          `[YouTube] CAS Invariant Violation: Authoritative artifact not found in CAS for SHA-256: ${hash}. ` +
+          "Publication directly from unverified mutable URLs or arbitrary disk paths is forbidden."
+        );
+      }
+      mediaStream = fs.createReadStream(ref.uri);
+    }
 
     try {
-      if (payload.casStreamProvider) {
-        mediaStream = payload.casStreamProvider();
-      } else if (payload.videoArtifactHash || auth.artifactSha256) {
-        const hash = payload.videoArtifactHash || auth.artifactSha256;
-        const cas = ContentAddressedStore.getInstance();
-        const ref = cas.getByHash(hash);
-        if (ref && fs.existsSync(ref.uri)) {
-          mediaStream = fs.createReadStream(ref.uri);
-        }
-      }
-
-      if (!mediaStream) {
-        // Fallback to videoUrl if not in CAS
-        if (payload.videoUrl.startsWith("http://") || payload.videoUrl.startsWith("https://")) {
-          console.log(`[YouTube] Downloading remote video: ${payload.videoUrl}`);
-          const response = await fetch(payload.videoUrl);
-          if (!response.ok) throw new Error(`Failed to fetch remote video: ${response.statusText}`);
-          const buffer = await response.arrayBuffer();
-          const tempDir = os.tmpdir();
-          tempLocalPath = path.join(tempDir, `yt_upload_${payload.jobId}_${Date.now()}.mp4`);
-          fs.writeFileSync(tempLocalPath, Buffer.from(buffer));
-          mediaStream = fs.createReadStream(tempLocalPath);
-        } else if (fs.existsSync(payload.videoUrl)) {
-          mediaStream = fs.createReadStream(payload.videoUrl);
-        } else {
-          throw new Error(`Cannot locate physical media stream for videoUrl: ${payload.videoUrl}`);
-        }
-      }
-
       // ── Phase 4: Resumable Upload Reconciliation ────────────────────────────
       if (payload.uploadSessionUri) {
         console.log(`[YouTube] Checking existing resumable upload session: ${payload.uploadSessionUri}`);
@@ -122,7 +133,7 @@ export class YouTubePublishingProvider implements PublishingProvider {
             },
           });
           if (statusRes.status === 200 || statusRes.status === 201) {
-            // Already uploaded! Parse response
+            // Already uploaded! Parse response to prevent duplicate upload
             const data = await statusRes.json();
             const videoId = data.id;
             if (videoId) {
@@ -135,6 +146,9 @@ export class YouTubePublishingProvider implements PublishingProvider {
                 publishedAt: new Date().toISOString(),
               };
             }
+          } else if (statusRes.status === 308) {
+            const range = statusRes.headers.get("Range");
+            console.log(`[YouTube] Resumable upload session active with range: ${range}`);
           }
         } catch (resumableErr: any) {
           console.warn("[YouTube] Resumable session query error:", resumableErr.message);
@@ -152,15 +166,16 @@ export class YouTubePublishingProvider implements PublishingProvider {
         part: ["snippet", "status"],
         requestBody: {
           snippet: {
-            title: canonicalParams.title.slice(0, 100),
-            description: canonicalParams.description || "Generated by ShortForge / FactoryOS",
-            tags: canonicalParams.tags ? [...canonicalParams.tags] : ["shorts", "shortforge"],
+            title: canonicalParams.title,
+            description: canonicalParams.description || "",
+            tags: canonicalParams.tags ? [...canonicalParams.tags] : [],
             categoryId: "22", // People & Blogs
           },
           status: {
             privacyStatus: canonicalParams.privacyStatus,
-            selfDeclaredMadeForKids: canonicalParams.selfDeclaredMadeForKids,
+            selfDeclaredMadeForKids: canonicalParams.selfDeclaredMadeForKids !== undefined ? Boolean(canonicalParams.selfDeclaredMadeForKids) : undefined,
             publishAt: canonicalParams.publishAt || undefined,
+            ...(canonicalParams.containsSyntheticMedia !== undefined ? { containsSyntheticMedia: Boolean(canonicalParams.containsSyntheticMedia) } : {}),
           },
         },
         media: {
@@ -188,12 +203,6 @@ export class YouTubePublishingProvider implements PublishingProvider {
     } catch (err: any) {
       console.error("[YouTube] API publish failed:", err.message);
       throw err;
-    } finally {
-      if (tempLocalPath && fs.existsSync(tempLocalPath)) {
-        try {
-          fs.unlinkSync(tempLocalPath);
-        } catch {}
-      }
     }
   }
 

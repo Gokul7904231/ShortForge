@@ -210,10 +210,25 @@ export class G12_ShortsEligibilityGate {
       ruleId: rule.ruleId,
       status: "PASS",
       severity: rule.severity,
-      observedSignal: {},
-      explanation: "Shorts eligibility rule passed.",
+      observedSignal: {
+        duration: video.measurements.videoDuration,
+        resolution: `${video.measurements.width}x${video.measurements.height}`,
+      },
+      explanation: "Shorts eligibility rule passed: qualifying aspect ratio and duration within 180s boundary.",
       evidence: ["Shorts eligibility condition satisfied."],
-      evidenceRefs: [],
+      evidenceRefs: [
+        EvidenceRefFactory.create({
+          evidenceType: "FACTUAL_SOURCE",
+          producer: "G12_ShortsEligibilityGate",
+          method: "DETERMINISTIC_PROBE",
+          confidence: 1.0,
+          metadata: {
+            duration: video.measurements.videoDuration,
+            width: video.measurements.width,
+            height: video.measurements.height,
+          },
+        }),
+      ],
       affectedStages: [],
       evaluationType: "DETERMINISTIC",
       confidence: 1.0,
@@ -336,10 +351,20 @@ export class G14_EvidenceReconciliationGate {
     priorFindings: readonly GateEvaluationFinding[],
     rule: PolicyRuleDefinition
   ): GateEvaluationFinding {
-    // 1. Audit that every finding has at least one valid structured EvidenceRef or traceable evidence string
-    const ungroundedFindings = priorFindings.filter(
-      (f) => (!f.evidence || f.evidence.length === 0) && (!f.evidenceRefs || f.evidenceRefs.length === 0)
-    );
+    // 1. Audit that every finding has valid structured EvidenceRef records or traceable evidence strings
+    const ungroundedFindings = priorFindings.filter((f) => {
+      const hasRefs = f.evidenceRefs && f.evidenceRefs.length > 0;
+      const hasEvidence = f.evidence && f.evidence.length > 0;
+      if (!hasRefs && !hasEvidence) return true;
+      if (hasRefs) {
+        // Enforce structural integrity of all EvidenceRefs
+        const invalidRef = f.evidenceRefs!.some(
+          (ref) => !ref.evidenceId || !ref.evidenceType || !ref.producer || (!ref.createdAt && !(ref as any).timestamp) || ref.confidence === undefined
+        );
+        if (invalidRef) return true;
+      }
+      return false;
+    });
 
     if (ungroundedFindings.length > 0) {
       return {

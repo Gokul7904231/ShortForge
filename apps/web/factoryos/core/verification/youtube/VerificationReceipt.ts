@@ -134,10 +134,26 @@ export class VerificationReceiptBuilder {
       originalityStatus: params.originalityStatus,
     };
 
+    let overallOutcome = params.overallOutcome;
+    let publishAllowed = params.publishAllowed;
+    let publishBlockReason = params.publishBlockReason;
+
+    if (
+      !technicalForensics.artifactExists ||
+      !technicalForensics.sha256Valid ||
+      !technicalForensics.durationWithinBounds ||
+      !technicalForensics.decodeSmokePassed ||
+      !technicalForensics.geometry9x16Or1x1
+    ) {
+      publishAllowed = false;
+      overallOutcome = "BLOCKED";
+      publishBlockReason = publishBlockReason || "Technical forensics failed: physical media defect, invalid geometry/duration, or missing artifact SHA-256";
+    }
+
     const youtubePolicy = {
-      overallOutcome: params.overallOutcome,
-      publishAllowed: params.publishAllowed,
-      publishBlockReason: params.publishBlockReason,
+      overallOutcome,
+      publishAllowed,
+      publishBlockReason,
       gateFindings: params.gateFindings,
     };
 
@@ -298,7 +314,7 @@ export class VerificationReceiptVerifier {
         artifactSha256: receipt.artifactSha256,
         generatedAt: receipt.generatedAt,
       });
-      return ref.uri;
+      return ref.uri || `cas://${ref.sha256}`;
     } finally {
       if (require("fs").existsSync(tmpPath)) {
         require("fs").unlinkSync(tmpPath);

@@ -43,8 +43,9 @@ describe("Phase 11 — Durable Memory Learning Loop & Self-Improvement", () => {
       tags: ["rendering", "worker-leases", "self-healing", "autonomous-recovery"],
       isVerified: true,
       provenance: {
-        source: mission1Id,
-        commit: "44c9c2c8f40562144e2f0506021c078d0c8de6f3",
+        source_type: "AGENT_OBSERVATION",
+        source_id: mission1Id,
+        captured_at: new Date().toISOString(),
       },
     });
 
@@ -138,7 +139,6 @@ describe("Phase 11 — Durable Memory Learning Loop & Self-Improvement", () => {
     const evidence = recordVerificationEvidence({
       capability: "Memory Learning Loop & Autonomous Self-Improvement",
       verificationLevel: "E2E_VERIFIED",
-      environment: "Node v24 + FactoryOS Intelligence Plane + Local Knowledge Vault",
       command: "vitest run memory-learning-loop.test.ts",
       testName: "Phase 11 — Durable Memory Learning Loop & Self-Improvement",
       runId: `run_learning_${Date.now()}`,
