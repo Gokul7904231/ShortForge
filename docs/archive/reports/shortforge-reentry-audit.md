@@ -1,5 +1,7 @@
 # ShortForge / FactoryOS — Reentry Architecture Audit & Ground-Truth Baseline
 
+> **Status**: Historical Audit Report (Archive)  
+> **Canonical Current Architecture**: [`docs/architecture/current.md`](../../architecture/current.md)  
 > **Audit Date**: 2026-09-20  
 > **Auditors**: Principal Software Architect & Technical Leadership Team  
 > **Target Repository**: `ShortForge` (`Gokul7904231/AI-Shorts-Maker` / `ShortForge`)  

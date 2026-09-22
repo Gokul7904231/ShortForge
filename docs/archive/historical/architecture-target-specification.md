@@ -1,5 +1,11 @@
 # SHORTFORGE / FACTORYOS — TARGET ARCHITECTURE SPECIFICATION
 
+> **Status**: Historical Reference  
+> **Canonical Replacement**: [`docs/architecture/system-overview.md`](../../architecture/system-overview.md) and [`docs/architecture/current.md`](../../architecture/current.md)  
+> **Note**: This document records the original target architecture specification before execution of the unified FactoryOS control plane.
+
+---
+
 ## 1. Target Unified Flow
 
 ```text

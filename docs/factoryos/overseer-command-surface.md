@@ -71,14 +71,14 @@ User Command Surface
 
 | Component | Responsibility |
 | :--- | :--- |
-| [`OverseerCommandSurface.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerCommandSurface.tsx) | Master Command Surface orchestrator binding presence, metrics, focus, timeline, and composer. |
-| [`OverseerFocusCard.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerFocusCard.tsx) | Displays real-time attention target, severity, reason, confidence score, and context actions. |
-| [`OverseerOperationalTimeline.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerOperationalTimeline.tsx) | Event-driven operational activity stream replacing the legacy chat transcript. |
-| [`OverseerResponseCard.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerResponseCard.tsx) | Structured insight card with root cause, detector, healer, validator status, and proof evidence. |
-| [`OverseerCommandComposer.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerCommandComposer.tsx) | Context-aware command bar (`+ Context`) with speech synthesis, voice barge-in, and keyboard handling. |
-| [`OverseerModeBar.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerModeBar.tsx) | Segmented mode switcher: `CHAT`, `OPERATE`, `RESEARCH`, `CREATE`, `MONITOR`, `AUTOPILOT`. |
-| [`OverseerQuickActions.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerQuickActions.tsx) | State-aware dynamic quick action pills adjusting to anomalies, active missions, and modes. |
-| [`OverseerConversationDrawer.tsx`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/components/overseer/presence/OverseerConversationDrawer.tsx) | Searchable slide-over drawer with pinned and recent conversation logs. |
+| [`OverseerCommandSurface.tsx`](gen-v/components/overseer/presence/OverseerCommandSurface.tsx) | Master Command Surface orchestrator binding presence, metrics, focus, timeline, and composer. |
+| [`OverseerFocusCard.tsx`](gen-v/components/overseer/presence/OverseerFocusCard.tsx) | Displays real-time attention target, severity, reason, confidence score, and context actions. |
+| [`OverseerOperationalTimeline.tsx`](gen-v/components/overseer/presence/OverseerOperationalTimeline.tsx) | Event-driven operational activity stream replacing the legacy chat transcript. |
+| [`OverseerResponseCard.tsx`](gen-v/components/overseer/presence/OverseerResponseCard.tsx) | Structured insight card with root cause, detector, healer, validator status, and proof evidence. |
+| [`OverseerCommandComposer.tsx`](gen-v/components/overseer/presence/OverseerCommandComposer.tsx) | Context-aware command bar (`+ Context`) with speech synthesis, voice barge-in, and keyboard handling. |
+| [`OverseerModeBar.tsx`](gen-v/components/overseer/presence/OverseerModeBar.tsx) | Segmented mode switcher: `CHAT`, `OPERATE`, `RESEARCH`, `CREATE`, `MONITOR`, `AUTOPILOT`. |
+| [`OverseerQuickActions.tsx`](gen-v/components/overseer/presence/OverseerQuickActions.tsx) | State-aware dynamic quick action pills adjusting to anomalies, active missions, and modes. |
+| [`OverseerConversationDrawer.tsx`](gen-v/components/overseer/presence/OverseerConversationDrawer.tsx) | Searchable slide-over drawer with pinned and recent conversation logs. |
 
 ---
 

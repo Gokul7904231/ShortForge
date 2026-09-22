@@ -1,4 +1,10 @@
-# SHORTFORGE / FACTORYOS — CANONICAL SYSTEM ARCHITECTURE
+# SHORTFORGE / FACTORYOS — CANONICAL SYSTEM ARCHITECTURE (EARLY DRAFT)
+
+> **Status**: Historical / Superseded  
+> **Canonical Replacement**: [`docs/architecture/system-overview.md`](../../architecture/system-overview.md) and [`docs/architecture/current.md`](../../architecture/current.md)  
+> **Note**: This document is an early architecture draft, superseded by the canonical system overview and current runtime architecture.
+
+---
 
 ## 1. Executive Summary & Core Principle
 

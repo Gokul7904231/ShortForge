@@ -1,5 +1,11 @@
 # SHORTFORGE / FACTORYOS — CURRENT RUNTIME ARCHITECTURE INVENTORY
 
+> **Status**: Historical / Superseded  
+> **Canonical Replacement**: [`docs/architecture/current.md`](../../architecture/current.md)  
+> **Note**: This document preserves the early inventory of discrepancies identified during the initial transition audit.
+
+---
+
 ## 1. Executive Summary
 This document captures the inventory of the existing runtime paths, dual architectures, and structural discrepancies identified during the architecture audit.
 

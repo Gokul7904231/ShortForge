@@ -36,12 +36,12 @@
 ## Phase 1 — Hardened Mission Substrate (Completed & Verified)
 
 ### Verification Highlights:
-- **Hardened Mission Suite**: **12 / 12 PASSED** ([`mission-hardened-lifecycle.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/mission-hardened-lifecycle.test.ts))
+- **Hardened Mission Suite**: **12 / 12 PASSED** ([`mission-hardened-lifecycle.test.ts`](gen-v/factoryos/tests/mission-hardened-lifecycle.test.ts))
 - **Total Master Suite**: **447 / 447 PASSED** across 73 test files (47.24s, 1 skipped)
 
 ### Key Architectural Improvements Completed:
 1. **Watchdog Budget & Duration Sweeps**: Added `checkActiveMissionBudgets()` in `MissionManager` and integrated active sweep into `FactoryWatchdog.runHealthCheck()`. Over-duration missions are now detected automatically on health check sweeps without requiring manual `recordBudgetConsumption()` calls.
-2. **Typed Success Predicates (`UNKNOWN != PASS`)**: Added `SuccessPredicateType` (`FLOOR_HEALTHY`, `NO_BLOCKING_CASES`, `TASKS_COMPLETE`, `VALIDATOR_PASSED`, `OBJECTIVE_MET`, `RESOURCE_CONDITION_MET`) and `MissionSuccessCondition` in [`MissionContracts.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/core/contracts/MissionContracts.ts) and enforced in `MissionCompletionEvaluator.ts`.
+2. **Typed Success Predicates (`UNKNOWN != PASS`)**: Added `SuccessPredicateType` (`FLOOR_HEALTHY`, `NO_BLOCKING_CASES`, `TASKS_COMPLETE`, `VALIDATOR_PASSED`, `OBJECTIVE_MET`, `RESOURCE_CONDITION_MET`) and `MissionSuccessCondition` in [`MissionContracts.ts`](gen-v/factoryos/core/contracts/MissionContracts.ts) and enforced in `MissionCompletionEvaluator.ts`.
 3. **Fail-Closed Production Security**: Replaced production fallback string for admin authorization tokens in `MissionManager.forceCompleteMissionAdmin`. Unset `FACTORYOS_ADMIN_TOKEN` fails closed in non-test mode.
 4. **Persistent Disk Multi-Writer OCC**: Proven via concurrent disk writes from distinct `MissionManager` / `DiskMissionRepository` instances with atomic reload, retry, and version incrementing.
 5. **Multi-Level Persistence Matrix**:
@@ -54,9 +54,9 @@
 ## Phase 2 — Overseer Autonomous Control Path (Completed & Strongly Verified)
 
 ### Verification Highlights:
-- **True Autonomous Runtime Suite**: **1 / 1 PASSED** ([`overseer-real-autonomy.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-real-autonomy.test.ts))
-- **Autonomous Overseer Control Suite**: **5 / 5 PASSED** ([`overseer-autonomous-control.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-autonomous-control.test.ts))
-- **Master Autonomous Closed-Loop E2E**: **1 / 1 PASSED** ([`frontier-v2-master-e2e.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/frontier-v2-master-e2e.test.ts))
+- **True Autonomous Runtime Suite**: **1 / 1 PASSED** ([`overseer-real-autonomy.test.ts`](gen-v/factoryos/tests/overseer-real-autonomy.test.ts))
+- **Autonomous Overseer Control Suite**: **5 / 5 PASSED** ([`overseer-autonomous-control.test.ts`](gen-v/factoryos/tests/overseer-autonomous-control.test.ts))
+- **Master Autonomous Closed-Loop E2E**: **1 / 1 PASSED** ([`frontier-v2-master-e2e.test.ts`](gen-v/factoryos/tests/frontier-v2-master-e2e.test.ts))
 - **Total Master Suite**: **452 / 452 PASSED** across 74 test files (47.41s, 1 skipped)
 - **Verified Control Path**:
   $$\text{Mission} \longrightarrow \text{Overseer} \longrightarrow \text{Decision} \longrightarrow \text{Task DAG} \longrightarrow \text{Dispatch} \longrightarrow \text{Floor Executors} \longrightarrow \text{Completion Evaluator} \longrightarrow \text{Completed Mission}$$
@@ -74,14 +74,14 @@
 ## Phase 3 — Floor Guardian Operating Mind (Completed & Strongly Verified)
 
 ### Verification Highlights:
-- **Floor Guardian Autonomous Runtime Suite**: **6 / 6 PASSED** ([`guardian-autonomous-runtime.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-autonomous-runtime.test.ts))
-- **Guardian State Machine Suite**: **1 / 1 PASSED** ([`guardian-state.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-state.test.ts))
-- **Guardian Audit Engine Suite**: **2 / 2 PASSED** ([`guardian-audit.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-audit.test.ts))
-- **Guardian Worker Management Suite**: **2 / 2 PASSED** ([`guardian-worker-management.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-worker-management.test.ts))
-- **Guardian Load Balancing Suite**: **2 / 2 PASSED** ([`guardian-load-balancing.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-load-balancing.test.ts))
-- **Guardian & Slayer Integration Suite**: **1 / 1 PASSED** ([`guardian-slayer-integration.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-slayer-integration.test.ts))
-- **Guardian Process Restart Recovery Suite**: **1 / 1 PASSED** ([`guardian-restart.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-restart.test.ts))
-- **Guardian Negative Safety & Policy Suite**: **3 / 3 PASSED** ([`guardian-negative-safety.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/guardian-negative-safety.test.ts))
+- **Floor Guardian Autonomous Runtime Suite**: **6 / 6 PASSED** ([`guardian-autonomous-runtime.test.ts`](gen-v/factoryos/tests/guardian-autonomous-runtime.test.ts))
+- **Guardian State Machine Suite**: **1 / 1 PASSED** ([`guardian-state.test.ts`](gen-v/factoryos/tests/guardian-state.test.ts))
+- **Guardian Audit Engine Suite**: **2 / 2 PASSED** ([`guardian-audit.test.ts`](gen-v/factoryos/tests/guardian-audit.test.ts))
+- **Guardian Worker Management Suite**: **2 / 2 PASSED** ([`guardian-worker-management.test.ts`](gen-v/factoryos/tests/guardian-worker-management.test.ts))
+- **Guardian Load Balancing Suite**: **2 / 2 PASSED** ([`guardian-load-balancing.test.ts`](gen-v/factoryos/tests/guardian-load-balancing.test.ts))
+- **Guardian & Slayer Integration Suite**: **1 / 1 PASSED** ([`guardian-slayer-integration.test.ts`](gen-v/factoryos/tests/guardian-slayer-integration.test.ts))
+- **Guardian Process Restart Recovery Suite**: **1 / 1 PASSED** ([`guardian-restart.test.ts`](gen-v/factoryos/tests/guardian-restart.test.ts))
+- **Guardian Negative Safety & Policy Suite**: **3 / 3 PASSED** ([`guardian-negative-safety.test.ts`](gen-v/factoryos/tests/guardian-negative-safety.test.ts))
 - **Total Master Guardian Suite**: **18 / 18 (100%) PASSED** across all 8 test files (2.52s)
 
 ### Key Architectural Capabilities Verified:
@@ -101,14 +101,14 @@
 ## Phase 4 — Persistent Slayer Swarm & Autonomous Investigation Hardening (Completed & Strongly Verified)
 
 ### Verification Highlights:
-- **True Autonomous Slayer Swarm Runtime Suite**: **2 / 2 PASSED** ([`slayer-autonomous-runtime.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-autonomous-runtime.test.ts))
-- **Slayer Detection Zone Leases Suite**: **2 / 2 PASSED** ([`slayer-zone-leases.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-zone-leases.test.ts))
-- **Slayer Investigation Budget Suite**: **1 / 1 PASSED** ([`slayer-investigation-budget.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-investigation-budget.test.ts))
-- **Slayer False-Positive Dampening Suite**: **3 / 3 PASSED** ([`slayer-false-positive-dampening.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-false-positive-dampening.test.ts))
-- **Slayer Anomaly Clustering & Correlation Suite**: **2 / 2 PASSED** ([`slayer-anomaly-clustering.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-anomaly-clustering.test.ts))
-- **Slayer Reputation Persistence Suite**: **1 / 1 PASSED** ([`slayer-reputation-persistence.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-reputation-persistence.test.ts))
-- **Slayer Process Restart Recovery Suite**: **1 / 1 PASSED** ([`slayer-restart-recovery.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-restart-recovery.test.ts))
-- **Slayer Negative Safety Suite**: **1 / 1 PASSED** ([`slayer-negative-safety.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/slayer-negative-safety.test.ts))
+- **True Autonomous Slayer Swarm Runtime Suite**: **2 / 2 PASSED** ([`slayer-autonomous-runtime.test.ts`](gen-v/factoryos/tests/slayer-autonomous-runtime.test.ts))
+- **Slayer Detection Zone Leases Suite**: **2 / 2 PASSED** ([`slayer-zone-leases.test.ts`](gen-v/factoryos/tests/slayer-zone-leases.test.ts))
+- **Slayer Investigation Budget Suite**: **1 / 1 PASSED** ([`slayer-investigation-budget.test.ts`](gen-v/factoryos/tests/slayer-investigation-budget.test.ts))
+- **Slayer False-Positive Dampening Suite**: **3 / 3 PASSED** ([`slayer-false-positive-dampening.test.ts`](gen-v/factoryos/tests/slayer-false-positive-dampening.test.ts))
+- **Slayer Anomaly Clustering & Correlation Suite**: **2 / 2 PASSED** ([`slayer-anomaly-clustering.test.ts`](gen-v/factoryos/tests/slayer-anomaly-clustering.test.ts))
+- **Slayer Reputation Persistence Suite**: **1 / 1 PASSED** ([`slayer-reputation-persistence.test.ts`](gen-v/factoryos/tests/slayer-reputation-persistence.test.ts))
+- **Slayer Process Restart Recovery Suite**: **1 / 1 PASSED** ([`slayer-restart-recovery.test.ts`](gen-v/factoryos/tests/slayer-restart-recovery.test.ts))
+- **Slayer Negative Safety Suite**: **1 / 1 PASSED** ([`slayer-negative-safety.test.ts`](gen-v/factoryos/tests/slayer-negative-safety.test.ts))
 - **Total Master Slayer Suite**: **13 / 13 (100%) PASSED** across all 8 test files (2.33s)
 
 ### Key Architectural Capabilities Verified:
@@ -124,12 +124,12 @@
 ## Phase 5 — Deep Cognitive Plane Runtime Integration (Completed & Strongly Verified)
 
 ### Verification Highlights:
-- **Cognitive Autonomous Closed-Loop E2E Suite**: **1 / 1 PASSED** ([`cognitive-autonomous-e2e.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/cognitive-autonomous-e2e.test.ts))
-- **Cognitive Triage & Adaptive Routing Suite**: **5 / 5 PASSED** ([`cognitive-triage-routing.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/cognitive-triage-routing.test.ts))
-- **Cognitive Evidence Graph & Contradiction Suite**: **1 / 1 PASSED** ([`cognitive-evidence-contradiction.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/cognitive-evidence-contradiction.test.ts))
-- **Cognitive Simulation Gate Suite**: **1 / 1 PASSED** ([`cognitive-simulation-gate.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/cognitive-simulation-gate.test.ts))
-- **Cognitive Fallback & Safety Suite**: **1 / 1 PASSED** ([`cognitive-fallback-safety.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/cognitive-fallback-safety.test.ts))
-- **Cognitive Outcome Learning Suite**: **1 / 1 PASSED** ([`cognitive-outcome-learner.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/cognitive-outcome-learner.test.ts))
+- **Cognitive Autonomous Closed-Loop E2E Suite**: **1 / 1 PASSED** ([`cognitive-autonomous-e2e.test.ts`](gen-v/factoryos/tests/cognitive-autonomous-e2e.test.ts))
+- **Cognitive Triage & Adaptive Routing Suite**: **5 / 5 PASSED** ([`cognitive-triage-routing.test.ts`](gen-v/factoryos/tests/cognitive-triage-routing.test.ts))
+- **Cognitive Evidence Graph & Contradiction Suite**: **1 / 1 PASSED** ([`cognitive-evidence-contradiction.test.ts`](gen-v/factoryos/tests/cognitive-evidence-contradiction.test.ts))
+- **Cognitive Simulation Gate Suite**: **1 / 1 PASSED** ([`cognitive-simulation-gate.test.ts`](gen-v/factoryos/tests/cognitive-simulation-gate.test.ts))
+- **Cognitive Fallback & Safety Suite**: **1 / 1 PASSED** ([`cognitive-fallback-safety.test.ts`](gen-v/factoryos/tests/cognitive-fallback-safety.test.ts))
+- **Cognitive Outcome Learning Suite**: **1 / 1 PASSED** ([`cognitive-outcome-learner.test.ts`](gen-v/factoryos/tests/cognitive-outcome-learner.test.ts))
 - **Total Master Cognitive Suite**: **10 / 10 (100%) PASSED** across all 6 test files (1.47s)
 
 ### Key Architectural Capabilities Verified:
@@ -145,13 +145,13 @@
 ## Phase 10 — Overseer Presence System ("Give the Overseer a Life") (Completed & Strongly Verified)
 
 ### Verification Highlights:
-- **True Autonomous Presence Closed-Loop Suite**: **1 / 1 PASSED** ([`overseer-presence-real-autonomy.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-presence-real-autonomy.test.ts))
-- **Presence Master E2E & Reconnection Suite**: **2 / 2 PASSED** ([`overseer-presence-e2e.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-presence-e2e.test.ts))
-- **Presence State & Appraisal Suite**: **6 / 6 PASSED** ([`overseer-presence-state.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-presence-state.test.ts))
-- **Expression & Spring Animation Suite**: **5 / 5 PASSED** ([`overseer-expression.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-expression.test.ts))
-- **Attention Controller Suite**: **3 / 3 PASSED** ([`overseer-attention.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-attention.test.ts))
-- **Performance & Reduced-Motion Suite**: **3 / 3 PASSED** ([`overseer-performance.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-performance.test.ts))
-- **Voice & Multimodal Synchronization Suite**: **3 / 3 PASSED** ([`overseer-voice.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/gen-v/factoryos/tests/overseer-voice.test.ts))
+- **True Autonomous Presence Closed-Loop Suite**: **1 / 1 PASSED** ([`overseer-presence-real-autonomy.test.ts`](gen-v/factoryos/tests/overseer-presence-real-autonomy.test.ts))
+- **Presence Master E2E & Reconnection Suite**: **2 / 2 PASSED** ([`overseer-presence-e2e.test.ts`](gen-v/factoryos/tests/overseer-presence-e2e.test.ts))
+- **Presence State & Appraisal Suite**: **6 / 6 PASSED** ([`overseer-presence-state.test.ts`](gen-v/factoryos/tests/overseer-presence-state.test.ts))
+- **Expression & Spring Animation Suite**: **5 / 5 PASSED** ([`overseer-expression.test.ts`](gen-v/factoryos/tests/overseer-expression.test.ts))
+- **Attention Controller Suite**: **3 / 3 PASSED** ([`overseer-attention.test.ts`](gen-v/factoryos/tests/overseer-attention.test.ts))
+- **Performance & Reduced-Motion Suite**: **3 / 3 PASSED** ([`overseer-performance.test.ts`](gen-v/factoryos/tests/overseer-performance.test.ts))
+- **Voice & Multimodal Synchronization Suite**: **3 / 3 PASSED** ([`overseer-voice.test.ts`](gen-v/factoryos/tests/overseer-voice.test.ts))
 - **Total Master Presence Suite**: **23 / 23 PASSED** across 7 test files (1.24s)
 
 ### Architectural Pillars Implemented:
