@@ -31,7 +31,7 @@ export type WorkerState =
 
 export type GpuVendor = "NVIDIA" | "AMD" | "INTEL" | "APPLE" | "NONE";
 
-export type FabricProviderType = "LOCAL" | "AMD" | "KAGGLE" | "LIGHTNING" | "GITHUB_ACTIONS";
+export type FabricProviderType = "LOCAL" | "AMD" | "KAGGLE" | "LIGHTNING" | "GITHUB_ACTIONS" | "RUNPOD" | "VAST";
 
 export interface WorkerCapability {
   readonly workerId: string;

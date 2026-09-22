@@ -44,6 +44,7 @@ import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentCont
 import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegistry";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
+import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -289,13 +290,43 @@ export class OverseerControlPlane {
     const currentState = this.worldState.getState();
     const assessment = this.thinkingController.assessCommand(run.command, currentState);
 
+    // 0. Typed Decision Batch Evaluation (Decision Fabric)
+    const decisionEngine = new DecisionEngine();
+    const batchResult = await decisionEngine.evaluateBatch({
+      batchId: `batch_${run.runId}`,
+      taskId: run.runId,
+      missionId,
+      questions: [
+        {
+          id: "intent",
+          type: "CHOICE",
+          question: "Determine operational intent",
+          options: ["EXECUTE_AUTONOMOUS_OPERATION", "TRIAGE_OPEN_CASES", "DISPATCH_SLAYERS"],
+        },
+        {
+          id: "generationRequired",
+          type: "NOUL",
+          question: "Is generation required for this command?",
+        },
+      ],
+      sharedContext: {
+        command: run.command,
+        activeCases: (currentState as any).activeCaseIds?.length || 0,
+      },
+    });
+
+    const selectedOption =
+      batchResult.answersById["intent"]?.type === "CHOICE"
+        ? (batchResult.answersById["intent"] as any).selected
+        : "EXECUTE_AUTONOMOUS_OPERATION";
+
     // 1. Record Decision in Ledger
     const decision = await this.decisionLedger.record({
       goalId: run.runId,
       stateSnapshot: currentState as unknown as Record<string, unknown>,
       thinkingMode: assessment.mode,
       availableOptions: ["EXECUTE_AUTONOMOUS_OPERATION", "TRIAGE_OPEN_CASES", "DISPATCH_SLAYERS"],
-      selectedOption: "EXECUTE_AUTONOMOUS_OPERATION",
+      selectedOption,
       reasoningSummary: assessment.rationale,
       predictedOutcome: "Factory operating continuously with swarms active",
       agentsUsed: ["overseer", "slayer_general_patrol", "healer_diagnostic", "validator_prime"],

@@ -100,16 +100,11 @@ export class F07ReleaseGuardian {
       }
     }
 
-    // Prohibit empty SHA-256 placeholder
+    // Prohibit missing, empty, or synthetic SHA-256 placeholder (Zero Synthetic Fallback)
     const EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
     if (!artifactSha256 || artifactSha256 === EMPTY_SHA256) {
-      if (measurements && measurements.fileExists && measurements.byteLength > 0) {
-        // Deterministic artifact identity bound to video and physical measurements
-        artifactSha256 = crypto.createHash("sha256").update(`artifact_${video.videoId}_${measurements.byteLength}`).digest("hex");
-      } else {
-        physicalIntegrityFailure = physicalIntegrityFailure || "Missing or empty placeholder artifact SHA-256 identity";
-        artifactSha256 = "";
-      }
+      physicalIntegrityFailure = physicalIntegrityFailure || "Missing or empty placeholder artifact SHA-256 identity: authentic physical byte digest required";
+      artifactSha256 = "";
     }
 
     // Update video context with physical measurements

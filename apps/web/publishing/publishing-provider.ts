@@ -57,6 +57,7 @@ export interface PublishResult {
   postUrl?: string;
   publishedAt: string;
   error?: string;
+  isSimulated?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -6,10 +6,12 @@
  * bounded, ranked, provenance-backed evidence under strict token budgets.
  */
 
+import * as crypto from "node:crypto";
 import { EvidenceItem } from "../retrieval/RetrievalContracts";
 import {
   ContextBudgetPolicy,
   ContextCapsule,
+  ContextCapsuleV2,
   IContextCompiler,
 } from "./ContextCapsuleContracts";
 
@@ -290,5 +292,76 @@ export class ContextCompiler implements IContextCompiler {
     }
 
     return sanitized;
+  }
+
+  public canonicalizeJson(obj: unknown): string {
+    if (obj === null || typeof obj !== "object") {
+      return JSON.stringify(obj);
+    }
+    if (Array.isArray(obj)) {
+      return "[" + obj.map((item) => this.canonicalizeJson(item)).join(",") + "]";
+    }
+    const keys = Object.keys(obj as Record<string, unknown>).sort();
+    const entries = keys.map(
+      (k) => JSON.stringify(k) + ":" + this.canonicalizeJson((obj as Record<string, unknown>)[k])
+    );
+    return "{" + entries.join(",") + "}";
+  }
+
+  public computeFingerprint(data: unknown): string {
+    return crypto.createHash("sha256").update(this.canonicalizeJson(data)).digest("hex");
+  }
+
+  public compileV2(params: {
+    taskId: string;
+    query: string;
+    evidenceItems: EvidenceItem[];
+    currentState?: Record<string, unknown>;
+    stateVersion?: string;
+    sourceVersions?: Record<string, string>;
+    budgetPolicy?: Partial<ContextBudgetPolicy>;
+  }): ContextCapsuleV2 {
+    const baseCapsule = this.compile({
+      taskId: params.taskId,
+      query: params.query,
+      evidenceItems: params.evidenceItems,
+      currentState: params.currentState,
+      budgetPolicy: params.budgetPolicy,
+    });
+
+    const stateFingerprint = this.computeFingerprint(params.currentState || {});
+    const payload: Record<string, unknown> = {
+      taskId: baseCapsule.taskId,
+      query: baseCapsule.query,
+      currentState: baseCapsule.currentState,
+      relevantEntities: baseCapsule.relevantEntities,
+      keyFacts: baseCapsule.keyFacts,
+      decisions: baseCapsule.decisions,
+      lessons: baseCapsule.lessons,
+      recentChanges: baseCapsule.recentChanges,
+      evidence: baseCapsule.evidence,
+      conflicts: baseCapsule.conflicts,
+      unknowns: baseCapsule.unknowns,
+      provenance: baseCapsule.provenance,
+    };
+
+    const canonicalSerialized = this.canonicalizeJson(payload);
+    const contextHash = crypto.createHash("sha256").update(canonicalSerialized).digest("hex");
+    const estimatedTokens = Math.ceil(canonicalSerialized.length / 4);
+
+    return {
+      contextId: `ctx_${crypto.randomBytes(8).toString("hex")}`,
+      contextVersion: 2,
+      contextHash,
+      stateVersion: params.stateVersion || "1.0.0",
+      stateFingerprint,
+      sourceVersions: params.sourceVersions || {},
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 300000).toISOString(),
+      estimatedTokens,
+      truncated: baseCapsule.budget.wasTruncated,
+      redactionState: "CLEAN",
+      payload,
+    };
   }
 }

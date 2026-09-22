@@ -217,6 +217,7 @@ describe("YouTube ReMaker Remediation & Evidence Invalidation — Targeted Repai
       video: candidateVideo,
       channel: channelWithCloneHistory,
       publicationIntentAt: "2026-09-21T00:00:00Z",
+      artifactSha256: "e".repeat(64),
     });
 
     expect(receipt1.youtubePolicy.overallOutcome).toBe("REPAIR_REQUIRED");
@@ -247,6 +248,7 @@ describe("YouTube ReMaker Remediation & Evidence Invalidation — Targeted Repai
       video: remediatedVideo,
       channel: channelWithCloneHistory,
       publicationIntentAt: "2026-09-21T00:00:00Z",
+      artifactSha256: "f".repeat(64),
     });
 
     expect(receipt2.youtubePolicy.overallOutcome).toBe("READY");
