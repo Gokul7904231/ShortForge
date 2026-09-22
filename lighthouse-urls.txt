@@ -1,7 +1,0 @@
-# Lighthouse Audit URLs (one per line, # for comments)
-# Edit this file to add/remove URLs
-
-http://localhost:3000/
-http://localhost:3000/about
-http://localhost:3000/contact
-http://localhost:3000/shop
