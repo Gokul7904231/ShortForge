@@ -56,7 +56,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_worker_script(job: dict) -> str:
+def build_worker_script(job: dict, kernel_id: str) -> str:
     job_json = json.dumps(job, separators=(",", ":"))
     job_literal = repr(job_json)
 
@@ -185,7 +185,7 @@ def render():
         "provider": "kaggle",
         "controller_test": True,
         "job": JOB,
-        "kernel_id": "{os.environ.get("KERNEL_ID", "UNKNOWN")}",
+        "kernel_id": "{kernel_id}",
         "status": "completed",
         "gpu": {{
             "detected": True,
@@ -324,12 +324,7 @@ def main():
             encoding="utf-8",
         )
 
-        worker_script = build_worker_script(job)
-
-        worker_script = worker_script.replace(
-            'kernel_id": "UNKNOWN"',
-            f'kernel_id": "{kernel_id}"',
-        )
+        worker_script = build_worker_script(job, kernel_id)
 
         (work_dir / "worker.py").write_text(
             worker_script,
