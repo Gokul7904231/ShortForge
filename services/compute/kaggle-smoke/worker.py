@@ -1,61 +1,211 @@
-import os
+import hashlib
+import json
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 
-print("=== ShortForge Kaggle GPU Diagnostic ===")
+KERNEL_ID = "gokulkumara/shortforge-kaggle-gpu-smoke-test"
 
-print("\n[1] Environment")
-print("CUDA_VISIBLE_DEVICES =", os.environ.get("CUDA_VISIBLE_DEVICES"))
-print("PATH =", os.environ.get("PATH"))
+OUTPUT_DIR = Path("/kaggle/working")
+VIDEO_PATH = OUTPUT_DIR / "shortforge-kaggle-gpu-smoke.mp4"
+RECEIPT_PATH = OUTPUT_DIR / "shortforge-receipt.json"
 
-print("\n[2] nvidia-smi discovery")
-nvidia_smi = shutil.which("nvidia-smi")
-print("nvidia-smi path =", nvidia_smi)
 
-if nvidia_smi:
+def run_command(command):
     result = subprocess.run(
-        [
-            nvidia_smi,
-            "--query-gpu=name,memory.total,driver_version",
-            "--format=csv,noheader",
-        ],
-        capture_output=True,
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
+        check=False,
     )
-    print("nvidia-smi return code =", result.returncode)
     print(result.stdout)
-    print(result.stderr)
+    return result.returncode, result.stdout
 
-print("\n[3] NVIDIA device files")
-for path in sorted(Path("/dev").glob("nvidia*")):
-    print(path)
 
-print("\n[4] PyTorch")
-try:
-    import torch
+def sha256_file(path):
+    digest = hashlib.sha256()
 
-    print("torch version =", torch.__version__)
-    print("torch CUDA version =", torch.version.cuda)
-    print("torch CUDA available =", torch.cuda.is_available())
-    print("torch device count =", torch.cuda.device_count())
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
 
-    for i in range(torch.cuda.device_count()):
-        print(f"device {i} =", torch.cuda.get_device_name(i))
-        print(f"capability {i} =", torch.cuda.get_device_capability(i))
+    return digest.hexdigest()
 
-except Exception as exc:
-    print("PyTorch diagnostic failed:", repr(exc))
 
-print("\n[5] CUDA libraries")
-for candidate in [
-    "/usr/local/cuda",
-    "/usr/local/cuda/bin/nvidia-smi",
-    "/usr/bin/nvidia-smi",
-    "/opt/nvidia/bin/nvidia-smi",
-]:
-    path = Path(candidate)
-    print(candidate, "=>", "EXISTS" if path.exists() else "missing")
+print("=== ShortForge Kaggle GPU Render Test ===")
 
-print("\n=== Diagnostic finished ===")
+# ---------------------------------------------------------
+# 1. GPU detection
+# ---------------------------------------------------------
+print("\n[1] NVIDIA GPU")
+
+nvidia_smi = shutil.which("nvidia-smi")
+
+if not nvidia_smi:
+    raise RuntimeError("nvidia-smi not found")
+
+gpu_code, gpu_output = run_command([
+    nvidia_smi,
+    "--query-gpu=index,name,memory.total,driver_version",
+    "--format=csv,noheader",
+])
+
+if gpu_code != 0:
+    raise RuntimeError("nvidia-smi failed")
+
+gpu_lines = [
+    line.strip()
+    for line in gpu_output.splitlines()
+    if line.strip()
+]
+
+print(f"Detected GPUs: {len(gpu_lines)}")
+
+if len(gpu_lines) < 1:
+    raise RuntimeError("No NVIDIA GPUs detected")
+
+
+# ---------------------------------------------------------
+# 2. FFmpeg / NVENC capability
+# ---------------------------------------------------------
+print("\n[2] FFmpeg")
+
+ffmpeg_path = shutil.which("ffmpeg")
+
+if not ffmpeg_path:
+    raise RuntimeError("ffmpeg not found")
+
+ffmpeg_version_code, ffmpeg_version = run_command([
+    ffmpeg_path,
+    "-version",
+])
+
+if ffmpeg_version_code != 0:
+    raise RuntimeError("FFmpeg version check failed")
+
+
+print("\n[3] Checking NVENC support")
+
+encoder_code, encoder_output = run_command([
+    ffmpeg_path,
+    "-hide_banner",
+    "-encoders",
+])
+
+nvenc_available = "h264_nvenc" in encoder_output
+
+print("h264_nvenc available =", nvenc_available)
+
+encoder = "h264_nvenc" if nvenc_available else "libx264"
+
+if not nvenc_available:
+    print("WARNING: NVENC unavailable; falling back to libx264 CPU encoding")
+
+
+# ---------------------------------------------------------
+# 3. Render
+# ---------------------------------------------------------
+print("\n[4] Rendering")
+
+render_command = [
+    ffmpeg_path,
+    "-y",
+    "-f",
+    "lavfi",
+    "-i",
+    "testsrc2=size=1080x1920:rate=30",
+    "-f",
+    "lavfi",
+    "-i",
+    "anullsrc=r=48000:cl=stereo",
+    "-t",
+    "5",
+]
+
+if encoder == "h264_nvenc":
+    render_command += [
+        "-c:v",
+        "h264_nvenc",
+        "-preset",
+        "p4",
+        "-pix_fmt",
+        "yuv420p",
+    ]
+else:
+    render_command += [
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-pix_fmt",
+        "yuv420p",
+    ]
+
+render_command += [
+    "-c:a",
+    "aac",
+    "-shortest",
+    str(VIDEO_PATH),
+]
+
+render_code, render_output = run_command(render_command)
+
+if render_code != 0:
+    raise RuntimeError("FFmpeg render failed")
+
+if not VIDEO_PATH.exists():
+    raise RuntimeError("Rendered MP4 was not created")
+
+
+# ---------------------------------------------------------
+# 4. Physical artifact verification
+# ---------------------------------------------------------
+print("\n[5] Artifact verification")
+
+byte_length = VIDEO_PATH.stat().st_size
+
+if byte_length <= 0:
+    raise RuntimeError("Rendered MP4 is empty")
+
+sha256 = sha256_file(VIDEO_PATH)
+
+
+# ---------------------------------------------------------
+# 5. Receipt
+# ---------------------------------------------------------
+receipt = {
+    "provider": "kaggle",
+    "kernel_id": KERNEL_ID,
+    "status": "completed",
+    "gpu": {
+        "detected": True,
+        "count": len(gpu_lines),
+        "devices": gpu_lines,
+    },
+    "ffmpeg": {
+        "encoder_selected": encoder,
+        "nvenc_available": nvenc_available,
+    },
+    "artifact": {
+        "filename": VIDEO_PATH.name,
+        "path": str(VIDEO_PATH),
+        "byteLength": byte_length,
+        "sha256": sha256,
+    },
+    "timestamp": int(time.time()),
+}
+
+RECEIPT_PATH.write_text(
+    json.dumps(receipt, indent=2),
+    encoding="utf-8",
+)
+
+print("\n=== GPU RENDER TEST COMPLETE ===")
+print("Kernel:", KERNEL_ID)
+print("Encoder:", encoder)
+print("Bytes:", byte_length)
+print("SHA-256:", sha256)
+print("Receipt:", RECEIPT_PATH)
