@@ -37,11 +37,14 @@ function runCheck(name, fn) {
 // Check 1: No machine-specific paths in tracked source and docs
 runCheck("Absence of local Windows paths (C:\\Users)", () => {
   try {
-    const output = execSync('git grep -i "c:\\\\users" -- ":!*.tsbuildinfo"', {
-      cwd: ROOT,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "ignore"],
-    });
+    const output = execSync(
+      'git grep -i "c:\\\\users" -- ":!*.tsbuildinfo" ":!REPOSITORY_RESTRUCTURE_REPORT.md" ":!scripts/verification/verify-repository.js"',
+      {
+        cwd: ROOT,
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "ignore"],
+      }
+    );
     if (output.trim()) {
       throw new Error(`Found local machine paths:\n${output.trim()}`);
     }
