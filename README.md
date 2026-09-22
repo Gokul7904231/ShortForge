@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/Gokul7904231/ShortForge/actions/workflows/ci.yml"><img src="https://github.com/Gokul7904231/ShortForge/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/TypeScript-Strict_FactoryOS-blue?style=flat-square&logo=typescript&logoColor=white" alt="TypeCheck" />
-  <img src="https://img.shields.io/badge/Vitest-Passing_100%25-brightgreen?style=flat-square&logo=vitest&logoColor=white" alt="Tests" />
+  <img src="https://img.shields.io/badge/Vitest-Passing_100%25-brightgreen?style=flat-square&logo=vitest" alt="Tests" />
   <img src="https://img.shields.io/badge/Architecture-FactoryOS_v2-indigo?style=flat-square" alt="Architecture" />
   <img src="https://img.shields.io/badge/Verification-CLAIM_%3C%3D_EVIDENCE-orange?style=flat-square" alt="Standard" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License" /></a>
@@ -73,8 +73,9 @@ ShortForge enforces a strict structural invariant: **There is exactly one author
 ```
 
 Full architectural specifications:
-* [Current Factual Architecture](docs/architecture/current.md)
-* [System Overview & Topology](docs/architecture/system-overview.md)
+
+- [Current Factual Architecture](docs/architecture/current.md)
+- [System Overview & Topology](docs/architecture/system-overview.md)
 
 ---
 
@@ -97,9 +98,9 @@ Full architectural specifications:
 
 FactoryOS is the supervisory operating system running inside the Next.js runtime. It transforms human or scheduled intent into structured missions, monitors execution health, and guarantees state-machine atomicity:
 
-* **Sovereign Agent Hierarchy**: Overseer, Slayer, Healer, and Worker models.
-* **Deterministic Event Bus**: Resilient event distribution ensuring audit observability.
-* **Content-Addressed Storage**: Artifacts are addressed strictly by physical byte SHA-256 digests (`data/cas_storage/{ab}/{hash}.ext`).
+- **Sovereign Agent Hierarchy**: Overseer, Slayer, Healer, and Worker models.
+- **Deterministic Event Bus**: Resilient event distribution ensuring audit observability.
+- **Content-Addressed Storage**: Artifacts are addressed strictly by physical byte SHA-256 digests (`data/cas_storage/{ab}/{hash}.ext`).
 
 See [FactoryOS Documentation](docs/factoryos/agent-contracts.md) for contracts and schemas.
 
@@ -119,9 +120,9 @@ ShortForge routes rendering workloads across diverse hardware providers:
 
 ## Intelligence Layer
 
-* **Typed Decision Fabric**: Introduces `Noul`, `Choice`, and `Score` primitives with distinct separation between epistemic confidence ($[0, 1]$ certainty) and outcome probability distribution.
-* **Shadow-Mode Jev Intelligence**: Real-time evaluation of LLM decision proposals with shadow agreement logging before production intervention.
-* **Context Economy v2**: Deterministic key sorting, state fingerprints, contextual SHA-256 caching, and 11-class credential redaction.
+- **Typed Decision Fabric**: Introduces `Noul`, `Choice`, and `Score` primitives with distinct separation between epistemic confidence ($[0, 1]$ certainty) and outcome probability distribution.
+- **Shadow-Mode Jev Intelligence**: Real-time evaluation of LLM decision proposals with shadow agreement logging before production intervention.
+- **Context Economy v2**: Deterministic key sorting, state fingerprints, contextual SHA-256 caching, and 11-class credential redaction.
 
 ---
 
@@ -143,9 +144,9 @@ Topic / Intent
 
 The **F07 YouTube Monetization & Content Integrity Guardian** serves as the authoritative release boundary:
 
-* **Eradicated Synthetic Fallbacks**: Missing physical artifact hashes immediately trigger `physicalIntegrityFailure` without synthetic SHA generation.
-* **Simulated Publisher Isolation**: `dryrun-youtube.ts` is explicitly quarantined and throws fatal exceptions in production environments without explicit bypass flags.
-* **15 Concrete Gates (G00–G14)**: Verification of community guidelines, advertiser suitability, copyright compliance, audio loudness, and visual pacing.
+- **Eradicated Synthetic Fallbacks**: Missing physical artifact hashes immediately trigger `physicalIntegrityFailure` without synthetic SHA generation.
+- **Simulated Publisher Isolation**: `dryrun-youtube.ts` is explicitly quarantined and throws fatal exceptions in production environments without explicit bypass flags.
+- **15 Concrete Gates (G00–G14)**: Verification of community guidelines, advertiser suitability, copyright compliance, audio loudness, and visual pacing.
 
 ---
 
@@ -182,9 +183,9 @@ ShortForge/
 
 ### Prerequisites
 
-* Node.js >= 20.x
-* Python >= 3.10
-* FFmpeg & FFprobe installed and available on `PATH`
+- Node.js >= 20.x
+- Python >= 3.10
+- FFmpeg & FFprobe installed and available on `PATH`
 
 ### Quick Start
 
@@ -229,11 +230,11 @@ node scripts/verification/verify-repository.js
 
 Full architectural specifications, threat models, and verification matrices are maintained under [`docs/`](docs/README.md).
 
-* [Documentation Index](docs/README.md)
-* [Current Factual Architecture](docs/architecture/current.md)
-* [System Overview](docs/architecture/system-overview.md)
-* [Security Threat Model](docs/security/threat-model.md)
-* [Requirement Traceability Matrix](docs/verification/requirements/traceability-matrix.md)
+- [Documentation Index](docs/README.md)
+- [Current Factual Architecture](docs/architecture/current.md)
+- [System Overview](docs/architecture/system-overview.md)
+- [Security Threat Model](docs/security/threat-model.md)
+- [Requirement Traceability Matrix](docs/verification/requirements/traceability-matrix.md)
 
 ---
 
@@ -254,7 +255,7 @@ Please report security issues responsibly. Refer to the [Security Threat Model](
 | **Heterogeneous Compute Adapters** | `UNIT-VERIFIED` | 6/6 qualification tests passing for Kaggle, RunPod, Vast |
 | **Token & Context Economy** | `UNIT-VERIFIED` | 13/13 token economy tests passing; ContextCompiler v2 green |
 | **Decision Intelligence Fabric** | `SHADOW-MODE` | TypeSafeJevAdapter operational in shadow evaluation mode |
-| **Live Cloud Rendering** | `REQUIRES-CREDENTIALS`| Adapters functional; requires live API keys for L6–L8 cloud testing |
+| **Live Cloud Rendering** | `REQUIRES-CREDENTIALS` | Adapters functional; requires live API keys for L6–L8 cloud testing |
 
 ---
 
