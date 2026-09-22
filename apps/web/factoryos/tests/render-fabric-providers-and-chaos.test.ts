@@ -73,7 +73,7 @@ describe("Render Fabric Providers, Chaos & Zero Duplicate Render Verification", 
       expect(execResult.error).toMatch(/AMD ROCm GPU hardware.*not configured/);
 
       // Invariant: Zero synthetic "PRODUCTION_VERIFIED" claims manufactured
-      expect(execResult.artifactReference).toBeUndefined();
+      expect((execResult as any).artifactReference).toBeUndefined();
     });
   });
 

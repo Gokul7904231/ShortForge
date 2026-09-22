@@ -11,17 +11,20 @@ import { EvidenceRef } from "../evidence/EvidenceRef";
 
 export interface VideoAssetRecord {
   readonly assetId: string;
-  readonly type: "VIDEO" | "AUDIO" | "VOICE" | "IMAGE" | "MUSIC";
+  readonly type?: "VIDEO" | "AUDIO" | "VOICE" | "IMAGE" | "MUSIC" | string;
+  readonly role?: string;
   readonly source: string;
+  readonly license?: string;
   readonly isCommercialSafe: boolean;
   readonly isOriginalSynthesis: boolean;
+  readonly assetHash?: string;
   readonly licenseType?: string;
   readonly licenseExpiresAt?: string;
 }
 
 export interface ChannelContext {
   readonly channelId: string;
-  readonly channelName: string;
+  readonly channelName?: string;
   readonly yppStatus: "CHANNEL_READY_TO_APPLY" | "ACCEPTED_INTO_YPP" | "CURRENTLY_MONETIZING" | "NOT_YET_ELIGIBLE";
   readonly isTwoStepVerificationEnabled: boolean;
   readonly hasAdvancedFeaturesAccess: boolean;

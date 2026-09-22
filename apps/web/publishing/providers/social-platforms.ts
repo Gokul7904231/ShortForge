@@ -13,8 +13,10 @@
 
 import type { PublishingProvider, PublishPayload, PublishResult, PlatformHealth } from "../publishing-provider";
 
+import { PublicationAuthorizationService } from "../authorization/PublicationAuthorizationService";
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared stub factory
+// Shared platform provider factory (Fail-Closed, Zero Fake Success)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createStubProvider(
@@ -27,13 +29,55 @@ function createStubProvider(
     id,
     name,
     async publish(payload: PublishPayload): Promise<PublishResult> {
-      console.log(`[${name}] Stub publish for job ${payload.jobId} | title: "${payload.title}"`);
+      // 1. Mandatory Invariant: Authorization capability required
+      const auth = payload.authorization;
+      if (!auth) {
+        throw new Error(
+          `[${name}] Invariant Violation: NO VALID F07 RELEASE AUTHORIZATION = NO PUBLICATION. ` +
+          `PublishPayload is missing an authorized ReleaseAuthorization capability.`
+        );
+      }
+
+      // 2. Strict Credential Check: Never return fake success
+      const isAuthConfigured = !!process.env[envKey];
+      if (!isAuthConfigured) {
+        return {
+          platform: id,
+          success: false,
+          publishedAt: new Date().toISOString(),
+          error: `AUTH_NOT_CONFIGURED: ${envKey} missing from environment. Production publishing requires authentic credentials.`,
+        };
+      }
+
+      // 3. JIT Revalidation
+      const authService = PublicationAuthorizationService.getInstance();
+      const canonicalParams = {
+        jobId: payload.jobId,
+        title: payload.title,
+        description: payload.description,
+        tags: payload.tags,
+        privacyStatus: payload.privacyStatus || (auth.scope.allowedPrivacy as any) || "unlisted",
+        publishAt: payload.publishAt || auth.scope.publishAt,
+        containsSyntheticMedia: payload.containsSyntheticMedia ?? auth.scope.containsSyntheticMedia,
+        selfDeclaredMadeForKids: payload.selfDeclaredMadeForKids ?? auth.scope.selfDeclaredMadeForKids,
+        channelId: payload.channelId || auth.targetChannelId,
+        platform: id,
+      };
+
+      const jitCheck = authService.revalidateImmediatelyBeforePublish(auth, canonicalParams, {
+        uploadSessionUri: payload.uploadSessionUri,
+      });
+
+      if (!jitCheck.valid) {
+        throw new Error(`[${name}] JIT Authorization Revalidation Failed (${jitCheck.code}): ${jitCheck.error}`);
+      }
+
+      // In production with credentials: real integration call
       return {
         platform: id,
-        success: true,
-        postId: `${id}_stub_${Date.now()}`,
-        postUrl: `https://example.com/${id}/stub_${payload.jobId}`,
+        success: false,
         publishedAt: new Date().toISOString(),
+        error: `PLATFORM_ADAPTER_PENDING: Real ${name} production API integration pending qualification.`,
       };
     },
     async health(): Promise<boolean> {

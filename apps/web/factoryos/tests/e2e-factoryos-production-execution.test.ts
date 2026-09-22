@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { AutonomousFactoryController } from "../core/controller/AutonomousFactoryController";
 import { POST as generateVideoHandler } from "../../app/api/generate-video/route";
 import { POST as callbackHandler } from "../../app/api/rendering/callback/route";
@@ -115,8 +117,10 @@ describe("FactoryOS Phase 2 — Real Production Execution & End-to-End DAG Verif
       expect(mission).toBeDefined();
       expect(mission?.owner).toBe("user_test_e2e_101");
 
-      // Wait a moment for background TaskDAGExecutor to process floors
-      await new Promise((r) => setTimeout(r, 200));
+      // Wait for background TaskDAGExecutor to process floors and dispatch
+      for (let i = 0; i < 20 && azureDispatchCount === 0; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
 
       // Step D: Verify Floor Execution & Rendering Authority Invariant
       expect(azureDispatchCount).toBe(1);
@@ -124,6 +128,17 @@ describe("FactoryOS Phase 2 — Real Production Execution & End-to-End DAG Verif
       expect(localScenePoolCount).toBe(0);
 
       // Step E: Simulate Azure Worker Callback to /api/rendering/callback
+      const renderDir = path.join(process.cwd(), "data", "renders");
+      if (!fs.existsSync(renderDir)) fs.mkdirSync(renderDir, { recursive: true });
+      const testSampleMp4 = path.resolve(process.cwd(), "..", "..", "testing", "artifacts", "node_adapter_test_output.mp4");
+      const targetMp4 = path.join(renderDir, `${jobId}.mp4`);
+      if (fs.existsSync(testSampleMp4)) {
+        fs.copyFileSync(testSampleMp4, targetMp4);
+      } else {
+        const altMp4 = path.resolve(process.cwd(), "data", "renders", "real_proof_job_101_render.mp4");
+        if (fs.existsSync(altMp4)) fs.copyFileSync(altMp4, targetMp4);
+      }
+
       const callbackReq = new NextRequest("http://localhost:3000/api/rendering/callback", {
         method: "POST",
         headers: {
@@ -141,6 +156,9 @@ describe("FactoryOS Phase 2 — Real Production Execution & End-to-End DAG Verif
 
       const callbackRes = await callbackHandler(callbackReq);
       const callbackData = await callbackRes.json();
+      if (callbackRes.status !== 200) {
+        console.error("DEBUG CALLBACK ERROR:", callbackData);
+      }
 
       expect(callbackRes.status).toBe(200);
       expect(callbackData.success).toBe(true);
@@ -254,7 +272,9 @@ describe("FactoryOS Phase 2 — Real Production Execution & End-to-End DAG Verif
       const res = await generateVideoHandler(req);
       expect(res.status).toBe(200);
 
-      await new Promise((r) => setTimeout(r, 200));
+      for (let i = 0; i < 20 && azureDispatchCalls === 0; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
 
       expect(azureDispatchCalls).toBe(1);
       expect(localFFmpegCalls).toBe(0);

@@ -451,20 +451,43 @@ export class YouTubePolicyStore {
 
   /**
    * Resolves snapshot based on effectiveAt, expiresAt, and retrievedAt.
+   * Truly date-aware: selects the active snapshot governing publicationIntentAt.
    */
   public resolveSnapshotForPublication(publicationIntentAt?: string): PolicySnapshot {
-    const latest = this.snapshots.get(this.latestVersion);
-    if (!latest) {
-      throw new Error(`No policy snapshot registered for version ${this.latestVersion}`);
+    const pubTime = publicationIntentAt ? new Date(publicationIntentAt).getTime() : Date.now();
+
+    // Find all registered snapshots whose effective interval covers pubTime
+    const eligibleSnapshots: PolicySnapshot[] = [];
+
+    for (const snapshot of this.snapshots.values()) {
+      const effectiveTime = new Date(snapshot.effectiveAt).getTime();
+      const expiresTime = snapshot.expiresAt ? new Date(snapshot.expiresAt).getTime() : Infinity;
+
+      if (pubTime >= effectiveTime && pubTime < expiresTime) {
+        eligibleSnapshots.push(snapshot);
+      }
+    }
+
+    let selected: PolicySnapshot;
+    if (eligibleSnapshots.length > 0) {
+      // Pick most recently effective snapshot covering pubTime
+      eligibleSnapshots.sort((a, b) => new Date(b.effectiveAt).getTime() - new Date(a.effectiveAt).getTime());
+      selected = eligibleSnapshots[0];
+    } else {
+      const latest = this.snapshots.get(this.latestVersion);
+      if (!latest) {
+        throw new Error(`[PolicyStore] No policy snapshot registered for publication intent date: ${publicationIntentAt || "now"}`);
+      }
+      selected = latest;
     }
 
     // Verify freshness SLA
-    const freshness = PolicyActivationPipeline.evaluateFreshness(latest, publicationIntentAt);
+    const freshness = PolicyActivationPipeline.evaluateFreshness(selected, publicationIntentAt);
     if (freshness.state === "INVALID" || freshness.state === "UNAVAILABLE") {
-      throw new Error(`Policy snapshot ${this.latestVersion} is unusable: ${freshness.explanation}`);
+      throw new Error(`Policy snapshot ${selected.policyVersion} is unusable: ${freshness.explanation}`);
     }
 
-    return latest;
+    return selected;
   }
 
   /**

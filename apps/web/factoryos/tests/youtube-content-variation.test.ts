@@ -97,17 +97,17 @@ describe("YouTube Content Variation — 11 Approved Engines & Anti-Template Proo
       // Create 3 genomes
       const gA = VariationPlanner.createGenomeFromOption({
         topic,
-        option: all3Options[0],
+        option: all3Options[0]!,
         scriptText: `Script text for variant A of ${engine}...`,
       });
       const gB = VariationPlanner.createGenomeFromOption({
         topic,
-        option: all3Options[1],
+        option: all3Options[1]!,
         scriptText: `Script text for variant B of ${engine} with contrasting viewpoint...`,
       });
       const gC = VariationPlanner.createGenomeFromOption({
         topic,
-        option: all3Options[2],
+        option: all3Options[2]!,
         scriptText: `Script text for variant C of ${engine} with analytical breakdown...`,
       });
 
@@ -132,7 +132,7 @@ describe("YouTube Content Variation — 11 Approved Engines & Anti-Template Proo
     const plan = VariationPlanner.planVariations(topic, "GK", []);
     const gOriginal = VariationPlanner.createGenomeFromOption({
       topic,
-      option: plan.recommendedOption,
+      option: plan.recommendedOption!,
       scriptText: "Atmospheric scintillation causes stellar wavefront perturbation...",
     });
 
@@ -173,7 +173,7 @@ describe("YouTube Content Variation — 11 Approved Engines & Anti-Template Proo
     const plan = VariationPlanner.planVariations(topic, "History", []);
     const gOriginal = VariationPlanner.createGenomeFromOption({
       topic,
-      option: plan.recommendedOption,
+      option: plan.recommendedOption!,
       scriptText: "Original script of Roman Colosseum...",
       durationSeconds: 42,
     });

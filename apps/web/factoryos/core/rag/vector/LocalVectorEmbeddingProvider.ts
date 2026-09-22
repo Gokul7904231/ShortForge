@@ -46,6 +46,7 @@ export class LocalVectorEmbeddingProvider implements EmbeddingProvider {
     }
     try {
       if (!this.extractor) {
+        // @ts-ignore
         const { pipeline } = await import("@xenova/transformers");
         this.extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
       }
