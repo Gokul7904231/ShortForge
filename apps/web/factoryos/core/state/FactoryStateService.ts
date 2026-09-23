@@ -30,19 +30,18 @@ export interface FactoryTelemetryData {
   timestamp: string;
 }
 
+import { FloorRegistry } from "../hierarchy/FloorRegistry";
+
 export class FactoryStateService {
   private static instance: FactoryStateService;
 
-  // Registered Standard Production Floors (Immutable architectural blueprint)
-  private static readonly STANDARD_FLOORS: Array<{ id: string; name: string; category: string }> = [
-    { id: "floor01_strategy", name: "Strategic Direction & Research", category: "PLANNING" },
-    { id: "floor02_scripting", name: "Cognitive Scripting & Structure", category: "CREATIVE" },
-    { id: "floor03_asset_realization", name: "Visual Asset Realization", category: "MEDIA" },
-    { id: "floor04_media_synthesis", name: "Voice & Audio Synthesis", category: "VOICE" },
-    { id: "floor05_timeline_composition", name: "Timeline Composition & Motion", category: "COMPOSITION" },
-    { id: "floor06_rendering", name: "Video GPU Rendering Engine", category: "RENDER" },
-    { id: "floor07_compliance", name: "QA Gate & Social Compliance", category: "VERIFICATION" },
-  ];
+  // Registered Standard Production Floors derived dynamically from FloorRegistry
+  private static readonly STANDARD_FLOORS: Array<{ id: string; name: string; category: string }> =
+    FloorRegistry.getAllFloors().map((f) => ({
+      id: f.floorId,
+      name: f.canonicalName,
+      category: f.category,
+    }));
 
   static getInstance(): FactoryStateService {
     if (!this.instance) {

@@ -4,10 +4,13 @@ import { DailyProductionPolicy, ProductionQuotaLimit } from "./DailyProductionPo
 import { ProductionJob, ProductionJobStatus } from "./ProductionJob";
 import { ProductionStateMachine } from "./ProductionStateMachine";
 import { ProductionIdempotency } from "./ProductionIdempotency";
+import type { Schedule, ScheduleInstance } from "../schedule/ScheduleContracts";
+import { randomUUID } from "node:crypto";
 
 export class AutonomousScheduler {
   private policy: DailyProductionPolicy;
   private jobs: Map<string, ProductionJob> = new Map();
+  private scheduleInstances: Map<string, ScheduleInstance> = new Map();
   private idempotencyStore: Set<string> = new Set();
   private persistenceFilePath: string;
 
@@ -147,5 +150,69 @@ export class AutonomousScheduler {
         console.warn(`[AutonomousScheduler] Failed reading jobs from disk:`, err?.message ?? err);
       }
     }
+  }
+
+  /**
+   * Authoritative Schedule Trigger
+   * Derives a ScheduleInstance from the active Schedule, creates a Mission,
+   * and dispatches it directly to the Overseer Supreme Control Plane.
+   */
+  async triggerScheduleRun(
+    schedule: Schedule,
+    overseer?: { dispatchMission?: (missionId: string, goal: string, options?: any) => Promise<any> }
+  ): Promise<ScheduleInstance> {
+    const scheduledFor = new Date().toISOString();
+    const idempotencyKey = `sched_inst_${schedule.scheduleId}_${scheduledFor.slice(0, 10)}`;
+
+    if (this.idempotencyStore.has(idempotencyKey)) {
+      const existing = Array.from(this.scheduleInstances.values()).find(
+        (si) => si.idempotencyKey === idempotencyKey
+      );
+      if (existing) {
+        return existing;
+      }
+    }
+
+    const instanceId = `inst_${randomUUID().substring(0, 8)}`;
+    const missionId = `mission_${schedule.scheduleId}_${randomUUID().substring(0, 8)}`;
+
+    const instance: ScheduleInstance = {
+      instanceId,
+      scheduleId: schedule.scheduleId,
+      scheduledFor,
+      targetRequirements: schedule.targetRequirements,
+      missionId,
+      status: "DISPATCHED",
+      idempotencyKey,
+      generatedAt: scheduledFor,
+    };
+
+    this.scheduleInstances.set(instanceId, instance);
+    this.idempotencyStore.add(idempotencyKey);
+
+    if (overseer && typeof overseer.dispatchMission === "function") {
+      try {
+        await overseer.dispatchMission(
+          missionId,
+          `Autonomous production mission for ${schedule.name} (${schedule.targetRequirements.targetNiche})`,
+          {
+            scheduleInstanceId: instanceId,
+            targetRequirements: schedule.targetRequirements,
+          }
+        );
+      } catch (err: any) {
+        console.warn(`[AutonomousScheduler] Overseer dispatch notification failed:`, err?.message || err);
+      }
+    }
+
+    return instance;
+  }
+
+  getScheduleInstance(instanceId: string): ScheduleInstance | undefined {
+    return this.scheduleInstances.get(instanceId);
+  }
+
+  getAllScheduleInstances(): ScheduleInstance[] {
+    return Array.from(this.scheduleInstances.values());
   }
 }

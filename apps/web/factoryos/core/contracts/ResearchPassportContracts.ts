@@ -81,6 +81,13 @@ export interface ResearchPassport {
   integrity?: PassportIntegrityMetadata;
 }
 
+export type ResearchMeasurementFidelity =
+  | "HEURISTIC_ESTIMATE"
+  | "MODEL_INFERENCE"
+  | "OBSERVED_MEASUREMENT"
+  | "VERIFIED_FACT"
+  | "UNVERIFIED_ASSERTION";
+
 export interface AnalystReport {
   readonly reportId: string;
   readonly topic: string;
@@ -90,7 +97,9 @@ export interface AnalystReport {
     readonly recommendedHook: string;
     readonly hookArchetype: "CURIOSITY_GAP" | "PROVOCATIVE_QUESTION" | "STATISTICAL_SHOCK" | "CONTRARIAN";
     readonly estimatedRetentionBoost: number;
-    readonly competitiveRetentionCurve: number[];
+    readonly competitiveRetentionCurve?: number[];
+    readonly fidelity: ResearchMeasurementFidelity;
+    readonly provenanceNote: string;
   };
   readonly competitorSignals: Array<{
     readonly competitor: string;

@@ -1,17 +1,11 @@
 /**
- * FactoryOS v1 — Canonical Floor Protocol Contracts
- * Defines authenticated command and handoff envelopes for 6-Floor DAG executions.
+ * FactoryOS v3 — Canonical Floor Protocol Contracts
+ * Defines authenticated command and handoff envelopes for 8-Floor DAG executions.
  */
 
-export type FloorId =
-  | "floor00_analyst"
-  | "floor01_strategy"
-  | "floor02_scripting"
-  | "floor03_asset_realization"
-  | "floor04_media_synthesis"
-  | "floor05_timeline_composition"
-  | "floor06_rendering"
-  | "floor07_compliance";
+import type { FloorId } from "../hierarchy/FloorTypes";
+
+export type { FloorId };
 
 export type FloorExecutionStatus =
   | "PENDING"

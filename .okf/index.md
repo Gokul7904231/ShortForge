@@ -1,61 +1,110 @@
-# ShortForge / FactoryOS — Autonomous Content Manufacturing Operating System
-## Official System Specification & Operational Guide (.okf)
+# ShortForge / FactoryOS — Architectural Knowledge System (.okf)
 
-> **Specification Version**: 2.4.0-HARDENED  
-> **Status**: OPERATIONAL / PRODUCTION-READY  
-> **Target Runtime**: Node.js 20+ (Next.js 14 Web / Hybrid Control Plane) & FastAPI/Python 3.11 VPS Worker Nodes  
-> **Repository Authority**: `apps/web/factoryos` (Autonomous Factory Engine)  
-
----
-
-## 1. System Mission & Philosophy
-
-FactoryOS is an autonomous, mission-driven operating system designed for deterministic short-form video synthesis. Rather than treating video generation as an ad-hoc pipeline of disconnected API calls, FactoryOS models content creation as a 7-floor industrial manufacturing plant overseen by a hierarchical supervisory control plane.
-
-### Core Pillars
-1. **Single Autonomous Authority**: Generation execution is governed through the FactoryOS Control Plane (`AutonomousFactoryController` + `OverseerControlPlane`). Ad-hoc rendering and unauthenticated side-effects are strictly forbidden.
-2. **Fail-Closed Security & Trust**: Zero mock authorization in production; all worker callbacks are authenticated using high-entropy cryptographic HMAC/execution tokens with constant-time equality validation.
-3. **Hierarchical Command Structure**:
-   - **Overseer**: Supreme orchestrator managing multi-mission DAG generation and global factory throughput.
-   - **Guardians**: Floor-level command authorities enforcing domain policy gates before and after execution.
-   - **Independent Factory Workers**: Single-instance factory-wide investigators and remediators (`Slayer`, `Healer`, `ReMaker`, `Comms`, `Treasurer`).
-   - **Floor Swarms**: Specialized bounded workers executing concrete stage-specific tasks.
-4. **Resilient Render Fabric**: Decoupled rendering architecture seamlessly routing between high-throughput Azure GPU VM workers and deterministic local compositors with zero user-visible starvation.
-5. **Continuous Verification & Audit**: Real-time memory logging, decision ledger tracing, and Floor 07 verification auditing every artifact before delivery.
+> **Document Class**: Root Index & Architecture Handbook  
+> **Status**: AUTHORITATIVE & IMPLEMENTATION-GROUNDED  
+> **Repository**: [ShortForge](https://github.com/Gokul7904231/ShortForge)  
+> **Canonical Pipeline**: F00 → F01 → F02 → (F03 || F04) → F05 → F06 → F07  
 
 ---
 
-## 2. Document Map
+## 1. Executive Mission & System Identity
 
-The `.okf/` documentation suite serves as the single architectural source of truth for the entire system:
+**ShortForge / FactoryOS** is an autonomous media manufacturing operating system engineered to transform raw schedule directives into verified, broadcast-grade short-form video assets. It replaces ad-hoc generative scripting with an industrial production plant governed by formal state machines, cryptographic provenance, capability-fenced worker leases, and forensic output verification.
 
-| Section | Path | Purpose |
-| :--- | :--- | :--- |
-| **Architecture** | [`.okf/architecture.md`](./architecture.md) | Subsystem topology, dataflows, world state, event bus, storage engine |
-| **Principles** | [`.okf/principles.md`](./principles.md) | Invariants, fail-closed safety, lease recovery, concurrency rules |
-| **Terminology** | [`.okf/terminology.md`](./terminology.md) | Authoritative lexicon of roles, floors, primitives, and artifacts |
-| **Hierarchy** | [`.okf/hierarchy/`](./hierarchy/) | Specification for Overseer, Slayer, Healer, ReMaker, Guardians, Auditors, and Workers |
-| **Floors 01–07** | [`.okf/floors/`](./floors/) | Complete 7-floor manufacturing specifications from Strategy to Verification |
-| **Rendering** | [`.okf/rendering/`](./rendering/) | Render Fabric, compilers, compute policy, and worker protocols |
-| **Intelligence** | [`.okf/intelligence/`](./intelligence/) | Model routing, dynamic AI provider discovery, evaluation, and context management |
-| **Research** | [`.okf/research/`](./research/) | Reach engine, trend intelligence, and source provenance tracking |
-| **Memory** | [`.okf/memory/`](./memory/) | MemoryOS, cognitive indexing, and vector recall topology |
-| **Artifacts** | [`.okf/artifacts/`](./artifacts/) | Manifest models, media lineage, and cryptographic checksum tracking |
-| **Security** | [`.okf/security/`](./security/) | RBAC, capability security, lease protection, and zero-trust perimeter |
-| **Workflows** | [`.okf/workflows/`](./workflows/) | Step-by-step lifecycle specifications for generation, recovery, and publishing |
-
----
-
-## 3. Quickstart & Verification
-
-```bash
-# 1. Verify TypeScript compilation across web and FactoryOS kernels
-npm run typecheck
-npm run factoryos:typecheck
-
-# 2. Run the complete FactoryOS test suite
-npm run test:factoryos:audit
-
-# 3. Boot FactoryOS Autonomous Controller in dev mode
-npm run factoryos:dev
 ```
+                            USER / SCHEDULE DIRECTIVE
+                                       │
+                                       ▼
+                              SCHEDULE INSTANCE
+                                       │
+                                       ▼
+                                    MISSION
+                                       │
+                                       ▼
+                       OVERSEER SUPREME CONTROL PLANE (L1)
+                                       │
+               ┌───────────────────────┼───────────────────────┐
+               ▼                       ▼                       ▼
+      GUARDIAN (L2 Gate)       SLAYER (Lease Reclaim)   HEALER (Circuit Doctor)
+               │
+               ▼
+      AGENT RUNTIME HARNESS (Sessions, Budgets, Checkpointing, Tracing)
+               │
+               ▼
+ ┌───────────────────────────────────────────────────────────────────────────┐
+ │               CANONICAL EIGHT-FLOOR PRODUCTION PIPELINE                   │
+ │                                                                           │
+ │  F00: Analyst & Research Ingestion (Schedule-driven candidate slate)      │
+ │   │                                                                       │
+ │   ▼                                                                       │
+ │  F01: Strategic Direction & Narrative Blueprint Formulation               │
+ │   │                                                                       │
+ │   ▼                                                                       │
+ │  F02: Cognitive Scripting & Retention Architecture                        │
+ │   │                                                                       │
+ │   ├───────────────────────────────────┐                                   │
+ │   ▼                                   ▼                                   │
+ │  F03: Visual Asset Realization       F04: Media Synthesis (Voice & Audio) │
+ │   │                                   │                                   │
+ │   └───────────────────┬───────────────┘                                   │
+ │                       ▼                                                   │
+ │  F05: Timeline Composition & Motion (TimelineIR / EDL compilation)        │
+ │   │                                                                       │
+ │   ▼                                                                       │
+ │  F06: Distributed Render Orchestration (Utility compute router)           │
+ │   │                                                                       │
+ │   ▼                                                                       │
+ │  F07: QA Gate & Social Compliance (Forensic verification & structured finding)│
+ └───────────────────────────────────────────────────────────────────────────┘
+                                       │
+                                       ▼
+                          FORENSIC VERIFICATION RECEIPT
+                                       │
+                                       ▼
+                               GATEWAY / OUTBOX
+```
+
+---
+
+## 2. Source-of-Truth Priority Matrix
+
+To prevent documentation drift and eliminate false claims, all architectural assertions in this system adhere to a strict source-of-truth precedence hierarchy:
+
+```
+[1. Executable Implementation] 
+         ▼
+[2. Canonical Ontologies & Contracts] (hierarchy.json, floors.json, FloorRegistry.ts)
+         ▼
+[3. Automated Verification Tests] (vitest suites)
+         ▼
+[4. Provider Registries & Runtime Configurations]
+         ▼
+[5. Inline Code Architecture Comments]
+         ▼
+[6. Authoritative .okf Documentation]
+         ▼
+[7. Historical Audits & Legacy Records]
+         ▼
+[8. External Reference Patterns]
+         ▼
+[9. Architectural Inference]
+```
+
+> **Invariant**: Never silently convert an architectural inference or target design into an implementation fact. Components not backed by executable code and passing tests must carry an explicit status tag: `IMPLEMENTED`, `PARTIALLY_IMPLEMENTED`, `SCAFFOLDED`, `PLACEHOLDER`, `EXPERIMENTAL`, or `PLANNED`.
+
+---
+
+## 3. Directory Navigation & Reading Taxonomy
+
+| Section | Directory Path | Core Topics & Mandates |
+| :--- | :--- | :--- |
+| **System Foundations** | [`./architecture.md`](./architecture.md)<br>[`./principles.md`](./principles.md)<br>[`./terminology.md`](./terminology.md) | Decoupled hierarchy, 8-floor topology, core design principles, and unified terminology. |
+| **Production Floors** | [`./floors/`](./floors/) | Deep specifications for Floors 00 through 07, inputs, outputs, contracts, and failure modes. |
+| **Control Hierarchy** | [`./hierarchy/`](./hierarchy/) | Overseer, Guardian, Slayer, Healer, ReMaker, Auditor, and Worker execution contracts. |
+| **Intelligence & Models** | [`./intelligence/`](./intelligence/) | AgentRuntime, Skills, Capability-First Model Routing, Evaluation suite, and Ascalon training. |
+| **Memory & Knowledge** | [`./memory/`](./memory/) | MemoryOS, KnowledgeOS, domain-typed stores, and long-term memory promotion. |
+| **Workflows & Schedule** | [`./workflows/`](./workflows/) | Schedule lifecycle, mission execution, bounded healing, and gate-verified publishing. |
+| **Artifacts & Lineage** | [`./artifacts/`](./artifacts/) | Content-addressed storage, TimelineIR (EDL), Structured Findings, and cryptographic receipts. |
+| **Security & Trust** | [`./security/`](./security/) | Untrusted web content boundaries, capability grants, secret scanning, and lease fencing. |
+| **Research & External** | [`./research/`](./research/) | Clean-room mappings for `video-use`, `WeKnora`, `Octop`, `orca`, `VoiceStudio`, and Reach. |
+| **Historical Audits** | [`./audits/`](./audits/) | Archived forensic baselines, bypass analyses, and red-team findings (Historical Reference). |

@@ -4,92 +4,11 @@
  * strictly adhere to the single canonical hierarchy specification.
  */
 
-import { FloorId } from "./FloorProtocolContracts";
+import type { FloorId, CanonicalFloorDefinition } from "../hierarchy/FloorTypes";
+import { FloorRegistry, CANONICAL_FLOORS } from "../hierarchy/FloorRegistry";
 
-export interface CanonicalFloorDefinition {
-  readonly floorId: FloorId;
-  readonly number: number;
-  readonly canonicalName: string;
-  readonly category: string;
-  readonly predecessors: readonly FloorId[];
-  readonly successors: readonly FloorId[];
-  readonly isFloor: true;
-}
-
-export const CANONICAL_FLOORS: Record<FloorId, CanonicalFloorDefinition> = {
-  floor00_analyst: {
-    floorId: "floor00_analyst",
-    number: 0,
-    canonicalName: "Analyst & Research Ingestion",
-    category: "RESEARCH",
-    predecessors: [],
-    successors: ["floor01_strategy"],
-    isFloor: true,
-  },
-  floor01_strategy: {
-    floorId: "floor01_strategy",
-    number: 1,
-    canonicalName: "Strategic Direction & Research",
-    category: "PLANNING",
-    predecessors: ["floor00_analyst"],
-    successors: ["floor02_scripting"],
-    isFloor: true,
-  },
-  floor02_scripting: {
-    floorId: "floor02_scripting",
-    number: 2,
-    canonicalName: "Cognitive Scripting & Structure",
-    category: "CREATIVE",
-    predecessors: ["floor01_strategy"],
-    successors: ["floor03_asset_realization", "floor04_media_synthesis"],
-    isFloor: true,
-  },
-  floor03_asset_realization: {
-    floorId: "floor03_asset_realization",
-    number: 3,
-    canonicalName: "Visual Asset Realization & Blueprints",
-    category: "MEDIA",
-    predecessors: ["floor02_scripting"],
-    successors: ["floor05_timeline_composition"],
-    isFloor: true,
-  },
-  floor04_media_synthesis: {
-    floorId: "floor04_media_synthesis",
-    number: 4,
-    canonicalName: "Voice & Audio Synthesis",
-    category: "VOICE",
-    predecessors: ["floor02_scripting"],
-    successors: ["floor05_timeline_composition"],
-    isFloor: true,
-  },
-  floor05_timeline_composition: {
-    floorId: "floor05_timeline_composition",
-    number: 5,
-    canonicalName: "Timeline Composition & Motion",
-    category: "COMPOSITION",
-    predecessors: ["floor03_asset_realization", "floor04_media_synthesis"],
-    successors: ["floor06_rendering"],
-    isFloor: true,
-  },
-  floor06_rendering: {
-    floorId: "floor06_rendering",
-    number: 6,
-    canonicalName: "GPU Video Rendering Engine",
-    category: "RENDER",
-    predecessors: ["floor05_timeline_composition"],
-    successors: ["floor07_compliance"],
-    isFloor: true,
-  },
-  floor07_compliance: {
-    floorId: "floor07_compliance",
-    number: 7,
-    canonicalName: "QA Gate & Social Compliance",
-    category: "VERIFICATION",
-    predecessors: ["floor06_rendering"],
-    successors: [],
-    isFloor: true,
-  },
-};
+export type { FloorId, CanonicalFloorDefinition };
+export { FloorRegistry, CANONICAL_FLOORS };
 
 export const SOVEREIGN_AGENT_ROLES = [
   "OVERSEER",

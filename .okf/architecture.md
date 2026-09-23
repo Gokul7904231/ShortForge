@@ -1,95 +1,115 @@
-# FactoryOS — Complete System Architecture & Topology
+# FactoryOS System Architecture Specification
 
-> **Status**: AUTHORITATIVE SPECIFICATION  
-> **Source Module**: `apps/web/factoryos/core/`  
+> **Document Class**: Core System Architecture Specification  
+> **Status**: AUTHORITATIVE & IMPLEMENTATION-GROUNDED  
+> **Source of Truth**: `apps/web/factoryos/core/hierarchy/FloorRegistry.ts`  
 
 ---
 
-## 1. High-Level Subsystem Topology
+## 1. Architectural Foundations
 
-FactoryOS employs an event-driven, actor-based architecture structured into distinct planes of execution:
+FactoryOS rejects naive procedural scripting in favor of an **industrial distributed manufacturing plant**. Autonomous short-form video generation requires strict adherence to four architectural boundaries:
+
+1. **Decoupled Plane Separation**: The sovereign control hierarchy (authority and supervision) is strictly decoupled from the physical production pipeline (sequential media transformation).
+2. **Single Canonical Topology**: All components, planners, state machines, and validators derive their floor definitions from a single authoritative source: `apps/web/factoryos/core/hierarchy/FloorRegistry.ts`.
+3. **Schedule-First Production**: Autonomous production quantities, cadences, and niches are strictly derived from active schedule directives; no business quantity is hardcoded into the pipeline.
+4. **Claim <= Evidence Verification**: Physical outcomes must be verified with cryptographic receipts and forensic checks before delivery.
+
+---
+
+## 2. Decoupled System Architecture
 
 ```
-                      ┌────────────────────────────────────────┐
-                      │          OPERATOR / DASHBOARD          │
-                      │  (Next.js App / Presence UI / API)     │
-                      └───────────────────┬────────────────────┘
-                                          │ HTTP / SSE / WS
-                                          ▼
-                      ┌────────────────────────────────────────┐
-                      │     AUTONOMOUS FACTORY CONTROLLER      │
-                      │  (`AutonomousFactoryController.ts`)    │
-                      └───────┬────────────────────────┬───────┘
-                              │                        │
-               ┌──────────────┴──────────┐   ┌─────────┴──────────────┐
-               │  OVERSEER CONTROL PLANE │   │   DURABLE EVENT BUS    │
-               │ (`OverseerControlPlane`)│◄─►│  (`DurableEventBus`)   │
-               └──────────────┬──────────┘   └─────────┬──────────────┘
-                              │                        │
-               ┌──────────────┴──────────┐   ┌─────────┴──────────────┐
-               │    TASK DAG PLANNER     │   │  WORLD STATE ENGINE    │
-               │   (`TaskDAGPlanner.ts`) │   │  (`WorldStateEngine`)  │
-               └──────────────┬──────────┘   └─────────┬──────────────┘
-                              │                        │
-         ┌────────────────────┴────────────────────────┴────────────────────┐
-         ▼                                                                  ▼
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│  SLAYER ENGINE   │  │  HEALER ENGINE   │  │  REMAKER ENGINE  │  │ GUARDIAN MANAGER │
-│ (Investigation)  │  │   (Remediation)  │  │  (Reconstruction)│  │ (Floor Authority)│
-└──────────────────┘  └──────────────────┘  └──────────────────┘  └─────────┬────────┘
-                                                                            │
-      ┌─────────────────────────────────────────────────────────────────────┴──────────┐
-      ▼                                                                                ▼
-┌────────────────────────────────────────┐                       ┌────────────────────────────────────────┐
-│ FLOOR 01: Strategy & Topic Planning    │                       │ FLOOR 05: Timeline Composition         │
-├────────────────────────────────────────┤                       ├────────────────────────────────────────┤
-│ FLOOR 02: Script & Narrative Synthesis │                       │ FLOOR 06: Render Orchestration         │
-├────────────────────────────────────────┤                       ├────────────────────────────────────────┤
-│ FLOOR 03: Asset Realization & Prompts  │                       │ FLOOR 07: Media & Artifact Verify      │
-├────────────────────────────────────────┤                       └────────────────────────────────────────┘
-│ FLOOR 04: Media Synthesis & TTS        │
-└────────────────────────────────────────┘
+                    SOVEREIGN CONTROL PLANE
+                    ┌────────────────────────────────────────────────────────┐
+                    │ Level 0: Human Authority (Executive Operator)          │
+                    │   │                                                    │
+                    │   ▼                                                    │
+                    │ Level 1: Overseer Supreme Control Plane (Mission Lead) │
+                    │   │                                                    │
+                    │   ▼                                                    │
+                    │ Level 2: Regulators & Safety Governors                │
+                    │   ├── Guardian Gate (Capability & Policy Lease)        │
+                    │   ├── Slayer Engine (Monotonic Lease Revocation)       │
+                    │   └── Healer Engine (Circuit Doctor & Bounded Repair)  │
+                    └────────────────────────┬───────────────────────────────┘
+                                             │
+                                             ▼
+                    AGENT RUNTIME HARNESS
+                    ┌────────────────────────────────────────────────────────┐
+                    │ Session Lifecycle, Execution Budgets, Checkpointing,   │
+                    │ Distributed TraceContext, and Capability Grants        │
+                    └────────────────────────┬───────────────────────────────┘
+                                             │
+                                             ▼
+                    CANONICAL EIGHT-FLOOR PRODUCTION PIPELINE
+                    ┌────────────────────────────────────────────────────────┐
+                    │ Floor 00: Analyst & Research Ingestion                 │
+                    │   │                                                    │
+                    │   ▼                                                    │
+                    │ Floor 01: Strategic Direction & Narrative Blueprint    │
+                    │   │                                                    │
+                    │   ▼                                                    │
+                    │ Floor 02: Cognitive Scripting & Retention Architecture │
+                    │   │                                                    │
+                    │   ├───────────────────────────────┐                    │
+                    │   ▼                               ▼                    │
+                    │ Floor 03: Visual Assets      Floor 04: Voice Synthesis │
+                    │   │                               │                    │
+                    │   └───────────────┬───────────────┘                    │
+                    │                   ▼                                    │
+                    │ Floor 05: Timeline Composition (TimelineIR / EDL)      │
+                    │   │                                                    │
+                    │   ▼                                                    │
+                    │ Floor 06: Video GPU Rendering Engine (ComputeRouter)   │
+                    │   │                                                    │
+                    │   ▼                                                    │
+                    │ Floor 07: QA Gate & Social Compliance Verification     │
+                    └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Core Subsystems
+## 3. Floor Topology & Dependency Invariants
 
-### 2.1 Autonomous Factory Controller (`AutonomousFactoryController.ts`)
-The central kernel bootstrapper. Initializes:
-- Storage repositories (`Disk`, `MongoDB`, or `InMemory`)
-- Durable Event Bus (`DurableEventBus`)
-- World State Engine with snapshot persistence (`WorldStateEngine`)
-- Task Lease Management (`LeaseManager`) and Case Management (`CaseManager`)
-- Mission lifecycle engine (`MissionManager`)
-- Autonomous patrol loops and watchdog sweeps
+The pipeline DAG is strictly defined in `apps/web/factoryos/core/hierarchy/FloorRegistry.ts` and enacted by `apps/web/factoryos/core/overseer/TaskDAGPlanner.ts`:
 
-### 2.2 Overseer Control Plane (`OverseerControlPlane.ts`)
-The supreme operational intelligence:
-- Receives user generation requests, system alerts, or scheduled maintenance missions.
-- Evaluates goal context via `ThinkingController` (modes: `reflex`, `deliberate`, `deep`, `autonomous`).
-- Generates a multi-floor Directed Acyclic Graph (`TaskDAG`) ensuring strict dependencies across stages.
-- Dispatches execution across specialized floor workers while enforcing concurrency limits.
-- Integrates with `OverseerPresenceEngine` for bidirectional live streaming of factory state to the frontend.
+| Floor ID | Number | Canonical Name | Category | Predecessors | Parallel Branching |
+| :--- | :---: | :--- | :--- | :--- | :--- |
+| `floor00_analyst` | 0 | Analyst & Research Ingestion | `RESEARCH` | *None* | Root task |
+| `floor01_strategy` | 1 | Strategic Direction & Research | `PLANNING` | `floor00_analyst` | Sequential |
+| `floor02_scripting` | 2 | Cognitive Scripting & Structure | `CREATIVE` | `floor01_strategy` | Forks F03 & F04 |
+| `floor03_asset_realization` | 3 | Visual Asset Realization & Blueprints | `MEDIA` | `floor02_scripting` | **Parallel** with F04 |
+| `floor04_media_synthesis` | 4 | Voice & Audio Synthesis | `VOICE` | `floor02_scripting` | **Parallel** with F03 |
+| `floor05_timeline_composition` | 5 | Timeline Composition & Motion | `COMPOSITION` | `floor03_asset_realization`, `floor04_media_synthesis` | **Convergence point** |
+| `floor06_rendering` | 6 | Video GPU Rendering Engine | `RENDER` | `floor05_timeline_composition` | Sequential |
+| `floor07_compliance` | 7 | QA Gate & Social Compliance | `VERIFICATION` | `floor06_rendering` | Final Gate |
 
-### 2.3 World State Engine (`WorldStateEngine.ts`)
-The canonical in-memory state of the entire factory:
-- Tracks status of all 7 floors (`floor01_strategy` through `floor07_compliance`).
-- Maintains registry of active workers, health metrics, and heartbeats.
-- Records active missions, DAG execution timelines, and unassigned work.
-- Automatically persists snapshots to disk/database periodically and upon shutdown.
-
-### 2.4 Durable Event Bus (`DurableEventBus.ts`)
-The asynchronous nervous system:
-- High-throughput pub/sub mechanism decoupling control decisions from physical execution.
-- Retains bounded in-memory event audit logs with correlation IDs for forensic tracing.
-- Dispatches system-wide alerts: `MISSION_CREATED`, `TASK_STARTED`, `TASK_COMPLETED`, `GUARDIAN_REPORT`, `SLAYER_ALERT`, `RUN_COMPLETED`.
+### Key Topology Invariants:
+1. **F00 is Mandatory in Autonomous Mode**: Floor 00 provides schedule-derived candidate slates to Floor 01. It is never bypassed during scheduled operations.
+2. **Floor 03 vs. Floor 04 Parallelism**: F03 (visual assets) and F04 (speech/audio) run concurrently after F02 completes.
+3. **Floor 05 Convergence**: Floor 05 cannot begin until **both** F03 and F04 have successfully produced verified artifacts.
+4. **Guardian is Not Floor 07**: The Guardian is a sovereign Level 2 control agent exercising authority across all floors. Floor 07 is the physical QA/compliance verification floor.
 
 ---
 
-## 3. Storage & Persistence Topologies
+## 4. Current Implementation vs. Target Architecture Matrix
 
-FactoryOS supports 3 distinct storage configurations selected via `storageType`:
-1. **`disk`**: Zero-dependency filesystem JSON storage located at `apps/web/data/factoryos/`. Ideal for single-node deployments and offline development.
-2. **`mongo`**: Enterprise distributed persistence utilizing MongoDB collections (`missions`, `cases`, `task_dags`, `leases`, `memories`, `world_state`). Ideal for multi-replica production clusters.
-3. **`memory`**: Ephemeral, ultra-fast test harness storage used during Vitest CI/CD verification runs.
+| Subsystem | Component | Current Implementation State | Verified File Location | Target Architectural State |
+| :--- | :--- | :---: | :--- | :--- |
+| **Floor Registry** | Canonical Topology | **IMPLEMENTED** | `apps/web/factoryos/core/hierarchy/FloorRegistry.ts` | Single source of truth across runtime, DAG, and state service. |
+| **Production DAG** | 8-Floor DAG Planner | **IMPLEMENTED** | `apps/web/factoryos/core/overseer/TaskDAGPlanner.ts` | Dynamic parallel fork/join execution with lease management. |
+| **Scheduling** | Autonomous Scheduler | **IMPLEMENTED** | `apps/web/factoryos/core/production/AutonomousScheduler.ts` | ScheduleInstance $\rightarrow$ Mission $\rightarrow$ Overseer single scheduler path. |
+| **Daily Slate** | Dynamic Research Slate | **IMPLEMENTED** | `apps/web/factoryos/core/research/DailySlateGenerator.ts` | Schedule-driven candidate pool with explicit unmet capacity reporting. |
+| **Research Boundary** | AgentReach & Reach | **IMPLEMENTED** | `apps/web/factoryos/core/integrations/AgentReachAdapter.ts` | Real provider boundary; status 503 on fetch failure; zero fake URLs. |
+| **Agent Runtime** | Execution Harness | **IMPLEMENTED** | `apps/web/factoryos/core/agent/AgentRuntime.ts` | Session checkpointing, budget bounds, capability gates, and TraceContext. |
+| **Observability** | Distributed Tracing | **IMPLEMENTED** | `apps/web/factoryos/core/observability/TraceContext.ts` | Mission $\rightarrow$ Run $\rightarrow$ Agent $\rightarrow$ Skill $\rightarrow$ Tool $\rightarrow$ Artifact trace tree. |
+| **KnowledgeOS** | Typed Memory Stores | **IMPLEMENTED** | `apps/web/factoryos/core/knowledge/KnowledgeOS.ts` | Domain-isolated typed stores (Source, Claim, Evidence, Topic, Channel). |
+| **Model Routing** | Capability Router | **IMPLEMENTED** | `apps/web/factoryos/core/routing/CapabilityFirstRouter.ts` | Capability matching, circuit breakers, cost governance, and local preference. |
+| **Media Pipeline** | TimelineIR (EDL) | **IMPLEMENTED** | `apps/web/factoryos/core/timeline/TimelineIR.ts` | Word-level timestamp synchronization and canvas validation (1080x1920). |
+| **Voice Synthesis** | Voice Fabric | **IMPLEMENTED** | `apps/web/factoryos/core/voice/VoiceFabric.ts` | Multi-engine synthesis (Gemini, ElevenLabs, Edge), forensic WAV verification. |
+| **Compute Fabric** | Compute Router & CAS | **IMPLEMENTED** | `apps/web/factoryos/core/compute/router/ComputeRouter.ts` | Utility-based provider scoring, ephemeral compute management, worker fencing. |
+| **Verification Gate** | Structured Findings | **IMPLEMENTED** | `apps/web/factoryos/core/verification/StructuredFindings.ts` | Archify-promoted canonical Finding model with actionable repair actions. |
+| **Healing** | Bounded Repair Engine | **IMPLEMENTED** | `apps/web/factoryos/core/healers/BoundedRepairEngine.ts` | Iterative repair limited by budget; reverts to Last-Known-Good baseline. |
+| **External Integrations** | Remote Worker Fleet | **PARTIALLY_IMPLEMENTED** | `apps/web/factoryos/core/fabric/adapters/` | Local and AMD adapters implemented; cloud spot worker daemon scaffolded. |
+| **Trend Intelligence** | Live Social Scanner | **SCAFFOLDED** | `apps/web/factoryos/core/research/TrendResearchService.ts` | Browser DOM extraction implemented; live social platform APIs scaffolded. |

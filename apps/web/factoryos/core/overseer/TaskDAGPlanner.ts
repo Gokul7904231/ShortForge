@@ -9,6 +9,8 @@ import { InMemoryTaskDAGRepository } from "../database/InMemoryDatabase";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { LeaseManager } from "../leases/LeaseManager";
 
+import { FloorRegistry } from "../hierarchy/FloorRegistry";
+
 export type TaskExecutorFunction = (node: TaskNode) => Promise<Record<string, unknown>>;
 
 export class TaskDAGPlanner {
@@ -34,77 +36,37 @@ export class TaskDAGPlanner {
     };
   }
 
-  createSixFloorProductionDAG(goalId: string, initialPayload: Record<string, unknown> = {}): TaskDAG {
-    const nodes: TaskNode[] = [
-      {
-        taskId: "task_f01_strategy",
-        name: "Floor 01 Strategy",
-        description: "Floor 01 Strategy & Topic Intelligence Planning",
-        requiredAgentType: "FLOOR_STRATEGY",
-        payload: initialPayload,
+  /**
+   * Canonical 8-Floor Production DAG Generator
+   * Topology: F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07
+   * Derives structure directly from authoritative FloorRegistry.
+   */
+  createEightFloorProductionDAG(goalId: string, initialPayload: Record<string, unknown> = {}): TaskDAG {
+    const allFloors = FloorRegistry.getAllFloors();
+    const nodes: TaskNode[] = allFloors.map((floor) => {
+      const taskId = `task_${floor.floorId}`;
+      const dependencies = floor.predecessors.map((p) => `task_${p}`);
+      return {
+        taskId,
+        name: floor.canonicalName,
+        description: `Autonomous execution for ${floor.canonicalName} (${floor.floorId})`,
+        requiredAgentType: floor.requiredAgentType,
+        payload: floor.number === 0 ? initialPayload : {},
         status: "PENDING",
-        dependencies: [],
+        dependencies,
         attemptCount: 0,
         maxAttempts: 2,
-      },
-      {
-        taskId: "task_f02_scripting",
-        name: "Floor 02 Scripting",
-        description: "Floor 02 Script & Narrative Synthesis",
-        requiredAgentType: "FLOOR_SCRIPTING",
-        payload: {},
-        status: "PENDING",
-        dependencies: ["task_f01_strategy"],
-        attemptCount: 0,
-        maxAttempts: 2,
-      },
-      {
-        taskId: "task_f03_asset_realization",
-        name: "Floor 03 Asset Realization",
-        description: "Floor 03 Asset Realization & Blueprint Crafting",
-        requiredAgentType: "FLOOR_ASSET_REALIZATION",
-        payload: {},
-        status: "PENDING",
-        dependencies: ["task_f02_scripting"],
-        attemptCount: 0,
-        maxAttempts: 2,
-      },
-      {
-        taskId: "task_f04_media_synthesis",
-        name: "Floor 04 Media Synthesis",
-        description: "Floor 04 Media Synthesis & Voice Generation",
-        requiredAgentType: "FLOOR_MEDIA_SYNTHESIS",
-        payload: {},
-        status: "PENDING",
-        dependencies: ["task_f03_asset_realization"],
-        attemptCount: 0,
-        maxAttempts: 2,
-      },
-      {
-        taskId: "task_f05_timeline_composition",
-        name: "Floor 05 Timeline Composition",
-        description: "Floor 05 Timeline Composition & Render Manifest Assembly",
-        requiredAgentType: "FLOOR_TIMELINE_COMPOSITION",
-        payload: {},
-        status: "PENDING",
-        dependencies: ["task_f04_media_synthesis"],
-        attemptCount: 0,
-        maxAttempts: 2,
-      },
-      {
-        taskId: "task_f06_rendering",
-        name: "Floor 06 Render Orchestration",
-        description: "Floor 06 Render Orchestration & Azure Dispatch",
-        requiredAgentType: "FLOOR_RENDERING",
-        payload: {},
-        status: "PENDING",
-        dependencies: ["task_f05_timeline_composition"],
-        attemptCount: 0,
-        maxAttempts: 2,
-      },
-    ];
+      };
+    });
 
     return this.createDAG(goalId, nodes);
+  }
+
+  /**
+   * @deprecated Use createEightFloorProductionDAG instead. Retained for backward compatibility.
+   */
+  createSixFloorProductionDAG(goalId: string, initialPayload: Record<string, unknown> = {}): TaskDAG {
+    return this.createEightFloorProductionDAG(goalId, initialPayload);
   }
 }
 

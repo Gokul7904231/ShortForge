@@ -26,29 +26,29 @@ This hardcoded template substituted router telemetry and state acknowledgements 
 
 ## 2. FILES CHANGED
 
-1. [`CognitiveContracts.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/cognition/CognitiveContracts.ts)
+1. [`CognitiveContracts.ts`](apps/web/factoryos/core/cognition/CognitiveContracts.ts)
    - Added `errorCode?: string` and optional safe `diagnostics` tracking (`chatRequestStarted`, `chatRequestId`, `modelCallStarted`, `modelCallCompleted`, `responseParsed`) to `CognitiveResponse<T>`.
 
-2. [`OverseerCognitionClient.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/cognition/OverseerCognitionClient.ts)
+2. [`OverseerCognitionClient.ts`](apps/web/factoryos/core/cognition/OverseerCognitionClient.ts)
    - Integrated safe diagnostic telemetry without logging secrets, keys, or bearer tokens.
    - Provided semantic Overseer identity/capabilities reasoning when processing chat requests.
    - Enforced strict fail-closed error handling: returns explicit error codes (`TIMEOUT`, `AUTH_FAILED`, `PROVIDER_UNAVAILABLE`) when downstream model services fail.
 
-3. [`OverseerCognitionProvider.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/cognition/OverseerCognitionProvider.ts)
+3. [`OverseerCognitionProvider.ts`](apps/web/factoryos/core/cognition/OverseerCognitionProvider.ts)
    - Updated `synthesize` to embed the full Overseer system persona (central command interface, factory observation, mission coordination, floor telemetry inspection).
    - Removed canned fallback answers; re-throws and propagates provider errors.
 
-4. [`OverseerCognitivePipeline.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/core/cognition/OverseerCognitivePipeline.ts)
+4. [`OverseerCognitivePipeline.ts`](apps/web/factoryos/core/cognition/OverseerCognitivePipeline.ts)
    - In `processUserQuery`, wrapped Stage 4 (intent routing) and Stage 5 (synthesis) in fail-closed error handlers to return structured provider failure states instead of disguising failure.
 
-5. [`route.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/app/api/overseer/presence/interact/route.ts)
+5. [`route.ts`](apps/web/app/api/overseer/presence/interact/route.ts)
    - Permanently deleted the canned string template (`Understood: ... agent swarms are standing by`).
    - Integrated Better Auth session validation (`verifySession(request)`) ensuring requests are authenticated.
    - Dispatched all conversational queries directly to `OverseerCognitivePipeline.processUserQuery`.
    - Separated internal router state (`mode: CHAT`, `context: factory`, `floors: 7 online`, etc.) into `evidence` array entries, ensuring the user-facing `answer` is purely conversational.
    - Returns explicit HTTP 503 error states when the reasoning provider fails.
 
-6. [`overseer-chat-runtime.test.ts`](file:///c:/Users/ASUS/OneDrive/Desktop/123/aishorts/apps/web/factoryos/tests/overseer-chat-runtime.test.ts)
+6. [`overseer-chat-runtime.test.ts`](apps/web/factoryos/tests/overseer-chat-runtime.test.ts)
    - Regression and contract test suite with 11 tests verifying real conversational responses, semantic accuracy, evidence separation, and explicit error states.
 
 ---

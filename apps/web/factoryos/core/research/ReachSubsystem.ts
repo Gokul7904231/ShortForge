@@ -48,6 +48,7 @@ export class ReachSubsystem {
     if (request.type === "URL" || request.queryOrUrl.startsWith("http://") || request.queryOrUrl.startsWith("https://")) {
       const url = request.queryOrUrl;
       const snapshot = await this.browserAdapter.navigateAndExtract(url);
+      const isAvailable = snapshot.status === 200;
       const contentHash = createHash("sha256").update(snapshot.textContent, "utf8").digest("hex");
       sources.push({
         id: `src_${randomUUID().substring(0, 8)}`,
@@ -57,10 +58,10 @@ export class ReachSubsystem {
         retrievedAt: now,
         extractionMethod: "BROWSER_DOM",
         snippet: snapshot.textContent.slice(0, 600),
-        reliabilityScore: 0.92,
+        reliabilityScore: isAvailable ? 0.92 : 0.0,
         contentHash,
-        sourceStatus: "ONLINE",
-        sourceQuality: "TIER_1_PRIMARY",
+        sourceStatus: isAvailable ? "ONLINE" : ("UNAVAILABLE" as any),
+        sourceQuality: isAvailable ? "TIER_1_PRIMARY" : ("UNVERIFIED" as any),
       });
       return sources;
     }

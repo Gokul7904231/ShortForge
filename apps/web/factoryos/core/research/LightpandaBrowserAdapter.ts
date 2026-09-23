@@ -53,15 +53,15 @@ export class LightpandaBrowserAdapter {
       const html = await res.text();
       return this.parseHtmlToSnapshot(url, res.status, html);
     } catch (err: any) {
-      // Deterministic degraded snapshot fallback
+      // Honest failure status — never fabricate successful 200 responses when retrieval fails
       return {
         url,
-        title: "Extracted Target",
-        textContent: `Snapshot extracted via fallback. Content summarized for ${url}`,
-        extractedHeadings: ["Summary", "Details"],
+        title: "Retrieval Unavailable",
+        textContent: `Failed retrieving external source from ${url}: ${err?.name === "AbortError" ? "Timeout" : err?.message || "Network Error"}`,
+        extractedHeadings: [],
         links: [],
         capturedAt: new Date().toISOString(),
-        status: 200,
+        status: 503,
       };
     }
   }

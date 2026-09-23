@@ -21,6 +21,8 @@ export interface ResearchRequest {
   readonly topic: string;
   readonly intent?: string;
   readonly methodology?: "QUICK" | "FULL" | "FACT_CHECK" | "TREND_SCAN" | "COMPETITOR_SCAN";
+  readonly targetSourceCount?: number;
+  readonly scheduleInstanceId?: string;
 }
 
 const DEFAULT_FACTORY_INTEGRITY_SECRET = process.env.FACTORY_INTEGRITY_SECRET || "factory_internal_integrity_key_default";
@@ -123,11 +125,12 @@ export class ResearchRuntime {
     const methodology = request.methodology || "TREND_SCAN";
     const missionId = request.missionId;
 
-    // 1. Source Discovery via Reach
+    // 1. Source Discovery via Reach (capacity derived dynamically from schedule request)
+    const maxSources = request.targetSourceCount ?? (methodology === "QUICK" ? 2 : 4);
     const sources = await this.reach.acquireSources({
       queryOrUrl: request.topic,
       type: "QUERY",
-      maxSources: methodology === "QUICK" ? 2 : 5,
+      maxSources,
       callerFloor: "floor00_analyst",
       intent: request.intent,
     });
@@ -188,15 +191,16 @@ export class ResearchRuntime {
       topic: request.topic,
       executiveSummary: `Intelligence synthesis for "${request.topic}": ${sources.length} sources examined, ${claims.length} claims extracted (${claims.filter(c => c.verificationStatus === "VERIFIED").length} verified, ${claims.filter(c => c.verificationStatus === "CONTRADICTED").length} contradicted). Measured passport confidence: ${passportConfidence}.`,
       keyFindings: [
-        `High engagement velocity around novelty elements of "${request.topic}".`,
-        "Optimal short-form video length predicted at 35-45 seconds.",
-        "Retention curve benefits from early statistical or curiosity hook.",
+        `Observed ${sources.length} external sources relevant to "${request.topic}".`,
+        "Optimal short-form video pacing benefits from early hook alignment.",
       ],
       hookIntelligence: {
         recommendedHook: `Did you know the untold truth behind ${request.topic}?`,
         hookArchetype: "CURIOSITY_GAP",
         estimatedRetentionBoost: 0.18,
         competitiveRetentionCurve: [1.0, 0.88, 0.79, 0.74, 0.71, 0.68],
+        fidelity: "HEURISTIC_ESTIMATE",
+        provenanceNote: "Heuristic baseline recommendation. Not verified telemetry.",
       },
       competitorSignals,
       passport,
