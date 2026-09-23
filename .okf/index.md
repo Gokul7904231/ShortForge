@@ -1,5 +1,5 @@
 # ShortForge / FactoryOS — Autonomous Content Manufacturing Operating System
-## Official System Specification & Operational Guide (.ofk)
+## Official System Specification & Operational Guide (.okf)
 
 > **Specification Version**: 2.4.0-HARDENED  
 > **Status**: OPERATIONAL / PRODUCTION-READY  
@@ -27,22 +27,22 @@ FactoryOS is an autonomous, mission-driven operating system designed for determi
 
 ## 2. Document Map
 
-The `.ofk/` documentation suite serves as the single architectural source of truth for the entire system:
+The `.okf/` documentation suite serves as the single architectural source of truth for the entire system:
 
 | Section | Path | Purpose |
 | :--- | :--- | :--- |
-| **Architecture** | [`.ofk/architecture.md`](./architecture.md) | Subsystem topology, dataflows, world state, event bus, storage engine |
-| **Principles** | [`.ofk/principles.md`](./principles.md) | Invariants, fail-closed safety, lease recovery, concurrency rules |
-| **Terminology** | [`.ofk/terminology.md`](./terminology.md) | Authoritative lexicon of roles, floors, primitives, and artifacts |
-| **Hierarchy** | [`.ofk/hierarchy/`](./hierarchy/) | Specification for Overseer, Slayer, Healer, ReMaker, Guardians, Auditors, and Workers |
-| **Floors 01–07** | [`.ofk/floors/`](./floors/) | Complete 7-floor manufacturing specifications from Strategy to Verification |
-| **Rendering** | [`.ofk/rendering/`](./rendering/) | Render Fabric, compilers, compute policy, and worker protocols |
-| **Intelligence** | [`.ofk/intelligence/`](./intelligence/) | Model routing, dynamic AI provider discovery, evaluation, and context management |
-| **Research** | [`.ofk/research/`](./research/) | Reach engine, trend intelligence, and source provenance tracking |
-| **Memory** | [`.ofk/memory/`](./memory/) | MemoryOS, cognitive indexing, and vector recall topology |
-| **Artifacts** | [`.ofk/artifacts/`](./artifacts/) | Manifest models, media lineage, and cryptographic checksum tracking |
-| **Security** | [`.ofk/security/`](./security/) | RBAC, capability security, lease protection, and zero-trust perimeter |
-| **Workflows** | [`.ofk/workflows/`](./workflows/) | Step-by-step lifecycle specifications for generation, recovery, and publishing |
+| **Architecture** | [`.okf/architecture.md`](./architecture.md) | Subsystem topology, dataflows, world state, event bus, storage engine |
+| **Principles** | [`.okf/principles.md`](./principles.md) | Invariants, fail-closed safety, lease recovery, concurrency rules |
+| **Terminology** | [`.okf/terminology.md`](./terminology.md) | Authoritative lexicon of roles, floors, primitives, and artifacts |
+| **Hierarchy** | [`.okf/hierarchy/`](./hierarchy/) | Specification for Overseer, Slayer, Healer, ReMaker, Guardians, Auditors, and Workers |
+| **Floors 01–07** | [`.okf/floors/`](./floors/) | Complete 7-floor manufacturing specifications from Strategy to Verification |
+| **Rendering** | [`.okf/rendering/`](./rendering/) | Render Fabric, compilers, compute policy, and worker protocols |
+| **Intelligence** | [`.okf/intelligence/`](./intelligence/) | Model routing, dynamic AI provider discovery, evaluation, and context management |
+| **Research** | [`.okf/research/`](./research/) | Reach engine, trend intelligence, and source provenance tracking |
+| **Memory** | [`.okf/memory/`](./memory/) | MemoryOS, cognitive indexing, and vector recall topology |
+| **Artifacts** | [`.okf/artifacts/`](./artifacts/) | Manifest models, media lineage, and cryptographic checksum tracking |
+| **Security** | [`.okf/security/`](./security/) | RBAC, capability security, lease protection, and zero-trust perimeter |
+| **Workflows** | [`.okf/workflows/`](./workflows/) | Step-by-step lifecycle specifications for generation, recovery, and publishing |
 
 ---
 

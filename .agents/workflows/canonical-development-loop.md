@@ -23,7 +23,7 @@ REVIEW (Audit findings and hard gate scores)
   ↓
 VERIFY (Run authoritative verification gates)
   ↓
-.OFK RECORD (Update repository mappings if research used)
+.OKF RECORD (Update repository mappings if research used)
   ↓
 DONE
 ```

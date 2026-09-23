@@ -330,7 +330,7 @@ export class OverseerCognitivePipeline {
               content: ev.data.contentExcerpt,
               sourcePath: ev.data.sourcePath,
             },
-            toolOutputs: { ofkRef: ev.data.docId },
+            toolOutputs: { okfRef: ev.data.docId, ofkRef: ev.data.docId },
             evidenceRecord: ev,
           };
         }
@@ -340,14 +340,14 @@ export class OverseerCognitivePipeline {
           "KnowledgeDocumentService",
           "EMPTY",
           {},
-          { error: "No matching .ofk knowledge document found in workspace." }
+          { error: "No matching .okf knowledge document found in workspace." }
         );
 
         return {
           sourceUsed: "KnowledgeDocumentService:Empty",
           evidence: {
             title: "Document Not Found",
-            content: "No matching knowledge document or style guide exists in the local .ofk knowledge repository.",
+            content: "No matching knowledge document or style guide exists in the local .okf knowledge repository.",
           },
           toolOutputs: { found: false },
           evidenceRecord: emptyEv,

@@ -51,7 +51,7 @@ Respond ONLY with valid JSON matching:
   "freshness": "today" | "recent" | "static" | "any",
   "requiresLiveResearch": boolean,
   "requiresEvidence": boolean,
-  "sourceClass": "FACTORY_TELEMETRY" | "AGENT_REACH" | "OFK_KNOWLEDGE" | "QUOTA_SERVICE" | "MISSION_DATABASE" | "PROVIDER_REGISTRY" | "GENERAL_KNOWLEDGE",
+  "sourceClass": "FACTORY_TELEMETRY" | "AGENT_REACH" | "OKF_KNOWLEDGE" | "OFK_KNOWLEDGE" | "QUOTA_SERVICE" | "MISSION_DATABASE" | "PROVIDER_REGISTRY" | "GENERAL_KNOWLEDGE",
   "responseMode": "DIRECT_FACT" | "RESEARCH_SUMMARY" | "OPERATIONAL_STATUS" | "CREATIVE" | "TASK_PROGRESS" | "ERROR" | "CLARIFICATION",
   "clarificationRequired": boolean,
   "clarificationPrompt": string | null

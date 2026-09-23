@@ -140,4 +140,7 @@ gen-v/
 # smoke test outputs
 kaggle-output/
 **/kaggle-output/
+controller-output/
+**/controller-output/
+
 

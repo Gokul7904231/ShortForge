@@ -348,12 +348,12 @@ All rendered visualizations generate valid receipts conforming to `Visualization
 
 ---
 
-## 22. .OFK Provenance Documentation
+## 22. .OKF Provenance Documentation
 
 Updated:
-- `.ofk/research/repo-research-ledger.md`
-- `.ofk/research/repo-mappings/tt-a1i-archify.md`
-- `.ofk/research/repo-mappings/cathrynlavery-diagram-design.md`
+- `.okf/research/repo-research-ledger.md`
+- `.okf/research/repo-mappings/tt-a1i-archify.md`
+- `.okf/research/repo-mappings/cathrynlavery-diagram-design.md`
 
 ### Provenance Mapping:
 - **`tt-a1i/archify`** (MIT, Clean-Room Reimplementation):
@@ -418,5 +418,5 @@ node -e "const fs = require('fs'); const crypto = require('crypto'); ['demo1_cha
 | **Offline Browser Safety**| **PASS** | Unavailable CDP returns BLOCKED with zero fake evidence (Test T). |
 | **Full Regression Suite**| **PASS** | 10/10 test suites passed via `npm run test:all` (Exit 0). |
 | **Live Chrome CDP** | **PASS** | 4 physical screenshots captured on live Chrome daemon (Port 9222). |
-| **.OFK Provenance** | **PASS** | Ledger and repository mapping documents updated clean-room. |
+| **.OKF Provenance** | **PASS** | Ledger and repository mapping documents updated clean-room. |
 | **FINAL VERDICT** | **PASS** | **All 38 Acceptance Criteria Fully Satisfied.** |

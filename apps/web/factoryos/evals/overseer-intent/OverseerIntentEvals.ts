@@ -13,7 +13,7 @@ export interface IntentBenchmarkCase {
   expectedIntent: string;
   expectedSourceClass: string;
   requiresLiveResearch: boolean;
-  staticOfkAllowedAsPrimary: boolean;
+  staticOkfAllowedAsPrimary: boolean;
   expectedEvidenceKey: string;
   clarificationRequired?: boolean;
 }
@@ -26,7 +26,7 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "CURRENT_TREND",
     expectedSourceClass: "TrendResearchService",
     requiresLiveResearch: true,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "topTrend",
   },
   {
@@ -36,17 +36,17 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "FACTORY_TELEMETRY",
     expectedSourceClass: "FactoryStateService",
     requiresLiveResearch: false,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "floorCount",
   },
   {
     id: "INTENT-003",
-    name: "Brand Guide Lookup (.ofk Knowledge Pack)",
+    name: "Brand Guide Lookup (.okf Knowledge Pack)",
     userPrompt: "What does our brand guide say?",
     expectedIntent: "DOCUMENT_LOOKUP",
     expectedSourceClass: "KnowledgeDocumentService",
     requiresLiveResearch: false,
-    staticOfkAllowedAsPrimary: true,
+    staticOkfAllowedAsPrimary: true,
     expectedEvidenceKey: "content",
   },
   {
@@ -56,7 +56,7 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "QUOTA",
     expectedSourceClass: "QuotaService",
     requiresLiveResearch: false,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "rendersRemainingToday",
   },
   {
@@ -66,7 +66,7 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "VIDEO_STATUS",
     expectedSourceClass: "MissionStateService",
     requiresLiveResearch: false,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "activeMissions",
   },
   {
@@ -76,7 +76,7 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "CURRENT_TREND",
     expectedSourceClass: "TrendResearchService",
     requiresLiveResearch: true,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "topTrend",
   },
   {
@@ -87,7 +87,7 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "FACTORY_TELEMETRY",
     expectedSourceClass: "FactoryStateService",
     requiresLiveResearch: false,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "floorCount",
   },
   {
@@ -97,7 +97,7 @@ export const CANONICAL_INTENT_CASES: IntentBenchmarkCase[] = [
     expectedIntent: "CLARIFICATION_REQUIRED",
     expectedSourceClass: "GENERAL_KNOWLEDGE",
     requiresLiveResearch: false,
-    staticOfkAllowedAsPrimary: false,
+    staticOkfAllowedAsPrimary: false,
     expectedEvidenceKey: "",
     clarificationRequired: true,
   },

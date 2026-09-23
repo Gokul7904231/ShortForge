@@ -1,6 +1,6 @@
 /**
  * FactoryOS Frontier v3 — KnowledgeDocumentService
- * Authoritative .ofk Knowledge Pack & Persistent Knowledge Document Lookup
+ * Authoritative .okf Knowledge Pack & Persistent Knowledge Document Lookup
  */
 
 import fs from "fs";
@@ -26,15 +26,16 @@ export class KnowledgeDocumentService {
   }
 
   /**
-   * Looks up real .ofk / markdown / system documentation from disk.
+   * Looks up real .okf / markdown / system documentation from disk.
    */
   async lookupDocument(query: string): Promise<EvidenceRecord<RetrievedDocument | null>> {
     const startTime = Date.now();
     const queryLower = query.toLowerCase();
 
     try {
-      // 1. Search in .agents / config / docs directory if present
+      // 1. Search in .okf / .agents / config / docs directory if present
       const candidatePaths = [
+        path.resolve(process.cwd(), ".okf"),
         path.resolve(process.cwd(), "config"),
         path.resolve(process.cwd(), "docs"),
         path.resolve(process.cwd(), ".agents"),
@@ -45,7 +46,7 @@ export class KnowledgeDocumentService {
         if (fs.existsSync(dir)) {
           const files = fs.readdirSync(dir, { recursive: true }) as string[];
           for (const file of files) {
-            if (typeof file === "string" && (file.endsWith(".md") || file.endsWith(".json") || file.endsWith(".ofk"))) {
+            if (typeof file === "string" && (file.endsWith(".md") || file.endsWith(".json") || file.endsWith(".okf"))) {
               const fullPath = path.join(dir, file);
               try {
                 const stat = fs.statSync(fullPath);
@@ -63,7 +64,7 @@ export class KnowledgeDocumentService {
 
                     return EvidenceFactory.create<RetrievedDocument>(
                       "DOCUMENT",
-                      "KnowledgeDocumentService:LocalOFK",
+                      "KnowledgeDocumentService:LocalOKF",
                       "SUCCESS",
                       docData,
                       {
@@ -89,7 +90,7 @@ export class KnowledgeDocumentService {
         "EMPTY",
         null,
         {
-          error: `No .ofk or workspace document matching "${query}" was found.`,
+          error: `No .okf or workspace document matching "${query}" was found.`,
           metadata: { latencyMs: Date.now() - startTime }
         }
       );

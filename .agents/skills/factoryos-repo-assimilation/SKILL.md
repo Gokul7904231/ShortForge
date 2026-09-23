@@ -17,5 +17,5 @@ All capabilities must be independently reimplemented from first principles using
    - `CLEAN_ROOM_REIMPLEMENTATION`: Clean-room TypeScript implementation.
    - `ISOLATED_PROVIDER`: Network/process boundary adapter.
    - `RESEARCH_ONLY`: Document for future reference without runtime code.
-4. `CREATE MAPPING`: Add `.ofk/research/repo-mappings/<repo>.md`.
-5. `UPDATE LEDGER`: Add entry to `.ofk/research/repo-research-ledger.md`.
+4. `CREATE MAPPING`: Add `.okf/research/repo-mappings/<repo>.md`.
+5. `UPDATE LEDGER`: Add entry to `.okf/research/repo-research-ledger.md`.
