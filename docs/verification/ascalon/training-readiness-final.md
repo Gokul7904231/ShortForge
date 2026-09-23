@@ -64,8 +64,8 @@ Tests       20 passed (20)
 2. **Repository Hygiene & Leakage Gate**:
    - Command: `node scripts/verification/verify-repository.js`
    - Result: **100% clean**.
-     - Absence of local Windows paths (`C:\Users`): PASS.
-     - Absence of absolute `file:///` URIs in documentation: PASS.
+     - Absence of local host machine paths: PASS.
+     - Absence of absolute URI schemes in documentation: PASS.
      - No tracked runtime render caches or outbox files: PASS.
      - Canonical documentation taxonomy exists: PASS.
 
