@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonDecisionOntology",
+  "version": "1.0.0",
+  "description": "Typed decision schema specifications for Project Ascalon",
+  "decisionTypes": {
+    "NOUL": {
+      "description": "Binary truth-value proposition with explicit probability of true and epistemic confidence",
+      "requiredFields": ["questionId", "type", "value", "probabilityTrue", "confidence"],
+      "constraints": [
+        "0.0 <= probabilityTrue <= 1.0",
+        "0.0 <= confidence <= 1.0"
+      ]
+    },
+    "CHOICE": {
+      "description": "Categorical selection among a predefined, non-empty set of declared options with full probability distribution",
+      "requiredFields": ["questionId", "type", "selectedOption", "probabilities", "confidence"],
+      "constraints": [
+        "selectedOption in declaredOptions",
+        "probabilities contains every declared option exactly once",
+        "for all p in probabilities: 0.0 <= p <= 1.0",
+        "abs(sum(probabilities) - 1.0) <= 0.01"
+      ]
+    },
+    "SCORE": {
+      "description": "Bounded numerical evaluation against a declared rubric level",
+      "requiredFields": ["questionId", "type", "score", "normalizedScore", "rubricLevel", "confidence"],
+      "constraints": [
+        "rubricLevel in declaredRubrics",
+        "0.0 <= normalizedScore <= 1.0"
+      ]
+    }
+  },
+  "statusEnums": [
+    "VALID",
+    "INVALID",
+    "UNRESOLVED",
+    "ESCALATED"
+  ],
+  "validationErrorCodes": [
+    "INVALID_JSON",
+    "MISSING_FIELD",
+    "INVALID_ENUM",
+    "INVALID_PROBABILITY",
+    "INVALID_DISTRIBUTION",
+    "INVALID_CONFIDENCE",
+    "INVALID_RUBRIC_LEVEL",
+    "UNKNOWN_QUESTION",
+    "DUPLICATE_QUESTION",
+    "MISSING_QUESTION"
+  ]
+}

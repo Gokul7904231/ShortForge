@@ -3,6 +3,7 @@
  * Manages operational ground truth across floors, workers, cases, repairs, and resources.
  */
 
+import { randomUUID } from "node:crypto";
 import type {
   FloorState,
   FloorStatus,
@@ -10,6 +11,7 @@ import type {
   WorkerHealthStatus,
   WorkerState,
   WorldState,
+  WorldStateSnapshotContract,
 } from "../contracts/WorldStateContracts";
 import type { IWorldStateRepository } from "../database/DatabaseContracts";
 import { InMemoryWorldStateRepository } from "../database/InMemoryDatabase";
@@ -371,8 +373,9 @@ export class WorldStateEngine {
   }> = [];
 
   recordProvenance(actor: string, action: string, reason: string, correlationId?: string): void {
+    const provId = `prov_${randomUUID().replace(/-/g, "").substring(0, 12)}`;
     this.provenanceLog.push({
-      provenanceId: `prov_${Math.random().toString(36).substring(2, 10)}`,
+      provenanceId: provId,
       actor,
       action,
       reason,
@@ -397,11 +400,18 @@ export class WorldStateEngine {
     return worker ? structuredClone(worker) : null;
   }
 
-  getSnapshot() {
+  getSnapshot(correlationId?: string): WorldStateSnapshotContract & { snapshotAt: string } {
+    const now = new Date().toISOString();
     return {
-      state: structuredClone(this.currentState),
+      worldStateId: `ws_snap_${this.currentState.sequenceNumber}_${now.replace(/[:.-]/g, "")}`,
+      schemaVersion: this.currentState.schemaVersion,
       sequenceNumber: this.currentState.sequenceNumber,
-      snapshotAt: new Date().toISOString(),
+      timestamp: this.currentState.updatedAt,
+      capturedAt: now,
+      sourceVersion: "1.0.0",
+      correlationId,
+      state: structuredClone(this.currentState),
+      snapshotAt: now, // For backwards compatibility
     };
   }
 }

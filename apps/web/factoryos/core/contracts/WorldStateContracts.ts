@@ -1,6 +1,8 @@
 /**
  * FactoryOS v1 — World State Contracts
  * Represents authoritative, persistent factory operational state.
+ * Enhanced for Project Ascalon training readiness with immutable snapshot
+ * and event contracts, deterministic provenance IDs, and strict schema versioning.
  */
 
 export interface ProvenanceMeta {
@@ -92,4 +94,25 @@ export interface WorldStateSnapshot {
   readonly state: WorldState;
   readonly sequenceNumber: number;
   readonly snapshotAt: string;
+}
+
+export interface WorldStateSnapshotContract {
+  readonly worldStateId: string;
+  readonly schemaVersion: string;
+  readonly sequenceNumber: number;
+  readonly timestamp: string;
+  readonly capturedAt: string;
+  readonly sourceVersion: string;
+  readonly correlationId?: string;
+  readonly state: WorldState;
+}
+
+export interface WorldStateEventContract {
+  readonly eventId: string;
+  readonly eventType: string;
+  readonly sequenceNumber: number;
+  readonly timestamp: string;
+  readonly correlationId?: string;
+  readonly actor: string;
+  readonly payload: Record<string, unknown>;
 }

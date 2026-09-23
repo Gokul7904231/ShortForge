@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonCanonicalFloors",
+  "version": "1.0.0",
+  "description": "Authoritative canonical registry of ShortForge / FactoryOS assembly line floors",
+  "floors": [
+    {
+      "floorId": "floor00_analyst",
+      "number": 0,
+      "canonicalName": "Analyst & Research Ingestion",
+      "shortName": "Analyst",
+      "category": "RESEARCH",
+      "responsibility": "Collects market trends, viral topic seeds, external news, and research data from Reddit, YouTube, Tavily, and Firecrawl.",
+      "parent": "overseer",
+      "predecessors": [],
+      "successors": ["floor01_strategy"],
+      "runtimeOwner": "apps/web/factoryos/core/research/ResearchEngine.ts",
+      "sourceLocations": [
+        "apps/web/factoryos/core/worldstate/WorldStateEngine.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["topic", "targetAudience"],
+      "expectedOutputs": ["analystReport", "passport"],
+      "requiredMetadataKeys": ["reportId", "topic"],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Provides mock topic seeds and synthetic research passports for testing."
+    },
+    {
+      "floorId": "floor01_strategy",
+      "number": 1,
+      "canonicalName": "Strategic Direction & Research",
+      "shortName": "Strategy",
+      "category": "PLANNING",
+      "responsibility": "Synthesizes audience resonance hypotheses, selects hook archetypes, pacing profiles, and topic narrative strategy.",
+      "parent": "overseer",
+      "predecessors": ["floor00_analyst"],
+      "successors": ["floor02_scripting"],
+      "runtimeOwner": "services/pipeline/floor01_strategy/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor01_strategy/",
+        "apps/web/factoryos/core/state/FactoryStateService.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["topic", "analystReport"],
+      "expectedOutputs": ["strategyPayload"],
+      "requiredMetadataKeys": ["hookArchetype", "pacingProfile"],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Generates synthetic strategy payloads with controlled hook parameters."
+    },
+    {
+      "floorId": "floor02_scripting",
+      "number": 2,
+      "canonicalName": "Cognitive Scripting & Structure",
+      "shortName": "Scripting",
+      "category": "CREATIVE",
+      "responsibility": "Synthesizes high-retention 3-beat video scripts (Hook, Retain, Payoff) with strict word-count clamping (130-160 words/60s).",
+      "parent": "overseer",
+      "predecessors": ["floor01_strategy"],
+      "successors": ["floor03_asset_realization", "floor04_media_synthesis"],
+      "runtimeOwner": "services/pipeline/floor02_scripting/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/",
+        "apps/web/agents/script-agent.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["strategyPayload"],
+      "expectedOutputs": ["script", "scenes"],
+      "requiredMetadataKeys": ["script", "wordCount", "estimatedDurationSeconds"],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Provides canned or synthetic scripts for pipeline stress testing."
+    },
+    {
+      "floorId": "floor03_asset_realization",
+      "number": 3,
+      "canonicalName": "Visual Asset Realization & Blueprints",
+      "shortName": "Asset Realization",
+      "category": "MEDIA",
+      "responsibility": "Generates visual scene blueprints, prompt recipes, B-roll queries, image synthesis parameters, and enforces 9:16 aspect ratios.",
+      "parent": "overseer",
+      "predecessors": ["floor02_scripting"],
+      "successors": ["floor05_timeline_composition"],
+      "runtimeOwner": "services/pipeline/floor03_asset_realization/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor03_asset_realization/",
+        "apps/web/agents/scene-agent.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["scenes"],
+      "expectedOutputs": ["assetPayload", "imageUrls"],
+      "requiredMetadataKeys": ["aspectRatio", "promptRecipes"],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Provides pre-generated test images or mock asset payloads."
+    },
+    {
+      "floorId": "floor04_media_synthesis",
+      "number": 4,
+      "canonicalName": "Voice & Audio Synthesis",
+      "shortName": "Voice / Audio",
+      "category": "VOICE",
+      "responsibility": "Synthesizes neural voice tracks via Edge-TTS / ElevenLabs, performs EBU R128 audio loudness normalization (-14 LUFS), and audio ducking.",
+      "parent": "overseer",
+      "predecessors": ["floor02_scripting"],
+      "successors": ["floor05_timeline_composition"],
+      "runtimeOwner": "services/pipeline/floor04_media_synthesis/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor04_media_synthesis/",
+        "apps/web/factoryos/core/voice/",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["script"],
+      "expectedOutputs": ["voiceArtifact", "voiceUrl"],
+      "requiredMetadataKeys": ["sha256", "byteLength", "qualityClass", "durationSeconds"],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Provides canned audio tracks or silence WAVs for testing."
+    },
+    {
+      "floorId": "floor05_timeline_composition",
+      "number": 5,
+      "canonicalName": "Timeline Composition & Motion",
+      "shortName": "Timeline",
+      "category": "COMPOSITION",
+      "responsibility": "Aligns audio and script using Whisper word-level timestamps, generates kinetic subtitle layers, and compiles the final RenderIntent manifest.",
+      "parent": "overseer",
+      "predecessors": ["floor03_asset_realization", "floor04_media_synthesis"],
+      "successors": ["floor06_rendering"],
+      "runtimeOwner": "services/pipeline/floor05_timeline_composition/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor05_timeline_composition/",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["scenes", "voiceArtifact"],
+      "expectedOutputs": ["renderIntent"],
+      "requiredMetadataKeys": ["intentId", "resolution", "durationSeconds", "layers"],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Constructs test timeline JSON objects."
+    },
+    {
+      "floorId": "floor06_rendering",
+      "number": 6,
+      "canonicalName": "GPU Video Rendering Engine",
+      "shortName": "Rendering",
+      "category": "RENDER",
+      "responsibility": "Dispatches rendering workloads to heterogeneous compute (Kaggle T4, RunPod RTX 4090, Vast, Local FFmpeg), renders 1080x1920 MP4, and hashes to CAS.",
+      "parent": "overseer",
+      "predecessors": ["floor05_timeline_composition"],
+      "successors": ["floor07_compliance"],
+      "runtimeOwner": "services/rendering-engine/main.py",
+      "sourceLocations": [
+        "services/rendering-engine/",
+        "apps/web/factoryos/core/compute/",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["renderIntent"],
+      "expectedOutputs": ["artifact", "videoUrl", "sha256"],
+      "requiredMetadataKeys": ["sha256", "byteLength", "width", "height", "duration"],
+      "authority": "guardian",
+      "trainingEligible": true,
+      "simulationRole": "Executes mocked render job or returns pre-rendered test video bytes."
+    },
+    {
+      "floorId": "floor07_compliance",
+      "number": 7,
+      "canonicalName": "QA Gate & Social Compliance",
+      "shortName": "Compliance",
+      "category": "VERIFICATION",
+      "responsibility": "Executes 15 concrete verification gates (G00-G14), validates FFprobe physical media, checks YouTube monetization policies, and issues Ed25519 ReleaseAuthorization.",
+      "parent": "guardian",
+      "predecessors": ["floor06_rendering"],
+      "successors": [],
+      "runtimeOwner": "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+      "sourceLocations": [
+        "apps/web/factoryos/core/verification/youtube/",
+        "services/pipeline/guardian/",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": ["artifact", "script", "metadata"],
+      "expectedOutputs": ["verificationReport", "releaseAuthorization"],
+      "requiredMetadataKeys": ["overallScore", "hardGates", "publishAllowed", "signature"],
+      "authority": "guardian",
+      "trainingEligible": true,
+      "simulationRole": "Evaluates mock compliance rules in dry-run mode with explicit SIMULATED tag."
+    }
+  ]
+}

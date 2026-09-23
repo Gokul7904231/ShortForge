@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonFailureModes",
+  "version": "1.0.0",
+  "description": "Exhaustive taxonomy of observable operational failure modes in ShortForge",
+  "failureModes": [
+    {
+      "code": "ERR_WORKER_TIMEOUT",
+      "category": "COMPUTE",
+      "severity": "HIGH",
+      "description": "Render worker did not emit heartbeat or finish render within timeoutMs",
+      "remediationRole": "SLAYER",
+      "recoveryAction": "cap_slayer_revoke_lease"
+    },
+    {
+      "code": "ERR_CAS_SHA256_MISMATCH",
+      "category": "STORAGE",
+      "severity": "CRITICAL",
+      "description": "Computed physical file digest does not match expected CAS SHA-256 hash",
+      "remediationRole": "HEALER",
+      "recoveryAction": "cap_healer_retry_task"
+    },
+    {
+      "code": "ERR_FFPROBE_DECODE_FAILED",
+      "category": "VERIFICATION",
+      "severity": "CRITICAL",
+      "description": "Rendered container or video stream could not be decoded by FFprobe",
+      "remediationRole": "HEALER",
+      "recoveryAction": "cap_healer_retry_task"
+    },
+    {
+      "code": "ERR_F07_POLICY_GATE_REJECTION",
+      "category": "POLICY",
+      "severity": "BLOCKING",
+      "description": "Artifact failed one or more F07 verification gates (e.g. copyright, safety, repetition)",
+      "remediationRole": "GUARDIAN",
+      "recoveryAction": "QUARANTINE_MISSION"
+    },
+    {
+      "code": "ERR_FENCING_TOKEN_STALE",
+      "category": "DISTRIBUTED_SYSTEMS",
+      "severity": "HIGH",
+      "description": "Worker attempted to commit artifact with an expired or superseded fencing token",
+      "remediationRole": "SLAYER",
+      "recoveryAction": "REJECT_COMMIT"
+    },
+    {
+      "code": "ERR_GPU_OUT_OF_MEMORY",
+      "category": "COMPUTE",
+      "severity": "HIGH",
+      "description": "CUDA VRAM exhausted during video rendering or model inference",
+      "remediationRole": "HEALER",
+      "recoveryAction": "REROUTE_COMPUTE_PROVIDER"
+    },
+    {
+      "code": "ERR_LLM_INVALID_STRUCTURE",
+      "category": "INTELLIGENCE",
+      "severity": "MEDIUM",
+      "description": "Model returned invalid JSON, unknown enum, or malformed schema",
+      "remediationRole": "HEALER",
+      "recoveryAction": "FALLBACK_DETERMINISTIC_OR_CASCADE"
+    }
+  ]
+}

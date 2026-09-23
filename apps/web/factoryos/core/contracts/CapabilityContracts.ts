@@ -79,6 +79,7 @@ export interface CapabilityMetadata {
     readonly documentedAt: string;
   };
   readonly policy?: CapabilityPolicyBoundary;
+  readonly trainingEligibility?: "ELIGIBLE" | "INELIGIBLE" | "PENDING_REVIEW";
 }
 
 export interface CapabilityExecutionRequest<T = Record<string, unknown>> {

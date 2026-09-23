@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonMasterHierarchy",
+  "version": "1.0.0",
+  "description": "Unified canonical ontology mapping the complete ShortForge / FactoryOS control and pipeline topology",
+  "hierarchyVersion": "1.0.0",
+  "controlPlane": {
+    "supervisory": {
+      "overseer": {
+        "id": "agent_overseer",
+        "role": "OVERSEER",
+        "authorityLevel": "STRATEGIC",
+        "canOrchestrate": true,
+        "canAuthorize": false
+      },
+      "guardian": {
+        "id": "agent_guardian",
+        "role": "GUARDIAN",
+        "authorityLevel": "AUTHORITATIVE_SAFETY",
+        "canOrchestrate": false,
+        "canAuthorize": true,
+        "canVeto": true
+      }
+    },
+    "remediation": {
+      "slayer": {
+        "id": "agent_slayer",
+        "role": "SLAYER",
+        "action": "TERMINATION"
+      },
+      "healer": {
+        "id": "agent_healer",
+        "role": "HEALER",
+        "action": "REPAIR"
+      }
+    }
+  },
+  "pipelineTopology": {
+    "floor00_analyst": {
+      "floorNumber": 0,
+      "name": "Floor 00 Analyst (Research)",
+      "category": "RESEARCH",
+      "predecessors": [],
+      "successors": ["floor01_strategy"]
+    },
+    "floor01_strategy": {
+      "floorNumber": 1,
+      "name": "Floor 01 Strategy",
+      "category": "PLANNING",
+      "predecessors": ["floor00_analyst"],
+      "successors": ["floor02_scripting"]
+    },
+    "floor02_scripting": {
+      "floorNumber": 2,
+      "name": "Floor 02 Scripting",
+      "category": "CREATIVE",
+      "predecessors": ["floor01_strategy"],
+      "successors": ["floor03_asset_realization", "floor04_media_synthesis"]
+    },
+    "floor03_asset_realization": {
+      "floorNumber": 3,
+      "name": "Floor 03 Asset Realization",
+      "category": "MEDIA",
+      "predecessors": ["floor02_scripting"],
+      "successors": ["floor05_timeline_composition"]
+    },
+    "floor04_media_synthesis": {
+      "floorNumber": 4,
+      "name": "Floor 04 Media Synthesis (Voice)",
+      "category": "VOICE",
+      "predecessors": ["floor02_scripting"],
+      "successors": ["floor05_timeline_composition"]
+    },
+    "floor05_timeline_composition": {
+      "floorNumber": 5,
+      "name": "Floor 05 Timeline Composition",
+      "category": "COMPOSITION",
+      "predecessors": ["floor03_asset_realization", "floor04_media_synthesis"],
+      "successors": ["floor06_rendering"]
+    },
+    "floor06_rendering": {
+      "floorNumber": 6,
+      "name": "Floor 06 GPU Rendering",
+      "category": "RENDER",
+      "predecessors": ["floor05_timeline_composition"],
+      "successors": ["floor07_compliance"]
+    },
+    "floor07_compliance": {
+      "floorNumber": 7,
+      "name": "Floor 07 Verification & Monetization QA",
+      "category": "VERIFICATION",
+      "predecessors": ["floor06_rendering"],
+      "successors": []
+    }
+  },
+  "canonicalInvariants": [
+    "F03 is strictly Visual Asset Realization (blueprints, images, aspect ratios).",
+    "F04 is strictly Media Synthesis (voice, TTS audio, loudness normalization).",
+    "Guardian is the system-wide safety authority and governs Floor 07, but is not merely a floor.",
+    "Overseer, Slayer, and Healer are sovereign agents operating across floors, not floors themselves.",
+    "Training trajectories must reference canonical floor IDs (e.g. 'floor03_asset_realization')."
+  ]
+}

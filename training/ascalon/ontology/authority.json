@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonAuthorityModel",
+  "version": "1.0.0",
+  "description": "Separation of Control Hierarchy from Production Pipeline Topology in ShortForge / FactoryOS",
+  "controlHierarchy": {
+    "root": "HUMAN_OPERATOR",
+    "nodes": [
+      {
+        "role": "HUMAN_OPERATOR",
+        "level": 0,
+        "supervises": ["OVERSEER"],
+        "privileges": ["SYSTEM_ADMIN", "POLICY_BYPASS", "SHUTDOWN"]
+      },
+      {
+        "role": "OVERSEER",
+        "level": 1,
+        "supervises": ["GUARDIAN", "SLAYER", "HEALER", "INSTRUCTOR"],
+        "privileges": ["MISSION_DECOMPOSITION", "PLAN_GENERATION", "BUDGET_ALLOCATION", "FLOOR_DISPATCH"]
+      },
+      {
+        "role": "GUARDIAN",
+        "level": 2,
+        "supervises": ["CAPABILITY_GATES", "RELEASE_BOUNDARY_F07"],
+        "privileges": ["POLICY_ENFORCEMENT", "CAPABILITY_DENIAL", "ED25519_SIGNING", "RELEASE_AUTHORIZATION"],
+        "vetoPowerOver": ["OVERSEER", "SLAYER", "HEALER", "WORKER"]
+      },
+      {
+        "role": "SLAYER",
+        "level": 3,
+        "supervises": ["EXECUTION_WORKERS"],
+        "privileges": ["LEASE_REVOCATION", "PROCESS_TERMINATION", "CIRCUIT_BREAKING"]
+      },
+      {
+        "role": "HEALER",
+        "level": 3,
+        "supervises": ["EXECUTION_WORKERS"],
+        "privileges": ["STATE_RESTORATION", "RETRY_DISPATCH", "PAYLOAD_PATCHING"]
+      },
+      {
+        "role": "EXECUTION_WORKERS",
+        "level": 4,
+        "supervises": [],
+        "privileges": ["TASK_EXECUTION"]
+      }
+    ]
+  },
+  "pipelineTopology": {
+    "stages": [
+      "floor00_analyst",
+      "floor01_strategy",
+      "floor02_scripting",
+      "floor03_asset_realization",
+      "floor04_media_synthesis",
+      "floor05_timeline_composition",
+      "floor06_rendering",
+      "floor07_compliance"
+    ],
+    "invariants": [
+      "A floor is an execution stage boundary, NOT a sovereign authority.",
+      "Guardian is an authoritative governance body, NOT a mere pipeline floor.",
+      "Floor 07 is governed by Guardian, but Guardian also controls cross-floor capability execution.",
+      "Overseer orchestrates the pipeline execution DAG, but cannot override Guardian policy vetos."
+    ]
+  }
+}

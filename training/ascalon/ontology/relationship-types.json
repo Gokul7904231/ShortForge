@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonRelationshipTypes",
+  "version": "1.0.0",
+  "description": "Canonical relationship types governing ShortForge / FactoryOS control and pipeline topology",
+  "relationshipTypes": {
+    "SUPERVISES": {
+      "category": "CONTROL",
+      "description": "Entity directs and monitors the operational lifecycle of the target",
+      "direction": "DIRECTED"
+    },
+    "AUTHORIZES": {
+      "category": "GOVERNANCE",
+      "description": "Entity possesses capability or policy authority to grant execution rights",
+      "direction": "DIRECTED"
+    },
+    "GOVERNS": {
+      "category": "GOVERNANCE",
+      "description": "Entity enforces policy, invariant rules, and cryptographic boundaries",
+      "direction": "DIRECTED"
+    },
+    "REPAIRS": {
+      "category": "REMEDIATION",
+      "description": "Entity diagnoses and executes state restoration or retry actions on target",
+      "direction": "DIRECTED"
+    },
+    "TERMINATES": {
+      "category": "REMEDIATION",
+      "description": "Entity forcefully revokes leases, kills processes, or aborts missions",
+      "direction": "DIRECTED"
+    },
+    "EXECUTES": {
+      "category": "EXECUTION",
+      "description": "Entity performs the concrete computational work of the floor/task",
+      "direction": "DIRECTED"
+    },
+    "PRODUCES": {
+      "category": "DATA",
+      "description": "Floor or tool generates the specified data artifact or contract payload",
+      "direction": "DIRECTED"
+    },
+    "CONSUMES": {
+      "category": "DATA",
+      "description": "Floor or tool requires the specified data artifact as input",
+      "direction": "DIRECTED"
+    },
+    "DEPENDS_ON": {
+      "category": "PIPELINE",
+      "description": "Pipeline floor execution depends on predecessor floor output completion",
+      "direction": "DIRECTED"
+    },
+    "ESCALATES_TO": {
+      "category": "CONTROL",
+      "description": "Anomalies or unresolvable ambiguities bubble up to the target authority",
+      "direction": "DIRECTED"
+    },
+    "REPORTS_TO": {
+      "category": "CONTROL",
+      "description": "Operational telemetry and task completion receipts flow to the target",
+      "direction": "DIRECTED"
+    },
+    "VERIFIES": {
+      "category": "VERIFICATION",
+      "description": "Entity tests physical properties, cryptographic signatures, or policy criteria",
+      "direction": "DIRECTED"
+    },
+    "STORES_IN": {
+      "category": "PERSISTENCE",
+      "description": "Entity commits immutable bytes or records into the target storage system",
+      "direction": "DIRECTED"
+    },
+    "ROUTES_TO": {
+      "category": "COMPUTE",
+      "description": "Router or fabric selects target execution provider or worker node",
+      "direction": "DIRECTED"
+    }
+  }
+}

@@ -1,8 +1,13 @@
 /**
- * ShortForge / FactoryOS — LLM Decision Adapter
+ * ShortForge / FactoryOS — LLM Decision Adapter (Remediated for Project Ascalon)
  *
- * Implements structured multi-decision evaluation via AIRuntime.
- * Employs strict JSON parsing, declared option validation, and TokenEconomy tracking.
+ * Implements strict, verifiable typed decision evaluation via AIRuntime.
+ * Strictly eliminates synthetic fallbacks:
+ * - NO default confidence values (e.g. 0.85)
+ * - NO synthetic choice probability distributions (e.g. 0.8/0.2)
+ * - NO automatic selection of first declared option (q.options[0])
+ * - NO automatic selection of first rubric level (q.rubric[0])
+ * - Rejects malformed outputs with explicit validation error codes.
  */
 
 import { AIRuntime } from "../../../../ai/runtime";
@@ -17,6 +22,8 @@ import {
   NoulAnswer,
   ChoiceAnswer,
   ScoreAnswer,
+  DecisionStatus,
+  DecisionValidationErrorCode,
 } from "./DecisionContracts";
 
 export class LLMDecisionAdapter implements IDecisionAdapter {
@@ -24,18 +31,16 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
 
   public async evaluateBatch(request: DecisionBatchRequest): Promise<DecisionBatchResult> {
     const t0 = Date.now();
-
-    // Construct structured prompt specifying exact typed output requirements
     const prompt = this.buildPrompt(request);
 
     try {
       const response = await AIRuntime.execute(
-        "CLASSIFICATION", // Canonical decision classification capability
+        "CLASSIFICATION",
         "v1",
         {
           prompt,
           system:
-            "You are the FactoryOS Decision Intelligence Kernel. Answer all typed questions in the batch with strict JSON matching the requested schema. Separate probability distribution from confidence.",
+            "You are the FactoryOS Decision Intelligence Kernel. Answer all typed questions in the batch with strict JSON matching the requested schema. You must provide exact probability distributions for all declared options. Do not omit any option.",
           temperature: 0.1,
         },
         {
@@ -45,13 +50,20 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
       );
 
       const parsedAnswers = this.parseAndValidate(response, request.questions);
-      const confidences = parsedAnswers.map((a) => a.confidence);
-      const minConfidence = confidences.length > 0 ? Math.min(...confidences) : 0.8;
+      const confidences = parsedAnswers.map((a) => a.confidence).filter((c) => !isNaN(c));
+      const minConfidence = confidences.length > 0 ? Math.min(...confidences) : 0.0;
 
       const answersById: Record<string, DecisionAnswer> = {};
+      let hasInvalid = false;
+
       for (const ans of parsedAnswers) {
         answersById[ans.questionId] = ans;
+        if (ans.status === "INVALID" || ans.status === "UNRESOLVED") {
+          hasInvalid = true;
+        }
       }
+
+      const overallStatus: DecisionStatus = hasInvalid ? "UNRESOLVED" : "VALID";
 
       return {
         batchId: request.batchId,
@@ -61,11 +73,17 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
         adapterUsed: "LLM",
         totalLatencyMs: Date.now() - t0,
         minConfidence,
-        shouldEscalate: minConfidence < 0.7,
+        shouldEscalate: minConfidence < 0.7 || hasInvalid,
+        status: overallStatus,
+        adapterMetadata: {
+          adapterType: "LLM",
+          implementationVersion: "2.0.0",
+          isProductionAuthority: true,
+          isTrainingEligible: !hasInvalid,
+        },
       };
     } catch (err: any) {
-      // Fallback if LLM execution fails
-      return this.generateFallbackBatch(request, Date.now() - t0, err.message);
+      return this.generateUnresolvedBatch(request, Date.now() - t0, "INVALID_JSON", err.message);
     }
   }
 
@@ -114,7 +132,7 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
     });
   }
 
-  private parseAndValidate(
+  public parseAndValidate(
     rawResponse: unknown,
     questions: readonly (NoulQuestion | ChoiceQuestion<any> | ScoreQuestion)[]
   ): DecisionAnswer[] {
@@ -123,27 +141,81 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
       try {
         data = JSON.parse(rawResponse);
       } catch {
-        // Find JSON block
         const match = rawResponse.match(/\{[\s\S]*\}/);
-        if (match) data = JSON.parse(match[0]);
+        if (match) {
+          try {
+            data = JSON.parse(match[0]);
+          } catch {
+            data = null;
+          }
+        } else {
+          data = null;
+        }
       }
+    }
+
+    if (!data || typeof data !== "object") {
+      return questions.map((q) => this.buildInvalidAnswer(q, "INVALID_JSON", "Failed to parse JSON model output"));
     }
 
     const answersList: any[] = Array.isArray(data?.answers) ? data.answers : [];
     const answersMap = new Map<string, any>();
+    const seenQuestionIds = new Set<string>();
+    const duplicateIds = new Set<string>();
+
     for (const a of answersList) {
-      if (a?.questionId) answersMap.set(a.questionId, a);
+      if (a?.questionId) {
+        if (seenQuestionIds.has(a.questionId)) {
+          duplicateIds.add(a.questionId);
+        }
+        seenQuestionIds.add(a.questionId);
+        answersMap.set(a.questionId, a);
+      }
     }
 
     const validatedAnswers: DecisionAnswer[] = [];
 
     for (const q of questions) {
+      if (duplicateIds.has(q.id)) {
+        validatedAnswers.push(
+          this.buildInvalidAnswer(q, "DUPLICATE_QUESTION", `Multiple conflicting answers received for question ${q.id}`)
+        );
+        continue;
+      }
+
       const rawAns = answersMap.get(q.id);
+      if (!rawAns) {
+        validatedAnswers.push(
+          this.buildInvalidAnswer(q, "MISSING_QUESTION", `Model omitted answer for question ${q.id}`)
+        );
+        continue;
+      }
+
+      // Validate Confidence
+      const conf = rawAns.confidence;
+      if (typeof conf !== "number" || isNaN(conf) || conf < 0.0 || conf > 1.0) {
+        validatedAnswers.push(
+          this.buildInvalidAnswer(q, "INVALID_CONFIDENCE", `Confidence must be a valid float in [0.0, 1.0], received: ${conf}`)
+        );
+        continue;
+      }
 
       if (q.type === "NOUL") {
-        const val = typeof rawAns?.valueOrSelected === "boolean" ? rawAns.valueOrSelected : false;
-        const prob = typeof rawAns?.probabilitiesOrScore === "number" ? rawAns.probabilitiesOrScore : val ? 1.0 : 0.0;
-        const conf = typeof rawAns?.confidence === "number" ? Math.max(0, Math.min(1, rawAns.confidence)) : 0.85;
+        const val = rawAns.valueOrSelected;
+        if (typeof val !== "boolean") {
+          validatedAnswers.push(
+            this.buildInvalidAnswer(q, "MISSING_FIELD", `NOUL answer must have boolean 'valueOrSelected', received: ${typeof val}`)
+          );
+          continue;
+        }
+
+        const prob = rawAns.probabilitiesOrScore;
+        if (typeof prob !== "number" || isNaN(prob) || prob < 0.0 || prob > 1.0) {
+          validatedAnswers.push(
+            this.buildInvalidAnswer(q, "INVALID_PROBABILITY", `NOUL probabilityTrue must be float in [0.0, 1.0], received: ${prob}`)
+          );
+          continue;
+        }
 
         validatedAnswers.push({
           questionId: q.id,
@@ -151,54 +223,132 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
           value: val,
           probabilityTrue: prob,
           confidence: conf,
-          reasoning: rawAns?.reasoning || "LLM evaluated binary assertion",
+          reasoning: typeof rawAns.reasoning === "string" ? rawAns.reasoning : "Model-evaluated binary assertion",
           isDeterministic: false,
+          status: "VALID",
+          uncertainty: {
+            modelProbability: prob,
+            epistemicConfidence: conf,
+            calibrationStatus: "UNCALIBRATED",
+          },
         });
       } else if (q.type === "CHOICE") {
-        let selected = rawAns?.valueOrSelected;
-        if (!q.options.includes(selected)) {
-          selected = q.options[0]; // Fallback to first declared option if hallucinated
+        const selected = rawAns.valueOrSelected;
+        if (typeof selected !== "string" || !q.options.includes(selected)) {
+          validatedAnswers.push(
+            this.buildInvalidAnswer(
+              q,
+              "INVALID_ENUM",
+              `Selected option '${selected}' is not in declared options: [${q.options.join(", ")}]`
+            )
+          );
+          continue;
         }
 
-        const probs: Record<string, number> = {};
+        const rawProbs = rawAns.probabilitiesOrScore;
+        if (!rawProbs || typeof rawProbs !== "object" || Array.isArray(rawProbs)) {
+          validatedAnswers.push(
+            this.buildInvalidAnswer(
+              q,
+              "INVALID_DISTRIBUTION",
+              "CHOICE answer requires a probabilities object mapping every option to [0.0, 1.0]"
+            )
+          );
+          continue;
+        }
+
+        let sum = 0;
+        let distValid = true;
+        const typedProbs: Record<string, number> = {};
+
         for (const opt of q.options) {
-          probs[opt] = opt === selected ? 0.8 : 0.2 / Math.max(1, q.options.length - 1);
+          const p = rawProbs[opt];
+          if (typeof p !== "number" || isNaN(p) || p < 0.0 || p > 1.0) {
+            distValid = false;
+            break;
+          }
+          typedProbs[opt] = p;
+          sum += p;
         }
 
-        const conf = typeof rawAns?.confidence === "number" ? Math.max(0, Math.min(1, rawAns.confidence)) : 0.85;
+        // Verify all keys in rawProbs are known options
+        for (const k of Object.keys(rawProbs)) {
+          if (!q.options.includes(k)) {
+            distValid = false;
+            break;
+          }
+        }
+
+        if (!distValid || Math.abs(sum - 1.0) > 0.05) {
+          validatedAnswers.push(
+            this.buildInvalidAnswer(
+              q,
+              "INVALID_DISTRIBUTION",
+              `Probability distribution must cover all declared options and sum to ~1.0. Sum: ${sum.toFixed(3)}`
+            )
+          );
+          continue;
+        }
 
         validatedAnswers.push({
           questionId: q.id,
           type: "CHOICE",
           selected,
-          probabilities: probs,
+          probabilities: typedProbs,
           confidence: conf,
-          reasoning: rawAns?.reasoning || `LLM selected '${selected}'`,
+          reasoning: typeof rawAns.reasoning === "string" ? rawAns.reasoning : `Model selected '${selected}'`,
           isDeterministic: false,
+          status: "VALID",
+          uncertainty: {
+            modelProbability: typedProbs[selected],
+            epistemicConfidence: conf,
+            calibrationStatus: "UNCALIBRATED",
+          },
         });
       } else if (q.type === "SCORE") {
-        const levelVal = typeof rawAns?.valueOrSelected === "number" ? rawAns.valueOrSelected : q.rubric[0].level;
-        const matchedRubric = q.rubric.find((r) => r.level === levelVal) || q.rubric[0];
-        const maxLevel = Math.max(...q.rubric.map((r) => r.level));
-        const score = maxLevel > 0 ? matchedRubric.level / maxLevel : 0.0;
+        const levelVal = rawAns.valueOrSelected;
+        const matchedRubric = q.rubric.find((r) => r.level === levelVal);
 
-        const dist: Record<number, number> = {};
-        for (const r of q.rubric) {
-          dist[r.level] = r.level === matchedRubric.level ? 0.85 : 0.15 / (q.rubric.length - 1);
+        if (typeof levelVal !== "number" || !matchedRubric) {
+          validatedAnswers.push(
+            this.buildInvalidAnswer(
+              q,
+              "INVALID_RUBRIC_LEVEL",
+              `Level '${levelVal}' not found in declared rubric: [${q.rubric.map((r) => r.level).join(", ")}]`
+            )
+          );
+          continue;
         }
 
-        const conf = typeof rawAns?.confidence === "number" ? Math.max(0, Math.min(1, rawAns.confidence)) : 0.85;
+        const maxLevel = Math.max(...q.rubric.map((r) => r.level));
+        const normalizedScore = maxLevel > 0 ? matchedRubric.level / maxLevel : 0.0;
+
+        // Verify distribution if provided
+        const rawDist = rawAns.probabilitiesOrScore;
+        const dist: Record<number, number> = {};
+        if (rawDist && typeof rawDist === "object") {
+          for (const r of q.rubric) {
+            const p = rawDist[r.level];
+            dist[r.level] = typeof p === "number" && !isNaN(p) && p >= 0 ? p : 0;
+          }
+        }
 
         validatedAnswers.push({
           questionId: q.id,
           type: "SCORE",
           selectedLevel: matchedRubric.level,
           selectedLabel: matchedRubric.label,
-          score,
+          score: normalizedScore,
           distribution: dist,
           confidence: conf,
-          reasoning: rawAns?.reasoning || `LLM evaluated level ${matchedRubric.level}`,
+          reasoning: typeof rawAns.reasoning === "string" ? rawAns.reasoning : `Model evaluated level ${matchedRubric.level}`,
           isDeterministic: false,
+          status: "VALID",
+          uncertainty: {
+            modelProbability: dist[matchedRubric.level] ?? normalizedScore,
+            epistemicConfidence: conf,
+            calibrationStatus: "UNCALIBRATED",
+          },
         });
       }
     }
@@ -206,58 +356,91 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
     return validatedAnswers;
   }
 
-  private generateFallbackBatch(
+  private buildInvalidAnswer(
+    q: NoulQuestion | ChoiceQuestion<any> | ScoreQuestion,
+    code: DecisionValidationErrorCode,
+    reason: string
+  ): DecisionAnswer {
+    if (q.type === "NOUL") {
+      const ans: NoulAnswer = {
+        questionId: q.id,
+        type: "NOUL",
+        value: false,
+        probabilityTrue: 0.0,
+        confidence: 0.0,
+        reasoning: `VALIDATION_FAILURE: ${reason}`,
+        isDeterministic: false,
+        status: "INVALID",
+        validationErrorCode: code,
+        uncertainty: {
+          modelProbability: 0.0,
+          epistemicConfidence: 0.0,
+          calibrationStatus: "UNKNOWN",
+          uncertaintyReason: reason,
+        },
+      };
+      return ans;
+    } else if (q.type === "CHOICE") {
+      const probs: Record<string, number> = {};
+      for (const opt of q.options) probs[opt] = 0.0;
+
+      const ans: ChoiceAnswer = {
+        questionId: q.id,
+        type: "CHOICE",
+        selected: "" as any,
+        probabilities: probs,
+        confidence: 0.0,
+        reasoning: `VALIDATION_FAILURE: ${reason}`,
+        isDeterministic: false,
+        status: "INVALID",
+        validationErrorCode: code,
+        uncertainty: {
+          modelProbability: 0.0,
+          epistemicConfidence: 0.0,
+          calibrationStatus: "UNKNOWN",
+          uncertaintyReason: reason,
+        },
+      };
+      return ans;
+    } else {
+      const dist: Record<number, number> = {};
+      for (const r of q.rubric) dist[r.level] = 0.0;
+
+      const ans: ScoreAnswer = {
+        questionId: q.id,
+        type: "SCORE",
+        selectedLevel: -1,
+        selectedLabel: "UNRESOLVED",
+        score: 0.0,
+        distribution: dist,
+        confidence: 0.0,
+        reasoning: `VALIDATION_FAILURE: ${reason}`,
+        isDeterministic: false,
+        status: "INVALID",
+        validationErrorCode: code,
+        uncertainty: {
+          modelProbability: 0.0,
+          epistemicConfidence: 0.0,
+          calibrationStatus: "UNKNOWN",
+          uncertaintyReason: reason,
+        },
+      };
+      return ans;
+    }
+  }
+
+  private generateUnresolvedBatch(
     request: DecisionBatchRequest,
     latencyMs: number,
+    code: DecisionValidationErrorCode,
     errorMsg: string
   ): DecisionBatchResult {
-    const answers: DecisionAnswer[] = [];
+    const answers: DecisionAnswer[] = request.questions.map((q) =>
+      this.buildInvalidAnswer(q, code, errorMsg)
+    );
     const answersById: Record<string, DecisionAnswer> = {};
-
-    for (const q of request.questions) {
-      if (q.type === "NOUL") {
-        const ans: NoulAnswer = {
-          questionId: q.id,
-          type: "NOUL",
-          value: false,
-          probabilityTrue: 0.5,
-          confidence: 0.2, // Low confidence triggers escalation
-          reasoning: `LLM fallback: ${errorMsg}`,
-          isDeterministic: false,
-        };
-        answers.push(ans);
-        answersById[q.id] = ans;
-      } else if (q.type === "CHOICE") {
-        const probs: Record<string, number> = {};
-        for (const opt of q.options) probs[opt] = 1.0 / q.options.length;
-        const ans: ChoiceAnswer = {
-          questionId: q.id,
-          type: "CHOICE",
-          selected: q.options[0],
-          probabilities: probs,
-          confidence: 0.2,
-          reasoning: `LLM fallback: ${errorMsg}`,
-          isDeterministic: false,
-        };
-        answers.push(ans);
-        answersById[q.id] = ans;
-      } else {
-        const dist: Record<number, number> = {};
-        for (const r of q.rubric) dist[r.level] = 1.0 / q.rubric.length;
-        const ans: ScoreAnswer = {
-          questionId: q.id,
-          type: "SCORE",
-          selectedLevel: q.rubric[0].level,
-          selectedLabel: q.rubric[0].label,
-          score: 0.0,
-          distribution: dist,
-          confidence: 0.2,
-          reasoning: `LLM fallback: ${errorMsg}`,
-          isDeterministic: false,
-        };
-        answers.push(ans);
-        answersById[q.id] = ans;
-      }
+    for (const a of answers) {
+      answersById[a.questionId] = a;
     }
 
     return {
@@ -267,8 +450,15 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
       answersById,
       adapterUsed: "LLM",
       totalLatencyMs: latencyMs,
-      minConfidence: 0.2,
+      minConfidence: 0.0,
       shouldEscalate: true,
+      status: "UNRESOLVED",
+      adapterMetadata: {
+        adapterType: "LLM",
+        implementationVersion: "2.0.0",
+        isProductionAuthority: true,
+        isTrainingEligible: false,
+      },
     };
   }
 }

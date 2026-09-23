@@ -13,6 +13,7 @@ import type {
   ExecutionPlan,
   AnswerContract,
   ResponseReview,
+  ReasoningSource,
 } from "./CognitiveContracts";
 
 export class OverseerCognitionClient {
@@ -171,13 +172,23 @@ export class OverseerCognitionClient {
         if (!res.ok) {
           if (process.env.NODE_ENV !== "production" && !process.env.SIMULATE_LLM_FAILURE) {
             console.warn(`[OverseerCognitionClient] Remote provider HTTP ${res.status}: ${res.statusText}. Falling back to local reasoning.`);
-            return this.executeLocalReasoning<T>(req, startTime, chatRequestId, chatRequestStarted);
+            return this.executeLocalReasoning<T>(req, startTime, chatRequestId, chatRequestStarted, {
+              fallbackApplied: true,
+              fallbackReason: `Remote provider HTTP ${res.status}: ${res.statusText}`,
+              originalProvider: "overseer_api",
+            });
           }
           return {
             success: false,
             latencyMs,
             provider: "overseer_api",
             model: this.config.model || "unknown",
+            reasoningSource: {
+              mode: "REAL_MODEL",
+              provider: "overseer_api",
+              model: this.config.model || "unknown",
+              trainingEligible: false,
+            },
             error: `Overseer is currently unable to reach its reasoning service (HTTP ${res.status}: ${res.statusText}).`,
             errorCode: "PROVIDER_UNAVAILABLE",
             diagnostics: {
@@ -215,6 +226,13 @@ export class OverseerCognitionClient {
           latencyMs,
           provider: "overseer_api",
           model: this.config.model || "configured-model",
+          reasoningSource: {
+            mode: "REAL_MODEL",
+            provider: "overseer_api",
+            model: this.config.model || "configured-model",
+            trainingEligible: true,
+            fallbackApplied: false,
+          },
           diagnostics: {
             chatRequestStarted,
             chatRequestId,
@@ -237,7 +255,11 @@ export class OverseerCognitionClient {
 
         if (process.env.NODE_ENV !== "production" && !process.env.SIMULATE_LLM_FAILURE) {
           console.warn(`[OverseerCognitionClient] Remote reasoning failed (${err.message}), falling back to local reasoning.`);
-          return this.executeLocalReasoning<T>(req, startTime, chatRequestId, chatRequestStarted);
+          return this.executeLocalReasoning<T>(req, startTime, chatRequestId, chatRequestStarted, {
+            fallbackApplied: true,
+            fallbackReason: `Remote call exception: ${err.message}`,
+            originalProvider: "overseer_api",
+          });
         }
 
         return {
@@ -245,6 +267,12 @@ export class OverseerCognitionClient {
           latencyMs,
           provider: "overseer_api",
           model: this.config.model || "unknown",
+          reasoningSource: {
+            mode: "REAL_MODEL",
+            provider: "overseer_api",
+            model: this.config.model || "unknown",
+            trainingEligible: false,
+          },
           error: isTimeout
             ? "Overseer reasoning service request timed out."
             : "Overseer is currently unable to reach its reasoning service.",
@@ -272,10 +300,21 @@ export class OverseerCognitionClient {
     req: CognitiveRequest,
     startTime: number,
     chatRequestId: string,
-    chatRequestStarted: string
+    chatRequestStarted: string,
+    fallbackInfo?: { fallbackApplied: boolean; fallbackReason?: string; originalProvider?: string; }
   ): CognitiveResponse<T> {
     const modelCallStarted = new Date().toISOString();
     const userPromptLower = req.userPrompt.toLowerCase();
+    const reasoningSource: ReasoningSource = {
+      mode: "TEST_HEURISTIC",
+      provider: "factoryos_overseer_reasoner",
+      model: "local-rule-engine",
+      trainingEligible: false,
+      fallbackApplied: fallbackInfo?.fallbackApplied ?? false,
+      fallbackReason: fallbackInfo?.fallbackReason,
+      originalProvider: fallbackInfo?.originalProvider,
+      fallbackProvider: "local-rule-engine",
+    };
 
     // 1. Stage 1: CLASSIFY
     if (req.operation === "CLASSIFY") {
@@ -334,7 +373,7 @@ export class OverseerCognitionClient {
 
       const classification: IntentClassification = {
         intent,
-        confidence: 0.95,
+        confidence: 0.5, // Explicit heuristic baseline confidence (UNCALIBRATED)
         entities: {},
         freshness: requiresLiveResearch ? "today" : "static",
         requiresLiveResearch,
@@ -354,6 +393,7 @@ export class OverseerCognitionClient {
         latencyMs,
         provider: "factoryos_overseer_reasoner",
         model: "overseer-cognitive-v3",
+        reasoningSource,
         diagnostics: {
           chatRequestStarted,
           chatRequestId,
@@ -379,6 +419,7 @@ export class OverseerCognitionClient {
         latencyMs,
         provider: "factoryos_overseer_reasoner",
         model: "overseer-cognitive-v3",
+        reasoningSource,
         diagnostics: {
           chatRequestStarted,
           chatRequestId,
@@ -447,6 +488,7 @@ export class OverseerCognitionClient {
         latencyMs,
         provider: "factoryos_overseer_reasoner",
         model: "overseer-cognitive-v3",
+        reasoningSource,
         diagnostics: {
           chatRequestStarted,
           chatRequestId,
@@ -475,6 +517,7 @@ export class OverseerCognitionClient {
       latencyMs,
       provider: "factoryos_overseer_reasoner",
       model: "overseer-cognitive-v3",
+      reasoningSource,
       diagnostics: {
         chatRequestStarted,
         chatRequestId,

@@ -1,8 +1,15 @@
 /**
- * ShortForge / FactoryOS — TypeSafeJevAdapter (Shadow-Mode Decision Intelligence)
+ * ShortForge / FactoryOS — Heuristic Typed Decision Shadow Adapter
  *
- * Implements Jev / System-One typed decision intelligence.
- * Runs in shadow mode to establish baseline agreement metrics before live deployment.
+ * CRITICAL ARCHITECTURAL NOTICE (PROJECT ASCALON):
+ * ============================================================================
+ * THIS IS A SHADOW HEURISTIC BASELINE.
+ * THIS IS NOT THE JEV SYSTEM ONE MODEL.
+ * ============================================================================
+ *
+ * This adapter provides a lightweight, local heuristic baseline for shadow comparison
+ * and offline experimentation. It has NO production authority and its outputs are
+ * STRICTLY INELIGIBLE for golden training trajectories (isTrainingEligible: false).
  */
 
 import {
@@ -22,15 +29,15 @@ export interface ShadowDiffRecord {
   readonly batchId: string;
   readonly questionId: string;
   readonly primarySelected: unknown;
-  readonly jevSelected: unknown;
+  readonly heuristicSelected: unknown;
   readonly agreed: boolean;
   readonly primaryConfidence: number;
-  readonly jevConfidence: number;
+  readonly heuristicConfidence: number;
   readonly recordedAt: string;
 }
 
-export class TypeSafeJevAdapter implements IDecisionAdapter {
-  readonly adapterName = "JEV_SHADOW";
+export class HeuristicTypedDecisionShadowAdapter implements IDecisionAdapter {
+  readonly adapterName = "HEURISTIC_SHADOW";
   private shadowDiffHistory: ShadowDiffRecord[] = [];
 
   public async evaluateBatch(request: DecisionBatchRequest): Promise<DecisionBatchResult> {
@@ -60,59 +67,66 @@ export class TypeSafeJevAdapter implements IDecisionAdapter {
     }
 
     const confidences = answers.map((a) => a.confidence);
-    const minConfidence = confidences.length > 0 ? Math.min(...confidences) : 1.0;
+    const minConfidence = confidences.length > 0 ? Math.min(...confidences) : 0.5;
 
     return {
       batchId: request.batchId,
       evaluatedAt: new Date().toISOString(),
       answers,
       answersById,
-      adapterUsed: "JEV_SHADOW",
+      adapterUsed: "HEURISTIC_SHADOW",
       totalLatencyMs: Date.now() - t0,
       minConfidence,
       shouldEscalate: minConfidence < 0.7,
+      status: "VALID",
+      adapterMetadata: {
+        adapterType: "HEURISTIC_SHADOW",
+        implementationVersion: "1.0.0",
+        isProductionAuthority: false,
+        isTrainingEligible: false,
+      },
     };
   }
 
   public recordShadowComparison(
     batchId: string,
     primaryResult: DecisionBatchResult,
-    jevResult: DecisionBatchResult
+    heuristicResult: DecisionBatchResult
   ): { agreementRate: number; diffs: ShadowDiffRecord[] } {
     let matches = 0;
     const currentDiffs: ShadowDiffRecord[] = [];
 
     for (const qId of Object.keys(primaryResult.answersById)) {
       const pAns = primaryResult.answersById[qId];
-      const jAns = jevResult.answersById[qId];
+      const hAns = heuristicResult.answersById[qId];
 
-      if (!jAns) continue;
+      if (!hAns) continue;
 
       let pVal: unknown;
-      let jVal: unknown;
+      let hVal: unknown;
 
-      if (pAns.type === "NOUL" && jAns.type === "NOUL") {
+      if (pAns.type === "NOUL" && hAns.type === "NOUL") {
         pVal = pAns.value;
-        jVal = jAns.value;
-      } else if (pAns.type === "CHOICE" && jAns.type === "CHOICE") {
+        hVal = hAns.value;
+      } else if (pAns.type === "CHOICE" && hAns.type === "CHOICE") {
         pVal = pAns.selected;
-        jVal = jAns.selected;
-      } else if (pAns.type === "SCORE" && jAns.type === "SCORE") {
+        hVal = hAns.selected;
+      } else if (pAns.type === "SCORE" && hAns.type === "SCORE") {
         pVal = pAns.selectedLevel;
-        jVal = jAns.selectedLevel;
+        hVal = hAns.selectedLevel;
       }
 
-      const agreed = pVal === jVal;
+      const agreed = pVal === hVal;
       if (agreed) matches++;
 
       const record: ShadowDiffRecord = {
         batchId,
         questionId: qId,
         primarySelected: pVal,
-        jevSelected: jVal,
+        heuristicSelected: hVal,
         agreed,
         primaryConfidence: pAns.confidence,
-        jevConfidence: jAns.confidence,
+        heuristicConfidence: hAns.confidence,
         recordedAt: new Date().toISOString(),
       };
 
@@ -135,23 +149,14 @@ export class TypeSafeJevAdapter implements IDecisionAdapter {
   }
 
   private evaluateNoul(q: NoulQuestion, ctx: Record<string, unknown>): NoulAnswer {
-    // Jev System-One heuristic pattern matching
     const qLower = q.question.toLowerCase();
     let probabilityTrue = 0.5;
-    let confidence = 0.85;
-    let reasoning = "Jev system-one heuristic baseline";
 
-    if (qLower.includes("ambiguous") || qLower.includes("clarification")) {
-      const prompt = String(ctx.prompt || ctx.query || "");
-      probabilityTrue = prompt.length < 15 ? 0.9 : 0.1;
-      reasoning = `Prompt length ${prompt.length} evaluated for ambiguity`;
-    } else if (qLower.includes("generation") || qLower.includes("synthetic")) {
-      probabilityTrue = ctx.skipGeneration ? 0.0 : 0.95;
-      reasoning = "Evaluated generation requirement against workflow context";
-    } else if (qLower.includes("escalat")) {
-      const risk = Number(ctx.riskScore || 0);
-      probabilityTrue = risk > 0.8 ? 0.9 : 0.05;
-      reasoning = `Risk metric ${risk} evaluated for escalation`;
+    // Lightweight heuristic keyword detection
+    if (qLower.includes("healthy") || qLower.includes("online") || qLower.includes("operational")) {
+      probabilityTrue = 0.85;
+    } else if (qLower.includes("degraded") || qLower.includes("failure") || qLower.includes("error")) {
+      probabilityTrue = 0.15;
     }
 
     const threshold = q.threshold ?? 0.5;
@@ -162,86 +167,73 @@ export class TypeSafeJevAdapter implements IDecisionAdapter {
       type: "NOUL",
       value,
       probabilityTrue,
-      confidence,
-      reasoning,
+      confidence: 0.65, // Explicitly labeled heuristic confidence
+      reasoning: "Heuristic baseline keyword evaluation (SHADOW ONLY)",
       isDeterministic: false,
+      status: "VALID",
+      uncertainty: {
+        modelProbability: probabilityTrue,
+        epistemicConfidence: 0.65,
+        calibrationStatus: "UNCALIBRATED",
+        uncertaintyReason: "Heuristic baseline simulation, uncalibrated",
+      },
     };
   }
 
-  private evaluateChoice<T extends string>(q: ChoiceQuestion<T>, ctx: Record<string, unknown>): ChoiceAnswer<T> {
-    const qLower = q.question.toLowerCase();
-    let selected: T = q.options[0];
+  private evaluateChoice(q: ChoiceQuestion<any>, ctx: Record<string, unknown>): ChoiceAnswer {
+    const selected = q.options[0]; // Baseline heuristic: default to option 0
     const probs: Record<string, number> = {};
 
-    // Mode routing heuristics
-    if (qLower.includes("mode") || q.id === "responseMode") {
-      const taskComplexity = String(ctx.taskComplexity || "NORMAL");
-      if (taskComplexity === "HIGH" && q.options.includes("DEEP" as T)) {
-        selected = "DEEP" as T;
-      } else if (taskComplexity === "LOW" && q.options.includes("REFLEX" as T)) {
-        selected = "REFLEX" as T;
-      } else if (q.options.includes("DELIBERATE" as T)) {
-        selected = "DELIBERATE" as T;
-      }
-    } else if (q.id === "intent") {
-      const query = String(ctx.query || ctx.prompt || "").toLowerCase();
-      if (query.includes("fail") || query.includes("error") || query.includes("broken")) {
-        if (q.options.includes("INVESTIGATE_FAILURE" as T)) selected = "INVESTIGATE_FAILURE" as T;
-      } else if (query.includes("status") || query.includes("health")) {
-        if (q.options.includes("STATUS_INQUIRY" as T)) selected = "STATUS_INQUIRY" as T;
-      } else if (q.options.includes("PRODUCE_SHORT" as T)) {
-        selected = "PRODUCE_SHORT" as T;
-      }
-    }
-
     for (const opt of q.options) {
-      probs[opt] = opt === selected ? 0.8 : (0.2 / Math.max(1, q.options.length - 1));
+      probs[opt] = 1.0 / q.options.length;
     }
 
     return {
       questionId: q.id,
       type: "CHOICE",
       selected,
-      probabilities: probs as Record<T, number>,
-      confidence: 0.88,
-      reasoning: `Jev selected '${selected}' based on context signals`,
+      probabilities: probs,
+      confidence: 0.5,
+      reasoning: `Heuristic baseline uniform distribution over ${q.options.length} options (SHADOW ONLY)`,
       isDeterministic: false,
+      status: "VALID",
+      uncertainty: {
+        modelProbability: probs[selected],
+        epistemicConfidence: 0.5,
+        calibrationStatus: "UNCALIBRATED",
+        uncertaintyReason: "Heuristic baseline simulation, uncalibrated",
+      },
     };
   }
 
   private evaluateScore(q: ScoreQuestion, ctx: Record<string, unknown>): ScoreAnswer {
-    // Rubric mapping
-    let selectedLevel = q.rubric[0].level;
-    let selectedLabel = q.rubric[0].label;
+    const selectedRubric = q.rubric[0];
     const dist: Record<number, number> = {};
-
-    if (q.id === "riskScore") {
-      const isProduction = Boolean(ctx.isProduction);
-      const isLiveUpload = Boolean(ctx.isLiveUpload);
-
-      const targetLevel = isLiveUpload ? 3 : isProduction ? 2 : 1;
-      const match = q.rubric.find((r) => r.level === targetLevel) || q.rubric[0];
-      selectedLevel = match.level;
-      selectedLabel = match.label;
-    }
-
-    const maxLevel = Math.max(...q.rubric.map((r) => r.level));
-    const score = maxLevel > 0 ? selectedLevel / maxLevel : 0.0;
-
     for (const r of q.rubric) {
-      dist[r.level] = r.level === selectedLevel ? 0.85 : 0.15 / (q.rubric.length - 1);
+      dist[r.level] = 1.0 / q.rubric.length;
     }
 
     return {
       questionId: q.id,
       type: "SCORE",
-      selectedLevel,
-      selectedLabel,
-      score,
+      selectedLevel: selectedRubric.level,
+      selectedLabel: selectedRubric.label,
+      score: 0.0,
       distribution: dist,
-      confidence: 0.9,
-      reasoning: `Jev evaluated rubric level ${selectedLevel} (${selectedLabel})`,
+      confidence: 0.5,
+      reasoning: `Heuristic baseline rubric evaluation (SHADOW ONLY)`,
       isDeterministic: false,
+      status: "VALID",
+      uncertainty: {
+        modelProbability: dist[selectedRubric.level],
+        epistemicConfidence: 0.5,
+        calibrationStatus: "UNCALIBRATED",
+        uncertaintyReason: "Heuristic baseline simulation, uncalibrated",
+      },
     };
   }
 }
+
+/** Backwards-compatible alias for existing consumers */
+export const TypeSafeJevAdapter = HeuristicTypedDecisionShadowAdapter;
+export type TypeSafeJevAdapter = HeuristicTypedDecisionShadowAdapter;

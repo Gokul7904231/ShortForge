@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonSystemStates",
+  "version": "1.0.0",
+  "description": "Authoritative state definitions for missions, tasks, workers, and decisions in ShortForge",
+  "lifecycleStates": {
+    "decisionLifecycle": [
+      "RECOMMENDED",
+      "AUTHORIZED",
+      "EXECUTED",
+      "OBSERVED",
+      "VERIFIED",
+      "COMMITTED"
+    ],
+    "hypothesisLifecycle": [
+      "HYPOTHESIS",
+      "SUPPORTED_HYPOTHESIS",
+      "VERIFIED_ROOT_CAUSE",
+      "UNKNOWN"
+    ],
+    "missionLifecycle": [
+      "DRAFT",
+      "PENDING_APPROVAL",
+      "APPROVED",
+      "IN_PROGRESS",
+      "BLOCKED",
+      "HEALING",
+      "COMPLETED",
+      "FAILED",
+      "QUARANTINED"
+    ],
+    "workerHealthStates": [
+      "WARM_IDLE",
+      "BUSY_RENDERING",
+      "DRAINING",
+      "STALLED",
+      "DEGRADED",
+      "OFFLINE",
+      "TERMINATED"
+    ],
+    "trainingEligibility": [
+      "ELIGIBLE",
+      "INELIGIBLE",
+      "PENDING_REVIEW",
+      "REJECTED"
+    ],
+    "worldStateSources": [
+      "AUTHORITATIVE",
+      "SIMULATION"
+    ],
+    "calibrationStatus": [
+      "CALIBRATED",
+      "UNCALIBRATED",
+      "ESTIMATED",
+      "UNKNOWN"
+    ]
+  }
+}

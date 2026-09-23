@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://shortforge.ai/schemas/ascalon/trajectory.schema.json",
+  "title": "AscalonTrajectory",
+  "type": "object",
+  "description": "Complete operational trajectory contract bridging ShortForge runtime to Project Ascalon training",
+  "required": [
+    "trajectoryId",
+    "schemaVersion",
+    "hierarchyVersion",
+    "episode",
+    "environment",
+    "observation",
+    "decision",
+    "authorization",
+    "execution",
+    "outcome",
+    "provenance"
+  ],
+  "properties": {
+    "trajectoryId": {
+      "type": "string",
+      "pattern": "^traj_[a-zA-Z0-9_-]+$"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "hierarchyVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "episode": {
+      "type": "object",
+      "required": ["episodeId", "missionId"],
+      "properties": {
+        "episodeId": { "type": "string" },
+        "missionId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "caseId": { "type": "string" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "required": ["environmentType", "repositoryCommit", "runtimeVersion"],
+      "properties": {
+        "environmentType": {
+          "type": "string",
+          "enum": ["REAL", "SIMULATION", "EPHEMERAL", "REPLAY"]
+        },
+        "repositoryCommit": { "type": "string" },
+        "runtimeVersion": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "observation": {
+      "type": "object"
+    },
+    "decision": {
+      "type": "object"
+    },
+    "authorization": {
+      "type": "object",
+      "required": ["requested", "authorized", "guardianDecision"],
+      "properties": {
+        "requested": { "type": "boolean" },
+        "authorized": { "type": "boolean" },
+        "guardianDecision": {
+          "type": "string",
+          "enum": ["APPROVED", "DENIED", "QUARANTINED", "NOT_REQUIRED"]
+        },
+        "policyChecks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["tool", "arguments"],
+      "properties": {
+        "tool": { "type": "string" },
+        "arguments": { "type": "object" },
+        "leaseId": { "type": "string" },
+        "fencingToken": { "type": "integer" },
+        "startedAt": { "type": "string" },
+        "completedAt": { "type": "string" }
+      }
+    },
+    "outcome": {
+      "type": "object"
+    },
+    "learning": {
+      "type": "object",
+      "properties": {
+        "prediction": { "type": "string" },
+        "actualOutcome": { "type": "string" },
+        "success": { "type": "boolean" },
+        "failureCategory": { "type": "string" },
+        "lesson": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["labelSource", "trainingEligible", "humanReviewed"],
+      "properties": {
+        "labelSource": {
+          "type": "string",
+          "enum": [
+            "VERIFIED_OUTCOME",
+            "AUTHORITATIVE_SYSTEM",
+            "HUMAN_REVIEW",
+            "DETERMINISTIC_RULE",
+            "MODEL_PREDICTION",
+            "HEURISTIC",
+            "SIMULATION"
+          ]
+        },
+        "trainingEligible": { "type": "boolean" },
+        "humanReviewed": { "type": "boolean" },
+        "simulation": { "type": "boolean" },
+        "synthetic": { "type": "boolean" }
+      }
+    }
+  },
+  "additionalProperties": false
+}

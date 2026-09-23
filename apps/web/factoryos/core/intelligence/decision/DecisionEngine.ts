@@ -103,6 +103,8 @@ export class DecisionEngine {
     const minConfidence = confidences.length > 0 ? Math.min(...confidences) : 0.0;
     const shouldEscalate = minConfidence < this.config.escalationThreshold;
 
+    const hasUnresolved = assembledAnswers.some((a) => a?.status === "INVALID" || a?.status === "UNRESOLVED");
+
     const finalResult: DecisionBatchResult = {
       batchId: request.batchId,
       evaluatedAt: new Date().toISOString(),
@@ -112,6 +114,13 @@ export class DecisionEngine {
       totalLatencyMs: Date.now() - t0,
       minConfidence,
       shouldEscalate,
+      status: hasUnresolved ? "UNRESOLVED" : "VALID",
+      adapterMetadata: {
+        adapterType: adapterUsed,
+        implementationVersion: "2.0.0",
+        isProductionAuthority: true,
+        isTrainingEligible: !hasUnresolved,
+      },
     };
 
     // 3. Shadow Jev Evaluation in parallel (Safe learning loop)

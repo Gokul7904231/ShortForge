@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonCanonicalAgents",
+  "version": "1.0.0",
+  "description": "Authoritative canonical registry of ShortForge / FactoryOS cognitive and sovereign agents",
+  "agents": [
+    {
+      "agentId": "agent_overseer",
+      "canonicalRole": "OVERSEER",
+      "category": "SOVEREIGN_SUPERVISORY",
+      "authorityLevel": "STRATEGIC",
+      "description": "Master strategic orchestration agent responsible for mission decomposition, task DAG planning, context budgeting, and lifecycle supervision.",
+      "supervises": ["SLAYER", "HEALER", "INSTRUCTOR", "FLOOR_AGENTS"],
+      "escalatesTo": "HUMAN_OPERATOR",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/factoryos/core/overseer/"]
+    },
+    {
+      "agentId": "agent_guardian",
+      "canonicalRole": "GUARDIAN",
+      "category": "SOVEREIGN_GOVERNANCE",
+      "authorityLevel": "AUTHORITATIVE_SAFETY",
+      "description": "Policy and cryptographic safety authority. Evaluates invariant compliance, controls capability execution gates, signs release receipts, and governs Floor 07.",
+      "supervises": ["F07_COMPLIANCE_GATE", "CAPABILITY_GATES"],
+      "escalatesTo": "OVERSEER",
+      "isFloor": false,
+      "sourceLocations": [
+        "apps/web/factoryos/core/guardian/",
+        "services/pipeline/guardian/"
+      ]
+    },
+    {
+      "agentId": "agent_slayer",
+      "canonicalRole": "SLAYER",
+      "category": "SOVEREIGN_REMEDIATION",
+      "authorityLevel": "TACTICAL_INTERVENTION",
+      "description": "Anomaly containment and process terminator. Forcefully revokes expired leases, halts stalled render workers, and isolates compromised nodes.",
+      "supervises": [],
+      "escalatesTo": "OVERSEER",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/factoryos/core/slayers/"]
+    },
+    {
+      "agentId": "agent_healer",
+      "canonicalRole": "HEALER",
+      "category": "SOVEREIGN_REPAIR",
+      "authorityLevel": "TACTICAL_REPAIR",
+      "description": "Self-healing and state repair agent. Executes localized state restoration, retries transient network/compute failures, and restores corrupted context.",
+      "supervises": [],
+      "escalatesTo": "OVERSEER",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/factoryos/core/healers/"]
+    },
+    {
+      "agentId": "agent_instructor",
+      "canonicalRole": "INSTRUCTOR",
+      "category": "META_LEARNING",
+      "authorityLevel": "ADVISORY",
+      "description": "Prompt refinement and meta-learning agent. Tunes system prompts and instructions based on historical trajectory feedback.",
+      "supervises": [],
+      "escalatesTo": "OVERSEER",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/factoryos/core/instructor/"]
+    },
+    {
+      "agentId": "agent_trend_analyst",
+      "canonicalRole": "TREND_ANALYST",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor00_analyst",
+      "description": "Ingests raw trend streams from Reddit, YouTube, and news sources, producing structured research passports.",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/agents/trend-agent.ts"]
+    },
+    {
+      "agentId": "agent_script_writer",
+      "canonicalRole": "SCRIPT_WRITER",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor02_scripting",
+      "description": "Synthesizes 3-beat short-form narrative scripts with rhythmic word-count bounds.",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/agents/script-agent.ts"]
+    },
+    {
+      "agentId": "agent_hook_scorer",
+      "canonicalRole": "HOOK_SCORER",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor02_scripting",
+      "description": "Calculates cognitive hook engagement and curiosity retention scores on opening 3-second script segments.",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/agents/hook-score-agent.ts"]
+    },
+    {
+      "agentId": "agent_scene_architect",
+      "canonicalRole": "SCENE_ARCHITECT",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor03_asset_realization",
+      "description": "Converts narrative sentences into visual scene blueprints, camera directions, and prompt recipes.",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/agents/scene-agent.ts"]
+    },
+    {
+      "agentId": "agent_scene_quality_judge",
+      "canonicalRole": "SCENE_QUALITY_JUDGE",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor03_asset_realization",
+      "description": "Evaluates aesthetic composition, text contrast safety margins, and 9:16 alignment of generated visual assets.",
+      "isFloor": false,
+      "sourceLocations": ["apps/web/agents/scene-quality-agent.ts"]
+    },
+    {
+      "agentId": "agent_upload_dispatcher",
+      "canonicalRole": "UPLOAD_DISPATCHER",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor07_compliance",
+      "description": "Executes cryptographic JIT verification and performs authenticated resumable uploads to YouTube Data API v3 and Google Drive.",
+      "isFloor": false,
+      "sourceLocations": [
+        "apps/web/agents/upload-agent.ts",
+        "apps/web/publishing/providers/youtube.ts"
+      ]
+    }
+  ]
+}

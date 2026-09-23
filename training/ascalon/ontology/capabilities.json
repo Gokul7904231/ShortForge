@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonSystemCapabilities",
+  "version": "1.0.0",
+  "description": "Authoritative machine-readable registry of executable capabilities in ShortForge",
+  "capabilities": [
+    {
+      "capabilityId": "cap_research_topic_ingest",
+      "version": "1.0.0",
+      "name": "Topic Research Ingestion",
+      "floorId": "floor00_analyst",
+      "riskClass": "LOW",
+      "allowedRoles": ["OVERSEER", "TREND_ANALYST"],
+      "requiresGuardianGate": false,
+      "timeoutMs": 30000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_script_synthesis",
+      "version": "1.0.0",
+      "name": "Narrative Script Synthesis",
+      "floorId": "floor02_scripting",
+      "riskClass": "LOW",
+      "allowedRoles": ["OVERSEER", "SCRIPT_WRITER"],
+      "requiresGuardianGate": false,
+      "timeoutMs": 45000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_voice_generation",
+      "version": "1.0.0",
+      "name": "TTS Voice Generation & Normalization",
+      "floorId": "floor04_media_synthesis",
+      "riskClass": "LOW",
+      "allowedRoles": ["OVERSEER", "VOICE_ENGINE"],
+      "requiresGuardianGate": false,
+      "timeoutMs": 60000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_visual_asset_generate",
+      "version": "1.0.0",
+      "name": "Visual Asset Generation",
+      "floorId": "floor03_asset_realization",
+      "riskClass": "MEDIUM",
+      "allowedRoles": ["OVERSEER", "SCENE_ARCHITECT"],
+      "requiresGuardianGate": false,
+      "timeoutMs": 90000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_timeline_mux",
+      "version": "1.0.0",
+      "name": "Timeline Muxing & Subtitle Synthesis",
+      "floorId": "floor05_timeline_composition",
+      "riskClass": "LOW",
+      "allowedRoles": ["OVERSEER", "TIMELINE_COMPOSER"],
+      "requiresGuardianGate": false,
+      "timeoutMs": 45000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_render_dispatch",
+      "version": "1.0.0",
+      "name": "Compute Render Worker Dispatch",
+      "floorId": "floor06_rendering",
+      "riskClass": "MEDIUM",
+      "allowedRoles": ["OVERSEER", "RENDER_ROUTER"],
+      "requiresGuardianGate": true,
+      "timeoutMs": 300000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_compliance_verify",
+      "version": "1.0.0",
+      "name": "F07 Compliance & 15-Gate Verification",
+      "floorId": "floor07_compliance",
+      "riskClass": "HIGH",
+      "allowedRoles": ["GUARDIAN"],
+      "requiresGuardianGate": true,
+      "timeoutMs": 60000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_youtube_publish",
+      "version": "1.0.0",
+      "name": "YouTube Platform Publishing",
+      "floorId": "floor07_compliance",
+      "riskClass": "CRITICAL",
+      "allowedRoles": ["GUARDIAN", "UPLOAD_DISPATCHER"],
+      "requiresGuardianGate": true,
+      "timeoutMs": 120000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_slayer_revoke_lease",
+      "version": "1.0.0",
+      "name": "Slayer Worker Lease Revocation",
+      "floorId": "floor06_rendering",
+      "riskClass": "HIGH",
+      "allowedRoles": ["SLAYER"],
+      "requiresGuardianGate": true,
+      "timeoutMs": 15000,
+      "trainingEligible": true
+    },
+    {
+      "capabilityId": "cap_healer_retry_task",
+      "version": "1.0.0",
+      "name": "Healer Task State Recovery",
+      "floorId": "floor06_rendering",
+      "riskClass": "MEDIUM",
+      "allowedRoles": ["HEALER"],
+      "requiresGuardianGate": true,
+      "timeoutMs": 30000,
+      "trainingEligible": true
+    }
+  ]
+}

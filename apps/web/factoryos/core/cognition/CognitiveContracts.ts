@@ -1,6 +1,7 @@
 /**
  * FactoryOS Frontier v3 — Overseer Cognitive Runtime Contracts
  * Defines strict contracts for the dedicated cognitive layer (OVERSEER_API).
+ * Enhanced for Project Ascalon with explicit reasoning modes, provenance, and training eligibility.
  */
 
 export type CognitiveIntent =
@@ -38,6 +39,19 @@ export type SourceClass =
   | "MISSION_DATABASE"
   | "PROVIDER_REGISTRY"
   | "GENERAL_KNOWLEDGE";
+
+export type ReasoningMode = "REAL_MODEL" | "LOCAL_MODEL" | "TEST_HEURISTIC" | "DISABLED";
+
+export interface ReasoningSource {
+  readonly mode: ReasoningMode;
+  readonly provider: string;
+  readonly model: string;
+  readonly trainingEligible: boolean;
+  readonly fallbackApplied?: boolean;
+  readonly fallbackReason?: string;
+  readonly originalProvider?: string;
+  readonly fallbackProvider?: string;
+}
 
 export interface OverseerCognitionConfig {
   endpoint?: string;
@@ -105,6 +119,7 @@ export interface CognitiveResponse<T = any> {
   latencyMs: number;
   provider: string;
   model: string;
+  reasoningSource?: ReasoningSource;
   usage?: {
     promptTokens: number;
     completionTokens: number;

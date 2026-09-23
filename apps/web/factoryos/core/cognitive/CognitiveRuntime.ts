@@ -139,6 +139,9 @@ export class CognitiveRuntime {
       let recommendedAction = "EXECUTE_OPTIMAL_REPAIR";
       let candidateActionId = incident.candidateActions?.[0]?.actionId;
 
+      const isAuthoritative = !!incident.worldStateSnapshot;
+      const worldStateSource: "AUTHORITATIVE" | "SIMULATION" = isAuthoritative ? "AUTHORITATIVE" : "SIMULATION";
+
       if (incident.candidateActions && incident.candidateActions.length > 0) {
         const candidateActions: CandidateAction[] = incident.candidateActions.map((action) => ({
           actionId: action.actionId,
@@ -150,8 +153,11 @@ export class CognitiveRuntime {
           parameters: {},
         }));
 
-        const mockWorldState = {
-          factoryStatus: "RUNNING" as const,
+        const effectiveWorldState = incident.worldStateSnapshot || {
+          simulationId: `sim_${randomUUID().substring(0, 8)}`,
+          scenarioId: incident.incidentId,
+          worldStateVersion: "1.0.0",
+          factoryStatus: "RUNNING",
           systemConfidence: 0.8,
           resources: { cpuPercent: 85, memoryUsageMb: 4000, driveAvailable: true },
           floors: {},
@@ -160,7 +166,7 @@ export class CognitiveRuntime {
           lastHeartbeat: new Date().toISOString(),
         };
 
-        const simResult = this.plane.simulationEngine.simulateCandidates(candidateActions, mockWorldState as any);
+        const simResult = this.plane.simulationEngine.simulateCandidates(candidateActions, effectiveWorldState as any);
         simulationEvaluated = true;
         tokensConsumed += 150;
         costUsd += 0.003;
@@ -174,19 +180,29 @@ export class CognitiveRuntime {
       }
 
       const durationMs = Date.now() - startTime;
+      const calculatedConfidence = simulationEvaluated ? 0.75 : similarExperiences.length > 0 ? 0.65 : 0.5;
 
       // 8. Safe User-Facing Summary (No private Chain-of-Thought)
-      const rationale = `Cognitive assessment confirmed ${rootCauseTheory}. Recommended ${recommendedAction} based on ${
+      const rationale = `Cognitive assessment evaluated ${rootCauseTheory}. Recommended action: ${recommendedAction} based on ${
         simulationEvaluated ? "simulation evaluation" : similarExperiences.length > 0 ? "historical memory match" : "evidence graph analysis"
-      } with confidence 0.92.`;
+      } (epistemic confidence: ${calculatedConfidence.toFixed(2)}).`;
 
       return {
         incidentId: incident.incidentId,
         complexityLevel,
         recommendedAction,
         candidateActionId,
-        confidence: 0.92,
+        confidence: calculatedConfidence,
         rootCauseTheory,
+        hypothesisStatus: "SUPPORTED_HYPOTHESIS",
+        lifecycleState: "RECOMMENDED",
+        worldStateSource,
+        simulationMetadata: !isAuthoritative
+          ? {
+              simulationId: `sim_${randomUUID().substring(0, 8)}`,
+              scenarioId: incident.incidentId,
+            }
+          : undefined,
         rationale,
         evidenceIds,
         memoryMatchesCount: similarExperiences.length,
@@ -199,9 +215,12 @@ export class CognitiveRuntime {
         simulationEvaluated,
         rlmActivated,
         tokensConsumed,
+        tokenUsageStatus: "ESTIMATED",
         costUsd,
+        costStatus: "ESTIMATED",
         durationMs,
         fallbackApplied: false,
+        trainingEligible: isAuthoritative,
       };
     } catch (err: any) {
       return this.fallbackPolicy.generateFallbackDecision(

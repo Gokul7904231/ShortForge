@@ -1,0 +1,25 @@
+{
+  "reportId": "report_quality_1790158991994",
+  "generatedAt": "2026-09-23T10:23:11.994Z",
+  "datasetSummary": {
+    "totalTrajectoriesEvaluated": 13,
+    "validCount": 13,
+    "trainCount": 10,
+    "validationCount": 2,
+    "testCount": 1,
+    "rejectedCount": 0
+  },
+  "qualityGates": {
+    "secretLeakageDetected": false,
+    "syntheticMislabeledReal": false,
+    "unverifiedSuccessClaims": 0,
+    "schemaCompletenessRate": 1,
+    "replayEquivalenceRate": 1
+  },
+  "provenanceBreakdown": {
+    "verifiedOutcome": 2,
+    "authoritativeSystem": 1,
+    "simulationControlled": 10
+  },
+  "rejectionLog": []
+}

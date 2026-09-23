@@ -1,0 +1,1161 @@
+[
+  {
+    "trajectoryId": "traj_golden_001_lease_expired",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_lease_001",
+      "missionId": "miss_render_401",
+      "taskId": "task_render_f06",
+      "caseId": "case_anom_882"
+    },
+    "environment": {
+      "environmentType": "REAL",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:00:00Z"
+    },
+    "observation": {
+      "observationId": "obs_lease_001",
+      "timestamp": "2026-09-23T10:00:00Z",
+      "objective": "Manage unresponsive render worker on Floor 06",
+      "worldStateSummary": {
+        "factoryStatus": "DEGRADED",
+        "activeFloorsCount": 7,
+        "activeWorkersCount": 3,
+        "activeIncidentIds": [
+          "inc_lease_882"
+        ],
+        "sequenceNumber": 104
+      },
+      "relevantEvidence": [
+        {
+          "evidenceId": "evi_lease_stale_1",
+          "evidenceType": "DATABASE_RECORD",
+          "source": "lease_manager",
+          "confidence": 1
+        }
+      ],
+      "retrievedMemories": [],
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease",
+        "cap_healer_retry_task"
+      ],
+      "environmentType": "REAL"
+    },
+    "decision": {
+      "decisionId": "dec_lease_001",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "TERMINATE_EXPIRED_WORKER",
+        "targetEntity": "worker_gpu_t4_01",
+        "capabilityId": "cap_slayer_revoke_lease",
+        "parameters": {
+          "workerId": "worker_gpu_t4_01",
+          "leaseId": "lease_9941"
+        }
+      },
+      "alternatives": [
+        {
+          "actionType": "RETRY_WITHOUT_REVOCATION",
+          "probability": 0.05,
+          "rejectionReason": "Violates lease safety"
+        }
+      ],
+      "uncertainty": {
+        "modelProbability": 0.95,
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "slayer_safety_policy",
+        "model": "deterministic-engine",
+        "trainingEligible": true,
+        "fallbackApplied": false
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "lease_validity_rule",
+        "fencing_token_check"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "workerId": "worker_gpu_t4_01",
+        "leaseId": "lease_9941"
+      },
+      "leaseId": "lease_9941",
+      "fencingToken": 12,
+      "startedAt": "2026-09-23T10:00:01Z",
+      "completedAt": "2026-09-23T10:00:02Z"
+    },
+    "outcome": {
+      "outcomeId": "out_lease_001",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_revocation_receipt_001",
+      "actualStateChange": {
+        "entityModified": "worker_gpu_t4_01",
+        "priorState": "BUSY_RENDERING",
+        "newState": "TERMINATED"
+      },
+      "completedAt": "2026-09-23T10:00:02Z"
+    },
+    "learning": {
+      "prediction": "Worker terminated cleanly",
+      "actualOutcome": "Worker terminated cleanly",
+      "success": true
+    },
+    "provenance": {
+      "labelSource": "VERIFIED_OUTCOME",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": false,
+      "synthetic": false
+    }
+  },
+  {
+    "trajectoryId": "traj_golden_002_cas_verified",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_cas_002",
+      "missionId": "miss_short_501",
+      "taskId": "task_store_cas"
+    },
+    "environment": {
+      "environmentType": "REAL",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:05:00Z"
+    },
+    "observation": {
+      "observationId": "obs_cas_002",
+      "timestamp": "2026-09-23T10:05:00Z",
+      "objective": "Verify physical byte integrity of rendered video before CAS commit",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloorsCount": 8,
+        "activeWorkersCount": 4,
+        "sequenceNumber": 105
+      },
+      "relevantEvidence": [
+        {
+          "evidenceId": "evi_sha256_probe_002",
+          "evidenceType": "CAS_FILE_DIGEST",
+          "source": "verification_engine",
+          "confidence": 1
+        }
+      ],
+      "availableCapabilities": [
+        "cap_compliance_verify",
+        "cap_render_dispatch"
+      ],
+      "environmentType": "REAL"
+    },
+    "decision": {
+      "decisionId": "dec_cas_002",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "VERIFY_AND_PROMOTE_ARTIFACT",
+        "targetEntity": "data/cas_storage/e3/e3b0c442...mp4",
+        "capabilityId": "cap_compliance_verify",
+        "parameters": {
+          "artifactSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "uncertainty": {
+        "modelProbability": 1,
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "verification_engine",
+        "model": "cas-validator",
+        "trainingEligible": true,
+        "fallbackApplied": false
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "cas_checksum_match",
+        "ffprobe_decode_smoke"
+      ]
+    },
+    "execution": {
+      "tool": "cap_compliance_verify",
+      "arguments": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "startedAt": "2026-09-23T10:05:01Z",
+      "completedAt": "2026-09-23T10:05:03Z"
+    },
+    "outcome": {
+      "outcomeId": "out_cas_002",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_cas_receipt_002",
+      "actualStateChange": {
+        "entityModified": "artifact_release_status",
+        "priorState": "UNVERIFIED",
+        "newState": "VERIFIED"
+      },
+      "completedAt": "2026-09-23T10:05:03Z"
+    },
+    "provenance": {
+      "labelSource": "VERIFIED_OUTCOME",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": false,
+      "synthetic": false
+    }
+  },
+  {
+    "trajectoryId": "traj_golden_003_policy_veto",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_policy_003",
+      "missionId": "miss_pub_991",
+      "taskId": "task_publish_youtube"
+    },
+    "environment": {
+      "environmentType": "REAL",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:10:00Z"
+    },
+    "observation": {
+      "observationId": "obs_policy_003",
+      "timestamp": "2026-09-23T10:10:00Z",
+      "objective": "Evaluate YouTube publication intent with stale policy snapshot",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloorsCount": 8,
+        "activeWorkersCount": 4,
+        "sequenceNumber": 106
+      },
+      "relevantEvidence": [
+        {
+          "evidenceId": "evi_policy_stale_003",
+          "evidenceType": "POLICY_SNAPSHOT",
+          "source": "G00_PolicyFreshnessGate",
+          "confidence": 1
+        }
+      ],
+      "availableCapabilities": [
+        "cap_youtube_publish"
+      ],
+      "environmentType": "REAL"
+    },
+    "decision": {
+      "decisionId": "dec_policy_003",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "PUBLISH_TO_YOUTUBE",
+        "targetEntity": "youtube_channel_01",
+        "capabilityId": "cap_youtube_publish"
+      },
+      "uncertainty": {
+        "modelProbability": 0.8,
+        "epistemicConfidence": 0.9,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "REAL_MODEL",
+        "provider": "overseer_api",
+        "model": "gemini-2.5-flash",
+        "trainingEligible": true,
+        "fallbackApplied": false
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": false,
+      "guardianDecision": "DENIED",
+      "policyChecks": [
+        "G00_POLICY_FRESHNESS_FAILED"
+      ]
+    },
+    "execution": {
+      "tool": "cap_youtube_publish",
+      "arguments": {
+        "channelId": "youtube_channel_01"
+      },
+      "startedAt": "2026-09-23T10:10:01Z",
+      "completedAt": "2026-09-23T10:10:02Z"
+    },
+    "outcome": {
+      "outcomeId": "out_policy_003",
+      "status": "REJECTED_BY_GUARDIAN",
+      "verified": true,
+      "verificationEvidenceId": "evi_guardian_veto_receipt_003",
+      "actualStateChange": {
+        "entityModified": "publication_intent",
+        "priorState": "PENDING_APPROVAL",
+        "newState": "BLOCKED"
+      },
+      "completedAt": "2026-09-23T10:10:02Z"
+    },
+    "provenance": {
+      "labelSource": "AUTHORITATIVE_SYSTEM",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": false,
+      "synthetic": false
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_1",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_1",
+      "missionId": "miss_scen_1"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_1",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_26",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_1",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_101"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_1",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_1",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_2",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_2",
+      "missionId": "miss_scen_2"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_2",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_88",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_2",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_102"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_2",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_2",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_3",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_3",
+      "missionId": "miss_scen_3"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_3",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_77",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_3",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_103"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_3",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_3",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_4",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_4",
+      "missionId": "miss_scen_4"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_4",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_64",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_4",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_104"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_4",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_4",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_5",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_5",
+      "missionId": "miss_scen_5"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_5",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_57",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_5",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_105"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_5",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_5",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_6",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_6",
+      "missionId": "miss_scen_6"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_6",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_81",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_6",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_106"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_6",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_6",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_7",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_7",
+      "missionId": "miss_scen_7"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_7",
+      "timestamp": "2026-09-23T10:23:11.990Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_18",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_7",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_107"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_7",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_7",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.990Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_8",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_8",
+      "missionId": "miss_scen_8"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.990Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_8",
+      "timestamp": "2026-09-23T10:23:11.991Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_42",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_8",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_108"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_8",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_8",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.991Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_9",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_9",
+      "missionId": "miss_scen_9"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.991Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_9",
+      "timestamp": "2026-09-23T10:23:11.991Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_57",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_9",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_109"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_9",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_9",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.991Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  },
+  {
+    "trajectoryId": "traj_scen_timeout_10",
+    "schemaVersion": "1.0.0",
+    "hierarchyVersion": "1.0.0",
+    "episode": {
+      "episodeId": "ep_scen_10",
+      "missionId": "miss_scen_10"
+    },
+    "environment": {
+      "environmentType": "SIMULATION",
+      "repositoryCommit": "b70a4e5",
+      "runtimeVersion": "1.0.0",
+      "timestamp": "2026-09-23T10:23:11.991Z"
+    },
+    "observation": {
+      "observationId": "obs_scen_10",
+      "timestamp": "2026-09-23T10:23:11.991Z",
+      "objective": "Recover from worker timeout simulation",
+      "worldStateSummary": {
+        "factoryStatus": "OPERATIONAL",
+        "activeFloor": "floor06_rendering",
+        "workerId": "worker_gpu_48",
+        "leaseDurationMs": 30000,
+        "elapsedMs": 45000
+      },
+      "availableCapabilities": [
+        "cap_slayer_revoke_lease"
+      ],
+      "environmentType": "SIMULATION"
+    },
+    "decision": {
+      "decisionId": "dec_scen_10",
+      "decisionType": "CAPABILITY_SELECTION",
+      "selectedAction": {
+        "actionType": "REMEDIATE_SIMULATED_TIMEOUT",
+        "targetEntity": "worker_gpu_sim",
+        "capabilityId": "cap_slayer_revoke_lease"
+      },
+      "uncertainty": {
+        "epistemicConfidence": 1,
+        "calibrationStatus": "CALIBRATED"
+      },
+      "reasoningSource": {
+        "mode": "DETERMINISTIC_RULE",
+        "provider": "scenario_engine",
+        "model": "rule-engine",
+        "trainingEligible": true
+      },
+      "status": "VALID"
+    },
+    "authorization": {
+      "requested": true,
+      "authorized": true,
+      "guardianDecision": "APPROVED",
+      "policyChecks": [
+        "simulation_guard"
+      ]
+    },
+    "execution": {
+      "tool": "cap_slayer_revoke_lease",
+      "arguments": {
+        "scenarioId": "scen_timeout_110"
+      }
+    },
+    "outcome": {
+      "outcomeId": "out_scen_10",
+      "status": "SUCCESS",
+      "verified": true,
+      "verificationEvidenceId": "evi_scen_10",
+      "actualStateChange": {
+        "entityModified": "simulation_state",
+        "priorState": "TIMEOUT",
+        "newState": "RESOLVED"
+      },
+      "completedAt": "2026-09-23T10:23:11.991Z"
+    },
+    "provenance": {
+      "labelSource": "SIMULATION",
+      "trainingEligible": true,
+      "humanReviewed": true,
+      "simulation": true,
+      "synthetic": true
+    }
+  }
+]
