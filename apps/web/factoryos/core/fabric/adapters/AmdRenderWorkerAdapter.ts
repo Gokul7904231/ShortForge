@@ -24,6 +24,8 @@ import {
   RenderAttempt,
 } from "../contracts/RenderFabricContracts";
 import { IRenderWorker } from "../worker/RenderWorkerContract";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 export interface AmdRemoteCapabilities {
   ready: boolean;
@@ -183,6 +185,42 @@ export class AmdRenderWorkerAdapter implements IRenderWorker {
 
     this.state = "RUNNING";
     return response;
+  }
+
+  public async uploadInput(jobId: string, filePath: string): Promise<{
+    remotePath: string;
+    sha256: string;
+    byteLength: number;
+  }> {
+    const bytes = await fs.readFile(filePath);
+    const form = new FormData();
+    form.append("jobId", jobId);
+    form.append(
+      "file",
+      new Blob([bytes], { type: "application/octet-stream" }),
+      path.basename(filePath)
+    );
+
+    const response = await this.fetchRaw("/api/factoryos/render/inputs", {
+      method: "POST",
+      body: form,
+    });
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(
+        "[AmdRenderWorkerAdapter] AMD input upload failed HTTP " +
+          response.status + ": " +
+          text.slice(0, 500)
+      );
+    }
+
+    const payload = JSON.parse(text) as {
+      remotePath: string;
+      sha256: string;
+      byteLength: number;
+    };
+    return payload;
   }
 
   public async getRemoteJobStatus(
@@ -388,7 +426,7 @@ export class AmdRenderWorkerAdapter implements IRenderWorker {
     const headers = new Headers(init.headers || {});
     headers.set("Authorization", "Bearer " + this.workerSecret);
 
-    if (init.body && !headers.has("Content-Type")) {
+    if (init.body && !headers.has("Content-Type") && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
 
