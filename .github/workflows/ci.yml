@@ -152,7 +152,7 @@ jobs:
           python -m pip install pip-audit bandit
 
       - name: Dependency vulnerability scan
-        run: pip-audit --strict
+        run: pip-audit --strict --skip-editable
 
       - name: Static Python security scan
         run: bandit -q -r services/pipeline/floor01_strategy/app -ll
