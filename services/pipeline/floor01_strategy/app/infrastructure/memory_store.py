@@ -212,11 +212,12 @@ class StrategyMemoryStore:
 
         except Exception as exc:
             logger.error("strategy_memory_save_failed", error=str(exc))
-            if 'temp_file' in locals() and os.path.exists(temp_file.name):
+            if "temp_file" in locals() and os.path.exists(temp_file.name):
                 try:
                     os.remove(temp_file.name)
                 except Exception:
                     pass
+            raise
         finally:
             if lock_file:
                 _unlock_file(lock_file)
@@ -229,7 +230,7 @@ class StrategyMemoryStore:
         request_id: Optional[str] = None,
         payload: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    ) -> Optional[Dict[str, Any]]:
         lock_path = self._get_lock_path()
         lock_file = None
         if lock_path:
@@ -246,8 +247,9 @@ class StrategyMemoryStore:
             if request_id:
                 for rec in self._records:
                     if rec.get("request_id") == request_id:
+                        existing_payload = rec.get("payload") or {}
                         logger.info("skip_duplicate_idempotent_add_record", request_id=request_id)
-                        return
+                        return existing_payload
 
             record = {
                 "record_id": str(uuid4()),
