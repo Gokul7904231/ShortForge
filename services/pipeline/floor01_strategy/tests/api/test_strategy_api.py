@@ -43,6 +43,7 @@ async def test_production_cors_does_not_default_to_localhost(monkeypatch):
 
     settings = get_settings()
     monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(settings, "service_api_key", "test-production-secret")
     monkeypatch.setattr(settings, "cors_origins", [])
     production_app = create_app()
 
