@@ -910,3 +910,16 @@ Resolution on the research branch:
 - kept canonical implementation under `services/pipeline/floor03_asset_realization`.
 
 Fresh CI is required after this correction. The failed run is recorded as validation evidence, not as a production success claim.
+
+
+## Validation infrastructure correction — 2026-09-25
+
+The F03 production-gate run exposed a repository-root compatibility bridge defect in `floors/floor01_strategy/__init__.py`: the bridge pointed at the packaging root `services/pipeline/floor01_strategy` instead of the installable `services/pipeline/floor01_strategy/floor01_strategy` package. That prevented F02 and F03 imports from resolving.
+
+Resolution:
+- corrected the root Floor 01 compatibility path;
+- kept the F03 root compatibility bridge at `floors/floor03_asset_realization`;
+- retained `floors/**` in the Floor 02 + Floor 03 workflow trigger paths;
+- no canonical floor implementation was duplicated or moved.
+
+This is validation infrastructure, not a change to F01/F02 authority or semantics.
