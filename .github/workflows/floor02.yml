@@ -7,6 +7,7 @@ on:
       - "services/pipeline/floor02_scripting/**"
       - "services/pipeline/floor01_strategy/**"
       - "floors/**"
+      - "factoryos/**"
       - "services/pipeline/floor03_asset_realization/**"
       - "testing/contracts/floor.contract.ts"
       - "training/ascalon/ontology/floors.json"
