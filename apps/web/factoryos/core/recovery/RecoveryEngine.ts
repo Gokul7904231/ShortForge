@@ -53,12 +53,12 @@ export class RecoveryEngine {
     }
 
     // 2. Worker crash or heartbeat lost (Deterministic)
-    if (errorMsg.includes("worker") || errorMsg.includes("heartbeat") || errorMsg.includes("azure vm") || errorMsg.includes("runner")) {
+    if (errorMsg.includes("worker") || errorMsg.includes("heartbeat") || errorMsg.includes("runner")) {
       return {
         classification: "WORKER",
         isDeterministic: true,
         strategy: "FAILOVER_WORKER",
-        alternateTarget: "github-actions-backup-pool",
+        alternateTarget: "qualified-provider-backup",
         quotaReconciled: true,
         rationale: "Worker node failure or lost heartbeat. Reconciled quota and failing over to backup pool.",
       };
