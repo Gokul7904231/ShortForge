@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { saveJobManifest } from "@/lib/jobs-history";
 import { validateContent } from "@/lib/content-pipeline";
 import { EngineRegistry } from "@/lib/core/EngineRegistry";
+import { compileProductionSpec } from "@/factoryos/core/engines/ProductionSpecCompiler";
 import { EngineJobSnapshot } from "@/lib/core/EngineContracts";
 import { advancePointer, hasHardcodedCountry } from "@/lib/quiz/GeoRotationService";
 import { resolveTier } from "@/lib/quota/quota-service";
@@ -50,6 +51,15 @@ const GenerateVideoRequestSchema = z.object({
   contentEngine: z.string().optional(),
   formatFamily: z.string().optional(),
   userInputs: z.record(z.string(), z.any()).optional(),
+  // Schema-driven Content Engine configuration. Legacy top-level fields remain
+  // accepted during migration.
+  userConfig: z.record(z.string(), z.any()).optional(),
+  options: z.record(z.string(), z.any()).optional(),
+  platforms: z.array(z.string()).optional(),
+  audience: z.string().optional(),
+  thumbnailStyle: z.string().optional(),
+  retention: z.number().optional(),
+  providerOverride: z.string().optional(),
   // YouTube Shorts target duration (clamped server-side to 30–60 s)
   durationSeconds: z.number().optional(),
 });
@@ -174,11 +184,94 @@ export async function POST(req: Request) {
       throw quotaErr;
     }
 
+    // Resolve and compile the Content Engine configuration before content
+    // generation. The compiled ProductionSpec becomes the mission snapshot.
+    const engineId =
+      parsed.data.engineId ||
+      (parsed.data.contentType === "QUIZ_SHORTS" ? "quiz" : "facts");
+    const engineDef = await EngineRegistry.getEngine(engineId);
+
+    if (!engineDef) {
+      await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+      return NextResponse.json(
+        { error: `Unknown Content Engine "${engineId}".`, code: "ENGINE_NOT_FOUND" },
+        { status: 422 }
+      );
+    }
+
+    const submittedConfig: Record<string, any> = {
+      ...(parsed.data.options ?? {}),
+      ...(parsed.data.userConfig ?? {}),
+      topic: parsed.data.topic,
+      ...(parsed.data.difficulty !== undefined
+        ? { difficulty: parsed.data.difficulty }
+        : {}),
+      ...(parsed.data.audience !== undefined
+        ? { audience: parsed.data.audience }
+        : {}),
+      ...(parsed.data.tone !== undefined
+        ? { tone: parsed.data.tone }
+        : {}),
+      ...(parsed.data.voice !== undefined
+        ? { voice: parsed.data.voice }
+        : {}),
+      ...(parsed.data.ratio !== undefined
+        ? { ratio: parsed.data.ratio }
+        : {}),
+      ...(parsed.data.thumbnailStyle !== undefined
+        ? { thumbnailStyle: parsed.data.thumbnailStyle }
+        : {}),
+      ...(parsed.data.durationSeconds !== undefined
+        ? { durationSeconds: parsed.data.durationSeconds }
+        : {}),
+      ...(parsed.data.platforms !== undefined
+        ? { platforms: parsed.data.platforms }
+        : {}),
+      ...(parsed.data.providerOverride !== undefined
+        ? { providerOverride: parsed.data.providerOverride }
+        : {}),
+      ...(parsed.data.retention !== undefined
+        ? { retentionHours: parsed.data.retention }
+        : {}),
+    };
+
+    if (
+      parsed.data.provider !== undefined &&
+      submittedConfig.providerOverride === undefined
+    ) {
+      submittedConfig.providerOverride = parsed.data.provider;
+    }
+
+    let productionSpec;
+    try {
+      productionSpec = compileProductionSpec({
+        jobId,
+        engine: engineDef,
+        userConfig: submittedConfig,
+      }).spec;
+    } catch (specError: any) {
+      await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+      return NextResponse.json(
+        {
+          error: specError?.message ?? "Invalid engine configuration",
+          code: "ENGINE_CONFIG_INVALID",
+        },
+        { status: 422 }
+      );
+    }
+
+    const configuredDuration = Number(
+      productionSpec.configuration.media.durationSeconds ?? 45
+    );
+
     let finalPayload: any = null;
 
     // Clamp duration to YouTube Shorts range (30–60 s)
-    const rawDuration = parsed.data.durationSeconds ?? 45;
-    const durationSeconds = Math.min(60, Math.max(30, Number.isFinite(rawDuration) ? rawDuration : 45));
+    const rawDuration = configuredDuration;
+    const durationSeconds = Math.min(
+      60,
+      Math.max(30, Number.isFinite(rawDuration) ? rawDuration : 45)
+    );
 
     if (parsed.data.contentType === "QUIZ_SHORTS") {
       let quizHook = parsed.data.hook ?? "";
@@ -230,8 +323,15 @@ export async function POST(req: Request) {
           description: quizDescription,
           hashtags: quizHashtags,
         },
-        renderProfile: parsed.data.renderProfile || "FAST_QUIZ",
+        renderProfile:
+          parsed.data.renderProfile ||
+          engineDef.generationConfig.renderProfile ||
+          "FAST_QUIZ",
         durationSeconds,
+        platforms: Array.isArray(productionSpec.configuration.delivery.platforms)
+          ? productionSpec.configuration.delivery.platforms
+          : [],
+        productionSpec,
         status: "queued",
         createdAt: new Date().toISOString(),
         deviceFingerprint: deviceContext.fingerprint,
@@ -313,8 +413,15 @@ export async function POST(req: Request) {
         script: finalScript,
         scenes: finalScenes,
         contentType: parsed.data.contentType || "MOTIVATIONAL",
-        renderProfile: parsed.data.renderProfile || "STANDARD_SHORTS",
+        renderProfile:
+          parsed.data.renderProfile ||
+          engineDef.generationConfig.renderProfile ||
+          "STANDARD_SHORTS",
         durationSeconds,
+        platforms: Array.isArray(productionSpec.configuration.delivery.platforms)
+          ? productionSpec.configuration.delivery.platforms
+          : [],
+        productionSpec,
         status: "queued",
         createdAt: new Date().toISOString(),
         deviceFingerprint: deviceContext.fingerprint,
@@ -337,29 +444,39 @@ export async function POST(req: Request) {
       }
     } catch {}
 
-    // Build immutable engine configuration snapshot for runtime safety
-    const engineId = parsed.data.engineId || (parsed.data.contentType === "QUIZ_SHORTS" ? "quiz" : "facts");
-    const engineDef = await EngineRegistry.getEngine(engineId);
+    // Compatibility snapshot derived from the immutable ProductionSpec.
     const engineSnapshot: EngineJobSnapshot = {
       jobId,
       engineId,
-      manifestVersion: engineDef?.manifestVersion || "1.0",
-      engineConfigVersion: engineDef?.configVersion || 1,
-      engineStatusAtCreation: engineDef?.status || "ACTIVE",
+      manifestVersion: engineDef.manifestVersion || "1.0",
+      engineConfigVersion: engineDef.configVersion || 1,
+      engineStatusAtCreation: engineDef.status || "ACTIVE",
+      productionSpecId: productionSpec.specId,
+      productionSpecHash: productionSpec.compilation.hash,
       effectiveConfig: {
-        difficulty: parsed.data.difficulty || engineDef?.defaults.difficulty || "medium",
-        tone: parsed.data.tone || engineDef?.defaults.tone || "Challenging",
-        voice: parsed.data.voice || engineDef?.defaults.voice || "neutral",
-        ratio: parsed.data.ratio || engineDef?.defaults.ratio || "9:16",
-        renderProfile: parsed.data.renderProfile || engineDef?.generationConfig.renderProfile || "FAST_QUIZ",
-        provider: parsed.data.provider || engineDef?.generationConfig.provider,
+        difficulty: productionSpec.configuration.content.difficulty,
+        audience: productionSpec.configuration.content.audience,
+        tone: productionSpec.configuration.creative.tone,
+        voice: productionSpec.configuration.media.voice,
+        ratio: productionSpec.configuration.media.ratio,
+        thumbnailStyle: productionSpec.configuration.media.thumbnailStyle,
+        renderProfile:
+          parsed.data.renderProfile ||
+          engineDef.generationConfig.renderProfile ||
+          "FAST_QUIZ",
+        provider: productionSpec.configuration.runtime.providerOverride,
         durationSeconds,
+        retentionHours: productionSpec.configuration.lifecycle.retentionHours,
+        platforms: Array.isArray(productionSpec.configuration.delivery.platforms)
+          ? productionSpec.configuration.delivery.platforms
+          : [],
       },
       quizContext: parsed.data.quizContext,
     };
 
     finalPayload.engineId = engineId;
     finalPayload.engineSnapshot = engineSnapshot;
+    finalPayload.productionSpec = productionSpec;
 
     // Execution token: strong crypto — never jobId fallback (const-time compared in callback)
     const executionToken = crypto.randomBytes(32).toString("hex");
@@ -403,6 +520,7 @@ export async function POST(req: Request) {
           contentEngine: parsed.data.contentEngine,
           formatFamily: parsed.data.formatFamily,
           userInputs: parsed.data.userInputs,
+          productionSpec,
           renderProfile: finalPayload.renderProfile,
           contentType: finalPayload.contentType,
           quizData: finalPayload.quizData,
@@ -450,6 +568,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           jobId,
           executionToken,
+          productionSpec,
           tier: "BASIC", // Target worker protocol format accepted by Azure FastAPI
           topic: parsed.data.topic,
           renderProfile: parsed.data.renderProfile || engineSnapshot.effectiveConfig.renderProfile || "FAST_QUIZ",
@@ -490,6 +609,7 @@ export async function POST(req: Request) {
             engine: engineId,
             engineId,
             engineSnapshot,
+            productionSpec,
             topic: parsed.data.topic,
             profile: parsed.data.renderProfile || engineSnapshot.effectiveConfig.renderProfile || "FAST_QUIZ",
             platforms: ["youtube"],
