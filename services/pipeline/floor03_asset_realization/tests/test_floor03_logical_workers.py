@@ -161,6 +161,7 @@ def test_visual_plan_binds_dependency_last_frame_and_camera_metadata():
     assert plan.camera.camera_body == "cinematic digital body"
     assert any(ref.use.value == "last_frame" and ref.source_scene_id == scenes[0].scene_id for ref in plan.references)
     assert "last_frame" in {mode.value for mode in plan.generation_inputs}
+    assert plan.continuity.reference_strategy.value == "last_frame_chain"
 
 
 def test_motion_beats_cannot_exceed_scene_duration():
