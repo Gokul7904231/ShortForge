@@ -174,20 +174,20 @@ proposal
 Devourer itself is therefore auditable.
 
 
-## Mandatory full-.okf review
+## 11. Mandatory full-.okf review
 
 Every Devourer cycle begins with a complete end-to-end review of the current .okf tree using .okf/decision-protocol.md.
 
 Repository research is interpreted only after internal architecture reconstruction, current implementation inspection, current test inspection, existing repo-mapping extraction, and production-helper evidence review.
 
-## Current engineering-stack priority
+## 12. Current engineering-stack priority
 
 For rendering and media-engine improvements, compare candidates against TimelineIR, Remotion, AgentTube-derived scene lifecycle patterns, RenderFabric, and FFmpeg fallback.
 
 A candidate that simply duplicates an existing stack capability should not create a new architecture node.
 
 
-## 12. Mandatory .okf Decision Sweep
+## 13. Mandatory .okf Decision Sweep
 
 Every Devourer cycle must begin with the complete current `.okf` review defined by `.okf/decision-protocol.md`.
 
@@ -208,11 +208,11 @@ The cycle must compare external discoveries against existing:
 Only after that comparison may a discovery become a Devourer candidate.
 
 
-## 13. Root Devourer Governance
+## 14. Root Devourer Governance
 
 The root `.okf/devourer.md` is the canonical governance charter for promotion, permissions, production-helper evidence, and authority boundaries. This cognitive document remains the design-home for Devourer reasoning and improvement methods.
 
-## 9. Mandatory whole-.okf sweep
+## 15. Mandatory whole-.okf sweep
 
 Every Devourer cycle MUST begin by reconstructing the entire current .okf tree end to end using .okf/decision-protocol.md.
 
@@ -230,7 +230,7 @@ The sweep must extract:
 
 Devourer must never start from the external repository alone.
 
-## 10. Repository mapping assimilation
+## 16. Repository mapping assimilation
 
 When a useful repository mapping exists, Devourer must reuse its conclusions before inventing a new mechanism.
 
@@ -244,7 +244,7 @@ For each relevant mapping:
 
 A new pattern is promoted only after the existing mapping and current implementation have been compared.
 
-## 11. Locked media engineering stack
+## 17. Locked media engineering stack
 
 For media-system improvement, the first engineering baseline is:
 
@@ -259,13 +259,13 @@ with AgentTube-derived scene lifecycle patterns providing durable scene manifest
 
 Devourer may extend this stack, but may not silently replace TimelineIR, RenderFabric, F07, or the authority hierarchy.
 
-## 12. Production-helper evidence
+## 18. Production-helper evidence
 
 When a Devourer candidate changes security, worker permissions, rendering, remote execution, callbacks, quotas, provider routing, or completion semantics, production-helper evidence is part of the candidate gate.
 
 BLOCKED or UNPROVEN helper results remain unresolved evidence gaps.
 
-## 13. Desired improvement signal
+## 19. Desired improvement signal
 
 Devourer should prefer improvements that:
 - reduce expensive cognition
