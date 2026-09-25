@@ -34,3 +34,10 @@ def asset_plan_fingerprint(plan: Any) -> str:
         value.pop("plan_id", None)
         value.pop("plan_fingerprint", None)
     return stable_sha256(value)
+
+
+def floor03_input_fingerprint(value: Any) -> str:
+    """Fingerprint the complete validated Floor 03 input for Guardian evidence."""
+    if hasattr(value, "model_dump"):
+        value = value.model_dump(mode="json")
+    return stable_sha256({"floor": CANONICAL_FLOOR_ID, "input": value})
