@@ -12,7 +12,7 @@ import type {
   CapabilityExecutionResult,
 } from "../contracts/CapabilityContracts";
 import { VoiceFabric } from "../voice/VoiceFabric";
-import { FFmpegRenderCompiler } from "../rendering/RenderFabric";
+import { FFmpegRenderCompiler } from "../fabric/RenderFabric";
 import { ReachSubsystem } from "../research/ReachSubsystem";
 
 export type CapabilityHandler<T = Record<string, unknown>, R = Record<string, unknown>> = (
