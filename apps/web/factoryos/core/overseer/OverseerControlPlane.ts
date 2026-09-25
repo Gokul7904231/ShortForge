@@ -652,7 +652,7 @@ export class OverseerControlPlane {
         }
 
         const f01Request = Floor01RuntimeAdapter.fromAnalystReport(
-          executionId,
+          `f01_${missionId || "direct"}_${node.taskId}`,
           analystOutput,
           {
             targetAudience: scope.engineSnapshot?.effectiveConfig?.audience || "general_learners",
