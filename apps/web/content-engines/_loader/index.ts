@@ -5,6 +5,13 @@
  * content-engines directory. Replaces the older EngineLoader.
  */
 
+import {
+  getCompatibilityEngineConfiguration,
+  getCompatibilityEngineContracts,
+  type EngineConfigurationSchema,
+  type EngineContractProfile,
+} from "../../lib/core/EngineConfigurationContracts";
+
 export interface WorkflowStep {
   id: string;
   enabled: boolean;
@@ -36,6 +43,12 @@ export interface WorkflowManifest {
   metadataPrompt?: string;
   criticRules?: string | any;
   rendererConfig?: string;
+
+  /** Declarative creator-facing configuration contract. */
+  configuration?: EngineConfigurationSchema;
+
+  /** Engine-specific research, creative, media, render, and verification contracts. */
+  contracts?: EngineContractProfile;
 }
 
 export interface JobDefinition {
@@ -69,8 +82,18 @@ class WorkflowLoaderClass {
   }
 
   register(manifest: WorkflowManifest): void {
-    console.log(`[WorkflowLoader] Registered workflow: "${manifest.name}" (${manifest.id} v${manifest.version})`);
-    this.cache.set(manifest.id, manifest);
+    const normalized: WorkflowManifest = {
+      ...manifest,
+      configuration:
+        manifest.configuration ?? getCompatibilityEngineConfiguration(manifest.id),
+      contracts:
+        manifest.contracts ?? getCompatibilityEngineContracts(manifest.id),
+    };
+
+    console.log(
+      `[WorkflowLoader] Registered workflow: "${normalized.name}" (${normalized.id} v${normalized.version})`
+    );
+    this.cache.set(normalized.id, normalized);
   }
 }
 
