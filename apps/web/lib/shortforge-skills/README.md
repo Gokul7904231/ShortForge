@@ -14,6 +14,6 @@ Skills (docs-only):
 - `youtube-content/` — title/description/CTA/caption/hashtags, platform claims require evidence
 - `shorts-production/` — 9:16 Shorts/Reels packaging, hook style, timing, renderer-compatible inputs
 
-All future implementations must remain model-agnostic (via `IntelligentRouter`/`AIRuntime`), respect Basic 5-generation quota, and generate inputs for the existing Azure/`basic-fastapi`/`create_short.py`/FFmpeg/Cloudinary renderer — never rewrite it.
+All future implementations must remain model-agnostic (via `IntelligentRouter`/`AIRuntime`), respect Basic 5-generation quota, and generate inputs for the canonical `RenderFabric`/`ComputeRouter` rendering plane and its provider adapters — never bypass the FactoryOS execution boundary.
 
 License: repo-native MIT (see root `LICENSE`). No external code copied; methodology only.
