@@ -14,7 +14,7 @@ import { ResearchRuntime } from "../core/research/ResearchRuntime";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import { ArtifactResolver } from "../core/rendering/ArtifactResolver";
 import { RemoteRenderStateMachine } from "../core/rendering/RemoteRenderStateMachine";
-import { RenderFabric } from "../core/rendering/RenderFabric";
+import { RenderFabric } from "../core/fabric/RenderFabric";
 
 // Helper functions using native ffmpeg to generate genuine test media fixtures
 function generateTestMp4(outputPath: string, width = 1080, height = 1920, duration = 1): void {
