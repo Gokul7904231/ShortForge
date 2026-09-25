@@ -188,3 +188,22 @@ def test_candidate_selection_is_deterministic_on_score_ties():
         complexity_mode="FAST",
     )
     assert selected.strategy.content_angle == "beta_angle"
+
+
+def test_staging_without_service_key_fails_closed():
+    import asyncio
+    from floors.floor01_strategy.app.core import security
+    from floors.floor01_strategy.app.core.config import Floor01Settings
+
+    original = security.get_settings
+    try:
+        security.get_settings = lambda: Floor01Settings(
+            environment="staging",
+            allow_anonymous_dev=True,
+            service_api_key=None,
+        )
+        with __import__("pytest").raises(Exception) as exc_info:
+            asyncio.run(security.verify_api_key(None))
+        assert getattr(exc_info.value, "status_code", None) == 503
+    finally:
+        security.get_settings = original
