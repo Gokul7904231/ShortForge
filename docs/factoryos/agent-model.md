@@ -36,5 +36,5 @@ Overseer Resumes or Escalates DAG
 | **Quality Slayer** | Low confidence score, generic topic, weak hook | `MEDIUM` | Read-only analysis; returns structured recommendation |
 | **Asset Slayer** | Image prompt mismatch, aspect ratio discrepancy | `MEDIUM` | Structured asset rewrite candidate |
 | **Artifact Healer** | Missing scene image, partial upload, unreadable asset | `MEDIUM` | Requires `RepairLockManager` lease; idempotent re-fetch |
-| **Render Healer** | Azure network timeout, 5xx render gateway, transient drop | `HIGH` | Bounded retries (max 3); checks executionToken before re-dispatch |
+| **Render Healer** | render worker network timeout, 5xx render gateway, transient drop | `HIGH` | Bounded retries (max 3); checks executionToken before re-dispatch |
 | **Callback Healer** | Cloudinary webhook delayed, missing status callback | `HIGH` | Queries status directly; validates signature |

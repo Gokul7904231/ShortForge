@@ -51,13 +51,12 @@ vi.mock("../../lib/content-pipeline", () => ({
 
 describe("ShortForge — Security Claims Forensic Verification Suite", () => {
   let controller: AutonomousFactoryController;
-  const STAGING_AZURE_URL = "https://render-api.gokul.software";
-  const STAGING_SECRET = "staging_azure_render_secret_key_8888";
+  const STAGING_SECRET = "staging_factoryos_render_secret_key_8888";
 
   beforeEach(async () => {
     process.env.EXECUTION_AUTHORITY = "factoryos";
-    process.env.BASIC_RENDER_API_URL = STAGING_AZURE_URL;
-    process.env.BASIC_RENDER_API_SECRET = STAGING_SECRET;
+    delete process.env.BASIC_RENDER_API_URL;
+    delete process.env.BASIC_RENDER_API_SECRET;
     process.env.INTERNAL_API_SECRET_KEY = STAGING_SECRET;
 
     controller = new AutonomousFactoryController({ storageType: "memory" });
@@ -128,23 +127,7 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
       const attackerUid = `quota_attacker_${Date.now()}`;
       currentMockUser = { uid: attackerUid, role: "BASIC" };
 
-      let azureDispatchCount = 0;
-      const originalFetch = global.fetch;
-      global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
-        if (String(url).includes("/api/render/jobs")) {
-          azureDispatchCount++;
-          const parsed = JSON.parse(init.body);
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({ success: true, jobId: parsed.jobId }),
-            text: async () => JSON.stringify({ success: true }),
-          };
-        }
-        return originalFetch(url, init);
-      }) as any;
-
-      try {
+      
         // Complete 5 slots legitimately
         for (let i = 1; i <= 5; i++) {
           const jId = `job_quota_${attackerUid}_${i}`;
@@ -174,10 +157,6 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
 
         expect(res6.status).toBe(429);
         expect(data6.code).toBe("QUOTA_EXCEEDED");
-        expect(azureDispatchCount).toBe(0);
-      } finally {
-        global.fetch = originalFetch;
-      }
     });
 
     it("PROVEN_BY_INTEGRATION_TEST: Parallel flood of 10 concurrent requests respects limit <= 5", async () => {
@@ -317,7 +296,7 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
   describe("4. FactoryOS Floor Security & Replay Attacks", () => {
     it("PROVEN_BY_INTEGRATION_TEST: PythonFloorBridge rejects replayed nonces and invalid tokens", async () => {
       const bridge = controller.pythonBridge;
-      const testSecret = "staging_azure_render_secret_key_8888";
+      const testSecret = STAGING_SECRET;
       const nonce = `nonce_forensic_${crypto.randomBytes(8).toString("hex")}`;
       const timestamp = new Date().toISOString();
 

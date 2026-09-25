@@ -1,6 +1,6 @@
 import { UniversalRenderJob, UserTier } from "./RenderQueueManager";
 
-export type WorkerVendor = "azure" | "oracle" | "github-actions" | "byor" | "gpu" | "custom";
+export type WorkerVendor = "oracle" | "github-actions" | "byor" | "gpu" | "custom";
 export type WorkerAccessTier = "ADMIN_ONLY" | "BASIC" | "USER_OWNED";
 export type WorkerState = "DEALLOCATED" | "STARTING" | "BOOTING" | "READY" | "BUSY" | "DRAINING" | "DEALLOCATING" | "FAILED" | "LOST";
 
@@ -43,7 +43,7 @@ export interface RegisteredWorker {
 
 export class WorkerPoolRegistryClass {
   private workers = new Map<string, RegisteredWorker>();
-  private defaultVendorOrder: WorkerVendor[] = ["azure", "oracle", "github-actions", "byor"];
+  private defaultVendorOrder: WorkerVendor[] = ["oracle", "github-actions", "byor", "gpu", "custom"];
 
   /**
    * Register a new worker or update an existing worker's heartbeat & state.
@@ -112,17 +112,10 @@ export class WorkerPoolRegistryClass {
    * Find an available worker suitable for a job, evaluating tier security and tenant boundaries.
    */
   public findAvailableWorker(job: UniversalRenderJob): RegisteredWorker | null {
-    const isJobAdmin = job.tier === "ADMIN";
-
     for (const vendor of this.defaultVendorOrder) {
       const candidates = Array.from(this.workers.values()).filter((w) => {
         if (w.vendor !== vendor || w.state !== "READY" || !w.telemetry.b2Connectivity) {
           return false;
-        }
-
-        // STRICT SECURITY: Azure ADMIN_ONLY isolation
-        if (w.accessTier === "ADMIN_ONLY" && !isJobAdmin) {
-          return false; // Non-admin CANNOT use Azure
         }
 
         // BYOR USER_OWNED tenant isolation

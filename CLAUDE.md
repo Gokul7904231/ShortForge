@@ -11,7 +11,7 @@ ShortForge (rebrand of FactoryOS — infra names `factoryos` preserved) — AI S
 - **Pipeline Stages** (`services/pipeline/floor01_*` … `floor06_*` + `guardian/`) — domain slices of the assembly line (hexagonal `app/`)
 - **Compliance Gate** (`archive/floor07_compliance_2026-08-23/`) — FastAPI quality gate — **archived, not in live path**
 
-Live path: `apps/web POST /api/generate-video` (Zod + atomic quota + scriptAgent) → `saveJobManifest + SQLiteRenderQueue.enqueue + executionToken` → warm pool `POST {BASIC_RENDER_API_URL}/api/render/jobs` (sub-60s) or `repository_dispatch` → `services/rendering-engine/scripts/create_short.py` → FFmpeg/Pillow/edge-tts/whisper → ffprobe → Cloudinary/Firestore → `POST /api/rendering/callback` (`timingSafeEqual`, idempotent) → `GET /api/job-status/[id]` poll + SSE. See [`docs/architecture/current.md`](docs/architecture/current.md) and [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md).
+Live path: `apps/web POST /api/generate-video` (Zod + atomic quota + scriptAgent) → `saveJobManifest + FactoryOS mission` → F00-F05 → canonical F06 RenderFabric → ComputeRouter/provider execution → physical artifact + CAS → F07 verification → delivery → `GET /api/job-status/[id]` poll + SSE. See [`docs/architecture/current.md`](docs/architecture/current.md) and [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md).
 
 ## Repository Structure
 
@@ -117,18 +117,18 @@ make test && make lint && make format && make typecheck   # ruff + black + mypy 
 
 **Control Plane** — Next.js 16 / React 19 / Tailwind v4 / Zustand 5 / TanStack Query 5. Auth: Clerk `@clerk/nextjs` + Firebase `__session` HMAC (`middleware.ts` fail-closed). Data: `firebase-admin` + `firebase` (Firestore `quotas/videos`), `mongodb` 7.5 (`factoryos` db, InMemory fallback), `better-sqlite3` 12 (`data/shortfactory.db` WAL) via `SQLiteRenderQueue`, `cloudinary` CDN. AI: dual routers — `ai/` (`IntelligentRouter`/`AIRuntime` with `capability-registry`, scored `quality/latency/cost/availability` + health `errorRate>0.85` skip, `AIProfile`) + legacy `lib/ai-provider` (`ProviderRouter`, `model-discovery`), bridging via `factory_with_fallback`. Skills: 9 FactoryOS domain skills (`factoryos/skills/`) + 5 docs-only ShortForge-native skills (`lib/shortforge-skills/`). Vitest scoped to `factoryos/tests/**` + `tests/**` + `shortforge/tests/**` (node, 60s).
 
-**Rendering** — `main.py :8080` (`ThreadPoolExecutor 1` + `HTTPBearer`) writes `output/jobs/{jobId}.json` → `create_short.py` subprocess (Pillow 1080×1920, 30fps, edge-tts, faster-whisper, FFmpeg libx264 ultrafast, `drawtext` sanitized) → `output/{jobId}/final.mp4` + `result.json` + ffprobe → Cloudinary. Warm pool `basic_render_api.py :8100` + `basic_render_worker.py` (isolated workspaces, `POST /api/render/jobs` with `executionToken timingSafeEqual`).
+**Rendering** — The canonical path is `F06 RenderFabric → ComputeRouter → qualified provider → physical artifact → CAS/F07`. The provider-neutral self-hosted worker surface may expose `basic_render_api.py :8100` + `basic_render_worker.py` behind the persistent-worker adapter (isolated workspaces, execution-token authentication).
 
 **Pipeline** — `floor01_strategy` → `floor02_scripting` → `floor03_asset_realization` → `floor04_media_synthesis` → `floor05_timeline_composition` → `floor06_rendering` + `guardian` (watchdog, Decision Ledger, CircuitBreaker). Bridged via `factoryos/core/bridge/PythonFloorBridge.ts`. Full design → `docs/ARCHITECTURE.md`.
 
-**Security invariants:** `jobId ^[a-zA-Z0-9_-]{8,64}$` at boundary + worker `realpath` prefix check; `executionToken = crypto.randomBytes(32).hex()` never `jobId`, `timingSafeEqual` on `claim`/`callback`; tier-isolated dispatch (`azure↔ADMIN`, `github-actions/basic-fastapi↔BASIC`, `Basic→Azure` forbidden); `Host`-derived SSRF via canonical `APP_ORIGIN||CONTROL_PLANE_URL`; GH Actions SHA-pinned + `INPUT_*` indirection.
+**Security invariants:** `jobId ^[a-zA-Z0-9_-]{8,64}$` at boundary + worker `realpath` prefix check; `executionToken = crypto.randomBytes(32).hex()` never `jobId`, `timingSafeEqual` on `claim`/`callback`; tier/capability-isolated provider dispatch is enforced by ComputePolicy and worker capability contracts; `Host`-derived SSRF via canonical `APP_ORIGIN||CONTROL_PLANE_URL`; GH Actions SHA-pinned + `INPUT_*` indirection.
 
 ## Environment
 
 Each service has its own `.env` (gitignored; see `*.example`):
 
-- `apps/web/.env` — `GEMINI_API_KEY` · `GROQ_API_KEY` · `OPENROUTER_API_KEY` · `DEFAULT_LLM_PROVIDER` · `TOGETHER_API_KEY` · `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`/`CLERK_SECRET_KEY` · `FIREBASE_*` · `CLOUDINARY_*` · `INTERNAL_API_SECRET_KEY` · `BASIC_RENDER_API_URL` · `MONGODB_URI` · `BASIC_RENDER_API_SECRET` · `GITHUB_PAT`/`GITHUB_REPO` · `BASIC_GENERATION_LIMIT` · `APP_ORIGIN`/`CONTROL_PLANE_URL` · `CRON_SECRET` · `AI_EXECUTION_TIMEOUT_MS`
-- `services/rendering-engine/.env` (or `apps/web/.env` via `start_worker.py`) — `CLOUDINARY_*` · `INTERNAL_API_SECRET_KEY` · `BASIC_RENDER_API_SECRET` · `MAX_CONCURRENT_JOBS` · `CONTROL_PLANE_URL` · `RENDER_WORKER_SECRET`
+- `apps/web/.env` — `GEMINI_API_KEY` · `GROQ_API_KEY` · `OPENROUTER_API_KEY` · `DEFAULT_LLM_PROVIDER` · `TOGETHER_API_KEY` · `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`/`CLERK_SECRET_KEY` · `FIREBASE_*` · `CLOUDINARY_*` · `INTERNAL_API_SECRET_KEY` · `RENDER_WORKER_URL` · `MONGODB_URI` · `RENDER_WORKER_SECRET` · `GITHUB_PAT`/`GITHUB_REPO` · `BASIC_GENERATION_LIMIT` · `APP_ORIGIN`/`CONTROL_PLANE_URL` · `CRON_SECRET` · `AI_EXECUTION_TIMEOUT_MS`
+- `services/rendering-engine/.env` (or `apps/web/.env` via `start_worker.py`) — `CLOUDINARY_*` · `INTERNAL_API_SECRET_KEY` · `RENDER_WORKER_SECRET` · `MAX_CONCURRENT_JOBS` · `CONTROL_PLANE_URL` · `RENDER_WORKER_SECRET`
 - `archive/floor07_compliance_2026-08-23/.env` — archived, not required to run.
 
 Host requirement: system `ffmpeg` on PATH.

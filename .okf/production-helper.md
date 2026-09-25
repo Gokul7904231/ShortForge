@@ -33,7 +33,6 @@ production-helper/
 ├── combined/
 │   └── reports/
 │       ├── factoryos-p0-basic-hardening.md
-│       ├── factoryos-real-azure-e2e.md
 │       ├── factoryos-real-runtime-trace.md
 │       └── shortforge-security-audit-final.md
 ├── semgrep/
@@ -167,7 +166,7 @@ Rules:
 ## 7. Real-runtime proof
 
 The helper workspace contains evidence for:
-- remote Azure dispatch
+- remote render-provider dispatch
 - callback convergence
 - Guardian safety gating
 - Python floor bridge signatures/nonces

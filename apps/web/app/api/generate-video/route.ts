@@ -153,8 +153,6 @@ export async function POST(req: Request) {
     userId = authenticatedUser.uid;
     const userRole = (authenticatedUser.role || "USER").toUpperCase();
     const tier = resolveTier(userRole);
-    const isAdminOrOwner = tier === "ADMIN" || tier === "OWNER";
-    const targetWorkerPool = isAdminOrOwner ? "azure" : "basic-fastapi";
 
     const body = await req.json();
     const parsed = GenerateVideoRequestSchema.safeParse(body);
@@ -310,7 +308,6 @@ export async function POST(req: Request) {
       finalPayload = {
         userId,
         tier,
-        targetWorkerPool,
         topic: parsed.data.topic,
         style: parsed.data.style ?? "",
         script: quizHook,
@@ -539,95 +536,17 @@ export async function POST(req: Request) {
       });
     }
 
-    // ── LEGACY PATH (Compatibility Mode Only) ──────────────────────────────────
-    const isControlPlane = process.env.RENDER === "true" || process.env.NODE_ENV === "production" || Boolean(process.env.BASIC_RENDER_API_URL);
-    const basicRenderApiUrl = process.env.BASIC_RENDER_API_URL;
-    const basicRenderSecret = process.env.BASIC_RENDER_API_SECRET || process.env.RENDER_WORKER_SECRET || process.env.INTERNAL_API_SECRET_KEY;
-
-    if (isControlPlane) {
-      if (!basicRenderApiUrl) {
-        const configError = "BASIC_RENDER_API_URL is required for production Render Control Plane.";
-        console.error(`[generate-video Fatal] ${configError}`);
-        await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
-        await saveJobManifest(jobId, { ...finalPayload, status: "failed", error: configError });
-        return NextResponse.json(
-          { error: configError, jobId },
-          { status: 500 }
-        );
-      }
-
-      console.log(`[generate-video] Production Control Plane mode: Delegating job ${jobId} (tier: ${tier}) to Azure worker.`);
-
-      // Priority 1: Persistent FastAPI Service on Azure VM (All tiers)
-      fetch(`${basicRenderApiUrl.replace(/\/$/, "")}/api/render/jobs`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${basicRenderSecret}`,
-        },
-        body: JSON.stringify({
-          jobId,
-          executionToken,
-          productionSpec,
-          tier: "BASIC", // Target worker protocol format accepted by Azure FastAPI
-          topic: parsed.data.topic,
-          renderProfile: parsed.data.renderProfile || engineSnapshot.effectiveConfig.renderProfile || "FAST_QUIZ",
-          contentType: finalPayload.contentType,
-          quizData: finalPayload.quizData,
-          script: finalPayload.script,
-          scenes: finalPayload.scenes,
-        }),
-      })
-        .then(async (r) => {
-          if (!r.ok) {
-            const t = await r.text().catch(() => "");
-            console.warn(`[generate-video] Azure FastAPI dispatch warning (${r.status}): ${t.slice(0, 300)}`);
-          } else {
-            console.log(`[generate-video] Dispatched to Azure FastAPI renderer for ${jobId} (tier: ${tier})`);
-          }
-        })
-        .catch((e) => console.warn(`[generate-video] Azure FastAPI dispatch error: ${e?.message}`));
-    } else {
-      // Local development execution path
-      if (process.env.STORAGE_DRIVER !== "cloudflare-worker") {
-        const { ServiceRegistry } = await import("../../../lib/core/ServiceRegistry");
-        
-        if (!ServiceRegistry.has("renderQueue")) {
-          const { SQLiteRenderQueue } = await import("../../../lib/core/SQLiteRenderQueue");
-          ServiceRegistry.register("renderQueue", new SQLiteRenderQueue());
-        }
-
-        const { QueueProcessor } = await import("../../../lib/core/RenderQueueProcessor");
-        QueueProcessor.start();
-
-        const renderQueue = ServiceRegistry.get("renderQueue");
-        await renderQueue.enqueue({
-          jobId,
-          payload: {
-            jobId,
-            userId,
-            engine: engineId,
-            engineId,
-            engineSnapshot,
-            productionSpec,
-            topic: parsed.data.topic,
-            profile: parsed.data.renderProfile || engineSnapshot.effectiveConfig.renderProfile || "FAST_QUIZ",
-            platforms: ["youtube"],
-            options: {
-              humanApproval: false
-            },
-            contentType: finalPayload.contentType,
-            quizData: finalPayload.quizData,
-            script: finalPayload.script,
-            scenes: finalPayload.scenes,
-          },
-          priority: isAdminOrOwner ? 1 : 0,
-          maxAttempts: 3
-        });
-      }
-    }
-
-    return NextResponse.json({ jobId, videoId: jobId, status: "queued", authority: "legacy" });
+    // FactoryOS is the sole production execution authority.
+    // Legacy external render-plane dispatch is intentionally removed.
+    const authorityError =
+      `Unsupported execution authority "${executionAuthority}". Production generation must use FactoryOS.`;
+    await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+    await saveJobManifest(jobId, {
+      ...finalPayload,
+      status: "failed",
+      error: authorityError,
+    });
+    return NextResponse.json({ error: authorityError, jobId }, { status: 409 });;
   } catch (err: any) {
     if (userId && jobId) {
       try {

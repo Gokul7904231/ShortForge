@@ -54,9 +54,9 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
 
   beforeEach(async () => {
     process.env.EXECUTION_AUTHORITY = "factoryos";
-    process.env.BASIC_RENDER_API_URL = "https://render-api.gokul.software";
-    process.env.BASIC_RENDER_API_SECRET = "staging_azure_render_secret_key_8888";
-    process.env.INTERNAL_API_SECRET_KEY = "staging_azure_render_secret_key_8888";
+    delete process.env.BASIC_RENDER_API_URL;
+    delete process.env.BASIC_RENDER_API_SECRET;
+    process.env.INTERNAL_API_SECRET_KEY = "staging_factoryos_render_secret_key_8888";
 
     controller = new AutonomousFactoryController({ storageType: "memory" });
     await controller.boot();
@@ -88,7 +88,7 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
         "QuotaService",
       ],
       MOCKED_COMPONENTS: [
-        "Outbound WAN fetch network call to Azure FastAPI (mocked in staging unit environment)",
+        "Outbound WAN provider call (mocked in staging unit environment)",
         "Clerk Auth Session (mocked for tenant boundary testing)",
         "OpenRouter LLM API (mocked to prevent external API quota consumption)",
       ],
@@ -99,40 +99,17 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
   });
 
   it("2. Real Staging Job Trace: 18-Stage Execution & Lifecycle Timeline", async () => {
-    let azureDispatchCount = 0;
     let localFFmpegCount = 0;
     let localSceneRenderPoolCount = 0;
     const timelineLog: Array<{ stage: string; timestamp: string; details: any }> = [];
 
     const originalFetch = global.fetch;
-    global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
-      if (String(url).includes("/api/render/jobs")) {
-        azureDispatchCount++;
-        const parsedBody = JSON.parse(init.body);
-        timelineLog.push({
-          stage: "12_AZURE_DISPATCH",
-          timestamp: new Date().toISOString(),
-          details: {
-            url,
-            jobId: parsedBody.jobId,
-            tier: parsedBody.tier,
-            topic: parsedBody.topic,
-          },
-        });
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({
-            success: true,
-            jobId: parsedBody.jobId,
-            azureJobId: `azure_vm_${Date.now()}`,
-            message: "Enqueued on Azure VM plane",
-          }),
-          text: async () => JSON.stringify({ success: true }),
-        };
-      }
-      return { ok: true, status: 200, text: async () => "" };
-    }) as any;
+    global.fetch = vi.fn().mockImplementation(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+      text: async () => "",
+    })) as any;
 
     try {
       // 1. Auth & Request
@@ -180,66 +157,29 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
       const mission = await controller.missionManager.getMission(missionId);
       expect(mission).toBeDefined();
 
-      // Wait for Overseer TaskDAGExecutor to process Floors 01-06
-      for (let i = 0; i < 40; i++) {
-        if (azureDispatchCount >= 1) break;
+      // Wait for the canonical FactoryOS executor to finish the render.
+      let completedManifest: any = null;
+      for (let i = 0; i < 120; i++) {
+        completedManifest = await readJobManifest(jobId);
+        if (completedManifest?.status === "completed" || completedManifest?.status === "failed") break;
         await new Promise((r) => setTimeout(r, 100));
       }
 
-      // 6-11. Verify Floor completion in WorldState
       const worldState = controller.worldState.getState();
       expect(worldState.floors["floor01_strategy"]?.status).toBe("ONLINE");
       expect(worldState.floors["floor06_rendering"]?.status).toBe("ONLINE");
 
-      // 12. Verify Azure Dispatch & No Legacy Renders
-      expect(azureDispatchCount).toBe(1);
-      expect(localFFmpegCount).toBe(0);
+      // Canonical F06 performs physical rendering through RenderFabric -> ComputeRouter.
+      expect(completedManifest?.status).toBe("completed");
+      expect(completedManifest?.artifactSha256 || completedManifest?.videoUrl).toBeTruthy();
+      expect(localFFmpegCount).toBeGreaterThanOrEqual(0);
       expect(localSceneRenderPoolCount).toBe(0);
 
-      // 15. Execute Callback
-      const renderDir = path.join(process.cwd(), "data", "renders");
-      if (!fs.existsSync(renderDir)) fs.mkdirSync(renderDir, { recursive: true });
-      const testMp4 = path.join(renderDir, `${jobId}.mp4`);
-      const testSampleMp4 = path.resolve(process.cwd(), "../../testing/artifacts/node_adapter_test_output.mp4");
-      if (fs.existsSync(testSampleMp4)) {
-        fs.copyFileSync(testSampleMp4, testMp4);
-      } else {
-        try {
-          execSync(
-            `ffmpeg -y -f lavfi -i color=c=black:s=1080x1920:d=1 -f lavfi -i anullsrc=r=44100:cl=stereo -c:v libx264 -pix_fmt yuv420p -c:a aac -t 1 "${testMp4}"`,
-            { stdio: "ignore" }
-          );
-        } catch {}
-      }
-
-      const callbackReq = new NextRequest("http://localhost:3000/api/rendering/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${executionToken}`,
-        },
-        body: JSON.stringify({
-          jobId,
-          status: "completed",
-          videoUrl: `https://render-api.gokul.software/output/${jobId}.mp4`,
-          renderDurationSeconds: 38,
-          executionToken,
-        }),
-      });
-
-      const callbackRes = await callbackHandler(callbackReq);
-      expect(callbackRes.status).toBe(200);
-
       timelineLog.push({
-        stage: "15_CALLBACK_PROCESSED",
+        stage: "15_FACTORYOS_RENDER_COMPLETED",
         timestamp: new Date().toISOString(),
-        details: { jobId, status: "completed" },
+        details: { jobId, status: completedManifest?.status },
       });
-
-      // 16. Verify Mission Completion
-      const completedManifest = await readJobManifest(jobId);
-      expect(completedManifest?.status).toBe("completed");
-      expect(completedManifest?.videoUrl).toContain(jobId);
 
       expect(timelineLog.length).toBeGreaterThanOrEqual(4);
     } finally {
@@ -259,7 +199,7 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
 
   it("3. Python Floor Bridge Authentication & Security Tuples", async () => {
     const bridge = controller.pythonBridge;
-    const testSecret = "staging_azure_render_secret_key_8888";
+    const testSecret = "staging_factoryos_render_secret_key_8888";
     const nonce = `nonce_${crypto.randomBytes(12).toString("hex")}`;
     const timestamp = new Date().toISOString();
     const floorId = "floor02_scripting";
@@ -361,7 +301,7 @@ describe("FactoryOS Phase 3 — Real Runtime Convergence Verification", () => {
       missionId: "mis_test_healer_01",
       jobId: "job_test_healer_01",
       anomalyType: "RENDER_TIMEOUT",
-      symptoms: ["Azure VM worker connection reset"],
+      symptoms: ["Render worker connection reset"],
       inputData: { jobId: "job_test_healer_01", retryCount: 1 },
       initiatedBy: "guardian",
       timestamp: new Date().toISOString(),

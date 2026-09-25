@@ -12,6 +12,7 @@ import {
   ComputeRequirements,
   ExecutionReceipt,
   DEFAULT_COMPUTE_POLICY,
+  ProviderType,
 } from "../contracts/ComputeContracts";
 import { ComputeRouter, RoutingDecision } from "../router/ComputeRouter";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
@@ -19,6 +20,7 @@ import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
 import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
 import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
+import { AmdComputeProvider } from "../providers/AmdComputeProvider";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 
 export class ComputeGateway {
@@ -33,6 +35,7 @@ export class ComputeGateway {
     // Register canonical providers
     this.router.registerProvider(new LocalComputeProvider());
     this.router.registerProvider(new PersistentWorkerComputeProvider());
+    this.router.registerProvider(new AmdComputeProvider());
     this.router.registerProvider(new LightningComputeProvider());
     this.router.registerProvider(new KaggleComputeProvider());
     this.router.registerProvider(new GitHubActionsComputeProvider());
@@ -56,8 +59,8 @@ export class ComputeGateway {
   /**
    * Plans compute routing for a job without executing it.
    */
-  public async planJob(job: ComputeJob): Promise<RoutingDecision> {
-    return this.router.planProvider(job);
+  public async planJob(job: ComputeJob, preferredProviderType?: ProviderType): Promise<RoutingDecision> {
+    return this.router.planProvider(job, preferredProviderType);
   }
 
   /**
@@ -65,8 +68,9 @@ export class ComputeGateway {
    */
   public async submitJob(
     job: ComputeJob,
-    onProgress?: (msg: string) => void
+    onProgress?: (msg: string) => void,
+    preferredProviderType?: ProviderType
   ): Promise<{ receipt: ExecutionReceipt; failovers: string[] }> {
-    return this.router.dispatchWithFailover(job, onProgress);
+    return this.router.dispatchWithFailover(job, onProgress, preferredProviderType);
   }
 }

@@ -1,6 +1,5 @@
-import { RenderQueueManager } from "../rendering/RenderQueueManager";
 import { B2StorageManager } from "../storage/b2-storage-manager";
-import { AIExecutionMode } from "../rendering/RenderQueueManager";
+import type { AIExecutionMode } from "../rendering/RenderQueueManager";
 
 export interface ProviderAnalytics {
   provider: string;
@@ -13,11 +12,11 @@ export interface ProviderAnalytics {
 }
 
 export interface RendererAnalytics {
-  vendor: "AZURE" | "GITHUB_ACTIONS" | "BYOR";
+  vendor: "LOCAL" | "PERSISTENT_WORKER" | "KAGGLE" | "LIGHTNING" | "GITHUB_ACTIONS" | "BYOR";
   accessTier: string;
   totalRenders: number;
   avgDurationSeconds: number;
-  costDisplay: string; // e.g. "$0.052/hr" for Azure, "Included Quota / Metered" for GitHub, "N/A (User Compute)" for BYOR
+  costDisplay: string; // Provider-neutral render cost display
 }
 
 export interface SystemPerformanceSummary {
@@ -64,29 +63,26 @@ export class AnalyticsEngine {
 
   static getSummary(): SystemPerformanceSummary {
     const storageTelemetry = B2StorageManager.getTelemetry();
-    const workers = RenderQueueManager.getWorkers();
-    const activeJobs = RenderQueueManager.getActiveJobs();
-
     const rendererBreakdown: RendererAnalytics[] = [
       {
-        vendor: "AZURE",
-        accessTier: "ADMIN_ONLY",
-        totalRenders: 5,
-        avgDurationSeconds: 18.4,
-        costDisplay: "$0.052/hr (Azure B4ls_v2)",
+        vendor: "PERSISTENT_WORKER",
+        accessTier: "SERVER_AUTHORIZED",
+        totalRenders: 0,
+        avgDurationSeconds: 0,
+        costDisplay: "Provider reported",
       },
       {
         vendor: "GITHUB_ACTIONS",
         accessTier: "BASIC",
-        totalRenders: 12,
-        avgDurationSeconds: 24.1,
+        totalRenders: 0,
+        avgDurationSeconds: 0,
         costDisplay: "Included Quota / Metered",
       },
       {
         vendor: "BYOR",
         accessTier: "USER_OWNED",
-        totalRenders: 3,
-        avgDurationSeconds: 12.0,
+        totalRenders: 0,
+        avgDurationSeconds: 0,
         costDisplay: "N/A (User Compute)",
       },
     ];

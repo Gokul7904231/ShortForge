@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "../../../../lib/firebase-admin";
 import { verifyAuthAndRole } from "../../../../lib/auth/auth";
-import { AzureWorkerManager } from "../../../../lib/rendering/AzureWorkerManager";
+import { ComputeGateway } from "../../../../factoryos/core/compute/gateway/ComputeGateway";
 
 export const dynamic = "force-dynamic";
 
@@ -29,23 +29,24 @@ export async function GET(req: Request) {
       if (data.status === "completed") completedCount++;
     });
 
-    const vmDetails = AzureWorkerManager.getVmDetails();
-    const workerState = AzureWorkerManager.getState();
+    const computeRouter = ComputeGateway.getInstance().getRouter();
+    const providers = await Promise.all(
+      computeRouter.getAllProviders().map(async (provider) => ({
+        id: provider.id,
+        type: provider.type,
+        health: await provider.getHealth(),
+        capability: await provider.getCapability(),
+      }))
+    );
 
     return NextResponse.json({
       success: true,
       month: now.toLocaleString("default", { month: "long", year: "numeric" }),
       infrastructure: {
-        workerPool: "azure",
-        workerState,
-        vmId: vmDetails.vmId,
-        vmName: vmDetails.vmName,
-        region: vmDetails.region,
-        sku: vmDetails.sku,
-        vCpu: vmDetails.vCPU,
-        memoryMb: vmDetails.memoryMb,
-        powerState: vmDetails.powerState,
-        creditNotice: "Azure subscription credit balance is not available through the configured monitoring source.",
+        authority: "factoryos",
+        renderFabric: "core/fabric/RenderFabric",
+        routingAuthority: "ComputeRouter",
+        providers,
       },
       renderMetrics: {
         totalVideosGenerated: jobCount,

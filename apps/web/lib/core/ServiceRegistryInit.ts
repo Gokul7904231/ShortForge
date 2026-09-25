@@ -65,22 +65,14 @@ if (process.env.ENABLE_STARTUP_DIAGNOSIS === "true") {
   );
 }
 
-// Boot background RenderQueueProcessor daemon only when local rendering is enabled
-const isControlPlane = process.env.RENDER === "true" || process.env.NODE_ENV === "production" || Boolean(process.env.BASIC_RENDER_API_URL);
-const hasWorkerUrl = Boolean(process.env.BASIC_RENDER_API_URL);
-
-console.log(`[ControlPlane] RENDER_CONTROL_PLANE=${isControlPlane} BASIC_RENDER_API_URL_CONFIGURED=${hasWorkerUrl} LOCAL_RENDER_ALLOWED=${!isControlPlane}`);
-
-if (isControlPlane && !hasWorkerUrl) {
-  console.error(`[ControlPlane Error] BASIC_RENDER_API_URL is required for production Render Control Plane. Local video rendering is blocked.`);
-}
-
+// Legacy SQLite queue processing is opt-in only. FactoryOS is the default production execution authority.
 import { QueueProcessor } from "./RenderQueueProcessor";
 
-if (!isControlPlane || process.env.ENABLE_LOCAL_QUEUE_PROCESSOR === "true") {
-  QueueProcessor.start();
+const executionAuthority = (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
+const legacyQueueEnabled = process.env.ENABLE_LEGACY_QUEUE_PROCESSOR === "true";
+
+if (executionAuthority === "factoryos" && !legacyQueueEnabled) {
+  console.log("[ServiceRegistryInit] FactoryOS is authoritative; legacy RenderQueueProcessor disabled.");
 } else {
-  console.log("[ServiceRegistryInit] Control Plane mode: Local RenderQueueProcessor disabled (delegated to Azure worker).");
+  QueueProcessor.start();
 }
-
-

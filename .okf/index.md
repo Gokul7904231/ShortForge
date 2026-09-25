@@ -117,6 +117,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Security & Trust** | [`./security/`](./security/) | Untrusted web content boundaries, capability grants, secret scanning, and lease fencing. |
 | **Repository Mapping Stack** | [`./research/repo-mappings/`](./research/repo-mappings/) | Prioritized clean-room engineering mappings; Remotion is the primary composition engine and AgentTube is the selected scene-lifecycle pattern source. |
 | **Research & External** | [`./research/`](./research/) | Clean-room mappings for `video-use`, `WeKnora`, `Octop`, `orca`, `VoiceStudio`, and Reach. |
+| **F06 Azure Retirement Audit** | [./audits/f06-azure-retirement.md](./audits/f06-azure-retirement.md) | Current pre-merge audit: Azure removed from active architecture; F06 RenderFabric + ComputeRouter is canonical. |
 | **Historical Audits** | [`./audits/`](./audits/) | Archived forensic baselines, bypass analyses, and red-team findings (Historical Reference). |
 
 

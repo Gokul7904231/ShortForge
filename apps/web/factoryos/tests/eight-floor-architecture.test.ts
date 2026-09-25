@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { AutonomousFactoryController } from "../core/controller/AutonomousFactoryController";
 import { ResearchRuntime } from "../core/research/ResearchRuntime";
 import { VoiceFabric } from "../core/voice/VoiceFabric";
-import { RenderFabric } from "../core/rendering/RenderFabric";
+import { RenderFabric } from "../core/fabric/RenderFabric";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import type { RenderIntent } from "../core/contracts/RenderIntentContracts";
 
@@ -151,9 +151,9 @@ describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsyst
     const kineticCompiler = fabric.planCompiler(kineticIntent, true);
     expect(kineticCompiler.id).toBe("HYPERFRAMES");
 
-    const localExec = await fabric.executeRender({ ...standardIntent, durationSeconds: 2 }, "LOCAL");
+    const localExec = await fabric.executeRender({ ...standardIntent, durationSeconds: 2 }, { preferredProviderType: "LOCAL" });
     expect(localExec.success).toBe(true);
-    expect(localExec.providerUsed).toBe("LOCAL");
+    expect(localExec.providerUsed).toBe("DISTRIBUTED");
     expect(localExec.compilerUsed).toBe("FFMPEG");
     expect(localExec.artifact).toBeDefined();
 

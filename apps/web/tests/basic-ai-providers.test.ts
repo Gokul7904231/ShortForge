@@ -444,15 +444,14 @@ describe("Basic AI Generation Provider & Quota Test Suite", () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 18. Existing Azure Basic render path still works unchanged
+  // 18. Worker selection remains provider-neutral
   // ─────────────────────────────────────────────────────────────────────────────
-  test("18: TargetWorkerPool resolution preserves basic-fastapi for BASIC and azure for ADMIN", () => {
-    const getWorkerPool = (role: string) =>
-      role === "ADMIN" || role === "OWNER" ? "azure" : "basic-fastapi";
+  test("18: Target worker selection does not encode a cloud provider", () => {
+    const resolveExecutionAuthority = (_role: string) => "factoryos";
 
-    expect(getWorkerPool("USER")).toBe("basic-fastapi");
-    expect(getWorkerPool("PRO")).toBe("basic-fastapi");
-    expect(getWorkerPool("ADMIN")).toBe("azure");
-    expect(getWorkerPool("OWNER")).toBe("azure");
+    expect(resolveExecutionAuthority("USER")).toBe("factoryos");
+    expect(resolveExecutionAuthority("PRO")).toBe("factoryos");
+    expect(resolveExecutionAuthority("ADMIN")).toBe("factoryos");
+    expect(resolveExecutionAuthority("OWNER")).toBe("factoryos");
   });
 });

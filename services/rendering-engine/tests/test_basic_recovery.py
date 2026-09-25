@@ -136,18 +136,18 @@ async def test_worker_survives_failed_job_and_processes_next():
 # ---------------------------------------------------------------------------
 # Admin Isolation Protection Tests
 # ---------------------------------------------------------------------------
-def test_admin_worker_files_unmodified():
-    """Verifies that Admin worker daemon and service files exist and are intact."""
+def test_worker_files_are_provider_neutral():
+    """Verifies the persistent worker remains present without Azure-specific coupling."""
     base_dir = Path(__file__).resolve().parent.parent
-    admin_daemon = base_dir / "worker_daemon.py"
-    admin_service = base_dir / "factoryos-admin-render-worker.service"
+    worker_daemon = base_dir / "worker_daemon.py"
+    worker_service = base_dir / "factoryos-persistent-render.service"
 
-    assert admin_daemon.exists(), "Admin worker_daemon.py must exist"
-    assert admin_service.exists(), "Admin systemd service must exist"
+    assert worker_daemon.exists()
+    assert worker_service.exists()
 
-    daemon_content = admin_daemon.read_text(encoding="utf-8")
-    assert "FactoryOS Azure Admin Render Worker Daemon" in daemon_content
-    assert 'tier != "ADMIN"' in daemon_content
+    daemon_content = worker_daemon.read_text(encoding="utf-8")
+    assert "FactoryOS Persistent Render Worker Daemon" in daemon_content
+    assert "azure" not in daemon_content.lower()
 
 
 # ---------------------------------------------------------------------------

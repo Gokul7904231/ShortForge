@@ -2,20 +2,18 @@
 # ==============================================================================
 # FactoryOS — Persistent Basic FastAPI Render Service Setup Script
 # ==============================================================================
-# Productionizes the warm Basic rendering microservice on Azure VM without
-# touching or regressing the existing Admin render worker.
+# Installs the persistent render worker as a provider-neutral self-hosted service.
 # ==============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORK_DIR="/opt/factoryos/vps-rendering-engine"
-CACHE_DIR="/opt/factoryos/basic-cache"
-SERVICE_NAME="factoryos-basic-render.service"
-ADMIN_SERVICE_NAME="factoryos-admin-render-worker.service"
+WORK_DIR="/opt/factoryos/rendering-engine"
+CACHE_DIR="/opt/factoryos/render-cache"
+SERVICE_NAME="factoryos-persistent-render.service"
 
 echo "============================================================"
-echo " [FactoryOS] Starting Persistent Basic Render Service Setup "
+echo " [FactoryOS] Starting Persistent Render Service Setup "
 echo "============================================================"
 
 # 1. Verify Root/Sudo
@@ -48,9 +46,9 @@ mkdir -p "$CACHE_DIR/fonts"
 mkdir -p "$CACHE_DIR/templates"
 mkdir -p /tmp/factoryos-basic-render
 
-chown -R azureuser:azureuser "$WORK_DIR" 2>/dev/null || true
-chown -R azureuser:azureuser "$CACHE_DIR" 2>/dev/null || true
-chown -R azureuser:azureuser /tmp/factoryos-basic-render 2>/dev/null || true
+chown -R factoryos:factoryos "$WORK_DIR" 2>/dev/null || true
+chown -R factoryos:factoryos "$CACHE_DIR" 2>/dev/null || true
+chown -R factoryos:factoryos /tmp/factoryos-basic-render 2>/dev/null || true
 
 # 5. Install Dependencies
 echo "[+] Installing Python dependencies..."
@@ -83,15 +81,14 @@ echo ""
 
 # 8. Check Status & Admin Isolation Status
 echo "============================================================"
-echo " [FactoryOS] Basic Render Service Status:                   "
+echo " [FactoryOS] Persistent Render Service Status:              "
 echo "============================================================"
 systemctl status "$SERVICE_NAME" --no-pager || true
 
 echo "============================================================"
 echo " [FactoryOS] Verifying Admin Service Untouched Status:     "
 echo "============================================================"
-systemctl status "$ADMIN_SERVICE_NAME" --no-pager 2>/dev/null || echo "[+] Admin service check complete."
 
 echo "============================================================"
-echo " [FactoryOS] Basic FastAPI Render Service Successfully Ready!"
+echo " [FactoryOS] Persistent Render Service Successfully Ready!"
 echo "============================================================"

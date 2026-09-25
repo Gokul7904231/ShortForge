@@ -48,13 +48,12 @@ vi.mock("../../lib/content-pipeline", () => ({
 
 describe("FactoryOS P0 Fixes & Basic UX Hardening Suite", () => {
   let controller: AutonomousFactoryController;
-  const STAGING_AZURE_URL = "https://render-api.gokul.software";
 
   beforeEach(async () => {
     process.env.EXECUTION_AUTHORITY = "factoryos";
-    process.env.BASIC_RENDER_API_URL = STAGING_AZURE_URL;
-    process.env.BASIC_RENDER_API_SECRET = "staging_azure_render_secret_key_8888";
-    process.env.INTERNAL_API_SECRET_KEY = "staging_azure_render_secret_key_8888";
+    delete process.env.BASIC_RENDER_API_URL;
+    delete process.env.BASIC_RENDER_API_SECRET;
+    process.env.INTERNAL_API_SECRET_KEY = "staging_factoryos_render_secret_key_8888";
 
     controller = new AutonomousFactoryController({ storageType: "memory" });
     await controller.boot();
@@ -96,84 +95,12 @@ describe("FactoryOS P0 Fixes & Basic UX Hardening Suite", () => {
     expect(quotaAfter.remaining).toBe(5);
   });
 
-  it("P0-2: Azure Dispatch Failure Releases Quota and Sets Failed State (Never Hangs in Processing)", async () => {
-    const userId = "user_p0_azure_fail_001";
-    currentMockUser = { uid: userId, role: "BASIC" };
 
-    const originalFetch = global.fetch;
-    // Mock Azure dispatch returning HTTP 503 Service Unavailable
-    global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
-      if (String(url).includes("/api/render/jobs")) {
-        return {
-          ok: false,
-          status: 503,
-          text: async () => "Azure render worker cluster unavailable",
-        };
-      }
-      return originalFetch(url, init);
-    }) as any;
-
-    try {
-      const req = new Request("http://localhost:3000/api/generate-video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: "The Physics of Superconductors",
-          style: "Scientific",
-          contentType: "FACTS_SHORTS",
-          durationSeconds: 45,
-          script: "Superconductivity allows zero electrical resistance at low temperatures.",
-          scenes: [{ contactText: "Zero resistance", imagePrompt: "quantum levitation 8k" }],
-        }),
-      });
-
-      const res = await generateVideoHandler(req);
-      const data = await res.json();
-      expect(res.status).toBe(200);
-      expect(data.authority).toBe("factoryos");
-      const jobId = data.jobId;
-
-      // Allow background Overseer Floor 06 to attempt dispatch, fail closed, and release quota
-      let manifest = await readJobManifest(jobId);
-      for (let i = 0; i < 60 && manifest?.status !== "failed"; i++) {
-        await new Promise((r) => setTimeout(r, 100));
-        manifest = await readJobManifest(jobId);
-      }
-
-      expect(manifest?.status).toBe("failed");
-      expect(manifest?.error).toContain("Azure render dispatch failed");
-
-      const quotaAfter = await getUserQuota(userId, "BASIC");
-      expect(quotaAfter.completed).toBe(0);
-      expect(quotaAfter.reserved).toBe(0);
-      expect(quotaAfter.remaining).toBe(5);
-    } finally {
-      global.fetch = originalFetch;
-    }
-  });
-
-  it("P0-4: Basic 5-Video Lifecycle & 6th Attempt Hard Block without Azure Dispatch", async () => {
+  it("P0-4: Basic 5-Video Lifecycle & 6th Attempt Hard Block", async () => {
     const userId = "user_p0_basic_5_lifecycle_001";
     currentMockUser = { uid: userId, role: "BASIC" };
 
-    let azureDispatchCount = 0;
-    const originalFetch = global.fetch;
-    global.fetch = vi.fn().mockImplementation(async (url: string, init?: any) => {
-      if (String(url).includes("/api/render/jobs")) {
-        azureDispatchCount++;
-        const parsed = JSON.parse(init.body);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({ success: true, jobId: parsed.jobId }),
-          text: async () => JSON.stringify({ success: true }),
-        };
-      }
-      return originalFetch(url, init);
-    }) as any;
-
-    try {
-      // Execute 5 successful generations
+    // Execute 5 successful generations
       for (let i = 1; i <= 5; i++) {
         const jobId = `job_batch_${userId}_${i}`;
         await reserveGenerationSlot(userId, "BASIC", jobId);
@@ -204,13 +131,7 @@ describe("FactoryOS P0 Fixes & Basic UX Hardening Suite", () => {
 
       expect(res6.status).toBe(429);
       expect(data6.code).toBe("QUOTA_EXCEEDED");
-      expect(data6.error).toContain("Lifetime generation quota exhausted");
-
-      // Verify ZERO Azure dispatch on the 6th attempt
-      expect(azureDispatchCount).toBe(0);
-    } finally {
-      global.fetch = originalFetch;
-    }
+    expect(data6.error).toContain("Lifetime generation quota exhausted");
   });
 
   it("P1: Stale Reservation Bounded TTL Cleanup (15-Minute Expiry)", async () => {

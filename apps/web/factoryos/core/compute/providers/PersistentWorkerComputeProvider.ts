@@ -27,7 +27,7 @@ export class PersistentWorkerComputeProvider extends BaseComputeProvider {
 
   constructor() {
     super();
-    this.workerUrl = process.env.RENDER_WORKER_URL || process.env.BASIC_RENDER_API_URL;
+    this.workerUrl = process.env.RENDER_WORKER_URL;
     this.workerSecret = process.env.RENDER_WORKER_SECRET || process.env.INTERNAL_API_SECRET_KEY;
   }
 

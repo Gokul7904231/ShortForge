@@ -39,10 +39,9 @@ import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
 import { ResearchRuntime } from "../research/ResearchRuntime";
 import { VoiceFabric } from "../voice/VoiceFabric";
-import { RenderFabric } from "../rendering/RenderFabric";
+import { RenderFabric } from "../fabric/RenderFabric";
 import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentContracts";
 import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegistry";
-import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 
@@ -1164,17 +1163,6 @@ export class OverseerControlPlane {
           executionTimeMs: 40,
         });
 
-        const isControlPlane =
-          process.env.RENDER === "true" ||
-          process.env.NODE_ENV === "production" ||
-          Boolean(process.env.BASIC_RENDER_API_URL);
-
-        const basicRenderApiUrl = process.env.BASIC_RENDER_API_URL;
-        const basicRenderSecret =
-          process.env.BASIC_RENDER_API_SECRET ||
-          process.env.RENDER_WORKER_SECRET ||
-          process.env.INTERNAL_API_SECRET_KEY;
-
         const renderFabric = new RenderFabric();
         const renderIntent: RenderIntent = scope.renderIntent || {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
@@ -1187,7 +1175,14 @@ export class OverseerControlPlane {
           tracks: {
             visualAssets: scope.scenes || [],
             audioTracks: scope.voiceUrl
-              ? [{ id: "track_voice_0", type: "VOICE", src: scope.voiceUrl, volume: 1.0, startSeconds: 0, durationSeconds: scope.durationSeconds || 5 }]
+              ? [{
+                  id: "track_voice_0",
+                  type: "VOICE",
+                  src: scope.voiceUrl,
+                  volume: 1.0,
+                  startSeconds: 0,
+                  durationSeconds: scope.durationSeconds || 5,
+                }]
               : [],
             captions: [],
           },
@@ -1196,138 +1191,62 @@ export class OverseerControlPlane {
           createdAt: new Date().toISOString(),
         };
 
-        let renderOutputMessage = "";
-        let finalVideoUrl = "";
+        const renderRes = await renderFabric.executeRender(renderIntent, {
+          localRenderIntent: (scope.localRenderIntent || sharedScope.localRenderIntent) as LocalRenderIntent | undefined,
+        });
 
-        if (isControlPlane && basicRenderApiUrl) {
-          try {
-            const renderRes = await renderFabric.executeRender(
-              renderIntent,
-              "AZURE_VM",
-              { apiUrl: basicRenderApiUrl, secret: basicRenderSecret || "", executionToken }
-            );
-
-            renderOutputMessage = renderRes.message || "Dispatched to Azure VM. Awaiting async worker callback.";
-            finalVideoUrl = `/api/video/${targetJobId}.mp4`;
-            scope.remoteState = "DISPATCHED";
-            sharedScope.remoteState = "DISPATCHED";
-
-            try {
-              const { saveJobManifest } = await import("../../../lib/jobs-history");
-              await saveJobManifest(targetJobId, {
-                status: "processing",
-                remoteState: "DISPATCHED",
-                updatedAt: new Date().toISOString(),
-              });
-            } catch {}
-          } catch (dispatchErr: any) {
-            console.error(`[Overseer Floor06] Azure render dispatch failed: ${dispatchErr.message}`);
-            try {
-              const { saveJobManifest } = await import("../../../lib/jobs-history");
-              await saveJobManifest(targetJobId, {
-                status: "failed",
-                error: `Azure render dispatch failed: ${dispatchErr.message}`,
-                updatedAt: new Date().toISOString(),
-              });
-            } catch {}
-            const effectiveUserId = scope.userId || mission?.owner;
-            if (effectiveUserId) {
-              try {
-                const { releaseGenerationSlot } = await import("../../../lib/quota/quota-service");
-                await releaseGenerationSlot(effectiveUserId, "BASIC", targetJobId);
-              } catch {}
-            }
-            throw dispatchErr;
-          }
-        } else if (scope.localRenderIntent || sharedScope.localRenderIntent) {
-          // Canonical V3 Phase 4 path: invoke LocalRenderAdapter -> factoryos-render (Requirement 22)
-          const localIntent = (scope.localRenderIntent || sharedScope.localRenderIntent) as LocalRenderIntent;
-          const pipeline = TemplateProductionPipeline.getInstance();
-          const renderRes = await pipeline.executeProductionRender({
-            localIntent,
-            runId: `run_${targetJobId}`,
-            onProgress: (msg) => {
-              this.eventBus.publish("TASK_PROGRESS", { taskId: node.taskId, progressMessage: msg });
-            }
-          });
-
-          const artifact: RenderArtifact = {
-            artifactId: `art_${targetJobId}`,
-            jobId: targetJobId,
-            location: { kind: "LOCAL", path: renderRes.videoPath },
-            sha256: renderRes.sha256,
-            byteLength: renderRes.receipt.validation.file_size_bytes,
-            duration: renderRes.durationSeconds,
-            width: renderRes.width,
-            height: renderRes.height,
-            fps: renderRes.receipt.fps,
-            mimeType: "video/mp4",
-            videoCodec: "h264",
-            audioCodec: "aac",
-            producedAt: new Date().toISOString(),
-          };
-
-          scope.artifact = artifact;
-          sharedScope.artifact = artifact;
-          scope.renderReceipt = renderRes.receipt;
-          sharedScope.renderReceipt = renderRes.receipt;
-          finalVideoUrl = renderRes.videoPath;
-          scope.videoUrl = finalVideoUrl;
-          sharedScope.videoUrl = finalVideoUrl;
-          renderOutputMessage = `factoryos-render produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
-
-          try {
-            const { saveJobManifest } = await import("../../../lib/jobs-history");
-            await saveJobManifest(targetJobId, {
-              status: "completed",
-              videoUrl: `/api/media/video/${targetJobId}`,
-              downloadUrl: `/api/media/video/${targetJobId}`,
-              localVideoPath: finalVideoUrl,
-              artifactSha256: artifact.sha256,
-              duration: artifact.duration,
-              videoSizeMb: Number((artifact.byteLength / (1024 * 1024)).toFixed(2)),
-              renderDurationSeconds: artifact.duration,
-              renderReceipt: renderRes.receipt,
-              templateId: scope.templateId,
-              templateVersion: scope.templateVersion,
-              contentEngine: scope.contentEngine,
-              formatFamily: scope.formatFamily,
-              completedAt: new Date().toISOString(),
-            } as any);
-          } catch (e: any) {
-            console.warn(`[Overseer Floor06] Local manifest note: ${e?.message}`);
-          }
-        } else {
-          const renderRes = await renderFabric.executeRender(renderIntent, "LOCAL");
-          if (!renderRes.artifact) {
-            throw new Error("[Overseer Floor06] Local render completed without producing physical RenderArtifact");
-          }
-
-          const artifact = renderRes.artifact;
-          scope.artifact = artifact;
-          sharedScope.artifact = artifact;
-          finalVideoUrl = (artifact.location as any).path;
-          scope.videoUrl = finalVideoUrl;
-          sharedScope.videoUrl = finalVideoUrl;
-          renderOutputMessage = `Render Fabric produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
-
-          try {
-            const { saveJobManifest } = await import("../../../lib/jobs-history");
-            await saveJobManifest(targetJobId, {
-              status: "completed",
-              videoUrl: `/api/media/video/${targetJobId}`,
-              downloadUrl: `/api/media/video/${targetJobId}`,
-              localVideoPath: finalVideoUrl,
-              artifactSha256: artifact.sha256,
-              duration: artifact.duration,
-              videoSizeMb: Number((artifact.byteLength / (1024 * 1024)).toFixed(2)),
-              renderDurationSeconds: artifact.duration,
-              completedAt: new Date().toISOString(),
-            });
-          } catch (e: any) {
-            console.warn(`[Overseer Floor06] Local manifest note: ${e?.message}`);
-          }
+        if (!renderRes.artifact || !renderRes.receipt) {
+          throw new Error(
+            "[Overseer Floor06] RenderFabric completed without a physical artifact or execution receipt"
+          );
         }
+
+        const artifact = renderRes.artifact;
+        scope.artifact = artifact;
+        sharedScope.artifact = artifact;
+        scope.renderReceipt = renderRes.receipt;
+        sharedScope.renderReceipt = renderRes.receipt;
+        finalVideoUrl = (artifact.location as any).path;
+        scope.videoUrl = finalVideoUrl;
+        sharedScope.videoUrl = finalVideoUrl;
+
+        const renderOutputMessage =
+          `RenderFabric/ComputeRouter produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
+
+        try {
+          const { saveJobManifest } = await import("../../../lib/jobs-history");
+          await saveJobManifest(targetJobId, {
+            status: "completed",
+            videoUrl: `/api/media/video/${targetJobId}`,
+            downloadUrl: `/api/media/video/${targetJobId}`,
+            localVideoPath: finalVideoUrl,
+            artifactSha256: artifact.sha256,
+            duration: artifact.duration,
+            videoSizeMb: Number((artifact.byteLength / (1024 * 1024)).toFixed(2)),
+            renderDurationSeconds: artifact.duration,
+            renderReceipt: renderRes.receipt,
+            templateId: scope.templateId,
+            templateVersion: scope.templateVersion,
+            contentEngine: scope.contentEngine,
+            formatFamily: scope.formatFamily,
+            completedAt: new Date().toISOString(),
+          } as any);
+        } catch (e: any) {
+          console.warn(`[Overseer Floor06] Manifest note: ${e?.message}`);
+        }
+
+        await this.decisionLedger.record({
+          goalId: `render_${targetJobId}`,
+          stateSnapshot: this.worldState.getState() as unknown as Record<string, unknown>,
+          thinkingMode: "REFLEX",
+          availableOptions: ["DISPATCH_RENDER_FABRIC"],
+          selectedOption: "DISPATCH_RENDER_FABRIC",
+          reasoningSummary: "RenderIntent executed through the canonical RenderFabric and ComputeRouter",
+          predictedOutcome: "Verified physical render artifact available for F07",
+          agentsUsed: ["worker_render_01"],
+          toolsUsed: ["RenderFabric.executeRender", "ComputeRouter.dispatchWithFailover"],
+          executionTimeMs: Math.max(1, Math.round(performance.now() - startTime)),
+        });
 
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
@@ -1416,55 +1335,31 @@ export class OverseerControlPlane {
           node.dependencyOutputs?.["task_f06_rendering"]?.videoUrl ||
           (artifact?.location?.path);
 
-        const isControlPlane =
-          process.env.RENDER === "true" ||
-          process.env.NODE_ENV === "production" ||
-          Boolean(process.env.BASIC_RENDER_API_URL);
-        const basicRenderApiUrl = process.env.BASIC_RENDER_API_URL;
-        const isRemoteDispatched =
-          sharedScope.remoteState === "DISPATCHED" ||
-          (isControlPlane && Boolean(basicRenderApiUrl));
+        const verificationReport = await VerificationEngine.auditMediaArtifact({
+          jobId: targetJobId,
+          artifact,
+          videoUrl,
+          scriptText: scope.script || sharedScope.script || "",
+          sceneCount: Array.isArray(scope.scenes) ? scope.scenes.length : 1,
+          durationSeconds:
+            scope.renderIntent?.durationSeconds ||
+            sharedScope.renderIntent?.durationSeconds ||
+            3,
+          policyViolations: [],
+        });
 
-        let verificationReport: any;
-
-        if (isRemoteDispatched) {
-          verificationReport = {
+        if (!verificationReport.verified) {
+          await this.caseManager.createCase({
+            title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
+            description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
+            floorId: "floor07_compliance",
+            category: "VALIDATION_REJECTION",
+            severity: "HIGH",
+            detectorId: "worker_compliance_01",
             jobId: targetJobId,
-            verified: true,
-            overallStatus: "PASS",
-            status: "DISPATCHED_AWAITING_CALLBACK",
-            failures: [],
-            warnings: ["Render dispatched to remote compute plane. Forensic probe deferred to worker callback."],
-            measurements: { remoteState: "DISPATCHED" },
-            scores: { overall: 100 },
-            overallScore: 100,
-            passed: true,
-            evidence: { remoteState: "DISPATCHED" },
-          };
-        } else {
-          verificationReport = await VerificationEngine.auditMediaArtifact({
-            jobId: targetJobId,
-            artifact,
-            videoUrl,
-            scriptText: scope.script || sharedScope.script || "",
-            sceneCount: Array.isArray(scope.scenes) ? scope.scenes.length : 1,
-            durationSeconds: scope.renderIntent?.durationSeconds || sharedScope.renderIntent?.durationSeconds || 3,
-            policyViolations: [],
+            symptoms: verificationReport.failures,
+            observedState: verificationReport.measurements as any,
           });
-
-          if (!verificationReport.verified) {
-            await this.caseManager.createCase({
-              title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
-              description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
-              floorId: "floor07_compliance",
-              category: "VALIDATION_REJECTION",
-              severity: "HIGH",
-              detectorId: "worker_compliance_01",
-              jobId: targetJobId,
-              symptoms: verificationReport.failures,
-              observedState: verificationReport.measurements as any,
-            });
-          }
         }
 
         let deliveryArtifact: any;

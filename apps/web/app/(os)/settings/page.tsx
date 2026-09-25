@@ -124,7 +124,7 @@ export default function SettingsPage() {
             OS Settings & Infrastructure Control
           </h1>
           <p className="text-xs text-zinc-500 mt-1">
-            Configure multi-plane render workers (Azure, Basic Cloud, BYOR), FinOps cost guardrails, and credentials.
+            Configure distributed render workers, BYOR capacity, FinOps guardrails, and credentials.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function SettingsPage() {
               Multi-Plane Rendering Infrastructure (BYOR & Cloud)
             </h2>
             <p className="text-xs text-zinc-400 mt-1">
-              Connect your local computer/VPS via BYOR, monitor Azure Admin compute, and manage Basic GitHub Actions cloud runners.
+              Connect local/VPS BYOR workers and inspect provider-neutral distributed compute capacity.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -177,25 +177,25 @@ export default function SettingsPage() {
 
         {/* Multi-Plane Status Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Azure Admin Appliance */}
+          {/* Persistent / Distributed Worker */}
           <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 space-y-3">
             <div className="flex justify-between items-start">
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest font-mono">Plane 1: Admin Cloud</span>
-              <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 font-mono">ADMIN ONLY</span>
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest font-mono">Plane 1: Distributed Compute</span>
+              <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-300 font-mono">SERVER AUTHORIZED</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-zinc-200">Azure VM Pool (B4ls_v2)</span>
+              <span className="text-sm font-bold text-zinc-200">Distributed Render Fabric</span>
               <span className="inline-flex items-center gap-1 text-xs font-mono text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Scale-to-Zero
+                ComputeRouter
               </span>
             </div>
             <p className="text-[11px] text-zinc-400">
-              Ephemeral compute appliance. Auto-starts on queue, deallocates after 10-min grace period.
+              F06 RenderFabric routes work to qualified workers using capability, health, policy, lease, and fencing checks.
             </p>
             <div className="pt-2 border-t border-zinc-850 flex justify-between text-[11px] font-mono text-zinc-500">
-              <span>Hourly Cost: ~$0.052/hr</span>
-              <span>Guard: 6-Layer FinOps</span>
+              <span>Routing: policy-based</span>
+              <span>Guard: ComputePolicy + F07</span>
             </div>
           </div>
 

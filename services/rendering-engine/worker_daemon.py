@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FactoryOS Azure Admin Render Worker Daemon
+FactoryOS Persistent Render Worker Daemon
 ==========================================
 Continuously polls the FactoryOS Control Plane for queued ADMIN video jobs,
 executes high-fidelity FFmpeg rendering in an isolated workspace, validates
@@ -33,8 +33,8 @@ except ImportError:
 # Configuration Parameters
 CONTROL_PLANE_URL = os.environ.get("CONTROL_PLANE_URL", "http://localhost:3000").rstrip("/")
 RENDER_WORKER_SECRET = os.environ.get("RENDER_WORKER_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY")
-WORKER_POOL = os.environ.get("WORKER_POOL", "azure")
-WORKER_ID = os.environ.get("WORKER_ID", "azure-vm-admin-01")
+WORKER_POOL = os.environ.get("WORKER_POOL", "persistent-worker")
+WORKER_ID = os.environ.get("WORKER_ID", "render-worker-01")
 WORKER_CREDENTIAL_VERSION = os.environ.get("WORKER_CREDENTIAL_VERSION", "2026-08-23-v2")
 POLL_INTERVAL_SECONDS = float(os.environ.get("POLL_INTERVAL_SECONDS", "3.0"))
 MAX_POLL_INTERVAL_SECONDS = float(os.environ.get("MAX_POLL_INTERVAL_SECONDS", "15.0"))
@@ -129,7 +129,7 @@ class GoogleDriveDeliveryProvider:
         raise DriveAuthenticationError(
             "No valid Google Drive credentials configured. "
             "Provide GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, and GOOGLE_DRIVE_REFRESH_TOKEN "
-            "via Azure Key Vault or environment."
+            "via the configured worker secret or environment."
         )
 
     def deliver(self, job: dict, mp4_path: Path, meta: dict, sha256_hash: str) -> dict:
@@ -546,9 +546,6 @@ def process_single_job(job: dict):
     execution_token = job.get("executionToken")
     tier = job.get("tier", "BASIC")
 
-    # Hard security constraint: Azure worker must reject non-admin jobs
-    if tier != "ADMIN":
-        log("Worker", f"REJECTED non-admin job={job_id} (tier={tier}) on Azure worker pool.")
         return
 
     log("Worker", f"claimed job={job_id}")

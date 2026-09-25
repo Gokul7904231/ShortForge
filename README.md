@@ -466,8 +466,8 @@ ShortForge enforces strict separation of configuration across services.
 | `CLOUDINARY_CLOUD_NAME` | **Yes** | Cloudinary media CDN cloud name | `your-cloud-name` |
 | `CLOUDINARY_API_KEY` | **Yes** | Cloudinary API access key | `1234567890` |
 | `CLOUDINARY_API_SECRET` | **Yes** | Cloudinary secret access key | `your-api-secret` |
-| `BASIC_RENDER_API_URL` | Optional | URL of the warm basic render worker pool | `http://localhost:8100` |
-| `BASIC_RENDER_API_SECRET` | Optional | Shared bearer token for the basic pool | `your-basic-secret` |
+| `RENDER_WORKER_URL` | Optional | URL of a qualified persistent worker adapter | `http://localhost:8100` |
+| `RENDER_WORKER_SECRET` | Optional | Shared bearer token for the persistent worker | `your-worker-secret` |
 | `KAGGLE_USERNAME` | Optional | Kaggle account username for GPU rendering | `your-kaggle-user` |
 | `KAGGLE_KEY` | Optional | Kaggle API key for GPU kernel execution | `your-kaggle-key` |
 | `RUNPOD_API_KEY` | Optional | RunPod API key for serverless GPU workers | `rpa_...` |

@@ -13,6 +13,7 @@ export type ProviderType =
   | "LIGHTNING"
   | "GITHUB_ACTIONS"
   | "PERSISTENT_WORKER"
+  | "AMD"
   | "RUNPOD"
   | "VAST";
 
@@ -153,8 +154,8 @@ export interface ComputePolicy {
 }
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
-  allowedProviders: ["LOCAL", "KAGGLE", "LIGHTNING", "GITHUB_ACTIONS", "PERSISTENT_WORKER"],
-  preferredOrder: ["LOCAL", "PERSISTENT_WORKER", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
+  allowedProviders: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
+  preferredOrder: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
   maxRetries: 2,
   failoverAllowed: true,
   preferLocalForShortVideos: true,

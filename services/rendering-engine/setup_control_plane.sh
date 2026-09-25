@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# FactoryOS — Next.js Control Plane Setup Script for Azure VM
+# FactoryOS — Next.js Control Plane Setup Script for self-hosted Linux
 # ==============================================================================
 set -euo pipefail
 
@@ -9,7 +9,7 @@ APP_DIR="/opt/factoryos/apps/web"
 SERVICE_NAME="factoryos-control-plane.service"
 
 echo "============================================================"
-echo " [FactoryOS] Setting up Next.js Control Plane on Azure VM   "
+echo " [FactoryOS] Setting up Next.js Control Plane on a self-hosted Linux host   "
 echo "============================================================"
 
 # 1. Verify Node.js runtime

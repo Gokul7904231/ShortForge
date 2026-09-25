@@ -25,7 +25,7 @@ const nextConfig = {
   },
   outputFileTracingExcludes: {
     '*': [
-      // ── Native modules excluded from CF Worker (Azure VM only) ──────────
+      // ── Native modules excluded from edge/worker bundles ────────────────
       '**/*better-sqlite3*/**',
       '**/*sqlite3*/**',
       '**/*@xenova*/**',
@@ -36,7 +36,7 @@ const nextConfig = {
       '**/*.h',
       '**/*.cc',
       '**/*.cpp',
-      // ── Python / venv (Azure VM render side) ────────────────────────────
+      // ── Python / venv / local-render runtime assets ─────────────────────
       '**/venv/**/*',
       '**/.venv/**/*',
       '**/local-ai/scripts/**/*',

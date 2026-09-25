@@ -128,11 +128,18 @@ export class ComputeRouter {
   /**
    * Plans the optimal compute provider based on utility modeling (Section 9).
    */
-  public async planProvider(job: ComputeJob): Promise<RoutingDecision> {
+  public async planProvider(job: ComputeJob, preferredProviderType?: ProviderType): Promise<RoutingDecision> {
     const candidates: ScheduledProviderCandidate[] = [];
     const rejectionReasons: Record<string, string> = {};
 
     for (const provider of this.providers.values()) {
+      // 0. Optional hard provider constraint. The Render Fabric uses this for explicit LOCAL requests
+      // while AUTO remains fully capability/utility routed.
+      if (preferredProviderType && provider.type !== preferredProviderType) {
+        rejectionReasons[provider.id] = `Provider type ${provider.type} excluded by explicit provider constraint ${preferredProviderType}.`;
+        continue;
+      }
+
       // 1. Policy check: is provider type allowed?
       if (!this.policy.allowedProviders.includes(provider.type)) {
         rejectionReasons[provider.id] = `Provider type ${provider.type} not permitted by ComputePolicy.`;
@@ -254,9 +261,10 @@ export class ComputeRouter {
    */
   public async dispatchWithFailover(
     job: ComputeJob,
-    onProgress?: (msg: string) => void
+    onProgress?: (msg: string) => void,
+    preferredProviderType?: ProviderType
   ): Promise<{ receipt: ExecutionReceipt; failovers: string[] }> {
-    const routingDecision = await this.planProvider(job);
+    const routingDecision = await this.planProvider(job, preferredProviderType);
     const failovers: string[] = [];
 
     const candidatesToTry = routingDecision.evaluatedCandidates.map((c) => c.provider);
@@ -275,7 +283,12 @@ export class ComputeRouter {
 
       try {
         const receipt = await provider.executeJob(job, onProgress);
-        if (receipt.status === "COMPLETED") {
+        const renderCompletionWithoutArtifact =
+          job.workloadType === "RENDER" &&
+          receipt.status === "COMPLETED" &&
+          receipt.outputArtifacts.length === 0;
+
+        if (receipt.status === "COMPLETED" && !renderCompletionWithoutArtifact) {
           this.receipts.push(receipt);
           if (tel) {
             tel.successfulExecutions++;
@@ -288,17 +301,21 @@ export class ComputeRouter {
           return { receipt, failovers };
         }
 
-        // Execution failed on this provider
+        // A render provider may never claim completion without an artifact receipt.
+        // Treat that as a failed execution so another qualified provider may be tried.
+        const failureReason = renderCompletionWithoutArtifact
+          ? "RENDER_COMPLETED_WITHOUT_ARTIFACT"
+          : receipt.failureReason || `Exit code ${receipt.exitCode}`;
         if (tel) {
           tel.failedExecutions++;
           tel.failureLog.push({
             timestamp: new Date().toISOString(),
             jobId: job.jobId,
-            reason: receipt.failureReason || `Exit code ${receipt.exitCode}`,
+            reason: failureReason,
           });
         }
-        failovers.push(`Provider ${provider.id} failed: ${receipt.failureReason}`);
-        onProgress?.(`Provider ${provider.id} failed with exit code ${receipt.exitCode}. Initiating failover.`);
+        failovers.push(`Provider ${provider.id} failed: ${failureReason}`);
+        onProgress?.(`Provider ${provider.id} failed: ${failureReason}. Initiating failover.`);
       } catch (err: any) {
         lastError = err;
         if (tel) {

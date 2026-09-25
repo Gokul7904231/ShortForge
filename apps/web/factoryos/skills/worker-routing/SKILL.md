@@ -1,29 +1,35 @@
 # Skill: Worker Routing
 id: worker-routing
-version: 1.0.0
+version: 2.0.0
 owner: Overseer / Compute Plane Team
 
 ## WHEN TO USE
-Invoked by the runtime to select the appropriate render worker queue based on user role, worker health, and capacity.
+Invoked by the runtime when a render job needs a qualified worker/provider assignment.
 
 ## REQUIRED INPUTS
 - `userRole`: Server-authoritative caller role ("ADMIN", "OWNER", "EDITOR", "VIEWER")
 - `jobPriority`: Priority level (1 - 5)
+- `renderRequirements`: GPU/CPU, memory, workload, duration, network, and verification requirements
 
 ## REQUIRED ACCESS
 - Permissions: `workers:read`, `workers:route`
-- Tools: `get_worker_pool_health`, `claim_worker_slot`
+- Tools: `ComputeRouter`, worker health/capability inspection, claim/lease APIs
 
 ## EXECUTION SEQUENCE
-1. Inspect server-authenticated role (never trust client role).
-2. If role is ADMIN or OWNER, route to Azure GPU render pool.
-3. If role is VIEWER or EDITOR, route to GitHub Actions Basic render pool.
-4. Verify target worker health. If target is unhealthy, apply failover policy within permitted role bounds.
-5. Return assigned worker pool and execution token.
+1. Inspect server-authenticated role; never trust client routing claims.
+2. Submit hardware/workload requirements to ComputeRouter.
+3. Reject providers that fail policy, health, capability, permission, lease, or fencing checks.
+4. Claim a qualified worker with an execution token and bounded lease.
+5. Return the selected provider/worker and routing evidence.
 
 ## DECISION RULES
-- BASIC users MUST NEVER be routed to Azure GPU pool.
-- ADMIN users MUST NOT be degraded to Basic queue unless Azure is in full outage.
+- User role does not directly select a cloud vendor.
+- ComputePolicy and WorkerCapability determine eligible providers.
+- Failover stays within the same safety and verification boundary.
+- Render completion is accepted only with a verified physical artifact.
 
 ## SAFETY BOUNDARIES
-- Strict server-authoritative role boundary.
+- Server-authoritative routing.
+- Deny-by-default worker permissions.
+- Monotonic lease/fencing semantics.
+- F07 remains the authoritative media verification gate.

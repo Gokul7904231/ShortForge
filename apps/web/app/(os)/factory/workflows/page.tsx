@@ -98,10 +98,10 @@ export default function WorkflowsPage() {
       dependsOn: ["voice", "image"],
       retry: 1,
       timeoutMs: 120000,
-      primaryModel: "azure-vm-pool",
+      primaryModel: "distributed-render-fabric",
       fallbackModel: "services/rendering-engine",
       avgDurationMs: 14500,
-      logs: ["Assembled scene blocks on Azure VM Pool.", "Hardware acceleration nvenc enabled.", "FPS: 60"],
+      logs: ["Assembled scene blocks through distributed Render Fabric.", "Provider selected by ComputeRouter.", "F07 verification remains authoritative."],
     },
     {
       id: "upload",

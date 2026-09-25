@@ -33,7 +33,7 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent
 CONTROL_PLANE_URL = os.environ.get("CONTROL_PLANE_URL", "http://localhost:3000").rstrip("/")
-BASIC_RENDER_API_SECRET = os.environ.get("BASIC_RENDER_API_SECRET") or os.environ.get("RENDER_WORKER_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY", "factoryos_basic_secret_default")
+RENDER_WORKER_SECRET = os.environ.get("RENDER_WORKER_SECRET") or os.environ.get("RENDER_WORKER_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY", "factoryos_basic_secret_default")
 WORKER_CONCURRENCY = int(os.environ.get("BASIC_RENDER_CONCURRENCY", "1"))
 PERSISTENT_CACHE_DIR = Path(os.environ.get("BASIC_PERSISTENT_CACHE_DIR", "/opt/factoryos/basic-cache"))
 EPHEMERAL_WORKSPACE_ROOT = Path(os.environ.get("BASIC_EPHEMERAL_WORKSPACE_ROOT", "/tmp/factoryos-basic-render"))
@@ -503,7 +503,7 @@ class BasicRenderWorker:
             data=data,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {BASIC_RENDER_API_SECRET}",
+                "Authorization": f"Bearer {RENDER_WORKER_SECRET}",
                 "x-execution-token": execution_token or "",
             },
             method="POST",

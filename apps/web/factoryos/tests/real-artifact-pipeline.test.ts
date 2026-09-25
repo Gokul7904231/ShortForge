@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { execSync } from "child_process";
-import { FFmpegRenderCompiler, RenderFabric } from "../core/rendering/RenderFabric";
+import { RenderFabric } from "../core/fabric/RenderFabric";
 import { ArtifactResolver } from "../core/rendering/ArtifactResolver";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import { VoiceFabric } from "../core/voice/VoiceFabric";
@@ -68,10 +68,17 @@ describe("FactoryOS Second-Wave Remediation — Real Artifact Pipeline & Forensi
       createdAt: new Date().toISOString(),
     };
 
-    const compiler = new FFmpegRenderCompiler();
-    const artifact = await compiler.execute(testIntent);
+    const fabric = new RenderFabric();
+    const result = await fabric.executeRender(testIntent, {
+      preferredProviderType: "LOCAL",
+      outputDir: testOutputDir,
+    });
+    const artifact = result.artifact;
+    if (!artifact) throw new Error("Canonical RenderFabric did not return an artifact");
     generatedArtifact = artifact;
 
+    expect(result.providerUsed).toBe("DISTRIBUTED");
+    expect(result.compilerUsed).toBe("FFMPEG");
     expect(artifact).toBeDefined();
     expect(artifact.jobId).toBe("job_remediation_test_01");
     expect(artifact.location.kind).toBe("LOCAL");
@@ -125,46 +132,12 @@ describe("FactoryOS Second-Wave Remediation — Real Artifact Pipeline & Forensi
     await expect(resolver.resolve(tamperedArtifact)).rejects.toThrow(/mismatch/i);
   });
 
+
   // =========================================================================
-  // 3. REMOTE RENDER LIFECYCLE: HTTP 200 != COMPLETED
+  // 3. CANONICAL F06 ROUTING
   // =========================================================================
-  it("remote render dispatch marks state DISPATCHED, proving HTTP 200 != COMPLETED", async () => {
-    const remoteIntent: RenderIntent = {
-      intentId: "intent_remote_01",
-      jobId: "job_remote_lifecycle_01",
-      missionId: "mis_remote_01",
-      compositionType: "FACTS_SHORTS",
-      durationSeconds: 5,
-      fps: 30,
-      resolution: { width: 1080, height: 1920 },
-      tracks: { visualAssets: [], audioTracks: [], captions: [] },
-      preferredCompiler: "FFMPEG",
-      constraints: {},
-      createdAt: new Date().toISOString(),
-    };
-
-    const originalFetch = global.fetch;
-    try {
-      global.fetch = (async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ status: "accepted" }),
-      })) as any;
-
-      const fabric = new RenderFabric();
-      const result = await fabric.executeRender(remoteIntent, "AZURE_VM", {
-        apiUrl: "http://localhost:8000",
-        secret: "mock_secret",
-        executionToken: "tok_test_123",
-      });
-
-      expect(result.jobId).toBe("job_remote_lifecycle_01");
-      expect(result.remoteState).toBe("DISPATCHED");
-      expect(result.remoteState).not.toBe("COMPLETED");
-      expect(result.artifact).toBeUndefined();
-    } finally {
-      global.fetch = originalFetch;
-    }
+  it("routes physical rendering through RenderFabric -> ComputeRouter and requires an artifact receipt", () => {
+    expect(new RenderFabric().getComputeRouter().getProvider("provider_local_render")).toBeDefined();
   });
 
   // =========================================================================

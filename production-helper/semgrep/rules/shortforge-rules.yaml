@@ -23,7 +23,7 @@ rules:
       - pattern: fetch($URL, $OPTIONS)
       - pattern-not: fetch("/api/..." , ...)
       - pattern-not: fetch("http://localhost:..." , ...)
-      - pattern-not: fetch(`${process.env.BASIC_RENDER_API_URL}...` , ...)
+
 
   - id: shortforge-credential-logging
     languages: [typescript, javascript]

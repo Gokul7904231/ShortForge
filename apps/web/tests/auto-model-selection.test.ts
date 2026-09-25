@@ -821,14 +821,13 @@ describe("Auto Model Selection & Two-Tier Fallback Test Suite", () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 23. Existing Azure Basic rendering continues to work
+  // 23. Rendering authority stays in FactoryOS
   // ─────────────────────────────────────────────────────────────────────────────
-  test("23: Basic tier worker pool maps to basic-fastapi and Admin maps to azure", () => {
-    const resolveWorkerPool = (role: string) =>
-      role === "ADMIN" || role === "OWNER" ? "azure" : "basic-fastapi";
+  test("23: All tiers use FactoryOS rendering authority", () => {
+    const resolveExecutionAuthority = (_role: string) => "factoryos";
 
-    expect(resolveWorkerPool("USER")).toBe("basic-fastapi");
-    expect(resolveWorkerPool("BASIC")).toBe("basic-fastapi");
-    expect(resolveWorkerPool("ADMIN")).toBe("azure");
+    expect(resolveExecutionAuthority("USER")).toBe("factoryos");
+    expect(resolveExecutionAuthority("BASIC")).toBe("factoryos");
+    expect(resolveExecutionAuthority("ADMIN")).toBe("factoryos");
   });
 });

@@ -12,7 +12,7 @@ import type {
   CapabilityExecutionResult,
 } from "../contracts/CapabilityContracts";
 import { VoiceFabric } from "../voice/VoiceFabric";
-import { FFmpegRenderCompiler } from "../rendering/RenderFabric";
+import { FFmpegRenderCompiler } from "../fabric/RenderFabric";
 import { ReachSubsystem } from "../research/ReachSubsystem";
 
 export type CapabilityHandler<T = Record<string, unknown>, R = Record<string, unknown>> = (
@@ -489,7 +489,7 @@ export class CapabilityRegistry {
             capabilityId: "healer-render-recovery",
             status: "SUCCESS",
             findings: [`Job '${jobId}' advanced to attempt #${nextAttempt.attemptId} with refreshed lease`],
-            repairAction: "REDISPATCH_AZURE_RENDER",
+            repairAction: "REDISPATCH_RENDER",
             outputData: {
               jobId,
               attemptId: nextAttempt.attemptId,

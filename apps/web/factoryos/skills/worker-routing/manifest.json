@@ -1,12 +1,12 @@
 {
   "id": "worker-routing",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "Role-Isolated Worker Routing",
-  "description": "Enforces strict server-authoritative routing between Azure GPU and GitHub Actions workers.",
+  "description": "Enforces server-authoritative provider-neutral routing through ComputeRouter.",
   "author": "Overseer Core",
   "lifecycleState": "PROMOTED",
   "targetCapabilities": ["worker_routing"],
-  "requiredTools": ["get_worker_pool_health", "claim_worker_slot"],
+  "requiredTools": ["ComputeRouter", "worker_capability_check", "claim_worker_slot"],
   "requiredPermissions": ["workers:route"],
   "triggerConditions": {
     "taskTypes": ["RENDER_DISPATCH", "WORKER_SELECT"]
@@ -21,8 +21,8 @@
     { "stepIndex": 2, "name": "Check Health", "toolOrAgent": "get_worker_pool_health", "deterministic": true }
   ],
   "decisionRules": [
-    { "condition": "userRole == 'VIEWER' || userRole == 'EDITOR'", "action": "ROUTE_TO_GITHUB_ACTIONS" },
-    { "condition": "userRole == 'ADMIN' || userRole == 'OWNER'", "action": "ROUTE_TO_AZURE" }
+    { "condition": "userRole == 'VIEWER' || userRole == 'EDITOR'", "action": "ROUTE_VIA_COMPUTE_ROUTER" },
+    { "condition": "userRole == 'ADMIN' || userRole == 'OWNER'", "action": "ROUTE_VIA_COMPUTE_ROUTER" }
   ],
   "evaluationProfile": {
     "isCritical": true,

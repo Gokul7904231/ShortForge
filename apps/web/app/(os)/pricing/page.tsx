@@ -273,7 +273,7 @@ export default function PricingPlansPage() {
               </li>
               <li className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
-                <span>Dedicated Azure GPU Hardware Worker Pool</span>
+                <span>Dedicated qualified GPU worker capacity</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
@@ -368,7 +368,7 @@ export default function PricingPlansPage() {
                 <td className="py-3.5 pr-4 font-semibold text-[#111827] dark:text-[#F5F7FA]">Hardware Cloud Rendering</td>
                 <td className="py-3.5 px-4">Standard CPU</td>
                 <td className="py-3.5 px-4">Priority Node</td>
-                <td className="py-3.5 pl-4 font-semibold text-purple-500">Dedicated Azure VM Node</td>
+                <td className="py-3.5 pl-4 font-semibold text-purple-500">Dedicated qualified GPU node</td>
               </tr>
               <tr>
                 <td className="py-3.5 pr-4 font-semibold text-[#111827] dark:text-[#F5F7FA]">Factory Operations & Telemetry</td>

@@ -118,7 +118,7 @@ export function AdminOperationsDrawer({ isOpen, onClose }: AdminOperationsDrawer
           <div className="space-y-3">
             <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 flex justify-between items-center">
               <div>
-                <div className="font-semibold text-zinc-200">Azure GPU Render Pool</div>
+                <div className="font-semibold text-zinc-200">Distributed GPU Render Pool</div>
                 <div className="text-zinc-400 text-[11px]">Role Target: ADMIN / OWNER</div>
               </div>
               <span className="px-2 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[11px]">ONLINE (Scale-to-Zero)</span>

@@ -51,9 +51,7 @@ export async function POST(req: Request) {
 
     userId = authenticatedUser.uid;
     userRole = (authenticatedUser.role || "USER").toUpperCase();
-    const isAdminOrOwner = userRole === "ADMIN" || userRole === "OWNER";
-    const tier = isAdminOrOwner ? "ADMIN" : "BASIC";
-    const targetWorkerPool = isAdminOrOwner ? "azure" : "basic-fastapi";
+    const tier = userRole === "ADMIN" || userRole === "OWNER" ? "ADMIN" : "BASIC";
 
     // 2. Parse request payload & idempotency key
     const body = await req.json().catch(() => ({}));
@@ -201,7 +199,6 @@ export async function POST(req: Request) {
       jobId,
       userId,
       tier,
-      targetWorkerPool,
       workerPool: targetWorkerPool,
       topic,
       style: style || "",
