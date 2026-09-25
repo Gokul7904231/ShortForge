@@ -387,3 +387,124 @@ Implementation status must be verified against:
 8. No physical success claims without verification.
 9. No secrets in worker working memory unless explicitly required and sandboxed.
 10. No permission added solely because an LLM requested it.
+
+## 23. Absolute permission authority
+
+This file is the single canonical worker-permission map. Do not create a second worker-permissions source elsewhere in .okf.
+
+Permission authority is layered:
+
+~~~
+Human / policy authority
+        |
+        v
+Overseer task authority
+        |
+        v
+Guardian capability authorization
+        |
+        v
+AgentRuntime capability enforcement
+        |
+        v
+Worker execution
+        |
+        v
+F07 / Auditor verification
+~~~
+
+SCL may recommend a capability or task route. SCL does not grant capability authority.
+
+## 24. Absolute per-floor permission posture
+
+The floor matrix is a deny-by-default baseline, not a request for every worker to receive every capability.
+
+### F00 Analyst
+Allowed baseline: research read, research execution, evidence ingestion.
+Forbidden baseline: render dispatch, publication, arbitrary filesystem mutation.
+
+### F01 Strategy
+Allowed baseline: strategy synthesis, bounded context retrieval through approved interfaces.
+Forbidden baseline: rendering, publication, arbitrary network write.
+
+### F02 Scripting
+Allowed baseline: script writing, structured context consumption, verified-claim lookup.
+Forbidden baseline: rendering, audio synthesis, arbitrary network access.
+
+### F03 Asset Realization
+Allowed baseline: asset ingest, approved retrieval/vector lookup, visual-plan execution.
+Forbidden baseline: script authority, publication.
+
+### F04 Media Synthesis
+Allowed baseline: voice synthesis, audio encoding, approved provider execution.
+Forbidden baseline: timeline compilation, publication.
+
+### F05 Timeline
+Allowed baseline: TimelineIR compilation and composition validation.
+Forbidden baseline: direct GPU dispatch, arbitrary network access.
+
+### F06 Rendering
+Allowed baseline: authorized RenderIntent / RenderJob dispatch, approved artifact staging.
+Forbidden baseline: script rewriting, publication authority, quota mutation.
+
+### F07 Verification
+Allowed baseline: read-only inspection, evaluation, evidence collection, findings.
+Forbidden baseline: artifact mutation, publication, self-certification.
+
+These are governance defaults. Executable CapabilityRegistry and contracts remain authoritative where a documented capability set diverges.
+
+## 25. Cognitive permissions
+
+The ShortForge Cognitive Layer is not automatically privileged because it is intelligent.
+
+SCL may:
+- construct WorkerTaskContracts
+- recommend already-authorized capabilities
+- rank eligible workers/providers/templates
+- request diagnostics
+- propose repairs
+- prepare architecture proposals
+
+SCL may not:
+- mint capabilities
+- bypass Guardian
+- extend lease authority
+- revoke a lease directly
+- publish artifacts
+- certify final verification
+- turn research into policy without validation
+
+## 26. Permission change procedure
+
+Any new worker capability follows:
+
+1. define the capability
+2. define allowed roles
+3. define allowed floors
+4. define environments
+5. define input/output schema
+6. define side effects
+7. define lease/fencing requirements
+8. define denial conditions
+9. add positive and negative tests
+10. run applicable production-helper security checks
+11. verify with Guardian policy
+12. record the decision in .okf/decisions.md
+13. only then promote to implementation
+
+A permission request originating from an LLM, worker, external repository, or test fixture is not evidence that the permission should exist.
+
+## 27. Production-helper permission routine
+
+For permission changes, the routine validation station is production-helper/.
+
+Minimum expected checks:
+- targeted capability tests
+- privilege-escalation tests
+- stale-lease / fencing tests
+- replay / duplicate-request tests
+- Semgrep for security-sensitive code
+- Strix when Docker is available
+- staging proof for production-bound side effects
+
+A blocked Strix run remains UNPROVEN, never PASS.
