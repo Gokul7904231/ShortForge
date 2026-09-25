@@ -125,8 +125,7 @@ describe("FactoryOS Second-Wave Remediation — Real Artifact Pipeline & Forensi
     await expect(resolver.resolve(tamperedArtifact)).rejects.toThrow(/mismatch/i);
   });
 
-  // =========================================================================
-  // 3. REMOTE RENDER LIFECYCLE: HTTP 200 != COMPLETED
+
   // =========================================================================
   it("remote render dispatch marks state DISPATCHED, proving HTTP 200 != COMPLETED", async () => {
     const remoteIntent: RenderIntent = {
