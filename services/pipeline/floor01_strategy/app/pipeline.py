@@ -81,44 +81,43 @@ class Floor01Pipeline:
         if cached_payload_data:
             cached_floor_id = cached_payload_data.get("floor_id")
             cached_version = cached_payload_data.get("floor_version")
-            if cached_floor_id != settings.floor_id or cached_version != settings.floor_version:
-                logger.info(
-                    "ignoring_stale_f01_cached_payload",
-                    request_id=inp.request_id,
-                    cached_floor_id=cached_floor_id,
-                    cached_version=cached_version,
-                    expected_floor_id=settings.floor_id,
-                    expected_version=settings.floor_version,
-                )
-                cached_payload_data = None
-            else:
+            if cached_floor_id == settings.floor_id and cached_version == settings.floor_version:
                 cached_topic = cached_payload_data.get("topic", {}).get("selected_topic", "")
                 if cached_topic and cached_topic.lower() != inp.topic_query.strip().lower():
                     raise Floor01ValidationError(
                         f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for topic '{cached_topic}', but current request is for '{inp.topic_query}'"
                     )
                 payload = Floor01HandoffPayload.model_validate(cached_payload_data)
-            report = FloorExecutionReport(
+                report = FloorExecutionReport(
+                    request_id=inp.request_id,
+                    plan_id=payload.plan_id,
+                    floor_id=settings.floor_id,
+                    floor_version=settings.floor_version,
+                    started_at=started_at,
+                    duration_ms=round((time.time() - start_time) * 1000, 2),
+                    execution_mode=ExecutionModeDetails(
+                        global_mode=payload.execution_mode,
+                        worker_modes={"cached": payload.execution_mode},
+                        configured_provider=self.llm_adapter.provider_name,
+                        configured_model=self.llm_adapter.model_name,
+                        executed=self.llm_adapter.enabled,
+                        executed_model=self.llm_adapter.model_name if self.llm_adapter.enabled else None,
+                    ),
+                    status=payload.handoff_status,
+                    input_summary=inp.model_dump(),
+                    decision_quality_score=payload.decision_quality_score,
+                    handoff_reference={"plan_id": payload.plan_id, "cached": True},
+                )
+                return payload, report
+
+            logger.info(
+                "ignoring_stale_f01_cached_payload",
                 request_id=inp.request_id,
-                plan_id=payload.plan_id,
-                floor_id=settings.floor_id,
-                floor_version=settings.floor_version,
-                started_at=started_at,
-                duration_ms=round((time.time() - start_time) * 1000, 2),
-                execution_mode=ExecutionModeDetails(
-                    global_mode=payload.execution_mode,
-                    worker_modes={"cached": payload.execution_mode},
-                    configured_provider=self.llm_adapter.provider_name,
-                    configured_model=self.llm_adapter.model_name,
-                    executed=self.llm_adapter.enabled,
-                    executed_model=self.llm_adapter.model_name if self.llm_adapter.enabled else None,
-                ),
-                status=payload.handoff_status,
-                input_summary=inp.model_dump(),
-                decision_quality_score=payload.decision_quality_score,
-                handoff_reference={"plan_id": payload.plan_id, "cached": True},
+                cached_floor_id=cached_floor_id,
+                cached_version=cached_version,
+                expected_floor_id=settings.floor_id,
+                expected_version=settings.floor_version,
             )
-            return payload, report
 
         worker_summaries: List[WorkerExecutionSummary] = []
         warnings: List[str] = []
