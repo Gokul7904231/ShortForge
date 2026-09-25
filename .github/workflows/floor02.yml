@@ -46,7 +46,7 @@ jobs:
         env:
           FLOOR02_ENV: test
           FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"
-          PYTHONPATH: ${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/services/pipeline/floor01_strategy
+          PYTHONPATH: ${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy
         run: |
           set -o pipefail
           python -m pytest services/pipeline/floor02_scripting/tests/ -vv --durations=15 2>&1 | tee /tmp/f02-test.log
@@ -104,7 +104,7 @@ jobs:
 
       - name: Run F03 suite
         env:
-          PYTHONPATH: ${{ github.workspace }}/services/pipeline
+          PYTHONPATH: ${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy
         run: python -m pytest services/pipeline/floor03_asset_realization/tests/ -q
 
       - name: Validate F03 Ascalon JSON
@@ -132,5 +132,5 @@ jobs:
 
       - name: Run F03 Guardian tests
         env:
-          PYTHONPATH: ${{ github.workspace }}/services/pipeline
+          PYTHONPATH: ${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy
         run: python -m pytest tests/guardian/test_guardian_floor03.py tests/guardian/test_guardian_decision_scenarios.py -q
