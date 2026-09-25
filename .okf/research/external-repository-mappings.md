@@ -130,3 +130,28 @@ Primary reference for programmatic composition, frame-addressed timing, React co
 Primary pattern source for durable scene manifests, checkpoint/resume, audio-first timing, content-addressed reuse, and bounded scene-level repair.
 
 These are clean-room pattern integrations. They do not replace ShortForge's canonical authority, `TimelineIR`, capability security, RenderFabric, or F07 verification.
+
+## 7. Engineering-stack priority
+
+Two repository mappings now form the selected media engineering baseline:
+
+1. remotion-dev/remotion — primary programmatic composition engine.
+2. darkzOGx/youtube-automation-agent (AgentTube) — selected scene-lifecycle / repair pattern source.
+
+They are complementary, not competing:
+- Remotion answers how rich programmatic compositions are executed.
+- AgentTube-derived patterns answer how scene state, checkpoints, timing evidence, and selective repair are managed.
+- TimelineIR remains semantic truth.
+- RenderFabric remains execution orchestration.
+- F07 remains verification authority.
+
+## 8. Mapping-first decision rule
+
+Before introducing a new media-engineering mechanism, review all relevant existing mappings. A new mechanism must be classified as:
+- already exists
+- extends existing rule
+- contradicts existing rule
+- new capability
+- experiment only
+
+Where an existing mapping already solves the problem, prefer assimilation over another parallel architecture.
