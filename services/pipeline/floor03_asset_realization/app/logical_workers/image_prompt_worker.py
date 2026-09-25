@@ -13,6 +13,7 @@ from floors.floor03_asset_realization.app.domain.asset_models import AssetRole, 
 from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     CameraSpec,
     ContinuityMode,
+    CoverageRole,
     ContinuityPlan,
     GenerationInputMode,
     MotionBeat,
@@ -63,7 +64,32 @@ class ImagePromptWorker:
         return VisualShotType.BROLL
 
     @staticmethod
-    def _safe_text_region(scene: SceneSpecification, shot_type: VisualShotType) -> SafeRegion:
+    def _coverage_role(scene: SceneSpecification, shot_type: VisualShotType) -> CoverageRole:
+        structured = scene.visual_intent_structured or {}
+        explicit = str(structured.get("coverage_role") or "").strip().lower()
+        if explicit:
+            try:
+                return CoverageRole(explicit)
+            except ValueError:
+                pass
+
+        intent = (scene.visual_intent or "").lower()
+        if shot_type == VisualShotType.TEXT:
+            return CoverageRole.OVERLAY
+        if shot_type == VisualShotType.CLOSEUP:
+            return CoverageRole.DETAIL
+        if any(token in intent for token in ("reaction", "reacts", "responds", "listens")):
+            return CoverageRole.REACTION
+        if any(token in intent for token in ("transition", "cut to", "moves to", "shift")):
+            return CoverageRole.TRANSITION
+        if any(token in intent for token in ("payoff", "reveal", "conclusion", "cta")):
+            return CoverageRole.PAYOFF
+        if scene.sequence_index == 1 or shot_type == VisualShotType.ESTABLISHING:
+            return CoverageRole.ESTABLISH
+        return CoverageRole.ACTION
+
+    @staticmethod
+    def _safe_text_region(scene: SceneSpecification, shot_type: VisualShotType):
         structured = scene.visual_intent_structured or {}
         raw = structured.get("safe_text_region_box")
         if isinstance(raw, dict):
@@ -147,6 +173,29 @@ class ImagePromptWorker:
                 else:
                     inputs.add(GenerationInputMode.IMAGE_REFERENCE)
 
+        continuity_mode = str(
+            structured.get("continuity_mode")
+            or scene.continuity_rules.get("continuity_mode")
+            or "independent"
+        ).lower()
+        chain_requested = bool(
+            structured.get("chain_from_previous")
+            or scene.continuity_rules.get("chain_from_previous")
+            or continuity_mode in {"scene_end", "chain_from_previous"}
+        )
+        if chain_requested:
+            for dependency_scene_id in scene.depends_on_scene_ids:
+                references.append(
+                    ReferenceBinding(
+                        reference_id=f"scene:{dependency_scene_id}:last-frame",
+                        use=ReferenceUse.LAST_FRAME,
+                        subject_id=dependency_scene_id,
+                        source_scene_id=dependency_scene_id,
+                        required=False,
+                    )
+                )
+                inputs.add(GenerationInputMode.LAST_FRAME)
+
         return references, sorted(inputs, key=lambda item: item.value)
 
     @classmethod
@@ -167,6 +216,7 @@ class ImagePromptWorker:
             chain_from_previous=bool(
                 structured.get("chain_from_previous")
                 or scene.continuity_rules.get("chain_from_previous")
+                or mode in {ContinuityMode.SCENE_END, ContinuityMode.CHAIN_FROM_PREVIOUS}
             ),
             locked_subject_ids=list(scene.character_references),
             invariant_attributes=cls._string_list(
@@ -197,8 +247,17 @@ class ImagePromptWorker:
                         instruction=str(beat.get("instruction") or beat.get("description") or "").strip(),
                     )
                 )
-            except (TypeError, ValueError):
-                continue
+            except (TypeError, ValueError) as exc:
+                raise Floor03ValidationError(
+                    f"Invalid motion beat for scene_id '{scene.scene_id}'."
+                ) from exc
+
+            if motion.end_seconds > float(scene.target_duration_seconds):
+                raise Floor03ValidationError(
+                    f"Motion beat for scene_id '{scene.scene_id}' exceeds target duration."
+                )
+            result.append(motion)
+
         return result
 
     @classmethod
@@ -222,6 +281,25 @@ class ImagePromptWorker:
             camera_angle=str(
                 camera_block.get("camera_angle")
                 or structured.get("camera_angle")
+                or ""
+            ).strip()
+            or None,
+            camera_height=str(
+                camera_block.get("camera_height")
+                or structured.get("camera_height")
+                or ""
+            ).strip()
+            or None,
+            lens_profile=str(
+                camera_block.get("lens_profile")
+                or structured.get("lens_profile")
+                or structured.get("lens")
+                or ""
+            ).strip()
+            or None,
+            camera_body=str(
+                camera_block.get("camera_body")
+                or structured.get("camera_body")
                 or ""
             ).strip()
             or None,
@@ -273,6 +351,7 @@ class ImagePromptWorker:
             worker_modes.append(res["mode"])
 
             shot_type = self._shot_type(sc)
+            coverage_role = self._coverage_role(sc, shot_type)
             references, generation_inputs = self._references(sc)
             continuity = self._continuity(sc)
             structured = sc.visual_intent_structured or {}
@@ -289,6 +368,11 @@ class ImagePromptWorker:
             visual_plan = VisualPromptPlan(
                 prompt_text=res["prompt_text"],
                 negative_prompt=negative_prompt,
+                lighting=str(
+                    structured.get("lighting")
+                    or sc.continuity_rules.get("lighting")
+                    or ""
+                ).strip() or None,
                 camera=self._camera(sc, shot_type),
                 style_tokens=list(dict.fromkeys(style_tokens)),
                 subject_constraints=self._string_list(
@@ -325,6 +409,7 @@ class ImagePromptWorker:
                     "shot_type": shot_type.value,
                     "safe_text_region": visual_plan.camera.safe_text_region.model_dump(),
                     "dependency_scene_ids": list(sc.depends_on_scene_ids),
+                    "coverage_role": coverage_role.value,
                 },
                 scene_plan=visual_plan,
             )
