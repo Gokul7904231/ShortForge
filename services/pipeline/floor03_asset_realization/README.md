@@ -1,7 +1,7 @@
 # Floor 03 — Asset Specification & Realization Planning
 
 **Canonical Floor ID**: `floor03_asset_realization`  
-**Floor Version**: `2.2.0`  
+**Floor Version**: `2.3.0`  
 **Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
 **Overseer Integration**: **PENDING** — production control-plane wiring still requires the canonical runtime adapter.
 
@@ -89,6 +89,15 @@ Scene identity and asset identity remain separate. Regenerating one visual asset
 ## Validation status
 
 The historical repository evidence recorded 25 F03 tests and a 79-test combined floor run. The new v2 contract changes require fresh CI validation before merge.
+
+## Research Wave 4 additions
+
+- Every AssetPlanIR node carries the planned asset identity plus a semantic node fingerprint.
+- The plan carries an explicit Floor 02 lineage envelope and semantic source fingerprint.
+- Semantic plan fingerprints ignore runtime UUIDs and revision counters, while preserving source/compiler lineage needed for reproducible cache invalidation.
+- Continuity planning explicitly distinguishes independent, reference-first, last-frame-chain, and hybrid reference strategies.
+- Typed validation rejects duplicate nodes, broken dependency/reference asset bindings, invalid impact-radius references, inconsistent repair scopes, and missing first/last-frame input modes.
+- Surgical regeneration remaps downstream asset/reference bindings and recomputes only the semantic identities affected by the change.
 
 ## Research Wave 3 additions
 
