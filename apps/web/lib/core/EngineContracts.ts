@@ -101,6 +101,8 @@ export interface EngineJobSnapshot {
   manifestVersion: string;
   engineConfigVersion: number;
   engineStatusAtCreation: EngineStatus;
+  /** Immutable identifier of the compiled ProductionSpec used for the job. */
+  productionSpecId: string;
   effectiveConfig: {
     difficulty?: string;
     audience?: string;
