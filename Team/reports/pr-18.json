@@ -48,7 +48,12 @@
       "external research cannot override authority, contracts, or verification",
       "Guardian, leases/fencing, TimelineIR, RenderFabric, and F07 retain existing authority",
       "BLOCKED/UNPROVEN evidence cannot become a production PASS"
-    ]
+    ],
+    "repoMappingCorpus": {
+      "directory": ".okf/research/repo-mappings/",
+      "mappingFileCount": 63,
+      "rule": "Every promoted research pattern used by Floor 03 has a dedicated clean-room mapping or an existing screened mapping in this directory."
+    }
   },
   "classification": "new capability",
   "forgers": [
@@ -82,21 +87,23 @@
     },
     {
       "role": "Forge Evaluator",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "evidenceRefs": [
         "services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py",
         "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py",
         "tests/guardian/test_guardian_floor03.py",
-        ".github/workflows/floor02.yml"
+        ".github/workflows/floor02.yml",
+        "GitHub Actions run 36172205975: F02 + F03 + F03 Guardian production gates all passed"
       ]
     },
     {
       "role": "Forge Release",
-      "status": "IN_PROGRESS",
+      "status": "ESCALATED",
       "evidenceRefs": [
         ".github/workflows/team-gate.yml",
         ".okf/decisions.md",
-        ".github/workflows/floor02.yml"
+        ".github/workflows/floor02.yml",
+        "GitHub Actions run 36172206075: repository TypeScript typecheck failed on unrelated pre-existing web/FactoryOS errors"
       ]
     }
   ],
@@ -142,17 +149,13 @@
     }
   ],
   "verificationPlan": [
-    "validate Team report contract",
-    "run Floor 03 Python test suite",
-    "run Floor 03 Guardian tests",
-    "validate Ascalon ontology JSON",
-    "run TypeScript contract tests",
-    "inspect GitHub Actions CI and Floor 02 + Floor 03 Production Gates for the current PR head",
-    "verify AssetPlanIR dependency edges survive surgical regeneration",
-    "verify semantic plan fingerprints are stable across request IDs",
-    "verify idempotency cache replay returns a typed payload",
-    "do not merge until repository validation gates are satisfied",
-    "rerun F03/F02 production gates after compatibility-namespace and workflow trigger correction"
+    "F03 Python suite passes",
+    "F03 Guardian contract suite passes",
+    "Ascalon Floor 03 ontology JSON validates",
+    "F02 production suite passes",
+    "Team Change Gate validates this report",
+    "Full repository TypeScript typecheck remains a separate release blocker because it fails on unrelated existing files",
+    "Do not merge PR #18 until repository-level required checks are resolved"
   ],
   "evidenceRefs": [
     "PR #18",
@@ -167,13 +170,16 @@
     ".github/workflows/floor02.yml",
     "docs/architecture/floor03-research-upgrade.md",
     ".okf/decisions.md",
-    "floors/floor03_asset_realization/__init__.py"
+    "floors/floor03_asset_realization/__init__.py",
+    "GitHub Actions run 36172205975",
+    "GitHub Actions run 36172206075",
+    ".okf/research/repo-mappings/"
   ],
   "model": {
     "name": "Ascalon / ShortForge Cognitive Model",
     "participated": false,
     "runtimeStatus": "NOT_RUNTIME_VERIFIED",
-    "validationStatus": "F03 source compile previously passed; fresh test run pending after compatibility correction"
+    "validationStatus": "F03 production gates are green; full repository typecheck remains red on unrelated TypeScript errors."
   },
   "disposition": "ESCALATED"
 }
