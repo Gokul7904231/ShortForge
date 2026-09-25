@@ -132,3 +132,41 @@ def test_manifest_worker():
     assert manifest.total_visual_assets == 2
     assert manifest.total_audio_assets == 2
     assert manifest.resolved_platform == "youtube_shorts"
+
+
+
+def test_visual_plan_binds_dependency_last_frame_and_camera_metadata():
+    scenes = build_mock_scenes()
+    scenes[1].depends_on_scene_ids = [scenes[0].scene_id]
+    scenes[1].continuity_rules = {
+        "continuity_mode": "chain_from_previous",
+        "lighting": "soft rim light",
+    }
+    scenes[1].visual_intent_structured = {
+        "camera": {
+            "camera_height": "eye-level",
+            "lens_profile": "standard prime",
+            "camera_body": "cinematic digital body",
+        },
+        "coverage_role": "action",
+    }
+    reqs, _, _ = ImagePromptWorker().execute(
+        scenes, aspect_ratio="9:16", resolution="1080x1920"
+    )
+    plan = reqs[1].scene_plan
+    assert plan is not None
+    assert plan.lighting == "soft rim light"
+    assert plan.camera.camera_height == "eye-level"
+    assert plan.camera.lens_profile == "standard prime"
+    assert plan.camera.camera_body == "cinematic digital body"
+    assert any(ref.use.value == "last_frame" and ref.source_scene_id == scenes[0].scene_id for ref in plan.references)
+    assert "last_frame" in {mode.value for mode in plan.generation_inputs}
+
+
+def test_motion_beats_cannot_exceed_scene_duration():
+    scenes = build_mock_scenes()
+    scenes[0].visual_intent_structured = {
+        "time_beats": [{"start": 0, "end": 11, "instruction": "zoom in"}]
+    }
+    with pytest.raises(Floor03ValidationError, match="exceeds target duration"):
+        ImagePromptWorker().execute(scenes, aspect_ratio="9:16", resolution="1080x1920")
