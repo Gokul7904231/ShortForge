@@ -936,3 +936,19 @@ Resolution:
 - F02's own production quality gates remain unchanged and continue to run in their dedicated suite.
 
 This restores test ownership boundaries: F03 tests the F02→F03 contract, while F02 tests its own generation/quality policy.
+
+
+## F03 idempotency and semantic fingerprint hardening — 2026-09-25
+
+A production-gate run exposed two final test-level contract gaps:
+
+1. Request-id idempotency did not distinguish the same request ID carrying a different Floor 03 input because the memory key was request ID only.
+2. AssetPlanIR fingerprints included generated runtime asset identities, so equivalent semantic plans produced different fingerprints across independent executions.
+
+Resolution:
+- Floor 03 now computes a full validated-input SHA-256 fingerprint and persists it with every new idempotency record.
+- A stored fingerprint mismatch for the same request ID is rejected as an idempotency conflict.
+- AssetPlanIR semantic fingerprints exclude runtime-only plan/asset/reference/evidence identifiers while retaining semantic scene, camera, continuity, dependency, timing and constraint content.
+- Legacy records without stored fingerprints remain readable for backward compatibility; all new writes are fingerprinted.
+
+This strengthens replay safety without moving orchestration or provider authority into F03.
