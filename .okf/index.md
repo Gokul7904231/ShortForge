@@ -181,3 +181,7 @@ No F00-F07 worker receives generic MCP access by default.
 | apps/web/factoryos/core/engines/ProductionSpecCompiler.ts | Server-authoritative configuration compiler, normalization, validation, and SHA-256 spec hashing. |
 
 Invariant: engine UI configuration is creator intent. It does not grant worker capabilities, bypass .okf, override Guardian/Slayer controls, or bypass F07.
+
+## 12. Floor 00 Final Audit
+
+The authoritative pre-F01 audit is .okf/audits/floor00-final-audit.md. It reconciles executable F00 runtime, floor contracts, ResearchPassport provenance, Reach failure semantics, Content Engine research contracts, Ascalon ontology, regression tests, and remaining target-vs-current boundaries.
