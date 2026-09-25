@@ -800,3 +800,44 @@ No choice is made between IR and JSON because they operate at different layers:
 - Human reviewers receive Markdown.
 
 The Context Compiler may omit irrelevant data from a model projection, but it may not omit the fact that a complete .okf sweep occurred.
+
+
+## F03 AssetPlanIR research upgrade — 2026-09-25
+
+**Classification:** new capability
+
+**Decision:** Extend Floor 03's existing deterministic asset-specification boundary with a typed, provider-neutral `AssetPlanIR`. Keep the production topology unchanged: `F02 -> (F03 || F04) -> F05`.
+
+**Why:** The current F03 contract was sufficient for simple prompt specifications but did not express shot/camera constraints, safe text regions, scene dependency edges, or surgical-repair impact metadata as a first-class specification. A typed IR makes those semantics explicit without granting F03 physical-generation or orchestration authority.
+
+**External evidence considered:**
+- OpenSpec: specifications and their dependency relationships should be explicit, machine-checkable artifacts.
+- Paperclip: control-plane and execution-plane responsibilities should remain separated.
+- Hindsight + AI Agent Book: persistent memory should be useful context/evidence, not authority or indiscriminate history.
+- StarNet: capabilities and handoffs should be explicit and scoped.
+- OpenBao: secrets, leases, and revocation belong at a dedicated identity/secret boundary, not inside a media-planning floor.
+- quiche: semantic application state should remain separate from transport mechanics.
+- NVIDIA Model Optimizer: inference optimization belongs in the cognition/model-serving layer and must be benchmarked, not baked into F03 semantics.
+- ORCA was reviewed as a possible media-generation reference but no non-conflicting capability was promoted from the available evidence.
+
+**Affected components:**
+- `services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py`
+- `services/pipeline/floor03_asset_realization/app/domain/asset_models.py`
+- `services/pipeline/floor03_asset_realization/app/domain/handoff.py`
+- `services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py`
+- `services/pipeline/floor03_asset_realization/app/pipeline.py`
+- `services/pipeline/floor03_asset_realization/app/core/identity.py`
+- `services/pipeline/floor03_asset_realization/app/core/config.py`
+- Floor 03 Guardian identity handling
+- Ascalon floor/agent ontology
+- canonical floor testing contract
+
+**Contract impact:** Floor 03 is now identified as `floor03_asset_realization`, version `2.0.0`. The handoff may contain a typed `asset_plan_ir`. Visual requirements may carry a typed scene-level `scene_plan`. Regeneration creates a new asset identity and increments the local asset-plan version without rewriting the authoritative Floor 02 ScriptIR version.
+
+**Authority impact:** none. Overseer, Guardian, AgentRuntime, leases/fencing, TimelineIR, RenderFabric, and F07 remain authoritative at their existing layers. F03 cannot generate physical media, mint capabilities, or become a second orchestration plane.
+
+**Implementation status:** implemented on research branch; merge is gated on fresh CI and contract regression validation.
+
+**Validation required:** full F03 tests, Guardian tests, TypeScript contract tests, JSON ontology validation, and repository CI. Any failure or contract incompatibility rejects the promotion.
+
+**Rollback:** revert the branch changes as a unit and restore the prior F03 contract/ontology generation. No production authority or external secrets are modified by this decision.
