@@ -1,7 +1,7 @@
 # Floor 03 — Asset Specification & Realization Planning
 
 **Canonical Floor ID**: `floor03_asset_realization`  
-**Floor Version**: `2.1.0`  
+**Floor Version**: `2.2.0`  
 **Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
 **Overseer Integration**: **PENDING** — production control-plane wiring still requires the canonical runtime adapter.
 
@@ -89,3 +89,14 @@ Scene identity and asset identity remain separate. Regenerating one visual asset
 ## Validation status
 
 The historical repository evidence recorded 25 F03 tests and a 79-test combined floor run. The new v2 contract changes require fresh CI validation before merge.
+
+## Research Wave 3 additions
+
+- Cinematic coverage is explicit through `CoverageRole`.
+- Chain-dependent scenes can express provider-neutral previous-scene `LAST_FRAME` reference bindings.
+- Camera planning may include camera height, lens profile, and camera body.
+- Lighting is explicit semantic intent.
+- Motion beats are validated against the source scene's target duration.
+- Existing dependency DAG validation, transitive repair impact, semantic plan fingerprinting, and surgical asset identity renewal remain intact.
+
+Research mappings for these decisions are maintained under `.okf/research/repo-mappings/`.
