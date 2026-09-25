@@ -2,17 +2,15 @@
 # ==============================================================================
 # FactoryOS — Persistent Basic FastAPI Render Service Setup Script
 # ==============================================================================
-# Productionizes the warm Basic rendering microservice on Azure VM without
-# touching or regressing the existing Admin render worker.
+# Installs the persistent render worker as a provider-neutral self-hosted service.
 # ==============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORK_DIR="/opt/factoryos/vps-rendering-engine"
+WORK_DIR="/opt/factoryos/rendering-engine"
 CACHE_DIR="/opt/factoryos/basic-cache"
 SERVICE_NAME="factoryos-basic-render.service"
-ADMIN_SERVICE_NAME="factoryos-admin-render-worker.service"
 
 echo "============================================================"
 echo " [FactoryOS] Starting Persistent Basic Render Service Setup "
@@ -48,7 +46,7 @@ mkdir -p "$CACHE_DIR/fonts"
 mkdir -p "$CACHE_DIR/templates"
 mkdir -p /tmp/factoryos-basic-render
 
-chown -R azureuser:azureuser "$WORK_DIR" 2>/dev/null || true
+chown -R factoryos:factoryos "$WORK_DIR" 2>/dev/null || true
 chown -R azureuser:azureuser "$CACHE_DIR" 2>/dev/null || true
 chown -R azureuser:azureuser /tmp/factoryos-basic-render 2>/dev/null || true
 
