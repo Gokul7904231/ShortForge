@@ -106,6 +106,7 @@ export interface EngineJobSnapshot {
     audience?: string;
     tone?: string;
     voice?: string;
+    thumbnailStyle?: string;
     ratio?: string;
     renderProfile?: string;
     provider?: string;
