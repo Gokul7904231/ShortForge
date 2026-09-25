@@ -5,7 +5,7 @@ const DEFAULT_MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
 
 function normalizeRoots(value: string | undefined, fallback: string[]): string[] {
   const roots = (value || "")
-    .split(path.delimiter)
+    .split(/[;,]/)
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry) => path.resolve(process.cwd(), entry));
