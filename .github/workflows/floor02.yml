@@ -35,14 +35,7 @@ jobs:
         run: |
           python -m compileall -q services/pipeline/floor02_scripting
 
-      - name: Run Floor 02 full test suite
-        env:
-          FLOOR02_ENV: test
-          FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"
-        run: |
-          python -m pytest services/pipeline/floor02_scripting/tests/ -q --durations=15
-
-      - name: Validate canonical production gates
+      - name: Run Floor 02 full test suite\n        id: f02_tests\n        continue-on-error: true\n        env:\n          FLOOR02_ENV: test\n          FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"\n        run: |\n          set -o pipefail\n          python -m pytest services/pipeline/floor02_scripting/tests/ -vv --durations=15 2>&1 | tee /tmp/f02-test.log\n\n      - name: Publish temporary F02 failure diagnostics\n        if: steps.f02_tests.outcome == 'failure'\n        uses: actions/github-script@v7\n        with:\n          script: |\n            const fs = require('fs');\n            const log = fs.readFileSync('/tmp/f02-test.log', 'utf8');\n            const body = '### Temporary F02 failure diagnostics\\n\\n```text\\n' + log.slice(-14000) + '\\n```';\n            await github.rest.issues.createComment({\n              owner: context.repo.owner,\n              repo: context.repo.repo,\n              issue_number: context.issue.number,\n              body\n            });\n\n      - name: Fail on F02 test failure\n        if: steps.f02_tests.outcome == 'failure'\n        run: exit 1\n      - name: Validate canonical production gates
         env:
           FLOOR02_ENV: test
           FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"
