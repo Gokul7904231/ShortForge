@@ -81,7 +81,7 @@ export class Floor01RuntimeAdapter {
   }
 
   static fromAnalystReport(
-    executionId: string,
+    requestId: string,
     analystReport: AnalystReport,
     input: {
       targetAudience?: string;
@@ -96,7 +96,7 @@ export class Floor01RuntimeAdapter {
     const integrity = ResearchRuntime.verifyResearchPassport(passport);
 
     return {
-      request_id: executionId,
+      request_id: requestId,
       topic_query: analystReport.topic,
       target_audience: input.targetAudience || passport.researchContext?.audience || "general_learners",
       platform: input.platform || "youtube_shorts",
