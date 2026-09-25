@@ -7,7 +7,7 @@ It is not a second source of truth and it is not a green-light generator.
 
 ## What is here
 
-- combined/reports/ — P0 hardening, real Azure E2E, real runtime traces, security forensics
+- combined/reports/ — P0 hardening, runtime traces, security forensics, and release evidence
 - semgrep/rules/ — ShortForge-specific static security rules
 - semgrep/reports/ — recorded static-scan evidence
 - strix/prompts/ — dynamic security-audit instructions
