@@ -114,6 +114,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Workflows & Schedule** | [`./workflows/`](./workflows/) | Schedule lifecycle, mission execution, bounded healing, and gate-verified publishing. |
 | **Artifacts & Lineage** | [`./artifacts/`](./artifacts/) | Content-addressed storage, TimelineIR (EDL), Structured Findings, and cryptographic receipts. |
 | **Security & Trust** | [`./security/`](./security/) | Untrusted web content boundaries, capability grants, secret scanning, and lease fencing. |
+| **Repository Mapping Stack** | [`./research/repo-mappings/`](./research/repo-mappings/) | Prioritized clean-room engineering mappings; Remotion is the primary composition engine and AgentTube is the selected scene-lifecycle pattern source. |
 | **Research & External** | [`./research/`](./research/) | Clean-room mappings for `video-use`, `WeKnora`, `Octop`, `orca`, `VoiceStudio`, and Reach. |
 | **Historical Audits** | [`./audits/`](./audits/) | Archived forensic baselines, bypass analyses, and red-team findings (Historical Reference). |
 
@@ -143,3 +144,7 @@ Use these files as the canonical entry points for future architecture decisions 
 | `.okf/devourer.md` | Controlled self-improvement governance charter. |
 
 **Decision priority:** complete current `.okf` review first, then inspect relevant implementation, tests, repository mappings, and production-helper evidence.
+
+## 8. Absolute routine
+
+Every future non-trivial decision begins with the complete current .okf end-to-end sweep defined in .okf/decision-protocol.md. Relevant repository mappings and production-helper evidence are mandatory decision inputs, and worker permissions are governed by .okf/security/worker-permissions.md.
