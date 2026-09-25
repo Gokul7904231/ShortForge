@@ -56,8 +56,8 @@ export class ComputeGateway {
   /**
    * Plans compute routing for a job without executing it.
    */
-  public async planJob(job: ComputeJob): Promise<RoutingDecision> {
-    return this.router.planProvider(job);
+  public async planJob(job: ComputeJob, preferredProviderType?: ComputeJob["requirements"] extends never ? never : import("../contracts/ComputeContracts").ProviderType): Promise<RoutingDecision> {
+    return this.router.planProvider(job, preferredProviderType);
   }
 
   /**
@@ -65,8 +65,9 @@ export class ComputeGateway {
    */
   public async submitJob(
     job: ComputeJob,
-    onProgress?: (msg: string) => void
+    onProgress?: (msg: string) => void,
+    preferredProviderType?: import("../contracts/ComputeContracts").ProviderType
   ): Promise<{ receipt: ExecutionReceipt; failovers: string[] }> {
-    return this.router.dispatchWithFailover(job, onProgress);
+    return this.router.dispatchWithFailover(job, onProgress, preferredProviderType);
   }
 }
