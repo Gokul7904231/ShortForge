@@ -233,3 +233,17 @@ Adoption remains bounded:
 - shot coverage, evidence lineage and repair scope are typed;
 - TimelineIR, RenderFabric, Guardian and F07 retain their authority;
 - restrictive-license sources remain reference-only and are not embedded.
+
+## 2026-09-25 — Floor 03 Wave 4 Clean-Room Mappings
+
+The Floor 03 research corpus was widened beyond the previous media and agent repositories.
+
+- OpenLineage: explicit lineage entities and versioned metadata -> typed PlanLineage and source fingerprints.
+- DVC: dependency-aware reproducibility -> semantic plan/node fingerprints separated from runtime identities.
+- Dagster: blocking asset checks -> deterministic F03 structural preflight.
+- InvokeAI: specification versus executable graph -> AssetPlanIR remains non-executable and downstream compilation remains outside F03.
+- Character Consistency Skill: reference-first storyboard validation -> explicit continuity/reference strategy.
+- video-gen-en: layered storyboard, shot, motion and consistency metadata -> provider-neutral planning fields.
+- NeMo Guardrails: explicit validation boundaries -> deterministic F03 contract checks while Guardian retains safety authority.
+
+No third-party code, prompts, tests, models, credentials, or runtime dependencies were copied into F03.
