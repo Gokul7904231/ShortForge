@@ -698,10 +698,10 @@ This decision does not change the canonical eight-floor topology, sovereign auth
 
 **Decision:** Floor 06 has one authoritative rendering entry point at `apps/web/factoryos/core/fabric/RenderFabric.ts`. Physical provider execution is routed through the singleton `ComputeGateway` and its `ComputeRouter`; compiler selection remains inside RenderFabric, while worker lifecycle/state contracts remain under `core/fabric/*`.
 
-**Compatibility:** `apps/web/factoryos/core/rendering/RenderFabric.ts` is retained only as a re-export compatibility shim. New production imports must use `core/fabric/RenderFabric`.
+**Compatibility:** The duplicate `core/rendering/RenderFabric.ts` implementation has been removed. There is no second RenderFabric implementation.
 
 **Invariant:** A render provider cannot be treated as successfully completed when it returns `COMPLETED` without at least one physical artifact receipt. The ComputeRouter treats that condition as a failed execution eligible for bounded failover.
 
-**Non-goals:** This consolidation does not yet make AMD a live ComputeRouter provider. The AMD worker adapter remains a separate qualification/execution boundary until a real AMD `IComputeProvider` adapter is implemented and physically verified.
+**Provider boundary:** Azure VM rendering is retired. F06 provider routing is owned by ComputeRouter and qualified provider adapters; AMD remains the next physical provider integration.
 
-**Validation required:** Typecheck, canonical RenderFabric tests, Render Fabric distributed tests, and the later AMD distributed golden-mission proof.
+**Validation required:** Typecheck, canonical RenderFabric tests, Render Fabric distributed tests, and the AMD distributed golden-mission proof.
