@@ -12,7 +12,7 @@ import * as crypto from "node:crypto";
 import { randomUUID } from "node:crypto";
 import type { RenderIntent, RenderArtifact, RemoteRenderState } from "../contracts/RenderIntentContracts";
 import { ComputeGateway } from "../compute/gateway/ComputeGateway";
-import type { ProviderType, ComputeJob } from "../compute/contracts/ComputeContracts";
+import type { ProviderType, ComputeJob, ExecutionReceipt } from "../compute/contracts/ComputeContracts";
 import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
 
 export interface RenderCompilationResult {
@@ -33,6 +33,7 @@ export interface RenderExecutionResult {
   readonly compilerUsed: "FFMPEG" | "HYPERFRAMES";
   readonly message?: string;
   readonly error?: string;
+  readonly receipt?: ExecutionReceipt;
 }
 
 export interface IRenderCompiler {
@@ -509,6 +510,7 @@ export class RenderFabric {
       providerUsed: "DISTRIBUTED",
       compilerUsed: compiler.id === "FFMPEG" || compiler.id === "HYPERFRAMES" ? compiler.id : "FFMPEG",
       message: `ComputeRouter routed ${intent.jobId} through provider ${receipt.providerId} and verified physical artifact ${artifactRef.sha256}.`,
+      receipt,
     };
   }
 
