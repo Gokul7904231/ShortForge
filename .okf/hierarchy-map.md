@@ -1792,3 +1792,36 @@ Production authority remains:
 Human -> Overseer -> Guardian / regulators -> AgentRuntime -> Workers -> F07 -> ReleaseAuthorization
 
 Security Forgers are evidence producers. Evaluation Forgers are judges. Release Forgers prepare releases. None of them become sovereign merely because they operate outside the production worker hierarchy.
+
+
+## Content Engine → Configuration → ProductionSpec Boundary
+
+The existing Content-engine template hierarchy is extended with an explicit runtime compilation boundary:
+
+```text
+Content Engine
+   ↓
+Engine Capability Profile
+   ↓
+Engine Manifest
+   ├── input/data contract
+   ├── research contract
+   ├── creative/cognitive contract
+   ├── asset/voice contract
+   ├── timeline/render contract
+   └── verification contract
+   ↓
+ConfigurationSchema
+   ↓
+Creator Intent
+   ↓
+ProductionSpecCompiler
+   ↓
+Immutable ProductionSpec
+   ↓
+F00–F07 floor projections
+```
+
+The dashboard is only a schema renderer. It is not an independent configuration authority.
+
+ProductionSpec cannot grant worker capabilities, bypass .okf, override Guardian/Slayer controls, or bypass F07.
