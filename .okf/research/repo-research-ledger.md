@@ -135,3 +135,44 @@ Mappings remain research evidence. The Team consumes their adopted mechanisms on
 | showlab/Code2Video | Planner/Coder/Critic separation and evaluation | Preserve planner vs judge boundary in F03 | RESEARCH_ONLY |
 
 All mappings are clean-room pattern extraction or research references. No external code, prompts, tests, weights, or provider-specific credentials were imported into F03.
+
+## Floor 03 research wave 3 — 2026-09-25
+
+Additional GitHub repositories were reviewed beyond both the original nine sources and the prior second-wave corpus.
+
+### High-signal sources
+
+| Repository | F03-relevant signal | Adoption |
+|---|---|---|
+| Comfy-Org/ComfyUI | Declarative reusable graphs and partial re-execution | F03 remains declarative; repair locality is represented by dependency/impact metadata, while executable graphs stay downstream |
+| conexto/ViMax | Reference selection from previous timeline plus first/last-frame continuity | Automatic dependency-boundary last-frame reference bindings when chain continuity is requested |
+| huggingface/diffusers | First/last-frame conditioning and explicit temporal controls | Provider-neutral generation input modes and temporal intent |
+| hpcaitech/Open-Sora | Explicit aspect-ratio and frame-count generation controls | Temporal semantics remain explicit rather than hidden in prompts |
+| yfge/ai-video-studio | Durable production objects with Timeline as playback SSOT | AssetPlanIR remains durable intent; TimelineIR remains downstream SSOT |
+| LudwigKienle/ai-video-production-editor | Shot/camera/lens/lighting planning before filming | Camera height, lens profile, camera body and lighting fields |
+| Vidia-Tools/Vidia-Open-Studio | Declarative stage manifests separated from execution | F03 does not select provider workflow or execute stages |
+| thoxakihiko/shotlist-forge | Reusable shot grammar and continuity dimensions | Deterministic CoverageRole |
+| zyz254009-crypto/script-to-shootable-storyboard | Atomic shot contracts, coverage, source trace and bounded repair | Coverage/evidence/repair metadata in AssetPlanIR |
+| BitraAI/ai-film-director | Stage schemas, stable IDs, continuity checks, adapter execution | Stronger typed stage boundary and stable semantic artifact |
+| LinHao-city/StoryMind | Camera, lighting, character anchors and cross-shot consistency | Provider-neutral camera/lighting/continuity/reference semantics |
+
+### Additional screened references
+
+Sainath Pattipati's video-generation pipeline, 0xadvait/ai-video-pipeline, open-video-ai/open-video, billpar/ai-cinematic-pipeline, ai-visual-director and ai-storyboard-video-starter were also screened. Their useful signals overlap the adopted patterns above; no separate runtime capability was promoted from them.
+
+### Implementation delta
+
+- Floor 03 contract advances to 2.2.0.
+- AssetPlanIR advances to schema 1.2.0.
+- CameraSpec now carries camera height, lens profile and camera body.
+- VisualPromptPlan now carries lighting intent.
+- ReferenceBinding can retain source scene/asset lineage.
+- Chain continuity can automatically bind a dependent scene to the previous scene's last frame.
+- Generation input modes now expose that last-frame requirement to downstream adapters.
+- AssetPlanNode now carries deterministic cinematic CoverageRole.
+- Motion beats are validated against the source scene target duration instead of creating an invalid temporal plan.
+- Existing dependency graph, transitive impact radius and semantic plan fingerprinting remain intact.
+
+### Non-conflict rule
+
+These improvements remain specification-only. F03 does not choose a provider/model, execute generation graphs, own secrets, replace TimelineIR, or certify physical media.
