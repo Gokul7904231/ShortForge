@@ -8,7 +8,7 @@
 
 ## Production status
 
-**F02 v2 production implementation is complete and blocking-tested.**
+**F02 v2 production implementation is complete in code; release status is gated on the blocking F02/CI suites below.**
 
 The runtime is a **Narrative Compiler**, not a free-running text generator. CI blocks release on the full F02 suite:
 
