@@ -361,9 +361,9 @@ describe("FactoryOS P0-H Adversarial Failure-Injection Gates (H1 - H15)", () => 
   });
 
   // -------------------------------------------------------------
-  // H10: Azure/remote rendering unavailable -> local fallback
+  // H10: Prototype compiler requests fail closed to production FFmpeg
   // -------------------------------------------------------------
-  describe("H10: Azure/remote rendering unavailable -> local fallback", () => {
+  describe("H10: Prototype compiler requests fail closed to production FFmpeg", () => {
     it("should route to deterministic local FFmpeg compiler when remote compiler is disallowed or unavailable", async () => {
       const fabric = new RenderFabric();
       const compiler = fabric.planCompiler({
