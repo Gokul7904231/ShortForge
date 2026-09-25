@@ -78,6 +78,15 @@ export interface ResearchPassport {
     readonly completedAt: string;
   };
   readonly transformations: string[];
+  readonly researchContext?: {
+    readonly engineId?: string;
+    readonly audience?: string;
+    readonly dataRequirements?: string[];
+    readonly minSources?: number;
+    readonly citationRequired?: boolean;
+    readonly freshness?: "run" | "recent" | "any";
+    readonly agentReachProfile?: string;
+  };
   integrity?: PassportIntegrityMetadata;
 }
 
