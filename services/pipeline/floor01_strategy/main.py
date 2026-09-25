@@ -36,10 +36,21 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
-    async def add_security_headers(request: Request, call_next):
+    async def enforce_request_limits_and_security_headers(request: Request, call_next):
+        if request.method == "POST":
+            content_length = request.headers.get("content-length")
+            if content_length and int(content_length) > 262144:
+                return Response(
+                    content="Request body too large",
+                    status_code=413,
+                    media_type="text/plain",
+                )
+
         response: Response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         if is_production:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Cache-Control"] = "no-store"
