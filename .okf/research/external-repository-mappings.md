@@ -88,3 +88,30 @@ No code, prompt templates, test cases, or vendor-specific artifacts were copied 
 | **AgentRuntime (`Octop`)** | In-process execution harness with budget & capability gates | Distributed sandboxed WebAssembly / microVM worker execution |
 | **Compute Fabric (`orca`)** | Lease & fencing token contracts with CAS callbacks | Self-healing Kubernetes / Nomad GPU worker autoscaler with spot-instance preemption |
 | **Voice Engine (`VoiceStudio`)**| Dynamic provider routing with syllable timestamp extraction | Neural voice cloning with real-time emotion and pacing modulation |
+
+
+## 4. Remotion → Programmatic Composition Stack
+
+Status: SELECTED ENGINEERING STACK
+
+Assimilate explicit composition contracts, frame-clock animation, Sequence-based timeline composition, React / Canvas / WebGL rendering paths, dynamic metadata, and programmatic rendering.
+
+ShortForge mapping: TimelineIR -> RemotionCompiler -> RenderFabric -> F07
+
+Do not let Remotion replace TimelineIR as semantic truth.
+
+## 5. AgentTube → Scene Lifecycle and Surgical Repair
+
+Status: CLEAN-ROOM ENGINEERING PATTERN
+
+Assimilate durable scene manifests, persistent checkpoints, audio-first timing, scene-level selective regeneration, content-addressed caching, local-first rendering, and fail-closed narration / evidence state.
+
+ShortForge mapping: SceneManifest + TimelineIR + CAS + ReMaker + F07
+
+No upstream code, prompts, tests, or proprietary assets are copied.
+
+## 6. Stack governance
+
+The current engineering stack is canonically documented in .okf/engineering-stack.md.
+
+Future rendering research must compare candidates against Remotion plus AgentTube-derived lifecycle patterns before introducing a parallel architecture.
