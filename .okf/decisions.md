@@ -832,7 +832,7 @@ The Context Compiler may omit irrelevant data from a model projection, but it ma
 - Ascalon floor/agent ontology
 - canonical floor testing contract
 
-**Contract impact:** The initial AssetPlanIR promotion established Floor 03 as `floor03_asset_realization`, version `2.0.0`; the second-wave hardening advances the current branch contract to `2.1.0`. The handoff may contain a typed `asset_plan_ir`. Visual requirements may carry a typed scene-level `scene_plan`. Regeneration creates a new asset identity and increments the local asset-plan version without rewriting the authoritative Floor 02 ScriptIR version.
+**Contract impact:** The initial AssetPlanIR promotion established Floor 03 as `floor03_asset_realization`, version `2.0.0`; the second-wave hardening advanced the branch contract to `2.1.0`; Wave 3 research additions now advance the current branch contract to `2.2.0`. The handoff may contain a typed `asset_plan_ir`. Visual requirements may carry a typed scene-level `scene_plan`. Regeneration creates a new asset identity and increments the local asset-plan version without rewriting the authoritative Floor 02 ScriptIR version.
 
 **Authority impact:** none. Overseer, Guardian, AgentRuntime, leases/fencing, TimelineIR, RenderFabric, and F07 remain authoritative at their existing layers. F03 cannot generate physical media, mint capabilities, or become a second orchestration plane.
 
