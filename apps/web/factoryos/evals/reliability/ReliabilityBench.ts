@@ -96,7 +96,7 @@ export class ReliabilityBench {
   }
 
   private static runWorkerCrashScenario(): ReliabilityScenarioResult {
-    const plan = RecoveryEngine.analyzeFailure({ message: "Worker node heartbeat lost on Azure VM" }, "task_render", 1);
+    const plan = RecoveryEngine.analyzeFailure({ message: "Worker node heartbeat lost on render worker" }, "task_render", 1);
     const passed = plan.classification === "WORKER" && plan.strategy === "FAILOVER_WORKER" && plan.quotaReconciled;
     return {
       scenarioId: "REL-002",
