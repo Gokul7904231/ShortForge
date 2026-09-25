@@ -227,3 +227,14 @@ The branch now exposes that canonical implementation through a root Python compa
 ## Guardian gate ownership correction
 
 The production gate previously combined F03 Guardian tests with a Floor 02 scenario test. That unrelated F02 scenario requires F01 provenance evidence and can fail for reasons unrelated to F03. The F03 Guardian gate is now scoped to `tests/guardian/test_guardian_floor03.py`, preserving test ownership and keeping F02 recovery scenarios in the F02 validation domain.
+
+
+## Validation Gate Hardening — 2026-09-25
+
+Fresh runner evidence hardened the F03 validation boundary:
+
+- The F03 Guardian job now runs only the dedicated Floor 03 Guardian contract instead of inheriting unrelated Floor 02 scenario dependencies.
+- The workflow PYTHONPATH places the repository-root FactoryOS compatibility namespace first.
+- The latest targeted Floor 02 + Floor 03 production gate passes the F02 suite, F03 suite, ontology validation, and F03 Guardian contract.
+
+This is a validation-boundary correction, not a change to F03 production authority or the canonical floor topology.
