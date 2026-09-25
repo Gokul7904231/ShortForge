@@ -45,6 +45,7 @@ import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegist
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
+import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -646,18 +647,26 @@ export class OverseerControlPlane {
         });
 
         const analystOutput = node.dependencyOutputs?.["task_f00_analyst"]?.output || scope.analystReport || sharedScope.analystReport;
-        const strategyPayload = {
-          topic: scope.topic || node.payload?.topic || analystOutput?.topic || "Auto Topic",
-          style: scope.style || "informative",
-          targetAudience: "general",
-          recommendedHook: analystOutput?.hookIntelligence?.recommendedHook,
-          hookArchetype: analystOutput?.hookIntelligence?.hookArchetype || "CURIOSITY_GAP",
-          hasCorroboratedPassport: Boolean(analystOutput?.passport),
-        };
+        if (!analystOutput?.passport) {
+          throw new Error("F01_UPSTREAM_RESEARCH_MISSING: Floor 01 requires F00 AnalystReport/ResearchPassport.");
+        }
 
-        scope.strategy = strategyPayload;
-        sharedScope.strategy = strategyPayload;
+        const f01Request = Floor01RuntimeAdapter.fromAnalystReport(
+          executionId,
+          analystOutput,
+          {
+            targetAudience: scope.engineSnapshot?.effectiveConfig?.audience || "general_learners",
+            platform: scope.productionSpec?.configuration?.creative?.platform || "youtube_shorts",
+            contentFormat: scope.productionSpec?.configuration?.content?.format || "educational_short",
+            nicheContext: scope.productionSpec?.configuration?.content?.niche,
+            learningLevel: scope.productionSpec?.configuration?.content?.learningLevel || "beginner",
+            constraints: scope.productionSpec?.configuration?.content?.constraints || {},
+          },
+        );
 
+        const canonicalF01 = await new Floor01RuntimeAdapter().execute(f01Request);
+        scope.strategy = canonicalF01;
+        sharedScope.strategy = canonicalF01;
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
         }
