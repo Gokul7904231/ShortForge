@@ -11,19 +11,26 @@ from floors.floor01_strategy.app.core.config import get_settings
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    if settings.environment.lower() == "production" and not settings.service_api_key:
+        raise RuntimeError(
+            "FLOOR01_SERVICE_API_KEY must be configured before starting Floor 01 in production."
+        )
+
+    is_production = settings.environment.lower() == "production"
     app = FastAPI(
         title=f"FactoryOS {settings.floor_id.upper()} — {settings.floor_name}",
         description="FactoryOS Strategy & Intelligence Floor.",
         version=settings.floor_version,
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
     )
 
     origins = settings.cors_origins or ["http://localhost:3000"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type", "X-API-Key"],
     )
@@ -33,7 +40,8 @@ def create_app() -> FastAPI:
         response: Response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        if is_production:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Cache-Control"] = "no-store"
         return response
 
