@@ -607,7 +607,8 @@ class Floor01Pipeline:
 
     def _persist_report_artifact(self, report: FloorExecutionReport) -> None:
         try:
-            reports_dir = Path("used_artifact/reports")
+            settings = get_settings()
+            reports_dir = Path(settings.memory_file_path).expanduser().resolve().parent / "reports"
             reports_dir.mkdir(parents=True, exist_ok=True)
             report_file = reports_dir / f"floor01_execution_{report.execution_id}.json"
             report_file.write_text(
