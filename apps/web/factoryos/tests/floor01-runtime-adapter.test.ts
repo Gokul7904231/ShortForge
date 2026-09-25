@@ -69,9 +69,6 @@ describe("Floor01RuntimeAdapter", () => {
       handoff_status: "VALIDATED",
     });
   });
-});
-
-
   it("does not leak the F01 service response body on execution failure", async () => {
     vi.stubGlobal(
       "fetch",
@@ -109,7 +106,7 @@ describe("Floor01RuntimeAdapter", () => {
     ).rejects.not.toThrow("internal-stack-trace-and-secret");
   });
 
-  it("does not use the broad control-plane secret as a production F01 credential", () => {
+  it("does not use the broad control-plane secret as a production F01 credential", async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     const originalFloor01 = process.env.FLOOR01_SERVICE_API_KEY;
     const originalInternal = process.env.INTERNAL_API_SECRET_KEY;
