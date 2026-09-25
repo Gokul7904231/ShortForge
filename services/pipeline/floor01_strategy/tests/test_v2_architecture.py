@@ -207,3 +207,22 @@ def test_staging_without_service_key_fails_closed():
         assert getattr(exc_info.value, "status_code", None) == 503
     finally:
         security.get_settings = original
+
+
+def test_llm_endpoint_rejects_non_http_scheme(monkeypatch):
+    from floor01_strategy.app.infrastructure.llm_provider import LLMStrategyAdapter
+
+    monkeypatch.setenv("FLOOR01_ENVIRONMENT", "production")
+    adapter = LLMStrategyAdapter(
+        api_key="test-key",
+        model_name="test-model",
+        base_url="file:///tmp/llm",
+    )
+    insight, provenance = adapter.generate_strategy_insight(
+        topic="Python decorators",
+        category="computer_science",
+        audience="general_learners",
+        platform="youtube_shorts",
+    )
+    assert insight["confidence"] == 0.55
+    assert provenance.method == "endpoint_scheme_gate"
