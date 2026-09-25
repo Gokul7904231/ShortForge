@@ -62,3 +62,15 @@
 | **Research IR** | Structured intermediate representation connecting external evidence, claims, factory mappings, risks, decisions, and validation plans before architectural promotion. | `.okf/cognitive/devourer.md`, `.okf/research/` |
 | **ArchitectureProposal** | Evidence-backed proposal for changing a factory capability, contract, workflow, worker behavior, or architecture. | `.okf/cognitive/devourer.md` |
 | **Devourer** | Controlled self-improvement program that discovers external patterns, validates them, prepares training/evaluation candidates, and stages model or architecture improvements through gated promotion. | `.okf/cognitive/devourer.md` |
+
+
+## 6. Governance & Engineering Stack Terms
+
+| Term | Canonical Definition | Source |
+| :--- | :--- | :--- |
+| **Decision Sweep** | Mandatory end-to-end review of the current `.okf` corpus before non-trivial ShortForge decisions. | `.okf/decision-protocol.md` |
+| **Worker Permission Profile** | Least-privilege capability, resource, data, network, filesystem, lease, and fencing constraints for a worker. | `.okf/security/worker-permissions.md` |
+| **Production Helper** | Routine engineering evidence workspace for static scans, staging proofs, runtime traces, and forensic checks. | `.okf/production-helper.md`, `production-helper/` |
+| **Core Engineering Stack** | TimelineIR + Remotion + AgentTube-derived scene lifecycle + RenderFabric/FFmpeg + F07 verification. | `.okf/engineering-stack.md` |
+| **Scene Manifest** | Durable scene-level control/provenance record containing identity, timing, assets, provider evidence, rights, revision, and dependencies. | `.okf/engineering-stack.md`, AgentTube mapping |
+| **Devourer** | Controlled self-improvement program that researches, prototypes, evaluates, canaries, and promotes improvements only through explicit gates. | `.okf/devourer.md` |
