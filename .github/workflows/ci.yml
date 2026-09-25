@@ -54,6 +54,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/services/pipeline
           FLOOR01_ENVIRONMENT: test
+          FLOOR01_ALLOW_ANONYMOUS_DEV: "true"
           FLOOR01_MEMORY_FILE_PATH: ${{ runner.temp }}/floor01-memory.json
         run: python -m pytest floor01_strategy/tests/ -q
 
