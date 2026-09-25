@@ -100,6 +100,11 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | :--- | :--- | :--- |
 | **System Foundations** | [`./architecture.md`](./architecture.md)<br>[`./principles.md`](./principles.md)<br>[`./terminology.md`](./terminology.md) | Decoupled hierarchy, 8-floor topology, core design principles, and unified terminology. |
 | **Production Floors** | [`./floors/`](./floors/) | Deep specifications for Floors 00 through 07, inputs, outputs, contracts, and failure modes. |
+| **Mandatory Decision Protocol** | [./decision-protocol.md](./decision-protocol.md) | Mandatory end-to-end .okf review gate before architecture, research, model, worker, security, rendering, or workflow decisions. |
+| **Worker Permissions** | [./security/worker-permissions.md](./security/worker-permissions.md) | Canonical floor-by-floor capability grants, forbidden capabilities, attenuation, leases, fencing, and worker security rules. |
+| **Engineering Stack** | [./engineering-stack.md](./engineering-stack.md) | Locked media stack: TimelineIR + Remotion + AgentTube-derived scene lifecycle + RenderFabric / FFmpeg. |
+| **Production Helper** | [./production-helper.md](./production-helper.md) | Routine validation workflow for P0 hardening, static security, runtime convergence, staging, and release evidence. |
+| **Devourer Charter** | [./devourer.md](./devourer.md) | Root-level controlled self-improvement charter; detailed cognitive implementation remains in .okf/cognitive/devourer.md. |
 | **Absolute Hierarchy Map** | [`./hierarchy-map.md`](./hierarchy-map.md) | Master mapping of authority levels, cognition, regulators, runtime, workers, F00–F07, verification, memory, learning, and boundary rules. |\n| **Control Hierarchy** | [`./hierarchy/`](./hierarchy/) | Overseer, Guardian, Slayer, Healer, ReMaker, Auditor, and Worker execution contracts. |
 | **Intelligence & Models** | [`./intelligence/`](./intelligence/) | AgentRuntime, Skills, Capability-First Model Routing, Evaluation suite, and Ascalon training. |
 **Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
@@ -110,3 +115,14 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Security & Trust** | [`./security/`](./security/) | Untrusted web content boundaries, capability grants, secret scanning, and lease fencing. |
 | **Research & External** | [`./research/`](./research/) | Clean-room mappings for `video-use`, `WeKnora`, `Octop`, `orca`, `VoiceStudio`, and Reach. |
 | **Historical Audits** | [`./audits/`](./audits/) | Archived forensic baselines, bypass analyses, and red-team findings (Historical Reference). |
+
+
+---
+
+## 4. Mandatory Decision Gate
+
+Before any non-trivial ShortForge architecture, engineering, research, model, worker-permission, security, rendering, or workflow decision, the current .okf tree must be reviewed end to end.
+
+Canonical entry point: [./decision-protocol.md](./decision-protocol.md)
+
+The current .okf review is the highest-priority design input. Relevant repository mappings and production-helper evidence must then be incorporated before implementation decisions are finalized.
