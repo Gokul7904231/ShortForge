@@ -55,7 +55,7 @@ class Floor03Guardian:
     def __init__(self, reasoning_engine: Optional[ReasoningEngine] = None):
         self.registry = create_floor03_capability_registry()
         self.engine = GuardianEngine(
-            floor_id="floor03",
+            floor_id="floor03_asset_realization",
             registry=self.registry,
             reasoning_engine=reasoning_engine,
         )
