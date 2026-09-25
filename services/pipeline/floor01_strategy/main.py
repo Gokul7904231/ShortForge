@@ -5,8 +5,8 @@ from __future__ import annotations
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from floors.floor01_strategy.app.api.v1.strategy import router as strategy_router
-from floors.floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.api.v1.strategy import router as strategy_router
+from floor01_strategy.app.core.config import get_settings
 
 
 def create_app() -> FastAPI:
