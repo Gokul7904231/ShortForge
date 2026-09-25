@@ -289,3 +289,18 @@ For non-trivial changes, the selected Forger must record:
 - rollback / rejection conditions
 
 The Forger workforce does not alter the helper's evidence semantics to obtain a passing result.
+
+
+## 17. Team Change Gate integration
+
+The production-helper is one evidence source inside the Team Change Gate.
+
+Team sequence:
+
+TeamChangeIR
+  -> applicable helper/security routines
+  -> Forger evidence review
+  -> Team Change Report
+
+The Team gate must preserve BLOCKED and UNPROVEN semantics. A Forger may propose a repair, but cannot rewrite helper evidence to manufacture PASS.
+
