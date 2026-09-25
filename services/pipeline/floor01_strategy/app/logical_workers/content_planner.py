@@ -44,7 +44,7 @@ class ContentPlannerWorker:
                 if evidence_hook
                 else f"Challenge viewer knowledge on {topic} with a progressive difficulty quiz."
             )
-            cta_direction = f"Invite the viewer to respond with their score on {topic}."
+            cta_direction = f"Comment your score on {topic}."
             outline = ["Hook Card", "Easy Question", "Medium Question", "Hard Question", "Outro & CTA Card"]
             total = max(15, strat_res.target_duration_seconds)
             hook_seconds = max(2, round(total * 0.08))
@@ -82,7 +82,6 @@ class ContentPlannerWorker:
             core_seconds = max(5, round(total * 0.45))
             example_seconds = max(4, total - hook_seconds - summary_seconds - core_seconds)
 
-            # Keep the final sum exactly equal to the target duration.
             pacing_parts = [
                 hook_seconds,
                 core_seconds,
