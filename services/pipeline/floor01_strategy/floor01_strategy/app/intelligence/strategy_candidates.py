@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Dict, List, Sequence, Tuple
 
 from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.input_safety import sanitize_input_text
 from floor01_strategy.app.core.research_gate import ResearchGateResult
 from floor01_strategy.app.domain.handoff import (
     CandidateStatus,
@@ -63,17 +64,24 @@ class StrategyCandidateEngine:
             )
 
         if llm_insight:
-            recommended_angle = str(llm_insight.get("recommended_angle", "")).strip()
+            recommended_angle = sanitize_input_text(
+                str(llm_insight.get("recommended_angle", "")),
+                max_length=120,
+            )
+            strategic_reasoning = sanitize_input_text(
+                str(
+                    llm_insight.get(
+                        "strategic_reasoning",
+                        "Provider-generated strategic candidate.",
+                    )
+                ),
+                max_length=1000,
+            )
             if recommended_angle:
                 model_strategy = base.model_copy(update={
-                    "content_angle": recommended_angle[:120],
+                    "content_angle": recommended_angle,
                     "execution_mode": ExecutionMode.HYBRID,
-                    "rationale": str(
-                        llm_insight.get(
-                            "strategic_reasoning",
-                            "Provider-generated strategic candidate.",
-                        )
-                    ),
+                    "rationale": strategic_reasoning,
                 })
                 candidates.append(
                     StrategyCandidate(
