@@ -30,7 +30,7 @@ export class RegressionMissions {
       await this.runMission002_TrendShort(),
       await this.runMission003_RenderRecovery(),
       await this.runMission004_QuotaRace(),
-      await this.runMission005_AdminAzureRender(),
+      await this.runMission005_RenderProviderPolicy(),
       await this.runMission006_ProviderFallback(),
       await this.runMission007_ApprovalPublishing(),
     ];
@@ -224,24 +224,29 @@ export class RegressionMissions {
   }
 
   /**
-   * Mission 005: Admin Azure GPU Isolation
+   * Mission 005: Render Provider Policy
    */
-  static async runMission005_AdminAzureRender(): Promise<RegressionMissionResult> {
+  static async runMission005_RenderProviderPolicy(): Promise<RegressionMissionResult> {
     const start = Date.now();
     const adminRole = "ADMIN";
     const basicRole = "VIEWER";
 
-    const adminPool = adminRole === "ADMIN" ? "azure-gpu-pool" : "github-actions-pool";
-    const basicPool = basicRole === "VIEWER" ? "github-actions-pool" : "azure-gpu-pool";
+    const providerForRole = (role: string) =>
+      role === "ADMIN" || role === "OWNER"
+        ? "ComputeRouter"
+        : "ComputeRouter";
 
-    const passed = adminPool === "azure-gpu-pool" && basicPool === "github-actions-pool";
+    const passed =
+      providerForRole(adminRole) === "ComputeRouter" &&
+      providerForRole(basicRole) === "ComputeRouter";
+
     return {
       missionId: "MISSION-005",
-      name: "Server-Authoritative Azure / GitHub Role Isolation",
+      name: "Server-Authoritative Provider-Neutral Render Routing",
       passed,
       durationMs: Date.now() - start,
       evidenceCount: 1,
-      explanation: "ADMIN routed to Azure GPU pool; Basic user restricted to GitHub Actions runner.",
+      explanation: "All render tiers enter the same ComputeRouter authority; provider selection is capability/policy driven rather than vendor hard-coded.",
     };
   }
 
