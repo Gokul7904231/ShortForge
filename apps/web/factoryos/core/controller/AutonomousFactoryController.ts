@@ -33,7 +33,7 @@ import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
 import { InstructorSubsystem } from "../instructor/InstructorSubsystem";
 import { FactoryProjectionService } from "../projection/FactoryProjectionService";
 import { VoiceFabric } from "../voice/VoiceFabric";
-import { RenderFabric } from "../rendering/RenderFabric";
+import { RenderFabric } from "../fabric/RenderFabric";
 import { EvolutionBrainSeam } from "../evolution/EvolutionBrainSeam";
 import { ContentGenomeTracker } from "../artifacts/ContentGenome";
 import { ResearchRuntime } from "../research/ResearchRuntime";
