@@ -3,9 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
-from floors.floor01_strategy.app.domain.handoff import Floor01Input, HandoffStatus, ResearchContext, ResearchEvidenceRef, UniquenessVerdict
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
-from floors.floor01_strategy.app.service import Floor01Service
+from floor01_strategy.app.domain.handoff import Floor01Input, HandoffStatus, ResearchContext, ResearchEvidenceRef, UniquenessVerdict
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.service import Floor01Service
 
 
 def verified_research_context() -> ResearchContext:
