@@ -14,7 +14,10 @@ from floors.floor02_scripting.app.domain.handoff import Floor02HandoffPayload
 from floors.floor03_asset_realization.app.core.config import settings
 from floors.floor03_asset_realization.app.core.exceptions import Floor03Error, Floor03PlatformError, Floor03ValidationError
 from floors.floor03_asset_realization.app.core.identity import (
+    CANONICAL_FLOOR_VERSION,
     asset_plan_fingerprint,
+    asset_plan_node_fingerprint,
+    floor02_source_fingerprint,
     floor03_input_fingerprint,
     request_fingerprint,
 )
@@ -25,6 +28,7 @@ from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     AssetPlanNode,
     CoverageRole,
     DependencyRelation,
+    PlanLineage,
     RepairPlan,
     RepairScope,
 )
@@ -197,6 +201,7 @@ class Floor03Pipeline:
 
         req_by_scene = {req.scene_id: req for req in visual_reqs}
         impact_radius = self._compute_impact_radius(inp.floor02_payload.scenes)
+        source_fingerprint = floor02_source_fingerprint(inp.floor02_payload)
         nodes: List[AssetPlanNode] = []
 
         for req in sorted(visual_reqs, key=lambda item: item.sequence_index):
@@ -239,31 +244,32 @@ class Floor03Pipeline:
                 for reference in visual.references
             ]
 
-            nodes.append(
-                AssetPlanNode(
-                    scene_id=req.scene_id,
-                    source_scene_version=scene.scene_version,
-                    source_beat_id=scene.beat_id or None,
-                    sequence_index=req.sequence_index,
-                    coverage_role=CoverageRole(
-                        str(req.continuity_constraints.get("coverage_role") or "action").lower()
+            node = AssetPlanNode(
+                scene_id=req.scene_id,
+                asset_id=req.asset_id,
+                source_scene_version=scene.scene_version,
+                source_beat_id=scene.beat_id or None,
+                sequence_index=req.sequence_index,
+                coverage_role=CoverageRole(
+                    str(req.continuity_constraints.get("coverage_role") or "action").lower()
+                ),
+                visual=visual,
+                dependencies=dependencies,
+                target_duration_seconds=req.target_duration_seconds,
+                evidence_refs=list(scene.evidence_refs),
+                causal_event_ids=list(scene.causal_event_ids),
+                impact_radius=impact_radius.get(scene.scene_id, []),
+                repair=RepairPlan(
+                    scope=repair_scope,
+                    rationale=(
+                        "Regeneration may invalidate downstream dependent scene plans."
+                        if repair_scope == RepairScope.DEPENDENT_SUBGRAPH
+                        else "Scene has no downstream dependent plan nodes."
                     ),
-                    visual=visual,
-                    dependencies=dependencies,
-                    target_duration_seconds=req.target_duration_seconds,
-                    evidence_refs=list(scene.evidence_refs),
-                    causal_event_ids=list(scene.causal_event_ids),
-                    impact_radius=impact_radius.get(scene.scene_id, []),
-                    repair=RepairPlan(
-                        scope=repair_scope,
-                        rationale=(
-                            "Regeneration may invalidate downstream dependent scene plans."
-                            if repair_scope == RepairScope.DEPENDENT_SUBGRAPH
-                            else "Scene has no downstream dependent plan nodes."
-                        ),
-                    ),
-                )
+                ),
             )
+            node.node_fingerprint = asset_plan_node_fingerprint(node)
+            nodes.append(node)
 
         plan = AssetPlanIR(
             plan_id=plan_id or f"asset-plan-{inp.floor02_payload.script_id}-{inp.request_id}",
@@ -273,6 +279,16 @@ class Floor03Pipeline:
             platform=platform,
             aspect_ratio=aspect_ratio,
             resolution=resolution,
+            source_fingerprint=source_fingerprint,
+            lineage=PlanLineage(
+                source_floor_id=inp.floor02_payload.floor_id,
+                source_floor_version=inp.floor02_payload.floor_version,
+                source_script_id=inp.floor02_payload.script_id,
+                source_script_version=inp.floor02_payload.script_version,
+                source_fingerprint=source_fingerprint,
+                compiler_floor_id="floor03_asset_realization",
+                compiler_floor_version=CANONICAL_FLOOR_VERSION,
+            ),
             nodes=nodes,
         )
         plan.plan_fingerprint = asset_plan_fingerprint(plan)
@@ -526,10 +542,13 @@ class Floor03Pipeline:
             rebuilt_node = node.model_copy(
                 deep=True,
                 update={
+                    "asset_id": matching_req.asset_id,
                     "visual": visual,
                     "dependencies": remapped_dependencies,
+                    "node_fingerprint": None,
                 },
             )
+            rebuilt_node.node_fingerprint = asset_plan_node_fingerprint(rebuilt_node)
             nodes.append(rebuilt_node)
 
         plan = existing_plan.model_copy(
@@ -559,6 +578,10 @@ class Floor03Pipeline:
         """
         logger.info("regenerate_scene_assets_started", target_scene_id=target_scene_id)
 
+        instruction = new_prompt_instruction.strip()
+        if not instruction:
+            raise Floor03ValidationError("new_prompt_instruction must be non-empty.")
+
         target_visual_found = False
         updated_visuals: List[VisualAssetRequirement] = []
 
@@ -569,7 +592,7 @@ class Floor03Pipeline:
                 updated_req.asset_id = str(uuid4())
                 updated_req.asset_version += 1
                 updated_req.scene_version += 1
-                updated_req.prompt_text = f"{req.prompt_text} ({new_prompt_instruction})"
+                updated_req.prompt_text = f"{req.prompt_text} ({instruction})"
                 if updated_req.scene_plan is not None:
                     updated_req.scene_plan = updated_req.scene_plan.model_copy(
                         update={"prompt_text": updated_req.prompt_text}
@@ -595,7 +618,7 @@ class Floor03Pipeline:
             source_identifier=target_scene_id,
             method="regenerate_target_scene_assets",
             summary=f"Regenerated assets for scene {target_scene_id} (incremented asset_version & plan_version).",
-            raw_data={"target_scene_id": target_scene_id, "instruction": new_prompt_instruction},
+            raw_data={"target_scene_id": target_scene_id, "instruction": instruction},
         )
         new_payload.provenance.append(new_prov)
         if new_payload.asset_plan_ir is not None:
