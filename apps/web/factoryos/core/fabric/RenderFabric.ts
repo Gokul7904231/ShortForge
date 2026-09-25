@@ -192,7 +192,6 @@ export class RenderFabric {
         workloadType: "RENDER",
         gpuRequired: intent.constraints.hardwareAccel === true,
         estimatedDurationSeconds: intent.durationSeconds,
-        timeoutMs: Math.max(60000, Math.ceil(intent.durationSeconds * 5000)),
         networkAccessRequired: false,
         diskSpaceMb: 1024,
       },
