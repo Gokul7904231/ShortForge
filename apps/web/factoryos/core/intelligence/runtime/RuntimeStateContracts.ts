@@ -5,7 +5,7 @@
 
 export interface WorkerState {
   readonly workerId: string;
-  readonly pool: "BASIC_FASTAPI" | "AZURE_VM" | "FALLBACK";
+  readonly pool: "BASIC_FASTAPI" | "FALLBACK";
   readonly url: string;
   readonly status: "IDLE" | "BUSY" | "DEGRADED" | "OFFLINE";
   readonly activeJobsCount: number;
