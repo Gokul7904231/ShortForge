@@ -145,3 +145,46 @@ def test_verified_research_is_required_by_default():
     from floors.floor01_strategy.app.core.config import Floor01Settings
     settings = Floor01Settings()
     assert settings.require_verified_research is True
+
+
+def test_candidate_selection_is_deterministic_on_score_ties():
+    from floors.floor01_strategy.app.intelligence.strategy_candidates import StrategyCandidateEvaluator
+    from floors.floor01_strategy.app.domain.handoff import (
+        StrategyCandidate,
+        StrategyResult,
+        StrategyEvaluation,
+        QualityDimensions,
+    )
+
+    strategy_a = StrategyResult(
+        target_audience="general_learners",
+        platform="youtube_shorts",
+        content_angle="alpha_angle",
+    )
+    strategy_b = StrategyResult(
+        target_audience="general_learners",
+        platform="youtube_shorts",
+        content_angle="beta_angle",
+    )
+    candidate_a = StrategyCandidate(candidate_id="cand_random_1", strategy=strategy_a)
+    candidate_b = StrategyCandidate(candidate_id="cand_random_2", strategy=strategy_b)
+    dimensions = QualityDimensions(
+        evidence_adequacy=0.9,
+        novelty=0.9,
+        audience_fit=0.9,
+        platform_fit=0.9,
+        curriculum_coherence=0.9,
+        downstream_feasibility=0.9,
+        constraint_compliance=0.9,
+    )
+    evaluations = [
+        StrategyEvaluation(candidate_id=candidate_a.candidate_id, dimensions=dimensions, overall_score=0.9, accepted=True),
+        StrategyEvaluation(candidate_id=candidate_b.candidate_id, dimensions=dimensions, overall_score=0.9, accepted=True),
+    ]
+
+    selected, _, _ = StrategyCandidateEvaluator().select(
+        [candidate_b, candidate_a],
+        evaluations=[evaluations[1], evaluations[0]],
+        complexity_mode="FAST",
+    )
+    assert selected.strategy.content_angle == "beta_angle"
