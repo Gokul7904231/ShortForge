@@ -46,12 +46,17 @@ class ContentPlannerWorker:
             )
             cta_direction = f"Invite the viewer to respond with their score on {topic}."
             outline = ["Hook Card", "Easy Question", "Medium Question", "Hard Question", "Outro & CTA Card"]
+            total = max(15, strat_res.target_duration_seconds)
+            hook_seconds = max(2, round(total * 0.08))
+            outro_seconds = max(2, round(total * 0.08))
+            question_seconds = max(3, (total - hook_seconds - outro_seconds) // 3)
+            remainder = total - hook_seconds - outro_seconds - (question_seconds * 3)
             pacing = {
-                "Hook Card": 5,
-                "Easy Question": 15,
-                "Medium Question": 15,
-                "Hard Question": 15,
-                "Outro & CTA Card": 10,
+                "Hook Card": hook_seconds,
+                "Easy Question": question_seconds,
+                "Medium Question": question_seconds,
+                "Hard Question": question_seconds + remainder,
+                "Outro & CTA Card": outro_seconds,
             }
             downstream_reqs = {
                 "requires_quiz_options": True,
@@ -71,11 +76,23 @@ class ContentPlannerWorker:
                 "Practical Example",
                 "Key Summary & CTA",
             ]
-            total = strat_res.target_duration_seconds
-            hook_seconds = min(8, max(3, total // 10))
-            summary_seconds = min(10, max(5, total // 6))
-            core_seconds = max(10, int(total * 0.42))
-            example_seconds = max(5, total - hook_seconds - core_seconds - summary_seconds)
+            total = max(15, strat_res.target_duration_seconds)
+            hook_seconds = max(2, round(total * 0.10))
+            summary_seconds = max(2, round(total * 0.10))
+            core_seconds = max(5, round(total * 0.45))
+            example_seconds = max(4, total - hook_seconds - summary_seconds - core_seconds)
+
+            # Keep the final sum exactly equal to the target duration.
+            pacing_parts = [
+                hook_seconds,
+                core_seconds,
+                example_seconds,
+                summary_seconds,
+            ]
+            delta = total - sum(pacing_parts)
+            if delta != 0:
+                example_seconds = max(1, example_seconds + delta)
+
             pacing = {
                 "Evidence-Grounded Hook": hook_seconds,
                 "Core Concept Breakdown": core_seconds,
