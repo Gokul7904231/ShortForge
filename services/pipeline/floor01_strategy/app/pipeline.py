@@ -300,6 +300,99 @@ class Floor01Pipeline:
 
             duplicate = topic_res.uniqueness_verdict == UniquenessVerdict.DUPLICATE_IN_MEMORY
             if duplicate:
+                completed_for_request = self.memory_store.get_idempotent_payload(inp.request_id)
+                if completed_for_request:
+                    completed_fingerprint = completed_for_request.get("input_fingerprint")
+                    if completed_fingerprint != input_fingerprint:
+                        raise Floor01ValidationError(
+                            f"Idempotency conflict: request_id '{inp.request_id}' was previously completed for different request parameters."
+                        )
+                    replay_payload = Floor01HandoffPayload.model_validate(completed_for_request)
+                    replay_duration_ms = round((time.time() - start_time) * 1000, 2)
+                    replay_report = FloorExecutionReport(
+                        request_id=inp.request_id,
+                        plan_id=replay_payload.plan_id,
+                        floor_id=settings.floor_id,
+                        floor_version=settings.floor_version,
+                        started_at=started_at,
+                        duration_ms=replay_duration_ms,
+                        execution_mode=ExecutionModeDetails(
+                            global_mode=replay_payload.execution_mode,
+                            worker_modes={"idempotency_replay": replay_payload.execution_mode},
+                            configured_provider=self.llm_adapter.provider_name,
+                            configured_model=self.llm_adapter.model_name,
+                            executed=False,
+                        ),
+                        status=replay_payload.handoff_status,
+                        input_summary=inp.model_dump(),
+                        worker_results=[
+                            WorkerExecutionSummary(
+                                worker_name="IdempotencyReplay",
+                                execution_mode=ExecutionMode.DETERMINISTIC,
+                                duration_ms=replay_duration_ms,
+                                confidence_score=replay_payload.decision_quality_score,
+                                evidence_count=len(replay_payload.strategic_memory_refs),
+                                status="REPLAYED",
+                            )
+                        ],
+                        decisions=[
+                            {"plan_id": replay_payload.plan_id, "replayed": True},
+                            {"input_fingerprint": replay_payload.input_fingerprint},
+                        ],
+                        decision_quality_score=replay_payload.decision_quality_score,
+                        component_gates={"idempotency_gate": True},
+                        warnings=["Canonical payload already existed for this request ID."],
+                        handoff_reference={"plan_id": replay_payload.plan_id, "cached": True},
+                    )
+                    return replay_payload, replay_report
+
+                reservation = self.memory_store.get_request_reservation(inp.request_id)
+                if reservation and reservation.get("owner_token") != reservation_owner_token:
+                    wait_status, waited_payload = self.memory_store.wait_for_request(
+                        inp.request_id,
+                        input_fingerprint,
+                        timeout_seconds=10.0,
+                    )
+                    if wait_status == "COMPLETED" and waited_payload:
+                        replay_payload = Floor01HandoffPayload.model_validate(waited_payload)
+                        replay_duration_ms = round((time.time() - start_time) * 1000, 2)
+                        replay_report = FloorExecutionReport(
+                            request_id=inp.request_id,
+                            plan_id=replay_payload.plan_id,
+                            floor_id=settings.floor_id,
+                            floor_version=settings.floor_version,
+                            started_at=started_at,
+                            duration_ms=replay_duration_ms,
+                            execution_mode=ExecutionModeDetails(
+                                global_mode=replay_payload.execution_mode,
+                                worker_modes={"idempotency_replay": replay_payload.execution_mode},
+                                configured_provider=self.llm_adapter.provider_name,
+                                configured_model=self.llm_adapter.model_name,
+                                executed=False,
+                            ),
+                            status=replay_payload.handoff_status,
+                            input_summary=inp.model_dump(),
+                            worker_results=[
+                                WorkerExecutionSummary(
+                                    worker_name="IdempotencyReplay",
+                                    execution_mode=ExecutionMode.DETERMINISTIC,
+                                    duration_ms=replay_duration_ms,
+                                    confidence_score=replay_payload.decision_quality_score,
+                                    evidence_count=len(replay_payload.strategic_memory_refs),
+                                    status="REPLAYED",
+                                )
+                            ],
+                            decisions=[
+                                {"plan_id": replay_payload.plan_id, "replayed": True},
+                                {"input_fingerprint": replay_payload.input_fingerprint},
+                            ],
+                            decision_quality_score=replay_payload.decision_quality_score,
+                            component_gates={"idempotency_gate": True},
+                            warnings=["Canonical payload became available during duplicate detection."],
+                            handoff_reference={"plan_id": replay_payload.plan_id, "cached": True},
+                        )
+                        return replay_payload, replay_report
+
                 status = HandoffStatus.REJECTED
                 warnings.append(
                     f"Topic rejected as duplicate of memory (similarity={topic_res.similarity_risk_score:.2f})."
