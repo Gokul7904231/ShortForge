@@ -259,3 +259,26 @@ Devourer handles controlled model evolution separately.
 Every SCL capability is tagged IMPLEMENTED, PARTIALLY_IMPLEMENTED, SCAFFOLDED, EXPERIMENTAL, or PLANNED.
 
 Target architecture must never be described as current implementation.
+
+
+## 14. Team cognition boundary
+
+The ShortForge Cognitive Model / Ascalon may participate in the Team Change Gate through the Context Compiler and TeamChangeIR.
+
+The model may:
+- classify a change
+- route specialist Forgers
+- summarize authoritative evidence
+- diagnose contradictions
+- propose bounded resolutions
+- draft Team Change Reports
+
+The model may not:
+- bypass the mandatory .okf sweep
+- erase conflicts
+- rewrite an .okf rule silently
+- grant production authority
+- convert UNPROVEN evidence to PASS
+
+TeamChangeIR is the compact semantic state passed to the model. JSON is the canonical machine transport encoding of that IR; Markdown is the human evidence projection.
+
