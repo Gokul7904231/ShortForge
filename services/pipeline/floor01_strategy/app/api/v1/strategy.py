@@ -7,16 +7,16 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.core.exceptions import Floor01Error
-from floors.floor01_strategy.app.core.security import enforce_rate_limit, verify_api_key
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.exceptions import Floor01Error
+from floor01_strategy.app.core.security import enforce_rate_limit, verify_api_key
+from floor01_strategy.app.domain.handoff import (
     Floor01HandoffPayload,
     Floor01Input,
     FloorExecutionReport,
     TopicIntelligenceResult,
 )
-from floors.floor01_strategy.app.service import Floor01Service
+from floor01_strategy.app.service import Floor01Service
 
 logger = logging.getLogger(__name__)
 
