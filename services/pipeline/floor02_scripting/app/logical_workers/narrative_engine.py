@@ -545,7 +545,27 @@ class NarrativeCompiler:
         if best_candidate is None or best_ir is None:
             raise RuntimeError("F02 failed to produce any narrative candidate")
         if strict and not best_ir.quality.accepted:
-            raise ValueError("F02 quality gates could not be satisfied within the bounded revision budget")
+            failed = {
+                critic: report.critic_id,
+                passed: report.passed,
+                score: report.score,
+                findings: [f.message for f in report.findings],
+            }
+            for report in (best_ir.quality.critiques if best_ir.quality else []):
+                if not report.passed:
+                    failed = {
+                        "critic": report.critic_id,
+                        "passed": report.passed,
+                        "score": report.score,
+                        "findings": [f.message for f in report.findings],
+                    }
+                    break
+            raise ValueError(
+                "F02 quality gates could not be satisfied within the bounded revision budget: "
+                f"overall={best_ir.quality.overall_score if best_ir.quality else None}, "
+                f"hard_gates={best_ir.quality.hard_gates if best_ir.quality else {}}, "
+                f"failed={failed}"
+            )
         return best_candidate, best_ir, mode, model, candidates
 
     def _repair(self, candidate: NarrativeCandidate, inp: Floor02Input, quality: Optional[ScriptQualityReport]) -> NarrativeCandidate:
