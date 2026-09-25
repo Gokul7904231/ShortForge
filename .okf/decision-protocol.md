@@ -249,3 +249,94 @@ Also consult:
 - .okf/engineering-stack.md
 - .okf/production-helper.md
 - .okf/devourer.md
+
+## 15. Absolute top-priority rule
+
+The complete current .okf tree is the highest-priority architectural input for every non-trivial decision. This applies even when a proposed change appears local, obvious, faster, or unrelated.
+
+No architecture decision begins from external research, conversation memory, a new repository, a benchmark, or a model announcement. Those inputs are secondary until the current internal architecture has been reconstructed.
+
+The only operational exception is active incident containment. After containment, the complete .okf review is mandatory before related architecture is extended.
+
+## 16. End-to-end .okf sweep requirement
+
+For each decision cycle, inventory the current .okf tree first, then review every applicable section from root to leaf:
+
+1. root files
+2. hierarchy
+3. cognitive
+4. intelligence
+5. memory
+6. research and every repo mapping relevant to the decision
+7. rendering
+8. artifacts
+9. security
+10. workflows
+11. audits
+12. production-helper contract and evidence
+13. existing locked decisions
+
+The sweep must explicitly extract:
+- canonical rules
+- implementation facts
+- target designs
+- contradictions
+- security / permission constraints
+- performance constraints
+- verification requirements
+- reusable repository mappings
+- prior failure evidence
+- unresolved blockers
+
+A decision is incomplete until these have been considered.
+
+## 17. Repo mappings are first-class engineering inputs
+
+.okf/research/repo-mappings is part of the engineering knowledge base, not an optional appendix.
+
+For a decision touching a mapped domain, the mapping must be reviewed before proposing a new mechanism. Extract both adopted and rejected mechanisms. Reuse compatible patterns where they already fit. Do not create a parallel abstraction without documenting why the existing mapping is insufficient.
+
+Clean-room rule remains mandatory: patterns are assimilated, not blindly copied.
+
+## 18. Production-helper is routine
+
+production-helper/ is a normal engineering verification station. It is consulted according to the decision risk and affected surfaces.
+
+At minimum, consider it for:
+- worker permissions
+- Guardian policy
+- remote workers / callbacks
+- rendering
+- provider routing
+- quotas
+- authentication / authorization
+- network egress
+- filesystem boundaries
+- production completion semantics
+- significant architecture changes
+
+Blocked or unproven helper results remain blocked or unproven. They never become implicit PASS states.
+
+## 19. Decision sweep record
+
+For important architecture decisions, record a compact sweep summary in the related decision record:
+
+~~~text
+OKF_SWEEP = COMPLETE | PARTIAL
+ROOT_RULES = reviewed
+HIERARCHY = reviewed
+SECURITY = reviewed
+COGNITION = reviewed
+MEMORY = reviewed
+RESEARCH_MAPPINGS = reviewed
+RENDERING = reviewed
+ARTIFACTS = reviewed
+WORKFLOWS = reviewed
+AUDITS = reviewed
+PRODUCTION_HELPER = reviewed
+IMPLEMENTATION = reviewed
+TESTS = reviewed
+CONTRADICTIONS = none | listed
+~~~
+
+OKF_SWEEP=PARTIAL is not sufficient for architecture promotion except under the explicit incident-containment exception.
