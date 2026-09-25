@@ -7,7 +7,7 @@ Tests authentication, validation, health/readiness, metrics, and job submission.
 
 import pytest
 from fastapi.testclient import TestClient
-from basic_render_api import app, BASIC_RENDER_API_SECRET
+from basic_render_api import app, RENDER_WORKER_SECRET
 
 client = TestClient(app)
 
@@ -52,7 +52,7 @@ def test_tier_isolation_rejects_admin_jobs():
     response = client.post(
         "/api/render/jobs",
         json={"jobId": "admin-job-001", "executionToken": "token-001", "tier": "ADMIN"},
-        headers={"Authorization": f"Bearer {BASIC_RENDER_API_SECRET}"}
+        headers={"Authorization": f"Bearer {RENDER_WORKER_SECRET}"}
     )
     assert response.status_code == 403
     assert "Tier Isolation Error" in response.json()["detail"]
@@ -62,7 +62,7 @@ def test_missing_execution_token_rejected():
     response = client.post(
         "/api/render/jobs",
         json={"jobId": "test-job-002", "executionToken": "", "tier": "BASIC"},
-        headers={"Authorization": f"Bearer {BASIC_RENDER_API_SECRET}"}
+        headers={"Authorization": f"Bearer {RENDER_WORKER_SECRET}"}
     )
     assert response.status_code == 400
 
@@ -77,7 +77,7 @@ def test_valid_basic_job_submission_accepted():
             "topic": "Python Performance Optimization",
             "renderProfile": "FAST_QUIZ"
         },
-        headers={"Authorization": f"Bearer {BASIC_RENDER_API_SECRET}"}
+        headers={"Authorization": f"Bearer {RENDER_WORKER_SECRET}"}
     )
     assert response.status_code == 202
     data = response.json()
@@ -90,14 +90,14 @@ def test_duplicate_job_submission_is_idempotent():
     client.post(
         "/api/render/jobs",
         json={"jobId": "idempotent-job-01", "executionToken": "token-idem", "tier": "BASIC"},
-        headers={"Authorization": f"Bearer {BASIC_RENDER_API_SECRET}"}
+        headers={"Authorization": f"Bearer {RENDER_WORKER_SECRET}"}
     )
 
     # Second submission
     response = client.post(
         "/api/render/jobs",
         json={"jobId": "idempotent-job-01", "executionToken": "token-idem", "tier": "BASIC"},
-        headers={"Authorization": f"Bearer {BASIC_RENDER_API_SECRET}"}
+        headers={"Authorization": f"Bearer {RENDER_WORKER_SECRET}"}
     )
     assert response.status_code == 202
     data = response.json()
@@ -108,7 +108,7 @@ def test_metrics_endpoint():
     """Metrics endpoint reports operational stats."""
     response = client.get(
         "/metrics",
-        headers={"Authorization": f"Bearer {BASIC_RENDER_API_SECRET}"}
+        headers={"Authorization": f"Bearer {RENDER_WORKER_SECRET}"}
     )
     assert response.status_code == 200
     data = response.json()
