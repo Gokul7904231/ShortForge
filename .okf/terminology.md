@@ -13,8 +13,8 @@
 | **ScheduleInstance** | A concrete, time-stamped execution instance of a Schedule for a specific calendar window, bearing an idempotency key. | `apps/web/factoryos/core/schedule/ScheduleContracts.ts` |
 | **Mission** | An end-to-end autonomous objective managed by the Overseer Supreme Control Plane, coordinating the 8-floor production pipeline. | `apps/web/factoryos/core/missions/MissionManager.ts` |
 | **Run** | A single execution attempt of a mission or sub-task within a leased compute window. | `apps/web/factoryos/core/overseer/OverseerControlPlane.ts` |
-| **Daily Content Slate** | The structured research output produced by Floor 00 containing deduplicated, validated topic candidates and explicit unmet capacity. | `apps/web/factoryos/core/research/DailySlateGenerator.ts` |
-| **Research Passport** | A cryptographically signed record containing verified external sources, extracted claims, verification statuses, and integrity digests. | `apps/web/factoryos/core/contracts/ResearchPassportContracts.ts` |
+| **Daily Content Slate** | A schedule-driven F00 slate utility containing deduplicated, source-backed candidate references and explicit unmet capacity; it is not currently the direct F00 task output. | `apps/web/factoryos/core/research/DailySlateGenerator.ts` |
+| **Research Passport** | A cryptographically signed evidence record containing external sources, claim classifications, unresolved issues, verification statuses, provenance, and integrity metadata. | `apps/web/factoryos/core/contracts/ResearchPassportContracts.ts` |
 
 ---
 
