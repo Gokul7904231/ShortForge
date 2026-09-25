@@ -10,6 +10,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
+    "test": "tsx src/security.test.ts",
     "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
   },
   "dependencies": {
