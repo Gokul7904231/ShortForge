@@ -24,7 +24,7 @@ class Floor01Settings(BaseSettings):
 
     # Runtime safety: production/staging should explicitly authenticate service calls.
     environment: str = Field(default="development")
-    allow_anonymous_dev: bool = Field(default=True)
+    allow_anonymous_dev: bool = Field(default=False)
 
     similarity_warning_threshold: float = Field(default=0.45, ge=0.0, le=1.0)
     similarity_rejection_threshold: float = Field(default=0.75, ge=0.0, le=1.0)
