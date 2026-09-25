@@ -92,3 +92,25 @@ The structured development record attached to a non-trivial Forger task: .okf sw
 
 ### Forger Capability
 A reserved development-time capability such as CAP_FORGE_CODE or CAP_FORGE_SECURITY. These do not automatically grant production-floor authority and are not implemented until registered and tested through the canonical permission process.
+
+
+## 8. Team Governance Terms
+
+### Team
+The development-time operational workforce boundary containing the Team Change Gate, Forger Assembly, Security Stack, contracts, model integration and per-change reports. Team does not outrank .okf authority.
+
+### TeamChangeIR
+Typed semantic intermediate representation compiled after the complete .okf sweep. It contains only the smallest sufficient state needed for Team routing, security, verification and bounded model cognition while retaining authoritative source references.
+
+### Team Change Report
+Machine-readable per-change evidence record containing .okf sweep status, Forger work, security evidence, conflicts, resolutions and final disposition.
+
+### ConflictRecord
+A preserved record of a contradiction between a proposed change and an existing .okf rule, contract or authoritative implementation. It contains the original conflict, evidence, proposed resolution, authority and final status.
+
+### Team Change Gate
+The mandatory workflow that routes every non-trivial change through .okf review, Forgers, applicable security evidence, verification and a preserved final report.
+
+### Ascalon Team Adapter
+The bounded SCL/model integration that turns TeamChangeIR into compact model context and validates model outputs against Team contracts and authority boundaries.
+
