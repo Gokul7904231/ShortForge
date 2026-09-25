@@ -1744,3 +1744,16 @@ F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07
 - .okf/intelligence/agent-runtime.md
 - .okf/intelligence/model-routing.md
 - .okf/intelligence/context.md
+
+
+## 39. Governance-linked hierarchy contracts
+
+The absolute hierarchy is further constrained by these canonical contracts:
+
+- `.okf/security/worker-permissions.md` — exact worker capability boundaries.
+- `.okf/engineering-stack.md` — media-engine hierarchy and compiler boundary.
+- `.okf/production-helper.md` — routine evidence-generation boundary.
+- `.okf/decision-protocol.md` — mandatory decision-analysis process.
+- `.okf/devourer.md` — controlled self-improvement boundary.
+
+These documents refine responsibilities; they do not create new sovereign authorities.
