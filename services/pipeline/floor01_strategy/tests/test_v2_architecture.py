@@ -104,3 +104,22 @@ def test_model_key_without_endpoint_never_claims_model_execution():
     )
     assert provenance.evidence_type.value == "FALLBACK"
     assert provenance.raw_data["configured"] is True
+
+
+
+def test_service_api_key_is_enforced(monkeypatch):
+    import asyncio
+    import pytest
+    from floors.floor01_strategy.app.core import security
+    from floors.floor01_strategy.app.core.config import Floor01Settings
+
+    monkeypatch.setattr(
+        security,
+        "get_settings",
+        lambda: Floor01Settings(service_api_key="test-service-secret"),
+    )
+
+    assert asyncio.run(security.verify_api_key("test-service-secret")) == "test-service-secret"
+    with pytest.raises(Exception) as exc_info:
+        asyncio.run(security.verify_api_key("wrong-secret"))
+    assert getattr(exc_info.value, "status_code", None) == 401
