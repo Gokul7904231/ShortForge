@@ -52,7 +52,8 @@ async def verify_api_key(api_key: str = Depends(api_key_header)) -> str:
     required_key = settings.service_api_key
 
     if not required_key:
-        if settings.environment.lower() == "production" or not settings.allow_anonymous_dev:
+        anonymous_env_allowed = settings.environment.lower() in {"development", "test"}
+        if not anonymous_env_allowed or not settings.allow_anonymous_dev:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Floor 01 service authentication is not configured",
