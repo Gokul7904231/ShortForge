@@ -5,6 +5,11 @@
  * configuration schemas, and job snapshot structures.
  */
 
+import type {
+  EngineConfigurationSchema,
+  EngineContractProfile,
+} from "./EngineConfigurationContracts";
+
 export type EngineStatus =
   | "DRAFT"
   | "VALIDATING"
