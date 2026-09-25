@@ -1,7 +1,5 @@
 import { RenderJobValidator } from "./RenderJobValidator";
 import { WorkerPoolRegistry, RegisteredWorker } from "./WorkerPoolRegistry";
-import { AzureWorkerManager } from "./AzureWorkerManager";
-import { AzureFinOpsGuard } from "./AzureFinOpsGuard";
 import { BasicRenderingCapacityGuard } from "./BasicRenderingCapacityGuard";
 import { GitHubActionsRenderManager } from "./GitHubActionsRenderManager";
 
@@ -124,13 +122,6 @@ export class RenderQueueManager {
   static enqueue(jobData: Partial<UniversalRenderJob> & { jobId: string; topic: string; tenantId: string; userId: string; requestedWorkerId?: string }): UniversalRenderJob {
     const tier = jobData.tier || "FREE";
 
-    // STRICT SECURITY RULE 1: Azure is ADMIN-ONLY
-    if (jobData.requestedWorkerId?.startsWith("azure") || jobData.workerId?.startsWith("azure")) {
-      if (tier !== "ADMIN") {
-        throw new Error("RENDER_BACKEND_FORBIDDEN: Non-admin jobs cannot target Azure rendering infrastructure.");
-      }
-    }
-
     let tierError: string | undefined = undefined;
     if (tier === "PRO") {
       tierError = "PRO_RENDERING_NOT_AVAILABLE: Pro rendering tier is not currently available.";
@@ -138,13 +129,7 @@ export class RenderQueueManager {
       tierError = "ENTERPRISE_RENDERING_NOT_AVAILABLE: Enterprise rendering tier is not currently available.";
     }
 
-    if (tier === "ADMIN") {
-      // Layer 4 & Layer 6 FinOps Check for Admin Azure
-      const finopsCheck = AzureFinOpsGuard.canAcceptRenderJob(tier);
-      if (!finopsCheck.allowed) {
-        throw new Error(`FINOPS_GUARD_REJECTED: ${finopsCheck.reason}`);
-      }
-    } else if (tier === "FREE") {
+    if (tier === "FREE") {
       // Basic Local Billing Safety Check
       const guardCheck = BasicRenderingCapacityGuard.checkBasicDispatchAllowed(jobData.userId, jobData.tenantId);
       if (!guardCheck.allowed) {
@@ -190,10 +175,7 @@ export class RenderQueueManager {
     this.sortQueue();
     this.updateWorkerQueueDepths();
 
-    if (tier === "ADMIN") {
-      // Trigger Azure scale-to-zero controller start for Admin jobs
-      AzureWorkerManager.requestStartVm();
-    } else if (tier === "FREE") {
+    if (tier === "FREE") {
       // Trigger GitHub Actions workflow dispatch for Basic jobs
       GitHubActionsRenderManager.dispatchWorkflowRun(job).catch((err) => {
         console.error(`[RenderQueueManager] Basic GitHub Actions dispatch error: ${err.message}`);
@@ -255,18 +237,9 @@ export class RenderQueueManager {
     const worker = this.getWorkers().find(w => w.workerId === workerId);
     if (!worker || worker.status === "BUSY") return null;
 
-    // Search for first job matching worker's access tier security constraints
-    const isAzureWorker = workerId.startsWith("azure") || worker.vendor === "azure";
-    let targetIndex = -1;
-
-    for (let i = 0; i < this.queue.length; i++) {
-      const candidateJob = this.queue[i];
-      if (isAzureWorker && candidateJob.tier !== "ADMIN") {
-        continue; // Azure worker CANNOT process non-admin jobs
-      }
-      targetIndex = i;
-      break;
-    }
+    // Select the oldest eligible queued job. Provider authorization is handled by FactoryOS
+    // compute routing, not this legacy compatibility queue.
+    const targetIndex = this.queue.length > 0 ? 0 : -1;
 
     if (targetIndex === -1) return null;
 
@@ -312,9 +285,6 @@ export class RenderQueueManager {
     }
 
     this.activeJobs.delete(jobId);
-    if (this.queue.length === 0 && this.activeJobs.size === 0) {
-      AzureWorkerManager.enterDrainingState();
-    }
     return job;
   }
 
