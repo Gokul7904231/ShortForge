@@ -98,6 +98,7 @@ class ImagePromptWorker:
                     **dict(sc.continuity_rules),
                     "shot_type": shot_type.value,
                     "safe_text_region": visual_plan.camera.safe_text_region,
+                    "impact_radius": list(sc.depends_on_scene_ids),
                 },
                 scene_plan=scene_plan,
             )
