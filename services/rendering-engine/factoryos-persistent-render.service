@@ -1,5 +1,5 @@
 [Unit]
-Description=FactoryOS Persistent Basic FastAPI Render Service
+Description=FactoryOS Persistent Render Service
 After=network.target
 
 [Service]
