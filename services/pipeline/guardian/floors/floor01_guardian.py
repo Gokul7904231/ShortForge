@@ -1,7 +1,8 @@
-"""Floor 01 (Strategy Brain) Guardian Adapter for FactoryOS Autonomous Guardian System."""
+"""Floor 01 Guardian adapter."""
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any, Dict, Optional
 
 import structlog
@@ -13,29 +14,36 @@ from factoryos.guardian.contracts.guardian_state import ExecutionMode
 from factoryos.guardian.core.guardian import GuardianEngine
 from factoryos.guardian.reasoning.base import ReasoningEngine
 
-# Frozen Floor 01 Core Ingestion
-from floors.floor01_strategy.app.domain.handoff import Floor01Input, Floor01HandoffPayload
+from floors.floor01_strategy.app.domain.handoff import Floor01Input
 from floors.floor01_strategy.app.pipeline import Floor01Pipeline
 
 logger = structlog.get_logger(__name__)
 
+FLOOR_ID = "floor01_strategy"
+
 
 def create_floor01_capability_registry() -> CapabilityRegistry:
-    """Build authoritative capability registry wrapping frozen Floor 01 capabilities."""
-    registry = CapabilityRegistry(floor_id="floor01")
+    registry = CapabilityRegistry(floor_id=FLOOR_ID)
     pipeline = Floor01Pipeline()
 
     def run_strategy_pipeline(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         inp = context["floor01_input"]
         payload = pipeline.execute(inp)
         context["handoff_payload"] = payload.model_dump()
-        return {"status": "success", "script_topic": payload.topic.selected_topic, "platform": payload.strategy.platform}
+        return {
+            "status": "success",
+            "script_topic": payload.topic.selected_topic,
+            "platform": payload.strategy.platform,
+            "candidate_id": payload.selected_candidate_id,
+            "quality_score": payload.decision_quality_score,
+            "handoff_status": payload.handoff_status.value,
+        }
 
     registry.register(
         Capability(
             name="strategy_pipeline_worker",
-            floor_id="floor01",
-            description="Executes deterministic Floor 01 Strategy Pipeline",
+            floor_id=FLOOR_ID,
+            description="Executes the canonical Floor 01 Strategy Pipeline",
             handler=run_strategy_pipeline,
         )
     )
@@ -43,12 +51,12 @@ def create_floor01_capability_registry() -> CapabilityRegistry:
 
 
 class Floor01Guardian:
-    """Floor 01 Autonomous Strategy Brain Guardian."""
+    """Guardian wrapper around canonical F01 execution."""
 
     def __init__(self, reasoning_engine: Optional[ReasoningEngine] = None):
         self.registry = create_floor01_capability_registry()
         self.engine = GuardianEngine(
-            floor_id="floor01",
+            floor_id=FLOOR_ID,
             registry=self.registry,
             reasoning_engine=reasoning_engine,
         )
@@ -58,9 +66,10 @@ class Floor01Guardian:
         inp: Floor01Input,
         execution_mode: ExecutionMode = ExecutionMode.HYBRID,
     ) -> GuardianReport:
-        """Execute Floor 01 Autonomous Guardian loop around frozen Floor 01 core."""
         logger.info("floor01_guardian_executing", request_id=inp.request_id)
-        input_hash = f"hash-f01-{hash(inp.topic_query or inp.request_id)}"
+        input_hash = hashlib.sha256(
+            inp.model_dump_json(exclude_none=True).encode("utf-8")
+        ).hexdigest()
         initial_context = {"floor01_input": inp}
 
         return self.engine.run_autonomous_loop(
