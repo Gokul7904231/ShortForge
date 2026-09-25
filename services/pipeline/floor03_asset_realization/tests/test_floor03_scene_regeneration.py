@@ -32,9 +32,9 @@ def test_single_scene_asset_regeneration_invariants(tmp_path):
         new_prompt_instruction="Enhance code syntax glow",
     )
 
-    # Asset plan & script versions incremented
+    # Asset plan version increments while ScriptIR lineage remains upstream-owned
     assert updated_payload.asset_plan_version == 2
-    assert updated_payload.script_version == 2
+    assert updated_payload.script_version == initial_payload.script_version
 
     # Scene A (unaffected): Byte & semantic equivalence preserved
     asset_a_updated = updated_payload.visual_asset_requirements[0].model_dump()
@@ -43,6 +43,7 @@ def test_single_scene_asset_regeneration_invariants(tmp_path):
     # Scene B (target): Scene version & asset version incremented, prompt updated
     asset_b_updated = updated_payload.visual_asset_requirements[1].model_dump()
     assert asset_b_updated["scene_id"] == target_scene_id
+    assert asset_b_updated["asset_id"] != asset_b_initial["asset_id"]
     assert asset_b_updated["asset_version"] == asset_b_initial["asset_version"] + 1
     assert asset_b_updated["scene_version"] == asset_b_initial["scene_version"] + 1
     assert "Enhance code syntax glow" in asset_b_updated["prompt_text"]
