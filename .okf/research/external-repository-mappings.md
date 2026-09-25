@@ -117,7 +117,7 @@ The current engineering stack is canonically documented in .okf/engineering-stac
 Future rendering research must compare candidates against Remotion plus AgentTube-derived lifecycle patterns before introducing a parallel architecture.
 
 
-## 4. Selected Core Engineering Stack
+## 7. Selected Core Engineering Stack
 
 The external repository mapping system now gives elevated engineering priority to:
 
@@ -131,7 +131,7 @@ Primary pattern source for durable scene manifests, checkpoint/resume, audio-fir
 
 These are clean-room pattern integrations. They do not replace ShortForge's canonical authority, `TimelineIR`, capability security, RenderFabric, or F07 verification.
 
-## 7. Engineering-stack priority
+## 8. Engineering-stack priority
 
 Two repository mappings now form the selected media engineering baseline:
 
@@ -145,7 +145,7 @@ They are complementary, not competing:
 - RenderFabric remains execution orchestration.
 - F07 remains verification authority.
 
-## 8. Mapping-first decision rule
+## 9. Mapping-first decision rule
 
 Before introducing a new media-engineering mechanism, review all relevant existing mappings. A new mechanism must be classified as:
 - already exists
