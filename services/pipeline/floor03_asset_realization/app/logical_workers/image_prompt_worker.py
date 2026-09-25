@@ -95,25 +95,7 @@ class ImagePromptWorker:
                 if dep_asset_id:
                     dependencies.append(AssetDependency(asset_id=dep_asset_id, relation="scene_dependency"))
 
-            plan_ir = AssetPlanIR(
-                plan_id=f"asset-plan-{sc.scene_id}-{sc.scene_version}",
-                plan_version=1,
-                script_id="pending",
-                script_version=1,
-                platform="pending",
-                aspect_ratio=aspect_ratio,
-                resolution=resolution,
-                nodes=[
-                    AssetPlanNode(
-                        scene_id=sc.scene_id,
-                        sequence_index=sc.sequence_index,
-                        visual=visual_plan,
-                        dependencies=dependencies,
-                        target_duration_seconds=sc.target_duration_seconds,
-                        impact_radius=list(sc.depends_on_scene_ids),
-                    )
-                ],
-            )
+            scene_plan = visual_plan
 
             v_req = VisualAssetRequirement(
                 asset_type=AssetType.VISUAL,
@@ -132,7 +114,7 @@ class ImagePromptWorker:
                     "shot_type": shot_type.value,
                     "safe_text_region": visual_plan.camera.safe_text_region,
                 },
-                plan_ir=plan_ir,
+                scene_plan=scene_plan,
             )
             visual_reqs.append(v_req)
             asset_ids_by_scene[sc.scene_id] = v_req.asset_id
