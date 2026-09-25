@@ -185,3 +185,24 @@ Repository research is interpreted only after internal architecture reconstructi
 For rendering and media-engine improvements, compare candidates against TimelineIR, Remotion, AgentTube-derived scene lifecycle patterns, RenderFabric, and FFmpeg fallback.
 
 A candidate that simply duplicates an existing stack capability should not create a new architecture node.
+
+
+## 12. Mandatory .okf Decision Sweep
+
+Every Devourer cycle must begin with the complete current `.okf` review defined by `.okf/decision-protocol.md`.
+
+The cycle must compare external discoveries against existing:
+
+- authority hierarchy
+- worker permission contract
+- cognitive contracts
+- memory rules
+- rendering stack
+- artifact rules
+- workflows
+- security invariants
+- audits
+- repository mappings
+- production-helper evidence
+
+Only after that comparison may a discovery become a Devourer candidate.
