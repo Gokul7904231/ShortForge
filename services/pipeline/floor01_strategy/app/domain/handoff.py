@@ -5,6 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
+import json
+
+from floors.floor01_strategy.app.core.input_safety import (
+    sanitize_constraint_value,
+    sanitize_input_text,
+)
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -89,13 +95,41 @@ class ResearchContext(BaseModel):
 class Floor01Input(BaseModel):
     request_id: str = Field(default_factory=lambda: str(uuid4()))
     topic_query: str = Field(..., min_length=2, max_length=250)
-    target_audience: str = "general_learners"
-    platform: str = "youtube_shorts"
-    content_format: str = "educational_short"
-    niche_context: Optional[str] = None
-    learning_level: str = "beginner"
+    target_audience: str = Field(default="general_learners", min_length=1, max_length=120)
+    platform: str = Field(default="youtube_shorts", min_length=1, max_length=64)
+    content_format: str = Field(default="educational_short", min_length=1, max_length=120)
+    niche_context: Optional[str] = Field(default=None, max_length=200)
+    learning_level: str = Field(default="beginner", min_length=1, max_length=32)
     constraints: Dict[str, Any] = Field(default_factory=dict)
     research_context: Optional[ResearchContext] = None
+
+    @field_validator(
+        "topic_query",
+        "target_audience",
+        "platform",
+        "content_format",
+        "niche_context",
+        "learning_level",
+        mode="before",
+    )
+    @classmethod
+    def sanitize_text_fields(cls, value: Any) -> Any:
+        if value is None:
+            return value
+        return sanitize_input_text(str(value), max_length=2000)
+
+    @field_validator("constraints", mode="before")
+    @classmethod
+    def sanitize_constraints(cls, value: Any) -> Dict[str, Any]:
+        if value is None:
+            return {}
+        sanitized = sanitize_constraint_value(value)
+        serialized = json.dumps(sanitized, ensure_ascii=False, sort_keys=True)
+        if len(serialized) > 16000:
+            raise ValueError("constraints payload is too large")
+        if not isinstance(sanitized, dict):
+            raise ValueError("constraints must be an object")
+        return sanitized
 
 
 class ProvenanceEntry(BaseModel):
