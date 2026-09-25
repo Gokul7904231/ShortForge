@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Dict, List, Sequence, Tuple
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.core.research_gate import ResearchGateResult
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.research_gate import ResearchGateResult
+from floor01_strategy.app.domain.handoff import (
     CandidateStatus,
     EvidenceType,
     ExecutionMode,
@@ -18,7 +18,7 @@ from floors.floor01_strategy.app.domain.handoff import (
     StrategyEvaluation,
     TopicIntelligenceResult,
 )
-from floors.floor01_strategy.app.logical_workers.strategy_planner import StrategyPlannerWorker
+from floor01_strategy.app.logical_workers.strategy_planner import StrategyPlannerWorker
 
 
 class StrategyCandidateEngine:
