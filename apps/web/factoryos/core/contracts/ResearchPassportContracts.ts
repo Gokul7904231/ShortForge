@@ -28,8 +28,8 @@ export interface EvidenceSource {
   readonly reliabilityScore: number; // 0.0 to 1.0
   readonly isPrimarySource?: boolean;
   readonly contentHash?: string;
-  readonly sourceStatus?: "ONLINE" | "UNREACHABLE" | "VERIFIED" | "UNVERIFIED" | "TEST_FIXTURE";
-  readonly sourceQuality?: "TIER_1_PRIMARY" | "TIER_2_SECONDARY" | "TIER_3_TERTIARY" | "UNTRUSTED";
+  readonly sourceStatus?: "ONLINE" | "UNREACHABLE" | "UNAVAILABLE" | "VERIFIED" | "UNVERIFIED" | "TEST_FIXTURE";
+  readonly sourceQuality?: "TIER_1_PRIMARY" | "TIER_2_SECONDARY" | "TIER_3_TERTIARY" | "UNTRUSTED" | "UNVERIFIED";
 }
 
 export interface ResearchClaim {
