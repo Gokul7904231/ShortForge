@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 from uuid import uuid4
 
 from floors.floor02_scripting.app.core.config import settings
+from floors.floor02_scripting.app.core.security import sanitize_output_text
 from floors.floor02_scripting.app.domain.handoff import (
     EvidenceType,
     ExecutionMode,
@@ -311,7 +312,7 @@ class NarrativeCompiler:
             scene_id = str(raw_scene.get("scene_id") or f"scene-{index}-{seq}")
             section = str(raw_scene.get("section_type") or "RETAIN").upper()
             beat_type = section_to_beat.get(section, BeatType.RETAIN)
-            narration = str(raw_scene.get("narration_text") or raw_scene.get("text") or "").strip()
+            narration = sanitize_output_text(str(raw_scene.get("narration_text") or raw_scene.get("text") or "").strip())
             if not narration:
                 narration = f"The key idea about {self._topic(inp)} is worth understanding."
             target_duration = max(3, min(60, int(raw_scene.get("target_duration_seconds") or 10)))
@@ -352,8 +353,8 @@ class NarrativeCompiler:
                 beat_id=beat_id,
                 scene_goal=str(raw_scene.get("scene_goal") or section),
                 narration_text=narration,
-                on_screen_text=str(raw_scene.get("on_screen_text") or ""),
-                visual_intent=str(raw_scene.get("visual_intent") or f"Cinematic educational visual for {self._topic(inp)}."),
+                on_screen_text=sanitize_output_text(str(raw_scene.get("on_screen_text") or "")),
+                visual_intent=sanitize_output_text(str(raw_scene.get("visual_intent") or f"Cinematic educational visual for {self._topic(inp)}.")),
                 voice_intent={
                     "delivery_style": "engaging_educational",
                     "emphasis_terms": [],
@@ -376,8 +377,8 @@ class NarrativeCompiler:
 
         candidate = NarrativeCandidate(
             candidate_id=str(raw.get("candidate_id") or f"candidate-{index}"),
-            title=str(raw.get("title") or f"{self._topic(inp)} — explained"),
-            logline=str(raw.get("logline") or f"A clear short-form explanation of {self._topic(inp)}."),
+            title=sanitize_output_text(str(raw.get("title") or f"{self._topic(inp)} — explained")),
+            logline=sanitize_output_text(str(raw.get("logline") or f"A clear short-form explanation of {self._topic(inp)}.")),
             strategy_variant=str(raw.get("strategy_variant") or "canonical"),
             beats=beats,
             causal_events=causal_events,
