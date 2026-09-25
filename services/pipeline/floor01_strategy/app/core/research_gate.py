@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.domain.handoff import EvidenceType, Floor01Input, ProvenanceEntry, ResearchContext
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.domain.handoff import EvidenceType, Floor01Input, ProvenanceEntry, ResearchContext
 
 
 @dataclass(frozen=True)
