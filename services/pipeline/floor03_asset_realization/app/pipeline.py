@@ -29,7 +29,6 @@ from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     PlanLineage,
     CoverageRole,
     DependencyRelation,
-    PlanLineage,
     RepairPlan,
     RepairScope,
 )
