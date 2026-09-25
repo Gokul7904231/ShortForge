@@ -749,10 +749,10 @@ WorkflowStepRegistry.register("render", async (context) => {
     throw new Error("[Simulation] FFmpeg subprocess execution crashed unexpectedly.");
   }
 
-  // Defense-in-depth: Control plane must never run heavy FFmpeg/SceneRenderPool in production
-  const isControlPlane = process.env.RENDER === "true" || process.env.NODE_ENV === "production" || Boolean(process.env.BASIC_RENDER_API_URL);
-  if (isControlPlane && process.env.ENABLE_LOCAL_FFMPEG !== "true") {
-    throw new Error("[ControlPlaneGuard] Local SceneRenderPool/FFmpeg execution is strictly disabled on the Render Control Plane. All production rendering must execute on the Azure worker.");
+  // Legacy workflow rendering is retained only behind an explicit compatibility flag.
+  const executionAuthority = (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
+  if (executionAuthority === "factoryos" && process.env.ENABLE_LEGACY_WORKFLOW_RENDER !== "true") {
+    throw new Error("[ControlPlaneGuard] FactoryOS is authoritative for production rendering; legacy workflow render execution is disabled.");
   }
 
   console.log(`[StepExecutor] [${context.jobId}] Executing scene-by-scene rendering via TimelineOrchestrator and RenderPlanner...`);
