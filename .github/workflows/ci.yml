@@ -56,3 +56,63 @@ jobs:
           FLOOR01_ENVIRONMENT: test
           FLOOR01_MEMORY_FILE_PATH: ${{ runner.temp }}/floor01-memory.json
         run: python -m pytest floor01_strategy/tests/ -q
+
+  f01-container:
+    name: Floor 01 Production Container Smoke
+    runs-on: ubuntu-latest
+    needs: [f01-python]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Floor 01 image
+        run: docker build -f services/pipeline/floor01_strategy/Dockerfile -t shortforge-floor01:ci .
+
+      - name: Start production-configured service
+        env:
+          FLOOR01_CI_SERVICE_KEY: ci-floor01-service-key-012345678901234567890123456789
+        run: |
+          docker run -d --rm --name floor01-ci -p 18080:8000             -e FLOOR01_ENVIRONMENT=production             -e FLOOR01_SERVICE_API_KEY="$FLOOR01_CI_SERVICE_KEY"             shortforge-floor01:ci
+          trap 'docker stop floor01-ci >/dev/null 2>&1 || true' EXIT
+
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:18080/health
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/docs)" = "404"
+
+          curl --fail --silent             -H "Content-Type: application/json"             -H "X-API-Key: $FLOOR01_CI_SERVICE_KEY"             -X POST             -d '{
+              "topic_query": "Python decorators",
+              "target_audience": "beginner_programmers",
+              "platform": "youtube_shorts",
+              "content_format": "educational_short",
+              "learning_level": "beginner",
+              "research_context": {
+                "passport_id": "pass_container_ci",
+                "mission_id": "mission_container_ci",
+                "integrity_verified": true,
+                "confidence": 0.95,
+                "source_count": 2,
+                "verified_claim_count": 2,
+                "unresolved_issue_count": 0,
+                "key_findings": ["Container smoke evidence"],
+                "recommended_hook": "Most people misunderstand Python decorators.",
+                "hook_archetype": "CURIOSITY_GAP",
+                "evidence": [{
+                  "evidence_id": "claim_container_ci",
+                  "claim_id": "claim_container_ci",
+                  "statement": "Verified source-backed test claim.",
+                  "verification_status": "VERIFIED",
+                  "confidence": 0.95,
+                  "supporting_source_ids": ["src_container_ci"],
+                  "source_quality": ["TIER_1_PRIMARY"]
+                }],
+                "provenance": ["container-smoke"]
+              }
+            }'             http://127.0.0.1:18080/v1/plan | python -c "import json,sys; d=json.load(sys.stdin); assert d['floor_id']=='floor01_strategy'; assert d['handoff_status']=='VALIDATED'; print('F01 container handoff validated')"
+
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}'             -H "Content-Type: application/json"             -H "X-API-Key: wrong-key"             -X POST             -d '{"topic_query":"Python decorators"}'             http://127.0.0.1:18080/v1/plan)" = "401"
