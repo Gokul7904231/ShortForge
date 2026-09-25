@@ -151,7 +151,7 @@ describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsyst
     const kineticCompiler = fabric.planCompiler(kineticIntent, true);
     expect(kineticCompiler.id).toBe("HYPERFRAMES");
 
-    const localExec = await fabric.executeRender({ ...standardIntent, durationSeconds: 2 }, "LOCAL");
+    const localExec = await fabric.executeRender({ ...standardIntent, durationSeconds: 2 }, { preferredProviderType: "LOCAL" });
     expect(localExec.success).toBe(true);
     expect(localExec.providerUsed).toBe("DISTRIBUTED");
     expect(localExec.compilerUsed).toBe("FFMPEG");
