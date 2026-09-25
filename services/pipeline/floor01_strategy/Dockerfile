@@ -8,7 +8,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY services/pipeline/floor01_strategy/pyproject.toml /app/services/pipeline/floor01_strategy/pyproject.toml
-COPY services/pipeline/floors /app/services/pipeline/floors
 COPY services/pipeline/floor01_strategy /app/services/pipeline/floor01_strategy
 
 RUN python -m pip install --upgrade pip \
