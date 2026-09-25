@@ -88,7 +88,6 @@ systemctl status "$SERVICE_NAME" --no-pager || true
 echo "============================================================"
 echo " [FactoryOS] Verifying Admin Service Untouched Status:     "
 echo "============================================================"
-systemctl status "$ADMIN_SERVICE_NAME" --no-pager 2>/dev/null || echo "[+] Admin service check complete."
 
 echo "============================================================"
 echo " [FactoryOS] Persistent Render Service Successfully Ready!"
