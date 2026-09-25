@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Set
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.core.exceptions import UnsupportedFormatError, UnsupportedPlatformError
-from floors.floor01_strategy.app.core.novelty import extract_keywords, hybrid_similarity, normalize_text
-from floors.floor01_strategy.app.core.security import sanitize_input_text
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.exceptions import UnsupportedFormatError, UnsupportedPlatformError
+from floor01_strategy.app.core.novelty import extract_keywords, hybrid_similarity, normalize_text
+from floor01_strategy.app.core.security import sanitize_input_text
+from floor01_strategy.app.domain.handoff import (
     EvidenceType,
     Floor01Input,
     ProvenanceEntry,
@@ -50,7 +50,7 @@ class TopicIntelligenceWorker:
         query_keywords = extract_keywords(sanitized_query)
 
         if self.memory_store is None:
-            from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+            from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
             self.memory_store = StrategyMemoryStore()
 
         memory_topics = self.memory_store.get_all_topics()
