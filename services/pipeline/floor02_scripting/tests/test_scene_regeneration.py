@@ -10,7 +10,7 @@ from floors.floor02_scripting.app.pipeline import Floor02Pipeline
 def test_single_scene_regeneration_invariants():
     """Verify targeted single-scene regeneration preserves exact byte/semantic equivalence of unaffected scenes."""
     pipeline = Floor02Pipeline()
-    inp = Floor02Input(topic_query="Python Decorators", request_id="req-regen-invariants-1")
+    inp = Floor02Input(topic_query="Python Decorators", request_id="req-regen-invariants-1", strict_upstream=False)
     initial_payload = pipeline.execute(inp)
 
     assert len(initial_payload.scenes) >= 3
@@ -48,7 +48,7 @@ def test_single_scene_regeneration_invariants():
 
 def test_scene_regeneration_invalid_scene_id_rejection():
     pipeline = Floor02Pipeline()
-    inp = Floor02Input(topic_query="Python Generators", request_id="req-regen-invalid-1")
+    inp = Floor02Input(topic_query="Python Generators", request_id="req-regen-invalid-1", strict_upstream=False)
     initial_payload = pipeline.execute(inp)
 
     worker = SceneRegeneratorWorker()
