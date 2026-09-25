@@ -182,3 +182,18 @@ Ascalon must not learn or receive authority to mint capabilities, bypass Guardia
 - GEPA: https://arxiv.org/abs/2507.19457
 
 External sources are architecture references only. They do not outrank .okf, executable contracts, tests, or production-helper evidence.
+
+
+## Compatibility note
+
+The canonical production floor identity is `floor01_strategy`, matching the FactoryOS floor registry and F01 service contract.
+
+The Guardian execution kernel retains the historical `floor01` namespace because its domain-verification and existing safety tests are still keyed to that execution alias. This is intentional compatibility behavior, not a second F01 implementation.
+
+A future cross-system ID reconciliation can replace the alias only after a dedicated Guardian/Overseer migration and regression sweep.
+
+## Autonomous F00 prerequisite
+
+The existing Overseer DAG planner still conditionally inserts F00 for certain command classes. This v2 change makes the F01 service itself evidence-aware and strict-capable, but it does not silently rewrite the global DAG policy.
+
+Before autonomous production training, reconcile the repository's existing `.okf` rule that autonomous F01 execution requires F00 evidence with the current TaskDAG planning behavior.
