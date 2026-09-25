@@ -89,7 +89,7 @@ class AssetMemoryStore:
         stored_fingerprint = record.get("request_fingerprint")
         if expected_fingerprint and stored_fingerprint and stored_fingerprint != expected_fingerprint:
             raise ValueError(
-                f"Idempotency fingerprint conflict for request_id '{request_id}'."
+                f"Idempotency conflict: fingerprint mismatch for request_id '{request_id}'."
             )
 
         # Older records may not contain a fingerprint. They remain readable for
