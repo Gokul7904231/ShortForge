@@ -133,8 +133,18 @@ def test_fallback_provenance_cannot_create_model_candidate(tmp_path):
         )
     )
 
+    payload, report = pipeline.execute_with_report(
+        Floor01Input(
+            request_id="req_truthful_fallback_report",
+            topic_query="Python descriptors with report",
+            research_context=verified_research(),
+        )
+    )
+
     assert payload.handoff_status == HandoffStatus.VALIDATED
     assert payload.strategy.execution_mode.value == "DETERMINISTIC_FALLBACK"
+    assert report.execution_mode.executed is False
+    assert report.execution_mode.executed_model is None
 
 
 def test_model_key_without_endpoint_never_claims_model_execution():
