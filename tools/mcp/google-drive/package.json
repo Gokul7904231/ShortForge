@@ -1,0 +1,25 @@
+{
+  "name": "@shortforge/google-drive-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ShortForge-owned Google Drive MCP server with least-privilege storage tooling.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.1.0",
+    "googleapis": "^173.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^6.0.3"
+  }
+}
