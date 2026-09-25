@@ -8,15 +8,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.domain.handoff import (
     Floor01HandoffPayload,
     Floor01Input,
     FloorExecutionReport,
     TopicIntelligenceResult,
 )
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
-from floors.floor01_strategy.app.pipeline import Floor01Pipeline
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.pipeline import Floor01Pipeline
 
 
 class Floor01Service:
