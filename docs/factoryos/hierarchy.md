@@ -17,7 +17,7 @@ Level 3: ORCHESTRATION DAG & FLOORS
          • PythonFloorBridge
          • Floor 01 → Floor 02 → Floor 03 → Floor 04 → Floor 05 → Floor 06
 Level 4: EXECUTION WORKERS
-         • Azure VM Plane (FastAPI render worker, FFmpeg, edge-tts)
+         • Distributed Render Fabric (ComputeRouter, provider adapters, CAS)
          • Local / Python Microservice workers
 Level 5: OBSERVABILITY & PROJECTIONS
          • DurableEventBus (State-change event stream)
