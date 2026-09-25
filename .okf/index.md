@@ -169,3 +169,15 @@ The canonical MCP architecture is documented in .okf/intelligence/mcp-architectu
 MCP-specific least-privilege rules are documented in .okf/security/mcp-permissions.md.
 
 No F00-F07 worker receives generic MCP access by default.
+
+
+## 11. Content Engine Configuration & ProductionSpec
+
+| Entry Point | Purpose |
+|---|---|
+| .okf/content-engine-architecture.md | Canonical architecture for EngineManifest, ConfigurationSchema, ProductionSpec, authority domains, and F00/AgentReach boundaries. |
+| apps/web/lib/core/EngineConfigurationContracts.ts | Declarative creator-facing configuration schema, validation helpers, compatibility contracts, and engine contract profiles. |
+| apps/web/factoryos/core/contracts/ProductionSpecContracts.ts | Typed immutable mission-level ProductionSpec contract. |
+| apps/web/factoryos/core/engines/ProductionSpecCompiler.ts | Server-authoritative configuration compiler, normalization, validation, and SHA-256 spec hashing. |
+
+Invariant: engine UI configuration is creator intent. It does not grant worker capabilities, bypass .okf, override Guardian/Slayer controls, or bypass F07.
