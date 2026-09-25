@@ -923,3 +923,16 @@ Resolution:
 - no canonical floor implementation was duplicated or moved.
 
 This is validation infrastructure, not a change to F01/F02 authority or semantics.
+
+
+## F03 test-boundary hardening — 2026-09-25
+
+The F03 suite was correctly found to be coupled to F02's live pipeline quality policy through the shared `build_mock_floor02_payload()` helper. In the production gate, F02 rejected the synthetic fixture because its evidence lineage did not satisfy F02-C01, causing the F03 suite to fail before exercising F03 behavior.
+
+Resolution:
+- the F03 test fixture now constructs a validated `Floor02HandoffPayload` directly;
+- the fixture carries explicit platform provenance, scene evidence references, character metadata, dependency edges, and continuity/reference intent;
+- no F02 model credentials, revision loop, or quality-score behavior is required for F03 unit/API tests;
+- F02's own production quality gates remain unchanged and continue to run in their dedicated suite.
+
+This restores test ownership boundaries: F03 tests the F02→F03 contract, while F02 tests its own generation/quality policy.
