@@ -55,3 +55,43 @@ The locked ShortForge rules remain:
 ## Remaining validation gate
 
 Before merging, the branch must pass source-level checks and repository CI that are available. Because the local environment may not have network access, GitHub Actions is the authoritative final execution environment for the branch.
+
+## Second-wave deep research — 2026-09-25
+
+The research was intentionally expanded beyond the original nine repositories.
+
+Additional references reviewed:
+- StoryForgeAI (jamesbas/storyforgeai)
+- VideoClaw (HITsz-TMG/VideoClaw)
+- NolanX (nolanx-ai/nolanx.ai)
+- Seedance 2.0 sequence skill (Emily2040/seedance-2.0)
+- script-to-shootable-storyboard (zyz254009-crypto/script-to-shootable-storyboard)
+- xyz-video-skill (huangserva/xyz-video-skill)
+- Pydantic AI (pydantic/pydantic-ai)
+- CharacterConsistency (madebysaira/CharacterConsistency)
+- PopcornReady (kmgrassi/PopcornReady)
+- ShotDirector (UknowSth/ShotDirector)
+- MultiShotMaster (KlingAIResearch/MultiShotMaster)
+- VstoryGen (AI-Application-and-Integration-Lab/VstoryGen)
+- Code2Video (showlab/Code2Video)
+
+### Patterns promoted into F03
+
+1. **Plan globally, compile locally.** Seedance sequence-state patterns separate a global scene/continuity plan from the single-shot execution prompt. F03 now carries continuity mode, start/end state hints, and motion beats without owning execution.
+2. **Structured reference strategy.** xyz-video-skill, PopcornReady, and the structured storyboard schemas distinguish character, composition, style, stage, first-frame, last-frame, and target-state references. F03 now emits typed provider-neutral reference bindings and input-mode requirements.
+3. **Atomic shot semantics.** script-to-shootable-storyboard models a shot as a bounded, traceable unit with explicit camera, state, timing, continuity, and safety-zone fields. F03 now captures the minimum useful subset while leaving TimelineIR and execution authorities untouched.
+4. **Graph-aware impact.** Scene dependencies are now validated for missing references, forward dependencies, and cycles. impact_radius is the transitive downstream dependent set, not the scene's own prerequisites.
+5. **Repair locality.** A node with downstream dependents is explicitly marked as DEPENDENT_SUBGRAPH; regeneration remaps dependency asset IDs rather than dropping dependency edges.
+6. **Semantic fingerprints.** Pydantic-style typed output discipline and clean-room provenance patterns informed a stable SHA-256 plan_fingerprint independent of request-specific plan IDs.
+7. **Directorial structure without provider lock-in.** ShotDirector and MultiShotMaster show that explicit camera/shot transition semantics matter for coherent multi-shot generation. F03 records semantic camera and continuity intent only; it does not bind to Wan/Kling/Seedance/etc.
+8. **Multimodal continuity context.** VstoryGen demonstrates narrative visual consistency from scene + character references. F03 now preserves character reference bindings and structured intent when F02 supplies them.
+9. **Critic separation.** Code2Video's planner/critic separation reinforces that planning and evaluation should remain distinct. F03 remains a planner/specifier; visual quality judgment stays outside the new IR.
+
+### Explicit non-adoptions
+
+- No provider/model selection was added to F03.
+- No physical image/video generation was added.
+- No third-party code, prompts, or tests were copied.
+- No model-specific camera or reference syntax was embedded in the canonical IR.
+- Research-only repositories and non-production reference implementations remain non-authoritative.
+- The F02 -> (F03 || F04) topology remains unchanged.
