@@ -28,4 +28,5 @@ testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["floor01_strategy*"]
+include = ["floor01_strategy", "floor01_strategy.*"]
+exclude = ["floor01_strategy.tests", "floor01_strategy.tests.*"]
