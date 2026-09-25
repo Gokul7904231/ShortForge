@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any, Dict, Optional, Tuple
 
@@ -107,6 +108,33 @@ class LLMStrategyAdapter:
         if not endpoint.endswith("/chat/completions"):
             endpoint = endpoint + "/chat/completions"
 
+        parsed_endpoint = urllib.parse.urlsplit(endpoint)
+        allowed_schemes = {"https"}
+        if os.getenv("FLOOR01_ENVIRONMENT", "").lower() in {"development", "test"}:
+            allowed_schemes.add("http")
+        if parsed_endpoint.scheme not in allowed_schemes or not parsed_endpoint.netloc:
+            reason = (
+                "LLM endpoint rejected: only explicit HTTP(S) endpoints are allowed "
+                "for the current execution environment."
+            )
+            logger.warning("floor01_llm_endpoint_rejected", reason=reason)
+            return (
+                {
+                    "strategic_reasoning": reason,
+                    "recommended_angle": "practical_mental_model",
+                    "confidence": 0.55,
+                },
+                ProvenanceEntry(
+                    evidence_type=EvidenceType.FALLBACK,
+                    source_type=self.provider_name,
+                    source_identifier=self.model_name,
+                    method="endpoint_scheme_gate",
+                    confidence_score=0.55,
+                    summary=reason,
+                    raw_data={"prompt_hash": prompt_hash},
+                ),
+            )
+
         request_body = {
             "model": self.model_name,
             "temperature": 0.2,
@@ -134,8 +162,19 @@ class LLMStrategyAdapter:
             method="POST",
         )
 
+        class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                raise urllib.error.HTTPError(
+                    req.full_url,
+                    code,
+                    "Redirects are disabled for LLM provider calls.",
+                    headers,
+                    fp,
+                )
+
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+            opener = urllib.request.build_opener(_NoRedirectHandler())
+            with opener.open(request, timeout=self.timeout_seconds) as response:  # nosec B310 - endpoint scheme is allowlisted and redirects are disabled.
                 response_data = json.loads(response.read().decode("utf-8"))
 
             content = response_data["choices"][0]["message"]["content"]
