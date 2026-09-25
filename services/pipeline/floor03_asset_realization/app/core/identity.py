@@ -8,7 +8,7 @@ from typing import Any
 
 
 CANONICAL_FLOOR_ID = "floor03_asset_realization"
-CANONICAL_FLOOR_VERSION = "2.1.0"
+CANONICAL_FLOOR_VERSION = "2.2.0"
 
 
 def canonical_json(value: Any) -> str:
