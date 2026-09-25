@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.domain.handoff import (
     ContentPlanResult,
     EvidenceType,
     Floor01Input,
