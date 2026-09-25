@@ -48,9 +48,9 @@ We establish a two-tier rendering fabric:
    - High-availability dedicated FastAPI worker pool with sub-60s render latency for Standard/Basic tier jobs.
    - Isolated per-job disk workspace (`services/rendering-engine/output/jobs/{jobId}`).
    - Secure communication using high-entropy `executionToken` validated via constant-time `timingSafeEqual`.
-2. **Tier 2 — Dedicated High-Throughput Azure GPU VM Workers**:
-   - Allocated for Pro/Admin workloads requiring heavier rendering, 4K upscaling, or complex timelines.
-   - Tier isolation invariant: Basic users cannot dispatch to Azure GPU pools; Admin tokens cannot be reused by Basic workers.
+2. **Distributed GPU providers**:
+   - GPU-capable providers such as AMD workers, Kaggle, Lightning, or future qualified fleets are selected by ComputeRouter capability policy.
+   - Provider-specific credentials stay inside provider adapters.
 3. **Kaggle / Ephemeral Workers**:
    - Rejected as canonical or primary render workers due to cold starts, ephemeral storage loss, and security risks.
 
