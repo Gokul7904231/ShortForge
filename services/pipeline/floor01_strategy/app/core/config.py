@@ -22,6 +22,10 @@ class Floor01Settings(BaseSettings):
     floor_name: str = Field(default="Strategy & Intelligence")
     floor_version: str = Field(default="2.0.0")
 
+    # Runtime safety: production/staging should explicitly authenticate service calls.
+    environment: str = Field(default="development")
+    allow_anonymous_dev: bool = Field(default=True)
+
     similarity_warning_threshold: float = Field(default=0.45, ge=0.0, le=1.0)
     similarity_rejection_threshold: float = Field(default=0.75, ge=0.0, le=1.0)
     min_confidence_threshold: float = Field(default=0.70, ge=0.0, le=1.0)
@@ -37,9 +41,11 @@ class Floor01Settings(BaseSettings):
     min_duration_seconds: int = Field(default=15, ge=5)
     max_duration_seconds: int = Field(default=180, le=600)
     default_duration_seconds: int = Field(default=60)
-    memory_file_path: str = Field(default="floors/floor01_strategy/data/memory.json")
+    memory_file_path: str = Field(default="data/memory.json")
 
-    require_verified_research: bool = Field(default=False)
+    # Evidence-gated by default. Compatibility callers can explicitly choose
+    # a less strict policy at the runtime boundary.
+    require_verified_research: bool = Field(default=True)
     minimum_research_sources: int = Field(default=1, ge=0)
     minimum_verified_claims: int = Field(default=1, ge=0)
 
