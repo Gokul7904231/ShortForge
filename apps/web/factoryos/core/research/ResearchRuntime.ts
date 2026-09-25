@@ -185,9 +185,20 @@ export class ResearchRuntime {
 
     // 3. Research Passport Synthesis
     const passportId = `pass_${randomUUID().substring(0, 8)}`;
-    const passportConfidence = claims.length > 0
-      ? Number((claims.reduce((acc, c) => acc + c.confidence, 0) / claims.length).toFixed(2))
-      : 0.0;
+    const evidenceClaims = claims.filter(
+      (claim) =>
+        claim.claimType !== "MODEL_CLAIM" &&
+        claim.claimType !== "UNVERIFIED_ASSERTION"
+    );
+    const passportConfidence =
+      evidenceClaims.length > 0
+        ? Number(
+            (
+              evidenceClaims.reduce((acc, c) => acc + c.confidence, 0) /
+              evidenceClaims.length
+            ).toFixed(2)
+          )
+        : 0.0;
 
     const unsignedPassport: ResearchPassport = {
       passportId,
@@ -219,6 +230,15 @@ export class ResearchRuntime {
         "Conservative claim-level corroboration",
         "Verification status classification",
       ],
+      researchContext: {
+        engineId: request.researchContract?.engineId,
+        audience: request.audience,
+        dataRequirements: request.researchContract?.dataRequirements,
+        minSources: request.researchContract?.minSources,
+        citationRequired: request.researchContract?.citationRequired,
+        freshness: request.researchContract?.freshness,
+        agentReachProfile: request.researchContract?.agentReachProfile,
+      },
     };
 
     // 4. Cryptographic Signing of Passport
