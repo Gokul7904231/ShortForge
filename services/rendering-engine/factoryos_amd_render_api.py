@@ -210,6 +210,9 @@ def worker_capabilities() -> dict[str, Any]:
     ffmpeg_available = shutil.which("ffmpeg") is not None
     renderer_ready = renderer_importable()
     encoder_ready = ffmpeg_has_encoder(VIDEO_ENCODER)
+    vaapi_device_ready = (
+        VIDEO_ENCODER != "h264_vaapi" or Path(VAAPI_DEVICE).exists()
+    )
 
     gpu_model = os.environ.get(
         "AMD_GPU_MODEL",
@@ -228,7 +231,7 @@ def worker_capabilities() -> dict[str, Any]:
             and renderer_ready
             and (
                 not REQUIRE_GPU_ENCODE
-                or encoder_ready
+                or (encoder_ready and vaapi_device_ready)
             )
         ),
         "workerId": WORKER_ID,
@@ -248,7 +251,7 @@ def worker_capabilities() -> dict[str, Any]:
             "gpu": gpu_reason,
             "rendererImportable": renderer_ready,
             "encoderAvailable": encoder_ready,
-            "vaapiDeviceExists": Path(VAAPI_DEVICE).exists(),
+            "vaapiDeviceExists": vaapi_device_ready,
         },
     }
 
