@@ -37,3 +37,12 @@ npm test
 
 - Canonical Docs: `docs/...`
 - Architecture Map: `docs/architecture/system-overview.md`
+
+
+## Team Change Gate
+- [ ] I completed the current .okf end-to-end sweep.
+- [ ] I classified the change.
+- [ ] Required Forgers were routed and produced evidence.
+- [ ] Required security checks were run; BLOCKED/UNPROVEN states are disclosed.
+- [ ] Every contradiction is preserved in the Team report with a proposed resolution.
+- [ ] `Team/reports/pr-<number>.json` will be present before merge.
