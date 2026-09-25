@@ -211,3 +211,11 @@ After initial v2 branch verification exposed integration mismatches, the followi
 - CI now includes an explicit Python Floor 01 v2 test job covering the service/test tree. This closes the previous gap where F01's Python suite existed but was not executed by branch CI.
 
 These are compatibility and verification corrections only. They do not expand F01 authority or create a second strategy implementation.
+
+## Verification Follow-up — Namespace and Contract Corrections
+
+- EngineJobSnapshot now declares audience, thumbnailStyle, retentionHours, and platforms fields emitted by the immutable production snapshot.
+- Python CI explicitly sets PYTHONPATH to services/pipeline.
+- The historical floors.floor01_strategy import contract is restored through a compatibility namespace that points to the canonical services/pipeline/floor01_strategy implementation. This is an import-path bridge only; it is not a second F01 implementation.
+
+Fresh CI is required again after these changes. No pass is claimed until both TypeScript and Python F01 jobs succeed.
