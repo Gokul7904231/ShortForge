@@ -1,11 +1,8 @@
-"""Script Memory Store for Floor 02 (Scripting & Narrative).
-
-Provides process-safe, atomic-write file persistence / in-memory storage for past script payloads,
-single-scene regeneration histories, request idempotency indexing, corruption recovery, and retention bounds.
-"""
+"""Process-safe durable script memory and idempotency store."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -18,23 +15,24 @@ from uuid import uuid4
 
 import structlog
 
+from floors.floor02_scripting.app.core.config import settings
+
 logger = structlog.get_logger(__name__)
 
-# Cross-platform process file locking support
 if sys.platform == "win32":
     import msvcrt
 
-    def _lock_file(f):
-        for attempt in range(1000):
+    def _lock_file(f) -> None:
+        for _ in range(1000):
             try:
                 f.seek(0)
                 msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
                 return
             except (IOError, OSError):
                 time.sleep(0.01)
-        raise TimeoutError("Failed to acquire process file lock within timeout")
+        raise TimeoutError("Failed to acquire process file lock")
 
-    def _unlock_file(f):
+    def _unlock_file(f) -> None:
         try:
             f.seek(0)
             msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
@@ -43,16 +41,16 @@ if sys.platform == "win32":
 else:
     import fcntl
 
-    def _lock_file(f):
-        for attempt in range(1000):
+    def _lock_file(f) -> None:
+        for _ in range(1000):
             try:
                 fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 return
             except (IOError, OSError):
                 time.sleep(0.01)
-        raise TimeoutError("Failed to acquire process file lock within timeout")
+        raise TimeoutError("Failed to acquire process file lock")
 
-    def _unlock_file(f):
+    def _unlock_file(f) -> None:
         try:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         except (IOError, OSError):
@@ -60,164 +58,140 @@ else:
 
 
 class ScriptMemoryStore:
-    """Process-safe, atomic-write script memory persistence & idempotency store."""
+    """Atomic, bounded, process-safe persistence with request fingerprints."""
 
-    SCHEMA_VERSION = "1.0"
-    DEFAULT_MAX_RECORDS = 1000
+    SCHEMA_VERSION = "2.0"
 
-    def __init__(
-        self,
-        storage_path: Optional[str] = None,
-        max_records: int = DEFAULT_MAX_RECORDS,
-    ) -> None:
+    def __init__(self, storage_path: Optional[str] = None, max_records: int = settings.MEMORY_MAX_RECORDS) -> None:
         self.storage_path = Path(storage_path) if storage_path else None
         self.max_records = max_records
         self._records: List[Dict[str, Any]] = []
         self._idempotency_map: Dict[str, Dict[str, Any]] = {}
-
+        self._fingerprints: Dict[str, str] = {}
         if self.storage_path and self.storage_path.exists():
-            self._load_from_disk(skip_lock=False)
+            self._load_from_disk()
 
-    def _get_lock_path(self) -> Optional[Path]:
-        if self.storage_path:
-            return self.storage_path.with_name(f"{self.storage_path.name}.lock")
-        return None
+    @staticmethod
+    def fingerprint(payload: Dict[str, Any]) -> str:
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+
+    def _lock_path(self) -> Optional[Path]:
+        return self.storage_path.with_name(self.storage_path.name + ".lock") if self.storage_path else None
 
     def _load_from_disk(self, skip_lock: bool = False) -> List[Dict[str, Any]]:
         if not self.storage_path or not self.storage_path.is_file():
-            return []
-
-        lock_path = self._get_lock_path()
-        lock_file = None
-        if lock_path and not skip_lock:
-            lock_path.parent.mkdir(parents=True, exist_ok=True)
-            lock_file = open(lock_path, "a+")
-            _lock_file(lock_file)
-
-        try:
-            content = None
-            for attempt in range(10):
-                try:
-                    with self.storage_path.open("r", encoding="utf-8") as f:
-                        content = f.read()
-                        break
-                except (PermissionError, OSError) as exc:
-                    if attempt < 9:
-                        time.sleep(0.01)
-                        continue
-                    logger.warning("script_memory_read_retry_failed", error=str(exc))
-
-            if content is None or not content.strip():
-                return self._records
-
-            try:
-                data = json.loads(content)
-            except json.JSONDecodeError as exc:
-                logger.warning("script_memory_corrupted_recovery", error=str(exc), path=str(self.storage_path))
-                self._handle_corruption()
-                return []
-
-            if isinstance(data, dict) and "records" in data:
-                disk_records = data.get("records", [])
-            elif isinstance(data, list):
-                disk_records = data
-            else:
-                disk_records = []
-
-            seen_keys = {r.get("record_id") or r.get("request_id") or r.get("script_id") for r in self._records if r}
-            for dr in disk_records:
-                key = dr.get("record_id") or dr.get("request_id") or dr.get("script_id")
-                if key and key not in seen_keys:
-                    self._records.append(dr)
-                    seen_keys.add(key)
-
-            self._rebuild_idempotency_map()
             return self._records
 
+        lock = None
+        lock_path = self._lock_path()
+        if lock_path and not skip_lock:
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            lock = open(lock_path, "a+", encoding="utf-8")
+            _lock_file(lock)
+        try:
+            try:
+                raw = self.storage_path.read_text(encoding="utf-8")
+            except (PermissionError, OSError) as exc:
+                logger.warning("script_memory_read_failed", error=str(exc))
+                return self._records
+
+            if not raw.strip():
+                return self._records
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                self._handle_corruption()
+                logger.error("script_memory_corrupted", error=str(exc))
+                return self._records
+
+            disk_records = data.get("records", []) if isinstance(data, dict) else data if isinstance(data, list) else []
+            self._records = disk_records if isinstance(disk_records, list) else []
+            self._rebuild_indexes()
+            return self._records
         finally:
-            if lock_file:
-                _unlock_file(lock_file)
-                lock_file.close()
+            if lock:
+                _unlock_file(lock)
+                lock.close()
+
+    def _rebuild_indexes(self) -> None:
+        self._idempotency_map.clear()
+        self._fingerprints.clear()
+        for rec in self._records:
+            req = rec.get("request_id")
+            if req:
+                self._idempotency_map[req] = rec.get("payload") or {}
+                self._fingerprints[req] = rec.get("request_fingerprint", "")
 
     def _handle_corruption(self) -> None:
-        """Backup corrupted memory file and reset to clean state."""
         if self.storage_path and self.storage_path.exists():
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-            corrupt_path = self.storage_path.with_name(f"{self.storage_path.name}.corrupted.{timestamp}")
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            backup = self.storage_path.with_name(f"{self.storage_path.name}.corrupted.{stamp}")
             try:
-                self.storage_path.rename(corrupt_path)
-                logger.info("corrupted_script_memory_backed_up", corrupt_path=str(corrupt_path))
-            except Exception as e:
-                logger.error("corrupted_script_memory_backup_failed", error=str(e))
-
+                self.storage_path.rename(backup)
+            except Exception as exc:
+                logger.error("script_memory_corruption_backup_failed", error=str(exc))
         self._records = []
         self._idempotency_map = {}
-
-    def _rebuild_idempotency_map(self) -> None:
-        self._idempotency_map.clear()
-        for rec in self._records:
-            req_id = rec.get("request_id")
-            if req_id:
-                self._idempotency_map[req_id] = rec.get("payload") or {}
+        self._fingerprints = {}
 
     def save_to_disk(self, skip_lock: bool = False) -> None:
         if not self.storage_path:
             return
 
-        lock_path = self._get_lock_path()
-        lock_file = None
+        lock = None
+        lock_path = self._lock_path()
         if lock_path and not skip_lock:
             lock_path.parent.mkdir(parents=True, exist_ok=True)
-            lock_file = open(lock_path, "a+")
-            _lock_file(lock_file)
+            lock = open(lock_path, "a+", encoding="utf-8")
+            _lock_file(lock)
 
+        temp_name: Optional[str] = None
         try:
             if self.storage_path.exists():
                 self._load_from_disk(skip_lock=True)
 
             self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-            temp_file = tempfile.NamedTemporaryFile(
-                mode="w",
-                dir=str(self.storage_path.parent),
-                delete=False,
-                encoding="utf-8",
-            )
-
-            data = {
-                "schema_version": self.SCHEMA_VERSION,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                "record_count": len(self._records),
-                "records": self._records,
-            }
-
-            with temp_file as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-                f.flush()
-                os.fsync(f.fileno())
-
-            for attempt in range(15):
-                try:
-                    os.replace(temp_file.name, str(self.storage_path))
-                    break
-                except (PermissionError, OSError) as e:
-                    if attempt < 14:
-                        time.sleep(0.02)
-                    else:
-                        raise e
-
-            logger.info("script_memory_saved_atomic", record_count=len(self._records))
-
+            fd, temp_name = tempfile.mkstemp(prefix=self.storage_path.name + ".", suffix=".tmp", dir=str(self.storage_path.parent))
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "schema_version": self.SCHEMA_VERSION,
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "record_count": len(self._records),
+                        "records": self._records,
+                    },
+                    handle,
+                    indent=2,
+                    ensure_ascii=False,
+                )
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_name, self.storage_path)
+            temp_name = None
         except Exception as exc:
-            logger.error("script_memory_save_failed", error=str(exc))
-            if 'temp_file' in locals() and os.path.exists(temp_file.name):
+            if temp_name and os.path.exists(temp_name):
                 try:
-                    os.remove(temp_file.name)
-                except Exception:
+                    os.unlink(temp_name)
+                except OSError:
                     pass
+            logger.error("script_memory_save_failed", error=str(exc))
+            if settings.is_production:
+                raise
         finally:
-            if lock_file:
-                _unlock_file(lock_file)
-                lock_file.close()
+            if lock:
+                _unlock_file(lock)
+                lock.close()
+
+    def get_idempotent_payload(self, request_id: str, fingerprint: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        if self.storage_path and self.storage_path.exists():
+            self._load_from_disk()
+        cached = self._idempotency_map.get(request_id)
+        if cached is not None and fingerprint is not None:
+            previous = self._fingerprints.get(request_id)
+            if previous and previous != fingerprint:
+                raise ValueError(f"Idempotency conflict for request_id '{request_id}'")
+        return cached
 
     def add_record(
         self,
@@ -227,56 +201,46 @@ class ScriptMemoryStore:
         payload: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        lock_path = self._get_lock_path()
-        lock_file = None
+        lock = None
+        lock_path = self._lock_path()
         if lock_path:
             lock_path.parent.mkdir(parents=True, exist_ok=True)
-            lock_file = open(lock_path, "a+")
-            _lock_file(lock_file)
+            lock = open(lock_path, "a+", encoding="utf-8")
+            _lock_file(lock)
 
         try:
             if self.storage_path and self.storage_path.exists():
                 self._load_from_disk(skip_lock=True)
 
-            if request_id:
-                for rec in self._records:
-                    if rec.get("request_id") == request_id:
-                        logger.info("skip_duplicate_idempotent_add_script_record", request_id=request_id)
-                        return
+            fingerprint = self.fingerprint(payload or {})
+            if request_id and request_id in self._fingerprints:
+                if self._fingerprints[request_id] != fingerprint:
+                    raise ValueError(f"Idempotency conflict for request_id '{request_id}'")
+                return
 
-            record = {
-                "record_id": str(uuid4()),
-                "request_id": request_id,
-                "script_id": script_id,
-                "title": title,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "metadata": metadata or {},
-                "payload": payload,
-            }
-
-            self._records.append(record)
-
+            self._records.append(
+                {
+                    "record_id": str(uuid4()),
+                    "request_id": request_id,
+                    "script_id": script_id,
+                    "title": title,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "request_fingerprint": fingerprint,
+                    "metadata": metadata or {},
+                    "payload": payload or {},
+                }
+            )
             if len(self._records) > self.max_records:
-                evicted = self._records.pop(0)
-                logger.info("script_memory_record_evicted", evicted_title=evicted.get("title"))
-
-            if request_id:
-                self._idempotency_map[request_id] = payload or {}
-
+                self._records = self._records[-self.max_records :]
+            self._rebuild_indexes()
             self.save_to_disk(skip_lock=True)
-
         finally:
-            if lock_file:
-                _unlock_file(lock_file)
-                lock_file.close()
-
-    def get_idempotent_payload(self, request_id: str) -> Optional[Dict[str, Any]]:
-        """Return cached payload for request_id if previously processed."""
-        if self.storage_path and self.storage_path.exists():
-            self._load_from_disk()
-        return self._idempotency_map.get(request_id)
+            if lock:
+                _unlock_file(lock)
+                lock.close()
 
     def clear(self) -> None:
         self._records.clear()
         self._idempotency_map.clear()
+        self._fingerprints.clear()
         self.save_to_disk()
