@@ -166,3 +166,12 @@ The useful F03-level conclusion is consistent across these sources:
 - quality evaluation must remain a separate concern from the planning IR.
 
 Current F03 already covers the non-provider-specific subset through camera/lighting metadata, typed references, first/last-frame inputs, start/end state, motion beats, dependency edges and bounded repair impact. Provider-specific inference controls remain excluded.
+
+
+## Replay and fingerprint hardening
+
+The latest production-gate evidence showed that:
+- request-ID-only caching was too weak for a provider-neutral planning floor because platform/input changes could be incorrectly treated as idempotent replays;
+- runtime-generated asset IDs made semantic plan fingerprints unstable across equivalent executions.
+
+The branch now fingerprints the full validated Floor 03 input for idempotency and separately derives a semantic AssetPlanIR fingerprint with runtime identifiers removed. This keeps request replay safety distinct from semantic plan equivalence.
