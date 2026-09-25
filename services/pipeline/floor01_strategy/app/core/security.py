@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import re
+import secrets
 import time
 from typing import Dict, Tuple
 
-from fastapi import Depends, HTTPException, Header, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader
 
 from floors.floor01_strategy.app.core.config import get_settings
@@ -19,12 +20,9 @@ def sanitize_input_text(text: str) -> str:
     """Sanitize untrusted input text by stripping control chars, HTML tags, and injection markers."""
     if not text:
         return ""
-    # Strip HTML tags
     cleaned = re.sub(r"<[^>]*>", "", text)
-    # Strip prompt injection overrides
     cleaned = re.sub(r"(?i)ignore\s+all\s+previous\s+instructions", "", cleaned)
     cleaned = re.sub(r"(?i)system\s+prompt\s+override", "", cleaned)
-    # Strip non-printable control characters
     cleaned = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", cleaned)
     return cleaned.strip()
 
@@ -39,8 +37,6 @@ class RateLimiter:
     def check(self, client_ip: str) -> bool:
         now = time.time()
         capacity, last_update = self.tokens.get(client_ip, (self.rate, now))
-
-        # Replenish tokens based on elapsed time
         elapsed = now - last_update
         capacity = min(self.rate, capacity + elapsed * (self.rate / 60.0))
 
@@ -56,19 +52,25 @@ global_rate_limiter = RateLimiter(requests_per_minute=100)
 
 
 async def verify_api_key(api_key: str = Depends(api_key_header)) -> str:
-    """Validate API key header if required by settings."""
+    """Validate the service API key, failing closed outside explicitly anonymous development."""
     settings = get_settings()
-    # If dev mode or no required API key configured in env, allow access
     required_key = settings.service_api_key
+
     if not required_key:
+        if settings.environment.lower() == "production" or not settings.allow_anonymous_dev:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Floor 01 service authentication is not configured",
+            )
         return "anonymous_dev"
 
-    if api_key != required_key:
+    supplied_key = api_key or ""
+    if not secrets.compare_digest(supplied_key, required_key):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing X-API-Key header",
         )
-    return api_key
+    return supplied_key
 
 
 async def enforce_rate_limit(request: Request) -> None:
