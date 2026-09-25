@@ -60,7 +60,7 @@ jobs:
   f01-container:
     name: Floor 01 Production Container Smoke
     runs-on: ubuntu-latest
-    needs: [f01-python]
+    needs: [f01-python, f01-security]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
