@@ -115,3 +115,18 @@ No upstream code, prompts, tests, or proprietary assets are copied.
 The current engineering stack is canonically documented in .okf/engineering-stack.md.
 
 Future rendering research must compare candidates against Remotion plus AgentTube-derived lifecycle patterns before introducing a parallel architecture.
+
+
+## 4. Selected Core Engineering Stack
+
+The external repository mapping system now gives elevated engineering priority to:
+
+### remotion-dev/remotion
+
+Primary reference for programmatic composition, frame-addressed timing, React composition structures, Canvas/WebGL effects, and renderer/compiler integration.
+
+### darkzOGx/youtube-automation-agent (AgentTube)
+
+Primary pattern source for durable scene manifests, checkpoint/resume, audio-first timing, content-addressed reuse, and bounded scene-level repair.
+
+These are clean-room pattern integrations. They do not replace ShortForge's canonical authority, `TimelineIR`, capability security, RenderFabric, or F07 verification.
