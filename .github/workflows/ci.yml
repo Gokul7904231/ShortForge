@@ -125,6 +125,7 @@ jobs:
             -p 18080:8000 \
             -e FLOOR01_ENVIRONMENT=production \
             -e FLOOR01_SERVICE_API_KEY="$FLOOR01_CI_SERVICE_KEY" \
+            -e FLOOR01_MEMORY_FILE_PATH=/app/services/pipeline/floor01_strategy/data/memory.json \
             shortforge-floor01:ci
           trap 'docker stop floor01-ci >/dev/null 2>&1 || true' EXIT
 
