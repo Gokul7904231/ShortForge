@@ -33,10 +33,10 @@ export const CANONICAL_FLOOR_CONTRACTS: Record<FloorId, FloorContractExpectation
   },
   floor02_scripting: {
     floorId: "floor02_scripting",
-    name: "Floor 02 Scripting",
+    name: "Floor 02 Cognitive Scripting",
     expectedInputs: ["strategyPayload"],
-    expectedOutputs: ["script", "scenes"],
-    requiredMetadataKeys: ["script"],
+    expectedOutputs: ["script", "scenes", "scriptIR"],
+    requiredMetadataKeys: ["script", "wordCount", "estimatedDurationSeconds", "schemaVersion", "qualityGates"],
   },
   floor03_asset_realization: {
     floorId: "floor03_asset_realization",
