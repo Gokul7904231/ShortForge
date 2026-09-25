@@ -191,6 +191,7 @@ class Floor02Pipeline:
                 inp=inp,
                 payload=payload,
                 duration_ms=duration_ms,
+                started_at=started_at,
                 worker_results=[
                     WorkerExecutionSummary(
                         worker_name="NarrativeCompiler",
