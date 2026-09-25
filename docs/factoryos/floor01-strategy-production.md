@@ -82,7 +82,7 @@ F01 applies:
 - no-store responses
 - disabled interactive OpenAPI docs in production
 
-Input sanitization is defense-in-depth; it is not treated as a proof that arbitrary model providers are safe.
+Model output is also treated as untrusted data and sanitized before model-derived strategy fields enter the downstream handoff. Input sanitization remains defense-in-depth; it is not treated as a proof that arbitrary model providers are safe.
 
 ## Idempotency
 
@@ -104,7 +104,7 @@ The current strategy memory implementation is a single-instance, file-backed dur
 - request idempotency
 - explicit runtime path configuration
 
-Production deployment should mount the memory path on durable storage.
+Production deployment should mount the memory path on durable storage. Canonical execution audit reports are written under `<memory-file-parent>/reports/`, so strategy memory and audit artifacts share one durable writable boundary. Audit persistence is fail-hard: a report write failure prevents a successful canonical execution response.
 
 Do not horizontally scale F01 replicas until a shared strategy-memory backend is implemented and verified. The compatibility namespace `floors.floor01_strategy` is an import bridge, not a second implementation.
 
@@ -138,6 +138,7 @@ Required before promotion:
 4. Auth failure and validated-handoff checks pass.
 5. Security review has no unresolved blocking finding.
 6. The F01 branch evidence pack is updated.
+7. Container smoke proves a durable execution-report artifact is written.
 
 Historical test counts are not used as current proof.
 

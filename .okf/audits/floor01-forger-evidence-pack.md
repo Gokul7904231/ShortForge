@@ -16,7 +16,7 @@ This work follows the repository's Forger Assembly model without promoting Forge
 | Reliability | File-locking, atomic persistence, corruption recovery, full-input idempotency, concurrent replay convergence |
 | Performance | FastAPI blocking work moved to sync handlers, model/curriculum overlap retained, bounded candidate generation |
 | Evaluator | Deterministic candidate scoring, tie-breaking, v2 regression coverage, container smoke validation |
-| Release | CI Python gate, TypeScript gate, production-container gate, documentation/evidence-pack gate |
+| Release | CI Python gate, TypeScript gate, security gate, production-container gate, documentation/evidence-pack gate |
 
 ## Evidence order
 
@@ -38,6 +38,7 @@ Executable implementation and automated tests are treated as stronger evidence t
 - Runtime container runs unprivileged.
 - Production API documentation is disabled.
 - Persistence failures are surfaced rather than silently accepted.
+- Canonical audit reports are persisted beside the configured strategy-memory file.
 - Concurrent idempotent calls converge under the storage lock.
 
 ## Known architectural boundaries
@@ -48,9 +49,9 @@ A shared backend, semantic embedding scorer, downstream outcome learner, and bou
 
 ## Verification record
 
-Final production-gate evidence on branch head `7e79b9a2aa954ff8f8d22f887c06a1c720133e73`:
+Final executable production-gate evidence on code head `52842ccd57e4b6104edef6168956636ea6e5fc4e`:
 
-- CI run #408: `36131426878`
+- CI run #427: `36144286795`
 - Floor 01 Python v2 Tests: **PASS**
 - Production wheel-content verification: **PASS**
 - TypeCheck & Floor 01 Contract Tests: **PASS**
@@ -66,7 +67,7 @@ Final production-gate evidence on branch head `7e79b9a2aa954ff8f8d22f887c06a1c72
   - invalid API key: rejected with 401
 - Full Web Regression Suite: **informational/non-blocking**; it is not part of the F01 release gate because it exercises unrelated ambient Azure/FFmpeg/provider assumptions.
 
-The release gate is therefore **GREEN for Floor 01** on the recorded head SHA. PR #16 remains draft and unmerged.
+The release gate is therefore **GREEN for Floor 01** on the recorded code head SHA. The final container smoke also verified durable canonical execution-report persistence under the writable strategy-memory boundary. PR #16 remains draft and unmerged.
 
 ## Release rule
 

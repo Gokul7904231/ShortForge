@@ -35,10 +35,10 @@ F01 owns strategy-artifact construction, not factory-wide lifecycle authority.
 | Guardian input hash used process-dependent hash() | SHA-256 over normalized input JSON | IMPLEMENTED |
 | API security used model credential field | Dedicated service_api_key | IMPLEMENTED |
 | API CORS allowed every origin/method | Explicit origin/method/header allowlist | IMPLEMENTED |
-| Central Overseer report persistence | Existing integration remains | PENDING |
-| Shared semantic strategy memory | Current file store retained; backend boundary documented | PENDING |
-| True semantic embedding novelty | Current scorer is dependency-free baseline | PENDING |
-| DELIBERATE/DEEP bounded deliberation | Reserved but not enabled as an unbounded loop | PENDING |
+| Central Overseer report persistence | F01 emits the canonical report through the existing Overseer lifecycle/event path; F01 does not own a second report database | INTENTIONAL SYSTEM BOUNDARY |
+| Shared semantic strategy memory | Current file store is bounded, lock-protected, and explicitly single-instance; a shared backend is a separate deployment capability | INTENTIONAL FUTURE CAPABILITY |
+| True semantic embedding novelty | Dependency-free hybrid scorer remains the safe baseline; an embedding provider can be added behind the scorer boundary | INTENTIONAL FUTURE CAPABILITY |
+| DELIBERATE/DEEP bounded deliberation | Reserved modes remain bounded and deterministic; no unbounded reflection loop is enabled | INTENTIONAL FUTURE CAPABILITY |
 
 ## v2 workflow
 
@@ -139,7 +139,7 @@ F01 service authentication is separate from model credentials.
 
 - FLOOR01_SERVICE_API_KEY controls service authentication.
 - FLOOR01_LLM_API_KEY and FLOOR01_LLM_BASE_URL control optional model execution.
-- CORS defaults to localhost:3000 and can be configured explicitly.
+- Production CORS has no implicit browser origin; explicit origins must be configured when browser access is required.
 - Supported API methods and headers are explicit.
 
 This does not replace Guardian authorization or the existing worker capability model.
@@ -161,15 +161,14 @@ Future training data should link these records to downstream F02-F07 outcomes an
 
 Ascalon must not learn or receive authority to mint capabilities, bypass Guardian, alter leases/fencing, certify F07, publish, or rewrite .okf law.
 
-## Remaining gaps before autonomous production use
+## Intentional future capabilities and deployment boundaries
 
-1. Configure and runtime-verify the F01 Python service endpoint used by Overseer.
-2. Run the complete F01 Python suite and full TypeScript CI on the v2 branch.
-3. Reconcile older tests/fixtures that still use floor01 instead of floor01_strategy.
-4. Replace file-based strategy memory with a shared backend for multi-node execution.
-5. Add a real semantic/embedding novelty provider behind the scorer boundary.
-6. Add downstream outcome ingestion so strategic memory can learn from verified production results.
-7. Implement bounded DELIBERATE/DEEP strategies only after deterministic gates are proven.
+1. Multi-node shared strategy memory requires a separately approved backend and migration/test plan.
+2. Semantic embedding novelty can be added behind the scorer interface without changing authority semantics.
+3. Downstream outcome ingestion can connect F01 decisions to verified F02-F07 results without granting F01 new authority.
+4. DELIBERATE/DEEP strategies can be enabled only as bounded workflows with explicit caps, deterministic validators, and escalation rules.
+
+These are not blockers for the current single-instance production-gate baseline; they are deliberate capability boundaries.
 
 ## External design sources
 
@@ -212,10 +211,28 @@ After initial v2 branch verification exposed integration mismatches, the followi
 
 These are compatibility and verification corrections only. They do not expand F01 authority or create a second strategy implementation.
 
+## Production Hardening Follow-up — 2026-09-25
+
+The final hardening pass also made the following production-safety corrections:
+
+- execution audit reports now fail the request if canonical persistence fails instead of returning a non-durable success;
+- report artifacts are stored beside the configured strategy-memory file, matching the container writable persistent boundary;
+- model-generated strategy text is sanitized before it can cross into the typed downstream handoff;
+- model execution flags are derived from successful `MODEL_INFERENCE` provenance, not adapter configuration alone;
+- the single-instance rate limiter is thread-safe under FastAPI synchronous worker execution;
+- corruption recovery clears stale request reservations;
+- request IDs are bounded to 128 characters;
+- production browser CORS has no implicit localhost allow-origin;
+- malformed request-size headers fail safely;
+- the F01 runtime adapter uses only the dedicated `FLOOR01_SERVICE_API_KEY` and does not fall back to the broad control-plane secret;
+- F01 compatibility imports use the canonical package identity to avoid duplicate Pydantic/enum class identities;
+- production container smoke verifies that a canonical execution-report artifact is durably written under the memory storage boundary.
+
+These corrections preserve F01's bounded authority model while closing concrete reliability and security gaps discovered during executable verification.
 ## Verification Follow-up — Namespace and Contract Corrections
 
 - EngineJobSnapshot now declares audience, thumbnailStyle, retentionHours, and platforms fields emitted by the immutable production snapshot.
 - Python CI explicitly sets PYTHONPATH to services/pipeline.
 - The historical floors.floor01_strategy import contract is restored through a compatibility namespace that points to the canonical services/pipeline/floor01_strategy implementation. This is an import-path bridge only; it is not a second F01 implementation.
 
-Fresh CI is required again after these changes. No pass is claimed until both TypeScript and Python F01 jobs succeed.
+Final executable verification on the hardened code head is recorded by CI run #427 (`36144286795`): the Python suite, TypeScript/adapter contract tests, security scan, production wheel verification, and production-container smoke all passed.

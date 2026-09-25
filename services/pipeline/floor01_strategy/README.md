@@ -4,10 +4,10 @@
 **Guardian execution alias**: `floor01` (compatibility namespace)
 **Floor Version**: `2.0.0`
 **Location**: `services/pipeline/floor01_strategy/`
-**Status**: **Production-gate GREEN on `feat/floor01-strategy-v2`**
+**Status**: **Production-gate GREEN on head `52842ccd57e4b6104edef6168956636ea6e5fc4e`**
 **Overseer Integration**: canonical Python runtime adapter plus validated-only handoff boundary implemented; PR #16 remains draft/unmerged
 
-**Report Persistence Classification**: `LOCAL_DEVELOPMENT_ARTIFACT_PERSISTENCE = IMPLEMENTED` | `CENTRALIZED_OVERSEER_PERSISTENCE = INTEGRATION_PENDING`  
+**Report Persistence Classification**: `LOCAL_EXECUTION_AUDIT_ARTIFACT = IMPLEMENTED` | `OVERSEER_LIFECYCLE_PERSISTENCE = EXISTING_EVENT_PATH`  
 
 ---
 
@@ -160,7 +160,7 @@ Authoritative design records:
 - docs/research/floor01-v2-architecture-candidates.md
 
 Verification note:
-The old 31-test claim in this README is historical task-827 evidence. Current v2 verification is green in CI run #408 on head `7e79b9a2aa954ff8f8d22f887c06a1c720133e73`.
+The old 31-test claim in this README is historical task-827 evidence. Current v2 verification is green in CI run #427 (`36144286795`) on code head `52842ccd57e4b6104edef6168956636ea6e5fc4e`.
 New regression coverage is at services/pipeline/floor01_strategy/tests/test_v2_architecture.py.
 
 
@@ -178,6 +178,6 @@ Canonical production path:
 
 The authenticated `/v1/plan` and `/v1/plan/execution-report` endpoints are strict and fail closed when upstream evidence is missing or the strategy is not validated. The Overseer adapter independently rejects any non-`VALIDATED` handoff.
 
-The service image runs as a non-root user, exposes only the required API port, disables interactive OpenAPI documentation in production, applies request-size and response-security controls, and exposes an unauthenticated lightweight `/health` probe for orchestration.
+The service image runs as a non-root user, exposes only the required API port, disables interactive OpenAPI documentation in production, applies request-size and response-security controls, persists the canonical execution audit report beside the configured strategy-memory file, and exposes an unauthenticated lightweight `/health` probe for orchestration.
 
-Horizontal scaling is not enabled by the file memory implementation. Production deployment should keep F01 single-replica until a shared strategy-memory backend is promoted and tested.
+Horizontal scaling is not enabled by the file memory implementation. Production deployment should keep F01 single-replica until a shared strategy-memory backend is promoted and tested. The report artifact path is derived from the configured strategy-memory path, so the strategy memory and audit artifacts share one durable writable boundary.
