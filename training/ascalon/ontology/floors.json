@@ -59,22 +59,24 @@
       "canonicalName": "Cognitive Scripting & Structure",
       "shortName": "Scripting",
       "category": "CREATIVE",
-      "responsibility": "Synthesizes high-retention 3-beat video scripts (Hook, Retain, Payoff) with strict word-count clamping (130-160 words/60s).",
+      "responsibility": "Compiles a trusted Floor 01 strategy into a production-grade ScriptIR using hierarchical beat planning, viewer state, causal events, candidate search, parallel critics, bounded revision, evidence lineage, pacing gates, semantic regeneration, and typed F03/F04 handoffs.",
       "parent": "overseer",
       "predecessors": ["floor01_strategy"],
       "successors": ["floor03_asset_realization", "floor04_media_synthesis"],
       "runtimeOwner": "services/pipeline/floor02_scripting/main.py",
       "sourceLocations": [
         "services/pipeline/floor02_scripting/",
-        "apps/web/agents/script-agent.ts",
-        "testing/contracts/floor.contract.ts"
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py",
+        "testing/contracts/floor.contract.ts",
+        "apps/web/agents/script-agent.ts"
       ],
       "expectedInputs": ["strategyPayload"],
-      "expectedOutputs": ["script", "scenes"],
-      "requiredMetadataKeys": ["script", "wordCount", "estimatedDurationSeconds"],
+      "expectedOutputs": ["script", "scenes", "scriptIR"],
+      "requiredMetadataKeys": ["script", "wordCount", "estimatedDurationSeconds", "schemaVersion", "qualityGates"],
       "authority": "overseer",
       "trainingEligible": true,
-      "simulationRole": "Provides canned or synthetic scripts for pipeline stress testing."
+      "simulationRole": "Uses bounded deterministic candidates only when explicitly configured for tests/simulation; production requires a real model provider."
     },
     {
       "floorId": "floor03_asset_realization",
