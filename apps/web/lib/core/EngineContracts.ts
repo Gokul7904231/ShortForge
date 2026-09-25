@@ -111,6 +111,8 @@ export interface EngineJobSnapshot {
     renderProfile?: string;
     provider?: string;
     durationSeconds?: number;
+    retentionHours?: number;
+    platforms?: string[];
   };
   quizContext?: {
     quizMode: "geo" | "custom_single" | "custom_multiple";
