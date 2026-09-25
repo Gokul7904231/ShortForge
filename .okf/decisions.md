@@ -692,3 +692,16 @@ The dashboard previously mixed content choices, media choices, routing overrides
 ### Non-goals
 
 This decision does not change the canonical eight-floor topology, sovereign authority hierarchy, worker permissions, or F07 release gate.
+## 35. F06 Render Fabric consolidation
+
+**Classification:** extends existing rule.
+
+**Decision:** Floor 06 has one authoritative rendering entry point at `apps/web/factoryos/core/fabric/RenderFabric.ts`. Physical provider execution is routed through the singleton `ComputeGateway` and its `ComputeRouter`; compiler selection remains inside RenderFabric, while worker lifecycle/state contracts remain under `core/fabric/*`.
+
+**Compatibility:** `apps/web/factoryos/core/rendering/RenderFabric.ts` is retained only as a re-export compatibility shim. New production imports must use `core/fabric/RenderFabric`.
+
+**Invariant:** A render provider cannot be treated as successfully completed when it returns `COMPLETED` without at least one physical artifact receipt. The ComputeRouter treats that condition as a failed execution eligible for bounded failover.
+
+**Non-goals:** This consolidation does not yet make AMD a live ComputeRouter provider. The AMD worker adapter remains a separate qualification/execution boundary until a real AMD `IComputeProvider` adapter is implemented and physically verified.
+
+**Validation required:** Typecheck, canonical RenderFabric tests, Render Fabric distributed tests, and the later AMD distributed golden-mission proof.
