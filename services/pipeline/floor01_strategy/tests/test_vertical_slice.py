@@ -3,9 +3,36 @@
 import pytest
 from pydantic import ValidationError
 
-from floors.floor01_strategy.app.domain.handoff import Floor01Input, HandoffStatus, UniquenessVerdict
+from floors.floor01_strategy.app.domain.handoff import Floor01Input, HandoffStatus, ResearchContext, ResearchEvidenceRef, UniquenessVerdict
 from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
 from floors.floor01_strategy.app.service import Floor01Service
+
+
+def verified_research_context() -> ResearchContext:
+    return ResearchContext(
+        passport_id="pass_vertical_01",
+        mission_id="mission_vertical_01",
+        integrity_verified=True,
+        confidence=0.95,
+        source_count=2,
+        verified_claim_count=2,
+        unresolved_issue_count=0,
+        key_findings=["Verified evidence for the vertical-slice strategy."],
+        recommended_hook="Here is the important thing most people miss.",
+        hook_archetype="CURIOSITY_GAP",
+        evidence=[
+            ResearchEvidenceRef(
+                evidence_id="clm_vertical_01",
+                claim_id="clm_vertical_01",
+                statement="Verified source-backed fact.",
+                verification_status="VERIFIED",
+                confidence=0.95,
+                supporting_source_ids=["src_vertical_01"],
+                source_quality=["TIER_1_PRIMARY"],
+            )
+        ],
+        provenance=["ResearchRuntime.verifyResearchPassport", "floor00_analyst"],
+    )
 
 
 def test_floor01_vertical_slice_success():
@@ -18,6 +45,7 @@ def test_floor01_vertical_slice_success():
         platform="youtube_shorts",
         content_format="educational_short",
         learning_level="intermediate",
+        research_context=verified_research_context(),
     )
 
     payload = service.plan_strategy(inp)
