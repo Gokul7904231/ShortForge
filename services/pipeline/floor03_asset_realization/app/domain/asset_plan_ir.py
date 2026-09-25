@@ -199,7 +199,7 @@ class AssetPlanIR(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: str = "1.1.0"
+    schema_version: str = "1.2.0"
     plan_id: str = Field(..., min_length=1)
     plan_version: int = Field(default=1, ge=1)
     plan_fingerprint: Optional[str] = None
