@@ -197,7 +197,12 @@ class StrategyCandidateEvaluator:
 
         selected, evaluation = max(
             pool,
-            key=lambda pair: (pair[1].overall_score, pair[0].candidate_id),
+            key=lambda pair: (
+                pair[1].overall_score,
+                pair[0].strategy.content_angle,
+                pair[0].strategy.target_duration_seconds,
+                pair[0].strategy.tone,
+            ),
         )
         selected = selected.model_copy(update={"status": CandidateStatus.SELECTED})
 
