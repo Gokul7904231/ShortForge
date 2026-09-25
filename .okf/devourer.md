@@ -262,3 +262,63 @@ Learn
 ~~~
 
 The loop improves both the Fast Decision Core and the ShortForge Cognitive Model, while also seeking ways to reduce the need for expensive cognition.
+
+## 15. Canonical Devourer starting point
+
+The root .okf/devourer.md is the governance charter. .okf/cognitive/devourer.md contains the detailed cognitive design. Neither may be treated as an autonomous authority.
+
+Every Devourer cycle starts with the complete current .okf sweep defined by .okf/decision-protocol.md.
+
+## 16. Devourer engineering-stack rule
+
+For video-system improvements, compare candidates first against the locked ShortForge engineering stack:
+
+- TimelineIR — semantic composition truth
+- Remotion — primary programmatic composition foundation
+- AgentTube-derived scene lifecycle — manifest/checkpoint/repair discipline
+- RenderFabric — provider-neutral distributed execution
+- FFmpeg — deterministic physical fallback / normalization
+- F07 — independent physical verification
+
+A candidate renderer or scene system is not promoted merely because it has more features. It must demonstrate a measurable advantage without weakening these boundaries.
+
+## 17. Devourer repository assimilation ledger
+
+For each repository evaluated, Devourer records:
+- repository identity and revision/date
+- problem solved
+- adopted mechanisms
+- rejected mechanisms
+- implementation mapping
+- security implications
+- licensing implications
+- performance implications
+- verification plan
+- promotion status
+
+The relevant .okf/research/repo-mappings file is the primary reference for previously assimilated patterns.
+
+## 18. Devourer and production-helper
+
+Production-helper is mandatory evidence infrastructure for Devourer candidates that affect:
+- worker permissions
+- security
+- rendering
+- remote execution
+- callbacks
+- quotas
+- provider integrations
+- production completion state
+
+A Devourer candidate with missing required helper evidence remains unpromoted.
+
+## 19. Devourer target outcomes
+
+Devourer should seek four forms of improvement:
+
+1. Simplification — replace repeated cognition with deterministic rules.
+2. Distillation — move stable decisions into Fast Decision Core heads.
+3. Parallelization — collapse independent sequential calls into decision packs or concurrent work.
+4. Early rejection — turn recurring expensive failures into cheap preflight checks.
+
+The objective is not merely a smarter model. It is a factory that requires less expensive intelligence for the same or better verified outcome.
