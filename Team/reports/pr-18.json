@@ -67,7 +67,8 @@
         "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
         "services/pipeline/floor03_asset_realization/app/pipeline.py",
         "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
-        "services/pipeline/floor03_asset_realization/app/core/identity.py"
+        "services/pipeline/floor03_asset_realization/app/core/identity.py",
+        "floors/floor03_asset_realization/__init__.py"
       ]
     },
     {
@@ -94,7 +95,8 @@
       "status": "IN_PROGRESS",
       "evidenceRefs": [
         ".github/workflows/team-gate.yml",
-        ".okf/decisions.md"
+        ".okf/decisions.md",
+        ".github/workflows/floor02.yml"
       ]
     }
   ],
@@ -124,6 +126,19 @@
         ".okf/decisions.md",
         "docs/architecture/floor03-research-upgrade.md"
       ]
+    },
+    {
+      "id": "F03-VALIDATION-002",
+      "originalConflict": "The production-gate workflow imported historical floors.* compatibility namespaces, but the root compatibility namespace did not expose Floor 03 and root floors/** changes were outside the workflow path filter.",
+      "status": "RESOLVED",
+      "proposedResolution": "Add the canonical root Floor 03 compatibility bridge and include floors/** in production-gate trigger paths.",
+      "acceptedResolution": "Canonical implementation remains under services/pipeline; root floors namespace remains a compatibility layer and is now covered by CI triggers.",
+      "decisionAuthority": ".okf/decisions.md",
+      "canonicalUpdates": [
+        "floors/floor03_asset_realization/__init__.py",
+        ".github/workflows/floor02.yml",
+        ".okf/decisions.md"
+      ]
     }
   ],
   "verificationPlan": [
@@ -136,7 +151,8 @@
     "verify AssetPlanIR dependency edges survive surgical regeneration",
     "verify semantic plan fingerprints are stable across request IDs",
     "verify idempotency cache replay returns a typed payload",
-    "do not merge until repository validation gates are satisfied"
+    "do not merge until repository validation gates are satisfied",
+    "rerun F03/F02 production gates after compatibility-namespace and workflow trigger correction"
   ],
   "evidenceRefs": [
     "PR #18",
@@ -150,12 +166,14 @@
     "testing/contracts/floor.contract.ts",
     ".github/workflows/floor02.yml",
     "docs/architecture/floor03-research-upgrade.md",
-    ".okf/decisions.md"
+    ".okf/decisions.md",
+    "floors/floor03_asset_realization/__init__.py"
   ],
   "model": {
     "name": "Ascalon / ShortForge Cognitive Model",
     "participated": false,
-    "runtimeStatus": "NOT_RUNTIME_VERIFIED"
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "F03 source compile previously passed; fresh test run pending after compatibility correction"
   },
-  "disposition": "PASS"
+  "disposition": "ESCALATED"
 }
