@@ -29,20 +29,34 @@ class CharacterProfile(BaseModel):
 
 
 class SceneSpecification(BaseModel):
-    """Machine-readable specification for a single narrative scene."""
+    """Canonical machine-readable specification for a single narrative scene.
+
+    F02 owns the semantic narrative intent. F03/F04 own physical visual/audio
+    realization. The additional state/graph fields make regeneration impact-
+    aware without taking downstream production authority.
+    """
 
     scene_id: str = Field(..., description="Stable scene identity (survives single-scene regeneration)")
     scene_version: int = Field(default=1, ge=1, description="Scene version number, incremented on regeneration")
     sequence_index: int = Field(..., ge=1, description="1-indexed sequence position within the script")
-    section_type: str = Field(default="Core Narrative", description="Narrative section type: Curiosity Hook, Core Concept, CTA")
+    section_type: str = Field(default="Core Narrative", description="Narrative section type: Hook, Retain, Payoff, CTA")
+    beat_id: str = Field(default="", description="Canonical narrative beat identity")
+    scene_goal: str = Field(default="", description="Why this scene exists in the narrative")
     narration_text: str = Field(..., min_length=2, description="Spoken voiceover or dialogue text")
     on_screen_text: str = Field(default="", description="Caption or subtitle overlay text")
     visual_intent: str = Field(..., min_length=5, description="Semantic narrative intent description for visual scene setup")
+    voice_intent: Dict[str, Any] = Field(default_factory=dict, description="Voice delivery intent owned by F02")
     target_duration_seconds: int = Field(default=10, ge=3, le=60, description="Target section duration bound")
     word_count: int = Field(..., ge=1, description="Exact word count of narration_text")
     estimated_speech_duration_seconds: float = Field(..., ge=0.0, description="Calculated speech duration based on speech rate")
     character_references: List[str] = Field(default_factory=list, description="IDs of characters appearing in scene")
     continuity_rules: Dict[str, Any] = Field(default_factory=dict, description="Visual and narrative continuity constraints")
+    depends_on_scene_ids: List[str] = Field(default_factory=list, description="Scene dependencies used for impact-aware regeneration")
+    causal_event_ids: List[str] = Field(default_factory=list, description="Causal events introduced or resolved in this scene")
+    evidence_refs: List[str] = Field(default_factory=list, description="Upstream evidence/provenance IDs supporting factual content")
+    viewer_state_before: Dict[str, Any] = Field(default_factory=dict)
+    viewer_state_after: Dict[str, Any] = Field(default_factory=dict)
+    visual_intent_structured: Dict[str, Any] = Field(default_factory=dict)
 
 
 class NarrativeStructure(BaseModel):
