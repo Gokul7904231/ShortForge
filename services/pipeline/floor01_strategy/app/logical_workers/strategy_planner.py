@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.domain.handoff import (
     EvidenceType,
     ExecutionMode,
     Floor01Input,
