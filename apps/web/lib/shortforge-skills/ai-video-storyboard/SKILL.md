@@ -1,13 +1,13 @@
 # ai-video-storyboard — ShortForge-native Skill (docs-only)
 
-> No code integration. Methodology doc only. Existing Azure / basic-fastapi / create_short.py / FFmpeg / Cloudinary pipeline unchanged — future engine would generate INPUTS only.
+> No code integration. Methodology doc only. Existing RenderFabric / ComputeRouter / provider adapters / FFmpeg / Cloudinary pipeline unchanged — future engine would generate INPUTS only.
 
 ## Purpose
 Turn a retention-aware script into a production-ready visual storyboard: visual theme, shot purpose, composition, camera, lighting, subject, action, continuity, timing, and 9:16 aspect handling — consumable by `create_short.py` without renderer changes.
 
 ## Current vs Target Behavior
 - Current: `script sentence → imagePrompt`
-- Target: `script → scene intent → visual continuity → shot composition → camera direction → lighting → subject → action → production prompt` (still emits `imagePrompt` + timing per scene so `job manifest → Azure → FFmpeg` stays intact).
+- Target: `script → scene intent → visual continuity → shot composition → camera direction → lighting → subject → action → production prompt` (still emits `imagePrompt` + timing per scene so `job manifest → FactoryOS F06 → ComputeRouter → FFmpeg` stays intact).
 
 ## Inputs
 - `script` (retention-structured: HOOK → OPEN LOOP → CONTEXT → ESCALATION → REVEAL → PAYOFF → CTA)
