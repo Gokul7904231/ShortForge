@@ -153,8 +153,6 @@ export async function POST(req: Request) {
     userId = authenticatedUser.uid;
     const userRole = (authenticatedUser.role || "USER").toUpperCase();
     const tier = resolveTier(userRole);
-    const isAdminOrOwner = tier === "ADMIN" || tier === "OWNER";
-    const targetWorkerPool = isAdminOrOwner ? "azure" : "basic-fastapi";
 
     const body = await req.json();
     const parsed = GenerateVideoRequestSchema.safeParse(body);
@@ -310,7 +308,6 @@ export async function POST(req: Request) {
       finalPayload = {
         userId,
         tier,
-        targetWorkerPool,
         topic: parsed.data.topic,
         style: parsed.data.style ?? "",
         script: quizHook,
