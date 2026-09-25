@@ -179,3 +179,4 @@ describe("Floor01RuntimeAdapter", () => {
       }),
     ).rejects.toThrow("F01_SERVICE_TIMEOUT");
   });
+});
