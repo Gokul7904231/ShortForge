@@ -15,6 +15,7 @@ from floors.floor03_asset_realization.app.core.config import settings
 from floors.floor03_asset_realization.app.core.exceptions import Floor03Error, Floor03PlatformError, Floor03ValidationError
 from floors.floor03_asset_realization.app.core.identity import request_fingerprint
 from floors.floor03_asset_realization.app.domain.asset_models import AudioAssetRequirement, VisualAssetRequirement
+from floors.floor03_asset_realization.app.domain.asset_plan_ir import AssetDependency, AssetPlanIR, AssetPlanNode
 from floors.floor03_asset_realization.app.domain.handoff import (
     EvidenceType,
     ExecutionMode,
@@ -101,8 +102,54 @@ class Floor03Pipeline:
         )
         return resolved_platform, aspect_ratio, resolution, prov
 
-    def execute(self, inp: Floor03Input) -> Floor03HandoffPayload:
-        """Execute Floor 03 pipeline and produce downstream Floor03HandoffPayload."""
+    def _compile_asset_plan_ir(
+        self,
+        inp: Floor03Input,
+        platform: str,
+        aspect_ratio: str,
+        resolution: str,
+        visual_reqs: List[VisualAssetRequirement],
+        plan_id: Optional[str] = None,
+        plan_version: int = 1,
+    ) -> AssetPlanIR:
+        req_by_scene = {req.scene_id: req for req in visual_reqs}
+        nodes: List[AssetPlanNode] = []
+        for req in sorted(visual_reqs, key=lambda item: item.sequence_index):
+            scene = next((sc for sc in inp.floor02_payload.scenes if sc.scene_id == req.scene_id), None)
+            if scene is None or req.scene_plan is None:
+                raise Floor03ValidationError(
+                    f"Missing scene or scene plan for scene_id '{req.scene_id}'."
+                )
+            dependencies: List[AssetDependency] = []
+            for dep_scene_id in scene.depends_on_scene_ids:
+                dep_req = req_by_scene.get(dep_scene_id)
+                if dep_req:
+                    dependencies.append(
+                        AssetDependency(asset_id=dep_req.asset_id, relation="scene_dependency")
+                    )
+            nodes.append(
+                AssetPlanNode(
+                    scene_id=req.scene_id,
+                    sequence_index=req.sequence_index,
+                    visual=req.scene_plan,
+                    dependencies=dependencies,
+                    target_duration_seconds=req.target_duration_seconds,
+                    impact_radius=list(scene.depends_on_scene_ids),
+                )
+            )
+        return AssetPlanIR(
+            plan_id=plan_id or f"asset-plan-{inp.floor02_payload.script_id}-{inp.request_id}",
+            plan_version=plan_version,
+            script_id=inp.floor02_payload.script_id,
+            script_version=inp.floor02_payload.script_version,
+            platform=platform,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            nodes=nodes,
+        )
+
+    def _execute_internal(self, inp: Floor03Input) -> Tuple[Floor03HandoffPayload, Dict[str, float]]:
+        """Execute once and return payload plus measured worker timings."""
         logger.info("floor03_pipeline_started", request_id=inp.request_id)
 
         # 1. Idempotency Check
@@ -196,7 +243,13 @@ class Floor03Pipeline:
             visual_asset_requirements=visual_reqs,
             audio_asset_requirements=audio_reqs,
             manifest=manifest,
-            asset_plan_ir=None,
+            asset_plan_ir=self._compile_asset_plan_ir(
+                inp,
+                platform=platform,
+                aspect_ratio=aspect_ratio,
+                resolution=resolution,
+                visual_reqs=visual_reqs,
+            ),
             decision_quality_score=None,
             handoff_status=HandoffStatus.VALIDATED,
             provenance=provenance_list,
@@ -205,19 +258,26 @@ class Floor03Pipeline:
         # Persist payload to memory store for process locking & deduplication
         self.memory_store.save_payload(inp.request_id, payload.model_dump())
         logger.info("floor03_pipeline_completed", request_id=inp.request_id, asset_plan_id=payload.asset_plan_id)
+        return payload, {
+            "image_prompt_worker": image_duration_ms,
+            "audio_spec_worker": audio_duration_ms,
+            "continuity_worker": continuity_duration_ms,
+            "manifest_worker": manifest_duration_ms,
+        }
+
+    def execute(self, inp: Floor03Input) -> Floor03HandoffPayload:
+        payload, _ = self._execute_internal(inp)
         return payload
 
     def execute_with_report(self, inp: Floor03Input) -> Tuple[Floor03HandoffPayload, FloorExecutionReport]:
         """Execute pipeline and persist Overseer FloorExecutionReport JSON artifact."""
         start_time = perf_counter()
-        payload = self.execute(inp)
+        payload, worker_durations = self._execute_internal(inp)
         duration_ms = round((perf_counter() - start_time) * 1000.0, 2)
 
         worker_results = [
-            WorkerExecutionSummary(worker_name="image_prompt_worker", duration_ms=locals().get("image_duration_ms")),
-            WorkerExecutionSummary(worker_name="audio_spec_worker", duration_ms=locals().get("audio_duration_ms")),
-            WorkerExecutionSummary(worker_name="continuity_worker", duration_ms=locals().get("continuity_duration_ms")),
-            WorkerExecutionSummary(worker_name="manifest_worker", duration_ms=locals().get("manifest_duration_ms")),
+            WorkerExecutionSummary(worker_name=name, duration_ms=duration)
+            for name, duration in worker_durations.items()
         ]
 
         report = FloorExecutionReport(
