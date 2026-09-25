@@ -27,6 +27,7 @@ from floors.floor01_strategy.app.core.exceptions import (
     StrategyPipelineError,
 )
 from floors.floor01_strategy.app.core.research_gate import ResearchEvidenceGate
+from floors.floor01_strategy.app.core.request_fingerprint import fingerprint_floor01_input
 from floors.floor01_strategy.app.domain.handoff import (
     ExecutionMode,
     ExecutionModeDetails,
@@ -76,16 +77,21 @@ class Floor01Pipeline:
         start_time = time.time()
         started_at = datetime.now(timezone.utc).isoformat()
         settings = get_settings()
+        input_fingerprint = fingerprint_floor01_input(inp)
 
         cached_payload_data = self.memory_store.get_idempotent_payload(inp.request_id)
         if cached_payload_data:
             cached_floor_id = cached_payload_data.get("floor_id")
             cached_version = cached_payload_data.get("floor_version")
             if cached_floor_id == settings.floor_id and cached_version == settings.floor_version:
-                cached_topic = cached_payload_data.get("topic", {}).get("selected_topic", "")
-                if cached_topic and cached_topic.lower() != inp.topic_query.strip().lower():
+                cached_fingerprint = cached_payload_data.get("input_fingerprint")
+                if not cached_fingerprint:
                     raise Floor01ValidationError(
-                        f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for topic '{cached_topic}', but current request is for '{inp.topic_query}'"
+                        f"Idempotency record for request_id '{inp.request_id}' lacks a request fingerprint; use a new request_id."
+                    )
+                if cached_fingerprint != input_fingerprint:
+                    raise Floor01ValidationError(
+                        f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for different request parameters."
                     )
                 payload = Floor01HandoffPayload.model_validate(cached_payload_data)
                 report = FloorExecutionReport(
@@ -267,6 +273,7 @@ class Floor01Pipeline:
 
             payload = Floor01HandoffPayload(
                 request_id=inp.request_id,
+                input_fingerprint=input_fingerprint,
                 floor_id=settings.floor_id,
                 floor_version=settings.floor_version,
                 execution_mode=(
@@ -288,7 +295,7 @@ class Floor01Pipeline:
             )
 
             if status != HandoffStatus.REJECTED:
-                self.memory_store.add_record(
+                persisted_payload = self.memory_store.add_record(
                     topic=inp.topic_query,
                     plan_id=payload.plan_id,
                     request_id=inp.request_id,
@@ -305,6 +312,9 @@ class Floor01Pipeline:
                         ),
                     },
                 )
+                if persisted_payload:
+                    payload = Floor01HandoffPayload.model_validate(persisted_payload)
+                    warnings.append("Concurrent idempotent replay returned the existing canonical plan.")
 
             total_duration_ms = round((time.time() - start_time) * 1000, 2)
             all_provenance = (
