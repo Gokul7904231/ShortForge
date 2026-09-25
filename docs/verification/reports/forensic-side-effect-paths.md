@@ -40,7 +40,7 @@ NO VALID F07 RELEASE AUTHORIZATION = NO EXTERNAL YOUTUBE PUBLICATION
 | **SEP-11** | `GET /api/published-video` | Serves public video URL | None (Read-only) | Serves un-audited video if DB status completed | `IMPLEMENTED` |
 | **SEP-12** | `ProductionRunner.executeJob` | Uploads to Google Drive Outbox | QuizGuardian only | Missing F07; contains `forceOfflinePass` override | `INTEGRATION-VERIFIED` |
 | **SEP-13** | `StorageQueue.processJob` | Google Drive / Cloudinary upload | None (Storage Floor) | Bypasses CAS cryptographic verification | `INTEGRATION-VERIFIED` |
-| **SEP-14** | `POST /api/generate-video` | Dispatches render to Azure FastAPI | Deferred to callback | Validates tier & token | `INTEGRATION-VERIFIED` |
+| **SEP-14** | `POST /api/generate-video` | Creates FactoryOS mission; F06 RenderFabric routes physical rendering via ComputeRouter | Deferred to artifact/mission verification | Validates auth, quota, and mission scope | `INTEGRATION-VERIFIED` |
 
 ---
 
@@ -193,9 +193,9 @@ NO VALID F07 RELEASE AUTHORIZATION = NO EXTERNAL YOUTUBE PUBLICATION
 - **Security risk**: **CRITICAL**. Directly violates the invariant "Never fake production success". Creates a fake platform post ID and URL without any real API credentials or authorization.
 - **Evidence level**: `SIMULATED` / `DEFECTIVE`
 
-### SEP-10: Remote Render Callback Completion & F7 Media Audit
+### SEP-10: Worker Callback Completion & F7 Media Audit
 - **Entry point**: `apps/web/app/api/rendering/callback/route.ts` (`POST`, lines 32–346)
-- **Caller**: Azure FastAPI renderer, Kaggle worker, or Docker container.
+- **Caller**: A qualified render worker adapter (self-hosted, Kaggle, GitHub Actions, or other approved provider).
 - **Auth check**: Bearer token / `X-Execution-Token` verified against `RENDER_WORKER_SECRET` or job's stored `executionToken`.
 - **Artifact source**: Remote worker `videoUrl` or `driveUrl` resolved via `ArtifactResolver`.
 - **F07 check**: Executes `VerificationEngine.auditMediaArtifact` (Technical Forensics / Hard Gates). Does NOT evaluate F07 YouTube Policy Guardian (G00–G14).
