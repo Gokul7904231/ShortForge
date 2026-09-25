@@ -1,63 +1,85 @@
-# Research: The Reach Engine & Social Intelligence Subsystem
+# Research: Reach Engine & AgentReach Boundary
 
-> **Status**: OPERATIONAL / CANONICAL  
-> **Source Location**: `apps/web/factoryos/core/research/ReachSubsystem.ts` & `apps/web/factoryos/core/integrations/AgentReachAdapter.ts`
+> **Status**: CANONICAL / IMPLEMENTATION-ALIGNED  
+> **Current implementation**: `apps/web/factoryos/core/research/ReachSubsystem.ts` and `apps/web/factoryos/core/integrations/AgentReachAdapter.ts`
 
----
+## 1. Current boundary
 
-## 1. Architectural Philosophy: Grounded Social Intelligence
+Reach is an external-information acquisition subsystem.
 
-In automated video creation, feeding an agent fabricated trends or hallucinated engagement metrics produces disconnected, irrelevant content. The Reach Engine operates as the sensory radar of FactoryOS, extracting real-world market signals, competitive content formats, and audience engagement curves from digital video platforms (YouTube Shorts, TikTok, Instagram Reels).
+Current supported paths are:
 
-Under Project Ascalon and the architecture modernization, the Reach subsystem was refactored to eliminate mock-data leakage:
-1. **Real Provider Boundary**: The `AgentReachAdapter` enforces strict real-world provider contracts. When external scrapers or headless browsers (e.g. Lightpanda) fail or are unavailable, the adapter reports an honest `503 UNAVAILABLE` status rather than returning synthetic placeholder URLs or fake trending lists.
-2. **Deterministic Source Attribution**: Every extracted trend candidate must be backed by a verified URL, retrieval timestamp, author identity, and content digest stored in a `ResearchPassport`.
-3. **Explicit Measurement Fidelity**: Metrics extracted by Reach are rigorously tagged (`OBSERVED_MEASUREMENT`, `MODEL_INFERENCE`, or `HEURISTIC_ESTIMATE`).
+1. **Direct URL** → `LightpandaBrowserAdapter.navigateAndExtract()`
+2. **Query** → configured `SEARCH_API_URL`
+3. **No configured query provider** → empty evidence result
+4. **Test** → injected `ReachTestProvider`
 
-```
-┌────────────────────────────────────────────────────────┐
-│                   Digital Video Platforms              │
-│            (YouTube Shorts, TikTok, Web Sources)       │
-└───────────────────────────┬────────────────────────────┘
-                            │ Scraped / Ingested via Browser
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│              Lightpanda / AgentReach Boundary          │
-│  ├── Live Ingestion: Validates HTTP Status & Content   │
-│  └── Failure Semantics: Returns UNAVAILABLE on Error   │
-└───────────────────────────┬────────────────────────────┘
-                            │ Raw Verified Web Signals
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                     ReachSubsystem                     │
-│  ├── Parse Candidates: Title, Creator, Engagement      │
-│  ├── Tag Fidelity: OBSERVED_MEASUREMENT vs INFERENCE   │
-│  └── Construct Immutable ResearchPassport Entity       │
-└───────────────────────────┬────────────────────────────┘
-                            │ Verified Topic Slate
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│            Floor 00 Market Analyst & Research          │
-│      (Submits Curated Slate to Daily Content Engine)   │
-└────────────────────────────────────────────────────────┘
+The current query path is generic. It is **not yet hard-bound to a Content Engine-specific query schema**.
+
+The intended next architecture is:
+
+```text
+Content Engine Research Contract
+        ↓
+F00 Research Specification
+        ↓
+AgentReach query plan
+        ↓
+ReachSubsystem
+        ↓
+EvidenceSource[]
 ```
 
----
+## 2. Honest failure semantics
 
-## 2. CURRENT vs TARGET Architecture Status
+The current implementation intentionally fails closed:
 
-| Architectural Dimension | CURRENT Implementation | TARGET Implementation |
-|:------------------------|:-----------------------|:----------------------|
-| **Provider Boundary** | Real `AgentReachAdapter` with honest failure semantics and URL validation | Distributed headless browser cluster with automated anti-bot evasion & proxy rotation |
-| **Data Integrity** | Cryptographic tagging of research candidates via `ResearchPassport` | Multi-node consensus verification over scraped view counts and engagement ratios |
-| **Browser Execution** | `LightpandaBrowserAdapter` with graceful 503 fallback | Native Chromium / WebKit headless runner with GPU-accelerated video decoding |
-| **Trend Scoring** | Mathematical engagement velocity scoring in `ReachSubsystem.ts` | Deep graph neural network modeling cross-platform meme propagation dynamics |
-| **Capacity Management** | Dynamic quota sizing derived strictly from `ScheduleTargetRequirements` | Real-time backpressure shedding when provider rate limits are approached |
+- empty AgentReach query → `NO_EVIDENCE`;
+- failed query provider → no fabricated sources;
+- direct URL retrieval failure → explicit unavailable source state;
+- AgentReach only exposes online sources as usable findings;
+- no synthetic placeholder URLs are created.
 
----
+One important distinction is preserved:
 
-## 3. Operational Guarantees & Error Handling
+**Reach may expose an unavailable retrieval record for diagnostics; ResearchRuntime removes unavailable/unreachable records before treating sources as evidence.**
 
-- **No Synthetic Placeholders**: If external network access is blocked, Reach returns zero topics and marks the run status as `DEGRADED`.
-- **Honest Health Reporting**: `ReachSubsystem.isHealthy()` evaluates live connectivity. It never reports `ONLINE` if the underlying headless browser or network adapter is failing.
-- **Lineage Linkage**: Every trend finding emitted by Reach includes a parent `traceId` linking it to the scheduled mission.
+## 3. Current data integrity
+
+An `EvidenceSource` contains:
+
+- source ID;
+- URL;
+- title;
+- publisher when known;
+- retrieval timestamp;
+- extraction method;
+- snippet;
+- reliability score;
+- optional content hash;
+- source status and quality.
+
+The current implementation does **not** independently verify the truth of an HTTP response merely because the transport succeeded.
+
+## 4. Current vs target
+
+| Dimension | Current | Target |
+|---|---|---|
+| URL browser | Lightpanda adapter | Expanded browser/provider fleet |
+| Search | `SEARCH_API_URL` | Engine-specific research plans over multiple providers |
+| Source truth | Transport + normalized metadata | Source-specific verification and corroboration |
+| Social intelligence | Not a dedicated direct platform scraper | Engine-specific platform adapters |
+| AgentReach contract | Generic query/domain/maxSources | Research-contract-driven bounded query plans |
+| Failure semantics | Fail closed / no synthetic sources | Same invariant with richer diagnostics |
+
+## 5. Governance invariant
+
+AgentReach is an information-acquisition capability. It cannot:
+
+- invent evidence;
+- authorize content;
+- bypass F00;
+- bypass .okf policy;
+- grant worker capabilities;
+- override F07.
+
