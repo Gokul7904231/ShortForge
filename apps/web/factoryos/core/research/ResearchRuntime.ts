@@ -23,9 +23,29 @@ export interface ResearchRequest {
   readonly methodology?: "QUICK" | "FULL" | "FACT_CHECK" | "TREND_SCAN" | "COMPETITOR_SCAN";
   readonly targetSourceCount?: number;
   readonly scheduleInstanceId?: string;
+  readonly audience?: string;
+  readonly researchContract?: {
+    readonly engineId?: string;
+    readonly dataRequirements?: string[];
+    readonly minSources?: number;
+    readonly citationRequired?: boolean;
+    readonly freshness?: "run" | "recent" | "any";
+    readonly sourcePolicy?: string;
+    readonly agentReachProfile?: string;
+  };
 }
 
-const DEFAULT_FACTORY_INTEGRITY_SECRET = process.env.FACTORY_INTEGRITY_SECRET || "factory_internal_integrity_key_default";
+const DEV_FACTORY_INTEGRITY_SECRET = "factory_internal_integrity_key_dev_only";
+
+function getIntegritySecret(): string {
+  if (process.env.FACTORY_INTEGRITY_SECRET) {
+    return process.env.FACTORY_INTEGRITY_SECRET;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("FACTORY_INTEGRITY_SECRET is required in production.");
+  }
+  return DEV_FACTORY_INTEGRITY_SECRET;
+}
 
 export class ResearchRuntime {
   private reach: ReachSubsystem;
@@ -88,6 +108,7 @@ export class ResearchRuntime {
     }
 
     const { contentHash, integrityMac, canonicalizationVersion, algorithm } = passport.integrity;
+    const resolvedSecret = secret || getIntegritySecret();
 
     if (canonicalizationVersion !== "JCS-v1") {
       return { valid: false, reason: `Unsupported canonicalization version: ${canonicalizationVersion}` };
@@ -108,8 +129,13 @@ export class ResearchRuntime {
     }
 
     // 2. Validate HMAC signature
-    const expectedMac = createHmac("sha256", secret).update(recalculatedHash, "utf8").digest("hex");
-    if (expectedMac !== integrityMac) {
+    const expectedMac = createHmac("sha256", resolvedSecret).update(recalculatedHash, "utf8").digest("hex");
+    const expected = Buffer.from(expectedMac, "hex");
+    const received = Buffer.from(integrityMac, "hex");
+    if (
+      expected.length !== received.length ||
+      !require("node:crypto").timingSafeEqual(expected, received)
+    ) {
       return { valid: false, reason: "Integrity MAC mismatch (unauthorized signature or key mismatch)" };
     }
 
@@ -125,15 +151,33 @@ export class ResearchRuntime {
     const methodology = request.methodology || "TREND_SCAN";
     const missionId = request.missionId;
 
-    // 1. Source Discovery via Reach (capacity derived dynamically from schedule request)
-    const maxSources = request.targetSourceCount ?? (methodology === "QUICK" ? 2 : 4);
-    const sources = await this.reach.acquireSources({
+    if (!request.topic || request.topic.trim() === "") {
+      throw new Error("Floor 00 ResearchRuntime requires a non-empty topic.");
+    }
+
+    // 1. Source Discovery via Reach.
+    // Production callers should supply engine research requirements (or an
+    // explicit targetSourceCount); the methodology fallback exists only for
+    // standalone/legacy invocations.
+    const maxSources = request.targetSourceCount
+      ?? request.researchContract?.minSources
+      ?? (methodology === "QUICK" ? 2 : 4);
+
+    const acquiredSources = await this.reach.acquireSources({
       queryOrUrl: request.topic,
       type: "QUERY",
       maxSources,
       callerFloor: "floor00_analyst",
       intent: request.intent,
     });
+
+    // Reach may return an explicit UNAVAILABLE/UNREACHABLE source record so the
+    // caller can diagnose the failure. Those records are not evidence.
+    const sources = acquiredSources.filter(
+      (source) =>
+        source.sourceStatus !== "UNAVAILABLE" &&
+        source.sourceStatus !== "UNREACHABLE"
+    );
 
     // 2. Claim Formulation & Integrity Classification
     const claims: ResearchClaim[] = this.formulateClaims(request.topic, sources);
@@ -142,13 +186,16 @@ export class ResearchRuntime {
     const passportId = `pass_${randomUUID().substring(0, 8)}`;
     const passportConfidence = claims.length > 0
       ? Number((claims.reduce((acc, c) => acc + c.confidence, 0) / claims.length).toFixed(2))
-      : 0.3;
+      : 0.0;
 
     const unsignedPassport: ResearchPassport = {
       passportId,
       missionId,
-      question: `What are the dominant viral hooks, factual claims, and competitor patterns for "${request.topic}"?`,
-      intent: request.intent || "Short-form video synthesis and narrative retention optimization",
+      question: `What are the dominant evidence-backed hooks, factual claims, and competitor patterns for "${request.topic}"?`,
+      intent:
+        request.intent ||
+        "Short-form video research and evidence-backed narrative planning",
+
       methodology,
       sources,
       claims,
@@ -168,13 +215,13 @@ export class ResearchRuntime {
       transformations: [
         "Reach source extraction",
         "Deterministic claim parsing",
-        "Claim-level evidence cross-corroboration",
-        "Verification status scoring",
+        "Conservative claim-level corroboration",
+        "Verification status classification",
       ],
     };
 
     // 4. Cryptographic Signing of Passport
-    const passport = ResearchRuntime.signPassport(unsignedPassport);
+    const passport = ResearchRuntime.signPassport(unsignedPassport, getIntegritySecret());
 
     // 5. Synthesize Analyst Report with dynamic competitor signals
     const competitorSignals = sources
@@ -192,7 +239,7 @@ export class ResearchRuntime {
       executiveSummary: `Intelligence synthesis for "${request.topic}": ${sources.length} sources examined, ${claims.length} claims extracted (${claims.filter(c => c.verificationStatus === "VERIFIED").length} verified, ${claims.filter(c => c.verificationStatus === "CONTRADICTED").length} contradicted). Measured passport confidence: ${passportConfidence}.`,
       keyFindings: [
         `Observed ${sources.length} external sources relevant to "${request.topic}".`,
-        "Optimal short-form video pacing benefits from early hook alignment.",
+        `Heuristic only: early-hook alignment is a commonly used short-form pattern for "${request.topic}".`,
       ],
       hookIntelligence: {
         recommendedHook: `Did you know the untold truth behind ${request.topic}?`,
@@ -242,14 +289,17 @@ export class ResearchRuntime {
           .split(/\s+/)
           .filter((w) => w.length >= 4)
       );
-      const corroborating = sources.filter((other) => {
+        const corroborating = sources.filter((other) => {
         if (other.id === src.id) return false;
-        const otherWords = `${other.title} ${other.snippet}`
-          .toLowerCase()
-          .replace(/[^\w\s]/g, "")
-          .split(/\s+/)
-          .filter((w) => w.length >= 4);
-        return otherWords.some((w) => srcWords.has(w));
+        const otherWords = new Set(
+          `${other.title} ${other.snippet}`
+            .toLowerCase()
+            .replace(/[^\w\s]/g, "")
+            .split(/\s+/)
+            .filter((w) => w.length >= 4)
+        );
+        const sharedMeaningfulTokens = [...srcWords].filter((w) => otherWords.has(w)).length;
+        return sharedMeaningfulTokens >= 2;
       });
 
       let claimType: ClaimType = "SOURCE_CLAIM";
