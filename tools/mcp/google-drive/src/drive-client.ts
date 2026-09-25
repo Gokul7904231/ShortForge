@@ -6,6 +6,8 @@ import { assertAllowedDownloadPath, assertAllowedUploadPath } from "./security.j
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 const DRIVE_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
+const FOLDER_MIME = "application/vnd.google-apps.folder";
+const MAX_PARENT_WALK = 32;
 
 export type DriveScopeMode = "readonly" | "readwrite";
 
@@ -108,12 +110,74 @@ export class GoogleDriveClient {
     };
   }
 
+  /**
+   * When a root folder is configured, all file/folder IDs supplied to this MCP
+   * must be descendants of that root. This prevents a known Drive ID from
+   * bypassing the list/search boundary.
+   */
+  private async assertWithinRoot(fileId: string): Promise<void> {
+    if (!this.rootFolderId || this.rootFolderId === "root") {
+      return;
+    }
+
+    let currentId = fileId;
+    const visited = new Set<string>();
+
+    for (let depth = 0; depth <= MAX_PARENT_WALK; depth += 1) {
+      if (currentId === this.rootFolderId) {
+        return;
+      }
+      if (visited.has(currentId)) {
+        throw new Error("Drive parent graph contains a cycle; refusing access.");
+      }
+      visited.add(currentId);
+
+      const res = await this.drive.files.get({
+        fileId: currentId,
+        fields: "id,parents,mimeType,trashed",
+        supportsAllDrives: true,
+      });
+
+      if (res.data.trashed) {
+        throw new Error("Refusing access to a trashed Drive item.");
+      }
+
+      if (res.data.mimeType !== FOLDER_MIME && depth > 0) {
+        // Non-folder ancestors are invalid in the parent chain; fail closed.
+        throw new Error("Drive parent graph is malformed; refusing access.");
+      }
+
+      const parents = res.data.parents || [];
+      if (parents.includes(this.rootFolderId)) {
+        return;
+      }
+      if (parents.length === 0) {
+        break;
+      }
+
+      currentId = parents[0];
+    }
+
+    throw new Error("Drive item is outside the configured MCP root folder.");
+  }
+
+  private async assertParentWithinRoot(parentId?: string): Promise<void> {
+    if (!parentId || !this.rootFolderId || this.rootFolderId === "root") {
+      return;
+    }
+    await this.assertWithinRoot(parentId);
+  }
+
   async list(params: {
     folderId?: string;
     pageSize?: number;
     pageToken?: string;
     query?: string;
   }) {
+    if (params.folderId) {
+      await this.assertWithinRoot(params.folderId);
+    }
+
     const clauses = [this.scopedParentQuery(params.folderId), "trashed = false"];
 
     if (params.query) {
@@ -145,6 +209,10 @@ export class GoogleDriveClient {
     pageSize?: number;
     pageToken?: string;
   }) {
+    if (params.folderId) {
+      await this.assertWithinRoot(params.folderId);
+    }
+
     const literal = escapeDriveLiteral(params.query);
     const clauses = [
       this.scopedParentQuery(params.folderId),
@@ -171,6 +239,8 @@ export class GoogleDriveClient {
   }
 
   async metadata(fileId: string) {
+    await this.assertWithinRoot(fileId);
+
     const res = await this.drive.files.get({
       fileId,
       fields:
@@ -183,11 +253,12 @@ export class GoogleDriveClient {
   async createFolder(name: string, parentId?: string) {
     this.assertWriteScope();
     const parent = parentId || this.rootFolderId;
+    await this.assertParentWithinRoot(parent);
 
     const res = await this.drive.files.create({
       requestBody: {
         name,
-        mimeType: "application/vnd.google-apps.folder",
+        mimeType: FOLDER_MIME,
         ...(parent ? { parents: [parent] } : {}),
       },
       fields: "id,name,mimeType,parents,createdTime,webViewLink",
@@ -208,6 +279,8 @@ export class GoogleDriveClient {
 
     const source = assertAllowedUploadPath(params.sourcePath);
     const parent = params.folderId || this.rootFolderId;
+    await this.assertParentWithinRoot(parent);
+
     const fileName = params.fileName || path.basename(source);
     const sourceSha256 = await sha256File(source);
     const stream = fs.createReadStream(source);
