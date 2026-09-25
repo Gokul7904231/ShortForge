@@ -9,8 +9,8 @@ from typing import Dict, Tuple
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.core.input_safety import sanitize_input_text
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.input_safety import sanitize_input_text
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
