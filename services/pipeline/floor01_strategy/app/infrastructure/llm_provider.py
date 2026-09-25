@@ -1,8 +1,8 @@
-"""LLM Strategy Provider Adapter for Floor 01.
+"""Provider-neutral, structured LLM adapter for Floor 01.
 
-Provides optional structured AI model execution for Floor 01 topic evaluation,
-strategic angle recommendations, and curriculum guidance, generating explicit MODEL_INFERENCE
-provenance records.
+A configured API key without an executable endpoint is never reported as MODEL
+execution. The adapter only emits MODEL_INFERENCE provenance after a real,
+successful HTTP response has been parsed.
 """
 
 from __future__ import annotations
@@ -10,22 +10,48 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from typing import Any, Dict, Optional
+import urllib.error
+import urllib.request
+from typing import Any, Dict, Optional, Tuple
 
 import structlog
 
+from floors.floor01_strategy.app.core.config import get_settings
 from floors.floor01_strategy.app.domain.handoff import EvidenceType, ProvenanceEntry
 
 logger = structlog.get_logger(__name__)
 
 
 class LLMStrategyAdapter:
-    """Adapter for executing LLM strategic inference requests."""
+    """Execute a structured strategy request through an OpenAI-compatible endpoint."""
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-1.5-flash") -> None:
-        self.api_key = api_key or os.getenv("FLOOR01_LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
-        self.model_name = model_name
-        self.enabled = bool(self.api_key)
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model_name: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ) -> None:
+        settings = get_settings()
+        self.api_key = (
+            api_key
+            or settings.llm_api_key
+            or os.getenv("FLOOR01_LLM_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+        )
+        self.model_name = model_name or settings.llm_model
+        self.base_url = (
+            base_url
+            or settings.llm_base_url
+            or os.getenv("FLOOR01_LLM_BASE_URL")
+        )
+        self.timeout_seconds = settings.llm_timeout_seconds
+
+        self.configured = bool(self.api_key)
+        self.enabled = bool(self.api_key and self.base_url)
+
+    @property
+    def provider_name(self) -> str:
+        return "openai_compatible_http"
 
     def generate_strategy_insight(
         self,
@@ -33,49 +59,117 @@ class LLMStrategyAdapter:
         category: str,
         audience: str,
         platform: str,
+        evidence_summary: Optional[str] = None,
     ) -> Tuple[Dict[str, Any], ProvenanceEntry]:
-        """Execute LLM strategic reasoning or generate structured deterministic fallback."""
-        prompt_summary = f"Analyze topic '{topic}' ({category}) for {audience} on {platform}"
-        prompt_hash = hashlib.sha256(prompt_summary.encode()).hexdigest()[:12]
+        prompt_summary = (
+            f"Analyze topic '{topic}' ({category}) for {audience} on {platform}. "
+            f"Evidence: {evidence_summary or 'none supplied'}"
+        )
+        prompt_hash = hashlib.sha256(prompt_summary.encode("utf-8")).hexdigest()[:16]
 
         if not self.enabled:
-            logger.info("llm_inference_disabled_using_deterministic_fallback", prompt=prompt_summary)
-            fallback_data = {
-                "strategic_reasoning": f"Deterministic fallback policy for topic '{topic}'",
-                "recommended_angle": "practical_mental_model",
-                "confidence": 0.85,
-            }
-            provenance = ProvenanceEntry(
-                evidence_type=EvidenceType.DETERMINISTIC_RULE,
-                source_type="deterministic_fallback",
-                source_identifier="llm_strategy_adapter_fallback",
-                method="rule_based_fallback",
-                confidence_score=0.85,
-                summary="LLM API key unconfigured; using deterministic strategy policy.",
-                raw_data={"prompt_hash": prompt_hash, "fallback": True},
+            reason = (
+                "LLM endpoint and key are not both configured; using deterministic fallback."
             )
-            return fallback_data, provenance
+            if self.configured and not self.base_url:
+                reason = "LLM key configured but executable base URL is missing; using deterministic fallback."
+            logger.info("floor01_llm_fallback", reason=reason)
+            return (
+                {
+                    "strategic_reasoning": reason,
+                    "recommended_angle": "practical_mental_model",
+                    "confidence": 0.70,
+                },
+                ProvenanceEntry(
+                    evidence_type=EvidenceType.FALLBACK,
+                    source_type="deterministic_fallback",
+                    source_identifier="llm_strategy_adapter",
+                    method="provider_configuration_gate",
+                    confidence_score=0.70,
+                    summary=reason,
+                    raw_data={
+                        "prompt_hash": prompt_hash,
+                        "configured": self.configured,
+                        "endpoint_configured": bool(self.base_url),
+                    },
+                ),
+            )
 
-        # Simulated or HTTP API call
-        logger.info("executing_llm_strategy_inference", model=self.model_name, prompt=prompt_summary)
-        insight_data = {
-            "strategic_reasoning": f"LLM model '{self.model_name}' evaluated high engagement potential for '{topic}' targeting {audience}.",
-            "recommended_angle": "counter_intuitive_fact",
-            "confidence": 0.93,
+        endpoint = self.base_url.rstrip("/")
+        if not endpoint.endswith("/chat/completions"):
+            endpoint = endpoint + "/chat/completions"
+
+        request_body = {
+            "model": self.model_name,
+            "temperature": 0.2,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a bounded strategy candidate generator. "
+                        "Return only JSON with keys strategic_reasoning, recommended_angle, confidence. "
+                        "Do not invent evidence or claims."
+                    ),
+                },
+                {"role": "user", "content": prompt_summary},
+            ],
         }
 
-        provenance = ProvenanceEntry(
-            evidence_type=EvidenceType.MODEL_INFERENCE,
-            source_type="llm_model_completion",
-            source_identifier=self.model_name,
-            method="generate_text_structured_json",
-            confidence_score=0.93,
-            summary=f"LLM model '{self.model_name}' generated strategic recommendation.",
-            raw_data={
-                "model": self.model_name,
-                "prompt_hash": prompt_hash,
-                "reasoning": insight_data["strategic_reasoning"],
+        request = urllib.request.Request(
+            endpoint,
+            data=json.dumps(request_body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
             },
+            method="POST",
         )
 
-        return insight_data, provenance
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+                response_data = json.loads(response.read().decode("utf-8"))
+
+            content = response_data["choices"][0]["message"]["content"]
+            insight = json.loads(content)
+            confidence = float(insight.get("confidence", 0.75))
+            confidence = max(0.0, min(1.0, confidence))
+            insight["confidence"] = confidence
+
+            provenance = ProvenanceEntry(
+                evidence_type=EvidenceType.MODEL_INFERENCE,
+                source_type=self.provider_name,
+                source_identifier=self.model_name,
+                method="real_http_structured_json",
+                confidence_score=confidence,
+                summary=f"Model {self.model_name} returned a structured strategy candidate.",
+                raw_data={
+                    "model": self.model_name,
+                    "provider": self.provider_name,
+                    "prompt_hash": prompt_hash,
+                },
+            )
+            return insight, provenance
+
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, KeyError, IndexError, json.JSONDecodeError, ValueError) as exc:
+            reason = f"LLM execution failed closed to deterministic fallback: {type(exc).__name__}."
+            logger.warning("floor01_llm_execution_failed", error=str(exc))
+            return (
+                {
+                    "strategic_reasoning": reason,
+                    "recommended_angle": "practical_mental_model",
+                    "confidence": 0.55,
+                },
+                ProvenanceEntry(
+                    evidence_type=EvidenceType.FALLBACK,
+                    source_type=self.provider_name,
+                    source_identifier=self.model_name,
+                    method="http_failure_fallback",
+                    confidence_score=0.55,
+                    summary=reason,
+                    raw_data={
+                        "prompt_hash": prompt_hash,
+                        "error_type": type(exc).__name__,
+                    },
+                ),
+            )
