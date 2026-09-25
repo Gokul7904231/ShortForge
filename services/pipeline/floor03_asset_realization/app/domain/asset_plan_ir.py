@@ -41,6 +41,13 @@ class ContinuityMode(str, Enum):
     REANCHOR = "reanchor"
 
 
+class ReferenceStrategy(str, Enum):
+    NONE = "none"
+    REFERENCE_FIRST = "reference_first"
+    LAST_FRAME_CHAIN = "last_frame_chain"
+    HYBRID = "hybrid"
+
+
 class ReferenceUse(str, Enum):
     CHARACTER_IDENTITY = "reference_character"
     PROP = "reference_prop"
@@ -132,6 +139,7 @@ class ContinuityPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     mode: ContinuityMode = ContinuityMode.INDEPENDENT
+    reference_strategy: ReferenceStrategy = ReferenceStrategy.NONE
     chain_from_previous: bool = False
     locked_subject_ids: List[str] = Field(default_factory=list)
     invariant_attributes: List[str] = Field(default_factory=list)
@@ -178,9 +186,11 @@ class AssetPlanNode(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     scene_id: str = Field(..., min_length=1)
+    asset_id: str = Field(..., min_length=1)
     source_scene_version: int = Field(default=1, ge=1)
     source_beat_id: Optional[str] = None
     sequence_index: int = Field(..., ge=1)
+    node_fingerprint: Optional[str] = None
     coverage_role: CoverageRole = CoverageRole.ACTION
     visual: VisualPromptPlan
     dependencies: List[AssetDependency] = Field(default_factory=list)
@@ -194,18 +204,125 @@ class AssetPlanNode(BaseModel):
     repair: RepairPlan = Field(default_factory=RepairPlan)
 
 
+class PlanLineage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_floor_id: str = Field(..., min_length=1)
+    source_floor_version: str = Field(..., min_length=1)
+    source_script_id: str = Field(..., min_length=1)
+    source_script_version: int = Field(..., ge=1)
+    source_fingerprint: str = Field(..., min_length=64, max_length=64)
+    compiler_floor_id: str = Field(..., min_length=1)
+    compiler_floor_version: str = Field(..., min_length=1)
+
+
 class AssetPlanIR(BaseModel):
     """Deterministic, versioned, provider-neutral plan consumed downstream."""
 
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: str = "1.2.0"
+    schema_version: str = "1.3.0"
     plan_id: str = Field(..., min_length=1)
     plan_version: int = Field(default=1, ge=1)
     plan_fingerprint: Optional[str] = None
+    source_fingerprint: str = Field(..., min_length=64, max_length=64)
     script_id: str = Field(..., min_length=1)
     script_version: int = Field(..., ge=1)
     platform: str = Field(..., min_length=1)
     aspect_ratio: str = Field(..., min_length=1)
     resolution: str = Field(..., min_length=1)
+    lineage: PlanLineage
     nodes: List[AssetPlanNode] = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def validate_integrity(self) -> "AssetPlanIR":
+        scene_nodes = {}
+        sequence_indexes = set()
+
+        for node in self.nodes:
+            if node.scene_id in scene_nodes:
+                raise ValueError(f"duplicate scene_id in AssetPlanIR: {node.scene_id}")
+            if node.sequence_index in sequence_indexes:
+                raise ValueError(
+                    f"duplicate sequence_index in AssetPlanIR: {node.sequence_index}"
+                )
+            scene_nodes[node.scene_id] = node
+            sequence_indexes.add(node.sequence_index)
+
+        expected_asset_by_scene = {
+            scene_id: node.asset_id for scene_id, node in scene_nodes.items()
+        }
+
+        for node in self.nodes:
+            if len(node.impact_radius) != len(set(node.impact_radius)):
+                raise ValueError(
+                    f"duplicate impact_radius scene for node {node.scene_id}"
+                )
+            for impacted_scene_id in node.impact_radius:
+                if impacted_scene_id == node.scene_id:
+                    raise ValueError(
+                        f"impact_radius cannot contain its own scene_id: {node.scene_id}"
+                    )
+                if impacted_scene_id not in scene_nodes:
+                    raise ValueError(
+                        f"unknown impact_radius scene_id: {impacted_scene_id}"
+                    )
+
+            expected_scope = (
+                RepairScope.DEPENDENT_SUBGRAPH
+                if node.impact_radius
+                else RepairScope.NODE
+            )
+            if node.repair.scope != expected_scope:
+                raise ValueError(
+                    f"repair scope mismatch for node {node.scene_id}: "
+                    f"expected {expected_scope.value}, got {node.repair.scope.value}"
+                )
+
+            for dependency in node.dependencies:
+                if dependency.relation == DependencyRelation.SCENE_DEPENDENCY:
+                    if not dependency.scene_id:
+                        raise ValueError(
+                            f"scene dependency for {node.scene_id} must include scene_id"
+                        )
+                    if dependency.scene_id == node.scene_id:
+                        raise ValueError(
+                            f"scene dependency cannot self-reference: {node.scene_id}"
+                        )
+                if dependency.scene_id:
+                    if dependency.scene_id not in scene_nodes:
+                        raise ValueError(
+                            f"unknown dependency scene_id: {dependency.scene_id}"
+                        )
+                    expected_asset_id = expected_asset_by_scene[dependency.scene_id]
+                    if dependency.asset_id != expected_asset_id:
+                        raise ValueError(
+                            f"dependency asset_id mismatch for scene {node.scene_id} "
+                            f"-> {dependency.scene_id}"
+                        )
+
+            for reference in node.visual.references:
+                if reference.source_scene_id:
+                    if reference.source_scene_id not in scene_nodes:
+                        raise ValueError(
+                            f"unknown reference source_scene_id: {reference.source_scene_id}"
+                        )
+                    expected_asset_id = expected_asset_by_scene[reference.source_scene_id]
+                    if reference.source_asset_id != expected_asset_id:
+                        raise ValueError(
+                            f"reference source_asset_id mismatch for {node.scene_id}"
+                        )
+                    if reference.use == ReferenceUse.LAST_FRAME and (
+                        GenerationInputMode.LAST_FRAME not in node.visual.generation_inputs
+                    ):
+                        raise ValueError(
+                            f"last-frame reference missing LAST_FRAME input mode for {node.scene_id}"
+                        )
+                    if reference.use == ReferenceUse.FIRST_FRAME and (
+                        GenerationInputMode.FIRST_FRAME not in node.visual.generation_inputs
+                    ):
+                        raise ValueError(
+                            f"first-frame reference missing FIRST_FRAME input mode for {node.scene_id}"
+                        )
+
+        return self
