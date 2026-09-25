@@ -10,14 +10,7 @@ from floors.floor02_scripting.app.domain.script_models import SceneSpecification
 from floors.floor03_asset_realization.app.core.exceptions import Floor03ValidationError
 from floors.floor03_asset_realization.app.core.security import sanitize_input_text
 from floors.floor03_asset_realization.app.domain.asset_models import AssetRole, AssetType, VisualAssetRequirement
-from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
-    AssetDependency,
-    AssetPlanIR,
-    AssetPlanNode,
-    CameraSpec,
-    VisualPromptPlan,
-    VisualShotType,
-)
+from floors.floor03_asset_realization.app.domain.asset_plan_ir import CameraSpec, VisualPromptPlan, VisualShotType
 from floors.floor03_asset_realization.app.domain.handoff import EvidenceType, ExecutionMode, ProvenanceEntry
 from floors.floor03_asset_realization.app.infrastructure.llm_asset_adapter import LLMAssetAdapter
 
@@ -60,8 +53,6 @@ class ImagePromptWorker:
         provenance: List[ProvenanceEntry] = []
         worker_modes: List[ExecutionMode] = []
 
-        asset_ids_by_scene: dict[str, str] = {}
-
         for sc in scenes:
             raw_intent = (sc.visual_intent or "").strip()
             if not raw_intent:
@@ -89,12 +80,6 @@ class ImagePromptWorker:
                 continuity_keys=list(sc.character_references),
             )
 
-            dependencies: list[AssetDependency] = []
-            for dep_scene_id in sc.depends_on_scene_ids:
-                dep_asset_id = asset_ids_by_scene.get(dep_scene_id)
-                if dep_asset_id:
-                    dependencies.append(AssetDependency(asset_id=dep_asset_id, relation="scene_dependency"))
-
             scene_plan = visual_plan
 
             v_req = VisualAssetRequirement(
@@ -117,7 +102,6 @@ class ImagePromptWorker:
                 scene_plan=scene_plan,
             )
             visual_reqs.append(v_req)
-            asset_ids_by_scene[sc.scene_id] = v_req.asset_id
 
             provenance.append(
                 ProvenanceEntry(
