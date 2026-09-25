@@ -25,15 +25,32 @@ def request_fingerprint(request_id: str, script_id: str, script_version: int) ->
     )
 
 
+def _semanticize_plan(value: Any, key: str | None = None) -> Any:
+    """Remove runtime-only identifiers from the plan fingerprint projection."""
+    if isinstance(value, dict):
+        return {
+            item_key: _semanticize_plan(item_value, item_key)
+            for item_key, item_value in value.items()
+            if item_key not in {
+                "plan_id",
+                "plan_fingerprint",
+                "asset_id",
+                "source_asset_id",
+                "evidence_id",
+            }
+        }
+    if isinstance(value, list):
+        return [_semanticize_plan(item) for item in value]
+    return value
+
+
 def asset_plan_fingerprint(plan: Any) -> str:
     """Fingerprint semantic plan content, independent of runtime/request identity."""
     if hasattr(plan, "model_dump"):
-        value = plan.model_dump(mode="json", exclude={"plan_id", "plan_fingerprint"})
+        value = plan.model_dump(mode="json")
     else:
         value = dict(plan)
-        value.pop("plan_id", None)
-        value.pop("plan_fingerprint", None)
-    return stable_sha256(value)
+    return stable_sha256(_semanticize_plan(value))
 
 
 def floor03_input_fingerprint(value: Any) -> str:
