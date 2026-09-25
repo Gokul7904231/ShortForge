@@ -16,13 +16,14 @@ from factoryos.guardian.reasoning.base import ReasoningEngine
 # Frozen Floor 03 Core Ingestion
 from floors.floor03_asset_realization.app.domain.handoff import Floor03Input, Floor03HandoffPayload
 from floors.floor03_asset_realization.app.pipeline import Floor03Pipeline
+from floors.floor03_asset_realization.app.core.identity import request_fingerprint
 
 logger = structlog.get_logger(__name__)
 
 
 def create_floor03_capability_registry() -> CapabilityRegistry:
     """Build authoritative capability registry wrapping frozen Floor 03 capabilities."""
-    registry = CapabilityRegistry(floor_id="floor03")
+    registry = CapabilityRegistry(floor_id="floor03_asset_realization")
     pipeline = Floor03Pipeline()
 
     def run_asset_pipeline(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -40,8 +41,8 @@ def create_floor03_capability_registry() -> CapabilityRegistry:
     registry.register(
         Capability(
             name="asset_pipeline_worker",
-            floor_id="floor03",
-            description="Executes deterministic Floor 03 Asset Realization Pipeline",
+            floor_id="floor03_asset_realization",
+            description="Executes deterministic Floor 03 Asset Specification & Realization Planning Pipeline",
             handler=run_asset_pipeline,
         )
     )
@@ -66,7 +67,7 @@ class Floor03Guardian:
     ) -> GuardianReport:
         """Execute Floor 03 Autonomous Guardian loop around frozen Floor 03 core."""
         logger.info("floor03_guardian_executing", request_id=inp.request_id)
-        input_hash = f"hash-f03-{hash(inp.request_id)}"
+        input_hash = request_fingerprint(inp.request_id, inp.floor02_payload.script_id, inp.floor02_payload.script_version)
         initial_context = {"floor03_input": inp}
 
         return self.engine.run_autonomous_loop(
