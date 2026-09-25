@@ -983,3 +983,24 @@ This strengthens replay safety without moving orchestration or provider authorit
 
 **Rollback:** revert the Wave 4 changes as a unit and restore Floor 03 2.2.0 / AssetPlanIR 1.2.0.
 
+
+
+## F03 current contract generation — 2026-09-25
+
+The branch has since advanced through additional hardening to:
+- Floor 03 contract: `2.3.0`
+- AssetPlanIR schema: `1.3.0`
+
+Current contract additions include:
+- self-contained node asset identity and node fingerprinting;
+- explicit `sourceFingerprint` and `PlanLineage` from the trusted Floor 02 handoff;
+- semantic plan fingerprints that preserve meaningful upstream lineage while ignoring runtime-only asset/node IDs;
+- dependency/reference integrity checks aligned with node asset identity.
+
+Validation evidence:
+- The latest F03 gate now reaches the full test suite and reports **33 passed, 1 failed**.
+- The remaining failure was an exact error-message contract mismatch in the idempotency conflict test; the implementation already rejected the conflict correctly.
+- The branch has been updated to emit the expected `Idempotency conflict: fingerprint mismatch ...` wording.
+- F02 production tests passed in the same run; Team Change Gate also passed.
+
+This section records the current state before the next fresh CI run. No production-green or merge claim is made until that run completes.
