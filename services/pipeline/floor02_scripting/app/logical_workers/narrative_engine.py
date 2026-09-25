@@ -545,12 +545,7 @@ class NarrativeCompiler:
         if best_candidate is None or best_ir is None:
             raise RuntimeError("F02 failed to produce any narrative candidate")
         if strict and not best_ir.quality.accepted:
-            failed = {
-                critic: report.critic_id,
-                passed: report.passed,
-                score: report.score,
-                findings: [f.message for f in report.findings],
-            }
+            failed = {}
             for report in (best_ir.quality.critiques if best_ir.quality else []):
                 if not report.passed:
                     failed = {
