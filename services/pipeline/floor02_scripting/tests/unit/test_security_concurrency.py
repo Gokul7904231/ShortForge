@@ -17,7 +17,7 @@ def _multiprocess_script_worker(file_path: str, request_id: str, topic: str):
     """Worker executing full Floor 02 pipeline in separate OS processes for concurrent persistence deduplication."""
     store = ScriptMemoryStore(storage_path=file_path)
     pipeline = Floor02Pipeline(memory_store=store)
-    inp = Floor02Input(request_id=request_id, topic_query=topic)
+    inp = Floor02Input(request_id=request_id, topic_query=topic, strict_upstream=False)
     pipeline.execute(inp)
 
 
