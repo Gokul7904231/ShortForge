@@ -1,9 +1,9 @@
 # shorts-production — ShortForge-native Skill (docs-only)
 
-> No code integration. Methodology doc only. Generates INPUTS for existing renderer — never rewrites Azure / basic-fastapi / create_short.py / FFmpeg / Cloudinary.
+> No code integration. Methodology doc only. Generates INPUTS for existing renderer — never rewrites RenderFabric / ComputeRouter / provider adapters / FFmpeg / Cloudinary.
 
 ## Purpose
-Optimize 9:16 short-form packaging and production plan for YouTube Shorts / Instagram Reels / TikTok / Facebook Reels: hook style, pacing, caption/hashtag strategy, title/description/CTA, and render-safe timings — while staying inside the existing `ShortForge Control Plane → job manifest → Azure → create_short.py → FFmpeg → Cloudinary → Completed` pipeline.
+Optimize 9:16 short-form packaging and production plan for YouTube Shorts / Instagram Reels / TikTok / Facebook Reels: hook style, pacing, caption/hashtag strategy, title/description/CTA, and render-safe timings — while staying inside the existing `ShortForge Control Plane → FactoryOS mission → F06 RenderFabric → ComputeRouter → physical artifact → F07 → delivery` pipeline.
 
 ## Inputs
 - `topic`, `contentType` (`QUIZ_SHORTS` | `MOTIVATIONAL` | `FACTS` …)
