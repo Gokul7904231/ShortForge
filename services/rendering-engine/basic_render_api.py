@@ -3,7 +3,7 @@
 FactoryOS Basic Render API Service
 ==================================
 FastAPI asynchronous microservice providing a persistent, warm rendering endpoint
-for Basic user short-form video generation on the Azure VM.
+for provider-neutral self-hosted video generation.
 """
 
 import os
@@ -18,7 +18,7 @@ from fastapi import FastAPI, HTTPException, Header, Depends, status, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 
-from basic_render_worker import basic_worker, BASIC_RENDER_API_SECRET, log
+from basic_render_worker import basic_worker, RENDER_WORKER_SECRET, log
 
 # Pydantic Schemas
 class RenderJobRequest(BaseModel):
@@ -73,7 +73,7 @@ async def verify_internal_secret(
     if not token or token != BASIC_RENDER_API_SECRET:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized: Missing or invalid Basic Render API secret.",
+            detail="Unauthorized: Missing or invalid Render Worker secret.",
         )
     return token
 
