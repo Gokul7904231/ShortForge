@@ -40,13 +40,19 @@ def test_single_scene_asset_regeneration_invariants(tmp_path):
     asset_a_updated = updated_payload.visual_asset_requirements[0].model_dump()
     assert asset_a_updated == asset_a_initial
 
-    # Scene B (target): Scene version & asset version incremented, prompt updated
+    # Scene B (target): identity/version incremented and prompt updated
     asset_b_updated = updated_payload.visual_asset_requirements[1].model_dump()
     assert asset_b_updated["scene_id"] == target_scene_id
     assert asset_b_updated["asset_id"] != asset_b_initial["asset_id"]
     assert asset_b_updated["asset_version"] == asset_b_initial["asset_version"] + 1
     assert asset_b_updated["scene_version"] == asset_b_initial["scene_version"] + 1
     assert "Enhance code syntax glow" in asset_b_updated["prompt_text"]
+    assert updated_payload.asset_plan_ir is not None
+    target_nodes = [node for node in updated_payload.asset_plan_ir.nodes if node.scene_id == target_scene_id]
+    assert len(target_nodes) == 1
+    assert "Enhance code syntax glow" in target_nodes[0].visual.prompt_text
+    assert updated_payload.asset_plan_ir.plan_version == 2
+    assert updated_payload.asset_plan_ir.script_version == initial_payload.asset_plan_ir.script_version
 
     # Scene C (unaffected): Byte & semantic equivalence preserved
     asset_c_updated = updated_payload.visual_asset_requirements[2].model_dump()
