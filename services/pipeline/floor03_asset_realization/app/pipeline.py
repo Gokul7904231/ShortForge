@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import time
+from time import perf_counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -12,6 +12,7 @@ import structlog
 from floors.floor02_scripting.app.domain.handoff import Floor02HandoffPayload
 from floors.floor03_asset_realization.app.core.config import settings
 from floors.floor03_asset_realization.app.core.exceptions import Floor03Error, Floor03PlatformError, Floor03ValidationError
+from floors.floor03_asset_realization.app.core.identity import request_fingerprint
 from floors.floor03_asset_realization.app.domain.asset_models import AudioAssetRequirement, VisualAssetRequirement
 from floors.floor03_asset_realization.app.domain.handoff import (
     EvidenceType,
@@ -121,6 +122,7 @@ class Floor03Pipeline:
         worker_modes: Dict[str, ExecutionMode] = {}
 
         # 3. Image Prompt Worker
+        image_started = perf_counter()
         visual_reqs, img_mode, img_provs = self.image_prompt_worker.execute(
             scenes=inp.floor02_payload.scenes,
             aspect_ratio=aspect_ratio,
@@ -129,24 +131,30 @@ class Floor03Pipeline:
         )
         worker_modes["image_prompt_worker"] = img_mode
         provenance_list.extend(img_provs)
+        image_duration_ms = round((perf_counter() - image_started) * 1000.0, 2)
 
         # 4. Audio Spec Worker
+        audio_started = perf_counter()
         audio_reqs, aud_mode, aud_provs = self.audio_spec_worker.execute(
             scenes=inp.floor02_payload.scenes,
             voice_id=inp.voice_id,
         )
         worker_modes["audio_spec_worker"] = aud_mode
         provenance_list.extend(aud_provs)
+        audio_duration_ms = round((perf_counter() - audio_started) * 1000.0, 2)
 
         # 5. Continuity Worker
+        continuity_started = perf_counter()
         visual_reqs, cont_mode, cont_provs = self.continuity_worker.execute(
             visual_reqs=visual_reqs,
             character_profiles=inp.floor02_payload.character_profiles,
         )
         worker_modes["continuity_worker"] = cont_mode
         provenance_list.extend(cont_provs)
+        continuity_duration_ms = round((perf_counter() - continuity_started) * 1000.0, 2)
 
         # 6. Manifest Worker
+        manifest_started = perf_counter()
         manifest, man_mode, man_provs = self.manifest_worker.execute(
             script_id=inp.floor02_payload.script_id,
             script_version=inp.floor02_payload.script_version,
@@ -158,6 +166,7 @@ class Floor03Pipeline:
         )
         worker_modes["manifest_worker"] = man_mode
         provenance_list.extend(man_provs)
+        manifest_duration_ms = round((perf_counter() - manifest_started) * 1000.0, 2)
 
         # Determine Global Execution Mode
         # DETERMINISTIC_FALLBACK is set ONLY if actual fallback occurred in a worker
@@ -186,6 +195,7 @@ class Floor03Pipeline:
             visual_asset_requirements=visual_reqs,
             audio_asset_requirements=audio_reqs,
             manifest=manifest,
+            asset_plan_ir=None,
             decision_quality_score=None,
             handoff_status=HandoffStatus.VALIDATED,
             provenance=provenance_list,
@@ -198,15 +208,15 @@ class Floor03Pipeline:
 
     def execute_with_report(self, inp: Floor03Input) -> Tuple[Floor03HandoffPayload, FloorExecutionReport]:
         """Execute pipeline and persist Overseer FloorExecutionReport JSON artifact."""
-        start_time = time.time()
+        start_time = perf_counter()
         payload = self.execute(inp)
-        duration_ms = round((time.time() - start_time) * 1000.0, 2)
+        duration_ms = round((perf_counter() - start_time) * 1000.0, 2)
 
         worker_results = [
-            WorkerExecutionSummary(worker_name="image_prompt_worker", duration_ms=round(duration_ms * 0.4, 2)),
-            WorkerExecutionSummary(worker_name="audio_spec_worker", duration_ms=round(duration_ms * 0.2, 2)),
-            WorkerExecutionSummary(worker_name="continuity_worker", duration_ms=round(duration_ms * 0.2, 2)),
-            WorkerExecutionSummary(worker_name="manifest_worker", duration_ms=round(duration_ms * 0.2, 2)),
+            WorkerExecutionSummary(worker_name="image_prompt_worker", duration_ms=locals().get("image_duration_ms")),
+            WorkerExecutionSummary(worker_name="audio_spec_worker", duration_ms=locals().get("audio_duration_ms")),
+            WorkerExecutionSummary(worker_name="continuity_worker", duration_ms=locals().get("continuity_duration_ms")),
+            WorkerExecutionSummary(worker_name="manifest_worker", duration_ms=locals().get("manifest_duration_ms")),
         ]
 
         report = FloorExecutionReport(
@@ -220,6 +230,9 @@ class Floor03Pipeline:
                 "request_id": inp.request_id,
                 "script_id": inp.floor02_payload.script_id,
                 "resolved_platform": payload.resolved_platform,
+                "request_fingerprint": request_fingerprint(
+                    inp.request_id, inp.floor02_payload.script_id, inp.floor02_payload.script_version
+                ),
             },
             worker_results=worker_results,
             decisions=[
@@ -264,6 +277,8 @@ class Floor03Pipeline:
             if req.scene_id == target_scene_id:
                 target_visual_found = True
                 updated_req = req.model_copy(deep=True)
+                from uuid import uuid4
+                updated_req.asset_id = str(uuid4())
                 updated_req.asset_version += 1
                 updated_req.scene_version += 1
                 updated_req.prompt_text = f"{req.prompt_text} ({new_prompt_instruction})"
