@@ -16,14 +16,16 @@ Invoked by the runtime to select the appropriate render worker queue based on us
 
 ## EXECUTION SEQUENCE
 1. Inspect server-authenticated role (never trust client role).
-2. If role is ADMIN or OWNER, route to Azure GPU render pool.
+2. Submit render requirements to ComputeRouter and evaluate eligible provider health/capacity.
+3. Verify worker capability, lease/fencing state, and provider policy before claim.
+4. Apply bounded failover only among qualified providers.
+5. Return assigned provider/worker and execution token.
+1. Inspect server-authenticated role (never trust client role).
 3. If role is VIEWER or EDITOR, route to GitHub Actions Basic render pool.
 4. Verify target worker health. If target is unhealthy, apply failover policy within permitted role bounds.
 5. Return assigned worker pool and execution token.
 
 ## DECISION RULES
-- BASIC users MUST NEVER be routed to Azure GPU pool.
-- ADMIN users MUST NOT be degraded to Basic queue unless Azure is in full outage.
 
 ## SAFETY BOUNDARIES
 - Strict server-authoritative role boundary.
