@@ -157,3 +157,28 @@ def test_idempotency_conflict_rejection(tmp_path):
         pipeline.execute(inp_b)
 
     assert "Idempotency conflict" in str(exc_info.value)
+
+
+def test_asset_plan_fingerprint_is_semantic_and_request_independent(tmp_path):
+    f02_payload_a = build_mock_floor02_payload()
+    f02_payload_b = build_mock_floor02_payload()
+
+    pipeline_a = Floor03Pipeline(
+        memory_store=AssetMemoryStore(storage_path=str(tmp_path / "memory-a.json"))
+    )
+    pipeline_b = Floor03Pipeline(
+        memory_store=AssetMemoryStore(storage_path=str(tmp_path / "memory-b.json"))
+    )
+
+    payload_a = pipeline_a.execute(
+        Floor03Input(floor02_payload=f02_payload_a, request_id="req-fingerprint-a")
+    )
+    payload_b = pipeline_b.execute(
+        Floor03Input(floor02_payload=f02_payload_b, request_id="req-fingerprint-b")
+    )
+
+    assert payload_a.asset_plan_ir is not None
+    assert payload_b.asset_plan_ir is not None
+    assert payload_a.asset_plan_ir.plan_id != payload_b.asset_plan_ir.plan_id
+    assert payload_a.asset_plan_ir.plan_fingerprint == payload_b.asset_plan_ir.plan_fingerprint
+    assert len(payload_a.asset_plan_ir.plan_fingerprint) == 64
