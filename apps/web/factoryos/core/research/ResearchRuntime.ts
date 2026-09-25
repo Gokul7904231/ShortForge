@@ -14,7 +14,7 @@ import type {
   VerificationStatus,
   PassportIntegrityMetadata,
 } from "../contracts/ResearchPassportContracts";
-import { randomUUID, createHash, createHmac } from "node:crypto";
+import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 export interface ResearchRequest {
   readonly missionId: string;
@@ -79,7 +79,7 @@ export class ResearchRuntime {
     const resolvedSecret = secret || getIntegritySecret();
     const canonicalPayload = ResearchRuntime.canonicalize(passport);
     const contentHash = createHash("sha256").update(canonicalPayload, "utf8").digest("hex");
-    const integrityMac = createHmac("sha256", secret).update(contentHash, "utf8").digest("hex");
+    const integrityMac = createHmac("sha256", resolvedSecret).update(contentHash, "utf8").digest("hex");
 
     const integrity: PassportIntegrityMetadata = {
       contentHash,
@@ -102,7 +102,7 @@ export class ResearchRuntime {
    */
   static verifyResearchPassport(
     passport: ResearchPassport,
-    secret: string = DEFAULT_FACTORY_INTEGRITY_SECRET
+    secret?: string
   ): { valid: boolean; reason?: string } {
     if (!passport.integrity) {
       return { valid: false, reason: "Passport has no cryptographic integrity metadata" };
@@ -135,7 +135,7 @@ export class ResearchRuntime {
     const received = Buffer.from(integrityMac, "hex");
     if (
       expected.length !== received.length ||
-      !require("node:crypto").timingSafeEqual(expected, received)
+      !timingSafeEqual(expected, received)
     ) {
       return { valid: false, reason: "Integrity MAC mismatch (unauthorized signature or key mismatch)" };
     }
@@ -281,7 +281,7 @@ export class ResearchRuntime {
     const contradictionRegex = /\b(myth|debunked|false|untrue|hoax|disputed|unproven|fake|rumor|contrary)\b/i;
 
     // Source-backed claims with claim-level evidence
-    sources.forEach((src, idx) => {
+    sources.forEach((src) => {
       const isContradicted = contradictionRegex.test(src.snippet) || contradictionRegex.test(src.title);
       const srcWords = new Set(
         `${src.title} ${src.snippet}`
