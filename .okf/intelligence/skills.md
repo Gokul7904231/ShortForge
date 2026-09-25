@@ -100,3 +100,10 @@ Skills are organized by production floor responsibility:
 1. **Pre-Conditions**: Skills must validate their input payloads against schema before processing. Invalid payloads return immediate schema rejection without invoking downstream APIs.
 2. **Post-Conditions**: Output payloads must produce verifiable artifacts or structured outputs.
 3. **Idempotency**: Skills marked as read-only or query operations are declared idempotent; mutating skills record their resulting changes in the mission context ledger.
+
+
+## 6. Canonical permission reference
+
+Skill-level capability enforcement is governed by .okf/security/worker-permissions.md.
+
+A Skill cannot be used as a backdoor to obtain capabilities not present in the worker session.
