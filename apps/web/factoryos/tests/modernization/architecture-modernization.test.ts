@@ -161,11 +161,11 @@ describe("Phase 1: Scheduler & Control Plane Invariants", () => {
     });
 
     const candidates = [
-      { topic: "Topic A", hookConcept: "Hook A", rawSources: ["https://source1.com/a"] },
-      { topic: "Topic B", hookConcept: "Hook B", rawSources: ["https://source2.com/b"] },
-      { topic: "Topic C", hookConcept: "Hook C", rawSources: ["https://source3.com/c"] },
-      { topic: "Topic D", hookConcept: "Hook D", rawSources: ["https://source4.com/d"] },
-      { topic: "Topic E", hookConcept: "Hook E", rawSources: ["https://source5.com/e"] },
+      { topic: "Topic A", hookConcept: "Hook A", rawSources: ["https://source1.com/a"], passportId: "pass_topic_a" },
+      { topic: "Topic B", hookConcept: "Hook B", rawSources: ["https://source2.com/b"], passportId: "pass_topic_b" },
+      { topic: "Topic C", hookConcept: "Hook C", rawSources: ["https://source3.com/c"], passportId: "pass_topic_c" },
+      { topic: "Topic D", hookConcept: "Hook D", rawSources: ["https://source4.com/d"], passportId: "pass_topic_d" },
+      { topic: "Topic E", hookConcept: "Hook E", rawSources: ["https://source5.com/e"], passportId: "pass_topic_e" },
     ];
 
     // Schedule A requests 2 videos
