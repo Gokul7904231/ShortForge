@@ -131,3 +131,13 @@ The branch now:
 - keeps the canonical implementation under `services/pipeline/floor03_asset_realization`.
 
 The corrected branch requires a fresh CI run before merge. No merge or production-green claim is made from the earlier failed run.
+
+
+## Compatibility validation correction
+
+The corrected production gate exposed a second compatibility issue outside F03 semantics: `floors/floor01_strategy/__init__.py` pointed at the packaging root rather than the nested installable package. This made both F02 and F03 imports fail during test collection.
+
+The branch now points the root compatibility namespace at:
+`services/pipeline/floor01_strategy/floor01_strategy`
+
+This remains a compatibility-layer fix only; the canonical Floor 01 implementation is unchanged. Fresh CI is required to validate the correction.
