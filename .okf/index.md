@@ -169,3 +169,18 @@ The canonical MCP architecture is documented in .okf/intelligence/mcp-architectu
 MCP-specific least-privilege rules are documented in .okf/security/mcp-permissions.md.
 
 No F00-F07 worker receives generic MCP access by default.
+
+
+## 11. Team Engineering Workforce
+
+The canonical operational home for the development-time engineering workforce and security stack is now the top-level `Team/` directory.
+
+- `Team/workflow/change-gate.md` — mandatory change gate.
+- `Team/forgers/TEAM.md` — specialist Forger Assembly.
+- `Team/security/TEAM.md` — Semgrep / Strix / ZAP / production-helper security stack.
+- `Team/contracts/team-change-ir.md` — semantic TeamChangeIR.
+- `Team/contracts/team-change-report.schema.json` — machine report contract.
+- `Team/llm/` — Ascalon Team protocol and training specification.
+- `Team/reports/` — per-change evidence reports.
+
+`.okf/` remains the authority/law layer. `Team/` is the execution/workforce layer.
