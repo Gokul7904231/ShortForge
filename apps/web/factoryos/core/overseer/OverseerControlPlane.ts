@@ -665,8 +665,9 @@ export class OverseerControlPlane {
         );
 
         const canonicalF01 = await new Floor01RuntimeAdapter().execute(f01Request);
-        scope.strategy = canonicalF01;
-        sharedScope.strategy = canonicalF01;
+        const strategyPayload = canonicalF01;
+        scope.strategy = strategyPayload;
+        sharedScope.strategy = strategyPayload;
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
         }
