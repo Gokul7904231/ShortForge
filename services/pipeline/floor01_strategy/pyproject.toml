@@ -26,5 +26,6 @@ test = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
-[tool.setuptools]
-packages = ["floor01_strategy"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["floor01_strategy*"]
