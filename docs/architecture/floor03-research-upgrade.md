@@ -148,3 +148,21 @@ This remains a compatibility-layer fix only; the canonical Floor 01 implementati
 A production-gate run exposed an ownership leak in the F03 test suite: the shared F03 fixture was executing the real F02 pipeline and therefore inherited F02's strict evidence-quality policy and model-provider availability.
 
 The F03 fixture is now a direct validated `Floor02HandoffPayload` with explicit provenance, evidence references, character metadata, dependency edges and continuity intent. This keeps F03 contract tests deterministic and independent of F02 model credentials/revision policy while preserving F02's own production tests unchanged.
+
+
+## Current-generation model/evaluation corpus
+
+The research sweep was also extended to official/open repositories for current video-model control and evaluation:
+- Wan-Video/Wan2.2
+- SkyworkAI/SkyReels-V2
+- Tencent-Hunyuan/HunyuanVideo-1.5
+- Vchitect/VBench
+- Lightricks/LTX-Video
+
+The useful F03-level conclusion is consistent across these sources:
+- conditioning inputs and temporal anchors are explicit;
+- long/multi-shot continuity benefits from boundary-frame or keyframe state;
+- cinematic controls are richer than a single prompt string;
+- quality evaluation must remain a separate concern from the planning IR.
+
+Current F03 already covers the non-provider-specific subset through camera/lighting metadata, typed references, first/last-frame inputs, start/end state, motion beats, dependency edges and bounded repair impact. Provider-specific inference controls remain excluded.
