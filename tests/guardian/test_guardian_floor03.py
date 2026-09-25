@@ -22,5 +22,5 @@ def test_floor03_guardian_execution(tmp_path):
     assert report.status == GuardianLifecycleState.COMPLETED
     assert report.handoff_payload is not None
     assert report.handoff_payload["manifest"]["total_visual_assets"] >= 3
-    assert report.handoff_payload["asset_plan_ir"]["schema_version"] == "1.2.0"
+    assert report.handoff_payload["asset_plan_ir"]["schema_version"] == "1.3.0"
     assert report.handoff_payload["asset_plan_ir"]["plan_fingerprint"]
