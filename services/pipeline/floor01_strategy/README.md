@@ -4,8 +4,8 @@
 **Guardian execution alias**: `floor01` (compatibility namespace)
 **Floor Version**: `2.0.0`
 **Location**: `services/pipeline/floor01_strategy/`
-**Status**: **v2 implementation on `feat/floor01-strategy-v2`; merge gated on fresh test/CI verification**
-**Overseer Integration**: canonical Python runtime adapter implemented; endpoint runtime verification pending
+**Status**: **Production-hardening complete on `feat/floor01-strategy-v2`; final promotion gated on fresh CI/runtime/security evidence**
+**Overseer Integration**: canonical Python runtime adapter plus validated-only handoff boundary implemented
 
 **Report Persistence Classification**: `LOCAL_DEVELOPMENT_ARTIFACT_PERSISTENCE = IMPLEMENTED` | `CENTRALIZED_OVERSEER_PERSISTENCE = INTEGRATION_PENDING`  
 
@@ -77,7 +77,7 @@ Generated for Overseer control plane consumption. Contains execution metrics (ID
   - `API_KEY_AUTH = IMPLEMENTED` (`X-API-Key` header verification)
   - `RATE_LIMITING = IMPLEMENTED` (single-node in-process token bucket rate limiter)
   - `FULL_PROMPT_INJECTION_RESILIENCE = NOT_IMPLEMENTED / REQUIRES_DEFENSE_IN_DEPTH`
-- **Persistence Boundary**: Single-node multi-process file memory hardened with sidecar `.lock` process locking (`msvcrt`/`fcntl`), atomic file replace (`NamedTemporaryFile` + `os.replace`), corruption auto-recovery (`.corrupted.<timestamp>`), retention bounds (`max_records=1000`), and idempotency index. Multi-node shared memory is unsupported pending shared backend infrastructure.
+- **Persistence Boundary**: Single-node multi-process file memory hardened with sidecar `.lock` process locking (`msvcrt`/`fcntl`), atomic file replace (`NamedTemporaryFile` + `os.replace`), corruption auto-recovery (`.corrupted.<timestamp>`), retention bounds (`max_records=1000`), full-request SHA-256 idempotency fingerprints, concurrent replay convergence, and fail-hard persistence errors. Multi-node shared memory remains intentionally unsupported until a shared backend is introduced.
 - **Report Persistence**: Local report artifact persistence to `used_artifact/reports/floor01_execution_<id>.json`. Centralized Overseer persistence transport marked `INTEGRATION_PENDING`.
 
 ---
@@ -96,15 +96,19 @@ Authoritative test execution command:
 
 Authoritative test log: `used_artifact/test_runs/task-827.log`
 
-**31 PASSING TESTS — AUTHORITATIVE TASK-827 VERIFICATION RUNTIME: 4.60s**
+**Historical task-827 result only. Not current v2 proof.**
 
+Current verification is owned by branch CI:
 ```
-============================= 31 passed in 4.60s =============================
+python -m pytest floor01_strategy/tests/ -q
 ```
+and the production-container smoke job in `.github/workflows/ci.yml`.
 
-### Performance Analysis:
-- Process locking and multi-worker execution are fully process-safe and optimized.
-- All unit, contract, API, multiprocess locking, concurrent persistence deduplication, security sanitization, and failure recovery tests execute in **4.60 seconds** total.
+### Performance Design:
+- Blocking strategy work is executed by FastAPI sync route handlers, keeping the event loop free.
+- Independent model/curriculum preparation remains overlapped inside F01.
+- Candidate tie-breaking is content-deterministic rather than UUID-deterministic.
+- File persistence is lock-protected and atomic.
 
 
 # Floor 01 v2 Architecture Addendum
@@ -155,3 +159,22 @@ Authoritative design records:
 Verification note:
 The old 31-test claim in this README is historical task-827 evidence. v2 requires fresh branch CI verification.
 New regression coverage is at services/pipeline/floor01_strategy/tests/test_v2_architecture.py.
+
+
+## Production Runbook
+
+Required production configuration:
+- `FLOOR01_ENVIRONMENT=production`
+- `FLOOR01_SERVICE_API_KEY` (required; production startup fails without it)
+- `FLOOR01_MEMORY_FILE_PATH` (recommended on persistent storage)
+- `FLOOR01_CORS_ORIGINS` only when browser-origin access is explicitly required
+- Optional `FLOOR01_LLM_API_KEY`, `FLOOR01_LLM_BASE_URL`, and `FLOOR01_LLM_MODEL`
+
+Canonical production path:
+`F00 ResearchPassport -> Floor01RuntimeAdapter -> /v1/plan -> validated Floor01HandoffPayload -> F02`
+
+The authenticated `/v1/plan` and `/v1/plan/execution-report` endpoints are strict and fail closed when upstream evidence is missing or the strategy is not validated. The Overseer adapter independently rejects any non-`VALIDATED` handoff.
+
+The service image runs as a non-root user, exposes only the required API port, disables interactive OpenAPI documentation in production, applies request-size and response-security controls, and exposes an unauthenticated lightweight `/health` probe for orchestration.
+
+Horizontal scaling is not enabled by the file memory implementation. Production deployment should keep F01 single-replica until a shared strategy-memory backend is promoted and tested.
