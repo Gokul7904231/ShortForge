@@ -123,3 +123,25 @@ def test_service_api_key_is_enforced(monkeypatch):
     with pytest.raises(Exception) as exc_info:
         asyncio.run(security.verify_api_key("wrong-secret"))
     assert getattr(exc_info.value, "status_code", None) == 401
+
+
+def test_production_auth_fails_closed_without_service_key(monkeypatch):
+    import asyncio
+    from floors.floor01_strategy.app.core import security
+    from floors.floor01_strategy.app.core.config import Floor01Settings
+
+    monkeypatch.setattr(
+        security,
+        "get_settings",
+        lambda: Floor01Settings(environment="production", service_api_key=None),
+    )
+
+    with __import__("pytest").raises(Exception) as exc_info:
+        asyncio.run(security.verify_api_key(None))
+    assert getattr(exc_info.value, "status_code", None) == 503
+
+
+def test_verified_research_is_required_by_default():
+    from floors.floor01_strategy.app.core.config import Floor01Settings
+    settings = Floor01Settings()
+    assert settings.require_verified_research is True
