@@ -112,8 +112,6 @@ export class WorkerPoolRegistryClass {
    * Find an available worker suitable for a job, evaluating tier security and tenant boundaries.
    */
   public findAvailableWorker(job: UniversalRenderJob): RegisteredWorker | null {
-    const isJobAdmin = job.tier === "ADMIN";
-
     for (const vendor of this.defaultVendorOrder) {
       const candidates = Array.from(this.workers.values()).filter((w) => {
         if (w.vendor !== vendor || w.state !== "READY" || !w.telemetry.b2Connectivity) {
