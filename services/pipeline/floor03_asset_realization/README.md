@@ -1,107 +1,91 @@
 # Floor 03 — Asset Specification & Realization Planning
 
-**Floor ID**: `floor03`  
-**Floor Name**: Asset Specification & Realization Planning  
-**Floor Version**: `1.0.0`  
-**Location**: `floors/floor03_asset_realization/`  
-**Status**: **FLOOR 03 DETERMINISTIC CORE IMPLEMENTATION COMPLETE & FROZEN**  
-**Overseer Integration Status**: `CONTRACT_DEFINED` | `INTEGRATION_PENDING`  
-**Report Persistence Classification**: `LOCAL_DEVELOPMENT_ARTIFACT_PERSISTENCE = IMPLEMENTED` | `CENTRALIZED_OVERSEER_PERSISTENCE = INTEGRATION_PENDING`  
+**Canonical Floor ID**: `floor03_asset_realization`  
+**Floor Version**: `2.0.0`  
+**Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
+**Overseer Integration**: **PENDING** — production control-plane wiring still requires the canonical runtime adapter.
 
----
+## Purpose
 
-## 1. Overview & Architectural Scope
+Floor 03 is the **visual asset planning/specification floor**. It transforms the trusted Floor 02 handoff into provider-neutral, versioned visual asset requirements and a typed `AssetPlanIR`. It does **not** generate physical images/video and it does **not** select provider credentials.
 
-Floor 03 is the asset specification and realization planning engine of FactoryOS. It transforms upstream narrative scripts (`Floor02HandoffPayload`) into machine-consumable visual and audio asset requirements (`Floor03HandoffPayload`) and asset manifests. Floor 03 specifies WHAT assets are required; actual FFmpeg video assembly and speech synthesis are owned downstream by `vps-rendering-engine` and cloud/local generation providers.
+The canonical production topology remains:
 
-Key responsibilities:
-1. **Upstream Handoff Ingestion**: Consumes `Floor02HandoffPayload` immutably without modifying Floor 02 or Floor 01.
-2. **Authoritative Platform Resolution**: Resolves target platform via hierarchy ($\text{upstream Strategy platform} \succ \text{authorized caller override} \succ \text{configuration default}$) without silent defaults.
-3. **Visual Asset Requirement Planning**: Generates machine-consumable prompt specifications (`VisualAssetRequirement`) from visual narrative intent. Rejects missing `visual_intent` with `Floor03ValidationError`.
-4. **Audio Asset Requirement Planning**: Generates voiceover audio specifications (`AudioAssetRequirement`). Voice selection is nullable/configurable.
-5. **Decoupled Asset Identity & Versioning**: Decouples scene identity from asset identity ($\text{scene\_id} \neq \text{asset\_id}$). Single-scene regeneration ($scene\_version$ $v1 \rightarrow v2$) assigns new `asset_id` references and $asset\_version = 2$ to target scene assets while preserving exact byte and semantic specification equality for unaffected scenes.
-6. **Mandatory Provenance & Execution Mode**: Enforces non-empty provenance lists for all decisions and execution reports. `DETERMINISTIC_FALLBACK` execution mode is used ONLY when actual fallback occurred.
+`F00 → F01 → F02 → (F03 || F04) → F05 → F06 → F07`
 
----
+F03 therefore cannot become a dependency of F04.
 
-## 2. Core Contracts Architecture
+## Inputs
 
-### A. Downstream Handoff Contract (`Floor03HandoffPayload`)
-Handed off downstream to asset execution layers and `vps-rendering-engine`. Contains `asset_plan_id`, `asset_plan_version`, `script_id`, `script_version`, `resolved_platform`, `visual_asset_requirements`, `audio_asset_requirements`, `manifest`, handoff status, and mandatory non-empty `provenance`.
+- `Floor03Input.floor02_payload`: authoritative Floor 02 handoff.
+- Optional authorized platform override.
+- Optional aspect ratio/resolution/style/voice constraints.
+- Production constraints supplied by the upstream mission.
 
-### B. Overseer Execution Report Contract (`FloorExecutionReport`)
-Generated for Overseer control plane consumption. Contains execution metrics (`execution_id`, `started_at`, `completed_at`, `duration_ms`), per-worker execution modes, decisions, component gates, and mandatory non-empty `provenance_audit`.
+## Core actions
 
----
+1. Validate and ingest the F02 handoff without mutating upstream ScriptIR.
+2. Resolve platform using executable precedence:
+   `authorized caller override → upstream strategy platform → configured fallback`.
+3. Compile every scene into a visual requirement.
+4. Add typed shot/camera/safe-text-region information through `AssetPlanIR`.
+5. Preserve F02 scene dependencies as asset-plan dependency edges.
+6. Attach character continuity descriptors.
+7. Assemble an asset manifest.
+8. Emit provenance and execution-mode metadata.
+9. Persist idempotent plan state.
+10. Support surgical scene-plan regeneration with a new asset identity.
 
-## 3. Authoritative Capability Matrix
+## Permissions and boundaries
 
-```
-╔════════════════════════════════════════════════════════════╗
-║                 FACTORYOS — FLOOR 03                     ║
-╠════════════════════════════════════════════════════════════╣
-║ Deterministic asset specification    IMPLEMENTED          ║
-║ Visual prompt planning               IMPLEMENTED          ║
-║ Audio asset requirement planning     IMPLEMENTED          ║
-║ Authoritative platform resolution    IMPLEMENTED          ║
-║ Decoupled asset identity & versioning IMPLEMENTED          ║
-║ Visual continuity metadata           IMPLEMENTED          ║
-║ Asset manifest assembly              IMPLEMENTED          ║
-║ Mandatory provenance traceability    IMPLEMENTED          ║
-║ Floor 02 contract ingestion          IMPLEMENTED          ║
-║ Local execution report generation    IMPLEMENTED          ║
-║ API authentication                   IMPLEMENTED          ║
-║ Rate limiting                        IMPLEMENTED          ║
-║ Input sanitization                   IMPLEMENTED          ║
-║ Workspace path boundary validation   IMPLEMENTED          ║
-║ Zero-tool LLM boundary               IMPLEMENTED          ║
-║ Multiprocess lock deduplication      IMPLEMENTED          ║
-║                                                            ║
-║ Prompt injection resilience          NOT_IMPLEMENTED     ║
-║ Output security filtering            NOT_IMPLEMENTED     ║
-║ Concurrent execution deduplication   NOT_IMPLEMENTED     ║
-║ Production LLM execution             EXTERNAL_DEPENDENCY ║
-║ Overseer transport                   INTEGRATION_PENDING ║
-║ Generative AI video                  NOT_IMPLEMENTED     ║
-║ Generative character consistency     NOT_IMPLEMENTED     ║
-╚════════════════════════════════════════════════════════════╝
-```
+F03 may:
+- read the validated F02 handoff;
+- create/modify F03-local asset plans;
+- read character metadata supplied by F02;
+- write F03-local plan state and evidence;
+- request downstream execution through the canonical Overseer/runtime boundary.
 
----
+F03 may not:
+- mutate F01/F02 source state;
+- mint production capabilities;
+- select or disclose provider secrets;
+- generate/verify physical media;
+- approve release;
+- bypass Guardian/Slayer/AgentRuntime/F07;
+- become an orchestration authority.
 
-## 4. Authoritative Verification Results & Test Inventory (Task 1246)
+## Current deterministic truth
 
-Command: `python -m pytest floors/floor01_strategy/tests/ floors/floor02_scripting/tests/ floors/floor03_asset_realization/tests/`  
-Authoritative Task Log: `used_artifact/test_runs/task-1246.log`
+The current visual adapter is deterministic. The repository must not label this as real model execution until a production model/provider adapter is actually wired.
 
-```
-============================= 79 passed in 12.71s =============================
-```
+## Versioning rule
 
-### Complete Floor 03 25-Test Inventory:
+Scene identity and asset identity remain separate. Regenerating one visual asset:
+- increments the asset version;
+- increments the F03 asset-plan version;
+- creates a new asset ID;
+- preserves unaffected scene specifications;
+- does not rewrite the authoritative F02 ScriptIR version.
 
-1. `test_floor02_handoff_ingestion_and_asset_planning`: Ingestion of Floor 02 payload and asset specification generation.
-2. `test_execution_report_generation_and_artifact_persistence`: Overseer execution report generation and physical JSON artifact persistence.
-3. `test_mandatory_non_empty_provenance`: Enforces mandatory non-empty provenance lists for payload and execution reports.
-4. `test_strict_schema_extra_forbid`: Verifies `extra="forbid"` schema validation on domain models.
-5. `test_idempotency_conflict_rejection`: Rejects duplicate `request_id` submitted with conflicting `script_id`.
-6. `test_upstream_platform_resolution`: Priority 1 upstream strategy platform resolution.
-7. `test_authorized_caller_override`: Priority 2 authorized caller platform override (`authorized_override=True`).
-8. `test_unauthorized_caller_override_rejection`: Rejection of unauthorized caller platform override (`authorized_override=False`).
-9. `test_image_prompt_worker_success`: Visual asset requirement planning.
-10. `test_image_prompt_worker_missing_visual_intent_rejection`: Rejection of missing/whitespace `visual_intent` with `Floor03ValidationError`.
-11. `test_audio_spec_worker`: Audio asset requirement planning.
-12. `test_continuity_worker`: Attachment of character profile continuity descriptors.
-13. `test_manifest_worker`: Assembly of overall `AssetManifest`.
-14. `test_single_scene_asset_regeneration_invariants`: Targeted single-scene asset regeneration ($asset\_version$ $v1 \rightarrow v2$) with new `asset_id` references and preserved byte/semantic equality for unaffected scenes.
-15. `test_scene_asset_regeneration_invalid_scene_id_rejection`: Rejection of invalid scene ID during regeneration.
-16. `test_input_text_sanitization`: Input text sanitization against HTML script tags and injection keywords.
-17. `test_workspace_path_boundary_validation`: Path traversal security validation (`Path.resolve().is_relative_to()`).
-18. `test_api_key_verification`: Rejection of invalid or missing API key headers.
-19. `test_token_bucket_rate_limiter`: In-process token bucket rate limiting.
-20. `test_asset_memory_corruption_recovery`: Automatic backup (`.corrupted.<timestamp>`) and recovery of corrupted memory files.
-21. `test_multiprocess_concurrent_duplicate_asset_persistence`: **CONCURRENT PERSISTENCE DEDUPLICATION** across 5 OS processes under sidecar `.lock` protection.
-22. `test_health_check_endpoint`: GET `/v1/assets/health` status endpoint.
-23. `test_plan_assets_endpoint_success`: POST `/v1/assets/plan` pipeline endpoint.
-24. `test_execution_report_endpoint`: POST `/v1/assets/execution-report` endpoint.
-25. `test_regenerate_scene_endpoint_success`: POST `/v1/assets/regenerate-scene` endpoint.
+## Research-derived design rules
+
+- **OpenSpec**: the typed AssetPlanIR is treated as a first-class specification artifact with explicit dependencies.
+- **Paperclip**: execution/control-plane separation is preserved; F03 plans work but does not own agent runtime execution.
+- **Hindsight / AI Agent Book**: memory is evidence/context, not authority; future learning should retain useful scene/continuity facts instead of replaying arbitrary raw history.
+- **StarNet**: capability and handoff boundaries are explicit rather than ambient.
+- **OpenBao**: provider credentials and leases stay outside F03; future provider adapters should use explicit identity/lease boundaries.
+- **quiche**: semantic F03 state is separated from transport mechanics.
+- **NVIDIA Model Optimizer**: model optimization belongs to the Fast Decision Core / Ascalon training system, not to F03's semantic contract.
+
+## Not implemented by this floor
+
+- physical image/video generation;
+- production LLM execution;
+- generative character consistency;
+- output security scanning of provider-generated media;
+- centralized Overseer report persistence;
+- provider credential management.
+
+## Validation status
+
+The historical repository evidence recorded 25 F03 tests and a 79-test combined floor run. The new v2 contract changes require fresh CI validation before merge.
