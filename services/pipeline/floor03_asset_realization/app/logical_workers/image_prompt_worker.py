@@ -18,6 +18,7 @@ from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     GenerationInputMode,
     MotionBeat,
     ReferenceBinding,
+    ReferenceStrategy,
     ReferenceUse,
     SafeRegion,
     VisualPromptPlan,
@@ -198,8 +199,40 @@ class ImagePromptWorker:
 
         return references, sorted(inputs, key=lambda item: item.value)
 
+    @staticmethod
+    def _reference_strategy(
+        references: List[ReferenceBinding],
+        chain_requested: bool,
+    ) -> ReferenceStrategy:
+        reference_first = any(
+            ref.use in {
+                ReferenceUse.CHARACTER_IDENTITY,
+                ReferenceUse.PROP,
+                ReferenceUse.COMPOSITION,
+                ReferenceUse.STYLE,
+                ReferenceUse.STAGE,
+                ReferenceUse.TARGET_STATE,
+                ReferenceUse.VIDEO,
+            }
+            for ref in references
+        )
+        last_frame_chain = chain_requested or any(
+            ref.use == ReferenceUse.LAST_FRAME for ref in references
+        )
+        if reference_first and last_frame_chain:
+            return ReferenceStrategy.HYBRID
+        if reference_first:
+            return ReferenceStrategy.REFERENCE_FIRST
+        if last_frame_chain:
+            return ReferenceStrategy.LAST_FRAME_CHAIN
+        return ReferenceStrategy.NONE
+
     @classmethod
-    def _continuity(cls, scene: SceneSpecification) -> ContinuityPlan:
+    def _continuity(
+        cls,
+        scene: SceneSpecification,
+        references: List[ReferenceBinding],
+    ) -> ContinuityPlan:
         structured = scene.visual_intent_structured or {}
         raw_mode = str(
             structured.get("continuity_mode")
@@ -211,13 +244,16 @@ class ImagePromptWorker:
         except ValueError:
             mode = ContinuityMode.INDEPENDENT
 
+        chain_requested = bool(
+            structured.get("chain_from_previous")
+            or scene.continuity_rules.get("chain_from_previous")
+            or mode in {ContinuityMode.SCENE_END, ContinuityMode.CHAIN_FROM_PREVIOUS}
+        )
+
         return ContinuityPlan(
             mode=mode,
-            chain_from_previous=bool(
-                structured.get("chain_from_previous")
-                or scene.continuity_rules.get("chain_from_previous")
-                or mode in {ContinuityMode.SCENE_END, ContinuityMode.CHAIN_FROM_PREVIOUS}
-            ),
+            reference_strategy=cls._reference_strategy(references, chain_requested),
+            chain_from_previous=chain_requested,
             locked_subject_ids=list(scene.character_references),
             invariant_attributes=cls._string_list(
                 structured.get("subject_constraints")
@@ -351,7 +387,7 @@ class ImagePromptWorker:
             shot_type = self._shot_type(sc)
             coverage_role = self._coverage_role(sc, shot_type)
             references, generation_inputs = self._references(sc)
-            continuity = self._continuity(sc)
+            continuity = self._continuity(sc, references)
             structured = sc.visual_intent_structured or {}
 
             negative_values = structured.get("negative_constraints") or sc.continuity_rules.get(
