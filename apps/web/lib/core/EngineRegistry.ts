@@ -13,6 +13,12 @@ import {
   EngineVisibility,
   EngineCategory,
 } from "./EngineContracts";
+import {
+  getCompatibilityEngineConfiguration,
+  getCompatibilityEngineContracts,
+  getConfigurationDefaults,
+  validateEngineConfigurationSchema,
+} from "./EngineConfigurationContracts";
 
 // System Engine Catalog Metadata mapping
 const SYSTEM_ENGINES_METADATA: Record<
@@ -143,6 +149,12 @@ class EngineRegistryClass {
    * Translates a system WorkflowManifest into an EngineDefinition.
    */
   private mapSystemManifest(id: string, manifest: WorkflowManifest): EngineDefinition {
+    const configuration =
+      manifest.configuration ?? getCompatibilityEngineConfiguration(id);
+    const contracts =
+      manifest.contracts ?? getCompatibilityEngineContracts(id);
+    const configDefaults = getConfigurationDefaults(configuration);
+
     const meta = SYSTEM_ENGINES_METADATA[id] || {
       name: manifest.name || id,
       description: `Production execution engine for ${manifest.name || id}`,
@@ -166,17 +178,26 @@ class EngineRegistryClass {
         workflow: manifest.id,
       },
       defaults: {
-        difficulty: "medium",
-        tone: "Challenging",
-        voice: "neutral",
-        ratio: "9:16",
-        retentionPolicy: "72 hours",
+        difficulty: configDefaults.difficulty,
+        tone: configDefaults.tone,
+        audience: configDefaults.audience,
+        voice: configDefaults.voice,
+        ratio: configDefaults.ratio,
+        thumbnailStyle: configDefaults.thumbnailStyle,
+        retentionPolicy:
+          configDefaults.retentionHours === 0
+            ? "never"
+            : configDefaults.retentionHours !== undefined
+              ? String(configDefaults.retentionHours) + " hours"
+              : undefined,
       },
       capabilities: meta.capabilities,
       validation: {
-        schemaVersion: "1.0",
+        schemaVersion: configuration.schemaVersion,
         validatedAt: new Date().toISOString(),
       },
+      configuration,
+      contracts,
       manifestVersion: manifest.version || "1.0",
       configVersion: 1,
       createdAt: new Date(0).toISOString(),
@@ -202,11 +223,33 @@ class EngineRegistryClass {
         workflow: eng.workflow || "custom-workflow",
       },
       defaults: {
-        difficulty: eng.difficulty || "medium",
-        tone: eng.tone || "General",
-        voice: eng.voice || "alloy",
-        ratio: eng.ratio || "9:16",
-        retentionPolicy: eng.retention || "72 hours",
+        difficulty:
+          eng.difficulty ??
+          eng.configuration?.fields?.find((f: any) => f.key === "difficulty")?.defaultValue ??
+          "medium",
+        tone:
+          eng.tone ??
+          eng.configuration?.fields?.find((f: any) => f.key === "tone")?.defaultValue ??
+          "General",
+        audience:
+          eng.audience ??
+          eng.configuration?.fields?.find((f: any) => f.key === "audience")?.defaultValue,
+        voice:
+          eng.voice ??
+          eng.configuration?.fields?.find((f: any) => f.key === "voice")?.defaultValue ??
+          "alloy",
+        ratio:
+          eng.ratio ??
+          eng.configuration?.fields?.find((f: any) => f.key === "ratio")?.defaultValue ??
+          "9:16",
+        thumbnailStyle:
+          eng.thumbnailStyle ??
+          eng.configuration?.fields?.find((f: any) => f.key === "thumbnailStyle")?.defaultValue,
+        retentionPolicy:
+          eng.retention ??
+          String(
+            eng.configuration?.fields?.find((f: any) => f.key === "retentionHours")?.defaultValue ?? 72
+          ) + " hours",
       },
       capabilities: eng.capabilities || {
         supportsDraftReview: true,
@@ -215,9 +258,13 @@ class EngineRegistryClass {
         supportsGeoMode: eng.category === "QUIZ",
       },
       validation: eng.validation || {
-        schemaVersion: "1.0",
+        schemaVersion: eng.configuration?.schemaVersion || "1.0",
         validatedAt: new Date().toISOString(),
       },
+      configuration:
+        eng.configuration ?? getCompatibilityEngineConfiguration(eng.id),
+      contracts:
+        eng.contracts ?? getCompatibilityEngineContracts(eng.id),
       manifestVersion: eng.version || "1.0",
       configVersion: eng.configVersion || 1,
       createdAt: eng.createdAt || new Date().toISOString(),
@@ -306,6 +353,10 @@ class EngineRegistryClass {
       errors.push(`Unsupported render profile: ${definition.generationConfig.renderProfile}`);
     }
 
+    if (definition.configuration) {
+      errors.push(...validateEngineConfigurationSchema(definition.configuration).errors);
+    }
+
     return {
       valid: errors.length === 0,
       errors,
@@ -342,6 +393,10 @@ class EngineRegistryClass {
       configVersion: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      configuration:
+        definition.configuration ?? getCompatibilityEngineConfiguration(engineId),
+      contracts:
+        definition.contracts ?? getCompatibilityEngineContracts(engineId),
       capabilities: definition.capabilities || {
         supportsDraftReview: true,
         supportsQuestionEditing: definition.category === "QUIZ",
