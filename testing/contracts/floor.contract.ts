@@ -41,9 +41,17 @@ export const CANONICAL_FLOOR_CONTRACTS: Record<FloorId, FloorContractExpectation
   floor03_asset_realization: {
     floorId: "floor03_asset_realization",
     name: "Floor 03 Asset Realization",
-    expectedInputs: ["scenes"],
-    expectedOutputs: ["assetPayload"],
-    requiredMetadataKeys: ["aspectRatio"],
+    expectedInputs: ["floor02Handoff"],
+    expectedOutputs: ["assetPlan", "assetPlanIR", "assetManifest"],
+    requiredMetadataKeys: [
+      "assetPlanId",
+      "assetPlanVersion",
+      "platform",
+      "aspectRatio",
+      "resolution",
+      "provenance",
+      "schemaVersion",
+    ],
   },
   floor04_media_synthesis: {
     floorId: "floor04_media_synthesis",
