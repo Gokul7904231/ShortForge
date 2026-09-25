@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     FLOOR_ID: str = "floor03_asset_realization"
-    FLOOR_VERSION: str = "2.0.0"
+    FLOOR_VERSION: str = "2.1.0"
     DEFAULT_API_KEY: str = "factoryos-floor03-dev-key"
     STORAGE_PATH: str = "services/pipeline/floor03_asset_realization/storage/asset_memory.json"
     MAX_MEMORY_RECORDS: int = 1000
