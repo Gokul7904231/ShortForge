@@ -13,6 +13,16 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+class CoverageRole(str, Enum):
+    ESTABLISH = "establish"
+    ACTION = "action"
+    REACTION = "reaction"
+    DETAIL = "detail"
+    TRANSITION = "transition"
+    PAYOFF = "payoff"
+    OVERLAY = "overlay"
+
+
 class VisualShotType(str, Enum):
     BROLL = "BROLL"
     ESTABLISHING = "ESTABLISHING"
@@ -84,6 +94,9 @@ class CameraSpec(BaseModel):
     shot_type: VisualShotType = VisualShotType.BROLL
     framing: Optional[str] = None
     camera_angle: Optional[str] = None
+    camera_height: Optional[str] = None
+    lens_profile: Optional[str] = None
+    camera_body: Optional[str] = None
     focal_length_mm: Optional[float] = Field(default=None, ge=1.0, le=400.0)
     movement: Optional[str] = None
     subject_position: Optional[str] = None
@@ -110,6 +123,8 @@ class ReferenceBinding(BaseModel):
     reference_id: str = Field(..., min_length=1)
     use: ReferenceUse
     subject_id: Optional[str] = None
+    source_scene_id: Optional[str] = None
+    source_asset_id: Optional[str] = None
     required: bool = True
 
 
@@ -137,6 +152,7 @@ class VisualPromptPlan(BaseModel):
 
     prompt_text: str = Field(..., min_length=1)
     negative_prompt: Optional[str] = None
+    lighting: Optional[str] = None
     camera: CameraSpec = Field(default_factory=CameraSpec)
     style_tokens: List[str] = Field(default_factory=list)
     subject_constraints: List[str] = Field(default_factory=list)
@@ -165,6 +181,7 @@ class AssetPlanNode(BaseModel):
     source_scene_version: int = Field(default=1, ge=1)
     source_beat_id: Optional[str] = None
     sequence_index: int = Field(..., ge=1)
+    coverage_role: CoverageRole = CoverageRole.ACTION
     visual: VisualPromptPlan
     dependencies: List[AssetDependency] = Field(default_factory=list)
     target_duration_seconds: float = Field(..., ge=0.0)
