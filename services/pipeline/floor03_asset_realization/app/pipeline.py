@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from time import perf_counter
 from pathlib import Path
+from uuid import uuid4
 from typing import Any, Dict, List, Optional, Tuple
 
 import structlog
@@ -264,9 +265,9 @@ class Floor03Pipeline:
     ) -> Floor03HandoffPayload:
         """Execute targeted single-scene asset regeneration.
 
-        Increments target scene asset versions (asset_version v1 -> v2) with new asset_id references.
-        Preserves exact byte and semantic asset specification equality for unaffected scenes.
-        Increments script_version (v1 -> v2) and asset_plan_version (v1 -> v2).
+        Increments target scene asset versions with a new asset identity.
+        Preserves exact specification equality for unaffected scenes.
+        Increments asset_plan_version while preserving upstream ScriptIR version.
         """
         logger.info("regenerate_scene_assets_started", target_scene_id=target_scene_id)
 
@@ -277,7 +278,6 @@ class Floor03Pipeline:
             if req.scene_id == target_scene_id:
                 target_visual_found = True
                 updated_req = req.model_copy(deep=True)
-                from uuid import uuid4
                 updated_req.asset_id = str(uuid4())
                 updated_req.asset_version += 1
                 updated_req.scene_version += 1
@@ -294,10 +294,8 @@ class Floor03Pipeline:
 
         new_payload = current_payload.model_copy(deep=True)
         new_payload.asset_plan_version += 1
-        new_payload.script_version += 1
         new_payload.visual_asset_requirements = updated_visuals
         new_payload.audio_asset_requirements = updated_audios
-        new_payload.manifest.script_version += 1
 
         new_prov = ProvenanceEntry(
             evidence_type=EvidenceType.DETERMINISTIC_RULE,
