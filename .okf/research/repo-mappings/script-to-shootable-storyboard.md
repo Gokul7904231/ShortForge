@@ -17,3 +17,14 @@ Not adopted:
 - Rights/safety/release authority outside F03's scope.
 
 Status: CLEAN_ROOM_PATTERN_EXTRACTION
+
+## Current implementation status — 2026-09-25
+
+The clean-room F03 implementation now reflects the mapped typed-artifact pattern with:
+- self-contained `AssetPlanNode.asset_id`;
+- explicit `PlanLineage` and upstream `source_fingerprint`;
+- dependency graph validation and transitive repair impact;
+- regeneration remapping that preserves dependency and reference lineage;
+- semantic plan/node fingerprints independent of runtime asset identities.
+
+Status remains: CLEAN_ROOM_PATTERN_EXTRACTION.
