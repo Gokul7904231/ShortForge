@@ -1,6 +1,5 @@
-import { RenderQueueManager } from "../rendering/RenderQueueManager";
 import { B2StorageManager } from "../storage/b2-storage-manager";
-import { AIExecutionMode } from "../rendering/RenderQueueManager";
+import type { AIExecutionMode } from "../rendering/RenderQueueManager";
 
 export interface ProviderAnalytics {
   provider: string;
@@ -64,9 +63,6 @@ export class AnalyticsEngine {
 
   static getSummary(): SystemPerformanceSummary {
     const storageTelemetry = B2StorageManager.getTelemetry();
-    const workers = RenderQueueManager.getWorkers();
-    const activeJobs = RenderQueueManager.getActiveJobs();
-
     const rendererBreakdown: RendererAnalytics[] = [
       {
         vendor: "PERSISTENT_WORKER",
