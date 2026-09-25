@@ -95,7 +95,7 @@ export interface RenderArtifact {
   readonly producedAt?: string;
   readonly compiler?: "FFMPEG" | "HYPERFRAMES";
   readonly compilerVersion?: string;
-  readonly provider?: "LOCAL" | "AZURE_VM" | "DISTRIBUTED";
+  readonly provider?: "LOCAL" | "DISTRIBUTED";
   readonly executionClass?: "PRODUCTION" | "PROTOTYPE" | "UNVERIFIED";
 }
 
