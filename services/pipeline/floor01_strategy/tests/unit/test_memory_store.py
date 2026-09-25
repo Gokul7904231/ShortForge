@@ -78,6 +78,15 @@ def test_memory_store_thread_concurrency():
         assert len(topics) == 20
 
 
+def test_pipeline_uses_memory_root_for_report_artifacts(tmp_path):
+    from floor01_strategy.app.pipeline import Floor01Pipeline
+
+    store = StrategyMemoryStore(storage_path=str(tmp_path / "memory.json"))
+    pipeline = Floor01Pipeline(memory_store=store)
+
+    assert pipeline.artifact_report_dir == tmp_path.resolve() / "reports"
+
+
 def test_corruption_recovery_clears_stale_request_reservations(tmp_path):
     memory_path = tmp_path / "memory.json"
     store = StrategyMemoryStore(storage_path=str(memory_path))
