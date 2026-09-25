@@ -310,7 +310,7 @@ Do not:
 - bypass F07 because the renderer reported success
 - import external architecture as authority without .okf review
 
-## 15. Engineering stack priority rule
+## 16. Engineering stack priority rule
 
 For media-generation architecture, the default comparison baseline is:
 
@@ -323,7 +323,7 @@ For media-generation architecture, the default comparison baseline is:
 
 A new engine may complement this stack, but must not silently replace any canonical boundary.
 
-## 16. Remotion is a selected foundation, not semantic authority
+## 17. Remotion is a selected foundation, not semantic authority
 
 ShortForge adopts Remotion for rich programmatic compositions where its React/frame-clock composition model is advantageous.
 
@@ -345,7 +345,7 @@ F07
 
 Remotion completion is never itself verification.
 
-## 17. AgentTube is the selected scene-lifecycle pattern source
+## 18. AgentTube is the selected scene-lifecycle pattern source
 
 ShortForge adopts the clean-room engineering patterns demonstrated by AgentTube for:
 - durable scene manifests
@@ -358,19 +358,19 @@ ShortForge adopts the clean-room engineering patterns demonstrated by AgentTube 
 
 These patterns are reimplemented as native ShortForge contracts under Overseer, SCL, AgentRuntime, Healer/ReMaker, CAS, and F07 boundaries.
 
-## 18. Current external evidence
+## 19. Current external evidence
 
 The current public AgentTube repository documents approval-first publishing, durable scene manifests, Scene Repair Studio, fail-closed narration, and persistent production state. These observations are current external evidence and remain subject to clean-room assimilation and ShortForge verification.
 
 The current Remotion documentation confirms frame-addressed timing through useCurrentFrame and frame-based sequencing/timing APIs. These are the basis for our frame-clock assimilation.
 
-## 19. Licensing gate
+## 20. Licensing gate
 
 Remotion is source-available software under its own proprietary Remotion License rather than an OSI-approved open-source license. The current official FAQ states that individuals and organizations/teams up to three people can use the Free License under the published terms; larger organizations may require a Company License, and automation products can fall under the Automators licensing model when the Company License applies.
 
 ShortForge must verify the actual organizational and automation licensing situation before production rollout. License status is a release gate, not an implementation detail.
 
-## 20. Stack change gate
+## 21. Stack change gate
 
 Before adopting another composition or scene lifecycle system, the proposal must compare against:
 - TimelineIR
