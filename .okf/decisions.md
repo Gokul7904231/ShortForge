@@ -468,3 +468,30 @@ Use this prompt whenever a new architecture decision needs to be evaluated and f
 > 7. rollback / rejection condition
 >
 > If the proposal contradicts a locked decision, do not silently overwrite it. Record the contradiction and require explicit architecture review before promotion.
+
+
+## 26. Mandatory full-.okf decision gate
+
+All future non-trivial architecture decisions must begin with a complete end-to-end review of the current .okf tree.
+
+The decision protocol is canonical in .okf/decision-protocol.md.
+
+The review must extract existing canonical rules, current implementation vs target design, known contradictions, security and authority boundaries, relevant memory and research constraints, applicable repo mappings, production-helper evidence, and current tests / executable implementation.
+
+No new idea may be filed as an architectural decision without this review.
+
+## 27. Engineering stack decision
+
+ShortForge media-engineering decisions must first compare against TimelineIR, Remotion, AgentTube-derived scene lifecycle mechanisms, RenderFabric, and FFmpeg.
+
+Remotion is the selected primary programmatic composition foundation, subject to license verification.
+
+AgentTube is the selected clean-room engineering pattern source for scene manifests, durable checkpoints, audio-first timing, local-first execution, and selective scene repair.
+
+These decisions extend existing TimelineIR, CAS, bounded-repair, and RenderFabric architecture rather than replacing it.
+
+## 28. Production-helper routine
+
+production-helper is a routine engineering validation station. Security-sensitive, rendering-sensitive, distributed-worker, callback, quota, or production-authority changes must consult its evidence and run the relevant available checks.
+
+Helper output is evidence, not architectural authority.
