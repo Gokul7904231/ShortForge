@@ -34,7 +34,7 @@ service = Floor01Service()
 def plan_strategy(payload: Floor01Input) -> Floor01HandoffPayload:
     """Submit topic query and constraints to receive a validated Floor01HandoffPayload."""
     try:
-        return service.plan_strategy(payload)
+        return service.plan_strategy(payload, strict_rejection=True)
     except Floor01Error as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -58,7 +58,7 @@ def plan_strategy(payload: Floor01Input) -> Floor01HandoffPayload:
 def generate_execution_report(payload: Floor01Input) -> FloorExecutionReport:
     """Submit topic query and constraints to receive the Overseer FloorExecutionReport."""
     try:
-        _, report = service.generate_execution_report(payload)
+        _, report = service.generate_execution_report(payload, strict_rejection=True)
         return report
     except Floor01Error as exc:
         raise HTTPException(
