@@ -197,3 +197,17 @@ A future cross-system ID reconciliation can replace the alias only after a dedic
 The existing Overseer DAG planner still conditionally inserts F00 for certain command classes. This v2 change makes the F01 service itself evidence-aware and strict-capable, but it does not silently rewrite the global DAG policy.
 
 Before autonomous production training, reconcile the repository's existing `.okf` rule that autonomous F01 execution requires F00 evidence with the current TaskDAG planning behavior.
+
+## Verification Follow-up — 2026-09-25
+
+After initial v2 branch verification exposed integration mismatches, the following compatibility/runtime issues were corrected without changing the F01 architecture:
+
+- EngineJobSnapshot.effectiveConfig now declares audience and thumbnailStyle, matching the immutable ProductionSpec snapshot emitted by the control plane.
+- Overseer preserves the historical strategyPayload event/return shape while sourcing it exclusively from the canonical Python F01 handoff.
+- Removed an unsupported style-jsx block embedded inside the SVG status-ring tree.
+- Declared the existing @travisvn/edge-tts runtime dependency in apps/web/package.json to match the lockfile and the actual VoiceFabric import.
+- CI runtime moved from Node 20 to Node 22 because the current AI SDK dependency set declares Node >=22 engines.
+- F01 service authentication now reads the declared FLOOR01_SERVICE_API_KEY setting; a regression test verifies correct-key acceptance and wrong-key rejection.
+- CI now includes an explicit Python Floor 01 v2 test job covering the service/test tree. This closes the previous gap where F01's Python suite existed but was not executed by branch CI.
+
+These are compatibility and verification corrections only. They do not expand F01 authority or create a second strategy implementation.
