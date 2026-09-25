@@ -271,7 +271,7 @@ class Floor03Pipeline:
                     f"Idempotency conflict: request_id '{inp.request_id}' already associated with script_id '{cached_payload.script_id}'."
                 )
             logger.info("floor03_pipeline_idempotent_hit", request_id=inp.request_id)
-            return cached_payload
+            return cached_payload, {}
 
         # 2. Authoritative Platform Resolution
         platform, aspect_ratio, resolution, plat_prov = self.resolve_platform_spec(inp)
@@ -521,6 +521,10 @@ class Floor03Pipeline:
                 updated_req.asset_version += 1
                 updated_req.scene_version += 1
                 updated_req.prompt_text = f"{req.prompt_text} ({new_prompt_instruction})"
+                if updated_req.scene_plan is not None:
+                    updated_req.scene_plan = updated_req.scene_plan.model_copy(
+                        update={"prompt_text": updated_req.prompt_text}
+                    )
                 updated_visuals.append(updated_req)
             else:
                 # Unaffected scenes: Byte and semantic equivalence preserved
