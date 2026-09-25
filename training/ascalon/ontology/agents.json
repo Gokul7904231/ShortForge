@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonCanonicalAgents",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Authoritative canonical registry of ShortForge / FactoryOS cognitive and sovereign agents",
   "agents": [
     {
@@ -180,12 +180,13 @@
       "category": "DOMAIN_WORKER",
       "authorityLevel": "OPERATIONAL",
       "assignedFloor": "floor03_asset_realization",
-      "description": "Compiles trusted Floor 02 scene semantics into provider-neutral visual scene plans and the canonical Floor 03 AssetPlanIR, including shot/camera guidance, safe text regions, continuity keys, dependency edges, and bounded regeneration impact.",
+      "description": "Compiles trusted Floor 02 scene semantics into the canonical provider-neutral AssetPlanIR, including shot/camera guidance, normalized safe text regions, subject constraints, reference bindings, continuity mode, temporal motion beats, evidence/causal lineage, dependency edges, semantic fingerprints, and bounded downstream repair impact. It does not select providers or execute media.",
       "isFloor": false,
       "sourceLocations": [
         "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
         "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
-        "apps/web/agents/scene-agent.ts"
+        "apps/web/agents/scene-agent.ts",
+        "services/pipeline/floor03_asset_realization/app/core/identity.py"
       ]
     },
     {
