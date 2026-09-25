@@ -45,7 +45,11 @@ export class GoogleDriveClient {
       throw new Error("GOOGLE_DRIVE_MCP_SCOPE_MODE must be readonly or readwrite.");
     }
 
-    this.rootFolderId = process.env.GOOGLE_DRIVE_MCP_ROOT_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID || undefined;
+    this.rootFolderId =
+      process.env.GOOGLE_DRIVE_MCP_ROOT_FOLDER_ID ||
+      process.env.GOOGLE_DRIVE_FOLDER_ID ||
+      undefined;
+
     const auth = this.buildAuth();
     this.drive = google.drive({ version: "v3", auth });
   }
@@ -69,7 +73,7 @@ export class GoogleDriveClient {
     if (!clientId || !clientSecret || !refreshToken) {
       throw new Error(
         "Configure GOOGLE_APPLICATION_CREDENTIALS or " +
-        "GOOGLE_DRIVE_CLIENT_ID + GOOGLE_DRIVE_CLIENT_SECRET + GOOGLE_DRIVE_REFRESH_TOKEN."
+          "GOOGLE_DRIVE_CLIENT_ID + GOOGLE_DRIVE_CLIENT_SECRET + GOOGLE_DRIVE_REFRESH_TOKEN."
       );
     }
 
@@ -104,8 +108,14 @@ export class GoogleDriveClient {
     };
   }
 
-  async list(params: { folderId?: string; pageSize?: number; pageToken?: string; query?: string }) {
+  async list(params: {
+    folderId?: string;
+    pageSize?: number;
+    pageToken?: string;
+    query?: string;
+  }) {
     const clauses = [this.scopedParentQuery(params.folderId), "trashed = false"];
+
     if (params.query) {
       const literal = escapeDriveLiteral(params.query);
       clauses.push(`name contains '${literal}'`);
@@ -116,7 +126,8 @@ export class GoogleDriveClient {
       pageSize: Math.min(Math.max(params.pageSize || 50, 1), 1000),
       pageToken: params.pageToken,
       orderBy: "modifiedTime desc",
-      fields: "nextPageToken, files(id,name,mimeType,size,createdTime,modifiedTime,parents,webViewLink)",
+      fields:
+        "nextPageToken, files(id,name,mimeType,size,createdTime,modifiedTime,parents,webViewLink)",
       spaces: "drive",
       includeItemsFromAllDrives: true,
       supportsAllDrives: true,
@@ -128,14 +139,26 @@ export class GoogleDriveClient {
     };
   }
 
-  async search(params: { query: string; pageSize?: number; pageToken?: string }) {
+  async search(params: {
+    query: string;
+    folderId?: string;
+    pageSize?: number;
+    pageToken?: string;
+  }) {
     const literal = escapeDriveLiteral(params.query);
+    const clauses = [
+      this.scopedParentQuery(params.folderId),
+      `name contains '${literal}'`,
+      "trashed = false",
+    ];
+
     const res = await this.drive.files.list({
-      q: `name contains '${literal}' and trashed = false`,
+      q: clauses.join(" and "),
       pageSize: Math.min(Math.max(params.pageSize || 50, 1), 1000),
       pageToken: params.pageToken,
       orderBy: "modifiedTime desc",
-      fields: "nextPageToken, files(id,name,mimeType,size,createdTime,modifiedTime,parents,webViewLink)",
+      fields:
+        "nextPageToken, files(id,name,mimeType,size,createdTime,modifiedTime,parents,webViewLink)",
       spaces: "drive",
       includeItemsFromAllDrives: true,
       supportsAllDrives: true,
@@ -150,7 +173,8 @@ export class GoogleDriveClient {
   async metadata(fileId: string) {
     const res = await this.drive.files.get({
       fileId,
-      fields: "id,name,mimeType,size,createdTime,modifiedTime,parents,webViewLink,description,md5Checksum,capabilities",
+      fields:
+        "id,name,mimeType,size,createdTime,modifiedTime,parents,webViewLink,description,md5Checksum,capabilities",
       supportsAllDrives: true,
     });
     return res.data;
@@ -159,6 +183,7 @@ export class GoogleDriveClient {
   async createFolder(name: string, parentId?: string) {
     this.assertWriteScope();
     const parent = parentId || this.rootFolderId;
+
     const res = await this.drive.files.create({
       requestBody: {
         name,
@@ -168,11 +193,19 @@ export class GoogleDriveClient {
       fields: "id,name,mimeType,parents,createdTime,webViewLink",
       supportsAllDrives: true,
     });
+
     return res.data;
   }
 
-  async upload(params: { sourcePath: string; folderId?: string; fileName?: string; mimeType?: string; description?: string }) {
+  async upload(params: {
+    sourcePath: string;
+    folderId?: string;
+    fileName?: string;
+    mimeType?: string;
+    description?: string;
+  }) {
     this.assertWriteScope();
+
     const source = assertAllowedUploadPath(params.sourcePath);
     const parent = params.folderId || this.rootFolderId;
     const fileName = params.fileName || path.basename(source);
@@ -206,10 +239,10 @@ export class GoogleDriveClient {
     const safePath = assertAllowedDownloadPath(destinationPath);
     const meta = await this.metadata(fileId);
 
-    const response = await this.drive.files.get(
+    const response = (await this.drive.files.get(
       { fileId, alt: "media", supportsAllDrives: true },
       { responseType: "stream" }
-    ) as { data: NodeJS.ReadableStream };
+    )) as { data: NodeJS.ReadableStream };
 
     await new Promise<void>((resolve, reject) => {
       const output = fs.createWriteStream(safePath);
@@ -230,10 +263,10 @@ export class GoogleDriveClient {
     const safePath = assertAllowedDownloadPath(destinationPath);
     const meta = await this.metadata(fileId);
 
-    const response = await this.drive.files.export(
+    const response = (await this.drive.files.export(
       { fileId, mimeType },
       { responseType: "stream" }
-    ) as { data: NodeJS.ReadableStream };
+    )) as { data: NodeJS.ReadableStream };
 
     await new Promise<void>((resolve, reject) => {
       const output = fs.createWriteStream(safePath);
