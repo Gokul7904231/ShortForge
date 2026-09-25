@@ -185,6 +185,9 @@ jobs:
             }' \
             http://127.0.0.1:18080/v1/plan | python -c "import json,sys; d=json.load(sys.stdin); assert d['floor_id']=='floor01_strategy'; assert d['handoff_status']=='VALIDATED'; print('F01 container handoff validated')"
 
+          # The canonical execution report is a required durable audit artifact and must be writable by the service user.
+          test -n "$(docker exec floor01-ci sh -c 'find /app/services/pipeline/floor01_strategy/data/reports -maxdepth 1 -type f -name "floor01_execution_*.json" -print -quit' 2>/dev/null)"
+
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
             -H "Content-Type: application/json" \
             -H "X-API-Key: wrong-key" \
