@@ -217,6 +217,10 @@ class StrategyDecisionRecord(BaseModel):
 class Floor01HandoffPayload(BaseModel):
     plan_id: str = Field(default_factory=lambda: str(uuid4()))
     request_id: str
+    input_fingerprint: str = Field(
+        default="",
+        description="SHA-256 fingerprint of the normalized request excluding request_id.",
+    )
     floor_id: str = "floor01_strategy"
     floor_version: str = "2.0.0"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
