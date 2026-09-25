@@ -215,3 +215,10 @@ F03 still does not:
 - import third-party code, prompts, tests, models, or runtime dependencies.
 
 Fresh CI remains the promotion gate.
+
+
+## Guardian compatibility correction
+
+The Guardian contract gate surfaced a packaging/layout issue rather than an F03 semantic failure: tests import `factoryos.guardian.*`, while the canonical implementation is stored at `services/pipeline/guardian`.
+
+The branch now exposes that canonical implementation through a root Python compatibility namespace at `factoryos/guardian` and triggers the floor gate when that namespace changes. This keeps Guardian runtime code single-sourced.
