@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
     const workerPool = (body.workerPool || request.headers.get("x-worker-pool") || "").toLowerCase();
 
     // Enforce allowed worker pools
-    if (workerPool !== "azure" && workerPool !== "github-actions" && workerPool !== "basic-fastapi" && workerPool !== "basic") {
+    if (workerPool !== "github-actions" && workerPool !== "basic-fastapi" && workerPool !== "basic") {
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid or missing workerPool. Allowed values: 'azure', 'github-actions', 'basic-fastapi'. Received: '${workerPool}'`,
+          error: `Invalid or missing workerPool. Allowed values: 'github-actions', 'basic-fastapi', 'basic'. Received: '${workerPool}'`,
         },
         { status: 400 }
       );
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       for (const doc of snapshot.docs) {
         const data = doc.data();
         const jobStatus = data.status;
-        const jobTier = data.tier || (data.targetWorkerPool === "azure" ? "ADMIN" : "BASIC");
+        const jobTier = data.tier || "BASIC";
 
         // Stale job detection
         const isStaleProcessing =
@@ -87,16 +87,9 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // STRICT TIER ISOLATION SECURITY BOUNDARY:
-        // Azure workers claim ONLY tier === "ADMIN"
-        // Basic FastAPI & GitHub Actions workers claim ONLY tier === "BASIC"
-        if (workerPool === "azure") {
-          if (jobTier === "ADMIN") {
-            targetDoc = doc;
-            targetJobData = data;
-            break;
-          }
-        } else if (workerPool === "github-actions" || workerPool === "basic-fastapi" || workerPool === "basic") {
+        // Legacy worker claim API is BASIC-only. FactoryOS/Render Fabric remains
+        // the authoritative production dispatch path.
+        if (workerPool === "github-actions" || workerPool === "basic-fastapi" || workerPool === "basic") {
           if (jobTier === "BASIC" || !data.tier) {
             targetDoc = doc;
             targetJobData = data;
@@ -131,7 +124,7 @@ export async function POST(request: NextRequest) {
         id: targetDoc.id,
         jobId: targetDoc.id,
         userId: targetJobData.userId || "anonymous",
-        tier: targetJobData.tier || (workerPool === "azure" ? "ADMIN" : "BASIC"),
+        tier: targetJobData.tier || "BASIC",
         targetWorkerPool: targetJobData.targetWorkerPool || workerPool,
         workerPool,
         topic: targetJobData.topic || "Untitled Short",
@@ -154,47 +147,11 @@ export async function POST(request: NextRequest) {
       const inMemoryJobs = getInMemoryJobs();
       const nowMs = Date.now();
       for (const [id, data] of inMemoryJobs.entries()) {
-        const jobTier = (data as any).tier || ((data as any).targetWorkerPool === "azure" ? "ADMIN" : "BASIC");
+        const jobTier = (data as any).tier || "BASIC";
         const jobStatus = data.status;
         const isStale = jobStatus === "processing" && (data as any).startedAt && nowMs - new Date((data as any).startedAt).getTime() > STALE_JOB_LEASE_MS;
 
         if (jobStatus === "queued" || isStale) {
-          if (workerPool === "azure" && jobTier === "ADMIN") {
-            const executionToken = `exec_${crypto.randomBytes(24).toString("hex")}`;
-            const startedAt = new Date().toISOString();
-            const updatedJob = {
-              ...data,
-              status: "processing" as const,
-              workerId,
-              workerPool,
-              startedAt,
-              claimedAt: startedAt,
-              executionToken,
-              attempts: ((data as any).attempts || 0) + 1,
-              updatedAt: startedAt,
-            };
-            inMemoryJobs.set(id, updatedJob as any);
-            finalClaim = {
-              id,
-              jobId: id,
-              userId: updatedJob.userId || "anonymous",
-              tier: "ADMIN",
-              targetWorkerPool: "azure",
-              workerPool: "azure",
-              topic: (updatedJob as any).topic || "Untitled Short",
-              style: (updatedJob as any).style || "",
-              script: updatedJob.script || "",
-              scenes: (updatedJob as any).scenes || [],
-              quizData: (updatedJob as any).quizData || null,
-              renderProfile: (updatedJob as any).renderProfile || "FAST_QUIZ",
-              contentType: updatedJob.contentType || "QUIZ_SHORTS",
-              durationSeconds: (updatedJob as any).durationSeconds || 45,
-              executionToken,
-              workerId,
-              startedAt,
-            };
-            break;
-          }
           if ((workerPool === "github-actions" || workerPool === "basic-fastapi" || workerPool === "basic") && (jobTier === "BASIC" || !(data as any).tier)) {
             const executionToken = `exec_${crypto.randomBytes(24).toString("hex")}`;
             const startedAt = new Date().toISOString();
