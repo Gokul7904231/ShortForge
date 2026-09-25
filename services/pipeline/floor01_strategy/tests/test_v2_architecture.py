@@ -1,16 +1,16 @@
 """Regression tests for Floor 01 v2 architecture."""
 
-from floors.floor01_strategy.app.core.novelty import hybrid_similarity
-from floors.floor01_strategy.app.core.research_gate import ResearchEvidenceGate
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.novelty import hybrid_similarity
+from floor01_strategy.app.core.research_gate import ResearchEvidenceGate
+from floor01_strategy.app.domain.handoff import (
     Floor01Input,
     HandoffStatus,
     ResearchContext,
     ResearchEvidenceRef,
 )
-from floors.floor01_strategy.app.infrastructure.llm_provider import LLMStrategyAdapter
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
-from floors.floor01_strategy.app.pipeline import Floor01Pipeline
+from floor01_strategy.app.infrastructure.llm_provider import LLMStrategyAdapter
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.pipeline import Floor01Pipeline
 
 
 def verified_research() -> ResearchContext:
@@ -110,8 +110,8 @@ def test_model_key_without_endpoint_never_claims_model_execution():
 def test_service_api_key_is_enforced(monkeypatch):
     import asyncio
     import pytest
-    from floors.floor01_strategy.app.core import security
-    from floors.floor01_strategy.app.core.config import Floor01Settings
+    from floor01_strategy.app.core import security
+    from floor01_strategy.app.core.config import Floor01Settings
 
     monkeypatch.setattr(
         security,
@@ -127,8 +127,8 @@ def test_service_api_key_is_enforced(monkeypatch):
 
 def test_production_auth_fails_closed_without_service_key(monkeypatch):
     import asyncio
-    from floors.floor01_strategy.app.core import security
-    from floors.floor01_strategy.app.core.config import Floor01Settings
+    from floor01_strategy.app.core import security
+    from floor01_strategy.app.core.config import Floor01Settings
 
     monkeypatch.setattr(
         security,
@@ -142,14 +142,14 @@ def test_production_auth_fails_closed_without_service_key(monkeypatch):
 
 
 def test_verified_research_is_required_by_default():
-    from floors.floor01_strategy.app.core.config import Floor01Settings
+    from floor01_strategy.app.core.config import Floor01Settings
     settings = Floor01Settings()
     assert settings.require_verified_research is True
 
 
 def test_candidate_selection_is_deterministic_on_score_ties():
-    from floors.floor01_strategy.app.intelligence.strategy_candidates import StrategyCandidateEvaluator
-    from floors.floor01_strategy.app.domain.handoff import (
+    from floor01_strategy.app.intelligence.strategy_candidates import StrategyCandidateEvaluator
+    from floor01_strategy.app.domain.handoff import (
         StrategyCandidate,
         StrategyResult,
         StrategyEvaluation,
