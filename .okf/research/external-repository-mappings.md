@@ -155,3 +155,39 @@ Before introducing a new media-engineering mechanism, review all relevant existi
 - experiment only
 
 Where an existing mapping already solves the problem, prefer assimilation over another parallel architecture.
+
+
+## 10. Gstack -> Forger Engineering Workforce
+
+Status: SELECTED ENGINEERING WORKFORCE PATTERN
+
+Gstack is mapped into the Forger Assembly rather than imported as a second runtime authority. Its specialist workflow structure informs planning, review, QA, security, benchmarking, debugging, DevEx, shipping, and retrospective roles.
+
+ShortForge mapping:
+- planning / architecture -> Forge Architect
+- implementation review -> Forge Builder
+- browser QA -> Forge Browser
+- security -> Forge Sentinel
+- benchmark / eval -> Forge Evaluator and Performance
+- investigation -> Forge Reliability
+- design / diagrams -> Forge Visualization
+- ship / canary -> Forge Release
+
+No gstack prompt, hook, browser assumption, or authority model is copied into FactoryOS.
+
+## 11. OWASP ZAP -> DAST Security Lane
+
+Status: ISOLATED SECURITY PROVIDER / ADOPTION CANDIDATE
+
+ZAP is mapped to Forge Sentinel and the production-helper security routine for authorized web/API dynamic testing.
+
+ShortForge uses ZAP as a complementary evidence source:
+- Semgrep = static source-pattern evidence
+- Strix = runtime adversarial evidence
+- ZAP = web/API protocol and DAST evidence
+
+ZAP active scans require explicit target authorization. Scanner output never replaces FactoryOS capability, evidence, or release gates.
+
+## 12. Engineering-workforce mapping rule
+
+Relevant repo mappings are now consumed through the Forger specialist that owns the concern. Where an existing mapping already provides a solution, Forgers should assimilate it rather than introduce a parallel subsystem.
