@@ -36,6 +36,7 @@ export interface ResearchRequest {
 }
 
 const DEV_FACTORY_INTEGRITY_SECRET = "factory_internal_integrity_key_dev_only";
+const MAX_RESEARCH_SOURCE_CAP = 20;
 
 function getIntegritySecret(): string {
   if (process.env.FACTORY_INTEGRITY_SECRET) {
@@ -55,7 +56,7 @@ export class ResearchRuntime {
   }
 
   /**
-   * Deterministic JSON Canonicalization (JCS-v1 compliant)
+   * Deterministic project canonicalization (JCS-v1).
    * Recursively sorts object keys and strips the integrity block.
    */
   static canonicalize(obj: any): string {
@@ -160,9 +161,21 @@ export class ResearchRuntime {
     // Production callers should supply engine research requirements (or an
     // explicit targetSourceCount); the methodology fallback exists only for
     // standalone/legacy invocations.
-    const maxSources = request.targetSourceCount
-      ?? request.researchContract?.minSources
-      ?? (methodology === "QUICK" ? 2 : 4);
+    const requestedSourceCount =
+      request.targetSourceCount ??
+      request.researchContract?.minSources ??
+      (methodology === "QUICK" ? 2 : 4);
+    const maxSources = Math.min(
+      MAX_RESEARCH_SOURCE_CAP,
+      Math.max(
+        1,
+        Math.floor(
+          Number.isFinite(Number(requestedSourceCount))
+            ? Number(requestedSourceCount)
+            : 1
+        )
+      )
+    );
 
     const acquiredSources = await this.reach.acquireSources({
       queryOrUrl: request.topic,
