@@ -1,4 +1,8 @@
-"""Floor 01 Guardian adapter."""
+"""Floor 01 Guardian adapter.
+
+Guardian retains its historical execution namespace `floor01` for compatibility;
+the production floor/handoff identity is `floor01_strategy`.
+"""
 
 from __future__ import annotations
 
@@ -19,7 +23,7 @@ from floors.floor01_strategy.app.pipeline import Floor01Pipeline
 
 logger = structlog.get_logger(__name__)
 
-FLOOR_ID = "floor01_strategy"
+FLOOR_ID = "floor01"
 
 
 def create_floor01_capability_registry() -> CapabilityRegistry:
