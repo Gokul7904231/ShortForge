@@ -1,5 +1,7 @@
 # FACTORYOS FRONTIER V3 — MASTER CURRENT STATE FORENSIC BASELINE
 
+> **SUPERSEDED FOR CURRENT STATE:** This historical baseline is retained for provenance. Its branch, commit, timestamps, and subsystem statuses are not current. For Floor 00, use `.okf/audits/floor00-final-audit.md`.
+
 **Audit Timestamp**: 2026-09-09T00:15:00+05:30  
 **Head Commit**: `chore/rename-shortforge` @ `44c9c2c`  
 **Governance**: ZERO FALSE GREENS | EVIDENCE BEFORE CLAIM | SOURCE CODE OVER DOCUMENTATION | NO SYNTHETIC SUCCESS  
