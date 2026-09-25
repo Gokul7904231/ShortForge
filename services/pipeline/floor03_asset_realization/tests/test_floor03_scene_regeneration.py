@@ -147,3 +147,47 @@ def test_asset_plan_rejects_unknown_or_cyclic_scene_dependencies(tmp_path):
         pipeline.execute(
             Floor03Input(floor02_payload=f02_cycle, request_id="req-invalid-graph-2")
         )
+
+
+
+def test_reference_asset_lineage_remaps_after_dependency_regeneration(tmp_path):
+    f02_payload = build_mock_floor02_payload()
+    scene_a = f02_payload.scenes[0]
+    scene_b = f02_payload.scenes[1]
+    scene_b.depends_on_scene_ids = [scene_a.scene_id]
+    scene_b.continuity_rules = {"continuity_mode": "chain_from_previous"}
+
+    pipeline = Floor03Pipeline(
+        memory_store=AssetMemoryStore(storage_path=str(tmp_path / "reference-memory.json"))
+    )
+    initial = pipeline.execute(
+        Floor03Input(floor02_payload=f02_payload, request_id="req-reference-lineage-1")
+    )
+    initial_plan = initial.asset_plan_ir
+    assert initial_plan is not None
+    initial_a_asset = next(
+        req.asset_id for req in initial.visual_asset_requirements if req.scene_id == scene_a.scene_id
+    )
+    node_b = next(node for node in initial_plan.nodes if node.scene_id == scene_b.scene_id)
+    last_frame_refs = [ref for ref in node_b.visual.references if ref.source_scene_id == scene_a.scene_id]
+    assert len(last_frame_refs) == 1
+    assert last_frame_refs[0].source_asset_id == initial_a_asset
+
+    updated = pipeline.regenerate_scene_assets(
+        current_payload=initial,
+        target_scene_id=scene_a.scene_id,
+        new_prompt_instruction="repair continuity anchor",
+    )
+    new_a_asset = next(
+        req.asset_id for req in updated.visual_asset_requirements if req.scene_id == scene_a.scene_id
+    )
+    assert new_a_asset != initial_a_asset
+
+    updated_node_b = next(
+        node for node in updated.asset_plan_ir.nodes if node.scene_id == scene_b.scene_id
+    )
+    updated_last_frame_refs = [
+        ref for ref in updated_node_b.visual.references if ref.source_scene_id == scene_a.scene_id
+    ]
+    assert len(updated_last_frame_refs) == 1
+    assert updated_last_frame_refs[0].source_asset_id == new_a_asset
