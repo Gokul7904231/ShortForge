@@ -952,3 +952,34 @@ Resolution:
 - Legacy records without stored fingerprints remain readable for backward compatibility; all new writes are fingerprinted.
 
 This strengthens replay safety without moving orchestration or provider authority into F03.
+
+
+## F03 Research Wave 4 — 2026-09-25
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Strengthen Floor 03's provider-neutral planning boundary with explicit node identity, semantic fingerprints, upstream lineage, and typed continuity/reference strategy. Preserve the canonical topology F02 -> (F03 || F04) -> F05.
+
+**Research expansion beyond the previous corpus:**
+- OpenLineage/OpenLineage — first-class lineage entities/facets and source-version provenance.
+- iterative/dvc — dependency-aware reproducibility and stable stage identity.
+- dagster-io/dagster — explicit blocking asset checks and inspectable metadata.
+- invoke-ai/InvokeAI — saved workflow/specification separated from executable graph submission.
+- divolleggett/character-consistency-skill — reference-first storyboard validation and reuse.
+- taylorzhou16/video-gen-en — layered storyboard/shot/motion specification and parameter consistency.
+- NVIDIA-NeMo/Guardrails — explicit validation-rail boundaries.
+
+**Implementation decisions:**
+1. AssetPlanNode carries the planned asset_id and semantic node_fingerprint.
+2. AssetPlanIR carries source_fingerprint and a typed PlanLineage envelope.
+3. Plan fingerprints normalize runtime UUIDs and plan revision counters.
+4. ContinuityPlan explicitly records reference strategy: none, reference_first, last_frame_chain, or hybrid.
+5. AssetPlanIR validation rejects broken dependency/reference bindings, invalid impact-radius references, inconsistent repair scope, and missing frame-input modes.
+6. Surgical regeneration rejects blank instructions and remaps downstream asset/reference identities without mutating the authoritative F02 ScriptIR.
+
+**Authority invariant:** F03 remains specification/planning only. It does not generate physical media, select provider credentials, enqueue provider graphs, replace Guardian, replace TimelineIR, or replace F07.
+
+**Validation required:** F03 Python tests, Guardian tests, TypeScript floor contract tests, ontology JSON validation, and fresh repository CI.
+
+**Rollback:** revert the Wave 4 changes as a unit and restore Floor 03 2.2.0 / AssetPlanIR 1.2.0.
+
