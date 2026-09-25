@@ -1,4 +1,4 @@
-"""Application Entrypoint for Floor 01 (Strategy & Intelligence) FastAPI service with Security Headers."""
+"""Application entrypoint for Floor 01 with bounded CORS and security headers."""
 
 from __future__ import annotations
 
@@ -10,23 +10,22 @@ from floors.floor01_strategy.app.core.config import get_settings
 
 
 def create_app() -> FastAPI:
-    """Build and configure FastAPI app instance for Floor 01."""
     settings = get_settings()
-
     app = FastAPI(
         title=f"FactoryOS {settings.floor_id.upper()} — {settings.floor_name}",
-        description="FactoryOS Strategy & Intelligence Floor. Generates validated topic selection, channel strategy, content planning, and curriculum mapping payloads for Floor 02.",
+        description="FactoryOS Strategy & Intelligence Floor.",
         version=settings.floor_version,
         docs_url="/docs",
         redoc_url="/redoc",
     )
 
+    origins = settings.cors_origins or ["http://localhost:3000"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "X-API-Key"],
     )
 
     @app.middleware("http")
@@ -34,8 +33,8 @@ def create_app() -> FastAPI:
         response: Response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Cache-Control"] = "no-store"
         return response
 
     app.include_router(strategy_router)
