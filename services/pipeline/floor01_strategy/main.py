@@ -11,7 +11,7 @@ from floor01_strategy.app.core.config import get_settings
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    if settings.environment.lower() == "production" and not settings.service_api_key:
+    if settings.environment.lower() not in {"development", "test"} and not settings.service_api_key:
         raise RuntimeError(
             "FLOOR01_SERVICE_API_KEY must be configured before starting Floor 01 in production."
         )
