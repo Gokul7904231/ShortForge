@@ -113,3 +113,40 @@ The pipeline DAG is strictly defined in `apps/web/factoryos/core/hierarchy/Floor
 | **Healing** | Bounded Repair Engine | **IMPLEMENTED** | `apps/web/factoryos/core/healers/BoundedRepairEngine.ts` | Iterative repair limited by budget; reverts to Last-Known-Good baseline. |
 | **External Integrations** | Remote Worker Fleet | **PARTIALLY_IMPLEMENTED** | `apps/web/factoryos/core/fabric/adapters/` | Local and AMD adapters implemented; cloud spot worker daemon scaffolded. |
 | **Trend Intelligence** | Live Social Scanner | **SCAFFOLDED** | `apps/web/factoryos/core/research/TrendResearchService.ts` | Browser DOM extraction implemented; live social platform APIs scaffolded. |
+
+
+---
+
+## 5. Content Engine Configuration Architecture
+
+Content Engines are versioned production contracts. They own the legal creator-facing configuration surface for their content type; the dashboard renders that contract rather than hardcoding every engine's fields.
+
+```text
+Engine Manifest
+      ↓
+Configuration Schema
+      ↓
+Creator Intent
+      ↓
+ProductionSpecCompiler
+      ↓
+Immutable ProductionSpec + SHA-256 hash
+      ↓
+FactoryOS Mission Scope
+      ↓
+F00–F07 projections
+```
+
+The configuration surface is partitioned into content, creative, media, delivery, runtime, and lifecycle. System routing policy, provider secrets, worker permissions, leases, fencing, governance, and F07 authority remain outside creator configuration.
+
+### Engine-to-research boundary
+
+A Content Engine declares its information requirements. F00 converts those requirements into a research specification and AgentReach acquisition plan. AgentReach is an evidence-acquisition boundary, not a generic content-policy oracle.
+
+### Current rollout
+
+- IMPLEMENTED: declarative configuration schema, server-side compiler, hash-bound ProductionSpec, schema-driven engine UI, engine registry propagation, job/mission snapshot propagation.
+- PARTIAL: Quiz Engine currently declares a first-class configuration/contract profile; engines without declarations receive compatibility schemas.
+- MIGRATION: downstream floors/workers still need progressive migration from legacy flat configuration fields to typed ProductionSpec projections.
+
+The ProductionSpec is a configuration-plane artifact and does not replace the canonical eight-floor topology or the floor-specific input/output contracts.
