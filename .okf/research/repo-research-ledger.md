@@ -129,7 +129,7 @@ Mappings remain research evidence. The Team consumes their adopted mechanisms on
 | pydantic/pydantic-ai | Typed structured output and validation/retry discipline | Pydantic-first strict AssetPlanIR and semantic validation | PATTERN_EXTRACTION |
 | madebysaira/CharacterConsistency | Stable identity/style block plus per-shot action/camera delta | ContinuityPlan with invariants/allowed changes and character references | PATTERN_EXTRACTION |
 | kmgrassi/PopcornReady | Character bible/reference pack/shot intent separation and surgical repair | First-class references and localized regeneration | PATTERN_EXTRACTION |
-| UknowSth/ShotDirector | Cinematographic transition semantics and explicit camera control | Richer provider-neutral camera/continuity semantics | RESEARCH_PATTERN |
+| ShotDirector research pattern (evidence via zhaoyang97/Paper-Notes-en; upstream implementation not verified in this sweep) | Cinematographic transition semantics and explicit camera control | Richer provider-neutral camera/continuity semantics | RESEARCH_PATTERN |
 | KlingAIResearch/MultiShotMaster | Global persistent caption + per-shot local caption structure | Stable invariants vs local shot plan separation | RESEARCH_PATTERN |
 | AI-Application-and-Integration-Lab/VstoryGen | Multi-scene visual storytelling with scene/character references | Reference-aware scene planning | RESEARCH_ONLY |
 | showlab/Code2Video | Planner/Coder/Critic separation and evaluation | Preserve planner vs judge boundary in F03 | RESEARCH_ONLY |
