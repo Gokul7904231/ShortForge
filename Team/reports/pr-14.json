@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR14-TeamEngineeringWorkflow",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/team-engineering-workflow",
+  "objective": "Establish a dedicated Team operating boundary that forces non-trivial changes through .okf review, specialist Forgers, applicable security evidence, preserved conflict resolution, verification, and a final machine-readable report.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/decisions.md",
+      ".okf/hierarchy-map.md",
+      ".okf/cognitive/README.md",
+      ".okf/cognitive/team-model-protocol.md",
+      ".okf/intelligence/forgers.md",
+      ".okf/intelligence/training.md",
+      ".okf/security/capability-security.md",
+      ".okf/security/forger-security-stack.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/production-helper.md",
+      ".okf/engineering-stack.md",
+      ".okf/terminology.md",
+      ".okf/research/repo-research-ledger.md",
+      ".okf/research/external-repository-mappings.md",
+      ".okf/research/repo-mappings/garrytan-gstack.md",
+      ".okf/research/repo-mappings/owasp-zap.md",
+      ".okf/research/repo-mappings/chromedevtools-chrome-devtools-mcp.md",
+      ".okf/research/repo-mappings/langchain-ai-agentevals.md",
+      ".okf/research/repo-mappings/openai-evals.md"
+    ],
+    "rulesConsidered": [
+      "complete .okf sweep before non-trivial decisions",
+      "executable implementation/tests outrank documentation",
+      "repo mappings are first-class engineering inputs",
+      "production-helper evidence is evidence, not authority",
+      "Forger capabilities cannot imply production authority",
+      "BLOCKED/UNPROVEN cannot become PASS",
+      "SCL/Ascalon cannot bypass Guardian/F07/release authority"
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    {
+      "role": "Forge Architect",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "Team/workflow/change-gate.md",
+        ".okf/decisions.md"
+      ]
+    },
+    {
+      "role": "Forge Builder",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "Team/contracts/team-change-report.schema.json",
+        "Team/scripts/validate-team-report.mjs"
+      ]
+    },
+    {
+      "role": "Forge Sentinel",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "Team/security/TEAM.md",
+        ".okf/security/forger-security-stack.md"
+      ]
+    },
+    {
+      "role": "Forge Evaluator",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "Team/llm/training-spec.md",
+        ".okf/intelligence/evaluation.md"
+      ]
+    },
+    {
+      "role": "Forge Release",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        ".github/workflows/team-gate.yml",
+        ".github/pull_request_template.md"
+      ]
+    }
+  ],
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_REQUIRED",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "evidenceRefs": [
+      "Team/security/TEAM.md",
+      ".okf/security/forger-security-stack.md",
+      ".okf/production-helper.md"
+    ],
+    "reason": "The change is governance/docs/CI workflow design; no new application endpoint, production credential, worker capability, or deployment target is introduced. Security tooling remains mandatory for applicable future changes."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "validate Team report contract",
+    "validate Team change gate script",
+    "verify PR workflow references the report path derived from PR number",
+    "verify .okf links preserve authority boundary",
+    "verify no Team document claims production authority"
+  ],
+  "evidenceRefs": [
+    "Team/README.md",
+    "Team/workflow/change-gate.md",
+    "Team/forgers/TEAM.md",
+    "Team/security/TEAM.md",
+    "Team/contracts/team-change-ir.md",
+    "Team/contracts/team-change-report.schema.json",
+    "Team/llm/ascalon-team-protocol.md",
+    "Team/llm/training-spec.md",
+    ".github/workflows/team-gate.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "protocolAdded": "Team/llm/ascalon-team-protocol.md",
+    "trainingSpecAdded": "Team/llm/training-spec.md",
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED"
+  },
+  "disposition": "PASS"
+}
