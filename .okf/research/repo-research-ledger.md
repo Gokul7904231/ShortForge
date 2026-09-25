@@ -79,3 +79,17 @@ Remotion is now the selected primary programmatic composition foundation for ric
 AgentTube remains a clean-room pattern source for scene manifests, durable checkpoints, audio-first timing, local-first rendering, content-addressed caching, and selective scene repair.
 
 These choices are subordinate to TimelineIR, RenderFabric, capability policy, CAS, and F07 verification.
+
+
+## Selected Core Engineering Stack
+
+The repository ledger now designates these as the current core media engineering references:
+
+| Repository | Role | Adoption |
+|---|---|---|
+| `remotion-dev/remotion` | Programmatic video composition, frame-timed React composition, WebGL/Canvas composition target | PRIMARY ENGINEERING REFERENCE / LICENSE-GATED |
+| `darkzOGx/youtube-automation-agent` (AgentTube) | Scene lifecycle, checkpoints, audio-first timing, scene-level repair, durable manifests | CORE ENGINEERING PATTERN / CLEAN-ROOM |
+
+Canonical ShortForge boundaries remain `TimelineIR`, `RenderFabric`, CAS, leases/fencing, and F07 verification.
+
+A new rendering stack must explicitly compare against these references before adoption.
