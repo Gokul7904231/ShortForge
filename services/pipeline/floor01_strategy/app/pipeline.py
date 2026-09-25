@@ -79,12 +79,25 @@ class Floor01Pipeline:
 
         cached_payload_data = self.memory_store.get_idempotent_payload(inp.request_id)
         if cached_payload_data:
-            cached_topic = cached_payload_data.get("topic", {}).get("selected_topic", "")
-            if cached_topic and cached_topic.lower() != inp.topic_query.strip().lower():
-                raise Floor01ValidationError(
-                    f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for topic '{cached_topic}', but current request is for '{inp.topic_query}'"
+            cached_floor_id = cached_payload_data.get("floor_id")
+            cached_version = cached_payload_data.get("floor_version")
+            if cached_floor_id != settings.floor_id or cached_version != settings.floor_version:
+                logger.info(
+                    "ignoring_stale_f01_cached_payload",
+                    request_id=inp.request_id,
+                    cached_floor_id=cached_floor_id,
+                    cached_version=cached_version,
+                    expected_floor_id=settings.floor_id,
+                    expected_version=settings.floor_version,
                 )
-            payload = Floor01HandoffPayload.model_validate(cached_payload_data)
+                cached_payload_data = None
+            else:
+                cached_topic = cached_payload_data.get("topic", {}).get("selected_topic", "")
+                if cached_topic and cached_topic.lower() != inp.topic_query.strip().lower():
+                    raise Floor01ValidationError(
+                        f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for topic '{cached_topic}', but current request is for '{inp.topic_query}'"
+                    )
+                payload = Floor01HandoffPayload.model_validate(cached_payload_data)
             report = FloorExecutionReport(
                 request_id=inp.request_id,
                 plan_id=payload.plan_id,
