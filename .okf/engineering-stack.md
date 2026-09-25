@@ -381,3 +381,54 @@ Before adopting another composition or scene lifecycle system, the proposal must
 - F07 verification
 
 The comparison must state exactly what is better, what remains unchanged, and what boundary is added or removed.
+
+
+## 22. Forger engineering workforce
+
+The engineering stack now includes a development-time workforce layer named **Forgers**.
+
+Forgers are specialized developers mapped to the repository research corpus rather than a generic multi-purpose agent.
+
+Primary specialist lanes:
+- Architect
+- Builder
+- Browser
+- Sentinel / Security
+- Evaluator
+- Media
+- Knowledge
+- Reliability
+- Performance
+- Visualization
+- Release
+
+The detailed contract is ".okf/intelligence/forgers.md".
+
+The Forger workforce does not replace TimelineIR, RenderFabric, F07, Guardian, AgentRuntime, or production worker permissions. It maintains and verifies the engineering system around those canonical boundaries.
+
+## 23. Engineering reference stack for Forgers
+
+The Forger workforce should preferentially reuse the existing mapped patterns:
+
+| Engineering concern | Primary reference(s) |
+|---|---|
+| Engineering discipline | ECC + i-have-adhd |
+| Architecture / typed IR / bounded repair | Archify + Temporal |
+| Browser evidence / E2E | Chrome DevTools MCP + BrowserGym |
+| Security | production-helper + Semgrep + Strix + ZAP + gstack CSO methodology |
+| Agent / mission evaluation | AgentEvals + OpenAI Evals + OpenHands Benchmarks |
+| Rendering | Remotion + AgentTube + TimelineIR + RenderFabric |
+| Research / document normalization | MarkItDown + ResearchPassport + Reach |
+| Graph / investigation presentation | Diagram Design + Archify |
+| History / telemetry performance | Zstandard reference + Performance architecture |
+| Release / delivery engineering | gstack ship/release methods + existing CI/release gates |
+
+A new engineering tool should first be assigned to an existing Forger lane before creating another parallel engineering subsystem.
+
+## 24. Gstack boundary
+
+Gstack is an engineering workflow reference and optional developer toolchain. It is not a production authority layer and not a second orchestration plane.
+
+ShortForge retains Chrome DevTools MCP as the canonical local browser evidence provider and production-helper as the canonical security evidence station.
+
+Any gstack-derived mechanism must pass the existing .okf decision protocol and source-of-truth precedence.
