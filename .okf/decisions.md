@@ -692,3 +692,37 @@ The dashboard previously mixed content choices, media choices, routing overrides
 ### Non-goals
 
 This decision does not change the canonical eight-floor topology, sovereign authority hierarchy, worker permissions, or F07 release gate.
+
+
+## Decision — F01 v2 Strategy Architecture
+
+Date: 2026-09-25
+Status: PROPOSED ON feat/floor01-strategy-v2; merge requires fresh CI/evidence.
+
+Decision:
+- Canonical F01 implementation is services/pipeline/floor01_strategy.
+- Canonical floor identity is floor01_strategy.
+- F01 consumes a typed ResearchContext derived from the verified F00 ResearchPassport.
+- F01 generates bounded StrategyCandidates and uses deterministic QualityDimensions evaluation.
+- Only the compiled Floor01HandoffPayload is authoritative downstream.
+- Overseer delegates F01 execution through Floor01RuntimeAdapter and must not synthesize a second strategy implementation.
+- LLM adapters may emit MODEL_INFERENCE only after real model execution; otherwise provenance is FALLBACK.
+- Missing/weak research is DEGRADED in compatibility execution and rejected in strict execution.
+- F01 v2 preserves Guardian, Slayer, Healer, F07, lease/fencing, capability, and .okf authority boundaries.
+
+Evidence:
+- .okf/audits/floor01-v2-improvement.md
+- docs/research/floor01-v2-architecture-candidates.md
+- services/pipeline/floor01_strategy/tests/test_v2_architecture.py
+
+External references:
+- Temporal: https://docs.temporal.io/
+- LLMCompiler: https://arxiv.org/abs/2312.04511
+- CRAG: https://arxiv.org/abs/2401.15884
+- STORM: https://arxiv.org/abs/2402.14207
+- GraphRAG: https://arxiv.org/abs/2404.16130
+- DSPy: https://github.com/stanfordnlp/dspy
+- GEPA: https://arxiv.org/abs/2507.19457
+
+Conflict/limitation:
+- Semantic embedding novelty, shared strategic graph memory, bounded DELIBERATE/DEEP search, and centralized report persistence remain future work.
