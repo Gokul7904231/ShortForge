@@ -13,7 +13,11 @@ import structlog
 from floors.floor02_scripting.app.domain.handoff import Floor02HandoffPayload
 from floors.floor03_asset_realization.app.core.config import settings
 from floors.floor03_asset_realization.app.core.exceptions import Floor03Error, Floor03PlatformError, Floor03ValidationError
-from floors.floor03_asset_realization.app.core.identity import asset_plan_fingerprint, request_fingerprint
+from floors.floor03_asset_realization.app.core.identity import (
+    asset_plan_fingerprint,
+    floor03_input_fingerprint,
+    request_fingerprint,
+)
 from floors.floor03_asset_realization.app.domain.asset_models import AudioAssetRequirement, VisualAssetRequirement
 from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     AssetDependency,
@@ -278,8 +282,17 @@ class Floor03Pipeline:
         """Execute once and return payload plus measured worker timings."""
         logger.info("floor03_pipeline_started", request_id=inp.request_id)
 
+        input_fingerprint = floor03_input_fingerprint(inp)
+
         # 1. Idempotency Check
-        cached_dict = self.memory_store.get_idempotent_payload(inp.request_id)
+        try:
+            cached_dict = self.memory_store.get_idempotent_payload(
+                inp.request_id,
+                expected_fingerprint=input_fingerprint,
+            )
+        except ValueError as exc:
+            raise Floor03ValidationError(str(exc)) from exc
+
         if cached_dict:
             cached_payload = Floor03HandoffPayload.model_validate(cached_dict)
             if cached_payload.script_id != inp.floor02_payload.script_id:
@@ -382,7 +395,11 @@ class Floor03Pipeline:
         )
 
         # Persist payload to memory store for process locking & deduplication
-        self.memory_store.save_payload(inp.request_id, payload.model_dump())
+        self.memory_store.save_payload(
+            inp.request_id,
+            payload.model_dump(),
+            request_fingerprint=input_fingerprint,
+        )
         logger.info("floor03_pipeline_completed", request_id=inp.request_id, asset_plan_id=payload.asset_plan_id)
         return payload, {
             "image_prompt_worker": image_duration_ms,
@@ -420,6 +437,7 @@ class Floor03Pipeline:
                 "request_fingerprint": request_fingerprint(
                     inp.request_id, inp.floor02_payload.script_id, inp.floor02_payload.script_version
                 ),
+                "input_fingerprint": floor03_input_fingerprint(inp),
             },
             worker_results=worker_results,
             decisions=[
