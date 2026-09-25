@@ -88,6 +88,8 @@ class EngineDiscoveryClass {
             renderProfile: eng.renderProfile || "FAST_QUIZ",
             hookPromptSlug: eng.prompt ? `hook:${eng.id}` : "hook:v1",
             scenePromptSlug: eng.sceneRules ? `scene:${eng.id}` : "scene:v1",
+            configuration: eng.configuration,
+            contracts: eng.contracts,
             steps: eng.steps || [
               { id: "script", enabled: true, retry: 2 },
               { id: "critic", enabled: true, approvalRequired: false },
@@ -186,7 +188,9 @@ class EngineDiscoveryClass {
         renderProfile: manifest.renderProfile || "FAST_QUIZ",
         prompt: manifest.prompt,
         sceneRules: manifest.sceneRules,
-        steps: manifest.steps
+        steps: manifest.steps,
+        configuration: manifest.configuration,
+        contracts: manifest.contracts
       });
       fs.writeFileSync(filePath, JSON.stringify(engines, null, 2), "utf-8");
       console.log(`[EngineDiscovery] Saved dynamic engine "${manifest.id}" to custom-engines.json`);
