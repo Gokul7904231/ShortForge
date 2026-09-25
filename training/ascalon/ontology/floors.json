@@ -10,21 +10,25 @@
       "canonicalName": "Analyst & Research Ingestion",
       "shortName": "Analyst",
       "category": "RESEARCH",
-      "responsibility": "Collects market trends, viral topic seeds, external news, and research data from Reddit, YouTube, Tavily, and Firecrawl.",
+      "responsibility": "Acquires bounded external evidence, formulates claim-level research findings, produces a cryptographically signed ResearchPassport, and returns an AnalystReport for Floor 01.",
       "parent": "overseer",
       "predecessors": [],
       "successors": ["floor01_strategy"],
-      "runtimeOwner": "apps/web/factoryos/core/research/ResearchEngine.ts",
+      "runtimeOwner": "apps/web/factoryos/core/research/ResearchRuntime.ts",
       "sourceLocations": [
-        "apps/web/factoryos/core/worldstate/WorldStateEngine.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/ReachSubsystem.ts",
+        "apps/web/factoryos/core/integrations/AgentReachAdapter.ts",
+        "apps/web/factoryos/core/research/DailySlateGenerator.ts",
+        "apps/web/factoryos/core/contracts/ResearchPassportContracts.ts",
         "testing/contracts/floor.contract.ts"
       ],
-      "expectedInputs": ["topic", "targetAudience"],
+      "expectedInputs": ["topic"],
       "expectedOutputs": ["analystReport", "passport"],
       "requiredMetadataKeys": ["reportId", "topic"],
       "authority": "overseer",
       "trainingEligible": true,
-      "simulationRole": "Provides mock topic seeds and synthetic research passports for testing."
+      "simulationRole": "Uses an injected Reach test provider for deterministic fixtures; production Reach must not fabricate sources when external retrieval is unavailable."
     },
     {
       "floorId": "floor01_strategy",
