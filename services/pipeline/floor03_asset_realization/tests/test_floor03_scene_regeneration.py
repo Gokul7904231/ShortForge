@@ -54,6 +54,13 @@ def test_single_scene_asset_regeneration_invariants(tmp_path):
     assert updated_payload.asset_plan_ir.plan_version == 2
     assert updated_payload.asset_plan_ir.plan_fingerprint
     assert updated_payload.asset_plan_ir.script_version == initial_payload.asset_plan_ir.script_version
+    initial_nodes = {node.scene_id: node for node in initial_payload.asset_plan_ir.nodes}
+    updated_nodes = {node.scene_id: node for node in updated_payload.asset_plan_ir.nodes}
+    assert updated_nodes[target_scene_id].asset_id == asset_b_updated["asset_id"]
+    assert updated_nodes[target_scene_id].node_fingerprint != initial_nodes[target_scene_id].node_fingerprint
+    for scene_id, initial_node in initial_nodes.items():
+        if scene_id != target_scene_id:
+            assert updated_nodes[scene_id].node_fingerprint == initial_node.node_fingerprint
 
     # Scene C (unaffected): Byte & semantic equivalence preserved
     asset_c_updated = updated_payload.visual_asset_requirements[2].model_dump()
@@ -191,3 +198,23 @@ def test_reference_asset_lineage_remaps_after_dependency_regeneration(tmp_path):
     ]
     assert len(updated_last_frame_refs) == 1
     assert updated_last_frame_refs[0].source_asset_id == new_a_asset
+
+
+def test_blank_regeneration_instruction_is_rejected(tmp_path):
+    payload = Floor03Pipeline(
+        memory_store=AssetMemoryStore(storage_path=str(tmp_path / "memory.json"))
+    ).execute(
+        Floor03Input(
+            floor02_payload=build_mock_floor02_payload(),
+            request_id="req-blank-regeneration",
+        )
+    )
+
+    with pytest.raises(Floor03ValidationError, match="non-empty"):
+        Floor03Pipeline(
+            memory_store=AssetMemoryStore(storage_path=str(tmp_path / "memory2.json"))
+        ).regenerate_scene_assets(
+            current_payload=payload,
+            target_scene_id=payload.visual_asset_requirements[0].scene_id,
+            new_prompt_instruction="   ",
+        )
