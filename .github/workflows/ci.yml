@@ -105,12 +105,22 @@ jobs:
             shortforge-floor01:ci
           trap 'docker stop floor01-ci >/dev/null 2>&1 || true' EXIT
 
+          health_ok=false
           for i in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then
+              health_ok=true
               break
             fi
             sleep 1
           done
+
+          if [ "$health_ok" != "true" ]; then
+            echo "F01 container failed readiness."
+            docker ps -a
+            docker inspect floor01-ci --format '{{.State.Status}} {{.State.ExitCode}} {{.State.Error}}' || true
+            docker logs floor01-ci || true
+            exit 1
+          fi
 
           curl --fail --silent http://127.0.0.1:18080/health
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/docs)" = "404"
