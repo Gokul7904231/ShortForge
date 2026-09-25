@@ -39,7 +39,7 @@ import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
 import { ResearchRuntime } from "../research/ResearchRuntime";
 import { VoiceFabric } from "../voice/VoiceFabric";
-import { RenderFabric } from "../rendering/RenderFabric";
+import { RenderFabric } from "../fabric/RenderFabric";
 import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentContracts";
 import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegistry";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
