@@ -51,6 +51,12 @@ class HandoffStatus(str, Enum):
     REJECTED = "REJECTED"
 
 
+class CandidateStatus(str, Enum):
+    GENERATED = "GENERATED"
+    SELECTED = "SELECTED"
+    REJECTED = "REJECTED"
+
+
 # ── Input Contract ───────────────────────────────────────────────────────────
 
 class Floor01Input(BaseModel):
@@ -64,6 +70,39 @@ class Floor01Input(BaseModel):
     niche_context: Optional[str] = Field(default=None, description="Optional domain or niche context")
     learning_level: str = Field(default="beginner", description="Target difficulty/learning level")
     constraints: Dict[str, Any] = Field(default_factory=dict, description="Additional processing constraints")
+    research_context: Optional[ResearchContext] = Field(default=None, description="Typed projection of the upstream F00 ResearchPassport")
+
+
+
+class ResearchEvidenceRef(BaseModel):
+    """Compact evidence projection consumed by F01; raw retrieval remains owned by F00."""
+
+    evidence_id: str
+    claim_id: Optional[str] = None
+    statement: str
+    verification_status: str
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    supporting_source_ids: List[str] = Field(default_factory=list)
+    source_quality: List[str] = Field(default_factory=list)
+
+
+class ResearchContext(BaseModel):
+    """Typed F00 -> F01 evidence boundary."""
+
+    passport_id: str
+    mission_id: str
+    integrity_verified: bool = False
+    question: str = ""
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    source_count: int = Field(default=0, ge=0)
+    verified_claim_count: int = Field(default=0, ge=0)
+    unresolved_issue_count: int = Field(default=0, ge=0)
+    freshness: str = "any"
+    key_findings: List[str] = Field(default_factory=list)
+    recommended_hook: Optional[str] = None
+    hook_archetype: Optional[str] = None
+    evidence: List[ResearchEvidenceRef] = Field(default_factory=list)
+    provenance: List[str] = Field(default_factory=list)
 
 
 # ── Provenance & Evidence Contract ───────────────────────────────────────────
@@ -108,6 +147,8 @@ class StrategyResult(BaseModel):
     target_duration_seconds: int = Field(default=60, ge=10, le=600)
     platform_spec: Dict[str, Any] = Field(default_factory=dict, description="Platform-specific constraints, versioning, and CTA rules")
     execution_mode: ExecutionMode = Field(default=ExecutionMode.DETERMINISTIC_FALLBACK)
+    rationale: str = ""
+    evidence_refs: List[str] = Field(default_factory=list)
     provenance: List[ProvenanceEntry] = Field(default_factory=list)
 
 
@@ -138,6 +179,65 @@ class CurriculumMapResult(BaseModel):
     provenance: List[ProvenanceEntry] = Field(default_factory=list)
 
 
+
+class QualityDimensions(BaseModel):
+    """Independent heuristic dimensions; never interpreted as probability."""
+
+    evidence_adequacy: float = Field(ge=0.0, le=1.0)
+    novelty: float = Field(ge=0.0, le=1.0)
+    audience_fit: float = Field(ge=0.0, le=1.0)
+    platform_fit: float = Field(ge=0.0, le=1.0)
+    curriculum_coherence: float = Field(ge=0.0, le=1.0)
+    downstream_feasibility: float = Field(ge=0.0, le=1.0)
+    constraint_compliance: float = Field(ge=0.0, le=1.0)
+
+    @property
+    def overall(self) -> float:
+        weights = {
+            "evidence_adequacy": 0.22,
+            "novelty": 0.16,
+            "audience_fit": 0.14,
+            "platform_fit": 0.14,
+            "curriculum_coherence": 0.10,
+            "downstream_feasibility": 0.12,
+            "constraint_compliance": 0.12,
+        }
+        return round(sum(getattr(self, key) * weight for key, weight in weights.items()), 4)
+
+
+class StrategyCandidate(BaseModel):
+    candidate_id: str = Field(default_factory=lambda: f"cand_{uuid4().hex[:10]}")
+    status: CandidateStatus = CandidateStatus.GENERATED
+    strategy: StrategyResult
+    rationale: str = ""
+    evidence_refs: List[str] = Field(default_factory=list)
+    model_generated: bool = False
+
+
+class StrategyEvaluation(BaseModel):
+    candidate_id: str
+    dimensions: QualityDimensions
+    overall_score: float = Field(ge=0.0, le=1.0)
+    accepted: bool = False
+    blockers: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+    evaluator_provenance: List[ProvenanceEntry] = Field(default_factory=list)
+
+    @field_validator("overall_score")
+    @classmethod
+    def round_score(cls, value: float) -> float:
+        return round(value, 4)
+
+
+class StrategyDecisionRecord(BaseModel):
+    selected_candidate_id: str
+    candidate_ids_considered: List[str]
+    selection_basis: str
+    evaluation_score: float
+    complexity_mode: str
+    bounded_deliberation_used: bool = False
+
+
 # ── Contract 1: Authoritative Downstream Handoff Payload (Floor 01 -> Floor 02) ──
 
 class Floor01HandoffPayload(BaseModel):
@@ -145,15 +245,19 @@ class Floor01HandoffPayload(BaseModel):
 
     plan_id: str = Field(default_factory=lambda: str(uuid4()))
     request_id: str = Field(...)
-    floor_id: str = Field(default="floor01")
-    floor_version: str = Field(default="1.0.0")
+    floor_id: str = Field(default="floor01_strategy")
+    floor_version: str = Field(default="2.0.0")
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     execution_mode: ExecutionMode = Field(default=ExecutionMode.DETERMINISTIC_FALLBACK, description="Execution mode: DETERMINISTIC, MODEL, HYBRID, or DETERMINISTIC_FALLBACK")
     topic: TopicIntelligenceResult
     strategy: StrategyResult
     content_plan: ContentPlanResult
     curriculum: CurriculumMapResult
-    decision_quality_score: float = Field(..., ge=0.0, le=1.0, description="Defined weighted heuristic quality score; not a statistical probability")
+    selected_candidate_id: Optional[str] = None
+    evaluation: Optional[StrategyEvaluation] = None
+    decision_record: Optional[StrategyDecisionRecord] = None
+    strategic_memory_refs: List[str] = Field(default_factory=list)
+    decision_quality_score: float = Field(..., ge=0.0, le=1.0, description="Composite heuristic score; not a calibrated probability")
     handoff_status: HandoffStatus = Field(default=HandoffStatus.VALIDATED)
 
     @field_validator("decision_quality_score")
