@@ -92,3 +92,13 @@ The structured development record attached to a non-trivial Forger task: .okf sw
 
 ### Forger Capability
 A reserved development-time capability such as CAP_FORGE_CODE or CAP_FORGE_SECURITY. These do not automatically grant production-floor authority and are not implemented until registered and tested through the canonical permission process.
+
+
+## Content Engine Configuration Terms
+
+| Term | Canonical Definition | Source File / Contract |
+| :--- | :--- | :--- |
+| Engine Manifest | Versioned contract declaring what a Content Engine is, its configuration surface, production requirements, and verification boundaries. | .okf/content-engine-architecture.md; apps/web/content-engines/_loader/index.ts |
+| ConfigurationSchema | Declarative engine-owned description of legal creator-facing controls, defaults, constraints, visibility, and bindings. | apps/web/lib/core/EngineConfigurationContracts.ts |
+| ProductionSpec | Immutable mission-level configuration compiled from an engine manifest and creator intent; hash-bound for reproducibility. | apps/web/factoryos/core/contracts/ProductionSpecContracts.ts; apps/web/factoryos/core/engines/ProductionSpecCompiler.ts |
+| Engine Contract Profile | Structured research, cognitive, creative, asset, voice, timeline, render, and verification requirements declared by an engine. | apps/web/lib/core/EngineConfigurationContracts.ts |
