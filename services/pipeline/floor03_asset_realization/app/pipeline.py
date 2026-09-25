@@ -26,6 +26,7 @@ from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     AssetDependency,
     AssetPlanIR,
     AssetPlanNode,
+    PlanLineage,
     CoverageRole,
     DependencyRelation,
     PlanLineage,
