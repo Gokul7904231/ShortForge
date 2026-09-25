@@ -75,7 +75,8 @@ class Floor02Pipeline:
         strict = settings.is_production or strict_rejection or inp.strict_upstream
         self._require_upstream(inp, strict)
 
-        cached = self.memory_store.get_idempotent_payload(inp.request_id)
+        input_fingerprint = self.memory_store.fingerprint(inp.model_dump(mode="json"))
+        cached = self.memory_store.get_idempotent_payload(inp.request_id, input_fingerprint)
         if cached:
             try:
                 payload = Floor02HandoffPayload.model_validate(cached)
@@ -181,6 +182,7 @@ class Floor02Pipeline:
                     "script_version": payload.script_version,
                     "quality_score": payload.decision_quality_score,
                 },
+                request_fingerprint=input_fingerprint,
             )
 
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
