@@ -75,13 +75,33 @@ class AssetMemoryStore:
             finally:
                 _unlock_file(lock_file)
 
-    def get_idempotent_payload(self, request_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve existing cached Floor03HandoffPayload for identical request_id."""
+    def get_idempotent_payload(
+        self,
+        request_id: str,
+        expected_fingerprint: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve a cached payload and reject fingerprint conflicts when known."""
         self._load_with_lock()
         record = self._records.get(request_id)
-        return record.get("payload") if record else None
+        if not record:
+            return None
 
-    def save_payload(self, request_id: str, payload_dict: Dict[str, Any]) -> None:
+        stored_fingerprint = record.get("request_fingerprint")
+        if expected_fingerprint and stored_fingerprint and stored_fingerprint != expected_fingerprint:
+            raise ValueError(
+                f"Idempotency fingerprint conflict for request_id '{request_id}'."
+            )
+
+        # Older records may not contain a fingerprint. They remain readable for
+        # compatibility; new writes always persist one.
+        return record.get("payload")
+
+    def save_payload(
+        self,
+        request_id: str,
+        payload_dict: Dict[str, Any],
+        request_fingerprint: Optional[str] = None,
+    ) -> None:
         """Atomically persist payload dict under process-level sidecar lock."""
         with open(self.lock_path, "a+", encoding="utf-8") as lock_file:
             _lock_file(lock_file)
@@ -99,6 +119,7 @@ class AssetMemoryStore:
 
                 self._records[request_id] = {
                     "timestamp": time.time(),
+                    "request_fingerprint": request_fingerprint,
                     "payload": payload_dict,
                 }
 
