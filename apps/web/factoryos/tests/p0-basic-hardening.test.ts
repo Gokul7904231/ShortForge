@@ -100,8 +100,7 @@ describe("FactoryOS P0 Fixes & Basic UX Hardening Suite", () => {
     const userId = "user_p0_basic_5_lifecycle_001";
     currentMockUser = { uid: userId, role: "BASIC" };
 
-    try {
-      // Execute 5 successful generations
+    // Execute 5 successful generations
       for (let i = 1; i <= 5; i++) {
         const jobId = `job_batch_${userId}_${i}`;
         await reserveGenerationSlot(userId, "BASIC", jobId);
@@ -132,11 +131,7 @@ describe("FactoryOS P0 Fixes & Basic UX Hardening Suite", () => {
 
       expect(res6.status).toBe(429);
       expect(data6.code).toBe("QUOTA_EXCEEDED");
-      expect(data6.error).toContain("Lifetime generation quota exhausted");
-
-    } finally {
-      global.fetch = originalFetch;
-    }
+    expect(data6.error).toContain("Lifetime generation quota exhausted");
   });
 
   it("P1: Stale Reservation Bounded TTL Cleanup (15-Minute Expiry)", async () => {
