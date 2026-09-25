@@ -52,6 +52,7 @@ def test_single_scene_asset_regeneration_invariants(tmp_path):
     assert len(target_nodes) == 1
     assert "Enhance code syntax glow" in target_nodes[0].visual.prompt_text
     assert updated_payload.asset_plan_ir.plan_version == 2
+    assert updated_payload.asset_plan_ir.plan_fingerprint
     assert updated_payload.asset_plan_ir.script_version == initial_payload.asset_plan_ir.script_version
 
     # Scene C (unaffected): Byte & semantic equivalence preserved
