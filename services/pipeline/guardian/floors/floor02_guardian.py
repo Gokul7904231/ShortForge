@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any, Dict, Optional
 
 import structlog
@@ -14,7 +15,7 @@ from factoryos.guardian.core.guardian import GuardianEngine
 from factoryos.guardian.reasoning.base import ReasoningEngine
 
 # Frozen Floor 02 Core Ingestion
-from floors.floor02_scripting.app.domain.handoff import Floor02Input, Floor02HandoffPayload
+from floors.floor02_scripting.app.domain.handoff import Floor02Input
 from floors.floor02_scripting.app.pipeline import Floor02Pipeline
 
 logger = structlog.get_logger(__name__)
@@ -60,7 +61,6 @@ class Floor02Guardian:
     ) -> GuardianReport:
         """Execute Floor 02 Autonomous Guardian loop around frozen Floor 02 core."""
         logger.info("floor02_guardian_executing", request_id=inp.request_id)
-        import hashlib
         input_hash = hashlib.sha256(inp.request_id.encode("utf-8")).hexdigest()
         initial_context = {"floor02_input": inp}
 
