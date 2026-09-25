@@ -172,3 +172,16 @@ proposal
 ~~~
 
 Devourer itself is therefore auditable.
+
+
+## Mandatory full-.okf review
+
+Every Devourer cycle begins with a complete end-to-end review of the current .okf tree using .okf/decision-protocol.md.
+
+Repository research is interpreted only after internal architecture reconstruction, current implementation inspection, current test inspection, existing repo-mapping extraction, and production-helper evidence review.
+
+## Current engineering-stack priority
+
+For rendering and media-engine improvements, compare candidates against TimelineIR, Remotion, AgentTube-derived scene lifecycle patterns, RenderFabric, and FFmpeg fallback.
+
+A candidate that simply duplicates an existing stack capability should not create a new architecture node.
