@@ -14,6 +14,8 @@ It is not a second source of truth and it is not a green-light generator.
 
 ## Routine usage
 
+Top process rule: complete the current .okf end-to-end decision sweep before choosing which helper checks to run.
+
 For meaningful changes:
 
 1. Review the current .okf tree end to end.
@@ -71,3 +73,15 @@ A production-impacting change should have:
 - runtime evidence where applicable
 - explicit blocked / unproven items
 - corresponding .okf decision updates when architecture changed
+
+## Routine trigger matrix
+
+| Change surface | Minimum routine evidence |
+|---|---|
+| Worker permissions | targeted capability tests + permission regression + Semgrep; Strix when Docker is available |
+| Rendering / RenderFabric | targeted render tests + staging/runtime proof + physical artifact verification |
+| Remote worker / callback | state-machine tests + replay/idempotency tests + staging proof |
+| Security / network / filesystem | Semgrep + applicable adversarial tests + Strix when Docker is available |
+| Quota / scheduling | lifecycle tests + concurrency / stale-cleanup tests |
+| Architecture / control plane | architecture tests + relevant staging/runtime evidence |
+| Devourer candidate affecting production | candidate evaluation + relevant helper evidence + explicit blocked/unproven accounting |
