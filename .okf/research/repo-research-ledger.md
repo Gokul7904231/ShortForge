@@ -66,7 +66,7 @@
 | **Floor 07 Verification Engine** | Independent media probe; refuses to trust claims or URLs | **ACTIVE & VERIFIED** | Subprocess `ffprobe` format/stream probe; `ffmpeg -v error -i ... -f null -` decode smoke test; 8 hard gates (container, codecs, geometry, duration, sync, decode). |
 | **Remote Azure State Machine** | HTTP 200 != COMPLETED | **ACTIVE & VERIFIED** | Dispatched async job returns `remoteState: "DISPATCHED"`; completion only acknowledged upon cryptographically verified callback with executionToken. |
 | **Voice Fabric** | Physical WAV on disk with degraded fallback tracking | **ACTIVE & VERIFIED** | Real 16-bit PCM WAV generated on disk; 44-byte RIFF/fmt/data chunks verified; explicitly tagged `qualityClass: "DEGRADED_FALLBACK"`. |
-| **Research Passport** | Cryptographic claim & metadata tamper detection | **ACTIVE & VERIFIED** | RFC-8785 JCS-v1 canonical serialization; SHA-256 claim hashing; HMAC-SHA256 signature; rejects altered claims and altered metadata. |
+| **Research Passport** | Cryptographic claim & metadata tamper detection | **ACTIVE & VERIFIED** | deterministic project JCS-v1 canonical serialization; SHA-256 claim hashing; HMAC-SHA256 signature; rejects altered claims and altered metadata. |
 | **Capability Registry** | Server-side blocking of prototypes | **ACTIVE & VERIFIED** | `authorizeExecution()` rejects `render.hyperframes` before runtime access when `isProductionRoutable: false`. |
 | **UI Telemetry Surfaces** | Zero synthetic optimistic numbers | **ACTIVE & VERIFIED** | Removed `|| 7`, `94.8`, `2.8x`, `|| 70%`; displays `UNKNOWN` / `UNMEASURED` when real measurements are unavailable. |
 
