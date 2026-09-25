@@ -1,7 +1,7 @@
 # Floor 03 — Asset Specification & Realization Planning
 
 **Canonical Floor ID**: `floor03_asset_realization`  
-**Floor Version**: `2.0.0`  
+**Floor Version**: `2.1.0`  
 **Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
 **Overseer Integration**: **PENDING** — production control-plane wiring still requires the canonical runtime adapter.
 
