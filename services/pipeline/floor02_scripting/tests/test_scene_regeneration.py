@@ -11,7 +11,7 @@ def test_single_scene_regeneration_invariants():
     """Verify targeted single-scene regeneration preserves exact byte/semantic equivalence of unaffected scenes."""
     pipeline = Floor02Pipeline()
     inp = Floor02Input(topic_query="Python Decorators", request_id="req-regen-invariants-1", strict_upstream=False)
-    initial_payload = pipeline.execute(inp)
+    initial_payload = pipeline.execute(inp, strict_rejection=False)
 
     assert len(initial_payload.scenes) >= 3
     assert initial_payload.script_version == 1
