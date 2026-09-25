@@ -182,3 +182,40 @@ def test_asset_plan_fingerprint_is_semantic_and_request_independent(tmp_path):
     assert payload_a.asset_plan_ir.plan_id != payload_b.asset_plan_ir.plan_id
     assert payload_a.asset_plan_ir.plan_fingerprint == payload_b.asset_plan_ir.plan_fingerprint
     assert len(payload_a.asset_plan_ir.plan_fingerprint) == 64
+
+
+def test_idempotency_cache_returns_same_typed_payload(tmp_path):
+    f02_payload = build_mock_floor02_payload()
+    store = AssetMemoryStore(storage_path=str(tmp_path / "memory.json"))
+    pipeline = Floor03Pipeline(memory_store=store)
+    inp = Floor03Input(floor02_payload=f02_payload, request_id="req-idempotency-cache-1")
+
+    first = pipeline.execute(inp)
+    second = pipeline.execute(inp)
+
+    assert second.asset_plan_id == first.asset_plan_id
+    assert second.asset_plan_version == first.asset_plan_version
+    assert second.asset_plan_ir is not None
+    assert second.asset_plan_ir.plan_fingerprint == first.asset_plan_ir.plan_fingerprint
+
+
+def test_regeneration_updates_scene_plan_prompt(tmp_path):
+    f02_payload = build_mock_floor02_payload()
+    store = AssetMemoryStore(storage_path=str(tmp_path / "memory.json"))
+    pipeline = Floor03Pipeline(memory_store=store)
+    inp = Floor03Input(floor02_payload=f02_payload, request_id="req-scene-plan-prompt-1")
+
+    initial = pipeline.execute(inp)
+    target_scene_id = initial.visual_asset_requirements[0].scene_id
+
+    updated = pipeline.regenerate_scene_assets(
+        current_payload=initial,
+        target_scene_id=target_scene_id,
+        new_prompt_instruction="make the product screen glow softly",
+    )
+
+    target_req = next(
+        req for req in updated.visual_asset_requirements if req.scene_id == target_scene_id
+    )
+    assert target_req.scene_plan is not None
+    assert "make the product screen glow softly" in target_req.scene_plan.prompt_text
