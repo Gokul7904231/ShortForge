@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class BeatType(str, Enum):
     HOOK = "HOOK"
     PROBLEM = "PROBLEM"
+    RETAIN = "RETAIN"
     CONTEXT = "CONTEXT"
     EXPLANATION = "EXPLANATION"
     EXAMPLE = "EXAMPLE"
