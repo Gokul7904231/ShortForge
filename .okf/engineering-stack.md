@@ -2,7 +2,7 @@
 # ShortForge / FactoryOS — Canonical Engineering Stack
 
 > Document Class: Engineering Stack Decision
-> Status: LOCKED DIRECTION
+> Status: LOCKED DIRECTION / PRIMARY ENGINEERING BASELINE
 > Primary Domain: Programmatic video composition, scene lifecycle, deterministic rendering, and bounded repair
 > Decision Basis: Complete .okf review + current rendering architecture + existing AgentTube assimilation + current Remotion documentation
 
@@ -309,3 +309,75 @@ Do not:
 - trust metadata instead of physical media evidence
 - bypass F07 because the renderer reported success
 - import external architecture as authority without .okf review
+
+## 15. Engineering stack priority rule
+
+For media-generation architecture, the default comparison baseline is:
+
+1. TimelineIR — semantic source of truth
+2. Remotion — primary programmatic composition engine
+3. AgentTube-derived scene lifecycle — manifest/checkpoint/repair discipline
+4. RenderFabric — distributed provider-neutral execution
+5. FFmpeg — deterministic physical rendering / normalization fallback
+6. F07 / Auditor — physical proof
+
+A new engine may complement this stack, but must not silently replace any canonical boundary.
+
+## 16. Remotion is a selected foundation, not semantic authority
+
+ShortForge adopts Remotion for rich programmatic compositions where its React/frame-clock composition model is advantageous.
+
+Required boundary:
+
+~~~
+TimelineIR
+   |
+RemotionCompiler
+   |
+Remotion Composition
+   |
+RenderFabric
+   |
+physical artifact
+   |
+F07
+~~~
+
+Remotion completion is never itself verification.
+
+## 17. AgentTube is the selected scene-lifecycle pattern source
+
+ShortForge adopts the clean-room engineering patterns demonstrated by AgentTube for:
+- durable scene manifests
+- scene-level repair
+- persistent checkpoints
+- audio-first timing
+- local-first rendering where appropriate
+- content-addressed reuse
+- explicit narration evidence and fail-closed narration state
+
+These patterns are reimplemented as native ShortForge contracts under Overseer, SCL, AgentRuntime, Healer/ReMaker, CAS, and F07 boundaries.
+
+## 18. Current external evidence
+
+The current public AgentTube repository documents approval-first publishing, durable scene manifests, Scene Repair Studio, fail-closed narration, and persistent production state. These observations are current external evidence and remain subject to clean-room assimilation and ShortForge verification.
+
+The current Remotion documentation confirms frame-addressed timing through useCurrentFrame and frame-based sequencing/timing APIs. These are the basis for our frame-clock assimilation.
+
+## 19. Licensing gate
+
+Remotion is source-available software under its own proprietary Remotion License rather than an OSI-approved open-source license. The current official FAQ states that individuals and organizations/teams up to three people can use the Free License under the published terms; larger organizations may require a Company License, and automation products can fall under the Automators licensing model when the Company License applies.
+
+ShortForge must verify the actual organizational and automation licensing situation before production rollout. License status is a release gate, not an implementation detail.
+
+## 20. Stack change gate
+
+Before adopting another composition or scene lifecycle system, the proposal must compare against:
+- TimelineIR
+- Remotion
+- AgentTube-derived lifecycle patterns
+- RenderFabric
+- FFmpeg
+- F07 verification
+
+The comparison must state exactly what is better, what remains unchanged, and what boundary is added or removed.
