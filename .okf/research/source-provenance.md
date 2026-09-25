@@ -1,69 +1,89 @@
-# Research: Source Provenance, ResearchPassports & Fidelity Governance
+# Research: ResearchPassport & Evidence Provenance
 
-> **Status**: OPERATIONAL / CANONICAL  
-> **Source Location**: `apps/web/factoryos/core/contracts/ResearchPassportContracts.ts` & `apps/web/factoryos/core/research/`
+> **Status**: CANONICAL / IMPLEMENTATION-ALIGNED  
+> **Current implementation**: `apps/web/factoryos/core/contracts/ResearchPassportContracts.ts` and `apps/web/factoryos/core/research/ResearchRuntime.ts`
 
----
+## 1. Passport purpose
 
-## 1. Architectural Philosophy: The ResearchPassport Standard
+A ResearchPassport is the durable evidence record emitted by Floor 00.
 
-In automated knowledge synthesis, citations cannot be vague strings or arbitrary URLs hallucinated by an LLM. Misattributed facts or fabricated source links compromise legal compliance, violate platform terms of service, and destroy viewer trust.
+It records:
 
-FactoryOS mandates that every factual assertion, trivia datapoint, and news topic ingested during Floor 00 must carry a **ResearchPassport**. A ResearchPassport is a cryptographically verifiable provenance record that certifies:
-1. **Source Veracity**: The exact authenticated source URL, canonical domain name, and author identity.
-2. **Temporal Validity**: Timestamp of initial retrieval and snapshot content hash.
-3. **Fidelity Taxonomy**: Explicit classification of how every extracted metric was derived.
-4. **Anti-Fabrication Check**: Rejection of synthetic placeholder domains (e.g., `example.com`, `fake-news.internal`) or broken links.
+- passport ID and mission ID;
+- the research question and intent;
+- methodology;
+- normalized evidence sources;
+- claim-level classifications;
+- unresolved issues;
+- confidence;
+- provenance identifying Reach, agent, and floor;
+- lifecycle timestamps;
+- transformation steps;
+- optional Content Engine research context;
+- cryptographic integrity metadata.
 
-```
-┌────────────────────────────────────────────────────────┐
-│                    Research Extraction                 │
-└───────────────────────────┬────────────────────────────┘
-                            │ Emits Candidate
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                    ResearchPassport                    │
-├────────────────────────────────────────────────────────┤
-│  passportId: "pass_01j8m..."                           │
-│  sourceUrl: "https://verified-publisher.com/article"   │
-│  canonicalDomain: "verified-publisher.com"             │
-│  retrievedAt: 1718000000000                            │
-│  contentSha256: "9f86d081884c7d659a2feaa0c55ad015..." │
-│  domainReputationScore: 0.94                           │
-│  measurementFidelity: "VERIFIED_FACT"                  │
-├────────────────────────────────────────────────────────┤
-│                       Evidence                         │
-│  (Exact Quotations, Extracted Stats, Raw HTML Snippet) │
-└────────────────────────────────────────────────────────┘
+## 2. Claim fidelity
+
+Claims are explicitly typed:
+
+```text
+VERIFIED_FACT
+SOURCE_CLAIM
+MODEL_CLAIM
+UNVERIFIED_ASSERTION
+CONTRADICTED_CLAIM
+AMBIGUOUS_CLAIM
 ```
 
----
+A model inference is never silently promoted to a verified fact.
 
-## 2. CURRENT vs TARGET Architecture Status
+Heuristic hook intelligence is explicitly marked `HEURISTIC_ESTIMATE`.
 
-| Architectural Dimension | CURRENT Implementation | TARGET Implementation |
-|:------------------------|:-----------------------|:----------------------|
-| **Provenance Tracking** | Strongly typed `ResearchPassport` in `ResearchPassportContracts.ts` | Decentralized timestamp attestation on public blockchain / certificate transparency logs |
-| **Fidelity Taxonomy** | 5-level enum enforced across all research and script interfaces | Formal probabilistic Bayesian confidence calibration per extracted claim |
-| **Domain Reputation** | Domain reputation lookup and URL syntax validation | Dynamic trust graph modeling source reliability based on historical correction rates |
-| **Anti-Fabrication** | Automated rejection of mock URLs and placeholder domains | Live HTTP HEAD/GET connectivity probe with DNSSEC cryptographic validation |
-| **Archival Snapshot** | Raw text excerpt caching in `KnowledgeOS` CAS | Full WARC (Web ARChive) snapshot preservation with cryptographic signing |
+## 3. Current corroboration behavior
 
----
+The current ResearchRuntime uses a conservative deterministic corroboration heuristic:
 
-## 3. The 5-Level Measurement Fidelity Taxonomy
+- source/title/snippet tokens are normalized;
+- at least two meaningful shared tokens are required for the corroboration path;
+- contradiction markers can downgrade a claim to `CONTRADICTED`;
+- otherwise source-backed claims remain `UNVERIFIED` / `SOURCE_CLAIM`.
 
-Defined in `ResearchPassportContracts.ts`:
+This is still **not equivalent to expert fact checking or semantic verification**. F00 must not be described as having perfect factual verification.
 
-```typescript
-export type ResearchMeasurementFidelity = 
-  | 'VERIFIED_FACT'          // Grounded in authoritative documentation or peer-reviewed source
-  | 'OBSERVED_MEASUREMENT'   // Directly scraped or measured data point (e.g. view count, video duration)
-  | 'MODEL_INFERENCE'        // Output derived via AI/LLM probabilistic reasoning
-  | 'HEURISTIC_ESTIMATE'     // Rule-based or formulaic estimation (e.g. pacing prediction)
-  | 'UNVERIFIED_ASSERTION';  // Raw claim requiring downstream verification prior to release
-```
+## 4. Integrity
 
-### Downstream Usage Invariants
-- **Educational / Trivia Channels**: Floor 02 Scripting can only use facts tagged as `VERIFIED_FACT` or `OBSERVED_MEASUREMENT`.
-- **Heuristic Containment**: Any metric tagged as `HEURISTIC_ESTIMATE` or `MODEL_INFERENCE` must never be presented to viewers or downstream models as an observed fact.
+The passport is signed with:
+
+- SHA-256 content hash;
+- HMAC-SHA256 integrity MAC;
+- project canonicalization version `JCS-v1`.
+
+The project canonicalizer is a deterministic implementation-specific canonical form. The implementation should not be described as a complete RFC 8785 implementation unless separately verified.
+
+Production requires `FACTORY_INTEGRITY_SECRET`.
+
+Development/test environments may use a fixed non-production development key.
+
+Integrity verification uses constant-time MAC comparison.
+
+## 5. Evidence failure invariant
+
+Unavailable/unreachable Reach records are not treated as evidence.
+
+When no usable sources remain:
+
+- passport confidence becomes `0.0`;
+- the passport contains an explicit `UNVERIFIED_ASSERTION`;
+- no fake source is created;
+- downstream consumers can see the lack of evidence through `unresolvedIssues`.
+
+## 6. Training boundary
+
+Ascalon training/export must preserve:
+
+- source provenance;
+- claim fidelity;
+- passport integrity;
+- distinction between observed evidence and heuristic/model outputs.
+
+Heuristic output must never be exported as observed telemetry.
