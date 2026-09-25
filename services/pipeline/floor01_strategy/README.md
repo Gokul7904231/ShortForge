@@ -1,11 +1,12 @@
 # Floor 01 — Strategy & Intelligence
 
-**Floor ID**: `floor01`  
-**Floor Name**: Strategy & Intelligence  
-**Floor Version**: `1.0.0`  
-**Location**: `floors/floor01_strategy/`  
-**Status**: **FLOOR 01 CORE IMPLEMENTATION FROZEN; EXTERNAL INTELLIGENCE INTEGRATIONS PENDING; OVERSEER TRANSPORT INTEGRATION PENDING**  
-**Overseer Integration Status**: `CONTRACT_DEFINED` | `INTEGRATION_PENDING`  
+**Canonical floor ID**: `floor01_strategy`
+**Guardian execution alias**: `floor01` (compatibility namespace)
+**Floor Version**: `2.0.0`
+**Location**: `services/pipeline/floor01_strategy/`
+**Status**: **v2 implementation on `feat/floor01-strategy-v2`; merge gated on fresh test/CI verification**
+**Overseer Integration**: canonical Python runtime adapter implemented; endpoint runtime verification pending
+
 **Report Persistence Classification**: `LOCAL_DEVELOPMENT_ARTIFACT_PERSISTENCE = IMPLEMENTED` | `CENTRALIZED_OVERSEER_PERSISTENCE = INTEGRATION_PENDING`  
 
 ---
