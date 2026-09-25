@@ -52,14 +52,16 @@ Generated for Overseer control plane consumption. Contains execution metrics (ID
 
 ## 3. Heuristic Decision Quality Score Semantics
 
-- **Terminology**: `decision_quality_score` (defined weighted heuristic score; **not** a calibrated statistical probability).
+- **Terminology**: `decision_quality_score` is a weighted heuristic quality signal, not a calibrated probability.
 - **Formula**:
-  $$\text{Score} = 0.30 \cdot c_{\text{topic}} + 0.25 \cdot c_{\text{strategy}} + 0.25 \cdot c_{\text{content}} + 0.20 \cdot c_{\text{curriculum}}$$
-- **Component Quality Gates**:
-  - `topic_uniqueness_gate`: Rejects topic if verdict is `DUPLICATE_IN_MEMORY`.
-  - `confidence_score_gate`: Marks status `DEGRADED` if `decision_quality_score < 0.70`.
-
----
+  $$\text{Score} = 0.22e + 0.16n + 0.14a + 0.14p + 0.10c + 0.12d + 0.12k$$
+  where \(e\)=evidence adequacy, \(n\)=novelty, \(a\)=audience fit, \(p\)=platform fit, \(c\)=curriculum coherence, \(d\)=downstream feasibility, and \(k\)=constraint compliance.
+- **Acceptance gate**:
+  A candidate is accepted only when there are no deterministic blockers and the score is at least the configured `min_confidence_threshold` (default 0.70).
+- **Handoff gate**:
+  Canonical production API execution runs in strict mode. Missing/insufficient F00 evidence or an unaccepted strategy is not promoted as a validated handoff.
+- **Topic uniqueness**:
+  `DUPLICATE_IN_MEMORY` is a deterministic blocker and strict execution rejects the request.
 
 ## 4. Provenance & Evidence Classification Rules
 
@@ -76,7 +78,8 @@ Generated for Overseer control plane consumption. Contains execution metrics (ID
   - `INPUT_SANITIZATION = IMPLEMENTED` (strips HTML script tags, control characters, and direct injection phrases)
   - `API_KEY_AUTH = IMPLEMENTED` (`X-API-Key` header verification)
   - `RATE_LIMITING = IMPLEMENTED` (single-node in-process token bucket rate limiter)
-  - `FULL_PROMPT_INJECTION_RESILIENCE = NOT_IMPLEMENTED / REQUIRES_DEFENSE_IN_DEPTH`
+  - `INPUT_BOUNDARY_DEFENSE_IN_DEPTH = IMPLEMENTED` (bounded field/constraint sanitization, model-bound input sanitization, and request-size limits)
+  - `FULL_PROMPT_INJECTION_RESILIENCE = NOT_GUARANTEED` (sanitization is defense-in-depth, not proof of arbitrary provider safety)
 - **Persistence Boundary**: Single-node multi-process file memory hardened with sidecar `.lock` process locking (`msvcrt`/`fcntl`), atomic file replace (`NamedTemporaryFile` + `os.replace`), corruption auto-recovery (`.corrupted.<timestamp>`), retention bounds (`max_records=1000`), full-request SHA-256 idempotency fingerprints, concurrent replay convergence, and fail-hard persistence errors. Multi-node shared memory remains intentionally unsupported until a shared backend is introduced.
 - **Report Persistence**: Local report artifact persistence to `used_artifact/reports/floor01_execution_<id>.json`. Centralized Overseer persistence transport marked `INTEGRATION_PENDING`.
 
@@ -92,7 +95,7 @@ Generated for Overseer control plane consumption. Contains execution metrics (ID
 ## 7. Authoritative Test Verification & Performance Breakdown
 
 Authoritative test execution command:
-`python -m pytest floors/floor01_strategy/tests/`
+`python -m pytest floor01_strategy/tests/ -q`
 
 Authoritative test log: `used_artifact/test_runs/task-827.log`
 
