@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { AutonomousFactoryController } from "../core/controller/AutonomousFactoryController";
 import { ResearchRuntime } from "../core/research/ResearchRuntime";
 import { VoiceFabric } from "../core/voice/VoiceFabric";
-import { RenderFabric } from "../core/rendering/RenderFabric";
+import { RenderFabric } from "../core/fabric/RenderFabric";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import type { RenderIntent } from "../core/contracts/RenderIntentContracts";
 
