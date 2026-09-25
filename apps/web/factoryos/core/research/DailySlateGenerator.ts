@@ -48,7 +48,10 @@ export class DailySlateGenerator {
       const validSources = raw.rawSources.filter(
         (url) => url.startsWith("http://") || url.startsWith("https://")
       );
-      if (validSources.length === 0) {
+      // A slate candidate must point back to a Research Passport produced by F00.
+      // The generator validates the presence of the lineage reference; passport
+      // cryptographic verification remains the responsibility of the consumer.
+      if (validSources.length === 0 || !raw.passportId) {
         continue;
       }
 
