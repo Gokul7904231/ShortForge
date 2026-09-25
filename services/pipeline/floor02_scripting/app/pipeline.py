@@ -28,7 +28,6 @@ from floors.floor02_scripting.app.domain.handoff import (
     ProvenanceEntry,
     WorkerExecutionSummary,
 )
-from floors.floor02_scripting.app.domain.script_ir import EvidenceType as ScriptEvidenceType
 from floors.floor02_scripting.app.infrastructure.llm_narrative_adapter import LLMNarrativeAdapter
 from floors.floor02_scripting.app.infrastructure.memory_store import ScriptMemoryStore
 from floors.floor02_scripting.app.logical_workers.narrative_engine import NarrativeCompiler
@@ -87,6 +86,7 @@ class Floor02Pipeline:
                     duration_ms=round((time.perf_counter() - started) * 1000, 2),
                     worker_results=[],
                     warnings=["Idempotent cached payload returned"],
+                    started_at=started_at,
                 )
                 return payload, report
             except Exception as exc:
@@ -222,6 +222,7 @@ class Floor02Pipeline:
         inp: Floor02Input,
         payload: Floor02HandoffPayload,
         duration_ms: float,
+        started_at: str,
         worker_results: List[WorkerExecutionSummary],
         warnings: List[str],
     ) -> FloorExecutionReport:
@@ -235,7 +236,7 @@ class Floor02Pipeline:
             script_id=payload.script_id,
             floor_id=settings.FLOOR_ID,
             floor_version=settings.FLOOR_VERSION,
-            started_at=datetime.now(timezone.utc).isoformat(),
+            started_at=started_at,
             completed_at=datetime.now(timezone.utc).isoformat(),
             duration_ms=duration_ms,
             execution_mode=ExecutionModeDetails(
