@@ -34,6 +34,39 @@ def verified_research_payload() -> dict:
     }
 
 
+
+
+@pytest.mark.asyncio
+async def test_production_cors_does_not_default_to_localhost(monkeypatch):
+    from floor01_strategy.app.core.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "environment", "production")
+    monkeypatch.setattr(settings, "cors_origins", [])
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.options(
+            "/v1/plan",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+    assert "access-control-allow-origin" not in response.headers
+
+
+@pytest.mark.asyncio
+async def test_malformed_content_length_is_rejected():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.post(
+            "/v1/plan",
+            headers={"Content-Length": "not-a-number", "X-API-Key": "anonymous_dev"},
+            json={"topic_query": "Python decorators"},
+        )
+    assert response.status_code == 400
+
 @pytest.mark.asyncio
 async def test_health_endpoint():
     transport = ASGITransport(app=app)
