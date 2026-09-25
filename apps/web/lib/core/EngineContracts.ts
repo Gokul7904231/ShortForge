@@ -63,6 +63,12 @@ export interface EngineDefinition {
     validationErrors?: string[];
   };
 
+  /** Creator-facing configuration declared by the Content Engine. */
+  configuration: EngineConfigurationSchema;
+
+  /** Engine-specific production contract profile. */
+  contracts: EngineContractProfile;
+
   manifestVersion: string;
   configVersion: number;
 
