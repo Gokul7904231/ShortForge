@@ -50,4 +50,6 @@ jobs:
 
       - name: Run Floor 01 v2 test suite
         working-directory: services/pipeline
+        env:
+          PYTHONPATH: ${{ github.workspace }}/services/pipeline
         run: python -m pytest floor01_strategy/tests/ -q
