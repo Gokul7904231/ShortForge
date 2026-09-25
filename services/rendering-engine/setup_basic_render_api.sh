@@ -13,7 +13,7 @@ CACHE_DIR="/opt/factoryos/render-cache"
 SERVICE_NAME="factoryos-persistent-render.service"
 
 echo "============================================================"
-echo " [FactoryOS] Starting Persistent Basic Render Service Setup "
+echo " [FactoryOS] Starting Persistent Render Service Setup "
 echo "============================================================"
 
 # 1. Verify Root/Sudo
@@ -81,7 +81,7 @@ echo ""
 
 # 8. Check Status & Admin Isolation Status
 echo "============================================================"
-echo " [FactoryOS] Basic Render Service Status:                   "
+echo " [FactoryOS] Persistent Render Service Status:              "
 echo "============================================================"
 systemctl status "$SERVICE_NAME" --no-pager || true
 
