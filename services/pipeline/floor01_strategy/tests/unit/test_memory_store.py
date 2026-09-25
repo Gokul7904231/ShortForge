@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
 
 
 def test_memory_store_in_memory():
