@@ -841,3 +841,42 @@ The Context Compiler may omit irrelevant data from a model projection, but it ma
 **Validation required:** full F03 tests, Guardian tests, TypeScript contract tests, JSON ontology validation, and repository CI. Any failure or contract incompatibility rejects the promotion.
 
 **Rollback:** revert the branch changes as a unit and restore the prior F03 contract/ontology generation. No production authority or external secrets are modified by this decision.
+
+
+## F03 AssetPlanIR second-wave research expansion — 2026-09-25
+
+**Classification:** new capability
+
+**Decision:** Extend the Floor 03 planning contract with the smallest non-conflicting set of patterns discovered through a broader repository and research sweep. The canonical topology remains F02 -> (F03 || F04) -> F05.
+
+### Promoted capabilities
+
+- AssetPlanIR schema 1.1.0 now contains typed continuity modes, reference bindings, generation input modes, normalized safe text regions, motion beats, subject constraints, start/end state hints, evidence and causal lineage, dependency edges, semantic fingerprints, and bounded repair scope.
+- F03 validates the scene dependency DAG before compilation: duplicate scene IDs/sequence indexes, missing dependencies, forward dependencies, self-dependencies, and cycles are rejected.
+- impact_radius now means transitive downstream dependents, enabling repair planning rather than merely repeating prerequisites.
+- Surgical scene regeneration preserves dependency edges and remaps dependency asset IDs to the regenerated asset identity.
+- Guardian evidence hashing now fingerprints the complete validated Floor 03 input instead of only request/script identity fields.
+- The semantic AssetPlanIR fingerprint excludes runtime plan identity and therefore supports replay/cache evidence across distinct request IDs for equivalent plan semantics.
+
+### Research corpus considered
+
+In addition to the original Paperclip, Hindsight, StarNet, NVIDIA Model Optimizer, OpenBao, ORCA, quiche, OpenSpec, and AI Agent Book set, the sweep included StoryForgeAI, VideoClaw, NolanX, Seedance 2.0, script-to-shootable-storyboard, xyz-video-skill, Pydantic AI, CharacterConsistency, PopcornReady, ShotDirector, MultiShotMaster, VstoryGen, and Code2Video.
+
+The detailed clean-room mappings are stored under .okf/research/repo-mappings/.
+
+### Authority and scope invariants
+
+- F03 remains specification/planning only.
+- F03 does not select providers or store provider credentials.
+- F03 does not generate or verify physical media.
+- F03 does not replace TimelineIR, RenderFabric, Guardian, Healer, Slayer, AgentRuntime, or F07.
+- External repositories are evidence only and cannot override executable source, canonical contracts, tests, or locked .okf rules.
+- F03/F04 parallelism is unchanged.
+
+### Validation gate
+
+Fresh F03 Python tests, Guardian tests, TypeScript contract checks, ontology validation, and repository CI remain required before PR promotion. Research quality does not substitute for executable validation.
+
+### Rollback
+
+Revert the second-wave F03 changes as one logical unit. No external provider credentials, production authority, or physical media execution path is modified by this decision.
