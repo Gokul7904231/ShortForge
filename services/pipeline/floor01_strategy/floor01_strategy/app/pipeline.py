@@ -61,9 +61,16 @@ class Floor01Pipeline:
         self,
         memory_store: Optional[StrategyMemoryStore] = None,
         llm_adapter: Optional[LLMStrategyAdapter] = None,
+        artifact_report_dir: Optional[str] = None,
     ) -> None:
         self.memory_store = memory_store or StrategyMemoryStore()
         self.llm_adapter = llm_adapter or LLMStrategyAdapter()
+        if artifact_report_dir:
+            self.artifact_report_dir = Path(artifact_report_dir)
+        elif self.memory_store.storage_path:
+            self.artifact_report_dir = self.memory_store.storage_path.expanduser().resolve().parent / "reports"
+        else:
+            self.artifact_report_dir = Path("data/reports")
         self.topic_worker = TopicIntelligenceWorker(memory_store=self.memory_store)
         self.strategy_worker = StrategyPlannerWorker()
         self.candidate_engine = StrategyCandidateEngine(self.strategy_worker)
@@ -607,8 +614,7 @@ class Floor01Pipeline:
 
     def _persist_report_artifact(self, report: FloorExecutionReport) -> None:
         try:
-            settings = get_settings()
-            reports_dir = Path(settings.memory_file_path).expanduser().resolve().parent / "reports"
+            reports_dir = self.artifact_report_dir
             reports_dir.mkdir(parents=True, exist_ok=True)
             report_file = reports_dir / f"floor01_execution_{report.execution_id}.json"
             report_file.write_text(
