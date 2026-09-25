@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import secrets
 import time
 from typing import Dict, Tuple
@@ -11,27 +10,19 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader
 
 from floors.floor01_strategy.app.core.config import get_settings
+from floors.floor01_strategy.app.core.input_safety import sanitize_input_text
 
 API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 
-def sanitize_input_text(text: str) -> str:
-    """Sanitize untrusted input text by stripping control chars, HTML tags, and injection markers."""
-    if not text:
-        return ""
-    cleaned = re.sub(r"<[^>]*>", "", text)
-    cleaned = re.sub(r"(?i)ignore\s+all\s+previous\s+instructions", "", cleaned)
-    cleaned = re.sub(r"(?i)system\s+prompt\s+override", "", cleaned)
-    cleaned = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", cleaned)
-    return cleaned.strip()
-
 
 class RateLimiter:
-    """In-memory token bucket rate limiter for API protection."""
+    """Bounded in-memory token bucket rate limiter for a single service instance."""
 
-    def __init__(self, requests_per_minute: int = 60) -> None:
+    def __init__(self, requests_per_minute: int = 60, max_clients: int = 10000) -> None:
         self.rate = requests_per_minute
+        self.max_clients = max_clients
         self.tokens: Dict[str, Tuple[float, float]] = {}
 
     def check(self, client_ip: str) -> bool:
