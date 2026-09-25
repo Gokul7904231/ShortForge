@@ -281,7 +281,8 @@ def ensure_local_output(intent: dict[str, Any], output_path: Path) -> dict[str, 
     prepared["project_id"] = str(prepared.get("project_id") or output_path.stem)
 
     output = prepared.setdefault("output", {})
-    output["video_codec"] = VIDEO_ENCODER
+    # Contract codec stays logical H.264; the backend selects the physical encoder via env.
+    output["video_codec"] = "h264"
     output.setdefault("audio_codec", "aac")
     return prepared
 
