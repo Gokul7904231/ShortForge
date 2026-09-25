@@ -38,7 +38,7 @@ Repo-native MIT. External `shortforge-skills/video-analysis` not found on disk �
 Standalone optional pre-generation tool: `reference video → analysis → hook/pacing/visual profile → ShortForge generation plan` → then normal `POST /api/generate-video` flow. Never on the mandatory Basic path (5-generation quota path stays analysis-free).
 
 ## Constraints
-- Optional, not a dependency of `tier=BASIC` queued → FastAPI → Cloudinary flow.
-- No auto-integration of external `yt-dlp` / ffmpeg shell scripts into Worker/Azure.
+- Optional, not a dependency of `tier=BASIC` queued → FactoryOS F06 → provider → Cloudinary flow.
+- No auto-integration of external `yt-dlp` / ffmpeg shell scripts into worker/provider.
 - Bounded calls, model-agnostic when LLM assists (via `IntelligentRouter`).
 - No `.claude/skills`, no Claude dependency.
