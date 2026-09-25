@@ -1,6 +1,6 @@
 # Floor 03 Research Upgrade — Evidence & Adoption Ledger
 
-**Current branch contract:** Floor 03 `2.2.0`; AssetPlanIR `1.2.0`.
+**Current branch contract:** Floor 03 `2.3.0`; AssetPlanIR `1.3.0`.
 
 ## Status
 Implementation branch: `feat/f03-research-upgrade`
@@ -175,3 +175,43 @@ The latest production-gate evidence showed that:
 - runtime-generated asset IDs made semantic plan fingerprints unstable across equivalent executions.
 
 The branch now fingerprints the full validated Floor 03 input for idempotency and separately derives a semantic AssetPlanIR fingerprint with runtime identifiers removed. This keeps request replay safety distinct from semantic plan equivalence.
+
+
+## Research Wave 4 — 2026-09-25
+
+The candidate set was widened beyond the previously mapped media/agent repositories to lineage, reproducibility, execution-boundary, continuity, and validation systems.
+
+### Newly screened sources
+
+| Repository | Signal | F03 treatment |
+|---|---|---|
+| OpenLineage/OpenLineage | First-class lineage entities and versioned facets | Adopted as typed internal PlanLineage and source fingerprint |
+| iterative/dvc | Dependency-aware reproducibility and stable stage identity | Adopted as semantic source/node fingerprint discipline |
+| dagster-io/dagster | Explicit, blocking asset checks and metadata | Adopted as deterministic structural preflight principles |
+| invoke-ai/InvokeAI | Saved workflow/specification separated from executable graph submission | Adopted as strict non-executable AssetPlanIR boundary |
+| divolleggett/character-consistency-skill | Reference-first storyboard validation and reuse | Adopted as explicit continuity/reference strategy |
+| taylorzhou16/video-gen-en | Layered storyboard/shot/motion specification and parameter consistency | Adopted as planning separation and consistency discipline |
+| NVIDIA-NeMo/Guardrails | Explicit input/output/execution validation rails | Adopted only as validation-boundary discipline; Guardian remains authoritative |
+
+### Concrete implementation
+
+- Floor 03 advanced to 2.3.0.
+- AssetPlanIR advanced to schema 1.3.0.
+- Nodes now contain asset_id and a semantic node_fingerprint.
+- The plan now contains source_fingerprint plus a typed PlanLineage envelope.
+- Plan fingerprints are normalized against runtime UUIDs and revision counters.
+- Continuity now records reference_strategy: none, reference_first, last_frame_chain, or hybrid.
+- AssetPlanIR validates dependency/reference bindings, repair scope, impact radius, and frame-input consistency.
+- Regeneration rejects blank instructions and remaps dependency/reference asset identities without changing the authoritative F02 ScriptIR version.
+
+### Non-adoption
+
+F03 still does not:
+- execute provider workflows;
+- store/select provider credentials;
+- generate physical media;
+- become an orchestration authority;
+- replace Guardian, TimelineIR, RenderFabric, or F07;
+- import third-party code, prompts, tests, models, or runtime dependencies.
+
+Fresh CI remains the promotion gate.
