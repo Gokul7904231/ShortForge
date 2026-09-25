@@ -97,7 +97,9 @@ export class LocalComputeProvider extends BaseComputeProvider {
         throw new Error(`[LocalComputeProvider] Workload type "${job.workloadType}" not supported by local render provider.`);
       }
 
-      const localIntent = job.manifest as LocalRenderIntent;
+      const localIntent = (
+        (job.manifest as any)?.localRenderIntent || job.manifest
+      ) as LocalRenderIntent;
       if (!localIntent || !Array.isArray(localIntent.scenes)) {
         throw new Error(`[LocalComputeProvider] Invalid LocalRenderIntent in job manifest for ${job.jobId}`);
       }
