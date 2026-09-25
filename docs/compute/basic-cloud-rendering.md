@@ -1,67 +1,82 @@
-# FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architecture
+# FactoryOS — Basic Compute & Distributed Rendering
 
-## 1. Executive Summary & Core Topology
+## 1. Purpose
 
-FactoryOS implements a **strictly isolated multi-plane rendering architecture**:
+This document describes the non-authoritative compatibility compute surface used around the canonical Floor 06 rendering path.
 
+Production authority:
+
+```text
+F05 TimelineIR / RenderIntent
+        |
+        v
+F06 RenderFabric
+        |
+        v
+ComputeGateway
+        |
+        v
+ComputeRouter
+        |
+        +--> Local
+        +--> Persistent Worker
+        +--> Kaggle
+        +--> Lightning
+        +--> GitHub Actions
+        +--> other qualified providers
+        |
+        v
+Physical artifact
+        |
+        v
+CAS
+        |
+        v
+F07 verification
 ```
-                         FACTORYOS CONTROL PLANE
-                                  │
-                         RenderQueueManager
-                                  │
-                     WorkerPoolRegistry / Router
-                                  │
-                ┌─────────────────┴─────────────────┐
-                │                                   │
-             ADMIN                               BASIC
-                │                                   │
-                ▼                                   ▼
-          Azure VM Pool                       GitHub Actions
-          ADMIN ONLY                          BASIC ONLY
-                │                                   │
-                └─────────────────┬─────────────────┘
-                                  ▼
-                              B2 Storage
-                                  │
-                         Delivery / Download
-```
 
----
+Provider selection is capability- and policy-driven. Provider adapters must fail closed when unavailable or unqualified.
 
-## 2. Non-Negotiable Routing Matrix & Security Rules
+## 2. Basic / Free Rendering
 
-| User Tier | Target Rendering Backend | Access Tier | Failure / Fallback Behavior |
-| :--- | :--- | :--- | :--- |
-| **ADMIN** | Azure VM Pool (`azure-admin`) | `ADMIN_ONLY` | Fallback to BYOR if configured |
-| **BASIC / FREE** | GitHub Actions Ephemeral Workflow | `BASIC` | **NO Azure Fallback**. Returns `BASIC_RENDER_CAPACITY_UNAVAILABLE` |
-| **PRO** | Placeholder (`PRO_RENDERING_NOT_AVAILABLE`) | N/A | Honest capability state. **No Azure / Basic Fallback** |
-| **ENTERPRISE** | Placeholder (`ENTERPRISE_RENDERING_NOT_AVAILABLE`) | N/A | Honest capability state. **No Azure / Basic Fallback** |
-| **BYOR** | User-Owned Desktop / VPS | `USER_OWNED` | Bound strictly to `job.tenantId` |
+The existing basic quota guard may be used to bound free-tier capacity:
 
-> **SERVER-SIDE AZURE ISOLATION**: Non-admin render requests targeting Azure are rejected server-side with `RENDER_BACKEND_FORBIDDEN` and emit an `AZURE_UNAUTHORIZED_ACCESS_ATTEMPT` security event.
+- per-user monthly generation limits
+- global render-minute limits
+- explicit enable/disable state
+- no provider-specific authority
 
----
+After the guard accepts a request, the authoritative F06 path remains `RenderFabric -> ComputeRouter`.
 
-## 3. GitHub Actions Ephemeral Compute Architecture
+## 3. Provider Isolation
 
-1. **Abstraction**: `WorkerPoolRegistry ➔ Provider Adapter ➔ Ephemeral Workflow Run` (via GitHub REST API `workflow_dispatch`).
-2. **Input Security**: Workflow inputs receive **ONLY** `jobId` and short-lived `executionToken`. No master credentials, customer content, or cross-tenant secrets are passed in workflow inputs.
-3. **Billing Safety Guard**: `BasicRenderingCapacityGuard` enforces user-level quotas (5 Shorts/month) and global monthly render minutes limits (`BASIC_MONTHLY_RENDER_MINUTES_LIMIT`) before dispatching.
-4. **Server-Side MP4 Verification**: Control plane independently validates MP4 container headers and non-zero file sizes before issuing `RENDER_COMPLETED`.
+Provider identity is never treated as authority.
 
----
+1. capability compatibility
+2. health/availability
+3. ComputePolicy eligibility
+4. worker permission boundaries
+5. artifact verification requirements
+6. CAS registration where applicable
+7. bounded failover rules
 
-## 4. Environment Variables & Infrastructure Configuration
+A provider cannot report render completion without a physical artifact receipt.
+
+## 4. Environment Configuration
+
+Example provider configuration is intentionally generic:
 
 ```env
-GITHUB_RENDER_REPOSITORY="FactoryOS/factoryos-basic-renderer"
-GITHUB_RENDER_WORKFLOW="factoryos-basic-render.yml"
-GITHUB_RENDER_REF="main"
-GITHUB_RENDER_TOKEN="ghp_xxxxxxxxxxxx"
+RENDER_WORKER_URL=
+RENDER_WORKER_SECRET=
+GITHUB_RENDER_REPOSITORY=
+GITHUB_RENDER_WORKFLOW=
+GITHUB_RENDER_REF=main
+GITHUB_RENDER_TOKEN=
 
 BASIC_MONTHLY_RENDER_MINUTES_LIMIT=1000
 BASIC_RENDER_MAX_DURATION_SECONDS=300
 BASIC_RENDERING_ENABLED=true
-AZURE_RENDERING_ENABLED=true
-AZURE_RENDERING_LOCKDOWN=false
 ```
+
+Provider-specific secrets belong only to their provider adapters and never become creator-facing configuration.
