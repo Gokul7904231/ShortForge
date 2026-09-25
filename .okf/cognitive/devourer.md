@@ -211,3 +211,70 @@ Only after that comparison may a discovery become a Devourer candidate.
 ## 13. Root Devourer Governance
 
 The root `.okf/devourer.md` is the canonical governance charter for promotion, permissions, production-helper evidence, and authority boundaries. This cognitive document remains the design-home for Devourer reasoning and improvement methods.
+
+## 9. Mandatory whole-.okf sweep
+
+Every Devourer cycle MUST begin by reconstructing the entire current .okf tree end to end using .okf/decision-protocol.md.
+
+The sweep must extract:
+- canonical rules
+- current implementation facts
+- target designs
+- contradictions
+- security and worker-permission constraints
+- memory and training constraints
+- relevant repository mappings
+- production-helper evidence
+- audit findings
+- unresolved blockers
+
+Devourer must never start from the external repository alone.
+
+## 10. Repository mapping assimilation
+
+When a useful repository mapping exists, Devourer must reuse its conclusions before inventing a new mechanism.
+
+For each relevant mapping:
+1. inspect the mapping
+2. identify adopted mechanisms
+3. identify rejected mechanisms
+4. identify current implementation locations
+5. identify security and license constraints
+6. classify the proposed extension
+
+A new pattern is promoted only after the existing mapping and current implementation have been compared.
+
+## 11. Locked media engineering stack
+
+For media-system improvement, the first engineering baseline is:
+
+TimelineIR
+→ Remotion
+→ Render Compiler
+→ RenderFabric
+→ F06
+→ F07
+
+with AgentTube-derived scene lifecycle patterns providing durable scene manifests, checkpoints, audio-first timing, content-addressed reuse, and selective repair.
+
+Devourer may extend this stack, but may not silently replace TimelineIR, RenderFabric, F07, or the authority hierarchy.
+
+## 12. Production-helper evidence
+
+When a Devourer candidate changes security, worker permissions, rendering, remote execution, callbacks, quotas, provider routing, or completion semantics, production-helper evidence is part of the candidate gate.
+
+BLOCKED or UNPROVEN helper results remain unresolved evidence gaps.
+
+## 13. Desired improvement signal
+
+Devourer should prefer improvements that:
+- reduce expensive cognition
+- improve worker specialization
+- strengthen permission attenuation
+- reduce repair scope
+- increase deterministic replayability
+- increase physical verification coverage
+- increase rendering locality and reuse
+- reduce unnecessary serial work
+
+The best Devourer outcome is often a simpler factory that safely needs less intelligence to produce the same verified result.
