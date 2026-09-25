@@ -329,7 +329,43 @@ class Floor01Pipeline:
                 )
                 if persisted_payload:
                     payload = Floor01HandoffPayload.model_validate(persisted_payload)
-                    warnings.append("Concurrent idempotent replay returned the existing canonical plan.")
+                    replay_duration_ms = round((time.time() - start_time) * 1000, 2)
+                    replay_report = FloorExecutionReport(
+                        request_id=inp.request_id,
+                        plan_id=payload.plan_id,
+                        floor_id=settings.floor_id,
+                        floor_version=settings.floor_version,
+                        started_at=started_at,
+                        duration_ms=replay_duration_ms,
+                        execution_mode=ExecutionModeDetails(
+                            global_mode=payload.execution_mode,
+                            worker_modes={"idempotent_replay": payload.execution_mode},
+                            configured_provider=self.llm_adapter.provider_name,
+                            configured_model=self.llm_adapter.model_name,
+                            executed=False,
+                        ),
+                        status=payload.handoff_status,
+                        input_summary=inp.model_dump(),
+                        worker_results=[
+                            WorkerExecutionSummary(
+                                worker_name="IdempotencyReplay",
+                                execution_mode=ExecutionMode.DETERMINISTIC,
+                                duration_ms=replay_duration_ms,
+                                confidence_score=payload.decision_quality_score,
+                                evidence_count=len(payload.strategic_memory_refs),
+                                status="REPLAYED",
+                            )
+                        ],
+                        decisions=[
+                            {"plan_id": payload.plan_id, "replayed": True},
+                            {"input_fingerprint": payload.input_fingerprint},
+                        ],
+                        decision_quality_score=payload.decision_quality_score,
+                        component_gates={"idempotency_gate": True},
+                        warnings=["Concurrent idempotent replay returned the existing canonical plan."],
+                        handoff_reference={"plan_id": payload.plan_id, "cached": True},
+                    )
+                    return payload, replay_report
 
             total_duration_ms = round((time.time() - start_time) * 1000, 2)
             all_provenance = (
