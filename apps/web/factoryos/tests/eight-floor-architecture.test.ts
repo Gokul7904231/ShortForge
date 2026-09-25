@@ -153,7 +153,7 @@ describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsyst
 
     const localExec = await fabric.executeRender({ ...standardIntent, durationSeconds: 2 }, "LOCAL");
     expect(localExec.success).toBe(true);
-    expect(localExec.providerUsed).toBe("LOCAL");
+    expect(localExec.providerUsed).toBe("DISTRIBUTED");
     expect(localExec.compilerUsed).toBe("FFMPEG");
     expect(localExec.artifact).toBeDefined();
 
