@@ -160,6 +160,7 @@ class StrategyMemoryStore:
 
         self._records = []
         self._idempotency_map = {}
+        self._reservations = {}
 
     def _rebuild_idempotency_map(self) -> None:
         self._idempotency_map.clear()
