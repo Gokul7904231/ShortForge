@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from floors.floor02_scripting.app.domain.script_models import SceneSpecification
+
 
 class BeatType(str, Enum):
     HOOK = "HOOK"
@@ -168,7 +170,7 @@ class NarrativeCandidate(BaseModel):
     causal_events: List[CausalEvent] = Field(default_factory=list)
     narrative_state: NarrativeState = Field(default_factory=NarrativeState)
     claims: List[ClaimRef] = Field(default_factory=list)
-    scenes: List[Any] = Field(default_factory=list)
+    scenes: List[SceneSpecification] = Field(default_factory=list)
     evidence_lineage: List[str] = Field(default_factory=list)
 
 
@@ -192,7 +194,7 @@ class ScriptIR(BaseModel):
     beats: List[NarrativeBeat] = Field(default_factory=list)
     causal_events: List[CausalEvent] = Field(default_factory=list)
     narrative_state: NarrativeState = Field(default_factory=NarrativeState)
-    scenes: List[Any] = Field(default_factory=list)
+    scenes: List[SceneSpecification] = Field(default_factory=list)
 
     retention: Dict[str, Any] = Field(default_factory=dict)
     quality: Optional[ScriptQualityReport] = None
