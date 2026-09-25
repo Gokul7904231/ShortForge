@@ -93,15 +93,20 @@ export class DailySlateGenerator {
       .map((c) => c.passportId)
       .filter((id): id is string => !!id);
 
-    // Compute cryptographic provenance digest
+    // Compute cryptographic provenance digest over the complete generated slate
+    // payload rather than only candidate identifiers.
     const digestPayload = JSON.stringify({
       slateId,
       scheduleId: scheduleInstance.scheduleId,
       instanceId: scheduleInstance.instanceId,
+      missionId: scheduleInstance.missionId,
+      generatedAt: now,
       requestedCount,
       candidateCount: validCandidates.length,
       unmetCapacity,
-      candidates: validCandidates.map((c) => c.candidateId),
+      unmetReason,
+      researchPassportIds,
+      selectedCandidates: validCandidates,
     });
     const provenanceDigest = createHash("sha256").update(digestPayload, "utf8").digest("hex");
 
