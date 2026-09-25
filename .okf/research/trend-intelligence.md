@@ -1,61 +1,95 @@
 # Research: Trend Intelligence & Daily Content Slate Generation
 
-> **Status**: OPERATIONAL / CANONICAL  
-> **Source Location**: `apps/web/factoryos/core/research/DailySlateGenerator.ts` & `apps/web/factoryos/core/research/ResearchRuntime.ts`
+> **Status**: CANONICAL / IMPLEMENTATION-ALIGNED  
+> **Current implementation**: `apps/web/factoryos/core/research/DailySlateGenerator.ts` and `apps/web/factoryos/core/research/ResearchRuntime.ts`
 
----
+## 1. Floor 00 responsibility
 
-## 1. Architectural Philosophy: Demand-Driven Trend Synthesis
+Floor 00 is the evidence-intake boundary of FactoryOS.
 
-An autonomous video factory must not flood channels with repetitive, saturated, or low-interest content. At the same time, it must not fabricate arbitrary topics when market signals are quiet.
+The production research path is:
 
-FactoryOS combines trend discovery and schedule requirements in the **Daily Slate Generator**:
-1. **Dynamic Schedule Sizing**: Floor 00 ingests `ScheduleTargetRequirements` (e.g. produce 3 videos across AI and science niches) and computes required candidate volume dynamically.
-2. **Thematic Clustering & Deduplication**: High-velocity search and social topics are clustered into semantic buckets, filtering out duplicate or overlapping angles.
-3. **Saturation & Novelty Scoring**: Each topic is scored against historical channel publications and broader market saturation. Topics exceeding saturation thresholds are pruned.
-4. **Honest Capacity Reporting**: If vetted, high-novelty topics fall short of the schedule's target, `DailySlateGenerator` outputs a partial slate with an explicit **capacity deficit report** rather than inventing fictional trends.
-
-```
-┌────────────────────────────────────────────────────────┐
-│               ScheduleTargetRequirements               │
-│         (Target Video Count: N, Niches, Formats)       │
-└───────────────────────────┬────────────────────────────┘
-                            │ Dynamic Capacity Ingestion
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                  DailySlateGenerator                   │
-│  ├── Ingest Raw Candidates from ReachSubsystem         │
-│  ├── Deduplicate & Semantic Cluster                    │
-│  ├── Calculate Novelty Score (vs Channel History)      │
-│  ├── Filter: Saturation Score < Max Threshold          │
-│  └── Match Top N Candidates with ResearchPassports     │
-└───────────────────────────┬────────────────────────────┘
-                            │ Daily Slate Output
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                   DailyContentSlate                    │
-│  ├── items: Array of Vetted Topic Items                │
-│  ├── targetRequirementsMet: boolean                    │
-│  └── unmetCapacityReason?: string (if deficit exists)  │
-└────────────────────────────────────────────────────────┘
+```text
+Mission / Engine Research Contract
+        ↓
+Floor 00 ResearchRuntime
+        ↓
+ReachSubsystem
+        ↓
+EvidenceSource[]
+        ↓
+Claim classification
+        ↓
+Cryptographically signed ResearchPassport
+        ↓
+AnalystReport
+        ↓
+Floor 01
 ```
 
----
+`DailySlateGenerator` is a schedule-driven slate utility that can turn already researched candidates into a bounded `DailyContentSlate`. It is **not currently the direct executor used by the F00 task executor**.
 
-## 2. CURRENT vs TARGET Architecture Status
+## 2. What DailySlateGenerator actually guarantees
 
-| Architectural Dimension | CURRENT Implementation | TARGET Implementation |
-|:------------------------|:-----------------------|:----------------------|
-| **Slate Generation** | `DailySlateGenerator.ts` with explicit deficit reporting | Dynamic queue balancing across multiple competitive sister channels |
-| **Saturation Scoring** | Vector similarity distance from past 30 days of channel scripts | Global cross-channel multi-platform saturation indexing in real-time |
-| **Capacity Sizing** | Purely dynamic based on schedule requirements (no constants) | Predictive dynamic scheduling allocating more videos to exploding trends |
-| **Topic Clustering** | Embedding-based DBSCAN / hierarchical agglomerative clustering | Continuous topic streaming graph clustering with automated title ideation |
-| **Novelty Calibration**| Minimum cosine distance threshold against published archive | Multi-dimensional novelty scoring (angle, visual motif, audio hook) |
+The current implementation:
 
----
+- derives the requested candidate count from `ScheduleInstance.targetRequirements.requestedCount`;
+- normalizes topic names and removes duplicate topic strings;
+- requires syntactically valid HTTP(S) source URLs;
+- requires a non-empty `passportId` lineage reference;
+- rejects candidates with saturation above `0.8`;
+- preserves supplied novelty/saturation values, otherwise applies bounded compatibility defaults;
+- never fabricates candidates when capacity is insufficient;
+- emits an explicit `unmetCapacity` / `unmetReason`;
+- computes a SHA-256 provenance digest for the generated slate.
 
-## 3. Slate Invariants & Safety Rules
+The generator does **not** currently:
+- perform semantic embedding clustering;
+- query channel history;
+- calculate cross-channel trend velocity;
+- cryptographically verify the referenced ResearchPassport itself.
 
-- **Zero Trend Fabrication**: Under no circumstances may the generator invent topics out of thin air to fulfill a target count. If only 2 valid topics exist for a 3-video schedule, 2 videos are produced and an alert is logged.
-- **Passport Required**: Every item included in a `DailyContentSlate` must have an associated `ResearchPassport` reference.
-- **Novelty Floor**: Any candidate with a novelty score below 0.60 relative to the channel's recent 30-day production history is automatically rejected.
+Those are downstream/target capabilities, not current guarantees.
+
+## 3. Schedule sizing invariant
+
+Autonomous production quantity comes from `ScheduleInstance.targetRequirements.requestedCount`.
+
+That is a **business production quantity**, distinct from the bounded external-source fan-out used by `ResearchRuntime`.
+
+For production runs, the selected Content Engine's research contract may provide `minSources` and other research requirements. Standalone legacy research calls retain a small methodology-based fallback only for backward compatibility.
+
+## 4. Current vs target
+
+| Dimension | Current | Target |
+|---|---|---|
+| Schedule sizing | Implemented from ScheduleInstance | Predictive capacity allocation |
+| Topic deduplication | Exact normalized-topic deduplication | Semantic angle/topic clustering |
+| Saturation | Explicit candidate saturation filter | Cross-channel real-time saturation graph |
+| Novelty | Supplied candidate score or bounded compatibility default | Measured against historical channel/content genome |
+| Passport lineage | Required by DailySlateGenerator | Cryptographically verified before slate acceptance |
+| Slate execution | Utility/tested contract | Directly wired into autonomous F00 scheduled execution |
+
+## 5. Non-fabrication invariant
+
+If F00 cannot obtain usable evidence, it must not invent sources, URLs, trends, or "observed" metrics.
+
+The resulting ResearchPassport may contain an explicit `UNVERIFIED_ASSERTION`, but that is evidence of insufficient research, not a successful factual finding.
+
+## 6. Content Engine relationship
+
+A Content Engine may declare its research contract:
+
+```text
+Content Engine
+  ↓
+Research Contract
+  ↓
+F00 ResearchRuntime
+  ↓
+AgentReach / ReachSubsystem
+  ↓
+ResearchPassport
+```
+
+The Content Engine constrains what evidence F00 is supposed to acquire; AgentReach remains the external information acquisition boundary.
