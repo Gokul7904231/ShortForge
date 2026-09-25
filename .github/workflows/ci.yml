@@ -121,7 +121,7 @@ jobs:
         env:
           FLOOR01_CI_SERVICE_KEY: ci-floor01-service-key-012345678901234567890123456789
         run: |
-          docker run -d --rm --name floor01-ci \
+          docker run -d --name floor01-ci \
             -p 18080:8000 \
             -e FLOOR01_ENVIRONMENT=production \
             -e FLOOR01_SERVICE_API_KEY="$FLOOR01_CI_SERVICE_KEY" \
@@ -142,6 +142,7 @@ jobs:
             docker ps -a
             docker inspect floor01-ci --format '{{.State.Status}} {{.State.ExitCode}} {{.State.Error}}' || true
             docker logs floor01-ci || true
+            docker rm -f floor01-ci >/dev/null 2>&1 || true
             exit 1
           fi
 
@@ -189,6 +190,9 @@ jobs:
             -X POST \
             -d '{"topic_query":"Python decorators"}' \
             http://127.0.0.1:18080/v1/plan)" = "401"
+
+          docker stop floor01-ci >/dev/null
+          docker rm floor01-ci >/dev/null
 
   f01-security:
     name: Floor 01 Security & Dependency Scan
