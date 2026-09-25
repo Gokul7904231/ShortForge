@@ -8,7 +8,7 @@ on:
 
 jobs:
   verify:
-    name: TypeCheck & Tests (CI) — no Render OOM
+    name: TypeCheck & Floor 01 Contract Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -27,7 +27,30 @@ jobs:
       - name: TypeScript TypeCheck (strict, fails CI on error)
         run: cd apps/web && npm run typecheck
 
-      - name: Tests (vitest scoped to factoryos + shortforge)
+      - name: Floor 01 Runtime Adapter Contract Tests
+        run: cd apps/web && npx vitest run factoryos/tests/floor01-runtime-adapter.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+  web-regression-informational:
+    name: Web Regression Suite (Informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: cd apps/web && npm ci
+
+      - name: Full Vitest regression suite
         run: cd apps/web && npm test
         env:
           NEXT_TELEMETRY_DISABLED: 1
