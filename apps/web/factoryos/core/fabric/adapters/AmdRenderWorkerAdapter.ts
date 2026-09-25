@@ -193,34 +193,32 @@ export class AmdRenderWorkerAdapter implements IRenderWorker {
     byteLength: number;
   }> {
     const bytes = await fs.readFile(filePath);
-    const form = new FormData();
-    form.append("jobId", jobId);
-    form.append(
-      "file",
-      new Blob([bytes], { type: "application/octet-stream" }),
-      path.basename(filePath)
-    );
 
     const response = await this.fetchRaw("/api/factoryos/render/inputs", {
       method: "POST",
-      body: form,
+      headers: {
+        "X-Job-Id": jobId,
+        "X-Filename": path.basename(filePath),
+        "Content-Type": "application/octet-stream",
+      },
+      body: bytes,
     });
     const text = await response.text();
 
     if (!response.ok) {
       throw new Error(
         "[AmdRenderWorkerAdapter] AMD input upload failed HTTP " +
-          response.status + ": " +
+          response.status +
+          ": " +
           text.slice(0, 500)
       );
     }
 
-    const payload = JSON.parse(text) as {
+    return JSON.parse(text) as {
       remotePath: string;
       sha256: string;
       byteLength: number;
     };
-    return payload;
   }
 
   public async getRemoteJobStatus(
