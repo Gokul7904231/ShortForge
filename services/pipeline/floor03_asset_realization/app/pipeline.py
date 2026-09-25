@@ -19,6 +19,7 @@ from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     AssetDependency,
     AssetPlanIR,
     AssetPlanNode,
+    CoverageRole,
     DependencyRelation,
     RepairPlan,
     RepairScope,
@@ -228,6 +229,9 @@ class Floor03Pipeline:
                     source_scene_version=scene.scene_version,
                     source_beat_id=scene.beat_id or None,
                     sequence_index=req.sequence_index,
+                    coverage_role=CoverageRole(
+                        str(req.continuity_constraints.get("coverage_role") or "action").lower()
+                    ),
                     visual=req.scene_plan,
                     dependencies=dependencies,
                     target_duration_seconds=req.target_duration_seconds,
