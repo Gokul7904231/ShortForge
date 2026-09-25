@@ -76,6 +76,16 @@ export class Floor01RuntimeAdapter {
     if (payload.handoff_status === "REJECTED") {
       throw new Error("F01_STRATEGY_REJECTED_BY_CANONICAL_RUNTIME");
     }
+    if (payload.handoff_status === "DEGRADED") {
+      throw new Error(
+        "F01_DEGRADED_HANDOFF_NOT_ALLOWED: canonical production handoff must be VALIDATED.",
+      );
+    }
+    if (payload.handoff_status !== "VALIDATED") {
+      throw new Error(
+        "F01_INVALID_HANDOFF_STATUS: canonical production handoff status is not recognized.",
+      );
+    }
 
     return payload;
   }
