@@ -54,7 +54,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, description, workflow, voice, prompt, sceneRules, category } = body;
+    const {
+      name,
+      description,
+      workflow,
+      voice,
+      prompt,
+      sceneRules,
+      category,
+      configuration,
+      contracts,
+    } = body;
     if (!name || !name.trim()) {
       return NextResponse.json({ success: false, error: "Engine name is required." }, { status: 400 });
     }
@@ -70,6 +80,8 @@ export async function POST(req: Request) {
         },
         prompt,
         sceneRules,
+        configuration,
+        contracts,
       },
       { uid: user.uid, role: user.role }
     );
