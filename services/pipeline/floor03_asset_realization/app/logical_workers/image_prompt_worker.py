@@ -240,12 +240,10 @@ class ImagePromptWorker:
             if not isinstance(beat, dict):
                 continue
             try:
-                result.append(
-                    MotionBeat(
-                        start_seconds=float(beat.get("start_seconds", beat.get("start", 0))),
-                        end_seconds=float(beat.get("end_seconds", beat.get("end", 0))),
-                        instruction=str(beat.get("instruction") or beat.get("description") or "").strip(),
-                    )
+                motion = MotionBeat(
+                    start_seconds=float(beat.get("start_seconds", beat.get("start", 0))),
+                    end_seconds=float(beat.get("end_seconds", beat.get("end", 0))),
+                    instruction=str(beat.get("instruction") or beat.get("description") or "").strip(),
                 )
             except (TypeError, ValueError) as exc:
                 raise Floor03ValidationError(
