@@ -151,18 +151,21 @@ Use these files as the canonical entry points for future architecture decisions 
 Every future non-trivial decision begins with the complete current .okf end-to-end sweep defined in .okf/decision-protocol.md. Relevant repository mappings and production-helper evidence are mandatory decision inputs, and worker permissions are governed by .okf/security/worker-permissions.md.
 
 
-## 9. Forger Engineering Workforce
+## 9. MCP Integration Architecture
 
-".okf/intelligence/forgers.md" defines the development-time engineering workforce that maintains FactoryOS through specialized developer roles.
+MCP integrations are external tool/context surfaces, not a replacement for FactoryOS authority.
 
-## 10. Forger Security Stack
+Current MCP posture:
+- GitHub: existing engineering/development integration.
+- Google Drive: repository-owned bounded storage/knowledge integration at tools/mcp/google-drive/.
+- Browser / DevTools: planned research/diagnostic integration, subject to the same capability and evidence rules.
 
-".okf/security/forger-security-stack.md" defines the Security Forge using production-helper, Semgrep, Strix, and the governed ZAP DAST lane.
+Production side effects must continue through canonical internal boundaries such as AgentRuntime, Guardian, CAS, F07, ReleaseAuthorization, RenderFabric, and provider adapters.
 
-## 11. Selected Engineering Research
+The canonical MCP architecture is documented in .okf/intelligence/mcp-architecture.md.
 
-The repository mapping stack now includes the gstack engineering-workflow reference and the OWASP ZAP security-provider candidate alongside the existing mappings for ECC, Chrome DevTools MCP, AgentEvals, OpenAI Evals, OpenHands Benchmarks, Temporal, Archify, Remotion, AgentTube, MarkItDown, BrowserGym, and Zstandard.
+## 10. MCP Security Entry Point
 
-## 12. Absolute routine extension
+MCP-specific least-privilege rules are documented in .okf/security/mcp-permissions.md.
 
-Every Forger task inherits the mandatory full-.okf sweep. The relevant specialist then consumes the applicable repo mappings and production-helper evidence before implementation or claims of verification.
+No F00-F07 worker receives generic MCP access by default.

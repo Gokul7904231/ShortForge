@@ -510,20 +510,25 @@ Minimum expected checks:
 A blocked Strix run remains UNPROVEN, never PASS.
 
 
-## 28. Forger permissions are separate from production-floor permissions
+## 28. MCP access is separate from floor permissions
 
-Forgers are development-time agents and must not be added to the F00-F07 floor capability matrix merely because they maintain the code.
+MCP access is not ambient worker authority.
 
-Reserved development-time capability names are governed in .okf/intelligence/forgers.md:
-- CAP_FORGE_RESEARCH
-- CAP_FORGE_ARCHITECTURE
-- CAP_FORGE_CODE
-- CAP_FORGE_BROWSER
-- CAP_FORGE_SECURITY
-- CAP_FORGE_EVAL
-- CAP_FORGE_RENDERING
-- CAP_FORGE_PERFORMANCE
-- CAP_FORGE_DOCUMENTATION
-- CAP_FORGE_RELEASE
+No F00-F07 worker receives MCP capabilities by default. If a worker must use an MCP, the access must be represented as an explicit capability and skill contract, with task/session scope and verification requirements.
 
-These names are reservations until the executable permission system and tests implement them. A Forger capability never implies CAP_DELIVERY_PUBLISH, F07 certification, Guardian authority, lease mutation, or ReleaseAuthorization.
+Canonical MCP capabilities are documented separately in .okf/security/mcp-permissions.md:
+- CAP_MCP_DRIVE_READ
+- CAP_MCP_DRIVE_WRITE
+- CAP_MCP_BROWSER_RESEARCH
+- CAP_MCP_GITHUB_READ
+- CAP_MCP_GITHUB_WRITE
+
+These names are governance reservations until the executable CapabilityRegistry, tests, and production-helper checks establish them as implemented capabilities.
+
+An MCP call can retrieve information or request an external side effect, but it cannot:
+- mint capabilities
+- extend/revoke leases
+- bypass Guardian
+- certify F07
+- mint ReleaseAuthorization
+- convert provider success into verified production completion

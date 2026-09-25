@@ -525,6 +525,71 @@ All workers operate under `.okf/security/worker-permissions.md`. No worker recei
 
 The root Devourer charter is `.okf/devourer.md`. Devourer may research, prototype, train candidates, benchmark, evaluate, and canary; it may not silently promote production weights, permissions, contracts, security policy, or architecture.
 
+## 31. MCP integration boundary
+
+Classification: new capability, extending existing provider/adapter boundaries.
+
+ShortForge may expose bounded external systems through Model Context Protocol (MCP), but MCP is an integration surface and must not become a second authority plane.
+
+Locked rules:
+- GitHub remains the engineering/development MCP integration already available.
+- Google Drive MCP is a repository-owned bounded operator/developer integration.
+- Production Drive delivery remains through the existing GoogleDriveStorageProvider and DriveDeliveryAdapter.
+- MCP output is evidence/input, not architecture authority.
+- MCP tools do not mint capabilities, extend leases, revoke fencing, certify F07, or mint ReleaseAuthorization.
+- Generic MCP access is not part of the default F00-F07 worker capability matrix.
+- New MCP capabilities must be explicitly named, scoped, tested, and filed.
+
+## 32. Google Drive MCP boundary
+
+Classification: new capability.
+
+Repository path: tools/mcp/google-drive/.
+
+Initial tool surface:
+- drive_health
+- drive_list
+- drive_search
+- drive_get_metadata
+- drive_create_folder
+- drive_upload
+- drive_download
+- drive_export
+
+Locked security posture:
+- read-only Drive scope by default
+- write operations require explicit readwrite scope
+- local upload paths are allowlisted
+- download paths are containment-checked
+- configured Drive root is enforced for file/folder access
+- no delete/trash operation
+- no ACL/public-sharing mutation
+- no release/publishing authority
+
+Implementation status is SCAFFOLDED / NOT YET RUNTIME-VERIFIED until dependency installation, typecheck, MCP handshake, authenticated Drive health, and representative read/write tests pass.
+
+## 33. MCP essential-set rule
+
+The default ShortForge MCP set is intentionally small:
+
+1. GitHub — engineering and repository operations.
+2. Google Drive — bounded artifact/document storage and exchange.
+3. Browser/DevTools — research/diagnostics when needed.
+
+A database, object-storage, chat, social publishing, or generic filesystem MCP is not automatically required. Add one only when an actual workflow gap remains after checking existing provider adapters and internal subsystems.
+
+## 34. MCP validation gate
+
+Before promoting an MCP integration:
+- complete the current .okf sweep
+- inspect the relevant implementation and tests
+- define the capability boundary
+- run production-helper checks where applicable
+- verify authentication and least privilege
+- verify failure/timeout behavior
+- verify filesystem/network containment
+- verify idempotency for side effects
+- verify that production authority remains in canonical internal components
 ## 31. Forger engineering workforce
 
 **Classification:** extends existing rule.

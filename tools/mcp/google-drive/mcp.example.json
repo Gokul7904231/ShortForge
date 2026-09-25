@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "shortforge-google-drive": {
+      "command": "npx",
+      "args": ["tsx", "tools/mcp/google-drive/src/index.ts"],
+      "cwd": "/absolute/path/to/ShortForge"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+name: Google Drive MCP
+
+on:
+  pull_request:
+    paths:
+      - "tools/mcp/google-drive/**"
+      - ".okf/intelligence/mcp-architecture.md"
+      - ".okf/security/mcp-permissions.md"
+      - ".okf/security/worker-permissions.md"
+      - ".okf/decisions.md"
+      - ".okf/index.md"
+  push:
+    branches: [main]
+    paths:
+      - "tools/mcp/google-drive/**"
+
+jobs:
+  verify:
+    name: Google Drive MCP TypeCheck & Security Self-Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/mcp/google-drive
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install MCP dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Security self-test
+        run: npm test
