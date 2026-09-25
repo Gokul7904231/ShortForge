@@ -197,13 +197,18 @@ def test_floor02_handoff_ingestion_and_asset_planning(tmp_path):
     assert payload.script_id == f02_payload.script_id
     assert payload.resolved_platform == "youtube_shorts"
     assert payload.floor_id == "floor03_asset_realization"
-    assert payload.floor_version == "2.2.0"
+    assert payload.floor_version == "2.3.0"
     assert payload.asset_plan_ir is not None
     assert payload.asset_plan_ir.script_id == f02_payload.script_id
     assert payload.asset_plan_ir.platform == payload.resolved_platform
-    assert payload.asset_plan_ir.schema_version == "1.2.0"
+    assert payload.asset_plan_ir.schema_version == "1.3.0"
     assert payload.asset_plan_ir.plan_fingerprint
     assert all(node.coverage_role.value for node in payload.asset_plan_ir.nodes)
+    assert all(node.asset_id for node in payload.asset_plan_ir.nodes)
+    assert all(node.node_fingerprint and len(node.node_fingerprint) == 64 for node in payload.asset_plan_ir.nodes)
+    assert payload.asset_plan_ir.source_fingerprint == payload.asset_plan_ir.lineage.source_fingerprint
+    assert payload.asset_plan_ir.lineage.source_floor_id == "floor02_scripting"
+    assert payload.asset_plan_ir.lineage.compiler_floor_id == "floor03_asset_realization"
     assert len(payload.asset_plan_ir.nodes) == len(payload.visual_asset_requirements)
     assert len(payload.visual_asset_requirements) >= 3
     assert len(payload.audio_asset_requirements) >= 3
@@ -222,7 +227,7 @@ def test_execution_report_generation_and_artifact_persistence(tmp_path):
     assert isinstance(payload, Floor03HandoffPayload)
     assert isinstance(report, FloorExecutionReport)
     assert report.floor_id == "floor03_asset_realization"
-    assert report.floor_version == "2.2.0"
+    assert report.floor_version == "2.3.0"
     assert report.request_id == "req-f03-report-1"
 
     report_file = report_dir / f"floor03_execution_{report.execution_id}.json"
@@ -309,6 +314,12 @@ def test_asset_plan_fingerprint_is_semantic_and_request_independent(tmp_path):
     assert payload_a.asset_plan_ir.plan_id != payload_b.asset_plan_ir.plan_id
     assert payload_a.asset_plan_ir.plan_fingerprint == payload_b.asset_plan_ir.plan_fingerprint
     assert len(payload_a.asset_plan_ir.plan_fingerprint) == 64
+    asset_ids_a = {node.scene_id: node.asset_id for node in payload_a.asset_plan_ir.nodes}
+    asset_ids_b = {node.scene_id: node.asset_id for node in payload_b.asset_plan_ir.nodes}
+    assert asset_ids_a != asset_ids_b
+    node_fingerprints_a = {node.scene_id: node.node_fingerprint for node in payload_a.asset_plan_ir.nodes}
+    node_fingerprints_b = {node.scene_id: node.node_fingerprint for node in payload_b.asset_plan_ir.nodes}
+    assert node_fingerprints_a == node_fingerprints_b
 
 
 def test_idempotency_cache_returns_same_typed_payload(tmp_path):
