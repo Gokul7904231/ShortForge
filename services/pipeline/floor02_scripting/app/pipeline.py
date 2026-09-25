@@ -75,7 +75,10 @@ class Floor02Pipeline:
         self._require_upstream(inp, strict)
 
         input_fingerprint = self.memory_store.fingerprint(inp.model_dump(mode="json"))
-        cached = self.memory_store.get_idempotent_payload(inp.request_id, input_fingerprint)
+        try:
+            cached = self.memory_store.get_idempotent_payload(inp.request_id, input_fingerprint)
+        except ValueError as exc:
+            raise Floor02ValidationError(str(exc)) from exc
         if cached:
             try:
                 payload = Floor02HandoffPayload.model_validate(cached)
