@@ -140,3 +140,27 @@ Host requirement: system `ffmpeg` on PATH.
 - Workflows: `ci.yml` (Build & TypeCheck at `apps/web` — `tsc --noEmit` + `next build`), `factoryos-render-worker.yml` (cron `* * * * *` dispatcher), `factoryos-basic-render.yml` (per-job `create_short.py`).
 
 Full authoritative design → `docs/ARCHITECTURE.md` (698 lines — data layer, skill system, 109 routes, deployment, archived components, roadmap).
+
+
+## CRITICAL: ShortForge Architecture Decision Protocol
+
+Before any non-trivial architecture, engineering, research-assimilation, worker, permission, rendering, model, security, workflow, or Devourer decision:
+
+1. Read the entire current `.okf` tree end to end.
+2. Extract the relevant existing rules, implementation facts, target states, contradictions, audits, and repository mappings.
+3. Read `.okf/decision-protocol.md` and classify the proposal as `already exists`, `extends existing rule`, `contradicts existing rule`, `new capability`, or `experiment only`.
+4. Inspect the relevant executable implementation and tests after the `.okf` sweep.
+5. Consult `production-helper/` for applicable evidence and run the relevant checks for security, worker permissions, rendering, callbacks, providers, or release behavior.
+6. Record architectural decisions in `.okf/decisions.md` or the appropriate canonical `.okf` document.
+
+The `.okf` corpus is the first architectural reasoning context. It does not outrank executable implementation or tests when a conflict exists.
+
+Mandatory references:
+- `.okf/decision-protocol.md`
+- `.okf/hierarchy-map.md`
+- `.okf/security/worker-permissions.md`
+- `.okf/engineering-stack.md`
+- `.okf/production-helper.md`
+- `.okf/devourer.md`
+
+Do not introduce a new abstraction, repository pattern, worker capability, renderer, or model behavior merely because it is novel or useful in isolation. Reconcile it against the current `.okf` and existing repo mappings first.
