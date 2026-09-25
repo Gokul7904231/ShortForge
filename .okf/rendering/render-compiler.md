@@ -53,3 +53,16 @@ Rather than authoring raw FFmpeg shell scripts or hardcoding React Remotion comp
 - **Canvas Integrity**: The compiler must strictly enforce vertical $1080 \times 1920$ resolution output with 9:16 aspect ratio.
 - **Audio Clamping**: Audio volumes across tracks are automatically normalized to target -14 LUFS to prevent clipping or distortion.
 - **Time Quantization**: Clip boundaries are quantized to exact frame intervals (1/30s at 30fps) to eliminate fractional frame audio drift.
+
+
+## 4. Selected engineering stack
+
+The primary programmatic composition target is Remotion.
+
+Compiler boundary: TimelineIR -> Remotion composition -> RenderFabric -> F07.
+
+AgentTube-derived lifecycle mechanisms provide durable scene manifests, checkpoints, audio-first timing, scene-level repair, and CAS reuse.
+
+FFmpeg remains the deterministic physical fallback.
+
+No renderer may bypass TimelineIR semantics, capability authorization, or F07 verification.
