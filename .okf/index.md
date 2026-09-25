@@ -107,7 +107,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Devourer Charter** | [./devourer.md](./devourer.md) | Root-level controlled self-improvement charter; detailed cognitive implementation remains in .okf/cognitive/devourer.md. |
 | **Absolute Hierarchy Map** | [`./hierarchy-map.md`](./hierarchy-map.md) | Master mapping of authority levels, cognition, regulators, runtime, workers, F00–F07, verification, memory, learning, and boundary rules. |\n| **Control Hierarchy** | [`./hierarchy/`](./hierarchy/) | Overseer, Guardian, Slayer, Healer, ReMaker, Auditor, and Worker execution contracts. |
 | **Intelligence & Models** | [`./intelligence/`](./intelligence/) | AgentRuntime, Skills, Capability-First Model Routing, Evaluation suite, and Ascalon training. |
-**Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
+| **Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
 | **Cognitive Layer** | [`./cognitive/`](./cognitive/) | ShortForge Cognitive Layer, worker cognition contract, Devourer self-improvement program, and cross-layer improvement roadmap. |
 | **Memory & Knowledge** | [`./memory/`](./memory/) | MemoryOS, KnowledgeOS, domain-typed stores, and long-term memory promotion. |
 | **Workflows & Schedule** | [`./workflows/`](./workflows/) | Schedule lifecycle, mission execution, bounded healing, and gate-verified publishing. |
