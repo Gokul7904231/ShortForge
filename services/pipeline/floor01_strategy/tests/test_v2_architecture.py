@@ -130,7 +130,7 @@ def test_model_candidate_sanitizes_untrusted_provider_text(tmp_path):
         normalized_topic="python decorators",
         category="computer_science",
         niche="python",
-        selection_reason="test",
+        selection_reason="test fixture",
         similarity_risk_score=0.0,
         uniqueness_verdict=UniquenessVerdict.MEMORY_UNSEEN,
     )
