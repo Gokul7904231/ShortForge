@@ -83,7 +83,7 @@ Additional references reviewed:
 4. **Graph-aware impact.** Scene dependencies are now validated for missing references, forward dependencies, and cycles. impact_radius is the transitive downstream dependent set, not the scene's own prerequisites.
 5. **Repair locality.** A node with downstream dependents is explicitly marked as DEPENDENT_SUBGRAPH; regeneration remaps dependency asset IDs rather than dropping dependency edges.
 6. **Semantic fingerprints.** Pydantic-style typed output discipline and clean-room provenance patterns informed a stable SHA-256 plan_fingerprint independent of request-specific plan IDs.
-7. **Directorial structure without provider lock-in.** ShotDirector and MultiShotMaster show that explicit camera/shot transition semantics matter for coherent multi-shot generation. F03 records semantic camera and continuity intent only; it does not bind to Wan/Kling/Seedance/etc.
+7. **Directorial structure without provider lock-in.** ShotDirector paper-level research and MultiShotMaster repository evidence show that explicit camera/shot transition semantics matter for coherent multi-shot generation. F03 records semantic camera and continuity intent only; it does not bind to Wan/Kling/Seedance/etc.
 8. **Multimodal continuity context.** VstoryGen demonstrates narrative visual consistency from scene + character references. F03 now preserves character reference bindings and structured intent when F02 supplies them.
 9. **Critic separation.** Code2Video's planner/critic separation reinforces that planning and evaluation should remain distinct. F03 remains a planner/specifier; visual quality judgment stays outside the new IR.
 
