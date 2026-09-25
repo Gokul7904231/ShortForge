@@ -26,7 +26,20 @@ test = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["floor01_strategy", "floor01_strategy.*"]
-exclude = ["floor01_strategy.tests", "floor01_strategy.tests.*"]
+[tool.setuptools]
+include-package-data = true
+packages = [
+  "floor01_strategy",
+  "floor01_strategy.app",
+  "floor01_strategy.app.api",
+  "floor01_strategy.app.api.v1",
+  "floor01_strategy.app.core",
+  "floor01_strategy.app.domain",
+  "floor01_strategy.app.infrastructure",
+  "floor01_strategy.app.intelligence",
+  "floor01_strategy.app.logical_workers",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
