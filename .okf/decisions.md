@@ -648,3 +648,47 @@ Diagram Design -> investigation visualization
 Zstandard -> deferred history/telemetry compression
 Gstack -> specialist engineering workflow
 ZAP -> DAST security candidate
+
+
+## Decision: EngineManifest → ConfigurationSchema → ProductionSpec
+
+### Status
+
+**LOCKED ARCHITECTURAL DIRECTION / IMPLEMENTED TRANSITION**
+
+### Decision
+
+ShortForge separates Content Engine identity from runtime mission configuration.
+
+```text
+Content Engine
+  ↓
+Engine Manifest
+  ↓
+Configuration Schema
+  ↓
+Creator Intent
+  ↓
+ProductionSpec Compiler
+  ↓
+Immutable ProductionSpec
+  ↓
+FactoryOS Mission / Floor Projections
+```
+
+### Rationale
+
+The dashboard previously mixed content choices, media choices, routing overrides, delivery targets, and lifecycle preferences in one hardcoded form. This refactor makes the Content Engine the authority over its configurable surface while keeping system-level routing, worker capability, governance, and F07 verification outside creator control.
+
+### Consequences
+
+- New engines can declare their own configuration without requiring hardcoded dashboard fields.
+- Server-side validation is deterministic and aligned with the engine schema.
+- Jobs carry a reproducible configuration snapshot and hash.
+- F00 research requirements can be declared by the engine instead of being invented by a generic search layer.
+- Legacy fields remain accepted during migration.
+- Engines without declarations temporarily receive compatibility schemas.
+
+### Non-goals
+
+This decision does not change the canonical eight-floor topology, sovereign authority hierarchy, worker permissions, or F07 release gate.
