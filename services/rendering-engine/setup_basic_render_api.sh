@@ -9,8 +9,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_DIR="/opt/factoryos/rendering-engine"
-CACHE_DIR="/opt/factoryos/basic-cache"
-SERVICE_NAME="factoryos-basic-render.service"
+CACHE_DIR="/opt/factoryos/render-cache"
+SERVICE_NAME="factoryos-persistent-render.service"
 
 echo "============================================================"
 echo " [FactoryOS] Starting Persistent Basic Render Service Setup "
@@ -47,8 +47,8 @@ mkdir -p "$CACHE_DIR/templates"
 mkdir -p /tmp/factoryos-basic-render
 
 chown -R factoryos:factoryos "$WORK_DIR" 2>/dev/null || true
-chown -R azureuser:azureuser "$CACHE_DIR" 2>/dev/null || true
-chown -R azureuser:azureuser /tmp/factoryos-basic-render 2>/dev/null || true
+chown -R factoryos:factoryos "$CACHE_DIR" 2>/dev/null || true
+chown -R factoryos:factoryos /tmp/factoryos-basic-render 2>/dev/null || true
 
 # 5. Install Dependencies
 echo "[+] Installing Python dependencies..."
@@ -91,5 +91,5 @@ echo "============================================================"
 systemctl status "$ADMIN_SERVICE_NAME" --no-pager 2>/dev/null || echo "[+] Admin service check complete."
 
 echo "============================================================"
-echo " [FactoryOS] Basic FastAPI Render Service Successfully Ready!"
+echo " [FactoryOS] Persistent Render Service Successfully Ready!"
 echo "============================================================"
