@@ -722,7 +722,12 @@ export class OverseerControlPlane {
         });
 
         const upstreamStrategy = node.dependencyOutputs?.["task_f01_strategy"]?.output || sharedScope.strategy;
-        const effectiveTopic = upstreamStrategy?.topic || scope.topic || "Factual Topic";
+        const effectiveTopic =
+          typeof upstreamStrategy?.topic === "string"
+            ? upstreamStrategy.topic
+            : upstreamStrategy?.topic?.selected_topic ||
+              scope.topic ||
+              "Factual Topic";
         const effectiveTemplateId = scope.templateId || sharedScope.templateId || node.payload?.templateId;
         const templateRegistry = TemplateRegistry.getInstance();
         const templateDef = effectiveTemplateId ? templateRegistry.getTemplate(effectiveTemplateId) : null;
@@ -784,7 +789,9 @@ export class OverseerControlPlane {
             quizData: scope.quizData || null,
           };
         } else {
-          const hookText = upstreamStrategy?.recommendedHook || `Did you know these astonishing facts about ${effectiveTopic}?`;
+          const hookText =
+            upstreamStrategy?.content_plan?.hook_direction ||
+            `Did you know these astonishing facts about ${effectiveTopic}?`;
           const scriptText = scope.script || `${hookText} Deep exploration reveals truths that defy expectations.`;
           const scenes = (scope.scenes && scope.scenes.length > 0) ? scope.scenes : [
             { text: hookText, durationSeconds: 2 },
