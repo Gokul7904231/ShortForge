@@ -259,3 +259,24 @@ Devourer handles controlled model evolution separately.
 Every SCL capability is tagged IMPLEMENTED, PARTIALLY_IMPLEMENTED, SCAFFOLDED, EXPERIMENTAL, or PLANNED.
 
 Target architecture must never be described as current implementation.
+
+
+## Engine Template and Configuration Boundary
+
+The Content Engine template hierarchy now has a concrete runtime compilation boundary:
+
+```text
+Engine Capability Profile
+  ↓
+SCL / Template Planner
+  ↓
+Engine Manifest + ConfigurationSchema
+  ↓
+Creator Intent
+  ↓
+ProductionSpec
+  ↓
+FactoryOS floor projections
+```
+
+SCL may reason over the engine's declared template, research contract, and creative constraints, but it does not gain sovereign authority by selecting or compiling configuration. Runtime policy and worker permissions remain governed by the existing control hierarchy.
