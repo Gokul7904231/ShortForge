@@ -51,6 +51,7 @@ export const CANONICAL_FLOOR_CONTRACTS: Record<FloorId, FloorContractExpectation
       "resolution",
       "provenance",
       "schemaVersion",
+      "planFingerprint",
     ],
   },
   floor04_media_synthesis: {
