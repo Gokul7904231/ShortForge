@@ -103,6 +103,7 @@ export interface EngineJobSnapshot {
   engineStatusAtCreation: EngineStatus;
   effectiveConfig: {
     difficulty?: string;
+    audience?: string;
     tone?: string;
     voice?: string;
     ratio?: string;
