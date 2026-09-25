@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+import logging
+from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -16,6 +17,8 @@ from floors.floor01_strategy.app.domain.handoff import (
     TopicIntelligenceResult,
 )
 from floors.floor01_strategy.app.service import Floor01Service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Strategy & Intelligence"], dependencies=[Depends(enforce_rate_limit)])
 service = Floor01Service()
@@ -37,10 +40,11 @@ async def plan_strategy(payload: Floor01Input) -> Floor01HandoffPayload:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": exc.message, "detail": exc.detail, "retryable": exc.retryable},
         )
-    except Exception as exc:
+    except Exception:
+        logger.exception("floor01_plan_unhandled_error", extra={"request_id": payload.request_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Floor 01 execution failure: {str(exc)}",
+            detail={"error": "Floor 01 execution failed", "request_id": payload.request_id},
         )
 
 
@@ -61,10 +65,11 @@ async def generate_execution_report(payload: Floor01Input) -> FloorExecutionRepo
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": exc.message, "detail": exc.detail, "retryable": exc.retryable},
         )
-    except Exception as exc:
+    except Exception:
+        logger.exception("floor01_execution_report_unhandled_error", extra={"request_id": payload.request_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Floor 01 execution failure: {str(exc)}",
+            detail={"error": "Floor 01 execution failed", "request_id": payload.request_id},
         )
 
 
@@ -72,7 +77,7 @@ async def generate_execution_report(payload: Floor01Input) -> FloorExecutionRepo
     "/v1/evaluate-topic",
     response_model=TopicIntelligenceResult,
     summary="Evaluate Topic Intelligence Standalone",
-    description="Evaluates topic normalization, category classification, and Jaccard similarity memory lookup.",
+    description="Evaluates topic normalization, category classification, and hybrid similarity memory lookup.",
     dependencies=[Depends(verify_api_key)],
 )
 async def evaluate_topic(payload: Floor01Input) -> TopicIntelligenceResult:
@@ -83,6 +88,12 @@ async def evaluate_topic(payload: Floor01Input) -> TopicIntelligenceResult:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": exc.message, "detail": exc.detail},
+        )
+    except Exception:
+        logger.exception("floor01_evaluate_topic_unhandled_error", extra={"request_id": payload.request_id})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "Floor 01 topic evaluation failed", "request_id": payload.request_id},
         )
 
 
