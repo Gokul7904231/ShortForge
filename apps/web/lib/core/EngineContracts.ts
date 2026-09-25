@@ -103,6 +103,8 @@ export interface EngineJobSnapshot {
   engineStatusAtCreation: EngineStatus;
   /** Immutable identifier of the compiled ProductionSpec used for the job. */
   productionSpecId: string;
+  /** Immutable SHA-256-like compilation fingerprint of the ProductionSpec. */
+  productionSpecHash: string;
   effectiveConfig: {
     difficulty?: string;
     audience?: string;
