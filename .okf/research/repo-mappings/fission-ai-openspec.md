@@ -12,3 +12,14 @@ ShortForge mapping:
 - Downstream physical execution consumes the plan rather than redefining it.
 
 Status: DIRECT_PATTERN_ADOPTION
+
+## Current implementation status — 2026-09-25
+
+The OpenSpec-derived specification-as-artifact pattern is now represented by AssetPlanIR 1.3.0 as a typed, versioned specification with:
+- explicit node/dependency graph;
+- upstream lineage;
+- semantic fingerprints;
+- local repair scope and transitive impact;
+- a stable provider-neutral downstream contract.
+
+Status remains: DIRECT_PATTERN_ADOPTION.
