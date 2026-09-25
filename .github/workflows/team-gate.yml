@@ -1,1 +1,29 @@
-name: Team Change Gate\n\non:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n\npermissions:\n  contents: read\n\njobs:\n  team-change-gate:\n    name: Validate Team change report\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 1\n\n      - name: Locate required report\n        id: report\n        shell: bash\n        run: |\n          REPORT="Team/reports/pr-${{ github.event.pull_request.number }}.json"\n          echo "path=$REPORT" >> "$GITHUB_OUTPUT"\n          test -f "$REPORT"\n\n      - name: Validate report\n        run: node Team/scripts/validate-team-report.mjs "${{ steps.report.outputs.path }}"\n
+name: Team Change Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  team-change-gate:
+    name: Validate Team change report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Locate required report
+        id: report
+        shell: bash
+        run: |
+          REPORT="Team/reports/pr-${{ github.event.pull_request.number }}.json"
+          echo "path=$REPORT" >> "$GITHUB_OUTPUT"
+          test -f "$REPORT"
+
+      - name: Validate report
+        run: node Team/scripts/validate-team-report.mjs "${{ steps.report.outputs.path }}"
