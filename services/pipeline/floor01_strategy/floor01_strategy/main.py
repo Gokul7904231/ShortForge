@@ -26,7 +26,9 @@ def create_app() -> FastAPI:
         openapi_url=None if is_production else "/openapi.json",
     )
 
-    origins = settings.cors_origins or ["http://localhost:3000"]
+    origins = settings.cors_origins
+    if not origins and settings.environment.lower() in {"development", "test"}:
+        origins = ["http://localhost:3000"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -39,8 +41,17 @@ def create_app() -> FastAPI:
     async def enforce_request_limits_and_security_headers(request: Request, call_next):
         if request.method == "POST":
             content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > 262144:
-                return Response(
+            if content_length:
+                try:
+                    content_length_value = int(content_length)
+                except ValueError:
+                    return Response(
+                        content="Invalid Content-Length",
+                        status_code=400,
+                        media_type="text/plain",
+                    )
+                if content_length_value > 262144:
+                    return Response(
                     content="Request body too large",
                     status_code=413,
                     media_type="text/plain",
