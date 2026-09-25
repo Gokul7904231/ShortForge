@@ -108,6 +108,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Absolute Hierarchy Map** | [`./hierarchy-map.md`](./hierarchy-map.md) | Master mapping of authority levels, cognition, regulators, runtime, workers, F00–F07, verification, memory, learning, and boundary rules. |
 | **Control Hierarchy** | [`./hierarchy/`](./hierarchy/) | Overseer, Guardian, Slayer, Healer, ReMaker, Auditor, and Worker execution contracts. |
 | **Intelligence & Models** | [`./intelligence/`](./intelligence/) | AgentRuntime, Skills, Capability-First Model Routing, Evaluation suite, and Ascalon training. |
+| **Ascalon Model** | [`./intelligence/ascalon-model.md`](./intelligence/ascalon-model.md) | Project-owned fine-tuned Llama model plan: decision + generation cognition, training pipeline, inference gateway, evaluation, promotion, and Devourer integration. |
 | **Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
 | **Cognitive Layer** | [`./cognitive/`](./cognitive/) | ShortForge Cognitive Layer, worker cognition contract, Devourer self-improvement program, and cross-layer improvement roadmap. |
 | **Memory & Knowledge** | [`./memory/`](./memory/) | MemoryOS, KnowledgeOS, domain-typed stores, and long-term memory promotion. |
