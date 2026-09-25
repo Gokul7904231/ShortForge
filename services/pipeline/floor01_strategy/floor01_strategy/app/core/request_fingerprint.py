@@ -6,7 +6,7 @@ import hashlib
 import json
 from typing import Any
 
-from floors.floor01_strategy.app.domain.handoff import Floor01Input
+from floor01_strategy.app.domain.handoff import Floor01Input
 
 
 def fingerprint_floor01_input(inp: Floor01Input) -> str:
