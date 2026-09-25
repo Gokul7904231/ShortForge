@@ -191,6 +191,87 @@ describe("Phase 1: Scheduler & Control Plane Invariants", () => {
 });
 
 describe("Phase 1: Research Provenance & Honest Error Semantics", () => {
+
+  it("8a. rejects an empty F00 topic instead of inventing a default research subject", async () => {
+    const runtime = new ResearchRuntime();
+    await expect(
+      runtime.executeResearch({
+        missionId: "mis_missing_f00_topic",
+        topic: "   ",
+      })
+    ).rejects.toThrow("F00 ResearchRuntime requires a non-empty topic");
+  });
+
+  it("8b. excludes unavailable Reach records from ResearchPassport evidence", async () => {
+    const testProvider = {
+      isTestFixture: true as const,
+      async acquire() {
+        return [
+          {
+            id: "src_unavailable_f00",
+            url: "https://example.invalid/unavailable",
+            title: "Retrieval Unavailable",
+            publisher: "example.invalid",
+            retrievedAt: new Date().toISOString(),
+            extractionMethod: "TEST_FIXTURE" as const,
+            snippet: "No evidence was retrieved.",
+            reliabilityScore: 0,
+            sourceStatus: "UNAVAILABLE" as const,
+          },
+        ];
+      },
+    };
+
+    const { ReachSubsystem } = await import("../../core/research/ReachSubsystem");
+    const runtime = new ResearchRuntime(new ReachSubsystem(testProvider));
+    const report = await runtime.executeResearch({
+      missionId: "mis_f00_unavailable_source",
+      topic: "Unavailable research subject",
+      researchContract: {
+        engineId: "quiz",
+        minSources: 2,
+        citationRequired: true,
+        agentReachProfile: "engine:quiz",
+      },
+    });
+
+    expect(report.passport.sources).toHaveLength(0);
+    expect(report.passport.confidence).toBe(0);
+    expect(report.passport.researchContext?.engineId).toBe("quiz");
+  });
+
+  it("8c. requires a ResearchPassport lineage reference before a candidate enters a DailyContentSlate", () => {
+    const schedule = {
+      scheduleId: "sched_passport_gate",
+      name: "Passport Gate",
+      cadence: "DAILY",
+      timezone: "UTC",
+      enabled: true,
+      version: "1.0.0",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      targetRequirements: {
+        requestedCount: 1,
+        platform: "YOUTUBE_SHORTS" as const,
+        targetNiche: "TEST",
+        targetDurationSec: { min: 30, max: 60 },
+        freshnessWindowHours: 24,
+        researchDepth: "STANDARD" as const,
+        safetyPolicy: "POL_TEST",
+      },
+    };
+
+    const noPassport = DailySlateGenerator.generateSlate(schedule, [
+      {
+        topic: "No Passport",
+        hookConcept: "hook",
+        rawSources: ["https://source.example/article"],
+      },
+    ]);
+    expect(noPassport.candidateCount).toBe(0);
+    expect(noPassport.unmetCapacity).toBe(1);
+  });
+
   it("6. proves LightpandaBrowserAdapter returns honest 503 UNAVAILABLE on fetch failure", async () => {
     const adapter = new LightpandaBrowserAdapter();
     // Nonexistent domain / bad URL
