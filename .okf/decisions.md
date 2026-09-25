@@ -1016,3 +1016,15 @@ Resolution:
 - added `factoryos/**` to the Floor 02 + Floor 03 production-gate trigger paths.
 
 No Guardian implementation was duplicated or moved. The bridge only exposes the existing package through its canonical import namespace.
+
+
+## F03 Guardian gate ownership correction — 2026-09-25
+
+The F03 Guardian production-gate job was executing both the F03 Guardian contract suite and an unrelated Floor 02 recovery scenario suite. The latter failed because its F01/F02 fixture lacked the evidence/provenance required by the independent F02 quality gate, even though the F03 Guardian contract tests were the relevant verification target.
+
+Resolution:
+- the F03 Guardian job now runs only `tests/guardian/test_guardian_floor03.py`;
+- Floor 02 Guardian scenario coverage remains a separate responsibility and is not used as a proxy for F03 Guardian correctness;
+- the root `factoryos.guardian` compatibility bridge remains required for the scoped F03 Guardian tests.
+
+This is a gate-ownership correction, not a relaxation of F03 safety requirements.
