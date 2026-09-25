@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
     await basic_worker.stop()
 
 app = FastAPI(
-    title="FactoryOS Basic Render API",
+    title="FactoryOS Persistent Render API",
     version="1.0.0",
     description="Persistent, warm rendering microservice for FactoryOS Basic video production.",
     lifespan=lifespan,
@@ -70,7 +70,7 @@ async def verify_internal_secret(
     elif x_worker_secret:
         token = x_worker_secret.strip()
 
-    if not token or token != BASIC_RENDER_API_SECRET:
+    if not token or token != RENDER_WORKER_SECRET:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized: Missing or invalid Render Worker secret.",
@@ -83,7 +83,7 @@ async def health_check():
     """Liveness probe returning service and worker pool status."""
     return {
         "status": "ok",
-        "service": "factoryos-basic-render",
+        "service": "factoryos-persistent-render",
         "version": "1.0.0",
         "workerCount": basic_worker.concurrency,
         "uptimeSeconds": round(time.time() - basic_worker.start_time, 2),
