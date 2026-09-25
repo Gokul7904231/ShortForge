@@ -3,8 +3,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from floors.floor01_strategy.main import app
-from floors.floor01_strategy.app.domain.handoff import ResearchContext, ResearchEvidenceRef
+from floor01_strategy.main import app
+from floor01_strategy.app.domain.handoff import ResearchContext, ResearchEvidenceRef
 
 
 def verified_research_payload() -> dict:
