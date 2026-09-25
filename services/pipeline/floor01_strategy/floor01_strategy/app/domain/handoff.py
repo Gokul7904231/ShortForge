@@ -93,7 +93,7 @@ class ResearchContext(BaseModel):
 
 
 class Floor01Input(BaseModel):
-    request_id: str = Field(default_factory=lambda: str(uuid4()))
+    request_id: str = Field(default_factory=lambda: str(uuid4()), min_length=1, max_length=128)
     topic_query: str = Field(..., min_length=2, max_length=250)
     target_audience: str = Field(default="general_learners", min_length=1, max_length=120)
     platform: str = Field(default="youtube_shorts", min_length=1, max_length=64)
