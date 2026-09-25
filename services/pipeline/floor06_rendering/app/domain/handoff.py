@@ -14,7 +14,6 @@ from floors.floor05_timeline_composition.app.domain.handoff import Floor05Handof
 
 
 class RenderWorkerPool(str, Enum):
-    AZURE_GPU = "azure-gpu-pool"
     GITHUB_ACTIONS = "github-actions-pool"
     LOCAL_VPS = "local-vps-pool"
 
