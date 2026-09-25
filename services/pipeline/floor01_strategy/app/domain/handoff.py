@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 import json
 
-from floors.floor01_strategy.app.core.input_safety import (
+from floor01_strategy.app.core.input_safety import (
     sanitize_constraint_value,
     sanitize_input_text,
 )
