@@ -59,6 +59,53 @@ class FFmpegBackend:
             pass
         return "Unknown FFmpeg"
 
+    def _video_encode_args(self, preset: str = "fast", crf: int = 20) -> List[str]:
+        """
+        Build the video encoder portion of the FFmpeg command.
+
+        Default remains libx264. Remote AMD workers can opt into VAAPI with:
+          FACTORYOS_VIDEO_ENCODER=h264_vaapi
+          FACTORYOS_VAAPI_DEVICE=/dev/dri/renderD128
+        """
+        encoder = os.environ.get("FACTORYOS_VIDEO_ENCODER", "libx264").strip()
+        if encoder == "h264_vaapi":
+            device = os.environ.get(
+                "FACTORYOS_VAAPI_DEVICE",
+                "/dev/dri/renderD128",
+            )
+            qp = os.environ.get("FACTORYOS_VAAPI_QP", "23")
+            return [
+                "-vaapi_device",
+                device,
+                "-vf",
+                "format=nv12,hwupload",
+                "-c:v",
+                "h264_vaapi",
+                "-qp",
+                qp,
+            ]
+
+        if encoder == "libx264":
+            return [
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-preset",
+                preset,
+                "-crf",
+                str(crf),
+            ]
+
+        return [
+            "-c:v",
+            encoder,
+            "-pix_fmt",
+            "yuv420p",
+            "-preset",
+            preset,
+        ]
+
     def open_pipe_encoder(
         self,
         output_temp_path: str,
@@ -91,11 +138,7 @@ class FFmpegBackend:
         else:
             cmd.extend(["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"])
 
-        cmd.extend([
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", preset,
-            "-crf", str(crf),
+        cmd.extend(self._video_encode_args(preset=preset, crf=crf) + [
             "-c:a", "aac",
             "-b:a", "192k",
         ])
@@ -140,11 +183,7 @@ class FFmpegBackend:
         else:
             cmd.extend(["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"])
 
-        cmd.extend([
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", preset,
-            "-crf", str(crf),
+        cmd.extend(self._video_encode_args(preset=preset, crf=crf) + [
             "-r", str(fps),
             "-c:a", "aac",
             "-b:a", "192k",
