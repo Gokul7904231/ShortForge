@@ -1,152 +1,198 @@
-
 # ShortForge / FactoryOS — Production Helper Operating Contract
 
 > Document Class: Operational Validation & Evidence Contract
-> Status: CANONICAL ROUTINE
+> Status: CANONICAL ROUTINE / MANDATORY WHERE APPLICABLE
 > Scope: production-helper/
-> Purpose: Make the existing production-helper workspace a routine part of engineering, security, staging, and release verification.
+> Purpose: Make the existing production-helper workspace a routine evidence-producing engineering station for implementation, security, staging, release, and architecture decisions.
 
-## 1. What production-helper is
+## 1. Role
 
-production-helper is an engineering verification workspace.
+production-helper is not a second source of truth and is not a green-light generator.
 
-It currently contains:
+It is a repeatable evidence station.
 
-- P0 hardening reports
-- real Azure end-to-end proof
-- real runtime convergence traces
-- security forensic reports
-- Semgrep rule definitions and reports
-- Strix security-audit instructions
+Its reports can prove, disprove, or expose gaps in:
+- worker behavior
+- security boundaries
+- render dispatch
+- remote callbacks
+- quotas
+- runtime convergence
+- staging behavior
+- release invariants
 
-It is not a second source of truth.
+Architecture authority remains the .okf + executable implementation + tests hierarchy.
 
-It is an evidence-producing operational layer.
+## 2. Actual helper inventory
 
-## 2. Routine usage rule
+Current repository structure:
 
-The appropriate production-helper checks must be considered whenever work affects:
+~~~
+production-helper/
+├── README.md
+├── combined/
+│   └── reports/
+│       ├── factoryos-p0-basic-hardening.md
+│       ├── factoryos-real-azure-e2e.md
+│       ├── factoryos-real-runtime-trace.md
+│       └── shortforge-security-audit-final.md
+├── semgrep/
+│   ├── rules/
+│   │   └── shortforge-rules.yaml
+│   └── reports/
+│       └── semgrep-report.json
+└── strix/
+    └── prompts/
+        └── shortforge-audit-instructions.md
+~~~
 
+This inventory is versioned evidence; new helper assets must be reflected here when they become routine.
+
+## 3. Mandatory decision usage
+
+For non-trivial engineering decisions:
+
+~~~
+Complete .okf sweep
+      |
+Relevant repo mappings
+      |
+Relevant production-helper evidence
+      |
+Implementation
+      |
+Tests
+      |
+Applicable helper checks
+      |
+Evidence review
+      |
+Decision / promotion
+~~~
+
+The helper is mandatory for changes affecting:
 - worker permissions
 - Guardian / capability policy
-- render routing
-- remote worker callbacks
+- rendering / TimelineIR compiler
+- remote compute
+- callbacks
 - quotas
-- authentication / authorization
-- network egress
-- filesystem boundaries
+- auth / RBAC
+- filesystem or network boundaries
 - provider adapters
-- production completion states
-- major architecture decisions
+- production completion semantics
+- significant architecture changes
 
-## 3. Routine engineering cycle
+## 4. Routine engineering cycle
 
 ### Before implementation
 
-1. Complete the mandatory .okf review.
-2. Inspect relevant existing production-helper evidence.
-3. Identify the exact invariant being changed.
-4. Identify the tests that must fail if the invariant is broken.
+1. Complete the full current .okf decision sweep.
+2. Inspect applicable repo mappings.
+3. Inspect relevant helper reports.
+4. Identify the exact invariant being changed.
+5. Identify the executable implementation and tests.
+6. Define required evidence.
 
 ### During implementation
 
-Run the smallest applicable checks continuously.
+Run the smallest useful checks continuously.
 
 ### Before merge
 
-Run:
-
+Use:
 - targeted unit tests
+- architecture invariant tests
 - relevant integration tests
-- architectural invariant tests
-- Semgrep security scan when security-sensitive
-- production-helper staging checks when runtime behavior changed
+- Semgrep for security-sensitive changes
+- helper runtime/staging checks when distributed behavior changes
 
 ### Before production
 
-For production-impacting changes, prefer:
+Preferred gate:
 
 ~~~
-build / typecheck
+typecheck / build
   |
 targeted tests
   |
-security scan
+architecture / security tests
   |
-staging runtime trace
+Semgrep where applicable
   |
-real external integration proof where required
+Strix when Docker is available
   |
-forensic evidence review
+staging / real-runtime proof where applicable
+  |
+physical artifact verification where applicable
+  |
+evidence review
   |
 release
 ~~~
 
-## 4. Semgrep routine
+## 5. Semgrep routine
 
-Current helper configuration:
-
+Canonical rule file:
 production-helper/semgrep/rules/shortforge-rules.yaml
 
-Last recorded security audit scanned 522 files and produced 75 rule results:
-
+Recorded historical run:
+- 522 files scanned
+- 75 static findings
 - 65 dangerous-fetch / SSRF warnings
 - 6 path-traversal warnings
 - 4 command-execution warnings
 
-These are not automatically confirmed vulnerabilities. They are static-analysis findings requiring triage.
+These are historical findings and are not current status.
 
-Routine rule:
-
-No Semgrep warning is silently ignored. Each production-relevant finding is:
-
+Rule:
+No Semgrep warning becomes invisible. Each production-relevant result is:
 - fixed
 - explicitly justified
-- or tracked as a known accepted risk with evidence.
+- or tracked as an accepted risk with evidence.
 
-## 5. Strix routine
+## 6. Strix routine
 
-Strix is the dynamic penetration-testing path.
+Strix is the dynamic security testing path.
 
-The last recorded security audit classified Strix as UNPROVEN because Docker was unavailable.
+Current recorded status:
+UNPROVEN when Docker was unavailable.
 
-Therefore:
+Rules:
+- a blocked Strix run is not a PASS
+- Docker must be available before claiming dynamic Strix coverage
+- missing dynamic coverage remains disclosed
+- successful Strix results must be preserved as evidence
 
-- Strix is part of the routine security toolkit.
-- A blocked Strix run is not a green security result.
-- Docker must be available before claiming dynamic Strix coverage.
-- The absence of a Strix run must be recorded honestly.
+## 7. Real-runtime proof
 
-## 6. Real runtime proof
-
-The helper workspace already contains real staging evidence for:
-
+The helper workspace contains evidence for:
 - remote Azure dispatch
-- zero local-rendering assertions
+- callback convergence
 - Guardian safety gating
 - Python floor bridge signatures/nonces
 - Slayer / Healer reliability
-- callback convergence
 - multi-tenant boundaries
+- quota hardening
 
-Future changes to these surfaces should reuse the same proof style.
+Future changes to these surfaces should reuse the same evidence style.
 
-## 7. P0 hardening lessons
+## 8. P0 lessons are reusable invariants
 
-The existing P0 report established concrete engineering rules:
-
-- every quota reservation must have a safe release path
-- failed Azure dispatch must become an explicit failed state
-- polling must terminate at bounded terminal states
+The helper history established reusable rules:
+- every quota reservation needs a safe release path
+- failed remote dispatch must become an explicit failed state
+- polling must reach bounded terminal states
 - stale reservations require bounded cleanup
-- failures must not silently leave hanging jobs
+- asynchronous failures must not leave hanging jobs
+- HTTP dispatch success is not physical completion
+- completion requires authoritative callback/state plus physical artifact evidence
 
-These lessons should be reused whenever a new asynchronous workflow is introduced.
+These are reusable engineering constraints, not merely historical bugs.
 
-## 8. Production-helper evidence classification
+## 9. Evidence classes
 
-Every helper result must be tagged as one of:
-
+Every helper result must be explicitly classified:
 - TEST_VERIFIED
 - LIVE_VERIFIED
 - SECURITY_SCAN
@@ -157,73 +203,53 @@ Every helper result must be tagged as one of:
 
 Do not collapse BLOCKED or UNPROVEN into PASS.
 
-## 9. Relationship to .okf
-
-Helper evidence flows into:
+## 10. Relationship to .okf
 
 ~~~
 production-helper
    |
 raw evidence
    |
-audit / finding
+finding / interpretation
    |
-.okf/audits/
-   |
-decision / remediation
+.okf/audits or decision record
    |
 code + tests
 ~~~
 
-The helper does not rewrite architecture documentation by itself.
+The helper does not rewrite architecture documentation automatically.
 
-## 10. Relationship to workers
+## 11. Relationship to worker permissions
 
-Production-helper can test worker behavior.
+Production-helper can test worker permissions.
 
 It cannot:
-
-- grant worker permissions
+- grant worker capabilities
 - modify Guardian authority
-- bypass worker fencing
+- bypass lease/fencing
 - authorize production side effects
 - fabricate successful worker output
 
-## 11. Release gate
+Permission changes must still pass .okf/security/worker-permissions.md.
 
-A production-impacting change is not considered verified until:
+## 12. Relationship to Devourer
 
-- relevant code is tested
-- relevant security checks are run
-- helper evidence is reviewed
-- blocked checks are disclosed
+Devourer candidates affecting operational behavior must use production-helper evidence whenever the candidate risk surface matches the helper capabilities.
+
+A Devourer candidate missing required runtime/security evidence remains unpromoted.
+
+## 13. Release gate
+
+A production-impacting change is not considered fully verified until:
+- code evidence exists
+- test evidence exists
+- applicable security evidence exists
+- applicable runtime evidence exists
+- blocked/unproven checks are disclosed
 - physical output is verified when media is involved
 
-## 12. Routine ownership
+## 14. Absolute rule
 
-Overseer:
-- coordinates production evidence requirements.
-
-SCL:
-- helps select the smallest sufficient test / diagnostic path.
-
-Guardian:
-- ensures permissions remain within policy.
-
-Slayer:
-- responds to failed or dangerous runtime behavior.
-
-Healer:
-- repairs bounded failures.
-
-F07 / Auditor:
-- independently verifies output.
-
-Production-helper:
-- provides repeatable engineering evidence.
-
-## 13. Absolute rule
-
-production-helper exists to make verification routine, not to make verification ceremonial.
+production-helper exists to make verification routine, not ceremonial.
 
 A green-looking report without real evidence is not a green system.
