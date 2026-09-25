@@ -1792,3 +1792,31 @@ Production authority remains:
 Human -> Overseer -> Guardian / regulators -> AgentRuntime -> Workers -> F07 -> ReleaseAuthorization
 
 Security Forgers are evidence producers. Evaluation Forgers are judges. Release Forgers prepare releases. None of them become sovereign merely because they operate outside the production worker hierarchy.
+
+
+## 10. Development-Time Team Boundary
+
+Team is outside the F00-F07 production hierarchy.
+
+Human / repository governance
+  ↓
+.okf authority and canonical implementation
+  ↓
+Team Change Gate
+  ↓
+Forger Assembly
+  ├─ Architecture
+  ├─ Build
+  ├─ Browser
+  ├─ Security
+  ├─ Evaluation
+  ├─ Media
+  ├─ Knowledge
+  ├─ Reliability
+  ├─ Performance
+  ├─ Visualization
+  └─ Release
+  ↓
+evidence / report / authorized disposition
+
+Team agents cannot exercise production-floor authority merely because they participated in a change.
