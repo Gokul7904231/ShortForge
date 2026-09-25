@@ -1,6 +1,6 @@
 # ShotDirector research → Floor 03 Mapping
 
-Source used for this mapping: https://github.com/zhaoyang97/Paper-Notes-en/blob/148a16f2.../docs/CVPR2026/video_generation/shotdirector_directorially_controllable_multi-shot_video_generation_with_cinemat.md
+Source used for this mapping: https://github.com/zhaoyang97/Paper-Notes-en/blob/148a16dd45b148e890b4428db21133e5a1589b77/docs/CVPR2026/video_generation/shotdirector_directorially_controllable_multi-shot_video_generation_with_cinemat.md
 
 Source note:
 - The upstream ShotDirector repository itself was not verified as an accessible GitHub repository in this sweep.
