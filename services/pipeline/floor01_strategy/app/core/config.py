@@ -47,6 +47,8 @@ class Floor01Settings(BaseSettings):
     max_strategy_candidates: int = Field(default=3, ge=1, le=6)
     max_refinement_cycles: int = Field(default=1, ge=0, le=2)
 
+    service_api_key: str | None = Field(default=None, repr=False)
+    cors_origins: List[str] = Field(default_factory=list)
     llm_api_key: str | None = Field(default=None, repr=False)
     llm_base_url: str | None = Field(default=None)
     llm_model: str = Field(default="gpt-4o-mini")
