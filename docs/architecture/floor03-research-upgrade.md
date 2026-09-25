@@ -141,3 +141,10 @@ The branch now points the root compatibility namespace at:
 `services/pipeline/floor01_strategy/floor01_strategy`
 
 This remains a compatibility-layer fix only; the canonical Floor 01 implementation is unchanged. Fresh CI is required to validate the correction.
+
+
+## Test ownership correction
+
+A production-gate run exposed an ownership leak in the F03 test suite: the shared F03 fixture was executing the real F02 pipeline and therefore inherited F02's strict evidence-quality policy and model-provider availability.
+
+The F03 fixture is now a direct validated `Floor02HandoffPayload` with explicit provenance, evidence references, character metadata, dependency edges and continuity intent. This keeps F03 contract tests deterministic and independent of F02 model credentials/revision policy while preserving F02's own production tests unchanged.
