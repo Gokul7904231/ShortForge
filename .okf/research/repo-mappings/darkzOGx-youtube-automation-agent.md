@@ -1,7 +1,7 @@
 
 # Repository Mapping: darkzOGx/youtube-automation-agent (AgentTube)
 
-> Status: SELECTED ENGINEERING PATTERN SOURCE
+> Status: SELECTED ENGINEERING STACK / PATTERN SOURCE
 > Adoption Mode: CLEAN-ROOM PATTERN ASSIMILATION
 > License recorded by the ShortForge research ledger: MIT
 > Primary Mapping: scene lifecycle, checkpoints, audio timing, selective repair
@@ -85,3 +85,27 @@ The AgentTube-derived render lifecycle is considered valid only when:
 
 Repository:
 https://github.com/darkzOGx/youtube-automation-agent
+
+## 8. Current external validation
+
+The current public AgentTube repository documents approval-first publishing, durable scene manifests, selective scene repair, persistent production state, and fail-closed narration. These are current external observations and remain subject to clean-room assimilation and ShortForge verification.
+
+## 9. Engineering-stack rule
+
+AgentTube is not the ShortForge orchestrator. Its selected role is scene-lifecycle discipline beneath the existing ShortForge hierarchy:
+
+~~~
+SCL / Overseer
+      |
+TimelineIR + Scene Manifest
+      |
+Render Compiler / Remotion
+      |
+RenderFabric
+      |
+F06
+      |
+F07
+~~~
+
+AgentTube-derived patterns may improve the lifecycle but may not replace Overseer, Guardian, Slayer, Healer, ReMaker, TimelineIR, or F07.
