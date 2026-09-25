@@ -508,3 +508,27 @@ Minimum expected checks:
 - staging proof for production-bound side effects
 
 A blocked Strix run remains UNPROVEN, never PASS.
+
+
+## 28. MCP access is separate from floor permissions
+
+MCP access is not ambient worker authority.
+
+No F00-F07 worker receives MCP capabilities by default. If a worker must use an MCP, the access must be represented as an explicit capability and skill contract, with task/session scope and verification requirements.
+
+Canonical MCP capabilities are documented separately in .okf/security/mcp-permissions.md:
+- CAP_MCP_DRIVE_READ
+- CAP_MCP_DRIVE_WRITE
+- CAP_MCP_BROWSER_RESEARCH
+- CAP_MCP_GITHUB_READ
+- CAP_MCP_GITHUB_WRITE
+
+These names are governance reservations until the executable CapabilityRegistry, tests, and production-helper checks establish them as implemented capabilities.
+
+An MCP call can retrieve information or request an external side effect, but it cannot:
+- mint capabilities
+- extend/revoke leases
+- bypass Guardian
+- certify F07
+- mint ReleaseAuthorization
+- convert provider success into verified production completion
