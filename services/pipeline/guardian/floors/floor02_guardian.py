@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any, Dict, Optional
 
 import structlog
@@ -14,7 +15,7 @@ from factoryos.guardian.core.guardian import GuardianEngine
 from factoryos.guardian.reasoning.base import ReasoningEngine
 
 # Frozen Floor 02 Core Ingestion
-from floors.floor02_scripting.app.domain.handoff import Floor02Input, Floor02HandoffPayload
+from floors.floor02_scripting.app.domain.handoff import Floor02Input
 from floors.floor02_scripting.app.pipeline import Floor02Pipeline
 
 logger = structlog.get_logger(__name__)
@@ -22,7 +23,7 @@ logger = structlog.get_logger(__name__)
 
 def create_floor02_capability_registry() -> CapabilityRegistry:
     """Build authoritative capability registry wrapping frozen Floor 02 capabilities."""
-    registry = CapabilityRegistry(floor_id="floor02")
+    registry = CapabilityRegistry(floor_id="floor02_scripting")
     pipeline = Floor02Pipeline()
 
     def run_scripting_pipeline(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -34,7 +35,7 @@ def create_floor02_capability_registry() -> CapabilityRegistry:
     registry.register(
         Capability(
             name="scripting_pipeline_worker",
-            floor_id="floor02",
+            floor_id="floor02_scripting",
             description="Executes deterministic Floor 02 Scripting & Narrative Pipeline",
             handler=run_scripting_pipeline,
         )
@@ -48,7 +49,7 @@ class Floor02Guardian:
     def __init__(self, reasoning_engine: Optional[ReasoningEngine] = None):
         self.registry = create_floor02_capability_registry()
         self.engine = GuardianEngine(
-            floor_id="floor02",
+            floor_id="floor02_scripting",
             registry=self.registry,
             reasoning_engine=reasoning_engine,
         )
@@ -60,7 +61,7 @@ class Floor02Guardian:
     ) -> GuardianReport:
         """Execute Floor 02 Autonomous Guardian loop around frozen Floor 02 core."""
         logger.info("floor02_guardian_executing", request_id=inp.request_id)
-        input_hash = f"hash-f02-{hash(inp.request_id)}"
+        input_hash = hashlib.sha256(inp.request_id.encode("utf-8")).hexdigest()
         initial_context = {"floor02_input": inp}
 
         return self.engine.run_autonomous_loop(

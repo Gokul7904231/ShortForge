@@ -19,6 +19,7 @@ from floors.floor02_scripting.app.domain.script_models import (
     NarrativeFormat,
     SceneSpecification,
 )
+from floors.floor02_scripting.app.domain.script_ir import ScriptIR, ScriptQualityReport
 
 
 class EvidenceType(str, Enum):
@@ -68,6 +69,7 @@ class Floor02Input(BaseModel):
     narrative_format: NarrativeFormat = Field(default=NarrativeFormat.EDUCATIONAL_EXPLAINER)
     words_per_second: float = Field(default=2.5, ge=1.0, le=5.0, description="Target narration speech rate")
     constraints: Dict[str, Any] = Field(default_factory=dict)
+    strict_upstream: bool = Field(default=True, description="Production executions require a validated Floor 01 handoff")
 
 
 # ── Contract A: Downstream Handoff Payload (Floor 02 -> Floor 03) ────────────
@@ -79,7 +81,7 @@ class Floor02HandoffPayload(BaseModel):
     script_version: int = Field(default=1, ge=1, description="Script version number, incremented on regeneration")
     plan_id: str = Field(default_factory=lambda: str(uuid4()))
     request_id: str = Field(...)
-    floor_id: str = Field(default="floor02")
+    floor_id: str = Field(default="floor02_scripting")
     floor_version: str = Field(default="1.0.0")
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     execution_mode: ExecutionMode = Field(default=ExecutionMode.DETERMINISTIC_FALLBACK)
@@ -92,10 +94,13 @@ class Floor02HandoffPayload(BaseModel):
     estimated_pause_transition_duration_seconds: float = Field(default=0.0, ge=0.0)
     scenes: List[SceneSpecification] = Field(..., min_length=1)
     character_profiles: List[CharacterProfile] = Field(default_factory=list)
-    educational_beats: Dict[str, str] = Field(default_factory=dict, description="Map of scene_id to Bloom taxonomy objective")
+    educational_beats: Dict[str, str] = Field(default_factory=dict, description="Map of scene_id to learning objective")
     decision_quality_score: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Defined weighted heuristic quality score; null if uncalculated")
     handoff_status: HandoffStatus = Field(default=HandoffStatus.VALIDATED)
     provenance: List[ProvenanceEntry] = Field(default_factory=list)
+    script_ir: Optional[ScriptIR] = Field(default=None, description="Canonical F02 ScriptIR; mandatory for production handoff")
+    quality_report: Optional[ScriptQualityReport] = Field(default=None)
+    successor_handoffs: Dict[str, Dict[str, Any]] = Field(default_factory=dict, description="Typed F03/F04 branch handoff metadata")
 
 
 # ── Contract B: Overseer Execution Report (Floor 02 -> Overseer) ────────────
@@ -131,7 +136,7 @@ class FloorExecutionReport(BaseModel):
     request_id: str = Field(...)
     plan_id: Optional[str] = Field(default=None)
     script_id: Optional[str] = Field(default=None)
-    floor_id: str = Field(default="floor02")
+    floor_id: str = Field(default="floor02_scripting")
     floor_version: str = Field(default="1.0.0")
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -147,3 +152,5 @@ class FloorExecutionReport(BaseModel):
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
     handoff_reference: Dict[str, Any] = Field(default_factory=dict)
+    script_ir_schema_version: str = Field(default="2.0")
+    quality_gates: Dict[str, bool] = Field(default_factory=dict)

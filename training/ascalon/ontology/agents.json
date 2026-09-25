@@ -78,7 +78,7 @@
       "category": "DOMAIN_WORKER",
       "authorityLevel": "OPERATIONAL",
       "assignedFloor": "floor02_scripting",
-      "description": "Synthesizes 3-beat short-form narrative scripts with rhythmic word-count bounds.",
+      "description": "Compiles hierarchical narrative candidates into canonical ScriptIR with beat structure, causal events, viewer state, evidence lineage, pacing and downstream handoffs.",
       "isFloor": false,
       "sourceLocations": ["apps/web/agents/script-agent.ts"]
     },
@@ -88,9 +88,59 @@
       "category": "DOMAIN_WORKER",
       "authorityLevel": "OPERATIONAL",
       "assignedFloor": "floor02_scripting",
-      "description": "Calculates cognitive hook engagement and curiosity retention scores on opening 3-second script segments.",
+      "description": "Evaluates hook/open-loop quality as one bounded critic dimension; it does not directly mutate authoritative ScriptIR.",
       "isFloor": false,
       "sourceLocations": ["apps/web/agents/hook-score-agent.ts"]
+    },
+    {
+      "agentId": "agent_f02_evidence_critic",
+      "canonicalRole": "F02_EVIDENCE_CRITIC",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "ADVISORY",
+      "assignedFloor": "floor02_scripting",
+      "description": "Checks script claims for upstream evidence lineage and blocks unsupported production handoffs.",
+      "isFloor": false,
+      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+    },
+    {
+      "agentId": "agent_f02_narrative_critic",
+      "canonicalRole": "F02_NARRATIVE_CRITIC",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "ADVISORY",
+      "assignedFloor": "floor02_scripting",
+      "description": "Evaluates beat progression, scene purpose and payoff closure without owning final authority.",
+      "isFloor": false,
+      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+    },
+    {
+      "agentId": "agent_f02_continuity_critic",
+      "canonicalRole": "F02_CONTINUITY_CRITIC",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "ADVISORY",
+      "assignedFloor": "floor02_scripting",
+      "description": "Checks scene dependencies and causal event references for continuity-safe regeneration.",
+      "isFloor": false,
+      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+    },
+    {
+      "agentId": "agent_f02_pacing_critic",
+      "canonicalRole": "F02_PACING_CRITIC",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "ADVISORY",
+      "assignedFloor": "floor02_scripting",
+      "description": "Enforces normalized 130-160 words-per-minute production pacing bounds.",
+      "isFloor": false,
+      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+    },
+    {
+      "agentId": "agent_f02_feasibility_critic",
+      "canonicalRole": "F02_PRODUCTION_FEASIBILITY_CRITIC",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "ADVISORY",
+      "assignedFloor": "floor02_scripting",
+      "description": "Checks visual and voice intent completeness before F03/F04 handoff.",
+      "isFloor": false,
+      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
     },
     {
       "agentId": "agent_scene_architect",

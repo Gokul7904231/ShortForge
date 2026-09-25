@@ -42,6 +42,7 @@ import { VoiceFabric } from "../voice/VoiceFabric";
 import { RenderFabric } from "../fabric/RenderFabric";
 import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentContracts";
 import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegistry";
+import { Floor02RuntimeAdapter } from "../adapters/Floor02RuntimeAdapter";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
@@ -471,7 +472,7 @@ export class OverseerControlPlane {
           requiredAgentType: "FLOOR_MEDIA_SYNTHESIS",
           payload: {},
           status: "PENDING" as const,
-          dependencies: ["task_f03_asset_realization"],
+          dependencies: ["task_f02_scripting"],
           attemptCount: 0,
           maxAttempts: 2,
         },
@@ -482,7 +483,7 @@ export class OverseerControlPlane {
           requiredAgentType: "FLOOR_TIMELINE_COMPOSITION",
           payload: {},
           status: "PENDING" as const,
-          dependencies: ["task_f04_media_synthesis"],
+          dependencies: ["task_f03_asset_realization", "task_f04_media_synthesis"],
           attemptCount: 0,
           maxAttempts: 2,
         },
@@ -737,7 +738,49 @@ export class OverseerControlPlane {
 
         let scriptPayload: any;
 
-        if (templateDef) {
+        const useCanonicalPythonF02 =
+          Boolean(process.env.FLOOR02_RUNTIME_URL) ||
+          process.env.NODE_ENV === "production";
+
+        if (useCanonicalPythonF02) {
+          const runtime = new Floor02RuntimeAdapter();
+          const f02 = await runtime.plan({
+            requestId: executionId,
+            topic: effectiveTopic,
+            targetDurationSeconds: Number(
+              upstreamStrategy?.targetDurationSeconds ||
+              upstreamStrategy?.target_duration_seconds ||
+              scope.targetDurationSeconds ||
+              60
+            ),
+            strategy: upstreamStrategy || {},
+            upstreamHandoff:
+              (scope.floor01Handoff as Record<string, any> | undefined) ||
+              (sharedScope as any).floor01Handoff,
+          });
+
+          const canonical = f02.handoffPayload;
+          const scriptIR = canonical.script_ir;
+          const scenes = Array.isArray(canonical.scenes) ? canonical.scenes : [];
+
+          scope.f02Handoff = canonical;
+          sharedScope.f02Handoff = canonical;
+          scope.scriptIR = scriptIR;
+          sharedScope.scriptIR = scriptIR;
+          scope.script = scenes.map((scene: any) => scene.narration_text || "").join(" ").trim();
+          sharedScope.script = scope.script;
+          scope.scenes = scenes;
+          sharedScope.scenes = scenes;
+
+          scriptPayload = {
+            script: scope.script,
+            scriptIR,
+            handoffPayload: canonical,
+            scenes,
+            floorVersion: canonical.floor_version,
+            successorHandoffs: canonical.successor_handoffs,
+          };
+        } else if (templateDef) {
           // Template context survives entire mission (Requirement 5)
           scope.templateId = templateDef.identity.id;
           scope.templateVersion = templateDef.identity.version;

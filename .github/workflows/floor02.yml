@@ -1,0 +1,80 @@
+name: Floor 02 Production Gates
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "services/pipeline/floor02_scripting/**"
+      - "services/pipeline/floor01_strategy/**"
+      - "services/pipeline/floor03_asset_realization/**"
+      - "testing/contracts/floor.contract.ts"
+      - "training/ascalon/ontology/floors.json"
+      - "training/ascalon/ontology/agents.json"
+      - "apps/web/factoryos/core/overseer/OverseerControlPlane.ts"
+      - ".github/workflows/floor02.yml"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  floor02-python:
+    name: F02 Python production suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Floor 02 runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "fastapi>=0.115,<1" "pydantic>=2.7,<3" "structlog>=24,<26" "pytest>=8,<9" "httpx>=0.27,<1"
+
+      - name: Compile Python sources
+        run: python -m compileall -q services/pipeline/floor02_scripting
+
+      - name: Run Floor 02 full test suite
+        id: f02_tests
+        continue-on-error: true
+        env:
+          FLOOR02_ENV: test
+          FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"
+        run: |
+          set -o pipefail
+          python -m pytest services/pipeline/floor02_scripting/tests/ -vv --durations=15 2>&1 | tee /tmp/f02-test.log
+
+      - name: Publish F02 failure diagnostics
+        if: steps.f02_tests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.readFileSync('/tmp/f02-test.log', 'utf8');
+            const body = '### F02 test failure diagnostics\n\n```text\n' + log.slice(-14000) + '\n```';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      - name: Fail on F02 test failure
+        if: steps.f02_tests.outcome == 'failure'
+        run: exit 1
+
+      - name: Validate canonical v2 architecture (isolated state)
+        env:
+          FLOOR02_ENV: test
+          FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"
+          FLOOR02_MEMORY_PATH: /tmp/f02-v2-memory.json
+          FLOOR02_EXECUTION_REPORT_PATH: /tmp/f02-v2-reports
+        run: |
+          python -m pytest services/pipeline/floor02_scripting/tests/test_v2_architecture.py -q
+          python -m pytest services/pipeline/floor02_scripting/tests/api/test_script_api.py -q

@@ -8,7 +8,7 @@ from floors.floor02_scripting.app.core.config import settings
 app = FastAPI(
     title=f"FactoryOS {settings.FLOOR_NAME}",
     version=settings.FLOOR_VERSION,
-    description="Floor 02 microservice: Scripting & Narrative planning engine.",
+    description="Floor 02 microservice: production Narrative Compiler and ScriptIR handoff engine.",
 )
 
 app.include_router(script_router)
@@ -19,6 +19,8 @@ def health_check():
     return {
         "status": "healthy",
         "floor_id": settings.FLOOR_ID,
+        "legacy_floor_id": settings.LEGACY_FLOOR_ID,
         "floor_name": settings.FLOOR_NAME,
         "floor_version": settings.FLOOR_VERSION,
+        "environment": settings.ENVIRONMENT,
     }
