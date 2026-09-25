@@ -42,7 +42,6 @@ import { VoiceFabric } from "../voice/VoiceFabric";
 import { RenderFabric } from "../fabric/RenderFabric";
 import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentContracts";
 import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegistry";
-import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 
@@ -1240,41 +1239,29 @@ export class OverseerControlPlane {
             throw dispatchErr;
           }
         } else if (scope.localRenderIntent || sharedScope.localRenderIntent) {
-          // Canonical V3 Phase 4 path: invoke LocalRenderAdapter -> factoryos-render (Requirement 22)
+          // Canonical F06 path: all physical rendering is routed through RenderFabric -> ComputeRouter.
           const localIntent = (scope.localRenderIntent || sharedScope.localRenderIntent) as LocalRenderIntent;
-          const pipeline = TemplateProductionPipeline.getInstance();
-          const renderRes = await pipeline.executeProductionRender({
-            localIntent,
-            runId: `run_${targetJobId}`,
-            onProgress: (msg) => {
-              this.eventBus.publish("TASK_PROGRESS", { taskId: node.taskId, progressMessage: msg });
-            }
-          });
+          const renderRes = await renderFabric.executeRender(
+            renderIntent,
+            "LOCAL",
+            undefined,
+            undefined,
+            { localRenderIntent: localIntent }
+          );
 
-          const artifact: RenderArtifact = {
-            artifactId: `art_${targetJobId}`,
-            jobId: targetJobId,
-            location: { kind: "LOCAL", path: renderRes.videoPath },
-            sha256: renderRes.sha256,
-            byteLength: renderRes.receipt.validation.file_size_bytes,
-            duration: renderRes.durationSeconds,
-            width: renderRes.width,
-            height: renderRes.height,
-            fps: renderRes.receipt.fps,
-            mimeType: "video/mp4",
-            videoCodec: "h264",
-            audioCodec: "aac",
-            producedAt: new Date().toISOString(),
-          };
+          if (!renderRes.artifact || !renderRes.receipt) {
+            throw new Error("[Overseer Floor06] RenderFabric completed without a physical artifact or execution receipt");
+          }
 
+          const artifact = renderRes.artifact;
           scope.artifact = artifact;
           sharedScope.artifact = artifact;
           scope.renderReceipt = renderRes.receipt;
           sharedScope.renderReceipt = renderRes.receipt;
-          finalVideoUrl = renderRes.videoPath;
+          finalVideoUrl = (artifact.location as any).path;
           scope.videoUrl = finalVideoUrl;
           sharedScope.videoUrl = finalVideoUrl;
-          renderOutputMessage = `factoryos-render produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
+          renderOutputMessage = `RenderFabric/ComputeRouter produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
 
           try {
             const { saveJobManifest } = await import("../../../lib/jobs-history");
