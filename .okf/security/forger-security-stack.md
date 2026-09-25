@@ -156,3 +156,14 @@ Evidence
 .okf audit / decision
 
 The Forger is an operator of security evidence, not the owner of security authority.
+
+
+## 9. Team operational home
+
+The Security Forge is operationally consolidated under:
+
+`Team/security/TEAM.md`
+
+Its output is consumed by the Team Change Gate and preserved in the Team Change Report.
+
+The Team security layer cannot override .okf law or convert unavailable/unproven scans into PASS.
