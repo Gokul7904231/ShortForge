@@ -51,3 +51,14 @@
 | **Case** | A formal anomaly or failure investigation record managed by the CaseManager, containing incident telemetry and forensic replays. | `apps/web/factoryos/core/cases/CaseManager.ts` |
 | **Last-Known-Good** | The verified baseline state of an artifact or pipeline step preserved during repair operations to prevent corruption. | `apps/web/factoryos/core/healers/BoundedRepairEngine.ts` |
 | **TraceContext** | The distributed context propagating correlation identifiers (`missionId`, `runId`, `agentId`, `skillId`, `toolId`, `traceId`) across all subsystem boundaries. | `apps/web/factoryos/core/observability/TraceContext.ts` |
+
+## 5. Cognitive & Evolution Entities
+
+| Term | Canonical Definition | Source File / Contract |
+| :--- | :--- | :--- |
+| **ShortForge Cognitive Layer (SCL)** | The cognitive substrate beneath the Overseer responsible for worker cognition, bounded decisions, context synthesis, template design, research interpretation, and learning candidates. It is not a sovereign authority. | `.okf/cognitive/README.md` |
+| **ShortForge Cognitive Model** | The project-owned fine-tuned LLM used as the primary cognitive model for SCL. | `.okf/cognitive/README.md`, `.okf/intelligence/training.md` |
+| **Worker Task Contract** | The compact typed cognitive package describing a worker's specialization, objective, inputs, constraints, allowed capabilities, success criteria, and verification criteria. | `.okf/cognitive/layer-contract.md` |
+| **Research IR** | Structured intermediate representation connecting external evidence, claims, factory mappings, risks, decisions, and validation plans before architectural promotion. | `.okf/cognitive/devourer.md`, `.okf/research/` |
+| **ArchitectureProposal** | Evidence-backed proposal for changing a factory capability, contract, workflow, worker behavior, or architecture. | `.okf/cognitive/devourer.md` |
+| **Devourer** | Controlled self-improvement program that discovers external patterns, validates them, prepares training/evaluation candidates, and stages model or architecture improvements through gated promotion. | `.okf/cognitive/devourer.md` |
