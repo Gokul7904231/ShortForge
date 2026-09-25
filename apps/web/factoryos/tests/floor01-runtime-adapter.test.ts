@@ -120,8 +120,7 @@ describe("Floor01RuntimeAdapter", () => {
 
     try {
       const adapter = new Floor01RuntimeAdapter("http://floor01.internal");
-      expect(adapter).toBeDefined();
-      expect(() =>
+      await expect(
         adapter.execute({
           request_id: "req-adapter-production-key-boundary",
           topic_query: "Python decorators",
@@ -129,7 +128,7 @@ describe("Floor01RuntimeAdapter", () => {
           platform: "youtube_shorts",
           content_format: "educational_short",
         }),
-      ).toThrow("F01_SERVICE_AUTH_UNCONFIGURED");
+      ).rejects.toThrow("F01_SERVICE_AUTH_UNCONFIGURED");
     } finally {
       if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
       else process.env.NODE_ENV = originalNodeEnv;
