@@ -48,10 +48,25 @@ A shared backend, semantic embedding scorer, downstream outcome learner, and bou
 
 ## Verification record
 
-At the time this pack was written:
-- F01 Python CI had reached a corrected passing run after one report-contract defect was repaired.
-- The TypeScript and production-container checks for the latest head were still running.
-- Therefore final release status remained `VERIFICATION IN PROGRESS` and no merge/promotion claim was made.
+Final production-gate evidence on branch head `7e79b9a2aa954ff8f8d22f887c06a1c720133e73`:
+
+- CI run #408: `36131426878`
+- Floor 01 Python v2 Tests: **PASS**
+- Production wheel-content verification: **PASS**
+- TypeCheck & Floor 01 Contract Tests: **PASS**
+- Floor 01 Security & Dependency Scan: **PASS**
+  - dependency vulnerability audit: pass
+  - Bandit static scan: pass
+- Floor 01 Production Container Smoke: **PASS**
+  - image build: pass
+  - production startup: pass
+  - unauthenticated health probe: pass
+  - production OpenAPI/docs disabled: pass
+  - authenticated strict `/v1/plan`: validated `floor01_strategy` handoff
+  - invalid API key: rejected with 401
+- Full Web Regression Suite: **informational/non-blocking**; it is not part of the F01 release gate because it exercises unrelated ambient Azure/FFmpeg/provider assumptions.
+
+The release gate is therefore **GREEN for Floor 01** on the recorded head SHA. PR #16 remains draft and unmerged.
 
 ## Release rule
 
