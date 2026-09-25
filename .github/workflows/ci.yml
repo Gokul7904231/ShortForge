@@ -49,6 +49,31 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e "services/pipeline/floor01_strategy[test]"
 
+      - name: Verify production wheel contains runtime modules
+        working-directory: services/pipeline/floor01_strategy
+        run: |
+          rm -rf /tmp/floor01-wheel
+          python -m pip wheel --no-deps --wheel-dir /tmp/floor01-wheel .
+          python - <<'PY'
+          import glob
+          import zipfile
+
+          wheels = glob.glob("/tmp/floor01-wheel/*.whl")
+          assert len(wheels) == 1, wheels
+          with zipfile.ZipFile(wheels[0]) as wheel:
+              names = set(wheel.namelist())
+          required = {
+              "floor01_strategy/main.py",
+              "floor01_strategy/app/service.py",
+              "floor01_strategy/app/pipeline.py",
+              "floor01_strategy/app/domain/handoff.py",
+              "floor01_strategy/app/infrastructure/memory_store.py",
+          }
+          missing = required - names
+          assert not missing, f"Missing runtime modules from wheel: {sorted(missing)}"
+          assert not any(name.startswith("floor01_strategy/tests/") for name in names)
+          print(f"Verified runtime wheel: {len(names)} files")
+          PY
       - name: Run Floor 01 v2 test suite
         working-directory: services/pipeline
         env:
