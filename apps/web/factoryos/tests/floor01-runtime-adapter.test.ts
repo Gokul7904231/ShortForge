@@ -70,3 +70,48 @@ describe("Floor01RuntimeAdapter", () => {
     });
   });
 });
+
+
+  it("fails closed when service authentication is not configured", async () => {
+    const adapter = new Floor01RuntimeAdapter("http://floor01.internal", undefined);
+
+    await expect(
+      adapter.execute({
+        request_id: "req-adapter-no-auth",
+        topic_query: "Python decorators",
+        target_audience: "general_learners",
+        platform: "youtube_shorts",
+        content_format: "educational_short",
+      }),
+    ).rejects.toThrow("F01_SERVICE_AUTH_UNCONFIGURED");
+  });
+
+  it("fails with a bounded timeout instead of retrying a POST", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+        return new Promise((_resolve, reject) => {
+          const signal = init?.signal;
+          signal?.addEventListener("abort", () => {
+            reject(new DOMException("aborted", "AbortError"));
+          });
+        });
+      }),
+    );
+
+    const adapter = new Floor01RuntimeAdapter(
+      "http://floor01.internal",
+      "test-service-secret",
+      1000,
+    );
+
+    await expect(
+      adapter.execute({
+        request_id: "req-adapter-timeout",
+        topic_query: "Python decorators",
+        target_audience: "general_learners",
+        platform: "youtube_shorts",
+        content_format: "educational_short",
+      }),
+    ).rejects.toThrow("F01_SERVICE_TIMEOUT");
+  });
