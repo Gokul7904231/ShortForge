@@ -124,7 +124,7 @@ def test_provenance_correctness():
 def test_idempotency_payload_mismatch_rejection():
     """Verify same request_id with conflicting topic query is rejected."""
     pipeline = Floor02Pipeline()
-    inp1 = Floor02Input(request_id="req-conflict-999", topic_query="Topic Alpha")
+    inp1 = Floor02Input(request_id="req-conflict-999", topic_query="Topic Alpha", strict_upstream=False)
     pipeline.execute(inp1)
 
     inp2 = Floor02Input(request_id="req-conflict-999", topic_query="Topic Beta", strict_upstream=False)
