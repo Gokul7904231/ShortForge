@@ -222,3 +222,8 @@ Fresh CI remains the promotion gate.
 The Guardian contract gate surfaced a packaging/layout issue rather than an F03 semantic failure: tests import `factoryos.guardian.*`, while the canonical implementation is stored at `services/pipeline/guardian`.
 
 The branch now exposes that canonical implementation through a root Python compatibility namespace at `factoryos/guardian` and triggers the floor gate when that namespace changes. This keeps Guardian runtime code single-sourced.
+
+
+## Guardian gate ownership correction
+
+The production gate previously combined F03 Guardian tests with a Floor 02 scenario test. That unrelated F02 scenario requires F01 provenance evidence and can fail for reasons unrelated to F03. The F03 Guardian gate is now scoped to `tests/guardian/test_guardian_floor03.py`, preserving test ownership and keeping F02 recovery scenarios in the F02 validation domain.
