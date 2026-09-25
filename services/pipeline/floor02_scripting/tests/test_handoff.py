@@ -7,7 +7,9 @@ import pytest
 from floors.floor01_strategy.app.domain.handoff import (
     ContentPlanResult,
     CurriculumMapResult,
+    EvidenceType,
     Floor01HandoffPayload,
+    ProvenanceEntry,
     StrategyResult,
     TopicIntelligenceResult,
 )
@@ -25,12 +27,28 @@ def build_mock_floor01_payload() -> Floor01HandoffPayload:
             selected_topic="Python Decorators",
             normalized_topic="python_decorators",
             selection_reason="High educational demand",
+            provenance=[ProvenanceEntry(
+                evidence_type=EvidenceType.DETERMINISTIC_RULE,
+                source_type="f01_test_fixture",
+                source_identifier="f01_fixture_v2",
+                method="fixture_provenance",
+                confidence_score=1.0,
+                summary="Deterministic test fixture provenance for F02 production grounding.",
+            )],
         ),
         strategy=StrategyResult(
             target_audience="intermediate_developers",
             platform="youtube_shorts",
             content_angle="practical_mental_model",
             target_duration_seconds=60,
+            provenance=[ProvenanceEntry(
+                evidence_type=EvidenceType.DETERMINISTIC_RULE,
+                source_type="f01_test_fixture",
+                source_identifier="f01_fixture_v2",
+                method="fixture_provenance",
+                confidence_score=1.0,
+                summary="Deterministic test fixture provenance for F02 production grounding.",
+            )],
         ),
         content_plan=ContentPlanResult(
             core_objective="Explain wrapper functions and decorator syntax",
@@ -38,9 +56,25 @@ def build_mock_floor01_payload() -> Floor01HandoffPayload:
             hook_direction="Did you know Python functions are secretly objects?",
             cta_direction="Follow for Python mental models",
             structural_outline=["Hook", "Concept Breakdown", "Example", "CTA"],
+            provenance=[ProvenanceEntry(
+                evidence_type=EvidenceType.DETERMINISTIC_RULE,
+                source_type="f01_test_fixture",
+                source_identifier="f01_fixture_v2",
+                method="fixture_provenance",
+                confidence_score=1.0,
+                summary="Deterministic test fixture provenance for F02 production grounding.",
+            )],
         ),
         curriculum=CurriculumMapResult(
             learning_objectives=["Understand higher-order functions"],
+            provenance=[ProvenanceEntry(
+                evidence_type=EvidenceType.DETERMINISTIC_RULE,
+                source_type="f01_test_fixture",
+                source_identifier="f01_fixture_v2",
+                method="fixture_provenance",
+                confidence_score=1.0,
+                summary="Deterministic test fixture provenance for F02 production grounding.",
+            )],
         ),
         decision_quality_score=0.92,
     )
@@ -123,7 +157,7 @@ def test_provenance_correctness():
 
 def test_idempotency_payload_mismatch_rejection():
     """Verify same request_id with conflicting topic query is rejected."""
-    pipeline = Floor02Pipeline()
+    pipeline = Floor02Pipeline(memory_store=ScriptMemoryStore(storage_path=None))
     inp1 = Floor02Input(request_id="req-conflict-999", topic_query="Topic Alpha", strict_upstream=False)
     pipeline.execute(inp1, strict_rejection=False)
 
