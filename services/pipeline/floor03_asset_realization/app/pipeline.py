@@ -223,6 +223,18 @@ class Floor03Pipeline:
                 else RepairScope.NODE
             )
 
+            visual = req.scene_plan.model_copy(deep=True)
+            visual.references = [
+                reference.model_copy(
+                    update={
+                        "source_asset_id": req_by_scene[reference.source_scene_id].asset_id
+                        if reference.source_scene_id and reference.source_scene_id in req_by_scene
+                        else reference.source_asset_id
+                    }
+                )
+                for reference in visual.references
+            ]
+
             nodes.append(
                 AssetPlanNode(
                     scene_id=req.scene_id,
@@ -232,7 +244,7 @@ class Floor03Pipeline:
                     coverage_role=CoverageRole(
                         str(req.continuity_constraints.get("coverage_role") or "action").lower()
                     ),
-                    visual=req.scene_plan,
+                    visual=visual,
                     dependencies=dependencies,
                     target_duration_seconds=req.target_duration_seconds,
                     evidence_refs=list(scene.evidence_refs),
@@ -478,10 +490,25 @@ class Floor03Pipeline:
                     )
                 )
 
+            visual = matching_req.scene_plan.model_copy(deep=True)
+            visual.references = [
+                reference.model_copy(
+                    update={
+                        "source_asset_id": current_asset_by_scene.get(
+                            reference.source_scene_id,
+                            reference.source_asset_id,
+                        )
+                        if reference.source_scene_id
+                        else reference.source_asset_id
+                    }
+                )
+                for reference in visual.references
+            ]
+
             rebuilt_node = node.model_copy(
                 deep=True,
                 update={
-                    "visual": matching_req.scene_plan,
+                    "visual": visual,
                     "dependencies": remapped_dependencies,
                 },
             )
