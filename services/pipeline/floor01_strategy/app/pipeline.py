@@ -19,16 +19,16 @@ from typing import List, Optional, Tuple
 
 import structlog
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.core.exceptions import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.exceptions import (
     DuplicateTopicError,
     Floor01ValidationError,
     LowConfidenceError,
     StrategyPipelineError,
 )
-from floors.floor01_strategy.app.core.research_gate import ResearchEvidenceGate
-from floors.floor01_strategy.app.core.request_fingerprint import fingerprint_floor01_input
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.research_gate import ResearchEvidenceGate
+from floor01_strategy.app.core.request_fingerprint import fingerprint_floor01_input
+from floor01_strategy.app.domain.handoff import (
     ExecutionMode,
     ExecutionModeDetails,
     Floor01HandoffPayload,
@@ -39,16 +39,16 @@ from floors.floor01_strategy.app.domain.handoff import (
     UniquenessVerdict,
     WorkerExecutionSummary,
 )
-from floors.floor01_strategy.app.infrastructure.llm_provider import LLMStrategyAdapter
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
-from floors.floor01_strategy.app.intelligence.strategy_candidates import (
+from floor01_strategy.app.infrastructure.llm_provider import LLMStrategyAdapter
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.intelligence.strategy_candidates import (
     StrategyCandidateEngine,
     StrategyCandidateEvaluator,
 )
-from floors.floor01_strategy.app.logical_workers.content_planner import ContentPlannerWorker
-from floors.floor01_strategy.app.logical_workers.curriculum_mapper import CurriculumMapperWorker
-from floors.floor01_strategy.app.logical_workers.strategy_planner import StrategyPlannerWorker
-from floors.floor01_strategy.app.logical_workers.topic_intelligence import TopicIntelligenceWorker
+from floor01_strategy.app.logical_workers.content_planner import ContentPlannerWorker
+from floor01_strategy.app.logical_workers.curriculum_mapper import CurriculumMapperWorker
+from floor01_strategy.app.logical_workers.strategy_planner import StrategyPlannerWorker
+from floor01_strategy.app.logical_workers.topic_intelligence import TopicIntelligenceWorker
 
 logger = structlog.get_logger(__name__)
 
