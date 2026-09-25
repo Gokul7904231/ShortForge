@@ -201,7 +201,7 @@ export class AmdRenderWorkerAdapter implements IRenderWorker {
         "X-Filename": path.basename(filePath),
         "Content-Type": "application/octet-stream",
       },
-      body: bytes,
+      body: bytes as unknown as BodyInit,
     });
     const text = await response.text();
 
