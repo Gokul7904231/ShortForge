@@ -176,3 +176,15 @@ Sainath Pattipati's video-generation pipeline, 0xadvait/ai-video-pipeline, open-
 ### Non-conflict rule
 
 These improvements remain specification-only. F03 does not choose a provider/model, execute generation graphs, own secrets, replace TimelineIR, or certify physical media.
+
+## Current-generation video-model and evaluation research — 2026-09-25
+
+| Repository | Signal | F03 treatment | Status |
+|---|---|---|---|
+| Wan-Video/Wan2.2 | Explicit cinematic conditioning, T2V/I2V, resolution/frame-rate and character-animation inputs | Confirms provider-neutral camera/lighting/reference/input metadata; runtime stays downstream | PATTERN_EXTRACTION |
+| SkyworkAI/SkyReels-V2 | Start/end-frame control and long-video extension | Reinforces dependency-boundary frame references and continuity state | PATTERN_EXTRACTION |
+| Tencent-Hunyuan/HunyuanVideo-1.5 | Explicit model/runtime conditions separated from semantic request | Keeps inference/runtime parameters outside AssetPlanIR | ARCHITECTURE_REFERENCE |
+| Vchitect/VBench | Multidimensional video quality evaluation | Keeps quality scoring downstream of F03 planning | EVALUATION_PATTERN |
+| Lightricks/LTX-Video | Multi-keyframe conditioning, extension and frame-level control | Reinforces temporal-reference direction while keeping provider-specific syntax out of F03 | PATTERN_EXTRACTION |
+
+These mappings are research inputs only. No provider code, weights, workflows, or model-specific execution APIs were imported into F03.
