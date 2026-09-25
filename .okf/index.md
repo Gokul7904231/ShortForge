@@ -126,3 +126,19 @@ Before any non-trivial ShortForge architecture, engineering, research, model, wo
 Canonical entry point: [./decision-protocol.md](./decision-protocol.md)
 
 The current .okf review is the highest-priority design input. Relevant repository mappings and production-helper evidence must then be incorporated before implementation decisions are finalized.
+
+
+## 7. Mandatory Governance Entry Points
+
+Use these files as the canonical entry points for future architecture decisions and execution-boundary changes:
+
+| Entry Point | Purpose |
+|---|---|
+| `.okf/decision-protocol.md` | Mandatory end-to-end `.okf` analysis before non-trivial decisions. |
+| `.okf/hierarchy-map.md` | Absolute authority and subsystem relationship map. |
+| `.okf/security/worker-permissions.md` | Least-privilege worker capability and scope contract. |
+| `.okf/engineering-stack.md` | Locked media engineering stack and renderer-selection rules. |
+| `.okf/production-helper.md` | Routine production-helper evidence and validation procedure. |
+| `.okf/devourer.md` | Controlled self-improvement governance charter. |
+
+**Decision priority:** complete current `.okf` review first, then inspect relevant implementation, tests, repository mappings, and production-helper evidence.
