@@ -210,6 +210,21 @@ class Floor01Pipeline:
                 evaluations,
                 settings.default_complexity_mode,
             )
+            worker_summaries.append(
+                WorkerExecutionSummary(
+                    worker_name="StrategyCandidateEngine",
+                    execution_mode=(
+                        ExecutionMode.HYBRID
+                        if any(candidate.model_generated for candidate in candidates)
+                        else ExecutionMode.DETERMINISTIC
+                    ),
+                    duration_ms=0.0,
+                    confidence_score=evaluation.overall_score,
+                    evidence_count=sum(
+                        len(item.evaluator_provenance) for item in evaluations
+                    ),
+                )
+            )
 
             if strict_rejection and not evaluation.accepted:
                 raise LowConfidenceError(
