@@ -6,7 +6,7 @@ import json
 from time import perf_counter
 from pathlib import Path
 from uuid import uuid4
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import structlog
 
