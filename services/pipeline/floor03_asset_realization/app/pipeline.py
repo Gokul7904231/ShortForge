@@ -13,9 +13,16 @@ import structlog
 from floors.floor02_scripting.app.domain.handoff import Floor02HandoffPayload
 from floors.floor03_asset_realization.app.core.config import settings
 from floors.floor03_asset_realization.app.core.exceptions import Floor03Error, Floor03PlatformError, Floor03ValidationError
-from floors.floor03_asset_realization.app.core.identity import request_fingerprint
+from floors.floor03_asset_realization.app.core.identity import asset_plan_fingerprint, request_fingerprint
 from floors.floor03_asset_realization.app.domain.asset_models import AudioAssetRequirement, VisualAssetRequirement
-from floors.floor03_asset_realization.app.domain.asset_plan_ir import AssetDependency, AssetPlanIR, AssetPlanNode
+from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
+    AssetDependency,
+    AssetPlanIR,
+    AssetPlanNode,
+    DependencyRelation,
+    RepairPlan,
+    RepairScope,
+)
 from floors.floor03_asset_realization.app.domain.handoff import (
     EvidenceType,
     ExecutionMode,
@@ -102,6 +109,75 @@ class Floor03Pipeline:
         )
         return resolved_platform, aspect_ratio, resolution, prov
 
+    @staticmethod
+    def _validate_scene_graph(scenes) -> None:
+        scene_by_id = {scene.scene_id: scene for scene in scenes}
+        if len(scene_by_id) != len(scenes):
+            raise Floor03ValidationError("Duplicate scene_id detected in Floor 02 payload.")
+
+        sequence_indexes = [scene.sequence_index for scene in scenes]
+        if len(sequence_indexes) != len(set(sequence_indexes)):
+            raise Floor03ValidationError("Duplicate scene sequence_index detected in Floor 02 payload.")
+
+        for scene in scenes:
+            for dependency_id in scene.depends_on_scene_ids:
+                if dependency_id == scene.scene_id:
+                    raise Floor03ValidationError(
+                        f"Scene '{scene.scene_id}' cannot depend on itself."
+                    )
+                dependency = scene_by_id.get(dependency_id)
+                if dependency is None:
+                    raise Floor03ValidationError(
+                        f"Scene '{scene.scene_id}' references missing dependency '{dependency_id}'."
+                    )
+                if dependency.sequence_index >= scene.sequence_index:
+                    raise Floor03ValidationError(
+                        f"Scene '{scene.scene_id}' depends on '{dependency_id}' which does not precede it."
+                    )
+
+        state = {}
+
+        def visit(scene_id: str) -> None:
+            mark = state.get(scene_id, 0)
+            if mark == 1:
+                raise Floor03ValidationError(
+                    f"Cycle detected in Floor 02 scene dependencies at '{scene_id}'."
+                )
+            if mark == 2:
+                return
+            state[scene_id] = 1
+            for dep_id in scene_by_id[scene_id].depends_on_scene_ids:
+                visit(dep_id)
+            state[scene_id] = 2
+
+        for scene in scenes:
+            visit(scene.scene_id)
+
+    @staticmethod
+    def _compute_impact_radius(scenes) -> Dict[str, List[str]]:
+        dependents: Dict[str, List[str]] = {scene.scene_id: [] for scene in scenes}
+        for scene in scenes:
+            for dep_id in scene.depends_on_scene_ids:
+                dependents.setdefault(dep_id, []).append(scene.scene_id)
+
+        impact: Dict[str, List[str]] = {}
+        for scene in scenes:
+            seen = set()
+            stack = list(dependents.get(scene.scene_id, []))
+            while stack:
+                current = stack.pop()
+                if current in seen:
+                    continue
+                seen.add(current)
+                stack.extend(dependents.get(current, []))
+            impact[scene.scene_id] = sorted(
+                seen,
+                key=lambda sid: next(
+                    candidate.sequence_index for candidate in scenes if candidate.scene_id == sid
+                ),
+            )
+        return impact
+
     def _compile_asset_plan_ir(
         self,
         inp: Floor03Input,
@@ -112,32 +188,64 @@ class Floor03Pipeline:
         plan_id: Optional[str] = None,
         plan_version: int = 1,
     ) -> AssetPlanIR:
+        self._validate_scene_graph(inp.floor02_payload.scenes)
+
         req_by_scene = {req.scene_id: req for req in visual_reqs}
+        impact_radius = self._compute_impact_radius(inp.floor02_payload.scenes)
         nodes: List[AssetPlanNode] = []
+
         for req in sorted(visual_reqs, key=lambda item: item.sequence_index):
-            scene = next((sc for sc in inp.floor02_payload.scenes if sc.scene_id == req.scene_id), None)
+            scene = next(
+                (sc for sc in inp.floor02_payload.scenes if sc.scene_id == req.scene_id),
+                None,
+            )
             if scene is None or req.scene_plan is None:
                 raise Floor03ValidationError(
                     f"Missing scene or scene plan for scene_id '{req.scene_id}'."
                 )
+
             dependencies: List[AssetDependency] = []
             for dep_scene_id in scene.depends_on_scene_ids:
                 dep_req = req_by_scene.get(dep_scene_id)
                 if dep_req:
                     dependencies.append(
-                        AssetDependency(asset_id=dep_req.asset_id, relation="scene_dependency")
+                        AssetDependency(
+                            asset_id=dep_req.asset_id,
+                            scene_id=dep_scene_id,
+                            relation=DependencyRelation.SCENE_DEPENDENCY,
+                        )
                     )
+
+            repair_scope = (
+                RepairScope.DEPENDENT_SUBGRAPH
+                if impact_radius.get(scene.scene_id)
+                else RepairScope.NODE
+            )
+
             nodes.append(
                 AssetPlanNode(
                     scene_id=req.scene_id,
+                    source_scene_version=scene.scene_version,
+                    source_beat_id=scene.beat_id or None,
                     sequence_index=req.sequence_index,
                     visual=req.scene_plan,
                     dependencies=dependencies,
                     target_duration_seconds=req.target_duration_seconds,
-                    impact_radius=list(scene.depends_on_scene_ids),
+                    evidence_refs=list(scene.evidence_refs),
+                    causal_event_ids=list(scene.causal_event_ids),
+                    impact_radius=impact_radius.get(scene.scene_id, []),
+                    repair=RepairPlan(
+                        scope=repair_scope,
+                        rationale=(
+                            "Regeneration may invalidate downstream dependent scene plans."
+                            if repair_scope == RepairScope.DEPENDENT_SUBGRAPH
+                            else "Scene has no downstream dependent plan nodes."
+                        ),
+                    ),
                 )
             )
-        return AssetPlanIR(
+
+        plan = AssetPlanIR(
             plan_id=plan_id or f"asset-plan-{inp.floor02_payload.script_id}-{inp.request_id}",
             plan_version=plan_version,
             script_id=inp.floor02_payload.script_id,
@@ -147,6 +255,8 @@ class Floor03Pipeline:
             resolution=resolution,
             nodes=nodes,
         )
+        plan.plan_fingerprint = asset_plan_fingerprint(plan)
+        return plan
 
     def _execute_internal(self, inp: Floor03Input) -> Tuple[Floor03HandoffPayload, Dict[str, float]]:
         """Execute once and return payload plus measured worker timings."""
@@ -319,33 +429,72 @@ class Floor03Pipeline:
 
     @staticmethod
     def _rebuild_asset_plan_from_payload(payload: Floor03HandoffPayload) -> AssetPlanIR:
+        existing_plan = payload.asset_plan_ir
+        if existing_plan is None:
+            raise Floor03ValidationError("Cannot rebuild AssetPlanIR without the existing plan.")
+
+        current_asset_by_scene = {
+            req.scene_id: req.asset_id for req in payload.visual_asset_requirements
+        }
+        previous_scene_by_asset = {}
+        for node in existing_plan.nodes:
+            for dependency in node.dependencies:
+                if dependency.scene_id and dependency.asset_id:
+                    previous_scene_by_asset[dependency.asset_id] = dependency.scene_id
+
         nodes: List[AssetPlanNode] = []
-        for req in sorted(payload.visual_asset_requirements, key=lambda item: item.sequence_index):
-            if req.scene_plan is None:
-                raise Floor03ValidationError(
-                    f"Missing scene plan for scene_id '{req.scene_id}' during regeneration."
-                )
-            scene_dependencies: List[AssetDependency] = []
-            nodes.append(
-                AssetPlanNode(
-                    scene_id=req.scene_id,
-                    sequence_index=req.sequence_index,
-                    visual=req.scene_plan,
-                    dependencies=scene_dependencies,
-                    target_duration_seconds=req.target_duration_seconds,
-                    impact_radius=list(req.continuity_constraints.get("impact_radius") or []),
-                )
+        for node in existing_plan.nodes:
+            matching_req = next(
+                (req for req in payload.visual_asset_requirements if req.scene_id == node.scene_id),
+                None,
             )
-        return AssetPlanIR(
-            plan_id=payload.asset_plan_id,
-            plan_version=payload.asset_plan_version,
-            script_id=payload.script_id,
-            script_version=payload.script_version,
-            platform=payload.resolved_platform,
-            aspect_ratio=payload.manifest.resolved_aspect_ratio,
-            resolution=payload.manifest.resolved_resolution,
-            nodes=nodes,
+            if matching_req is None or matching_req.scene_plan is None:
+                raise Floor03ValidationError(
+                    f"Missing regenerated scene plan for scene_id '{node.scene_id}'."
+                )
+
+            remapped_dependencies: List[AssetDependency] = []
+            for dependency in node.dependencies:
+                dependency_scene_id = dependency.scene_id or previous_scene_by_asset.get(
+                    dependency.asset_id
+                )
+                if dependency_scene_id:
+                    remapped_asset_id = current_asset_by_scene.get(
+                        dependency_scene_id, dependency.asset_id
+                    )
+                else:
+                    remapped_asset_id = dependency.asset_id
+
+                remapped_dependencies.append(
+                    dependency.model_copy(
+                        update={
+                            "asset_id": remapped_asset_id,
+                            "scene_id": dependency_scene_id,
+                        }
+                    )
+                )
+
+            rebuilt_node = node.model_copy(
+                deep=True,
+                update={
+                    "visual": matching_req.scene_plan,
+                    "dependencies": remapped_dependencies,
+                },
+            )
+            nodes.append(rebuilt_node)
+
+        plan = existing_plan.model_copy(
+            deep=True,
+            update={
+                "plan_version": payload.asset_plan_version,
+                "nodes": nodes,
+                "aspect_ratio": payload.manifest.resolved_aspect_ratio,
+                "resolution": payload.manifest.resolved_resolution,
+                "plan_fingerprint": None,
+            },
         )
+        plan.plan_fingerprint = asset_plan_fingerprint(plan)
+        return plan
 
     def regenerate_scene_assets(
         self,
