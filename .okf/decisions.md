@@ -1028,3 +1028,23 @@ Resolution:
 - the root `factoryos.guardian` compatibility bridge remains required for the scoped F03 Guardian tests.
 
 This is a gate-ownership correction, not a relaxation of F03 safety requirements.
+
+
+## F03 Validation Gate Hardening — 2026-09-25
+
+**Classification:** extends existing rule
+
+Fresh runner evidence hardened the F03 validation boundary:
+
+1. The F03 Guardian job was executing a cross-floor Guardian scenario suite that depended on Floor 02 model credentials and F02 provenance-quality policy. The F03 gate is now scoped to the dedicated Floor 03 Guardian contract test.
+2. The Guardian runner required the repository-root FactoryOS compatibility namespace before the other Python roots. The F03 workflow now places the repository root first in PYTHONPATH.
+
+This keeps F03 validation deterministic and owned by the F03 contract while leaving cross-floor scenario coverage to the broader CI layer.
+
+Latest targeted validation:
+- Floor 02 + Floor 03 Production Gates: passed.
+- F03 Asset Planning v2: passed.
+- F03 Guardian contract: passed.
+- Team Change Gate: passed.
+
+Full repository CI remains a separate gate.
