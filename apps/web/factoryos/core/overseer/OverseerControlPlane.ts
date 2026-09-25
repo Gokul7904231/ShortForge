@@ -1335,55 +1335,31 @@ export class OverseerControlPlane {
           node.dependencyOutputs?.["task_f06_rendering"]?.videoUrl ||
           (artifact?.location?.path);
 
-        const isControlPlane =
-          process.env.RENDER === "true" ||
-          process.env.NODE_ENV === "production" ||
-          Boolean(process.env.BASIC_RENDER_API_URL);
-        const basicRenderApiUrl = process.env.BASIC_RENDER_API_URL;
-        const isRemoteDispatched =
-          sharedScope.remoteState === "DISPATCHED" ||
-          (isControlPlane && Boolean(basicRenderApiUrl));
+        const verificationReport = await VerificationEngine.auditMediaArtifact({
+          jobId: targetJobId,
+          artifact,
+          videoUrl,
+          scriptText: scope.script || sharedScope.script || "",
+          sceneCount: Array.isArray(scope.scenes) ? scope.scenes.length : 1,
+          durationSeconds:
+            scope.renderIntent?.durationSeconds ||
+            sharedScope.renderIntent?.durationSeconds ||
+            3,
+          policyViolations: [],
+        });
 
-        let verificationReport: any;
-
-        if (isRemoteDispatched) {
-          verificationReport = {
+        if (!verificationReport.verified) {
+          await this.caseManager.createCase({
+            title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
+            description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
+            floorId: "floor07_compliance",
+            category: "VALIDATION_REJECTION",
+            severity: "HIGH",
+            detectorId: "worker_compliance_01",
             jobId: targetJobId,
-            verified: true,
-            overallStatus: "PASS",
-            status: "DISPATCHED_AWAITING_CALLBACK",
-            failures: [],
-            warnings: ["Render dispatched to remote compute plane. Forensic probe deferred to worker callback."],
-            measurements: { remoteState: "DISPATCHED" },
-            scores: { overall: 100 },
-            overallScore: 100,
-            passed: true,
-            evidence: { remoteState: "DISPATCHED" },
-          };
-        } else {
-          verificationReport = await VerificationEngine.auditMediaArtifact({
-            jobId: targetJobId,
-            artifact,
-            videoUrl,
-            scriptText: scope.script || sharedScope.script || "",
-            sceneCount: Array.isArray(scope.scenes) ? scope.scenes.length : 1,
-            durationSeconds: scope.renderIntent?.durationSeconds || sharedScope.renderIntent?.durationSeconds || 3,
-            policyViolations: [],
+            symptoms: verificationReport.failures,
+            observedState: verificationReport.measurements as any,
           });
-
-          if (!verificationReport.verified) {
-            await this.caseManager.createCase({
-              title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
-              description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
-              floorId: "floor07_compliance",
-              category: "VALIDATION_REJECTION",
-              severity: "HIGH",
-              detectorId: "worker_compliance_01",
-              jobId: targetJobId,
-              symptoms: verificationReport.failures,
-              observedState: verificationReport.measurements as any,
-            });
-          }
         }
 
         let deliveryArtifact: any;
