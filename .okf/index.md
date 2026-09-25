@@ -102,6 +102,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Production Floors** | [`./floors/`](./floors/) | Deep specifications for Floors 00 through 07, inputs, outputs, contracts, and failure modes. |
 | **Control Hierarchy** | [`./hierarchy/`](./hierarchy/) | Overseer, Guardian, Slayer, Healer, ReMaker, Auditor, and Worker execution contracts. |
 | **Intelligence & Models** | [`./intelligence/`](./intelligence/) | AgentRuntime, Skills, Capability-First Model Routing, Evaluation suite, and Ascalon training. |
+**Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
 | **Cognitive Layer** | [`./cognitive/`](./cognitive/) | ShortForge Cognitive Layer, worker cognition contract, Devourer self-improvement program, and cross-layer improvement roadmap. |
 | **Memory & Knowledge** | [`./memory/`](./memory/) | MemoryOS, KnowledgeOS, domain-typed stores, and long-term memory promotion. |
 | **Workflows & Schedule** | [`./workflows/`](./workflows/) | Schedule lifecycle, mission execution, bounded healing, and gate-verified publishing. |
