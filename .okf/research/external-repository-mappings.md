@@ -191,3 +191,33 @@ ZAP active scans require explicit target authorization. Scanner output never rep
 ## 12. Engineering-workforce mapping rule
 
 Relevant repo mappings are now consumed through the Forger specialist that owns the concern. Where an existing mapping already provides a solution, Forgers should assimilate it rather than introduce a parallel subsystem.
+
+
+## Floor 03 second-wave corpus
+
+The generic mapping-first rule now applies to a broader F03 research corpus. Dedicated records live under `.okf/research/repo-mappings/`.
+
+For F03, the current corpus covers:
+- storyboard/creative planning: StoryForgeAI, VideoClaw, NolanX
+- sequence/continuity: Seedance 2.0, xyz-video-skill, CharacterConsistency, PopcornReady
+- typed artifacts/validation: script-to-shootable-storyboard, Pydantic AI
+- directorial multi-shot research: ShotDirector, MultiShotMaster
+- multimodal visual storytelling: VstoryGen
+- planning/critic separation: Code2Video
+
+Selection rule:
+1. extract a high-level pattern;
+2. compare against executable ShortForge contracts and .okf authority;
+3. implement only the smallest non-conflicting capability;
+4. record non-adoptions explicitly;
+5. benchmark or test before promotion.
+
+F03-specific promotion from this corpus is limited to:
+- typed shot/camera/continuity/reference planning;
+- graph-aware dependency validation;
+- transitive regeneration impact;
+- localized dependency remapping;
+- semantic plan fingerprinting;
+- richer provenance/reference metadata.
+
+Provider selection, media generation, credentials, physical verification, and sovereign orchestration remain outside F03.
