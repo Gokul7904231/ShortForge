@@ -200,6 +200,7 @@ class ScriptMemoryStore:
         request_id: Optional[str] = None,
         payload: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        request_fingerprint: Optional[str] = None,
     ) -> None:
         lock = None
         lock_path = self._lock_path()
@@ -212,7 +213,7 @@ class ScriptMemoryStore:
             if self.storage_path and self.storage_path.exists():
                 self._load_from_disk(skip_lock=True)
 
-            fingerprint = self.fingerprint(payload or {})
+            fingerprint = request_fingerprint or self.fingerprint(payload or {})
             if request_id and request_id in self._fingerprints:
                 if self._fingerprints[request_id] != fingerprint:
                     raise ValueError(f"Idempotency conflict for request_id '{request_id}'")
