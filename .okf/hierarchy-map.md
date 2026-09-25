@@ -1725,6 +1725,11 @@ F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07
 - .okf/principles.md
 - .okf/terminology.md
 - .okf/decisions.md
+- .okf/decision-protocol.md
+- .okf/security/worker-permissions.md
+- .okf/engineering-stack.md
+- .okf/production-helper.md
+- .okf/devourer.md
 - .okf/hierarchy/overseer.md
 - .okf/hierarchy/guardian.md
 - .okf/hierarchy/slayer.md
