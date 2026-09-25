@@ -127,9 +127,7 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
       const attackerUid = `quota_attacker_${Date.now()}`;
       currentMockUser = { uid: attackerUid, role: "BASIC" };
 
-      const originalFetch = global.fetch;
-
-      try {
+      
         // Complete 5 slots legitimately
         for (let i = 1; i <= 5; i++) {
           const jId = `job_quota_${attackerUid}_${i}`;
@@ -159,10 +157,6 @@ describe("ShortForge — Security Claims Forensic Verification Suite", () => {
 
         expect(res6.status).toBe(429);
         expect(data6.code).toBe("QUOTA_EXCEEDED");
-
-      } finally {
-        global.fetch = originalFetch;
-      }
     });
 
     it("PROVEN_BY_INTEGRATION_TEST: Parallel flood of 10 concurrent requests respects limit <= 5", async () => {
