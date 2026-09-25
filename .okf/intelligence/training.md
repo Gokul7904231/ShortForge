@@ -93,3 +93,22 @@ The training readiness of the codebase is verified continuously:
   - Proper tagging of `ResearchMeasurementFidelity`.
   - Integrity of `AgentReachAdapter` provider boundaries.
   - Clean separation between sovereign authorities and production workers.
+
+
+## 6. Team workflow training for Ascalon
+
+Team change trajectories should become a first-class Ascalon training/evaluation source.
+
+Training examples must preserve:
+- .okf sweep attestations and source references
+- TeamChangeIR
+- Forger routing decisions
+- security evidence and unavailable-tool semantics
+- ConflictRecords
+- final Team Change Reports
+- accepted/rejected/escalated dispositions
+
+Hard-negative examples must include attempts to hide contradictions, skip the .okf gate, treat external mappings as authority, or turn UNPROVEN security evidence into PASS.
+
+The Team report contract is machine-readable JSON; the underlying semantic contract is TeamChangeIR.
+

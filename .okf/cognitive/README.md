@@ -280,3 +280,24 @@ FactoryOS floor projections
 ```
 
 SCL may reason over the engine's declared template, research contract, and creative constraints, but it does not gain sovereign authority by selecting or compiling configuration. Runtime policy and worker permissions remain governed by the existing control hierarchy.
+
+## 14. Team cognition boundary
+
+The ShortForge Cognitive Model / Ascalon may participate in the Team Change Gate through the Context Compiler and TeamChangeIR.
+
+The model may:
+- classify a change
+- route specialist Forgers
+- summarize authoritative evidence
+- diagnose contradictions
+- propose bounded resolutions
+- draft Team Change Reports
+
+The model may not:
+- bypass the mandatory .okf sweep
+- erase conflicts
+- rewrite an .okf rule silently
+- grant production authority
+- convert UNPROVEN evidence to PASS
+
+TeamChangeIR is the compact semantic state passed to the model. JSON is the canonical machine transport encoding of that IR; Markdown is the human evidence projection.

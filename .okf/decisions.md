@@ -738,3 +738,65 @@ External references:
 
 Conflict/limitation:
 - Semantic embedding novelty, shared strategic graph memory, bounded DELIBERATE/DEEP search, and centralized report persistence remain future work.
+
+## 35. Team Engineering Workforce and Change Gate
+
+**Classification:** extends existing rule.
+
+The previously established Forger Assembly and Security Stack are consolidated operationally under the top-level `Team/` directory.
+
+Locked workflow:
+
+.okf full sweep
+↓
+TeamChangeIR
+↓
+Forger Assembly
+↓
+Security Stack
+↓
+implementation + tests + evidence
+↓
+Team Change Report
+↓
+authorized disposition
+
+Every non-trivial change must pass this sequence.
+
+A contradiction against an absolute .okf rule is a first-class conflict. It must be preserved in the Team report, and the Forgers must propose a bounded resolution. The proposal does not itself amend .okf.
+
+## 36. Team reports preserve conflicts
+
+**Classification:** new capability.
+
+The machine-readable Team Change Report requires:
+- complete .okf sweep status
+- source references
+- change classification
+- Forger participation
+- security status
+- all detected conflicts
+- proposed resolution
+- accepted resolution when authorized
+- final disposition
+
+Resolved conflicts remain in the report as historical evidence.
+
+## 37. Team IR and JSON boundary
+
+**Classification:** new capability.
+
+TeamChangeIR is the semantic representation.
+
+JSON is its transport/persistence/CI encoding.
+
+Markdown is its human report projection.
+
+No choice is made between IR and JSON because they operate at different layers:
+
+- IR defines the meaning and typed contract.
+- JSON carries that contract between processes and stores reproducible evidence.
+- Model prompts receive compact projections compiled from the IR.
+- Human reviewers receive Markdown.
+
+The Context Compiler may omit irrelevant data from a model projection, but it may not omit the fact that a complete .okf sweep occurred.

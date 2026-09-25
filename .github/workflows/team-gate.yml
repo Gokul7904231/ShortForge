@@ -1,0 +1,29 @@
+name: Team Change Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  team-change-gate:
+    name: Validate Team change report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Locate required report
+        id: report
+        shell: bash
+        run: |
+          REPORT="Team/reports/pr-${{ github.event.pull_request.number }}.json"
+          echo "path=$REPORT" >> "$GITHUB_OUTPUT"
+          test -f "$REPORT"
+
+      - name: Validate report
+        run: node Team/scripts/validate-team-report.mjs "${{ steps.report.outputs.path }}"

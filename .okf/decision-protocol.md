@@ -340,3 +340,24 @@ CONTRADICTIONS = none | listed
 ~~~
 
 OKF_SWEEP=PARTIAL is not sufficient for architecture promotion except under the explicit incident-containment exception.
+
+
+## 20. Team Change Gate is mandatory
+
+The Team workforce is the operational executor of the engineering decision protocol.
+
+For every non-trivial repository change:
+
+complete .okf sweep
+→ TeamChangeIR
+→ Forger routing
+→ applicable Security Stack
+→ implementation / tests
+→ conflict report when needed
+→ Team Change Report
+→ authorized disposition
+
+A Team workflow cannot replace the complete .okf sweep.
+
+If a change contradicts an absolute .okf rule, the conflict must be preserved and escalated. Forgers must propose a bounded resolution; they cannot silently rewrite the rule.
+

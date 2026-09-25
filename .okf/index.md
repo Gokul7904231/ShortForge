@@ -186,3 +186,17 @@ Invariant: engine UI configuration is creator intent. It does not grant worker c
 ## 12. Floor 00 Final Audit
 
 The authoritative pre-F01 audit is .okf/audits/floor00-final-audit.md. It reconciles executable F00 runtime, floor contracts, ResearchPassport provenance, Reach failure semantics, Content Engine research contracts, Ascalon ontology, regression tests, and remaining target-vs-current boundaries.
+
+## 11. Team Engineering Workforce
+
+The canonical operational home for the development-time engineering workforce and security stack is now the top-level `Team/` directory.
+
+- `Team/workflow/change-gate.md` — mandatory change gate.
+- `Team/forgers/TEAM.md` — specialist Forger Assembly.
+- `Team/security/TEAM.md` — Semgrep / Strix / ZAP / production-helper security stack.
+- `Team/contracts/team-change-ir.md` — semantic TeamChangeIR.
+- `Team/contracts/team-change-report.schema.json` — machine report contract.
+- `Team/llm/` — Ascalon Team protocol and training specification.
+- `Team/reports/` — per-change evidence reports.
+
+`.okf/` remains the authority/law layer. `Team/` is the execution/workforce layer.

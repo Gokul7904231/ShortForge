@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://team/team-change-report/v1",
+  "title": "ShortForge Team Change Report",
+  "type": "object",
+  "required": ["schemaVersion","changeId","okf","classification","forgers","security","conflicts","disposition"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "changeId": {"type":"string","minLength":1},
+    "okf": {
+      "type":"object",
+      "required":["sweepStatus","sourceRefs"],
+      "properties":{
+        "sweepStatus":{"enum":["COMPLETE","INCIDENT_FOLLOWUP"]},
+        "sourceRefs":{"type":"array","items":{"type":"string"}}
+      },
+      "additionalProperties":true
+    },
+    "classification":{"enum":["already exists","extends existing rule","contradicts existing rule","new capability","experiment only"]},
+    "forgers":{"type":"array"},
+    "security":{"type":"object","required":["required"]},
+    "conflicts":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","originalConflict","status","proposedResolution"],
+        "properties":{
+          "id":{"type":"string"},
+          "originalConflict":{"type":"string","minLength":1},
+          "status":{"enum":["RESOLVED","REJECTED","ESCALATED","OPEN"]},
+          "proposedResolution":{"type":"string","minLength":1},
+          "acceptedResolution":{"type":"string"},
+          "decisionAuthority":{"type":"string"},
+          "canonicalUpdates":{"type":"array","items":{"type":"string"}}
+        }
+      }
+    },
+    "disposition":{"enum":["PASS","BLOCKED","REJECTED","ESCALATED"]},
+    "evidenceRefs":{"type":"array","items":{"type":"string"}},
+    "model":{"type":"object"}
+  },
+  "additionalProperties":true
+}

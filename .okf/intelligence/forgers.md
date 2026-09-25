@@ -449,3 +449,20 @@ The desired behavior is not "more agents."
 It is:
 
 > **the right specialist, using the right evidence, with the smallest authority necessary, producing a reviewable engineering result.**
+
+
+## 13. Operational home
+
+The Forger Assembly is operationally housed under the top-level `Team/` directory.
+
+Canonical execution workflow:
+
+`.okf` full sweep
+→ `Team/workflow/change-gate.md`
+→ Forger routing
+→ Security Stack
+→ implementation/evidence
+→ Team Change Report
+
+The .okf file remains the governance definition; Team is the executable development-workforce boundary.
+

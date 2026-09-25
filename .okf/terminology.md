@@ -102,3 +102,23 @@ A reserved development-time capability such as CAP_FORGE_CODE or CAP_FORGE_SECUR
 | ConfigurationSchema | Declarative engine-owned description of legal creator-facing controls, defaults, constraints, visibility, and bindings. | apps/web/lib/core/EngineConfigurationContracts.ts |
 | ProductionSpec | Immutable mission-level configuration compiled from an engine manifest and creator intent; hash-bound for reproducibility. | apps/web/factoryos/core/contracts/ProductionSpecContracts.ts; apps/web/factoryos/core/engines/ProductionSpecCompiler.ts |
 | Engine Contract Profile | Structured research, cognitive, creative, asset, voice, timeline, render, and verification requirements declared by an engine. | apps/web/lib/core/EngineConfigurationContracts.ts |
+
+## 8. Team Governance Terms
+
+### Team
+The development-time operational workforce boundary containing the Team Change Gate, Forger Assembly, Security Stack, contracts, model integration and per-change reports. Team does not outrank .okf authority.
+
+### TeamChangeIR
+Typed semantic intermediate representation compiled after the complete .okf sweep. It contains only the smallest sufficient state needed for Team routing, security, verification and bounded model cognition while retaining authoritative source references.
+
+### Team Change Report
+Machine-readable per-change evidence record containing .okf sweep status, Forger work, security evidence, conflicts, resolutions and final disposition.
+
+### ConflictRecord
+A preserved record of a contradiction between a proposed change and an existing .okf rule, contract or authoritative implementation. It contains the original conflict, evidence, proposed resolution, authority and final status.
+
+### Team Change Gate
+The mandatory workflow that routes every non-trivial change through .okf review, Forgers, applicable security evidence, verification and a preserved final report.
+
+### Ascalon Team Adapter
+The bounded SCL/model integration that turns TeamChangeIR into compact model context and validates model outputs against Team contracts and authority boundaries.

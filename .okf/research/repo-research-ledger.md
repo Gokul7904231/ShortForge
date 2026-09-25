@@ -108,3 +108,9 @@ The Forger workforce consumes the existing repository corpus rather than flatten
 Before adding an engineering tool, identify the owning Forger lane and compare the tool against the existing mappings already assigned to that lane.
 
 A new tool is not justified merely because it is newer. It must close a measurable gap in fidelity, correctness, security, evaluation coverage, latency, cost, developer productivity, or repair locality.
+
+## 7. Team assimilation rule
+
+Gstack, Semgrep, Strix, ZAP, AgentEvals, OpenAI Evals and other mapped engineering/security patterns are operationalized through the top-level `Team/` boundary.
+
+Mappings remain research evidence. The Team consumes their adopted mechanisms only after the same .okf-first and source-of-truth rules are satisfied.

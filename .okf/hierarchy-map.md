@@ -1825,3 +1825,30 @@ F00–F07 floor projections
 The dashboard is only a schema renderer. It is not an independent configuration authority.
 
 ProductionSpec cannot grant worker capabilities, bypass .okf, override Guardian/Slayer controls, or bypass F07.
+
+## 10. Development-Time Team Boundary
+
+Team is outside the F00-F07 production hierarchy.
+
+Human / repository governance
+  ↓
+.okf authority and canonical implementation
+  ↓
+Team Change Gate
+  ↓
+Forger Assembly
+  ├─ Architecture
+  ├─ Build
+  ├─ Browser
+  ├─ Security
+  ├─ Evaluation
+  ├─ Media
+  ├─ Knowledge
+  ├─ Reliability
+  ├─ Performance
+  ├─ Visualization
+  └─ Release
+  ↓
+evidence / report / authorized disposition
+
+Team agents cannot exercise production-floor authority merely because they participated in a change.
