@@ -1757,3 +1757,38 @@ The absolute hierarchy is further constrained by these canonical contracts:
 - `.okf/devourer.md` — controlled self-improvement boundary.
 
 These documents refine responsibilities; they do not create new sovereign authorities.
+
+
+## 9. Engineering Workforce Boundary — Forgers
+
+Forgers are a **development-time engineering workforce outside the F00-F07 production hierarchy**.
+
+Human / Repository authority
+        |
+        v
+Overseer / engineering direction
+        |
+        v
+Forger Assembly
+        |
+        +--> Architect
+        +--> Builder
+        +--> Browser
+        +--> Sentinel
+        +--> Evaluator
+        +--> Media
+        +--> Knowledge
+        +--> Reliability
+        +--> Performance
+        +--> Visualization
+        +--> Release
+        |
+        v
+Branch + Evidence + Tests + PR
+
+The Forger Assembly may prepare changes to production components, but it cannot promote those changes by itself.
+
+Production authority remains:
+Human -> Overseer -> Guardian / regulators -> AgentRuntime -> Workers -> F07 -> ReleaseAuthorization
+
+Security Forgers are evidence producers. Evaluation Forgers are judges. Release Forgers prepare releases. None of them become sovereign merely because they operate outside the production worker hierarchy.

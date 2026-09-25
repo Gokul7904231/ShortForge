@@ -590,3 +590,61 @@ Before promoting an MCP integration:
 - verify filesystem/network containment
 - verify idempotency for side effects
 - verify that production authority remains in canonical internal components
+## 31. Forger engineering workforce
+
+**Classification:** extends existing rule.
+
+ShortForge establishes a development-time engineering workforce named **Forgers**.
+
+Forgers are specialized developer roles that consume the existing ".okf/research/repo-mappings/" corpus, production-helper evidence, and gstack engineering workflows.
+
+The Forger Assembly is not a new production hierarchy. It is subordinate to engineering direction and repository governance.
+
+Locked requirements:
+- every Forger task begins with the complete current .okf sweep
+- role specialization is preferred over one generic coding agent
+- Forger output is evidence + branch/PR work, not production authority
+- specialist security/evaluation lanes cannot self-authorize promotion
+- external repositories remain pattern sources, not authority
+- production-helper remains the evidence station for applicable changes
+- F07, Guardian, AgentRuntime, leases/fencing, CAS, and ReleaseAuthorization remain authoritative boundaries
+
+## 32. Forger security stack
+
+**Classification:** extends existing rule.
+
+Forge Sentinel uses:
+- Semgrep as the existing static security worker
+- Strix as the existing conditional dynamic security worker
+- ZAP as the governed DAST / web-API security lane
+- gstack CSO methodology as an engineering security workflow reference
+
+ZAP is not yet represented as an existing production-helper execution asset. Until a real helper integration and evidence run exist, its status remains "ADOPTION CANDIDATE / UNPROVEN" rather than implemented.
+
+Active security scanning is deny-by-default outside explicitly authorized test/staging targets.
+
+## 33. Gstack engineering workflow mapping
+
+**Classification:** new capability / pattern assimilation.
+
+Gstack is adopted as an external engineering-workflow reference for specialized planning, review, QA, security, benchmarking, debugging, DevEx, shipping, and retrospectives.
+
+ShortForge maps those methods into Forgers rather than creating a second authority hierarchy.
+
+No gstack-derived workflow may bypass the mandatory .okf decision protocol or executable source-of-truth hierarchy.
+
+## 34. Repository mapping priority update
+
+Relevant existing mappings should be treated as a reusable engineering stack before new tools are introduced:
+
+ECC -> engineering discipline
+Chrome DevTools MCP -> browser evidence
+AgentEvals + OpenAI Evals -> deterministic agent evaluation
+OpenHands Benchmarks -> long-horizon mission evaluation
+Archify + Temporal -> typed IR, receipts, bounded repair, replayability
+Remotion + AgentTube -> media engineering
+MarkItDown -> document normalization
+Diagram Design -> investigation visualization
+Zstandard -> deferred history/telemetry compression
+Gstack -> specialist engineering workflow
+ZAP -> DAST security candidate

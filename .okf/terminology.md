@@ -74,3 +74,21 @@
 | **Core Engineering Stack** | TimelineIR + Remotion + AgentTube-derived scene lifecycle + RenderFabric/FFmpeg + F07 verification. | `.okf/engineering-stack.md` |
 | **Scene Manifest** | Durable scene-level control/provenance record containing identity, timing, assets, provider evidence, rights, revision, and dependencies. | `.okf/engineering-stack.md`, AgentTube mapping |
 | **Devourer** | Controlled self-improvement program that researches, prototypes, evaluates, canaries, and promotes improvements only through explicit gates. | `.okf/devourer.md` |
+
+
+## 7. Engineering Workforce Terms
+
+### Forger
+A specialized development-time engineering agent optimized for a specific engineering concern. Forgers maintain FactoryOS through bounded branches, evidence, tests, reviews, and PRs. They are not F00-F07 production workers.
+
+### Forger Assembly
+The coordinated set of specialized Forgers. It routes engineering tasks to the smallest qualified specialist set and gathers their evidence before merge or architecture promotion.
+
+### Forge Sentinel
+The Security Forger responsible for Semgrep, Strix, ZAP, adversarial testing, and security evidence. It is not a security authority that can grant capabilities or waive FactoryOS controls.
+
+### Engineering Evidence Pack
+The structured development record attached to a non-trivial Forger task: .okf sweep status, repo mappings, changed files, tests, security evidence, benchmark evidence, blockers, implementation status, and rollback/rejection conditions.
+
+### Forger Capability
+A reserved development-time capability such as CAP_FORGE_CODE or CAP_FORGE_SECURITY. These do not automatically grant production-floor authority and are not implemented until registered and tested through the canonical permission process.

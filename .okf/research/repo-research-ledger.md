@@ -93,3 +93,18 @@ The repository ledger now designates these as the current core media engineering
 Canonical ShortForge boundaries remain `TimelineIR`, `RenderFabric`, CAS, leases/fencing, and F07 verification.
 
 A new rendering stack must explicitly compare against these references before adoption.
+
+## 5. Third-Wave Engineering Workforce Mappings
+
+| Repository | Capability | Adoption Mode | ShortForge Role | Status |
+|---|---|---|---|---|
+| **gstack** (garrytan/gstack) | Specialist AI engineering workflow: planning, review, QA, security, benchmark, ship, DevEx, retro | Pattern extraction / optional developer toolchain | Forger Assembly | SELECTED WORKFORCE PATTERN |
+| **ZAP** (zaproxy/zaproxy) | Web/API DAST, automation plans, MCP-server scanning | Isolated security provider | Forge Sentinel | ADOPTION CANDIDATE |
+
+The Forger workforce consumes the existing repository corpus rather than flattening all mappings into one generic developer role.
+
+## 6. Forger reuse rule
+
+Before adding an engineering tool, identify the owning Forger lane and compare the tool against the existing mappings already assigned to that lane.
+
+A new tool is not justified merely because it is newer. It must close a measurable gap in fidelity, correctness, security, evaluation coverage, latency, cost, developer productivity, or repair locality.
