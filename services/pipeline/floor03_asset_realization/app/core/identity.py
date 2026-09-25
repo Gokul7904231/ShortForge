@@ -89,26 +89,6 @@ def asset_plan_fingerprint(plan: Any) -> str:
 
 
 
-def source_handoff_fingerprint(value: Any) -> str:
-    """Fingerprint upstream handoff semantics while excluding runtime timestamps/IDs."""
-    if hasattr(value, "model_dump"):
-        value = value.model_dump(mode="json")
-    else:
-        value = dict(value)
-
-    def strip_runtime(item: Any) -> Any:
-        if isinstance(item, dict):
-            return {
-                key: strip_runtime(val)
-                for key, val in item.items()
-                if key not in {"request_id", "created_at", "timestamp", "evidence_id"}
-            }
-        if isinstance(item, list):
-            return [strip_runtime(entry) for entry in item]
-        return item
-
-    return stable_sha256(strip_runtime(value))
-
 def floor03_input_fingerprint(value: Any) -> str:
     """Fingerprint the complete validated Floor 03 input for Guardian evidence."""
     if hasattr(value, "model_dump"):
