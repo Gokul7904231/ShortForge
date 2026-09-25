@@ -139,8 +139,8 @@ class Floor01Pipeline:
                         worker_modes={"cached": payload.execution_mode},
                         configured_provider=self.llm_adapter.provider_name,
                         configured_model=self.llm_adapter.model_name,
-                        executed=self.llm_adapter.enabled,
-                        executed_model=self.llm_adapter.model_name if self.llm_adapter.enabled else None,
+                        executed=False,
+                        executed_model=None,
                     ),
                     status=payload.handoff_status,
                     input_summary=inp.model_dump(),
@@ -158,6 +158,7 @@ class Floor01Pipeline:
                 expected_version=settings.floor_version,
             )
 
+        model_execution_succeeded = False
         worker_summaries: List[WorkerExecutionSummary] = []
         warnings: List[str] = []
         errors: List[str] = []
@@ -219,6 +220,7 @@ class Floor01Pipeline:
                 curriculum_res = curriculum_future.result()
 
             if llm_prov:
+                model_execution_succeeded = llm_prov.evidence_type == EvidenceType.MODEL_INFERENCE
                 topic_res.provenance.append(llm_prov)
 
             # 3. Candidate generation and deterministic evaluation.
@@ -539,8 +541,8 @@ class Floor01Pipeline:
                     },
                     configured_provider=self.llm_adapter.provider_name,
                     configured_model=self.llm_adapter.model_name,
-                    executed=self.llm_adapter.enabled,
-                    executed_model=self.llm_adapter.model_name if self.llm_adapter.enabled else None,
+                    executed=model_execution_succeeded,
+                    executed_model=self.llm_adapter.model_name if model_execution_succeeded else None,
                 ),
                 status=status,
                 input_summary={
