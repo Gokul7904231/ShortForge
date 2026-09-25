@@ -559,11 +559,36 @@ export class OverseerControlPlane {
           startedAt,
         });
 
+        const topic = String(
+          scope.topic ??
+            node.payload?.topic ??
+            node.payload?.command ??
+            ""
+        ).trim();
+
+        if (!topic) {
+          throw new Error(
+            "F00_ANALYST_INPUT_MISSING: Floor 00 requires a non-empty topic."
+          );
+        }
+
+        const productionSpec = scope.productionSpec as any;
+        const researchContract =
+          productionSpec?.engine?.contracts?.research ?? undefined;
+
         const researchRuntime = new ResearchRuntime();
         const analystReport = await researchRuntime.executeResearch({
           missionId: missionId || "direct",
-          topic: scope.topic || node.payload?.command || "Video Synthesis Trends",
+          topic,
+          audience:
+            scope.engineSnapshot?.effectiveConfig?.audience ??
+            productionSpec?.configuration?.content?.audience,
           methodology: "TREND_SCAN",
+          researchContract,
+          targetSourceCount: researchContract?.minSources,
+          intent:
+            researchContract?.sourcePolicy ??
+            "Floor 00 evidence acquisition for the selected Content Engine.",
         });
 
         if (missionId && this.missionManager) {
