@@ -832,7 +832,7 @@ The Context Compiler may omit irrelevant data from a model projection, but it ma
 - Ascalon floor/agent ontology
 - canonical floor testing contract
 
-**Contract impact:** Floor 03 is now identified as `floor03_asset_realization`, version `2.0.0`. The handoff may contain a typed `asset_plan_ir`. Visual requirements may carry a typed scene-level `scene_plan`. Regeneration creates a new asset identity and increments the local asset-plan version without rewriting the authoritative Floor 02 ScriptIR version.
+**Contract impact:** The initial AssetPlanIR promotion established Floor 03 as `floor03_asset_realization`, version `2.0.0`; the second-wave hardening advances the current branch contract to `2.1.0`. The handoff may contain a typed `asset_plan_ir`. Visual requirements may carry a typed scene-level `scene_plan`. Regeneration creates a new asset identity and increments the local asset-plan version without rewriting the authoritative Floor 02 ScriptIR version.
 
 **Authority impact:** none. Overseer, Guardian, AgentRuntime, leases/fencing, TimelineIR, RenderFabric, and F07 remain authoritative at their existing layers. F03 cannot generate physical media, mint capabilities, or become a second orchestration plane.
 
@@ -898,3 +898,15 @@ Revert the second-wave F03 changes as one logical unit. No external provider cre
 **Validation required:** F03 worker tests, handoff tests, scene-regeneration tests, Guardian tests, ontology JSON validation, TypeScript floor-contract validation and repository CI.
 
 **Rollback:** revert the wave-3 implementation/doc changes together. No provider credentials or physical-generation authority is introduced.
+
+## F03 validation finding — 2026-09-25
+
+A repository CI run exposed a pre-existing compatibility/import-path gap in the historical `floors.*` namespace: the canonical root compatibility namespace did not yet expose Floor 03, and the Floor 03 production-gate path filter did not include root `floors/**` changes.
+
+Resolution on the research branch:
+- added `floors/floor03_asset_realization/__init__.py` as the canonical compatibility bridge;
+- removed the unused nested bridge under `services/pipeline/floors/`;
+- added `floors/**` to the Floor 02 + Floor 03 production-gate trigger paths;
+- kept canonical implementation under `services/pipeline/floor03_asset_realization`.
+
+Fresh CI is required after this correction. The failed run is recorded as validation evidence, not as a production success claim.
