@@ -221,3 +221,15 @@ F03-specific promotion from this corpus is limited to:
 - richer provenance/reference metadata.
 
 Provider selection, media generation, credentials, physical verification, and sovereign orchestration remain outside F03.
+
+## F03 Research Wave 3 — 2026-09-25
+
+The F03 research set now extends beyond the original clean-room corpus to a broader video-planning cohort: ComfyUI, ViMax, Diffusers, Open-Sora, ai-video-studio, ai-video-production-editor, Vidia Open Studio, shotlist-forge, script-to-shootable-storyboard, ai-film-director and StoryMind. Their mappings are maintained individually under .okf/research/repo-mappings/.
+
+Adoption remains bounded:
+- declarative workflow structure informs AssetPlanIR but executable graphs remain downstream;
+- first/last-frame continuity informs typed dependency reference bindings;
+- temporal and camera metadata are explicit semantic fields;
+- shot coverage, evidence lineage and repair scope are typed;
+- TimelineIR, RenderFabric, Guardian and F07 retain their authority;
+- restrictive-license sources remain reference-only and are not embedded.
