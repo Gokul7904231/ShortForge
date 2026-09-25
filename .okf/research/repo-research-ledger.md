@@ -188,3 +188,16 @@ These improvements remain specification-only. F03 does not choose a provider/mod
 | Lightricks/LTX-Video | Multi-keyframe conditioning, extension and frame-level control | Reinforces temporal-reference direction while keeping provider-specific syntax out of F03 | PATTERN_EXTRACTION |
 
 These mappings are research inputs only. No provider code, weights, workflows, or model-specific execution APIs were imported into F03.
+
+
+## Floor 03 Research Wave 4 — 2026-09-25
+
+| Repository | Capability | Adoption Mode | ShortForge Role | Status |
+|---|---|---|---|---|
+| OpenLineage/OpenLineage | Run/job/dataset lineage and versioned facets | Pattern Extraction | F03 PlanLineage/source fingerprint | ADOPTED |
+| iterative/dvc | Dependency-aware reproducibility and stable stage identity | Pattern Extraction | F03 semantic source/node fingerprints | ADOPTED |
+| dagster-io/dagster | Explicit asset checks and blocking check semantics | Pattern Extraction | F03 structural preflight validation | ADOPTED |
+| invoke-ai/InvokeAI | Saved workflow distinct from executable graph | Architecture Reference | AssetPlanIR execution boundary | ADOPTED |
+| divolleggett/character-consistency-skill | Reference-first storyboard and reference reuse | Pattern Extraction | F03 continuity/reference strategy | ADOPTED |
+| taylorzhou16/video-gen-en | Layered storyboard and parameter consistency | Pattern Extraction | F03 typed planning discipline | ADOPTED |
+| NVIDIA-NeMo/Guardrails | Independent validation rails | Architecture Reference | F03 validation-boundary discipline | ADOPTED |
