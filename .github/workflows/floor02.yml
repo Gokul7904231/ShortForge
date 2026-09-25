@@ -69,10 +69,12 @@ jobs:
         if: steps.f02_tests.outcome == 'failure'
         run: exit 1
 
-      - name: Validate canonical v2 architecture
+      - name: Validate canonical v2 architecture (isolated state)
         env:
           FLOOR02_ENV: test
           FLOOR02_ALLOW_DETERMINISTIC_FALLBACK: "true"
+          FLOOR02_MEMORY_PATH: /tmp/f02-v2-memory.json
+          FLOOR02_EXECUTION_REPORT_PATH: /tmp/f02-v2-reports
         run: |
           python -m pytest services/pipeline/floor02_scripting/tests/test_v2_architecture.py -q
           python -m pytest services/pipeline/floor02_scripting/tests/api/test_script_api.py -q
