@@ -3,7 +3,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=/app/services/pipeline
+    PYTHONPATH=/app/services/pipeline \
+    FLOOR01_MEMORY_FILE_PATH=/app/services/pipeline/floor01_strategy/data/memory.json
 
 WORKDIR /app
 
