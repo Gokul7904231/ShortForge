@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { execSync } from "child_process";
-import { FFmpegRenderCompiler, RenderFabric } from "../core/rendering/RenderFabric";
+import { FFmpegRenderCompiler, RenderFabric } from "../core/fabric/RenderFabric";
 import { ArtifactResolver } from "../core/rendering/ArtifactResolver";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import { VoiceFabric } from "../core/voice/VoiceFabric";
