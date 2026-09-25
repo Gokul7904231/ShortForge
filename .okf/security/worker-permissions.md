@@ -508,3 +508,22 @@ Minimum expected checks:
 - staging proof for production-bound side effects
 
 A blocked Strix run remains UNPROVEN, never PASS.
+
+
+## 28. Forger permissions are separate from production-floor permissions
+
+Forgers are development-time agents and must not be added to the F00-F07 floor capability matrix merely because they maintain the code.
+
+Reserved development-time capability names are governed in .okf/intelligence/forgers.md:
+- CAP_FORGE_RESEARCH
+- CAP_FORGE_ARCHITECTURE
+- CAP_FORGE_CODE
+- CAP_FORGE_BROWSER
+- CAP_FORGE_SECURITY
+- CAP_FORGE_EVAL
+- CAP_FORGE_RENDERING
+- CAP_FORGE_PERFORMANCE
+- CAP_FORGE_DOCUMENTATION
+- CAP_FORGE_RELEASE
+
+These names are reservations until the executable permission system and tests implement them. A Forger capability never implies CAP_DELIVERY_PUBLISH, F07 certification, Guardian authority, lease mutation, or ReleaseAuthorization.

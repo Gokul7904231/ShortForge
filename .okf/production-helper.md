@@ -253,3 +253,39 @@ A production-impacting change is not considered fully verified until:
 production-helper exists to make verification routine, not ceremonial.
 
 A green-looking report without real evidence is not a green system.
+
+
+## 15. Forger security routine
+
+Forge Sentinel is the designated engineering operator for security-helper evidence.
+
+Canonical lane:
+
+Security change
+  -> Semgrep
+  -> targeted adversarial tests
+  -> Strix when Docker is available
+  -> ZAP baseline/passive scan when a web/API target is in scope
+  -> ZAP active scan only with explicit authorization
+  -> evidence review
+  -> disposition
+  -> re-scan
+
+ZAP is an adoption candidate, not part of the historical helper inventory until a versioned helper integration and real report exist.
+
+A blocked or skipped ZAP run is UNPROVEN and must remain visible.
+
+## 16. Forger operating routine
+
+Forgers are development-time operators of production-helper evidence, not authority owners.
+
+For non-trivial changes, the selected Forger must record:
+- .okf sweep completion
+- applicable repo mappings
+- applicable helper evidence
+- tests and measurements
+- unresolved BLOCKED / UNPROVEN items
+- implementation status
+- rollback / rejection conditions
+
+The Forger workforce does not alter the helper's evidence semantics to obtain a passing result.
