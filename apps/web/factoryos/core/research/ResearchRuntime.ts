@@ -75,7 +75,8 @@ export class ResearchRuntime {
   /**
    * Cryptographically signs a ResearchPassport using canonical serialization and HMAC-SHA256.
    */
-  static signPassport(passport: ResearchPassport, secret: string = DEFAULT_FACTORY_INTEGRITY_SECRET): ResearchPassport {
+  static signPassport(passport: ResearchPassport, secret?: string): ResearchPassport {
+    const resolvedSecret = secret || getIntegritySecret();
     const canonicalPayload = ResearchRuntime.canonicalize(passport);
     const contentHash = createHash("sha256").update(canonicalPayload, "utf8").digest("hex");
     const integrityMac = createHmac("sha256", secret).update(contentHash, "utf8").digest("hex");
