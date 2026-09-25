@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+import threading
 import time
 from typing import Dict, Tuple
 
@@ -24,23 +25,25 @@ class RateLimiter:
         self.rate = requests_per_minute
         self.max_clients = max_clients
         self.tokens: Dict[str, Tuple[float, float]] = {}
+        self._lock = threading.Lock()
 
     def check(self, client_ip: str) -> bool:
-        now = time.time()
-        if client_ip not in self.tokens and len(self.tokens) >= self.max_clients:
-            oldest_ip = min(self.tokens.items(), key=lambda item: item[1][1])[0]
-            self.tokens.pop(oldest_ip, None)
+        with self._lock:
+            now = time.time()
+            if client_ip not in self.tokens and len(self.tokens) >= self.max_clients:
+                oldest_ip = min(self.tokens.items(), key=lambda item: item[1][1])[0]
+                self.tokens.pop(oldest_ip, None)
 
-        capacity, last_update = self.tokens.get(client_ip, (self.rate, now))
-        elapsed = now - last_update
-        capacity = min(self.rate, capacity + elapsed * (self.rate / 60.0))
+            capacity, last_update = self.tokens.get(client_ip, (self.rate, now))
+            elapsed = now - last_update
+            capacity = min(self.rate, capacity + elapsed * (self.rate / 60.0))
 
-        if capacity >= 1.0:
-            self.tokens[client_ip] = (capacity - 1.0, now)
-            return True
+            if capacity >= 1.0:
+                self.tokens[client_ip] = (capacity - 1.0, now)
+                return True
 
-        self.tokens[client_ip] = (capacity, now)
-        return False
+            self.tokens[client_ip] = (capacity, now)
+            return False
 
 
 global_rate_limiter = RateLimiter(requests_per_minute=100)
