@@ -28,11 +28,7 @@ export class Floor01RuntimeAdapter {
 
   constructor(
     serviceUrl: string | undefined = process.env.FLOOR01_SERVICE_URL,
-    apiKey: string | undefined =
-      process.env.FLOOR01_SERVICE_API_KEY ||
-      (process.env.NODE_ENV !== "production"
-        ? process.env.INTERNAL_API_SECRET_KEY
-        : undefined),
+    apiKey: string | undefined = process.env.FLOOR01_SERVICE_API_KEY,
     timeoutMs = Number(process.env.FLOOR01_SERVICE_TIMEOUT_MS || 30000),
   ) {
     this.serviceUrl = serviceUrl;
