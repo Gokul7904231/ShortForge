@@ -61,7 +61,8 @@
     "tailwindcss": "^4",
     "typescript": "^6.0.3",
     "zod": "^4.4.3",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "@travisvn/edge-tts": "^1.0.2"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.20.2",
