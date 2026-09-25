@@ -10,7 +10,7 @@
 
 **F02 v2 production implementation is complete and blocking-tested.**
 
-The runtime is a **Narrative Compiler**, not a free-running text generator:
+The runtime is a **Narrative Compiler**, not a free-running text generator. CI blocks release on the full F02 suite:
 
 ```
 F01 Strategy
