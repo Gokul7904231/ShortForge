@@ -489,7 +489,7 @@ export class CapabilityRegistry {
             capabilityId: "healer-render-recovery",
             status: "SUCCESS",
             findings: [`Job '${jobId}' advanced to attempt #${nextAttempt.attemptId} with refreshed lease`],
-            repairAction: "REDISPATCH_AZURE_RENDER",
+            repairAction: "REDISPATCH_RENDER",
             outputData: {
               jobId,
               attemptId: nextAttempt.attemptId,
