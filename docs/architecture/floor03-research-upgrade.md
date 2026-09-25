@@ -117,3 +117,15 @@ F03 is now version 2.2.0 with AssetPlanIR schema 1.2.0. The new fields remain pr
 ### Explicitly not promoted
 
 No provider/model routing, generation workflow JSON, physical generation, vendor credential handling, or downstream Timeline/F07 authority moved into F03.
+
+## Current validation status
+
+A fresh repository gate run found the F03 source tree compiled successfully but test collection initially failed because the repository-root `floors.*` compatibility namespace did not expose `floor03_asset_realization`. The same run also confirmed the existing Floor 02 import-path assumption needed the canonical root compatibility namespace.
+
+The branch now:
+- exposes Floor 03 through `floors/floor03_asset_realization/__init__.py`;
+- removes the redundant nested compatibility bridge;
+- triggers the F02/F03 production workflow when `floors/**` changes;
+- keeps the canonical implementation under `services/pipeline/floor03_asset_realization`.
+
+The corrected branch requires a fresh CI run before merge. No merge or production-green claim is made from the earlier failed run.
