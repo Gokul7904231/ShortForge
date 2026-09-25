@@ -64,3 +64,10 @@ FactoryOS implements a **Capability-Based Security Model**. Agents and workers d
 When an agent spawns a child subagent:
 $$\text{childCapabilities} \subseteq \text{parentCapabilities}$$
 A parent agent can never grant capabilities it does not possess. Attempting to escalate privileges triggers an immediate `SECURITY_VIOLATION` event, halts the session, and notifies the Slayer.
+
+
+## 5. Detailed worker permission contract
+
+The root canonical worker permission map is .okf/security/worker-permissions.md.
+
+That file expands this capability matrix into worker lifecycle rules, skill gates, lease/fencing requirements, production-helper boundaries, test requirements, and absolute worker prohibitions.
