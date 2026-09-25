@@ -32,6 +32,7 @@
 | **MarkItDown** (`microsoft/markitdown`) | `v0.0.1a4` | MIT | Multi-format document normalization boundary | **Isolated Provider / Interface** | `apps/web/factoryos/core/research/DocumentNormalizer.ts` | **ISOLATED_PROVIDER** |
 | **Chrome DevTools MCP** (`ChromeDevTools/chrome-devtools-mcp`) | `v0.1.x` | Apache-2.0 | Development & browser testing inspection via CDP | **Isolated Development Provider** | `testing/runtime/ChromeDevToolsClient.ts`, `.agents/docs/mcp-chrome-devtools.md` | **ISOLATED_PROVIDER** |
 | **Zstandard** (`facebook/zstd`) | `v1.5.6` | BSD-3-Clause | Fast history & telemetry compression interface | **Architecture Reference / Interface** | `apps/web/factoryos/core/database/HistoryCompressionProvider.ts` | **REFERENCE_ONLY** |
+| **Remotion** (`remotion-dev/remotion`) | main / current | Source-available / Remotion License | Programmatic React video composition, frame-based timing, Canvas/WebGL, render APIs | PRIMARY ENGINEERING STACK / LICENSE-GATED DEPENDENCY | apps/web/factoryos/core/timeline/, .okf/engineering-stack.md | STACK_SELECTED |
 | **AgentTube** (`darkzOGx/youtube-automation-agent`) | `main` / 2026 | MIT | Local-first rendering, persistent checkpoints, scene manifests, scene-level repair, audio-first timing | **Clean-Room Reimplementation & Pattern Extraction** | `packages/factoryos-render/` (`FrameEngine`, `SceneEngine`, `CheckpointStore`, `AudioSync`) | **CLEAN_ROOM_REIMPLEMENTATION** |
 | **HyperFrames Frame Clock** (`heygen-com/hyperframes`) | `v0.9.x` | MIT | Deterministic frame clock ($t = \text{frame}/\text{fps}$), frame adapter interface, zero wall-clock dependency | **Clean-Room Reimplementation** | `packages/factoryos-render/src/factoryos_render/timing/frame_clock.py` | **CLEAN_ROOM_REIMPLEMENTATION** |
 | **Simple Icons & FlagCDN** (`simple-icons`, `flagcdn`) | `v11.x` | CC0-1.0 / Public Domain | Vector brand logos and ISO-3166 high-res national flags | **Free/Open Provider Adapters** | `testing/templates/providers/ProviderRouter.ts`, `apps/web/lib/templates/providers/` | **FREE_OPEN_ADAPTER** |
@@ -69,3 +70,12 @@
 | **Capability Registry** | Server-side blocking of prototypes | **ACTIVE & VERIFIED** | `authorizeExecution()` rejects `render.hyperframes` before runtime access when `isProductionRoutable: false`. |
 | **UI Telemetry Surfaces** | Zero synthetic optimistic numbers | **ACTIVE & VERIFIED** | Removed `|| 7`, `94.8`, `2.8x`, `|| 70%`; displays `UNKNOWN` / `UNMEASURED` when real measurements are unavailable. |
 
+
+
+### 4. Remotion + AgentTube engineering-stack decision
+
+Remotion is now the selected primary programmatic composition foundation for rich deterministic video composition.
+
+AgentTube remains a clean-room pattern source for scene manifests, durable checkpoints, audio-first timing, local-first rendering, content-addressed caching, and selective scene repair.
+
+These choices are subordinate to TimelineIR, RenderFabric, capability policy, CAS, and F07 verification.
