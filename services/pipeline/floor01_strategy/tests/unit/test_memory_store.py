@@ -76,3 +76,23 @@ def test_memory_store_thread_concurrency():
 
         topics = store.get_all_topics()
         assert len(topics) == 20
+
+
+def test_corruption_recovery_clears_stale_request_reservations(tmp_path):
+    memory_path = tmp_path / "memory.json"
+    store = StrategyMemoryStore(storage_path=str(memory_path))
+
+    status, _, owner_token = store.claim_request(
+        "req-corrupt-01",
+        "fingerprint-corrupt-01",
+        ttl_seconds=120.0,
+    )
+    assert status == "OWNER"
+    assert owner_token
+    assert store.get_request_reservation("req-corrupt-01") is not None
+
+    memory_path.write_text("{corrupted-json", encoding="utf-8")
+
+    recovered = StrategyMemoryStore(storage_path=str(memory_path))
+    assert recovered.get_request_reservation("req-corrupt-01") is None
+
