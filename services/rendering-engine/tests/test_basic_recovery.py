@@ -140,7 +140,7 @@ def test_worker_files_are_provider_neutral():
     """Verifies the persistent worker remains present without Azure-specific coupling."""
     base_dir = Path(__file__).resolve().parent.parent
     worker_daemon = base_dir / "worker_daemon.py"
-    worker_service = base_dir / "factoryos-basic-render.service"
+    worker_service = base_dir / "factoryos-persistent-render.service"
 
     assert worker_daemon.exists()
     assert worker_service.exists()
