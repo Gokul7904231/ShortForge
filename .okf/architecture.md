@@ -100,8 +100,8 @@ The pipeline DAG is strictly defined in `apps/web/factoryos/core/hierarchy/Floor
 | **Floor Registry** | Canonical Topology | **IMPLEMENTED** | `apps/web/factoryos/core/hierarchy/FloorRegistry.ts` | Single source of truth across runtime, DAG, and state service. |
 | **Production DAG** | 8-Floor DAG Planner | **IMPLEMENTED** | `apps/web/factoryos/core/overseer/TaskDAGPlanner.ts` | Dynamic parallel fork/join execution with lease management. |
 | **Scheduling** | Autonomous Scheduler | **IMPLEMENTED** | `apps/web/factoryos/core/production/AutonomousScheduler.ts` | ScheduleInstance $\rightarrow$ Mission $\rightarrow$ Overseer single scheduler path. |
-| **Daily Slate** | Dynamic Research Slate | **IMPLEMENTED** | `apps/web/factoryos/core/research/DailySlateGenerator.ts` | Schedule-driven candidate pool with explicit unmet capacity reporting. |
-| **Research Boundary** | AgentReach & Reach | **IMPLEMENTED** | `apps/web/factoryos/core/integrations/AgentReachAdapter.ts` | Real provider boundary; status 503 on fetch failure; zero fake URLs. |
+| **Daily Slate** | Dynamic Research Slate Utility | **IMPLEMENTED / PARTIALLY_WIRED** | `apps/web/factoryos/core/research/DailySlateGenerator.ts` | Schedule-driven candidate filtering, passport lineage requirement, and explicit unmet capacity; direct F00 executor currently returns ResearchPassport + AnalystReport rather than emitting the slate itself. |
+| **Research Boundary** | AgentReach & Reach | **IMPLEMENTED / BOUNDED** | `apps/web/factoryos/core/integrations/AgentReachAdapter.ts`, `ReachSubsystem.ts` | Real provider boundary with no synthetic sources; query path is still generic and Content-Engine research contracts are now passed into F00. |
 | **Agent Runtime** | Execution Harness | **IMPLEMENTED** | `apps/web/factoryos/core/agent/AgentRuntime.ts` | Session checkpointing, budget bounds, capability gates, and TraceContext. |
 | **Observability** | Distributed Tracing | **IMPLEMENTED** | `apps/web/factoryos/core/observability/TraceContext.ts` | Mission $\rightarrow$ Run $\rightarrow$ Agent $\rightarrow$ Skill $\rightarrow$ Tool $\rightarrow$ Artifact trace tree. |
 | **KnowledgeOS** | Typed Memory Stores | **IMPLEMENTED** | `apps/web/factoryos/core/knowledge/KnowledgeOS.ts` | Domain-isolated typed stores (Source, Claim, Evidence, Topic, Channel). |
@@ -150,3 +150,11 @@ A Content Engine declares its information requirements. F00 converts those requi
 - MIGRATION: downstream floors/workers still need progressive migration from legacy flat configuration fields to typed ProductionSpec projections.
 
 The ProductionSpec is a configuration-plane artifact and does not replace the canonical eight-floor topology or the floor-specific input/output contracts.
+
+
+## Floor 00 Final Audit Boundary
+
+The authoritative final F00 audit is maintained at:
+` .okf/audits/floor00-final-audit.md`
+
+That audit supersedes older baseline claims about F00 runtime ownership, optionality, Reach status codes, Daily Slate wiring, and ResearchPassport provenance semantics.
