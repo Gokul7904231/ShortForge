@@ -175,7 +175,10 @@ class LLMStrategyAdapter:
         try:
             opener = urllib.request.build_opener(_NoRedirectHandler())
             with opener.open(request, timeout=self.timeout_seconds) as response:  # nosec B310 - endpoint scheme is allowlisted and redirects are disabled.
-                response_data = json.loads(response.read().decode("utf-8"))
+                raw_response = response.read(128 * 1024 + 1)
+                if len(raw_response) > 128 * 1024:
+                    raise ValueError("LLM provider response exceeded the 128 KiB safety limit.")
+                response_data = json.loads(raw_response.decode("utf-8"))
 
             content = response_data["choices"][0]["message"]["content"]
             insight = json.loads(content)
@@ -200,7 +203,7 @@ class LLMStrategyAdapter:
 
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, KeyError, IndexError, json.JSONDecodeError, ValueError) as exc:
             reason = f"LLM execution failed closed to deterministic fallback: {type(exc).__name__}."
-            logger.warning("floor01_llm_execution_failed", error=str(exc))
+            logger.warning("floor01_llm_execution_failed", error_type=type(exc).__name__)
             return (
                 {
                     "strategic_reasoning": reason,
