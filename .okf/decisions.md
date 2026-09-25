@@ -880,3 +880,21 @@ Fresh F03 Python tests, Guardian tests, TypeScript contract checks, ontology val
 ### Rollback
 
 Revert the second-wave F03 changes as one logical unit. No external provider credentials, production authority, or physical media execution path is modified by this decision.
+
+## F03 AssetPlanIR research upgrade — Wave 3 — 2026-09-25
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Extend the provider-neutral Floor 03 planning contract with cinematic coverage roles, dependency-boundary last-frame references, richer camera metadata, lighting intent and temporal-plan validation. Preserve the canonical `F02 -> (F03 || F04) -> F05` topology and all authority boundaries.
+
+**External evidence considered:** ComfyUI, ViMax, Hugging Face Diffusers, Open-Sora, ai-video-studio, ai-video-production-editor, Vidia Open Studio, shotlist-forge, script-to-shootable-storyboard, ai-film-director and StoryMind, plus screened reference implementations documented in `.okf/research/repo-mappings/f03-screened-wave3.md`.
+
+**Contract impact:** Floor 03 advances to 2.2.0; AssetPlanIR schema advances to 1.2.0. Added coverage role, camera height/lens/body, lighting, source reference lineage and dependency last-frame binding semantics. Motion beats must remain within source scene duration.
+
+**Authority impact:** none. F03 remains planning/specification only. TimelineIR remains downstream semantic composition truth, RenderFabric owns rendering execution, Guardian/Slayer/Healer retain their control roles, and F07 remains physical verification authority.
+
+**Implementation status:** implemented on `feat/f03-research-upgrade`; fresh CI and repository-level regression validation remain required before merge.
+
+**Validation required:** F03 worker tests, handoff tests, scene-regeneration tests, Guardian tests, ontology JSON validation, TypeScript floor-contract validation and repository CI.
+
+**Rollback:** revert the wave-3 implementation/doc changes together. No provider credentials or physical-generation authority is introduced.
