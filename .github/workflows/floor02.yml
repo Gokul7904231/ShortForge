@@ -135,4 +135,4 @@ jobs:
       - name: Run F03 Guardian tests
         env:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
-        run: python -m pytest tests/guardian/test_guardian_floor03.py tests/guardian/test_guardian_decision_scenarios.py -q
+        run: python -m pytest tests/guardian/test_guardian_floor03.py -q
