@@ -99,7 +99,7 @@ class _FallbackButEnabledAdapter:
     model_name = "test-model"
 
     def generate_strategy_insight(self, *args, **kwargs):
-        from floors.floor01_strategy.app.domain.handoff import EvidenceType, ProvenanceEntry
+        from floor01_strategy.app.domain.handoff import EvidenceType, ProvenanceEntry
 
         return (
             {
@@ -236,8 +236,8 @@ def test_candidate_selection_is_deterministic_on_score_ties():
 
 def test_staging_without_service_key_fails_closed():
     import asyncio
-    from floors.floor01_strategy.app.core import security
-    from floors.floor01_strategy.app.core.config import Floor01Settings
+    from floor01_strategy.app.core import security
+    from floor01_strategy.app.core.config import Floor01Settings
 
     original = security.get_settings
     try:
