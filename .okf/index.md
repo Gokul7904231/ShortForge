@@ -148,3 +148,23 @@ Use these files as the canonical entry points for future architecture decisions 
 ## 8. Absolute routine
 
 Every future non-trivial decision begins with the complete current .okf end-to-end sweep defined in .okf/decision-protocol.md. Relevant repository mappings and production-helper evidence are mandatory decision inputs, and worker permissions are governed by .okf/security/worker-permissions.md.
+
+
+## 9. MCP Integration Architecture
+
+MCP integrations are external tool/context surfaces, not a replacement for FactoryOS authority.
+
+Current MCP posture:
+- GitHub: existing engineering/development integration.
+- Google Drive: repository-owned bounded storage/knowledge integration at tools/mcp/google-drive/.
+- Browser / DevTools: planned research/diagnostic integration, subject to the same capability and evidence rules.
+
+Production side effects must continue through canonical internal boundaries such as AgentRuntime, Guardian, CAS, F07, ReleaseAuthorization, RenderFabric, and provider adapters.
+
+The canonical MCP architecture is documented in .okf/intelligence/mcp-architecture.md.
+
+## 10. MCP Security Entry Point
+
+MCP-specific least-privilege rules are documented in .okf/security/mcp-permissions.md.
+
+No F00-F07 worker receives generic MCP access by default.
