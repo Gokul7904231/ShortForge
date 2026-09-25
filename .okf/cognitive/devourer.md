@@ -206,3 +206,8 @@ The cycle must compare external discoveries against existing:
 - production-helper evidence
 
 Only after that comparison may a discovery become a Devourer candidate.
+
+
+## 13. Root Devourer Governance
+
+The root `.okf/devourer.md` is the canonical governance charter for promotion, permissions, production-helper evidence, and authority boundaries. This cognitive document remains the design-home for Devourer reasoning and improvement methods.
