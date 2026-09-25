@@ -72,6 +72,74 @@ describe("Floor01RuntimeAdapter", () => {
 });
 
 
+  it("does not leak the F01 service response body on execution failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response("internal-stack-trace-and-secret", {
+          status: 500,
+          headers: { "content-type": "text/plain" },
+        }),
+      ),
+    );
+
+    const adapter = new Floor01RuntimeAdapter(
+      "http://floor01.internal",
+      "test-service-secret",
+    );
+
+    await expect(
+      adapter.execute({
+        request_id: "req-adapter-error-redaction",
+        topic_query: "Python decorators",
+        target_audience: "general_learners",
+        platform: "youtube_shorts",
+        content_format: "educational_short",
+      }),
+    ).rejects.toThrow("F01_SERVICE_EXECUTION_FAILED: HTTP 500");
+
+    await expect(
+      adapter.execute({
+        request_id: "req-adapter-error-redaction-2",
+        topic_query: "Python decorators",
+        target_audience: "general_learners",
+        platform: "youtube_shorts",
+        content_format: "educational_short",
+      }),
+    ).rejects.not.toThrow("internal-stack-trace-and-secret");
+  });
+
+  it("does not use the broad control-plane secret as a production F01 credential", () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalFloor01 = process.env.FLOOR01_SERVICE_API_KEY;
+    const originalInternal = process.env.INTERNAL_API_SECRET_KEY;
+
+    process.env.NODE_ENV = "production";
+    delete process.env.FLOOR01_SERVICE_API_KEY;
+    process.env.INTERNAL_API_SECRET_KEY = "broad-control-plane-secret";
+
+    try {
+      const adapter = new Floor01RuntimeAdapter("http://floor01.internal");
+      expect(adapter).toBeDefined();
+      expect(() =>
+        adapter.execute({
+          request_id: "req-adapter-production-key-boundary",
+          topic_query: "Python decorators",
+          target_audience: "general_learners",
+          platform: "youtube_shorts",
+          content_format: "educational_short",
+        }),
+      ).toThrow("F01_SERVICE_AUTH_UNCONFIGURED");
+    } finally {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = originalNodeEnv;
+      if (originalFloor01 === undefined) delete process.env.FLOOR01_SERVICE_API_KEY;
+      else process.env.FLOOR01_SERVICE_API_KEY = originalFloor01;
+      if (originalInternal === undefined) delete process.env.INTERNAL_API_SECRET_KEY;
+      else process.env.INTERNAL_API_SECRET_KEY = originalInternal;
+    }
+  });
+
   it("fails closed when service authentication is not configured", async () => {
     const adapter = new Floor01RuntimeAdapter("http://floor01.internal", undefined);
 
