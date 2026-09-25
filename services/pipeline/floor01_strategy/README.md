@@ -104,3 +104,53 @@ Authoritative test log: `used_artifact/test_runs/task-827.log`
 ### Performance Analysis:
 - Process locking and multi-worker execution are fully process-safe and optimized.
 - All unit, contract, API, multiprocess locking, concurrent persistence deduplication, security sanitization, and failure recovery tests execute in **4.60 seconds** total.
+
+
+# Floor 01 v2 Architecture Addendum
+
+Canonical floor ID: floor01_strategy
+Version: 2.0.0
+
+F01 v2 workflow:
+F00 ResearchPassport -> ResearchContext -> Topic Intelligence -> Evidence Gate -> bounded Strategy Candidates -> deterministic Evaluation -> Content/Curriculum -> Floor01HandoffPayload -> F02.
+
+Key rules:
+- F00 owns external research and passport integrity.
+- F01 consumes a typed evidence projection.
+- Model output is a candidate, not an authority.
+- The deterministic evaluator compiles the authoritative handoff.
+- Missing evidence can be DEGRADED in compatibility mode and rejected in strict mode.
+- Overseer remains orchestration authority and delegates strategy to the canonical Python runtime.
+- F01 identity is floor01_strategy.
+- MODEL_INFERENCE provenance is emitted only after a real provider request succeeds.
+
+New contracts:
+- ResearchContext
+- ResearchEvidenceRef
+- StrategyCandidate
+- StrategyEvaluation
+- QualityDimensions
+- StrategyDecisionRecord
+
+Reliability/performance changes:
+- Hybrid novelty scoring replaces token-only Jaccard as the primary duplicate signal.
+- Independent model/curriculum preparation overlaps.
+- Existing idempotency persistence is retained.
+- Guardian input hashes use SHA-256.
+- Service authentication is separate from model credentials.
+- CORS is explicitly bounded.
+
+Canonical Overseer transport:
+apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts
+
+Required runtime configuration:
+- FLOOR01_SERVICE_URL
+- FLOOR01_SERVICE_API_KEY
+
+Authoritative design records:
+- .okf/audits/floor01-v2-improvement.md
+- docs/research/floor01-v2-architecture-candidates.md
+
+Verification note:
+The old 31-test claim in this README is historical task-827 evidence. v2 requires fresh branch CI verification.
+New regression coverage is at services/pipeline/floor01_strategy/tests/test_v2_architecture.py.
