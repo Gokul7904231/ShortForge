@@ -59,7 +59,7 @@ async def verify_api_key(api_key: str = Depends(api_key_header)) -> str:
     """Validate API key header if required by settings."""
     settings = get_settings()
     # If dev mode or no required API key configured in env, allow access
-    required_key = getattr(settings, "api_key", None)
+    required_key = settings.service_api_key
     if not required_key:
         return "anonymous_dev"
 
