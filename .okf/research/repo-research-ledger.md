@@ -114,3 +114,24 @@ A new tool is not justified merely because it is newer. It must close a measurab
 Gstack, Semgrep, Strix, ZAP, AgentEvals, OpenAI Evals and other mapped engineering/security patterns are operationalized through the top-level `Team/` boundary.
 
 Mappings remain research evidence. The Team consumes their adopted mechanisms only after the same .okf-first and source-of-truth rules are satisfied.
+
+
+## Fourth-wave Floor 03 research mappings — 2026-09-25
+
+| Repository | Capability observed | ShortForge treatment | Status |
+|---|---|---|---|
+| jamesbas/storyforgeai | World/visual bible, cinematography/directorial plan, storyboard package, variants and animatic | Typed planning boundary and intermediate-artifact separation | PATTERN_EXTRACTION |
+| HITsz-TMG/VideoClaw | Visible staged creative pipeline and editable storyboard/reference stages | Inspectable F03 planning artifact | PATTERN_EXTRACTION |
+| nolanx-ai/nolanx.ai | Long-runtime multimodal continuity and persistent scene/asset context | Canonical continuity vs transient execution separation | PATTERN_EXTRACTION |
+| Emily2040/seedance-2.0 | Global sequence plan, local prompt compilation, re-anchors, observed-state handoff | ContinuityMode, motion beats, state hints, typed references | PATTERN_EXTRACTION |
+| zyz254009-crypto/script-to-shootable-storyboard | Atomic shot schema, graph validators, provenance, safe zones, repair plans | Typed F03 shot semantics, graph validation, fingerprints, repair locality | CLEAN_ROOM_PATTERN_EXTRACTION |
+| huangserva/xyz-video-skill | Purpose-driven reference protocol and explicit continuity fields | ReferenceUse, GenerationInputMode, ContinuityMode | PATTERN_EXTRACTION |
+| pydantic/pydantic-ai | Typed structured output and validation/retry discipline | Pydantic-first strict AssetPlanIR and semantic validation | PATTERN_EXTRACTION |
+| madebysaira/CharacterConsistency | Stable identity/style block plus per-shot action/camera delta | ContinuityPlan with invariants/allowed changes and character references | PATTERN_EXTRACTION |
+| kmgrassi/PopcornReady | Character bible/reference pack/shot intent separation and surgical repair | First-class references and localized regeneration | PATTERN_EXTRACTION |
+| UknowSth/ShotDirector | Cinematographic transition semantics and explicit camera control | Richer provider-neutral camera/continuity semantics | RESEARCH_PATTERN |
+| KlingAIResearch/MultiShotMaster | Global persistent caption + per-shot local caption structure | Stable invariants vs local shot plan separation | RESEARCH_PATTERN |
+| AI-Application-and-Integration-Lab/VstoryGen | Multi-scene visual storytelling with scene/character references | Reference-aware scene planning | RESEARCH_ONLY |
+| showlab/Code2Video | Planner/Coder/Critic separation and evaluation | Preserve planner vs judge boundary in F03 | RESEARCH_ONLY |
+
+All mappings are clean-room pattern extraction or research references. No external code, prompts, tests, weights, or provider-specific credentials were imported into F03.
