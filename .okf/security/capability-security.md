@@ -71,3 +71,8 @@ A parent agent can never grant capabilities it does not possess. Attempting to e
 The root canonical worker permission map is .okf/security/worker-permissions.md.
 
 That file expands this capability matrix into worker lifecycle rules, skill gates, lease/fencing requirements, production-helper boundaries, test requirements, and absolute worker prohibitions.
+
+
+## 5. Canonical Worker Permission Contract
+
+The detailed worker permission and denial model is maintained in `.okf/security/worker-permissions.md`. This file defines the high-level capability-security principle; the worker-permissions document defines exact worker scope, denial semantics, delegation, resource boundaries, lease/fencing requirements, and verification rules.
