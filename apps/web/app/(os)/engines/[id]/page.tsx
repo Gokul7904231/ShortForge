@@ -1,394 +1,507 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { 
-  Cpu, Sliders, Play, AlertTriangle, CheckCircle, 
-  Terminal, Shield, Settings, Activity, Trash2, ExternalLink
+import {
+  AlertTriangle,
+  CheckCircle,
+  Cpu,
+  Layers3,
+  Play,
+  Settings2,
+  Shield,
+  Sliders,
+  Terminal,
 } from "lucide-react";
 import BrandIcon from "@/components/BrandIcon";
-import { useOSStore } from "@/lib/os-store";
 import { useFactoryStore } from "@/lib/factory-store";
+import { useOSStore } from "@/lib/os-store";
 import { useAuth } from "@/lib/auth/hooks";
+
+type ConfigField = {
+  key: string;
+  label: string;
+  type: "text" | "textarea" | "select" | "number" | "toggle" | "multi-select";
+  section: "content" | "creative" | "media" | "delivery" | "runtime" | "lifecycle";
+  defaultValue: any;
+  required?: boolean;
+  advanced?: boolean;
+  readonly?: boolean;
+  helpText?: string;
+  options?: Array<{ value: string | number | boolean; label: string }>;
+  min?: number;
+  max?: number;
+  step?: number;
+};
+
+const SECTION_LABELS: Record<ConfigField["section"], string> = {
+  content: "Content",
+  creative: "Creative",
+  media: "Media",
+  delivery: "Delivery",
+  runtime: "Runtime",
+  lifecycle: "Lifecycle",
+};
 
 export default function DynamicEnginePage() {
   const { user } = useAuth();
-  const isAdmin = ["ADMIN", "OWNER", "SUPERADMIN"].includes(user?.role?.toUpperCase() || "");
   const params = useParams();
   const engineId = params.id as string;
-
+  const isAdmin = ["ADMIN", "OWNER", "SUPERADMIN"].includes(
+    user?.role?.toUpperCase() || ""
+  );
   const { events } = useFactoryStore();
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const selectedProfile = useOSStore((state) => state.selectedProfile);
 
   const [manifest, setManifest] = useState<any>(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [config, setConfig] = useState<Record<string, any>>({});
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-
-  // Configuration Form State
-  const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("medium");
-  const [audience, setAudience] = useState("general");
-  const [tone, setTone] = useState("Challenging");
-  const [voice, setVoice] = useState("neutral");
-  const [ratio, setRatio] = useState("9:16");
-  const [providerOverride, setProviderOverride] = useState("auto");
-  const [retention, setRetention] = useState(72);
-  const [platforms, setPlatforms] = useState<string[]>([]);
-  const [thumbnailStyle, setThumbnailStyle] = useState("cinematic");
-
-  const selectedProfile = useOSStore((state) => state.selectedProfile);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (!engineId) return;
-    setError("");
-    setSuccess("");
 
-    fetch(`/api/engines/${engineId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Content Engine "${engineId}" not found in registries.`);
-        return res.json();
+    fetch("/api/engines/" + engineId)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(
+            data.error || ('Content Engine "' + engineId + '" not found in registries.')
+          );
+        }
+        return data;
       })
       .then((data) => {
-        if (data.success && data.manifest) {
-          setManifest(data.manifest);
-          setTopic(engineId === "quiz" ? "Global Geography Quiz" : `Fascinating facts about ${engineId}`);
-        } else {
-          setError(data.error || `Content Engine "${engineId}" not found in registries.`);
+        setManifest(data.manifest);
+        const next: Record<string, any> = {};
+        for (const field of data.manifest?.configuration?.fields ?? []) {
+          next[field.key] = field.defaultValue;
         }
+        setConfig(next);
       })
-      .catch((err) => {
-        setError(err.message);
-      });
+      .catch((err) => setError(err.message));
   }, [engineId]);
 
-  // Dynamically poll events and format logs
+  const fields: ConfigField[] = manifest?.configuration?.fields ?? [];
+
+  const groupedFields = useMemo(
+    () =>
+      fields.reduce<Record<string, ConfigField[]>>((acc, field) => {
+        (acc[field.section] ||= []).push(field);
+        return acc;
+      }, {}),
+    [fields]
+  );
+
   useEffect(() => {
     if (!activeJobId) return;
 
-    // Filter events belonging to this jobId
-    const jobEvents = events.filter(e => e.traceId === activeJobId || e.payload?.jobId === activeJobId);
-    
-    // Format events as log lines
-    const newLogs = [
-      `[0.0s] Initializing ${engineId} engine runtime...`,
-      `[0.2s] [SUCCESS] Manifest enqueued. Job ID: ${activeJobId}`
+    const jobEvents = events
+      .filter(
+        (event) =>
+          event.traceId === activeJobId || event.payload?.jobId === activeJobId
+      )
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    const nextLogs = [
+      "[0.0s] Initializing " + engineId + " engine runtime...",
+      "[0.2s] [SUCCESS] ProductionSpec compile requested. Job ID: " + activeJobId,
     ];
 
-    // Sort by timestamp
-    const sortedEvents = [...jobEvents].sort((a, b) => a.timestamp - b.timestamp);
+    let finished = false;
+    let failed = false;
 
-    let isFinished = false;
-    let isError = false;
+    jobEvents.forEach((event) => {
+      const offset = (
+        (event.timestamp -
+          (jobEvents[0]?.timestamp ?? event.timestamp)) /
+        1000
+      ).toFixed(1);
 
-    sortedEvents.forEach(e => {
-      const timeOffset = ((e.timestamp - sortedEvents[0]?.timestamp || 0) / 1000).toFixed(1);
-      
-      if (e.type === "workflow.started") {
-        newLogs.push(`[${timeOffset}s] Workflow pipeline started for topic: "${e.payload.topic}"`);
-      } else if (e.type === "step.started") {
-        newLogs.push(`[${timeOffset}s] Executing stage: ${e.payload.stepId}...`);
-      } else if (e.type === "step.completed") {
-        newLogs.push(`[${timeOffset}s] Stage completed: ${e.payload.stepId} in ${e.payload.duration}ms`);
-      } else if (e.type === "step.failed") {
-        newLogs.push(`[${timeOffset}s] [ERROR] Stage failed: ${e.payload.stepId} - ${e.payload.error}`);
-        isError = true;
-      } else if (e.type === "workflow.completed") {
-        newLogs.push(`[${timeOffset}s] [SUCCESS] Pipeline execution finished in ${e.payload.durationMs}ms`);
-        isFinished = true;
-      } else if (e.type === "workflow.failed") {
-        newLogs.push(`[${timeOffset}s] [CRITICAL_ERR] Execution failed: ${e.payload.error}`);
-        isFinished = true;
-        isError = true;
+      if (event.type === "workflow.started") {
+        nextLogs.push(
+          "[" + offset + "s] Workflow pipeline started for topic: \"" +
+            event.payload.topic +
+            "\""
+        );
+      } else if (event.type === "step.started") {
+        nextLogs.push(
+          "[" + offset + "s] Executing stage: " +
+            event.payload.stepId +
+            "..."
+        );
+      } else if (event.type === "step.completed") {
+        nextLogs.push(
+          "[" + offset + "s] Stage completed: " +
+            event.payload.stepId +
+            " in " +
+            event.payload.duration +
+            "ms"
+        );
+      } else if (event.type === "step.failed") {
+        nextLogs.push(
+          "[" + offset + "s] [ERROR] Stage failed: " +
+            event.payload.stepId +
+            " - " +
+            event.payload.error
+        );
+        failed = true;
+      } else if (event.type === "workflow.completed") {
+        nextLogs.push(
+          "[" + offset + "s] [SUCCESS] Pipeline execution finished in " +
+            event.payload.durationMs +
+            "ms"
+        );
+        finished = true;
+      } else if (event.type === "workflow.failed") {
+        nextLogs.push(
+          "[" + offset + "s] [CRITICAL_ERR] Execution failed: " +
+            event.payload.error
+        );
+        finished = true;
+        failed = true;
       }
     });
 
-    setLogs(newLogs);
+    setLogs(nextLogs);
 
-    if (isFinished) {
+    if (finished) {
       setRunning(false);
-      if (isError) {
-        setError("Pipeline run failed. Check process logs.");
-      } else {
-        setSuccess(`Video job completed successfully! ID: ${activeJobId}`);
-      }
+      if (failed) setError("Pipeline run failed. Check process logs.");
+      else setSuccess("Video job completed successfully! ID: " + activeJobId);
     }
   }, [events, activeJobId, engineId]);
 
-  // Execute job mutation
-  const executeJob = useMutation({
-    mutationFn: async () => {
-      setRunning(true);
-      setSuccess("");
-      setActiveJobId(null);
-      setLogs([`[0.0s] Initializing ${engineId} engine runtime...`]);
+  function updateField(field: ConfigField, value: any) {
+    if (field.readonly) return;
+    setConfig((previous) => ({ ...previous, [field.key]: value }));
+  }
 
-      const res = await fetch("/api/generate-video", {
+  function toggleMulti(field: ConfigField, option: string | number | boolean) {
+    const current = Array.isArray(config[field.key]) ? config[field.key] : [];
+    updateField(
+      field,
+      current.includes(option)
+        ? current.filter((item: any) => item !== option)
+        : [...current, option]
+    );
+  }
+
+  function renderField(field: ConfigField) {
+    const value = config[field.key];
+
+    if (field.type === "textarea") {
+      return (
+        <textarea
+          value={value ?? ""}
+          onChange={(event) => updateField(field, event.target.value)}
+          className="min-h-24 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
+          disabled={field.readonly}
+        />
+      );
+    }
+
+    if (field.type === "text") {
+      return (
+        <input
+          value={value ?? ""}
+          onChange={(event) => updateField(field, event.target.value)}
+          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
+          disabled={field.readonly}
+        />
+      );
+    }
+
+    if (field.type === "number") {
+      return (
+        <input
+          type="number"
+          value={value ?? ""}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          onChange={(event) => updateField(field, Number(event.target.value))}
+          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
+          disabled={field.readonly}
+        />
+      );
+    }
+
+    if (field.type === "toggle") {
+      return (
+        <button
+          type="button"
+          onClick={() => updateField(field, !Boolean(value))}
+          className={
+            "w-full rounded-lg border px-3 py-2 text-left text-xs " +
+            (value
+              ? "border-blue-500/40 bg-blue-500/10 text-blue-300"
+              : "border-zinc-800 bg-zinc-950 text-zinc-500")
+          }
+          disabled={field.readonly}
+        >
+          {value ? "Enabled" : "Disabled"}
+        </button>
+      );
+    }
+
+    if (field.type === "multi-select") {
+      return (
+        <div className="flex flex-wrap gap-2">
+          {(field.options ?? []).map((option) => {
+            const active =
+              Array.isArray(value) && value.includes(option.value);
+            return (
+              <button
+                type="button"
+                key={String(option.value)}
+                onClick={() => toggleMulti(field, option.value)}
+                className={
+                  "rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all " +
+                  (active
+                    ? "border-blue-500/40 bg-blue-500/20 text-blue-300"
+                    : "border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700")
+                }
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <select
+        value={value ?? ""}
+        onChange={(event) => {
+          const selected = (field.options ?? []).find(
+            (option) => String(option.value) === event.target.value
+          );
+          updateField(field, selected?.value ?? event.target.value);
+        }}
+        className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
+        disabled={field.readonly}
+      >
+        {(field.options ?? []).map((option) => (
+          <option key={String(option.value)} value={String(option.value)}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  async function executeJob() {
+    if (!config.topic) return;
+
+    setRunning(true);
+    setSuccess("");
+    setError("");
+    setActiveJobId(null);
+    setLogs(["[0.0s] Preparing " + engineId + " configuration..."]);
+
+    try {
+      const response = await fetch("/api/generate-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic,
+          engineId,
+          topic: config.topic,
           style: engineId,
           contentType: engineId === "quiz" ? "QUIZ_SHORTS" : "STORY",
           renderProfile: selectedProfile,
-          platforms,
-          options: {
-            difficulty,
-            audience,
-            tone,
-            voice,
-            ratio,
-            retention,
-            thumbnailStyle,
-            providerOverride,
-          }
+          platforms: config.platforms ?? [],
+          userConfig: config,
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to queue job");
-      return data;
-    },
-    onSuccess: (data) => {
-      setSuccess(`Job enqueued successfully! ID: ${data.jobId}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to queue job");
+      }
+
       setActiveJobId(data.jobId);
-    },
-    onError: (err: any) => {
+      setSuccess(
+        "ProductionSpec compiled and job enqueued. ID: " + data.jobId
+      );
+    } catch (err: any) {
       setError(err.message);
-      setLogs((prev) => [...prev, `[CRITICAL_ERR] Spawn process crashed: ${err.message}`]);
+      setLogs((previous) => [
+        ...previous,
+        "[CRITICAL_ERR] Spawn process crashed: " + err.message,
+      ]);
       setRunning(false);
     }
-  });
-
-  const togglePlatform = (p: string) => {
-    setPlatforms((prev) =>
-      prev.includes(p) ? prev.filter((item) => item !== p) : [...prev, p]
-    );
-  };
+  }
 
   const isQuizLive = isAdmin || engineId === "quiz";
   const comingSoonEngine = !isQuizLive;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-zinc-900 pb-4 justify-between">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <div className="flex items-center justify-between gap-3 border-b border-zinc-900 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-            <Cpu className="w-5 h-5 text-blue-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900">
+            <Cpu className="h-5 w-5 text-blue-400" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-zinc-50 tracking-tight capitalize">{manifest?.name ?? engineId} Engine</h2>
-              {isQuizLive ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE NOW</span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-wider">COMING SOON</span>
-              )}
+              <h2 className="text-lg font-bold tracking-tight text-zinc-50">
+                {manifest?.name ?? engineId} Engine
+              </h2>
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-400">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                {comingSoonEngine ? "COMING SOON" : "LIVE NOW"}
+              </span>
             </div>
-            <p className="text-xs text-zinc-500 mt-0.5">Version {manifest?.version ?? "1.0"} • Profile: {selectedProfile}{comingSoonEngine ? " · Coming soon — Quiz Shorts is live now" : ""}</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Version {manifest?.version ?? "1.0"} · Schema{" "}
+              {manifest?.configuration?.schemaVersion ?? "1.0"} · Renderer{" "}
+              {manifest?.renderProfile ?? "default"}
+            </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-[10px] font-mono text-zinc-500">
+          <Settings2 className="h-3.5 w-3.5 text-blue-400" />
+          {manifest?.configuration?.source === "declared"
+            ? "ENGINE-DECLARED CONFIG"
+            : "COMPATIBILITY CONFIG"}
         </div>
       </div>
 
       {comingSoonEngine && (
-        <div
-          className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3"
-          title="Coming soon — Quiz Shorts is live now"
-        >
-          <p className="text-xs font-semibold text-amber-300">This engine is coming soon. Quiz Shorts is the live production path — create from the Quiz engine today.</p>
-          <a href="/factory/jobs" className="px-3 py-1.5 rounded-lg bg-white text-zinc-900 text-xs font-bold hover:bg-zinc-100 transition-colors">Create Quiz Short →</a>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <p className="text-xs font-semibold text-amber-300">
+            This engine is not yet on the live production path. Quiz Shorts is
+            the currently exposed production path.
+          </p>
         </div>
       )}
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-semibold text-rose-400 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
+        <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs font-semibold text-rose-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400 flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>{success}</span>
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-semibold text-emerald-400">
+          <CheckCircle className="h-4 w-4 shrink-0" />
+          {success}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Config Forms */}
-        <div className="lg:col-span-6 bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 space-y-4">
-          <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-3">
-            <Sliders className="w-4 h-4 text-blue-400" />
-            Configuration
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Topic / Theme</label>
-              <input
-                type="text"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Difficulty</label>
-              <select
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 lg:col-span-7">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+            <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-300">
+              <Sliders className="h-4 w-4 text-blue-400" />
+              Configuration
+            </h3>
+            <div className="flex rounded-lg border border-zinc-800 bg-zinc-950 p-1">
+              <button
+                type="button"
+                className={
+                  "rounded px-2 py-1 text-[10px] font-bold " +
+                  (!showAdvanced
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-500")
+                }
+                onClick={() => setShowAdvanced(false)}
               >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Audience</label>
-              <select
-                value={audience}
-                onChange={(e) => setAudience(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
+                BASIC
+              </button>
+              <button
+                type="button"
+                className={
+                  "rounded px-2 py-1 text-[10px] font-bold " +
+                  (showAdvanced
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-500")
+                }
+                onClick={() => setShowAdvanced(true)}
               >
-                <option value="general">General</option>
-                <option value="kids">Kids</option>
-                <option value="experts">Experts</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Engagement Tone</label>
-              <select
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              >
-                <option value="Challenging">Challenging</option>
-                <option value="Dramatic">Dramatic</option>
-                <option value="Friendly">Friendly</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Voice Synthesizer</label>
-              <select
-                value={voice}
-                onChange={(e) => setVoice(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              >
-                <option value="neutral">Neutral Voice</option>
-                <option value="male">Male Voice</option>
-                <option value="female">Female Voice</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Thumbnail Style</label>
-              <select
-                value={thumbnailStyle}
-                onChange={(e) => setThumbnailStyle(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              >
-                <option value="cinematic">Cinematic</option>
-                <option value="flat">Minimalist</option>
-                <option value="isometric">Isometric</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Output Ratio</label>
-              <select
-                value={ratio}
-                onChange={(e) => setRatio(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              >
-                <option value="9:16">Portrait Shorts (9:16)</option>
-                <option value="16:9">Horizontal Landscape (16:9)</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">AI Provider Override</label>
-              <select
-                value={providerOverride}
-                onChange={(e) => setProviderOverride(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              >
-                <option value="auto">Auto Router</option>
-                <option value="google">Google Gemini Only</option>
-                <option value="groq">Groq LPU Only</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Retention Policy</label>
-              <select
-                value={retention}
-                onChange={(e) => setRetention(Number(e.target.value))}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-blue-500"
-              >
-                <option value={24}>Delete after 24h</option>
-                <option value={48}>Delete after 48h</option>
-                <option value={72}>Delete after 72h</option>
-                <option value={0}>Never Delete (Premium)</option>
-              </select>
+                ADVANCED
+              </button>
             </div>
           </div>
 
-          <div className="space-y-2 border-t border-zinc-800 pt-4">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">Publish targets</span>
-            <div className="flex flex-wrap gap-2">
-              {["youtube", "tiktok", "instagram"].map((p) => {
-                const active = platforms.includes(p);
-                return (
-                  <button
-                    key={p}
-                    onClick={() => togglePlatform(p)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold uppercase tracking-wider transition-all select-none ${
-                      active 
-                        ? "bg-blue-500/20 border-blue-500/40 text-blue-300"
-                        : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {Object.entries(groupedFields).map(([section, sectionFields]) => {
+            const visible = sectionFields.filter(
+              (field) => showAdvanced || !field.advanced
+            );
+            if (visible.length === 0) return null;
+
+            return (
+              <div key={section} className="space-y-3">
+                <div className="flex items-center gap-2 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                  <Layers3 className="h-3.5 w-3.5" />
+                  {SECTION_LABELS[section as ConfigField["section"]]}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {visible.map((field) => (
+                    <div
+                      key={field.key}
+                      className={
+                        field.type === "textarea" ||
+                        field.type === "multi-select" ||
+                        field.key === "topic"
+                          ? "sm:col-span-2"
+                          : ""
+                      }
+                    >
+                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono">
+                        {field.label}
+                        {field.required ? " *" : ""}
+                      </label>
+                      {renderField(field)}
+                      {field.helpText && (
+                        <p className="mt-1 text-[10px] leading-relaxed text-zinc-600">
+                          {field.helpText}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
 
           <button
-            onClick={() => executeJob.mutate()}
-            disabled={running || !topic}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-zinc-950 font-bold text-xs py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50"
+            onClick={executeJob}
+            disabled={running || !config.topic}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500 py-2.5 text-xs font-bold text-zinc-950 transition-all hover:bg-blue-600 active:scale-[0.99] disabled:opacity-50"
           >
-            <BrandIcon className="w-4 h-4" />
-            <span>Generate Video</span>
+            {running ? (
+              <Play className="h-4 w-4 animate-pulse" />
+            ) : (
+              <BrandIcon className="h-4 w-4" />
+            )}
+            {running ? "Compiling / Running..." : "Generate Video"}
           </button>
         </div>
 
-        {/* Right Column: Execution Logs / Previews */}
-        <div className="lg:col-span-6 space-y-6">
-          {/* Logs */}
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 flex flex-col h-[320px]">
-            <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-3 shrink-0">
-              <Terminal className="w-4 h-4 text-blue-400" />
+        <div className="space-y-6 lg:col-span-5">
+          <div className="flex h-[320px] flex-col rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
+            <h3 className="flex shrink-0 items-center gap-2 border-b border-zinc-800 pb-3 text-xs font-bold uppercase tracking-widest text-zinc-300">
+              <Terminal className="h-4 w-4 text-blue-400" />
               Live Process Feed
             </h3>
-            
-            <div className="flex-1 overflow-y-auto mt-4 p-4 rounded-lg bg-zinc-950 border border-zinc-800/60 font-mono text-[10px] leading-relaxed text-zinc-400 space-y-1 terminal-scroll">
-              {logs.map((log, i) => (
-                <div key={i}>{log}</div>
+            <div className="terminal-scroll mt-4 flex-1 space-y-1 overflow-y-auto rounded-lg border border-zinc-800/60 bg-zinc-950 p-4 font-mono text-[10px] leading-relaxed text-zinc-400">
+              {logs.map((log, index) => (
+                <div key={index}>{log}</div>
               ))}
               {running && (
-                <div className="flex items-center gap-2 text-blue-400 animate-pulse mt-2">
-                  <span className="w-1.5 h-3 bg-blue-400 inline-block animate-pulse"></span>
+                <div className="mt-2 flex items-center gap-2 animate-pulse text-blue-400">
+                  <span className="inline-block h-3 w-1.5 animate-pulse bg-blue-400" />
                   Running engine logic...
                 </div>
               )}
@@ -398,24 +511,82 @@ export default function DynamicEnginePage() {
             </div>
           </div>
 
-          {/* Engine Manifesto */}
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 space-y-3 text-xs">
-            <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-3 font-mono">
-              <Shield className="w-4 h-4 text-blue-400" />
-              Engine Manifesto
+          <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 text-xs">
+            <h3 className="flex items-center gap-2 border-b border-zinc-800 pb-3 text-xs font-bold uppercase tracking-widest text-zinc-300">
+              <Shield className="h-4 w-4 text-blue-400" />
+              Engine Manifest
             </h3>
-            <div className="space-y-2.5 font-mono text-[10px] text-zinc-400">
-              <div className="flex justify-between">
-                <span className="text-zinc-650">Hook Prompt:</span>
-                <span>{manifest?.hookPrompt ?? "prompts/quiz/hook.txt"}</span>
+
+            <div className="grid grid-cols-2 gap-3 font-mono text-[10px]">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                <div className="text-zinc-600">Config Fields</div>
+                <div className="mt-1 text-zinc-200">{fields.length}</div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-650">Critic Rules:</span>
-                <span>{manifest?.criticRules ?? "content-engines/quiz/critic.json"}</span>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                <div className="text-zinc-600">Config Source</div>
+                <div className="mt-1 text-zinc-200">
+                  {manifest?.configuration?.source ?? "unknown"}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-650">Renderer Profile:</span>
-                <span>{manifest?.renderProfile ?? "default"}</span>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                <div className="text-zinc-600">Research Contract</div>
+                <div className="mt-1 text-zinc-200">
+                  {manifest?.contracts?.research?.required
+                    ? "required"
+                    : "optional"}
+                </div>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                <div className="text-zinc-600">Verification</div>
+                <div className="mt-1 text-zinc-200">
+                  {manifest?.contracts?.verification?.requiredChecks?.length ??
+                    0}{" "}
+                  checks
+                </div>
+              </div>
+              <div className="col-span-2 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                <div className="text-zinc-600">Renderer Profile</div>
+                <div className="mt-1 text-zinc-200">
+                  {manifest?.contracts?.render?.profile ??
+                    manifest?.renderProfile ??
+                    "default"}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 border-t border-zinc-800 pt-3 font-mono text-[10px] text-zinc-400">
+              <div className="flex justify-between gap-4">
+                <span className="text-zinc-600">Hook Prompt</span>
+                <span>
+                  {manifest?.hookPromptSlug ??
+                    manifest?.hookPrompt ??
+                    "not declared"}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-zinc-600">Critic Rules</span>
+                <span>
+                  {manifest?.contracts?.verification?.criticRules ??
+                    manifest?.criticRules ??
+                    "not declared"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 text-[10px] text-zinc-500">
+            <div className="flex items-start gap-2">
+              <Settings2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-400" />
+              <div>
+                <div className="font-semibold text-zinc-300">
+                  Configuration boundary
+                </div>
+                <p className="mt-1 leading-relaxed">
+                  This screen edits creator intent only. The server recompiles
+                  it into an immutable ProductionSpec. It cannot grant worker
+                  capabilities, bypass .okf policy, override Guardian or Slayer
+                  decisions, or bypass F07.
+                </p>
               </div>
             </div>
           </div>
