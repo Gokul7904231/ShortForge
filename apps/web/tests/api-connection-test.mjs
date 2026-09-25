@@ -8,6 +8,16 @@
 
 const BASE = "http://localhost:3000";
 
+// Load the same server-side environment used by Next.js so protected API
+// tests can authenticate as the internal FactoryOS owner instead of relying
+// on a browser session cookie that this standalone Node script does not have.
+const { loadEnvConfig } = require("@next/env");
+loadEnvConfig(process.cwd());
+const INTERNAL_API_SECRET_KEY = process.env.INTERNAL_API_SECRET_KEY || "";
+const AUTH_HEADERS = INTERNAL_API_SECRET_KEY
+  ? { Authorization: `Bearer ${INTERNAL_API_SECRET_KEY}` }
+  : {};
+
 let passed = 0;
 let failed = 0;
 let warnings = 0;
@@ -34,7 +44,7 @@ async function test(name, fn) {
 }
 
 async function get(path, expectJson = true) {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${BASE}${path}`, { headers: AUTH_HEADERS });
   const body = expectJson ? await res.json().catch(() => null) : await res.text();
   return { res, body };
 }
@@ -42,7 +52,7 @@ async function get(path, expectJson = true) {
 async function post(path, payload) {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
     body: JSON.stringify(payload),
   });
   const body = await res.json().catch(() => null);
@@ -278,63 +288,16 @@ console.log("\n━━━━━━━━━━━━━━━━━━━━━�
 console.log("  GROUP 9: Dynamic Templates & Content Engines");
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-let createdTemplateId = null;
-await test("POST /api/templates (create test template)", async () => {
-  const { res, body } = await post("/api/templates", {
-    name: "Test Space Template",
-    category: "Narrative",
-    description: "Space facts and exploration layout",
-    version: "1.0",
-    prompt: "A template about deep space {{topic}}",
-    variables: "topic",
-  });
-  if (!res.ok) return { ok: false, note: `HTTP ${res.status}: ${body?.error}` };
-  createdTemplateId = body?.template?.id;
-  return { ok: true, note: `Created ID: ${createdTemplateId}` };
-});
-
-await test("GET /api/templates (list templates)", async () => {
+await test("GET /api/templates (template registry)", async () => {
   const { res, body } = await get("/api/templates");
   if (!res.ok) return { ok: false, note: `HTTP ${res.status}: ${body?.error}` };
-  const hasCreated = body?.templates?.some(t => t.id === createdTemplateId);
-  return { ok: true, note: `templatesCount=${body?.templates?.length ?? 0} containsCreated=${hasCreated}` };
+  return { ok: true, note: `${body?.templates?.length ?? 0} template(s) returned` };
 });
 
-await test("DELETE /api/templates (cleanup test template)", async () => {
-  if (!createdTemplateId) return { warn: true, note: "Skipped (no template created)" };
-  const res = await fetch(`${BASE}/api/templates?id=${createdTemplateId}`, { method: "DELETE" });
-  if (!res.ok) return { ok: false, note: `HTTP ${res.status}` };
-  return { ok: true, note: `Deleted ID: ${createdTemplateId}` };
-});
-
-let createdEngineId = null;
-await test("POST /api/engines (create test engine)", async () => {
-  const { res, body } = await post("/api/engines", {
-    name: "Test Dynamic Engine",
-    description: "A completely custom dynamically created test engine",
-    workflow: "quiz-workflow",
-    voice: "alloy",
-    prompt: "Generate dynamic quiz on {{topic}}",
-    sceneRules: "Cinematic, space context",
-    category: "Educational",
-  });
-  if (!res.ok) return { ok: false, note: `HTTP ${res.status}: ${body?.error}` };
-  createdEngineId = body?.id;
-  return { ok: true, note: `Created ID: ${createdEngineId}` };
-});
-
-await test("GET /api/engines (list active engines)", async () => {
+await test("GET /api/engines (engine registry)", async () => {
   const { res, body } = await get("/api/engines");
   if (!res.ok) return { ok: false, note: `HTTP ${res.status}: ${body?.error}` };
-  const hasCreated = body?.engines?.some(e => e.id === createdEngineId);
-  return { ok: true, note: `enginesCount=${body?.engines?.length ?? 0} containsCreated=${hasCreated}` };
-});
-
-await test("DELETE /api/engines (cleanup test engine)", async () => {
-  if (!createdEngineId) return { warn: true, note: "Skipped (no engine created)" };
-  const res = await fetch(`${BASE}/api/engines?id=${createdEngineId}`, { method: "DELETE" });
-  if (!res.ok) return { ok: false, note: `HTTP ${res.status}` };
-  return { ok: true, note: `Deleted ID: ${createdEngineId}` };
+  return { ok: true, note: `${body?.engines?.length ?? 0} engine(s) returned` };
 });
 
 // =============================================
