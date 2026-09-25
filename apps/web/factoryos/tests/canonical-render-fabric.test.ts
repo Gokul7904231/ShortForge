@@ -10,9 +10,10 @@ describe("Floor 06 — Canonical Render Fabric", () => {
     expect(fabric.getCompiler("FFMPEG")?.status).toBe("PRODUCTION_READY");
   });
 
-  it("keeps the legacy RenderFabric path as a compatibility boundary only", async () => {
-    const legacy = await import("../core/rendering/RenderFabric");
-    expect(legacy.RenderFabric).toBeDefined();
-    expect(legacy.FFmpegRenderCompiler).toBeDefined();
+  it("does not expose a second RenderFabric implementation", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const legacyPath = path.resolve(process.cwd(), "factoryos/core/rendering/RenderFabric.ts");
+    expect(fs.existsSync(legacyPath)).toBe(false);
   });
 });
