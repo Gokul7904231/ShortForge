@@ -10,7 +10,7 @@
       "name": "Topic Research Ingestion",
       "floorId": "floor00_analyst",
       "riskClass": "LOW",
-      "allowedRoles": ["OVERSEER", "TREND_ANALYST"],
+      "allowedRoles": ["OVERSEER", "TREND_ANALYST", "RESEARCH_ANALYST"],
       "requiresGuardianGate": false,
       "timeoutMs": 30000,
       "trainingEligible": true
