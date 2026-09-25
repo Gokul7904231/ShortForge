@@ -44,10 +44,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Floor 01 test dependencies
+      - name: Install Floor 01 package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "fastapi>=0.100" "pydantic>=2" pydantic-settings pytest pytest-asyncio structlog httpx
+          python -m pip install -e "services/pipeline/floor01_strategy[test]"
 
       - name: Run Floor 01 v2 test suite
         working-directory: services/pipeline
@@ -72,7 +72,11 @@ jobs:
         env:
           FLOOR01_CI_SERVICE_KEY: ci-floor01-service-key-012345678901234567890123456789
         run: |
-          docker run -d --rm --name floor01-ci -p 18080:8000             -e FLOOR01_ENVIRONMENT=production             -e FLOOR01_SERVICE_API_KEY="$FLOOR01_CI_SERVICE_KEY"             shortforge-floor01:ci
+          docker run -d --rm --name floor01-ci \
+            -p 18080:8000 \
+            -e FLOOR01_ENVIRONMENT=production \
+            -e FLOOR01_SERVICE_API_KEY="$FLOOR01_CI_SERVICE_KEY" \
+            shortforge-floor01:ci
           trap 'docker stop floor01-ci >/dev/null 2>&1 || true' EXIT
 
           for i in $(seq 1 30); do
@@ -85,7 +89,11 @@ jobs:
           curl --fail --silent http://127.0.0.1:18080/health
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/docs)" = "404"
 
-          curl --fail --silent             -H "Content-Type: application/json"             -H "X-API-Key: $FLOOR01_CI_SERVICE_KEY"             -X POST             -d '{
+          curl --fail --silent \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: $FLOOR01_CI_SERVICE_KEY" \
+            -X POST \
+            -d '{
               "topic_query": "Python decorators",
               "target_audience": "beginner_programmers",
               "platform": "youtube_shorts",
@@ -113,6 +121,37 @@ jobs:
                 }],
                 "provenance": ["container-smoke"]
               }
-            }'             http://127.0.0.1:18080/v1/plan | python -c "import json,sys; d=json.load(sys.stdin); assert d['floor_id']=='floor01_strategy'; assert d['handoff_status']=='VALIDATED'; print('F01 container handoff validated')"
+            }' \
+            http://127.0.0.1:18080/v1/plan | python -c "import json,sys; d=json.load(sys.stdin); assert d['floor_id']=='floor01_strategy'; assert d['handoff_status']=='VALIDATED'; print('F01 container handoff validated')"
 
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}'             -H "Content-Type: application/json"             -H "X-API-Key: wrong-key"             -X POST             -d '{"topic_query":"Python decorators"}'             http://127.0.0.1:18080/v1/plan)" = "401"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: wrong-key" \
+            -X POST \
+            -d '{"topic_query":"Python decorators"}' \
+            http://127.0.0.1:18080/v1/plan)" = "401"
+
+  f01-security:
+    name: Floor 01 Security & Dependency Scan
+    runs-on: ubuntu-latest
+    needs: [f01-python]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime and security scanners
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "services/pipeline/floor01_strategy[test]"
+          python -m pip install pip-audit bandit
+
+      - name: Dependency vulnerability scan
+        run: pip-audit --strict
+
+      - name: Static Python security scan
+        run: bandit -q -r services/pipeline/floor01_strategy/app -ll
