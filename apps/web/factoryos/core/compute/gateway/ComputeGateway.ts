@@ -20,6 +20,7 @@ import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
 import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
 import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
+import { AmdComputeProvider } from "../providers/AmdComputeProvider";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 
 export class ComputeGateway {
@@ -34,6 +35,7 @@ export class ComputeGateway {
     // Register canonical providers
     this.router.registerProvider(new LocalComputeProvider());
     this.router.registerProvider(new PersistentWorkerComputeProvider());
+    this.router.registerProvider(new AmdComputeProvider());
     this.router.registerProvider(new LightningComputeProvider());
     this.router.registerProvider(new KaggleComputeProvider());
     this.router.registerProvider(new GitHubActionsComputeProvider());
