@@ -325,11 +325,7 @@ class Floor03Pipeline:
                 raise Floor03ValidationError(
                     f"Missing scene plan for scene_id '{req.scene_id}' during regeneration."
                 )
-            scene_dependencies = [
-                AssetDependency(asset_id=dep["asset_id"], relation=dep["relation"])
-                for dep in (req.continuity_constraints.get("asset_dependencies") or [])
-                if isinstance(dep, dict) and dep.get("asset_id") and dep.get("relation")
-            ]
+            scene_dependencies: List[AssetDependency] = []
             nodes.append(
                 AssetPlanNode(
                     scene_id=req.scene_id,
