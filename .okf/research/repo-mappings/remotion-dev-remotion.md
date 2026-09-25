@@ -89,3 +89,23 @@ https://github.com/remotion-dev/remotion
 
 Documentation:
 https://www.remotion.dev/docs
+
+## 9. Engineering-stack lock
+
+Remotion is the selected primary programmatic composition foundation for ShortForge. It must remain behind TimelineIR and RenderFabric.
+
+Remotion-derived mechanisms to prioritize:
+- frame-addressed timing
+- explicit composition contracts
+- React composition boundaries
+- Sequence/timeline primitives
+- Canvas/WebGL capability where needed
+- programmatic rendering
+
+Do not let renderer-specific representations replace TimelineIR.
+
+## 10. Current license gate
+
+The current Remotion licensing documentation states that Remotion is source-available rather than OSI-approved open source. The Free License covers individuals and organizations/teams up to three people under the published terms; larger organizations may require a Company License, and automation products can fall under the Automators licensing model when the Company License applies.
+
+ShortForge must perform a license check before production rollout or any material change in organizational usage.
