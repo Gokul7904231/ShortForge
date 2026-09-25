@@ -93,6 +93,50 @@ def test_pipeline_validates_with_verified_research(tmp_path):
     assert report.component_gates["candidate_evaluation_gate"] is True
 
 
+class _FallbackButEnabledAdapter:
+    enabled = True
+    provider_name = "test-provider"
+    model_name = "test-model"
+
+    def generate_strategy_insight(self, *args, **kwargs):
+        from floors.floor01_strategy.app.domain.handoff import EvidenceType, ProvenanceEntry
+
+        return (
+            {
+                "strategic_reasoning": "fallback",
+                "recommended_angle": "unsafe_to_treat_as_model",
+                "confidence": 0.55,
+            },
+            ProvenanceEntry(
+                evidence_type=EvidenceType.FALLBACK,
+                source_type="test",
+                source_identifier="fallback-adapter",
+                method="test",
+                confidence_score=0.55,
+                summary="fallback",
+            ),
+        )
+
+
+def test_fallback_provenance_cannot_create_model_candidate(tmp_path):
+    store = StrategyMemoryStore(storage_path=str(tmp_path / "memory.json"))
+    pipeline = Floor01Pipeline(
+        memory_store=store,
+        llm_adapter=_FallbackButEnabledAdapter(),
+    )
+
+    payload = pipeline.execute(
+        Floor01Input(
+            request_id="req_truthful_fallback",
+            topic_query="Python descriptors",
+            research_context=verified_research(),
+        )
+    )
+
+    assert payload.handoff_status == HandoffStatus.VALIDATED
+    assert payload.strategy.execution_mode.value == "DETERMINISTIC_FALLBACK"
+
+
 def test_model_key_without_endpoint_never_claims_model_execution():
     adapter = LLMStrategyAdapter(api_key="configured-but-no-endpoint", base_url=None)
     assert adapter.enabled is False
