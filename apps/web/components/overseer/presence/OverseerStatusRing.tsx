@@ -46,16 +46,7 @@ export const OverseerStatusRing: React.FC<StatusRingProps> = memo(({ expression 
         <line x1="214" y1="85" x2="219" y2="85" />
       </g>
 
-      <style jsx>{`
-        @keyframes overseer-orbit {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
+
     </g>
   );
 });
