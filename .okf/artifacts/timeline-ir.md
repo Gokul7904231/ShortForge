@@ -111,3 +111,30 @@ Every `TimelineIR` document is validated against strict constraints before being
 2. **Track Bounds Check**: No clip may start before $0\text{ms}$ or extend beyond `canvas.durationMs`.
 3. **No Audio Collisions**: Clips on the `AUDIO_VOICE` track must not overlap in time (ensuring dialogue clarity).
 4. **Caption Alignment**: Words on the `CAPTIONS` track must align with speech syllable timestamps from Floor 04 within a $\pm 50\text{ms}$ window.
+
+
+## 5. Engineering-stack mapping
+
+TimelineIR is the canonical semantic media graph.
+
+Selected execution mapping:
+
+~~~
+TimelineIR
+   |
+Remotion compiler
+   +-- React / Canvas / WebGL
+   |
+RenderFabric
+   +-- local
+   +-- remote
+   +-- FFmpeg fallback
+   |
+physical artifact
+   |
+F07
+~~~
+
+AgentTube-derived scene lifecycle mechanisms complement TimelineIR through durable scene manifests, checkpoints, audio-first timing, CAS reuse, and selective repair.
+
+The renderer never becomes the source of semantic truth.
