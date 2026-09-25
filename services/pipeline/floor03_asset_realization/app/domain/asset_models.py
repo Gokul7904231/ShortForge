@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from floors.floor03_asset_realization.app.domain.asset_plan_ir import AssetPlanIR
+from floors.floor03_asset_realization.app.domain.asset_plan_ir import VisualPromptPlan
 
 
 class AssetType(str, Enum):
@@ -40,7 +40,7 @@ class VisualAssetRequirement(BaseModel):
     target_duration_seconds: float = Field(..., ge=0.0)
     character_references: List[str] = Field(default_factory=list)
     continuity_constraints: Dict[str, Any] = Field(default_factory=dict)
-    plan_ir: Optional[AssetPlanIR] = None
+    scene_plan: Optional[VisualPromptPlan] = None
 
 
 class AudioAssetRequirement(BaseModel):
