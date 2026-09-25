@@ -56,8 +56,6 @@ Two authentication modes are supported:
 
 Default scope posture is read-only.
 
-Google's Drive API uses OAuth 2.0 for app user access and supports service-account credentials for server-side integrations. citeturn912184search9turn912184search5
-
 ## Setup
 
 From the repository root:
@@ -71,6 +69,7 @@ copy .env.example .env
 Populate credentials, then run:
 
 ```bash
+npm run typecheck
 npm run start
 ```
 
@@ -79,8 +78,6 @@ For local debugging:
 ```bash
 npm run inspect
 ```
-
-The current MCP TypeScript SDK v2 uses `@modelcontextprotocol/server`; local process integrations use stdio. citeturn912184search0turn912184search6
 
 ## Host configuration
 
