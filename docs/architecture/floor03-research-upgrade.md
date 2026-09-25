@@ -95,3 +95,25 @@ Additional references reviewed:
 - No model-specific camera or reference syntax was embedded in the canonical IR.
 - Research-only repositories and non-production reference implementations remain non-authoritative.
 - The F02 -> (F03 || F04) topology remains unchanged.
+
+## Research Wave 3 — 2026-09-25
+
+The research scope was widened again to 11 additional high-signal GitHub repositories plus six screened references. The repository-specific provenance records live under `.okf/research/repo-mappings/`.
+
+### Promoted F03 patterns
+
+- ComfyUI reinforces that a semantic plan can later compile to an executable graph without making the planning floor the execution owner.
+- ViMax and Diffusers reinforce first/last-frame conditioning. F03 now emits typed last-frame bindings for chain-dependent scenes.
+- Open-Sora reinforces explicit frame-oriented generation metadata; F03 keeps temporal semantics typed rather than hidden in prompts.
+- ai-video-studio reinforces durable plan objects while preserving TimelineIR as downstream playback truth.
+- ai-video-production-editor and StoryMind reinforce explicit camera/lighting metadata.
+- shotlist-forge supports deterministic coverage-role semantics.
+- script-to-shootable-storyboard and ai-film-director reinforce atomic stage artifacts, evidence lineage and bounded repair.
+
+### Implementation state
+
+F03 is now version 2.2.0 with AssetPlanIR schema 1.2.0. The new fields remain provider-neutral and backward-friendly through defaults. Motion-plan validation rejects beats that exceed the source scene duration.
+
+### Explicitly not promoted
+
+No provider/model routing, generation workflow JSON, physical generation, vendor credential handling, or downstream Timeline/F07 authority moved into F03.
