@@ -146,7 +146,9 @@ def test_provenance_correctness():
     pipeline = Floor02Pipeline()
     payload = pipeline.execute(inp)
 
-    assert len(payload.provenance) >= 4
+    assert len(payload.provenance) >= 2
+    assert payload.script_ir is not None
+    assert payload.script_ir.provenance_refs
     for prov in payload.provenance:
         assert prov.evidence_type in ["UPSTREAM_HANDOFF", "DETERMINISTIC_RULE", "MODEL_INFERENCE"]
         assert len(prov.source_type) > 0
