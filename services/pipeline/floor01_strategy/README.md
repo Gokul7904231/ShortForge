@@ -4,8 +4,8 @@
 **Guardian execution alias**: `floor01` (compatibility namespace)
 **Floor Version**: `2.0.0`
 **Location**: `services/pipeline/floor01_strategy/`
-**Status**: **Production-hardening complete on `feat/floor01-strategy-v2`; final promotion gated on fresh CI/runtime/security evidence**
-**Overseer Integration**: canonical Python runtime adapter plus validated-only handoff boundary implemented
+**Status**: **Production-gate GREEN on `feat/floor01-strategy-v2`**
+**Overseer Integration**: canonical Python runtime adapter plus validated-only handoff boundary implemented; PR #16 remains draft/unmerged
 
 **Report Persistence Classification**: `LOCAL_DEVELOPMENT_ARTIFACT_PERSISTENCE = IMPLEMENTED` | `CENTRALIZED_OVERSEER_PERSISTENCE = INTEGRATION_PENDING`  
 
@@ -81,7 +81,7 @@ Generated for Overseer control plane consumption. Contains execution metrics (ID
   - `INPUT_BOUNDARY_DEFENSE_IN_DEPTH = IMPLEMENTED` (bounded field/constraint sanitization, model-bound input sanitization, and request-size limits)
   - `FULL_PROMPT_INJECTION_RESILIENCE = NOT_GUARANTEED` (sanitization is defense-in-depth, not proof of arbitrary provider safety)
 - **Persistence Boundary**: Single-node multi-process file memory hardened with sidecar `.lock` process locking (`msvcrt`/`fcntl`), atomic file replace (`NamedTemporaryFile` + `os.replace`), corruption auto-recovery (`.corrupted.<timestamp>`), retention bounds (`max_records=1000`), full-request SHA-256 idempotency fingerprints, concurrent replay convergence, and fail-hard persistence errors. Multi-node shared memory remains intentionally unsupported until a shared backend is introduced.
-- **Report Persistence**: Local report artifact persistence to `used_artifact/reports/floor01_execution_<id>.json`. Centralized Overseer persistence transport marked `INTEGRATION_PENDING`.
+- **Report Persistence**: F01 persists its local execution artifact; Overseer also receives the canonical execution result through the existing control-plane event path. A separate shared report database is intentionally not introduced because Overseer remains the lifecycle authority and F01 memory is single-instance.
 
 ---
 
@@ -160,7 +160,7 @@ Authoritative design records:
 - docs/research/floor01-v2-architecture-candidates.md
 
 Verification note:
-The old 31-test claim in this README is historical task-827 evidence. v2 requires fresh branch CI verification.
+The old 31-test claim in this README is historical task-827 evidence. Current v2 verification is green in CI run #408 on head `7e79b9a2aa954ff8f8d22f887c06a1c720133e73`.
 New regression coverage is at services/pipeline/floor01_strategy/tests/test_v2_architecture.py.
 
 
