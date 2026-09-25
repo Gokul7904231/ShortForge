@@ -15,3 +15,13 @@ Not adopted:
 - Pydantic AI runtime or model/provider routing.
 
 Status: PATTERN_EXTRACTION
+
+## Current implementation status — 2026-09-25
+
+The mapped typed-output discipline is now enforced in F03's `AssetPlanIR` 1.3.0:
+- `extra="forbid"` across the IR models;
+- semantic validators for dependency/reference integrity;
+- required lineage and node identity fields;
+- deterministic fingerprint fields validated as part of the handoff.
+
+Status remains: PATTERN_EXTRACTION.
