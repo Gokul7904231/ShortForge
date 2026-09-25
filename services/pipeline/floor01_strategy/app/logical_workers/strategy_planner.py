@@ -60,6 +60,7 @@ class StrategyPlannerWorker:
                 "aspect_ratio": "9:16",
                 "max_hook_window_seconds": 3,
                 "cta_type": "subscribe_and_comment",
+                "max_duration_seconds": 60,
                 "layout_safe_zone": "center_vertical_safe",
             })
         elif platform == "tiktok":
@@ -69,6 +70,7 @@ class StrategyPlannerWorker:
                 "aspect_ratio": "9:16",
                 "max_hook_window_seconds": 2,
                 "cta_type": "follow_and_share",
+                "max_duration_seconds": 45,
                 "layout_safe_zone": "avoid_bottom_caption_overlap",
             })
         elif platform == "instagram_reels":
@@ -78,6 +80,7 @@ class StrategyPlannerWorker:
                 "aspect_ratio": "9:16",
                 "max_hook_window_seconds": 3,
                 "cta_type": "save_and_share",
+                "max_duration_seconds": 90,
                 "layout_safe_zone": "avoid_right_sidebar_icons",
             })
         elif platform == "linkedin_video":
@@ -87,6 +90,7 @@ class StrategyPlannerWorker:
                 "aspect_ratio": "16:9_or_1:1",
                 "max_hook_window_seconds": 8,
                 "cta_type": "connect_and_discuss",
+                "max_duration_seconds": 120,
                 "layout_safe_zone": "standard_subtitles",
             })
         elif platform == "twitter_video":
@@ -96,6 +100,7 @@ class StrategyPlannerWorker:
                 "aspect_ratio": "1:1",
                 "max_hook_window_seconds": 3,
                 "cta_type": "retweet_and_reply",
+                "max_duration_seconds": 140,
                 "layout_safe_zone": "standard",
             })
         else:
