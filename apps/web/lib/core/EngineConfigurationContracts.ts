@@ -154,10 +154,6 @@ export function validateEngineConfigurationSchema(
       errors.push("Field " + field.key + " has min > max.");
     }
 
-    if (field.required && !hasValue(field.defaultValue) && field.type !== "multi-select") {
-      errors.push("Required field " + field.key + " needs a default or an explicit runtime value.");
-    }
-
     if (field.options && hasValue(field.defaultValue)) {
       const values = field.options.map((option) => option.value);
       if (field.type === "multi-select") {
