@@ -55,3 +55,8 @@ Workers operate under strict distributed bounding principles:
 - **No Global Mutations**: Workers have zero direct access to modify user accounts, billing balances, or cluster configuration.
 - **Strict Fencing**: Any callback or artifact submission presenting a stale or mismatched fencing token is instantly discarded.
 - **Ephemeral Cleanup**: Scratch files generated during execution must be unlinked or garbage collected upon task completion.
+
+
+## 4. Canonical Permission Boundary
+
+Worker capability boundaries are defined by `.okf/security/worker-permissions.md`. Workers do not receive ambient authority; capability grants, resource scope, leases, fencing, and Guardian policy must all be satisfied before side effects.
