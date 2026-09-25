@@ -1,8 +1,4 @@
-"""Content Planning Logical Worker for Floor 01.
-
-Establishes core educational objectives, key takeaways, hook direction,
-call-to-action direction, structural outline, pacing guidance, and downstream Floor 02 requirements.
-"""
+"""Content Planning worker for Floor 01 v2."""
 
 from __future__ import annotations
 
@@ -17,7 +13,7 @@ from floors.floor01_strategy.app.domain.handoff import (
 
 
 class ContentPlannerWorker:
-    """Logical worker for core objective, hook direction, structural outline, pacing & downstream hints."""
+    """Build core objective, evidence-aware hook, outline, pacing and F02 requirements."""
 
     def run(
         self,
@@ -27,6 +23,11 @@ class ContentPlannerWorker:
     ) -> ContentPlanResult:
         topic = topic_res.selected_topic
         angle = strat_res.content_angle
+        evidence_hook = (
+            inp.research_context.recommended_hook
+            if inp.research_context and inp.research_context.recommended_hook
+            else None
+        )
 
         core_obj = f"Master the fundamental concept of {topic} through a clear, actionable mental model."
         takeaways = [
@@ -34,10 +35,16 @@ class ContentPlannerWorker:
             f"Avoid common misconceptions about {topic}",
             f"Apply the {angle} perspective in real-world scenarios",
         ]
+        if inp.research_context and inp.research_context.key_findings:
+            takeaways.extend(inp.research_context.key_findings[:2])
 
         if strat_res.format == "quiz_short":
-            hook_direction = f"Challenge viewer knowledge on {topic} with a progressive difficulty quiz."
-            cta_direction = f"Comment your score below and subscribe for daily {topic_res.category} trivia!"
+            hook_direction = (
+                evidence_hook
+                if evidence_hook
+                else f"Challenge viewer knowledge on {topic} with a progressive difficulty quiz."
+            )
+            cta_direction = f"Invite the viewer to respond with their score on {topic}."
             outline = ["Hook Card", "Easy Question", "Medium Question", "Hard Question", "Outro & CTA Card"]
             pacing = {
                 "Hook Card": 5,
@@ -52,31 +59,52 @@ class ContentPlannerWorker:
                 "include_explanations": True,
             }
         else:
-            hook_direction = f"Start with a provocative misconception about {topic} to spark instant curiosity."
-            cta_direction = f"Subscribe to FactoryOS Shorts for more essential {topic_res.category} breakdowns!"
-            outline = ["Curiosity Hook", "Core Concept Breakdown", "Practical Example", "Key Summary & CTA"]
+            hook_direction = (
+                evidence_hook
+                if evidence_hook
+                else f"Start with a concise curiosity gap grounded in the selected topic."
+            )
+            cta_direction = f"Invite the viewer to continue learning about {topic}."
+            outline = [
+                "Evidence-Grounded Hook",
+                "Core Concept Breakdown",
+                "Practical Example",
+                "Key Summary & CTA",
+            ]
+            total = strat_res.target_duration_seconds
+            hook_seconds = min(8, max(3, total // 10))
+            summary_seconds = min(10, max(5, total // 6))
+            core_seconds = max(10, int(total * 0.42))
+            example_seconds = max(5, total - hook_seconds - core_seconds - summary_seconds)
             pacing = {
-                "Curiosity Hook": 8,
-                "Core Concept Breakdown": 25,
-                "Practical Example": 17,
-                "Key Summary & CTA": 10,
+                "Evidence-Grounded Hook": hook_seconds,
+                "Core Concept Breakdown": core_seconds,
+                "Practical Example": example_seconds,
+                "Key Summary & CTA": summary_seconds,
             }
             downstream_reqs = {
                 "narrative_arc": "problem_solution",
                 "max_words_per_scene": 25,
+                "evidence_grounded_hook": bool(evidence_hook),
             }
 
         prov_entry = ProvenanceEntry(
-            evidence_type=EvidenceType.DETERMINISTIC_RULE,
+            evidence_type=EvidenceType.UPSTREAM_RESEARCH if evidence_hook else EvidenceType.DETERMINISTIC_RULE,
             source_type="content_blueprint_engine",
-            source_identifier="content_planner_policy",
-            method="generate_structure_and_pacing",
-            confidence_score=0.90,
-            summary=f"Generated outline '{outline}' and pacing for topic '{topic}'.",
+            source_identifier="content_planner_policy_v2",
+            method="evidence_aware_structure_and_pacing",
+            confidence_score=0.92 if evidence_hook else 0.90,
+            summary=f"Generated evidence-aware outline for topic '{topic}'.",
             raw_data={
                 "core_objective": core_obj,
                 "outline": outline,
                 "pacing": pacing,
+                "evidence_hook_used": bool(evidence_hook),
+                "research_passport_id": (
+                    inp.research_context.passport_id
+                    if inp.research_context
+                    else None
+                ),
             },
         )
 
