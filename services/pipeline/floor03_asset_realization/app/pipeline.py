@@ -317,6 +317,35 @@ class Floor03Pipeline:
         logger.info("floor03_execution_report_persisted", report_file=str(report_file))
         return payload, report
 
+    @staticmethod
+    def _rebuild_asset_plan_from_payload(payload: Floor03HandoffPayload) -> AssetPlanIR:
+        nodes: List[AssetPlanNode] = []
+        for req in sorted(payload.visual_asset_requirements, key=lambda item: item.sequence_index):
+            if req.scene_plan is None:
+                raise Floor03ValidationError(
+                    f"Missing scene plan for scene_id '{req.scene_id}' during regeneration."
+                )
+            nodes.append(
+                AssetPlanNode(
+                    scene_id=req.scene_id,
+                    sequence_index=req.sequence_index,
+                    visual=req.scene_plan,
+                    dependencies=[],
+                    target_duration_seconds=req.target_duration_seconds,
+                    impact_radius=[],
+                )
+            )
+        return AssetPlanIR(
+            plan_id=payload.asset_plan_id,
+            plan_version=payload.asset_plan_version,
+            script_id=payload.script_id,
+            script_version=payload.script_version,
+            platform=payload.resolved_platform,
+            aspect_ratio=payload.manifest.resolved_aspect_ratio,
+            resolution=payload.manifest.resolved_resolution,
+            nodes=nodes,
+        )
+
     def regenerate_scene_assets(
         self,
         current_payload: Floor03HandoffPayload,
@@ -366,6 +395,8 @@ class Floor03Pipeline:
             raw_data={"target_scene_id": target_scene_id, "instruction": new_prompt_instruction},
         )
         new_payload.provenance.append(new_prov)
+        if new_payload.asset_plan_ir is not None:
+            new_payload.asset_plan_ir = self._rebuild_asset_plan_from_payload(new_payload)
 
         logger.info("regenerate_scene_assets_completed", asset_plan_version=new_payload.asset_plan_version)
         return new_payload
