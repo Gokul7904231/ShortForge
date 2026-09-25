@@ -27,6 +27,10 @@ class RateLimiter:
 
     def check(self, client_ip: str) -> bool:
         now = time.time()
+        if client_ip not in self.tokens and len(self.tokens) >= self.max_clients:
+            oldest_ip = min(self.tokens.items(), key=lambda item: item[1][1])[0]
+            self.tokens.pop(oldest_ip, None)
+
         capacity, last_update = self.tokens.get(client_ip, (self.rate, now))
         elapsed = now - last_update
         capacity = min(self.rate, capacity + elapsed * (self.rate / 60.0))
