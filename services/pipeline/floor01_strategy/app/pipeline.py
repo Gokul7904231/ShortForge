@@ -81,84 +81,83 @@ class Floor01Pipeline:
 
         reservation_owner_token: Optional[str] = None
         try:
-            try:
+            claim_status, claimed_payload, reservation_owner_token = self.memory_store.claim_request(
+                inp.request_id,
+                input_fingerprint,
+            )
+        except ValueError as exc:
+            raise Floor01ValidationError(str(exc)) from exc
+
+        if claim_status == "WAIT":
+            wait_status, claimed_payload = self.memory_store.wait_for_request(
+                inp.request_id,
+                input_fingerprint,
+            )
+            if wait_status == "RETRY":
                 claim_status, claimed_payload, reservation_owner_token = self.memory_store.claim_request(
                     inp.request_id,
                     input_fingerprint,
                 )
-            except ValueError as exc:
-                raise Floor01ValidationError(str(exc)) from exc
-
-            if claim_status == "WAIT":
-                wait_status, claimed_payload = self.memory_store.wait_for_request(
-                    inp.request_id,
-                    input_fingerprint,
-                )
-                if wait_status == "RETRY":
-                    claim_status, claimed_payload, reservation_owner_token = self.memory_store.claim_request(
+                if claim_status == "WAIT":
+                    wait_status, claimed_payload = self.memory_store.wait_for_request(
                         inp.request_id,
                         input_fingerprint,
+                        timeout_seconds=10.0,
                     )
-                    if claim_status == "WAIT":
-                        wait_status, claimed_payload = self.memory_store.wait_for_request(
-                            inp.request_id,
-                            input_fingerprint,
-                            timeout_seconds=10.0,
-                        )
-                elif wait_status == "TIMEOUT":
-                    raise StrategyPipelineError(
-                        "Floor 01 idempotency reservation timed out.",
-                        detail="Owner did not publish a canonical result before the request deadline.",
-                        retryable=True,
-                    )
-
-            cached_payload_data = claimed_payload if claim_status == "COMPLETED" else None
-            if cached_payload_data:
-                cached_floor_id = cached_payload_data.get("floor_id")
-                cached_version = cached_payload_data.get("floor_version")
-                if cached_floor_id == settings.floor_id and cached_version == settings.floor_version:
-                    cached_fingerprint = cached_payload_data.get("input_fingerprint")
-                    if not cached_fingerprint:
-                        raise Floor01ValidationError(
-                            f"Idempotency record for request_id '{inp.request_id}' lacks a request fingerprint; use a new request_id."
-                        )
-                    if cached_fingerprint != input_fingerprint:
-                        raise Floor01ValidationError(
-                            f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for different request parameters."
-                        )
-                    payload = Floor01HandoffPayload.model_validate(cached_payload_data)
-                    report = FloorExecutionReport(
-                        request_id=inp.request_id,
-                        plan_id=payload.plan_id,
-                        floor_id=settings.floor_id,
-                        floor_version=settings.floor_version,
-                        started_at=started_at,
-                        duration_ms=round((time.time() - start_time) * 1000, 2),
-                        execution_mode=ExecutionModeDetails(
-                            global_mode=payload.execution_mode,
-                            worker_modes={"cached": payload.execution_mode},
-                            configured_provider=self.llm_adapter.provider_name,
-                            configured_model=self.llm_adapter.model_name,
-                            executed=self.llm_adapter.enabled,
-                            executed_model=self.llm_adapter.model_name if self.llm_adapter.enabled else None,
-                        ),
-                        status=payload.handoff_status,
-                        input_summary=inp.model_dump(),
-                        decision_quality_score=payload.decision_quality_score,
-                        handoff_reference={"plan_id": payload.plan_id, "cached": True},
-                    )
-                    return payload, report
-
-                logger.info(
-                    "ignoring_stale_f01_cached_payload",
-                    request_id=inp.request_id,
-                    cached_floor_id=cached_floor_id,
-                    cached_version=cached_version,
-                    expected_floor_id=settings.floor_id,
-                    expected_version=settings.floor_version,
+            if wait_status == "TIMEOUT":
+                raise StrategyPipelineError(
+                    "Floor 01 idempotency reservation timed out.",
+                    detail="Owner did not publish a canonical result before the request deadline.",
+                    retryable=True,
                 )
 
-            worker_summaries: List[WorkerExecutionSummary] = []
+        cached_payload_data = claimed_payload if claim_status == "COMPLETED" else None
+        if cached_payload_data:
+            cached_floor_id = cached_payload_data.get("floor_id")
+            cached_version = cached_payload_data.get("floor_version")
+            if cached_floor_id == settings.floor_id and cached_version == settings.floor_version:
+                cached_fingerprint = cached_payload_data.get("input_fingerprint")
+                if not cached_fingerprint:
+                    raise Floor01ValidationError(
+                        f"Idempotency record for request_id '{inp.request_id}' lacks a request fingerprint; use a new request_id."
+                    )
+                if cached_fingerprint != input_fingerprint:
+                    raise Floor01ValidationError(
+                        f"Idempotency conflict: request_id '{inp.request_id}' was previously processed for different request parameters."
+                    )
+                payload = Floor01HandoffPayload.model_validate(cached_payload_data)
+                report = FloorExecutionReport(
+                    request_id=inp.request_id,
+                    plan_id=payload.plan_id,
+                    floor_id=settings.floor_id,
+                    floor_version=settings.floor_version,
+                    started_at=started_at,
+                    duration_ms=round((time.time() - start_time) * 1000, 2),
+                    execution_mode=ExecutionModeDetails(
+                        global_mode=payload.execution_mode,
+                        worker_modes={"cached": payload.execution_mode},
+                        configured_provider=self.llm_adapter.provider_name,
+                        configured_model=self.llm_adapter.model_name,
+                        executed=self.llm_adapter.enabled,
+                        executed_model=self.llm_adapter.model_name if self.llm_adapter.enabled else None,
+                    ),
+                    status=payload.handoff_status,
+                    input_summary=inp.model_dump(),
+                    decision_quality_score=payload.decision_quality_score,
+                    handoff_reference={"plan_id": payload.plan_id, "cached": True},
+                )
+                return payload, report
+
+            logger.info(
+                "ignoring_stale_f01_cached_payload",
+                request_id=inp.request_id,
+                cached_floor_id=cached_floor_id,
+                cached_version=cached_version,
+                expected_floor_id=settings.floor_id,
+                expected_version=settings.floor_version,
+            )
+
+        worker_summaries: List[WorkerExecutionSummary] = []
         warnings: List[str] = []
         errors: List[str] = []
 
