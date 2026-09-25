@@ -495,3 +495,32 @@ These decisions extend existing TimelineIR, CAS, bounded-repair, and RenderFabri
 production-helper is a routine engineering validation station. Security-sensitive, rendering-sensitive, distributed-worker, callback, quota, or production-authority changes must consult its evidence and run the relevant available checks.
 
 Helper output is evidence, not architectural authority.
+
+
+## 26. Mandatory .okf Decision Sweep
+
+This is now a locked process rule for all future ShortForge decisions.
+
+Before deciding, changing, or promoting architecture, workers, permissions, models, rendering, workflows, provider integrations, or Devourer behavior, analyse the entire current `.okf` tree end to end. Extract existing rules, current implementation facts, target states, contradictions, relevant repository mappings, audit evidence, and production-helper evidence before proposing a new change.
+
+The mandatory protocol is defined in `.okf/decision-protocol.md`.
+
+## 27. Core Engineering Stack Locked
+
+The current media engineering direction is:
+
+`.TimelineIR → Remotion → Render Compiler → RenderFabric → F06 Worker → F07` with FFmpeg retained as the deterministic physical renderer/fallback.
+
+AgentTube is the selected scene-lifecycle pattern source for durable scene manifests, checkpoints, audio-first timing, content-addressed reuse, and selective scene repair.
+
+## 28. Worker Permissions Locked
+
+All workers operate under `.okf/security/worker-permissions.md`. No worker receives ambient authority. Capability, scope, policy, lease, fencing, and verification requirements remain explicit.
+
+## 29. Production Helper Routine Locked
+
+`production-helper/` is a routine validation station. Relevant evidence must be consulted and the applicable checks run for security, worker permission, rendering, callback, provider, quota, architecture, and release changes.
+
+## 30. Devourer Governance Locked
+
+The root Devourer charter is `.okf/devourer.md`. Devourer may research, prototype, train candidates, benchmark, evaluate, and canary; it may not silently promote production weights, permissions, contracts, security policy, or architecture.
