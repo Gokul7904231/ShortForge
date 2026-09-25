@@ -29,6 +29,7 @@ from floor01_strategy.app.core.exceptions import (
 from floor01_strategy.app.core.research_gate import ResearchEvidenceGate
 from floor01_strategy.app.core.request_fingerprint import fingerprint_floor01_input
 from floor01_strategy.app.domain.handoff import (
+    EvidenceType,
     ExecutionMode,
     ExecutionModeDetails,
     Floor01HandoffPayload,
@@ -224,7 +225,9 @@ class Floor01Pipeline:
             candidates = self.candidate_engine.generate(
                 inp,
                 topic_res,
-                llm_insight if self.llm_adapter.enabled else None,
+                llm_insight
+                if llm_prov and llm_prov.evidence_type == EvidenceType.MODEL_INFERENCE
+                else None,
             )
             evaluations = [
                 self.candidate_evaluator.evaluate(
@@ -610,7 +613,12 @@ class Floor01Pipeline:
                 encoding="utf-8",
             )
         except Exception as exc:
-            logger.warning(
+            logger.error(
                 "failed_to_persist_execution_report_artifact",
-                error=str(exc),
+                error_type=type(exc).__name__,
             )
+            raise StrategyPipelineError(
+                "Floor 01 execution report persistence failed.",
+                detail="Canonical execution evidence could not be persisted.",
+                retryable=True,
+            ) from exc
