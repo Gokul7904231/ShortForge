@@ -1004,3 +1004,15 @@ Validation evidence:
 - F02 production tests passed in the same run; Team Change Gate also passed.
 
 This section records the current state before the next fresh CI run. No production-green or merge claim is made until that run completes.
+
+
+## Guardian import-boundary correction — 2026-09-25
+
+The F03 Guardian gate exposed a repository-layout compatibility gap: Guardian source imports use the canonical Python namespace `factoryos.guardian.*`, while the implementation is physically stored under `services/pipeline/guardian`.
+
+Resolution:
+- added the root `factoryos/guardian` compatibility bridge to the canonical Guardian package;
+- added `factoryos/__init__.py` as the Python namespace root;
+- added `factoryos/**` to the Floor 02 + Floor 03 production-gate trigger paths.
+
+No Guardian implementation was duplicated or moved. The bridge only exposes the existing package through its canonical import namespace.
