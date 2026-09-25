@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=83", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shortforge-floor01-strategy"
+version = "2.0.0"
+description = "ShortForge FactoryOS Floor 01 Strategy & Intelligence service"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi>=0.141,<1",
+  "pydantic>=2,<3",
+  "pydantic-settings>=2,<3",
+  "structlog>=24,<27",
+  "uvicorn[standard]>=0.30,<1",
+]
+
+[project.optional-dependencies]
+test = [
+  "httpx>=0.28,<1",
+  "pytest>=8,<10",
+  "pytest-asyncio>=0.24,<2",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["floor01_strategy*"]

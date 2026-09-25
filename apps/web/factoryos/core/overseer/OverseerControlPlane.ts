@@ -44,6 +44,7 @@ import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentCont
 import { TemplateRegistry } from "../../../lib/templates/registry/TemplateRegistry";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
+import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -645,14 +646,27 @@ export class OverseerControlPlane {
         });
 
         const analystOutput = node.dependencyOutputs?.["task_f00_analyst"]?.output || scope.analystReport || sharedScope.analystReport;
-        const strategyPayload = {
-          topic: scope.topic || node.payload?.topic || analystOutput?.topic || "Auto Topic",
-          style: scope.style || "informative",
-          targetAudience: "general",
-          recommendedHook: analystOutput?.hookIntelligence?.recommendedHook,
-          hookArchetype: analystOutput?.hookIntelligence?.hookArchetype || "CURIOSITY_GAP",
-          hasCorroboratedPassport: Boolean(analystOutput?.passport),
-        };
+        if (!analystOutput?.passport) {
+          throw new Error("F01_UPSTREAM_RESEARCH_MISSING: Floor 01 requires F00 AnalystReport/ResearchPassport.");
+        }
+
+        const f01Request = Floor01RuntimeAdapter.fromAnalystReport(
+          `f01_${missionId || "direct"}_${node.taskId}`,
+          analystOutput,
+          {
+            targetAudience: scope.engineSnapshot?.effectiveConfig?.audience || "general_learners",
+            platform: scope.productionSpec?.configuration?.creative?.platform || "youtube_shorts",
+            contentFormat: scope.productionSpec?.configuration?.content?.format || "educational_short",
+            nicheContext: scope.productionSpec?.configuration?.content?.niche,
+            learningLevel: scope.productionSpec?.configuration?.content?.learningLevel || "beginner",
+            constraints: scope.productionSpec?.configuration?.content?.constraints || {},
+          },
+        );
+
+        const canonicalF01 = await new Floor01RuntimeAdapter().execute(f01Request);
+        const strategyPayload = canonicalF01;
+        scope.strategy = strategyPayload;
+        sharedScope.strategy = strategyPayload;
 
         scope.strategy = strategyPayload;
         sharedScope.strategy = strategyPayload;
@@ -711,7 +725,12 @@ export class OverseerControlPlane {
         });
 
         const upstreamStrategy = node.dependencyOutputs?.["task_f01_strategy"]?.output || sharedScope.strategy;
-        const effectiveTopic = upstreamStrategy?.topic || scope.topic || "Factual Topic";
+        const effectiveTopic =
+          typeof upstreamStrategy?.topic === "string"
+            ? upstreamStrategy.topic
+            : upstreamStrategy?.topic?.selected_topic ||
+              scope.topic ||
+              "Factual Topic";
         const effectiveTemplateId = scope.templateId || sharedScope.templateId || node.payload?.templateId;
         const templateRegistry = TemplateRegistry.getInstance();
         const templateDef = effectiveTemplateId ? templateRegistry.getTemplate(effectiveTemplateId) : null;
@@ -773,7 +792,9 @@ export class OverseerControlPlane {
             quizData: scope.quizData || null,
           };
         } else {
-          const hookText = upstreamStrategy?.recommendedHook || `Did you know these astonishing facts about ${effectiveTopic}?`;
+          const hookText =
+            upstreamStrategy?.content_plan?.hook_direction ||
+            `Did you know these astonishing facts about ${effectiveTopic}?`;
           const scriptText = scope.script || `${hookText} Deep exploration reveals truths that defy expectations.`;
           const scenes = (scope.scenes && scope.scenes.length > 0) ? scope.scenes : [
             { text: hookText, durationSeconds: 2 },

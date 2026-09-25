@@ -101,14 +101,22 @@ export interface EngineJobSnapshot {
   manifestVersion: string;
   engineConfigVersion: number;
   engineStatusAtCreation: EngineStatus;
+  /** Immutable identifier of the compiled ProductionSpec used for the job. */
+  productionSpecId: string;
+  /** Immutable SHA-256-like compilation fingerprint of the ProductionSpec. */
+  productionSpecHash: string;
   effectiveConfig: {
     difficulty?: string;
+    audience?: string;
     tone?: string;
     voice?: string;
+    thumbnailStyle?: string;
     ratio?: string;
     renderProfile?: string;
     provider?: string;
     durationSeconds?: number;
+    retentionHours?: number;
+    platforms?: string[];
   };
   quizContext?: {
     quizMode: "geo" | "custom_single" | "custom_multiple";

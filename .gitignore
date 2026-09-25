@@ -146,3 +146,8 @@ controller-output/
 **/controller-output/
 
 
+
+# Floor 01 runtime state
+services/pipeline/floor01_strategy/data/*.json
+services/pipeline/floor01_strategy/data/*.lock
+services/pipeline/floor01_strategy/used_artifact/

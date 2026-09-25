@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.domain.handoff import (
     BloomLevel,
     CurriculumMapResult,
     EvidenceType,

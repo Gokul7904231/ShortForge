@@ -5,16 +5,18 @@ Primary application layer entrypoint for executing Floor 01.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import List, Optional, Tuple
 
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.domain.handoff import (
     Floor01HandoffPayload,
     Floor01Input,
     FloorExecutionReport,
     TopicIntelligenceResult,
 )
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
-from floors.floor01_strategy.app.pipeline import Floor01Pipeline
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.pipeline import Floor01Pipeline
 
 
 class Floor01Service:
@@ -24,7 +26,14 @@ class Floor01Service:
         self,
         memory_store: Optional[StrategyMemoryStore] = None,
     ) -> None:
-        self.memory_store = memory_store or StrategyMemoryStore()
+        if memory_store is not None:
+            self.memory_store = memory_store
+        else:
+            settings = get_settings()
+            storage_path = Path(settings.memory_file_path)
+            if not storage_path.is_absolute():
+                storage_path = Path(__file__).resolve().parents[1] / storage_path
+            self.memory_store = StrategyMemoryStore(storage_path=str(storage_path))
         self.pipeline = Floor01Pipeline(memory_store=self.memory_store)
 
     def plan_strategy(self, input_data: Floor01Input, strict_rejection: bool = False) -> Floor01HandoffPayload:
@@ -42,7 +51,7 @@ class Floor01Service:
         return self.pipeline.topic_worker.run(input_data)
 
     def get_memory_topics(self) -> List[str]:
-        """Return list of historical topics stored in memory."""
+        """Return list of historical topics stored in strategy memory."""
         return self.memory_store.get_all_topics()
 
     def clear_memory(self) -> None:

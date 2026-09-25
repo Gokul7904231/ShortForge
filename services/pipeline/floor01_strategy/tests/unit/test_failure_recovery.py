@@ -2,16 +2,16 @@
 
 import pytest
 
-from floors.floor01_strategy.app.core.config import get_settings
-from floors.floor01_strategy.app.core.exceptions import (
+from floor01_strategy.app.core.config import get_settings
+from floor01_strategy.app.core.exceptions import (
     DuplicateTopicError,
     LowConfidenceError,
     UnsupportedFormatError,
     UnsupportedPlatformError,
 )
-from floors.floor01_strategy.app.domain.handoff import Floor01Input, HandoffStatus
-from floors.floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
-from floors.floor01_strategy.app.pipeline import Floor01Pipeline
+from floor01_strategy.app.domain.handoff import Floor01Input, HandoffStatus
+from floor01_strategy.app.infrastructure.memory_store import StrategyMemoryStore
+from floor01_strategy.app.pipeline import Floor01Pipeline
 
 
 def test_unsupported_platform_error():

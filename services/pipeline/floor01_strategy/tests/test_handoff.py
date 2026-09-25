@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from floors.floor01_strategy.app.domain.handoff import (
+from floor01_strategy.app.domain.handoff import (
     BloomLevel,
     ContentPlanResult,
     CurriculumMapResult,

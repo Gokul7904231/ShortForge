@@ -13,7 +13,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 import structlog
@@ -74,6 +74,7 @@ class StrategyMemoryStore:
         self.max_records = max_records
         self._records: List[Dict[str, Any]] = []
         self._idempotency_map: Dict[str, Dict[str, Any]] = {}
+        self._reservations: Dict[str, Dict[str, Any]] = {}
 
         if self.storage_path and self.storage_path.exists():
             self._load_from_disk(skip_lock=False)
@@ -119,10 +120,16 @@ class StrategyMemoryStore:
 
             if isinstance(data, dict) and "records" in data:
                 disk_records = data.get("records", [])
+                disk_reservations = data.get("reservations", {})
             elif isinstance(data, list):
                 disk_records = data
+                disk_reservations = {}
             else:
                 disk_records = []
+                disk_reservations = {}
+
+            if isinstance(disk_reservations, dict):
+                self._reservations.update(disk_reservations)
 
             # Merge disk records with in-memory records
             seen_keys = {r.get("record_id") or r.get("request_id") or r.get("topic") for r in self._records if r}
@@ -153,6 +160,7 @@ class StrategyMemoryStore:
 
         self._records = []
         self._idempotency_map = {}
+        self._reservations = {}
 
     def _rebuild_idempotency_map(self) -> None:
         self._idempotency_map.clear()
@@ -190,6 +198,7 @@ class StrategyMemoryStore:
                 "updated_at": datetime.now(timezone.utc).isoformat(),
                 "record_count": len(self._records),
                 "records": self._records,
+                "reservations": self._reservations,
             }
 
             with temp_file as f:
@@ -212,11 +221,12 @@ class StrategyMemoryStore:
 
         except Exception as exc:
             logger.error("strategy_memory_save_failed", error=str(exc))
-            if 'temp_file' in locals() and os.path.exists(temp_file.name):
+            if "temp_file" in locals() and os.path.exists(temp_file.name):
                 try:
                     os.remove(temp_file.name)
                 except Exception:
                     pass
+            raise
         finally:
             if lock_file:
                 _unlock_file(lock_file)
@@ -229,7 +239,7 @@ class StrategyMemoryStore:
         request_id: Optional[str] = None,
         payload: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    ) -> Optional[Dict[str, Any]]:
         lock_path = self._get_lock_path()
         lock_file = None
         if lock_path:
@@ -246,8 +256,9 @@ class StrategyMemoryStore:
             if request_id:
                 for rec in self._records:
                     if rec.get("request_id") == request_id:
+                        existing_payload = rec.get("payload") or {}
                         logger.info("skip_duplicate_idempotent_add_record", request_id=request_id)
-                        return
+                        return existing_payload
 
             record = {
                 "record_id": str(uuid4()),
@@ -268,10 +279,121 @@ class StrategyMemoryStore:
 
             if request_id:
                 self._idempotency_map[request_id] = payload or {}
+                self._reservations.pop(request_id, None)
 
             # Pass skip_lock=True to save_to_disk as lock_file is already held
             self.save_to_disk(skip_lock=True)
 
+        finally:
+            if lock_file:
+                _unlock_file(lock_file)
+                lock_file.close()
+
+    def claim_request(
+        self,
+        request_id: str,
+        input_fingerprint: str,
+        ttl_seconds: float = 120.0,
+    ) -> Tuple[str, Optional[Dict[str, Any]], Optional[str]]:
+        """Atomically claim an idempotent request across OS processes.
+
+        Returns (status, payload, owner_token), where status is OWNER, WAIT,
+        or COMPLETED. A fingerprint conflict raises ValueError.
+        """
+        now = time.time()
+        lock_path = self._get_lock_path()
+        lock_file = None
+
+        if lock_path:
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            lock_file = open(lock_path, "a+")
+            _lock_file(lock_file)
+
+        try:
+            if self.storage_path and self.storage_path.exists():
+                self._load_from_disk(skip_lock=True)
+
+            completed = self._idempotency_map.get(request_id)
+            if completed:
+                cached_fingerprint = completed.get("input_fingerprint")
+                if cached_fingerprint and cached_fingerprint != input_fingerprint:
+                    raise ValueError("Idempotency conflict: request fingerprint does not match the completed request.")
+                return "COMPLETED", completed, None
+
+            existing = self._reservations.get(request_id)
+            if existing:
+                if existing.get("input_fingerprint") != input_fingerprint:
+                    raise ValueError("Idempotency conflict: request fingerprint does not match the in-flight request.")
+                expires_at = float(existing.get("expires_at", 0.0))
+                if expires_at > now:
+                    return "WAIT", None, None
+                self._reservations.pop(request_id, None)
+
+            owner_token = str(uuid4())
+            self._reservations[request_id] = {
+                "input_fingerprint": input_fingerprint,
+                "owner_token": owner_token,
+                "created_at": now,
+                "expires_at": now + max(5.0, ttl_seconds),
+            }
+            self.save_to_disk(skip_lock=True)
+            return "OWNER", None, owner_token
+        finally:
+            if lock_file:
+                _unlock_file(lock_file)
+                lock_file.close()
+
+    def wait_for_request(
+        self,
+        request_id: str,
+        input_fingerprint: str,
+        timeout_seconds: float = 130.0,
+        poll_seconds: float = 0.025,
+    ) -> Tuple[str, Optional[Dict[str, Any]]]:
+        """Wait for the current owner to publish a canonical result or release its reservation."""
+        deadline = time.time() + timeout_seconds
+        while time.time() < deadline:
+            payload = self.get_idempotent_payload(request_id)
+            if payload is not None:
+                cached_fingerprint = payload.get("input_fingerprint")
+                if cached_fingerprint and cached_fingerprint != input_fingerprint:
+                    raise ValueError("Idempotency conflict: completed request fingerprint differs.")
+                return "COMPLETED", payload
+
+            now = time.time()
+            reservation = self.get_request_reservation(request_id)
+            if reservation is None or float(reservation.get("expires_at", 0.0)) <= now:
+                return "RETRY", None
+            if reservation.get("input_fingerprint") != input_fingerprint:
+                raise ValueError("Idempotency conflict: in-flight request fingerprint differs.")
+            time.sleep(poll_seconds)
+
+        return "TIMEOUT", None
+
+    def get_request_reservation(self, request_id: str) -> Optional[Dict[str, Any]]:
+        if self.storage_path and self.storage_path.exists():
+            self._load_from_disk()
+        return dict(self._reservations.get(request_id)) if request_id in self._reservations else None
+
+    def release_request(self, request_id: str, owner_token: Optional[str]) -> None:
+        """Release an in-flight request reservation owned by this process."""
+        if not owner_token:
+            return
+
+        lock_path = self._get_lock_path()
+        lock_file = None
+        if lock_path:
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            lock_file = open(lock_path, "a+")
+            _lock_file(lock_file)
+
+        try:
+            if self.storage_path and self.storage_path.exists():
+                self._load_from_disk(skip_lock=True)
+            reservation = self._reservations.get(request_id)
+            if reservation and reservation.get("owner_token") == owner_token:
+                self._reservations.pop(request_id, None)
+                self.save_to_disk(skip_lock=True)
         finally:
             if lock_file:
                 _unlock_file(lock_file)
@@ -291,4 +413,5 @@ class StrategyMemoryStore:
     def clear(self) -> None:
         self._records.clear()
         self._idempotency_map.clear()
+        self._reservations.clear()
         self.save_to_disk()
