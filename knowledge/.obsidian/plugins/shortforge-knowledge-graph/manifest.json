@@ -1,0 +1,9 @@
+{
+  "id": "shortforge-knowledge-graph",
+  "name": "ShortForge Knowledge Graph",
+  "version": "0.1.0",
+  "minAppVersion": "1.7.2",
+  "description": "Interactive relation graph for ShortForge knowledge with force motion, semantic links, filtering, and node navigation.",
+  "author": "ShortForge",
+  "isDesktopOnly": false
+}
