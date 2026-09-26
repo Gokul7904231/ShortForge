@@ -153,15 +153,10 @@ async function testExplicitPromotion(): Promise<void> {
   }
   await bridge.drain();
 
-  const healthAfterPromotion = await bridge.getHealth();
   const promoted = store
     .list()
-    .find((doc) => doc.frontmatter.sf_lifecycle === "active" && doc.frontmatter.sf_memory_record_key);
+    .find((doc) => doc.filePath.includes("obsidian/candidates") && doc.frontmatter.sf_lifecycle === "active" && doc.frontmatter.sf_memory_record_key);
 
-  if (!promoted) {
-    console.error("EXPLICIT_PROMOTION_DEBUG", JSON.stringify(healthAfterPromotion));
-    console.error("EXPLICIT_PROMOTION_DOCS", JSON.stringify(store.list().map((doc) => ({ id: doc.frontmatter.id, lifecycle: doc.frontmatter.sf_lifecycle, verification: doc.frontmatter.sf_verification_state, quality: doc.frontmatter.sf_quality_state }))));
-  }
   assert.ok(promoted);
   assert.equal(promoted.frontmatter.sf_verification_state, "verified");
   assert.equal(promoted.frontmatter.sf_quality_state, "VALID");
