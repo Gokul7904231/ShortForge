@@ -13,6 +13,10 @@ def test_registry_register_and_retrieve(tmp_path):
     registry = MediaAssetRegistry(registry_file_path=str(reg_file))
 
     rights = RightsMetadata(source_type=AssetSourceType.DETERMINISTIC_SYNTHESIS, provider_name="test_provider")
+    storage_path = tmp_path / "asset-vis-01.png"
+    storage_path.write_bytes(b"test-image-bytes")
+    storage_path = tmp_path / "asset-aud-01.mp3"
+    storage_path.write_bytes(b"test-audio-bytes")
     rec = MediaAssetRecord(
         asset_id="asset-vis-01",
         scene_id="sc-01",
