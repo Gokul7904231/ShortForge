@@ -218,7 +218,7 @@ describe("Floor 03 Overseer & Durability Integration", () => {
       return { overseer, eventBus, worldState };
     }
 
-    it("executes the full F02 -> F03 pipeline, persists durably, and makes output available for F05", async () => {
+    it("executes the Overseer F03 task boundary from a validated F02 handoff, persists durably, and makes output available downstream", async () => {
       const fetchMock = vi.fn().mockResolvedValue(
         new Response(JSON.stringify(createValidF03ServiceResponse()), {
           status: 200,
@@ -237,16 +237,13 @@ describe("Floor 03 Overseer & Durability Integration", () => {
       const executors = (overseer as any).getTaskExecutorsForFloors("mission-test-01");
       const f02Handoff = createValidF02Handoff();
 
-      // Mock F02 output in sharedScope
-      // In OverseerControlPlane, executors share scope across floor tasks
-      // First run F03 task
+      // This test intentionally supplies a validated F02 handoff; it does not execute the F02 runtime.
       const node = {
         taskId: "task_f03_asset_realization",
         capabilityId: "FLOOR_ASSET_REALIZATION",
       };
 
-      // Set F02 handoff in sharedScope via mission scope or directly
-      // Test the F03 executor logic:
+      // Verify the F03 executor fails closed without the canonical upstream handoff:
       const f03Executor = executors.FLOOR_ASSET_REALIZATION;
 
       // Without F02 handoff, it must fail closed
@@ -254,27 +251,13 @@ describe("Floor 03 Overseer & Durability Integration", () => {
         /Canonical Floor 02 handoff is missing; refusing non-canonical F03 execution/i
       );
 
-      // Now inject F02 handoff by running in mission context
       const missionScope = {
         f02Handoff,
         platform: "youtube_shorts",
         aspectRatio: "9:16",
       };
 
-      // Create a mission in missionManager if present, or assign to mission scope
-      const missionManager = (overseer as any).missionManager;
-      if (missionManager) {
-        await missionManager.createMission({
-          missionId: "mission-test-01",
-          objective: "test objective",
-          scope: missionScope,
-        });
-      }
-
-      // Or recreate executors with mission scope
-      const missionExecutors = (overseer as any).getTaskExecutorsForFloors("mission-test-01");
-      // We can also pass scope through the node or sharedScope
-      // Let's test execution with mock mission scope:
+      // Supply the validated upstream handoff through the same mission lookup boundary used in production.
       (overseer as any).missionManager = {
         getMission: vi.fn().mockResolvedValue({
           missionId: "mission-test-01",
@@ -282,6 +265,8 @@ describe("Floor 03 Overseer & Durability Integration", () => {
         }),
         updateProgress: vi.fn().mockResolvedValue(true),
       };
+
+      const missionExecutors = (overseer as any).getTaskExecutorsForFloors("mission-test-01");
 
       const result = await missionExecutors.FLOOR_ASSET_REALIZATION(node);
 
