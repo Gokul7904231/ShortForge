@@ -62,6 +62,9 @@ export class MemoryFabricProjectionService {
     maxChars: number,
     mode: "AGENT" | "ASCALON",
   ): MemoryFabricProjection {
+    // Obsidian/human edits occur outside the process; refresh the semantic store before every bounded read.
+    this.knowledgeStore.reload();
+
     const now = Date.now();
     const candidateDocs = this.knowledgeStore
       .list({ sf_lifecycle: "active" })
