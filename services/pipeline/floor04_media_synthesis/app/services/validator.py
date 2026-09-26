@@ -153,6 +153,55 @@ class PhysicalMediaValidator:
         return duration
 
     @classmethod
+    def _jpeg_dimensions(cls, path: Path) -> Tuple[int, int]:
+        data = path.read_bytes()
+        if not data.startswith(b"\xff\xd8") or not data.endswith(JPEG_EOI):
+            raise GuardianValidationError(f"Decoder Failure: malformed JPEG framing in '{path}'")
+
+        i = 2
+        sof_markers = {
+            0xC0, 0xC1, 0xC2, 0xC3,
+            0xC5, 0xC6, 0xC7,
+            0xC9, 0xCA, 0xCB,
+            0xCD, 0xCE, 0xCF,
+        }
+
+        while i + 3 < len(data):
+            if data[i] != 0xFF:
+                i += 1
+                continue
+
+            while i < len(data) and data[i] == 0xFF:
+                i += 1
+            if i >= len(data):
+                break
+
+            marker = data[i]
+            i += 1
+
+            if marker in (0xD8, 0xD9) or 0x01 or 0xD0 <= marker <= 0xD7:
+                continue
+
+            if i + 1 >= len(data):
+                break
+            length = int.from_bytes(data[i:i + 2], "big")
+            if length < 2 or i + length > len(data):
+                raise GuardianValidationError(f"Decoder Failure: truncated JPEG segment in '{path}'")
+
+            if marker in sof_markers:
+                if length < 7:
+                    raise GuardianValidationError(f"Decoder Failure: malformed JPEG SOF segment in '{path}'")
+                height = int.from_bytes(data[i + 3:i + 5], "big")
+                width = int.from_bytes(data[i + 5:i + 7], "big")
+                if width <= 0 or height <= 0:
+                    raise GuardianValidationError(f"Decoder Failure: invalid JPEG dimensions in '{path}'")
+                return width, height
+
+            i += length
+
+        raise GuardianValidationError(f"Decoder Failure: JPEG SOF dimensions not found in '{path}'")
+
+    @classmethod
     def validate_image_asset(
         cls,
         file_path: str,
@@ -186,13 +235,12 @@ class PhysicalMediaValidator:
                 raise GuardianValidationError(f"Decoder Failure: PNG missing IEND in '{file_path}'")
         elif data.startswith(JPEG_SOI):
             mime_type = "image/jpeg"
-            if len(data) < 4 or not data.endswith(JPEG_EOI):
-                raise GuardianValidationError(f"Decoder Failure: corrupt JPEG footer in '{file_path}'")
-            # JPEG dimensions must be resolved by a real decoder/provider before handoff.
-            raise GuardianValidationError(
-                "Decoder Failure: JPEG physical-dimension inspection is not available in the "
-                "portable Floor 04 validator; convert/normalize to PNG before handoff."
-            )
+            width, height = cls._jpeg_dimensions(p)
+            if width != required_width or height != required_height:
+                raise GuardianValidationError(
+                    f"Contract Requirement Violation: physical JPEG dimensions {width}x{height} do not match "
+                    f"requested {required_width}x{required_height}"
+                )
         else:
             raise GuardianValidationError(f"Physical Media Validation Failed: unsupported image magic bytes: '{file_path}'")
 
