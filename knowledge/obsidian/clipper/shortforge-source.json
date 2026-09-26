@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "ShortForge — Source Capture",
+  "behavior": "create",
+  "noteNameFormat": "{{date|date:\"YYYY-MM-DD\"}} — {{title|safe_name}}",
+  "path": "raw/web",
+  "context": "{{content}}",
+  "properties": [
+    {
+      "name": "source_url",
+      "value": "{{url}}",
+      "type": "text"
+    },
+    {
+      "name": "source_title",
+      "value": "{{title}}",
+      "type": "text"
+    },
+    {
+      "name": "memory_type",
+      "value": "source",
+      "type": "text"
+    },
+    {
+      "name": "sf_epistemic_state",
+      "value": "sourced",
+      "type": "text"
+    },
+    {
+      "name": "sf_verification_state",
+      "value": "unverified",
+      "type": "text"
+    }
+  ],
+  "triggers": [],
+  "noteContentFormat": "# {{title}}\n\n## Source\n{{url}}\n\n## Captured content\n{{content}}\n\n## Compilation notes\n- Pending ShortForge memory compilation.\n"
+}
