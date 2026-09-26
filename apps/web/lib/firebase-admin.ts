@@ -40,6 +40,14 @@ class MockDocRef {
     map.set(this.id, { ...newData, updatedAt: new Date().toISOString() });
   }
 
+  async create(data: any) {
+    const map = getMockCollectionMap(this.collName);
+    if (map.has(this.id)) {
+      throw new Error(`Document already exists: ${this.id}`);
+    }
+    map.set(this.id, { ...data, updatedAt: new Date().toISOString() });
+  }
+
   async update(data: any) {
     const map = getMockCollectionMap(this.collName);
     const existing = map.get(this.id) || {};

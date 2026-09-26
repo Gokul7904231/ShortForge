@@ -1,6 +1,6 @@
 # Floor 03 Research Upgrade — Evidence & Adoption Ledger
 
-**Current branch contract:** Floor 03 `2.3.0`; AssetPlanIR `1.3.0`.
+**Current branch contract:** Floor 03 `2.3.0`; AssetPlanIR `1.4.0`.
 
 ## Status
 Implementation branch: `feat/f03-research-upgrade`
