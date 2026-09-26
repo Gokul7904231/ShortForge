@@ -416,7 +416,7 @@ class GraphView extends ItemView {
       if(!n.el)continue;
       n.el.style.display=n._visible?"":"none";n.el.setAttribute("transform","translate("+n.x+","+n.y+")");n.circle.setAttribute("r",5.5+this.s.nodeSize*2.2);
       const selected=focus&&focus.id===n.id,connected=focus&&this.graph.edges.some(e=>(e.source.id===focus.id||e.target.id===focus.id)&&(e.source.id===n.id||e.target.id===n.id));
-      n.el.style.opacity=has?(selected||connected?"1":".16"):" .92";n.el.classList.toggle("is-selected",!!selected);n.el.classList.toggle("is-connected",!!connected);
+      n.el.style.opacity=has?(selected||connected?"1":".16"):".92";n.el.classList.toggle("is-selected",!!selected);n.el.classList.toggle("is-connected",!!connected);
       const lo=this.zoom>this.s.textFade?1:Math.max(0,(this.zoom-this.s.textFade+.08)/.2);n.labelEl.style.opacity=lo;n.labelEl.style.fontSize=(10/Math.max(.7,this.zoom))+"px";
     }
   }
