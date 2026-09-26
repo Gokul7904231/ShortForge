@@ -121,7 +121,7 @@ const knownBasenames = new Set(files.map((file) => path.basename(file, ".md")));
 for (const file of files) {
   const rel = path.relative(root,file).replaceAll(path.sep,"/");
   const text = fs.readFileSync(file,"utf8");
-  const linkRegex = /\\[\\[([^\\]|#]+)(?:#[^\\]|]+)?(?:\\|[^\\]]+)?\\]\\]/g;
+  const linkRegex = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g;
   let match;
   while ((match = linkRegex.exec(text)) !== null) {
     const target = match[1].trim();
