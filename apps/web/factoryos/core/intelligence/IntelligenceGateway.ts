@@ -19,6 +19,7 @@ import { ContextCompiler } from "./context/ContextCompiler";
 import { ContextCapsule, IContextCompiler } from "./context/ContextCapsuleContracts";
 import { MemoryWriter } from "./writer/MemoryWriter";
 import { CandidateMemoryProposal, IMemoryWriter } from "./writer/MemoryWriterContracts";
+import { MemoryFabricProjectionService } from "./memory/MemoryFabricProjection";
 
 export interface SystemDoctorReport {
   readonly status: "HEALTHY" | "DEGRADED" | "BROKEN";
@@ -45,6 +46,7 @@ export class IntelligenceGateway {
   public readonly retrievalPlanner: IRetrievalPlanner;
   public readonly contextCompiler: IContextCompiler;
   public readonly memoryWriter: IMemoryWriter;
+  public readonly memoryFabric: MemoryFabricProjectionService;
 
   constructor(options?: {
     graphPath?: string;
@@ -115,6 +117,10 @@ export class IntelligenceGateway {
 
     // 7. Memory Writer
     this.memoryWriter = new MemoryWriter(this.knowledgeStore);
+    this.memoryFabric = new MemoryFabricProjectionService(
+      this.knowledgeStore,
+      this.memoryWriter as MemoryWriter,
+    );
   }
 
   /**
