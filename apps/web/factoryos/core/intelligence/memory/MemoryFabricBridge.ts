@@ -14,7 +14,8 @@
 
 import crypto from "node:crypto";
 import path from "node:path";
-import { EJSON, type Db } from "mongodb";
+import type { Db } from "mongodb";
+import { EJSON } from "bson";
 
 import type { EventEnvelope } from "../../contracts/EventContracts";
 import type { DurableEventBus } from "../../events/DurableEventBus";
