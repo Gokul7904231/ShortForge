@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Floor05-PreTraining-Hardening-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor05-pretraining-upgrade-20260927",
+  "objective": "Complete Floor 05 pre-training audit and harden the F03/F04 convergence, temporal identity, physical render verification, recovery, Ascalon boundary and F05→F06 handoff without changing the locked floor topology or authority hierarchy.",
+  "classification": "extends existing rule + new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "F03 and F04 remain parallel predecessors of F05.",
+      "F05 is the temporal convergence boundary and does not replace F03/F04 authority.",
+      "Guardian authorizes execution; TimelineBrain/Ascalon only proposes.",
+      "F06 consumes committed F05 handoff and owns production render/compute execution.",
+      "F07 remains final release/verification authority.",
+      "External research is evidence only."
+    ]
+  },
+  "forensicFindings": [
+    "F05 timeline clips lacked mandatory scene identity and exact frame-grid semantics.",
+    "Canonical render hashing omitted important timeline and media identity fields.",
+    "Composition worker could substitute an unrelated available asset when the requested asset was missing.",
+    "Reference renderer emitted synthetic MP4/thumbnail byte stubs instead of decoder-valid media.",
+    "Physical validation trusted file headers and declared timeline duration instead of probing the actual media stream.",
+    "Crash reconciliation deleted or mislabeled ambiguous render evidence instead of quarantining it.",
+    "F05 Guardian contract hash did not include all semantic execution inputs.",
+    "Ascalon F05 execution capability was marked as unguarded even though the runtime path is Guardian-authorized.",
+    "F06 Python handoff accepted F05 output without enforcing committed artifact and lineage integrity.",
+    "F03 execution report retained stale 2.3.0 version metadata after the canonical handoff had moved to 2.3.1."
+  ],
+  "changes": [
+    "Added rational TimelineTimebase and frame-grid validation.",
+    "Added scene_id and strict timeline clip validation.",
+    "Added deterministic timeline fingerprint and canonical render-input hashing v2.",
+    "Removed heuristic asset fallback and enforced exact F03/F04 asset sets, paths and versions.",
+    "Added source-manifest SHA-256 and size verification before rendering.",
+    "Replaced fake reference render output with real FFmpeg MP4 and PNG generation.",
+    "Replaced header-only media validation with ffprobe physical stream/container validation.",
+    "Added semantic overlap, transition, subtitle and render identity validation.",
+    "Made timeline/render registry writes atomic and added committed-render idempotency lookup.",
+    "Added pre-render crash journal and quarantine of corrupt/ambiguous artifacts.",
+    "Bound TimelineBrain proposal evidence to the input semantic fingerprint and Guardian authorization requirement.",
+    "Hardened F05→F06 handoff with committed state, exact artifact checksum/size, timeline fingerprint and render identity.",
+    "Aligned the F03 execution report version to 2.3.1.",
+    "Aligned F04-F06 testing contracts with the executable seams.",
+    "Added F05 README, .okf research/decision records and Ascalon pre-training admission document."
+  ],
+  "research": [
+    "OpenTimelineIO rational time/time-range and interchange boundary patterns",
+    "Remotion programmatic/frame-driven renderer architecture",
+    "FFmpeg and ffprobe machine-readable media evidence",
+    "VBench and VBench-2.0 multidimensional video quality evaluation",
+    "C2PA provenance boundary",
+    "OpenAssetIO logical-vs-physical media identity separation"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY_BOUNDARY_CHANGE",
+    "notes": "Security-sensitive paths are hardened through source checksum/size verification, path containment, symlink controls, exact lineage contracts, Guardian allowlisting, atomic persistence and quarantine. Full repository security lanes remain the final admission gate."
+  },
+  "trainingReadiness": {
+    "floor05": "NOT_PROMOTED_UNTIL_FRESH_CI",
+    "ascalon": "Bounded timeline proposal and evaluation only; no authority promotion.",
+    "rendererModels": "Reference renderer remains an evidence/verification path; future provider/render adapters require separate qualification."
+  },
+  "evidenceRefs": [
+    "services/pipeline/floor05_timeline_composition/README.md",
+    "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+    "services/pipeline/floor05_timeline_composition/app/services/canonical_hasher.py",
+    "services/pipeline/floor05_timeline_composition/app/services/source_manifest.py",
+    "services/pipeline/floor05_timeline_composition/app/services/validators.py",
+    "services/pipeline/floor05_timeline_composition/app/services/registry.py",
+    "services/pipeline/floor05_timeline_composition/app/services/reconciliation.py",
+    "services/pipeline/floor05_timeline_composition/app/workers/composition_worker.py",
+    "services/pipeline/floor05_timeline_composition/app/workers/render_worker.py",
+    "services/pipeline/floor05_timeline_composition/app/services/pipeline.py",
+    "services/pipeline/guardian/floors/floor05_guardian.py",
+    "services/pipeline/floor06_rendering/app/domain/handoff.py",
+    "services/pipeline/floor03_asset_realization/app/domain/handoff.py",
+    "training/ascalon/ontology/capabilities.json",
+    "testing/contracts/floor.contract.ts",
+    ".okf/decisions.md",
+    ".okf/research/repo-mappings/f05-timeline-composition-wave1-20260927.md",
+    "docs/verification/ascalon/floor05-pretraining-hardening.md",
+    ".github/workflows/floor05-pretraining-validation.yml"
+  ],
+  "disposition": "PASS_PENDING_FRESH_CI",
+  "verificationPlan": [
+    "Run the dedicated Floor 05 Pre-Training Validation lane.",
+    "Run Floor 04 + F05 handoff validation after F05 contract changes.",
+    "Run Floor 03 production and typecheck gates.",
+    "Run repository CI, Team Change Gate and Obsidian Memory Validation.",
+    "Review any failing F05 integration test and remediate before merge.",
+    "Only admit Floor 05 to Ascalon training after fresh main CI evidence."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_FRESH_CI",
+    "Forge Release": "PENDING_FRESH_CI"
+  },
+  "conflicts": [],
+  "notes": [
+    "No floor topology change was introduced.",
+    "No third-party source code, model weights, credentials, provider authority or release authority was imported.",
+    "The reference renderer is a verification/runtime fixture, not the final F06 distributed render fabric."
+  ]
+}
