@@ -241,6 +241,7 @@ export class MemoryFabricBridge {
 
         await this.promoteVerifiedCandidates();
         await this.detectActiveContradictions();
+        await this.refreshAscalonProjection();
       });
     } finally {
       this.draining = false;
