@@ -1,8 +1,8 @@
 # Floor 03 Post-Merge Hardening Audit
 
 **Date:** 2026-09-26
-**Merged baseline:** `main` at `96d9b39c9fac7645ae273a2b3dd86d2de5d6275b`
-**Hardening branch:** `fix/f03-post-merge-hardening-20260926`
+**Final merged main:** `e341b6f9e8d2a090812b038dbc7cde90d0b83e2a`
+**Post-merge verification run:** `36219440438`
 
 ## Scope
 
@@ -36,4 +36,14 @@ The Python JSON memory store is treated as local cache/idempotency state. The Fa
 
 ## Training readiness
 
-Ascalon F03 promotion remains blocked until this branch is merged and the new post-merge workflow is green on `main`. Earlier PR-scoped F03 green results do not substitute for post-merge evidence.
+Ascalon F03 admission criteria are satisfied on the final merged-main evidence:
+- canonical runtime path is in use;
+- durable control-plane handoff boundary is implemented;
+- explicit F03→F05 typed join is validated;
+- F03 suite and Guardian contract pass;
+- F03/F04/F05 handoff seam passes;
+- Ascalon ontology validates;
+- repository TypeScript typecheck passes.
+
+The informational web regression remains separate from this admission gate.
+

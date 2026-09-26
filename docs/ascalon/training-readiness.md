@@ -53,6 +53,19 @@ All 6 critical anomaly classes have been remediated in the `feat/ascalon-trainin
 
 ## Floor 03 post-merge admission gate — 2026-09-26
 
-Floor 03 remains **NOT TRAINING-READY** on the hardening branch until the canonical runtime adapter, distributed handoff persistence, explicit F03→F05 join, repository-wide typecheck, and the dedicated post-merge F03 workflow all pass on the actual `main` commit.
+**STATUS: ADMITTED FOR ASCALON TRAINING DATA PREPARATION**
 
-Evidence from the earlier PR-scoped F03 run proves the scoped implementation tests, but it does not prove post-merge runtime integration or repository-wide health. The new admission evidence is therefore the post-merge workflow on `main`, plus the immutable F03 handoff record and canonical Overseer execution trace.
+Final merged-main evidence:
+- Main commit: `e341b6f9e8d2a090812b038dbc7cde90d0b83e2a`
+- Floor 03 Post-Merge Verification run: `36219440438`
+- F03 canonical gate: **PASS**
+- F03 suite: **37 passed**
+- F03 Guardian contract: **1 passed**
+- F03/F04/F05 typed handoff contract: **2 passed**
+- Ascalon `floors.json` and `agents.json`: valid JSON
+- Repository TypeScript typecheck: **PASS**
+- Main CI required checks: **PASS** for Floor 01 Python, TypeCheck/Contract, Security/Dependency Scan, and Production Container Smoke.
+
+The remaining Web Regression Suite is explicitly informational and does not replace or invalidate the required F03/main verification evidence.
+
+The admission claim is limited to the canonical F03 planning/runtime contracts and their governance evidence. It does not claim physical media generation authority or F07 release authority.
