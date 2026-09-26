@@ -8,6 +8,13 @@ on:
       - "docs/architecture/obsidian-memory-fabric.md"
       - ".okf/decisions.md"
       - ".github/workflows/obsidian-memory-validation.yml"
+      - "apps/web/factoryos/core/intelligence/memory/**"
+      - "apps/web/factoryos/core/intelligence/knowledge/**"
+      - "apps/web/factoryos/core/intelligence/writer/**"
+      - "apps/web/factoryos/core/intelligence/IntelligenceGateway.ts"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/factoryos/tests/obsidian-memory-fabric.integration.test.ts"
+      - "package.json"
   push:
     branches:
       - main
@@ -16,6 +23,13 @@ on:
       - "tools/obsidian/**"
       - "docs/architecture/obsidian-memory-fabric.md"
       - ".okf/decisions.md"
+      - "apps/web/factoryos/core/intelligence/memory/**"
+      - "apps/web/factoryos/core/intelligence/knowledge/**"
+      - "apps/web/factoryos/core/intelligence/writer/**"
+      - "apps/web/factoryos/core/intelligence/IntelligenceGateway.ts"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/factoryos/tests/obsidian-memory-fabric.integration.test.ts"
+      - "package.json"
 
 jobs:
   validate:
@@ -53,3 +67,12 @@ jobs:
           const text = fs.readFileSync(p, "utf8");
           if (!text.includes("# Generated Memory Catalog")) process.exit(1);
           console.log("OBSIDIAN_CATALOG: PASS");
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Live Memory Fabric integration test
+        run: npm run test:obsidian-memory-fabric
+
+      - name: FactoryOS strict typecheck
+        run: npx tsc -p apps/web/tsconfig.factoryos.json --noEmit
