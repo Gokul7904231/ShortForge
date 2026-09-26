@@ -123,7 +123,7 @@
       "canonicalName": "Visual Asset Realization & Blueprints",
       "shortName": "Asset Realization",
       "category": "MEDIA",
-      "responsibility": "Compiles trusted Floor 02 scenes into a provider-neutral, versioned visual asset plan with self-contained node identity, semantic plan/node fingerprints, explicit upstream lineage, typed shot/camera structure, normalized safe zones, cinematic coverage roles, dependency last-frame references, continuity strategy, temporal motion beats, evidence lineage, and bounded surgical-repair impact. F03 plans assets; it does not generate physical media, select providers, or own secrets/capabilities.",
+      "responsibility": "Compiles trusted Floor 02 scenes into a provider-neutral, versioned visual asset plan with self-contained node identity, semantic plan/node fingerprints, explicit upstream lineage, typed shot/camera structure, normalized safe zones, cinematic coverage roles, logical asset references with version and trait hints, typed generation conditionings, dependency fingerprints, dependency last-frame references, continuity strategy, temporal motion beats, evidence lineage, and bounded surgical-repair impact. F03 plans assets; it does not generate physical media, select providers, or own secrets/capabilities.",
       "parent": "overseer",
       "predecessors": [
         "floor02_scripting"
