@@ -72,7 +72,12 @@ export class AmdComputeProvider extends BaseComputeProvider {
         cpuCores: remote.cpuCores || 0,
         memoryMb: remote.memoryMb || 0,
         gpuAvailable: remote.gpuCount > 0 && remote.ffmpegAvailable,
-        gpuType: remote.gpuModel || "AMD GPU",
+        gpuType:
+          remote.gpuModel ||
+          "AMD GPU" +
+            (remote.hardwareVideoEncode
+              ? " (hardware video encode)"
+              : " (video encode not hardware-qualified)"),
         operatingSystem: "Linux AMD render worker",
         supportedWorkloads: ["RENDER"],
         estimatedStartupSeconds: 1,
