@@ -190,3 +190,14 @@ Live change streams and periodic reconciliation cover new and changed operationa
     npm run obsidian:backfill-memory
 
 The backfill is idempotent through deterministic source keys and the MongoDB ledger. It materializes sanitized observations and high-signal candidate memories, but does not grant verification or training eligibility.
+
+
+## DISTRIBUTED WRITES AND CONTRADICTIONS
+
+When MongoDB is available, the Memory Fabric uses a short-lived writer lease so concurrent FactoryOS instances do not mutate the same knowledge vault simultaneously.
+
+Conflict groups are conservative: more than one active memory in the same group is marked CONTRADICTORY and excluded from projection. A verified promotion with the same conflict group may supersede prior active memory through the existing supersession path.
+
+## OBSIDIAN AS A LIVE CLIENT
+
+Agent projections reload the Markdown vault before reading. This means changes made through Obsidian are visible without restarting FactoryOS, while projection eligibility still requires the normal verification, lifecycle, quality and provenance rules.
