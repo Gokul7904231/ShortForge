@@ -242,6 +242,78 @@ export class MemoryFabricBridge {
     }
   }
 
+  /**
+   * One-time bounded historical backfill. This is explicit rather than automatic
+   * on every restart so production startup remains predictable.
+   */
+  async backfillMongo(maxDocumentsPerCollection = 5000): Promise<number> {
+    if (!this.mongoDb || !this.enabled) return 0;
+
+    let ingested = 0;
+
+    for (const collectionName of this.watchedCollections) {
+      let processed = 0;
+      const cursor = this.mongoDb
+        .collection(collectionName)
+        .find({})
+        .sort({ _id: 1 })
+        .batchSize(100);
+
+      for await (const raw of cursor) {
+        if (processed >= maxDocumentsPerCollection) break;
+
+        const fullDocument = this.sanitizeObject(raw as Record<string, unknown>);
+        const documentId = String((raw as Record<string, unknown>)["_id"] || "unknown");
+        const sourcePayload = {
+          backfill: true,
+          collection: collectionName,
+          documentId,
+          document: fullDocument,
+        } as Record<string, unknown>;
+
+        const sourceHash = crypto
+          .createHash("sha256")
+          .update(this.stableJson(sourcePayload), "utf8")
+          .digest("hex");
+
+        const source: MemoryFabricSourceEnvelope = {
+          sourceKey:
+            "mongo-backfill:" +
+            collectionName +
+            ":" +
+            documentId +
+            ":" +
+            sourceHash.slice(0, 24),
+          sourceKind: "MONGO_RECONCILIATION",
+          sourceId: sourceHash,
+          sourceType: "mongo.backfill." + collectionName,
+          sourceCollection: collectionName,
+          sourceDocumentId: documentId,
+          occurredAt:
+            this.extractOccurrenceTime(fullDocument) || new Date().toISOString(),
+          capturedAt: new Date().toISOString(),
+          correlationId: this.extractCorrelationId(fullDocument),
+          summary:
+            "MongoDB historical backfill for " +
+            collectionName +
+            "/" +
+            documentId,
+          payload: sourcePayload,
+          conflictGroup: this.extractConflictGroup(collectionName, fullDocument),
+        };
+
+        const before = this.totalIngested;
+        await this.ingest(source);
+        if (this.totalIngested > before) ingested += 1;
+
+        processed += 1;
+      }
+    }
+
+    await this.drain();
+    return ingested;
+  }
+
   async projectForAgent(query: string, maxItems = 12, maxChars = 12000): Promise<MemoryFabricProjection> {
     return this.projectionService.projectForAgent(query, maxItems, maxChars);
   }
