@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { Floor02RuntimeAdapter } from "../factoryos/core/adapters/Floor02RuntimeAdapter";
+import { Floor02RuntimeAdapter } from "../core/adapters/Floor02RuntimeAdapter";
 
 describe("Floor02RuntimeAdapter", () => {
   const originalFetch = global.fetch;
