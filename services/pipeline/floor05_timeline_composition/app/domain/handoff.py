@@ -200,8 +200,9 @@ class TimelineSpec(BaseModel):
                 raise ValueError(
                     f"Transition {transition.transition_id} references an unknown visual scene."
                 )
-            if transition.duration_seconds <= 0:
-                raise ValueError(f"Transition {transition.transition_id} must have positive duration.")
+            if transition.duration_seconds < 0:
+                raise ValueError(f"Transition {transition.transition_id} cannot have negative duration.")
+            self.timebase.frame_index(transition.duration_seconds)
 
         return self
 
