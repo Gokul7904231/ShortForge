@@ -63,7 +63,7 @@
     "notes": "Security-sensitive paths are hardened through source checksum/size verification, path containment, symlink controls, exact lineage contracts, Guardian allowlisting, atomic persistence and quarantine. Full repository security lanes remain the final admission gate."
   },
   "trainingReadiness": {
-    "floor05": "NOT_PROMOTED_UNTIL_FRESH_CI",
+    "floor05": "PASS_PENDING_MERGE",
     "ascalon": "Bounded timeline proposal and evaluation only; no authority promotion.",
     "rendererModels": "Reference renderer remains an evidence/verification path; future provider/render adapters require separate qualification."
   },
@@ -88,26 +88,28 @@
     "docs/verification/ascalon/floor05-pretraining-hardening.md",
     ".github/workflows/floor05-pretraining-validation.yml"
   ],
-  "disposition": "PASS_PENDING_FRESH_CI",
+  "disposition": "PASS",
   "verificationPlan": [
-    "Run the dedicated Floor 05 Pre-Training Validation lane.",
-    "Run Floor 04 + F05 handoff validation after F05 contract changes.",
-    "Run Floor 03 production and typecheck gates.",
-    "Run repository CI, Team Change Gate and Obsidian Memory Validation.",
-    "Review any failing F05 integration test and remediate before merge.",
-    "Only admit Floor 05 to Ascalon training after fresh main CI evidence."
+    "Floor 05 pre-training production validation PASS.",
+    "Floor 04 + F05 handoff validation PASS.",
+    "F03 production and Guardian gates PASS.",
+    "Floor 06 boundary tests PASS.",
+    "Team Change Gate PASS.",
+    "Obsidian Memory Validation PASS.",
+    "Repository CI PASS with Web Regression Suite informational failure."
   ],
   "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "PENDING_FRESH_CI",
-    "Forge Release": "PENDING_FRESH_CI"
+    "Forge Evaluator": "PASS",
+    "Forge Release": "PASS_PENDING_MERGE"
   },
   "conflicts": [],
   "notes": [
     "No floor topology change was introduced.",
     "No third-party source code, model weights, credentials, provider authority or release authority was imported.",
-    "The reference renderer is a verification/runtime fixture, not the final F06 distributed render fabric."
+    "The reference renderer is a verification/runtime fixture, not the final F06 distributed render fabric.",
+    "Fresh CI evidence is green for the production-critical lanes. Web Regression Suite failed but is explicitly informational in the repository."
   ]
 }
