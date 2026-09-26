@@ -67,6 +67,10 @@ class Floor05PipelineService:
             timeline_spec=timeline_spec,
             storage_root=str(self.storage_root),
         )
+        PhysicalVideoValidator.validate_thumbnail(
+            file_path=thumb_path,
+            storage_root=str(self.storage_root),
+        )
         SemanticCompositionValidator.validate_semantic_composition(
             render_job=job_spec,
             timeline_spec=timeline_spec,
