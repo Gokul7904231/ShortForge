@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR27-API-Connection-Test-Hardening",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/f06-unified-render-fabric",
+  "objective": "Preserve and integrate the post-merge API connection audit fix that authenticates protected API checks from the server environment and removes destructive create/delete registry test behavior.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Tests are part of the Team Change Gate and must not mutate shared production-like registries unnecessarily.",
+      "Evidence must be truthful and authentication assumptions must match the canonical server boundary.",
+      "No change may introduce or expand production authority."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Builder": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_REQUIRED",
+    "strix": "UNAVAILABLE_FOR_PR27",
+    "zap": "NOT_REQUIRED",
+    "reason": "Test-only change. Semgrep and ZAP have no applicable production-surface delta. Strix was invoked by the repository automation but the installed workspace trial has ended, so its review was unavailable; this is explicitly recorded rather than represented as executed. No production runtime, credential storage, authorization policy, or network-facing security control is changed."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Team Change Gate validates this report.",
+    "Repository TypeScript/required CI checks remain green after merge.",
+    "The updated API connection audit remains compatible with apps/web dependency resolution and protected API authentication."
+  ],
+  "evidenceRefs": [
+    "apps/web/tests/api-connection-test.mjs",
+    "apps/web/package.json",
+    "Team/workflow/change-gate.md"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "Not applicable to this test-only change; human/repository authority remains controlling."
+  },
+  "disposition": "PASS"
+}
