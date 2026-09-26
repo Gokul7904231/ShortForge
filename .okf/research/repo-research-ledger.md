@@ -37,6 +37,8 @@
 | **HyperFrames Frame Clock** (`heygen-com/hyperframes`) | `v0.9.x` | MIT | Deterministic frame clock ($t = \text{frame}/\text{fps}$), frame adapter interface, zero wall-clock dependency | **Clean-Room Reimplementation** | `packages/factoryos-render/src/factoryos_render/timing/frame_clock.py` | **CLEAN_ROOM_REIMPLEMENTATION** |
 | **Simple Icons & FlagCDN** (`simple-icons`, `flagcdn`) | `v11.x` | CC0-1.0 / Public Domain | Vector brand logos and ISO-3166 high-res national flags | **Free/Open Provider Adapters** | `testing/templates/providers/ProviderRouter.ts`, `apps/web/lib/templates/providers/` | **FREE_OPEN_ADAPTER** |
 
+| **AutoClip** (`zhouxiaoka/autoclip`) | `v1.3.5` / main inspected 2026-09-26 | MIT | Transcript-driven highlight extraction, duration-aware clipping, deterministic timeline refinement, fallback scoring, Shorts export, CLI/MCP automation and publishing workflow | **Research Only / Future Build Reference** | `.okf/research/repo-mappings/zhouxiaoka-autoclip.md` | **FUTURE_BUILD_CANDIDATE** |
+
 ---
 
 ## Detailed Isolation Verification
