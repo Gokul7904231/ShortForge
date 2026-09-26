@@ -147,7 +147,7 @@ def test_floor05_handoff_contract_serialization(tmp_path):
 
     assert deserialized.request_id == "req-f05-01"
     assert deserialized.render_job.render_job_id == "job-1"
-    assert deserialized.timeline_spec.clips[0].source_asset_id == "vis-001"
+    assert deserialized.timeline_spec.clips[0].source_asset_id == f04.synthesized_visual_assets[0].asset_id
 
 
 def test_floor05_rejects_f03_f04_lineage_mismatch(tmp_path):
