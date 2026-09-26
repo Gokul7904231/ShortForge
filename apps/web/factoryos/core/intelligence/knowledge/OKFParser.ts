@@ -162,6 +162,33 @@ export class OKFParser {
       yamlLines.push(`  captured_at: ${prov.captured_at}`);
     }
 
+    // --- 3. Live Memory Fabric extension fields ---
+    const extensionFields: Array<[string, unknown]> = [
+      ["sf_quality_state", fm.sf_quality_state],
+      ["sf_memory_quality_score", fm.sf_memory_quality_score],
+      ["sf_source_hash", fm.sf_source_hash],
+      ["sf_source_kind", fm.sf_source_kind],
+      ["sf_source_collection", fm.sf_source_collection],
+      ["sf_source_document_id", fm.sf_source_document_id],
+      ["sf_memory_record_key", fm.sf_memory_record_key],
+      ["sf_conflict_group", fm.sf_conflict_group],
+      ["sf_promoted_from", fm.sf_promoted_from],
+      ["sf_promoted_at", fm.sf_promoted_at],
+      ["sf_evidence_reference", fm.sf_evidence_reference],
+      ["sf_validity_reason", fm.sf_validity_reason],
+    ];
+    for (const [key, value] of extensionFields) {
+      if (value !== undefined && value !== null) {
+        yamlLines.push(key + ": " + this.escapeYamlString(String(value)));
+      }
+    }
+    if (fm.sf_training_eligible !== undefined) yamlLines.push("sf_training_eligible: " + String(fm.sf_training_eligible));
+    if (fm.training_eligible !== undefined) yamlLines.push("training_eligible: " + String(fm.training_eligible));
+    if (Array.isArray(fm.evidence_refs) && fm.evidence_refs.length > 0) {
+      yamlLines.push("evidence_refs:");
+      for (const evidenceRef of fm.evidence_refs) yamlLines.push("  - " + this.escapeYamlString(String(evidenceRef)));
+    }
+
     yamlLines.push("---");
     yamlLines.push("");
     yamlLines.push(doc.content);
