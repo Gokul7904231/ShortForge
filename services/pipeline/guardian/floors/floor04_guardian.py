@@ -33,7 +33,7 @@ def build_floor04_registry(pipeline_service: Optional[Floor04PipelineService] = 
         Capability(
             name="media_synthesis_pipeline_worker",
             floor_id="floor04",
-            description="Executes complete deterministic media synthesis pipeline",
+            description="Executes authorized Floor 04 media synthesis with physical validation and provider/fallback policy",
             handler=run_media_pipeline_handler,
         )
     )
@@ -55,8 +55,8 @@ class Floor04Guardian:
 
         report = self.engine.run_autonomous_loop(
             request_id=req_id,
-            objective="Synthesize visual frames, narration audio, and assemble verified media package for Floor 05",
-            input_contract_hash=input_data.floor03_payload.asset_plan_id,
+            objective="Execute authorized media synthesis, physically validate artifacts, and assemble verified media package for Floor 05",
+            input_contract_hash=(input_data.floor03_payload.asset_plan_ir.plan_fingerprint or input_data.floor03_payload.asset_plan_ir.source_fingerprint),
             initial_context=initial_context,
             execution_mode=input_data.execution_mode,
         )
