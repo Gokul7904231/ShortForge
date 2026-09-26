@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR30-F03-Overseer-Runtime-Review",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/f03-runtime-adapter",
+  "objective": "Review and promote the audited Floor 03 Overseer runtime-adapter, durable-handoff, and contract-test changes represented by commit 5f647c3 without weakening canonical floor boundaries.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/decisions.md",
+      ".okf/research/repo-research-ledger.md",
+      "docs/architecture/floor03-research-upgrade.md",
+      "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+      "apps/web/factoryos/core/bridge/Floor03DurableHandoffStore.ts",
+      "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+      "apps/web/factoryos/tests/floor03-runtime-adapter.test.ts",
+      "apps/web/factoryos/tests/floor03-overseer-integration.test.ts"
+    ],
+    "rulesConsidered": [
+      "F03 remains a provider-neutral planning/specification floor and does not generate physical media.",
+      "Overseer remains the production control-plane authority.",
+      "F03 must consume a validated canonical F02 handoff and fail closed otherwise.",
+      "Durable F03 handoffs require immutable request identity and semantic fingerprints.",
+      "External research cannot override executable source, canonical contracts, tests, or .okf.",
+      "F07 remains the downstream physical verification/release authority."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "REVIEWED",
+    "Forge Builder": "REVIEWED",
+    "Forge Sentinel": "PENDING_FRESH_SECURITY_EVIDENCE",
+    "Forge Evaluator": "REVIEWED",
+    "Forge Release": "BLOCKED_PENDING_CI_AND_MERGE_REVIEW"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_RUN",
+    "zap": "NOT_REQUIRED",
+    "reason": "The reviewed delta is limited to runtime contract tests, the Firebase mock implementation needed to mirror Firestore create semantics, and the F03 research ledger. Fresh security execution has not been demonstrated for this PR, so the report does not claim PASS."
+  },
+  "conflicts": [
+    {
+      "id": "F03-PR30-BRANCH-FRESHNESS",
+      "originalConflict": "The feature branch is 60 commits behind current main and therefore must be evaluated against the current repository head before merge.",
+      "status": "OPEN",
+      "proposedResolution": "Synchronize or otherwise reconcile the branch with current main, then rerun the complete PR CI suite and re-review the resulting diff.",
+      "decisionAuthority": "ShortForge repository maintainer",
+      "canonicalUpdates": []
+    },
+    {
+      "id": "F03-PR30-INTEGRATION-TEST-SCOPE",
+      "originalConflict": "The new F03 Overseer integration test injects a validated F02 handoff and invokes the private F03 executor directly; its current wording overstates that it executes the complete F02-to-F03 production path.",
+      "status": "OPEN",
+      "proposedResolution": "Rename/reframe the test as F03 Overseer task-boundary integration, or replace it with a public mission-path test that actually executes the canonical F02 runtime before F03.",
+      "decisionAuthority": "ShortForge repository maintainer",
+      "canonicalUpdates": [
+        "apps/web/factoryos/tests/floor03-overseer-integration.test.ts"
+      ]
+    }
+  ],
+  "verificationPlan": [
+    "Fresh GitHub Actions TypeScript and regression suites complete successfully.",
+    "Floor 03 runtime adapter and Overseer integration tests pass against current main.",
+    "Team Change Gate report validates for PR 30.",
+    "The reviewed diff contains no unauthorized production authority or provider credential changes.",
+    "The integration test scope is corrected before final approval.",
+    "A final review confirms mergeability and current-main compatibility."
+  ],
+  "evidenceRefs": [
+    "5f647c35111271dfaca7ee86f434e32ce0651678",
+    "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+    "apps/web/factoryos/core/bridge/Floor03DurableHandoffStore.ts",
+    "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+    "apps/web/factoryos/tests/floor02-runtime-adapter.test.ts",
+    "apps/web/factoryos/tests/floor03-runtime-adapter.test.ts",
+    "apps/web/factoryos/tests/floor03-overseer-integration.test.ts",
+    "apps/web/lib/firebase-admin.ts",
+    "docs/architecture/floor03-research-upgrade.md"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "No Ascalon training or runtime authority is claimed by this change."
+  },
+  "disposition": "BLOCKED"
+}
