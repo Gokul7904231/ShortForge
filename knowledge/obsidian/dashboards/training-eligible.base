@@ -1,0 +1,14 @@
+filters:
+  and:
+    - 'training_eligible == true'
+    - 'sf_verification_state == "verified"'
+
+views:
+  - type: table
+    name: Training eligible memory
+    order:
+      - file.name
+      - title
+      - domain
+      - authority
+      - updated_at
