@@ -156,14 +156,18 @@ async function testExplicitPromotion(): Promise<void> {
   await bridge.stop();
 }
 
-try {
-  await testLiveIngestion();
-  await testExplicitPromotion();
-  resetVault();
-  console.log("LIVE_MEMORY_FABRIC: PASS");
-} catch (error) {
-  resetVault();
-  console.error("LIVE_MEMORY_FABRIC: FAIL");
-  console.error(error);
-  process.exit(1);
+async function main(): Promise<void> {
+  try {
+    await testLiveIngestion();
+    await testExplicitPromotion();
+    resetVault();
+    console.log("LIVE_MEMORY_FABRIC: PASS");
+  } catch (error) {
+    resetVault();
+    console.error("LIVE_MEMORY_FABRIC: FAIL");
+    console.error(error);
+    process.exit(1);
+  }
 }
+
+void main();
