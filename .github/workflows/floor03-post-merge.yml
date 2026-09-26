@@ -40,10 +40,11 @@ jobs:
         run: |
           python -m compileall -q services/pipeline/floor02_scripting
           python -m compileall -q services/pipeline/floor03_asset_realization
+          python -m compileall -q services/pipeline/floor04_media_synthesis
           python -m compileall -q services/pipeline/floor05_timeline_composition
       - name: Run F03 suite
         env:
-          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/services/pipeline/floor04_media_synthesis:${{ github.workspace }}/apps/web
         run: python -m pytest services/pipeline/floor03_asset_realization/tests/ -q
       - name: Run F03 Guardian contract
         env:
