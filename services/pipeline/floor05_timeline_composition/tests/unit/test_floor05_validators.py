@@ -168,7 +168,7 @@ def test_semantic_validator_s1_missing_visual_clips_rejection():
         idempotency_key="i",
     )
 
-    with pytest.raises(GuardianValidationError, match="Semantic Invariant Violation \(S1\)"):
+    with pytest.raises(GuardianValidationError, match=r"Semantic Invariant Violation \(S1\)"):
         SemanticCompositionValidator.validate_semantic_composition(job, spec, "a" * 64)
 
 
