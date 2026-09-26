@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "ShortForge — Research / Paper",
+  "behavior": "create",
+  "noteNameFormat": "{{date|date:\"YYYY-MM-DD\"}} — Research — {{title|safe_name}}",
+  "path": "raw/research",
+  "context": "{{content}}",
+  "properties": [
+    {
+      "name": "source_url",
+      "value": "{{url}}",
+      "type": "text"
+    },
+    {
+      "name": "source_title",
+      "value": "{{title}}",
+      "type": "text"
+    },
+    {
+      "name": "source_type",
+      "value": "research",
+      "type": "text"
+    },
+    {
+      "name": "sf_epistemic_state",
+      "value": "sourced",
+      "type": "text"
+    },
+    {
+      "name": "sf_verification_state",
+      "value": "unverified",
+      "type": "text"
+    }
+  ],
+  "triggers": [
+    "https://arxiv.org/",
+    "schema:@Article"
+  ],
+  "noteContentFormat": "# {{title}}\n\n## Source\n{{url}}\n\n## Captured content\n{{content}}\n\n## Extraction checklist\n- Problem:\n- Method:\n- Result:\n- ShortForge relevance:\n- Adopt / Adapt / Inspire / Reject:\n"
+}
