@@ -68,7 +68,7 @@ export class MongoMemoryFabricLedger implements IMemoryFabricLedger {
 
   async listPending(limit = 50): Promise<MemoryFabricLedgerRecord[]> {
     const docs = await this.events
-      .find({ status: { $in: ["INGESTED", "MATERIALIZED", "CANDIDATE"] } })
+      .find({ status: "INGESTED" })
       .sort({ createdAt: 1 })
       .limit(limit)
       .toArray();
@@ -78,6 +78,10 @@ export class MongoMemoryFabricLedger implements IMemoryFabricLedger {
 
   async countByStatus(status: MemoryFabricLedgerRecord["status"]): Promise<number> {
     return this.events.countDocuments({ status });
+  }
+
+  async countByQualityState(state: MemoryFabricLedgerRecord["qualityState"]): Promise<number> {
+    return this.events.countDocuments({ qualityState: state });
   }
 
   async getRecent(limit = 50): Promise<MemoryFabricLedgerRecord[]> {
@@ -147,6 +151,10 @@ export class InMemoryMemoryFabricLedger implements IMemoryFabricLedger {
 
   async countByStatus(status: MemoryFabricLedgerRecord["status"]): Promise<number> {
     return [...this.events.values()].filter((record) => record.status === status).length;
+  }
+
+  async countByQualityState(state: MemoryFabricLedgerRecord["qualityState"]): Promise<number> {
+    return [...this.events.values()].filter((record) => record.qualityState === state).length;
   }
 
   async getRecent(limit = 50): Promise<MemoryFabricLedgerRecord[]> {
