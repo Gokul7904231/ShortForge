@@ -35,6 +35,7 @@
   ],
   "filesChanged": [
     "apps/web/factoryos/core/fabric/contracts/RenderFabricContracts.ts",
+    "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
     "apps/web/factoryos/core/fabric/adapters/AmdRenderWorkerAdapter.ts",
     "apps/web/factoryos/core/compute/providers/AmdComputeProvider.ts",
     "apps/web/scripts/amd-live-f06.mjs",
@@ -42,5 +43,10 @@
     "docs/compute/amd-render-worker.md",
     ".okf/architecture.md",
     ".okf/decisions.md"
+  ],
+  "notes": [
+    "The capability model now separately records physical GPU availability and hardware video encoding capability.",
+    "The live F06 harness creates an SSH tunnel, retrieves the remote worker secret without printing it, runs the canonical AMD smoke test, and tears the tunnel down.",
+    "The harness uses Node built-ins for HTTP probing and cross-platform file URL conversion."
   ]
 }
