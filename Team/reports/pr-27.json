@@ -24,9 +24,9 @@
     "required": true,
     "triageStatus": "COMPLETE",
     "semgrep": "NOT_REQUIRED",
-    "strix": "NOT_REQUIRED",
+    "strix": "UNAVAILABLE_FOR_PR27",
     "zap": "NOT_REQUIRED",
-    "reason": "Test-only change. It changes request authentication in a local API audit script and removes test-created/test-deleted registry mutations; no production runtime, credential storage, authorization policy, or network-facing security control is changed."
+    "reason": "Test-only change. Semgrep and ZAP have no applicable production-surface delta. Strix was invoked by the repository automation but the installed workspace trial has ended, so its review was unavailable; this is explicitly recorded rather than represented as executed. No production runtime, credential storage, authorization policy, or network-facing security control is changed."
   },
   "conflicts": [],
   "verificationPlan": [
