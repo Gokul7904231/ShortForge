@@ -203,6 +203,7 @@ class Floor03Pipeline:
         impact_radius = self._compute_impact_radius(inp.floor02_payload.scenes)
         source_fingerprint = floor02_source_fingerprint(inp.floor02_payload)
         nodes: List[AssetPlanNode] = []
+        node_by_scene: Dict[str, AssetPlanNode] = {}
 
         for req in sorted(visual_reqs, key=lambda item: item.sequence_index):
             scene = next(
@@ -217,14 +218,20 @@ class Floor03Pipeline:
             dependencies: List[AssetDependency] = []
             for dep_scene_id in scene.depends_on_scene_ids:
                 dep_req = req_by_scene.get(dep_scene_id)
-                if dep_req:
-                    dependencies.append(
-                        AssetDependency(
-                            asset_id=dep_req.asset_id,
-                            scene_id=dep_scene_id,
-                            relation=DependencyRelation.SCENE_DEPENDENCY,
-                        )
+                dep_node = node_by_scene.get(dep_scene_id)
+                if dep_req is None or dep_node is None:
+                    raise Floor03ValidationError(
+                        f"Visual asset dependency '{dep_scene_id}' is not compiled before "
+                        f"scene '{scene.scene_id}'."
                     )
+                dependencies.append(
+                    AssetDependency(
+                        asset_id=dep_req.asset_id,
+                        scene_id=dep_scene_id,
+                        relation=DependencyRelation.SCENE_DEPENDENCY,
+                        dependency_node_fingerprint=dep_node.node_fingerprint,
+                    )
+                )
 
             repair_scope = (
                 RepairScope.DEPENDENT_SUBGRAPH
@@ -270,6 +277,7 @@ class Floor03Pipeline:
             )
             node.node_fingerprint = asset_plan_node_fingerprint(node)
             nodes.append(node)
+            node_by_scene[node.scene_id] = node
 
         plan = AssetPlanIR(
             plan_id=plan_id or f"asset-plan-{inp.floor02_payload.script_id}-{inp.request_id}",
@@ -493,6 +501,7 @@ class Floor03Pipeline:
                     previous_scene_by_asset[dependency.asset_id] = dependency.scene_id
 
         nodes: List[AssetPlanNode] = []
+        rebuilt_node_by_scene: Dict[str, AssetPlanNode] = {}
         for node in existing_plan.nodes:
             matching_req = next(
                 (req for req in payload.visual_asset_requirements if req.scene_id == node.scene_id),
@@ -512,14 +521,23 @@ class Floor03Pipeline:
                     remapped_asset_id = current_asset_by_scene.get(
                         dependency_scene_id, dependency.asset_id
                     )
+                    dependency_node = rebuilt_node_by_scene.get(dependency_scene_id)
+                    if dependency_node is None:
+                        raise Floor03ValidationError(
+                            f"Dependency node '{dependency_scene_id}' was not rebuilt before "
+                            f"'{node.scene_id}'."
+                        )
+                    dependency_node_fingerprint = dependency_node.node_fingerprint
                 else:
                     remapped_asset_id = dependency.asset_id
+                    dependency_node_fingerprint = dependency.dependency_node_fingerprint
 
                 remapped_dependencies.append(
                     dependency.model_copy(
                         update={
                             "asset_id": remapped_asset_id,
                             "scene_id": dependency_scene_id,
+                            "dependency_node_fingerprint": dependency_node_fingerprint,
                         }
                     )
                 )
@@ -550,6 +568,7 @@ class Floor03Pipeline:
             )
             rebuilt_node.node_fingerprint = asset_plan_node_fingerprint(rebuilt_node)
             nodes.append(rebuilt_node)
+            rebuilt_node_by_scene[rebuilt_node.scene_id] = rebuilt_node
 
         plan = existing_plan.model_copy(
             deep=True,
