@@ -177,6 +177,18 @@ class Floor05PipelineService:
                 timeline_spec=timeline_spec,
                 storage_root=str(self.storage_root),
             )
+            video_file = Path(video_path)
+            thumb_file = Path(thumb_path)
+            expected_artifacts = {
+                "video": {
+                    "sha256": hashlib.sha256(video_file.read_bytes()).hexdigest(),
+                    "size_bytes": video_file.stat().st_size,
+                },
+                "thumbnail": {
+                    "sha256": hashlib.sha256(thumb_file.read_bytes()).hexdigest(),
+                    "size_bytes": thumb_file.stat().st_size,
+                },
+            }
             self.reconciliation.record_transaction(
                 tx_id,
                 "ARTIFACT_RECEIVED",
@@ -185,6 +197,7 @@ class Floor05PipelineService:
                         {"path": video_path, "kind": "video"},
                         {"path": thumb_path, "kind": "thumbnail"},
                     ],
+                    "expected_artifacts": expected_artifacts,
                 },
             )
 
