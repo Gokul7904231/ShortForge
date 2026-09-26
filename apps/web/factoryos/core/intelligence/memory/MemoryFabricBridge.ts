@@ -113,6 +113,7 @@ export class MemoryFabricBridge {
   private lastProcessedAt?: string;
   private lastError?: string;
   private totalIngested = 0;
+  private draining = false;
 
   constructor(
     private readonly eventBus: DurableEventBus,
@@ -213,9 +214,11 @@ export class MemoryFabricBridge {
   }
 
   async drain(limit = this.batchSize): Promise<void> {
-    if (!this.enabled) return;
+    if (!this.enabled || this.draining) return;
+    this.draining = true;
 
-    const pending = await this.ledger.listPending(limit);
+    try {
+      const pending = await this.ledger.listPending(limit);
     for (const record of pending) {
       try {
         await this.processLedgerRecord(record);
@@ -230,7 +233,10 @@ export class MemoryFabricBridge {
       }
     }
 
-    await this.promoteVerifiedCandidates();
+      await this.promoteVerifiedCandidates();
+    } finally {
+      this.draining = false;
+    }
   }
 
   async projectForAgent(query: string, maxItems = 12, maxChars = 12000): Promise<MemoryFabricProjection> {
@@ -245,7 +251,7 @@ export class MemoryFabricBridge {
     const [pending, failed, quarantined] = await Promise.all([
       this.ledger.countByStatus("INGESTED"),
       this.ledger.countByStatus("FAILED"),
-      this.ledger.countByStatus("QUARANTINED"),
+      this.ledger.countByQualityState("QUARANTINED"),
     ]);
 
     return {
