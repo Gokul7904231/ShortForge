@@ -146,6 +146,25 @@ export class IntelligenceCli {
       ].join("\n");
     }
 
+    if (command === "memory" && subcommand === "fabric") {
+      const mode = rest[0] === "ascalon" ? "ASCALON" : "AGENT";
+      const query = rest.slice(1).join(" ");
+      const projection = mode === "ASCALON"
+        ? await this.gateway.memoryFabric.projectForAscalon(query)
+        : await this.gateway.memoryFabric.projectForAgent(query);
+
+      return [
+        "=== MEMORY FABRIC PROJECTION ===",
+        "Mode: " + projection.mode,
+        "Query: " + JSON.stringify(projection.query),
+        "Items: " + projection.itemCount,
+        "Estimated Tokens: " + projection.estimatedTokens,
+        ...projection.items.map((item) =>
+          "- " + item.id + " | " + item.qualityState + " | " + item.verificationState + " | " + item.title
+        ),
+      ].join("\n");
+    }
+
     if (command === "knowledge" && subcommand === "validate") {
       const report = this.gateway.knowledgeStore.validate();
       const okf = report.okfConformance;
