@@ -138,17 +138,23 @@ class CrashReconciliationEngine:
                 reconciled["COMMITTED"].append(tx_id)
                 continue
 
-            if valid_count > 0 or corrupt_paths:
-                moved = []
-                for fp in corrupt_paths:
-                    quarantine_path = self._quarantine(fp, tx_id)
-                    if quarantine_path:
-                        moved.append(quarantine_path)
+            moved = []
+            for fp in corrupt_paths:
+                quarantine_path = self._quarantine(fp, tx_id)
+                if quarantine_path:
+                    moved.append(quarantine_path)
+
+            if valid_count > 0:
+                # Mixed valid/corrupt/missing state is genuinely ambiguous.
                 record["state"] = "ORPHANED"
                 record.setdefault("details", {})["quarantined_files"] = moved
                 reconciled["ORPHANED"].append(tx_id)
             else:
+                # Nothing valid survived. The production transaction can be
+                # deterministically rolled back, while corrupt evidence stays
+                # quarantined for forensic inspection.
                 record["state"] = "ROLLED_BACK"
+                record.setdefault("details", {})["quarantined_files"] = moved
                 reconciled["ROLLED_BACK"].append(tx_id)
 
         # Never silently delete unknown staging artifacts. Quarantine them for
