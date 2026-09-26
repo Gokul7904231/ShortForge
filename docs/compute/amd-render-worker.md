@@ -251,3 +251,36 @@ F07 verification passes
 ```
 
 A configured URL or secret alone is never treated as proof that AMD compute is available.
+
+
+## Live MI300X evidence — 2026-09-26
+
+The AMD Developer Cloud worker at the recorded MI300X host was exercised directly.
+
+Observed evidence:
+- `/ready` returned HTTP 200 and reported AMD GPU detection, renderer importability, encoder availability, and a present VAAPI device.
+- `/health` returned HTTP 200 for worker `amd-worker-01`.
+- Authenticated `/capabilities` reported `AMD_Instinct_MI300X_VF`, ROCm `10.0.0`, one GPU, and configured encoder `libx264`.
+- FFmpeg exposed `h264_vaapi`, but the active Mesa `radeonsi` VAAPI driver exposed H.264 only through `VAEntrypointVLD` (decode), with no H.264 encode entrypoint.
+- A direct `h264_vaapi` encode proof therefore failed and produced a zero-byte file.
+- A production worker render using the configured `libx264` encoder succeeded:
+  - duration: 2.0 seconds
+  - resolution: 1080x1920
+  - fps: 30
+  - codec: H.264
+  - physical artifact size: 52,675 bytes
+  - worker SHA-256: `f58c6531af68dda10e4e27721b80ceb3c36fd471d0b14e532ae7c9955930c1b8`
+  - downloaded artifact SHA-256 matched the worker receipt exactly.
+
+Qualification interpretation:
+
+`AMD-hosted distributed rendering = PROVEN`.
+
+`AMD GPU H.264 video encoding = NOT PROVEN` on this guest media stack.
+
+The successful render is therefore classified as an AMD-hosted persistent render worker using CPU `libx264` encoding. The system must not describe this worker as hardware-video-encoding-qualified until the worker media stack exposes and successfully exercises a real hardware encoder.
+
+The remaining system-level admission gate is the canonical control-plane live path:
+
+`RenderFabric -> ComputeGateway -> ComputeRouter -> AmdComputeProvider -> AMD worker -> CAS -> F07`.
+
