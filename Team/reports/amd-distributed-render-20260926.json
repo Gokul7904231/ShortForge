@@ -1,0 +1,46 @@
+{
+  "reportVersion": "1.0",
+  "changeId": "amd-distributed-render-2026-09-26",
+  "classification": "evidence-backed implementation state",
+  "okfSweepStatus": "PASS",
+  "scope": [
+    "AMD persistent render worker capability truthfulness",
+    "MI300X physical render qualification evidence",
+    "one-command live F06 harness"
+  ],
+  "evidence": [
+    "AMD /ready HTTP 200",
+    "AMD /health HTTP 200",
+    "authenticated /capabilities",
+    "h264_vaapi direct encode attempt failed: no usable H.264 encode entrypoint",
+    "production AMD worker render completed with libx264",
+    "worker/download SHA-256 matched"
+  ],
+  "physicalArtifact": {
+    "jobId": "job_amd_final_1790442335",
+    "durationSeconds": 2,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "codec": "h264",
+    "encoder": "libx264",
+    "byteLength": 52675,
+    "sha256": "f58c6531af68dda10e4e27721b80ceb3c36fd471d0b14e532ae7c9955930c1b8"
+  },
+  "disposition": "PARTIAL_ADMISSION",
+  "unresolved": [
+    "Fresh canonical F06 control-plane live test from the web/control-plane environment",
+    "CAS and F07 evidence from that live F06 run",
+    "Hardware H.264 encode qualification on the current MI300X guest media stack"
+  ],
+  "filesChanged": [
+    "apps/web/factoryos/core/fabric/contracts/RenderFabricContracts.ts",
+    "apps/web/factoryos/core/fabric/adapters/AmdRenderWorkerAdapter.ts",
+    "apps/web/factoryos/core/compute/providers/AmdComputeProvider.ts",
+    "apps/web/scripts/amd-live-f06.mjs",
+    "package.json",
+    "docs/compute/amd-render-worker.md",
+    ".okf/architecture.md",
+    ".okf/decisions.md"
+  ]
+}
