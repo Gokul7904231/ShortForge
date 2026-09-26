@@ -254,6 +254,7 @@ class ReferenceRenderWorker:
         ffmpeg = cls._require_tools()
         SourceManifestVerifier.verify_visuals(floor04_payload.synthesized_visual_assets)
         SourceManifestVerifier.verify_audio(floor04_payload.synthesized_audio_assets)
+        SourceManifestVerifier.verify_background_audio(floor04_payload.background_audio_asset)
 
         root = Path(storage_root).resolve()
         root.mkdir(parents=True, exist_ok=True)
