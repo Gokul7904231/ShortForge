@@ -1,0 +1,17 @@
+filters:
+  or:
+    - file.inFolder("architecture")
+    - file.inFolder("systems")
+    - file.inFolder("agents")
+    - file.inFolder("decisions")
+
+views:
+  - type: table
+    name: Architecture memory
+    order:
+      - file.name
+      - title
+      - domain
+      - sf_lifecycle
+      - sf_verification_state
+      - updated_at
