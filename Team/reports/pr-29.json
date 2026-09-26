@@ -33,10 +33,12 @@
   "conflicts": [],
   "verificationPlan": [
     "Run vault JSON validation and memory-vault lint.",
-    "Run the live Memory Fabric integration test.",
-    "Run strict FactoryOS TypeScript validation.",
+    "Run the live Memory Fabric integration test and module-load smoke test.",
+    "Run the repository CI strict TypeScript and required Floor 01 checks.",
     "Verify Team Change Gate report.",
     "Verify MongoDB change-stream failure degrades to bounded reconciliation without stopping FactoryOS.",
+    "Verify explicit historical MongoDB backfill is idempotent and remains evidence-gated.",
+    "Verify headless Obsidian sync remains an operator-managed optional client and does not become runtime authority.",
     "Verify post-merge main branch required checks before release."
   ],
   "evidenceRefs": [
@@ -54,7 +56,10 @@
     "knowledge/obsidian/OPERATIONS.md",
     "docs/architecture/obsidian-memory-fabric.md",
     ".okf/decisions.md",
-    ".okf/memory/knowledge-os.md"
+    ".okf/memory/knowledge-os.md",
+    "apps/web/factoryos/cli/memory-fabric-backfill.mts",
+    "tools/obsidian/headless-sync.mjs",
+    "apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts"
   ],
   "model": {
     "name": "Ascalon / ShortForge Cognitive Model",
