@@ -118,6 +118,7 @@ class Floor05PipelineService:
         # Gate 0: verify immutable F04 manifest before any composition decisions.
         SourceManifestVerifier.verify_visuals(f04_payload.synthesized_visual_assets)
         SourceManifestVerifier.verify_audio(f04_payload.synthesized_audio_assets)
+        SourceManifestVerifier.verify_background_audio(f04_payload.background_audio_asset)
 
         # Gate 1: compile deterministic timeline.
         timeline_spec = TimelineCompositionWorker.assemble_timeline(
