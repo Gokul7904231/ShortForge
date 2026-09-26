@@ -9,6 +9,7 @@ import structlog
 
 from factoryos.guardian.contracts.decision import DecisionActionType, GuardianDecisionProposal, ReasonCategory
 from floors.floor05_timeline_composition.app.domain.handoff import Floor05Input
+from floors.floor05_timeline_composition.app.brain.proposal import TimelineProposalIR
 
 logger = structlog.get_logger(__name__)
 
@@ -25,6 +26,12 @@ class TimelineBrain:
         """Formulate candidate decision proposal for timeline composition & rendering."""
         request_id = input_payload.request_id or f"req-{uuid4().hex[:8]}"
 
+        proposal_ir = TimelineProposalIR.from_input(
+            input_payload=input_payload,
+            proposal_id=f"proposal-{request_id}",
+            request_id=request_id,
+        )
+
         proposal = GuardianDecisionProposal(
             action_type=DecisionActionType.RUN_WORKER,
             target_capability="timeline_composition_pipeline_worker",
@@ -40,6 +47,8 @@ class TimelineBrain:
                 "proposal_only": True,
                 "guardian_authorization_required": True,
                 "source_manifest_verification_required": True,
+                "timeline_proposal_ir": proposal_ir.model_dump(),
+                "timeline_proposal_fingerprint": proposal_ir.semantic_fingerprint(),
             },
         )
         logger.info("timeline_brain_proposed_plan", request_id=request_id, target_capability=proposal.target_capability)
