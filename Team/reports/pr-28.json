@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR28-Obsidian-Memory-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/obsidian-memory-fabric-20260926",
+  "objective": "Integrate Obsidian as the human/agent knowledge IDE and cognitive memory projection layer for the existing knowledge/ vault without creating a competing authority or production runtime dependency.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "The knowledge layer must remain distinct from runtime and governance authority.",
+      "Memory promotion requires provenance and verification.",
+      "Ascalon receives bounded evidence-backed projections and cannot amend authority."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_REQUIRED",
+    "strix": "UNAVAILABLE_FOR_PR28",
+    "zap": "NOT_REQUIRED",
+    "reason": "The change adds documentation, Markdown/YAML vault assets, Bases/Canvas/Clipper templates, CSS, and repository-side Node tooling. No production authentication, credentials, network-facing runtime authority, or release path is changed. Strix availability is recorded honestly rather than represented as executed."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Validate changed JSON templates and Canvas as syntactically valid JSON.",
+    "Run repository-side Obsidian lint tooling against the knowledge vault.",
+    "Run repository TypeScript / required CI checks.",
+    "Verify the Team Change Gate report.",
+    "Verify the final merged main branch still passes the existing post-merge F03 and required CI lanes."
+  ],
+  "evidenceRefs": [
+    "knowledge/README.md",
+    "knowledge/obsidian/README.md",
+    "knowledge/obsidian/MEMORY_SCHEMA.md",
+    "knowledge/obsidian/dashboards/",
+    "knowledge/obsidian/canvases/memory-fabric.canvas",
+    "knowledge/obsidian/clipper/",
+    "tools/obsidian/",
+    "docs/architecture/obsidian-memory-fabric.md",
+    ".okf/decisions.md"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "The integration defines bounded memory projection semantics; it does not alter Ascalon runtime authority."
+  },
+  "disposition": "PASS"
+}
