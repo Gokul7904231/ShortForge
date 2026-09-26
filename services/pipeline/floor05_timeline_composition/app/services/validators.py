@@ -11,8 +11,6 @@ from typing import Any, Dict, List, Tuple
 import structlog
 
 from factoryos.guardian.core.exceptions import GuardianValidationError
-from floors.pipeline import __name__ as _unused  # type-only import guard removed by formatter
-
 from floors.floor03_asset_realization.app.domain.handoff import Floor03HandoffPayload
 from floors.floor04_media_synthesis.app.domain.handoff import Floor04HandoffPayload
 from floors.floor05_timeline_composition.app.domain.handoff import (
