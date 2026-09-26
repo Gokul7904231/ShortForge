@@ -127,7 +127,14 @@ def test_asset_plan_dependency_edges_and_impact_radius_survive_regeneration(tmp_
     assert new_scene_a_asset != old_scene_a_asset
     assert updated_nodes[scene_b].dependencies[0].scene_id == scene_a
     assert updated_nodes[scene_b].dependencies[0].asset_id == new_scene_a_asset
+    assert updated_nodes[scene_b].dependencies[0].dependency_node_fingerprint == updated_nodes[scene_a].node_fingerprint
     assert updated_nodes[scene_c].dependencies[0].scene_id == scene_b
+    assert updated_nodes[scene_c].dependencies[0].dependency_node_fingerprint == updated_nodes[scene_b].node_fingerprint
+    # Upstream regeneration invalidates the exact dependent cache lineage,
+    # while unrelated nodes remain reusable.
+    assert updated_nodes[scene_a].node_fingerprint != nodes[scene_a].node_fingerprint
+    assert updated_nodes[scene_b].node_fingerprint != nodes[scene_b].node_fingerprint
+    assert updated_nodes[scene_c].node_fingerprint != nodes[scene_c].node_fingerprint
     assert updated_nodes[scene_a].impact_radius == [scene_b, scene_c]
     assert updated_nodes[scene_b].impact_radius == [scene_c]
 
