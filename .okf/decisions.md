@@ -1193,3 +1193,27 @@ Latest verified `main` is `0fa169cae74c9b77def147df55dc4572b91769d2`. Post-merge
 **Rollback:** disable MEMORY_FABRIC_ENABLED. Remove the bridge and ledger integration without changing runtime authority or the existing KnowledgeOS/MemoryWriter boundary.
 
 **Validation:** integration tests, vault lint, generated catalog validation, and strict FactoryOS TypeScript validation are required before merge.
+
+## ShortForge Knowledge Graph View — 2026-09-26
+
+**Classification:** new capability
+
+**Decision:** Add a dedicated Obsidian custom view named **ShortForge Knowledge Graph** for visual relation navigation over the existing `knowledge/` vault.
+
+**Behavior contract:**
+- force-directed graph motion;
+- node drag;
+- background pan;
+- cursor-centered zoom;
+- hover/select relation isolation;
+- semantic relation labels;
+- Display controls: arrows, text fade threshold, node size, link thickness, animation;
+- Forces controls: center, repel, link force and link distance;
+- relation filtering and search;
+- direct navigation from graph node to underlying knowledge note.
+
+**Data contract:** normal Obsidian wikilinks become `links_to`; explicit `sf_relations`, `evidence_refs`, and supersession metadata are interpreted as semantic relations. The graph is read-only.
+
+**Authority invariant:** the graph cannot mutate `.okf`, MongoDB, MemoryWriter, runtime state, Guardian state or Ascalon authority.
+
+**Validation:** `node --check` and repository graph-asset validation run in the Obsidian memory CI lane.

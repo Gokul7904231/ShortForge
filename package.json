@@ -21,6 +21,7 @@
     "obsidian:project-ascalon": "npx tsx apps/web/factoryos/cli/memory-fabric.mts ascalon",
     "obsidian:backfill-memory": "npx tsx apps/web/factoryos/cli/memory-fabric-backfill.mts",
     "obsidian:headless-sync": "node tools/obsidian/headless-sync.mjs",
-    "obsidian:headless-sync:continuous": "node tools/obsidian/headless-sync.mjs --continuous"
+    "obsidian:headless-sync:continuous": "node tools/obsidian/headless-sync.mjs --continuous",
+    "obsidian:graph-validate": "node tools/obsidian/validate-knowledge-graph.mjs"
   }
 }

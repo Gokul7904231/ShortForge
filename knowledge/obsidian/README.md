@@ -82,3 +82,7 @@ Obsidian notes may summarize authoritative evidence, but they do not upgrade an 
 - LINT detect stale, contradictory, orphaned or evidence-poor knowledge.
 
 See [[MEMORY_SCHEMA]], [[OPERATIONS]], and [[SECURITY]].
+
+## ShortForge Knowledge Graph
+
+Use `ShortForge Knowledge Graph` as the relation-navigation surface over the vault. It visualizes Obsidian links plus ShortForge semantic relation properties without becoming a memory-authority or mutation surface.

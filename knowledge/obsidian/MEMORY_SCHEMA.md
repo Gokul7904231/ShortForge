@@ -71,3 +71,17 @@ stale_after: 2027-09-26T00:00:00Z
 6. hypotheses / exploratory research
 
 A lower layer may summarize a higher layer, never redefine it.
+
+## Semantic relation metadata
+
+Durable knowledge notes may declare explicit graph relations without changing the authority model:
+
+~~~yaml
+sf_relations:
+  - relation: feeds
+    target: "[[F03 AssetPlanIR]]"
+  - relation: verified_by
+    target: "[[F03 Verification Receipt]]"
+~~~
+
+Supported relation names are extensible. The graph treats relation names as semantic labels and does not infer authority from them. Normal Obsidian wikilinks remain valid and are displayed as `links_to` when no explicit semantic relation exists.

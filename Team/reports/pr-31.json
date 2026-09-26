@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR31-ShortForge-Knowledge-Graph",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/shortforge-knowledge-graph-20260926",
+  "objective": "Add a dedicated read-only Obsidian custom view that renders ShortForge knowledge relations with force-directed motion and relation navigation.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Obsidian remains a derived knowledge visualization and cannot become runtime authority.",
+      "The knowledge graph must preserve evidence/provenance semantics rather than infer authority.",
+      "Graph interaction must be read-only against the knowledge vault.",
+      "Semantic relation metadata is extensible and does not itself establish truth."
+    ]
+  },
+  "classification": "new capability",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_REQUIRED",
+    "strix": "UNAVAILABLE_FOR_PR31",
+    "zap": "NOT_REQUIRED",
+    "reason": "The change is an Obsidian-side read-only visualization surface with no new production endpoint, credential handling, or authority mutation. Node syntax validation and asset validation are included in CI. Strix availability is recorded honestly rather than represented as executed."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Validate plugin manifest, main.js syntax and CSS assets.",
+    "Run Obsidian memory vault lint/catalog validation.",
+    "Verify the custom view registers and exposes the ShortForge graph command.",
+    "Verify semantic sf_relations/evidence_refs/supersession parsing is present.",
+    "Verify Team Change Gate report.",
+    "Verify repository CI lanes remain green.",
+    "Post-merge verify the Obsidian Memory Validation lane on main."
+  ],
+  "evidenceRefs": [
+    "knowledge/.obsidian/plugins/shortforge-knowledge-graph/manifest.json",
+    "knowledge/.obsidian/plugins/shortforge-knowledge-graph/main.js",
+    "knowledge/.obsidian/plugins/shortforge-knowledge-graph/styles.css",
+    "knowledge/.obsidian/plugins/shortforge-knowledge-graph/README.md",
+    "tools/obsidian/validate-knowledge-graph.mjs",
+    "knowledge/obsidian/MEMORY_SCHEMA.md",
+    "knowledge/obsidian/SETUP.md",
+    "knowledge/obsidian/README.md",
+    ".okf/decisions.md",
+    ".github/workflows/obsidian-memory-validation.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "The graph is only a visualization/navigation client and does not modify Ascalon authority or training admission."
+  },
+  "disposition": "PASS"
+}
