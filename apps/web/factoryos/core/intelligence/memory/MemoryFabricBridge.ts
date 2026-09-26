@@ -240,6 +240,7 @@ export class MemoryFabricBridge {
         }
 
         await this.promoteVerifiedCandidates();
+        await this.detectActiveContradictions();
       });
     } finally {
       this.draining = false;
@@ -661,6 +662,33 @@ export class MemoryFabricBridge {
       promotedPath: promoted.filePath,
       processedAt: new Date().toISOString(),
     });
+  }
+
+  private async detectActiveContradictions(): Promise<void> {
+    const activeDocs = this.knowledgeStore.list({ sf_lifecycle: "active" });
+    const byConflict = new Map<string, KnowledgeDocument[]>();
+
+    for (const doc of activeDocs) {
+      const group = doc.frontmatter.sf_conflict_group;
+      if (typeof group !== "string" || !group) continue;
+      const list = byConflict.get(group) || [];
+      list.push(doc);
+      byConflict.set(group, list);
+    }
+
+    for (const [group, docs] of byConflict.entries()) {
+      if (docs.length < 2) continue;
+
+      for (const doc of docs) {
+        if (doc.frontmatter.sf_quality_state === "CONTRADICTORY") continue;
+        await this.knowledgeStore.update(doc.frontmatter.id, {
+          frontmatter: {
+            sf_quality_state: "CONTRADICTORY",
+            sf_validity_reason: "Multiple active memories share conflict group " + group + ".",
+          },
+        });
+      }
+    }
   }
 
   private async promoteVerifiedCandidates(): Promise<void> {
