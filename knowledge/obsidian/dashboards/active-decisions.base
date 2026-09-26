@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.inFolder("decisions")
+    - 'sf_lifecycle == "active"'
+
+views:
+  - type: table
+    name: Active decisions
+    order:
+      - file.name
+      - title
+      - domain
+      - sf_verification_state
+      - updated_at
