@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { DurableEventBus } from "../core/events/DurableEventBus";
@@ -7,152 +7,163 @@ import { MemoryWriter } from "../core/intelligence/writer/MemoryWriter";
 import { InMemoryMemoryFabricLedger } from "../core/intelligence/memory/MongoMemoryFabricLedger";
 import { MemoryFabricBridge } from "../core/intelligence/memory/MemoryFabricBridge";
 
-describe("Live Obsidian Memory Fabric", () => {
-  const vault = path.resolve(process.cwd(), ".test-vault-live-memory-fabric");
+const vault = path.resolve(process.cwd(), ".test-vault-live-memory-fabric");
 
-  beforeEach(() => {
-    if (fs.existsSync(vault)) fs.rmSync(vault, { recursive: true, force: true });
-    fs.mkdirSync(vault, { recursive: true });
+function resetVault(): void {
+  if (fs.existsSync(vault)) fs.rmSync(vault, { recursive: true, force: true });
+  fs.mkdirSync(vault, { recursive: true });
+}
+
+async function testLiveIngestion(): Promise<void> {
+  resetVault();
+
+  const bus = new DurableEventBus();
+  const store = new KnowledgeStore(vault);
+  const writer = new MemoryWriter(store);
+  const ledger = new InMemoryMemoryFabricLedger();
+
+  const bridge = new MemoryFabricBridge(
+    bus,
+    store,
+    writer,
+    ledger,
+    null,
+    { enabled: true, vaultPath: vault, batchSize: 10 },
+  );
+
+  await bridge.start();
+
+  await bus.publish(
+    "MISSION_COMPLETED",
+    {
+      missionId: "mission-test-001",
+      outcome: "completed",
+      password: "do-not-store",
+      authorization: "Bearer abcdefghijklmnopqrstuvwxyz0123456789",
+    },
+    {
+      source: "test-runtime",
+      correlationId: "corr-test-001",
+      idempotencyKey: "mission-complete-test-001",
+    },
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 25));
+
+  const rawFiles = store.list().filter((doc) => doc.filePath.includes("obsidian/raw/runtime"));
+  const candidateFiles = store.list().filter((doc) => doc.filePath.includes("obsidian/candidates"));
+
+  assert.equal(rawFiles.length, 1);
+  assert.equal(candidateFiles.length, 1);
+  assert.doesNotMatch(rawFiles[0].content, /do-not-store/);
+  assert.match(rawFiles[0].content, /REDACTED_SECRET/);
+  assert.equal(candidateFiles[0].frontmatter.sf_lifecycle, "candidate");
+  assert.equal(candidateFiles[0].frontmatter.sf_verification_state, "unverified");
+
+  const health = await bridge.getHealth();
+  assert.equal(health.running, true);
+  assert.equal(health.mode, "EVENT_ONLY");
+  assert.equal(health.totalIngested, 1);
+
+  const agentProjection = await bridge.projectForAgent("MISSION_COMPLETED");
+  assert.equal(agentProjection.itemCount, 0);
+
+  await store.update(candidateFiles[0].frontmatter.id, {
+    frontmatter: {
+      sf_verification_state: "verified",
+      sf_epistemic_state: "sourced",
+      verified: [
+        {
+          by: "test-auditor",
+          at: new Date().toISOString(),
+          method: "controlled-integration-test",
+        },
+      ],
+      evidence_refs: ["evidence:test-001"],
+    },
   });
 
-  afterEach(() => {
-    if (fs.existsSync(vault)) fs.rmSync(vault, { recursive: true, force: true });
+  await bridge.drain();
+
+  const promoted = store.get(candidateFiles[0].frontmatter.id);
+  assert.ok(promoted);
+  assert.equal(promoted.frontmatter.sf_lifecycle, "active");
+  assert.equal(promoted.frontmatter.sf_verification_state, "verified");
+  assert.equal(promoted.frontmatter.sf_quality_state, "VALID");
+  assert.equal(promoted.frontmatter.training_eligible, false);
+
+  const projectedAgentMemory = await bridge.projectForAgent("MISSION_COMPLETED");
+  assert.equal(projectedAgentMemory.itemCount, 1);
+
+  const projectedAscalonBeforeAdmission = await bridge.projectForAscalon();
+  assert.equal(projectedAscalonBeforeAdmission.itemCount, 0);
+
+  await store.update(promoted.frontmatter.id, {
+    frontmatter: { training_eligible: true },
   });
 
-  it("ingests runtime evidence, sanitizes it, compiles candidates, and exposes bounded projections", async () => {
-    const bus = new DurableEventBus();
-    const store = new KnowledgeStore(vault);
-    const writer = new MemoryWriter(store);
-    const ledger = new InMemoryMemoryFabricLedger();
+  const projectedAscalon = await bridge.projectForAscalon();
+  assert.equal(projectedAscalon.itemCount, 1);
 
-    const bridge = new MemoryFabricBridge(
-      bus,
-      store,
-      writer,
-      ledger,
-      null,
-      { enabled: true, vaultPath: vault, batchSize: 10 },
-    );
+  await bridge.stop();
+}
 
-    await bridge.start();
+async function testExplicitPromotion(): Promise<void> {
+  resetVault();
 
-    await bus.publish(
-      "MISSION_COMPLETED",
-      {
-        missionId: "mission-test-001",
-        outcome: "completed",
-        password: "do-not-store",
-        authorization: "Bearer abcdefghijklmnopqrstuvwxyz0123456789",
-      },
-      {
-        source: "test-runtime",
-        correlationId: "corr-test-001",
-        idempotencyKey: "mission-complete-test-001",
-      },
-    );
+  const bus = new DurableEventBus();
+  const store = new KnowledgeStore(vault);
+  const writer = new MemoryWriter(store);
+  const ledger = new InMemoryMemoryFabricLedger();
 
-    await new Promise((resolve) => setTimeout(resolve, 25));
+  const bridge = new MemoryFabricBridge(
+    bus,
+    store,
+    writer,
+    ledger,
+    null,
+    { enabled: true, vaultPath: vault },
+  );
 
-    const rawFiles = store.list().filter((doc) => doc.filePath.includes("obsidian/raw/runtime"));
-    const candidateFiles = store.list().filter((doc) => doc.filePath.includes("obsidian/candidates"));
+  await bridge.start();
 
-    expect(rawFiles.length).toBe(1);
-    expect(candidateFiles.length).toBe(1);
-    expect(rawFiles[0].content).not.toContain("do-not-store");
-    expect(rawFiles[0].content).toContain("[REDACTED_SECRET]");
-    expect(candidateFiles[0].frontmatter.sf_lifecycle).toBe("candidate");
-    expect(candidateFiles[0].frontmatter.sf_verification_state).toBe("unverified");
-
-    const health = await bridge.getHealth();
-    expect(health.running).toBe(true);
-    expect(health.mode).toBe("EVENT_ONLY");
-    expect(health.totalIngested).toBe(1);
-
-    const agentProjection = await bridge.projectForAgent("MISSION_COMPLETED");
-    expect(agentProjection.itemCount).toBe(0);
-
-    await store.update(candidateFiles[0].frontmatter.id, {
-      frontmatter: {
-        sf_verification_state: "verified",
-        sf_epistemic_state: "sourced",
-        verified: [
-          {
-            by: "test-auditor",
-            at: new Date().toISOString(),
-            method: "controlled-integration-test",
-          },
-        ],
-        evidence_refs: ["evidence:test-001"],
-      },
-    });
-
-    await bridge.drain();
-
-    const promoted = store.get(candidateFiles[0].frontmatter.id);
-    expect(promoted?.frontmatter.sf_lifecycle).toBe("active");
-    expect(promoted?.frontmatter.sf_verification_state).toBe("verified");
-    expect(promoted?.frontmatter.sf_quality_state).toBe("VALID");
-    expect(promoted?.frontmatter.training_eligible).toBe(false);
-
-    const projectedAgentMemory = await bridge.projectForAgent("MISSION_COMPLETED");
-    expect(projectedAgentMemory.itemCount).toBe(1);
-
-    const projectedAscalonBeforeAdmission = await bridge.projectForAscalon();
-    expect(projectedAscalonBeforeAdmission.itemCount).toBe(0);
-
-    await store.update(promoted!.frontmatter.id, {
-      frontmatter: { training_eligible: true },
-    });
-
-    const projectedAscalon = await bridge.projectForAscalon();
-    expect(projectedAscalon.itemCount).toBe(1);
-
-    await bridge.stop();
-  });
-
-  it("enforces explicit promotion metadata for automatic promotion", async () => {
-    const bus = new DurableEventBus();
-    const store = new KnowledgeStore(vault);
-    const writer = new MemoryWriter(store);
-    const ledger = new InMemoryMemoryFabricLedger();
-
-    const bridge = new MemoryFabricBridge(
-      bus,
-      store,
-      writer,
-      ledger,
-      null,
-      { enabled: true, vaultPath: vault },
-    );
-
-    await bridge.start();
-
-    await bus.publish(
-      "VERIFICATION_PASSED",
-      {
-        capability: "memory-fabric-candidate",
-        memoryPromotion: {
-          status: "VERIFIED",
-          evidenceReference: "receipt:memory-fabric-test",
-          verificationEvidence: {
-            verificationLevel: "INTEGRATION_VERIFIED",
-            result: "PASS",
-          },
+  await bus.publish(
+    "VERIFICATION_PASSED",
+    {
+      capability: "memory-fabric-candidate",
+      memoryPromotion: {
+        status: "VERIFIED",
+        evidenceReference: "receipt:memory-fabric-test",
+        verificationEvidence: {
+          verificationLevel: "INTEGRATION_VERIFIED",
+          result: "PASS",
         },
       },
-      { source: "verified-test" },
-    );
+    },
+    { source: "verified-test" },
+  );
 
-    await new Promise((resolve) => setTimeout(resolve, 25));
+  await new Promise((resolve) => setTimeout(resolve, 25));
 
-    const promoted = store
-      .list()
-      .find((doc) => doc.frontmatter.sf_lifecycle === "active" && doc.frontmatter.sf_memory_record_key);
+  const promoted = store
+    .list()
+    .find((doc) => doc.frontmatter.sf_lifecycle === "active" && doc.frontmatter.sf_memory_record_key);
 
-    expect(promoted).toBeDefined();
-    expect(promoted?.frontmatter.sf_verification_state).toBe("verified");
-    expect(promoted?.frontmatter.sf_quality_state).toBe("VALID");
+  assert.ok(promoted);
+  assert.equal(promoted.frontmatter.sf_verification_state, "verified");
+  assert.equal(promoted.frontmatter.sf_quality_state, "VALID");
 
-    await bridge.stop();
-  });
-});
+  await bridge.stop();
+}
+
+try {
+  await testLiveIngestion();
+  await testExplicitPromotion();
+  resetVault();
+  console.log("LIVE_MEMORY_FABRIC: PASS");
+} catch (error) {
+  resetVault();
+  console.error("LIVE_MEMORY_FABRIC: FAIL");
+  console.error(error);
+  process.exit(1);
+}
