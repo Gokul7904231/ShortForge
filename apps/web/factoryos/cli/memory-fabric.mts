@@ -1,4 +1,4 @@
-import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
+import { IntelligenceGateway } from "../core/intelligence/IntelligenceGateway";
 
 const mode = process.argv[2] === "ascalon" ? "ASCALON" : "AGENT";
 const query = process.argv.slice(3).join(" ");
