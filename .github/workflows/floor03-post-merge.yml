@@ -48,11 +48,11 @@ jobs:
         run: python -m pytest services/pipeline/floor03_asset_realization/tests/ -q
       - name: Run F03 Guardian contract
         env:
-          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/services/pipeline/floor04_media_synthesis:${{ github.workspace }}/apps/web
         run: python -m pytest tests/guardian/test_guardian_floor03.py -q
       - name: Run F03/F04/F05 contract tests
         env:
-          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/services/pipeline/floor04_media_synthesis:${{ github.workspace }}/apps/web
         run: python -m pytest services/pipeline/floor05_timeline_composition/tests/test_floor05_handoff.py -q
       - name: Validate Ascalon ontology JSON
         run: |
