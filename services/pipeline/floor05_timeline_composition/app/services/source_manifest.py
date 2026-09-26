@@ -14,11 +14,12 @@ class SourceManifestVerifier:
 
     @staticmethod
     def _verify_path(file_path: str, expected_sha256: str, expected_size: int, kind: str) -> Path:
-        path = Path(file_path).resolve()
-        if path.is_symlink():
+        raw_path = Path(file_path)
+        if raw_path.is_symlink():
             raise GuardianValidationError(
-                f"F05 source integrity rejection: {kind} artifact must not be a symlink: {path}"
+                f"F05 source integrity rejection: {kind} artifact must not be a symlink: {raw_path}"
             )
+        path = raw_path.resolve()
         if not path.exists() or not path.is_file():
             raise GuardianValidationError(
                 f"F05 source integrity rejection: {kind} artifact is missing: {path}"
