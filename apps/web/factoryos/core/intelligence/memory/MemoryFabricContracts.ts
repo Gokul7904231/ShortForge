@@ -152,4 +152,6 @@ export interface IMemoryFabricLedger {
   getRecent(limit?: number): Promise<MemoryFabricLedgerRecord[]>;
   getOffset(streamKey: string): Promise<MemoryFabricOffset | null>;
   setOffset(offset: MemoryFabricOffset): Promise<void>;
+  acquireWriterLease(ownerId: string, ttlMs: number): Promise<boolean>;
+  releaseWriterLease(ownerId: string): Promise<void>;
 }
