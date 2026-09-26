@@ -5,6 +5,7 @@ from floors.floor05_timeline_composition.app.domain.handoff import (
     TimelineTrackType,
 )
 from floors.floor05_timeline_composition.app.services.canonical_hasher import CanonicalHasher
+from floors.floor05_timeline_composition.app.services.registry import TimelineRegistry
 from floors.floor05_timeline_composition.tests.test_floor05_handoff import build_mock_floor04_payload
 
 
@@ -112,3 +113,32 @@ def test_canonical_hasher_versioning_sensitivity(tmp_path):
     hash_v2 = CanonicalHasher.compute_render_input_hash(f04, spec, "renderer-1", "2.0.0")
 
     assert hash_v1 != hash_v2
+
+
+def test_timeline_registry_ignores_creation_timestamp(tmp_path):
+    timeline = TimelineSpec(
+        timeline_id="tl-registry",
+        target_width=1080,
+        target_height=1920,
+        target_fps=30,
+        aspect_ratio="9:16",
+        total_duration_seconds=1.0,
+        clips=[
+            TimelineClip(
+                clip_id="clip-reg",
+                scene_id="scene-1",
+                track_type=TimelineTrackType.VISUAL,
+                start_time=0.0,
+                end_time=1.0,
+                source_asset_id="asset-1",
+                source_file_path="/path/asset.png",
+            )
+        ],
+    )
+    registry = TimelineRegistry(str(tmp_path / "registry"))
+    registry.register_timeline(timeline)
+
+    replay = timeline.model_copy(update={"created_at": timeline.created_at.replace(microsecond=999999)})
+    registry.register_timeline(replay)
+
+    assert registry.get_timeline("tl-registry") is not None
