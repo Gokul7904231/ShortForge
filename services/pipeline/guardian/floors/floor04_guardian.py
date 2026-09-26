@@ -27,7 +27,14 @@ def build_floor04_registry(pipeline_service: Optional[Floor04PipelineService] = 
         inp = context["input_data"]
         handoff = service.execute_pipeline(inp)
         context["handoff_payload"] = handoff.model_dump()
-        return {"status": "success", "request_id": handoff.request_id, "visual_count": len(handoff.synthesized_visual_assets)}
+        return {
+            "status": "success",
+            "request_id": handoff.request_id,
+            "sourceAssetPlanFingerprint": handoff.source_asset_plan_fingerprint,
+            "visualCount": len(handoff.synthesized_visual_assets),
+            "audioCount": len(handoff.synthesized_audio_assets),
+            "provenanceHash": handoff.provenance_hash,
+        }
 
     registry.register(
         Capability(

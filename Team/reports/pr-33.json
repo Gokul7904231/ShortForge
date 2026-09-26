@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR33-Floor05",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor05-pretraining-upgrade-20260927",
+  "objective": "Complete Floor 05 pre-training hardening and align F03/F04/F05/F06 contracts.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "F03 and F04 remain parallel predecessors of F05.",
+      "Guardian authorizes execution.",
+      "F06 consumes committed F05 handoff.",
+      "F07 remains final verification authority."
+    ]
+  },
+  "forensicFindings": [
+    "F05 previously relied on weak physical render evidence.",
+    "Canonical render identity omitted relevant timeline fields.",
+    "Composition could substitute assets.",
+    "Crash recovery did not preserve ambiguous evidence.",
+    "Ascalon execution gating did not reflect Guardian authority."
+  ],
+  "changes": [
+    "Rational timeline timebase and deterministic fingerprints.",
+    "Exact F03/F04 lineage and asset enforcement.",
+    "Real FFmpeg render and ffprobe verification.",
+    "Atomic registry and crash quarantine.",
+    "Guardian-bound Ascalon capability.",
+    "Hardened F05 to F06 handoff.",
+    "F03 version metadata correction.",
+    "Added Floor 06 compatibility namespace and explicit F05-to-F06 boundary tests.",
+    "All fresh Floor 05/F06 boundary tests and cross-floor production validations pass."
+  ],
+  "research": [
+    "OpenTimelineIO",
+    "Remotion",
+    "FFmpeg/ffprobe",
+    "VBench-2.0",
+    "C2PA",
+    "OpenAssetIO"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Fresh repository security lanes remain required."
+  },
+  "trainingReadiness": {
+    "floor05": "PASS_PENDING_MERGE",
+    "ascalon": "proposal/evaluation only",
+    "providerModels": "separate qualification"
+  },
+  "evidenceRefs": [
+    "services/pipeline/floor05_timeline_composition",
+    "services/pipeline/floor06_rendering/app/domain/handoff.py",
+    "services/pipeline/floor03_asset_realization/app/domain/handoff.py",
+    "training/ascalon/ontology/capabilities.json",
+    ".okf/decisions.md",
+    ".okf/research/repo-mappings/f05-timeline-composition-wave1-20260927.md",
+    "docs/verification/ascalon/floor05-pretraining-hardening.md"
+  ],
+  "disposition": "PASS",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PASS",
+    "Forge Release": "PASS_PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "teamChangeGate": "PASS",
+    "obsidianMemoryValidation": "PASS",
+    "floor02Floor03ProductionGates": "PASS",
+    "floor04ProductionValidation": "PASS",
+    "floor05PreTrainingValidation": "PASS",
+    "floor06HandoffBoundary": "PASS",
+    "repositoryCI": "PASS",
+    "webRegressionSuite": "INFORMATIONAL_FAILURE"
+  },
+  "notes": [
+    "No floor topology change.",
+    "No third-party runtime authority imported.",
+    "Repository CI passed; Web Regression Suite remains informational and failed under the existing repository policy."
+  ],
+  "verificationPlan": [
+    "Run explicit Floor 06 handoff boundary tests."
+  ]
+}

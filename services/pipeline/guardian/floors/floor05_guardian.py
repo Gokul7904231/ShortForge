@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
@@ -32,9 +31,13 @@ def build_floor05_registry(pipeline_service: Optional[Floor05PipelineService] = 
             "status": "success",
             "request_id": handoff.request_id,
             "timeline_id": handoff.timeline_spec.timeline_id,
+            "timeline_fingerprint": handoff.timeline_fingerprint,
             "render_job_id": handoff.render_job.render_job_id,
             "render_input_hash": handoff.render_job.render_input_hash,
+            "sha256": handoff.sha256_checksum,
+            "byteLength": handoff.file_size_bytes,
             "video_path": handoff.rendered_video_path,
+            "handoff_version": handoff.version,
         }
 
     registry.register(
@@ -63,11 +66,8 @@ class Floor05Guardian:
 
         report = self.engine.run_autonomous_loop(
             request_id=req_id,
-            objective="Assemble TimelineSpec, execute reference video render, verify physical/semantic output, and prepare Floor 07 handoff",
-            input_contract_hash=hashlib.sha256(
-                f"{input_data.floor03_payload.asset_plan_ir.plan_fingerprint if input_data.floor03_payload.asset_plan_ir else input_data.floor03_payload.asset_plan_id}:
-{input_data.floor04_payload.provenance_hash}".encode("utf-8")
-            ).hexdigest(),
+            objective="Assemble TimelineSpec, execute reference video render, verify physical/semantic output, and prepare Floor 06 handoff",
+            input_contract_hash=input_data.semantic_fingerprint(),
             initial_context=initial_context,
             execution_mode=input_data.execution_mode,
         )

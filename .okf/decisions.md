@@ -1299,3 +1299,29 @@ Verified:
 The Web Regression Suite remains informational and may report environment-dependent failures; it is not used as Floor 04 promotion authority.
 
 The floor is therefore mechanically hardened and CI-verified, while third-party provider/model promotion remains a separate qualification process.
+
+
+## Floor 05 Timeline Composition hardening — 2026-09-27
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Treat Floor 05 as the canonical temporal convergence boundary for the verified F03 semantic plan and F04 physical media.
+
+**Locked invariants:**
+- F03 remains semantic media planning authority.
+- F04 remains physical media synthesis authority.
+- F05 cannot substitute one scene's media for another.
+- Timeline timing is frame-grid aligned and has deterministic fingerprint identity.
+- Render execution is Guardian-gated; TimelineBrain/Ascalon can propose but never authorize.
+- Physical video claims are based on ffprobe evidence, not producer-declared duration/codec metadata.
+- Render evidence is committed only after physical and semantic validation.
+- Interrupted or ambiguous artifacts are quarantined for forensic review.
+- F06 accepts only a committed F05 handoff with matching artifact SHA, size, timeline fingerprint and render identity.
+- VBench-style quality signals are evaluation evidence only; they do not become F05 release authority.
+- C2PA provenance remains downstream of F05 authority.
+
+**Research basis:** OpenTimelineIO time/range semantics, Remotion frame-driven rendering architecture, FFmpeg/ffprobe media evidence, VBench/VBench-2.0 evaluation dimensions, C2PA provenance patterns, and the existing OpenAssetIO-derived logical/physical identity split were screened without importing external runtime authority.
+
+**Ascalon implication:** The training projection teaches proposal -> authorization -> execution -> measurement -> handoff, while the Guardian remains authoritative.
+
+**Rollback:** revert the F05 hardening commits and remove the F05 research/admission documents; F03/F04/F06 authority boundaries remain unchanged.

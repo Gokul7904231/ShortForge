@@ -112,7 +112,7 @@ class FloorExecutionReport(BaseModel):
     script_id: str
     asset_plan_id: str
     floor_id: str = "floor03_asset_realization"
-    floor_version: str = "2.3.0"
+    floor_version: str = "2.3.1"
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     duration_ms: Optional[float] = None

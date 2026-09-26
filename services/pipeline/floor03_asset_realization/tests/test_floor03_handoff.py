@@ -227,7 +227,7 @@ def test_execution_report_generation_and_artifact_persistence(tmp_path):
     assert isinstance(payload, Floor03HandoffPayload)
     assert isinstance(report, FloorExecutionReport)
     assert report.floor_id == "floor03_asset_realization"
-    assert report.floor_version == "2.3.0"
+    assert report.floor_version == "2.3.1"
     assert report.request_id == "req-f03-report-1"
 
     report_file = report_dir / f"floor03_execution_{report.execution_id}.json"

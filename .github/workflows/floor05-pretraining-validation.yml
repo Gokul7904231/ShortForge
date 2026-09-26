@@ -1,0 +1,86 @@
+name: Floor 05 Pre-Training Validation
+
+on:
+  pull_request:
+    paths:
+      - "services/pipeline/floor03_asset_realization/**"
+      - "services/pipeline/floor04_media_synthesis/**"
+      - "services/pipeline/floor05_timeline_composition/**"
+      - "services/pipeline/floor06_rendering/**"
+      - "services/pipeline/guardian/floors/floor05_guardian.py"
+      - "training/ascalon/ontology/capabilities.json"
+      - ".okf/**"
+      - "Team/reports/**"
+      - ".github/workflows/floor05-pretraining-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "services/pipeline/floor03_asset_realization/**"
+      - "services/pipeline/floor04_media_synthesis/**"
+      - "services/pipeline/floor05_timeline_composition/**"
+      - "services/pipeline/floor06_rendering/**"
+      - "services/pipeline/guardian/floors/floor05_guardian.py"
+      - "training/ascalon/ontology/capabilities.json"
+      - ".okf/**"
+      - "Team/reports/**"
+
+jobs:
+  floor05:
+    name: Floor 05 pre-training production validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "fastapi>=0.115,<1" "pydantic>=2.7,<3" "pydantic-settings>=2.4,<3" "structlog>=24,<26" "pytest>=8,<9" "httpx>=0.27,<1"
+
+      - name: Ensure FFmpeg and FFprobe exist
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Compile pipeline floors
+        run: |
+          python -m compileall -q             services/pipeline/floor03_asset_realization             services/pipeline/floor04_media_synthesis             services/pipeline/floor05_timeline_composition             services/pipeline/floor06_rendering
+
+      - name: Validate Ascalon capability ontology
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path("training/ascalon/ontology/capabilities.json").read_text())
+          cap=next(c for c in data["capabilities"] if c["capabilityId"]=="cap_timeline_mux")
+          assert cap["requiresGuardianGate"] is True
+          assert cap["version"] == "2.0.0"
+          assert cap["riskClass"] == "MEDIUM"
+          print("Ascalon F05 execution capability gate: PASS")
+          PY
+
+      - name: Run Floor 05 tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: |
+          python -m pytest services/pipeline/floor05_timeline_composition/tests/ -q
+
+      - name: Run F03/F04/F06 contract regression tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: |
+          python -m pytest \
+            services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py \
+            services/pipeline/floor04_media_synthesis/tests/test_floor04_handoff.py \
+            services/pipeline/floor06_rendering/tests/test_floor06_handoff.py -q
