@@ -49,3 +49,14 @@ class SourceManifestVerifier:
             cls._verify_path(asset.file_path, asset.sha256_checksum, asset.file_size_bytes, "audio")
             for asset in assets
         ]
+
+    @classmethod
+    def verify_background_audio(cls, asset: SynthesizedAudioAsset | None) -> Path | None:
+        if asset is None:
+            return None
+        return cls._verify_path(
+            asset.file_path,
+            asset.sha256_checksum,
+            asset.file_size_bytes,
+            "background audio",
+        )
