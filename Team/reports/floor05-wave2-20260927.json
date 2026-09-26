@@ -55,7 +55,7 @@
     "notes": "Wave 2 tightens path, symlink, byte-length, SHA-256, decoder, and recovery boundaries. Final repository security lanes remain admission gates."
   },
   "trainingReadiness": {
-    "floor05": "PASS_PENDING_CI",
+    "floor05": "PASS",
     "ascalon": "Bounded TimelineProposalIR proposal/evaluation only; no authority promotion.",
     "rendererModels": "No new provider/model execution authority."
   },
@@ -92,14 +92,26 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "PENDING_CI",
-    "Forge Release": "PENDING_CI"
+    "Forge Evaluator": "PASS",
+    "Forge Release": "PASS_PENDING_MERGE"
   },
   "conflicts": [],
   "notes": [
     "No floor topology or authority hierarchy change.",
     "No third-party source code, model weights, credentials or provider authority imported.",
     "The reference render remains a bounded physical evidence path and not F06 distributed rendering.",
-    "Wave2 intentionally improves semantic fidelity and recovery without moving downstream ownership upstream."
-  ]
+    "Wave2 intentionally improves semantic fidelity and recovery without moving downstream ownership upstream.",
+    "Canonical production-critical CI gates are green on the branch head; Web Regression Suite is informational and still running/non-blocking."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PASS",
+    "obsidianMemoryValidation": "PASS",
+    "floor02Floor03ProductionGates": "PASS",
+    "floor04F05HandoffValidation": "PASS",
+    "floor05PreTrainingValidation": "PASS",
+    "f03GuardianContract": "PASS",
+    "repositoryCriticalCi": "PASS",
+    "googleDriveMcp": "PASS",
+    "webRegressionSuite": "RUNNING_INFORMATIONAL"
+  }
 }
