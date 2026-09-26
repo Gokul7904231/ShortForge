@@ -49,3 +49,10 @@ Prior to Project Ascalon, the FactoryOS codebase contained several critical impl
 6. **Unvalidated Memory Ingestion**: The experience retriever lacked training eligibility flags, allowing simulated and failed experiences to influence live decision policies.
 
 All 6 critical anomaly classes have been remediated in the `feat/ascalon-training-readiness` branch.
+
+
+## Floor 03 post-merge admission gate — 2026-09-26
+
+Floor 03 remains **NOT TRAINING-READY** on the hardening branch until the canonical runtime adapter, distributed handoff persistence, explicit F03→F05 join, repository-wide typecheck, and the dedicated post-merge F03 workflow all pass on the actual `main` commit.
+
+Evidence from the earlier PR-scoped F03 run proves the scoped implementation tests, but it does not prove post-merge runtime integration or repository-wide health. The new admission evidence is therefore the post-merge workflow on `main`, plus the immutable F03 handoff record and canonical Overseer execution trace.
