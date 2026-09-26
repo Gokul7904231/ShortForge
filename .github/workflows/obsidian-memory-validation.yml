@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "knowledge/**"
+      - "knowledge/.obsidian/plugins/shortforge-knowledge-graph/**"
+      - "tools/obsidian/validate-knowledge-graph.mjs"
       - "tools/obsidian/**"
       - "docs/architecture/obsidian-memory-fabric.md"
       - ".okf/decisions.md"
@@ -20,6 +22,8 @@ on:
       - main
     paths:
       - "knowledge/**"
+      - "knowledge/.obsidian/plugins/shortforge-knowledge-graph/**"
+      - "tools/obsidian/validate-knowledge-graph.mjs"
       - "tools/obsidian/**"
       - "docs/architecture/obsidian-memory-fabric.md"
       - ".okf/decisions.md"
@@ -77,3 +81,8 @@ jobs:
       - name: Load live Memory Fabric modules
         run: |
           npx tsx --eval "Promise.all([import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricBridge.ts'), import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricProjection.ts'), import('./apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts')]).then(() => console.log('MEMORY_FABRIC_MODULE_LOAD: PASS'))"
+
+      - name: Validate ShortForge Knowledge Graph plugin assets
+        run: |
+          node --check knowledge/.obsidian/plugins/shortforge-knowledge-graph/main.js
+          node tools/obsidian/validate-knowledge-graph.mjs
