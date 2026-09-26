@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR22-PostMergeF03PythonPath",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/post-merge-f03-pythonpath-20260926",
+  "objective": "Correct all Python test-step PYTHONPATH declarations in the canonical post-merge F03 verification workflow so the explicit F03/F04/F05 contract test can import the Floor 04 compatibility namespace after merge.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Post-merge verification must exercise the same canonical floor compatibility namespaces as pre-merge production gates.",
+      "F03 and F04 remain parallel predecessors to F05."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_POST_MERGE_VERIFICATION",
+    "Forge Release": "PENDING_POST_MERGE_VERIFICATION"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "reason": "Workflow-only PYTHONPATH correction; no production runtime capability, credential, or authority changes."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Team Change Gate passes",
+    "F03/F04/F05 post-merge contract test passes on main",
+    "Repository typecheck remains green",
+    "Actual main post-merge F03 workflow passes"
+  ],
+  "evidenceRefs": [
+    ".github/workflows/floor03-post-merge.yml",
+    "Team/reports/pr-22.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "No runtime training authority changed; this closes verification-environment coverage."
+  },
+  "disposition": "ESCALATED"
+}
