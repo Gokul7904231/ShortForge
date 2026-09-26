@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from floors.floor02_scripting.app.domain.handoff import Floor02HandoffPayload, HandoffStatus
 from floors.floor03_asset_realization.app.domain.asset_models import AssetManifest, AudioAssetRequirement, VisualAssetRequirement
@@ -73,17 +73,29 @@ class Floor03HandoffPayload(BaseModel):
     script_version: int = Field(default=1, ge=1)
     request_id: str
     floor_id: str = "floor03_asset_realization"
-    floor_version: str = "2.3.0"
+    floor_version: str = "2.3.1"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     resolved_platform: str
     execution_mode: ExecutionModeDetails = Field(default_factory=ExecutionModeDetails)
     visual_asset_requirements: List[VisualAssetRequirement] = Field(..., min_length=1)
     audio_asset_requirements: List[AudioAssetRequirement] = Field(..., min_length=1)
     manifest: AssetManifest
-    asset_plan_ir: Optional[AssetPlanIR] = None
+    asset_plan_ir: AssetPlanIR
     decision_quality_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     handoff_status: HandoffStatus = HandoffStatus.VALIDATED
     provenance: List[ProvenanceEntry] = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def validate_plan_boundary(self) -> "Floor03HandoffPayload":
+        if self.asset_plan_ir is None:
+            raise ValueError("Floor 03 handoff requires AssetPlanIR.")
+        if not self.asset_plan_ir.plan_fingerprint:
+            raise ValueError("Floor 03 handoff requires a semantic AssetPlanIR plan_fingerprint.")
+        if self.asset_plan_ir.plan_id != self.asset_plan_id:
+            raise ValueError("Floor 03 handoff asset_plan_id must match AssetPlanIR plan_id.")
+        if self.asset_plan_ir.script_id != self.script_id or self.asset_plan_ir.script_version != self.script_version:
+            raise ValueError("Floor 03 AssetPlanIR script lineage must match the handoff.")
+        return self
 
 
 class WorkerExecutionSummary(BaseModel):

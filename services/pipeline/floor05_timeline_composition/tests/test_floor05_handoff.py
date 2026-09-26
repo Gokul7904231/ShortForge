@@ -16,6 +16,7 @@ from floors.floor04_media_synthesis.app.domain.handoff import (
     RightsMetadata,
     SynthesizedAudioAsset,
     SynthesizedVisualAsset,
+    ProviderExecutionRecord,
 )
 from floors.floor05_timeline_composition.app.domain.handoff import (
     Floor05HandoffPayload,
@@ -40,10 +41,10 @@ def build_mock_floor04_payload(tmp_path) -> Floor04HandoffPayload:
     root.mkdir(exist_ok=True)
 
     img_path = root / "scene1.png"
-    img_path.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDRIEND\xaeB`\x82")
+    img_path.write_bytes(b"placeholder-test-image")
 
-    aud_path = root / "scene1.mp3"
-    aud_path.write_bytes(b"ID3\x04\x00\x00\x00\x00\x00\x00Valid MP3 Stream Payload")
+    aud_path = root / "scene1.wav"
+    aud_path.write_bytes(b"placeholder-test-audio")
 
     rights = RightsMetadata(
         source_type=AssetSourceType.DETERMINISTIC_SYNTHESIS,
@@ -51,7 +52,7 @@ def build_mock_floor04_payload(tmp_path) -> Floor04HandoffPayload:
     )
 
     vis = SynthesizedVisualAsset(
-        asset_id="vis-001",
+        asset_id=f03.visual_asset_requirements[0].asset_id,
         scene_id="sc-1",
         file_path=str(img_path),
         mime_type="image/png",
@@ -60,19 +61,23 @@ def build_mock_floor04_payload(tmp_path) -> Floor04HandoffPayload:
         sha256_checksum="a" * 64,
         file_size_bytes=100,
         provenance_hash="p" * 64,
+        source_spec_hash=f03.asset_plan_ir.plan_fingerprint or f03.asset_plan_ir.source_fingerprint,
+        provider_execution=ProviderExecutionRecord(provider_id="test-image", capability="image_generation", request_fingerprint="c" * 64),
         rights_metadata=rights,
     )
 
     aud = SynthesizedAudioAsset(
-        asset_id="aud-001",
+        asset_id=f03.audio_asset_requirements[0].asset_id,
         scene_id="sc-1",
         file_path=str(aud_path),
-        mime_type="audio/mpeg",
+        mime_type="audio/wav",
         duration_seconds=5.0,
         sample_rate_hz=44100,
         sha256_checksum="b" * 64,
         file_size_bytes=200,
         provenance_hash="q" * 64,
+        source_spec_hash=f03.asset_plan_ir.plan_fingerprint or f03.asset_plan_ir.source_fingerprint,
+        provider_execution=ProviderExecutionRecord(provider_id="test-tts", capability="tts_generation", request_fingerprint="d" * 64),
         rights_metadata=rights,
     )
 
@@ -84,7 +89,9 @@ def build_mock_floor04_payload(tmp_path) -> Floor04HandoffPayload:
         synthesized_visual_assets=[vis],
         synthesized_audio_assets=[aud],
         media_manifest=manifest,
-        provenance_hash="f04prov" + "0" * 57,
+        source_asset_plan_fingerprint=f03.asset_plan_ir.plan_fingerprint or f03.asset_plan_ir.source_fingerprint,
+        provider_executions=[vis.provider_execution, aud.provider_execution],
+        provenance_hash="e" * 64,
     )
 
 
@@ -97,7 +104,7 @@ def test_floor05_handoff_contract_serialization(tmp_path):
         track_type=TimelineTrackType.VISUAL,
         start_time=0.0,
         end_time=5.0,
-        source_asset_id="vis-001",
+        source_asset_id=f04.synthesized_visual_assets[0].asset_id,
         source_asset_version="1.0.0",
         source_file_path="/path/to/img.png",
     )
@@ -140,7 +147,7 @@ def test_floor05_handoff_contract_serialization(tmp_path):
 
     assert deserialized.request_id == "req-f05-01"
     assert deserialized.render_job.render_job_id == "job-1"
-    assert deserialized.timeline_spec.clips[0].source_asset_id == "vis-001"
+    assert deserialized.timeline_spec.clips[0].source_asset_id == f04.synthesized_visual_assets[0].asset_id
 
 
 def test_floor05_rejects_f03_f04_lineage_mismatch(tmp_path):

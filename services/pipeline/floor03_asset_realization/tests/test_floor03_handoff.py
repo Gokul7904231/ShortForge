@@ -197,7 +197,7 @@ def test_floor02_handoff_ingestion_and_asset_planning(tmp_path):
     assert payload.script_id == f02_payload.script_id
     assert payload.resolved_platform == "youtube_shorts"
     assert payload.floor_id == "floor03_asset_realization"
-    assert payload.floor_version == "2.3.0"
+    assert payload.floor_version == "2.3.1"
     assert payload.asset_plan_ir is not None
     assert payload.asset_plan_ir.script_id == f02_payload.script_id
     assert payload.asset_plan_ir.platform == payload.resolved_platform

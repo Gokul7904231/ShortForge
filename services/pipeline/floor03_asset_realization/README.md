@@ -1,7 +1,7 @@
 # Floor 03 — Asset Specification & Realization Planning
 
 **Canonical Floor ID**: `floor03_asset_realization`  
-**Floor Version**: `2.3.0`  
+**Floor Version**: `2.3.1`  
 **Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
 **Overseer Integration**: **CANONICAL** — Overseer uses the signed/internal Python runtime adapter and persists the validated handoff in the distributed control-plane store.
 
@@ -130,3 +130,7 @@ Broader GitHub research now informs the planning contract without importing any 
 The canonical AssetPlanIR validator now checks dependency order, dependency identity, recorded upstream node fingerprints, and conditioning-to-reference bindings.
 
 Fresh CI is still required for promotion of this research wave.
+
+### F03→F04 contract hardening — 2.3.1
+
+The validated F03 handoff now requires AssetPlanIR plus a semantic plan fingerprint. The plan ID and script lineage are checked against the handoff. This is a patch-level enforcement change only; F03 remains provider-neutral and non-executing.

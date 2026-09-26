@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import hashlib
 from typing import List, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import structlog
 
 from factoryos.guardian.contracts.guardian_state import ExecutionMode
 from floors.floor03_asset_realization.app.domain.handoff import Floor03HandoffPayload
-from floors.floor04_media_synthesis.app.domain.handoff import Floor04HandoffPayload, MediaPackageManifest, SynthesizedAudioAsset, SynthesizedVisualAsset
+from floors.floor04_media_synthesis.app.domain.handoff import (
+    Floor04HandoffPayload,
+    MediaPackageManifest,
+    ProviderExecutionRecord,
+    SynthesizedAudioAsset,
+    SynthesizedVisualAsset,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -24,10 +30,18 @@ def run_media_package_worker(
     bg_audio_asset: Optional[SynthesizedAudioAsset],
     execution_mode: ExecutionMode,
 ) -> Floor04HandoffPayload:
-    """Bundle synthesized visual and audio assets into the authoritative Floor 04 handoff contract."""
-    total_size = sum(v.file_size_bytes for v in visual_assets) + sum(a.file_size_bytes for a in audio_assets)
-    if bg_audio_asset:
-        total_size += bg_audio_asset.file_size_bytes
+    """Bundle verified assets into the authoritative Floor 04 handoff."""
+    plan = f03_payload.asset_plan_ir
+    if plan is None:
+        raise ValueError("Floor 04 cannot assemble a package without AssetPlanIR.")
+
+    source_asset_plan_fingerprint = plan.plan_fingerprint or plan.source_fingerprint
+
+    total_size = (
+        sum(v.file_size_bytes for v in visual_assets)
+        + sum(a.file_size_bytes for a in audio_assets)
+        + (bg_audio_asset.file_size_bytes if bg_audio_asset else 0)
+    )
 
     manifest = MediaPackageManifest(
         total_visual_assets=len(visual_assets),
@@ -36,8 +50,23 @@ def run_media_package_worker(
         total_size_bytes=total_size,
     )
 
-    all_hashes = "".join(v.sha256_checksum for v in visual_assets) + "".join(a.sha256_checksum for a in audio_assets)
-    provenance_hash = hashlib.sha256(f"{request_id}:{execution_id}:{all_hashes}".encode("utf-8")).hexdigest()
+    provider_executions: List[ProviderExecutionRecord] = [
+        *(asset.provider_execution for asset in visual_assets),
+        *(asset.provider_execution for asset in audio_assets),
+    ]
+    if bg_audio_asset is not None:
+        provider_executions.append(bg_audio_asset.provider_execution)
+
+    all_hashes = "".join(
+        [
+            *(asset.sha256_checksum for asset in visual_assets),
+            *(asset.sha256_checksum for asset in audio_assets),
+            *([bg_audio_asset.sha256_checksum] if bg_audio_asset else []),
+        ]
+    )
+    provenance_hash = hashlib.sha256(
+        f"{request_id}:{execution_id}:{source_asset_plan_fingerprint}:{all_hashes}".encode("utf-8")
+    ).hexdigest()
 
     handoff = Floor04HandoffPayload(
         request_id=request_id,
@@ -48,8 +77,16 @@ def run_media_package_worker(
         background_audio_asset=bg_audio_asset,
         media_manifest=manifest,
         execution_mode=execution_mode,
+        source_asset_plan_fingerprint=source_asset_plan_fingerprint,
+        provider_executions=provider_executions,
         provenance_hash=provenance_hash,
     )
 
-    logger.info("media_package_assembled", request_id=request_id, visual_count=len(visual_assets), audio_count=len(audio_assets))
+    logger.info(
+        "media_package_assembled",
+        request_id=request_id,
+        visual_count=len(visual_assets),
+        audio_count=len(audio_assets),
+        plan_fingerprint=source_asset_plan_fingerprint,
+    )
     return handoff

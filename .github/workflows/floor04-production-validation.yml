@@ -1,0 +1,74 @@
+name: Floor 04 Production Validation
+
+on:
+  pull_request:
+    paths:
+      - "services/pipeline/floor04_media_synthesis/**"
+      - "services/pipeline/floor05_timeline_composition/**"
+      - "services/pipeline/floor03_asset_realization/**"
+      - "services/pipeline/guardian/**"
+      - ".okf/**"
+      - "Team/reports/**"
+      - ".github/workflows/floor04-production-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "services/pipeline/floor04_media_synthesis/**"
+      - "services/pipeline/floor05_timeline_composition/**"
+      - "services/pipeline/floor03_asset_realization/**"
+      - "services/pipeline/guardian/**"
+      - ".okf/**"
+      - "Team/reports/**"
+
+jobs:
+  floor04:
+    name: Floor 04 + F05 handoff validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "fastapi>=0.115,<1" "pydantic>=2.7,<3" "pydantic-settings>=2.4,<3" "structlog>=24,<26" "pytest>=8,<9" "httpx>=0.27,<1"
+
+      - name: Ensure ffprobe exists for physical audio validation
+        run: |
+          if ! command -v ffprobe >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffprobe -version | head -n 1
+
+      - name: Compile Floor 03/04/05
+        run: |
+          python -m compileall -q \
+            services/pipeline/floor03_asset_realization \
+            services/pipeline/floor04_media_synthesis \
+            services/pipeline/floor05_timeline_composition
+
+      - name: Run Floor 04 tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: |
+          python -m pytest services/pipeline/floor04_media_synthesis/tests/ -q
+
+      - name: Run F05 handoff tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: |
+          python -m pytest services/pipeline/floor05_timeline_composition/tests/test_floor05_handoff.py -q
+
+      - name: Verify hardened F03 handoff contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: |
+          python -m pytest services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py -q

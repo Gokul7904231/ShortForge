@@ -13,6 +13,8 @@ def test_registry_register_and_retrieve(tmp_path):
     registry = MediaAssetRegistry(registry_file_path=str(reg_file))
 
     rights = RightsMetadata(source_type=AssetSourceType.DETERMINISTIC_SYNTHESIS, provider_name="test_provider")
+    storage_path = tmp_path / "asset-vis-01.png"
+    storage_path.write_bytes(b"test-image-bytes")
     rec = MediaAssetRecord(
         asset_id="asset-vis-01",
         scene_id="sc-01",
@@ -48,6 +50,8 @@ def test_registry_spec_linkage_verification(tmp_path):
     registry = MediaAssetRegistry(registry_file_path=str(reg_file))
 
     rights = RightsMetadata(source_type=AssetSourceType.DETERMINISTIC_SYNTHESIS, provider_name="test_provider")
+    storage_path = tmp_path / "asset-aud-01.mp3"
+    storage_path.write_bytes(b"test-audio-bytes")
     rec = MediaAssetRecord(
         asset_id="asset-aud-01",
         scene_id="sc-01",
@@ -60,7 +64,7 @@ def test_registry_spec_linkage_verification(tmp_path):
         provider_name="tts_worker",
         generation_request_id="req-f04-02",
         transaction_id="tx-102",
-        storage_path=str(tmp_path / "asset-aud-01.mp3"),
+        storage_path=str(storage_path),
         rights_metadata=rights,
     )
 

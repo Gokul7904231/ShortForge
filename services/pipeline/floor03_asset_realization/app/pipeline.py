@@ -396,7 +396,16 @@ class Floor03Pipeline:
             executed_model=None,
         )
 
+        asset_plan_ir = self._compile_asset_plan_ir(
+            inp,
+            platform=platform,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            visual_reqs=visual_reqs,
+        )
+
         payload = Floor03HandoffPayload(
+            asset_plan_id=asset_plan_ir.plan_id,
             asset_plan_version=1,
             script_id=inp.floor02_payload.script_id,
             script_version=inp.floor02_payload.script_version,
@@ -406,13 +415,7 @@ class Floor03Pipeline:
             visual_asset_requirements=visual_reqs,
             audio_asset_requirements=audio_reqs,
             manifest=manifest,
-            asset_plan_ir=self._compile_asset_plan_ir(
-                inp,
-                platform=platform,
-                aspect_ratio=aspect_ratio,
-                resolution=resolution,
-                visual_reqs=visual_reqs,
-            ),
+            asset_plan_ir=asset_plan_ir,
             decision_quality_score=None,
             handoff_status=HandoffStatus.VALIDATED,
             provenance=provenance_list,

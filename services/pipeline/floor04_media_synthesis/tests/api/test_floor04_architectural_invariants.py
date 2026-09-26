@@ -13,6 +13,7 @@ from floors.floor04_media_synthesis.app.services.pipeline import Floor04Pipeline
 from floors.floor04_media_synthesis.app.services.reconciliation import CrashReconciliationEngine
 from floors.floor04_media_synthesis.app.services.validator import PNG_IEND, PNG_MAGIC, PhysicalMediaValidator
 from floors.floor04_media_synthesis.tests.test_floor04_handoff import build_mock_floor03_payload
+from floors.floor04_media_synthesis.tests.media_fixtures import write_png
 
 
 def test_invariant_brain_cannot_authorize_itself(tmp_path):
@@ -65,7 +66,7 @@ def test_invariant_worker_cannot_bypass_validator(tmp_path):
 def test_invariant_provider_metadata_cannot_override_bytes(tmp_path):
     """INVARIANT 4: Provider-declared MIME cannot override physical byte inspection."""
     png_file = tmp_path / "actual_png.png"
-    png_file.write_bytes(PNG_MAGIC + b"\x00IHDR" + PNG_IEND)
+    write_png(png_file)
 
     with pytest.raises(GuardianValidationError) as exc:
         PhysicalMediaValidator.validate_image_asset(
@@ -83,7 +84,7 @@ def test_invariant_provider_cannot_choose_arbitrary_paths(tmp_path):
     outside_root = tmp_path / "outside"
     outside_root.mkdir()
     outside_file = outside_root / "test.png"
-    outside_file.write_bytes(PNG_MAGIC + PNG_IEND)
+    write_png(outside_file)
 
     authorized_root = tmp_path / "authorized_storage"
     authorized_root.mkdir()
@@ -117,7 +118,7 @@ def test_invariant_ambiguous_recovery_becomes_orphaned(tmp_path):
     storage_root.mkdir()
 
     valid_file = storage_root / "valid.png"
-    valid_file.write_bytes(PNG_MAGIC + b"\x00\x00\x00\x0dIHDR\x00\x00\x04\x38" + PNG_IEND)
+    write_png(valid_file)
     corrupt_file = storage_root / "corrupt.png"
     corrupt_file.write_bytes(b"corrupt")
 

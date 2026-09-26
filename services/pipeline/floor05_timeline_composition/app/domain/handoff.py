@@ -159,6 +159,24 @@ class Floor05Input(BaseModel):
             )
         if self.floor03_payload.handoff_status != HandoffStatus.VALIDATED:
             raise ValueError("F03 handoff must be VALIDATED before Floor 05 execution.")
+
+        expected_plan_fingerprint = (
+            self.floor03_payload.asset_plan_ir.plan_fingerprint
+            if self.floor03_payload.asset_plan_ir is not None
+            else None
+        ) or (
+            self.floor03_payload.asset_plan_ir.source_fingerprint
+            if self.floor03_payload.asset_plan_ir is not None
+            else None
+        )
+        if expected_plan_fingerprint is None:
+            raise ValueError("F05 requires a typed F03 AssetPlanIR fingerprint.")
+
+        if self.floor04_payload.source_asset_plan_fingerprint != expected_plan_fingerprint:
+            raise ValueError(
+                "F04/F05 join mismatch: Floor 04 media must be derived from the exact F03 AssetPlanIR."
+            )
+
         return self
 
 
@@ -182,3 +200,35 @@ class Floor05HandoffPayload(BaseModel):
     provenance_hash: str = Field(...)
     version: str = Field(default="1.0.0")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @model_validator(mode="after")
+    def validate_asset_references(self) -> "Floor05HandoffPayload":
+        available_visual_ids = {
+            asset.asset_id for asset in self.floor04_payload.synthesized_visual_assets
+        }
+        available_audio_ids = {
+            asset.asset_id for asset in self.floor04_payload.synthesized_audio_assets
+        }
+        if self.floor04_payload.background_audio_asset:
+            available_audio_ids.add(self.floor04_payload.background_audio_asset.asset_id)
+
+        for clip in self.timeline_spec.clips:
+            if clip.track_type == TimelineTrackType.VISUAL:
+                available_ids = available_visual_ids
+            elif clip.track_type in {
+                TimelineTrackType.NARRATION,
+                TimelineTrackType.BACKGROUND_AUDIO,
+                TimelineTrackType.SFX,
+            }:
+                available_ids = available_audio_ids
+            else:
+                continue
+
+            if clip.source_asset_id not in available_ids:
+                raise ValueError(
+                    "F05 timeline references an asset not present in F04 handoff: "
+                    + clip.source_asset_id
+                )
+
+        return self
+

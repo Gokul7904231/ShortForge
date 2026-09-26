@@ -34,3 +34,8 @@ This wave broadens F03 research beyond the original nine repositories and the ea
 ## Explicit non-adoption
 
 No upstream code, runtime, model, prompt, provider API, credential, storage implementation, or verification authority is imported into F03.
+
+## Contract-hardening follow-up — 2026-09-26
+
+- The F03 handoff now requires the semantic AssetPlanIR fingerprint to be present and consistent with plan/script identity.
+- This is a mechanical enforcement of already-promoted Wave 5 lineage principles; it does not expand F03 authority or introduce provider-specific runtime behavior.
