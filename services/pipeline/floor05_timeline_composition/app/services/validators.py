@@ -72,6 +72,43 @@ class PhysicalVideoValidator:
             return 0.0
 
     @classmethod
+    def validate_thumbnail(cls, file_path: str, storage_root: str) -> Tuple[str, int]:
+        p = Path(file_path).resolve()
+        root = Path(storage_root).resolve()
+        try:
+            p.relative_to(root)
+        except ValueError as exc:
+            raise GuardianValidationError(
+                f"Security Violation: Thumbnail path {p} attempts path traversal outside {root}"
+            ) from exc
+
+        if p.is_symlink():
+            target = p.readlink().resolve()
+            try:
+                target.relative_to(root)
+            except ValueError as exc:
+                raise GuardianValidationError(
+                    f"Security Violation: Thumbnail symlink target {target} escapes root {root}"
+                ) from exc
+
+        if not p.exists() or not p.is_file():
+            raise GuardianValidationError(f"Thumbnail File Error: Thumbnail does not exist at {p}")
+
+        probe = cls._run_ffprobe(p)
+        format_name = str(probe.get("format", {}).get("format_name", ""))
+        if "png" not in format_name.lower():
+            raise GuardianValidationError(
+                f"Thumbnail Validation Failure: expected PNG, got {format_name!r}"
+            )
+        streams = [s for s in probe.get("streams", []) if s.get("codec_type") == "video"]
+        if len(streams) != 1:
+            raise GuardianValidationError("Thumbnail Validation Failure: expected exactly one image stream.")
+        size = p.stat().st_size
+        if size <= 0:
+            raise GuardianValidationError("Thumbnail Validation Failure: thumbnail is empty.")
+        return "image/png", size
+
+    @classmethod
     def validate_rendered_video(
         cls,
         file_path: str,
