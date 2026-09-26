@@ -24,10 +24,12 @@ type MongoMemoryFabricOffsetDocument = MemoryFabricOffset & {
 export class MongoMemoryFabricLedger implements IMemoryFabricLedger {
   private readonly events: Collection<MongoMemoryFabricLedgerDocument>;
   private readonly offsets: Collection<MongoMemoryFabricOffsetDocument>;
+  private readonly locks: Collection<{ _id: string; ownerId: string; expiresAt: string }>;
 
   constructor(private readonly db: Db) {
     this.events = db.collection<MongoMemoryFabricLedgerDocument>("memory_fabric_events");
     this.offsets = db.collection<MongoMemoryFabricOffsetDocument>("memory_fabric_offsets");
+    this.locks = db.collection<{ _id: string; ownerId: string; expiresAt: string }>("memory_fabric_locks");
   }
 
   async initialize(): Promise<void> {
@@ -36,6 +38,7 @@ export class MongoMemoryFabricLedger implements IMemoryFabricLedger {
     await this.events.createIndex({ lifecycle: 1, updatedAt: -1 });
     await this.events.createIndex({ sourceHash: 1 });
     await this.offsets.createIndex({ streamKey: 1 }, { unique: true });
+    await this.locks.createIndex({ expiresAt: 1 });
   }
 
   async insertIfAbsent(record: MemoryFabricLedgerRecord): Promise<boolean> {
@@ -82,6 +85,28 @@ export class MongoMemoryFabricLedger implements IMemoryFabricLedger {
 
   async countByQualityState(state: MemoryFabricLedgerRecord["qualityState"]): Promise<number> {
     return this.events.countDocuments({ qualityState: state });
+  }
+
+  async acquireWriterLease(ownerId: string, ttlMs: number): Promise<boolean> {
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+    try {
+      const result = await this.locks.updateOne(
+        {
+          _id: "memory-fabric-writer",
+          $or: [{ expiresAt: { $lte: now } }, { ownerId }],
+        },
+        { $set: { ownerId, expiresAt } },
+        { upsert: true },
+      );
+      return result.matchedCount === 1 || result.upsertedCount === 1;
+    } catch {
+      return false;
+    }
+  }
+
+  async releaseWriterLease(ownerId: string): Promise<void> {
+    await this.locks.deleteOne({ _id: "memory-fabric-writer", ownerId });
   }
 
   async getRecent(limit = 50): Promise<MemoryFabricLedgerRecord[]> {
@@ -156,6 +181,12 @@ export class InMemoryMemoryFabricLedger implements IMemoryFabricLedger {
   async countByQualityState(state: MemoryFabricLedgerRecord["qualityState"]): Promise<number> {
     return [...this.events.values()].filter((record) => record.qualityState === state).length;
   }
+
+  async acquireWriterLease(_ownerId: string, _ttlMs: number): Promise<boolean> {
+    return true;
+  }
+
+  async releaseWriterLease(_ownerId: string): Promise<void> {}
 
   async getRecent(limit = 50): Promise<MemoryFabricLedgerRecord[]> {
     return structuredClone(
