@@ -212,7 +212,7 @@ class PhysicalMediaValidator:
     ) -> Tuple[str, str, int]:
         if required_width <= 0 or required_height <= 0:
             raise GuardianValidationError(
-                f"Contract Requirement Violation: invalid target dimensions {required_width}x{required_height}"
+                f"Contract Requirement Violation: Invalid target dimensions {required_width}x{required_height}"
             )
 
         p = cls._verify_path_security(file_path, storage_root)
@@ -242,7 +242,7 @@ class PhysicalMediaValidator:
                     f"requested {required_width}x{required_height}"
                 )
         else:
-            raise GuardianValidationError(f"Physical Media Validation Failed: unsupported image magic bytes: '{file_path}'")
+            raise GuardianValidationError(f"Physical Media Validation Failed: Invalid or unsupported image magic bytes: '{file_path}'")
 
         if expected_mime and expected_mime != mime_type:
             raise GuardianValidationError(
