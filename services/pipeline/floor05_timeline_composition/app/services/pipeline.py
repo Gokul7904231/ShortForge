@@ -75,10 +75,12 @@ class Floor05PipelineService:
         job_spec.artifact_sha256 = sha256_val
         job_spec.artifact_size_bytes = size_bytes
         job_spec.artifact_duration_seconds = duration
-        if job_spec.state != RenderJobState.PHYSICAL_VALIDATION:
+        if job_spec.state == RenderJobState.COMMITTED:
+            pass
+        else:
             job_spec.transition_to(RenderJobState.PHYSICAL_VALIDATION)
-        job_spec.transition_to(RenderJobState.SEMANTIC_VALIDATION)
-        job_spec.transition_to(RenderJobState.COMMITTED)
+            job_spec.transition_to(RenderJobState.SEMANTIC_VALIDATION)
+            job_spec.transition_to(RenderJobState.COMMITTED)
         self.registry.register_render_job(job_spec)
 
         timeline_fingerprint = CanonicalHasher.compute_timeline_fingerprint(timeline_spec)
