@@ -172,7 +172,7 @@ class ImagePromptWorker:
                             raw.get("version_selector") or raw.get("version") or ""
                         ).strip()
                         or None,
-                        traits=self._string_list(raw.get("traits")),
+                        traits=cls._string_list(raw.get("traits")),
                         required=bool(raw.get("required", True)),
                     )
                 )
