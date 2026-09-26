@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR19-Floor03-ResearchWave5",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/f03-research-wave2",
+  "objective": "Expand Floor 03 through a broader clean-room GitHub research sweep and harden the provider-neutral AssetPlanIR with logical reference identity, typed conditioning, dependency-aware cache lineage, stronger graph validation, surgical regeneration preservation, synchronized Ascalon and OKF documentation, and regression coverage.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/architecture.md",
+      ".okf/principles.md",
+      ".okf/terminology.md",
+      ".okf/decisions.md",
+      ".okf/hierarchy-map.md",
+      ".okf/research/repo-research-ledger.md",
+      ".okf/research/external-repository-mappings.md",
+      ".okf/research/repo-mappings/f03-screened-wave5.md",
+      ".okf/research/repo-mappings/openassetio-openassetio.md",
+      ".okf/research/repo-mappings/openassetio-mediacreation.md",
+      ".okf/research/repo-mappings/academysoftwarefoundation-opentimelineio.md",
+      ".okf/research/repo-mappings/comfy-org-comfyui.md",
+      ".okf/research/repo-mappings/huggingface-diffusers.md",
+      ".okf/research/repo-mappings/openlineage-openlineage.md",
+      ".okf/research/repo-mappings/dagster-io-dagster.md",
+      ".okf/research/repo-mappings/hvision-nku-storydiffusion.md",
+      ".okf/research/repo-mappings/instantx-instantid.md",
+      ".okf/research/repo-mappings/ali-vilab-videocomposer.md",
+      ".okf/research/repo-mappings/lightricks-ltx-video.md",
+      ".okf/research/repo-mappings/contentauth-c2pa-rs.md"
+    ],
+    "rulesConsidered": [
+      "complete .okf sweep before non-trivial decisions",
+      "executable implementation/tests outrank documentation",
+      "repo mappings are first-class research inputs",
+      "F03 remains provider-neutral specification/planning only",
+      "F03 and F04 remain parallel branches",
+      "external research cannot override authority, contracts, or verification",
+      "Guardian, leases/fencing, TimelineIR, RenderFabric, and F07 retain existing authority",
+      "BLOCKED/UNPROVEN evidence cannot become a production PASS"
+    ],
+    "repoMappingCorpus": {
+      "directory": ".okf/research/repo-mappings/",
+      "mappingFileCount": 73,
+      "rule": "Every promoted research pattern used by Floor 03 has a dedicated clean-room mapping or an existing screened mapping in this directory."
+    }
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    {
+      "role": "Forge Architect",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        ".okf/decisions.md",
+        "docs/architecture/floor03-research-upgrade.md",
+        ".okf/research/repo-mappings/f03-screened-wave5.md"
+      ]
+    },
+    {
+      "role": "Forge Builder",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
+        "services/pipeline/floor03_asset_realization/app/pipeline.py",
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py"
+      ]
+    },
+    {
+      "role": "Forge Sentinel",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "services/pipeline/guardian/floors/floor03_guardian.py",
+        ".okf/security/worker-permissions.md",
+        ".okf/security/forger-security-stack.md"
+      ]
+    },
+    {
+      "role": "Forge Evaluator",
+      "status": "IN_PROGRESS",
+      "evidenceRefs": [
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py",
+        ".github/workflows/floor02.yml",
+        "GitHub Actions run 36216890867"
+      ]
+    },
+    {
+      "role": "Forge Release",
+      "status": "ESCALATED",
+      "evidenceRefs": [
+        ".github/workflows/team-gate.yml",
+        ".okf/decisions.md",
+        "PR #19"
+      ]
+    }
+  ],
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "evidenceRefs": [
+      ".okf/security/worker-permissions.md",
+      ".okf/security/forger-security-stack.md",
+      "services/pipeline/guardian/floors/floor03_guardian.py"
+    ],
+    "reason": "The wave changes typed planning contracts and provenance/cache identity but adds no provider credentials, new network endpoint, secret storage, physical generation, or production capability grant."
+  },
+  "conflicts": [
+    {
+      "id": "F03-TOPOLOGY-001",
+      "originalConflict": "A historical F04 payload dependency can appear to imply F03 -> F04, while canonical FloorRegistry topology remains F02 -> (F03 || F04) -> F05.",
+      "status": "RESOLVED",
+      "proposedResolution": "Preserve the canonical parallel topology and treat F04 contract reconciliation as a separate future change.",
+      "acceptedResolution": "Wave 5 does not serialize F04 behind F03.",
+      "decisionAuthority": ".okf/decisions.md",
+      "canonicalUpdates": [
+        ".okf/decisions.md",
+        "docs/architecture/floor03-research-upgrade.md"
+      ]
+    },
+    {
+      "id": "F03-REFERENCE-002",
+      "originalConflict": "External media-generation systems often encode references and controls with provider-specific paths or model parameters.",
+      "status": "RESOLVED",
+      "proposedResolution": "Represent logical entity identity, typed conditioning and dependency lineage in provider-neutral F03 contracts; keep resolution/execution downstream.",
+      "acceptedResolution": "ReferenceBinding and ConditioningSpec are declarative only.",
+      "decisionAuthority": ".okf/decisions.md",
+      "canonicalUpdates": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        ".okf/terminology.md"
+      ]
+    },
+    {
+      "id": "F03-CACHE-003",
+      "originalConflict": "Runtime asset UUID changes can otherwise prevent deterministic dependency-aware cache invalidation across surgical regeneration.",
+      "status": "RESOLVED",
+      "proposedResolution": "Record dependency-node fingerprints on dependency edges and recompute them in sequence order during regeneration.",
+      "acceptedResolution": "Only the affected dependency subgraph changes fingerprints; unrelated branches remain reusable.",
+      "decisionAuthority": ".okf/decisions.md",
+      "canonicalUpdates": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/pipeline.py"
+      ]
+    }
+  ],
+  "verificationPlan": [
+    "F03 Python suite passes",
+    "F03 Guardian contract suite passes",
+    "Ascalon Floor 03 ontology JSON validates",
+    "F02 production suite passes",
+    "Team Change Gate validates this report",
+    "Full repository CI must reach a clean required-check state before merge",
+    "Do not merge PR #19 while any required check is pending or failing"
+  ],
+  "evidenceRefs": [
+    "PR #19",
+    "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+    "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
+    "services/pipeline/floor03_asset_realization/app/pipeline.py",
+    "services/pipeline/floor03_asset_realization/tests/test_floor03_asset_plan_ir.py",
+    "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py",
+    "training/ascalon/ontology/floors.json",
+    "training/ascalon/ontology/agents.json",
+    "testing/contracts/floor.contract.ts",
+    ".github/workflows/floor02.yml",
+    ".okf/decisions.md",
+    ".okf/research/repo-research-ledger.md",
+    ".okf/research/external-repository-mappings.md",
+    ".okf/research/repo-mappings/f03-screened-wave5.md",
+    ".okf/research/repo-mappings/"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "Research and implementation changes are documented; current required CI checks are still running after the latest fix."
+  },
+  "disposition": "ESCALATED"
+}
