@@ -82,4 +82,4 @@ Model quality is evaluated separately from release authority. Agentic post-produ
 - [x] Crash recovery does not commit header-only or unproven artifacts.
 - [x] TimelineProposalIR is typed and proposal-only.
 - [x] Ascalon ontology and worker permissions document the boundary.
-- [x] Canonical production-critical CI admission passed on this branch; informational Web Regression remains non-blocking.
+- [x] Canonical production-critical CI admission and post-merge validation passed on main; informational Web Regression remains non-blocking.
