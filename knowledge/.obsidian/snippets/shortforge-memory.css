@@ -1,0 +1,5 @@
+/* ShortForge Memory Fabric — optional Obsidian CSS snippet */
+.callout[data-callout="authority"] { border-left-width: 4px; }
+.callout[data-callout="verified"] { border-left-width: 4px; }
+.callout[data-callout="warning"] { border-left-width: 4px; }
+.callout[data-callout="evidence"] { border-left-width: 4px; }
