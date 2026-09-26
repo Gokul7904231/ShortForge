@@ -21,5 +21,16 @@
     "Fixed repository-wide TypeScript contract errors identified on the merged main CI run.",
     "Reconciled F03 README, Ascalon ontology, OKF decisions, and training-readiness documentation."
   ],
-  "trainingAdmission": "BLOCKED_UNTIL_MAIN_POST_MERGE_GREEN"
+  "trainingAdmission": "ADMITTED_FOR_ASCALON_TRAINING_DATA_PREPARATION",
+  "finalMainCommit": "e341b6f9e8d2a090812b038dbc7cde90d0b83e2a",
+  "finalVerificationRun": "36219440438",
+  "verificationResults": {
+    "f03Suite": "37 passed",
+    "f03Guardian": "1 passed",
+    "f03F04F05Contracts": "2 passed",
+    "ascalonOntology": "valid JSON",
+    "repositoryTypecheck": "PASS",
+    "mainRequiredChecks": "PASS"
+  },
+  "disposition": "PASS"
 }
