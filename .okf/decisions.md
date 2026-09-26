@@ -1128,3 +1128,8 @@ Fresh F03 Python tests, Guardian tests, ontology JSON validation, TypeScript con
 **Training admission:** F03 is admitted for Ascalon training-data preparation subject to the standing Ascalon principles: deterministic replayability, claim-evidence integrity, secret isolation, and separation of simulation from production authority. This admission does not grant F03 physical-media or release authority.
 
 **Informational note:** the Web Regression Suite is maintained as an informational CI lane and is not used as a substitute for the canonical F03 admission gate.
+
+
+## F03 final evidence refresh — 2026-09-26
+
+Latest verified `main` is `0fa169cae74c9b77def147df55dc4572b91769d2`. Post-merge verification run `36219665043` passed the canonical F03 gate and the repository TypeScript typecheck. Repository CI run `36219665012` also passed. PR #21 corrected verifier-only environment defects discovered on the first merged-main attempt; no production F03 authority boundary was changed by that follow-up.
