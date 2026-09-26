@@ -70,3 +70,16 @@ The training target must still fail closed when:
 ### Evaluation rule
 
 Model quality is evaluated separately from release authority. Agentic post-production benchmark patterns may inform datasets and rubrics, but the production gates remain programmatic validators plus Guardian/F07 authority.
+
+
+## Wave 2 completion checklist
+
+- [x] F03 transition intent preserved.
+- [x] F05 CUT/CROSSFADE semantics deterministic.
+- [x] Reference renderer supports zero-duration CUT joins.
+- [x] FFmpeg decoder smoke gate added after ffprobe.
+- [x] Registry reuse re-checks SHA-256 and byte length.
+- [x] Crash recovery does not commit header-only or unproven artifacts.
+- [x] TimelineProposalIR is typed and proposal-only.
+- [x] Ascalon ontology and worker permissions document the boundary.
+- [ ] Canonical CI admission must pass on this branch before training promotion.
