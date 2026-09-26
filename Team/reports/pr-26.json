@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR26-F03-Evidence-Refresh",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "docs/f03-final-evidence-20260926",
+  "objective": "Refresh F03, OKF, and Ascalon admission documentation to the latest verified main commit and post-merge evidence after PR #21 corrected the verification environment.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Documentation must point at current main evidence.",
+      "Training admission must be grounded in actual post-merge verification.",
+      "Historical verifier failures remain documented as verifier defects, not hidden."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "UNAVAILABLE_FOR_PR21",
+    "zap": "NOT_REQUIRED",
+    "reason": "Documentation/evidence-only change; no runtime code or credentials change. The PR #21 Strix bot reported the workspace trial had ended, so that review was unavailable and is explicitly recorded rather than claimed as executed."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Verify the exact main commit and post-merge run IDs.",
+    "Keep F03 training admission scoped to canonical planning/runtime evidence."
+  ],
+  "evidenceRefs": [
+    "docs/ascalon/training-readiness.md",
+    "docs/verification/ascalon/floor03-post-merge-hardening.md",
+    ".okf/decisions.md",
+    "Team/reports/f03-post-merge-hardening-20260926.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "Documentation refresh only; standing training admission constraints remain."
+  },
+  "disposition": "PASS"
+}

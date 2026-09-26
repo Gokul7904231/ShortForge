@@ -1,8 +1,8 @@
 # Floor 03 Post-Merge Hardening Audit
 
 **Date:** 2026-09-26
-**Final merged main:** `e341b6f9e8d2a090812b038dbc7cde90d0b83e2a`
-**Post-merge verification run:** `36219440438`
+**Latest verified main:** `0fa169cae74c9b77def147df55dc4572b91769d2`
+**Latest post-merge verification run:** `36219665043`
 
 ## Scope
 
@@ -34,6 +34,10 @@ The Python JSON memory store is treated as local cache/idempotency state. The Fa
 
 `.github/workflows/floor03-post-merge.yml` validates the F03 suite, F03 Guardian contract, the F03/F04/F05 contract seam, Ascalon ontology JSON, and the repository-wide TypeScript typecheck whenever relevant changes reach `main`.
 
+## Verification history
+
+The first post-merge attempt on the initial merge commit exposed two verifier-environment defects rather than F03 runtime failures: the TypeScript job ran without installing `apps/web` dependencies, and the F03/F04/F05 contract test omitted the Floor 04 compatibility path. Both were corrected in PR #21. The corrected merged-main run `36219665043` passed both post-merge jobs.
+
 ## Training readiness
 
 Ascalon F03 admission criteria are satisfied on the final merged-main evidence:
@@ -47,3 +51,15 @@ Ascalon F03 admission criteria are satisfied on the final merged-main evidence:
 
 The informational web regression remains separate from this admission gate.
 
+
+
+## Final evidence refresh — 2026-09-26
+
+- Latest verified main: `0fa169cae74c9b77def147df55dc4572b91769d2`
+- Floor 03 Post-Merge Verification: `36219665043` — PASS
+- Repository TypeScript typecheck: PASS
+- Repository CI: `36219665012` — PASS
+- F03 suite: 37 passed
+- F03 Guardian: 1 passed
+- F03/F04/F05 typed seam: 2 passed
+- Ascalon ontology JSON: valid
