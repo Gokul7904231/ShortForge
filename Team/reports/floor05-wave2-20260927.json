@@ -3,7 +3,7 @@
   "changeId": "ShortForge-Floor05-Wave2-20260927",
   "repository": "Gokul7904231/ShortForge",
   "baseRef": "main",
-  "headRef": "feat/floor05-wave2-pretraining-completion-20260927",
+  "headRef": "main",
   "objective": "Complete the remaining Floor 05 pre-training hardening gaps identified after the first production wave, while preserving the locked F02 -> (F03 || F04) -> F05 -> F06 -> F07 topology and authority hierarchy.",
   "classification": "extends existing rule + new capability",
   "okf": {
@@ -93,7 +93,7 @@
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
     "Forge Evaluator": "PASS",
-    "Forge Release": "PASS_PENDING_MERGE"
+    "Forge Release": "COMPLETE"
   },
   "conflicts": [],
   "notes": [
@@ -101,7 +101,8 @@
     "No third-party source code, model weights, credentials or provider authority imported.",
     "The reference render remains a bounded physical evidence path and not F06 distributed rendering.",
     "Wave2 intentionally improves semantic fidelity and recovery without moving downstream ownership upstream.",
-    "Web Regression Suite completed with failure; repository marks this lane informational/non-blocking. All production-critical F05/F03/F04/F06/Team/Obsidian/TypeCheck/Security lanes passed."
+    "Web Regression Suite completed with failure; repository marks this lane informational/non-blocking. All production-critical F05/F03/F04/F06/Team/Obsidian/TypeCheck/Security lanes passed.",
+    "PR #34 merged to main at 254191074ef73c3b1a2951b2da494b379e0a1a9a. All production-critical post-merge gates passed; Web Regression Suite remained informational and failed."
   ],
   "verificationResults": {
     "teamChangeGate": "PASS",
@@ -112,6 +113,11 @@
     "f03GuardianContract": "PASS",
     "repositoryCriticalCi": "PASS",
     "googleDriveMcp": "PASS",
-    "webRegressionSuite": "FAIL_INFORMATIONAL"
-  }
+    "webRegressionSuite": "FAIL_INFORMATIONAL",
+    "postMergeFloor05": "PASS",
+    "postMergeF03": "PASS",
+    "postMergeF04F05Handoff": "PASS",
+    "postMergeTypeScript": "PASS"
+  },
+  "mergedCommitSha": "254191074ef73c3b1a2951b2da494b379e0a1a9a"
 }
