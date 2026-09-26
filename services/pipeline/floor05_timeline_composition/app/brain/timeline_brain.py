@@ -35,6 +35,11 @@ class TimelineBrain:
                 "request_id": request_id,
                 "target_fps": input_payload.target_fps,
                 "execution_mode": input_payload.execution_mode.value,
+                "input_semantic_fingerprint": input_payload.semantic_fingerprint(),
+                "asset_plan_fingerprint": input_payload.floor03_payload.asset_plan_ir.plan_fingerprint,
+                "proposal_only": True,
+                "guardian_authorization_required": True,
+                "source_manifest_verification_required": True,
             },
         )
         logger.info("timeline_brain_proposed_plan", request_id=request_id, target_capability=proposal.target_capability)
