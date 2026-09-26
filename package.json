@@ -18,6 +18,7 @@
     "obsidian:compile": "node tools/obsidian/compile-memory.mjs knowledge",
     "test:obsidian-memory-fabric": "npx tsx apps/web/factoryos/tests/obsidian-memory-fabric.integration.test.ts",
     "obsidian:project-agent": "npx tsx apps/web/factoryos/cli/memory-fabric.mts agent",
-    "obsidian:project-ascalon": "npx tsx apps/web/factoryos/cli/memory-fabric.mts ascalon"
+    "obsidian:project-ascalon": "npx tsx apps/web/factoryos/cli/memory-fabric.mts ascalon",
+    "obsidian:backfill-memory": "npx tsx apps/web/factoryos/cli/memory-fabric-backfill.mts"
   }
 }
