@@ -161,3 +161,12 @@ This changes the prior architecture from a mostly repository-side Obsidian knowl
         → bounded agent / Ascalon context
 
 Obsidian is still not the runtime database, not the control plane, and not the authority source.
+
+
+### Additional hardening
+
+- Historical MongoDB state has an explicit bounded backfill command; startup does not perform an unbounded database scan.
+- A MongoDB-backed writer lease serializes vault mutations when multiple FactoryOS instances share the same derived knowledge target.
+- Active duplicate conflict groups are marked CONTRADICTORY until explicit promotion/supersession resolves the group; no automatic winner is inferred.
+- The projection layer reloads the vault before bounded reads so edits made through Obsidian are visible to agents.
+- Optional Obsidian Headless Sync is exposed only as a repository adapter; it never changes authority or runtime state.
