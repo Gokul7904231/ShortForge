@@ -180,7 +180,7 @@
       "category": "DOMAIN_WORKER",
       "authorityLevel": "OPERATIONAL",
       "assignedFloor": "floor03_asset_realization",
-      "description": "Compiles trusted Floor 02 scene semantics into the canonical provider-neutral AssetPlanIR, including self-contained asset/node identity, semantic fingerprints, explicit upstream lineage, shot/camera guidance, cinematic coverage roles, normalized safe text regions, subject constraints, typed reference bindings with dependency boundary frames, continuity strategy, temporal motion beats, evidence/causal lineage, dependency edges, and bounded downstream repair impact. It does not select providers or execute media.",
+      "description": "Compiles trusted Floor 02 scene semantics into the canonical provider-neutral AssetPlanIR, including self-contained asset/node identity, semantic fingerprints, explicit upstream lineage, shot/camera guidance, cinematic coverage roles, normalized safe text regions, subject constraints, typed reference bindings with dependency boundary frames, continuity strategy, temporal motion beats, evidence/causal lineage, dependency edges, and bounded downstream repair impact. It does not select providers or execute media. Overseer production entry is through the canonical Floor03RuntimeAdapter; the agent never becomes an orchestration or provider authority.",
       "isFloor": false,
       "sourceLocations": [
         "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
