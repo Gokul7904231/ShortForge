@@ -181,6 +181,26 @@ class Floor05Input(BaseModel):
 
 
 class Floor05HandoffPayload(BaseModel):
+    """Authoritative handoff payload produced by Floor 05 for Floor 07."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    request_id: str = Field(...)
+    execution_id: UUID = Field(default_factory=uuid4)
+    floor03_payload: Floor03HandoffPayload = Field(...)
+    floor04_payload: Floor04HandoffPayload = Field(...)
+    timeline_spec: TimelineSpec = Field(...)
+    render_job: RenderJobSpecification = Field(...)
+    rendered_video_path: str = Field(...)
+    rendered_thumbnail_path: str = Field(...)
+    subtitle_file_path: Optional[str] = Field(default=None)
+    sha256_checksum: str = Field(...)
+    file_size_bytes: int = Field(..., gt=0)
+    execution_mode: ExecutionMode = Field(default=ExecutionMode.HYBRID)
+    provenance_hash: str = Field(...)
+    version: str = Field(default="1.0.0")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
     @model_validator(mode="after")
     def validate_asset_references(self) -> "Floor05HandoffPayload":
         available_visual_ids = {
@@ -212,23 +232,3 @@ class Floor05HandoffPayload(BaseModel):
 
         return self
 
-
-    """Authoritative handoff payload produced by Floor 05 for Floor 07."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    request_id: str = Field(...)
-    execution_id: UUID = Field(default_factory=uuid4)
-    floor03_payload: Floor03HandoffPayload = Field(...)
-    floor04_payload: Floor04HandoffPayload = Field(...)
-    timeline_spec: TimelineSpec = Field(...)
-    render_job: RenderJobSpecification = Field(...)
-    rendered_video_path: str = Field(...)
-    rendered_thumbnail_path: str = Field(...)
-    subtitle_file_path: Optional[str] = Field(default=None)
-    sha256_checksum: str = Field(...)
-    file_size_bytes: int = Field(..., gt=0)
-    execution_mode: ExecutionMode = Field(default=ExecutionMode.HYBRID)
-    provenance_hash: str = Field(...)
-    version: str = Field(default="1.0.0")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
