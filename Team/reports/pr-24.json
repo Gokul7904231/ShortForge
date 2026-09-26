@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR24-F05-Compatibility-Bridge",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/f05-compat-bridge-20260926",
+  "objective": "Add the missing root floors.floor05_timeline_composition compatibility bridge required by the explicit F03/F04/F05 contract test.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Root floors.* compatibility namespaces must map to canonical services/pipeline packages.",
+      "Verification contracts must test the canonical namespace instead of being weakened to a different import path."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_POST_MERGE_VERIFICATION",
+    "Forge Release": "PENDING_POST_MERGE_VERIFICATION"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "reason": "Compatibility bridge only; no runtime behavior, credentials, providers, capabilities, or authority are changed."
+  },
+  "conflicts": [
+    {
+      "id": "F05-COMPAT-001",
+      "originalConflict": "F05 contract tests import floors.floor05_timeline_composition but the root compatibility bridge was absent.",
+      "status": "RESOLVED",
+      "proposedResolution": "Add the root bridge consistently with existing canonical floor compatibility packages."
+    }
+  ],
+  "verificationPlan": [
+    "Team Change Gate passes",
+    "Repository CI passes",
+    "Merged-main Floor 03 Post-Merge Verification passes including F03/F04/F05 contract test"
+  ],
+  "evidenceRefs": [
+    "floors/floor05_timeline_composition/__init__.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_handoff.py",
+    "Team/reports/pr-24.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "Training admission remains gated on the corrected main post-merge verification."
+  },
+  "disposition": "ESCALATED"
+}
