@@ -123,7 +123,7 @@ export class MemoryFabricBridge {
     config: MemoryFabricBridgeConfig = {},
   ) {
     this.enabled = config.enabled !== false;
-    this.vaultPath = path.resolve(config.vaultPath || "knowledge");
+    this.vaultPath = path.resolve(config.vaultPath || knowledgeStore.getRootDir());
     this.batchSize = Math.max(1, config.batchSize || 25);
     this.reconciliationIntervalMs = Math.max(5000, config.reconciliationIntervalMs || 60000);
     this.changeStreamRetryMs = Math.max(5000, config.changeStreamRetryMs || 15000);
