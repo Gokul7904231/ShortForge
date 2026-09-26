@@ -30,7 +30,8 @@
     "Guardian-bound Ascalon capability.",
     "Hardened F05 to F06 handoff.",
     "F03 version metadata correction.",
-    "Added Floor 06 compatibility namespace and explicit F05-to-F06 boundary tests."
+    "Added Floor 06 compatibility namespace and explicit F05-to-F06 boundary tests.",
+    "All fresh Floor 05/F06 boundary tests and cross-floor production validations pass."
   ],
   "research": [
     "OpenTimelineIO",
@@ -49,7 +50,7 @@
     "notes": "Fresh repository security lanes remain required."
   },
   "trainingReadiness": {
-    "floor05": "PENDING_FRESH_CI",
+    "floor05": "PASS_PENDING_MERGE",
     "ascalon": "proposal/evaluation only",
     "providerModels": "separate qualification"
   },
@@ -67,22 +68,24 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "PENDING_FRESH_CI",
-    "Forge Release": "PENDING_FRESH_CI"
+    "Forge Evaluator": "PASS",
+    "Forge Release": "PASS_PENDING_MERGE"
   },
   "conflicts": [],
   "verificationResults": {
-    "teamChangeGate": "PENDING",
-    "obsidianMemoryValidation": "PENDING",
-    "floor02Floor03ProductionGates": "PENDING",
-    "floor04ProductionValidation": "PENDING",
-    "floor05PreTrainingValidation": "PENDING",
-    "repositoryCI": "PENDING",
-    "floor06HandoffBoundary": "PENDING"
+    "teamChangeGate": "PASS",
+    "obsidianMemoryValidation": "PASS",
+    "floor02Floor03ProductionGates": "PASS",
+    "floor04ProductionValidation": "PASS",
+    "floor05PreTrainingValidation": "PASS",
+    "floor06HandoffBoundary": "PASS",
+    "repositoryCI": "PASS",
+    "webRegressionSuite": "INFORMATIONAL_FAILURE"
   },
   "notes": [
     "No floor topology change.",
-    "No third-party runtime authority imported."
+    "No third-party runtime authority imported.",
+    "Repository CI passed; Web Regression Suite remains informational and failed under the existing repository policy."
   ],
   "verificationPlan": [
     "Run explicit Floor 06 handoff boundary tests."
