@@ -78,6 +78,8 @@ class RenderOutputMetadata(BaseModel):
     render_duration_ms: int = Field(..., ge=0)
     source_timeline_fingerprint: str = Field(..., min_length=64, max_length=64)
     source_render_input_hash: str = Field(..., min_length=64, max_length=64)
+    source_f05_artifact_sha256: str = Field(..., min_length=64, max_length=64)
+    source_f05_artifact_size_bytes: int = Field(..., gt=0)
 
 
 class Floor06HandoffPayload(BaseModel):
@@ -103,6 +105,8 @@ class Floor06HandoffPayload(BaseModel):
             raise ValueError("F06 output provenance must point at the exact F05 timeline fingerprint.")
         if metadata.source_render_input_hash != f05.render_job.render_input_hash:
             raise ValueError("F06 output provenance must point at the exact F05 render input hash.")
-        if metadata.sha256_checksum != f05.sha256_checksum:
-            raise ValueError("F06 output checksum must match the F05 committed artifact when the artifact is reused.")
+        if metadata.source_f05_artifact_sha256 != f05.sha256_checksum:
+            raise ValueError("F06 output must preserve the exact F05 source artifact checksum.")
+        if metadata.source_f05_artifact_size_bytes != f05.file_size_bytes:
+            raise ValueError("F06 output must preserve the exact F05 source artifact byte length.")
         return self
