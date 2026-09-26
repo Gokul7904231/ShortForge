@@ -159,3 +159,33 @@ The authoritative final F00 audit is maintained at:
 ` .okf/audits/floor00-final-audit.md`
 
 That audit supersedes older baseline claims about F00 runtime ownership, optionality, Reach status codes, Daily Slate wiring, and ResearchPassport provenance semantics.
+
+
+## 12. Floor 03 Current Planning Boundary — 2026-09-26
+
+Floor 03 is a declarative visual-asset planning stage between trusted F02 scene semantics and downstream media realization.
+
+Current canonical artifact:
+- AssetPlanIR schema 1.4.0
+- typed scene/asset nodes
+- camera and coverage intent
+- normalized safe text regions
+- explicit continuity/reference strategy
+- logical reference identity, version selection and traits
+- typed conditioning with strength and bounded temporal application
+- dependency edges plus dependency-node fingerprints
+- transitive impact radius and bounded repair scope
+- upstream PlanLineage and semantic fingerprints
+
+Boundary invariants:
+- F03 does not generate physical media.
+- F03 does not select provider credentials or execute provider workflows.
+- F03 does not replace TimelineIR as composition truth.
+- F03 does not sign provenance or issue release authorization.
+- F03 does not self-certify visual quality.
+- F03 and F04 remain parallel.
+
+Research governance:
+- GitHub repositories are clean-room pattern evidence only.
+- Dedicated mappings are stored under .okf/research/repo-mappings/.
+- Promotion requires executable implementation, contract/test evidence, and compatibility with .okf authority.
