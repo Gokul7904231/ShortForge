@@ -238,3 +238,37 @@ Fresh runner evidence hardened the F03 validation boundary:
 - The latest targeted Floor 02 + Floor 03 production gate passes the F02 suite, F03 suite, ontology validation, and F03 Guardian contract.
 
 This is a validation-boundary correction, not a change to F03 production authority or the canonical floor topology.
+
+
+## Research Wave 5 — 2026-09-26
+
+The research sweep expanded beyond the original nine repositories and earlier F03 cohorts into media interoperability, graph execution, conditioning, lineage, reproducibility and evaluation systems.
+
+### New promoted patterns
+
+- OpenAssetIO: logical asset identity is distinct from storage resolution.
+- OpenTimelineIO: logical shot/media intent is distinct from whichever media instance is currently available.
+- ComfyUI/DVC/Dagster: graph dependencies should be explicit and cache invalidation should follow dependency identity.
+- Diffusers/InstantID/VideoComposer/LTX: visual generation requirements are better represented as typed conditioning than as provider-specific prompt text.
+- OpenLineage: lineage should be typed, versioned and inspectable.
+- StoryDiffusion and the existing character-consistency mappings: identity/continuity is a planning property, not merely a provider prompt trick.
+- C2PA/VBench: provenance signing and quality judgment belong downstream of planning.
+
+### F03 implementation state after this wave
+
+- AssetPlanIR schema: 1.4.0.
+- ReferenceBinding carries logical entity identity, version selector and traits.
+- VisualPromptPlan carries typed ConditioningSpec records.
+- AssetPlanIR validates conditioning/reference bindings and dependency ordering.
+- AssetDependency records dependency node fingerprints.
+- Regeneration recomputes dependency lineage in sequence order so downstream node fingerprints change only along the affected dependency subgraph.
+- New tests cover conditioning/reference contracts and dependency cache invalidation.
+- Ascalon ontology has been synchronized to the new planning responsibilities.
+
+### Boundary remains locked
+
+F03 still does not generate physical media, resolve provider credentials, execute provider graphs, sign provenance, certify visual quality, replace TimelineIR, or replace F07. Physical execution remains downstream.
+
+### Promotion gate
+
+Fresh CI is required for this wave. The current branch contains the implementation and documentation changes, but no new clean CI result should be inferred until GitHub Actions executes the updated test set.
