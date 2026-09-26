@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR25-F03-Training-Admission",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "docs/f03-training-admission-20260926",
+  "objective": "Reconcile Ascalon training-readiness documentation and OKF evidence with the final verified main commit for Floor 03.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Training admission must be based on verified merged-main evidence.",
+      "Documentation must distinguish required checks from informational regression lanes.",
+      "F03 training admission does not grant physical generation or release authority."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "reason": "Documentation-only admission reconciliation; no runtime capability, credential, provider, or authority change."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Final main commit e341b6f9e8d2a090812b038dbc7cde90d0b83e2a is verified.",
+    "Floor 03 post-merge workflow 36219440438 passes.",
+    "F03 suite reports 37 passed.",
+    "F03 Guardian contract reports 1 passed.",
+    "F03/F04/F05 typed handoff test reports 2 passed.",
+    "Ascalon ontology JSON validates.",
+    "Repository TypeScript post-merge check passes.",
+    "Main CI required checks pass."
+  ],
+  "evidenceRefs": [
+    "docs/ascalon/training-readiness.md",
+    "docs/verification/ascalon/floor03-post-merge-hardening.md",
+    "Team/reports/f03-post-merge-hardening-20260926.json",
+    ".okf/decisions.md",
+    "Floor 03 Post-Merge Verification run 36219440438"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "Training admission documentation is based on verified deterministic floor/runtime evidence; the model itself did not participate."
+  },
+  "disposition": "PASS"
+}
