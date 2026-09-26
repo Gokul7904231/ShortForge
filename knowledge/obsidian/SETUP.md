@@ -101,3 +101,13 @@ To connect a FactoryOS runtime:
 For production or headless environments, use a controlled filesystem target and an audited synchronization process. Never make public Publish or unreviewed community plugins part of the production execution path.
 
 The runtime bridge can consume MongoDB change streams when supported by the deployment and always keeps a bounded reconciliation path as a correctness backstop.
+
+## HEADLESS SYNC ADAPTER
+
+ShortForge includes a small repository adapter for Obsidian Headless Sync.
+
+    MEMORY_FABRIC_VAULT_PATH=<repo>/knowledge
+    npm run obsidian:headless-sync
+    npm run obsidian:headless-sync:continuous
+
+Setup and login remain operator-managed. The adapter only forwards the configured vault path to the official headless client. Use one sync method per device.
