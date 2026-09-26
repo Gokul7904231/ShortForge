@@ -58,11 +58,13 @@ def test_single_scene_asset_regeneration_invariants(tmp_path):
     updated_nodes = {node.scene_id: node for node in updated_payload.asset_plan_ir.nodes}
     assert updated_nodes[target_scene_id].asset_id == asset_b_updated["asset_id"]
     assert updated_nodes[target_scene_id].node_fingerprint != initial_nodes[target_scene_id].node_fingerprint
-    for scene_id, initial_node in initial_nodes.items():
-        if scene_id != target_scene_id:
-            assert updated_nodes[scene_id].node_fingerprint == initial_node.node_fingerprint
+    # Scene A is independent and remains cache-reusable.
+    assert updated_nodes["scene-1"].node_fingerprint == initial_nodes["scene-1"].node_fingerprint
+    # Scene C depends on the regenerated Scene B, so its cache lineage must change
+    # even though its own asset specification remains unchanged.
+    assert updated_nodes["scene-3"].node_fingerprint != initial_nodes["scene-3"].node_fingerprint
 
-    # Scene C (unaffected): Byte & semantic equivalence preserved
+    # Scene C asset specification remains byte/semantic equivalent.
     asset_c_updated = updated_payload.visual_asset_requirements[2].model_dump()
     assert asset_c_updated == asset_c_initial
 
