@@ -101,7 +101,7 @@
     "No floor topology changed.",
     "No third-party source code, model weights, credentials or provider authority imported.",
     "Reference rendering remains a bounded evidence path, not F06 distributed render.",
-    "Canonical production-critical CI gates are green on the branch head; Web Regression Suite is informational and still running/non-blocking."
+    "Web Regression Suite completed with failure; repository marks this lane informational/non-blocking. All production-critical F05/F03/F04/F06/Team/Obsidian/TypeCheck/Security lanes passed."
   ],
   "verificationResults": {
     "teamChangeGate": "PASS",
@@ -112,6 +112,6 @@
     "f03GuardianContract": "PASS",
     "repositoryCriticalCi": "PASS",
     "googleDriveMcp": "PASS",
-    "webRegressionSuite": "RUNNING_INFORMATIONAL"
+    "webRegressionSuite": "FAIL_INFORMATIONAL"
   }
 }
