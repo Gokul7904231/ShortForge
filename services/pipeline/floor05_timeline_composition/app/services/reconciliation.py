@@ -1,9 +1,11 @@
 """Crash reconciliation and evidence quarantine for Floor 05."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
+import subprocess
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -67,24 +69,72 @@ class CrashReconciliationEngine:
         shutil.move(str(file_path), str(target))
         return str(target)
 
+    @staticmethod
+    def _sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
     def _inspect(self, path: Path, kind: str) -> bool:
-        if not path.exists() or not path.is_file():
+        if not path.exists() or not path.is_file() or path.is_symlink():
             return False
         try:
             if kind == "thumbnail":
                 with path.open("rb") as handle:
                     return handle.read(8) == b"\x89PNG\r\n\x1a\n"
-            # A minimal but safe first-line check; committed artifacts are re-validated by F05's ffprobe gate.
-            with path.open("rb") as handle:
-                header = handle.read(64)
-            return b"ftyp" in header
+            executable = shutil.which("ffprobe")
+            if executable is None:
+                return False
+            completed = subprocess.run(
+                [
+                    executable,
+                    "-v",
+                    "error",
+                    "-print_format",
+                    "json",
+                    "-show_streams",
+                    "-show_format",
+                    str(path),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            payload = json.loads(completed.stdout or "{}")
+            format_name = str(payload.get("format", {}).get("format_name", ""))
+            video_streams = [
+                stream for stream in payload.get("streams", [])
+                if stream.get("codec_type") == "video"
+            ]
+            return ("mp4" in format_name.lower() or "mov" in format_name.lower()) and len(video_streams) == 1
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError):
+            return False
+
+    def _verify_expected_identity(self, path: Path, expected: Dict[str, Any]) -> bool:
+        expected_size = expected.get("size_bytes")
+        expected_sha = expected.get("sha256")
+        if not expected_size or not expected_sha:
+            return False
+        try:
+            return (
+                path.stat().st_size == int(expected_size)
+                and self._sha256(path) == str(expected_sha)
+            )
         except OSError:
             return False
 
     def reconcile_on_restart(self) -> Dict[str, List[str]]:
         with self._lock:
             journal = self._load_journal()
-            reconciled = {"COMMITTED": [], "ROLLED_BACK": [], "ORPHANED": []}
+            reconciled = {
+                "COMMITTED": [],
+                "ROLLED_BACK": [],
+                "ORPHANED": [],
+                "RECONCILIATION_REQUIRED": [],
+            }
 
             for tx_id, record in list(journal.items()):
                 state = record.get("state")
@@ -93,11 +143,22 @@ class CrashReconciliationEngine:
 
                 entries = record.get("details", {}).get("files", [])
                 normalised = [self._normalise_file_entry(entry) for entry in entries]
+                if not normalised:
+                    record["state"] = "ROLLED_BACK"
+                    record.setdefault("details", {})["reconciliation_reason"] = "No artifact evidence was recorded before restart."
+                    reconciled["ROLLED_BACK"].append(tx_id)
+                    continue
+
                 missing = False
                 invalid = False
+                identity_missing = False
 
                 for file_name, kind in normalised:
-                    path = Path(file_name).resolve()
+                    raw_path = Path(file_name)
+                    if raw_path.is_symlink():
+                        invalid = True
+                        continue
+                    path = raw_path.resolve()
                     try:
                         path.relative_to(self.storage_root)
                     except ValueError:
@@ -105,8 +166,14 @@ class CrashReconciliationEngine:
                         continue
                     if not path.exists():
                         missing = True
-                    elif not self._inspect(path, kind):
+                        continue
+                    if not self._inspect(path, kind):
                         invalid = True
+                        continue
+                    expected_map = record.get("details", {}).get("expected_artifacts", {})
+                    expected = expected_map.get(kind)
+                    if not expected or not self._verify_expected_identity(path, expected):
+                        identity_missing = True
 
                 if invalid:
                     quarantined = []
@@ -124,6 +191,12 @@ class CrashReconciliationEngine:
                 elif missing:
                     record["state"] = "ROLLED_BACK"
                     reconciled["ROLLED_BACK"].append(tx_id)
+                elif identity_missing:
+                    record["state"] = "RECONCILIATION_REQUIRED"
+                    record.setdefault("details", {})["reconciliation_reason"] = (
+                        "Artifact evidence exists but expected SHA-256/byte-length identity is incomplete or mismatched."
+                    )
+                    reconciled["RECONCILIATION_REQUIRED"].append(tx_id)
                 else:
                     record["state"] = "COMMITTED"
                     reconciled["COMMITTED"].append(tx_id)
