@@ -148,6 +148,7 @@ export interface IMemoryFabricLedger {
   update(sourceKey: string, patch: Partial<MemoryFabricLedgerRecord>): Promise<void>;
   listPending(limit?: number): Promise<MemoryFabricLedgerRecord[]>;
   countByStatus(status: MemoryFabricRecordStatus): Promise<number>;
+  countByQualityState(state: MemoryFabricQualityState): Promise<number>;
   getRecent(limit?: number): Promise<MemoryFabricLedgerRecord[]>;
   getOffset(streamKey: string): Promise<MemoryFabricOffset | null>;
   setOffset(offset: MemoryFabricOffset): Promise<void>;
