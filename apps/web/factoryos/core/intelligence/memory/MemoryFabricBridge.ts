@@ -163,6 +163,9 @@ export class MemoryFabricBridge {
 
     if (this.mongoDb) {
       await this.startChangeStream();
+      // Initial bounded reconciliation closes the startup gap between the
+      // existing operational state and the live change stream.
+      await this.reconcileMongo();
 
       this.reconciliationTimer = setInterval(() => {
         void this.reconcileMongo().catch((error) => {
