@@ -422,7 +422,7 @@ ShortForge/
 │   │   ├── floor02_scripting/             # High-retention script synthesis & hook clamping
 │   │   ├── floor03_asset_realization/     # Visual prompt generation & asset resolution
 │   │   ├── floor04_media_synthesis/       # TTS speech generation & image generation
-│   │   ├── floor05_timeline_composition/  # Whisper word-level alignment & timeline JSON
+│   │   ├── floor05_timeline_composition/  # Frame-aligned timeline composition & verified reference render
 │   │   ├── floor06_rendering/             # Worker dispatch & rendering execution
 │   │   └── guardian/                      # Python-side watchdog & decision ledger
 │   └── rendering-engine/                  # EXECUTION PLANE: High-Performance Rendering Workers
