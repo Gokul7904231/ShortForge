@@ -1,6 +1,6 @@
 # Floor 05 — Timeline Composition & Motion
 
-Status: pre-training hardening branch, pending canonical CI admission.
+Status: wave-2 implementation branch, pending canonical CI admission.
 
 ## Purpose
 
@@ -145,3 +145,31 @@ Remains a downstream provenance/signing concern rather than a F05 execution auth
 ## Current non-adoption rule
 
 No third-party provider, model, runtime, credential, storage system, or source-code implementation becomes canonical because a research source recommends it. The executable ShortForge contracts, Guardian policy, tests, CI evidence, and .okf governance remain authoritative.
+
+
+## Wave 2 completion — 2026-09-27
+
+The second hardening wave closes the remaining pre-training gaps without changing the F03/F04/F05/F06 authority topology.
+
+### Added
+
+- F03 preserves Floor 02's explicit `transition_intent` in its existing `continuity_constraints` handoff field.
+- F05 now honors that intent: `cut` is represented as a zero-duration transition; `crossfade`/compatible dissolve intents remain bounded and frame-aligned.
+- The reference renderer supports both cut joins and crossfade joins.
+- F05 runs an actual FFmpeg decoder smoke test after ffprobe inspection.
+- Crash reconciliation now fails closed when artifact evidence is absent, incomplete, or physically mismatched; it no longer treats a header-only file as committed evidence.
+- The committed-render registry now verifies path containment, non-symlink status, byte length, and SHA-256 before reusing an artifact.
+- TimelineBrain emits a typed, non-authoritative `TimelineProposalIR` containing scene order, transition intents, target frame durations, hard constraints, and training objectives.
+- Added deterministic regression coverage for F03→F05 transition intent, cut semantics, registry tamper detection, reconciliation fail-closed behavior, and structured Brain proposals.
+
+### Ascalon training consequence
+
+The training target is now explicitly:
+
+`F03/F04 evidence → TimelineProposalIR → Guardian authorization → deterministic composition → physical decode evidence → semantic verification → committed handoff`.
+
+Ascalon may learn to propose and explain composition decisions, but the proposal remains non-authoritative and all physical truth remains outside the model.
+
+### Boundary preserved
+
+F05 still does not acquire provider credentials, distributed render dispatch authority, F07 release authority, or permission to mutate F03 semantics. The reference render remains a bounded evidence/render fixture; production distributed compute remains F06.
