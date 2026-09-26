@@ -104,6 +104,35 @@ class PhysicalVideoValidator:
             raise GuardianValidationError("Thumbnail Validation Failure: thumbnail is empty.")
         return "image/png", size
 
+    @staticmethod
+    def _decoder_smoke(file_path: Path) -> None:
+        executable = shutil.which("ffmpeg")
+        if executable is None:
+            raise GuardianValidationError("Render Validation Failure: ffmpeg is required for decoder smoke validation.")
+        command = [
+            executable,
+            "-v",
+            "error",
+            "-i",
+            str(file_path),
+            "-f",
+            "null",
+            "-",
+        ]
+        try:
+            subprocess.run(
+                command,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+            stderr = getattr(exc, "stderr", "") or str(exc)
+            raise GuardianValidationError(
+                f"Render Validation Failure: decoder smoke test failed for {file_path}: {stderr[-2000:]}"
+            ) from exc
+
     @classmethod
     def validate_rendered_video(
         cls,
@@ -139,6 +168,7 @@ class PhysicalVideoValidator:
             )
 
         probe = cls._run_ffprobe(p)
+        cls._decoder_smoke(p)
         format_info = probe.get("format", {})
         format_name = str(format_info.get("format_name", ""))
         if "mp4" not in format_name and "mov" not in format_name:
