@@ -30,25 +30,29 @@
       "id": "F03-RUNTIME-004",
       "originalConflict": "Overseer production execution used TemplateProductionPipeline instead of the canonical Python F03 service.",
       "status": "RESOLVED",
-      "acceptedResolution": "Overseer now enters F03 through Floor03RuntimeAdapter and validates AssetPlanIR 1.4.0."
+      "acceptedResolution": "Overseer now enters F03 through Floor03RuntimeAdapter and validates AssetPlanIR 1.4.0.",
+      "proposedResolution": "Overseer now enters F03 through Floor03RuntimeAdapter and validates AssetPlanIR 1.4.0."
     },
     {
       "id": "F03-F05-JOIN-005",
       "originalConflict": "F05 recovered F03 semantics indirectly through the F04 envelope.",
       "status": "RESOLVED",
-      "acceptedResolution": "Floor05Input carries explicit floor03_payload and validates lineage against the F04-embedded F03 payload."
+      "acceptedResolution": "Floor05Input carries explicit floor03_payload and validates lineage against the F04-embedded F03 payload.",
+      "proposedResolution": "Floor05Input carries explicit floor03_payload and validates lineage against the F04-embedded F03 payload."
     },
     {
       "id": "F03-EVIDENCE-006",
       "originalConflict": "F03 planning completion was reported with physical execution truth.",
       "status": "RESOLVED",
-      "acceptedResolution": "F03 uses measured runtime evidence and explicitly records physicalMediaProduced=false."
+      "acceptedResolution": "F03 uses measured runtime evidence and explicitly records physicalMediaProduced=false.",
+      "proposedResolution": "F03 uses measured runtime evidence and explicitly records physicalMediaProduced=false."
     },
     {
       "id": "F03-DURABILITY-007",
       "originalConflict": "F03 JSON memory was local process state rather than distributed operational authority.",
       "status": "RESOLVED",
-      "acceptedResolution": "FactoryOS persists immutable canonical F03 handoffs in factoryos_floor03_handoffs; Python memory remains cache/idempotency state."
+      "acceptedResolution": "FactoryOS persists immutable canonical F03 handoffs in factoryos_floor03_handoffs; Python memory remains cache/idempotency state.",
+      "proposedResolution": "FactoryOS persists immutable canonical F03 handoffs in factoryos_floor03_handoffs; Python memory remains cache/idempotency state."
     }
   ],
   "verificationPlan": [
@@ -76,5 +80,14 @@
     "runtimeStatus": "NOT_RUNTIME_VERIFIED",
     "validationStatus": "Training admission remains blocked until main post-merge evidence is green."
   },
-  "disposition": "PENDING_VERIFICATION"
+  "disposition": "ESCALATED",
+  "classification": "extends existing rule",
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "reason": "This hardening change adds typed runtime/handoff boundaries and a distributed handoff record but does not add provider credentials, secret storage, or new externally exposed production capabilities. Existing F03/F05 security boundaries are preserved."
+  }
 }
