@@ -1247,3 +1247,38 @@ Admission status:
 - Canonical F06 control-plane -> AMD -> CAS -> F07 live admission: PENDING fresh live-run evidence.
 - Hardware H.264 encode on this guest stack: NOT QUALIFIED.
 
+
+## Floor 04 physical-truth hardening — 2026-09-26
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Strengthen Floor 04 as the canonical physical media execution boundary without changing the F02 → (F03 || F04) topology.
+
+### Locked invariants
+
+- F03 remains provider-neutral specification/planning.
+- F04 may choose among explicitly allowlisted providers only after Guardian authorization.
+- Physical artifact bytes and decoder metadata outrank provider-declared metadata.
+- Every F04 physical asset must be linked to the exact F03 AssetPlanIR semantic fingerprint.
+- Deterministic fallback artifacts must be truthful: they are valid fallback media, not claimed real TTS/image models or licensed stock assets.
+- Registry writes must be atomic and asset identity cannot silently map to a different checksum.
+- Crash reconciliation quarantines ambiguous/corrupt evidence; it must not erase forensic evidence.
+- F05 receives only a validated F04 handoff and must confirm exact F03 plan lineage.
+- C2PA provenance signing remains a downstream/F07 capability.
+- VBench-style quality evaluation informs downstream quality verification and does not grant F04 release authority.
+
+### Research basis
+
+OpenAssetIO, LTX-2, HunyuanVideo-1.5, Wan2.2, VBench-2.0, C2PA 2.4, and existing ShortForge image/audio provider abstractions were screened. They were adopted only where they fit existing authority and provider-neutrality rules. No external source overrides executable contracts, Guardian policy, tests, or .okf.
+
+### Promotion gate
+
+The branch must pass:
+- Floor 04 unit + API + security tests
+- Floor 05 handoff/contract tests
+- Floor 03 contract tests
+- Guardian tests
+- full repository CI
+- security/evaluation lanes where applicable
+
+No “production-ready” status is inferred from architectural completion alone.
