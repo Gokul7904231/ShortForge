@@ -12,6 +12,7 @@ from floors.floor05_timeline_composition.app.domain.handoff import (
     TimelineSpec,
     TimelineTrackType,
 )
+from floors.floor05_timeline_composition.app.services.source_manifest import SourceManifestVerifier
 from floors.floor05_timeline_composition.app.services.validators import (
     PhysicalVideoValidator,
     SemanticCompositionValidator,
@@ -253,4 +254,57 @@ def test_render_job_rejects_non_sha256_hash():
             render_input_hash="short_hash",
             authorization_reference="a",
             idempotency_key="i",
+        )
+
+
+def test_source_manifest_rejects_symlink_before_resolution(tmp_path):
+    target = tmp_path / "real.bin"
+    target.write_bytes(b"trusted")
+    link = tmp_path / "link.bin"
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("symlink creation is unavailable on this runner")
+
+    with pytest.raises(GuardianValidationError, match="must not be a symlink"):
+        SourceManifestVerifier._verify_path(
+            str(link),
+            "a" * 64,
+            target.stat().st_size,
+            "visual",
+        )
+
+
+def test_render_validator_rejects_symlink_before_resolution(storage_setup, tmp_path):
+    target = storage_setup / "target.mp4"
+    target.write_bytes(b"placeholder")
+    link = storage_setup / "link.mp4"
+    try:
+        link.symlink_to(target)
+    except OSError:
+        pytest.skip("symlink creation is unavailable on this runner")
+
+    spec = TimelineSpec(
+        timeline_id="tl-symlink",
+        target_width=1080,
+        target_height=1920,
+        target_fps=30,
+        aspect_ratio="9:16",
+        total_duration_seconds=1.0,
+    )
+    job = RenderJobSpecification(
+        render_job_id="job-symlink",
+        request_id="req-symlink",
+        timeline_id="tl-symlink",
+        render_input_hash="a" * 64,
+        authorization_reference="auth",
+        idempotency_key="idem",
+    )
+
+    with pytest.raises(GuardianValidationError, match="must not be a symlink"):
+        PhysicalVideoValidator.validate_rendered_video(
+            str(link),
+            job,
+            spec,
+            str(storage_setup),
         )
