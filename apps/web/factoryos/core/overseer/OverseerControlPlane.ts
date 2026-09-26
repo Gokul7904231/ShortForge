@@ -727,6 +727,7 @@ export class OverseerControlPlane {
         const effectiveTemplateDef = scope.templateDef || sharedScope.templateDef;
         const effectiveScenePlans = scope.scenePlans || sharedScope.scenePlans;
         let localRenderIntent: LocalRenderIntent | null = null;
+        let finalVideoUrl: string | undefined;
 
         if (effectiveTemplateDef && effectiveScenePlans && effectiveScenePlans.length > 0) {
           const pipeline = TemplateProductionPipeline.getInstance();
