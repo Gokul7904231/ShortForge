@@ -110,6 +110,7 @@ class ReferenceRenderWorker:
         segments: List[Tuple[Path, float]],
         transitions: Dict[Tuple[str, str], float],
         scene_ids: List[str],
+        target_fps: int,
         output_path: Path,
     ) -> None:
         if len(segments) == 1:
@@ -167,7 +168,7 @@ class ReferenceRenderWorker:
                 "-pix_fmt",
                 "yuv420p",
                 "-r",
-                str(timeline_spec.target_fps),
+                str(target_fps),
                 "-c:a",
                 "aac",
                 "-ar",
@@ -322,7 +323,14 @@ class ReferenceRenderWorker:
             (transition.from_scene_id, transition.to_scene_id): transition.duration_seconds
             for transition in timeline_spec.transitions
         }
-        cls._join_segments(ffmpeg, segments, transitions, scene_ids, concat_path)
+        cls._join_segments(
+            ffmpeg,
+            segments,
+            transitions,
+            scene_ids,
+            timeline_spec.target_fps,
+            concat_path,
+        )
 
         background_clip = next(
             (
