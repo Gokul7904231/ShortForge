@@ -142,7 +142,7 @@ class TransitionSpec(BaseModel):
     from_scene_id: str = Field(...)
     to_scene_id: str = Field(...)
     transition_type: str = Field(default="CROSSFADE")
-    duration_seconds: float = Field(default=0.5, gt=0.0)
+    duration_seconds: float = Field(default=0.5, ge=0.0)
 
 
 class TimelineSpec(BaseModel):
