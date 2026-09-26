@@ -25,6 +25,7 @@ class TimelineCompositionWorker:
     @classmethod
     def assemble_timeline(
         cls,
+        floor03_payload: Floor03HandoffPayload,
         floor04_payload: Floor04HandoffPayload,
         target_fps: int = 30,
     ) -> TimelineSpec:
