@@ -504,6 +504,11 @@ class ImagePromptWorker:
                     "safe_text_region": visual_plan.camera.safe_text_region.model_dump(),
                     "dependency_scene_ids": list(sc.depends_on_scene_ids),
                     "coverage_role": coverage_role.value,
+                    "transition_intent": str(
+                        structured.get("transition_intent")
+                        or sc.continuity_rules.get("transition_intent")
+                        or "cut"
+                    ).strip().lower() or "cut",
                 },
                 scene_plan=visual_plan,
             )
