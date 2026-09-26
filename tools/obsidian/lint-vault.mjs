@@ -13,6 +13,7 @@ const ALLOWED = {
   sf_lifecycle: new Set(["candidate","active","superseded","archived"]),
   sf_epistemic_state: new Set(["observed","sourced","inferred","hypothesized"]),
   sf_verification_state: new Set(["unverified","verified","disputed"]),
+  sf_quality_state: new Set(["VALID","WARN","STALE","INCOMPLETE","CONTRADICTORY","UNVERIFIED","QUARANTINED"]),
 };
 
 const SECRET_PATTERNS = [
@@ -83,13 +84,29 @@ for (const file of files) {
     if (rx.test(text)) warnings.push({file:rel,code:"SECRET_PATTERN",message:rx.source});
   }
 
-  if (/training_eligible:\s*true/i.test(parsed.block)) {
+  const trainingEligible = /(?:training_eligible|sf_training_eligible):\s*true/i.test(parsed.block);
+  if (trainingEligible) {
     if (parsed.values.sf_verification_state !== "verified") {
       errors.push({file:rel,code:"TRAINING_UNVERIFIED"});
     }
-    if (!/(evidence_refs|source_refs|sources):/i.test(parsed.block)) {
+    if (!/(evidence_refs|source_refs|sources|verified):/i.test(parsed.block)) {
       errors.push({file:rel,code:"TRAINING_NO_PROVENANCE"});
     }
+  }
+
+  if (parsed.values.sf_quality_state === "VALID" && parsed.values.sf_verification_state !== "verified") {
+    warnings.push({file:rel,code:"VALID_WITHOUT_VERIFICATION"});
+  }
+
+  if (parsed.values.sf_memory_quality_score !== undefined) {
+    const score = Number(parsed.values.sf_memory_quality_score);
+    if (!Number.isFinite(score) || score < 0 || score > 1) {
+      errors.push({file:rel,code:"INVALID_QUALITY_SCORE",message:String(parsed.values.sf_memory_quality_score)});
+    }
+  }
+
+  if (parsed.values.sf_lifecycle === "superseded" && parsed.values.status === "stable") {
+    warnings.push({file:rel,code:"SUPERSEDED_MARKED_STABLE"});
   }
 
   if (parsed.values.stale_after) {
@@ -98,6 +115,36 @@ for (const file of files) {
       warnings.push({file:rel,code:"STALE_MEMORY",message:parsed.values.stale_after});
     }
   }
+}
+
+const knownBasenames = new Set(files.map((file) => path.basename(file, ".md")));
+for (const file of files) {
+  const rel = path.relative(root,file).replaceAll(path.sep,"/");
+  const text = fs.readFileSync(file,"utf8");
+  const linkRegex = /\\[\\[([^\\]|#]+)(?:#[^\\]|]+)?(?:\\|[^\\]]+)?\\]\\]/g;
+  let match;
+  while ((match = linkRegex.exec(text)) !== null) {
+    const target = match[1].trim();
+    if (!seenIds.has(target) && !knownBasenames.has(target)) {
+      warnings.push({file:rel,code:"BROKEN_WIKILINK",message:target});
+    }
+  }
+}
+
+const activeConflictGroups = new Map();
+for (const file of files) {
+  const rel = path.relative(root,file).replaceAll(path.sep,"/");
+  const text = fs.readFileSync(file,"utf8");
+  const parsed = parseFrontmatter(text);
+  if (!parsed) continue;
+  if (parsed.values.sf_lifecycle !== "active" || !parsed.values.sf_conflict_group) continue;
+  const group = parsed.values.sf_conflict_group;
+  const list = activeConflictGroups.get(group) || [];
+  list.push(rel);
+  activeConflictGroups.set(group,list);
+}
+for (const [group, list] of activeConflictGroups.entries()) {
+  if (list.length > 1) warnings.push({code:"ACTIVE_CONFLICT_GROUP",message:group+" => "+list.join(", ")});
 }
 
 const result = {
