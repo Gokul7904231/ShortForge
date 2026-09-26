@@ -76,4 +76,4 @@ jobs:
 
       - name: Load live Memory Fabric modules
         run: |
-          npx tsx --eval "await import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricBridge.ts'); await import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricProjection.ts'); await import('./apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts'); console.log('MEMORY_FABRIC_MODULE_LOAD: PASS')"
+          npx tsx --eval "Promise.all([import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricBridge.ts'), import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricProjection.ts'), import('./apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts')]).then(() => console.log('MEMORY_FABRIC_MODULE_LOAD: PASS'))"
