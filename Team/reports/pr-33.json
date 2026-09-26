@@ -29,7 +29,8 @@
     "Atomic registry and crash quarantine.",
     "Guardian-bound Ascalon capability.",
     "Hardened F05 to F06 handoff.",
-    "F03 version metadata correction."
+    "F03 version metadata correction.",
+    "Added Floor 06 compatibility namespace and explicit F05-to-F06 boundary tests."
   ],
   "research": [
     "OpenTimelineIO",
@@ -76,10 +77,14 @@
     "floor02Floor03ProductionGates": "PENDING",
     "floor04ProductionValidation": "PENDING",
     "floor05PreTrainingValidation": "PENDING",
-    "repositoryCI": "PENDING"
+    "repositoryCI": "PENDING",
+    "floor06HandoffBoundary": "PENDING"
   },
   "notes": [
     "No floor topology change.",
     "No third-party runtime authority imported."
+  ],
+  "verificationPlan": [
+    "Run explicit Floor 06 handoff boundary tests."
   ]
 }
