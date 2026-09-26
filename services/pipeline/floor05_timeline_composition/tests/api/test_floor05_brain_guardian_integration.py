@@ -16,7 +16,7 @@ from floors.floor05_timeline_composition.tests.test_floor05_handoff import build
 
 def test_brain_proposal_generation(tmp_path):
     f04 = build_mock_floor04_payload(tmp_path)
-    inp = Floor05Input(floor04_payload=f04, request_id="req-brain-1")
+    inp = Floor05Input(floor03_payload=f04.floor03_payload, floor04_payload=f04, request_id="req-brain-1")
 
     brain = TimelineBrain()
     proposal = brain.propose_composition_plan(inp)
@@ -28,7 +28,7 @@ def test_brain_proposal_generation(tmp_path):
 
 def test_guardian_authorizes_and_executes_floor05_pipeline(tmp_path):
     f04 = build_mock_floor04_payload(tmp_path)
-    inp = Floor05Input(floor04_payload=f04, request_id="req-g-05-auth")
+    inp = Floor05Input(floor03_payload=f04.floor03_payload, floor04_payload=f04, request_id="req-g-05-auth")
 
     pipeline_service = Floor05PipelineService(storage_root=str(tmp_path))
     guardian = Floor05Guardian(pipeline_service=pipeline_service)
