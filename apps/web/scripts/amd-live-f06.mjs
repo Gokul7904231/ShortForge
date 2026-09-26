@@ -67,8 +67,7 @@ process.on("SIGTERM", () => { cleanup(); process.exit(143); });
 
 for (let i = 0; i < 20; i++) {
   if (tunnel.exitCode !== null) break;
-  const probe = runSync("curl.exe", ["-fsS", `http://127.0.0.1:${localPort}/health`]);
-  if (probe.status === 0) break;
+  if (await workerReachable()) break;
   await sleep(500);
 }
 
@@ -78,8 +77,7 @@ if (tunnel.exitCode !== null) {
   process.exit(1);
 }
 
-const probe = runSync("curl.exe", ["-fsS", `http://127.0.0.1:${localPort}/health`]);
-if (probe.status !== 0) {
+if (!(await workerReachable())) {
   console.error("AMD worker tunnel did not become reachable.");
   console.error(tunnelError.trim());
   process.exit(1);
@@ -114,7 +112,7 @@ const test = spawnSync(
     stdio: "inherit",
     env,
     windowsHide: true,
-    cwd: new URL("../..", import.meta.url).pathname,
+    cwd: new URL("..", import.meta.url).pathname,
   }
 );
 
