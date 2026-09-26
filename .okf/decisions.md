@@ -1117,3 +1117,14 @@ Fresh F03 Python tests, Guardian tests, ontology JSON validation, TypeScript con
 **CI:** A dedicated post-merge F03 workflow now validates the merged main branch. Repository-wide TypeScript errors discovered on the prior main run are corrected in the same hardening branch and must pass before promotion.
 
 **Ascalon readiness:** Do not promote the updated F03 ontology as runtime truth until the canonical runtime adapter, explicit F03→F05 join, distributed handoff persistence, scoped post-merge gate, and repository-wide typecheck all pass on main.
+
+
+## F03 post-merge admission — 2026-09-26
+
+**Final evidence:** main `e341b6f9e8d2a090812b038dbc7cde90d0b83e2a`, Floor 03 Post-Merge Verification run `36219440438`.
+
+**Result:** PASS for the F03 canonical planning/runtime contract. The dedicated post-merge gate passed the F03 suite (37), Guardian contract (1), F03/F04/F05 typed seam (2), and Ascalon ontology JSON validation. The repository TypeScript post-merge gate also passed.
+
+**Training admission:** F03 is admitted for Ascalon training-data preparation subject to the standing Ascalon principles: deterministic replayability, claim-evidence integrity, secret isolation, and separation of simulation from production authority. This admission does not grant F03 physical-media or release authority.
+
+**Informational note:** the Web Regression Suite is maintained as an informational CI lane and is not used as a substitute for the canonical F03 admission gate.
