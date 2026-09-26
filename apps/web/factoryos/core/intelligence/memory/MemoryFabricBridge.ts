@@ -114,6 +114,8 @@ export class MemoryFabricBridge {
   private lastError?: string;
   private totalIngested = 0;
   private draining = false;
+  private readonly writerLeaseId = crypto.randomUUID();
+  private readonly writerLeaseTtlMs = 30000;
 
   constructor(
     private readonly eventBus: DurableEventBus,
@@ -221,22 +223,24 @@ export class MemoryFabricBridge {
     this.draining = true;
 
     try {
-      const pending = await this.ledger.listPending(limit);
-    for (const record of pending) {
-      try {
-        await this.processLedgerRecord(record);
-      } catch (error) {
-        await this.ledger.update(record.sourceKey, {
-          status: "FAILED",
-          qualityState: "QUARANTINED",
-          lifecycle: "ARCHIVED",
-          error: this.errorMessage(error),
-        });
-        this.lastError = this.errorMessage(error);
-      }
-    }
+      await this.withWriterLease(async () => {
+        const pending = await this.ledger.listPending(limit);
+        for (const record of pending) {
+          try {
+            await this.processLedgerRecord(record);
+          } catch (error) {
+            await this.ledger.update(record.sourceKey, {
+              status: "FAILED",
+              qualityState: "QUARANTINED",
+              lifecycle: "ARCHIVED",
+              error: this.errorMessage(error),
+            });
+            this.lastError = this.errorMessage(error);
+          }
+        }
 
-      await this.promoteVerifiedCandidates();
+        await this.promoteVerifiedCandidates();
+      });
     } finally {
       this.draining = false;
     }
@@ -403,7 +407,8 @@ export class MemoryFabricBridge {
     this.lastIngestAt = now;
 
     try {
-      await this.processLedgerRecord(record);
+      const acquired = await this.withWriterLease(() => this.processLedgerRecord(record));
+      if (!acquired) return;
     } catch (error) {
       await this.ledger.update(record.sourceKey, {
         status: "FAILED",
@@ -412,6 +417,23 @@ export class MemoryFabricBridge {
         error: this.errorMessage(error),
       });
       throw error;
+    }
+  }
+
+  private async withWriterLease<T>(fn: () => Promise<T>): Promise<T | undefined> {
+    const acquired = await this.ledger.acquireWriterLease(
+      this.writerLeaseId,
+      this.writerLeaseTtlMs,
+    );
+    if (!acquired) {
+      this.mode = this.mongoDb ? "DEGRADED" : this.mode;
+      return undefined;
+    }
+
+    try {
+      return await fn();
+    } finally {
+      await this.ledger.releaseWriterLease(this.writerLeaseId);
     }
   }
 
