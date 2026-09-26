@@ -247,3 +247,35 @@ The Floor 03 research corpus was widened beyond the previous media and agent rep
 - NeMo Guardrails: explicit validation boundaries -> deterministic F03 contract checks while Guardian retains safety authority.
 
 No third-party code, prompts, tests, models, credentials, or runtime dependencies were copied into F03.
+
+
+## 13. Floor 03 Research Wave 5 — Interoperability, Conditioning and Cache-Lineage
+
+The F03 corpus was expanded again on 2026-09-26. Dedicated clean-room mapping records are maintained under .okf/research/repo-mappings/.
+
+### Selected high-signal mappings
+
+- OpenAssetIO/OpenAssetIO -> stable logical entity identity and resolver boundary.
+- OpenAssetIO/OpenAssetIO-MediaCreation -> typed media traits.
+- AcademySoftwareFoundation/OpenTimelineIO -> logical media range separated from currently available media.
+- Comfy-Org/ComfyUI -> dependency-aware graph reuse and partial re-execution.
+- huggingface/diffusers -> modular image/structural conditioning.
+- OpenLineage/OpenLineage -> typed lineage and versioned metadata facets.
+- dagster-io/dagster -> stable asset keys and explicit dependency checks.
+- HVision-NKU/StoryDiffusion -> long-range visual identity consistency.
+- instantX-research/InstantID -> identity-preserving reference conditioning.
+- ali-vilab/VideoComposer -> spatial/temporal control signals.
+- Lightricks/LTX-Video and LTX-2 -> strength/time-indexed conditioning and keyframe concepts.
+- contentauth/c2pa-rs -> provenance/signing boundary reserved for downstream verification.
+- Vchitect/VBench -> multidimensional quality evaluation reserved for downstream judges.
+
+### F03 promotion
+
+The research produced:
+- opaque logical reference identity with traits/version selectors;
+- typed conditioning signals with bounded strength/time;
+- dependency node fingerprints for deterministic cache invalidation;
+- stronger dependency/conditioning graph validation;
+- regeneration remapping of dependency fingerprints.
+
+These are implemented as clean-room ShortForge structures only. No upstream code, prompts, models, credentials, or runtime dependencies were imported.
