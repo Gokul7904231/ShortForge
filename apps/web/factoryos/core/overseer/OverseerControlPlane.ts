@@ -47,6 +47,7 @@ import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRende
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
+import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 
 export class OverseerControlPlane {
@@ -605,20 +606,346 @@ export class OverseerControlPlane {
         await this.eventBus.publish("TASK_COMPLETED", {
           taskId: node.taskId,
           taskNodeId: node.taskId,
-          capabilityId: "FLOOR_ASSET_REALIZATION",
+          capabilityId: "FLOOR_ANALYST",
           executionId,
-          floorId: "floor03_asset_realization",
-          workerId: "worker_assets_01",
+          floorId: "floor00_analyst",
+          workerId: "worker_analyst_01",
           missionId,
-          output: assetPayload,
-          handoff: canonicalF03,
-          executionReport: f03.executionReport,
+          output: analystReport,
           startedAt,
           completedAt,
           executionTimeMs,
-          durationTruth: "MEASURED",
-          evidenceClass: "TYPED_F03_RUNTIME_HANDOFF",
-          physicalMediaProduced: false,
+          durationTruth: "PHYSICAL",
+          producedArtifacts: analystReport.passport ? [{ kind: "PASSPORT", id: analystReport.passport.passportId }] : [],
+          producedArtifactIds: analystReport.passport ? [analystReport.passport.passportId] : [],
+        });
+        return { status: "OK", floor: "floor00_analyst", output: analystReport, executionTimeMs };
+      },
+      FLOOR_STRATEGY: async (node: any) => {
+        const startTime = performance.now();
+        const startedAt = new Date().toISOString();
+        const executionId = `exec_${node.taskId}_${Date.now()}`;
+        const mission = missionId && this.missionManager ? await this.missionManager.getMission(missionId) : null;
+        const scope = (mission?.scope as Record<string, any>) || {};
+
+        this.worldState.updateFloorStatus("floor01_strategy", "ONLINE", "Topic Strategy & Intelligence");
+        this.worldState.registerWorker({
+          workerId: "worker_strategy_01",
+          role: "WORKER",
+          specialization: "STRATEGY",
+          status: "HEALTHY",
+          lastSeen: new Date().toISOString(),
+          metrics: { tasksCompleted: 1, tasksFailed: 0, uptimeSeconds: 100, averageLatencyMs: 20 },
+        });
+
+        await this.eventBus.publish("TASK_STARTED", {
+          taskId: node.taskId,
+          taskNodeId: node.taskId,
+          capabilityId: "FLOOR_STRATEGY",
+          executionId,
+          floorId: "floor01_strategy",
+          workerId: "worker_strategy_01",
+          missionId,
+          startedAt,
+        });
+
+        const analystOutput = node.dependencyOutputs?.["task_f00_analyst"]?.output || scope.analystReport || sharedScope.analystReport;
+        if (!analystOutput?.passport) {
+          throw new Error("F01_UPSTREAM_RESEARCH_MISSING: Floor 01 requires F00 AnalystReport/ResearchPassport.");
+        }
+
+        const f01Request = Floor01RuntimeAdapter.fromAnalystReport(
+          `f01_${missionId || "direct"}_${node.taskId}`,
+          analystOutput,
+          {
+            targetAudience: scope.engineSnapshot?.effectiveConfig?.audience || "general_learners",
+            platform: scope.productionSpec?.configuration?.creative?.platform || "youtube_shorts",
+            contentFormat: scope.productionSpec?.configuration?.content?.format || "educational_short",
+            nicheContext: scope.productionSpec?.configuration?.content?.niche,
+            learningLevel: scope.productionSpec?.configuration?.content?.learningLevel || "beginner",
+            constraints: scope.productionSpec?.configuration?.content?.constraints || {},
+          },
+        );
+
+        const canonicalF01 = await new Floor01RuntimeAdapter().execute(f01Request);
+        const strategyPayload = canonicalF01;
+        scope.strategy = strategyPayload;
+        sharedScope.strategy = strategyPayload;
+
+        scope.strategy = strategyPayload;
+        sharedScope.strategy = strategyPayload;
+
+        if (missionId && this.missionManager) {
+          await this.missionManager.updateProgress(missionId, 1);
+        }
+
+        const endTime = performance.now();
+        const completedAt = new Date().toISOString();
+        const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
+
+        await this.eventBus.publish("TASK_COMPLETED", {
+          taskId: node.taskId,
+          taskNodeId: node.taskId,
+          capabilityId: "FLOOR_STRATEGY",
+          executionId,
+          floorId: "floor01_strategy",
+          workerId: "worker_strategy_01",
+          missionId,
+          output: strategyPayload,
+          startedAt,
+          completedAt,
+          executionTimeMs,
+          durationTruth: "PHYSICAL",
+          consumedArtifactIds: analystOutput?.passport?.passportId ? [analystOutput.passport.passportId] : [],
+        });
+        return { status: "OK", floor: "floor01_strategy", output: strategyPayload, executionTimeMs };
+      },
+      FLOOR_SCRIPTING: async (node: any) => {
+        const startTime = performance.now();
+        const startedAt = new Date().toISOString();
+        const executionId = `exec_${node.taskId}_${Date.now()}`;
+        const mission = missionId && this.missionManager ? await this.missionManager.getMission(missionId) : null;
+        const scope = (mission?.scope as Record<string, any>) || {};
+
+        this.worldState.updateFloorStatus("floor02_scripting", "ONLINE", "Scripting & Topic Generation");
+        this.worldState.registerWorker({
+          workerId: "worker_scripting_01",
+          role: "WORKER",
+          specialization: "SCRIPTING",
+          status: "HEALTHY",
+          lastSeen: new Date().toISOString(),
+          metrics: { tasksCompleted: 1, tasksFailed: 0, uptimeSeconds: 100, averageLatencyMs: 20 },
+        });
+
+        await this.eventBus.publish("TASK_STARTED", {
+          taskId: node.taskId,
+          taskNodeId: node.taskId,
+          capabilityId: "FLOOR_SCRIPTING",
+          executionId,
+          floorId: "floor02_scripting",
+          workerId: "worker_scripting_01",
+          missionId,
+          startedAt,
+        });
+
+        const upstreamStrategy = node.dependencyOutputs?.["task_f01_strategy"]?.output || sharedScope.strategy;
+        const effectiveTopic =
+          typeof upstreamStrategy?.topic === "string"
+            ? upstreamStrategy.topic
+            : upstreamStrategy?.topic?.selected_topic ||
+              scope.topic ||
+              "Factual Topic";
+        const effectiveTemplateId = scope.templateId || sharedScope.templateId || node.payload?.templateId;
+        const templateRegistry = TemplateRegistry.getInstance();
+        const templateDef = effectiveTemplateId ? templateRegistry.getTemplate(effectiveTemplateId) : null;
+
+        let scriptPayload: any;
+
+        const useCanonicalPythonF02 =
+          Boolean(process.env.FLOOR02_RUNTIME_URL) ||
+          process.env.NODE_ENV === "production";
+
+        if (useCanonicalPythonF02) {
+          const runtime = new Floor02RuntimeAdapter();
+          const f02 = await runtime.plan({
+            requestId: executionId,
+            topic: effectiveTopic,
+            targetDurationSeconds: Number(
+              upstreamStrategy?.targetDurationSeconds ||
+              upstreamStrategy?.target_duration_seconds ||
+              scope.targetDurationSeconds ||
+              60
+            ),
+            strategy: upstreamStrategy || {},
+            upstreamHandoff:
+              (scope.floor01Handoff as Record<string, any> | undefined) ||
+              (sharedScope as any).floor01Handoff,
+          });
+
+          const canonical = f02.handoffPayload;
+          const scriptIR = canonical.script_ir;
+          const scenes = Array.isArray(canonical.scenes) ? canonical.scenes : [];
+
+          scope.f02Handoff = canonical;
+          sharedScope.f02Handoff = canonical;
+          scope.scriptIR = scriptIR;
+          sharedScope.scriptIR = scriptIR;
+          scope.script = scenes.map((scene: any) => scene.narration_text || "").join(" ").trim();
+          sharedScope.script = scope.script;
+          scope.scenes = scenes;
+          sharedScope.scenes = scenes;
+
+          scriptPayload = {
+            script: scope.script,
+            scriptIR,
+            handoffPayload: canonical,
+            scenes,
+            floorVersion: canonical.floor_version,
+            successorHandoffs: canonical.successor_handoffs,
+          };
+        } else if (templateDef) {
+          // Template context survives entire mission (Requirement 5)
+          scope.templateId = templateDef.identity.id;
+          scope.templateVersion = templateDef.identity.version;
+          scope.contentEngine = templateDef.category;
+          scope.formatFamily = templateDef.formatFamily;
+          scope.templateDef = templateDef;
+          sharedScope.templateId = templateDef.identity.id;
+          sharedScope.templateVersion = templateDef.identity.version;
+          sharedScope.contentEngine = templateDef.category;
+          sharedScope.formatFamily = templateDef.formatFamily;
+          sharedScope.templateDef = templateDef;
+
+          const pipeline = TemplateProductionPipeline.getInstance();
+          const scriptIR = await pipeline.generateTemplateScript({
+            templateDef,
+            topic: effectiveTopic,
+            userInputs: scope.userInputs || {}
+          });
+
+          // Enforce template-specific validation with localized failure isolation (Requirement 8 & 9)
+          const validation = pipeline.validateTemplateScript(templateDef, scriptIR);
+          if (!validation.valid) {
+            const validationErr = new Error(`[TEMPLATE_SCRIPT_INVALID] Template ${templateDef.identity.id} validation failed: ${validation.errors.join("; ")}`);
+            (validationErr as any).code = "TEMPLATE_SCRIPT_INVALID";
+            (validationErr as any).stage = "FLOOR_SCRIPTING";
+            (validationErr as any).templateId = templateDef.identity.id;
+            (validationErr as any).errors = validation.errors;
+            throw validationErr;
+          }
+
+          scope.templateScriptIR = scriptIR;
+          sharedScope.templateScriptIR = scriptIR;
+          const fullScript = scriptIR.beats.map((b) => b.narration).join(" ");
+          scope.script = fullScript;
+          sharedScope.script = fullScript;
+          scope.scenes = scriptIR.beats.map((b) => ({
+            text: b.narration,
+            durationSeconds: b.durationSeconds,
+            shotRecipeId: b.shotRecipeId,
+            props: b.props,
+          }));
+          sharedScope.scenes = scope.scenes;
+
+          scriptPayload = {
+            script: fullScript,
+            templateScriptIR: scriptIR,
+            templateId: templateDef.identity.id,
+            templateVersion: templateDef.identity.version,
+            contentEngine: templateDef.category,
+            formatFamily: templateDef.formatFamily,
+            scenes: scope.scenes,
+            quizData: scope.quizData || null,
+          };
+        } else {
+          const hookText =
+            upstreamStrategy?.content_plan?.hook_direction ||
+            `Did you know these astonishing facts about ${effectiveTopic}?`;
+          const scriptText = scope.script || `${hookText} Deep exploration reveals truths that defy expectations.`;
+          const scenes = (scope.scenes && scope.scenes.length > 0) ? scope.scenes : [
+            { text: hookText, durationSeconds: 2 },
+            { text: `Deep exploration reveals secrets of ${effectiveTopic}`, durationSeconds: 2 }
+          ];
+
+          scope.script = scriptText;
+          sharedScope.script = scriptText;
+          scope.scenes = scenes;
+          sharedScope.scenes = scenes;
+
+          scriptPayload = {
+            script: scriptText,
+            scenes,
+            quizData: scope.quizData || null,
+          };
+        }
+
+        if (missionId && this.missionManager) {
+          await this.missionManager.updateProgress(missionId, 1);
+        }
+
+        const endTime = performance.now();
+        const completedAt = new Date().toISOString();
+        const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
+
+        await this.eventBus.publish("TASK_COMPLETED", {
+          taskId: node.taskId,
+          taskNodeId: node.taskId,
+          capabilityId: "FLOOR_SCRIPTING",
+          executionId,
+          floorId: "floor02_scripting",
+          workerId: "worker_scripting_01",
+          missionId,
+          output: scriptPayload,
+          startedAt,
+          completedAt,
+          executionTimeMs,
+          durationTruth: "PHYSICAL",
+        });
+        return { status: "OK", floor: "floor02_scripting", output: scriptPayload, executionTimeMs };
+      },
+      FLOOR_ASSET_REALIZATION: async (node: any) => {
+        const startTime = performance.now();
+        const startedAt = new Date().toISOString();
+        const executionId = `exec_${node.taskId}_${Date.now()}`;
+        const mission = missionId && this.missionManager ? await this.missionManager.getMission(missionId) : null;
+        const scope = Object.assign(sharedScope, (mission?.scope as Record<string, any>) || {});
+
+        this.worldState.updateFloorStatus("floor03_asset_realization", "ONLINE", "Asset Realization & Blueprints");
+        this.worldState.registerWorker({
+          workerId: "worker_assets_01", role: "WORKER", specialization: "ASSET_REALIZATION", status: "STARTING",
+          lastSeen: new Date().toISOString(), metrics: { tasksCompleted: 0, tasksFailed: 0, uptimeSeconds: 0, averageLatencyMs: 0 },
+        });
+        await this.eventBus.publish("TASK_STARTED", {
+          taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION",
+          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, startedAt,
+        });
+
+        const f02Handoff = (scope.f02Handoff || sharedScope.f02Handoff) as Record<string, any> | undefined;
+        if (!f02Handoff) throw new Error("[Overseer Floor03] Canonical Floor 02 handoff is missing; refusing non-canonical F03 execution.");
+        const runtime = new Floor03RuntimeAdapter();
+        const durableStore = new Floor03DurableHandoffStore();
+        const f03RequestId = `${missionId || "mission"}:${node.taskId}`;
+        const durableF03 = await durableStore.get(f03RequestId);
+        const f03 = durableF03
+          ? { handoffPayload: durableF03.handoff, executionReport: durableF03.executionReport }
+          : await runtime.plan({
+              requestId: f03RequestId, floor02Handoff: f02Handoff,
+              platform: scope.platform || sharedScope.platform || f02Handoff?.strategy?.platform || f02Handoff?.provenance?.find((p: any) => p?.raw_data?.platform)?.raw_data?.platform,
+              aspectRatio: scope.aspectRatio || sharedScope.aspectRatio, targetResolution: scope.targetResolution || sharedScope.targetResolution,
+              stylePreset: scope.style || sharedScope.style, voiceId: scope.voiceId || sharedScope.voiceId,
+              authorizedOverride: Boolean(scope.authorizedPlatformOverride),
+            });
+        if (!durableF03) {
+          const hd = f03.handoffPayload;
+          await durableStore.put({
+            requestId: f03RequestId, floorId: "floor03_asset_realization", floorVersion: hd.floor_version,
+            assetPlanId: hd.asset_plan_id, assetPlanVersion: hd.asset_plan_version,
+            planFingerprint: hd.asset_plan_ir.plan_fingerprint, sourceFingerprint: hd.asset_plan_ir.source_fingerprint,
+            handoff: hd, executionReport: f03.executionReport, persistedAt: new Date().toISOString(),
+          });
+        }
+        const canonicalF03 = f03.handoffPayload;
+        const visualRequirements = Array.isArray(canonicalF03.visual_asset_requirements) ? canonicalF03.visual_asset_requirements : [];
+        scope.f03Handoff = canonicalF03; sharedScope.f03Handoff = canonicalF03;
+        scope.f03ExecutionReport = f03.executionReport; sharedScope.f03ExecutionReport = f03.executionReport;
+        scope.assetPlanIR = canonicalF03.asset_plan_ir; sharedScope.assetPlanIR = canonicalF03.asset_plan_ir;
+        scope.scenes = visualRequirements.map((req: any) => ({
+          sceneId: req.scene_id,
+          text: f02Handoff.scenes?.find((scene: any) => scene.scene_id === req.scene_id)?.narration_text || "",
+          durationSeconds: req.target_duration_seconds, imagePrompt: req.prompt_text, assetId: req.asset_id,
+        }));
+        sharedScope.scenes = scope.scenes;
+        const assetPayload = { floor03Handoff: canonicalF03, assetPlanIR: canonicalF03.asset_plan_ir, assetManifest: canonicalF03.manifest, scenes: scope.scenes };
+        scope.assetPayload = assetPayload; sharedScope.assetPayload = assetPayload;
+        if (missionId && this.missionManager) await this.missionManager.updateProgress(missionId, 1);
+        const endTime = performance.now();
+        const completedAt = new Date().toISOString();
+        const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
+        await this.eventBus.publish("TASK_COMPLETED", {
+          taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION", executionId,
+          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, output: assetPayload,
+          handoff: canonicalF03, executionReport: f03.executionReport, startedAt, completedAt, executionTimeMs,
+          durationTruth: "MEASURED", evidenceClass: "TYPED_F03_RUNTIME_HANDOFF", physicalMediaProduced: false,
         });
         return { status: "OK", floor: "floor03_asset_realization", output: assetPayload, executionTimeMs };
       },
