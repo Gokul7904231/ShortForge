@@ -45,10 +45,22 @@ class TimelineRegistry:
     def register_timeline(self, timeline_spec: TimelineSpec) -> None:
         with self._lock:
             db = self._load_db()
+            serialized = json.loads(timeline_spec.model_dump_json())
+            identity_snapshot = {
+                key: value
+                for key, value in serialized.items()
+                if key != "created_at"
+            }
             existing = db["timelines"].get(timeline_spec.timeline_id)
-            if existing is not None and existing != json.loads(timeline_spec.model_dump_json()):
-                raise ValueError(f"Timeline identity collision for {timeline_spec.timeline_id}")
-            db["timelines"][timeline_spec.timeline_id] = json.loads(timeline_spec.model_dump_json())
+            if existing is not None:
+                existing_identity = {
+                    key: value
+                    for key, value in existing.items()
+                    if key != "created_at"
+                }
+                if existing_identity != identity_snapshot:
+                    raise ValueError(f"Timeline identity collision for {timeline_spec.timeline_id}")
+            db["timelines"][timeline_spec.timeline_id] = serialized
             self._atomic_save(db)
 
     def register_render_job(self, render_job: RenderJobSpecification) -> None:
