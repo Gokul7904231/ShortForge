@@ -892,7 +892,7 @@ export class OverseerControlPlane {
 
         this.worldState.updateFloorStatus("floor03_asset_realization", "ONLINE", "Asset Realization & Blueprints");
         this.worldState.registerWorker({
-          workerId: "worker_assets_01", role: "WORKER", specialization: "ASSET_REALIZATION", status: "STARTING",
+          workerId: "worker_assets_01", role: "WORKER", specialization: "ASSET_REALIZATION", status: "BUSY",
           lastSeen: new Date().toISOString(), metrics: { tasksCompleted: 0, tasksFailed: 0, uptimeSeconds: 0, averageLatencyMs: 0 },
         });
         await this.eventBus.publish("TASK_STARTED", {
@@ -1054,7 +1054,6 @@ export class OverseerControlPlane {
         const effectiveTemplateDef = scope.templateDef || sharedScope.templateDef;
         const effectiveScenePlans = scope.scenePlans || sharedScope.scenePlans;
         let localRenderIntent: LocalRenderIntent | null = null;
-        let finalVideoUrl: string | undefined;
 
         if (effectiveTemplateDef && effectiveScenePlans && effectiveScenePlans.length > 0) {
           const pipeline = TemplateProductionPipeline.getInstance();
@@ -1243,7 +1242,7 @@ export class OverseerControlPlane {
         sharedScope.artifact = artifact;
         scope.renderReceipt = renderRes.receipt;
         sharedScope.renderReceipt = renderRes.receipt;
-        finalVideoUrl = (artifact.location as any).path;
+        const finalVideoUrl = (artifact.location as any).path;
         scope.videoUrl = finalVideoUrl;
         sharedScope.videoUrl = finalVideoUrl;
 
