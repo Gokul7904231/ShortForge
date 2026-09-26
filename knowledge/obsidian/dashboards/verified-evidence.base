@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.inFolder("evidence")
+    - 'sf_verification_state == "verified"'
+
+views:
+  - type: table
+    name: Verified evidence
+    order:
+      - file.name
+      - title
+      - domain
+      - authority
+      - created_at

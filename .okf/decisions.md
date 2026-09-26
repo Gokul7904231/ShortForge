@@ -1133,3 +1133,29 @@ Fresh F03 Python tests, Guardian tests, ontology JSON validation, TypeScript con
 ## F03 final evidence refresh — 2026-09-26
 
 Latest verified `main` is `0fa169cae74c9b77def147df55dc4572b91769d2`. Post-merge verification run `36219665043` passed the canonical F03 gate and the repository TypeScript typecheck. Repository CI run `36219665012` also passed. PR #21 corrected verifier-only environment defects discovered on the first merged-main attempt; no production F03 authority boundary was changed by that follow-up.
+
+
+## Obsidian Memory Fabric — 2026-09-26
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Promote the existing Obsidian-compatible knowledge/ vault into the documented ShortForge Memory Fabric. Obsidian is the human/agent knowledge IDE and cognitive memory projection layer. It does not become a runtime authority, production state database, Guardian replacement, or Ascalon authority.
+
+**Implementation:**
+1. Add a typed Obsidian memory schema with explicit epistemic, verification, lifecycle, provenance and training-eligibility fields.
+2. Add Bases dashboards for active decisions, verified evidence, research, conflicts, training eligibility and architecture memory.
+3. Add a Canvas architecture map for the memory lifecycle.
+4. Add core-compatible templates for claims, decisions, research, evidence, incidents and experiments.
+5. Add official Web Clipper templates for generic sources, GitHub, and research/papers.
+6. Add repository-side vault linting, catalog generation and bounded memory projection under tools/obsidian/.
+7. Keep raw sources immutable and require evidence-backed promotion into durable verified knowledge.
+8. Preserve the existing MemoryWriter / KnowledgeOS promotion boundary; Obsidian does not bypass it.
+9. Document Obsidian CLI, Headless Sync, Git, optional community plugins and Publish as controlled integration surfaces.
+
+**Authority invariant:** .okf remains governance truth; canonical contracts/runtime/CI remain executable and measured truth; Obsidian remains derived knowledge; Ascalon consumes bounded projections and cannot amend authority.
+
+**Security invariant:** secrets, credentials and private customer data never enter durable memory. Community plugins require audit before enablement. Headless automation runs only on controlled hosts. Public Publish is opt-in for curated content only.
+
+**Research basis:** current Obsidian supports core plugins including Bases, Canvas, Graph, Properties, Templates and Sync; official Web Clipper supports templates and Interpreter; Obsidian CLI supports scripted vault operations; Obsidian Headless supports agent/CI synchronization. These surfaces are used without making the desktop app a production dependency.
+
+**Rollback:** remove the Obsidian integration files and this decision entry. Existing knowledge/ and runtime memory systems remain valid.

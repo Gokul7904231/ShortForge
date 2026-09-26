@@ -1,0 +1,55 @@
+name: Obsidian Memory Validation
+
+on:
+  pull_request:
+    paths:
+      - "knowledge/**"
+      - "tools/obsidian/**"
+      - "docs/architecture/obsidian-memory-fabric.md"
+      - ".okf/decisions.md"
+      - ".github/workflows/obsidian-memory-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "knowledge/**"
+      - "tools/obsidian/**"
+      - "docs/architecture/obsidian-memory-fabric.md"
+      - ".okf/decisions.md"
+
+jobs:
+  validate:
+    name: Validate Obsidian memory fabric
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JSON assets
+        shell: node {0}
+        run: |
+          const fs = require("node:fs");
+          const paths = [
+            "knowledge/obsidian/clipper/shortforge-source.json",
+            "knowledge/obsidian/clipper/shortforge-github.json",
+            "knowledge/obsidian/clipper/shortforge-research.json",
+            "knowledge/obsidian/canvases/memory-fabric.canvas"
+          ];
+          for (const file of paths) JSON.parse(fs.readFileSync(file, "utf8"));
+          console.log("OBSIDIAN_JSON: PASS");
+
+      - name: Lint memory vault
+        run: node tools/obsidian/lint-vault.mjs knowledge
+
+      - name: Build memory catalog
+        run: node tools/obsidian/build-catalog.mjs knowledge
+
+      - name: Check catalog is generated
+        shell: node {0}
+        run: |
+          const fs = require("node:fs");
+          const p = "knowledge/obsidian/generated/MEMORY_CATALOG.md";
+          if (!fs.existsSync(p)) process.exit(1);
+          const text = fs.readFileSync(p, "utf8");
+          if (!text.includes("# Generated Memory Catalog")) process.exit(1);
+          console.log("OBSIDIAN_CATALOG: PASS");

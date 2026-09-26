@@ -92,3 +92,23 @@ sf_provenance:
   captured_at: YYYY-MM-DDTHH:MM:SSZ
 ---
 ```
+
+
+---
+
+## Obsidian Memory Fabric
+
+The `knowledge/` directory is now the canonical Obsidian-compatible cognitive memory surface.
+
+- [Obsidian integration](obsidian/README.md)
+- [Memory schema](obsidian/MEMORY_SCHEMA.md)
+- [Operations](obsidian/OPERATIONS.md)
+- [Security boundary](obsidian/SECURITY.md)
+- [Setup](obsidian/SETUP.md)
+- [Memory operation log](obsidian/MEMORY_LOG.md)
+- [Dashboards](obsidian/dashboards/)
+- [Canvas](obsidian/canvases/memory-fabric.canvas)
+- [Web Clipper templates](obsidian/clipper/)
+- Repository tooling: `tools/obsidian/`
+
+Obsidian is a knowledge IDE and memory projection layer. It is not a runtime authority, production database, Guardian replacement, or Ascalon authority.

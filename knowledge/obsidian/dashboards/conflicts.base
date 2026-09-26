@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.inFolder("conflicts")
+    - 'sf_lifecycle != "archived"'
+
+views:
+  - type: table
+    name: Active conflicts
+    order:
+      - file.name
+      - title
+      - status
+      - sf_verification_state
+      - updated_at

@@ -1,0 +1,132 @@
+{
+  "nodes": [
+    {
+      "id": "authority",
+      "type": "text",
+      "text": "# Authority\n.okf + canonical contracts + runtime evidence",
+      "x": 0,
+      "y": 0,
+      "width": 340,
+      "height": 140
+    },
+    {
+      "id": "raw",
+      "type": "text",
+      "text": "RAW SOURCES\nImmutable research / PR / CI / incident material",
+      "x": 0,
+      "y": 220,
+      "width": 340,
+      "height": 160
+    },
+    {
+      "id": "compile",
+      "type": "text",
+      "text": "COMPILE\nExtract claims, entities, links, evidence, conflicts",
+      "x": 430,
+      "y": 220,
+      "width": 360,
+      "height": 160
+    },
+    {
+      "id": "knowledge",
+      "type": "text",
+      "text": "KNOWLEDGE\nTyped Markdown + YAML + wikilinks",
+      "x": 890,
+      "y": 220,
+      "width": 340,
+      "height": 160
+    },
+    {
+      "id": "obsidian",
+      "type": "text",
+      "text": "OBSIDIAN\nGraph • Bases • Canvas • Search • Templates",
+      "x": 890,
+      "y": 0,
+      "width": 340,
+      "height": 140
+    },
+    {
+      "id": "query",
+      "type": "text",
+      "text": "QUERY / PROJECT\nBounded evidence-first context",
+      "x": 1330,
+      "y": 220,
+      "width": 360,
+      "height": 160
+    },
+    {
+      "id": "ascalon",
+      "type": "text",
+      "text": "ASCALON\nBounded cognition; never authority",
+      "x": 1800,
+      "y": 220,
+      "width": 340,
+      "height": 160
+    },
+    {
+      "id": "lint",
+      "type": "text",
+      "text": "LINT\nStale • contradiction • secret • orphan • training eligibility",
+      "x": 430,
+      "y": 470,
+      "width": 360,
+      "height": 160
+    },
+    {
+      "id": "git",
+      "type": "text",
+      "text": "GIT\nReview • rollback • reproducibility",
+      "x": 890,
+      "y": 470,
+      "width": 340,
+      "height": 160
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "fromNode": "authority",
+      "toNode": "raw"
+    },
+    {
+      "id": "e2",
+      "fromNode": "raw",
+      "toNode": "compile"
+    },
+    {
+      "id": "e3",
+      "fromNode": "compile",
+      "toNode": "knowledge"
+    },
+    {
+      "id": "e4",
+      "fromNode": "knowledge",
+      "toNode": "obsidian"
+    },
+    {
+      "id": "e5",
+      "fromNode": "knowledge",
+      "toNode": "query"
+    },
+    {
+      "id": "e6",
+      "fromNode": "query",
+      "toNode": "ascalon"
+    },
+    {
+      "id": "e7",
+      "fromNode": "knowledge",
+      "toNode": "lint"
+    },
+    {
+      "id": "e8",
+      "fromNode": "lint",
+      "toNode": "compile"
+    },
+    {
+      "id": "e9",
+      "fromNode": "knowledge",
+      "toNode": "git"
+    }
+  ]
+}
