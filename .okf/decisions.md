@@ -1217,3 +1217,33 @@ Latest verified `main` is `0fa169cae74c9b77def147df55dc4572b91769d2`. Post-merge
 **Authority invariant:** the graph cannot mutate `.okf`, MongoDB, MemoryWriter, runtime state, Guardian state or Ascalon authority.
 
 **Validation:** `node --check` and repository graph-asset validation run in the Obsidian memory CI lane.
+
+
+## AMD distributed render qualification — 2026-09-26
+
+**Classification:** evidence-backed implementation state
+
+**Decision:** Treat the AMD persistent worker integration as physically proven for distributed rendering, but do not classify the current MI300X worker as hardware-video-encoding-qualified.
+
+Measured worker evidence:
+- AMD Instinct MI300X VF detected.
+- ROCm 10.0.0 reported.
+- `/ready` and `/health` returned HTTP 200.
+- Authenticated capability discovery succeeded.
+- Direct `h264_vaapi` proof failed because the installed VAAPI driver exposed H.264 as `VAEntrypointVLD` only.
+- Production worker render succeeded with `libx264`.
+- Result: 1080x1920, 30fps, 2.0s H.264 MP4, 52,675 bytes.
+- Worker and downloaded SHA-256 matched:
+  `f58c6531af68dda10e4e27721b80ceb3c36fd471d0b14e532ae7c9955930c1b8`.
+
+Architecture implication:
+- AMD worker presence and AMD hardware-video encoding are separate capabilities.
+- The Render Fabric capability contract now records the configured video encoder and whether it is hardware-video-encode qualified.
+- Router/provider logic must not infer hardware media encoding merely from `gpuCount > 0`.
+
+Admission status:
+- Physical AMD worker render: VERIFIED.
+- Artifact digest integrity across worker -> download: VERIFIED.
+- Canonical F06 control-plane -> AMD -> CAS -> F07 live admission: PENDING fresh live-run evidence.
+- Hardware H.264 encode on this guest stack: NOT QUALIFIED.
+
