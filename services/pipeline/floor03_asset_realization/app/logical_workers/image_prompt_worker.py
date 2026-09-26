@@ -131,6 +131,9 @@ class ImagePromptWorker:
                     reference_id=character_id,
                     use=ReferenceUse.CHARACTER_IDENTITY,
                     subject_id=character_id,
+                    entity_ref=f"character:{character_id}",
+                    version_selector="latest",
+                    traits=["identity"],
                     required=True,
                 )
             )
@@ -164,6 +167,12 @@ class ImagePromptWorker:
                         reference_id=reference_id,
                         use=use,
                         subject_id=str(raw.get("subject") or "").strip() or None,
+                        entity_ref=str(raw.get("entity_ref") or raw.get("entity") or reference_id).strip(),
+                        version_selector=str(
+                            raw.get("version_selector") or raw.get("version") or ""
+                        ).strip()
+                        or None,
+                        traits=self._string_list(raw.get("traits")),
                         required=bool(raw.get("required", True)),
                     )
                 )
@@ -194,6 +203,9 @@ class ImagePromptWorker:
                         use=ReferenceUse.LAST_FRAME,
                         subject_id=dependency_scene_id,
                         source_scene_id=dependency_scene_id,
+                        entity_ref=f"scene:{dependency_scene_id}:last-frame",
+                        version_selector="current",
+                        traits=["frame", "continuity"],
                         required=False,
                     )
                 )
