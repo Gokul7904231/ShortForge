@@ -423,18 +423,19 @@ export class MemoryFabricBridge {
     }
   }
 
-  private async withWriterLease<T>(fn: () => Promise<T>): Promise<T | undefined> {
+  private async withWriterLease(fn: () => Promise<void>): Promise<boolean> {
     const acquired = await this.ledger.acquireWriterLease(
       this.writerLeaseId,
       this.writerLeaseTtlMs,
     );
     if (!acquired) {
       this.mode = this.mongoDb ? "DEGRADED" : this.mode;
-      return undefined;
+      return false;
     }
 
     try {
-      return await fn();
+      await fn();
+      return true;
     } finally {
       await this.ledger.releaseWriterLease(this.writerLeaseId);
     }
