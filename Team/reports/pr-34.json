@@ -53,7 +53,7 @@
     "notes": "Code-level hardening is present; full repository security lanes remain the final admission evidence."
   },
   "trainingReadiness": {
-    "floor05": "PASS_PENDING_CI",
+    "floor05": "PASS",
     "ascalon": "Bounded TimelineProposalIR proposal/evaluation only; no authority promotion.",
     "rendererModels": "No new provider/model execution authority."
   },
@@ -82,8 +82,8 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "PENDING_CI",
-    "Forge Release": "PENDING_CI"
+    "Forge Evaluator": "PASS",
+    "Forge Release": "PASS_PENDING_MERGE"
   },
   "conflicts": [],
   "verificationPlan": [
@@ -100,6 +100,18 @@
     "TimelineProposalIR is a new training evidence artifact but does not create a new runtime authority.",
     "No floor topology changed.",
     "No third-party source code, model weights, credentials or provider authority imported.",
-    "Reference rendering remains a bounded evidence path, not F06 distributed render."
-  ]
+    "Reference rendering remains a bounded evidence path, not F06 distributed render.",
+    "Canonical production-critical CI gates are green on the branch head; Web Regression Suite is informational and still running/non-blocking."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PASS",
+    "obsidianMemoryValidation": "PASS",
+    "floor02Floor03ProductionGates": "PASS",
+    "floor04F05HandoffValidation": "PASS",
+    "floor05PreTrainingValidation": "PASS",
+    "f03GuardianContract": "PASS",
+    "repositoryCriticalCi": "PASS",
+    "googleDriveMcp": "PASS",
+    "webRegressionSuite": "RUNNING_INFORMATIONAL"
+  }
 }
