@@ -39,6 +39,7 @@ export interface AmdRemoteCapabilities {
   rocmVersion?: string;
   ffmpegAvailable: boolean;
   videoEncoder?: string;
+  hardwareVideoEncode?: boolean;
   maxConcurrency: number;
   isEphemeral: boolean;
 }
@@ -133,6 +134,8 @@ export class AmdRenderWorkerAdapter implements IRenderWorker {
       memoryMb: Number(remote.memoryMb || 0),
       rocmVersion: remote.rocmVersion,
       ffmpegAvailable: Boolean(remote.ffmpegAvailable),
+      videoEncoder: remote.videoEncoder,
+      hardwareVideoEncode: remote.videoEncoder === "h264_vaapi",
       supportedCodecs: ["h264", "hevc", "av1"],
       supportedWorkloads: ["video.render"],
       maxConcurrency: Number(remote.maxConcurrency || 1),
