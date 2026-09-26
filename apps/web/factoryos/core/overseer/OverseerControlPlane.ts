@@ -47,6 +47,7 @@ import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRende
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
+import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
