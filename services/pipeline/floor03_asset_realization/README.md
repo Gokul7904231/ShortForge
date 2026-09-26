@@ -3,7 +3,7 @@
 **Canonical Floor ID**: `floor03_asset_realization`  
 **Floor Version**: `2.3.0`  
 **Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
-**Overseer Integration**: **PENDING** — production control-plane wiring still requires the canonical runtime adapter.
+**Overseer Integration**: **CANONICAL** — Overseer uses the signed/internal Python runtime adapter and persists the validated handoff in the distributed control-plane store.
 
 ## Purpose
 
@@ -76,6 +76,12 @@ Scene identity and asset identity remain separate. Regenerating one visual asset
 - **OpenBao**: provider credentials and leases stay outside F03; future provider adapters should use explicit identity/lease boundaries.
 - **quiche**: semantic F03 state is separated from transport mechanics.
 - **NVIDIA Model Optimizer**: model optimization belongs to the Fast Decision Core / Ascalon training system, not to F03's semantic contract.
+
+## Runtime persistence boundary
+
+The local JSON memory store is an idempotency/cache mechanism only. Canonical Overseer execution persists the validated F03 handoff and execution report in the FactoryOS distributed control-plane store keyed by the mission/task request identity. Duplicate requests with the same canonical request identity must resolve to the same immutable handoff.
+
+The Python service does not own orchestration, provider credentials, render capabilities, physical media, or release authority.
 
 ## Not implemented by this floor
 

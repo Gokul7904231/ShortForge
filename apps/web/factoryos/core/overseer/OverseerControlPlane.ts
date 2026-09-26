@@ -46,6 +46,9 @@ import { Floor02RuntimeAdapter } from "../adapters/Floor02RuntimeAdapter";
 import { LocalRenderAdapter, type LocalRenderIntent } from "../render/LocalRenderAdapter";
 import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
+import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
+import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
+import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -885,95 +888,64 @@ export class OverseerControlPlane {
         const startedAt = new Date().toISOString();
         const executionId = `exec_${node.taskId}_${Date.now()}`;
         const mission = missionId && this.missionManager ? await this.missionManager.getMission(missionId) : null;
-        const scope = (mission?.scope as Record<string, any>) || {};
+        const scope = Object.assign(sharedScope, (mission?.scope as Record<string, any>) || {});
 
         this.worldState.updateFloorStatus("floor03_asset_realization", "ONLINE", "Asset Realization & Blueprints");
         this.worldState.registerWorker({
-          workerId: "worker_assets_01",
-          role: "WORKER",
-          specialization: "ASSET_REALIZATION",
-          status: "HEALTHY",
-          lastSeen: new Date().toISOString(),
-          metrics: { tasksCompleted: 1, tasksFailed: 0, uptimeSeconds: 100, averageLatencyMs: 20 },
+          workerId: "worker_assets_01", role: "WORKER", specialization: "ASSET_REALIZATION", status: "BUSY",
+          lastSeen: new Date().toISOString(), metrics: { tasksCompleted: 0, tasksFailed: 0, uptimeSeconds: 0, averageLatencyMs: 0 },
         });
-
         await this.eventBus.publish("TASK_STARTED", {
-          taskId: node.taskId,
-          taskNodeId: node.taskId,
-          capabilityId: "FLOOR_ASSET_REALIZATION",
-          executionId,
-          floorId: "floor03_asset_realization",
-          workerId: "worker_assets_01",
-          missionId,
-          startedAt,
+          taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION",
+          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, startedAt,
         });
 
-        const effectiveTemplateDef = scope.templateDef || sharedScope.templateDef;
-        const effectiveScriptIR = scope.templateScriptIR || sharedScope.templateScriptIR;
-
-        let assetPayload: any;
-        if (effectiveTemplateDef && effectiveScriptIR) {
-          const pipeline = TemplateProductionPipeline.getInstance();
-          const scenePlans = await pipeline.planScenes(effectiveTemplateDef, effectiveScriptIR);
-          const planValidation = pipeline.validateScenePlans(scenePlans);
-          if (!planValidation.valid) {
-            const planErr = new Error(`[SCENE_PLAN_INVALID] Scene planning failed: ${planValidation.errors.join("; ")}`);
-            (planErr as any).code = "SCENE_PLAN_INVALID";
-            (planErr as any).stage = "FLOOR_ASSET_REALIZATION";
-            (planErr as any).errors = planValidation.errors;
-            throw planErr;
-          }
-
-          scope.scenePlans = scenePlans;
-          sharedScope.scenePlans = scenePlans;
-          scope.scenes = scenePlans.map((sp) => ({
-            text: sp.narration,
-            durationSeconds: sp.durationIntent.target,
-            shotRecipeId: sp.shotRecipeId,
-            props: sp.props,
-            resolvedAssets: sp.resolvedAssets,
-          }));
-          sharedScope.scenes = scope.scenes;
-
-          assetPayload = {
-            scenePlans,
-            scenes: scope.scenes,
-            stylePreset: effectiveTemplateDef.category,
-            aspectRatio: "9:16",
-          };
-        } else {
-          const scenes = scope.scenes || sharedScope.scenes || [];
-          assetPayload = {
-            scenes,
-            stylePreset: scope.style || "cinematic",
-            aspectRatio: "9:16",
-          };
+        const f02Handoff = (scope.f02Handoff || sharedScope.f02Handoff) as Record<string, any> | undefined;
+        if (!f02Handoff) throw new Error("[Overseer Floor03] Canonical Floor 02 handoff is missing; refusing non-canonical F03 execution.");
+        const runtime = new Floor03RuntimeAdapter();
+        const durableStore = new Floor03DurableHandoffStore();
+        const f03RequestId = `${missionId || "mission"}:${node.taskId}`;
+        const durableF03 = await durableStore.get(f03RequestId);
+        const f03 = durableF03
+          ? { handoffPayload: durableF03.handoff, executionReport: durableF03.executionReport }
+          : await runtime.plan({
+              requestId: f03RequestId, floor02Handoff: f02Handoff,
+              platform: scope.platform || sharedScope.platform || f02Handoff?.strategy?.platform || f02Handoff?.provenance?.find((p: any) => p?.raw_data?.platform)?.raw_data?.platform,
+              aspectRatio: scope.aspectRatio || sharedScope.aspectRatio, targetResolution: scope.targetResolution || sharedScope.targetResolution,
+              stylePreset: scope.style || sharedScope.style, voiceId: scope.voiceId || sharedScope.voiceId,
+              authorizedOverride: Boolean(scope.authorizedPlatformOverride),
+            });
+        if (!durableF03) {
+          const hd = f03.handoffPayload;
+          await durableStore.put({
+            requestId: f03RequestId, floorId: "floor03_asset_realization", floorVersion: hd.floor_version,
+            assetPlanId: hd.asset_plan_id, assetPlanVersion: hd.asset_plan_version,
+            planFingerprint: hd.asset_plan_ir.plan_fingerprint, sourceFingerprint: hd.asset_plan_ir.source_fingerprint,
+            handoff: hd, executionReport: f03.executionReport, persistedAt: new Date().toISOString(),
+          });
         }
-
-        scope.assetPayload = assetPayload;
-        sharedScope.assetPayload = assetPayload;
-
-        if (missionId && this.missionManager) {
-          await this.missionManager.updateProgress(missionId, 1);
-        }
-
+        const canonicalF03 = f03.handoffPayload;
+        const visualRequirements = Array.isArray(canonicalF03.visual_asset_requirements) ? canonicalF03.visual_asset_requirements : [];
+        scope.f03Handoff = canonicalF03; sharedScope.f03Handoff = canonicalF03;
+        scope.f03ExecutionReport = f03.executionReport; sharedScope.f03ExecutionReport = f03.executionReport;
+        scope.assetPlanIR = canonicalF03.asset_plan_ir; sharedScope.assetPlanIR = canonicalF03.asset_plan_ir;
+        scope.scenes = visualRequirements.map((req: any) => ({
+          sceneId: req.scene_id,
+          text: f02Handoff.scenes?.find((scene: any) => scene.scene_id === req.scene_id)?.narration_text || "",
+          durationSeconds: req.target_duration_seconds, imagePrompt: req.prompt_text, assetId: req.asset_id,
+        }));
+        sharedScope.scenes = scope.scenes;
+        const assetPayload = { floor03Handoff: canonicalF03, assetPlanIR: canonicalF03.asset_plan_ir, assetManifest: canonicalF03.manifest, scenes: scope.scenes };
+        scope.assetPayload = assetPayload; sharedScope.assetPayload = assetPayload;
+        if (missionId && this.missionManager) await this.missionManager.updateProgress(missionId, 1);
         const endTime = performance.now();
         const completedAt = new Date().toISOString();
         const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
-
         await this.eventBus.publish("TASK_COMPLETED", {
-          taskId: node.taskId,
-          taskNodeId: node.taskId,
-          capabilityId: "FLOOR_ASSET_REALIZATION",
-          executionId,
-          floorId: "floor03_asset_realization",
-          workerId: "worker_assets_01",
-          missionId,
-          output: assetPayload,
-          startedAt,
-          completedAt,
-          executionTimeMs,
-          durationTruth: "PHYSICAL",
+          taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION", executionId,
+          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, output: assetPayload,
+          handoff: canonicalF03, executionReport: f03.executionReport, startedAt, completedAt, executionTimeMs,
+          durationTruth: "MEASURED", evidenceClass: "TYPED_F03_RUNTIME_HANDOFF", physicalMediaProduced: false,
         });
         return { status: "OK", floor: "floor03_asset_realization", output: assetPayload, executionTimeMs };
       },
@@ -1270,7 +1242,7 @@ export class OverseerControlPlane {
         sharedScope.artifact = artifact;
         scope.renderReceipt = renderRes.receipt;
         sharedScope.renderReceipt = renderRes.receipt;
-        finalVideoUrl = (artifact.location as any).path;
+        const finalVideoUrl = (artifact.location as any).path;
         scope.videoUrl = finalVideoUrl;
         sharedScope.videoUrl = finalVideoUrl;
 

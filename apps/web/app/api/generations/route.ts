@@ -30,6 +30,7 @@ export async function POST(req: Request) {
   let jobId = "";
   let generationId = "";
   let slotReserved = false;
+  const targetWorkerPool = process.env.DEFAULT_RENDER_WORKER_POOL || (userRole === "ADMIN" ? "github-actions" : "basic-fastapi");
 
   try {
     // 1. Authenticate user

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
@@ -63,7 +64,10 @@ class Floor05Guardian:
         report = self.engine.run_autonomous_loop(
             request_id=req_id,
             objective="Assemble TimelineSpec, execute reference video render, verify physical/semantic output, and prepare Floor 07 handoff",
-            input_contract_hash=input_data.floor04_payload.provenance_hash,
+            input_contract_hash=hashlib.sha256(
+                f"{input_data.floor03_payload.asset_plan_ir.plan_fingerprint if input_data.floor03_payload.asset_plan_ir else input_data.floor03_payload.asset_plan_id}:
+{input_data.floor04_payload.provenance_hash}".encode("utf-8")
+            ).hexdigest(),
             initial_context=initial_context,
             execution_mode=input_data.execution_mode,
         )

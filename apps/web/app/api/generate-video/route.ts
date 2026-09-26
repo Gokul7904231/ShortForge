@@ -264,6 +264,8 @@ export async function POST(req: Request) {
 
     let finalPayload: any = null;
 
+    const targetWorkerPool = process.env.DEFAULT_RENDER_WORKER_POOL || (tier === "ADMIN" ? "github-actions" : "basic-fastapi");
+
     // Clamp duration to YouTube Shorts range (30–60 s)
     const rawDuration = configuredDuration;
     const durationSeconds = Math.min(

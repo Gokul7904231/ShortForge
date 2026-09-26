@@ -12,7 +12,7 @@ import type {
   CapabilityExecutionResult,
 } from "../contracts/CapabilityContracts";
 import { VoiceFabric } from "../voice/VoiceFabric";
-import { FFmpegRenderCompiler } from "../fabric/RenderFabric";
+import { RenderFabric } from "../fabric/RenderFabric";
 import { ReachSubsystem } from "../research/ReachSubsystem";
 
 export type CapabilityHandler<T = Record<string, unknown>, R = Record<string, unknown>> = (
@@ -874,9 +874,21 @@ export class CapabilityRegistry {
             durationMs: Date.now() - start,
           };
         }
-        const compiler = new FFmpegRenderCompiler();
-        const artifact = await compiler.execute(intent);
+        const renderFabric = new RenderFabric();
+        const renderResult = await renderFabric.executeRender(intent);
+        const artifact = renderResult.artifact;
         const latency = Date.now() - start;
+
+        if (!artifact) {
+          return {
+            requestExecutionId: req.requestExecutionId,
+            capabilityId: "render.ffmpeg",
+            status: "FAILED",
+            findings: ["Render Fabric completed without a physical artifact"],
+            error: "Missing physical render artifact",
+            durationMs: latency,
+          };
+        }
 
         return {
           requestExecutionId: req.requestExecutionId,
@@ -890,6 +902,7 @@ export class CapabilityRegistry {
             videoPath: (artifact.location as any).path,
             duration: artifact.duration,
             sha256: artifact.sha256,
+            receipt: renderResult.receipt,
           },
           durationMs: latency,
         };

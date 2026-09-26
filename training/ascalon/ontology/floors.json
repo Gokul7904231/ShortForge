@@ -163,7 +163,7 @@
       ],
       "authority": "overseer",
       "trainingEligible": true,
-      "simulationRole": "Deterministically compiles provider-neutral AssetPlanIR 1.4.0, validates dependency/reference/conditioning graph integrity, derives cinematic coverage and continuity strategy, emits logical reference identity and typed conditioning bindings, computes semantic plan/node fingerprints with dependency-version lineage, records upstream lineage, computes transitive repair impact, and preserves/remaps dependency and reference edges across local regeneration. Physical generation and provider execution remain outside F03."
+      "simulationRole": "Deterministically compiles provider-neutral AssetPlanIR 1.4.0; canonical Overseer production execution enters through Floor03RuntimeAdapter, validates the F02 handoff, persists the immutable F03 handoff in the distributed control-plane store, and exposes only declarative asset planning. Physical generation and provider execution remain outside F03."
     },
     {
       "floorId": "floor04_media_synthesis",
@@ -208,7 +208,7 @@
       "canonicalName": "Timeline Composition & Motion",
       "shortName": "Timeline",
       "category": "COMPOSITION",
-      "responsibility": "Aligns audio and script using Whisper word-level timestamps, generates kinetic subtitle layers, and compiles the final RenderIntent manifest.",
+      "responsibility": "Joins the independent Floor 03 asset plan and Floor 04 media handoff, validates their lineage match, aligns audio and visual timing, and compiles the final RenderIntent manifest.",
       "parent": "overseer",
       "predecessors": [
         "floor03_asset_realization",
@@ -223,8 +223,8 @@
         "testing/contracts/floor.contract.ts"
       ],
       "expectedInputs": [
-        "scenes",
-        "voiceArtifact"
+        "floor03Handoff",
+        "floor04Handoff"
       ],
       "expectedOutputs": [
         "renderIntent"

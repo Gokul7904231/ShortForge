@@ -132,7 +132,7 @@ export class GoogleDriveClient {
       }
       visited.add(currentId);
 
-      const res = await this.drive.files.get({
+      const res: any = await this.drive.files.get({
         fileId: currentId,
         fields: "id,parents,mimeType,trashed",
         supportsAllDrives: true,
@@ -147,7 +147,7 @@ export class GoogleDriveClient {
         throw new Error("Drive parent graph is malformed; refusing access.");
       }
 
-      const parents = res.data.parents || [];
+      const parents: string[] = res.data.parents || [];
       if (parents.includes(this.rootFolderId)) {
         return;
       }

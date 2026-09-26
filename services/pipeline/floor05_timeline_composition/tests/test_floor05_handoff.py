@@ -90,7 +90,7 @@ def build_mock_floor04_payload(tmp_path) -> Floor04HandoffPayload:
 
 def test_floor05_handoff_contract_serialization(tmp_path):
     f04 = build_mock_floor04_payload(tmp_path)
-    inp = Floor05Input(floor04_payload=f04, request_id="req-f05-01")
+    inp = Floor05Input(floor03_payload=f04.floor03_payload, floor04_payload=f04, request_id="req-f05-01")
 
     clip = TimelineClip(
         clip_id="clip-1",
@@ -124,6 +124,7 @@ def test_floor05_handoff_contract_serialization(tmp_path):
 
     payload = Floor05HandoffPayload(
         request_id="req-f05-01",
+        floor03_payload=f04.floor03_payload,
         floor04_payload=f04,
         timeline_spec=spec,
         render_job=job,
@@ -140,3 +141,17 @@ def test_floor05_handoff_contract_serialization(tmp_path):
     assert deserialized.request_id == "req-f05-01"
     assert deserialized.render_job.render_job_id == "job-1"
     assert deserialized.timeline_spec.clips[0].source_asset_id == "vis-001"
+
+
+def test_floor05_rejects_f03_f04_lineage_mismatch(tmp_path):
+    f04 = build_mock_floor04_payload(tmp_path)
+    mismatched = f04.floor03_payload.model_copy(deep=True)
+    mismatched.asset_plan_version += 1
+
+    with pytest.raises(ValueError, match="F03/F04 join mismatch"):
+        Floor05Input(
+            floor03_payload=mismatched,
+            floor04_payload=f04,
+            request_id="req-f05-mismatch",
+        )
+

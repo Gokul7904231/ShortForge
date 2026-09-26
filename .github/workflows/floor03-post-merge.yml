@@ -1,0 +1,71 @@
+name: Floor 03 Post-Merge Verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/pipeline/floor02_scripting/**"
+      - "services/pipeline/floor03_asset_realization/**"
+      - "services/pipeline/floor04_media_synthesis/**"
+      - "services/pipeline/floor05_timeline_composition/**"
+      - "services/pipeline/guardian/floors/floor05_guardian.py"
+      - "floors/**"
+      - "factoryos/**"
+      - "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts"
+      - "apps/web/factoryos/core/bridge/Floor03DurableHandoffStore.ts"
+      - "apps/web/factoryos/core/overseer/OverseerControlPlane.ts"
+      - "training/ascalon/ontology/**"
+      - "testing/contracts/floor.contract.ts"
+      - ".okf/**"
+      - ".github/workflows/floor03-post-merge.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  f03:
+    name: F03 canonical post-merge gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install Python floor dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "fastapi>=0.115,<1" "pydantic>=2.7,<3" "pydantic-settings>=2.4,<3" "structlog>=24,<26" "pytest>=8,<9" "httpx>=0.27,<1"
+      - name: Compile canonical floors
+        run: |
+          python -m compileall -q services/pipeline/floor02_scripting
+          python -m compileall -q services/pipeline/floor03_asset_realization
+          python -m compileall -q services/pipeline/floor05_timeline_composition
+      - name: Run F03 suite
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: python -m pytest services/pipeline/floor03_asset_realization/tests/ -q
+      - name: Run F03 Guardian contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: python -m pytest tests/guardian/test_guardian_floor03.py -q
+      - name: Run F03/F04/F05 contract tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: python -m pytest services/pipeline/floor05_timeline_composition/tests/test_floor05_handoff.py -q
+      - name: Validate Ascalon ontology JSON
+        run: |
+          python -m json.tool training/ascalon/ontology/floors.json >/dev/null
+          python -m json.tool training/ascalon/ontology/agents.json >/dev/null
+
+  repository-typecheck:
+    name: Repository TypeScript typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit -p apps/web/tsconfig.json
