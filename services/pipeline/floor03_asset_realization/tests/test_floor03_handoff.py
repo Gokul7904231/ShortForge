@@ -201,7 +201,7 @@ def test_floor02_handoff_ingestion_and_asset_planning(tmp_path):
     assert payload.asset_plan_ir is not None
     assert payload.asset_plan_ir.script_id == f02_payload.script_id
     assert payload.asset_plan_ir.platform == payload.resolved_platform
-    assert payload.asset_plan_ir.schema_version == "1.3.0"
+    assert payload.asset_plan_ir.schema_version == "1.4.0"
     assert payload.asset_plan_ir.plan_fingerprint
     assert all(node.coverage_role.value for node in payload.asset_plan_ir.nodes)
     assert all(node.asset_id for node in payload.asset_plan_ir.nodes)
