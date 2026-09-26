@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR20-F03-PostMerge-Hardening",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/f03-post-merge-hardening-20260926",
+  "objective": "Canonicalize production Floor 03 execution through the Python F03 runtime, make the F03→F05 join explicit and lineage-validated, preserve evidence truthfulness, add distributed F03 handoff persistence, add a post-merge F03 verification gate, reconcile documentation/Ascalon readiness, and repair repository-wide TypeScript contract errors identified on merged main.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "F03 remains provider-neutral specification/planning only",
+      "F03 and F04 remain parallel branches",
+      "Overseer remains sovereign orchestration authority",
+      "Guardian remains capability/safety authority",
+      "F03 must not claim physical media generation",
+      "Post-merge evidence outranks historical PR evidence",
+      "Ascalon training admission requires canonical runtime evidence"
+    ],
+    "repoMappingCorpus": ".okf/research/repo-mappings/"
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_POST_MERGE_VERIFICATION",
+    "Forge Release": "PENDING_POST_MERGE_VERIFICATION"
+  },
+  "conflicts": [
+    {
+      "id": "F03-RUNTIME-004",
+      "originalConflict": "Overseer production execution used TemplateProductionPipeline instead of the canonical Python F03 service.",
+      "status": "RESOLVED",
+      "acceptedResolution": "Overseer now enters F03 through Floor03RuntimeAdapter and validates AssetPlanIR 1.4.0."
+    },
+    {
+      "id": "F03-F05-JOIN-005",
+      "originalConflict": "F05 recovered F03 semantics indirectly through the F04 envelope.",
+      "status": "RESOLVED",
+      "acceptedResolution": "Floor05Input carries explicit floor03_payload and validates lineage against the F04-embedded F03 payload."
+    },
+    {
+      "id": "F03-EVIDENCE-006",
+      "originalConflict": "F03 planning completion was reported with physical execution truth.",
+      "status": "RESOLVED",
+      "acceptedResolution": "F03 uses measured runtime evidence and explicitly records physicalMediaProduced=false."
+    },
+    {
+      "id": "F03-DURABILITY-007",
+      "originalConflict": "F03 JSON memory was local process state rather than distributed operational authority.",
+      "status": "RESOLVED",
+      "acceptedResolution": "FactoryOS persists immutable canonical F03 handoffs in factoryos_floor03_handoffs; Python memory remains cache/idempotency state."
+    }
+  ],
+  "verificationPlan": [
+    "F03 Asset Planning v2 passes",
+    "F03 Guardian contract passes",
+    "F03/F04/F05 handoff tests pass",
+    "Ascalon ontology JSON validates",
+    "Canonical Floor03RuntimeAdapter tests pass",
+    "Repository-wide TypeScript typecheck passes",
+    "Dedicated post-merge F03 workflow passes on main after merge"
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+    "apps/web/factoryos/core/bridge/Floor03DurableHandoffStore.ts",
+    "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+    "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_handoff.py",
+    ".github/workflows/floor03-post-merge.yml",
+    "docs/verification/ascalon/floor03-post-merge-hardening.md",
+    "Team/reports/f03-post-merge-hardening-20260926.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "Training admission remains blocked until main post-merge evidence is green."
+  },
+  "disposition": "PENDING_VERIFICATION"
+}
