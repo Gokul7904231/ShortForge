@@ -12,7 +12,7 @@ def test_registry_prefers_healthy_high_priority_provider():
             provider_id="healthy-low-number",
             capability="image_generation",
             priority=10,
-            execution_mode=ExecutionMode.MODEL,
+            execution_mode=ExecutionMode.HYBRID,
             health_check=lambda: True,
         )
     )
@@ -21,7 +21,7 @@ def test_registry_prefers_healthy_high_priority_provider():
             provider_id="healthy-high-number",
             capability="image_generation",
             priority=20,
-            execution_mode=ExecutionMode.MODEL,
+            execution_mode=ExecutionMode.HYBRID,
             health_check=lambda: True,
         )
     )
@@ -37,7 +37,7 @@ def test_registry_skips_unhealthy_provider():
             provider_id="down-provider",
             capability="tts_generation",
             priority=1,
-            execution_mode=ExecutionMode.MODEL,
+            execution_mode=ExecutionMode.HYBRID,
             health_check=lambda: False,
         )
     )
@@ -61,7 +61,7 @@ def test_registry_rejects_capability_mismatch():
             provider_id="image-only",
             capability="image_generation",
             priority=1,
-            execution_mode=ExecutionMode.MODEL,
+            execution_mode=ExecutionMode.HYBRID,
         )
     )
 
