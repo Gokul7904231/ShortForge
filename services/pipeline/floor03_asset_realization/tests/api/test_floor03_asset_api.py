@@ -17,7 +17,7 @@ def test_health_check_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["floor_id"] == "floor03"
+    assert data["floor_id"] == "floor03_asset_realization"
 
 
 def test_plan_assets_endpoint_success():
@@ -31,7 +31,7 @@ def test_plan_assets_endpoint_success():
     assert response.status_code == 200
     data = response.json()
     assert data["request_id"] == req_id
-    assert data["floor_id"] == "floor03"
+    assert data["floor_id"] == "floor03_asset_realization"
     assert len(data["visual_asset_requirements"]) >= 3
 
 
@@ -47,7 +47,7 @@ def test_execution_report_endpoint():
     data = response.json()
     assert "handoff_payload" in data
     assert "execution_report" in data
-    assert data["execution_report"]["floor_id"] == "floor03"
+    assert data["execution_report"]["floor_id"] == "floor03_asset_realization"
 
 
 def test_regenerate_scene_endpoint_success():

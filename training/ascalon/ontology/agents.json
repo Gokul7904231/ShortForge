@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonCanonicalAgents",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "Authoritative canonical registry of ShortForge / FactoryOS cognitive and sovereign agents",
   "agents": [
     {
@@ -10,10 +10,17 @@
       "category": "SOVEREIGN_SUPERVISORY",
       "authorityLevel": "STRATEGIC",
       "description": "Master strategic orchestration agent responsible for mission decomposition, task DAG planning, context budgeting, and lifecycle supervision.",
-      "supervises": ["SLAYER", "HEALER", "INSTRUCTOR", "FLOOR_AGENTS"],
+      "supervises": [
+        "SLAYER",
+        "HEALER",
+        "INSTRUCTOR",
+        "FLOOR_AGENTS"
+      ],
       "escalatesTo": "HUMAN_OPERATOR",
       "isFloor": false,
-      "sourceLocations": ["apps/web/factoryos/core/overseer/"]
+      "sourceLocations": [
+        "apps/web/factoryos/core/overseer/"
+      ]
     },
     {
       "agentId": "agent_guardian",
@@ -21,7 +28,10 @@
       "category": "SOVEREIGN_GOVERNANCE",
       "authorityLevel": "AUTHORITATIVE_SAFETY",
       "description": "Policy and cryptographic safety authority. Evaluates invariant compliance, controls capability execution gates, signs release receipts, and governs Floor 07.",
-      "supervises": ["F07_COMPLIANCE_GATE", "CAPABILITY_GATES"],
+      "supervises": [
+        "F07_COMPLIANCE_GATE",
+        "CAPABILITY_GATES"
+      ],
       "escalatesTo": "OVERSEER",
       "isFloor": false,
       "sourceLocations": [
@@ -38,7 +48,9 @@
       "supervises": [],
       "escalatesTo": "OVERSEER",
       "isFloor": false,
-      "sourceLocations": ["apps/web/factoryos/core/slayers/"]
+      "sourceLocations": [
+        "apps/web/factoryos/core/slayers/"
+      ]
     },
     {
       "agentId": "agent_healer",
@@ -49,7 +61,9 @@
       "supervises": [],
       "escalatesTo": "OVERSEER",
       "isFloor": false,
-      "sourceLocations": ["apps/web/factoryos/core/healers/"]
+      "sourceLocations": [
+        "apps/web/factoryos/core/healers/"
+      ]
     },
     {
       "agentId": "agent_instructor",
@@ -60,7 +74,9 @@
       "supervises": [],
       "escalatesTo": "OVERSEER",
       "isFloor": false,
-      "sourceLocations": ["apps/web/factoryos/core/instructor/"]
+      "sourceLocations": [
+        "apps/web/factoryos/core/instructor/"
+      ]
     },
     {
       "agentId": "agent_trend_analyst",
@@ -70,7 +86,9 @@
       "assignedFloor": "floor00_analyst",
       "description": "Ingests raw trend streams from Reddit, YouTube, and news sources, producing structured research passports.",
       "isFloor": false,
-      "sourceLocations": ["apps/web/agents/trend-agent.ts"]
+      "sourceLocations": [
+        "apps/web/agents/trend-agent.ts"
+      ]
     },
     {
       "agentId": "agent_script_writer",
@@ -80,7 +98,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Compiles hierarchical narrative candidates into canonical ScriptIR with beat structure, causal events, viewer state, evidence lineage, pacing and downstream handoffs.",
       "isFloor": false,
-      "sourceLocations": ["apps/web/agents/script-agent.ts"]
+      "sourceLocations": [
+        "apps/web/agents/script-agent.ts"
+      ]
     },
     {
       "agentId": "agent_hook_scorer",
@@ -90,7 +110,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Evaluates hook/open-loop quality as one bounded critic dimension; it does not directly mutate authoritative ScriptIR.",
       "isFloor": false,
-      "sourceLocations": ["apps/web/agents/hook-score-agent.ts"]
+      "sourceLocations": [
+        "apps/web/agents/hook-score-agent.ts"
+      ]
     },
     {
       "agentId": "agent_f02_evidence_critic",
@@ -100,7 +122,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Checks script claims for upstream evidence lineage and blocks unsupported production handoffs.",
       "isFloor": false,
-      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"
+      ]
     },
     {
       "agentId": "agent_f02_narrative_critic",
@@ -110,7 +134,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Evaluates beat progression, scene purpose and payoff closure without owning final authority.",
       "isFloor": false,
-      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"
+      ]
     },
     {
       "agentId": "agent_f02_continuity_critic",
@@ -120,7 +146,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Checks scene dependencies and causal event references for continuity-safe regeneration.",
       "isFloor": false,
-      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"
+      ]
     },
     {
       "agentId": "agent_f02_pacing_critic",
@@ -130,7 +158,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Enforces normalized 130-160 words-per-minute production pacing bounds.",
       "isFloor": false,
-      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"
+      ]
     },
     {
       "agentId": "agent_f02_feasibility_critic",
@@ -140,7 +170,9 @@
       "assignedFloor": "floor02_scripting",
       "description": "Checks visual and voice intent completeness before F03/F04 handoff.",
       "isFloor": false,
-      "sourceLocations": ["services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"]
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py"
+      ]
     },
     {
       "agentId": "agent_scene_architect",
@@ -148,9 +180,14 @@
       "category": "DOMAIN_WORKER",
       "authorityLevel": "OPERATIONAL",
       "assignedFloor": "floor03_asset_realization",
-      "description": "Converts narrative sentences into visual scene blueprints, camera directions, and prompt recipes.",
+      "description": "Compiles trusted Floor 02 scene semantics into the canonical provider-neutral AssetPlanIR, including self-contained asset/node identity, semantic fingerprints, explicit upstream lineage, shot/camera guidance, cinematic coverage roles, normalized safe text regions, subject constraints, typed reference bindings with dependency boundary frames, continuity strategy, temporal motion beats, evidence/causal lineage, dependency edges, and bounded downstream repair impact. It does not select providers or execute media.",
       "isFloor": false,
-      "sourceLocations": ["apps/web/agents/scene-agent.ts"]
+      "sourceLocations": [
+        "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "apps/web/agents/scene-agent.ts",
+        "services/pipeline/floor03_asset_realization/app/core/identity.py"
+      ]
     },
     {
       "agentId": "agent_scene_quality_judge",
@@ -160,7 +197,9 @@
       "assignedFloor": "floor03_asset_realization",
       "description": "Evaluates aesthetic composition, text contrast safety margins, and 9:16 alignment of generated visual assets.",
       "isFloor": false,
-      "sourceLocations": ["apps/web/agents/scene-quality-agent.ts"]
+      "sourceLocations": [
+        "apps/web/agents/scene-quality-agent.ts"
+      ]
     },
     {
       "agentId": "agent_upload_dispatcher",

@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR18-Floor03-ResearchExpansion",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/f03-research-upgrade",
+  "objective": "Expand and harden Floor 03 through a broader clean-room GitHub research sweep; introduce richer provider-neutral AssetPlanIR semantics, graph-aware dependencies, continuity/reference planning, semantic fingerprints, surgical repair preservation, canonical identity updates, tests, ontology synchronization, and complete OKF/repository mapping documentation.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/architecture.md",
+      ".okf/principles.md",
+      ".okf/terminology.md",
+      ".okf/decisions.md",
+      ".okf/hierarchy-map.md",
+      ".okf/research/repo-research-ledger.md",
+      ".okf/research/external-repository-mappings.md",
+      ".okf/research/repo-mappings/paperclipai-paperclip.md",
+      ".okf/research/repo-mappings/vectorize-io-hindsight.md",
+      ".okf/research/repo-mappings/androoAGI-starnet.md",
+      ".okf/research/repo-mappings/nvidia-model-optimizer.md",
+      ".okf/research/repo-mappings/openbao.md",
+      ".okf/research/repo-mappings/stablyai-orca.md",
+      ".okf/research/repo-mappings/cloudflare-quiche.md",
+      ".okf/research/repo-mappings/fission-ai-openspec.md",
+      ".okf/research/repo-mappings/bojieli-ai-agent-book.md",
+      ".okf/research/repo-mappings/storyforgeai.md",
+      ".okf/research/repo-mappings/video-claw.md",
+      ".okf/research/repo-mappings/nolanx-ai.md",
+      ".okf/research/repo-mappings/seedance-2.0.md",
+      ".okf/research/repo-mappings/script-to-shootable-storyboard.md",
+      ".okf/research/repo-mappings/xyz-video-skill.md",
+      ".okf/research/repo-mappings/pydantic-ai.md",
+      ".okf/research/repo-mappings/madebysaira-character-consistency.md",
+      ".okf/research/repo-mappings/popcornready.md",
+      ".okf/research/repo-mappings/shotdirector.md",
+      ".okf/research/repo-mappings/multishotmaster.md",
+      ".okf/research/repo-mappings/vstorygen.md",
+      ".okf/research/repo-mappings/code2video.md"
+    ],
+    "rulesConsidered": [
+      "complete .okf sweep before non-trivial decisions",
+      "executable implementation/tests outrank documentation",
+      "repo mappings are first-class research inputs",
+      "F03 remains provider-neutral specification/planning only",
+      "F03 and F04 remain parallel branches",
+      "external research cannot override authority, contracts, or verification",
+      "Guardian, leases/fencing, TimelineIR, RenderFabric, and F07 retain existing authority",
+      "BLOCKED/UNPROVEN evidence cannot become a production PASS"
+    ],
+    "repoMappingCorpus": {
+      "directory": ".okf/research/repo-mappings/",
+      "mappingFileCount": 63,
+      "rule": "Every promoted research pattern used by Floor 03 has a dedicated clean-room mapping or an existing screened mapping in this directory."
+    }
+  },
+  "classification": "new capability",
+  "forgers": [
+    {
+      "role": "Forge Architect",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        ".okf/decisions.md",
+        "docs/architecture/floor03-research-upgrade.md"
+      ]
+    },
+    {
+      "role": "Forge Builder",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/pipeline.py",
+        "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
+        "services/pipeline/floor03_asset_realization/app/core/identity.py",
+        "floors/floor03_asset_realization/__init__.py"
+      ]
+    },
+    {
+      "role": "Forge Sentinel",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "services/pipeline/guardian/floors/floor03_guardian.py",
+        ".okf/security/worker-permissions.md",
+        ".okf/security/forger-security-stack.md"
+      ]
+    },
+    {
+      "role": "Forge Evaluator",
+      "status": "COMPLETE",
+      "evidenceRefs": [
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py",
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py",
+        "tests/guardian/test_guardian_floor03.py",
+        ".github/workflows/floor02.yml",
+        "GitHub Actions run 36172205975: F02 + F03 + F03 Guardian production gates all passed"
+      ]
+    },
+    {
+      "role": "Forge Release",
+      "status": "ESCALATED",
+      "evidenceRefs": [
+        ".github/workflows/team-gate.yml",
+        ".okf/decisions.md",
+        ".github/workflows/floor02.yml",
+        "GitHub Actions run 36172206075: repository TypeScript typecheck failed on unrelated pre-existing web/FactoryOS errors"
+      ]
+    }
+  ],
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "evidenceRefs": [
+      ".okf/security/worker-permissions.md",
+      ".okf/security/forger-security-stack.md",
+      "services/pipeline/guardian/floors/floor03_guardian.py",
+      "services/pipeline/floor03_asset_realization/app/core/identity.py"
+    ],
+    "reason": "The change modifies a Guardian evidence fingerprint and strict planning contracts, but does not add provider credentials, a new network endpoint, secret storage, production capability grants, or physical media execution. Security review is still applicable to provenance and capability-boundary preservation."
+  },
+  "conflicts": [
+    {
+      "id": "F03-TOPOLOGY-001",
+      "originalConflict": "Older domain discussion could imply Floor 04 depends on Floor 03, while the canonical production DAG remains F02 -> (F03 || F04) -> F05.",
+      "status": "RESOLVED",
+      "proposedResolution": "Preserve the canonical parallel topology; keep any F04 payload dependency mismatch as a separate future contract-reconciliation task rather than serializing F04 behind F03.",
+      "acceptedResolution": "F03 research expansion does not change F03/F04 topology or downstream authority.",
+      "decisionAuthority": ".okf/decisions.md",
+      "canonicalUpdates": [
+        ".okf/decisions.md",
+        "docs/architecture/floor03-research-upgrade.md"
+      ]
+    },
+    {
+      "id": "F03-VALIDATION-002",
+      "originalConflict": "The production-gate workflow imported historical floors.* compatibility namespaces, but the root compatibility namespace did not expose Floor 03 and root floors/** changes were outside the workflow path filter.",
+      "status": "RESOLVED",
+      "proposedResolution": "Add the canonical root Floor 03 compatibility bridge and include floors/** in production-gate trigger paths.",
+      "acceptedResolution": "Canonical implementation remains under services/pipeline; root floors namespace remains a compatibility layer and is now covered by CI triggers.",
+      "decisionAuthority": ".okf/decisions.md",
+      "canonicalUpdates": [
+        "floors/floor03_asset_realization/__init__.py",
+        ".github/workflows/floor02.yml",
+        ".okf/decisions.md"
+      ]
+    }
+  ],
+  "verificationPlan": [
+    "F03 Python suite passes",
+    "F03 Guardian contract suite passes",
+    "Ascalon Floor 03 ontology JSON validates",
+    "F02 production suite passes",
+    "Team Change Gate validates this report",
+    "Full repository TypeScript typecheck remains a separate release blocker because it fails on unrelated existing files",
+    "Do not merge PR #18 until repository-level required checks are resolved"
+  ],
+  "evidenceRefs": [
+    "PR #18",
+    "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+    "services/pipeline/floor03_asset_realization/app/pipeline.py",
+    "services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py",
+    "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py",
+    "tests/guardian/test_guardian_floor03.py",
+    "training/ascalon/ontology/floors.json",
+    "training/ascalon/ontology/agents.json",
+    "testing/contracts/floor.contract.ts",
+    ".github/workflows/floor02.yml",
+    "docs/architecture/floor03-research-upgrade.md",
+    ".okf/decisions.md",
+    "floors/floor03_asset_realization/__init__.py",
+    "GitHub Actions run 36172205975",
+    "GitHub Actions run 36172206075",
+    ".okf/research/repo-mappings/"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "F03 production gates are green; full repository typecheck remains red on unrelated TypeScript errors."
+  },
+  "disposition": "ESCALATED"
+}

@@ -114,3 +114,115 @@ A new tool is not justified merely because it is newer. It must close a measurab
 Gstack, Semgrep, Strix, ZAP, AgentEvals, OpenAI Evals and other mapped engineering/security patterns are operationalized through the top-level `Team/` boundary.
 
 Mappings remain research evidence. The Team consumes their adopted mechanisms only after the same .okf-first and source-of-truth rules are satisfied.
+
+
+## Fourth-wave Floor 03 research mappings — 2026-09-25
+
+| Repository | Capability observed | ShortForge treatment | Status |
+|---|---|---|---|
+| jamesbas/storyforgeai | World/visual bible, cinematography/directorial plan, storyboard package, variants and animatic | Typed planning boundary and intermediate-artifact separation | PATTERN_EXTRACTION |
+| HITsz-TMG/VideoClaw | Visible staged creative pipeline and editable storyboard/reference stages | Inspectable F03 planning artifact | PATTERN_EXTRACTION |
+| nolanx-ai/nolanx.ai | Long-runtime multimodal continuity and persistent scene/asset context | Canonical continuity vs transient execution separation | PATTERN_EXTRACTION |
+| Emily2040/seedance-2.0 | Global sequence plan, local prompt compilation, re-anchors, observed-state handoff | ContinuityMode, motion beats, state hints, typed references | PATTERN_EXTRACTION |
+| zyz254009-crypto/script-to-shootable-storyboard | Atomic shot schema, graph validators, provenance, safe zones, repair plans | Typed F03 shot semantics, graph validation, fingerprints, repair locality | CLEAN_ROOM_PATTERN_EXTRACTION |
+| huangserva/xyz-video-skill | Purpose-driven reference protocol and explicit continuity fields | ReferenceUse, GenerationInputMode, ContinuityMode | PATTERN_EXTRACTION |
+| pydantic/pydantic-ai | Typed structured output and validation/retry discipline | Pydantic-first strict AssetPlanIR and semantic validation | PATTERN_EXTRACTION |
+| madebysaira/CharacterConsistency | Stable identity/style block plus per-shot action/camera delta | ContinuityPlan with invariants/allowed changes and character references | PATTERN_EXTRACTION |
+| kmgrassi/PopcornReady | Character bible/reference pack/shot intent separation and surgical repair | First-class references and localized regeneration | PATTERN_EXTRACTION |
+| ShotDirector research pattern (evidence via zhaoyang97/Paper-Notes-en; upstream implementation not verified in this sweep) | Cinematographic transition semantics and explicit camera control | Richer provider-neutral camera/continuity semantics | RESEARCH_PATTERN |
+| KlingAIResearch/MultiShotMaster | Global persistent caption + per-shot local caption structure | Stable invariants vs local shot plan separation | RESEARCH_PATTERN |
+| AI-Application-and-Integration-Lab/VstoryGen | Multi-scene visual storytelling with scene/character references | Reference-aware scene planning | RESEARCH_ONLY |
+| showlab/Code2Video | Planner/Coder/Critic separation and evaluation | Preserve planner vs judge boundary in F03 | RESEARCH_ONLY |
+
+All mappings are clean-room pattern extraction or research references. No external code, prompts, tests, weights, or provider-specific credentials were imported into F03.
+
+## Floor 03 research wave 3 — 2026-09-25
+
+Additional GitHub repositories were reviewed beyond both the original nine sources and the prior second-wave corpus.
+
+### High-signal sources
+
+| Repository | F03-relevant signal | Adoption |
+|---|---|---|
+| Comfy-Org/ComfyUI | Declarative reusable graphs and partial re-execution | F03 remains declarative; repair locality is represented by dependency/impact metadata, while executable graphs stay downstream |
+| conexto/ViMax | Reference selection from previous timeline plus first/last-frame continuity | Automatic dependency-boundary last-frame reference bindings when chain continuity is requested |
+| huggingface/diffusers | First/last-frame conditioning and explicit temporal controls | Provider-neutral generation input modes and temporal intent |
+| hpcaitech/Open-Sora | Explicit aspect-ratio and frame-count generation controls | Temporal semantics remain explicit rather than hidden in prompts |
+| yfge/ai-video-studio | Durable production objects with Timeline as playback SSOT | AssetPlanIR remains durable intent; TimelineIR remains downstream SSOT |
+| LudwigKienle/ai-video-production-editor | Shot/camera/lens/lighting planning before filming | Camera height, lens profile, camera body and lighting fields |
+| Vidia-Tools/Vidia-Open-Studio | Declarative stage manifests separated from execution | F03 does not select provider workflow or execute stages |
+| thoxakihiko/shotlist-forge | Reusable shot grammar and continuity dimensions | Deterministic CoverageRole |
+| zyz254009-crypto/script-to-shootable-storyboard | Atomic shot contracts, coverage, source trace and bounded repair | Coverage/evidence/repair metadata in AssetPlanIR |
+| BitraAI/ai-film-director | Stage schemas, stable IDs, continuity checks, adapter execution | Stronger typed stage boundary and stable semantic artifact |
+| LinHao-city/StoryMind | Camera, lighting, character anchors and cross-shot consistency | Provider-neutral camera/lighting/continuity/reference semantics |
+
+### Additional screened references
+
+Sainath Pattipati's video-generation pipeline, 0xadvait/ai-video-pipeline, open-video-ai/open-video, billpar/ai-cinematic-pipeline, ai-visual-director and ai-storyboard-video-starter were also screened. Their useful signals overlap the adopted patterns above; no separate runtime capability was promoted from them.
+
+### Implementation delta
+
+- Floor 03 contract advances to 2.2.0.
+- AssetPlanIR advances to schema 1.2.0.
+- CameraSpec now carries camera height, lens profile and camera body.
+- VisualPromptPlan now carries lighting intent.
+- ReferenceBinding can retain source scene/asset lineage.
+- Chain continuity can automatically bind a dependent scene to the previous scene's last frame.
+- Generation input modes now expose that last-frame requirement to downstream adapters.
+- AssetPlanNode now carries deterministic cinematic CoverageRole.
+- Motion beats are validated against the source scene target duration instead of creating an invalid temporal plan.
+- Existing dependency graph, transitive impact radius and semantic plan fingerprinting remain intact.
+
+### Non-conflict rule
+
+These improvements remain specification-only. F03 does not choose a provider/model, execute generation graphs, own secrets, replace TimelineIR, or certify physical media.
+
+## Current-generation video-model and evaluation research — 2026-09-25
+
+| Repository | Signal | F03 treatment | Status |
+|---|---|---|---|
+| Wan-Video/Wan2.2 | Explicit cinematic conditioning, T2V/I2V, resolution/frame-rate and character-animation inputs | Confirms provider-neutral camera/lighting/reference/input metadata; runtime stays downstream | PATTERN_EXTRACTION |
+| SkyworkAI/SkyReels-V2 | Start/end-frame control and long-video extension | Reinforces dependency-boundary frame references and continuity state | PATTERN_EXTRACTION |
+| Tencent-Hunyuan/HunyuanVideo-1.5 | Explicit model/runtime conditions separated from semantic request | Keeps inference/runtime parameters outside AssetPlanIR | ARCHITECTURE_REFERENCE |
+| Vchitect/VBench | Multidimensional video quality evaluation | Keeps quality scoring downstream of F03 planning | EVALUATION_PATTERN |
+| Lightricks/LTX-Video | Multi-keyframe conditioning, extension and frame-level control | Reinforces temporal-reference direction while keeping provider-specific syntax out of F03 | PATTERN_EXTRACTION |
+
+These mappings are research inputs only. No provider code, weights, workflows, or model-specific execution APIs were imported into F03.
+
+
+## Floor 03 Research Wave 4 — 2026-09-25
+
+| Repository | Capability | Adoption Mode | ShortForge Role | Status |
+|---|---|---|---|---|
+| OpenLineage/OpenLineage | Run/job/dataset lineage and versioned facets | Pattern Extraction | F03 PlanLineage/source fingerprint | ADOPTED |
+| iterative/dvc | Dependency-aware reproducibility and stable stage identity | Pattern Extraction | F03 semantic source/node fingerprints | ADOPTED |
+| dagster-io/dagster | Explicit asset checks and blocking check semantics | Pattern Extraction | F03 structural preflight validation | ADOPTED |
+| invoke-ai/InvokeAI | Saved workflow distinct from executable graph | Architecture Reference | AssetPlanIR execution boundary | ADOPTED |
+| divolleggett/character-consistency-skill | Reference-first storyboard and reference reuse | Pattern Extraction | F03 continuity/reference strategy | ADOPTED |
+| taylorzhou16/video-gen-en | Layered storyboard and parameter consistency | Pattern Extraction | F03 typed planning discipline | ADOPTED |
+| NVIDIA-NeMo/Guardrails | Independent validation rails | Architecture Reference | F03 validation-boundary discipline | ADOPTED |
+
+
+## Floor 03 Research Wave 5 — 2026-09-26
+
+| Repository | Capability observed | ShortForge treatment | Status |
+|---|---|---|---|
+| OpenAssetIO/OpenAssetIO | Logical asset identity, resolver boundary, typed traits | ReferenceBinding entity_ref/version/traits | ADOPTED |
+| OpenAssetIO/OpenAssetIO-MediaCreation | Typed media-creation trait boundary | Reference metadata discipline | ADOPTED |
+| AcademySoftwareFoundation/OpenTimelineIO | Logical source range vs available media | Preserve semantic asset intent independently of resolved media | ADOPTED |
+| Comfy-Org/ComfyUI | Graph cache and partial re-execution | Dependency-node fingerprint lineage | ADOPTED |
+| huggingface/diffusers | Modular conditioning | ConditioningSpec | ADOPTED |
+| OpenLineage/OpenLineage | Typed lineage/facets | PlanLineage/source fingerprints | ADOPTED |
+| dagster-io/dagster | Explicit asset dependencies/checks | Structural dependency validation | ADOPTED |
+| HVision-NKU/StoryDiffusion | Long-range consistency | First-class continuity/reference strategy | ADOPTED |
+| instantX-research/InstantID | Identity reference conditioning | Identity ConditioningSpec | ADOPTED |
+| ali-vilab/VideoComposer | Spatial/temporal conditioning | Typed control and motion intent | ADOPTED |
+| Lightricks/LTX-Video | Conditioning strength/start frame | Typed temporal conditioning | ADOPTED |
+| Lightricks/LTX-2 | Keyframe/video/HDR conditioning | Boundary reference; provider mechanics remain downstream | REFERENCE_ONLY |
+| contentauth/c2pa-rs | Manifest/ingredient/assertion provenance | Future F07 signing/verification boundary | REFERENCE_ONLY |
+| Vchitect/VBench | Multidimensional video quality | Downstream evaluation | REFERENCE_ONLY |
+| iterative/dvc | Dependency-aware reproducibility | Semantic source/node/plan fingerprints | ADOPTED |
+| invoke-ai/InvokeAI | Saved workflow vs execution graph | Non-executable AssetPlanIR boundary | ADOPTED |
+| Additional storyboard/director repositories | Shot, camera, reference and continuity patterns | Existing typed scene planning fields | PATTERN_EXTRACTION |
+
+No third-party runtime code or model/provider dependency was added.

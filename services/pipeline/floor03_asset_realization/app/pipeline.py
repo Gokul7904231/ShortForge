@@ -3,16 +3,35 @@
 from __future__ import annotations
 
 import json
-import time
+from time import perf_counter
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from uuid import uuid4
+from typing import Dict, List, Optional, Tuple
 
 import structlog
 
 from floors.floor02_scripting.app.domain.handoff import Floor02HandoffPayload
 from floors.floor03_asset_realization.app.core.config import settings
 from floors.floor03_asset_realization.app.core.exceptions import Floor03Error, Floor03PlatformError, Floor03ValidationError
+from floors.floor03_asset_realization.app.core.identity import (
+    CANONICAL_FLOOR_VERSION,
+    asset_plan_fingerprint,
+    asset_plan_node_fingerprint,
+    floor02_source_fingerprint,
+    floor03_input_fingerprint,
+    request_fingerprint,
+)
 from floors.floor03_asset_realization.app.domain.asset_models import AudioAssetRequirement, VisualAssetRequirement
+from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
+    AssetDependency,
+    AssetPlanIR,
+    AssetPlanNode,
+    PlanLineage,
+    CoverageRole,
+    DependencyRelation,
+    RepairPlan,
+    RepairScope,
+)
 from floors.floor03_asset_realization.app.domain.handoff import (
     EvidenceType,
     ExecutionMode,
@@ -99,12 +118,205 @@ class Floor03Pipeline:
         )
         return resolved_platform, aspect_ratio, resolution, prov
 
-    def execute(self, inp: Floor03Input) -> Floor03HandoffPayload:
-        """Execute Floor 03 pipeline and produce downstream Floor03HandoffPayload."""
+    @staticmethod
+    def _validate_scene_graph(scenes) -> None:
+        scene_by_id = {scene.scene_id: scene for scene in scenes}
+        if len(scene_by_id) != len(scenes):
+            raise Floor03ValidationError("Duplicate scene_id detected in Floor 02 payload.")
+
+        sequence_indexes = [scene.sequence_index for scene in scenes]
+        if len(sequence_indexes) != len(set(sequence_indexes)):
+            raise Floor03ValidationError("Duplicate scene sequence_index detected in Floor 02 payload.")
+
+        for scene in scenes:
+            for dependency_id in scene.depends_on_scene_ids:
+                if dependency_id == scene.scene_id:
+                    raise Floor03ValidationError(
+                        f"Scene '{scene.scene_id}' cannot depend on itself."
+                    )
+                dependency = scene_by_id.get(dependency_id)
+                if dependency is None:
+                    raise Floor03ValidationError(
+                        f"Scene '{scene.scene_id}' references missing dependency '{dependency_id}'."
+                    )
+                if dependency.sequence_index >= scene.sequence_index:
+                    raise Floor03ValidationError(
+                        f"Scene '{scene.scene_id}' depends on '{dependency_id}' which does not precede it."
+                    )
+
+        state = {}
+
+        def visit(scene_id: str) -> None:
+            mark = state.get(scene_id, 0)
+            if mark == 1:
+                raise Floor03ValidationError(
+                    f"Cycle detected in Floor 02 scene dependencies at '{scene_id}'."
+                )
+            if mark == 2:
+                return
+            state[scene_id] = 1
+            for dep_id in scene_by_id[scene_id].depends_on_scene_ids:
+                visit(dep_id)
+            state[scene_id] = 2
+
+        for scene in scenes:
+            visit(scene.scene_id)
+
+    @staticmethod
+    def _compute_impact_radius(scenes) -> Dict[str, List[str]]:
+        dependents: Dict[str, List[str]] = {scene.scene_id: [] for scene in scenes}
+        for scene in scenes:
+            for dep_id in scene.depends_on_scene_ids:
+                dependents.setdefault(dep_id, []).append(scene.scene_id)
+
+        impact: Dict[str, List[str]] = {}
+        for scene in scenes:
+            seen = set()
+            stack = list(dependents.get(scene.scene_id, []))
+            while stack:
+                current = stack.pop()
+                if current in seen:
+                    continue
+                seen.add(current)
+                stack.extend(dependents.get(current, []))
+            impact[scene.scene_id] = sorted(
+                seen,
+                key=lambda sid: next(
+                    candidate.sequence_index for candidate in scenes if candidate.scene_id == sid
+                ),
+            )
+        return impact
+
+    def _compile_asset_plan_ir(
+        self,
+        inp: Floor03Input,
+        platform: str,
+        aspect_ratio: str,
+        resolution: str,
+        visual_reqs: List[VisualAssetRequirement],
+        plan_id: Optional[str] = None,
+        plan_version: int = 1,
+    ) -> AssetPlanIR:
+        self._validate_scene_graph(inp.floor02_payload.scenes)
+
+        req_by_scene = {req.scene_id: req for req in visual_reqs}
+        impact_radius = self._compute_impact_radius(inp.floor02_payload.scenes)
+        source_fingerprint = floor02_source_fingerprint(inp.floor02_payload)
+        nodes: List[AssetPlanNode] = []
+        node_by_scene: Dict[str, AssetPlanNode] = {}
+
+        for req in sorted(visual_reqs, key=lambda item: item.sequence_index):
+            scene = next(
+                (sc for sc in inp.floor02_payload.scenes if sc.scene_id == req.scene_id),
+                None,
+            )
+            if scene is None or req.scene_plan is None:
+                raise Floor03ValidationError(
+                    f"Missing scene or scene plan for scene_id '{req.scene_id}'."
+                )
+
+            dependencies: List[AssetDependency] = []
+            for dep_scene_id in scene.depends_on_scene_ids:
+                dep_req = req_by_scene.get(dep_scene_id)
+                dep_node = node_by_scene.get(dep_scene_id)
+                if dep_req is None or dep_node is None:
+                    raise Floor03ValidationError(
+                        f"Visual asset dependency '{dep_scene_id}' is not compiled before "
+                        f"scene '{scene.scene_id}'."
+                    )
+                dependencies.append(
+                    AssetDependency(
+                        asset_id=dep_req.asset_id,
+                        scene_id=dep_scene_id,
+                        relation=DependencyRelation.SCENE_DEPENDENCY,
+                        dependency_node_fingerprint=dep_node.node_fingerprint,
+                    )
+                )
+
+            repair_scope = (
+                RepairScope.DEPENDENT_SUBGRAPH
+                if impact_radius.get(scene.scene_id)
+                else RepairScope.NODE
+            )
+
+            visual = req.scene_plan.model_copy(deep=True)
+            visual.references = [
+                reference.model_copy(
+                    update={
+                        "source_asset_id": req_by_scene[reference.source_scene_id].asset_id
+                        if reference.source_scene_id and reference.source_scene_id in req_by_scene
+                        else reference.source_asset_id
+                    }
+                )
+                for reference in visual.references
+            ]
+
+            node = AssetPlanNode(
+                scene_id=req.scene_id,
+                asset_id=req.asset_id,
+                source_scene_version=scene.scene_version,
+                source_beat_id=scene.beat_id or None,
+                sequence_index=req.sequence_index,
+                coverage_role=CoverageRole(
+                    str(req.continuity_constraints.get("coverage_role") or "action").lower()
+                ),
+                visual=visual,
+                dependencies=dependencies,
+                target_duration_seconds=req.target_duration_seconds,
+                evidence_refs=list(scene.evidence_refs),
+                causal_event_ids=list(scene.causal_event_ids),
+                impact_radius=impact_radius.get(scene.scene_id, []),
+                repair=RepairPlan(
+                    scope=repair_scope,
+                    rationale=(
+                        "Regeneration may invalidate downstream dependent scene plans."
+                        if repair_scope == RepairScope.DEPENDENT_SUBGRAPH
+                        else "Scene has no downstream dependent plan nodes."
+                    ),
+                ),
+            )
+            node.node_fingerprint = asset_plan_node_fingerprint(node)
+            nodes.append(node)
+            node_by_scene[node.scene_id] = node
+
+        plan = AssetPlanIR(
+            plan_id=plan_id or f"asset-plan-{inp.floor02_payload.script_id}-{inp.request_id}",
+            plan_version=plan_version,
+            script_id=inp.floor02_payload.script_id,
+            script_version=inp.floor02_payload.script_version,
+            platform=platform,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            source_fingerprint=source_fingerprint,
+            lineage=PlanLineage(
+                source_floor_id=inp.floor02_payload.floor_id,
+                source_floor_version=inp.floor02_payload.floor_version,
+                source_script_id=inp.floor02_payload.script_id,
+                source_script_version=inp.floor02_payload.script_version,
+                source_fingerprint=source_fingerprint,
+                compiler_floor_id="floor03_asset_realization",
+                compiler_floor_version=CANONICAL_FLOOR_VERSION,
+            ),
+            nodes=nodes,
+        )
+        plan.plan_fingerprint = asset_plan_fingerprint(plan)
+        return plan
+
+    def _execute_internal(self, inp: Floor03Input) -> Tuple[Floor03HandoffPayload, Dict[str, float]]:
+        """Execute once and return payload plus measured worker timings."""
         logger.info("floor03_pipeline_started", request_id=inp.request_id)
 
+        input_fingerprint = floor03_input_fingerprint(inp)
+
         # 1. Idempotency Check
-        cached_dict = self.memory_store.get_idempotent_payload(inp.request_id)
+        try:
+            cached_dict = self.memory_store.get_idempotent_payload(
+                inp.request_id,
+                expected_fingerprint=input_fingerprint,
+            )
+        except ValueError as exc:
+            raise Floor03ValidationError(str(exc)) from exc
+
         if cached_dict:
             cached_payload = Floor03HandoffPayload.model_validate(cached_dict)
             if cached_payload.script_id != inp.floor02_payload.script_id:
@@ -112,7 +324,7 @@ class Floor03Pipeline:
                     f"Idempotency conflict: request_id '{inp.request_id}' already associated with script_id '{cached_payload.script_id}'."
                 )
             logger.info("floor03_pipeline_idempotent_hit", request_id=inp.request_id)
-            return cached_payload
+            return cached_payload, {}
 
         # 2. Authoritative Platform Resolution
         platform, aspect_ratio, resolution, plat_prov = self.resolve_platform_spec(inp)
@@ -121,6 +333,7 @@ class Floor03Pipeline:
         worker_modes: Dict[str, ExecutionMode] = {}
 
         # 3. Image Prompt Worker
+        image_started = perf_counter()
         visual_reqs, img_mode, img_provs = self.image_prompt_worker.execute(
             scenes=inp.floor02_payload.scenes,
             aspect_ratio=aspect_ratio,
@@ -129,24 +342,30 @@ class Floor03Pipeline:
         )
         worker_modes["image_prompt_worker"] = img_mode
         provenance_list.extend(img_provs)
+        image_duration_ms = round((perf_counter() - image_started) * 1000.0, 2)
 
         # 4. Audio Spec Worker
+        audio_started = perf_counter()
         audio_reqs, aud_mode, aud_provs = self.audio_spec_worker.execute(
             scenes=inp.floor02_payload.scenes,
             voice_id=inp.voice_id,
         )
         worker_modes["audio_spec_worker"] = aud_mode
         provenance_list.extend(aud_provs)
+        audio_duration_ms = round((perf_counter() - audio_started) * 1000.0, 2)
 
         # 5. Continuity Worker
+        continuity_started = perf_counter()
         visual_reqs, cont_mode, cont_provs = self.continuity_worker.execute(
             visual_reqs=visual_reqs,
             character_profiles=inp.floor02_payload.character_profiles,
         )
         worker_modes["continuity_worker"] = cont_mode
         provenance_list.extend(cont_provs)
+        continuity_duration_ms = round((perf_counter() - continuity_started) * 1000.0, 2)
 
         # 6. Manifest Worker
+        manifest_started = perf_counter()
         manifest, man_mode, man_provs = self.manifest_worker.execute(
             script_id=inp.floor02_payload.script_id,
             script_version=inp.floor02_payload.script_version,
@@ -158,6 +377,7 @@ class Floor03Pipeline:
         )
         worker_modes["manifest_worker"] = man_mode
         provenance_list.extend(man_provs)
+        manifest_duration_ms = round((perf_counter() - manifest_started) * 1000.0, 2)
 
         # Determine Global Execution Mode
         # DETERMINISTIC_FALLBACK is set ONLY if actual fallback occurred in a worker
@@ -186,27 +406,45 @@ class Floor03Pipeline:
             visual_asset_requirements=visual_reqs,
             audio_asset_requirements=audio_reqs,
             manifest=manifest,
+            asset_plan_ir=self._compile_asset_plan_ir(
+                inp,
+                platform=platform,
+                aspect_ratio=aspect_ratio,
+                resolution=resolution,
+                visual_reqs=visual_reqs,
+            ),
             decision_quality_score=None,
             handoff_status=HandoffStatus.VALIDATED,
             provenance=provenance_list,
         )
 
         # Persist payload to memory store for process locking & deduplication
-        self.memory_store.save_payload(inp.request_id, payload.model_dump())
+        self.memory_store.save_payload(
+            inp.request_id,
+            payload.model_dump(),
+            request_fingerprint=input_fingerprint,
+        )
         logger.info("floor03_pipeline_completed", request_id=inp.request_id, asset_plan_id=payload.asset_plan_id)
+        return payload, {
+            "image_prompt_worker": image_duration_ms,
+            "audio_spec_worker": audio_duration_ms,
+            "continuity_worker": continuity_duration_ms,
+            "manifest_worker": manifest_duration_ms,
+        }
+
+    def execute(self, inp: Floor03Input) -> Floor03HandoffPayload:
+        payload, _ = self._execute_internal(inp)
         return payload
 
     def execute_with_report(self, inp: Floor03Input) -> Tuple[Floor03HandoffPayload, FloorExecutionReport]:
         """Execute pipeline and persist Overseer FloorExecutionReport JSON artifact."""
-        start_time = time.time()
-        payload = self.execute(inp)
-        duration_ms = round((time.time() - start_time) * 1000.0, 2)
+        start_time = perf_counter()
+        payload, worker_durations = self._execute_internal(inp)
+        duration_ms = round((perf_counter() - start_time) * 1000.0, 2)
 
         worker_results = [
-            WorkerExecutionSummary(worker_name="image_prompt_worker", duration_ms=round(duration_ms * 0.4, 2)),
-            WorkerExecutionSummary(worker_name="audio_spec_worker", duration_ms=round(duration_ms * 0.2, 2)),
-            WorkerExecutionSummary(worker_name="continuity_worker", duration_ms=round(duration_ms * 0.2, 2)),
-            WorkerExecutionSummary(worker_name="manifest_worker", duration_ms=round(duration_ms * 0.2, 2)),
+            WorkerExecutionSummary(worker_name=name, duration_ms=duration)
+            for name, duration in worker_durations.items()
         ]
 
         report = FloorExecutionReport(
@@ -220,6 +458,10 @@ class Floor03Pipeline:
                 "request_id": inp.request_id,
                 "script_id": inp.floor02_payload.script_id,
                 "resolved_platform": payload.resolved_platform,
+                "request_fingerprint": request_fingerprint(
+                    inp.request_id, inp.floor02_payload.script_id, inp.floor02_payload.script_version
+                ),
+                "input_fingerprint": floor03_input_fingerprint(inp),
             },
             worker_results=worker_results,
             decisions=[
@@ -243,6 +485,104 @@ class Floor03Pipeline:
         logger.info("floor03_execution_report_persisted", report_file=str(report_file))
         return payload, report
 
+    @staticmethod
+    def _rebuild_asset_plan_from_payload(payload: Floor03HandoffPayload) -> AssetPlanIR:
+        existing_plan = payload.asset_plan_ir
+        if existing_plan is None:
+            raise Floor03ValidationError("Cannot rebuild AssetPlanIR without the existing plan.")
+
+        current_asset_by_scene = {
+            req.scene_id: req.asset_id for req in payload.visual_asset_requirements
+        }
+        previous_scene_by_asset = {}
+        for node in existing_plan.nodes:
+            for dependency in node.dependencies:
+                if dependency.scene_id and dependency.asset_id:
+                    previous_scene_by_asset[dependency.asset_id] = dependency.scene_id
+
+        nodes: List[AssetPlanNode] = []
+        rebuilt_node_by_scene: Dict[str, AssetPlanNode] = {}
+        for node in existing_plan.nodes:
+            matching_req = next(
+                (req for req in payload.visual_asset_requirements if req.scene_id == node.scene_id),
+                None,
+            )
+            if matching_req is None or matching_req.scene_plan is None:
+                raise Floor03ValidationError(
+                    f"Missing regenerated scene plan for scene_id '{node.scene_id}'."
+                )
+
+            remapped_dependencies: List[AssetDependency] = []
+            for dependency in node.dependencies:
+                dependency_scene_id = dependency.scene_id or previous_scene_by_asset.get(
+                    dependency.asset_id
+                )
+                if dependency_scene_id:
+                    remapped_asset_id = current_asset_by_scene.get(
+                        dependency_scene_id, dependency.asset_id
+                    )
+                    dependency_node = rebuilt_node_by_scene.get(dependency_scene_id)
+                    if dependency_node is None:
+                        raise Floor03ValidationError(
+                            f"Dependency node '{dependency_scene_id}' was not rebuilt before "
+                            f"'{node.scene_id}'."
+                        )
+                    dependency_node_fingerprint = dependency_node.node_fingerprint
+                else:
+                    remapped_asset_id = dependency.asset_id
+                    dependency_node_fingerprint = dependency.dependency_node_fingerprint
+
+                remapped_dependencies.append(
+                    dependency.model_copy(
+                        update={
+                            "asset_id": remapped_asset_id,
+                            "scene_id": dependency_scene_id,
+                            "dependency_node_fingerprint": dependency_node_fingerprint,
+                        }
+                    )
+                )
+
+            visual = matching_req.scene_plan.model_copy(deep=True)
+            visual.references = [
+                reference.model_copy(
+                    update={
+                        "source_asset_id": current_asset_by_scene.get(
+                            reference.source_scene_id,
+                            reference.source_asset_id,
+                        )
+                        if reference.source_scene_id
+                        else reference.source_asset_id
+                    }
+                )
+                for reference in visual.references
+            ]
+
+            rebuilt_node = node.model_copy(
+                deep=True,
+                update={
+                    "asset_id": matching_req.asset_id,
+                    "visual": visual,
+                    "dependencies": remapped_dependencies,
+                    "node_fingerprint": None,
+                },
+            )
+            rebuilt_node.node_fingerprint = asset_plan_node_fingerprint(rebuilt_node)
+            nodes.append(rebuilt_node)
+            rebuilt_node_by_scene[rebuilt_node.scene_id] = rebuilt_node
+
+        plan = existing_plan.model_copy(
+            deep=True,
+            update={
+                "plan_version": payload.asset_plan_version,
+                "nodes": nodes,
+                "aspect_ratio": payload.manifest.resolved_aspect_ratio,
+                "resolution": payload.manifest.resolved_resolution,
+                "plan_fingerprint": None,
+            },
+        )
+        plan.plan_fingerprint = asset_plan_fingerprint(plan)
+        return plan
+
     def regenerate_scene_assets(
         self,
         current_payload: Floor03HandoffPayload,
@@ -251,11 +591,15 @@ class Floor03Pipeline:
     ) -> Floor03HandoffPayload:
         """Execute targeted single-scene asset regeneration.
 
-        Increments target scene asset versions (asset_version v1 -> v2) with new asset_id references.
-        Preserves exact byte and semantic asset specification equality for unaffected scenes.
-        Increments script_version (v1 -> v2) and asset_plan_version (v1 -> v2).
+        Increments target scene asset versions with a new asset identity.
+        Preserves exact specification equality for unaffected scenes.
+        Increments asset_plan_version while preserving upstream ScriptIR version.
         """
         logger.info("regenerate_scene_assets_started", target_scene_id=target_scene_id)
+
+        instruction = new_prompt_instruction.strip()
+        if not instruction:
+            raise Floor03ValidationError("new_prompt_instruction must be non-empty.")
 
         target_visual_found = False
         updated_visuals: List[VisualAssetRequirement] = []
@@ -264,9 +608,14 @@ class Floor03Pipeline:
             if req.scene_id == target_scene_id:
                 target_visual_found = True
                 updated_req = req.model_copy(deep=True)
+                updated_req.asset_id = str(uuid4())
                 updated_req.asset_version += 1
                 updated_req.scene_version += 1
-                updated_req.prompt_text = f"{req.prompt_text} ({new_prompt_instruction})"
+                updated_req.prompt_text = f"{req.prompt_text} ({instruction})"
+                if updated_req.scene_plan is not None:
+                    updated_req.scene_plan = updated_req.scene_plan.model_copy(
+                        update={"prompt_text": updated_req.prompt_text}
+                    )
                 updated_visuals.append(updated_req)
             else:
                 # Unaffected scenes: Byte and semantic equivalence preserved
@@ -279,10 +628,8 @@ class Floor03Pipeline:
 
         new_payload = current_payload.model_copy(deep=True)
         new_payload.asset_plan_version += 1
-        new_payload.script_version += 1
         new_payload.visual_asset_requirements = updated_visuals
         new_payload.audio_asset_requirements = updated_audios
-        new_payload.manifest.script_version += 1
 
         new_prov = ProvenanceEntry(
             evidence_type=EvidenceType.DETERMINISTIC_RULE,
@@ -290,9 +637,11 @@ class Floor03Pipeline:
             source_identifier=target_scene_id,
             method="regenerate_target_scene_assets",
             summary=f"Regenerated assets for scene {target_scene_id} (incremented asset_version & plan_version).",
-            raw_data={"target_scene_id": target_scene_id, "instruction": new_prompt_instruction},
+            raw_data={"target_scene_id": target_scene_id, "instruction": instruction},
         )
         new_payload.provenance.append(new_prov)
+        if new_payload.asset_plan_ir is not None:
+            new_payload.asset_plan_ir = self._rebuild_asset_plan_from_payload(new_payload)
 
         logger.info("regenerate_scene_assets_completed", asset_plan_version=new_payload.asset_plan_version)
         return new_payload

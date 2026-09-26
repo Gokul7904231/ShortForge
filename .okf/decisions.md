@@ -800,3 +800,305 @@ No choice is made between IR and JSON because they operate at different layers:
 - Human reviewers receive Markdown.
 
 The Context Compiler may omit irrelevant data from a model projection, but it may not omit the fact that a complete .okf sweep occurred.
+
+
+## F03 AssetPlanIR research upgrade — 2026-09-25
+
+**Classification:** new capability
+
+**Decision:** Extend Floor 03's existing deterministic asset-specification boundary with a typed, provider-neutral `AssetPlanIR`. Keep the production topology unchanged: `F02 -> (F03 || F04) -> F05`.
+
+**Why:** The current F03 contract was sufficient for simple prompt specifications but did not express shot/camera constraints, safe text regions, scene dependency edges, or surgical-repair impact metadata as a first-class specification. A typed IR makes those semantics explicit without granting F03 physical-generation or orchestration authority.
+
+**External evidence considered:**
+- OpenSpec: specifications and their dependency relationships should be explicit, machine-checkable artifacts.
+- Paperclip: control-plane and execution-plane responsibilities should remain separated.
+- Hindsight + AI Agent Book: persistent memory should be useful context/evidence, not authority or indiscriminate history.
+- StarNet: capabilities and handoffs should be explicit and scoped.
+- OpenBao: secrets, leases, and revocation belong at a dedicated identity/secret boundary, not inside a media-planning floor.
+- quiche: semantic application state should remain separate from transport mechanics.
+- NVIDIA Model Optimizer: inference optimization belongs in the cognition/model-serving layer and must be benchmarked, not baked into F03 semantics.
+- ORCA was reviewed as a possible media-generation reference but no non-conflicting capability was promoted from the available evidence.
+
+**Affected components:**
+- `services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py`
+- `services/pipeline/floor03_asset_realization/app/domain/asset_models.py`
+- `services/pipeline/floor03_asset_realization/app/domain/handoff.py`
+- `services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py`
+- `services/pipeline/floor03_asset_realization/app/pipeline.py`
+- `services/pipeline/floor03_asset_realization/app/core/identity.py`
+- `services/pipeline/floor03_asset_realization/app/core/config.py`
+- Floor 03 Guardian identity handling
+- Ascalon floor/agent ontology
+- canonical floor testing contract
+
+**Contract impact:** The initial AssetPlanIR promotion established Floor 03 as `floor03_asset_realization`, version `2.0.0`; the second-wave hardening advanced the branch contract to `2.1.0`; Wave 3 research additions now advance the current branch contract to `2.2.0`. The handoff may contain a typed `asset_plan_ir`. Visual requirements may carry a typed scene-level `scene_plan`. Regeneration creates a new asset identity and increments the local asset-plan version without rewriting the authoritative Floor 02 ScriptIR version.
+
+**Authority impact:** none. Overseer, Guardian, AgentRuntime, leases/fencing, TimelineIR, RenderFabric, and F07 remain authoritative at their existing layers. F03 cannot generate physical media, mint capabilities, or become a second orchestration plane.
+
+**Implementation status:** implemented on research branch; merge is gated on fresh CI and contract regression validation.
+
+**Validation required:** full F03 tests, Guardian tests, TypeScript contract tests, JSON ontology validation, and repository CI. Any failure or contract incompatibility rejects the promotion.
+
+**Rollback:** revert the branch changes as a unit and restore the prior F03 contract/ontology generation. No production authority or external secrets are modified by this decision.
+
+
+## F03 AssetPlanIR second-wave research expansion — 2026-09-25
+
+**Classification:** new capability
+
+**Decision:** Extend the Floor 03 planning contract with the smallest non-conflicting set of patterns discovered through a broader repository and research sweep. The canonical topology remains F02 -> (F03 || F04) -> F05.
+
+### Promoted capabilities
+
+- AssetPlanIR schema 1.1.0 now contains typed continuity modes, reference bindings, generation input modes, normalized safe text regions, motion beats, subject constraints, start/end state hints, evidence and causal lineage, dependency edges, semantic fingerprints, and bounded repair scope.
+- F03 validates the scene dependency DAG before compilation: duplicate scene IDs/sequence indexes, missing dependencies, forward dependencies, self-dependencies, and cycles are rejected.
+- impact_radius now means transitive downstream dependents, enabling repair planning rather than merely repeating prerequisites.
+- Surgical scene regeneration preserves dependency edges and remaps dependency asset IDs to the regenerated asset identity.
+- Guardian evidence hashing now fingerprints the complete validated Floor 03 input instead of only request/script identity fields.
+- The semantic AssetPlanIR fingerprint excludes runtime plan identity and therefore supports replay/cache evidence across distinct request IDs for equivalent plan semantics.
+
+### Research corpus considered
+
+In addition to the original Paperclip, Hindsight, StarNet, NVIDIA Model Optimizer, OpenBao, ORCA, quiche, OpenSpec, and AI Agent Book set, the sweep included StoryForgeAI, VideoClaw, NolanX, Seedance 2.0, script-to-shootable-storyboard, xyz-video-skill, Pydantic AI, CharacterConsistency, PopcornReady, ShotDirector, MultiShotMaster, VstoryGen, and Code2Video.
+
+The detailed clean-room mappings are stored under .okf/research/repo-mappings/.
+
+### Authority and scope invariants
+
+- F03 remains specification/planning only.
+- F03 does not select providers or store provider credentials.
+- F03 does not generate or verify physical media.
+- F03 does not replace TimelineIR, RenderFabric, Guardian, Healer, Slayer, AgentRuntime, or F07.
+- External repositories are evidence only and cannot override executable source, canonical contracts, tests, or locked .okf rules.
+- F03/F04 parallelism is unchanged.
+
+### Validation gate
+
+Fresh F03 Python tests, Guardian tests, TypeScript contract checks, ontology validation, and repository CI remain required before PR promotion. Research quality does not substitute for executable validation.
+
+### Rollback
+
+Revert the second-wave F03 changes as one logical unit. No external provider credentials, production authority, or physical media execution path is modified by this decision.
+
+## F03 AssetPlanIR research upgrade — Wave 3 — 2026-09-25
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Extend the provider-neutral Floor 03 planning contract with cinematic coverage roles, dependency-boundary last-frame references, richer camera metadata, lighting intent and temporal-plan validation. Preserve the canonical `F02 -> (F03 || F04) -> F05` topology and all authority boundaries.
+
+**External evidence considered:** ComfyUI, ViMax, Hugging Face Diffusers, Open-Sora, ai-video-studio, ai-video-production-editor, Vidia Open Studio, shotlist-forge, script-to-shootable-storyboard, ai-film-director and StoryMind, plus screened reference implementations documented in `.okf/research/repo-mappings/f03-screened-wave3.md`.
+
+**Contract impact:** Floor 03 advances to 2.2.0; AssetPlanIR schema advances to 1.2.0. Added coverage role, camera height/lens/body, lighting, source reference lineage and dependency last-frame binding semantics. Motion beats must remain within source scene duration.
+
+**Authority impact:** none. F03 remains planning/specification only. TimelineIR remains downstream semantic composition truth, RenderFabric owns rendering execution, Guardian/Slayer/Healer retain their control roles, and F07 remains physical verification authority.
+
+**Implementation status:** implemented on `feat/f03-research-upgrade`; fresh CI and repository-level regression validation remain required before merge.
+
+**Validation required:** F03 worker tests, handoff tests, scene-regeneration tests, Guardian tests, ontology JSON validation, TypeScript floor-contract validation and repository CI.
+
+**Rollback:** revert the wave-3 implementation/doc changes together. No provider credentials or physical-generation authority is introduced.
+
+## F03 validation finding — 2026-09-25
+
+A repository CI run exposed a pre-existing compatibility/import-path gap in the historical `floors.*` namespace: the canonical root compatibility namespace did not yet expose Floor 03, and the Floor 03 production-gate path filter did not include root `floors/**` changes.
+
+Resolution on the research branch:
+- added `floors/floor03_asset_realization/__init__.py` as the canonical compatibility bridge;
+- removed the unused nested bridge under `services/pipeline/floors/`;
+- added `floors/**` to the Floor 02 + Floor 03 production-gate trigger paths;
+- kept canonical implementation under `services/pipeline/floor03_asset_realization`.
+
+Fresh CI is required after this correction. The failed run is recorded as validation evidence, not as a production success claim.
+
+
+## Validation infrastructure correction — 2026-09-25
+
+The F03 production-gate run exposed a repository-root compatibility bridge defect in `floors/floor01_strategy/__init__.py`: the bridge pointed at the packaging root `services/pipeline/floor01_strategy` instead of the installable `services/pipeline/floor01_strategy/floor01_strategy` package. That prevented F02 and F03 imports from resolving.
+
+Resolution:
+- corrected the root Floor 01 compatibility path;
+- kept the F03 root compatibility bridge at `floors/floor03_asset_realization`;
+- retained `floors/**` in the Floor 02 + Floor 03 workflow trigger paths;
+- no canonical floor implementation was duplicated or moved.
+
+This is validation infrastructure, not a change to F01/F02 authority or semantics.
+
+
+## F03 test-boundary hardening — 2026-09-25
+
+The F03 suite was correctly found to be coupled to F02's live pipeline quality policy through the shared `build_mock_floor02_payload()` helper. In the production gate, F02 rejected the synthetic fixture because its evidence lineage did not satisfy F02-C01, causing the F03 suite to fail before exercising F03 behavior.
+
+Resolution:
+- the F03 test fixture now constructs a validated `Floor02HandoffPayload` directly;
+- the fixture carries explicit platform provenance, scene evidence references, character metadata, dependency edges, and continuity/reference intent;
+- no F02 model credentials, revision loop, or quality-score behavior is required for F03 unit/API tests;
+- F02's own production quality gates remain unchanged and continue to run in their dedicated suite.
+
+This restores test ownership boundaries: F03 tests the F02→F03 contract, while F02 tests its own generation/quality policy.
+
+
+## F03 idempotency and semantic fingerprint hardening — 2026-09-25
+
+A production-gate run exposed two final test-level contract gaps:
+
+1. Request-id idempotency did not distinguish the same request ID carrying a different Floor 03 input because the memory key was request ID only.
+2. AssetPlanIR fingerprints included generated runtime asset identities, so equivalent semantic plans produced different fingerprints across independent executions.
+
+Resolution:
+- Floor 03 now computes a full validated-input SHA-256 fingerprint and persists it with every new idempotency record.
+- A stored fingerprint mismatch for the same request ID is rejected as an idempotency conflict.
+- AssetPlanIR semantic fingerprints exclude runtime-only plan/asset/reference/evidence identifiers while retaining semantic scene, camera, continuity, dependency, timing and constraint content.
+- Legacy records without stored fingerprints remain readable for backward compatibility; all new writes are fingerprinted.
+
+This strengthens replay safety without moving orchestration or provider authority into F03.
+
+
+## F03 Research Wave 4 — 2026-09-25
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Strengthen Floor 03's provider-neutral planning boundary with explicit node identity, semantic fingerprints, upstream lineage, and typed continuity/reference strategy. Preserve the canonical topology F02 -> (F03 || F04) -> F05.
+
+**Research expansion beyond the previous corpus:**
+- OpenLineage/OpenLineage — first-class lineage entities/facets and source-version provenance.
+- iterative/dvc — dependency-aware reproducibility and stable stage identity.
+- dagster-io/dagster — explicit blocking asset checks and inspectable metadata.
+- invoke-ai/InvokeAI — saved workflow/specification separated from executable graph submission.
+- divolleggett/character-consistency-skill — reference-first storyboard validation and reuse.
+- taylorzhou16/video-gen-en — layered storyboard/shot/motion specification and parameter consistency.
+- NVIDIA-NeMo/Guardrails — explicit validation-rail boundaries.
+
+**Implementation decisions:**
+1. AssetPlanNode carries the planned asset_id and semantic node_fingerprint.
+2. AssetPlanIR carries source_fingerprint and a typed PlanLineage envelope.
+3. Plan fingerprints normalize runtime UUIDs and plan revision counters.
+4. ContinuityPlan explicitly records reference strategy: none, reference_first, last_frame_chain, or hybrid.
+5. AssetPlanIR validation rejects broken dependency/reference bindings, invalid impact-radius references, inconsistent repair scope, and missing frame-input modes.
+6. Surgical regeneration rejects blank instructions and remaps downstream asset/reference identities without mutating the authoritative F02 ScriptIR.
+
+**Authority invariant:** F03 remains specification/planning only. It does not generate physical media, select provider credentials, enqueue provider graphs, replace Guardian, replace TimelineIR, or replace F07.
+
+**Validation required:** F03 Python tests, Guardian tests, TypeScript floor contract tests, ontology JSON validation, and fresh repository CI.
+
+**Rollback:** revert the Wave 4 changes as a unit and restore Floor 03 2.2.0 / AssetPlanIR 1.2.0.
+
+
+
+## F03 current contract generation — 2026-09-25
+
+The branch has since advanced through additional hardening to:
+- Floor 03 contract: `2.3.0`
+- AssetPlanIR schema: `1.3.0`
+
+Current contract additions include:
+- self-contained node asset identity and node fingerprinting;
+- explicit `sourceFingerprint` and `PlanLineage` from the trusted Floor 02 handoff;
+- semantic plan fingerprints that preserve meaningful upstream lineage while ignoring runtime-only asset/node IDs;
+- dependency/reference integrity checks aligned with node asset identity.
+
+Validation evidence:
+- The latest F03 gate now reaches the full test suite and reports **33 passed, 1 failed**.
+- The remaining failure was an exact error-message contract mismatch in the idempotency conflict test; the implementation already rejected the conflict correctly.
+- The branch has been updated to emit the expected `Idempotency conflict: fingerprint mismatch ...` wording.
+- F02 production tests passed in the same run; Team Change Gate also passed.
+
+This section records the current state before the next fresh CI run. No production-green or merge claim is made until that run completes.
+
+
+## Guardian import-boundary correction — 2026-09-25
+
+The F03 Guardian gate exposed a repository-layout compatibility gap: Guardian source imports use the canonical Python namespace `factoryos.guardian.*`, while the implementation is physically stored under `services/pipeline/guardian`.
+
+Resolution:
+- added the root `factoryos/guardian` compatibility bridge to the canonical Guardian package;
+- added `factoryos/__init__.py` as the Python namespace root;
+- added `factoryos/**` to the Floor 02 + Floor 03 production-gate trigger paths.
+
+No Guardian implementation was duplicated or moved. The bridge only exposes the existing package through its canonical import namespace.
+
+
+## F03 Guardian gate ownership correction — 2026-09-25
+
+The F03 Guardian production-gate job was executing both the F03 Guardian contract suite and an unrelated Floor 02 recovery scenario suite. The latter failed because its F01/F02 fixture lacked the evidence/provenance required by the independent F02 quality gate, even though the F03 Guardian contract tests were the relevant verification target.
+
+Resolution:
+- the F03 Guardian job now runs only `tests/guardian/test_guardian_floor03.py`;
+- Floor 02 Guardian scenario coverage remains a separate responsibility and is not used as a proxy for F03 Guardian correctness;
+- the root `factoryos.guardian` compatibility bridge remains required for the scoped F03 Guardian tests.
+
+This is a gate-ownership correction, not a relaxation of F03 safety requirements.
+
+
+## F03 Validation Gate Hardening — 2026-09-25
+
+**Classification:** extends existing rule
+
+Fresh runner evidence hardened the F03 validation boundary:
+
+1. The F03 Guardian job was executing a cross-floor Guardian scenario suite that depended on Floor 02 model credentials and F02 provenance-quality policy. The F03 gate is now scoped to the dedicated Floor 03 Guardian contract test.
+2. The Guardian runner required the repository-root FactoryOS compatibility namespace before the other Python roots. The F03 workflow now places the repository root first in PYTHONPATH.
+
+This keeps F03 validation deterministic and owned by the F03 contract while leaving cross-floor scenario coverage to the broader CI layer.
+
+Latest targeted validation:
+- Floor 02 + Floor 03 Production Gates: passed.
+- F03 Asset Planning v2: passed.
+- F03 Guardian contract: passed.
+- Team Change Gate: passed.
+
+Full repository CI remains a separate gate.
+
+
+## F03 Research Wave 5 — 2026-09-26
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Further harden the Floor 03 planning artifact using broader media-interoperability, graph-execution, conditioning, lineage and reproducibility research. Preserve F03 as a declarative specification boundary and preserve the canonical topology F02 -> (F03 || F04) -> F05.
+
+### New research corpus
+
+The wave includes additional GitHub repositories beyond the original nine and earlier F03 waves:
+- OpenAssetIO/OpenAssetIO and OpenAssetIO/OpenAssetIO-MediaCreation
+- AcademySoftwareFoundation/OpenTimelineIO
+- Comfy-Org/ComfyUI
+- huggingface/diffusers
+- OpenLineage/OpenLineage
+- dagster-io/dagster
+- HVision-NKU/StoryDiffusion
+- instantX-research/InstantID
+- ali-vilab/VideoComposer
+- Lightricks/LTX-Video and Lightricks/LTX-2
+- contentauth/c2pa-rs
+- Vchitect/VBench
+- iterative/dvc
+- invoke-ai/InvokeAI
+- additional storyboard/cinematic/continuity mappings recorded under .okf/research/repo-mappings/
+
+### Promoted implementation
+
+1. AssetPlanIR schema advances to 1.4.0.
+2. ReferenceBinding can carry opaque entity_ref, version_selector and traits, separating logical identity from storage/provider resolution.
+3. VisualPromptPlan carries typed ConditioningSpec entries with conditioning type, strength and bounded temporal application.
+4. AssetPlanIR validates that every conditioning is backed by an explicit visual reference.
+5. AssetDependency carries an optional dependency_node_fingerprint so semantic cache lineage follows upstream node changes.
+6. Dependency validation now checks ordering and validates the recorded upstream node fingerprint.
+7. Regeneration remaps dependency asset identity and dependency-node fingerprints in sequence order, allowing exact downstream cache invalidation without rebuilding unrelated branches.
+8. Scene planning now emits logical identity metadata for character, style and continuity references.
+
+### Boundary decisions
+
+- OpenAssetIO informs reference identity only; F03 does not resolve storage paths.
+- OpenTimelineIO informs logical-vs-available media separation; F03 does not own media relinking.
+- ComfyUI/DVC/Dagster inform graph/cache semantics; F03 does not become a workflow executor.
+- Diffusers/InstantID/VideoComposer/LTX inform typed conditioning; F03 does not select or execute a model/provider.
+- OpenLineage/C2PA inform provenance boundaries; F03 does not sign or release artifacts.
+- VBench informs downstream evaluation; F03 does not self-certify quality.
+
+### Authority invariant
+
+Overseer remains sovereign. Guardian remains capability/safety authority. F03 remains planning/specification only. TimelineIR remains downstream semantic composition truth. RenderFabric remains physical execution orchestration. F07 remains physical verification authority.
+
+### Validation required
+
+Fresh F03 Python tests, Guardian tests, ontology JSON validation, TypeScript contract checks, and repository CI are required after this wave. No merge or production-green claim is made from earlier CI runs.

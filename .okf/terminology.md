@@ -122,3 +122,16 @@ The mandatory workflow that routes every non-trivial change through .okf review,
 
 ### Ascalon Team Adapter
 The bounded SCL/model integration that turns TeamChangeIR into compact model context and validates model outputs against Team contracts and authority boundaries.
+
+
+## 9. Floor 03 Planning Terms
+
+| Term | Canonical Definition | Source |
+|---|---|---|
+| **AssetPlanIR** | Provider-neutral, versioned Floor 03 specification describing visual asset nodes, dependencies, references, conditioning, lineage, timing intent and repair scope. It is declarative, not executable. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+| **AssetPlanNode** | One scene-scoped visual planning node with stable asset identity, camera/shot plan, references, dependencies, evidence lineage and repair impact. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+| **ReferenceBinding** | Logical relationship between a planned scene and an external asset/reference, optionally carrying entity identity, version selection, traits and source scene/asset lineage. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+| **ConditioningSpec** | Provider-neutral description of a visual generation control signal with typed kind, strength and bounded temporal application. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+| **PlanLineage** | Typed provenance envelope identifying the upstream Floor 02 source, source fingerprint, script revision and F03 compiler revision. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+| **Dependency Node Fingerprint** | Semantic fingerprint of an upstream AssetPlanNode recorded on a dependency edge to drive deterministic downstream cache invalidation after surgical regeneration. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+| **Impact Radius** | Transitive downstream scene set whose plans may be invalidated when a scene node changes. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |

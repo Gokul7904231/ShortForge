@@ -191,3 +191,91 @@ ZAP active scans require explicit target authorization. Scanner output never rep
 ## 12. Engineering-workforce mapping rule
 
 Relevant repo mappings are now consumed through the Forger specialist that owns the concern. Where an existing mapping already provides a solution, Forgers should assimilate it rather than introduce a parallel subsystem.
+
+
+## Floor 03 second-wave corpus
+
+The generic mapping-first rule now applies to a broader F03 research corpus. Dedicated records live under `.okf/research/repo-mappings/`.
+
+For F03, the current corpus covers:
+- storyboard/creative planning: StoryForgeAI, VideoClaw, NolanX
+- sequence/continuity: Seedance 2.0, xyz-video-skill, CharacterConsistency, PopcornReady
+- typed artifacts/validation: script-to-shootable-storyboard, Pydantic AI
+- directorial multi-shot research: ShotDirector, MultiShotMaster
+- multimodal visual storytelling: VstoryGen
+- planning/critic separation: Code2Video
+
+Selection rule:
+1. extract a high-level pattern;
+2. compare against executable ShortForge contracts and .okf authority;
+3. implement only the smallest non-conflicting capability;
+4. record non-adoptions explicitly;
+5. benchmark or test before promotion.
+
+F03-specific promotion from this corpus is limited to:
+- typed shot/camera/continuity/reference planning;
+- graph-aware dependency validation;
+- transitive regeneration impact;
+- localized dependency remapping;
+- semantic plan fingerprinting;
+- richer provenance/reference metadata.
+
+Provider selection, media generation, credentials, physical verification, and sovereign orchestration remain outside F03.
+
+## F03 Research Wave 3 — 2026-09-25
+
+The F03 research set now extends beyond the original clean-room corpus to a broader video-planning cohort: ComfyUI, ViMax, Diffusers, Open-Sora, ai-video-studio, ai-video-production-editor, Vidia Open Studio, shotlist-forge, script-to-shootable-storyboard, ai-film-director and StoryMind. Their mappings are maintained individually under .okf/research/repo-mappings/.
+
+Adoption remains bounded:
+- declarative workflow structure informs AssetPlanIR but executable graphs remain downstream;
+- first/last-frame continuity informs typed dependency reference bindings;
+- temporal and camera metadata are explicit semantic fields;
+- shot coverage, evidence lineage and repair scope are typed;
+- TimelineIR, RenderFabric, Guardian and F07 retain their authority;
+- restrictive-license sources remain reference-only and are not embedded.
+
+## 2026-09-25 — Floor 03 Wave 4 Clean-Room Mappings
+
+The Floor 03 research corpus was widened beyond the previous media and agent repositories.
+
+- OpenLineage: explicit lineage entities and versioned metadata -> typed PlanLineage and source fingerprints.
+- DVC: dependency-aware reproducibility -> semantic plan/node fingerprints separated from runtime identities.
+- Dagster: blocking asset checks -> deterministic F03 structural preflight.
+- InvokeAI: specification versus executable graph -> AssetPlanIR remains non-executable and downstream compilation remains outside F03.
+- Character Consistency Skill: reference-first storyboard validation -> explicit continuity/reference strategy.
+- video-gen-en: layered storyboard, shot, motion and consistency metadata -> provider-neutral planning fields.
+- NeMo Guardrails: explicit validation boundaries -> deterministic F03 contract checks while Guardian retains safety authority.
+
+No third-party code, prompts, tests, models, credentials, or runtime dependencies were copied into F03.
+
+
+## 13. Floor 03 Research Wave 5 — Interoperability, Conditioning and Cache-Lineage
+
+The F03 corpus was expanded again on 2026-09-26. Dedicated clean-room mapping records are maintained under .okf/research/repo-mappings/.
+
+### Selected high-signal mappings
+
+- OpenAssetIO/OpenAssetIO -> stable logical entity identity and resolver boundary.
+- OpenAssetIO/OpenAssetIO-MediaCreation -> typed media traits.
+- AcademySoftwareFoundation/OpenTimelineIO -> logical media range separated from currently available media.
+- Comfy-Org/ComfyUI -> dependency-aware graph reuse and partial re-execution.
+- huggingface/diffusers -> modular image/structural conditioning.
+- OpenLineage/OpenLineage -> typed lineage and versioned metadata facets.
+- dagster-io/dagster -> stable asset keys and explicit dependency checks.
+- HVision-NKU/StoryDiffusion -> long-range visual identity consistency.
+- instantX-research/InstantID -> identity-preserving reference conditioning.
+- ali-vilab/VideoComposer -> spatial/temporal control signals.
+- Lightricks/LTX-Video and LTX-2 -> strength/time-indexed conditioning and keyframe concepts.
+- contentauth/c2pa-rs -> provenance/signing boundary reserved for downstream verification.
+- Vchitect/VBench -> multidimensional quality evaluation reserved for downstream judges.
+
+### F03 promotion
+
+The research produced:
+- opaque logical reference identity with traits/version selectors;
+- typed conditioning signals with bounded strength/time;
+- dependency node fingerprints for deterministic cache invalidation;
+- stronger dependency/conditioning graph validation;
+- regeneration remapping of dependency fingerprints.
+
+These are implemented as clean-room ShortForge structures only. No upstream code, prompts, models, credentials, or runtime dependencies were imported.
