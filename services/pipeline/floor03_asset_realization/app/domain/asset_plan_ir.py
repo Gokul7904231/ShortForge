@@ -218,6 +218,11 @@ class AssetDependency(BaseModel):
     asset_id: str = Field(..., min_length=1)
     scene_id: Optional[str] = None
     relation: DependencyRelation
+    # Fingerprint of the dependency node at the moment this plan was compiled.
+    # Used for deterministic cache invalidation without coupling to asset UUIDs.
+    dependency_node_fingerprint: Optional[str] = Field(
+        default=None, min_length=64, max_length=64
+    )
 
 
 class AssetPlanNode(BaseModel):
@@ -332,12 +337,36 @@ class AssetPlanIR(BaseModel):
                         raise ValueError(
                             f"unknown dependency scene_id: {dependency.scene_id}"
                         )
+                    expected_dependency_node = scene_nodes[dependency.scene_id]
+                    if expected_dependency_node.sequence_index >= node.sequence_index:
+                        raise ValueError(
+                            f"dependency order violation for {node.scene_id} -> "
+                            f"{dependency.scene_id}"
+                        )
                     expected_asset_id = expected_asset_by_scene[dependency.scene_id]
                     if dependency.asset_id != expected_asset_id:
                         raise ValueError(
                             f"dependency asset_id mismatch for scene {node.scene_id} "
                             f"-> {dependency.scene_id}"
                         )
+                    if (
+                        dependency.dependency_node_fingerprint is not None
+                        and expected_dependency_node.node_fingerprint is not None
+                        and dependency.dependency_node_fingerprint
+                        != expected_dependency_node.node_fingerprint
+                    ):
+                        raise ValueError(
+                            f"dependency node fingerprint mismatch for scene {node.scene_id} "
+                            f"-> {dependency.scene_id}"
+                        )
+
+            reference_ids = {reference.reference_id for reference in node.visual.references}
+            for conditioning in node.visual.conditionings:
+                if conditioning.reference_id not in reference_ids:
+                    raise ValueError(
+                        f"conditioning '{conditioning.reference_id}' is not bound by a visual reference "
+                        f"for scene {node.scene_id}"
+                    )
 
             for reference in node.visual.references:
                 if reference.source_scene_id:
