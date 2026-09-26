@@ -189,3 +189,22 @@ Research governance:
 - GitHub repositories are clean-room pattern evidence only.
 - Dedicated mappings are stored under .okf/research/repo-mappings/.
 - Promotion requires executable implementation, contract/test evidence, and compatibility with .okf authority.
+
+
+## AMD distributed render evidence — 2026-09-26
+
+The AMD persistent-worker path has a measured physical proof on an AMD Instinct MI300X VF with ROCm 10.0.0.
+
+Evidence:
+- worker health/readiness succeeded;
+- authenticated capability discovery succeeded;
+- a 1080x1920, 30fps, 2-second H.264 MP4 was physically rendered;
+- worker SHA-256 and downloaded artifact SHA-256 matched;
+- worker encoder was `libx264`.
+
+Important limitation:
+- the installed Mesa `radeonsi` VAAPI stack exposed H.264 decode (`VAEntrypointVLD`) but no H.264 encode entrypoint;
+- therefore the worker is **not hardware-video-encoding qualified**;
+- the capability model now exposes the declared encoder and a separate hardware-video-encode flag so GPU presence cannot be mistaken for hardware media encoding.
+
+The remaining admission requirement is the canonical live F06 control-plane test and its CAS/F07 completion evidence.
