@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR21-PostMergeGateFix",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/post-merge-typecheck-deps-20260926",
+  "objective": "Correct the canonical post-merge F03 verification workflow so it installs the web dependencies used by the repository typecheck and includes the Floor 04 Python compatibility namespace required by the F03→F05 contract test.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Post-merge verification must reproduce the repository's known-good pre-merge dependency setup.",
+      "F03 remains provider-neutral planning/specification only.",
+      "F03 and F04 remain parallel predecessors to F05.",
+      "Verification workflow failures caused by missing test environment dependencies must be fixed in the verifier rather than ignored."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_POST_MERGE_VERIFICATION",
+    "Forge Release": "PENDING_POST_MERGE_VERIFICATION"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_REQUIRED",
+    "zap": "NOT_REQUIRED",
+    "reason": "Only CI workflow environment setup and PYTHONPATH coverage are changed; no runtime capability, credential, provider, or authority boundary is modified."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "PR Team Change Gate passes",
+    "F03 production suite passes",
+    "Repository typecheck workflow passes with apps/web dependencies installed",
+    "Post-merge F03 contract test discovers Floor 04 Python compatibility namespace",
+    "Actual main post-merge workflow becomes green after merge"
+  ],
+  "evidenceRefs": [
+    ".github/workflows/floor03-post-merge.yml",
+    "Team/reports/pr-21.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "No runtime authority or training data contract changed; post-merge verification remains the admission evidence."
+  },
+  "disposition": "ESCALATED"
+}
