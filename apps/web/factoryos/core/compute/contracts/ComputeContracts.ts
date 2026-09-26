@@ -49,6 +49,8 @@ export interface ProviderCapability {
   cpuCores: number;
   memoryMb: number;
   gpuAvailable: boolean;
+  /** True only when the provider's declared media stack supports hardware video encoding. */
+  hardwareVideoEncode?: boolean;
   gpuType?: string;
   operatingSystem: string;
   supportedWorkloads: ComputeWorkloadType[];
