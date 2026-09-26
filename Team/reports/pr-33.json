@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/floor05-pretraining-upgrade-20260927",
   "objective": "Complete Floor 05 pre-training hardening and align F03/F04/F05/F06 contracts.",
-  "classification": "extends existing rule + new capability",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -61,7 +61,7 @@
     ".okf/research/repo-mappings/f05-timeline-composition-wave1-20260927.md",
     "docs/verification/ascalon/floor05-pretraining-hardening.md"
   ],
-  "disposition": "PASS_PENDING_FRESH_CI",
+  "disposition": "PASS",
   "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
