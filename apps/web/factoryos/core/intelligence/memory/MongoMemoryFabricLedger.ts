@@ -143,7 +143,7 @@ export class InMemoryMemoryFabricLedger implements IMemoryFabricLedger {
 
   async listPending(limit = 50): Promise<MemoryFabricLedgerRecord[]> {
     const pending = [...this.events.values()]
-      .filter((r) => ["INGESTED", "MATERIALIZED", "CANDIDATE"].includes(r.status))
+      .filter((r) => r.status === "INGESTED")
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .slice(0, limit);
     return structuredClone(pending);
