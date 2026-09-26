@@ -179,7 +179,7 @@ class PhysicalMediaValidator:
             marker = data[i]
             i += 1
 
-            if marker in (0xD8, 0xD9) or 0x01 or 0xD0 <= marker <= 0xD7:
+            if marker in (0xD8, 0xD9, 0x01) or 0xD0 <= marker <= 0xD7:
                 continue
 
             if i + 1 >= len(data):
