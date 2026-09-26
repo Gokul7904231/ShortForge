@@ -93,3 +93,18 @@ To preserve the absolute purity of the long-term knowledge base:
 1. **Unverified by Default**: Any item ingested from external web scraping, social media analysis, or LLM generation is stored with `verified: false`.
 2. **Promotion Gate**: An item can only transition to `verified: true` if an authoritative verification agent or human auditor attaches a valid, cryptographic `evidenceReceiptId`.
 3. **Downstream Invariant**: Floor 02 Scripting agents query the `CLAIM` domain with `verified: true` exclusively when writing educational and documentary scripts. Unverified claims cannot be used without explicit disclaimer tagging.
+
+
+## Live Memory Fabric Integration — 2026-09-26
+
+The previously documented target of automatic runtime-to-knowledge synchronization is now implemented as a bounded integration layer.
+
+FactoryOS runtime events and MongoDB operational changes enter MemoryFabricBridge, which uses an idempotent MongoDB ledger and filesystem-backed knowledge vault materialization. The bridge does not replace KnowledgeOS or the operational memory repository.
+
+The promotion boundary remains explicit:
+
+    observation -> candidate -> verified -> promoted -> active
+
+Unverified events remain outside the active agent/Ascalon projection. Temporal fields, provenance hashes, deterministic quality states, conflict groups and supersession provide the minimum controls for long-lived cognitive memory.
+
+The Ascalon projection is generated automatically but remains an admission projection only. training_eligible is never inferred from a successful runtime event.

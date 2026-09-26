@@ -15,6 +15,12 @@
     "test:all": "npx tsx testing/cli/test.ts",
     "obsidian:lint": "node tools/obsidian/lint-vault.mjs knowledge",
     "obsidian:catalog": "node tools/obsidian/build-catalog.mjs knowledge",
-    "obsidian:compile": "node tools/obsidian/compile-memory.mjs knowledge"
+    "obsidian:compile": "node tools/obsidian/compile-memory.mjs knowledge",
+    "test:obsidian-memory-fabric": "npx tsx apps/web/factoryos/tests/obsidian-memory-fabric.integration.test.ts",
+    "obsidian:project-agent": "npx tsx apps/web/factoryos/cli/memory-fabric.mts agent",
+    "obsidian:project-ascalon": "npx tsx apps/web/factoryos/cli/memory-fabric.mts ascalon",
+    "obsidian:backfill-memory": "npx tsx apps/web/factoryos/cli/memory-fabric-backfill.mts",
+    "obsidian:headless-sync": "node tools/obsidian/headless-sync.mjs",
+    "obsidian:headless-sync:continuous": "node tools/obsidian/headless-sync.mjs --continuous"
   }
 }

@@ -37,6 +37,10 @@ import { RenderFabric } from "../fabric/RenderFabric";
 import { EvolutionBrainSeam } from "../evolution/EvolutionBrainSeam";
 import { ContentGenomeTracker } from "../artifacts/ContentGenome";
 import { ResearchRuntime } from "../research/ResearchRuntime";
+import { KnowledgeStore } from "../intelligence/knowledge/KnowledgeStore";
+import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
+import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
+import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -48,6 +52,10 @@ export interface FactoryOSConfig {
   readonly supervisorIntervalMs?: number;
   readonly watchdogIntervalMs?: number;
   readonly autoStartSwarm?: boolean;
+  readonly memoryFabricEnabled?: boolean;
+  readonly memoryFabricVaultPath?: string;
+  readonly memoryFabricReconciliationIntervalMs?: number;
+  readonly memoryFabricCollections?: readonly string[];
 }
 
 export class AutonomousFactoryController {
@@ -81,6 +89,7 @@ export class AutonomousFactoryController {
   public evolutionBrain: EvolutionBrainSeam = new EvolutionBrainSeam();
   public contentGenome: ContentGenomeTracker = new ContentGenomeTracker();
   public researchRuntime: ResearchRuntime = new ResearchRuntime();
+  public memoryFabric?: MemoryFabricBridge;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -89,6 +98,12 @@ export class AutonomousFactoryController {
       supervisorIntervalMs: 3000,
       watchdogIntervalMs: 4000,
       autoStartSwarm: true,
+      memoryFabricEnabled:
+        process.env.MEMORY_FABRIC_ENABLED === "true" ||
+        (process.env.MEMORY_FABRIC_ENABLED !== "false" &&
+          (process.env.NODE_ENV !== "production" || Boolean(process.env.MEMORY_FABRIC_VAULT_PATH))),
+      memoryFabricVaultPath: process.env.MEMORY_FABRIC_VAULT_PATH,
+      memoryFabricReconciliationIntervalMs: Number(process.env.MEMORY_FABRIC_RECONCILIATION_MS || 60000),
       ...config,
     };
   }
@@ -132,6 +147,33 @@ export class AutonomousFactoryController {
 
     // 4. Durable Event Bus
     this.eventBus = new DurableEventBus();
+
+    // 4.1 Live Memory Fabric. It is derived cognitive storage only and never
+    // becomes runtime authority. MongoDB remains operational truth; the
+    // knowledge vault is an inspectable projection consumed by agents/Ascalon.
+    if (this.config.memoryFabricEnabled) {
+      const knowledgeStore = new KnowledgeStore(this.config.memoryFabricVaultPath);
+      const memoryWriter = new MemoryWriter(knowledgeStore);
+      const mongoDb = this.mongoClient?.getDb() || null;
+      const ledger = mongoDb
+        ? new MongoMemoryFabricLedger(mongoDb)
+        : new InMemoryMemoryFabricLedger();
+
+      this.memoryFabric = new MemoryFabricBridge(
+        this.eventBus,
+        knowledgeStore,
+        memoryWriter,
+        ledger,
+        mongoDb,
+        {
+          enabled: true,
+          vaultPath: this.config.memoryFabricVaultPath,
+          reconciliationIntervalMs: this.config.memoryFabricReconciliationIntervalMs,
+          watchedCollections: this.config.memoryFabricCollections,
+        },
+      );
+      await this.memoryFabric.start();
+    }
 
     // 5. Leases, Case Manager & Mission Manager
     this.leaseManager = new LeaseManager(repos.leases);
@@ -309,6 +351,11 @@ export class AutonomousFactoryController {
         stoppedAt: new Date().toISOString(),
       });
     }
+
+    if (this.memoryFabric) {
+      await this.memoryFabric.drain();
+      await this.memoryFabric.stop();
+    }
   }
 
   async shutdown(): Promise<void> {
@@ -334,5 +381,11 @@ export class AutonomousFactoryController {
 
     // 3. Persist World State Snapshot
     await this.worldState.persist();
+
+    // 4. Drain cognitive memory asynchronously so the runtime control loop is
+    // never coupled to filesystem/Obsidian projection latency.
+    if (this.memoryFabric) {
+      void this.memoryFabric.drain().catch(() => {});
+    }
   }
 }

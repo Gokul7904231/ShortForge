@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR29-Live-Memory-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/obsidian-live-memory-fabric-20260926",
+  "objective": "Complete the live Obsidian Memory Fabric integration by connecting runtime events and MongoDB operational changes to the derived knowledge vault while preserving all existing authority boundaries.",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "The knowledge layer must remain distinct from runtime and governance authority.",
+      "Memory promotion requires provenance and explicit verification.",
+      "Ascalon receives bounded evidence-backed projections and cannot amend runtime authority.",
+      "Runtime execution must remain independent from Obsidian availability or filesystem latency."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "security": {
+    "required": true,
+    "triageStatus": "COMPLETE",
+    "semgrep": "NOT_REQUIRED",
+    "strix": "UNAVAILABLE_FOR_PR29",
+    "zap": "NOT_REQUIRED",
+    "reason": "The change introduces a bounded backend integration, but it does not expose a new public endpoint or grant Obsidian runtime authority. Secret redaction, provenance gating, idempotent ingestion, quarantine behavior and fail-open runtime isolation are implemented. Strix availability is recorded honestly rather than represented as executed."
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Run vault JSON validation and memory-vault lint.",
+    "Run the live Memory Fabric integration test and module-load smoke test.",
+    "Run the repository CI strict TypeScript and required Floor 01 checks.",
+    "Verify Team Change Gate report.",
+    "Verify MongoDB change-stream failure degrades to bounded reconciliation without stopping FactoryOS.",
+    "Verify explicit historical MongoDB backfill is idempotent and remains evidence-gated.",
+    "Verify headless Obsidian sync remains an operator-managed optional client and does not become runtime authority.",
+    "Verify post-merge main branch required checks before release."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/memory/MemoryFabricContracts.ts",
+    "apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts",
+    "apps/web/factoryos/core/intelligence/memory/MemoryFabricBridge.ts",
+    "apps/web/factoryos/core/intelligence/memory/MemoryFabricProjection.ts",
+    "apps/web/factoryos/core/intelligence/knowledge/KnowledgeStore.ts",
+    "apps/web/factoryos/core/intelligence/knowledge/OKFParser.ts",
+    "apps/web/factoryos/core/intelligence/knowledge/OKFContracts.ts",
+    "apps/web/factoryos/core/controller/AutonomousFactoryController.ts",
+    "apps/web/factoryos/core/intelligence/IntelligenceGateway.ts",
+    "apps/web/factoryos/tests/obsidian-memory-fabric.integration.test.ts",
+    "tools/obsidian/lint-vault.mjs",
+    "knowledge/obsidian/OPERATIONS.md",
+    "docs/architecture/obsidian-memory-fabric.md",
+    ".okf/decisions.md",
+    ".okf/memory/knowledge-os.md",
+    "apps/web/factoryos/cli/memory-fabric-backfill.mts",
+    "tools/obsidian/headless-sync.mjs",
+    "apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "participated": false,
+    "runtimeStatus": "NOT_RUNTIME_VERIFIED",
+    "validationStatus": "The integration exposes a bounded verified projection to Ascalon and does not claim a production Ascalon checkpoint or training admission."
+  },
+  "disposition": "PASS"
+}

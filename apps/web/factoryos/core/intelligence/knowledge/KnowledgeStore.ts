@@ -59,6 +59,10 @@ export class KnowledgeStore {
     this.reload();
   }
 
+  public getRootDir(): string {
+    return this.rootDir;
+  }
+
   public getParseErrors(): Array<{ filePath: string; error: string }> {
     return [...this.parseErrors];
   }

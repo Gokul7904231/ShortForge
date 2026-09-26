@@ -85,3 +85,29 @@ Keep knowledge/ versioned with the ShortForge repository. Do not commit machine-
 ## Publish
 
 Publish only a deliberately curated public documentation subset. Never publish raw evidence, internal security material or training data by default.
+
+
+## LIVE FACTORYOS CONNECTION
+
+Obsidian is a client of the ShortForge Memory Fabric. The desktop application is not required by FactoryOS.
+
+For local development, open the repository knowledge/ directory as the vault and enable only the documented core features. The live runtime bridge writes sanitized Markdown under knowledge/obsidian/.
+
+To connect a FactoryOS runtime:
+
+    MEMORY_FABRIC_ENABLED=true
+    MEMORY_FABRIC_VAULT_PATH=<absolute path to repository>/knowledge
+
+For production or headless environments, use a controlled filesystem target and an audited synchronization process. Never make public Publish or unreviewed community plugins part of the production execution path.
+
+The runtime bridge can consume MongoDB change streams when supported by the deployment and always keeps a bounded reconciliation path as a correctness backstop.
+
+## HEADLESS SYNC ADAPTER
+
+ShortForge includes a small repository adapter for Obsidian Headless Sync.
+
+    MEMORY_FABRIC_VAULT_PATH=<repo>/knowledge
+    npm run obsidian:headless-sync
+    npm run obsidian:headless-sync:continuous
+
+Setup and login remain operator-managed. The adapter only forwards the configured vault path to the official headless client. Use one sync method per device.
