@@ -118,7 +118,6 @@ class Floor05PipelineService:
         # Gate 0: verify immutable F04 manifest before any composition decisions.
         SourceManifestVerifier.verify_visuals(f04_payload.synthesized_visual_assets)
         SourceManifestVerifier.verify_audio(f04_payload.synthesized_audio_assets)
-        SemanticCompositionValidator.validate_lineage(f03_payload, f04_payload, None)  # type: ignore[arg-type]
 
         # Gate 1: compile deterministic timeline.
         timeline_spec = TimelineCompositionWorker.assemble_timeline(
@@ -126,6 +125,7 @@ class Floor05PipelineService:
             floor04_payload=f04_payload,
             target_fps=input_payload.target_fps,
         )
+        SemanticCompositionValidator.validate_lineage(f03_payload, f04_payload, timeline_spec)
         timeline_fingerprint = CanonicalHasher.compute_timeline_fingerprint(timeline_spec)
         self.registry.register_timeline(timeline_spec)
 
