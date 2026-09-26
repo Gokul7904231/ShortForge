@@ -1,6 +1,6 @@
 # Floor 05 — Timeline Composition & Motion
 
-Status: wave-2 implementation branch, pending canonical CI admission.
+Status: wave-2 production hardening complete; canonical production-critical CI gates PASS; merge admission pending.
 
 ## Purpose
 
