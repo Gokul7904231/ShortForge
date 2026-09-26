@@ -177,6 +177,12 @@ class Floor05Input(BaseModel):
                 "F04/F05 join mismatch: Floor 04 media must be derived from the exact F03 AssetPlanIR."
             )
 
+        return self
+
+
+class Floor05HandoffPayload(BaseModel):
+    @model_validator(mode="after")
+    def validate_asset_references(self) -> "Floor05HandoffPayload":
         available_visual_ids = {
             asset.asset_id for asset in self.floor04_payload.synthesized_visual_assets
         }
@@ -186,21 +192,27 @@ class Floor05Input(BaseModel):
         if self.floor04_payload.background_audio_asset:
             available_audio_ids.add(self.floor04_payload.background_audio_asset.asset_id)
 
-        for clip in getattr(self, "timeline_spec", None).clips if hasattr(self, "timeline_spec") else []:
-            available_ids = (
-                available_visual_ids
-                if clip.track_type == TimelineTrackType.VISUAL
-                else available_audio_ids
-            )
+        for clip in self.timeline_spec.clips:
+            if clip.track_type == TimelineTrackType.VISUAL:
+                available_ids = available_visual_ids
+            elif clip.track_type in {
+                TimelineTrackType.NARRATION,
+                TimelineTrackType.BACKGROUND_AUDIO,
+                TimelineTrackType.SFX,
+            }:
+                available_ids = available_audio_ids
+            else:
+                continue
+
             if clip.source_asset_id not in available_ids:
                 raise ValueError(
-                    f"F05 timeline references an asset not present in F04 handoff: {clip.source_asset_id}"
+                    "F05 timeline references an asset not present in F04 handoff: "
+                    + clip.source_asset_id
                 )
 
         return self
 
 
-class Floor05HandoffPayload(BaseModel):
     """Authoritative handoff payload produced by Floor 05 for Floor 07."""
 
     model_config = ConfigDict(extra="forbid")
