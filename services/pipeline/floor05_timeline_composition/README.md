@@ -1,6 +1,6 @@
 # Floor 05 — Timeline Composition & Motion
 
-Status: wave-2 production hardening complete; canonical production-critical CI gates PASS; merge admission pending.
+Status: wave-2 production hardening complete; canonical production-critical and post-merge gates PASS on main.
 
 ## Purpose
 
