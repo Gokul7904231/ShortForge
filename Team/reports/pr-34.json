@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR34-Floor05-Wave2-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor05-wave2-pretraining-completion-20260927",
+  "objective": "Complete Floor 05 second-wave pre-training hardening while preserving the locked F02 -> (F03 || F04) -> F05 -> F06 -> F07 topology and authority hierarchy.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "F03 and F04 remain parallel predecessors of F05.",
+      "F05 remains the temporal convergence boundary.",
+      "TimelineBrain/Ascalon can propose but cannot authorize.",
+      "F05 reference rendering is evidence-only; F06 owns production distributed rendering.",
+      "F07 remains final verification/release authority.",
+      "External research is evidence only."
+    ]
+  },
+  "forensicFindings": [
+    "F02 transition intent could be lost at F03/F05 convergence.",
+    "F05 rejected legitimate zero-duration CUT semantics.",
+    "ffprobe metadata did not independently provide a full decoder smoke pass.",
+    "Crash recovery accepted weak header evidence and could not distinguish unproven artifact identity.",
+    "Committed render reuse lacked a fresh physical integrity check.",
+    "TimelineBrain evidence was too thin for structured Ascalon decision-trace training."
+  ],
+  "changes": [
+    "F03 preserves transition_intent in existing continuity_constraints metadata.",
+    "F05 compiles CUT/CROSSFADE deterministically and validates frame-aligned transition duration including zero.",
+    "Reference renderer supports cut joins.",
+    "Physical validation adds FFmpeg decoder smoke testing.",
+    "Crash reconciliation requires physical inspection and exact SHA-256/byte-length identity before COMMITTED recovery.",
+    "Committed render reuse rechecks path containment, symlink status, byte length and SHA-256.",
+    "TimelineProposalIR adds typed proposal-only evidence for Ascalon training.",
+    "Added F03/F05/recovery/Brain regression coverage.",
+    "Updated F05 README, .okf records, Ascalon ontology, permissions and Team evidence."
+  ],
+  "research": [
+    "AgenticVBench",
+    "Unified Agentic Video Editing",
+    "BEAT",
+    "Agentic Video Generation via Executable Event Graphs",
+    "Remotion v4.0.529",
+    "LTX-2 v1.3.0"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY-BOUNDARY_CHANGE",
+    "notes": "Code-level hardening is present; full repository security lanes remain the final admission evidence."
+  },
+  "trainingReadiness": {
+    "floor05": "PASS_PENDING_CI",
+    "ascalon": "Bounded TimelineProposalIR proposal/evaluation only; no authority promotion.",
+    "rendererModels": "No new provider/model execution authority."
+  },
+  "evidenceRefs": [
+    "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
+    "services/pipeline/floor03_asset_realization/tests/test_f03_f05_transition_intent.py",
+    "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+    "services/pipeline/floor05_timeline_composition/app/brain/proposal.py",
+    "services/pipeline/floor05_timeline_composition/app/brain/timeline_brain.py",
+    "services/pipeline/floor05_timeline_composition/app/workers/composition_worker.py",
+    "services/pipeline/floor05_timeline_composition/app/workers/render_worker.py",
+    "services/pipeline/floor05_timeline_composition/app/services/validators.py",
+    "services/pipeline/floor05_timeline_composition/app/services/reconciliation.py",
+    "services/pipeline/floor05_timeline_composition/app/services/registry.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_wave2_temporal_contracts.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_reconciliation_wave2.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_brain_wave2.py",
+    "services/pipeline/floor05_timeline_composition/tests/unit/test_floor05_reconciliation.py",
+    "training/ascalon/ontology/floors.json",
+    ".okf/decisions.md",
+    ".okf/research/repo-mappings/f05-timeline-composition-wave1-20260927.md",
+    "docs/verification/ascalon/floor05-pretraining-hardening.md"
+  ],
+  "disposition": "PASS",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_CI"
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Floor 05 pre-training production validation PASS.",
+    "F03/F04/F06 contract regressions PASS.",
+    "F03 transition-intent regression PASS.",
+    "F05 temporal/identity/recovery/Brain regression PASS.",
+    "Team Change Gate PASS.",
+    "Obsidian Memory Validation PASS.",
+    "Repository CI PASS.",
+    "Post-merge F03/F04/F05/F06 canonical gates PASS."
+  ],
+  "notes": [
+    "TimelineProposalIR is a new training evidence artifact but does not create a new runtime authority.",
+    "No floor topology changed.",
+    "No third-party source code, model weights, credentials or provider authority imported.",
+    "Reference rendering remains a bounded evidence path, not F06 distributed render."
+  ]
+}
