@@ -54,4 +54,4 @@ def test_run_background_audio_worker(tmp_path):
 
     assert bg.asset_id == "bg-audio-01"
     assert bg.rights_metadata.source_type.value == "DETERMINISTIC_SYNTHESIS"
-    assert bg.rights_metadata.provider_name == "factoryos_stock_audio_library"
+    assert bg.rights_metadata.provider_name == "deterministic_background_audio_fallback"
