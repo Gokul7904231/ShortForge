@@ -60,7 +60,7 @@
     "notes": "Security assertions are backed by code-level path containment, symlink checks, provider MIME trust checks, atomic registry writes, quarantine, and Guardian allowlisting. Full repository security lanes remain the final gate."
   },
   "trainingReadiness": {
-    "floor04": "NOT_PROMOTED_UNTIL_FRESH_CI",
+    "floor04": "HARDENED_AND_CI_VERIFIED; external provider qualification, rights review, and benchmark-specific promotion remain separate gates",
     "ascalon": "Bounded optimization/recommendation only; no authority promotion.",
     "providerModels": "Candidate adapters only until benchmark + rights + physical validation + policy gates pass."
   },
@@ -103,5 +103,19 @@
     "Forge Evaluator": "COMPLETE",
     "Forge Release": "COMPLETE"
   },
-  "conflicts": []
+  "conflicts": [],
+  "verificationResults": {
+    "teamChangeGate": "PASS",
+    "obsidianMemoryValidation": "PASS",
+    "floor02Floor03ProductionGates": "PASS",
+    "floor04ProductionValidation": "PASS",
+    "repositoryCI": "PASS",
+    "googleDriveMcp": "PASS",
+    "webRegressionSuite": "FAIL_INFORMATIONAL"
+  },
+  "notes": [
+    "Web Regression Suite remains informational and was not a blocker for this floor-specific hardening PR.",
+    "The deterministic F04 fallbacks are truthful executable fallbacks, not claims of semantic model quality.",
+    "Provider-specific model admission remains gated by adapter implementation, rights metadata, physical validation, benchmark evidence and Guardian policy."
+  ]
 }
