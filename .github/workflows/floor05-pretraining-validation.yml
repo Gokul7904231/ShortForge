@@ -76,8 +76,11 @@ jobs:
         run: |
           python -m pytest services/pipeline/floor05_timeline_composition/tests/ -q
 
-      - name: Run F03/F04 contract regression tests
+      - name: Run F03/F04/F06 contract regression tests
         env:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
         run: |
-          python -m pytest             services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py             services/pipeline/floor04_media_synthesis/tests/test_floor04_handoff.py -q
+          python -m pytest \
+            services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py \
+            services/pipeline/floor04_media_synthesis/tests/test_floor04_handoff.py \
+            services/pipeline/floor06_rendering/tests/test_floor06_handoff.py -q
