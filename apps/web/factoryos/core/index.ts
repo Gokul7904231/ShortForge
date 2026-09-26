@@ -63,6 +63,10 @@ export * from "./overseer/api/OverseerAPIHandler";
 
 export * from "./memory/MemoryEngine";
 export * from "./watchdog/FactoryWatchdog";
+export * from "./intelligence/memory/MemoryFabricContracts";
+export * from "./intelligence/memory/MongoMemoryFabricLedger";
+export * from "./intelligence/memory/MemoryFabricProjection";
+export * from "./intelligence/memory/MemoryFabricBridge";
 
 // Cognitive Operating Plane (Frontier v2)
 export * from "./cognitive/CognitiveContracts";
