@@ -15,6 +15,7 @@
  * No secrets are written to disk.
  */
 import { spawn, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const sshTarget = process.argv[2] || process.env.AMD_SSH_TARGET;
 if (!sshTarget) {
@@ -112,7 +113,7 @@ const test = spawnSync(
     stdio: "inherit",
     env,
     windowsHide: true,
-    cwd: new URL("..", import.meta.url).pathname,
+    cwd: fileURLToPath(new URL("..", import.meta.url)),
   }
 );
 
