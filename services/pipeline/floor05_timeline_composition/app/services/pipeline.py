@@ -36,10 +36,12 @@ class Floor05PipelineService:
     def run_pipeline(self, input_payload: Floor05Input) -> Floor05HandoffPayload:
         """Run Floor 05 composition, render, double validation, and transaction commit."""
         request_id = input_payload.request_id or f"req-{uuid4().hex[:8]}"
+        f03_payload = input_payload.floor03_payload
         f04_payload = input_payload.floor04_payload
 
         # Step 1: Assemble TimelineSpec
         timeline_spec = TimelineCompositionWorker.assemble_timeline(
+            floor03_payload=f03_payload,
             floor04_payload=f04_payload,
             target_fps=input_payload.target_fps,
         )
@@ -48,6 +50,7 @@ class Floor05PipelineService:
         # Step 2: Render Reference Video Artifact
         job_spec, video_path, thumb_path = ReferenceRenderWorker.execute_render(
             request_id=request_id,
+            floor03_payload=f03_payload,
             floor04_payload=f04_payload,
             timeline_spec=timeline_spec,
             storage_root=str(self.storage_root),
@@ -78,7 +81,7 @@ class Floor05PipelineService:
         self.reconciliation.record_transaction(tx_id, "COMMITTED", {"files": [video_path, thumb_path]})
 
         # Step 6: Compute cumulative provenance hash
-        provenance_str = f"{f04_payload.provenance_hash}:{job_spec.render_input_hash}:{sha256_val}"
+        provenance_str = f"{f03_payload.asset_plan_ir.plan_fingerprint if f03_payload.asset_plan_ir else f03_payload.asset_plan_id}:{f04_payload.provenance_hash}:{job_spec.render_input_hash}:{sha256_val}"
         provenance_hash = hashlib.sha256(provenance_str.encode("utf-8")).hexdigest()
 
         handoff = Floor05HandoffPayload(
