@@ -37,61 +37,15 @@ def build_mock_floor03_payload() -> Floor03HandoffPayload:
 
 def build_mock_floor04_payload(tmp_path) -> Floor04HandoffPayload:
     f03 = build_mock_floor03_payload()
-    root = tmp_path / "mock_assets"
-    root.mkdir(exist_ok=True)
+    from floors.floor04_media_synthesis.app.domain.handoff import Floor04Input
+    from floors.floor04_media_synthesis.app.services.pipeline import Floor04PipelineService
 
-    img_path = root / "scene1.png"
-    img_path.write_bytes(b"placeholder-test-image")
-
-    aud_path = root / "scene1.wav"
-    aud_path.write_bytes(b"placeholder-test-audio")
-
-    rights = RightsMetadata(
-        source_type=AssetSourceType.DETERMINISTIC_SYNTHESIS,
-        provider_name="test_provider",
-    )
-
-    vis = SynthesizedVisualAsset(
-        asset_id=f03.visual_asset_requirements[0].asset_id,
-        scene_id="sc-1",
-        file_path=str(img_path),
-        mime_type="image/png",
-        width=1080,
-        height=1920,
-        sha256_checksum="a" * 64,
-        file_size_bytes=100,
-        provenance_hash="p" * 64,
-        source_spec_hash=f03.asset_plan_ir.plan_fingerprint or f03.asset_plan_ir.source_fingerprint,
-        provider_execution=ProviderExecutionRecord(provider_id="test-image", capability="image_generation", request_fingerprint="c" * 64),
-        rights_metadata=rights,
-    )
-
-    aud = SynthesizedAudioAsset(
-        asset_id=f03.audio_asset_requirements[0].asset_id,
-        scene_id="sc-1",
-        file_path=str(aud_path),
-        mime_type="audio/wav",
-        duration_seconds=5.0,
-        sample_rate_hz=44100,
-        sha256_checksum="b" * 64,
-        file_size_bytes=200,
-        provenance_hash="q" * 64,
-        source_spec_hash=f03.asset_plan_ir.plan_fingerprint or f03.asset_plan_ir.source_fingerprint,
-        provider_execution=ProviderExecutionRecord(provider_id="test-tts", capability="tts_generation", request_fingerprint="d" * 64),
-        rights_metadata=rights,
-    )
-
-    manifest = MediaPackageManifest(total_visual_assets=1, total_audio_assets=1, total_size_bytes=300)
-
-    return Floor04HandoffPayload(
-        request_id="req-f04-mock",
-        floor03_payload=f03,
-        synthesized_visual_assets=[vis],
-        synthesized_audio_assets=[aud],
-        media_manifest=manifest,
-        source_asset_plan_fingerprint=f03.asset_plan_ir.plan_fingerprint or f03.asset_plan_ir.source_fingerprint,
-        provider_executions=[vis.provider_execution, aud.provider_execution],
-        provenance_hash="e" * 64,
+    service = Floor04PipelineService(storage_root=str(tmp_path / "mock_assets"))
+    return service.execute_pipeline(
+        Floor04Input(
+            floor03_payload=f03,
+            request_id=f"req-f04-test-{uuid4()}",
+        )
     )
 
 
