@@ -98,7 +98,10 @@ export class AutonomousFactoryController {
       supervisorIntervalMs: 3000,
       watchdogIntervalMs: 4000,
       autoStartSwarm: true,
-      memoryFabricEnabled: process.env.MEMORY_FABRIC_ENABLED === "true",
+      memoryFabricEnabled:
+        process.env.MEMORY_FABRIC_ENABLED === "true" ||
+        (process.env.MEMORY_FABRIC_ENABLED !== "false" &&
+          (process.env.NODE_ENV !== "production" || Boolean(process.env.MEMORY_FABRIC_VAULT_PATH))),
       memoryFabricVaultPath: process.env.MEMORY_FABRIC_VAULT_PATH,
       memoryFabricReconciliationIntervalMs: Number(process.env.MEMORY_FABRIC_RECONCILIATION_MS || 60000),
       ...config,
