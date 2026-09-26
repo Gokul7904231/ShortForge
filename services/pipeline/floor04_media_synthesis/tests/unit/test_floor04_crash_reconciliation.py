@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from floors.floor04_media_synthesis.app.services.reconciliation import CrashReconciliationEngine
-from floors.floor04_media_synthesis.app.services.validator import PNG_IEND, PNG_MAGIC
+from floors.floor04_media_synthesis.tests.media_fixtures import write_png
 
 
 def test_reconciliation_commits_valid_files(tmp_path):
@@ -12,7 +12,7 @@ def test_reconciliation_commits_valid_files(tmp_path):
     storage_root.mkdir()
 
     valid_file = storage_root / "committed_tx01.png"
-    valid_file.write_bytes(PNG_MAGIC + b"\x00\x00\x00\x0dIHDR\x00\x00\x04\x38" + PNG_IEND)
+    write_png(valid_file)
 
     engine = CrashReconciliationEngine(storage_root=str(storage_root))
     engine.record_transaction("tx-01", "EXECUTING", {"files": [str(valid_file)]})
@@ -35,6 +35,7 @@ def test_reconciliation_rolls_back_corrupted_files(tmp_path):
     summary = engine.reconcile_on_restart()
     assert "tx-02" in summary["ROLLED_BACK"]
     assert not corrupt_file.exists()
+    assert (storage_root / "orphaned" / "tx-02").exists()
 
 
 def test_reconciliation_cleans_orphaned_staging_files(tmp_path):
@@ -48,7 +49,7 @@ def test_reconciliation_cleans_orphaned_staging_files(tmp_path):
     summary = engine.reconcile_on_restart()
 
     assert not orphan.exists()
-    assert len(summary["ORPHANED"]) >= 1
+    assert (storage_root / "orphaned" / "unindexed").exists()
 
 
 def test_reconciliation_idempotency(tmp_path):

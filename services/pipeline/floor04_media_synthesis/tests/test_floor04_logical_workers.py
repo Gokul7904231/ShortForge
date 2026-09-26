@@ -39,8 +39,9 @@ def test_run_tts_worker(tmp_path):
 
     assert aud.asset_id == "aud-01"
     assert aud.duration_seconds == 5.5
-    assert aud.mime_type == "audio/mpeg"
+    assert aud.mime_type == "audio/wav"
     assert aud.file_size_bytes > 0
+    assert aud.sample_rate_hz == 44100
 
 
 def test_run_background_audio_worker(tmp_path):

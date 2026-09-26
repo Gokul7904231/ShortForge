@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Floor04-Production-Hardening-20260926",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor04-production-hardening-20260926",
+  "objective": "Complete the Floor 04 pre-training audit and harden the F03→F04→F05 media execution boundary without changing the locked parallel floor topology or authority hierarchy.",
+  "classification": "extends existing rule + new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Overseer remains sovereign production authority.",
+      "F03 and F04 remain parallel predecessors of F05.",
+      "Guardian authorizes worker execution; workers cannot self-authorize.",
+      "F03 remains provider-neutral planning; F04 owns physical media realization.",
+      "F07 remains final physical/semantic verification authority.",
+      "External research is evidence, not architecture authority."
+    ]
+  },
+  "forensicFindings": [
+    "Deterministic F04 workers previously emitted shallow synthetic byte stubs that could satisfy magic-byte checks without proving true physical dimensions/duration.",
+    "F04 handoff lineage did not require the exact F03 AssetPlanIR fingerprint.",
+    "Media registry writes were not atomic.",
+    "Crash reconciliation removed ambiguous staging artifacts instead of preserving forensic evidence.",
+    "F04 provider selection was not isolated behind an explicit allowlist seam.",
+    "F05 join validation did not confirm the exact F03 plan fingerprint carried through F04.",
+    "F03 handoff allowed missing AssetPlanIR even though F04 requires it."
+  ],
+  "changes": [
+    "Added exact F03 AssetPlanIR fingerprint binding to F04 physical assets and handoff.",
+    "Added ProviderExecutionRecord and bounded MediaProviderRegistry.",
+    "Replaced fake image bytes with standards-valid deterministic PNG output.",
+    "Replaced fake TTS/background-audio bytes with real deterministic WAV output.",
+    "Added actual PNG dimension and WAV/MP3 duration validation.",
+    "Added JPEG dimension validation.",
+    "Made media registry atomic and checksum-identity-safe.",
+    "Made transaction journal atomic and thread-safe.",
+    "Changed ambiguous recovery to quarantine evidence and preserve safe rollback semantics.",
+    "Added F05 exact plan-lineage and timeline asset-reference checks.",
+    "Made F03 handoff AssetPlanIR/fingerprint lineage mandatory and bumped F03 to 2.3.1.",
+    "Added F04 research/adoption ledger and .okf decision filing.",
+    "Added bounded provider-registry tests and standards-aware media fixtures."
+  ],
+  "research": [
+    "OpenAssetIO logical identity / traits",
+    "LTX-2 conditioning and keyframes",
+    "HunyuanVideo-1.5 efficient T2V/I2V execution",
+    "Wan2.2 hybrid T2V/I2V and cinematic controls",
+    "VBench-2.0 multidimensional evaluation",
+    "C2PA 2.4 provenance boundary",
+    "existing ShortForge image provider registry",
+    "existing ShortForge AudioPipeline / ffprobe boundary"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY-BOUNDARY_CHANGE",
+    "notes": "Security assertions are backed by code-level path containment, symlink checks, provider MIME trust checks, atomic registry writes, quarantine, and Guardian allowlisting. Full repository security lanes remain the final gate."
+  },
+  "trainingReadiness": {
+    "floor04": "NOT_PROMOTED_UNTIL_FRESH_CI",
+    "ascalon": "Bounded optimization/recommendation only; no authority promotion.",
+    "providerModels": "Candidate adapters only until benchmark + rights + physical validation + policy gates pass."
+  },
+  "evidenceRefs": [
+    "services/pipeline/floor04_media_synthesis/README.md",
+    "services/pipeline/floor04_media_synthesis/app/domain/handoff.py",
+    "services/pipeline/floor04_media_synthesis/app/services/provider_registry.py",
+    "services/pipeline/floor04_media_synthesis/app/services/pipeline.py",
+    "services/pipeline/floor04_media_synthesis/app/services/validator.py",
+    "services/pipeline/floor04_media_synthesis/app/services/registry.py",
+    "services/pipeline/floor04_media_synthesis/app/services/reconciliation.py",
+    "services/pipeline/floor04_media_synthesis/app/workers/image_worker.py",
+    "services/pipeline/floor04_media_synthesis/app/workers/tts_worker.py",
+    "services/pipeline/floor04_media_synthesis/app/workers/background_audio_worker.py",
+    "services/pipeline/floor04_media_synthesis/app/workers/media_package_worker.py",
+    "services/pipeline/floor04_media_synthesis/tests/media_fixtures.py",
+    "services/pipeline/floor04_media_synthesis/tests/unit/test_provider_registry.py",
+    "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+    "services/pipeline/floor03_asset_realization/app/domain/handoff.py",
+    "services/pipeline/floor03_asset_realization/app/core/identity.py",
+    ".okf/decisions.md",
+    ".okf/research/repo-mappings/f04-production-hardening-wave1.md",
+    ".okf/research/repo-mappings/f03-screened-wave5.md"
+  ],
+  "disposition": "PASS_PENDING_FRESH_CI"
+}
