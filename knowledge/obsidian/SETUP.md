@@ -111,3 +111,17 @@ ShortForge includes a small repository adapter for Obsidian Headless Sync.
     npm run obsidian:headless-sync:continuous
 
 Setup and login remain operator-managed. The adapter only forwards the configured vault path to the official headless client. Use one sync method per device.
+
+## SHORTFORGE KNOWLEDGE GRAPH
+
+The repository includes a dedicated Obsidian custom view at:
+
+    knowledge/.obsidian/plugins/shortforge-knowledge-graph/
+
+Enable **ShortForge Knowledge Graph** under Obsidian Community Plugins, then open:
+
+    Command Palette → Open ShortForge Knowledge Graph
+
+The graph is intentionally read-only. It reads vault links and semantic relation metadata and never writes runtime state.
+
+The view reproduces the requested relation-graph interaction model: force motion, node drag, cursor-centered zoom, background pan, hover isolation, relation labels, Display/Forces controls, and direct note navigation.
