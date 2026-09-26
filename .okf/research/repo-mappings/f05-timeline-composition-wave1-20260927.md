@@ -34,3 +34,31 @@ External repositories and research are evidence sources only. Executable ShortFo
 ## Explicit non-adoption
 
 No third-party code, provider credential, model weight, renderer, storage system or policy authority was copied into ShortForge. Research can shape boundary design but cannot override executable tests, Guardian policy or .okf.
+
+
+## Research Wave 2 — 2026-09-27
+
+### Recent evidence reviewed
+
+| Source | Recent signal | ShortForge disposition |
+|---|---|---|
+| PhiloLabs/agentic-vbench | 100 real post-production tasks across repair, assembly, sequencing and repurpose; deterministic verifiers plus rubric judges | ADOPTED AS EVALUATION PATTERN: keep programmatic hard gates separate from model-quality judgment |
+| Unified Agentic Video Editing (arXiv:2609.12769, 2026-09-11) | Hierarchical scene/shot metadata, structured intermediate decisions, creative objectives and explicit trade-offs | ADOPTED AS DECISION-TRACE PATTERN: TimelineProposalIR records scene order, transition policy and constraints without granting runtime authority |
+| BEAT (arXiv:2605.27067, 2026-05-26) | Rhythm-elastic music/shot alignment using structured signals and dynamic programming | ADOPTED AS FUTURE OPTIONAL SIGNAL: F05 may later add bounded rhythm cues; no music-sync authority is added here |
+| Agentic Video Generation via Executable Event Graphs (arXiv:2604.10383, 2026-04-11) | Formal event/time graphs plus a programmatic state backend to guarantee executability | ADOPTED AS ARCHITECTURAL SUPPORT: keep agent proposals typed and execution constraints deterministic |
+| remotion-dev/remotion v4.0.529 (2026-09-25) | Active frame-driven programmatic composition stack | RETAINED AS PRIMARY COMPOSITION REFERENCE behind TimelineIR; no renderer becomes semantic authority |
+| Lightricks/LTX-2 v1.3.0 (2026-08-26) | Recent deterministic inference and fractional-frame-rate work | RESEARCH-ONLY FOR F03/F04 PROVIDER CAPABILITIES; F05 stays engine-neutral |
+
+### Wave 2 implementation disposition
+
+1. Explicit upstream transition intent is preserved from F03 to F05.
+2. Zero-duration CUT transitions are first-class instead of silently converting all scenes to crossfades.
+3. Decoder smoke testing is separate from metadata inspection.
+4. Recovery is fail-closed unless the journal contains verifiable artifact identity.
+5. Idempotent render reuse performs a fresh SHA-256/size integrity check.
+6. TimelineBrain produces a typed proposal trace for Ascalon training and evaluation.
+7. The new proposal trace is evidence only; Guardian authorization and F07 remain authoritative.
+
+### Non-adoption
+
+No third-party renderer, agent harness, benchmark score, provider credential, model weight, or external policy was promoted into the production authority chain.
