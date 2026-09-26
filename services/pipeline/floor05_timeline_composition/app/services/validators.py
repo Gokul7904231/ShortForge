@@ -73,23 +73,19 @@ class PhysicalVideoValidator:
 
     @classmethod
     def validate_thumbnail(cls, file_path: str, storage_root: str) -> Tuple[str, int]:
-        p = Path(file_path).resolve()
+        raw_path = Path(file_path)
         root = Path(storage_root).resolve()
+        if raw_path.is_symlink():
+            raise GuardianValidationError(
+                f"Security Violation: Thumbnail must not be a symlink: {raw_path}"
+            )
+        p = raw_path.resolve()
         try:
             p.relative_to(root)
         except ValueError as exc:
             raise GuardianValidationError(
                 f"Security Violation: Thumbnail path {p} attempts path traversal outside {root}"
             ) from exc
-
-        if p.is_symlink():
-            target = p.readlink().resolve()
-            try:
-                target.relative_to(root)
-            except ValueError as exc:
-                raise GuardianValidationError(
-                    f"Security Violation: Thumbnail symlink target {target} escapes root {root}"
-                ) from exc
 
         if not p.exists() or not p.is_file():
             raise GuardianValidationError(f"Thumbnail File Error: Thumbnail does not exist at {p}")
@@ -116,8 +112,13 @@ class PhysicalVideoValidator:
         timeline_spec: TimelineSpec,
         storage_root: str,
     ) -> Tuple[str, str, int, float]:
-        p = Path(file_path).resolve()
+        raw_path = Path(file_path)
         root = Path(storage_root).resolve()
+        if raw_path.is_symlink():
+            raise GuardianValidationError(
+                f"Security Violation: Render output must not be a symlink: {raw_path}"
+            )
+        p = raw_path.resolve()
 
         try:
             p.relative_to(root)
@@ -125,15 +126,6 @@ class PhysicalVideoValidator:
             raise GuardianValidationError(
                 f"Security Violation: Render path {p} attempts path traversal outside {root}"
             ) from exc
-
-        if p.is_symlink():
-            target = p.readlink().resolve()
-            try:
-                target.relative_to(root)
-            except ValueError as exc:
-                raise GuardianValidationError(
-                    f"Security Violation: Render symlink target {target} escapes root {root}"
-                ) from exc
 
         if not p.exists() or not p.is_file():
             raise GuardianValidationError(f"Render File Error: Rendered video file does not exist at {p}")
