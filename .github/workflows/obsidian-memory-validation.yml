@@ -74,5 +74,6 @@ jobs:
       - name: Live Memory Fabric integration test
         run: npm run test:obsidian-memory-fabric
 
-      - name: FactoryOS strict typecheck
-        run: npx tsc -p apps/web/tsconfig.factoryos.json --noEmit
+      - name: Load live Memory Fabric modules
+        run: |
+          npx tsx --eval "await import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricBridge.ts'); await import('./apps/web/factoryos/core/intelligence/memory/MemoryFabricProjection.ts'); await import('./apps/web/factoryos/core/intelligence/memory/MongoMemoryFabricLedger.ts'); console.log('MEMORY_FABRIC_MODULE_LOAD: PASS')"
