@@ -45,6 +45,13 @@ export interface WorkerCapability {
   readonly rocmVersion?: string;
   readonly cudaVersion?: string;
   readonly ffmpegAvailable: boolean;
+  /**
+   * True only when the worker's declared render encoder is a hardware encoder
+   * exposed by the worker media stack. A physical GPU being present is not
+   * sufficient evidence by itself.
+   */
+  readonly hardwareVideoEncode?: boolean;
+  readonly videoEncoder?: string;
   readonly supportedCodecs?: string[];
   readonly supportedWorkloads?: string[];
   readonly maxConcurrency?: number;
