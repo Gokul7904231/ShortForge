@@ -150,6 +150,14 @@ export class IntelligenceGateway {
   }
 
   /**
+   * Agent-safe durable memory proposal. The proposal is never written
+   * directly; it is admitted only through MemoryWriter policy.
+   */
+  public async proposeVerifiedMemory(proposal: CandidateMemoryProposal) {
+    return this.memoryFabric.proposeVerifiedMemory(proposal);
+  }
+
+  /**
    * Diagnostic: Factory Memory Doctor
    */
   public memoryDoctor(): SystemDoctorReport {
