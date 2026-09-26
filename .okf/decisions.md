@@ -1159,3 +1159,37 @@ Latest verified `main` is `0fa169cae74c9b77def147df55dc4572b91769d2`. Post-merge
 **Research basis:** current Obsidian supports core plugins including Bases, Canvas, Graph, Properties, Templates and Sync; official Web Clipper supports templates and Interpreter; Obsidian CLI supports scripted vault operations; Obsidian Headless supports agent/CI synchronization. These surfaces are used without making the desktop app a production dependency.
 
 **Rollback:** remove the Obsidian integration files and this decision entry. Existing knowledge/ and runtime memory systems remain valid.
+
+
+## Live Obsidian Memory Fabric Runtime Integration — 2026-09-26
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Connect the existing FactoryOS runtime event boundary and MongoDB operational state to the Obsidian-compatible knowledge vault through a dedicated MemoryFabricBridge.
+
+**Authority invariants:**
+- MongoDB operational collections remain runtime state.
+- DurableEventBus remains runtime event transport.
+- memory_fabric_events and memory_fabric_offsets are ingestion/checkpoint state only.
+- knowledge/ remains derived cognitive memory.
+- MemoryWriter remains the durable promotion gate.
+- .okf remains governance authority.
+- Ascalon receives bounded verified projections and cannot alter runtime state.
+
+**Integration behavior:**
+1. Ingest runtime events immediately through the existing DurableEventBus.
+2. Consume MongoDB insert/update/replace changes with a resumable change stream when supported.
+3. Run bounded periodic MongoDB reconciliation as a correctness backstop.
+4. Sanitize credentials and sensitive fields before persistence to the vault.
+5. Materialize raw observations with source hashes and temporal metadata.
+6. Compile high-signal runtime records into explicit candidate memories.
+7. Promote only explicitly verified candidates; unresolved or disputed memories remain out of active projection.
+8. Automatically supersede older active memories when the same verified conflict group is promoted.
+9. Generate a bounded Ascalon memory projection containing only verified active memories explicitly marked training_eligible.
+10. Expose bounded agent read/write access through IntelligenceGateway and the MemoryFabricProjectionService.
+
+**Operational configuration:** MEMORY_FABRIC_ENABLED, MEMORY_FABRIC_VAULT_PATH, MEMORY_FABRIC_RECONCILIATION_MS.
+
+**Rollback:** disable MEMORY_FABRIC_ENABLED. Remove the bridge and ledger integration without changing runtime authority or the existing KnowledgeOS/MemoryWriter boundary.
+
+**Validation:** integration tests, vault lint, generated catalog validation, and strict FactoryOS TypeScript validation are required before merge.
