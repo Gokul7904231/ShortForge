@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import tempfile
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -28,28 +29,31 @@ class CrashReconciliationEngine:
             else self.storage_root / "transaction_journal.json"
         )
         self.orphan_root = self.storage_root / "orphaned"
+        self._lock = threading.RLock()
         self.storage_root.mkdir(parents=True, exist_ok=True)
         self.orphan_root.mkdir(parents=True, exist_ok=True)
 
     def record_transaction(self, transaction_id: str, state: str, details: Dict) -> None:
-        journal = self._load_journal()
-        journal[transaction_id] = {
-            "state": state,
-            "details": details,
-        }
-        self._atomic_write(journal)
+        with self._lock:
+            journal = self._load_journal()
+            journal[transaction_id] = {
+                "state": state,
+                "details": details,
+            }
+            self._atomic_write(journal)
 
     def add_transaction_file(self, transaction_id: str, file_path: str) -> None:
-        journal = self._load_journal()
-        record = journal.setdefault(
-            transaction_id,
-            {"state": "EXECUTING", "details": {"files": []}},
-        )
-        details = record.setdefault("details", {})
-        files = details.setdefault("files", [])
-        if file_path not in files:
-            files.append(file_path)
-        self._atomic_write(journal)
+        with self._lock:
+            journal = self._load_journal()
+            record = journal.setdefault(
+                transaction_id,
+                {"state": "EXECUTING", "details": {"files": []}},
+            )
+            details = record.setdefault("details", {})
+            files = details.setdefault("files", [])
+            if file_path not in files:
+                files.append(file_path)
+            self._atomic_write(journal)
 
     def _load_journal(self) -> Dict[str, Dict]:
         if not self.journal_path.exists():
