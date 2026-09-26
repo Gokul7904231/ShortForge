@@ -201,3 +201,28 @@ These mappings are research inputs only. No provider code, weights, workflows, o
 | divolleggett/character-consistency-skill | Reference-first storyboard and reference reuse | Pattern Extraction | F03 continuity/reference strategy | ADOPTED |
 | taylorzhou16/video-gen-en | Layered storyboard and parameter consistency | Pattern Extraction | F03 typed planning discipline | ADOPTED |
 | NVIDIA-NeMo/Guardrails | Independent validation rails | Architecture Reference | F03 validation-boundary discipline | ADOPTED |
+
+
+## Floor 03 Research Wave 5 — 2026-09-26
+
+| Repository | Capability observed | ShortForge treatment | Status |
+|---|---|---|---|
+| OpenAssetIO/OpenAssetIO | Logical asset identity, resolver boundary, typed traits | ReferenceBinding entity_ref/version/traits | ADOPTED |
+| OpenAssetIO/OpenAssetIO-MediaCreation | Typed media-creation trait boundary | Reference metadata discipline | ADOPTED |
+| AcademySoftwareFoundation/OpenTimelineIO | Logical source range vs available media | Preserve semantic asset intent independently of resolved media | ADOPTED |
+| Comfy-Org/ComfyUI | Graph cache and partial re-execution | Dependency-node fingerprint lineage | ADOPTED |
+| huggingface/diffusers | Modular conditioning | ConditioningSpec | ADOPTED |
+| OpenLineage/OpenLineage | Typed lineage/facets | PlanLineage/source fingerprints | ADOPTED |
+| dagster-io/dagster | Explicit asset dependencies/checks | Structural dependency validation | ADOPTED |
+| HVision-NKU/StoryDiffusion | Long-range consistency | First-class continuity/reference strategy | ADOPTED |
+| instantX-research/InstantID | Identity reference conditioning | Identity ConditioningSpec | ADOPTED |
+| ali-vilab/VideoComposer | Spatial/temporal conditioning | Typed control and motion intent | ADOPTED |
+| Lightricks/LTX-Video | Conditioning strength/start frame | Typed temporal conditioning | ADOPTED |
+| Lightricks/LTX-2 | Keyframe/video/HDR conditioning | Boundary reference; provider mechanics remain downstream | REFERENCE_ONLY |
+| contentauth/c2pa-rs | Manifest/ingredient/assertion provenance | Future F07 signing/verification boundary | REFERENCE_ONLY |
+| Vchitect/VBench | Multidimensional video quality | Downstream evaluation | REFERENCE_ONLY |
+| iterative/dvc | Dependency-aware reproducibility | Semantic source/node/plan fingerprints | ADOPTED |
+| invoke-ai/InvokeAI | Saved workflow vs execution graph | Non-executable AssetPlanIR boundary | ADOPTED |
+| Additional storyboard/director repositories | Shot, camera, reference and continuity patterns | Existing typed scene planning fields | PATTERN_EXTRACTION |
+
+No third-party runtime code or model/provider dependency was added.
