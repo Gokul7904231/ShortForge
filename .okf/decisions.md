@@ -1048,3 +1048,57 @@ Latest targeted validation:
 - Team Change Gate: passed.
 
 Full repository CI remains a separate gate.
+
+
+## F03 Research Wave 5 — 2026-09-26
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Further harden the Floor 03 planning artifact using broader media-interoperability, graph-execution, conditioning, lineage and reproducibility research. Preserve F03 as a declarative specification boundary and preserve the canonical topology F02 -> (F03 || F04) -> F05.
+
+### New research corpus
+
+The wave includes additional GitHub repositories beyond the original nine and earlier F03 waves:
+- OpenAssetIO/OpenAssetIO and OpenAssetIO/OpenAssetIO-MediaCreation
+- AcademySoftwareFoundation/OpenTimelineIO
+- Comfy-Org/ComfyUI
+- huggingface/diffusers
+- OpenLineage/OpenLineage
+- dagster-io/dagster
+- HVision-NKU/StoryDiffusion
+- instantX-research/InstantID
+- ali-vilab/VideoComposer
+- Lightricks/LTX-Video and Lightricks/LTX-2
+- contentauth/c2pa-rs
+- Vchitect/VBench
+- iterative/dvc
+- invoke-ai/InvokeAI
+- additional storyboard/cinematic/continuity mappings recorded under .okf/research/repo-mappings/
+
+### Promoted implementation
+
+1. AssetPlanIR schema advances to 1.4.0.
+2. ReferenceBinding can carry opaque entity_ref, version_selector and traits, separating logical identity from storage/provider resolution.
+3. VisualPromptPlan carries typed ConditioningSpec entries with conditioning type, strength and bounded temporal application.
+4. AssetPlanIR validates that every conditioning is backed by an explicit visual reference.
+5. AssetDependency carries an optional dependency_node_fingerprint so semantic cache lineage follows upstream node changes.
+6. Dependency validation now checks ordering and validates the recorded upstream node fingerprint.
+7. Regeneration remaps dependency asset identity and dependency-node fingerprints in sequence order, allowing exact downstream cache invalidation without rebuilding unrelated branches.
+8. Scene planning now emits logical identity metadata for character, style and continuity references.
+
+### Boundary decisions
+
+- OpenAssetIO informs reference identity only; F03 does not resolve storage paths.
+- OpenTimelineIO informs logical-vs-available media separation; F03 does not own media relinking.
+- ComfyUI/DVC/Dagster inform graph/cache semantics; F03 does not become a workflow executor.
+- Diffusers/InstantID/VideoComposer/LTX inform typed conditioning; F03 does not select or execute a model/provider.
+- OpenLineage/C2PA inform provenance boundaries; F03 does not sign or release artifacts.
+- VBench informs downstream evaluation; F03 does not self-certify quality.
+
+### Authority invariant
+
+Overseer remains sovereign. Guardian remains capability/safety authority. F03 remains planning/specification only. TimelineIR remains downstream semantic composition truth. RenderFabric remains physical execution orchestration. F07 remains physical verification authority.
+
+### Validation required
+
+Fresh F03 Python tests, Guardian tests, ontology JSON validation, TypeScript contract checks, and repository CI are required after this wave. No merge or production-green claim is made from earlier CI runs.
