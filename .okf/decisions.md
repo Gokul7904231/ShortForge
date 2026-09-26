@@ -1102,3 +1102,18 @@ Overseer remains sovereign. Guardian remains capability/safety authority. F03 re
 ### Validation required
 
 Fresh F03 Python tests, Guardian tests, ontology JSON validation, TypeScript contract checks, and repository CI are required after this wave. No merge or production-green claim is made from earlier CI runs.
+
+
+## F03 post-merge canonicalization — 2026-09-26
+
+**Decision:** Canonicalize production Floor 03 execution through `Floor03RuntimeAdapter -> services/pipeline/floor03_asset_realization` and remove the duplicate TemplateProductionPipeline asset-planning path from the Overseer production executor. Test-only simulations may remain outside production, but no production fallback may bypass the canonical F03 service.
+
+**F03→F05 contract:** Floor 05 now accepts an explicit typed `floor03_payload` alongside the independent `floor04_payload`. The F04 envelope remains a physical-media source, not the authority for F03 semantics. F05 rejects lineage mismatches before composition.
+
+**Evidence truth:** F03 reports measured runtime execution of the planning service, never physical media success. Physical artifact truth remains downstream of F05/F06.
+
+**Persistence:** The F03 Python JSON store is local idempotency/cache state only. The canonical Overseer handoff is persisted to the distributed FactoryOS control-plane store with immutable request identity and conflict detection.
+
+**CI:** A dedicated post-merge F03 workflow now validates the merged main branch. Repository-wide TypeScript errors discovered on the prior main run are corrected in the same hardening branch and must pass before promotion.
+
+**Ascalon readiness:** Do not promote the updated F03 ontology as runtime truth until the canonical runtime adapter, explicit F03→F05 join, distributed handoff persistence, scoped post-merge gate, and repository-wide typecheck all pass on main.
