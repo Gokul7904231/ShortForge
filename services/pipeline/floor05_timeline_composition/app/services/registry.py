@@ -88,14 +88,20 @@ class TimelineRegistry:
                     and record.get("state") == "COMMITTED"
                     and record.get("artifact_reference")
                 ):
-                    artifact_path = Path(record["artifact_reference"])
+                    raw_artifact_path = Path(record["artifact_reference"])
+                    if raw_artifact_path.is_symlink():
+                        logger.warning(
+                            "committed_render_symlink_rejected",
+                            path=str(raw_artifact_path),
+                        )
+                        continue
+                    artifact_path = raw_artifact_path.resolve()
                     try:
-                        artifact_path = artifact_path.resolve()
                         artifact_path.relative_to(self.storage_root)
                     except ValueError:
                         logger.warning("committed_render_path_outside_storage", path=str(artifact_path))
                         continue
-                    if artifact_path.is_symlink() or not artifact_path.exists() or not artifact_path.is_file():
+                    if not artifact_path.exists() or not artifact_path.is_file():
                         continue
                     expected_size = record.get("artifact_size_bytes")
                     expected_sha = record.get("artifact_sha256")
