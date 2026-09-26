@@ -153,7 +153,9 @@
         "assetPlanId",
         "assetPlanVersion",
         "planFingerprint",
+        "nodeFingerprint",
         "sourceFingerprint",
+        "conditioningBindings",
         "lineage",
         "platform",
         "aspectRatio",
@@ -163,7 +165,7 @@
       ],
       "authority": "overseer",
       "trainingEligible": true,
-      "simulationRole": "Deterministically compiles provider-neutral AssetPlanIR 1.3.0, validates dependency/reference graph integrity, derives cinematic coverage and continuity strategy, computes semantic plan/node fingerprints independent of runtime asset IDs, records upstream lineage, computes transitive repair impact, and preserves dependency edges across local regeneration. Physical generation and provider execution remain outside F03."
+      "simulationRole": "Deterministically compiles provider-neutral AssetPlanIR 1.4.0, validates dependency/reference/conditioning graph integrity, derives cinematic coverage and continuity strategy, emits logical reference identity and typed conditioning bindings, computes semantic plan/node fingerprints with dependency-version lineage, records upstream lineage, computes transitive repair impact, and preserves/remaps dependency and reference edges across local regeneration. Physical generation and provider execution remain outside F03."
     },
     {
       "floorId": "floor04_media_synthesis",
