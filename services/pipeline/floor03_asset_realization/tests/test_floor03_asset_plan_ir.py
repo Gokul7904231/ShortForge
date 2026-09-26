@@ -60,6 +60,7 @@ def _node(
         node_fingerprint=node_fingerprint or stable_sha256({"node": scene_id}),
         visual=visual,
         dependencies=[dependency] if dependency else [],
+        target_duration_seconds=1.0,
         impact_radius=[],
     )
 
