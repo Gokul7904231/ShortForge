@@ -22,8 +22,8 @@
     "Reconciled F03 README, Ascalon ontology, OKF decisions, and training-readiness documentation."
   ],
   "trainingAdmission": "ADMITTED_FOR_ASCALON_TRAINING_DATA_PREPARATION",
-  "finalMainCommit": "e341b6f9e8d2a090812b038dbc7cde90d0b83e2a",
-  "finalVerificationRun": "36219440438",
+  "finalMainCommit": "0fa169cae74c9b77def147df55dc4572b91769d2",
+  "finalVerificationRun": "36219665043",
   "verificationResults": {
     "f03Suite": "37 passed",
     "f03Guardian": "1 passed",
@@ -32,5 +32,11 @@
     "repositoryTypecheck": "PASS",
     "mainRequiredChecks": "PASS"
   },
-  "disposition": "PASS"
+  "disposition": "PASS",
+  "repositoryCiRun": "36219665012",
+  "verificationHistory": [
+    "Initial merged-main verification exposed verifier-only environment defects.",
+    "PR #21 installed apps/web dependencies for typecheck and added the Floor 04 compatibility namespace.",
+    "Corrected merged-main verification run 36219665043 passed both post-merge jobs."
+  ]
 }
