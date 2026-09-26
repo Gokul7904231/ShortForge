@@ -167,7 +167,7 @@ class ReferenceRenderWorker:
                 "-pix_fmt",
                 "yuv420p",
                 "-r",
-                "30",
+                str(timeline_spec.target_fps),
                 "-c:a",
                 "aac",
                 "-ar",
