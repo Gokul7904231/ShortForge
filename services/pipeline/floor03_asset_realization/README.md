@@ -7,7 +7,7 @@
 
 ## Purpose
 
-Floor 03 is the **visual asset planning/specification floor**. It transforms the trusted Floor 02 handoff into provider-neutral, versioned visual asset requirements and a typed `AssetPlanIR`. It does **not** generate physical images/video and it does **not** select provider credentials.
+Floor 03 is the **visual asset planning/specification floor**. It transforms the trusted Floor 02 handoff into provider-neutral, versioned visual asset requirements and a typed `AssetPlanIR` (schema `1.4.0`). It does **not** generate physical images/video and it does **not** select provider credentials.
 
 The canonical production topology remains:
 
@@ -109,3 +109,18 @@ The historical repository evidence recorded 25 F03 tests and a 79-test combined 
 - Existing dependency DAG validation, transitive repair impact, semantic plan fingerprinting, and surgical asset identity renewal remain intact.
 
 Research mappings for these decisions are maintained under `.okf/research/repo-mappings/`.
+
+## Research Wave 5 additions — 2026-09-26
+
+Broader GitHub research now informs the planning contract without importing any external runtime.
+
+- OpenAssetIO-inspired logical reference identity is represented through opaque entity references, optional version selectors and traits.
+- Diffusers / InstantID / VideoComposer / LTX research is represented through provider-neutral typed conditioning with strength and bounded temporal application.
+- ComfyUI / DVC / Dagster research is represented through explicit dependency-node fingerprints so surgical regeneration invalidates the affected downstream subgraph without forcing unrelated nodes to rebuild.
+- OpenLineage research is reflected in typed plan lineage and semantic fingerprints.
+- OpenTimelineIO research reinforces that F03 owns logical asset intent while resolved physical media remains a downstream concern.
+- C2PA and VBench remain downstream provenance/verification and quality-evaluation references.
+
+The canonical AssetPlanIR validator now checks dependency order, dependency identity, recorded upstream node fingerprints, and conditioning-to-reference bindings.
+
+Fresh CI is still required for promotion of this research wave.
