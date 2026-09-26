@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.inFolder("research")
+
+views:
+  - type: table
+    name: Research registry
+    order:
+      - file.name
+      - title
+      - status
+      - sf_epistemic_state
+      - sf_verification_state
+      - updated_at
