@@ -208,3 +208,18 @@ Important limitation:
 - the capability model now exposes the declared encoder and a separate hardware-video-encode flag so GPU presence cannot be mistaken for hardware media encoding.
 
 The remaining admission requirement is the canonical live F06 control-plane test and its CAS/F07 completion evidence.
+
+
+## Floor 05 wave 2 temporal contract — 2026-09-27
+
+F05 consumes F03's existing provider-neutral semantic signals and compiles them into TimelineIR/TimelineSpec.
+
+The boundary is:
+
+F02 semantic transition intent
+→ F03 preserved visual requirement metadata
+→ F05 deterministic CUT/CROSSFADE + frame alignment
+→ F06 production render execution
+→ F07 final verification
+
+F05 reference rendering is evidence generation only; it does not acquire the F06 distributed render capability.
