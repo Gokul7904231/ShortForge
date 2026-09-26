@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-F03-PostMerge-Hardening-20260926",
+  "baseRef": "main",
+  "hardeningRef": "fix/f03-post-merge-hardening-20260926",
+  "findings": [
+    "Canonical Overseer F03 execution previously diverged from the canonical Python F03 service.",
+    "F03->F05 semantics were indirectly recovered from the F04 envelope.",
+    "F03 completion evidence could be confused with physical-media execution.",
+    "F03 local JSON memory was not a distributed operational authority.",
+    "Dedicated F03 post-merge CI was absent.",
+    "Repository-wide TypeScript CI had unrelated contract errors on merged main.",
+    "Pre-merge OKF/Team report state was stale after PR #19 merge."
+  ],
+  "remediations": [
+    "Added Floor03RuntimeAdapter and removed the production Overseer F03 planning fallback.",
+    "Added Floor03DurableHandoffStore with immutable request identity and fingerprint conflict detection.",
+    "Added explicit Floor05Input.floor03_payload plus F03/F04 lineage validation.",
+    "Changed F03 completion evidence to measured planning-runtime evidence and explicitly states no physical media produced.",
+    "Added .github/workflows/floor03-post-merge.yml.",
+    "Fixed repository-wide TypeScript contract errors identified on the merged main CI run.",
+    "Reconciled F03 README, Ascalon ontology, OKF decisions, and training-readiness documentation."
+  ],
+  "trainingAdmission": "BLOCKED_UNTIL_MAIN_POST_MERGE_GREEN"
+}
