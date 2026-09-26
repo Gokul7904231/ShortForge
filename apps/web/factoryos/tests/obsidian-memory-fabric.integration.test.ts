@@ -48,7 +48,11 @@ async function testLiveIngestion(): Promise<void> {
     },
   );
 
-  await new Promise((resolve) => setTimeout(resolve, 25));
+  for (let i = 0; i < 20; i += 1) {
+    if (store.list().some((doc) => doc.filePath.includes("obsidian/raw/runtime"))) break;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  await bridge.drain();
 
   const rawFiles = store.list().filter((doc) => doc.filePath.includes("obsidian/raw/runtime"));
   const candidateFiles = store.list().filter((doc) => doc.filePath.includes("obsidian/candidates"));
@@ -143,7 +147,11 @@ async function testExplicitPromotion(): Promise<void> {
     { source: "verified-test" },
   );
 
-  await new Promise((resolve) => setTimeout(resolve, 25));
+  for (let i = 0; i < 20; i += 1) {
+    if (store.list().some((doc) => doc.frontmatter.sf_lifecycle === "active")) break;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  await bridge.drain();
 
   const promoted = store
     .list()
