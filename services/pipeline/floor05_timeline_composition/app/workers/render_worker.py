@@ -130,23 +130,28 @@ class ReferenceRenderWorker:
             previous_scene = scene_ids[index - 1]
             current_scene = scene_ids[index]
             transition_duration = transitions.get((previous_scene, current_scene), 0.0)
-            if transition_duration <= 0:
-                raise RuntimeError(
-                    f"F05 reference renderer cannot join scene {previous_scene} -> {current_scene} without a transition."
-                )
-
             next_label = f"[v{index}]"
-            offset = max(0.0, cumulative_video_duration - transition_duration)
-            filter_parts.append(
-                f"{video_label}[{index}:v]xfade=transition=fade:duration={transition_duration:.6f}:offset={offset:.6f}{next_label}"
-            )
-            video_label = next_label
-            cumulative_video_duration += segments[index][1] - transition_duration
-
             audio_next_label = f"[a{index}]"
-            filter_parts.append(
-                f"{audio_label}[{index}:a]acrossfade=d={transition_duration:.6f}:c1=tri:c2=tri{audio_next_label}"
-            )
+
+            if transition_duration > 0:
+                offset = max(0.0, cumulative_video_duration - transition_duration)
+                filter_parts.append(
+                    f"{video_label}[{index}:v]xfade=transition=fade:duration={transition_duration:.6f}:offset={offset:.6f}{next_label}"
+                )
+                filter_parts.append(
+                    f"{audio_label}[{index}:a]acrossfade=d={transition_duration:.6f}:c1=tri:c2=tri{audio_next_label}"
+                )
+                cumulative_video_duration += segments[index][1] - transition_duration
+            else:
+                filter_parts.append(
+                    f"{video_label}[{index}:v]concat=n=2:v=1:a=0{next_label}"
+                )
+                filter_parts.append(
+                    f"{audio_label}[{index}:a]concat=n=2:v=0:a=1{audio_next_label}"
+                )
+                cumulative_video_duration += segments[index][1]
+
+            video_label = next_label
             audio_label = audio_next_label
 
         filter_complex = ";".join(filter_parts)

@@ -1,6 +1,7 @@
 """Atomic local registry for TimelineSpec and RenderJob provenance."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import threading
@@ -86,7 +87,47 @@ class TimelineRegistry:
                     record.get("render_input_hash") == render_input_hash
                     and record.get("state") == "COMMITTED"
                     and record.get("artifact_reference")
-                    and Path(record["artifact_reference"]).exists()
                 ):
+                    raw_artifact_path = Path(record["artifact_reference"])
+                    if raw_artifact_path.is_symlink():
+                        logger.warning(
+                            "committed_render_symlink_rejected",
+                            path=str(raw_artifact_path),
+                        )
+                        continue
+                    artifact_path = raw_artifact_path.resolve()
+                    try:
+                        artifact_path.relative_to(self.storage_root)
+                    except ValueError:
+                        logger.warning("committed_render_path_outside_storage", path=str(artifact_path))
+                        continue
+                    if not artifact_path.exists() or not artifact_path.is_file():
+                        continue
+                    expected_size = record.get("artifact_size_bytes")
+                    expected_sha = record.get("artifact_sha256")
+                    if not expected_size or not expected_sha:
+                        logger.warning(
+                            "committed_render_missing_physical_identity",
+                            render_job_id=record.get("render_job_id"),
+                        )
+                        continue
+                    actual_size = artifact_path.stat().st_size
+                    if actual_size != int(expected_size):
+                        logger.warning(
+                            "committed_render_size_mismatch",
+                            render_job_id=record.get("render_job_id"),
+                            expected=expected_size,
+                            actual=actual_size,
+                        )
+                        continue
+                    actual_sha = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+                    if actual_sha != expected_sha:
+                        logger.warning(
+                            "committed_render_checksum_mismatch",
+                            render_job_id=record.get("render_job_id"),
+                            expected=expected_sha,
+                            actual=actual_sha,
+                        )
+                        continue
                     return RenderJobSpecification.model_validate(record)
         return None

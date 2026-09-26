@@ -134,3 +134,15 @@ Fresh CI is still required for promotion of this research wave.
 ### F03→F04 contract hardening — 2.3.1
 
 The validated F03 handoff now requires AssetPlanIR plus a semantic plan fingerprint. The plan ID and script lineage are checked against the handoff. This is a patch-level enforcement change only; F03 remains provider-neutral and non-executing.
+
+
+## F03 → F05 temporal-intent preservation — 2026-09-27
+
+F03 now preserves Floor 02's existing `transition_intent` value inside the already-authorized `continuity_constraints` field of each visual requirement. This is a transport/provenance improvement, not a new execution authority.
+
+Supported downstream intent values are normalized from F02 semantics by F05 into:
+
+- `CUT`
+- bounded `CROSSFADE`
+
+F03 still does not choose a renderer, render a timeline, own physical media, or authorize execution. The change exists so F05 no longer has to silently invent a transition policy when F02 already supplied one.

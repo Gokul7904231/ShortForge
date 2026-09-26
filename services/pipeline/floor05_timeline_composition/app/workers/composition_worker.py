@@ -42,6 +42,25 @@ class TimelineCompositionWorker:
     def _map_audio_assets(payload: Floor04HandoffPayload) -> Dict[str, object]:
         return {asset.asset_id: asset for asset in payload.synthesized_audio_assets}
 
+    @staticmethod
+    def _transition_intent(visual_req: VisualAssetRequirement) -> str:
+        raw = str(visual_req.continuity_constraints.get("transition_intent") or "cut").strip().lower()
+        aliases = {
+            "cut": "CUT",
+            "hard_cut": "CUT",
+            "none": "CUT",
+            "crossfade": "CROSSFADE",
+            "cross-fade": "CROSSFADE",
+            "dissolve": "CROSSFADE",
+            "fade": "CROSSFADE",
+        }
+        if raw not in aliases:
+            raise ValueError(
+                f"Unsupported transition_intent '{raw}' for scene {visual_req.scene_id}. "
+                "Expected cut or crossfade-compatible intent."
+            )
+        return aliases[raw]
+
     @classmethod
     def assemble_timeline(
         cls,
@@ -106,22 +125,24 @@ class TimelineCompositionWorker:
             scene_duration = max(visual_duration, audio_duration)
 
             transition_duration = 0.0
+            transition_type = "CUT"
             if previous_scene_id is not None:
-                transition_duration = min(
-                    0.5,
-                    previous_visual_duration / 2.0,
-                    scene_duration / 2.0,
-                )
-                if transition_duration > 0:
-                    transitions.append(
-                        TransitionSpec(
-                            transition_id=f"trans-{idx}",
-                            from_scene_id=previous_scene_id,
-                            to_scene_id=visual_req.scene_id,
-                            transition_type="CROSSFADE",
-                            duration_seconds=transition_duration,
-                        )
+                transition_type = cls._transition_intent(visual_req)
+                if transition_type == "CROSSFADE":
+                    transition_duration = min(
+                        0.5,
+                        previous_visual_duration / 2.0,
+                        scene_duration / 2.0,
                     )
+                transitions.append(
+                    TransitionSpec(
+                        transition_id=f"trans-{idx}",
+                        from_scene_id=previous_scene_id,
+                        to_scene_id=visual_req.scene_id,
+                        transition_type=transition_type,
+                        duration_seconds=transition_duration,
+                    )
+                )
 
             scene_start = max(0.0, current_end - transition_duration)
 

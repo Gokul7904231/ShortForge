@@ -284,3 +284,12 @@ The latest integration pass makes the F03→F04 contract mechanically enforceabl
 - This change exists specifically to prevent F04 from having to reconstruct or guess planning truth.
 
 Research boundary remains locked: provider choice, physical generation, provenance signing and quality judgment remain downstream.
+
+
+## Floor 05 integration wave — 2026-09-27
+
+F03 remains schema-compatible at the handoff boundary while preserving one previously available F02 semantic signal, `transition_intent`, inside the existing visual requirement `continuity_constraints` transport map.
+
+This closes a cross-floor semantic-loss gap: F02 may declare a transition policy, F03 now preserves it, and F05 consumes it deterministically.
+
+No provider, renderer, compute authority, credential, or F07 release authority was added to F03.

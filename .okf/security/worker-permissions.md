@@ -532,3 +532,18 @@ An MCP call can retrieve information or request an external side effect, but it 
 - certify F07
 - mint ReleaseAuthorization
 - convert provider success into verified production completion
+
+
+### F05 reference-render clarification — 2026-09-27
+
+`CAP_TIMELINE_COMPILE` includes bounded local reference rendering only as evidence generation for the F05 convergence gate.
+
+It does **not** grant:
+
+- `CAP_RENDER_DISPATCH`
+- distributed compute routing
+- provider credential access
+- F06 worker lease/fencing authority
+- F07 release authority
+
+The reference artifact is evidence consumed by the F05/F06 contract; it is not the production distributed render.
