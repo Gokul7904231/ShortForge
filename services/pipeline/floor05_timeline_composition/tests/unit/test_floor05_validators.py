@@ -1,18 +1,21 @@
-"""Unit tests for PhysicalVideoValidator and SemanticCompositionValidator (S1-S10 Invariants)."""
+"""Unit tests for physical and semantic Floor 05 validation."""
+from shutil import which
+import subprocess
 
-from pathlib import Path
 import pytest
 
 from factoryos.guardian.core.exceptions import GuardianValidationError
 from floors.floor05_timeline_composition.app.domain.handoff import (
     RenderJobSpecification,
-    RenderJobState,
     SubtitleItem,
     TimelineClip,
     TimelineSpec,
     TimelineTrackType,
 )
-from floors.floor05_timeline_composition.app.services.validators import PhysicalVideoValidator, SemanticCompositionValidator
+from floors.floor05_timeline_composition.app.services.validators import (
+    PhysicalVideoValidator,
+    SemanticCompositionValidator,
+)
 
 
 @pytest.fixture
@@ -22,9 +25,48 @@ def storage_setup(tmp_path):
     return root
 
 
+def _make_real_mp4(path, duration=1.0):
+    ffmpeg = which("ffmpeg")
+    if ffmpeg is None:
+        pytest.skip("ffmpeg is required for physical media tests")
+    subprocess.run(
+        [
+            ffmpeg,
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=black:s=1080x1920:r=30",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=48000:cl=stereo",
+            "-t",
+            str(duration),
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
+            "-movflags",
+            "+faststart",
+            str(path),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
 def test_valid_physical_video_validation(storage_setup):
     mp4_file = storage_setup / "valid.mp4"
-    mp4_file.write_bytes(b"\x00\x00\x00\x1cftypisom\x00\x00\x02\x00isomiso2avc1mp41Valid MP4 Stream Data")
+    _make_real_mp4(mp4_file, duration=1.0)
 
     spec = TimelineSpec(
         timeline_id="tl-valid",
@@ -32,9 +74,28 @@ def test_valid_physical_video_validation(storage_setup):
         target_height=1920,
         target_fps=30,
         aspect_ratio="9:16",
-        total_duration_seconds=10.0,
+        total_duration_seconds=1.0,
+        clips=[
+            TimelineClip(
+                clip_id="visual",
+                scene_id="sc1",
+                track_type=TimelineTrackType.VISUAL,
+                start_time=0.0,
+                end_time=1.0,
+                source_asset_id="vis-1",
+                source_file_path="/path/1.png",
+            ),
+            TimelineClip(
+                clip_id="voice",
+                scene_id="sc1",
+                track_type=TimelineTrackType.NARRATION,
+                start_time=0.0,
+                end_time=1.0,
+                source_asset_id="aud-1",
+                source_file_path="/path/1.wav",
+            ),
+        ],
     )
-
     job = RenderJobSpecification(
         render_job_id="job-v",
         request_id="req-v",
@@ -54,7 +115,7 @@ def test_valid_physical_video_validation(storage_setup):
     assert mime == "video/mp4"
     assert len(sha) == 64
     assert size > 0
-    assert dur == 10.0
+    assert 0.9 <= dur <= 1.1
 
 
 def test_physical_video_path_traversal_rejection(storage_setup, tmp_path):
@@ -62,17 +123,29 @@ def test_physical_video_path_traversal_rejection(storage_setup, tmp_path):
     outside.write_bytes(b"\x00\x00\x00\x1cftypisom")
 
     spec = TimelineSpec(
-        timeline_id="tl-out", target_width=1080, target_height=1920, target_fps=30, aspect_ratio="9:16", total_duration_seconds=5.0
+        timeline_id="tl-out",
+        target_width=1080,
+        target_height=1920,
+        target_fps=30,
+        aspect_ratio="9:16",
+        total_duration_seconds=1.0,
     )
     job = RenderJobSpecification(
-        render_job_id="job-out", request_id="req-out", timeline_id="tl-out", render_input_hash="a" * 64, authorization_reference="a", idempotency_key="i"
+        render_job_id="job-out",
+        request_id="req-out",
+        timeline_id="tl-out",
+        render_input_hash="a" * 64,
+        authorization_reference="a",
+        idempotency_key="i",
     )
 
-    with pytest.raises(GuardianValidationError) as exc:
+    with pytest.raises(GuardianValidationError, match="Security Violation"):
         PhysicalVideoValidator.validate_rendered_video(
-            file_path=str(outside), render_job=job, timeline_spec=spec, storage_root=str(storage_setup)
+            file_path=str(outside),
+            render_job=job,
+            timeline_spec=spec,
+            storage_root=str(storage_setup),
         )
-    assert "Security Violation" in str(exc.value)
 
 
 def test_semantic_validator_s1_missing_visual_clips_rejection():
@@ -82,73 +155,102 @@ def test_semantic_validator_s1_missing_visual_clips_rejection():
         target_height=1920,
         target_fps=30,
         aspect_ratio="9:16",
-        total_duration_seconds=5.0,
-        clips=[],  # No visual clips
+        total_duration_seconds=1.0,
+        clips=[],
     )
     job = RenderJobSpecification(
-        render_job_id="j1", request_id="r1", timeline_id="tl-no-vis", render_input_hash="a" * 64, authorization_reference="a", idempotency_key="i"
+        render_job_id="j1",
+        request_id="r1",
+        timeline_id="tl-no-vis",
+        render_input_hash="a" * 64,
+        authorization_reference="a",
+        idempotency_key="i",
     )
 
-    with pytest.raises(GuardianValidationError) as exc:
+    with pytest.raises(GuardianValidationError, match="Semantic Invariant Violation \(S1\)"):
         SemanticCompositionValidator.validate_semantic_composition(job, spec, "a" * 64)
-    assert "Semantic Invariant Violation (S1)" in str(exc.value)
+
+
+def test_semantic_validator_rejects_unexplained_visual_overlap():
+    clips = [
+        TimelineClip(
+            clip_id="c1",
+            scene_id="sc1",
+            track_type=TimelineTrackType.VISUAL,
+            start_time=0.0,
+            end_time=1.0,
+            source_asset_id="vis-1",
+            source_file_path="/path/1.png",
+        ),
+        TimelineClip(
+            clip_id="c2",
+            scene_id="sc2",
+            track_type=TimelineTrackType.VISUAL,
+            start_time=0.5,
+            end_time=1.5,
+            source_asset_id="vis-2",
+            source_file_path="/path/2.png",
+        ),
+    ]
+    spec = TimelineSpec(
+        timeline_id="tl-overlap",
+        target_width=1080,
+        target_height=1920,
+        target_fps=30,
+        aspect_ratio="9:16",
+        total_duration_seconds=1.5,
+        clips=clips,
+    )
+    job = RenderJobSpecification(
+        render_job_id="j-overlap",
+        request_id="r-overlap",
+        timeline_id="tl-overlap",
+        render_input_hash="a" * 64,
+        authorization_reference="a",
+        idempotency_key="i",
+    )
+    with pytest.raises(GuardianValidationError, match="S5"):
+        SemanticCompositionValidator.validate_semantic_composition(job, spec, "a" * 64)
 
 
 def test_semantic_validator_s6_subtitle_out_of_bounds_rejection():
     clip = TimelineClip(
         clip_id="c1",
+        scene_id="sc1",
         track_type=TimelineTrackType.VISUAL,
         start_time=0.0,
-        end_time=5.0,
+        end_time=1.0,
         source_asset_id="vis-1",
-        source_asset_version="1.0.0",
         source_file_path="/path/1.png",
     )
-    sub = SubtitleItem(
-        subtitle_id="s1", scene_id="sc1", text="Late text", start_time=0.0, end_time=12.0  # Exceeds timeline duration 5.0
-    )
-    spec = TimelineSpec(
-        timeline_id="tl-sub-err",
-        target_width=1080,
-        target_height=1920,
-        target_fps=30,
-        aspect_ratio="9:16",
-        total_duration_seconds=5.0,
-        clips=[clip],
-        subtitles=[sub],
-    )
-    job = RenderJobSpecification(
-        render_job_id="j2", request_id="r2", timeline_id="tl-sub-err", render_input_hash="a" * 64, authorization_reference="a", idempotency_key="i"
-    )
+    with pytest.raises(ValueError, match="extends beyond total timeline duration"):
+        TimelineSpec(
+            timeline_id="tl-sub-err",
+            target_width=1080,
+            target_height=1920,
+            target_fps=30,
+            aspect_ratio="9:16",
+            total_duration_seconds=1.0,
+            clips=[clip],
+            subtitles=[
+                SubtitleItem(
+                    subtitle_id="s1",
+                    scene_id="sc1",
+                    text="Late text",
+                    start_time=0.0,
+                    end_time=2.0,
+                )
+            ],
+        )
 
-    with pytest.raises(GuardianValidationError) as exc:
-        SemanticCompositionValidator.validate_semantic_composition(job, spec, "a" * 64)
-    assert "Semantic Invariant Violation (S6)" in str(exc.value)
 
-
-def test_semantic_validator_s10_invalid_render_hash_rejection():
-    clip = TimelineClip(
-        clip_id="c1",
-        track_type=TimelineTrackType.VISUAL,
-        start_time=0.0,
-        end_time=5.0,
-        source_asset_id="vis-1",
-        source_asset_version="1.0.0",
-        source_file_path="/path/1.png",
-    )
-    spec = TimelineSpec(
-        timeline_id="tl-bad-hash",
-        target_width=1080,
-        target_height=1920,
-        target_fps=30,
-        aspect_ratio="9:16",
-        total_duration_seconds=5.0,
-        clips=[clip],
-    )
-    job = RenderJobSpecification(
-        render_job_id="j3", request_id="r3", timeline_id="tl-bad-hash", render_input_hash="short_hash", authorization_reference="a", idempotency_key="i"
-    )
-
-    with pytest.raises(GuardianValidationError) as exc:
-        SemanticCompositionValidator.validate_semantic_composition(job, spec, "a" * 64)
-    assert "Semantic Invariant Violation (S10)" in str(exc.value)
+def test_render_job_rejects_non_sha256_hash():
+    with pytest.raises(ValueError, match="string_too_short"):
+        RenderJobSpecification(
+            render_job_id="bad",
+            request_id="r",
+            timeline_id="tl",
+            render_input_hash="short_hash",
+            authorization_reference="a",
+            idempotency_key="i",
+        )
