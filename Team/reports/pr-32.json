@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/floor04-production-hardening-20260926",
   "objective": "Complete the Floor 04 pre-training audit and harden the F03→F04→F05 media execution boundary without changing the locked parallel floor topology or authority hierarchy.",
-  "classification": "extends existing rule + new capability",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -85,7 +85,7 @@
     ".okf/research/repo-mappings/f04-production-hardening-wave1.md",
     ".okf/research/repo-mappings/f03-screened-wave5.md"
   ],
-  "disposition": "PASS_PENDING_FRESH_CI",
+  "disposition": "PASS",
   "verificationPlan": [
     "Run F03 Asset Planning v2 suite after lineage identity fix.",
     "Run Floor 04 unit/API/security suites.",
@@ -93,5 +93,13 @@
     "Run Obsidian memory validation.",
     "Run Team Change Gate.",
     "Run full repository typecheck/security/smoke lanes."
-  ]
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "conflicts": []
 }
