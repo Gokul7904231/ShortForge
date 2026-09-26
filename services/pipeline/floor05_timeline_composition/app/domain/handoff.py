@@ -10,6 +10,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from factoryos.guardian.contracts.guardian_state import ExecutionMode
+from floors.floor02_scripting.app.domain.handoff import HandoffStatus
+from floors.floor03_asset_realization.app.domain.handoff import Floor03HandoffPayload
 from floors.floor04_media_synthesis.app.domain.handoff import Floor04HandoffPayload
 
 
