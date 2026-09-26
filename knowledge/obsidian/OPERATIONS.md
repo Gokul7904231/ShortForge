@@ -180,3 +180,13 @@ Memory Fabric errors are recorded in the ledger and quarantined. Event subscribe
 ### Reconciliation rule
 
 The bridge uses deterministic content hashes and unique source keys. Re-processing an unchanged Mongo document is idempotent and does not create another memory document.
+
+## HISTORICAL BACKFILL
+
+Live change streams and periodic reconciliation cover new and changed operational records. A one-time historical import is explicit so a large repository startup does not unexpectedly scan the complete database.
+
+    MEMORY_FABRIC_VAULT_PATH=<repo>/knowledge
+    MEMORY_FABRIC_BACKFILL_LIMIT=5000
+    npm run obsidian:backfill-memory
+
+The backfill is idempotent through deterministic source keys and the MongoDB ledger. It materializes sanitized observations and high-signal candidate memories, but does not grant verification or training eligibility.
