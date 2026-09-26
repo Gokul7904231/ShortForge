@@ -43,3 +43,30 @@ A training example should contain:
 ## Promotion rule
 
 Training data is admissible only when the underlying runtime contract and tests pass. The training ontology is a projection of executable capability boundaries, not the source of runtime authority.
+
+
+## Wave 2 training admission — 2026-09-27
+
+The F05 Brain now emits a typed `TimelineProposalIR` inside the Guardian proposal parameters.
+
+The training target may learn:
+
+- scene ordering from the canonical F03 plan;
+- explicit transition intent rather than renderer-invented defaults;
+- target frame durations;
+- hard constraints and optimization objectives;
+- deterministic proposal fingerprinting;
+- explanations that distinguish proposal evidence from authorization.
+
+The training target must still fail closed when:
+
+- the AssetPlanIR fingerprint is absent;
+- F03/F04 lineage does not match;
+- an unsupported transition intent is supplied;
+- a committed artifact loses its SHA-256/byte-length identity;
+- decoder smoke validation fails;
+- the Brain proposal attempts to authorize itself.
+
+### Evaluation rule
+
+Model quality is evaluated separately from release authority. Agentic post-production benchmark patterns may inform datasets and rubrics, but the production gates remain programmatic validators plus Guardian/F07 authority.
