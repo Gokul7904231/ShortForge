@@ -84,3 +84,80 @@ The Obsidian vault itself is not a training authority.
 ## Rollback
 
 Remove knowledge/obsidian/, knowledge/README.md, knowledge/.obsidian/snippets/shortforge-memory.css, tools/obsidian/, and this document plus the corresponding .okf decision entry. Existing knowledge/ and runtime memory systems remain valid.
+
+
+## Live MongoDB + Runtime Integration — 2026-09-26
+
+The Memory Fabric is now operationally connected to the existing FactoryOS runtime boundary.
+
+### Canonical path
+
+    FactoryOS runtime events
+             │
+             ├── DurableEventBus
+             │
+             └── MongoDB operational collections
+                        │
+                        ▼
+              MemoryFabricBridge
+                        │
+                        ▼
+              MemoryFabricLedger
+                        │
+                ┌───────┴────────┐
+                ▼                ▼
+          raw observations   candidates
+                │                │
+                └───────┬────────┘
+                        ▼
+                 MemoryWriter gate
+                        │
+                        ▼
+                 active knowledge
+                   /          \
+             Obsidian       projection services
+                               │
+                         Ascalon bounded view
+
+### Authority
+
+- MongoDB operational collections remain runtime persistence.
+- Memory Fabric ledger is ingestion/checkpoint state only.
+- knowledge/ remains the derived cognitive memory surface.
+- .okf remains governance truth.
+- MemoryWriter remains the durable promotion gate.
+- Ascalon receives bounded verified projections and cannot modify runtime authority.
+
+### Temporal and contradiction handling
+
+Every live memory record can carry:
+- occurrence time and valid-from time;
+- validity/staleness metadata;
+- deterministic quality state and score;
+- provenance and source hash;
+- conflict-group identity;
+- supersession relationships.
+
+When a verified memory is promoted with a conflict group, prior active memories in that group are marked superseded instead of silently overwritten.
+
+### Automatic maintenance
+
+The controller starts and stops the bridge with FactoryOS lifecycle. The autonomous cycle also performs a non-blocking memory drain. MongoDB change streams are the low-latency path where available; bounded reconciliation remains active as a correctness backstop.
+
+### Security and evidence
+
+The bridge recursively redacts credential-like fields and re-applies MemoryWriter secret sanitization before materializing Markdown. Raw runtime data is never marked verified. Training eligibility remains a separate explicit field.
+
+### Operational outcome
+
+This changes the prior architecture from a mostly repository-side Obsidian knowledge surface into a live Memory Fabric client boundary:
+
+    operational evidence
+        → ingest
+        → compile
+        → verify
+        → promote
+        → project
+        → bounded agent / Ascalon context
+
+Obsidian is still not the runtime database, not the control plane, and not the authority source.
