@@ -1325,3 +1325,53 @@ The floor is therefore mechanically hardened and CI-verified, while third-party 
 **Ascalon implication:** The training projection teaches proposal -> authorization -> execution -> measurement -> handoff, while the Guardian remains authoritative.
 
 **Rollback:** revert the F05 hardening commits and remove the F05 research/admission documents; F03/F04/F06 authority boundaries remain unchanged.
+
+
+## 35. Floor 05 temporal convergence wave 2 — 2026-09-27
+
+**Classification:** extends existing rule + new training evidence capability.
+
+### Decision
+
+Preserve upstream editorial transition intent at F03 and make F05 compile it into explicit frame-aligned CUT/CROSSFADE transitions. Add physical decoder smoke evidence, fail-closed crash reconciliation, integrity-checked render reuse, and a non-authoritative typed TimelineProposalIR for Ascalon training.
+
+### Why
+
+The current architecture already separates:
+- F02 narrative/visual semantics,
+- F03 provider-neutral asset planning,
+- F04 physical media,
+- F05 temporal convergence,
+- F06 distributed rendering,
+- F07 release verification.
+
+The wave therefore closes semantic and recovery gaps without moving authority between floors.
+
+### External evidence
+
+- AgenticVBench (2026) supports programmatic verifiers plus separate rubric judgment for real post-production tasks.
+- Unified Agentic Video Editing (2026-09-11) supports structured scene/shot intermediate decisions rather than opaque end-to-end agent action.
+- Agentic Video Generation via Executable Event Graphs (2026) supports typed executable specifications with deterministic state enforcement.
+- BEAT (2026) supports a future bounded rhythm-alignment signal, not a new authority layer.
+
+### Implementation constraints
+
+- TimelineBrain proposal remains proposal-only.
+- Guardian remains authorization authority.
+- F05 reference rendering does not receive CAP_RENDER_DISPATCH.
+- F03 retains provider-neutral planning scope.
+- F06 remains production distributed rendering authority.
+- F07 remains final verification/release authority.
+
+### Verification target
+
+Promotion requires:
+1. compile success,
+2. F03/F04/F05/F06 contract tests,
+3. F05 physical render + decoder smoke validation,
+4. registry tamper-reuse rejection,
+5. crash-reconciliation fail-closed test,
+6. Ascalon ontology validation,
+7. repository CI / post-merge gates.
+
+Failure or contradiction means reject promotion and preserve evidence.
