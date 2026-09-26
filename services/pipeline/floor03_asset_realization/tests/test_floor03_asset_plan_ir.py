@@ -3,6 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
+from floors.floor02_scripting.app.domain.script_models import SceneSpecification
+from floors.floor03_asset_realization.app.logical_workers.image_prompt_worker import ImagePromptWorker
 from floors.floor03_asset_realization.app.domain.asset_plan_ir import (
     AssetDependency,
     AssetPlanIR,
@@ -136,3 +138,49 @@ def test_dependency_fingerprint_tracks_upstream_node_version():
             lineage=_lineage(),
             nodes=[node_a, stale_node],
         )
+
+
+def test_image_prompt_worker_emits_logical_reference_and_conditioning_bindings():
+    scene = SceneSpecification(
+        scene_id="scene-character",
+        sequence_index=1,
+        section_type="Hook",
+        narration_text="A character explains the idea.",
+        visual_intent="A close-up character shot",
+        target_duration_seconds=6,
+        word_count=5,
+        estimated_speech_duration_seconds=2.5,
+        character_references=["char-1"],
+        visual_intent_structured={
+            "style_tokens": ["cinematic"],
+            "video_references": [
+                {
+                    "source_id": "style-ref-1",
+                    "usage": "reference_style",
+                    "entity_ref": "asset:style-ref-1",
+                    "version_selector": "latest",
+                    "traits": ["style"],
+                    "required": True,
+                }
+            ],
+        },
+    )
+
+    requirements, _, _ = ImagePromptWorker().execute(
+        scenes=[scene],
+        aspect_ratio="9:16",
+        resolution="1080x1920",
+        style_preset="cinematic",
+    )
+
+    plan = requirements[0].scene_plan
+    assert plan is not None
+    refs = {ref.reference_id: ref for ref in plan.references}
+    assert refs["char-1"].entity_ref == "character:char-1"
+    assert "identity" in refs["char-1"].traits
+    assert refs["style-ref-1"].entity_ref == "asset:style-ref-1"
+    assert refs["style-ref-1"].version_selector == "latest"
+
+    conditioning_types = {item.conditioning_type for item in plan.conditionings}
+    assert ConditioningType.IDENTITY in conditioning_types
+    assert ConditioningType.STYLE in conditioning_types
