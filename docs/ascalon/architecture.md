@@ -108,3 +108,33 @@ Floor 07: Final Render Packaging, Outbox Delivery & Ingestion
 - **AscalonTrajectoryValidator**: Scans for 9 classes of credentials and API keys, validates schema completeness, checks simulation labeling, and verifies authorization consistency.
 - **AscalonReplayEngine**: Validates that deterministic operational trajectories reproduce identical decision-execution chains upon replay.
 - **AscalonTrajectoryExporter**: Segregates trajectories by mission family into Train, Validation, and Test splits without cross-family data leakage.
+
+## 4. Fast Decision Core and Artifact Supply Chain — 2026-09-27
+
+### 4.1 Two-speed cognition
+
+The Ascalon cognitive path is now explicitly split into:
+
+- deep cognition: long-form reasoning, architecture, research synthesis, generation and ambiguous planning;
+- fast cognition: bounded typed decisions and candidate ranking.
+
+CLM-8B is implemented only behind the fast-decision adapter and remains shadow-only.
+
+### 4.2 Candidate-relative probability semantics
+
+ShortForge records probability semantics separately from calibration. This prevents a candidate-relative softmax from being mislabeled as an absolute confidence signal.
+
+### 4.3 Large-artifact acquisition
+
+Model/checkpoint/dataset acquisition may use aria2 through the isolated Ascalon acquisition helper. The canonical trust boundary is:
+
+~~~
+source allowlist
+ -> downloader
+ -> staged bytes
+ -> independent SHA-256 / byte-length verification
+ -> CAS / manifest
+ -> training consumer
+~~~
+
+F06 render transfer remains under the existing RenderFabric/provider/CAS/F07 chain. The aria2 helper does not become a render-provider authority.
