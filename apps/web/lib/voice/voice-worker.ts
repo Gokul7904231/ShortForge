@@ -122,6 +122,7 @@ export class VoiceWorker {
             providerName: session.provider.name,
             providerVersion: session.provider.version,
             preserveDurationForTiming: Boolean(params.temporalIntent?.targetDurationMs),
+            allowSilence: true,
           });
           audioBuffer = pipelineResult.audioBuffer;
           temporalEvidence = {
