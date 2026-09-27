@@ -180,6 +180,9 @@ class Floor05PipelineService:
                     job_spec=existing,
                     video_path=video_path,
                     thumb_path=thumb_path,
+                    authorization=authorization,
+                    canonical_ir_path=str(canonical_ir_path),
+                    canonical_ir_fingerprint=canonical_ir_fp,
                 )
 
         # Gate 2: create an early crash-recovery journal before FFmpeg starts.
