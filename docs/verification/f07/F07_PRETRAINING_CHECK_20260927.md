@@ -213,7 +213,7 @@ The floor is training-admissible only when all are freshly evidenced:
 - downstream evidence invalidation;
 - focused F07 tests and repository CI.
 
-Current declared state for this branch: CI_ADMISSION_PENDING. The code and documentation are on the hardening branch; promotion to main requires fresh CI evidence.
+Historical branch note: the pre-merge hardening branch used `CI_ADMISSION_PENDING`. The canonical merged-main admission contract now expects the committed `CI_ADMISSION_PASS` state plus successful focused verification evidence.
 
 ## 11. Research conclusions
 
