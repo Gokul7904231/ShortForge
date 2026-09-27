@@ -200,3 +200,10 @@ The canonical operational home for the development-time engineering workforce an
 - `Team/reports/` — per-change evidence reports.
 
 `.okf/` remains the authority/law layer. `Team/` is the execution/workforce layer.
+
+
+## Floor 06 pre-training boundary — 2026-09-27
+
+The canonical Floor 06 operating contract is now documented at `services/pipeline/floor06_rendering/README.md`. The F06 research/adoption ledger is `.okf/research/repo-mappings/f06-distributed-rendering-wave1-20260927.md` and the Ascalon admission specification is `docs/verification/ascalon/floor06-pretraining-admission.md`.
+
+F06 may not treat provider completion as physical truth. The pre-F07 completion chain is provider admission → physical SHA/size → ffprobe → FFmpeg decode smoke → F06 handoff.
