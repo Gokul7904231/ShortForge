@@ -7,7 +7,7 @@
 
 **STATUS: READY_FOR_TRAINING_DATA_GENERATION_UNDER_PROPOSAL_LEARNING_ONLY**
 
-This status applies to the reconciled current architecture on the PR #40 head and is based on fresh CI evidence. It does not authorize Ascalon to bypass Guardian, F07, leases/fencing, CAS, release authorization, or any production capability boundary.
+This status applies to the reconciled current architecture on merged `main` commit `9c27c7e75652c2cc04ebe41d41eed299cc88ce91` and is based on fresh CI evidence. It does not authorize Ascalon to bypass Guardian, F07, leases/fencing, CAS, release authorization, or any production capability boundary.
 
 ## Canonical topology
 
@@ -44,7 +44,7 @@ F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07
 | Floor 05 Pre-Training Validation | 36308757119 | PASS |
 | Floor 06 Pre-Training Validation | 36308757143 | PASS |
 | Floor 07 Pre-Training Validation | 36308757101 | PASS |
-| Repository CI | 36308757122 | PASS |
+| Repository CI | post-merge main run on 9c27c7e | PASS |
 
 Repository Web Regression remains an informational lane and does not replace the dedicated admission evidence.
 
@@ -65,3 +65,7 @@ Ascalon may not:
 ## Model training status
 
 No LLM weights were modified. No training job was dispatched. The system is ready to generate and benchmark training data subject to the normal trajectory validator and exporter gates.
+
+## Mainline evidence closure
+
+PR #40 (`feat/ascalon-cross-floor-reconciliation-20260927`) is merged. This document therefore supersedes PR-head-only wording and treats the merged `main` commit as the source reference. No model weights were trained or modified.
