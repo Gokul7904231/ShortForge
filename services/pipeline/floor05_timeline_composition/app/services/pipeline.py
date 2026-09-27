@@ -253,6 +253,7 @@ class Floor05PipelineService:
                 authorization=authorization,
                 canonical_ir_path=str(canonical_ir_path),
                 canonical_ir_fingerprint=canonical_ir_fp,
+                subtitle_path=str(subtitle_path),
             )
 
             self.reconciliation.record_transaction(
