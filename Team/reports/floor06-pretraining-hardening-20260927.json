@@ -85,10 +85,13 @@
     "Final promotion is conditional on CI and post-merge evidence."
   ],
   "verificationPlan": [
-    "Run F06 physical verifier and failover tests.",
-    "Run canonical Render Fabric regression tests.",
-    "Run F03/F04/F05/F06 handoff contract regression.",
-    "Run Ascalon ontology validation.",
-    "Run Team Change Gate and repository CI before merge."
+    "Final F06 physical admission workflow PASS.",
+    "Team Change Gate PASS.",
+    "Floor 02 + Floor 03 Production Gates PASS.",
+    "Floor 04 + F05 handoff validation PASS.",
+    "Floor 05 pre-training production validation PASS.",
+    "Obsidian Memory Validation PASS.",
+    "Google Drive MCP TypeCheck & Security Self-Test PASS.",
+    "Repository CI production-critical jobs PASS; Web Regression Suite remains informational failure."
   ]
 }
