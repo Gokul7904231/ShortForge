@@ -12,6 +12,7 @@ from factoryos.guardian.core.exceptions import GuardianValidationError
 from floors.floor05_timeline_composition.app.domain.handoff import (
     Floor05HandoffPayload,
     Floor05Input,
+    GuardianAuthorizationContext,
     RenderJobState,
 )
 from floors.floor05_timeline_composition.app.services.canonical_hasher import CanonicalHasher
@@ -21,6 +22,10 @@ from floors.floor05_timeline_composition.app.services.source_manifest import Sou
 from floors.floor05_timeline_composition.app.services.validators import (
     PhysicalVideoValidator,
     SemanticCompositionValidator,
+)
+from floors.floor05_timeline_composition.app.services.timeline_ir_bridge import (
+    canonical_timeline_ir_document,
+    canonical_timeline_ir_fingerprint,
 )
 from floors.floor05_timeline_composition.app.workers.composition_worker import TimelineCompositionWorker
 from floors.floor05_timeline_composition.app.workers.render_worker import ReferenceRenderWorker
@@ -60,6 +65,9 @@ class Floor05PipelineService:
         job_spec,
         video_path: str,
         thumb_path: str,
+        authorization: GuardianAuthorizationContext,
+        canonical_ir_path: str,
+        canonical_ir_fingerprint: str,
     ) -> Floor05HandoffPayload:
         mime, sha256_val, size_bytes, duration = PhysicalVideoValidator.validate_rendered_video(
             file_path=video_path,
@@ -111,10 +119,22 @@ class Floor05PipelineService:
             execution_mode=input_payload.execution_mode,
             provenance_hash=provenance_hash,
             ffprobe_summary=ffprobe_summary,
+            canonical_timeline_ir_path=canonical_ir_path,
+            canonical_timeline_ir_fingerprint=canonical_ir_fingerprint,
         )
 
-    def run_pipeline(self, input_payload: Floor05Input) -> Floor05HandoffPayload:
-        """Compose exact F03 intent + F04 media, render, physically verify, semantically verify, and commit."""
+    def run_pipeline(
+        self,
+        input_payload: Floor05Input,
+        authorization: GuardianAuthorizationContext,
+    ) -> Floor05HandoffPayload:
+        """Compose exact F03 intent + F04 media only after an authenticated Guardian decision."""
+        if authorization.floor_id != "floor05":
+            raise GuardianValidationError("Floor 05 execution denied: authorization scope is not floor05.")
+        if authorization.capability_name != "timeline_composition_pipeline_worker":
+            raise GuardianValidationError("Floor 05 execution denied: wrong Guardian capability.")
+        if authorization.authorized_by != "GUARDIAN_ACTION_GATE":
+            raise GuardianValidationError("Floor 05 execution denied: authorization source is not Guardian.")
         request_id = input_payload.request_id or f"req-f05-{uuid4().hex[:8]}"
         f03_payload = input_payload.floor03_payload
         f04_payload = input_payload.floor04_payload
@@ -132,6 +152,12 @@ class Floor05PipelineService:
         )
         SemanticCompositionValidator.validate_lineage(f03_payload, f04_payload, timeline_spec)
         timeline_fingerprint = CanonicalHasher.compute_timeline_fingerprint(timeline_spec)
+        canonical_ir_fp = canonical_timeline_ir_fingerprint(timeline_spec, request_id)
+        canonical_ir_path = self.storage_root / f"timeline_{timeline_spec.timeline_id}.timelineir.json"
+        canonical_ir_path.write_text(
+            canonical_timeline_ir_document(timeline_spec, request_id),
+            encoding="utf-8",
+        )
         self.registry.register_timeline(timeline_spec)
 
         # Compute the render identity before dispatch so duplicate requests can reuse a committed artifact.
@@ -140,6 +166,7 @@ class Floor05PipelineService:
             timeline_spec=timeline_spec,
             renderer_id=ReferenceRenderWorker.RENDERER_ID,
             renderer_version=ReferenceRenderWorker.RENDERER_VERSION,
+            canonical_timeline_ir_fingerprint=canonical_ir_fp,
         )
         existing = self.registry.get_render_job_by_hash(expected_render_hash)
         if existing is not None:
@@ -166,6 +193,8 @@ class Floor05PipelineService:
                 "source_asset_plan_fingerprint": f03_payload.asset_plan_ir.plan_fingerprint,
                 "timeline_fingerprint": timeline_fingerprint,
                 "render_input_hash": expected_render_hash,
+                "canonical_timeline_ir_fingerprint": canonical_ir_fp,
+                "authorization_decision_id": authorization.decision_id,
             },
         )
 
@@ -176,6 +205,8 @@ class Floor05PipelineService:
                 floor04_payload=f04_payload,
                 timeline_spec=timeline_spec,
                 storage_root=str(self.storage_root),
+                authorization_reference=f"guardian-decision:{authorization.decision_id}",
+                canonical_timeline_ir_fingerprint=canonical_ir_fp,
             )
             video_file = Path(video_path)
             thumb_file = Path(thumb_path)
@@ -209,6 +240,9 @@ class Floor05PipelineService:
                 job_spec=job_spec,
                 video_path=video_path,
                 thumb_path=thumb_path,
+                authorization=authorization,
+                canonical_ir_path=str(canonical_ir_path),
+                canonical_ir_fingerprint=canonical_ir_fp,
             )
 
             self.reconciliation.record_transaction(
