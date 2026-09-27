@@ -3,10 +3,11 @@ import { VoiceCache } from "./voice-cache";
 import { EventBus, WorkflowEvents } from "../../ai/event-bus";
 import fs from "fs";
 import path from "path";
+import crypto from "node:crypto";
 import { AudioPipeline } from "./AudioPipeline";
 import { NarrationSession } from "./narration-session";
 import { NarrationRole } from "./narration-role";
-import { PrecisionTTSController, TemporalTimingUnsatisfiedError } from "./temporal/PrecisionTTSController";
+import { PrecisionTTSController } from "./temporal/PrecisionTTSController";
 import type { TemporalIntent } from "../templates/temporal/TemporalContracts";
 
 export class VoiceWorker {
@@ -43,12 +44,23 @@ export class VoiceWorker {
         sampleRate,
         emotion,
         rendererVersion,
-        voiceVersion
+        voiceVersion,
+        targetDurationMs: params.temporalIntent?.targetDurationMs,
+        timingMode: params.temporalIntent?.timingMode
       });
 
       let audioBuffer = VoiceCache.get(cacheHash);
       let cacheHit = true;
       let attempts = 0;
+    let temporalEvidence: any = undefined;
+
+    if (audioBuffer && params.temporalIntent?.targetDurationMs) {
+      const cachedMeta = await (await import("../core/MediaInspector")).MediaInspector.inspectAudio(audioBuffer);
+      const errorMs = Math.round(cachedMeta.duration * 1000 - params.temporalIntent.targetDurationMs);
+      if (!cachedMeta.isValid || Math.abs(errorMs) > params.temporalIntent.toleranceMs) {
+        audioBuffer = null;
+      }
+    }
 
       if (!audioBuffer) {
         cacheHit = false;
@@ -163,7 +175,6 @@ export class VoiceWorker {
         params.jobId
       );
 
-      const crypto = require("crypto");
       const textHash = crypto.createHash("sha256").update(params.text).digest("hex").slice(0, 16);
 
       return {
