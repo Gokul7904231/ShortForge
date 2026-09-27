@@ -88,7 +88,7 @@ Skills are organized by production floor responsibility:
 | **F01** | `FLOOR_01_STRATEGY` | `build_editorial_blueprint`, `evaluate_persona_fit`, `calculate_hook_variance` | `CAP_STRATEGY_SYNTHESIS` |
 | **F02** | `FLOOR_02_SCRIPTING` | `generate_beat_sheet`, `score_retention_curve`, `format_dialogue_timing` | `CAP_SCRIPT_WRITING` |
 | **F03** | `FLOOR_03_ASSET_REALIZATION` | `query_vector_store`, `ingest_broll_metadata`, `synthesize_visual_prompts` | `CAP_ASSET_INGEST`, `CAP_VECTOR_SEARCH` |
-| **F04** | `FLOOR_04_MEDIA_SYNTHESIS` | `route_voice_synthesis`, `generate_speech_audio`, `extract_audio_duration` | `CAP_VOICE_SYNTHESIS`, `CAP_AUDIO_ENCODE` |
+| **F04** | `FLOOR_04_MEDIA_SYNTHESIS` | `select_media_provider`, `generate_visual_asset`, `route_voice_synthesis`, `generate_speech_audio`, `extract_media_metadata` | `CAP_VISUAL_ASSET_GENERATE`, `CAP_VOICE_GENERATION`, `CAP_TEMPORAL_PRECISION_TTS` |
 | **F05** | `FLOOR_05_TIMELINE_COMPOSITION`| `compile_timeline_ir`, `reconcile_track_collision`, `position_captions` | `CAP_TIMELINE_COMPILE` |
 | **F06** | `FLOOR_06_RENDERING` | `dispatch_render_job`, `poll_worker_status`, `verify_mp4_integrity` | `CAP_RENDER_DISPATCH`, `CAP_FS_WRITE` |
 | **F07** | `FLOOR_07_QA_COMPLIANCE` | `inspect_video_artifacts`, `evaluate_compliance_rules`, `publish_findings` | `CAP_QA_INSPECT`, `CAP_EVAL_EXEC` |
