@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR38-Floor07-PreTraining-Hardening",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor07-pretraining-hardening-20260927",
+  "objective": "Complete the Floor 07 pre-training audit and harden the physical truth boundary, policy interval binding, Ascalon admission contract, and release evidence without changing the locked floor topology or authority hierarchy.",
+  "classification": "extends existing rule + new training evidence capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "F07 remains final verification and release authority.",
+      "Ascalon remains proposal and learning only.",
+      "Publication requires durable cryptographic ReleaseAuthorization.",
+      "External research is evidence only.",
+      "No floor topology change."
+    ]
+  },
+  "forensicFindings": [
+    "F07 previously accepted caller-supplied media measurements too readily when no independently resolvable physical artifact was supplied.",
+    "F07 CAS verification did not enforce an explicit cas://digest identity contract.",
+    "F07 policy selection needed an explicit publication-intent interval coverage check at the release boundary.",
+    "A machine-readable training admission contract was missing."
+  ],
+  "changes": [
+    "Added F07PhysicalArtifactVerifier with independent CAS/local physical hashing and FFprobe-backed probing.",
+    "Added post-probe digest stability verification.",
+    "Integrated F07ReleaseGuardian with the physical truth boundary and production CAS requirement.",
+    "Added explicit publication-intent policy snapshot interval coverage.",
+    "Added F07PreTrainingAdmission typed evidence contract.",
+    "Added focused F07 physical truth tests.",
+    "Added dedicated Floor 07 pre-training validation workflow.",
+    "Added complete F07 audit, Ascalon admission specification, research mapping, traceability addendum and .okf decision."
+  ],
+  "research": [
+    "C2PA 2.4",
+    "OPA signed bundles",
+    "SLSA 1.2",
+    "in-toto Attestation Framework v1.0",
+    "YouTube current monetization policy",
+    "YouTube current AI disclosure policy",
+    "YouTube current Shorts policy"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY-BOUNDARY_CHANGE",
+    "notes": "Production release is now fail-closed without independently verified CAS-bound physical media. Full repository security lanes remain final admission evidence."
+  },
+  "trainingReadiness": {
+    "floor07": "PENDING_FRESH_CI",
+    "ascalon": "Can consume evidence and propose remediation/next-evidence actions; no authority promotion.",
+    "release": "Durable authorization boundary unchanged."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts",
+    "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+    "apps/web/factoryos/core/verification/youtube/F07PreTrainingAdmission.ts",
+    "apps/web/factoryos/tests/f07-physical-truth.test.ts",
+    "docs/verification/f07/F07_PRETRAINING_CHECK_20260927.md",
+    "docs/verification/ascalon/floor07-pretraining-admission.md",
+    ".okf/decisions/floor07-pretraining-hardening-20260927.md",
+    ".okf/research/repo-mappings/f07-pretraining-hardening-wave1-20260927.md",
+    "docs/verification/f07/TRACEABILITY_ADDENDUM_20260927.md",
+    ".github/workflows/floor07-pretraining-validation.yml"
+  ],
+  "disposition": "PENDING_CI",
+  "verificationPlan": [
+    "Run the dedicated Floor 07 pre-training validation workflow.",
+    "Run the F07 architectural invariants, receipt, remediation and policy refresh suites.",
+    "Run FactoryOS typecheck and repository CI.",
+    "Run Team Change Gate with this report.",
+    "Admit F07 to Ascalon training only after fresh CI evidence is complete."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "floor07PreTrainingValidation": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "floor06Regression": "PENDING",
+    "floor05Regression": "PENDING",
+    "webRegressionSuite": "INFORMATIONAL"
+  },
+  "notes": [
+    "No new floor, scheduler, or authority plane was introduced.",
+    "Test-only fixture behavior is not production release authority.",
+    "C2PA/OPA/SLSA/in-toto are pattern evidence only in this wave; no runtime dependencies were imported.",
+    "The older F07 traceability matrix contains historical stale entries; the 2026-09-27 addendum records current implementation truth."
+  ]
+}
