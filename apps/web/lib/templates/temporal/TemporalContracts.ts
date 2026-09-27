@@ -23,24 +23,24 @@ export const TemporalContractSchema = z.object({
     toleranceMs: z.number().int().nonnegative().default(40),
     quantization: TemporalQuantizationSchema.default("MIXED"),
     fpsRef: z.string().default("TEMPLATE_OUTPUT_FPS"),
-  }).default({}),
+  }).default({ toleranceMs: 40, quantization: "MIXED", fpsRef: "TEMPLATE_OUTPUT_FPS" }),
   narration: z.object({
     allocation: z.enum(["SCENE", "BEAT", "GLOBAL"]).default("BEAT"),
     timingMode: TemporalTimingModeSchema.default("BOUNDED"),
     targetDurationMs: z.number().int().positive().optional(),
     minDurationMs: z.number().int().positive().optional(),
     maxDurationMs: z.number().int().positive().optional(),
-  }).default({}),
+  }).default({ allocation: "BEAT", timingMode: "BOUNDED" }),
   pacing: z.object({
     preferredRateWpm: z.number().positive().optional(),
     minRateMultiplier: z.number().positive().default(0.75),
     maxRateMultiplier: z.number().positive().default(1.25),
     pausePolicy: TemporalPausePolicySchema.default("CONTROLLED"),
-  }).default({}),
+  }).default({ minRateMultiplier: 0.75, maxRateMultiplier: 1.25, pausePolicy: "CONTROLLED" }),
   alignment: z.object({
     granularity: TemporalAlignmentGranularitySchema.default("WORD"),
     required: z.boolean().default(false),
-  }).default({}),
+  }).default({ granularity: "WORD", required: false }),
   correction: z.object({
     maxResynthesisPasses: z.number().int().nonnegative().max(5).default(2),
     allowRateCorrection: z.boolean().default(true),
@@ -48,12 +48,12 @@ export const TemporalContractSchema = z.object({
     allowTimeStretch: z.boolean().default(true),
     allowPadding: z.boolean().default(false),
     maxStretchRatio: z.number().positive().default(1.10),
-  }).default({}),
+  }).default({ maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.10 }),
   quality: z.object({
     preservePitch: z.boolean().default(true),
     rejectClipping: z.boolean().default(true),
     rejectCorruption: z.boolean().default(true),
-  }).default({}),
+  }).default({ preservePitch: true, rejectClipping: true, rejectCorruption: true }),
 });
 export type TemporalContract = z.infer<typeof TemporalContractSchema>;
 
