@@ -38,12 +38,12 @@
       "version": "1.0.0",
       "name": "Measured TTS Temporal Precision",
       "floorId": "floor04_media_synthesis",
-      "riskClass": "LOW",
+      "riskClass": "MEDIUM",
       "allowedRoles": [
         "OVERSEER",
         "MEDIA_SYNTHESIZER"
       ],
-      "requiresGuardianGate": false,
+      "requiresGuardianGate": true,
       "timeoutMs": 120000,
       "trainingEligible": true,
       "trainingEvidence": [
@@ -60,12 +60,12 @@
       "version": "1.0.0",
       "name": "TTS Voice Generation & Normalization",
       "floorId": "floor04_media_synthesis",
-      "riskClass": "LOW",
+      "riskClass": "MEDIUM",
       "allowedRoles": [
         "OVERSEER",
         "MEDIA_SYNTHESIZER"
       ],
-      "requiresGuardianGate": false,
+      "requiresGuardianGate": true,
       "timeoutMs": 60000,
       "trainingEligible": true
     },
