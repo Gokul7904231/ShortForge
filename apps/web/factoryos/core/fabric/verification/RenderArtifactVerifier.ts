@@ -64,6 +64,9 @@ export class RenderArtifactVerifier {
     let artifactPath = "";
 
     try {
+      if (!request.artifact.uri) {
+        throw new Error("Artifact receipt is missing a physical URI.");
+      }
       artifactPath = await this.resolveAndContain(
         request.artifact.uri,
         request.approvedRoots || [process.cwd()]
@@ -200,9 +203,12 @@ export class RenderArtifactVerifier {
       let byteLength = request.artifact.byteLength;
 
       try {
-        const stat = await fs.stat(artifactPath || request.artifact.uri);
-        byteLength = stat.size;
-        sha256 = await this.sha256(artifactPath || request.artifact.uri);
+        const fallbackPath = artifactPath || request.artifact.uri;
+        if (fallbackPath) {
+          const stat = await fs.stat(fallbackPath);
+          byteLength = stat.size;
+          sha256 = await this.sha256(fallbackPath);
+        }
       } catch {
         // Preserve provider-reported identity only when physical observation failed.
       }
@@ -211,7 +217,7 @@ export class RenderArtifactVerifier {
         status: "FAIL",
         verifierId: RenderArtifactVerifier.verifierId,
         verifiedAt: new Date().toISOString(),
-        artifactPath: artifactPath || request.artifact.uri,
+        artifactPath: artifactPath || request.artifact.uri || "<unresolved>",
         sha256,
         byteLength,
         container: "unknown",
