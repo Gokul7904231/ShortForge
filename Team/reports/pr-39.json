@@ -31,7 +31,7 @@
     "zap": "NOT_APPLICABLE"
   },
   "conflicts": [],
-  "disposition": "PASS_PENDING_CI",
+  "disposition": "BLOCKED",
   "forgers": [
     "Forge Architect",
     "Forge Builder",
@@ -68,12 +68,13 @@
     "CLM candidate-relative probabilities are not treated as globally calibrated confidence.",
     "aria2 is a transfer accelerator only; CAS and F07 remain artifact truth.",
     "No third-party runtime source code or GPL library code was linked into FactoryOS.",
-    "No floor topology or sovereign authority changes."
+    "No floor topology or sovereign authority changes.",
+    "The Team Change Gate report is intentionally BLOCKED until repository CI and focused tests produce fresh external evidence."
   ],
   "verificationResults": {
-    "repositoryCI": "PENDING_GITHUB_ACTIONS",
-    "teamChangeGate": "PENDING_GITHUB_ACTIONS",
-    "localExecution": "NOT_AVAILABLE: repository network access is unavailable in the agent container"
+    "repositoryCI": "NOT_OBSERVED_FROM_AVAILABLE_GITHUB_ACTIONS_INTERFACE",
+    "teamChangeGate": "NOT_RUN_BY_AGENT_ENVIRONMENT",
+    "localExecution": "NOT_AVAILABLE: repository network access unavailable in agent container"
   },
   "verificationPlan": [
     "Team Change Gate must validate Team/reports/pr-39.json.",
