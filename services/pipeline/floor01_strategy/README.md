@@ -5,7 +5,7 @@
 **Floor Version**: `2.0.0`
 **Location**: `services/pipeline/floor01_strategy/`
 **Status**: **Production-gate GREEN on head `52842ccd57e4b6104edef6168956636ea6e5fc4e`**
-**Overseer Integration**: canonical Python runtime adapter plus validated-only handoff boundary implemented; PR #16 remains draft/unmerged
+**Overseer Integration**: canonical Python runtime adapter plus validated-only handoff boundary implemented; PR #16 is merged into `main`; this README reflects the canonical production runtime state.
 
 **Report Persistence Classification**: `LOCAL_EXECUTION_AUDIT_ARTIFACT = IMPLEMENTED` | `OVERSEER_LIFECYCLE_PERSISTENCE = EXISTING_EVENT_PATH`  
 
