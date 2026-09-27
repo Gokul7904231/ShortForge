@@ -112,3 +112,44 @@ Hard-negative examples must include attempts to hide contradictions, skip the .o
 
 The Team report contract is machine-readable JSON; the underlying semantic contract is TeamChangeIR.
 
+## 7. Fast Decision Training Track — 2026-09-27
+
+Ascalon now distinguishes deep-cognition training from a bounded decision-training track.
+
+### State/action example shape
+
+Each fast-decision example should preserve:
+
+- authoritative world state
+- typed question
+- complete candidate/action set
+- verified selected action
+- evidence references
+- outcome verification
+- negative candidates and why they are invalid when available.
+
+Hard negatives should be semantically plausible but operationally incorrect. They must be grounded in deterministic constraints, real incident/repair history, or verified teacher labels.
+
+### Dataset rules
+
+Do not import external CLM datasets directly into the golden corpus. External datasets inform architecture and benchmark design only unless they pass the same provenance and licensing controls.
+
+Task-disjoint family splits remain mandatory. Evaluation must include candidate-order invariance, candidate-set perturbation, hard-negative discrimination and calibration/reliability analysis.
+
+### Model status
+
+CLM-8B is `SHADOW_ONLY` and `TRAINING_INELIGIBLE` as an operational label source. Its outputs may be compared against the incumbent path but cannot become golden labels merely because the model is high-confidence.
+
+## 8. Model / Dataset Artifact Acquisition — 2026-09-27
+
+Large checkpoints and datasets may be acquired through `training/ascalon/transfer/Aria2ArtifactFetcher.ts`. The helper is an isolated transfer mechanism, not an authority.
+
+Every acquisition requires:
+
+- explicit HTTPS source allowlist
+- expected SHA-256
+- optional expected byte length
+- independent post-download SHA-256 verification
+- later CAS/manifest promotion.
+
+The downloader's exit status is never itself a provenance or training-eligibility signal.
