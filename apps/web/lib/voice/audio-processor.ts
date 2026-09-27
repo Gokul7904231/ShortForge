@@ -7,6 +7,7 @@ export class AudioPostProcessor {
     targetLoudnessLUFS?: number; // Target RMS scale approximation
     silenceThreshold?: number;   // Amplitude threshold for silence (0.0 to 1.0)
     fadeMs?: number;             // Fade length in milliseconds
+    trimSilence?: boolean;        // Preserve physical duration when false
   } = {}): Buffer {
     // 1. Verify WAV Header
     if (buffer.length < 12 || buffer.toString("utf8", 0, 4) !== "RIFF" || buffer.toString("utf8", 8, 12) !== "WAVE") {
@@ -72,6 +73,7 @@ export class AudioPostProcessor {
     if (samples.length === 0) return buffer;
 
     // 3. Silence Trimming (Start & End)
+    if (options.trimSilence !== false) {
     const threshold = options.silenceThreshold ?? 0.015; // ~ -36dB
     let startFrame = 0;
     let endFrame = samplesCount - 1;
@@ -104,6 +106,8 @@ export class AudioPostProcessor {
         endFrame = i;
         break;
       }
+    }
+
     }
 
     // Slice samples
