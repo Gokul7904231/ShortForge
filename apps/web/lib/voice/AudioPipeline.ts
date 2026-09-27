@@ -23,6 +23,7 @@ export class AudioPipelineClass {
     providerName: string;
     providerVersion: string;
     speedMultiplier?: number;
+    preserveDurationForTiming?: boolean;
   }): Promise<{ audioBuffer: Buffer; cacheHit: boolean; metadata: AudioMetadata }> {
     
     // 1. Check Cache first
@@ -57,7 +58,7 @@ export class AudioPipelineClass {
 
     // 4. Step: Normalize & Trim
     console.log(`[AudioPipeline] Step 3 (Normalize/Post-process) -> Applying LUFS/RMS scaling and silence trim...`);
-    const normalizedWav = this.stepNormalize(canonicalWav);
+    const normalizedWav = this.stepNormalize(canonicalWav, Boolean(params.preserveDurationForTiming));
 
     // 5. Step: Validate
     console.log(`[AudioPipeline] Step 4 (Validate) -> Querying ffprobe for stream verification...`);
@@ -172,10 +173,11 @@ export class AudioPipelineClass {
   /**
    * Applies normalization, silence trimming, and fades to WAV buffer
    */
-  stepNormalize(buffer: Buffer): Buffer {
+  stepNormalize(buffer: Buffer, preserveDuration = false): Buffer {
     return AudioPostProcessor.processWav(buffer, {
       silenceThreshold: 0.012, // -38dB
-      fadeMs: 25
+      fadeMs: preserveDuration ? 0 : 25,
+      trimSilence: !preserveDuration
     });
   }
 
