@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR36-Floor06",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor06-pretraining-hardening-20260927",
+  "objective": "Complete Floor 06 pre-training distributed-render hardening without changing the locked floor topology or authority hierarchy.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/decisions.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/audits/f06-azure-retirement.md",
+      "services/pipeline/floor03_asset_realization/README.md",
+      "services/pipeline/floor05_timeline_composition/README.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "PASS",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added provider-independent physical render artifact verification.",
+    "Added hard provider availability admission.",
+    "Added typed RenderAdmissionRecord.",
+    "Added physical-verification-driven provider failover.",
+    "Added F06 floor README and Ascalon pre-training admission specification.",
+    "Added F06 research/adoption ledger.",
+    "Updated Ascalon F06 capability/floor ontology.",
+    "Documented F03 downstream boundary without adding F03 semantic schema churn.",
+    "Added dedicated F06 validation workflow and tests."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/fabric/verification/RenderArtifactVerifier.ts",
+    "apps/web/factoryos/core/compute/router/ComputeRouter.ts",
+    "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+    "apps/web/factoryos/tests/f06-render-admission.test.ts",
+    "services/pipeline/floor06_rendering/README.md",
+    ".okf/research/repo-mappings/f06-distributed-rendering-wave1-20260927.md",
+    "docs/verification/ascalon/floor06-pretraining-admission.md",
+    "training/ascalon/ontology/capabilities.json",
+    "training/ascalon/ontology/floors.json",
+    ".okf/decisions.md"
+  ],
+  "notes": [
+    "No floor topology change.",
+    "No third-party runtime authority or source code imported.",
+    "F07 remains final verification and release authority.",
+    "F03 AssetPlanIR remains semantically unchanged because existing downstream signals are sufficient."
+  ],
+  "verificationResults": {
+    "f06WorkflowFirstAttempt": "FAIL: newly added verifier/test type errors plus unrelated pre-existing repository typecheck errors",
+    "teamChangeGateFirstAttempt": "FAIL: missing Team/reports/pr-36.json; report is now added for the next gate run",
+    "f06WorkflowCurrent": "PENDING/IN_PROGRESS",
+    "repositoryCI": "PENDING",
+    "floor05ProductionValidation": "PENDING",
+    "floor04ProductionValidation": "PENDING",
+    "floor02Floor03ProductionGates": "PENDING",
+    "obsidianMemoryValidation": "PENDING"
+  },
+  "verificationPlan": [
+    "Re-run Team Change Gate with required pr-36 report.",
+    "Complete F06 physical admission and failover workflow.",
+    "Resolve only new F06 failures; preserve unrelated legacy failures as separate evidence.",
+    "Run cross-floor contract and repository CI lanes.",
+    "Merge only after production-critical checks are green."
+  ]
+}
