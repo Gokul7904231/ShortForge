@@ -158,6 +158,15 @@ export class ComputeRouter {
 
       // 3. Capability check
       const capability = await provider.getCapability();
+
+      // Availability is a hard admission check, not a ranking hint. This prevents
+      // a provider at capacity from being selected and failing only after dispatch.
+      const available = await provider.isAvailable();
+      if (!available) {
+        rejectionReasons[provider.id] = "Provider is not currently available for dispatch.";
+        continue;
+      }
+
       if (!capability.supportedWorkloads.includes(job.workloadType)) {
         rejectionReasons[provider.id] = `Provider does not support workload ${job.workloadType}`;
         continue;
