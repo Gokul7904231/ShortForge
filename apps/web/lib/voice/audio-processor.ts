@@ -73,41 +73,38 @@ export class AudioPostProcessor {
     if (samples.length === 0) return buffer;
 
     // 3. Silence Trimming (Start & End)
-    if (options.trimSilence !== false) {
-    const threshold = options.silenceThreshold ?? 0.015; // ~ -36dB
     let startFrame = 0;
     let endFrame = samplesCount - 1;
 
-    // Scan from start
-    for (let i = 0; i < samplesCount; i++) {
-      let isSilent = true;
-      for (let c = 0; c < numChannels; c++) {
-        if (Math.abs(samples[i * numChannels + c]) > threshold) {
-          isSilent = false;
+    if (options.trimSilence !== false) {
+      const threshold = options.silenceThreshold ?? 0.015;
+      for (let i = 0; i < samplesCount; i++) {
+        let isSilent = true;
+        for (let c = 0; c < numChannels; c++) {
+          if (Math.abs(samples[i * numChannels + c]) > threshold) {
+            isSilent = false;
+            break;
+          }
+        }
+        if (!isSilent) {
+          startFrame = i;
           break;
         }
       }
-      if (!isSilent) {
-        startFrame = i;
-        break;
-      }
-    }
 
-    // Scan from end
-    for (let i = samplesCount - 1; i >= startFrame; i--) {
-      let isSilent = true;
-      for (let c = 0; c < numChannels; c++) {
-        if (Math.abs(samples[i * numChannels + c]) > threshold) {
-          isSilent = false;
+      for (let i = samplesCount - 1; i >= startFrame; i--) {
+        let isSilent = true;
+        for (let c = 0; c < numChannels; c++) {
+          if (Math.abs(samples[i * numChannels + c]) > threshold) {
+            isSilent = false;
+            break;
+          }
+        }
+        if (!isSilent) {
+          endFrame = i;
           break;
         }
       }
-      if (!isSilent) {
-        endFrame = i;
-        break;
-      }
-    }
-
     }
 
     // Slice samples
