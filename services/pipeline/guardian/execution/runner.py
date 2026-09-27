@@ -43,7 +43,18 @@ class WorkerRunner:
             logger.info("worker_runner_executing_capability", capability=capability.name)
 
             if capability.handler:
-                out_data = capability.handler(action.parameters, context)
+                handler_context = dict(context)
+                # Authorization evidence is injected by Guardian here, immediately
+                # before the capability handler executes. Workers cannot mint this
+                # context themselves because it is derived from the validated ActionRequest.
+                handler_context["_guardian_authorization"] = {
+                    "decision_id": str(action.decision_id),
+                    "execution_id": str(action.execution_id),
+                    "floor_id": action.floor_id,
+                    "capability_name": action.capability_name,
+                    "authorized_by": action.authorized_by,
+                }
+                out_data = capability.handler(action.parameters, handler_context)
             else:
                 out_data = {"status": "executed", "capability": capability.name, "parameters": action.parameters}
 
