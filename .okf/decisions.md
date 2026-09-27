@@ -1442,3 +1442,25 @@ Implementation surfaces:
 - apps/web/factoryos/core/timeline/TimelineIR.ts
 
 Validation is recorded in Team/reports/temporal-precision-20260927.json and the dedicated GitHub Actions workflow.
+
+
+## Cross-floor Ascalon reconciliation — 2026-09-27
+
+**Classification:** extends existing rule + consistency repair
+
+The current executable and Ascalon training identity is now locked as:
+- F03 = Visual Asset Realization & Blueprints.
+- F04 = Media Synthesis & Provider Execution.
+- F05 = Timeline Composition & Motion.
+- F06 = Video GPU Rendering Engine.
+- F07 = QA Gate & Social Compliance.
+
+The production topology remains F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07.
+
+This decision resolves an observed F04 semantic mismatch: the executable F04 service already generated and validated visual, narration and background-audio artifacts, while older runtime/ontology descriptions presented F04 as voice-only. The ontology, hierarchy validator, Ascalon agent/capability records, and tests are aligned to the executable boundary.
+
+F07 admission validation is aligned to the committed PASS-state report contract. Historical Ascalon readiness artifacts are explicitly marked historical/superseded.
+
+No new authority plane, scheduler, floor, provider authority, or model-training permission is introduced.
+
+Ascalon admission remains evidence-gated: current runtime/ontology consistency, dedicated floor validation, repository typecheck, Team Change Gate and required CI must pass on the current mainline before production trajectory collection is admitted.
