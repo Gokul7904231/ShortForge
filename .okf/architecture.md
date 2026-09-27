@@ -80,7 +80,7 @@ The pipeline DAG is strictly defined in `apps/web/factoryos/core/hierarchy/Floor
 | `floor01_strategy` | 1 | Strategic Direction & Research | `PLANNING` | `floor00_analyst` | Sequential |
 | `floor02_scripting` | 2 | Cognitive Scripting & Structure | `CREATIVE` | `floor01_strategy` | Forks F03 & F04 |
 | `floor03_asset_realization` | 3 | Visual Asset Realization & Blueprints | `MEDIA` | `floor02_scripting` | **Parallel** with F04 |
-| `floor04_media_synthesis` | 4 | Voice & Audio Synthesis | `VOICE` | `floor02_scripting` | **Parallel** with F03 |
+| `floor04_media_synthesis` | 4 | Media Synthesis & Provider Execution | `MEDIA` | `floor02_scripting` | **Parallel** with F03 |
 | `floor05_timeline_composition` | 5 | Timeline Composition & Motion | `COMPOSITION` | `floor03_asset_realization`, `floor04_media_synthesis` | **Convergence point** |
 | `floor06_rendering` | 6 | Video GPU Rendering Engine | `RENDER` | `floor05_timeline_composition` | Sequential |
 | `floor07_compliance` | 7 | QA Gate & Social Compliance | `VERIFICATION` | `floor06_rendering` | Final Gate |
@@ -245,3 +245,10 @@ F03 remains unchanged semantically in this wave. Its existing AssetPlanIR is suf
 The executable F04 boundary is Media Synthesis & Provider Execution. It physically realizes trusted visual/audio requirements, records provider execution and rights metadata, validates physical artifacts, and emits a verified handoff to F05. The floor remains subordinate to Guardian authorization and does not own final release truth.
 
 Topology remains F02 -> (F03 || F04) -> F05.
+
+
+## F04 canonical role — 2026-09-27
+
+The executable and Ascalon-canonical definition of F04 is **Media Synthesis & Provider Execution** (`MEDIA`). F04 physically realizes trusted media requirements, including visual assets plus voice/narration and background audio, with provider selection, physical validation, rights/provenance registration and crash-safe persistence.
+
+Historical voice-only descriptions are retained only as audit history and must not be used for current training trajectories.
