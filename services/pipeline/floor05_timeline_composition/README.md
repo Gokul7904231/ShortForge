@@ -1,6 +1,6 @@
 # Floor 05 — Timeline Composition & Motion
 
-Status: wave-2 production hardening complete; canonical production-critical and post-merge gates PASS on main.
+Status: wave-2 production hardening is merged and green on main. Wave-3 pre-training hardening is implemented on the current branch and requires fresh CI/promotion gates before main adoption.
 
 ## Purpose
 
@@ -173,3 +173,45 @@ Ascalon may learn to propose and explain composition decisions, but the proposal
 ### Boundary preserved
 
 F05 still does not acquire provider credentials, distributed render dispatch authority, F07 release authority, or permission to mutate F03 semantics. The reference render remains a bounded evidence/render fixture; production distributed compute remains F06.
+
+
+## Wave 3 pre-training hardening — 2026-09-27
+
+Wave 3 closes three boundary gaps identified during the pre-training forensic audit.
+
+### 1. Guardian authorization is now executable, not documentary
+
+WorkerRunner injects a reserved `_guardian_authorization` context derived from the already-authorized ActionRequest. The F05 handler validates this evidence before entering Floor05PipelineService, and the pipeline refuses execution unless the authorization is scoped to `floor05`, names the canonical F05 worker capability, and originates from `GUARDIAN_ACTION_GATE`.
+
+The reference render now records `guardian-decision:<decision_id>` instead of constructing a self-declared `guardian-floor05:<request_id>` authorization string.
+
+### 2. TimelineIR drift is now observable and render-addressable
+
+F05 keeps its Python `TimelineSpec` as the local compiler contract but now emits a deterministic canonical TimelineIR JSON sidecar through `app/services/timeline_ir_bridge.py`. Its SHA-256 fingerprint is included in the render-input identity, so changing canonical semantic mapping invalidates cached reference renders.
+
+This is an interoperability bridge, not a second timeline authority. `apps/web/factoryos/core/timeline/TimelineIR.ts` remains the canonical semantic schema; F06/RenderFabric remain the physical production execution boundary.
+
+### 3. Caption semantics are no longer reconstructed from narration
+
+F03 now preserves explicit F02 `on_screen_text` as `AudioAssetRequirement.caption_text`. F05 uses that field for subtitle composition and emits a validated WebVTT sidecar. When F02 has no explicit on-screen text, F05 retains the existing bounded narration-text fallback.
+
+### Ascalon training contract after wave 3
+
+The preferred trajectory is:
+
+`F02 intent → F03 plan → F04 measured media → TimelineBrain proposal → Guardian authorization → F05 TimelineIR + reference evidence → F06 production render → F07 verification`
+
+Training examples should teach the model to:
+- preserve explicit upstream semantics rather than infer missing intent;
+- reason over rational frame ranges instead of free-form time;
+- propose transitions only from declared policy;
+- distinguish caption text from narration text;
+- attach every decision to evidence and a plan fingerprint;
+- treat Guardian authorization as external state, never as an LLM-generated field;
+- use rejection/retry traces as negative examples when contracts fail.
+
+### Research promotion gate
+
+Wave 3 is based on clean-room analysis of OpenTimelineIO, current Remotion composition guidance, WebVTT, VBench-2.0, and C2PA. No external source code, model weights, prompts, credentials, or runtime authority was imported.
+
+Promotion remains gated by the executable repository tests, Guardian checks, security evidence, and full CI.
