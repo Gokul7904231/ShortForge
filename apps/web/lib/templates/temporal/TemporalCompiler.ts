@@ -88,6 +88,63 @@ export class TemporalCompiler {
     };
   }
 
+  static compileGeneratedBeats(
+    templateId: string,
+    templateVersion: string,
+    beats: Array<{ beatId: string; durationSeconds?: number }>,
+    targetDurationMs: number,
+    fps: number,
+    contractInput: unknown = {},
+  ): TemporalPlanIR {
+    const configured = TemporalContractSchema.parse(contractInput);
+    const weights = beats.map((beat) => Math.max(0.1, beat.durationSeconds || 1));
+    const weightSum = weights.reduce((sum, value) => sum + value, 0) || 1;
+    let cursorMs = 0;
+    const plans = beats.map((beat, index) => {
+      const raw = targetDurationMs * (weights[index] / weightSum);
+      const durationMs =
+        index === beats.length - 1
+          ? targetDurationMs - cursorMs
+          : Math.max(1, Math.round(raw));
+      const speechBudgetMs = Math.round(durationMs * 0.86);
+      const pauseBudgetMs = Math.round(durationMs * 0.08);
+      const transitionBudgetMs = Math.round(durationMs * 0.02);
+      const visualOnlyBudgetMs = Math.max(
+        0,
+        durationMs - speechBudgetMs - pauseBudgetMs - transitionBudgetMs,
+      );
+      const plan = {
+        beatId: beat.beatId,
+        startMs: cursorMs,
+        durationMs,
+        speechBudgetMs,
+        pauseBudgetMs,
+        visualOnlyBudgetMs,
+        transitionBudgetMs,
+      };
+      cursorMs += durationMs;
+      return plan;
+    });
+    return {
+      schemaVersion: "1.0.0",
+      templateId,
+      templateVersion,
+      targetDurationMs,
+      targetDurationFrames: Math.round((targetDurationMs / 1000) * fps),
+      fps,
+      frameTimebase: Math.round(1000 / fps) + "ms/frame",
+      beats: plans,
+      contract: {
+        ...configured,
+        video: { ...configured.video, targetDurationMs, fpsRef: "FPS_" + fps },
+      } as any,
+      provenance: {
+        compilerVersion: COMPILER_VERSION,
+        source: "TEMPLATE_DEFINITION",
+      },
+    };
+  }
+
   static intentForAudioTarget(options: {
     targetDurationMs: number;
     timingMode?: "FLEXIBLE" | "BOUNDED" | "EXACT";
