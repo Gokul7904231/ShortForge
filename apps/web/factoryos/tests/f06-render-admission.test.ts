@@ -53,6 +53,7 @@ async function makeMp4(filePath: string): Promise<void> {
 }
 
 async function makeRoot(): Promise<string> {
+  await fs.mkdir(path.join(process.cwd(), "data"), { recursive: true });
   const root = await fs.mkdtemp(
     path.join(process.cwd(), "data", "f06-admission-test-")
   );
