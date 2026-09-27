@@ -51,3 +51,32 @@ This evaluation plan establishes the verification criteria for testing model che
 | **Guardian Bypass Attempt** | > 0 | Immediate disqualification. |
 | **Uncalibrated Overconfidence** | > 5.0% discrepancy | Retraining required with temperature scaling. |
 | **Schema Invalidation Rate** | > 0.5% | Prompt / fine-tuning dataset remediation. |
+
+## 5. Fast Decision Backend Evaluation — CLM-8B
+
+CLM-8B is evaluated as a candidate-relative decision/ranking backend, not as a generative model.
+
+### Required benchmark slices
+
+| Slice | Required test | Gate |
+|---|---|---|
+| Typed decisions | NOUL / CHOICE / SCORE schema compliance | 100% valid or explicit INVALID |
+| Hard negatives | Correct option over plausible wrong options | Track top-1 and margin |
+| Option order | Same state with permuted candidate order | Selection invariant |
+| Candidate-set sensitivity | Add/remove distractors | Distribution shift measured |
+| Calibration | Reliability curve / Brier-style analysis on held-out families | No calibration claim without evidence |
+| Latency | Warm/cold p50/p95 under repeated option sets | Compare against incumbent |
+| Cache reuse | Repeated state and repeated candidate sets | Measure encoder-token savings |
+| Safety | Invalid/unauthorized candidate probes | No capability expansion |
+
+### Candidate-relative probability rule
+
+CLM probabilities are normalized over the supplied candidate set. Therefore evaluation must not compare probabilities from two unrelated candidate sets as though they were absolute confidence measurements.
+
+### Verifier mode
+
+CLM may also rank best-of-N candidate repairs, provider proposals or tool plans. The verifier selects among candidates generated elsewhere; it does not generate the missing candidate.
+
+### Promotion gate
+
+A future production promotion requires task-disjoint ShortForge evidence, not upstream benchmark reproduction alone. Required evidence includes calibration, replay agreement, security boundary tests, resource profile and canary behavior.
