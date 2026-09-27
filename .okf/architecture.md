@@ -223,3 +223,18 @@ F02 semantic transition intent
 → F07 final verification
 
 F05 reference rendering is evidence generation only; it does not acquire the F06 distributed render capability.
+
+
+## Floor 06 physical-admission hardening — 2026-09-27
+
+F06 remains the canonical production render boundary:
+
+`F05 committed TimelineSpec/render identity → RenderFabric → ComputeGateway → ComputeRouter → qualified provider → physical artifact verifier → CAS → F07`
+
+The new F06 evidence gate is provider-independent. A provider's completion receipt is not sufficient to establish F06 completion. The control plane recomputes SHA-256 and byte length and independently runs ffprobe plus FFmpeg decoder smoke before accepting a render artifact.
+
+ComputeRouter also records a typed `RenderAdmissionRecord` and treats provider availability as a hard admission condition. Candidate ranking remains deterministic utility scheduling, not a calibrated performance oracle; telemetry and evidence are retained for later calibration work.
+
+External systems including OpenCue, Temporal, Kueue and Ray remain pattern references only. No second scheduler/workflow authority is introduced.
+
+F03 remains unchanged semantically in this wave. Its existing AssetPlanIR is sufficient for downstream identity and planning needs, so the F06 improvement deliberately avoids expanding the F03 contract without a demonstrated requirement.

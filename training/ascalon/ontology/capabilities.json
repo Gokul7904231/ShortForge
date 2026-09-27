@@ -77,8 +77,8 @@
     },
     {
       "capabilityId": "cap_render_dispatch",
-      "version": "1.0.0",
-      "name": "Compute Render Worker Dispatch",
+      "version": "1.1.0",
+      "name": "Compute Render Admission & Worker Dispatch",
       "floorId": "floor06_rendering",
       "riskClass": "MEDIUM",
       "allowedRoles": [
@@ -87,7 +87,14 @@
       ],
       "requiresGuardianGate": true,
       "timeoutMs": 300000,
-      "trainingEligible": true
+      "trainingEligible": true,
+      "trainingEvidence": [
+        "provider_capability",
+        "provider_health",
+        "provider_availability",
+        "render_admission_record",
+        "physical_artifact_verification"
+      ]
     },
     {
       "capabilityId": "cap_compliance_verify",

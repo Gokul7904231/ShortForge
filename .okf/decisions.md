@@ -1375,3 +1375,43 @@ Promotion requires:
 7. repository CI / post-merge gates.
 
 Failure or contradiction means reject promotion and preserve evidence.
+
+
+## Decision 36. Floor 06 physical artifact admission before completion
+
+**Date:** 2026-09-27  
+**Classification:** extends existing rule  
+**Status:** LOCKED FOR CURRENT IMPLEMENTATION WAVE
+
+### Decision
+
+Floor 06 must not accept a provider-reported render completion as a successful production render until the canonical control plane has independently verified the returned physical artifact.
+
+### Required evidence
+
+1. physical file exists in an approved path;
+2. physical SHA-256 equals the provider receipt;
+3. physical byte length equals the provider receipt;
+4. ffprobe confirms the expected MP4/container and stream metadata;
+5. FFmpeg decoder smoke succeeds;
+6. the evidence is attached to the execution receipt and F06 handoff.
+
+### Routing consequence
+
+A render artifact that fails physical admission is a failed provider attempt and may trigger the existing bounded failover policy. This does not create a new authority layer.
+
+### Ascalon boundary
+
+Ascalon may reason over admission evidence and propose provider/failover choices. It may not grant `CAP_RENDER_DISPATCH`, certify physical truth, mutate F05 semantics, or issue F07 release authorization.
+
+### F03 consequence
+
+No new F03 semantic field is introduced. Existing AssetPlanIR lineage, fingerprints, continuity/reference data and timing intent already provide the necessary downstream semantics through the immutable F05 contract. Expanding F03 solely to satisfy F06 would add contract churn without a demonstrated requirement.
+
+### External research disposition
+
+OpenCue, Temporal, Kueue, Ray and OpenTelemetry inform boundary patterns only. ShortForge retains RenderFabric, ComputeRouter, Guardian, CAS, worker fencing and F07 as the authoritative execution/verification topology.
+
+### Verification obligation
+
+The branch must pass F06 physical-verifier tests, router failover tests, TypeScript typecheck/tests, F03/F04/F05/F06 contract regression, Team Change Gate and repository CI before promotion to main.

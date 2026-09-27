@@ -120,6 +120,39 @@ export type ExecutionStatus =
   | "TIMED_OUT"
   | "CANCELLED";
 
+export interface ArtifactVerificationEvidence {
+  status: "PASS" | "FAIL";
+  verifierId: string;
+  verifiedAt: string;
+  artifactPath: string;
+  sha256: string;
+  byteLength: number;
+  container: string;
+  videoCodec?: string;
+  audioCodec?: string;
+  width?: number;
+  height?: number;
+  fps?: number;
+  durationSeconds?: number;
+  decodeSmoke: "PASS" | "FAIL";
+  checks: string[];
+  failureReason?: string;
+}
+
+export interface RenderAdmissionRecord {
+  admissionId: string;
+  jobId: string;
+  policyVersion: string;
+  selectedProviderId: string;
+  selectedProviderType: ProviderType;
+  selectedUtilityScore: number;
+  candidateProviderIds: string[];
+  rejectionReasons: Record<string, string>;
+  capabilitySnapshot: ProviderCapability;
+  healthSnapshot: ProviderHealth;
+  evaluatedAt: string;
+}
+
 export interface ExecutionReceipt {
   receiptId: string;
   executionId: string;
@@ -143,9 +176,12 @@ export interface ExecutionReceipt {
   verifiedAt?: string;
   failureReason?: string;
   rawReceipt?: Record<string, any>;
+  artifactVerification?: ArtifactVerificationEvidence;
+  admissionRecord?: RenderAdmissionRecord;
 }
 
 export interface ComputePolicy {
+  policyVersion?: string;
   allowedProviders: ProviderType[];
   preferredOrder: ProviderType[];
   maxRetries: number;
@@ -156,6 +192,7 @@ export interface ComputePolicy {
 }
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
+  policyVersion: "1.0.0",
   allowedProviders: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
   preferredOrder: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
   maxRetries: 2,

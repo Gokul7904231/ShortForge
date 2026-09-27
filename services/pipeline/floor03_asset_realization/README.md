@@ -146,3 +146,14 @@ Supported downstream intent values are normalized from F02 semantics by F05 into
 - bounded `CROSSFADE`
 
 F03 still does not choose a renderer, render a timeline, own physical media, or authorize execution. The change exists so F05 no longer has to silently invent a transition policy when F02 already supplied one.
+
+
+## F03 → F06 downstream integrity boundary — 2026-09-27
+
+F03's `AssetPlanIR` remains the semantic source for visual intent. F06 is intentionally prohibited from consuming mutable F03 runtime state. The production path is:
+
+`F03 AssetPlanIR → F04 physical media → F05 immutable TimelineSpec/render identity → F06 admission/execution`
+
+No new F03 semantic field was introduced in the F06 wave because the existing plan already carries scene identity, continuity/reference intent, dependency fingerprints, timing intent and the semantic plan fingerprint required by downstream floors. This avoids unnecessary contract expansion while preserving exact lineage.
+
+F03 therefore remains a planning boundary, while F06 remains a compute/admission boundary.
