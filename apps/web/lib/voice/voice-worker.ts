@@ -6,6 +6,8 @@ import path from "path";
 import { AudioPipeline } from "./AudioPipeline";
 import { NarrationSession } from "./narration-session";
 import { NarrationRole } from "./narration-role";
+import { PrecisionTTSController, TemporalTimingUnsatisfiedError } from "./temporal/PrecisionTTSController";
+import type { TemporalIntent } from "../templates/temporal/TemporalContracts";
 
 export class VoiceWorker {
   /**
@@ -18,7 +20,8 @@ export class VoiceWorker {
     outputPath: string;
     session: Readonly<NarrationSession>;
     role: NarrationRole;
-  }): Promise<{ outputPath: string; cacheHit: boolean; attempts: number }> {
+    temporalIntent?: TemporalIntent;
+  }): Promise<{ outputPath: string; cacheHit: boolean; attempts: number; temporalEvidence?: any }> {
     const { session, role } = params;
     const voiceId = role === NarrationRole.INTRO ? session.introVoiceId : session.mainVoiceId;
     const taskId = `voice_${params.jobId}_role_${role}`;
@@ -49,67 +52,83 @@ export class VoiceWorker {
 
       if (!audioBuffer) {
         cacheHit = false;
-        console.log(`[VoiceWorker] Cache miss. Synthesizing via locked provider: ${session.provider.name}...`);
-
-        let rawBuffer: Buffer | null = null;
         let lastError: Error | null = null;
 
-        // Strict 3-Retry Loop on the Locked Provider
         for (let attempt = 1; attempt <= 3; attempt++) {
           attempts = attempt;
           try {
-            console.log(`[VoiceWorker] Synthesis attempt ${attempt}/3 for role "${role}" using ${session.providerId}`);
-
-            // Broadcast Event-Bus telemetry
             EventBus.publish(
               WorkflowEvents.VOICE_GENERATED + ".started",
               { jobId: params.jobId, provider: session.providerId, text: params.text.slice(0, 60), attempt },
               params.jobId
             );
 
-            rawBuffer = await session.provider.synthesize(params.text, {
+            const precision = await PrecisionTTSController.synthesizeAndVerify({
+              provider: session.provider,
               voiceId,
               modelId: session.modelId,
+              text: params.text,
+              sampleRate,
               language: "en-US",
-              speed: 1.15, // slightly faster for snappier shorts narration
+              baseSpeed: 1.15,
               format,
-              sampleRate
+              jobId: params.jobId,
+              outputPath: params.outputPath,
+              cacheHash,
+              temporalIntent: params.temporalIntent,
             });
 
-            // Validate that we got a valid non-empty buffer from TTS provider
-            if (rawBuffer && rawBuffer.length > 0) {
-              lastError = null;
-              break; // Success!
-            } else {
-              throw new Error("Received empty audio buffer from TTS provider.");
-            }
+            audioBuffer = precision.audioBuffer;
+            temporalEvidence = precision.evidence;
+            lastError = null;
+            break;
           } catch (err: any) {
-            lastError = err;
-            console.warn(`[VoiceWorker] Attempt ${attempt}/3 failed: ${err.message}`);
-            if (attempt < 3) {
-              await new Promise((r) => setTimeout(r, 1000 * attempt)); // Exponential backoff
-            }
+            lastError = err instanceof Error ? err : new Error(String(err));
+            console.warn("[VoiceWorker] Precision synthesis attempt " + attempt + "/3 failed: " + lastError.message);
+            if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
           }
         }
 
-        if (lastError || !rawBuffer) {
+        if (!audioBuffer) {
           console.warn(
-            `[VoiceWorker] Synthesis failed on provider "${session.providerId}" after 3 attempts (${lastError?.message}). Falling back to deterministic silent WAV audio to ensure render pipeline continuity.`
+            "[VoiceWorker] Precision TTS failed on provider " +
+              session.providerId +
+              " after 3 attempts (" +
+              (lastError?.message || "unknown") +
+              "). Falling back to existing degraded audio path.",
           );
-          rawBuffer = VoiceWorker.generateSilentWav(3, sampleRate);
+          const fallbackSeconds = params.temporalIntent?.targetDurationMs
+            ? params.temporalIntent.targetDurationMs / 1000
+            : 3;
+          const rawBuffer = VoiceWorker.generateSilentWav(fallbackSeconds, sampleRate);
+          const pipelineResult = await AudioPipeline.process({
+            rawBuffer,
+            cacheHash,
+            jobId: params.jobId,
+            outputPath: params.outputPath,
+            providerId: session.providerId,
+            providerName: session.provider.name,
+            providerVersion: session.provider.version,
+            preserveDurationForTiming: Boolean(params.temporalIntent?.targetDurationMs),
+          });
+          audioBuffer = pipelineResult.audioBuffer;
+          temporalEvidence = {
+            requestedDurationMs: params.temporalIntent?.targetDurationMs,
+            actualDurationMs: Math.round(pipelineResult.metadata.duration * 1000),
+            durationErrorMs: params.temporalIntent?.targetDurationMs
+              ? Math.round(pipelineResult.metadata.duration * 1000 - params.temporalIntent.targetDurationMs)
+              : undefined,
+            sampleRate: pipelineResult.metadata.sampleRate,
+            sampleCount: Math.round(pipelineResult.metadata.duration * pipelineResult.metadata.sampleRate),
+            providerId: session.providerId,
+            modelId: session.modelId,
+            correctionPasses: 0,
+            correctionMethods: ["DEGRADED_SILENT_FALLBACK"],
+            alignmentType: "NONE",
+            audioSha256: crypto.createHash("sha256").update(audioBuffer).digest("hex"),
+            physicalVerification: "DEGRADED",
+          };
         }
-
-        // Run through the robust Audio Intake Pipeline
-        const pipelineResult = await AudioPipeline.process({
-          rawBuffer,
-          cacheHash,
-          jobId: params.jobId,
-          outputPath: params.outputPath,
-          providerId: session.providerId,
-          providerName: session.provider.name,
-          providerVersion: session.provider.version
-        });
-        audioBuffer = pipelineResult.audioBuffer;
       } else {
         // Cache hit processing
         const pipelineResult = await AudioPipeline.process({
@@ -119,7 +138,8 @@ export class VoiceWorker {
           outputPath: params.outputPath,
           providerId: session.providerId,
           providerName: session.provider.name,
-          providerVersion: session.provider.version
+          providerVersion: session.provider.version,
+          preserveDurationForTiming: Boolean(params.temporalIntent?.targetDurationMs)
         });
         audioBuffer = pipelineResult.audioBuffer;
       }
@@ -137,7 +157,8 @@ export class VoiceWorker {
           audioPath: params.outputPath,
           cacheHit,
           sizeBytes: audioBuffer.length,
-          provider: session.providerId
+          provider: session.providerId,
+          temporalEvidence
         },
         params.jobId
       );
@@ -150,7 +171,8 @@ export class VoiceWorker {
         cacheHit,
         attempts,
         cacheHash,
-        textHash
+        textHash,
+        temporalEvidence
       };
     });
   }
