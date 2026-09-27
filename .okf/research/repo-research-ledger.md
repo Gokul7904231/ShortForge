@@ -228,3 +228,19 @@ These mappings are research inputs only. No provider code, weights, workflows, o
 | Additional storyboard/director repositories | Shot, camera, reference and continuity patterns | Existing typed scene planning fields | PATTERN_EXTRACTION |
 
 No third-party runtime code or model/provider dependency was added.
+
+## Ascalon Fast Decision + Artifact Acquisition Wave — 2026-09-27
+
+| Repository | Signal | ShortForge treatment | Adoption mode | Status |
+|---|---|---|---|---|
+| Contrastive-LM/CLM | State/action contrastive System One; typed decisions; candidate ranking; cacheable representations | `CLMDecisionAdapter`, candidate-relative probability semantics, fast-decision benchmark track | Pattern Extraction + Isolated Shadow Adapter | SHADOW_IMPLEMENTED |
+| jaredpalmer/kev | Small local Jev-like decision models with typed API and held-out temperature calibration | Confirms provider-neutral fast-decision contract and explicit calibration study requirement | Pattern Extraction | REFERENCE |
+| uspraveen/Jevify | Open System One reproduction and calibration-oriented evaluation | Use as methodology reference for calibration/reproducibility | Research Only | REFERENCE |
+| aria2/aria2 | Resumable multi-source downloads, checksum validation, RPC | `Aria2ArtifactFetcher` for large Ascalon model/dataset acquisition; independent SHA-256 remains authoritative | Isolated Provider | IMPLEMENTED |
+
+### Promotion boundaries
+
+- CLM benchmark claims are not production qualification evidence.
+- CLM outputs remain training-ineligible and authority-ineligible until an explicit promotion gate passes.
+- aria2 transfer completion never establishes artifact truth without independent post-download verification.
+- No third-party source code, model weights or GPL library code was imported into FactoryOS runtime.
