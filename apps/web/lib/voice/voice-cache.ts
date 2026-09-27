@@ -25,6 +25,8 @@ export class VoiceCacheClass {
     emotion: string;
     rendererVersion: string;
     voiceVersion: string;
+    targetDurationMs?: number;
+    timingMode?: string;
   }): string {
     const hashInput = [
       params.text,
@@ -35,7 +37,9 @@ export class VoiceCacheClass {
       String(params.sampleRate),
       params.emotion,
       params.rendererVersion,
-      params.voiceVersion
+      params.voiceVersion,
+      params.targetDurationMs == null ? "" : String(params.targetDurationMs),
+      params.timingMode || ""
     ].join("|");
     return crypto.createHash("sha256").update(hashInput).digest("hex");
   }
