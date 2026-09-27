@@ -16,8 +16,6 @@ from floors.floor05_timeline_composition.app.domain.handoff import (
     TimelineSpec,
     TimelineTrackType,
 )
-from floors.floor05_timeline_composition.app.services.canonical_hasher import CanonicalHasher
-
 
 def _frame(timeline: TimelineSpec, seconds: float) -> int:
     return timeline.timebase.frame_index(seconds)
@@ -45,11 +43,6 @@ def build_canonical_timeline_ir(timeline: TimelineSpec, correlation_id: str) -> 
             "timelineStartMs": round(clip.start_time * 1000),
             "durationMs": round((clip.end_time - clip.start_time) * 1000),
             "zIndex": 0 if clip.track_type == TimelineTrackType.VISUAL else 10,
-            "frameStart": start_frame,
-            "frameEndExclusive": end_frame,
-            "volume": clip.volume,
-            "trimStartSeconds": clip.trim_start,
-            "trimEndSeconds": clip.trim_end,
         }
 
         if clip.track_type == TimelineTrackType.VISUAL:
@@ -72,7 +65,7 @@ def build_canonical_timeline_ir(timeline: TimelineSpec, correlation_id: str) -> 
                     "src": clip.source_file_path,
                     "timelineStartMs": round(clip.start_time * 1000),
                     "durationMs": round((clip.end_time - clip.start_time) * 1000),
-                    "volume": clip.volume,
+                    "volume": min(1.0, clip.volume),
                 }
             )
 
@@ -100,7 +93,6 @@ def build_canonical_timeline_ir(timeline: TimelineSpec, correlation_id: str) -> 
         "timelineId": timeline.timeline_id,
         "schemaVersion": "1.0.0",
         "missionId": correlation_id,
-        "correlationId": correlation_id,
         "compositionType": "FACTS_SHORTS",
         "canvas": {
             "width": timeline.target_width,
@@ -112,16 +104,6 @@ def build_canonical_timeline_ir(timeline: TimelineSpec, correlation_id: str) -> 
         "visualTracks": visual_tracks,
         "audioTracks": audio_tracks,
         "subtitleTracks": subtitle_tracks,
-        "transitionMap": [
-            {
-                "transitionId": transition.transition_id,
-                "fromSceneId": transition.from_scene_id,
-                "toSceneId": transition.to_scene_id,
-                "transitionType": transition.transition_type,
-                "durationFrames": _frame(timeline, transition.duration_seconds),
-            }
-            for transition in sorted(timeline.transitions, key=lambda t: t.transition_id)
-        ],
     }
 
     digest_payload = dict(payload)
