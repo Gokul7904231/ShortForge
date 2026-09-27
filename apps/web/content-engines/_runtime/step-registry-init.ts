@@ -29,6 +29,7 @@ import { TimelineOrchestrator } from "../../lib/core/TimelineOrchestrator";
 import { QuestionOptimizer } from "../../lib/core/QuestionOptimizer";
 import { RenderPlanner } from "../../lib/core/RenderPlanner";
 import { NarrationRole } from "../../lib/voice/narration-role";
+import { TemporalCompiler } from "../../lib/templates/temporal/TemporalCompiler";
 
 // ── 1. Script Step ───────────────────────────────────────────────────────────
 WorkflowStepRegistry.register("script", async (context) => {
@@ -415,12 +416,29 @@ WorkflowStepRegistry.register("voice", async (context) => {
         const startSynth = Date.now();
 
         try {
+          const targetDurationMs =
+            typeof scene.duration === "number" && scene.duration > 0
+              ? Math.round(scene.duration * 1000)
+              : undefined;
           const generateResult = await VoiceWorker.generate({
             jobId: context.jobId,
             text,
             outputPath: sceneAudioPath,
             session,
-            role
+            role,
+            temporalIntent: targetDurationMs
+              ? TemporalCompiler.intentForAudioTarget({
+                  targetDurationMs,
+                  timingMode: "EXACT",
+                  toleranceMs: 50,
+                  alignmentGranularity: "WORD",
+                  pausePolicy: "CONTROLLED",
+                  maxResynthesisPasses: 2,
+                  allowRateCorrection: true,
+                  allowTimeStretch: true,
+                  maxStretchRatio: 1.10,
+                })
+              : undefined
           });
 
           totalLatency += (Date.now() - startSynth);
