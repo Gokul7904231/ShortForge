@@ -138,3 +138,25 @@ F07
 AgentTube-derived scene lifecycle mechanisms complement TimelineIR through durable scene manifests, checkpoints, audio-first timing, CAS reuse, and selective repair.
 
 The renderer never becomes the source of semantic truth.
+
+
+## 6. Floor 05 Python compiler bridge — 2026-09-27
+
+The production Python F05 service contains a local TimelineSpec used for validation and reference rendering. It is **not** a competing semantic authority.
+
+The new adapter:
+`services/pipeline/floor05_timeline_composition/app/services/timeline_ir_bridge.py`
+
+emits a deterministic JSON projection aligned to the project-owned TimelineIR.ts concept and produces a SHA-256 `provenanceDigest`. The digest participates in F05 render identity, so semantic mapping changes cannot silently reuse an old reference render.
+
+The bridge intentionally remains provider- and renderer-neutral. Remotion, FFmpeg, WebGL, and future engines consume compiled semantic intent downstream.
+
+### Identity note
+
+Until a cross-floor `missionId` is propagated into the Python handoff contracts, the bridge uses the F05 request correlation identifier as the TimelineIR `missionId` transport value. It is treated as correlation metadata, not sovereign mission authority. A future mission-contract rollout can replace this field without changing TimelineSpec semantics.
+
+### Wave-3 caption path
+
+F02 `on_screen_text` -> F03 `AudioAssetRequirement.caption_text` -> F05 `SubtitleItem` -> validated WebVTT sidecar -> canonical TimelineIR subtitle track.
+
+Word-level timing remains unclaimed until Floor 04 supplies measured word/phoneme timing evidence. F05 currently uses scene-aligned subtitle ranges only.
