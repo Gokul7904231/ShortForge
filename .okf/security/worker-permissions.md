@@ -547,3 +547,12 @@ It does **not** grant:
 - F07 release authority
 
 The reference artifact is evidence consumed by the F05/F06 contract; it is not the production distributed render.
+
+
+### F06 physical-admission clarification — 2026-09-27
+
+`CAP_RENDER_DISPATCH` authorizes dispatch only after provider admission. F06 completion additionally requires the provider-independent physical artifact gate:
+
+`provider receipt → physical SHA-256/size → ffprobe → FFmpeg decode smoke → F06 completion`
+
+Ascalon/SCL may recommend a provider or failover route from observed evidence, but it cannot grant `CAP_RENDER_DISPATCH`, mark the artifact verified, or convert a provider receipt into a final success claim.
