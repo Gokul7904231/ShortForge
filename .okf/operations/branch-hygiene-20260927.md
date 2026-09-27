@@ -1,46 +1,29 @@
-# Branch Hygiene Closure — 2026-09-27
+# Branch Hygiene — Live Repository State (2026-09-27)
 
-## Result
+## Current live branch inventory
 
-The live repository was audited against main, including branch-to-main commit divergence and associated pull requests.
+The repository currently exposes **5 branches**:
 
-### Retained branches
+- main — canonical production branch.
+- feat/ascalon-clm-aria2-upgrade-20260927 — PR #39 is open; the branch is 24 commits ahead and 1 behind main. It contains a new CLM/Aria2 implementation and must remain reviewable until PR disposition is explicit.
+- feat/floor05-pretraining-hardening-wave3-20260927 — PR #35 is closed and unmerged; it is 35 commits ahead and 80 behind main. Retain as an archive/review candidate; do not silently merge.
+- feat/floor07-pretraining-hardening-20260927 — PR #38 was merged; the branch remains because repository auto-delete-on-merge is disabled. Its 21-commit divergence is retained only as historical provenance.
+- research/movie-intelligence-wave1 — research-only branch with 9 commits not in main; retain as a research archive.
 
-| Branch | Reason |
-|---|---|
-| `main` | Canonical production branch |
-| `feat/floor05-pretraining-hardening-wave3-20260927` | Closed PR #35 contains unique unmerged Floor 05 implementation work; retained as a review/archive candidate rather than silently deleting potentially useful architecture |
-| `research/movie-intelligence-wave1` | Unique research-only `.okf` material for future Movie Intelligence work; retained as a research archive |
+## Safety rule
 
-### Deleted branches
+A branch is deleted only when:
+1. its production changes are already represented in main, or
+2. it is explicitly approved for archival deletion after confirming no unique research or implementation evidence is needed.
 
-- `feat/f03-runtime-adapter`
-- `feat/floor04-production-hardening-20260926`
-- `feat/floor05-pretraining-upgrade-20260927`
-- `feat/floor05-wave2-pretraining-completion-20260927`
-- `feat/floor06-pretraining-hardening-20260927`
-- `feat/obsidian-live-memory-fabric-20260926`
-- `feat/obsidian-memory-fabric-20260926`
-- `feat/shortforge-knowledge-graph-20260926`
-- `feat/temporal-precision-wave2-20260927`
-- `feat/temporal-template-precision-20260927`
+Unique open or unmerged implementation branches are not deleted merely because main has moved on.
 
-### Knowledge Graph preservation
+## Current cleanup state
 
-The merged Knowledge Graph implementation was already present on main, while its branch had the only remaining `knowledge/.obsidian/community-plugins.json`. That plugin-enable file was promoted to main before branch deletion.
+This document reflects the live repository audit performed on 2026-09-27. Earlier branch-count records are historical and must not be used as current repository truth.
 
-### Safety rule used
+Repository setting delete_branch_on_merge remains disabled, so merged source branches may remain as refs until explicitly removed.
 
-A branch was deleted only when its production changes were already represented in main, or it was an explicitly superseded/closed implementation branch with no approved canonical runtime change remaining.
+## Ascalon training implication
 
-Unique unmerged implementation/research branches were retained.
-
-## Current branch count
-
-**3 branches total:**
-
-- `main`
-- `feat/floor05-pretraining-hardening-wave3-20260927`
-- `research/movie-intelligence-wave1`
-
-Repository setting `delete_branch_on_merge` remains disabled, so future merged branches may continue to remain until explicitly cleaned.
+Branch existence is not evidence of production architecture. Ascalon trajectory generation must use the canonical main commit and explicit Team/CI evidence. Unmerged branch content is classified as proposal/research until promoted through the normal gate.
