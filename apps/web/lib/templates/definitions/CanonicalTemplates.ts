@@ -47,6 +47,13 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       tone: 'urgent, energized, breathless delivery',
       suggestedVoices: ['en-US-Neural2-F', 'en-US-Journey-F']
     },
+    temporalPolicy: {
+      video: { toleranceMs: 50 },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.15, pausePolicy: 'CONTROLLED' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 }
+    },
     outputPolicy: {
       width: 1080,
       height: 1920,
@@ -104,6 +111,13 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       tone: 'deep, grave, cinematic narrator',
       suggestedVoices: ['en-US-Neural2-D', 'en-US-Wavenet-D']
     },
+    temporalPolicy: {
+      video: { toleranceMs: 50 },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.90, maxRateMultiplier: 1.10, pausePolicy: 'CONTROLLED' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.04 }
+    },
     outputPolicy: {
       width: 1080,
       height: 1920,
@@ -158,6 +172,13 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       paceMultiplier: 0.92,
       tone: 'stoic, deliberate, grounded authority',
       suggestedVoices: ['en-US-Neural2-J', 'en-US-Studio-M']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50 },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.88, maxRateMultiplier: 1.08, pausePolicy: 'CONTROLLED' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.04 }
     },
     outputPolicy: {
       width: 1080,
@@ -542,6 +563,13 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       paceMultiplier: 1.15,
       tone: 'sharp, fast, game-show host',
       suggestedVoices: ['en-US-Neural2-F', 'en-US-Journey-O']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50 },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.20, pausePolicy: 'GRAMMAR' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 }
     },
     outputPolicy: {
       width: 1080,
