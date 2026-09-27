@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Floor06-PreTraining-Hardening-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor06-pretraining-hardening-20260927",
+  "objective": "Complete the Floor 06 pre-training audit and harden distributed render admission, physical artifact verification, bounded failover evidence, Ascalon boundaries, and F03 downstream documentation without changing the locked floor topology or authority hierarchy.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/decisions.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/audits/f06-azure-retirement.md",
+      "services/pipeline/floor03_asset_realization/README.md",
+      "services/pipeline/floor05_timeline_composition/README.md"
+    ]
+  },
+  "forensicFindings": [
+    "Provider completion receipts were accepted by the canonical ComputeRouter without a provider-independent physical media gate.",
+    "ComputeRouter did not make provider availability a hard admission condition.",
+    "Routing decisions exposed heuristic utility scoring but lacked a typed admission evidence record for later training/evaluation.",
+    "The strong lease/fencing state machine exists in the Render Fabric but is not the sole persistence-backed execution authority; no second state machine was introduced in this wave.",
+    "F06 lacked a dedicated production-facing floor README and Ascalon admission document.",
+    "F03 already carries the semantic plan fingerprint, dependencies, continuity/reference intent and timing semantics needed downstream, so no new F03 semantic field was justified."
+  ],
+  "changes": [
+    "Added provider-independent RenderArtifactVerifier for SHA-256, byte-length, ffprobe, and FFmpeg decoder smoke evidence.",
+    "Integrated physical render admission into ComputeRouter before accepting completed RENDER receipts.",
+    "Failed physical admission now triggers existing bounded failover behavior.",
+    "Provider availability is now a hard admission gate.",
+    "Added typed RenderAdmissionRecord to execution receipts.",
+    "Added F06 README with start/end conditions, actions, permissions and F06→F07 contract.",
+    "Added F06 research/adoption ledger for OpenCue, Temporal, Kueue, Ray and OpenTelemetry patterns.",
+    "Updated Ascalon F06 capability ontology and floor responsibility.",
+    "Added Ascalon F06 pre-training admission document.",
+    "Updated worker permission clarification and F03 downstream boundary documentation.",
+    "Added dedicated F06 CI validation workflow and F06 physical admission tests."
+  ],
+  "research": [
+    "OpenCue",
+    "Temporal",
+    "Kueue",
+    "Ray scheduling",
+    "OpenTelemetry semantic conventions",
+    "FFmpeg/ffprobe"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_LIBRARY_AND_CONTROL_PLANE_HARDENING",
+    "notes": "Physical admission adds path containment, SHA/size recomputation, ffprobe/decode evidence and fail-closed behavior. Full repository security lanes remain required for promotion."
+  },
+  "conflicts": [],
+  "disposition": "PASS",
+  "evidenceRefs": [
+    "apps/web/factoryos/core/fabric/verification/RenderArtifactVerifier.ts",
+    "apps/web/factoryos/core/compute/router/ComputeRouter.ts",
+    "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+    "apps/web/factoryos/tests/f06-render-admission.test.ts",
+    "services/pipeline/floor06_rendering/README.md",
+    ".okf/research/repo-mappings/f06-distributed-rendering-wave1-20260927.md",
+    "docs/verification/ascalon/floor06-pretraining-admission.md",
+    "training/ascalon/ontology/capabilities.json",
+    "training/ascalon/ontology/floors.json",
+    ".okf/decisions.md"
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "notes": [
+    "No floor topology change.",
+    "No third-party runtime authority imported.",
+    "No F03 semantic schema expansion promoted; existing AssetPlanIR remains canonical.",
+    "F07 remains independent final verification and release authority.",
+    "Final promotion is conditional on CI and post-merge evidence."
+  ],
+  "verificationPlan": [
+    "Run F06 physical verifier and failover tests.",
+    "Run canonical Render Fabric regression tests.",
+    "Run F03/F04/F05/F06 handoff contract regression.",
+    "Run Ascalon ontology validation.",
+    "Run Team Change Gate and repository CI before merge."
+  ]
+}
