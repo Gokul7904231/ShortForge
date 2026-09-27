@@ -23,11 +23,28 @@
   },
   "validation": {
     "local": "NOT_RUN_IN_CHAT_ENVIRONMENT",
-    "github_actions": "PENDING"
+    "github_actions": {
+      "temporal_precision": "PASS",
+      "team_change_gate": "PASS",
+      "floor04_production_validation": "PASS",
+      "floor05_pretraining_validation": "PASS",
+      "floor06_pretraining_validation": "PASS",
+      "obsidian_memory_validation": "PASS",
+      "google_drive_mcp": "PASS",
+      "repository_ci": {
+        "Floor01_Python": "PASS",
+        "TypeCheck": "BASELINE_FAILURE_UNCHANGED_FROM_MAIN",
+        "WebRegression": "BASELINE_INFORMATIONAL_FAILURE_UNCHANGED_FROM_MAIN",
+        "security_scan": "PASS",
+        "production_container_smoke": "PASS"
+      }
+    }
   },
   "notes": [
     "Word count is a planning estimate, not physical truth.",
     "Provider-reported duration is not physical truth.",
-    "Do not mark this report green until GitHub Actions completes."
+    "Do not mark this report green until GitHub Actions completes.",
+    "Temporal Precision Validation passed after measured-duration tests and targeted source checking.",
+    "Repository-wide TypeScript/Web regression failures reproduce the immediately preceding main-branch CI run and are not introduced by this temporal wave."
   ]
 }
