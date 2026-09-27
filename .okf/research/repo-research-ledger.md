@@ -228,3 +228,44 @@ These mappings are research inputs only. No provider code, weights, workflows, o
 | Additional storyboard/director repositories | Shot, camera, reference and continuity patterns | Existing typed scene planning fields | PATTERN_EXTRACTION |
 
 No third-party runtime code or model/provider dependency was added.
+
+
+## Floor 05 Research Wave 3 — 2026-09-27
+
+The F05 pre-training audit expanded the media-composition corpus with current interoperability, frame-driven rendering, timed-text, evaluation, provenance, and media-pipeline sources.
+
+### Screened sources
+
+- AcademySoftwareFoundation/OpenTimelineIO — rational time/ranges, editorial interchange boundary, logical media references.
+- remotion-dev/remotion / official Remotion skills — frame-driven composition metadata and deterministic render-time semantics.
+- W3C WebVTT — timed caption/subtitle interchange.
+- Vchitect/VBench-2.0 — multidimensional video evaluation and intrinsic faithfulness assessment.
+- c2pa-org/specifications — content provenance/signing boundary.
+- GStreamer/gstreamer — media pipeline and seeking architecture.
+
+### Promoted into ShortForge
+
+- deterministic TimelineIR projection from F05 TimelineSpec;
+- TimelineIR fingerprint included in reference-render identity;
+- explicit F02 on-screen text preserved through F03 into F05;
+- validated WebVTT sidecar as inspectable caption evidence;
+- executable Guardian authorization context injected at the WorkerRunner boundary;
+- TimelineBrain integrated into F05 Guardian reasoning while remaining non-authoritative;
+- least-privilege F05 capability metadata.
+
+### Explicit non-promotion
+
+- no OTIO/GStreamer runtime dependency;
+- no Remotion replacement of TimelineSpec;
+- no VBench quality gate in F05;
+- no C2PA signing in F05;
+- no CAP_RENDER_DISPATCH for F05;
+- no LLM self-authorization.
+
+### Architectural conflict check
+
+No conflict with the locked topology:
+
+`F02 -> (F03 || F04) -> F05 -> F06 -> F07`.
+
+F03 remains semantic planning, F04 remains physical media synthesis, F05 remains temporal convergence, F06 remains production render dispatch, and F07 remains final verification/release authority.
