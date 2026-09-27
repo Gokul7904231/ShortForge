@@ -207,3 +207,15 @@ The canonical operational home for the development-time engineering workforce an
 The canonical Floor 06 operating contract is now documented at `services/pipeline/floor06_rendering/README.md`. The F06 research/adoption ledger is `.okf/research/repo-mappings/f06-distributed-rendering-wave1-20260927.md` and the Ascalon admission specification is `docs/verification/ascalon/floor06-pretraining-admission.md`.
 
 F06 may not treat provider completion as physical truth. The pre-F07 completion chain is provider admission → physical SHA/size → ffprobe → FFmpeg decode smoke → F06 handoff.
+
+
+## Canonical floor identity — 2026-09-27
+
+Current runtime/training identity:
+- F03: Visual Asset Realization & Blueprints.
+- F04: Media Synthesis & Provider Execution.
+- F05: Timeline Composition & Motion.
+- F06: Video GPU Rendering Engine.
+- F07: QA Gate & Social Compliance.
+
+Historical documents may contain earlier F04 voice-only terminology. Those records are audit history, not current production or Ascalon ontology authority.
