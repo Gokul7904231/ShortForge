@@ -4,6 +4,7 @@ from uuid import uuid4
 from floors.floor05_timeline_composition.app.domain.handoff import (
     Floor05Input,
     GuardianAuthorizationContext,
+    TimelineSpec,
 )
 from floors.floor05_timeline_composition.app.services.timeline_ir_bridge import (
     build_canonical_timeline_ir,
@@ -27,7 +28,7 @@ def test_canonical_timeline_ir_bridge_is_deterministic(tmp_path):
     )
 
     a = build_canonical_timeline_ir(timeline, inp.request_id)
-    b = build_canonical_timeline_ir(timeline.model_validate_json(timeline.model_dump_json()), inp.request_id)
+    b = build_canonical_timeline_ir(TimelineSpec.model_validate_json(timeline.model_dump_json()), inp.request_id)
 
     assert a == b
     assert a["provenanceDigest"] == canonical_timeline_ir_fingerprint(timeline, inp.request_id)
