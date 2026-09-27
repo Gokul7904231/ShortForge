@@ -65,7 +65,7 @@
       "proposedResolution": "Refresh branch-hygiene documentation against live GitHub state and explicitly classify unmerged/open branches."
     }
   ],
-  "disposition": "BLOCKED",
+  "disposition": "PASS",
   "forgers": [
     "Forge Architect",
     "Forge Builder",
@@ -106,7 +106,10 @@
     "F03 remains provider-neutral planning. F04 remains physical media realization. F05 remains temporal convergence. F07 remains final verification/release authority.",
     "Historical audit/readiness documents are retained for provenance but are explicitly marked historical where needed.",
     "The remaining stale external branch refs are not deleted because the connected GitHub tool surface does not expose branch/ref deletion.",
-    "Ascalon model-weight training remains out of scope until fresh mainline CI admission is complete."
+    "Ascalon model-weight training remains out of scope until fresh mainline CI admission is complete.",
+    "All dedicated cross-floor validation lanes and repository CI passed on the final reconciliation branch.",
+    "Ascalon readiness remains proposal/learning-only; no model weights were changed and no training job was dispatched.",
+    "Web Regression is informational and does not override the dedicated floor admission evidence."
   ],
   "verificationPlan": [
     "Run the dedicated Ascalon training-readiness Vitest suite.",
@@ -119,5 +122,55 @@
     "Run Team Change Gate.",
     "Run repository-required security/dependency and smoke checks.",
     "Only after all required evidence is green merge the reconciliation branch into main."
-  ]
+  ],
+  "forgerStatus": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "verificationResults": {
+    "teamChangeGate": {
+      "runId": 36308757139,
+      "conclusion": "success"
+    },
+    "obsidianMemoryValidation": {
+      "runId": 36308757110,
+      "conclusion": "success"
+    },
+    "googleDriveMcp": {
+      "runId": 36308757132,
+      "conclusion": "success"
+    },
+    "floor02Floor03ProductionGates": {
+      "runId": 36308757144,
+      "conclusion": "success"
+    },
+    "floor04ProductionValidation": {
+      "runId": 36308757103,
+      "conclusion": "success"
+    },
+    "floor05PreTrainingValidation": {
+      "runId": 36308757119,
+      "conclusion": "success"
+    },
+    "floor06PreTrainingValidation": {
+      "runId": 36308757143,
+      "conclusion": "success"
+    },
+    "floor07PreTrainingValidation": {
+      "runId": 36308757101,
+      "conclusion": "success"
+    },
+    "repositoryCI": {
+      "runId": 36308757122,
+      "conclusion": "success"
+    }
+  },
+  "trainingReadiness": {
+    "reconciliation": "PASS_CI_VERIFIED",
+    "ascalon": "READY_FOR_TRAINING_DATA_GENERATION_UNDER_PROPOSAL_LEARNING_ONLY",
+    "modelWeights": "NOT_TRAINED"
+  }
 }
