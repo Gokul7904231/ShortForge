@@ -45,3 +45,18 @@ During the initial repository audit, multiple conflicting representations of the
 
 1. **Training Trajectories**: Every Ascalon trajectory must reference canonical IDs (`floor03_asset_realization`, `floor04_media_synthesis`). Trajectories containing ambiguous shorthand ("floor 3 = voice") are marked `LEGACY_AMBIGUOUS` and quarantined from training sets.
 2. **Runtime Consistency**: `HierarchyConsistencyValidator.ts` will validate runtime compliance against `training/ascalon/ontology/hierarchy.json` at build and test time.
+
+
+## Current reconciliation addendum — 2026-09-27
+
+The historical topology contradictions documented in this file are retained as audit history. Current executable and training truth is:
+
+- F03 = Visual Asset Realization & Blueprints / provider-neutral planning.
+- F04 = Media Synthesis & Provider Execution / physical visual + voice/audio realization.
+- F05 = Timeline Composition & Motion.
+- F06 = GPU Rendering Engine.
+- F07 = QA Gate & Social Compliance.
+
+Guardian is a sovereign governance authority and is not itself a pipeline floor. The locked pipeline remains F02 -> (F03 || F04) -> F05 -> F06 -> F07.
+
+Current machine-readable truth is training/ascalon/ontology/floors.json and apps/web/factoryos/core/hierarchy/FloorRegistry.ts; historical sections of this document must not be treated as current ontology input.
