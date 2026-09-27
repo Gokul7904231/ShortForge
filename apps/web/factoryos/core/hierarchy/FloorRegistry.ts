@@ -53,8 +53,8 @@ export class FloorRegistry {
     floor04_media_synthesis: {
       floorId: "floor04_media_synthesis",
       number: 4,
-      canonicalName: "Voice & Audio Synthesis",
-      category: "VOICE",
+      canonicalName: "Media Synthesis & Provider Execution",
+      category: "MEDIA",
       requiredAgentType: "FLOOR_MEDIA_SYNTHESIS",
       predecessors: ["floor02_scripting"],
       successors: ["floor05_timeline_composition"],
