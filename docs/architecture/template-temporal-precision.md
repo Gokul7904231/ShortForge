@@ -11,7 +11,7 @@ ShortForge treats time as a first-class production contract. Word count and word
 TemplateDefinition
   -> TemporalCompiler
   -> TemplateScriptIR + TemporalPlanIR
-  -> F04 voice realization
+  -> F04 media realization
   -> PrecisionTTSController
   -> physical audio measurement
   -> bounded corrective synthesis
