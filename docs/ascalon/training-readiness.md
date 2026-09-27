@@ -2,7 +2,7 @@
 
 ## Current readiness state — 2026-09-27
 
-**Status:** PRE_TRAINING_RECONCILIATION_IN_PROGRESS
+**Status:** READY_FOR_TRAINING_DATA_GENERATION_UNDER_PROPOSAL_LEARNING_ONLY
 
 The earlier readiness artifacts are historical evidence, not current certification. Current training-data admission must be derived from executable mainline state and fresh CI evidence.
 
@@ -15,7 +15,7 @@ The earlier readiness artifacts are historical evidence, not current certificati
 - the branch inventory is documented from the live repository rather than historical counts.
 
 ### Promotion gate
-Ascalon production trajectory collection remains blocked until the reconciliation branch is merged and fresh mainline evidence proves:
+The reconciliation branch is CI-verified and is eligible for merge. After merge, Ascalon production trajectory collection may begin under the standing proposal/learning-only boundary once the same evidence is visible on main:
 1. Ascalon hierarchy/ontology tests pass.
 2. F03/F04/F05/F06/F07 dedicated validation lanes pass.
 3. Team Change Gate passes.
@@ -98,3 +98,12 @@ The admission claim is limited to the canonical F03 planning/runtime contracts a
 
 ### Evidence refresh — 2026-09-26 11:10 IST
 The admission record above was revalidated on the newer `main` commit `0fa169cae74c9b77def147df55dc4572b91769d2`. The dedicated Floor 03 Post-Merge Verification run `36219665043` passed both jobs: **F03 canonical post-merge gate = PASS** and **Repository TypeScript typecheck = PASS**. The repository CI run `36219665012` also completed with **PASS**.
+
+## Fresh reconciliation evidence — 2026-09-27
+
+- PR #40 reconciliation branch: CI verified.
+- Team Change Gate: PASS.
+- F03/F04/F05/F06/F07 dedicated gates: PASS.
+- Repository CI: PASS.
+- No model weights trained or modified.
+- Ascalon authority remains proposal/learning-only.
