@@ -61,25 +61,24 @@
     "training/ascalon/ontology/capabilities.json"
   ],
   "notes": [
+    "No floor topology change.",
     "No new scheduler or authority plane was introduced.",
-    "Provider-specific timing controls remain adapter concerns.",
     "Provider-reported duration is never accepted as physical truth.",
     "Ascalon remains proposal-only for temporal allocation and repair.",
-    "The Team Change report is evidence of gate inputs, not a claim that all CI/security workflows have completed."
+    "Immediately preceding main-triggered CI run reproduced the same TypeCheck and Web Regression failures; those failures are baseline debt and are not caused by this wave.",
+    "Temporal Precision Validation is green, including measured TTS correction and targeted temporal source compilation."
   ],
   "verificationResults": {
-    "temporalWorkflow": "PENDING",
-    "teamChangeGate": "PENDING_FINAL_RERUN_AFTER_REPORT_ADDITION",
-    "repositoryCI": "PENDING",
-    "floor04Validation": "PENDING",
-    "floor05Validation": "PENDING",
-    "f06Validation": "PENDING",
-    "obsidianValidation": "PENDING"
+    "temporalWorkflow": "PASS",
+    "teamChangeGate": "PASS",
+    "floor04Validation": "PASS",
+    "floor05Validation": "PASS",
+    "f06Validation": "PASS",
+    "obsidianValidation": "PASS",
+    "googleDriveMcp": "PASS",
+    "repositoryCI": "PASS_FOR_PRODUCTION_CRITICAL_LANES_WITH_PRE_EXISTING_TYPECHECK_AND_INFORMATIONAL_WEB_REGRESSION_FAILURES_UNCHANGED_FROM_MAIN"
   },
   "verificationPlan": [
-    "Run dedicated Temporal Precision Validation.",
-    "Run Team Change Gate and validate this report.",
-    "Run repository CI and floor validation lanes triggered by the pull request.",
-    "Merge only after required production gates are green."
+    "Merged only after temporal, Team Gate, F04, F05, F06, Obsidian, and Google Drive validation lanes passed; repository-wide baseline CI failures remain separately documented."
   ]
 }
