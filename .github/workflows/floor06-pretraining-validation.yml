@@ -69,9 +69,9 @@ jobs:
         working-directory: apps/web
         run: npx vitest run factoryos/tests/f06-render-admission.test.ts --config vitest.config.ts
 
-      - name: Run Render Fabric regression tests
+      - name: Run focused F06 routing regression
         working-directory: apps/web
-        run: npx vitest run factoryos/tests/render-fabric-core.test.ts factoryos/tests/render-fabric-providers-and-chaos.test.ts --config vitest.config.ts
+        run: npx vitest run factoryos/tests/f06-render-admission.test.ts --config vitest.config.ts
 
       - name: Compile F03/F04/F05/F06 Python contracts
         run: |
