@@ -739,3 +739,58 @@ Relevant implementation areas:
 The target is not a model that can do everything.
 
 The target is a model that is **deeply specialized in ShortForge, evidence-grounded, schema-disciplined, authority-bounded, recoverable, measurable, and replaceable**.
+
+## CLM-8B and the Fast Decision Core — 2026-09-27
+
+The previously generic Fast Decision Core is now a concrete, swappable backend boundary rather than an architectural placeholder.
+
+### Role
+
+CLM-8B is an experimental System One backend for bounded, high-frequency decisions. It is not the Ascalon model itself. Deep reasoning, architecture design, research synthesis and generation remain responsibilities of the Ascalon deep-cognition path.
+
+### New boundary
+
+~~~
+authoritative state + bounded candidates
+            |
+            v
+     Fast Decision Core
+            |
+        CLM-8B shadow
+            |
+            v
+  candidate-relative probabilities
+            |
+            v
+deterministic policy / Guardian gate
+            |
+            v
+authorized worker action
+~~~
+
+The backend remains advisory. It cannot authorize capabilities, mint or extend leases, fence workers, publish artifacts, certify F07, access secrets, or replace Overseer.
+
+### Probability semantics correction
+
+Decision uncertainty now distinguishes probability semantics from calibration status. CLM's probabilities are relative to the exact candidate set supplied to it. They must not be described as globally calibrated confidence without a ShortForge-specific calibration study.
+
+NOUL responses may expose a probability without an epistemic confidence field. The adapter therefore records confidence as absent/zero rather than manufacturing an epistemic score.
+
+### Training implications
+
+Fast-decision training examples use verified state/action trajectories and hard negatives grounded in real failure modes, deterministic constraints, or verified repair outcomes. External CLM data is research reference only and is not silently imported into the golden corpus.
+
+### Artifact supply-chain improvement
+
+Large Ascalon checkpoints, datasets and evaluation assets may use the isolated aria2 acquisition helper. The helper requires an HTTPS source allowlist and independently recomputes SHA-256 and byte length before an artifact may enter the canonical storage path.
+
+Artifact download success is not training eligibility. Provenance, secret scanning, Claim <= Evidence, simulation labeling and mission-family split rules remain mandatory.
+
+### Canonical implementation references
+
+- apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts
+- training/ascalon/transfer/Aria2ArtifactFetcher.ts
+- docs/ascalon/fast-decision-backend.md
+- docs/ascalon/artifact-acquisition.md
+- .okf/research/repo-mappings/contrastive-lm-clm.md
+- .okf/research/repo-mappings/aria2-aria2.md
