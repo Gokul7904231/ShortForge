@@ -18,6 +18,7 @@ import {
   DEFAULT_COMPUTE_POLICY,
 } from "../contracts/ComputeContracts";
 import { IComputeProvider } from "../providers/ComputeProvider";
+import { RenderArtifactVerifier } from "../../fabric/verification/RenderArtifactVerifier";
 
 export interface UtilityScoreBreakdown {
   queueWaitSeconds: number;
@@ -51,6 +52,7 @@ export interface RoutingDecision {
   reason: string;
   evaluatedCandidates: ScheduledProviderCandidate[];
   rejectionReasons: Record<string, string>;
+  admissionRecord: import("../contracts/ComputeContracts").RenderAdmissionRecord;
   routedAt: string;
 }
 
@@ -73,6 +75,7 @@ export class ComputeRouter {
   private policy: ComputePolicy;
   private telemetry: Map<string, ProviderPerformanceTelemetry> = new Map();
   private receipts: ExecutionReceipt[] = [];
+  private readonly artifactVerifier = new RenderArtifactVerifier();
 
   constructor(policy: ComputePolicy = DEFAULT_COMPUTE_POLICY) {
     this.policy = policy;
@@ -244,14 +247,30 @@ export class ComputeRouter {
     // Sort by utility score ascending (lowest cost = best score)
     candidates.sort((a, b) => a.utilityScore - b.utilityScore);
 
+    const selected = candidates[0];
+    const admissionRecord = {
+      admissionId: "admission_" + job.jobId + "_" + Date.now().toString(36),
+      jobId: job.jobId,
+      policyVersion: this.policy.policyVersion || "1.0.0",
+      selectedProviderId: selected.provider.id,
+      selectedProviderType: selected.provider.type,
+      selectedUtilityScore: selected.utilityScore,
+      candidateProviderIds: candidates.map((candidate) => candidate.provider.id),
+      rejectionReasons: { ...rejectionReasons },
+      capabilitySnapshot: selected.capability,
+      healthSnapshot: selected.health,
+      evaluatedAt: new Date().toISOString(),
+    };
+
     return {
       jobId: job.jobId,
-      selectedCandidate: candidates[0],
-      selectedProvider: candidates[0].provider,
-      scoreBreakdown: candidates[0].scoreBreakdown,
-      reason: candidates[0].suitabilityReason,
+      selectedCandidate: selected,
+      selectedProvider: selected.provider,
+      scoreBreakdown: selected.scoreBreakdown,
+      reason: selected.suitabilityReason,
       evaluatedCandidates: candidates,
       rejectionReasons,
+      admissionRecord,
       routedAt: new Date().toISOString(),
     };
   }
@@ -289,6 +308,66 @@ export class ComputeRouter {
           receipt.outputArtifacts.length === 0;
 
         if (receipt.status === "COMPLETED" && !renderCompletionWithoutArtifact) {
+          if (job.workloadType === "RENDER") {
+            const artifact = receipt.outputArtifacts[0];
+            const localIntent =
+              ((job.manifest as any)?.localRenderIntent ||
+                job.manifest) as Record<string, any>;
+            const output = (localIntent?.output || {}) as Record<string, any>;
+            const verification = await this.artifactVerifier.verify({
+              artifact,
+              approvedRoots: [
+                process.cwd(),
+                process.cwd() + "/data",
+                process.cwd() + "/apps/web/data",
+              ],
+              expected: {
+                width: Number(output.width || (job.manifest as any)?.width || 1080),
+                height: Number(output.height || (job.manifest as any)?.height || 1920),
+                fps: Number(output.fps || (job.manifest as any)?.fps || 30),
+                durationSeconds:
+                  typeof output.duration_seconds === "number"
+                    ? output.duration_seconds
+                    : typeof (job.manifest as any)?.estimatedDurationSeconds === "number"
+                      ? (job.manifest as any).estimatedDurationSeconds
+                      : undefined,
+                videoCodec: normalizeCodec(String(output.video_codec || "h264")),
+                audioCodec: normalizeCodec(String(output.audio_codec || "aac")),
+                requireAudio: output.audio_codec !== "",
+              },
+            });
+
+            receipt.artifactVerification = verification;
+            receipt.admissionRecord = routingDecision.admissionRecord;
+            if (verification.status !== "PASS") {
+              const failureReason =
+                "F06_PHYSICAL_ARTIFACT_REJECTED: " +
+                (verification.failureReason || "render artifact failed physical verification");
+              if (tel) {
+                tel.failedExecutions++;
+                tel.failureLog.push({
+                  timestamp: new Date().toISOString(),
+                  jobId: job.jobId,
+                  reason: failureReason,
+                });
+              }
+              failovers.push(
+                "Provider " +
+                  provider.id +
+                  " failed physical verification: " +
+                  (verification.failureReason || "unknown reason")
+              );
+              onProgress?.(
+                "Provider " +
+                  provider.id +
+                  " produced an artifact rejected by the F06 physical verifier. Failing over."
+              );
+              continue;
+            }
+          } else {
+            receipt.admissionRecord = routingDecision.admissionRecord;
+          }
+
           this.receipts.push(receipt);
           if (tel) {
             tel.successfulExecutions++;
@@ -339,4 +418,16 @@ export class ComputeRouter {
       `[ComputeRouter] All compute provider attempts failed for job ${job.jobId}. Failovers: ${failovers.join(" | ")}. Last error: ${lastError?.message}`
     );
   }
+}
+
+
+function normalizeCodec(codec: string): string {
+  const normalized = codec.trim().toLowerCase();
+  if (normalized === "libx264" || normalized === "h264_nvenc" || normalized === "h264_vaapi") {
+    return "h264";
+  }
+  if (normalized === "libx265" || normalized === "hevc_nvenc" || normalized === "hevc_vaapi") {
+    return "hevc";
+  }
+  return normalized;
 }
