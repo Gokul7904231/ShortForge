@@ -32,8 +32,11 @@
  * Invariant #28: TRUTHFUL VERIFICATION TIERS (CLAIM <= EVIDENCE)
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as crypto from "crypto";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { F07CryptoSigner } from "../core/verification/youtube/crypto/F07CryptoSigner";
 import { VerificationReceipt, VerificationReceiptVerifier } from "../core/verification/youtube/VerificationReceipt";
 import { YouTubePolicyStore } from "../core/verification/youtube/policy/YouTubePolicyStore";
@@ -52,6 +55,7 @@ import { PublisherQueue } from "../../publishing/publisher-queue";
 import { YouTubeProvider } from "../../publishing/providers/youtube";
 import { DryRunYouTubeProvider } from "../../publishing/providers/dryrun-youtube";
 import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore";
+import { VerificationEngine } from "../core/verification/VerificationEngine";
 
 describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architectural Invariants", () => {
   const policyStore = YouTubePolicyStore.getInstance();
@@ -403,10 +407,31 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // ───────────────────────────────────────────────────────────────────────────
   // Invariant #15: CAS INTEGRITY & TOCTOU PROOF
   // ───────────────────────────────────────────────────────────────────────────
-  it("Invariant #15: CAS INTEGRITY & TOCTOU PROOF — Verification receipt references immutable CAS digest", async () => {
-    const receipt = await getApprovedReceipt();
-    expect(receipt.artifactCasRef).toMatch(/^cas:\/\//);
-    expect(receipt.artifactSha256).toHaveLength(64);
+  it("Invariant #15: CAS INTEGRITY & TOCTOU PROOF — Verification receipt references independently verified immutable CAS digest", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shortforge-f07-invariant-"));
+    const source = path.join(tempDir, "candidate.mp4");
+    fs.writeFileSync(source, Buffer.from("shortforge-f07-invariant"));
+
+    const cas = ContentAddressedStore.resetInstanceForTesting(path.join(tempDir, "cas"));
+    const ref = await cas.putFile(source, "test_video", "video/mp4");
+    const measured = { ...baseMeasurements, byteLength: ref.byteLength };
+    const probeSpy = vi.spyOn(VerificationEngine, "probeMediaFile").mockResolvedValue(measured);
+
+    try {
+      const receipt = await releaseGuardian.verifyRelease({
+        video: sampleVideo,
+        channel: sampleChannelMonetizing,
+        publicationIntentAt: "2026-09-21T12:00:00Z",
+        artifactSha256: ref.sha256,
+        artifactCasRef: `cas://${ref.sha256}`,
+      });
+
+      expect(receipt.artifactCasRef).toBe(`cas://${ref.sha256}`);
+      expect(receipt.artifactSha256).toBe(ref.sha256);
+      expect(receipt.evidenceRefs?.some((e) => e.evidenceType === "CAS_ARTIFACT" && e.sha256 === ref.sha256)).toBe(true);
+    } finally {
+      probeSpy.mockRestore();
+    }
   });
 
   // ───────────────────────────────────────────────────────────────────────────
