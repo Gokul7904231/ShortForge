@@ -34,3 +34,13 @@ This matrix provides the exhaustive audit and verification status of all eightee
 ## 3. Certification
 
 All eighteen (18) components have been audited, remediated, verified via the Ascalon test suite, and certified as **TRAINING_READY**.
+
+## 18. 2026-09-27 Fast-Decision / Artifact-Acquisition Additions
+
+| # | Subsystem / Component | Implementation | Training / Authority Status | Readiness |
+|---:|---|---|---|---|
+| 18 | CLM fast-decision adapter | `apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts` | SHADOW ONLY; not an authority; not a golden label source | READY FOR SHADOW EVALUATION |
+| 19 | Decision probability semantics | `apps/web/factoryos/core/intelligence/decision/DecisionContracts.ts` | Explicit candidate-relative vs calibration distinction | READY |
+| 20 | Ascalon aria2 artifact acquisition | `training/ascalon/transfer/Aria2ArtifactFetcher.ts` | Acquisition utility only; independent digest verification required | READY FOR CONTROLLED ACQUISITION |
+
+These additions do not alter the canonical floor DAG or sovereign authority hierarchy.
