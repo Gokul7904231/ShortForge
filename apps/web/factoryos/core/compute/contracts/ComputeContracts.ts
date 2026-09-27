@@ -181,6 +181,7 @@ export interface ExecutionReceipt {
 }
 
 export interface ComputePolicy {
+  policyVersion?: string;
   allowedProviders: ProviderType[];
   preferredOrder: ProviderType[];
   maxRetries: number;
@@ -191,6 +192,7 @@ export interface ComputePolicy {
 }
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
+  policyVersion: "1.0.0",
   allowedProviders: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
   preferredOrder: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
   maxRetries: 2,
