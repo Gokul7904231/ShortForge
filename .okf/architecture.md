@@ -87,7 +87,7 @@ The pipeline DAG is strictly defined in `apps/web/factoryos/core/hierarchy/Floor
 
 ### Key Topology Invariants:
 1. **F00 is Mandatory in Autonomous Mode**: Floor 00 provides schedule-derived candidate slates to Floor 01. It is never bypassed during scheduled operations.
-2. **Floor 03 vs. Floor 04 Parallelism**: F03 (visual assets) and F04 (speech/audio) run concurrently after F02 completes.
+2. **Floor 03 vs. Floor 04 Parallelism**: F03 (provider-neutral visual asset planning) and F04 (physical media synthesis/provider execution) run concurrently after F02 completes.
 3. **Floor 05 Convergence**: Floor 05 cannot begin until **both** F03 and F04 have successfully produced verified artifacts.
 4. **Guardian is Not Floor 07**: The Guardian is a sovereign Level 2 control agent exercising authority across all floors. Floor 07 is the physical QA/compliance verification floor.
 
