@@ -54,6 +54,20 @@ export class EdgeProvider implements VoiceProvider {
   supportsEmotion = false;
   supportsVoiceCloning = false;
   supportsLanguages = ["en", "es", "fr", "de", "it", "ja", "zh", "hi"];
+  timingCapabilities = {
+    exactDuration: false,
+    speedControl: true,
+    minSpeed: 0.5,
+    maxSpeed: 2.0,
+    ssmlBreaks: true,
+    wordTimestamps: false,
+    sentenceTimestamps: false,
+    characterTimestamps: false,
+    phonemeTimestamps: false,
+    postStretchSafe: true,
+    pitchPreservingStretch: true,
+    deterministicDuration: true,
+  } as const;
 
   async health(): Promise<{ online: boolean; latencyMs: number; error?: string; cpu?: number; memory?: number }> {
     // Control Plane health check is always online and instant because voice synthesis
@@ -94,7 +108,8 @@ export class EdgeProvider implements VoiceProvider {
 
     // Estimate duration based on word count (~150 words per minute / 2.5 words/sec, minimum 1.5s)
     const wordCount = text.trim().split(/\s+/).length;
-    const estimatedDuration = Math.max(1.5, parseFloat((wordCount / 2.5).toFixed(2)));
+    const speed = options.speed && options.speed > 0 ? options.speed : 1.0;
+    const estimatedDuration = Math.max(1.5, parseFloat((wordCount / 2.5 / speed).toFixed(3)));
 
     // Return valid PCM audio buffer
     return createSyntheticWavBuffer(estimatedDuration);
