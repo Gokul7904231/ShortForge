@@ -73,7 +73,7 @@ class Floor03HandoffPayload(BaseModel):
     script_version: int = Field(default=1, ge=1)
     request_id: str
     floor_id: str = "floor03_asset_realization"
-    floor_version: str = "2.3.1"
+    floor_version: str = "2.3.2"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     resolved_platform: str
     execution_mode: ExecutionModeDetails = Field(default_factory=ExecutionModeDetails)
@@ -112,7 +112,7 @@ class FloorExecutionReport(BaseModel):
     script_id: str
     asset_plan_id: str
     floor_id: str = "floor03_asset_realization"
-    floor_version: str = "2.3.1"
+    floor_version: str = "2.3.2"
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     duration_ms: Optional[float] = None
