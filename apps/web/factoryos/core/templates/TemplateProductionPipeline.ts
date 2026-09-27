@@ -18,6 +18,8 @@ import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { TemplateDefinition, ContentCategory } from '../../../lib/templates/schemas/TemplateSchema';
 import { SHOT_RECIPES } from '../../../lib/templates/shots/ShotRecipeLibrary';
+import { TemporalCompiler } from '../../../lib/templates/temporal/TemporalCompiler';
+import type { TemporalPlanIR } from '../../../lib/templates/temporal/TemporalContracts';
 import { ProviderRouter } from '../../../lib/templates/providers/ProviderRouter';
 import {
   LocalRenderAdapter,
