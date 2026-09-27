@@ -44,6 +44,7 @@ class AudioSpecWorker:
                 sequence_index=sc.sequence_index,
                 voice_id=voice_id,
                 narration_text=sanitized_narration,
+                caption_text=sanitize_input_text(sc.on_screen_text or "") or None,
                 speech_rate=speech_rate,
                 estimated_speech_duration_seconds=dur,
             )
@@ -56,7 +57,12 @@ class AudioSpecWorker:
                     source_identifier=sc.scene_id,
                     method="generate_audio_asset_requirement",
                     summary=f"Generated audio asset specification for scene {sc.scene_id} ({sc.word_count} words, {dur}s).",
-                    raw_data={"scene_id": sc.scene_id, "word_count": sc.word_count, "speech_duration": dur},
+                    raw_data={
+                        "scene_id": sc.scene_id,
+                        "word_count": sc.word_count,
+                        "speech_duration": dur,
+                        "caption_text_present": bool(sc.on_screen_text and sc.on_screen_text.strip()),
+                    },
                 )
             )
 
