@@ -1,6 +1,6 @@
 # Floor 03 Research Upgrade — Evidence & Adoption Ledger
 
-**Current branch contract:** Floor 03 `2.3.1`; AssetPlanIR `1.3.0`.
+**Current branch contract:** Floor 03 `2.3.2`; AssetPlanIR `1.3.0`.
 
 ## Status
 Implementation branch: `feat/f03-research-upgrade`
@@ -280,7 +280,7 @@ The latest integration pass makes the F03→F04 contract mechanically enforceabl
 - Floor 03 handoffs now require a typed AssetPlanIR rather than allowing an absent planning IR.
 - The handoff rejects missing semantic plan fingerprints.
 - AssetPlanIR plan identity and script lineage must match the enclosing F03 handoff.
-- The floor version is now 2.3.1 (contract-enforcement patch; AssetPlanIR remains schema 1.4.0).
+- The floor version is now 2.3.2 (contract-enforcement patch; AssetPlanIR remains schema 1.4.0).
 - This change exists specifically to prevent F04 from having to reconstruct or guess planning truth.
 
 Research boundary remains locked: provider choice, physical generation, provenance signing and quality judgment remain downstream.
