@@ -50,9 +50,9 @@
     "notes": "Production release is now fail-closed without independently verified CAS-bound physical media. Full repository security lanes remain final admission evidence."
   },
   "trainingReadiness": {
-    "floor07": "PENDING_FRESH_CI",
-    "ascalon": "Can consume evidence and propose remediation/next-evidence actions; no authority promotion.",
-    "release": "Durable authorization boundary unchanged."
+    "floor07": "PASS_CI_VERIFIED",
+    "ascalon": "READY_UNDER_PROPOSAL_LEARNING_ONLY",
+    "release": "Durable authorization boundary unchanged"
   },
   "evidenceRefs": [
     "apps/web/factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts",
@@ -83,17 +83,47 @@
   },
   "conflicts": [],
   "verificationResults": {
-    "floor07PreTrainingValidation": "PENDING",
-    "teamChangeGate": "PENDING",
-    "repositoryCI": "PENDING",
-    "floor06Regression": "PENDING",
-    "floor05Regression": "PENDING",
-    "webRegressionSuite": "INFORMATIONAL"
+    "floor07PreTrainingValidation": {
+      "runId": 36305703180,
+      "conclusion": "success"
+    },
+    "teamChangeGate": {
+      "runId": 36305703091,
+      "conclusion": "success"
+    },
+    "floor04Validation": {
+      "runId": 36305703036,
+      "conclusion": "success"
+    },
+    "floor05Validation": {
+      "runId": 36305703013,
+      "conclusion": "success"
+    },
+    "floor06Validation": {
+      "runId": 36305703016,
+      "conclusion": "success"
+    },
+    "repositoryTypecheck": {
+      "runId": 36305703239,
+      "jobId": 108581817261,
+      "conclusion": "success"
+    },
+    "webRegression": {
+      "runId": 36305703239,
+      "conclusion": "failure",
+      "informational": true,
+      "failedSuites": 47,
+      "failedTests": 65
+    }
   },
   "notes": [
     "No new floor, scheduler, or authority plane was introduced.",
     "Test-only fixture behavior is not production release authority.",
     "C2PA/OPA/SLSA/in-toto are pattern evidence only in this wave; no runtime dependencies were imported.",
-    "The older F07 traceability matrix contains historical stale entries; the 2026-09-27 addendum records current implementation truth."
-  ]
+    "The older F07 traceability matrix contains historical stale entries; the 2026-09-27 addendum records current implementation truth.",
+    "Resolved canonical template temporal typecheck failures by completing quantization/fpsRef/quality fields in all four affected templates.",
+    "The dedicated F07 workflow and F04/F05/F06 validation workflows pass on the current branch tip.",
+    "Full Web Regression remains informational and is not evidence of a F07 failure; failures include FFmpeg/ffprobe, MongoDB/provider/Agent-Reach availability and legacy suites."
+  ],
+  "dispositionRationale": "F07-specific and cross-floor critical validation passes. The repository Web Regression lane is informational and remains environment/legacy constrained; no F07 dedicated failure remains."
 }
