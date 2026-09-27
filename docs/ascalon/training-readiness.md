@@ -1,5 +1,30 @@
 # Project Ascalon: Training Readiness Charter & Principles
 
+## Current readiness state — 2026-09-27
+
+**Status:** PRE_TRAINING_RECONCILIATION_IN_PROGRESS
+
+The earlier readiness artifacts are historical evidence, not current certification. Current training-data admission must be derived from executable mainline state and fresh CI evidence.
+
+### Reconciled in this wave
+- F04 canonical identity is aligned with executable Media Synthesis & Provider Execution behavior.
+- F04 media-generation capabilities are bound to the F04 training ontology and Guardian-gated.
+- Ascalon now has an explicit MEDIA_SYNTHESIZER domain worker identity for F04 execution.
+- F07 admission validation now matches the committed CI_ADMISSION_PASS Team report contract.
+- stale floor/readiness documentation is being refreshed.
+- the branch inventory is documented from the live repository rather than historical counts.
+
+### Promotion gate
+Ascalon production trajectory collection remains blocked until the reconciliation branch is merged and fresh mainline evidence proves:
+1. Ascalon hierarchy/ontology tests pass.
+2. F03/F04/F05/F06/F07 dedicated validation lanes pass.
+3. Team Change Gate passes.
+4. repository typecheck passes.
+5. current Team report and documentation agree with the verified CI state.
+6. no canonical floor has multiple meanings across runtime, ontology, .okf, and training contracts.
+
+This charter does not authorize model-weight training. It authorizes only evidence-driven dataset preparation after the above gates pass.
+
 ## 1. Charter Mandate
 
 The primary objective of Project Ascalon is to prepare ShortForge / FactoryOS for operational machine learning and autonomous agent training. Training an LLM or autonomous policy on contaminated telemetry, fabricated outcomes, unearned confidence scores, or ambiguous hierarchy labels causes severe operational drift, hallucinated safety compliance, and catastrophic runtime failure.
