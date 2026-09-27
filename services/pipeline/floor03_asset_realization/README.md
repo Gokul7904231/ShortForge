@@ -129,7 +129,7 @@ Broader GitHub research now informs the planning contract without importing any 
 
 The canonical AssetPlanIR validator now checks dependency order, dependency identity, recorded upstream node fingerprints, and conditioning-to-reference bindings.
 
-Fresh CI is still required for promotion of this research wave.
+the dedicated post-merge verification and repository TypeScript typecheck have passed on `main`; fresh CI remains required for any new change to this floor..
 
 ### F03→F04 contract hardening — 2.3.1
 
