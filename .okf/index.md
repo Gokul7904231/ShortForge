@@ -207,3 +207,19 @@ The canonical operational home for the development-time engineering workforce an
 The canonical Floor 06 operating contract is now documented at `services/pipeline/floor06_rendering/README.md`. The F06 research/adoption ledger is `.okf/research/repo-mappings/f06-distributed-rendering-wave1-20260927.md` and the Ascalon admission specification is `docs/verification/ascalon/floor06-pretraining-admission.md`.
 
 F06 may not treat provider completion as physical truth. The pre-F07 completion chain is provider admission → physical SHA/size → ffprobe → FFmpeg decode smoke → F06 handoff.
+
+## Ascalon fast-decision and model-supply-chain wave — 2026-09-27
+
+The Ascalon Cognitive Layer now has an explicit, swappable Fast Decision Core candidate boundary. CLM-8B is implemented as a fail-closed shadow adapter only; candidate-relative probabilities are tracked separately from calibration and confidence.
+
+Large Ascalon checkpoints/datasets may use the isolated aria2 acquisition helper. Downloads require HTTPS allowlists and independent SHA-256/byte-length verification before CAS/manifest promotion.
+
+Primary files:
+- `.okf/intelligence/ascalon-model.md`
+- `.okf/cognitive/README.md`
+- `.okf/research/repo-mappings/contrastive-lm-clm.md`
+- `.okf/research/repo-mappings/aria2-aria2.md`
+- `apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts`
+- `training/ascalon/transfer/Aria2ArtifactFetcher.ts`
+- `docs/ascalon/fast-decision-backend.md`
+- `docs/ascalon/artifact-acquisition.md`
