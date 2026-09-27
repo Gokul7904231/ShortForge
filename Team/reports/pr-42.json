@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Branch-Hygiene-Final-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "chore/branch-hygiene-final-20260927",
+  "objective": "Refresh .okf live branch-hygiene documentation after PR #41 merge so branch authority and current live refs are explicit for Ascalon.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/operations/branch-hygiene-20260927.md",
+      ".okf/index.md",
+      ".okf/decisions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_BRANCH-HYGIENE-DOCUMENTATION"
+  },
+  "conflicts": [],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "changes": [
+    "Refresh branch inventory to the live post-PR41 state.",
+    "Mark main as the sole production/Ascalon authority.",
+    "Classify open/unmerged feature branches as non-authoritative candidates.",
+    "Classify merged branches as stale refs because delete-on-merge is disabled.",
+    "Record tool limitation around remote branch deletion without making false deletion claims."
+  ],
+  "authorityInvariant": "No runtime, ontology, topology, or model behavior change.",
+  "trainingBoundary": "Only mainline verified evidence is authoritative for Ascalon trajectory generation.",
+  "disposition": "PASS"
+}
