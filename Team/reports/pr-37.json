@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR37-TemporalPrecision",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/temporal-template-precision-20260927",
+  "objective": "Introduce provider-neutral temporal contracts, measured closed-loop TTS correction, timing-aware cache identity, and verified timing evidence without changing floor authority or topology.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/decisions.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/research/",
+      "docs/architecture/template-temporal-precision.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "PASS",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added typed TemporalContract, TemporalPlanIR, TemporalEvidence and TTS timing capability contracts.",
+    "Added deterministic template temporal compilation and attached TemporalPlanIR to TemplateScriptIR.",
+    "Added measured PrecisionTTSController with bounded rate correction and bounded FFmpeg micro-correction.",
+    "Made voice cache identity timing-aware.",
+    "Preserved exact timing through normalization and explicitly marked degraded silent fallback.",
+    "Exposed timing capabilities for Supertonic, Edge and ElevenLabs without falsely claiming unsupported alignment features.",
+    "Passed scene-level exact timing intent into VoiceWorker and carried measured evidence into narration reports and TimelineIR.",
+    "Added Ascalon temporal precision capability and locked OKF decision.",
+    "Added architecture, research ledger, report, tests and dedicated CI workflow."
+  ],
+  "evidenceRefs": [
+    "apps/web/lib/templates/temporal/TemporalContracts.ts",
+    "apps/web/lib/templates/temporal/TemporalCompiler.ts",
+    "apps/web/lib/voice/temporal/PrecisionTTSController.ts",
+    "apps/web/lib/voice/voice-worker.ts",
+    "apps/web/lib/voice/AudioPipeline.ts",
+    "apps/web/lib/voice/voice-cache.ts",
+    "apps/web/content-engines/_runtime/step-registry-init.ts",
+    "apps/web/factoryos/core/timeline/TimelineIR.ts",
+    "apps/web/factoryos/tests/temporal-precision.test.ts",
+    "docs/architecture/template-temporal-precision.md",
+    ".okf/research/repo-mappings/temporal-precision-wave1-20260927.md",
+    ".okf/decisions.md",
+    "training/ascalon/ontology/capabilities.json"
+  ],
+  "notes": [
+    "No floor topology change.",
+    "No new scheduler or authority plane was introduced.",
+    "Provider-reported duration is never accepted as physical truth.",
+    "Ascalon remains proposal-only for temporal allocation and repair.",
+    "Immediately preceding main-triggered CI run reproduced the same TypeCheck and Web Regression failures; those failures are baseline debt and are not caused by this wave.",
+    "Temporal Precision Validation is green, including measured TTS correction and targeted temporal source compilation."
+  ],
+  "verificationResults": {
+    "temporalWorkflow": "PASS",
+    "teamChangeGate": "PASS",
+    "floor04Validation": "PASS",
+    "floor05Validation": "PASS",
+    "f06Validation": "PASS",
+    "obsidianValidation": "PASS",
+    "googleDriveMcp": "PASS",
+    "repositoryCI": "PASS_FOR_PRODUCTION_CRITICAL_LANES_WITH_PRE_EXISTING_TYPECHECK_AND_INFORMATIONAL_WEB_REGRESSION_FAILURES_UNCHANGED_FROM_MAIN"
+  },
+  "verificationPlan": [
+    "Merged only after temporal, Team Gate, F04, F05, F06, Obsidian, and Google Drive validation lanes passed; repository-wide baseline CI failures remain separately documented."
+  ]
+}

@@ -1415,3 +1415,30 @@ OpenCue, Temporal, Kueue, Ray and OpenTelemetry inform boundary patterns only. S
 ### Verification obligation
 
 The branch must pass F06 physical-verifier tests, router failover tests, TypeScript typecheck/tests, F03/F04/F05/F06 contract regression, Team Change Gate and repository CI before promotion to main.
+
+
+## 33. Temporal Precision Contract
+
+Classification: extends existing rules.
+
+ShortForge time is now a first-class production contract. Word-count duration is a planning estimate only. F04 must physically measure synthesized audio; the measured duration and sample facts become temporal evidence; F05 composes against the verified timing; F06 executes; F07 independently verifies the final artifact.
+
+Locked rules:
+- templates express provider-neutral timing intent;
+- provider-specific TTS controls remain inside adapters;
+- VoiceWorker uses bounded corrective synthesis before bounded micro-stretch;
+- exact timing fails closed when tolerance is not met, except the explicitly marked degraded fallback path;
+- cache identity includes timing target/mode;
+- TemporalPlanIR stores milliseconds and frame projection;
+- Ascalon proposes timing allocations and repairs but cannot self-certify physical duration;
+- provider claims never replace physical measurement.
+
+Implementation surfaces:
+- apps/web/lib/templates/temporal/TemporalContracts.ts
+- apps/web/lib/templates/temporal/TemporalCompiler.ts
+- apps/web/lib/voice/temporal/PrecisionTTSController.ts
+- apps/web/lib/voice/AudioPipeline.ts
+- apps/web/lib/voice/voice-worker.ts
+- apps/web/factoryos/core/timeline/TimelineIR.ts
+
+Validation is recorded in Team/reports/temporal-precision-20260927.json and the dedicated GitHub Actions workflow.

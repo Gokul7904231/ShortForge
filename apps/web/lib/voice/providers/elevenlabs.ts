@@ -9,6 +9,18 @@ export class ElevenLabsProvider implements VoiceProvider {
   supportsEmotion = true;
   supportsVoiceCloning = true;
   supportsLanguages = ["en", "es", "fr", "de", "it", "ja", "zh", "hi"];
+  timingCapabilities = {
+    exactDuration: false,
+    speedControl: false,
+    ssmlBreaks: false,
+    wordTimestamps: false,
+    sentenceTimestamps: false,
+    characterTimestamps: false,
+    phonemeTimestamps: false,
+    postStretchSafe: true,
+    pitchPreservingStretch: false,
+    deterministicDuration: false,
+  } as const;
 
   private apiKey = process.env.ELEVENLABS_API_KEY || "";
 

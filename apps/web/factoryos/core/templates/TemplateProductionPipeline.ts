@@ -18,6 +18,8 @@ import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { TemplateDefinition, ContentCategory } from '../../../lib/templates/schemas/TemplateSchema';
 import { SHOT_RECIPES } from '../../../lib/templates/shots/ShotRecipeLibrary';
+import { TemporalCompiler } from '../../../lib/templates/temporal/TemporalCompiler';
+import type { TemporalPlanIR } from '../../../lib/templates/temporal/TemporalContracts';
 import { ProviderRouter } from '../../../lib/templates/providers/ProviderRouter';
 import {
   LocalRenderAdapter,
@@ -56,6 +58,7 @@ export interface TemplateScriptIR {
   cta?: string;
   estimatedDuration: number;
   narrationSegments: NarrationSegment[];
+  temporalPlan: TemporalPlanIR;
   metadata: Record<string, any>;
 }
 
@@ -471,6 +474,22 @@ export class TemplateProductionPipeline {
       totalEstSeconds += dur;
     }
 
+    const requestedTargetDurationMs =
+      typeof userInputs.targetDurationSeconds === "number"
+        ? Math.round(userInputs.targetDurationSeconds * 1000)
+        : undefined;
+    const [minDurationSeconds, maxDurationSeconds] = templateDef.outputPolicy.targetDurationRange;
+    const targetDurationMs = requestedTargetDurationMs ??
+      Math.round(((minDurationSeconds + maxDurationSeconds) / 2) * 1000);
+    const temporalPlan = TemporalCompiler.compileGeneratedBeats(
+      templateDef.identity.id,
+      templateDef.identity.version,
+      beats,
+      targetDurationMs,
+      templateDef.outputPolicy.fps || 30,
+      templateDef.temporalPolicy ?? {},
+    );
+
     return {
       templateId: templateDef.identity.id,
       templateVersion: templateDef.identity.version,
@@ -480,11 +499,13 @@ export class TemplateProductionPipeline {
       hook,
       beats,
       cta,
-      estimatedDuration: Number(totalEstSeconds.toFixed(1)),
+      estimatedDuration: Number((temporalPlan.targetDurationMs / 1000).toFixed(1)),
       narrationSegments,
+      temporalPlan,
       metadata: {
         topic,
         userInputs,
+        temporalCompilerVersion: temporalPlan.provenance.compilerVersion,
         generatedAt: new Date().toISOString()
       }
     };

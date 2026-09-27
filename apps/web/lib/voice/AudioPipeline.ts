@@ -23,6 +23,8 @@ export class AudioPipelineClass {
     providerName: string;
     providerVersion: string;
     speedMultiplier?: number;
+    preserveDurationForTiming?: boolean;
+    allowSilence?: boolean;
   }): Promise<{ audioBuffer: Buffer; cacheHit: boolean; metadata: AudioMetadata }> {
     
     // 1. Check Cache first
@@ -57,7 +59,7 @@ export class AudioPipelineClass {
 
     // 4. Step: Normalize & Trim
     console.log(`[AudioPipeline] Step 3 (Normalize/Post-process) -> Applying LUFS/RMS scaling and silence trim...`);
-    const normalizedWav = this.stepNormalize(canonicalWav);
+    const normalizedWav = this.stepNormalize(canonicalWav, Boolean(params.preserveDurationForTiming));
 
     // 5. Step: Validate
     console.log(`[AudioPipeline] Step 4 (Validate) -> Querying ffprobe for stream verification...`);
@@ -77,7 +79,8 @@ export class AudioPipelineClass {
     );
 
     // Verify non-silent content
-    if (!this.verifyRms(normalizedWav, 0.005)) {
+    const hasAudibleContent = this.verifyRms(normalizedWav, 0.005);
+    if (!hasAudibleContent && !params.allowSilence) {
       throw new Error(`[AudioPipeline] Content validation failed: Output WAV contains only silence (RMS below 0.005).`);
     }
 
@@ -95,7 +98,8 @@ export class AudioPipelineClass {
       duration: metadata.duration,
       providerId: params.providerId,
       providerName: params.providerName,
-      providerVersion: params.providerVersion
+      providerVersion: params.providerVersion,
+      allowSilence: params.allowSilence
     });
 
     return { audioBuffer: normalizedWav, cacheHit: false, metadata };
@@ -147,7 +151,7 @@ export class AudioPipelineClass {
     
     // Speed multiplier support: apply atempo filter if not 1.0 (last resort speed fallback)
     if (speedMultiplier !== 1.0) {
-      args.push("-filter:a", `atempo=${speedMultiplier.toFixed(2)}`);
+      args.push("-filter:a", `atempo=${speedMultiplier.toFixed(4)}`);
     }
 
     args.push(
@@ -172,10 +176,11 @@ export class AudioPipelineClass {
   /**
    * Applies normalization, silence trimming, and fades to WAV buffer
    */
-  stepNormalize(buffer: Buffer): Buffer {
+  stepNormalize(buffer: Buffer, preserveDuration = false): Buffer {
     return AudioPostProcessor.processWav(buffer, {
       silenceThreshold: 0.012, // -38dB
-      fadeMs: 25
+      fadeMs: preserveDuration ? 0 : 25,
+      trimSilence: !preserveDuration
     });
   }
 
@@ -198,6 +203,7 @@ export class AudioPipelineClass {
     providerId: string;
     providerName: string;
     providerVersion: string;
+    allowSilence?: boolean;
   }): void {
     const assetRecord = {
       id: `asset_voice_${params.jobId}`,
@@ -213,6 +219,7 @@ export class AudioPipelineClass {
       cache_status: "miss",
       version: params.providerVersion,
       source: params.providerName,
+      audio_quality: params.allowSilence ? "DEGRADED_SILENT" : "NORMAL",
       path: params.outputPath
     };
 

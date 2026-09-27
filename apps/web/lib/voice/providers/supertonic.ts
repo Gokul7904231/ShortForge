@@ -9,6 +9,20 @@ export class SupertonicProvider implements VoiceProvider {
   supportsEmotion = true;
   supportsVoiceCloning = true;
   supportsLanguages = ["en", "es", "fr", "de", "it", "ja", "zh", "hi"];
+  timingCapabilities = {
+    exactDuration: false,
+    speedControl: true,
+    minSpeed: 0.5,
+    maxSpeed: 2.0,
+    ssmlBreaks: false,
+    wordTimestamps: false,
+    sentenceTimestamps: false,
+    characterTimestamps: false,
+    phonemeTimestamps: false,
+    postStretchSafe: true,
+    pitchPreservingStretch: true,
+    deterministicDuration: false,
+  } as const;
 
   private baseUrl: string;
   private modelPreloaded = false;
