@@ -19,7 +19,11 @@ export type DecisionValidationErrorCode =
   | "INVALID_RUBRIC_LEVEL"
   | "UNKNOWN_QUESTION"
   | "DUPLICATE_QUESTION"
-  | "MISSING_QUESTION";
+  | "MISSING_QUESTION"
+  | "ADAPTER_UNAVAILABLE"
+  | "ADAPTER_TIMEOUT"
+  | "AUTHENTICATION_FAILED"
+  | "INVALID_MODEL_RESPONSE";
 
 export interface DecisionEvidence {
   readonly evidenceIds: readonly string[];
@@ -32,11 +36,23 @@ export interface DecisionEvidence {
 
 export type CalibrationStatus = "CALIBRATED" | "UNCALIBRATED" | "ESTIMATED" | "UNKNOWN";
 
+export type DecisionProbabilitySemantics =
+  | "CALIBRATED"
+  | "MODEL_PROBABILITY"
+  | "CANDIDATE_RELATIVE"
+  | "HEURISTIC"
+  | "UNKNOWN";
+
+export type DecisionConfidenceSource = "MODEL" | "ESTIMATED" | "NONE";
+
 export interface DecisionUncertainty {
   readonly modelProbability?: number;
   readonly epistemicConfidence: number;
   readonly calibrationStatus: CalibrationStatus;
   readonly uncertaintyReason?: string;
+  /** Separates probability semantics from epistemic confidence/calibration. */
+  readonly probabilitySemantics?: DecisionProbabilitySemantics;
+  readonly confidenceSource?: DecisionConfidenceSource;
 }
 
 export interface NoulQuestion {
@@ -130,6 +146,9 @@ export interface AdapterMetadata {
   readonly implementationVersion: string;
   readonly isProductionAuthority: boolean;
   readonly isTrainingEligible: boolean;
+  readonly modelRef?: string;
+  readonly probabilitySemantics?: DecisionProbabilitySemantics;
+  readonly capabilityClass?: "FAST_DECISION" | "DEEP_REASONING" | "DETERMINISTIC";
 }
 
 export interface DecisionBatchResult {
@@ -137,7 +156,7 @@ export interface DecisionBatchResult {
   readonly evaluatedAt: string;
   readonly answers: readonly DecisionAnswer[];
   readonly answersById: Record<string, DecisionAnswer>;
-  readonly adapterUsed: "DETERMINISTIC" | "LLM" | "JEV_SHADOW" | "HEURISTIC_SHADOW" | "HYBRID";
+  readonly adapterUsed: "DETERMINISTIC" | "LLM" | "JEV_SHADOW" | "HEURISTIC_SHADOW" | "CLM_SHADOW" | "HYBRID";
   readonly totalLatencyMs: number;
   readonly minConfidence: number;
   readonly shouldEscalate: boolean; // True if minConfidence < threshold (e.g. 0.70)
