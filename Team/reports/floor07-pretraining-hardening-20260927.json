@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Floor07-PreTraining-Hardening-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor07-pretraining-hardening-20260927",
+  "objective": "Complete Floor 07 pre-training audit and harden the physical truth boundary, policy/release evidence, Ascalon admission contract, and current documentation without changing floor topology or authority hierarchy.",
+  "status": "CI_ADMISSION_PENDING",
+  "implemented": [
+    "independent CAS physical verification",
+    "independent media probe",
+    "post-probe digest stability check",
+    "strict CAS identity matching",
+    "typed F07 pre-training admission contract",
+    "research and Ascalon documentation"
+  ],
+  "authorityInvariants": [
+    "F07 remains final verification and release authority",
+    "Ascalon remains proposal and learning only",
+    "publication still requires durable Ed25519 ReleaseAuthorization",
+    "no floor topology change"
+  ],
+  "requiredFreshEvidence": [
+    "F07 focused tests",
+    "FactoryOS typecheck",
+    "repository CI",
+    "pre-training admission report"
+  ]
+}
