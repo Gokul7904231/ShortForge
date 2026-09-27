@@ -16,6 +16,28 @@ from floors.floor03_asset_realization.app.domain.handoff import Floor03HandoffPa
 from floors.floor04_media_synthesis.app.domain.handoff import Floor04HandoffPayload
 
 
+class GuardianAuthorizationContext(BaseModel):
+    """Execution authorization evidence injected by Guardian immediately before a worker runs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision_id: str = Field(..., min_length=1)
+    execution_id: str = Field(..., min_length=1)
+    floor_id: str = Field(..., min_length=1)
+    capability_name: str = Field(..., min_length=1)
+    authorized_by: str = Field(default="GUARDIAN_ACTION_GATE", min_length=1)
+
+    @model_validator(mode="after")
+    def validate_floor_scope(self) -> "GuardianAuthorizationContext":
+        if self.floor_id != "floor05":
+            raise ValueError("Floor 05 authorization context must be scoped to floor05.")
+        if self.capability_name != "timeline_composition_pipeline_worker":
+            raise ValueError("Floor 05 authorization context must name the canonical F05 worker capability.")
+        if self.authorized_by != "GUARDIAN_ACTION_GATE":
+            raise ValueError("Floor 05 execution requires the Guardian action gate authorization source.")
+        return self
+
+
 class TimelineTrackType(str, Enum):
     VISUAL = "VISUAL"
     NARRATION = "NARRATION"
