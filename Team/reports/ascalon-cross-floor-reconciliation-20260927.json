@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Ascalon-Cross-Floor-Reconciliation-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/ascalon-cross-floor-reconciliation-20260927",
+  "objective": "Reconcile executable floor contracts, Ascalon ontology, F07 admission workflow, current readiness evidence and active documentation without changing the locked F00-F07 topology or sovereign authority hierarchy.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/decisions.md",
+      ".okf/hierarchy-map.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/intelligence/training.md",
+      ".okf/operations/branch-hygiene-20260927.md",
+      "docs/ascalon/training-readiness.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_ONTOLOGY_AND_CONTRACT_RECONCILIATION"
+  },
+  "conflicts": [
+    "F04 executable runtime performed visual + voice/audio media synthesis while registry and Ascalon ontology described a voice-only floor.",
+    "F07 admission workflow expected CI_ADMISSION_PENDING while the committed admission report uses CI_ADMISSION_PASS.",
+    "Ascalon trajectory capability allowlist was missing cap_temporal_precision_tts present in the ontology.",
+    "F04 physical capabilities were not represented under a canonical MEDIA_SYNTHESIZER agent identity.",
+    "Historical Ascalon readiness certification could be mistaken for current admission evidence.",
+    "Branch-hygiene documentation was stale versus the live repository."
+  ],
+  "disposition": "BLOCKED_UNTIL_CI",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Canonicalized F04 executable hierarchy to Media Synthesis & Provider Execution / MEDIA.",
+    "Aligned HierarchyConsistencyValidator and Ascalon readiness tests with the canonical F04 identity.",
+    "Reconciled floors.json and hierarchy.json F04 ontology entries with executable media synthesis behavior.",
+    "Moved visual asset generation capability ownership to F04 and introduced MEDIA_SYNTHESIZER as the explicit F04 execution worker.",
+    "Guardian-gated physical F04 voice and temporal-precision capabilities.",
+    "Added cap_temporal_precision_tts to the Ascalon trajectory validator allowlist.",
+    "Added executable runtime-to-ontology consistency tests.",
+    "Updated F07 admission workflow to validate the committed PASS report contract.",
+    "Marked the historical Ascalon final-readiness certification as superseded.",
+    "Refreshed current readiness charter and live branch-hygiene evidence.",
+    "Recorded the contradiction and resolution in .okf."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
+    "apps/web/factoryos/core/contracts/HierarchyConsistencyValidator.ts",
+    "apps/web/factoryos/tests/ascalon/ascalon-training-readiness.test.ts",
+    "apps/web/factoryos/tests/ascalon/ontology-consistency.test.ts",
+    "training/ascalon/ontology/floors.json",
+    "training/ascalon/ontology/hierarchy.json",
+    "training/ascalon/ontology/capabilities.json",
+    "training/ascalon/ontology/agents.json",
+    "training/ascalon/validators/AscalonTrajectoryValidator.ts",
+    ".github/workflows/floor07-pretraining-validation.yml",
+    ".okf/decisions/cross-floor-ascalon-reconciliation-20260927.md",
+    "docs/ascalon/training-readiness.md",
+    ".okf/operations/branch-hygiene-20260927.md"
+  ],
+  "notes": [
+    "No floor topology or sovereign authority change was introduced.",
+    "F03 remains provider-neutral planning. F04 remains physical media realization. F05 remains temporal convergence. F07 remains final verification/release authority.",
+    "Historical audit/readiness documents are retained for provenance but are explicitly marked historical where needed.",
+    "The remaining stale external branch refs are not deleted because the connected GitHub tool surface does not expose branch/ref deletion.",
+    "Ascalon model-weight training remains out of scope until fresh mainline CI admission is complete."
+  ],
+  "verificationPlan": [
+    "Run the dedicated Ascalon training-readiness Vitest suite.",
+    "Run the new runtime-to-ontology consistency suite.",
+    "Run F04 production validation.",
+    "Run F05 handoff validation.",
+    "Run F06 validation.",
+    "Run F07 pre-training validation.",
+    "Run repository typecheck.",
+    "Run Team Change Gate.",
+    "Run repository-required security/dependency and smoke checks.",
+    "Only after all required evidence is green merge the reconciliation branch into main."
+  ]
+}
