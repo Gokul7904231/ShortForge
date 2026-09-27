@@ -1442,3 +1442,31 @@ Implementation surfaces:
 - apps/web/factoryos/core/timeline/TimelineIR.ts
 
 Validation is recorded in Team/reports/temporal-precision-20260927.json and the dedicated GitHub Actions workflow.
+
+## Decision — CLM-8B as Fast Decision Core Candidate
+
+Date: 2026-09-27
+
+Decision: ADOPT PATTERN / SHADOW IMPLEMENTATION.
+
+Evidence reviewed:
+
+- Contrastive-LM/CLM upstream repository and CLM-v0.1-8B model card
+- current Ascalon Fast Decision Core design
+- existing typed DecisionContracts and LLM validation boundary
+- current Cognitive Layer and training governance
+- adjacent System One research including Kev and open Jev-style reproductions.
+
+Rule: CLM is a bounded candidate-ranking backend. It cannot grant authority and its candidate-relative probabilities are not globally calibrated confidence.
+
+Implementation: CLMDecisionAdapter is opt-in shadow-only, fail-closed on malformed/unavailable responses, and training-ineligible.
+
+## Decision — aria2 as isolated Ascalon artifact acquisition helper
+
+Date: 2026-09-27
+
+Decision: ADOPT ISOLATED TRANSFER PATTERN.
+
+Rule: aria2 may accelerate resumable acquisition of large model/dataset artifacts, but final artifact truth remains independent SHA-256/byte verification followed by CAS/manifest promotion.
+
+Security: HTTPS-only allowlisted origins, no credential-bearing URLs, no public unauthenticated RPC, and no direct authority over F06/F07.
