@@ -220,3 +220,11 @@ Current declared state for this branch: CI_ADMISSION_PENDING. The code and docum
 C2PA 2.4 supports preserving verifiable provenance through creation and publication workflows. OPA signed bundles demonstrate that a candidate policy should not activate until signature and content verification succeed. SLSA 1.2 and in-toto provide mature provenance/attestation patterns. Current YouTube documentation makes channel-level originality, realistic AI disclosure, and time-aware Shorts rules material verification inputs.
 
 ShortForge adopts the patterns only where they preserve the existing authority chain; no external project becomes an authority plane.
+
+## 12. Verification outcome
+
+The dedicated Floor 07 pre-training validation passed (GitHub Actions run 36305703180), including focused typecheck, physical-truth tests, the 28 F07 architectural invariants, receipt/remediation/policy-refresh suites, and machine-readable admission validation. F04/F05/F06 cross-floor validation also passed on the same branch. The strict repository TypeScript typecheck passed after completing the canonical template temporal contract fields (quantization, fpsRef, and quality).
+
+The repository-wide Web Regression lane remains informational and currently reports 47 failed suites / 65 failed tests out of 1157 tests. The observed failures are concentrated in environment-dependent FFmpeg/ffprobe availability, MongoDB/provider/Agent-Reach availability, and unrelated legacy/evaluation suites; no F07 dedicated validation failure remains.
+
+**F07 pre-training status: READY FOR ASCALON TRAINING, subject to the existing authority restrictions.** This is not a claim of live YouTube credential qualification or guaranteed third-party monetization.
