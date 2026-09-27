@@ -24,6 +24,7 @@ export class AudioPipelineClass {
     providerVersion: string;
     speedMultiplier?: number;
     preserveDurationForTiming?: boolean;
+    allowSilence?: boolean;
   }): Promise<{ audioBuffer: Buffer; cacheHit: boolean; metadata: AudioMetadata }> {
     
     // 1. Check Cache first
@@ -78,7 +79,8 @@ export class AudioPipelineClass {
     );
 
     // Verify non-silent content
-    if (!this.verifyRms(normalizedWav, 0.005)) {
+    const hasAudibleContent = this.verifyRms(normalizedWav, 0.005);
+    if (!hasAudibleContent && !params.allowSilence) {
       throw new Error(`[AudioPipeline] Content validation failed: Output WAV contains only silence (RMS below 0.005).`);
     }
 
@@ -215,6 +217,7 @@ export class AudioPipelineClass {
       cache_status: "miss",
       version: params.providerVersion,
       source: params.providerName,
+      audio_quality: params.allowSilence ? "DEGRADED_SILENT" : "NORMAL",
       path: params.outputPath
     };
 
