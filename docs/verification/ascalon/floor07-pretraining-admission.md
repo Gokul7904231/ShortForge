@@ -1,7 +1,7 @@
 # Floor 07 — Ascalon Pre-Training Admission
 
 Date: 2026-09-27  
-Status: HARDENING IMPLEMENTED — CI ADMISSION PENDING  
+Status: HARDENING IMPLEMENTED — CI ADMISSION PASS  
 Authority: F07 Release Guardian plus repository test/CI evidence. Ascalon is proposal and learning only.
 
 ## Start condition
@@ -60,3 +60,15 @@ Ascalon should learn the difference between proposal, observation, evidence, and
 Ascalon must never self-certify media, issue release capabilities, or bypass Guardian and authorization boundaries.
 
 Training admission is not granted by this document. Fresh CI/test evidence and the Team report are required.
+
+## Fresh verification evidence
+
+- Floor 07 Pre-Training Validation: GitHub Actions run 36305703180 — PASS.
+- Team Change Gate: run 36305703091 — PASS.
+- Floor 04 validation: run 36305703036 — PASS.
+- Floor 05 validation: run 36305703013 — PASS.
+- Floor 06 validation: run 36305703016 — PASS.
+- Strict repository TypeScript typecheck: run 36305703239 / job 108581817261 — PASS.
+- Full Web Regression is informational and remains red because of environment-dependent FFmpeg/ffprobe, external provider, MongoDB, Agent-Reach, and legacy test failures; no F07-specific test is failing in that lane.
+
+**Admission result:** F07 is ready for Ascalon pre-training under the locked authority boundaries. This does not claim live YouTube OAuth/provider qualification or guaranteed platform monetization.
