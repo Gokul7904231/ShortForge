@@ -41,7 +41,7 @@ jobs:
 
       - name: Temporal contract source check
         run: |
-          npx tsc --noEmit --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext \
+          npx tsc --ignoreConfig --noEmit --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext \
             lib/templates/temporal/TemporalContracts.ts \
             lib/templates/temporal/TemporalCompiler.ts
 
