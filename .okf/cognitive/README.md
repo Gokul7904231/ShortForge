@@ -301,3 +301,25 @@ The model may not:
 - convert UNPROVEN evidence to PASS
 
 TeamChangeIR is the compact semantic state passed to the model. JSON is the canonical machine transport encoding of that IR; Markdown is the human evidence projection.
+
+## Two-Speed Cognitive Runtime — 2026-09-27
+
+The Cognitive Layer now has an explicit two-speed contract:
+
+1. Deterministic rules resolve known facts at zero model cost.
+2. A fast decision backend may rank a closed set of actions for high-frequency bounded choices.
+3. Ascalon deep cognition handles ambiguous, generative, research-heavy or architecture-level reasoning.
+
+CLM-8B is the first concrete fast-decision backend implemented as a shadow adapter. It is deliberately backend-swappable so the Cognitive Layer is not architecturally coupled to one external model family.
+
+### Decision safety
+
+The fast backend does not create capabilities. It proposes a typed choice from an already authorized candidate set. Guardian policy and worker capability contracts remain outside the model.
+
+### Required evidence semantics
+
+The Cognitive Layer must preserve the distinction between outcome probability, epistemic confidence, and calibration. Candidate-relative probabilities are never promoted to calibrated confidence automatically.
+
+### Future promotion path
+
+Shadow -> task-disjoint benchmark -> calibration study -> invariant suite -> replay -> canary -> explicit governance promotion.
