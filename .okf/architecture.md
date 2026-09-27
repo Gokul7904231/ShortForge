@@ -238,3 +238,10 @@ ComputeRouter also records a typed `RenderAdmissionRecord` and treats provider a
 External systems including OpenCue, Temporal, Kueue and Ray remain pattern references only. No second scheduler/workflow authority is introduced.
 
 F03 remains unchanged semantically in this wave. Its existing AssetPlanIR is sufficient for downstream identity and planning needs, so the F06 improvement deliberately avoids expanding the F03 contract without a demonstrated requirement.
+
+
+## Canonical F04 reconciliation — 2026-09-27
+
+The executable F04 boundary is Media Synthesis & Provider Execution. It physically realizes trusted visual/audio requirements, records provider execution and rights metadata, validates physical artifacts, and emits a verified handoff to F05. The floor remains subordinate to Guardian authorization and does not own final release truth.
+
+Topology remains F02 -> (F03 || F04) -> F05.
