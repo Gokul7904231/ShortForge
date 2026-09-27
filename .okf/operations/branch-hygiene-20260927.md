@@ -1,3 +1,18 @@
+## Live repository inventory — 2026-09-27
+
+Live branches on GitHub at this refresh:
+
+- `main` — `9c27c7e75652c2cc04ebe41d41eed299cc88ce91`
+- `feat/ascalon-clm-aria2-upgrade-20260927` — open PR #39; not merged; current head `5a5ea3cbd919d3231a95d435dbf5f0223bf35399`
+- `feat/floor05-pretraining-hardening-wave3-20260927` — PR #35 closed unmerged; current head `2427aceebe2b996fc143b789c11a4748b4e10207`
+- `feat/floor07-pretraining-hardening-20260927` — PR #38 merged; branch ref remains because automatic deletion is disabled
+- `feat/ascalon-cross-floor-reconciliation-20260927` — PR #40 merged; branch ref remains because automatic deletion is disabled
+- `research/movie-intelligence-wave1` — research branch with unique commits; archive/delete decision still separate
+
+Remote branch deletion is not exposed by the connected GitHub tool surface in this environment, so stale refs are documented rather than falsely reported as deleted.
+
+Branch refs do not determine architecture authority. `main` plus executable contracts/tests/CI is the production source of truth.
+
 # Branch Hygiene — Live Repository State (2026-09-27)
 
 ## Current live branch inventory

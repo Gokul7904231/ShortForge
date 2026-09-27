@@ -489,7 +489,7 @@ Current OverseerControlPlane.ts maps to:
 | OverseerPresenceEngine | operational telemetry/presence | Overseer observability |
 | VerificationEngine | media/quality verification | independent verification |
 | ResearchRuntime | research execution | F00 / research |
-| VoiceFabric | voice/audio synthesis | F04 |
+| VoiceFabric | voice/audio synthesis within F04 media execution | F04 |
 | RenderFabric | render orchestration | F06 |
 | TemplateRegistry | template inventory | shared cognitive/production |
 | TemplateProductionPipeline | template production | shared service |
@@ -820,26 +820,40 @@ Produces:
 
 Converges into: F05
 
-## F04 — Voice & Audio Synthesis
+## F04 — Media Synthesis & Provider Execution
 
 ID: floor04_media_synthesis
-Category: VOICE
+Category: MEDIA
 Required agent type: FLOOR_MEDIA_SYNTHESIS
-Runs: parallel with F03
+Parallel branch: F02 → F04 alongside F03
+Converges into: F05
 
 Consumes:
-- F02 script
-- voice profile
-- pronunciation data
+- validated upstream media requirements and plan lineage
+- voice/narration intent
+- visual media requirements
 - timing constraints
+- authorized provider capabilities
 
 Produces:
-- audio
-- speech timings
-- pronunciation metadata
-- audio quality measurements
+- verified visual media
+- verified narration/audio
+- background audio where required
+- provider execution records
+- rights/provenance metadata
+- media manifest
+- validated Floor04 handoff for F05
 
-Converges into: F05
+Authority:
+- F04 executes only Guardian-authorized media capabilities.
+- F04 cannot redefine F03 planning truth.
+- F04 cannot become F05 composition authority.
+- F04 cannot certify F07 release truth.
+
+Training:
+- training trajectories must use the canonical floor ID and current MEDIA semantics.
+- legacy voice-only labels are historical/ambiguous and are excluded from authoritative training data.
+
 
 ## F05 — Timeline Composition & Motion
 
@@ -918,7 +932,7 @@ F07 produces evidence; it does not create factory authority.
 | F01 | strategy worker | strategy support | policy boundary | execution anomaly detection | strategy recovery | rationale/evidence audit |
 | F02 | scripting worker | cognitive scripting / claim checks | policy + capability | anomaly detection | bounded script repair | factuality audit |
 | F03 | visual worker | visual planning/template matching | capability gate | worker/resource anomaly detection | asset repair | asset/provenance audit |
-| F04 | audio worker | voice/profile/timing reasoning | capability gate | provider/audio anomaly detection | synthesis recovery | audio forensic audit |
+| F04 | media synthesis worker | visual + voice/audio realization | capability gate | provider/media anomaly detection | synthesis recovery | physical media/provenance audit |
 | F05 | timeline worker | template/constraint reasoning | composition boundary | pipeline anomaly detection | timeline repair | timeline validation |
 | F06 | render worker | provider/compute choice | compute capability boundary | GPU / worker enforcement | render recovery | physical media checks |
 | F07 | verification worker | explanation/triage support | policy boundary | quality anomaly detection | repair dispatch | final attestation |

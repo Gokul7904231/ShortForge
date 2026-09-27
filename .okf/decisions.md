@@ -1464,3 +1464,20 @@ F07 admission validation is aligned to the committed PASS-state report contract.
 No new authority plane, scheduler, floor, provider authority, or model-training permission is introduced.
 
 Ascalon admission remains evidence-gated: current runtime/ontology consistency, dedicated floor validation, repository typecheck, Team Change Gate and required CI must pass on the current mainline before production trajectory collection is admitted.
+
+
+## Cross-floor Ascalon reconciliation closure — 2026-09-27
+
+**Decision:** Accept the merged cross-floor reconciliation as the canonical production/train-data preparation state.
+
+**Main:** `9c27c7e75652c2cc04ebe41d41eed299cc88ce91`
+
+**Locked topology:** `F00 → F01 → F02 → (F03 || F04) → F05 → F06 → F07`
+
+**Canonical F04:** Media Synthesis & Provider Execution / MEDIA. It owns physical visual + voice/audio realization under Guardian authorization. F03 remains provider-neutral planning.
+
+**Training boundary:** Ascalon is proposal/learning-only. Authoritative trajectories require evidence, authorization, physical verification and replay/contamination gates. No model-weight training is authorized by this documentation change.
+
+**Supersession:** Historical readiness certificates remain for provenance but cannot be used as current admission evidence.
+
+**Verification:** Required mainline reconciliation gates pass; Web Regression remains informational only.

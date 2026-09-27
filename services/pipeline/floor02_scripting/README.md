@@ -30,7 +30,7 @@ Deterministic compilation
 Canonical ScriptIR
     ↓
 F03 Visual Asset Realization
-    └──────────────→ F04 Media / Voice Synthesis
+    └──────────────→ F04 Media Synthesis & Provider Execution
 ```
 
 Model output is always a candidate. The deterministic compiler, typed schemas and hard quality gates create the authoritative handoff.
@@ -206,7 +206,7 @@ F02 decides **what the scene communicates**.
 
 F03 decides **how visual assets are realized**.
 
-F04 decides **how the voice/audio is synthesized**.
+F04 decides **how trusted media is physically realized, including visual and voice/audio synthesis, within authorized provider capabilities**.
 
 ## Security boundary
 

@@ -1,3 +1,5 @@
+> **HISTORICAL BASELINE — NOT CURRENT TRAINING ADMISSION AUTHORITY.** The anomalies below describe the pre-reconciliation state. Current F03/F04 semantics, F07 admission, and Ascalon readiness are governed by merged `main` and the current readiness verification.
+
 # Project Ascalon: ShortForge Training-Readiness Baseline Audit
 
 **Repository**: ShortForge / FactoryOS  

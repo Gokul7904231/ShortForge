@@ -44,7 +44,7 @@
  │   │                                                                       │
  │   ├───────────────────────────────────┐                                   │
  │   ▼                                   ▼                                   │
- │  F03: Visual Asset Realization       F04: Media Synthesis (Voice & Audio) │
+ │  F03: Visual Asset Realization       F04: Media Synthesis & Provider Execution │
  │   │                                   │                                   │
  │   └───────────────────┬───────────────┘                                   │
  │                       ▼                                                   │

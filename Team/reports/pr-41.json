@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR41-Ascalon-Mainline-Truth-Refresh",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "chore/ascalon-production-truth-20260927",
+  "objective": "Close documentation and readiness-truth drift left after the cross-floor Ascalon reconciliation merged, so active .okf/docs align with executable runtime and Ascalon admission semantics.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/architecture.md",
+      ".okf/hierarchy-map.md",
+      ".okf/intelligence/skills.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/security/capability-security.md",
+      ".okf/operations/branch-hygiene-20260927.md",
+      ".okf/decisions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_DOC_AND_READINESS_TRUTH_REFRESH"
+  },
+  "conflicts": [],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "changes": [
+    "Canonicalized active F04 terminology to Media Synthesis & Provider Execution / MEDIA.",
+    "Aligned active .okf hierarchy, skills and capability-security documentation with the machine-readable F04 ontology.",
+    "Aligned F02/F04 handoff and temporal-precision documentation with the physical-media F04 boundary.",
+    "Marked historical Ascalon baseline/final readiness documents non-authoritative.",
+    "Bound current readiness documentation to merged main commit 9c27c7e75652c2cc04ebe41d41eed299cc88ce91.",
+    "Refreshed live branch inventory and classified unmerged branches as non-authoritative.",
+    "Recorded the reconciliation closure in .okf/decisions.md."
+  ],
+  "authorityInvariant": "No topology, sovereign authority, runtime behavior, or model-weight change.",
+  "trainingBoundary": "Ascalon remains proposal/learning-only. Only mainline verified trajectories may be admitted.",
+  "evidenceRefs": [
+    "docs/ascalon/training-readiness.md",
+    "docs/verification/ascalon/training-readiness-current-20260927.md",
+    "docs/verification/ascalon/training-readiness-final.md",
+    "docs/verification/ascalon/training-readiness-baseline.md",
+    ".okf/operations/branch-hygiene-20260927.md",
+    ".okf/decisions.md"
+  ],
+  "disposition": "PASS"
+}

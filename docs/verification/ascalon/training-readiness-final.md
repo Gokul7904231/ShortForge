@@ -1,3 +1,6 @@
+> **SUPERSEDED — HISTORICAL CERTIFICATION (2026-09-23). DO NOT USE AS CURRENT TRAINING ADMISSION AUTHORITY.**
+> Current admission authority: `docs/verification/ascalon/training-readiness-current-20260927.md` and the merged-main CI evidence.
+
 # HISTORICAL / SUPERSEDED — DO NOT USE AS CURRENT TRAINING READINESS
 
 > This document records an earlier certification artifact. It remains in the repository for audit history only. Current Ascalon readiness must be established from `docs/ascalon/training-readiness.md`, the current ontology, current Team report, and fresh CI evidence on `main`.
