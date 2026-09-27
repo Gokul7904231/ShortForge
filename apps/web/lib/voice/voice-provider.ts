@@ -1,3 +1,5 @@
+import type { TTSTimingCapabilities } from "../templates/temporal/TemporalContracts";
+
 export interface VoiceProvider {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export interface VoiceProvider {
   supportsEmotion: boolean;
   supportsVoiceCloning: boolean;
   supportsLanguages: string[];
+  timingCapabilities?: TTSTimingCapabilities;
   health(): Promise<{ online: boolean; latencyMs: number; error?: string; cpu?: number; memory?: number }>;
   benchmark(): Promise<{ latencyMs: number; coldStartMs: number; warmStartMs: number; wordsPerSec: number; rtf: number }>;
   synthesize(text: string, options: {
