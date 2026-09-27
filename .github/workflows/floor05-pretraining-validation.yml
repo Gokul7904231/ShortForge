@@ -65,7 +65,7 @@ jobs:
           data=json.loads(Path("training/ascalon/ontology/capabilities.json").read_text())
           cap=next(c for c in data["capabilities"] if c["capabilityId"]=="cap_timeline_mux")
           assert cap["requiresGuardianGate"] is True
-          assert cap["version"] == "2.0.0"
+          assert cap["version"] == "2.1.0"
           assert cap["riskClass"] == "MEDIUM"
           print("Ascalon F05 execution capability gate: PASS")
           PY
