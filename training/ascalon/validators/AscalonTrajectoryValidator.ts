@@ -37,6 +37,7 @@ const KNOWN_CAPABILITIES = [
   "cap_research_topic_ingest",
   "cap_script_synthesis",
   "cap_voice_generation",
+  "cap_temporal_precision_tts",
   "cap_visual_asset_generate",
   "cap_timeline_mux",
   "cap_render_dispatch",
