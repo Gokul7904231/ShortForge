@@ -1,0 +1,42 @@
+name: One-time branch cleanup
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: startsWith(github.event.head_commit.message, 'chore(branch-cleanup): execute one-time cleanup')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete superseded branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -u
+          branches=(
+            "feat/f03-runtime-adapter"
+            "feat/floor04-production-hardening-20260926"
+            "feat/floor05-pretraining-upgrade-20260927"
+            "feat/floor05-wave2-pretraining-completion-20260927"
+            "feat/floor06-pretraining-hardening-20260927"
+            "feat/obsidian-live-memory-fabric-20260926"
+            "feat/obsidian-memory-fabric-20260926"
+            "feat/shortforge-knowledge-graph-20260926"
+            "feat/temporal-precision-wave2-20260927"
+            "feat/temporal-template-precision-20260927"
+          )
+
+          for branch in "${branches[@]}"; do
+            echo "Deleting ${branch}"
+            gh api --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" || true
+          done
+
+          echo "Branch cleanup attempt completed."
