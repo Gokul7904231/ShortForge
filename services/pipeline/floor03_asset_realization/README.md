@@ -1,7 +1,7 @@
 # Floor 03 — Asset Specification & Realization Planning
 
 **Canonical Floor ID**: `floor03_asset_realization`  
-**Floor Version**: `2.3.1`  
+**Floor Version**: `2.3.2`  
 **Status**: **DETERMINISTIC PLANNING CORE + TYPED ASSET PLAN IR**  
 **Overseer Integration**: **CANONICAL** — Overseer uses the signed/internal Python runtime adapter and persists the validated handoff in the distributed control-plane store.
 
@@ -131,7 +131,7 @@ The canonical AssetPlanIR validator now checks dependency order, dependency iden
 
 Fresh CI is still required for promotion of this research wave.
 
-### F03→F04 contract hardening — 2.3.1
+### F03→F04 contract hardening — 2.3.2
 
 The validated F03 handoff now requires AssetPlanIR plus a semantic plan fingerprint. The plan ID and script lineage are checked against the handoff. This is a patch-level enforcement change only; F03 remains provider-neutral and non-executing.
 
@@ -146,3 +146,8 @@ Supported downstream intent values are normalized from F02 semantics by F05 into
 - bounded `CROSSFADE`
 
 F03 still does not choose a renderer, render a timeline, own physical media, or authorize execution. The change exists so F05 no longer has to silently invent a transition policy when F02 already supplied one.
+
+
+### Wave 3 caption preservation — 2026-09-27
+
+F03 now preserves explicit F02 `on_screen_text` as `AudioAssetRequirement.caption_text` so F05 can compose subtitles from semantic intent rather than reconstructing captions from narration. This is a patch-level handoff contract change; providers and physical media ownership remain unchanged.
