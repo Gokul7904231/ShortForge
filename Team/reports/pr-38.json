@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/floor07-pretraining-hardening-20260927",
   "objective": "Complete the Floor 07 pre-training audit and harden the physical truth boundary, policy interval binding, Ascalon admission contract, and release evidence without changing the locked floor topology or authority hierarchy.",
-  "classification": "extends existing rule + new training evidence capability",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -66,7 +66,7 @@
     "docs/verification/f07/TRACEABILITY_ADDENDUM_20260927.md",
     ".github/workflows/floor07-pretraining-validation.yml"
   ],
-  "disposition": "PENDING_CI",
+  "disposition": "PASS",
   "verificationPlan": [
     "Run the dedicated Floor 07 pre-training validation workflow.",
     "Run the F07 architectural invariants, receipt, remediation and policy refresh suites.",
