@@ -33,7 +33,7 @@ const SECRET_PATTERNS = [
   /CLERK_SECRET_KEY/i,                         // Literal secret key assignment
 ];
 
-const KNOWN_CAPABILITIES = [
+export const KNOWN_CAPABILITIES = [
   "cap_research_topic_ingest",
   "cap_script_synthesis",
   "cap_voice_generation",
