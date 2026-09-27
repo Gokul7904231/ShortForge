@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR39-Ascalon-CLM-Aria2",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/ascalon-clm-aria2-upgrade-20260927",
+  "objective": "Upgrade Ascalon with a concrete fast-decision backend boundary and verified large-artifact acquisition without changing the sovereign hierarchy or F00-F07 topology.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/decisions.md",
+      ".okf/hierarchy-map.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/intelligence/training.md",
+      ".okf/cognitive/README.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/research/repo-research-ledger.md",
+      "docs/ascalon/architecture.md",
+      "docs/ascalon/evaluation-plan.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "PASS_PENDING_CI",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Formalized probability semantics and confidence-source metadata in DecisionContracts.",
+    "Added opt-in CLMDecisionAdapter using the official typed /v1/systemone contract.",
+    "Added CLM malformed-response, missing-confidence and outage tests.",
+    "Added optional disabled-by-default CLM shadow comparison in DecisionEngine.",
+    "Added Aria2ArtifactFetcher with HTTPS allowlist, non-shell invocation, resume/checksum flags and independent SHA-256/size verification.",
+    "Added aria2 acquisition tests.",
+    "Added CLM and aria2 research mappings.",
+    "Updated Ascalon model, cognitive layer, training, evaluation, architecture, decisions and .okf index/ledger.",
+    "Updated Ascalon component training-readiness matrix."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/decision/DecisionContracts.ts",
+    "apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionEngine.ts",
+    "apps/web/factoryos/tests/clm-decision-adapter.test.ts",
+    "training/ascalon/transfer/Aria2ArtifactFetcher.ts",
+    "apps/web/factoryos/tests/ascalon/aria2-artifact-fetcher.test.ts",
+    ".okf/research/repo-mappings/contrastive-lm-clm.md",
+    ".okf/research/repo-mappings/aria2-aria2.md",
+    "docs/ascalon/fast-decision-backend.md",
+    "docs/ascalon/artifact-acquisition.md",
+    "Team/reports/ascalon-clm-aria2-upgrade-20260927.json"
+  ],
+  "notes": [
+    "CLM is shadow-only, non-authoritative and training-ineligible.",
+    "CLM candidate-relative probabilities are not treated as globally calibrated confidence.",
+    "aria2 is a transfer accelerator only; CAS and F07 remain artifact truth.",
+    "No third-party runtime source code or GPL library code was linked into FactoryOS.",
+    "No floor topology or sovereign authority changes."
+  ],
+  "verificationResults": {
+    "repositoryCI": "PENDING_GITHUB_ACTIONS",
+    "teamChangeGate": "PENDING_GITHUB_ACTIONS",
+    "localExecution": "NOT_AVAILABLE: repository network access is unavailable in the agent container"
+  },
+  "verificationPlan": [
+    "Team Change Gate must validate Team/reports/pr-39.json.",
+    "CI TypeCheck must pass.",
+    "Focused CLM and aria2 Vitest suites must pass.",
+    "Ascalon training-readiness suite must pass.",
+    "Only after CI evidence is green should PR #39 be merged."
+  ]
+}
