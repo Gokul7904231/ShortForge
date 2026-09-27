@@ -1,0 +1,37 @@
+{
+  "mission": "branch-hygiene-20260927",
+  "date": "2026-09-27",
+  "base": "main",
+  "activeFeature": "feat/temporal-template-precision-20260927",
+  "openPrsBeforeCleanup": [
+    37,
+    35,
+    30
+  ],
+  "prDisposition": {
+    "30": "CLOSED_STALE_NOT_MERGING",
+    "35": "CLOSED_STALE_NOT_MERGING",
+    "37": "KEEP_OPEN_FOR_MERGE_AFTER_GATES"
+  },
+  "mergedBranchesAlreadyRepresentedOnMain": [
+    "feat/floor04-production-hardening-20260926",
+    "feat/floor05-pretraining-upgrade-20260927",
+    "feat/floor05-wave2-pretraining-completion-20260927",
+    "feat/floor06-pretraining-hardening-20260927",
+    "feat/shortforge-knowledge-graph-20260926"
+  ],
+  "staleResearchOrMemoryBranches": [
+    "feat/obsidian-live-memory-fabric-20260926",
+    "feat/obsidian-memory-fabric-20260926",
+    "research/movie-intelligence-wave1"
+  ],
+  "branchesNotMergedDirectly": [
+    "feat/f03-runtime-adapter",
+    "feat/floor05-pretraining-hardening-wave3-20260927"
+  ],
+  "deletionStatus": {
+    "capability": "GitHub connector does not expose remote branch deletion.",
+    "actionTaken": "Stale PRs were closed and branches are classified for deletion; branch refs remain until deleted by an account with ref-delete capability."
+  },
+  "rule": "Never merge stale or duplicate architecture directly into main; main remains the canonical integration line."
+}
