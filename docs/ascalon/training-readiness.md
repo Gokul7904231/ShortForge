@@ -15,7 +15,7 @@ The earlier readiness artifacts are historical evidence, not current certificati
 - the branch inventory is documented from the live repository rather than historical counts.
 
 ### Promotion gate
-The reconciliation branch is CI-verified and is eligible for merge. After merge, Ascalon production trajectory collection may begin under the standing proposal/learning-only boundary once the same evidence is visible on main:
+The reconciliation work is merged into `main` at `9c27c7e75652c2cc04ebe41d41eed299cc88ce91`. Ascalon trajectory collection may begin only under the standing proposal/learning-only boundary and only from mainline-verified evidence:
 1. Ascalon hierarchy/ontology tests pass.
 2. F03/F04/F05/F06/F07 dedicated validation lanes pass.
 3. Team Change Gate passes.
@@ -73,7 +73,7 @@ Prior to Project Ascalon, the FactoryOS codebase contained several critical impl
 5. **Non-deterministic Provenance**: Provenance IDs relied on `Math.random()`, preventing deterministic trajectory replaying.
 6. **Unvalidated Memory Ingestion**: The experience retriever lacked training eligibility flags, allowing simulated and failed experiences to influence live decision policies.
 
-All 6 critical anomaly classes have been remediated in the `feat/ascalon-training-readiness` branch.
+The six historical anomaly classes are retained as audit history. Their current remediation state is governed by the merged mainline ontology, runtime consistency tests, admission workflow, and fresh CI evidence; the old branch name is historical and must not be treated as an active readiness authority.
 
 
 ## Floor 03 post-merge admission gate — 2026-09-26
@@ -107,3 +107,8 @@ The admission record above was revalidated on the newer `main` commit `0fa169cae
 - Repository CI: PASS.
 - No model weights trained or modified.
 - Ascalon authority remains proposal/learning-only.
+
+
+## Mainline closure — 2026-09-27
+
+The cross-floor reconciliation PR #40 is merged to `main` as `9c27c7e75652c2cc04ebe41d41eed299cc88ce91`. Fresh required gates on that main commit pass: F03 canonical post-merge, F04+F05, F05, F06, F07, repository TypeScript typecheck, Team Change Gate, Obsidian Memory Validation, Google Drive MCP, and the required Floor 01 checks. Web Regression remains informational and failed on this commit; it does not replace the dedicated admission lanes.
