@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TemporalContractSchema } from '../temporal/TemporalContracts';
 
 export const ContentCategorySchema = z.enum([
   'FACTS',
@@ -188,6 +189,7 @@ export const TemplateDefinitionSchema = z.object({
     tone: z.string().default('authoritative and energetic'),
     suggestedVoices: z.array(z.string()).default(['en-US-Neural2-F', 'en-US-Journey-O'])
   }),
+  temporalPolicy: TemporalContractSchema.optional(),
   outputPolicy: z.object({
     width: z.number().default(1080),
     height: z.number().default(1920),
