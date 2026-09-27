@@ -1375,3 +1375,29 @@ Promotion requires:
 7. repository CI / post-merge gates.
 
 Failure or contradiction means reject promotion and preserve evidence.
+
+
+## Floor 05 pre-training hardening wave 3 — 2026-09-27
+
+**Classification:** extends existing rule + new interoperability/evidence capability
+
+**Decision:** close the remaining F05 pre-training boundary gaps without moving authority between floors.
+
+### Locked invariants
+
+- Guardian authorization evidence is injected by the execution gate; workers do not self-authorize.
+- TimelineBrain/Ascalon remains proposal-only.
+- F05 reference rendering remains bounded local evidence generation under `CAP_TIMELINE_COMPILE`; it does not gain `CAP_RENDER_DISPATCH`.
+- TimelineSpec remains the local F05 compilation contract; the project-owned TimelineIR remains semantic authority.
+- Canonical TimelineIR projection is fingerprinted and included in render identity to prevent silent cache drift.
+- F02 explicit on-screen text is preserved through F03 into F05 subtitles instead of being reconstructed from narration.
+- WebVTT is evidence/interchange output; F07 remains final quality/provenance authority.
+- Word-level subtitle timing is not fabricated; scene-aligned timing remains the current evidence boundary.
+
+### Research basis
+
+OpenTimelineIO rational time/range semantics, current Remotion frame-driven composition patterns, W3C WebVTT timing semantics, VBench-2.0 evaluation separation, and C2PA downstream provenance were screened under the existing clean-room promotion rule.
+
+### Promotion gate
+
+Fresh F05/F03/Guardian/security/repository CI must pass before this branch is promoted to main. No external code or runtime dependency is imported by the research mapping.
