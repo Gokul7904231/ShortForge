@@ -65,20 +65,23 @@
     "F03 AssetPlanIR remains semantically unchanged because existing downstream signals are sufficient."
   ],
   "verificationResults": {
-    "f06WorkflowFirstAttempt": "FAIL: newly added verifier/test type errors plus unrelated pre-existing repository typecheck errors",
-    "teamChangeGateFirstAttempt": "FAIL: missing Team/reports/pr-36.json; report is now added for the next gate run",
-    "f06WorkflowCurrent": "PENDING/IN_PROGRESS",
-    "repositoryCI": "PENDING",
-    "floor05ProductionValidation": "PENDING",
-    "floor04ProductionValidation": "PENDING",
-    "floor02Floor03ProductionGates": "PENDING",
-    "obsidianMemoryValidation": "PENDING"
+    "f06WorkflowFirstAttempt": "FAIL: initial implementation issues were corrected before final admission",
+    "teamChangeGateFirstAttempt": "FAIL: report was added after initial gate; final gate PASS",
+    "f06WorkflowCurrent": "PASS",
+    "repositoryCI": "PASS with Web Regression Suite informational failure",
+    "floor05ProductionValidation": "PASS",
+    "floor04ProductionValidation": "PASS",
+    "floor02Floor03ProductionGates": "PASS",
+    "obsidianMemoryValidation": "PASS"
   },
   "verificationPlan": [
-    "Re-run Team Change Gate with required pr-36 report.",
-    "Complete F06 physical admission and failover workflow.",
-    "Resolve only new F06 failures; preserve unrelated legacy failures as separate evidence.",
-    "Run cross-floor contract and repository CI lanes.",
-    "Merge only after production-critical checks are green."
+    "Final F06 physical admission workflow PASS.",
+    "Team Change Gate PASS.",
+    "Floor 02 + Floor 03 Production Gates PASS.",
+    "Floor 04 + F05 handoff validation PASS.",
+    "Floor 05 pre-training production validation PASS.",
+    "Obsidian Memory Validation PASS.",
+    "Google Drive MCP TypeCheck & Security Self-Test PASS.",
+    "Repository CI production-critical jobs PASS; Web Regression Suite remains informational failure."
   ]
 }
