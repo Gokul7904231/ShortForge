@@ -143,7 +143,6 @@ function renderJob(jobId: string): ComputeJob {
       createdTimestamp: Date.now(),
     },
     requirements: {
-      workloadType: "RENDER",
       estimatedDurationSeconds: 0.5,
       diskSpaceMb: 1,
     },
