@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR35-Floor05-PreTraining-Hardening-Wave3",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor05-pretraining-hardening-wave3-20260927",
+  "objective": "Complete Floor 05 pre-training audit and harden temporal convergence, Guardian authorization, canonical TimelineIR interoperability, caption intent preservation, Ascalon boundaries, F03 lineage semantics and F05-to-F06 evidence without changing the locked floor topology or authority hierarchy.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decisions.md",
+      ".okf/research/repo-research-ledger.md",
+      ".okf/research/repo-mappings/f05-timeline-composition-wave3-20260927.md",
+      ".okf/artifacts/timeline-ir.md",
+      ".okf/security/worker-permissions.md"
+    ],
+    "rulesConsidered": [
+      "F03 and F04 remain parallel predecessors of F05.",
+      "F05 remains temporal convergence authority and does not replace F03/F04 authority.",
+      "Guardian authorizes execution; TimelineBrain/Ascalon only proposes.",
+      "F06 remains production distributed render/compute authority.",
+      "F07 remains final verification/release authority.",
+      "External research is evidence only and cannot override executable contracts, tests or .okf."
+    ]
+  },
+  "forensicFindings": [
+    "Guardian execution authorization was partly documentary at the F05 handler boundary because the handler called the pipeline without carrying structured authorization evidence from the ActionRequest.",
+    "F05 Python TimelineSpec could drift silently from the project-owned TypeScript TimelineIR projection.",
+    "F02 on-screen text was not preserved through F03, forcing F05 to reconstruct subtitle text from narration.",
+    "The F05 Guardian still used generic deterministic reasoning instead of the existing non-authoritative TimelineBrain proposal path.",
+    "Ascalon F05 capability ontology version needed to track the upgraded capability contract."
+  ],
+  "changes": [
+    "Injected non-forgeable Guardian authorization evidence into WorkerRunner handler context.",
+    "Added GuardianAuthorizationContext and fail-closed validation in the F05 worker and pipeline.",
+    "Bound TimelineBrain to the real F05 Guardian reasoning path while preserving proposal-only semantics.",
+    "Added least-privilege CAP_TIMELINE_COMPILE metadata and explicit local reference-evidence side effects.",
+    "Added deterministic canonical TimelineIR bridge and fingerprinted the bridge into render identity.",
+    "Added validated WebVTT subtitle evidence.",
+    "Preserved F02 on_screen_text as F03 caption_text and consumed it in F05 subtitles.",
+    "Bumped F03 handoff version from 2.3.1 to 2.3.2 for the explicit caption contract field.",
+    "Added wave-3 regression tests for bridge determinism, authorization scope, caption intent and Brain integration.",
+    "Updated README, .okf decisions, research ledgers/mappings, TimelineIR architecture docs and Ascalon ontology.",
+    "Updated the F05 CI ontology assertion to the new capability version."
+  ],
+  "research": [
+    "AcademySoftwareFoundation/OpenTimelineIO rational time/range and interchange semantics",
+    "remotion-dev/remotion frame-driven composition architecture",
+    "W3C WebVTT timed text semantics",
+    "Vchitect/VBench-2.0 multidimensional video evaluation",
+    "c2pa-org/specifications downstream provenance boundary",
+    "GStreamer media-pipeline architecture as reference-only"
+  ],
+  "security": {
+    "required": true,
+    "status": "PENDING_CI",
+    "semgrep": "PENDING_REPOSITORY_GATE",
+    "strix": "PENDING_REPOSITORY_GATE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY_AND_TIMELINE_BOUNDARY_CHANGE",
+    "notes": "Code-level capability scope, authorization evidence, path/identity controls and proposal/authority separation are implemented. Final repository security lanes remain admission gates."
+  },
+  "trainingReadiness": {
+    "floor05": "IMPLEMENTED_PENDING_FRESH_CI",
+    "f03": "2.3.2 caption-intent handoff implemented; pending F03 production gate",
+    "ascalon": "Proposal/evaluation only; no capability minting or execution authorization",
+    "renderer": "Reference renderer remains local evidence path; production distributed rendering remains F06"
+  },
+  "evidenceRefs": [
+    "services/pipeline/floor05_timeline_composition/README.md",
+    "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+    "services/pipeline/floor05_timeline_composition/app/services/timeline_ir_bridge.py",
+    "services/pipeline/floor05_timeline_composition/app/services/subtitle_sidecar.py",
+    "services/pipeline/floor05_timeline_composition/app/services/canonical_hasher.py",
+    "services/pipeline/floor05_timeline_composition/app/services/pipeline.py",
+    "services/pipeline/floor05_timeline_composition/app/workers/render_worker.py",
+    "services/pipeline/floor05_timeline_composition/app/workers/composition_worker.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_wave3_bridge.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_guardian_brain_integration.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_floor05_subtitle_intent.py",
+    "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+    "services/pipeline/floor03_asset_realization/app/logical_workers/audio_spec_worker.py",
+    "services/pipeline/floor03_asset_realization/tests/test_f03_caption_intent.py",
+    "services/pipeline/floor03_asset_realization/app/domain/handoff.py",
+    "services/pipeline/floor03_asset_realization/app/core/identity.py",
+    "services/pipeline/guardian/execution/runner.py",
+    "services/pipeline/guardian/floors/floor05_guardian.py",
+    "services/pipeline/guardian/floors/floor05_reasoning.py",
+    "training/ascalon/ontology/capabilities.json",
+    ".github/workflows/floor05-pretraining-validation.yml",
+    ".okf/decisions.md",
+    ".okf/research/repo-mappings/f05-timeline-composition-wave3-20260927.md"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Team Change Gate passes against this report.",
+    "Floor 05 pre-training production validation passes.",
+    "F03/F04/F06 contract regression tests pass.",
+    "Obsidian Memory Validation passes.",
+    "Repository CI passes.",
+    "Security/evaluation lanes pass or are explicitly dispositioned without blocking findings.",
+    "After all required gates, update disposition and verificationResults before merge."
+  ],
+  "forgers": [
+    {
+      "name": "Forge Architect",
+      "status": "COMPLETE",
+      "evidence": "Architecture conflict analysis and boundary preservation documented."
+    },
+    {
+      "name": "Forge Builder",
+      "status": "COMPLETE",
+      "evidence": "Wave-3 implementation and regression tests added."
+    },
+    {
+      "name": "Forge Sentinel",
+      "status": "PENDING_CI",
+      "evidence": "Code-level controls implemented; repository security lanes pending."
+    },
+    {
+      "name": "Forge Evaluator",
+      "status": "PENDING_CI",
+      "evidence": "F05/F03 regression and full repository gates pending."
+    },
+    {
+      "name": "Forge Release",
+      "status": "BLOCKED",
+      "evidence": "Promotion is gated on fresh CI and security evidence."
+    }
+  ],
+  "conflicts": [],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "floor05PreTrainingValidation": "PENDING",
+    "floor02Floor03ProductionGates": "PENDING",
+    "obsidianMemoryValidation": "PENDING",
+    "repositoryCI": "PENDING",
+    "webRegressionSuite": "INFORMATIONAL_PENDING"
+  },
+  "notes": [
+    "No floor topology change was introduced.",
+    "No third-party source code, prompts, model weights, credentials or runtime authority was imported.",
+    "F05 reference rendering remains evidence generation under CAP_TIMELINE_COMPILE and does not gain CAP_RENDER_DISPATCH.",
+    "No main-branch promotion is claimed until the required CI gates pass."
+  ]
+}
