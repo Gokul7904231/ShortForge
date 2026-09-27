@@ -1,0 +1,40 @@
+name: Temporal Precision Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/lib/templates/temporal/**"
+      - "apps/web/lib/voice/**"
+      - "apps/web/factoryos/tests/temporal-precision.test.ts"
+      - "apps/web/lib/templates/schemas/TemplateSchema.ts"
+      - "apps/web/factoryos/core/templates/TemplateProductionPipeline.ts"
+      - "docs/architecture/template-temporal-precision.md"
+      - ".okf/research/repo-mappings/temporal-precision-wave1-20260927.md"
+      - "Team/reports/temporal-precision-20260927.json"
+  push:
+    branches:
+      - main
+
+jobs:
+  temporal-precision:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Ensure media tooling
+        run: |
+          ffmpeg -version
+          ffprobe -version
+      - name: FactoryOS typecheck
+        run: npm run factoryos:typecheck
+      - name: Temporal precision tests
+        run: npx vitest run factoryos/tests/temporal-precision.test.ts
