@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Ascalon-CLM-Aria2-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/ascalon-clm-aria2-upgrade-20260927",
+  "objective": "Upgrade Ascalon documentation and executable fast-decision/acquisition boundaries using current CLM-8B and aria2 research without changing authority hierarchy or F00-F07 topology.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/architecture.md",
+      ".okf/principles.md",
+      ".okf/terminology.md",
+      ".okf/hierarchy-map.md",
+      ".okf/intelligence/",
+      ".okf/memory/",
+      ".okf/research/",
+      ".okf/cognitive/",
+      ".okf/security/worker-permissions.md",
+      ".okf/decision-protocol.md",
+      "docs/ascalon/architecture.md",
+      "docs/ascalon/evaluation-plan.md",
+      ".okf/decisions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "PASS_PENDING_REPOSITORY_CI",
+  "changes": [
+    "Added explicit probability semantics and confidence-source metadata to decision uncertainty.",
+    "Added fail-closed CLM-8B shadow adapter using the official /v1/systemone contract.",
+    "Added CLM decision adapter tests covering malformed output, missing confidence and backend failure.",
+    "Added isolated aria2-based Ascalon artifact acquisition helper with HTTPS allowlist and independent SHA-256 verification.",
+    "Added aria2 acquisition tests.",
+    "Added dedicated CLM and aria2 research mappings.",
+    "Expanded Ascalon fast-decision architecture, training, evaluation and artifact supply-chain documentation.",
+    "Recorded candidate-relative probability rules and hard-negative evaluation requirements."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/decision/DecisionContracts.ts",
+    "apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts",
+    "apps/web/factoryos/tests/clm-decision-adapter.test.ts",
+    "training/ascalon/transfer/Aria2ArtifactFetcher.ts",
+    "apps/web/factoryos/tests/ascalon/aria2-artifact-fetcher.test.ts",
+    ".okf/research/repo-mappings/contrastive-lm-clm.md",
+    ".okf/research/repo-mappings/aria2-aria2.md",
+    "docs/ascalon/fast-decision-backend.md",
+    "docs/ascalon/artifact-acquisition.md"
+  ],
+  "notes": [
+    "No change to sovereign authority hierarchy.",
+    "No change to F00-F07 topology.",
+    "CLM remains shadow-only and training-ineligible.",
+    "aria2 is an acquisition accelerator only; CAS/F07 remain artifact truth boundaries.",
+    "External benchmark claims are not treated as ShortForge qualification evidence."
+  ],
+  "verificationPlan": [
+    "Run focused CLM and aria2 Vitest suites.",
+    "Run Ascalon training-readiness suite.",
+    "Run repository TypeScript typecheck and production-critical CI.",
+    "Only after CI passes consider a future CLM shadow integration experiment."
+  ]
+}
