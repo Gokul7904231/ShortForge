@@ -1,3 +1,5 @@
+import type { TemporalEvidence } from "../../../lib/templates/temporal/TemporalContracts";
+
 /**
  * FactoryOS v3 — TimelineIR (Timeline Intermediate Representation / EDL)
  * Assimilates clean-room patterns from browser-use/video-use:
@@ -35,6 +37,10 @@ export interface TimelineAudioNode {
   readonly timelineStartMs: number;
   readonly durationMs: number;
   readonly volume: number; // 0.0 to 1.0
+  readonly verifiedDurationMs?: number;
+  readonly verifiedSampleRate?: number;
+  readonly verifiedSampleCount?: number;
+  readonly temporalEvidence?: TemporalEvidence;
   readonly fadeInMs?: number;
   readonly fadeOutMs?: number;
 }
