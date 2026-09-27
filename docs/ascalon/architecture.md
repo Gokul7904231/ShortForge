@@ -108,3 +108,10 @@ Floor 07: Final Render Packaging, Outbox Delivery & Ingestion
 - **AscalonTrajectoryValidator**: Scans for 9 classes of credentials and API keys, validates schema completeness, checks simulation labeling, and verifies authorization consistency.
 - **AscalonReplayEngine**: Validates that deterministic operational trajectories reproduce identical decision-execution chains upon replay.
 - **AscalonTrajectoryExporter**: Segregates trajectories by mission family into Train, Validation, and Test splits without cross-family data leakage.
+
+
+## Current canonical floor reconciliation — 2026-09-27
+
+F04 is canonical **Media Synthesis & Provider Execution**. Its physical scope includes visual asset generation, voice/narration, and background audio under Guardian-gated provider execution and physical artifact validation. F03 remains provider-neutral planning; F05 remains temporal convergence; F06 executes committed render contracts; F07 remains final verification/release authority.
+
+This statement supersedes any older F04 voice-only wording in historical architecture notes.

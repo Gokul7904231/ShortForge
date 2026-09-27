@@ -49,7 +49,7 @@ SPECIALIZED FLOOR WORKERS
   +-- F01 Strategy
   +-- F02 Scripting
   +-- F03 Visual
-  +-- F04 Voice / Audio
+  +-- F04 Media Synthesis
   +-- F05 Timeline
   +-- F06 Rendering
   +-- F07 Verification

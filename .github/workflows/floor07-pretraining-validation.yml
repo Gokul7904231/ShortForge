@@ -87,7 +87,12 @@ jobs:
           const fs = require('fs');
           const raw = fs.readFileSync('Team/reports/floor07-pretraining-hardening-20260927.json', 'utf8');
           const report = JSON.parse(raw);
-          if (report.status !== 'CI_ADMISSION_PENDING') throw new Error('Unexpected report state');
+          if (report.status !== 'CI_ADMISSION_PASS') throw new Error('F07 report is not at the admitted state');
+          if (report.trainingReadiness?.floor07 !== 'PASS_CI_VERIFIED') throw new Error('F07 training readiness is not PASS_CI_VERIFIED');
+          if (report.trainingReadiness?.ascalon !== 'READY_UNDER_PROPOSAL_LEARNING_ONLY') throw new Error('Ascalon F07 boundary is not proposal/learning-only');
           if (!Array.isArray(report.requiredFreshEvidence) || report.requiredFreshEvidence.length < 4) throw new Error('Admission evidence list missing');
-          console.log('F07 pre-training report schema: PASS');
+          if (!report.verificationResults?.floor07PreTrainingValidation || report.verificationResults.floor07PreTrainingValidation.conclusion !== 'success') {
+            throw new Error('F07 report does not contain successful focused validation evidence');
+          }
+          console.log('F07 pre-training report admission schema: PASS');
           NODE

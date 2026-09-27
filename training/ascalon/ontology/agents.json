@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonCanonicalAgents",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Authoritative canonical registry of ShortForge / FactoryOS cognitive and sovereign agents",
   "agents": [
     {
@@ -212,6 +212,22 @@
       "sourceLocations": [
         "apps/web/agents/upload-agent.ts",
         "apps/web/publishing/providers/youtube.ts"
+      ]
+    },
+    {
+      "agentId": "agent_media_synthesizer",
+      "canonicalRole": "MEDIA_SYNTHESIZER",
+      "category": "DOMAIN_WORKER",
+      "authorityLevel": "OPERATIONAL",
+      "assignedFloor": "floor04_media_synthesis",
+      "description": "Executes authorized media synthesis using registered providers or deterministic fallbacks, records physical/provenance evidence, and never self-authorizes, overrides validation, or grants release authority.",
+      "supervises": [],
+      "escalatesTo": "OVERSEER",
+      "isFloor": false,
+      "sourceLocations": [
+        "services/pipeline/floor04_media_synthesis/app/services/pipeline.py",
+        "services/pipeline/floor04_media_synthesis/app/brain/media_brain.py",
+        "services/pipeline/guardian/floors/floor04_guardian.py"
       ]
     }
   ]

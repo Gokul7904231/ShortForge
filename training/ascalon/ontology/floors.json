@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonCanonicalFloors",
-  "version": "1.5.1",
-  "description": "Authoritative canonical registry of ShortForge / FactoryOS assembly line floors",
+  "version": "1.5.2",
+  "description": "Authoritative canonical registry of ShortForge / FactoryOS assembly line floors; semantic floor names and responsibilities are aligned with executable runtime contracts and Ascalon training ontology.",
   "floors": [
     {
       "floorId": "floor00_analyst",
@@ -168,10 +168,10 @@
     {
       "floorId": "floor04_media_synthesis",
       "number": 4,
-      "canonicalName": "Voice & Audio Synthesis",
-      "shortName": "Voice / Audio",
-      "category": "VOICE",
-      "responsibility": "Synthesizes neural voice tracks via Edge-TTS / ElevenLabs, performs EBU R128 audio loudness normalization (-14 LUFS), and audio ducking.",
+      "canonicalName": "Media Synthesis & Provider Execution",
+      "shortName": "Media Synthesis",
+      "category": "MEDIA",
+      "responsibility": "Physically realizes trusted media requirements declared by upstream planning: visual assets, voice/narration, and background audio; performs provider selection within authorized capabilities, physical media validation, rights/provenance registration, crash-safe persistence, and emits a verified media package for Floor 05.",
       "parent": "overseer",
       "predecessors": [
         "floor02_scripting"
@@ -182,25 +182,35 @@
       "runtimeOwner": "services/pipeline/floor04_media_synthesis/main.py",
       "sourceLocations": [
         "services/pipeline/floor04_media_synthesis/",
-        "apps/web/factoryos/core/voice/",
+        "services/pipeline/floor04_media_synthesis/app/domain/handoff.py",
+        "services/pipeline/floor04_media_synthesis/app/services/pipeline.py",
+        "services/pipeline/floor04_media_synthesis/app/services/provider_registry.py",
+        "services/pipeline/floor04_media_synthesis/app/services/validator.py",
+        "services/pipeline/guardian/floors/floor04_guardian.py",
+        "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
         "testing/contracts/floor.contract.ts"
       ],
       "expectedInputs": [
-        "script"
+        "floor03Handoff"
       ],
       "expectedOutputs": [
-        "voiceArtifact",
-        "voiceUrl"
+        "mediaPackage",
+        "visualAssets",
+        "audioAssets",
+        "backgroundAudio"
       ],
       "requiredMetadataKeys": [
+        "sourceAssetPlanFingerprint",
+        "providerExecutions",
+        "provenanceHash",
+        "mediaManifest",
         "sha256",
         "byteLength",
-        "qualityClass",
         "durationSeconds"
       ],
       "authority": "overseer",
       "trainingEligible": true,
-      "simulationRole": "Provides canned audio tracks or silence WAVs for testing."
+      "simulationRole": "Uses deterministic physical PNG/WAV fallbacks for test/simulation only; production provider execution remains Guardian-gated and physical outputs remain subject to independent validation."
     },
     {
       "floorId": "floor05_timeline_composition",

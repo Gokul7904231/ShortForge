@@ -78,8 +78,8 @@ export class HierarchyConsistencyValidator {
     if (CANONICAL_FLOORS.floor03_asset_realization.category !== "MEDIA") {
       errors.push("F03 must be categorized as MEDIA (Visual Asset Realization).");
     }
-    if (CANONICAL_FLOORS.floor04_media_synthesis.category !== "VOICE") {
-      errors.push("F04 must be categorized as VOICE (Media Synthesis).");
+    if (CANONICAL_FLOORS.floor04_media_synthesis.category !== "MEDIA") {
+      errors.push("F04 must be categorized as MEDIA (Media Synthesis & Provider Execution).");
     }
 
     return {

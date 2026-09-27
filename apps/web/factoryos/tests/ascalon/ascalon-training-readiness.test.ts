@@ -26,7 +26,7 @@ describe("Project Ascalon: Factory Hierarchy & Floor Topology Tests", () => {
     expect(report.errors).toHaveLength(0);
   });
 
-  it("2. enforces that Floor 03 is strictly Asset Realization and Floor 04 is Media Synthesis", () => {
+  it("2. enforces that Floor 03 is visual asset planning and Floor 04 is canonical media synthesis", () => {
     const f03 = HierarchyConsistencyValidator.validateFloor("floor03_asset_realization");
     const f04 = HierarchyConsistencyValidator.validateFloor("floor04_media_synthesis");
 
@@ -35,8 +35,8 @@ describe("Project Ascalon: Factory Hierarchy & Floor Topology Tests", () => {
     expect(f03.canonicalName).toContain("Asset Realization");
 
     expect(f04.number).toBe(4);
-    expect(f04.category).toBe("VOICE");
-    expect(f04.canonicalName).toContain("Voice & Audio Synthesis");
+    expect(f04.category).toBe("MEDIA");
+    expect(f04.canonicalName).toContain("Media Synthesis");
   });
 
   it("3. strictly distinguishes Sovereign Agents from Pipeline Floors", () => {

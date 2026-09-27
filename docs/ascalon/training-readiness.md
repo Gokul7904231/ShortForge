@@ -1,5 +1,30 @@
 # Project Ascalon: Training Readiness Charter & Principles
 
+## Current readiness state — 2026-09-27
+
+**Status:** READY_FOR_TRAINING_DATA_GENERATION_UNDER_PROPOSAL_LEARNING_ONLY
+
+The earlier readiness artifacts are historical evidence, not current certification. Current training-data admission must be derived from executable mainline state and fresh CI evidence.
+
+### Reconciled in this wave
+- F04 canonical identity is aligned with executable Media Synthesis & Provider Execution behavior.
+- F04 media-generation capabilities are bound to the F04 training ontology and Guardian-gated.
+- Ascalon now has an explicit MEDIA_SYNTHESIZER domain worker identity for F04 execution.
+- F07 admission validation now matches the committed CI_ADMISSION_PASS Team report contract.
+- stale floor/readiness documentation is being refreshed.
+- the branch inventory is documented from the live repository rather than historical counts.
+
+### Promotion gate
+The reconciliation branch is CI-verified and is eligible for merge. After merge, Ascalon production trajectory collection may begin under the standing proposal/learning-only boundary once the same evidence is visible on main:
+1. Ascalon hierarchy/ontology tests pass.
+2. F03/F04/F05/F06/F07 dedicated validation lanes pass.
+3. Team Change Gate passes.
+4. repository typecheck passes.
+5. current Team report and documentation agree with the verified CI state.
+6. no canonical floor has multiple meanings across runtime, ontology, .okf, and training contracts.
+
+This charter does not authorize model-weight training. It authorizes only evidence-driven dataset preparation after the above gates pass.
+
 ## 1. Charter Mandate
 
 The primary objective of Project Ascalon is to prepare ShortForge / FactoryOS for operational machine learning and autonomous agent training. Training an LLM or autonomous policy on contaminated telemetry, fabricated outcomes, unearned confidence scores, or ambiguous hierarchy labels causes severe operational drift, hallucinated safety compliance, and catastrophic runtime failure.
@@ -73,3 +98,12 @@ The admission claim is limited to the canonical F03 planning/runtime contracts a
 
 ### Evidence refresh — 2026-09-26 11:10 IST
 The admission record above was revalidated on the newer `main` commit `0fa169cae74c9b77def147df55dc4572b91769d2`. The dedicated Floor 03 Post-Merge Verification run `36219665043` passed both jobs: **F03 canonical post-merge gate = PASS** and **Repository TypeScript typecheck = PASS**. The repository CI run `36219665012` also completed with **PASS**.
+
+## Fresh reconciliation evidence — 2026-09-27
+
+- PR #40 reconciliation branch: CI verified.
+- Team Change Gate: PASS.
+- F03/F04/F05/F06/F07 dedicated gates: PASS.
+- Repository CI: PASS.
+- No model weights trained or modified.
+- Ascalon authority remains proposal/learning-only.

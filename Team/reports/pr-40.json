@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR40-Ascalon-Cross-Floor-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/ascalon-cross-floor-reconciliation-20260927",
+  "objective": "Reconcile executable floor contracts, Ascalon ontology, F07 admission workflow, current readiness evidence and active documentation without changing the locked F00-F07 topology or sovereign authority hierarchy.",
+  "classification": "contradicts existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/decisions.md",
+      ".okf/hierarchy-map.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/intelligence/training.md",
+      ".okf/operations/branch-hygiene-20260927.md",
+      "docs/ascalon/training-readiness.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_ONTOLOGY_AND_CONTRACT_RECONCILIATION"
+  },
+  "conflicts": [
+    {
+      "id": "CF-40-01",
+      "originalConflict": "Executable F04 already performs visual, narration and background-audio synthesis while runtime/ontology described F04 as voice-only.",
+      "status": "RESOLVED",
+      "proposedResolution": "Canonicalize F04 as Media Synthesis & Provider Execution and align runtime hierarchy tests plus Ascalon floors/hierarchy ontology."
+    },
+    {
+      "id": "CF-40-02",
+      "originalConflict": "F07 admission workflow expected CI_ADMISSION_PENDING while the committed Team report uses CI_ADMISSION_PASS.",
+      "status": "RESOLVED",
+      "proposedResolution": "Validate the committed PASS state plus training readiness and successful focused evidence in the admission workflow."
+    },
+    {
+      "id": "CF-40-03",
+      "originalConflict": "Ascalon trajectory capability allowlist omitted cap_temporal_precision_tts even though the ontology declares it.",
+      "status": "RESOLVED",
+      "proposedResolution": "Add cap_temporal_precision_tts to the canonical validator allowlist and enforce ontology-to-validator coverage by test."
+    },
+    {
+      "id": "CF-40-04",
+      "originalConflict": "F04 physical capabilities had no canonical MEDIA_SYNTHESIZER training agent.",
+      "status": "RESOLVED",
+      "proposedResolution": "Register MEDIA_SYNTHESIZER as the F04 domain worker and bind F04 capabilities to it."
+    },
+    {
+      "id": "CF-40-05",
+      "originalConflict": "Historical Ascalon readiness certification could be mistaken for current readiness.",
+      "status": "RESOLVED",
+      "proposedResolution": "Mark the historical final readiness artifact superseded and add a current reconciliation-based readiness gate."
+    },
+    {
+      "id": "CF-40-06",
+      "originalConflict": "Branch-hygiene documentation described a stale three-branch repository state while live GitHub exposes five branches.",
+      "status": "RESOLVED",
+      "proposedResolution": "Refresh branch-hygiene documentation against live GitHub state and explicitly classify unmerged/open branches."
+    }
+  ],
+  "disposition": "PASS",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Canonicalized F04 executable hierarchy to Media Synthesis & Provider Execution / MEDIA.",
+    "Aligned HierarchyConsistencyValidator and Ascalon readiness tests with the canonical F04 identity.",
+    "Reconciled floors.json and hierarchy.json F04 ontology entries with executable media synthesis behavior.",
+    "Moved visual asset generation capability ownership to F04 and introduced MEDIA_SYNTHESIZER as the explicit F04 execution worker.",
+    "Guardian-gated physical F04 voice and temporal-precision capabilities.",
+    "Added cap_temporal_precision_tts to the Ascalon trajectory validator allowlist.",
+    "Added executable runtime-to-ontology consistency tests.",
+    "Updated F07 admission workflow to validate the committed PASS report contract.",
+    "Marked the historical Ascalon final-readiness certification as superseded.",
+    "Refreshed current readiness charter and live branch-hygiene evidence.",
+    "Recorded the contradiction and resolution in .okf."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
+    "apps/web/factoryos/core/contracts/HierarchyConsistencyValidator.ts",
+    "apps/web/factoryos/tests/ascalon/ascalon-training-readiness.test.ts",
+    "apps/web/factoryos/tests/ascalon/ontology-consistency.test.ts",
+    "training/ascalon/ontology/floors.json",
+    "training/ascalon/ontology/hierarchy.json",
+    "training/ascalon/ontology/capabilities.json",
+    "training/ascalon/ontology/agents.json",
+    "training/ascalon/validators/AscalonTrajectoryValidator.ts",
+    ".github/workflows/floor07-pretraining-validation.yml",
+    ".okf/decisions/cross-floor-ascalon-reconciliation-20260927.md",
+    "docs/ascalon/training-readiness.md",
+    ".okf/operations/branch-hygiene-20260927.md"
+  ],
+  "notes": [
+    "No floor topology or sovereign authority change was introduced.",
+    "F03 remains provider-neutral planning. F04 remains physical media realization. F05 remains temporal convergence. F07 remains final verification/release authority.",
+    "Historical audit/readiness documents are retained for provenance but are explicitly marked historical where needed.",
+    "The remaining stale external branch refs are not deleted because the connected GitHub tool surface does not expose branch/ref deletion.",
+    "Ascalon model-weight training remains out of scope until fresh mainline CI admission is complete.",
+    "All dedicated cross-floor validation lanes and repository CI passed on the final reconciliation branch.",
+    "Ascalon readiness remains proposal/learning-only; no model weights were changed and no training job was dispatched.",
+    "Web Regression is informational and does not override the dedicated floor admission evidence."
+  ],
+  "verificationPlan": [
+    "Run the dedicated Ascalon training-readiness Vitest suite.",
+    "Run the new runtime-to-ontology consistency suite.",
+    "Run F04 production validation.",
+    "Run F05 handoff validation.",
+    "Run F06 validation.",
+    "Run F07 pre-training validation.",
+    "Run repository typecheck.",
+    "Run Team Change Gate.",
+    "Run repository-required security/dependency and smoke checks.",
+    "Only after all required evidence is green merge the reconciliation branch into main."
+  ],
+  "forgerStatus": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "COMPLETE"
+  },
+  "verificationResults": {
+    "teamChangeGate": {
+      "runId": 36308757139,
+      "conclusion": "success"
+    },
+    "obsidianMemoryValidation": {
+      "runId": 36308757110,
+      "conclusion": "success"
+    },
+    "googleDriveMcp": {
+      "runId": 36308757132,
+      "conclusion": "success"
+    },
+    "floor02Floor03ProductionGates": {
+      "runId": 36308757144,
+      "conclusion": "success"
+    },
+    "floor04ProductionValidation": {
+      "runId": 36308757103,
+      "conclusion": "success"
+    },
+    "floor05PreTrainingValidation": {
+      "runId": 36308757119,
+      "conclusion": "success"
+    },
+    "floor06PreTrainingValidation": {
+      "runId": 36308757143,
+      "conclusion": "success"
+    },
+    "floor07PreTrainingValidation": {
+      "runId": 36308757101,
+      "conclusion": "success"
+    },
+    "repositoryCI": {
+      "runId": 36308757122,
+      "conclusion": "success"
+    }
+  },
+  "trainingReadiness": {
+    "reconciliation": "PASS_CI_VERIFIED",
+    "ascalon": "READY_FOR_TRAINING_DATA_GENERATION_UNDER_PROPOSAL_LEARNING_ONLY",
+    "modelWeights": "NOT_TRAINED"
+  }
+}

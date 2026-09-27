@@ -29,7 +29,7 @@
   "verifiedAt": "2026-09-27T08:18:46Z",
   "trainingReadiness": {
     "floor07": "PASS_CI_VERIFIED",
-    "ascalon": "Ready to consume F07 evidence under proposal/learning-only permissions; no authority promotion."
+    "ascalon": "READY_UNDER_PROPOSAL_LEARNING_ONLY"
   },
   "verificationResults": {
     "floor07PreTrainingValidation": {
@@ -73,6 +73,7 @@
     "Dedicated F07 validation passed with focused typecheck, physical-truth tests, architectural invariants, receipt, remediation, policy-refresh suites, and admission-contract validation.",
     "F03/F04/F05/F06 cross-floor validation passed on the same branch.",
     "Repository strict TypeScript typecheck now passes after completing canonical temporal contract fields.",
-    "Full Web Regression remains informational and failed due environment-dependent FFmpeg/ffprobe, MongoDB/provider/Agent-Reach availability, and legacy tests unrelated to the F07 hardening wave."
+    "Full Web Regression remains informational and failed due environment-dependent FFmpeg/ffprobe, MongoDB/provider/Agent-Reach availability, and legacy tests unrelated to the F07 hardening wave.",
+    "Ascalon readiness is represented as a machine-readable enum: READY_UNDER_PROPOSAL_LEARNING_ONLY. This does not grant capability, release, or model-training authority."
   ]
 }
