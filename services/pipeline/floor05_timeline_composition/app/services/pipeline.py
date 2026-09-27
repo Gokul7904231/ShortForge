@@ -19,6 +19,7 @@ from floors.floor05_timeline_composition.app.services.canonical_hasher import Ca
 from floors.floor05_timeline_composition.app.services.reconciliation import CrashReconciliationEngine
 from floors.floor05_timeline_composition.app.services.registry import TimelineRegistry
 from floors.floor05_timeline_composition.app.services.source_manifest import SourceManifestVerifier
+from floors.floor05_timeline_composition.app.services.subtitle_sidecar import write_webvtt, validate_webvtt
 from floors.floor05_timeline_composition.app.services.validators import (
     PhysicalVideoValidator,
     SemanticCompositionValidator,
@@ -68,6 +69,7 @@ class Floor05PipelineService:
         authorization: GuardianAuthorizationContext,
         canonical_ir_path: str,
         canonical_ir_fingerprint: str,
+        subtitle_path: str,
     ) -> Floor05HandoffPayload:
         mime, sha256_val, size_bytes, duration = PhysicalVideoValidator.validate_rendered_video(
             file_path=video_path,
@@ -104,6 +106,7 @@ class Floor05PipelineService:
             sha256_val,
         )
         ffprobe_summary = PhysicalVideoValidator.probe_rendered_video(video_path)
+        validate_webvtt(subtitle_path, timeline_spec)
         return Floor05HandoffPayload(
             request_id=request_id,
             execution_id=job_spec.execution_id,
@@ -121,6 +124,7 @@ class Floor05PipelineService:
             ffprobe_summary=ffprobe_summary,
             canonical_timeline_ir_path=canonical_ir_path,
             canonical_timeline_ir_fingerprint=canonical_ir_fingerprint,
+            subtitle_file_path=subtitle_path,
         )
 
     def run_pipeline(
@@ -158,6 +162,8 @@ class Floor05PipelineService:
             canonical_timeline_ir_document(timeline_spec, request_id),
             encoding="utf-8",
         )
+        subtitle_path = self.storage_root / f"subtitle_{timeline_spec.timeline_id}.vtt"
+        write_webvtt(timeline_spec, str(subtitle_path))
         self.registry.register_timeline(timeline_spec)
 
         # Compute the render identity before dispatch so duplicate requests can reuse a committed artifact.
@@ -183,6 +189,7 @@ class Floor05PipelineService:
                     authorization=authorization,
                     canonical_ir_path=str(canonical_ir_path),
                     canonical_ir_fingerprint=canonical_ir_fp,
+                    subtitle_path=str(subtitle_path),
                 )
 
         # Gate 2: create an early crash-recovery journal before FFmpeg starts.
