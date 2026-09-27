@@ -151,7 +151,7 @@ export class AudioPipelineClass {
     
     // Speed multiplier support: apply atempo filter if not 1.0 (last resort speed fallback)
     if (speedMultiplier !== 1.0) {
-      args.push("-filter:a", `atempo=${speedMultiplier.toFixed(2)}`);
+      args.push("-filter:a", `atempo=${speedMultiplier.toFixed(4)}`);
     }
 
     args.push(
