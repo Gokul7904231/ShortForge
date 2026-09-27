@@ -98,7 +98,8 @@ export class AudioPipelineClass {
       duration: metadata.duration,
       providerId: params.providerId,
       providerName: params.providerName,
-      providerVersion: params.providerVersion
+      providerVersion: params.providerVersion,
+      allowSilence: params.allowSilence
     });
 
     return { audioBuffer: normalizedWav, cacheHit: false, metadata };
@@ -202,6 +203,7 @@ export class AudioPipelineClass {
     providerId: string;
     providerName: string;
     providerVersion: string;
+    allowSilence?: boolean;
   }): void {
     const assetRecord = {
       id: `asset_voice_${params.jobId}`,
