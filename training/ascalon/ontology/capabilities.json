@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonSystemCapabilities",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Authoritative machine-readable registry of executable capabilities in ShortForge",
   "capabilities": [
     {
@@ -41,7 +41,7 @@
       "riskClass": "LOW",
       "allowedRoles": [
         "OVERSEER",
-        "VOICE_ENGINE"
+        "MEDIA_SYNTHESIZER"
       ],
       "requiresGuardianGate": false,
       "timeoutMs": 120000,
@@ -63,7 +63,7 @@
       "riskClass": "LOW",
       "allowedRoles": [
         "OVERSEER",
-        "VOICE_ENGINE"
+        "MEDIA_SYNTHESIZER"
       ],
       "requiresGuardianGate": false,
       "timeoutMs": 60000,
@@ -73,13 +73,13 @@
       "capabilityId": "cap_visual_asset_generate",
       "version": "1.0.0",
       "name": "Visual Asset Generation",
-      "floorId": "floor03_asset_realization",
+      "floorId": "floor04_media_synthesis",
       "riskClass": "MEDIUM",
       "allowedRoles": [
         "OVERSEER",
-        "SCENE_ARCHITECT"
+        "MEDIA_SYNTHESIZER"
       ],
-      "requiresGuardianGate": false,
+      "requiresGuardianGate": true,
       "timeoutMs": 90000,
       "trainingEligible": true
     },
