@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Ascalon-Mainline-Truth-Refresh-20260927",
+  "repository": "Gokul7904231/ShortForge",
+  "sourceMain": "9c27c7e75652c2cc04ebe41d41eed299cc88ce91",
+  "objective": "Close documentation and readiness-truth drift left after the cross-floor Ascalon reconciliation merged, so active .okf/docs align with executable runtime and Ascalon admission semantics.",
+  "changes": [
+    "Canonicalized active F04 terminology to Media Synthesis & Provider Execution / MEDIA.",
+    "Aligned active .okf hierarchy, skills and capability-security maps with the machine-readable F04 ontology.",
+    "Aligned temporal precision and F02/F04 handoff documentation with the physical-media F04 boundary.",
+    "Marked historical Ascalon baseline/final readiness documents as non-authoritative.",
+    "Bound current readiness documentation to merged main commit 9c27c7e...",
+    "Refreshed live branch inventory and explicitly classified unmerged work as non-authoritative.",
+    "Recorded the reconciliation closure in .okf/decisions.md."
+  ],
+  "authorityInvariant": "No topology, sovereign authority, training-weight, or runtime behavior changes.",
+  "trainingBoundary": "Ascalon remains proposal/learning-only; only mainline verified trajectories may be admitted.",
+  "currentBranches": [
+    "main",
+    "feat/ascalon-clm-aria2-upgrade-20260927",
+    "feat/ascalon-cross-floor-reconciliation-20260927",
+    "feat/floor05-pretraining-hardening-wave3-20260927",
+    "feat/floor07-pretraining-hardening-20260927",
+    "research/movie-intelligence-wave1"
+  ],
+  "nonAuthoritativeBranches": [
+    "feat/ascalon-clm-aria2-upgrade-20260927",
+    "feat/floor05-pretraining-hardening-wave3-20260927",
+    "research/movie-intelligence-wave1"
+  ],
+  "verificationBasis": {
+    "f03": "PASS",
+    "f04": "PASS",
+    "f05": "PASS",
+    "f06": "PASS",
+    "f07": "PASS",
+    "repoTypeScript": "PASS",
+    "teamChangeGate": "PASS",
+    "obsidianMemory": "PASS",
+    "googleDriveMcp": "PASS",
+    "webRegression": "INFORMATIONAL_FAILURE"
+  },
+  "disposition": "PASS_PENDING_PR_CI"
+}
