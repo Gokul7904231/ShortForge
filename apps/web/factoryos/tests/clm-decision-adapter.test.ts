@@ -55,6 +55,12 @@ describe("CLM Decision Adapter", () => {
     expect(result.adapterMetadata?.isTrainingEligible).toBe(false);
     expect(result.adapterMetadata?.probabilitySemantics).toBe("CANDIDATE_RELATIVE");
     expect(result.answersById.worker.type).toBe("CHOICE");
+    const call = (fetch as any).mock.calls[0];
+    const body = JSON.parse(call[1].body);
+    expect(body.model).toBe("clm-latest");
+    expect(body.questions.worker.type).toBe("choice");
+    expect(body.questions.worker.criteria).toEqual({ local: "local", amd: "amd", kaggle: "kaggle" });
+
     expect(result.answersById.worker.status).toBe("VALID");
     expect(result.answersById.quality.type).toBe("SCORE");
   });
