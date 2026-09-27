@@ -48,11 +48,12 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       suggestedVoices: ['en-US-Neural2-F', 'en-US-Journey-F']
     },
     temporalPolicy: {
-      video: { toleranceMs: 50 },
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
       narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
       pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.15, pausePolicy: 'CONTROLLED' },
       alignment: { granularity: 'WORD', required: true },
-      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 }
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
     },
     outputPolicy: {
       width: 1080,
@@ -112,11 +113,12 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       suggestedVoices: ['en-US-Neural2-D', 'en-US-Wavenet-D']
     },
     temporalPolicy: {
-      video: { toleranceMs: 50 },
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
       narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
       pacing: { minRateMultiplier: 0.90, maxRateMultiplier: 1.10, pausePolicy: 'CONTROLLED' },
       alignment: { granularity: 'WORD', required: true },
-      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.04 }
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.04 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
     },
     outputPolicy: {
       width: 1080,
@@ -174,11 +176,12 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       suggestedVoices: ['en-US-Neural2-J', 'en-US-Studio-M']
     },
     temporalPolicy: {
-      video: { toleranceMs: 50 },
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
       narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
       pacing: { minRateMultiplier: 0.88, maxRateMultiplier: 1.08, pausePolicy: 'CONTROLLED' },
       alignment: { granularity: 'WORD', required: true },
-      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.04 }
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.04 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
     },
     outputPolicy: {
       width: 1080,
@@ -565,11 +568,12 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
       suggestedVoices: ['en-US-Neural2-F', 'en-US-Journey-O']
     },
     temporalPolicy: {
-      video: { toleranceMs: 50 },
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
       narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
       pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.20, pausePolicy: 'GRAMMAR' },
       alignment: { granularity: 'WORD', required: true },
-      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 }
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
     },
     outputPolicy: {
       width: 1080,

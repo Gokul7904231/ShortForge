@@ -1,0 +1,93 @@
+name: Floor 07 Pre-Training Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/verification/youtube/**"
+      - "apps/web/factoryos/core/verification/VerificationEngine.ts"
+      - "apps/web/factoryos/core/compute/cas/**"
+      - "apps/web/publishing/authorization/**"
+      - "apps/web/publishing/providers/**"
+      - "apps/web/factoryos/tests/f07-*.test.ts"
+      - "training/ascalon/ontology/**"
+      - "docs/verification/f07/**"
+      - "docs/verification/ascalon/**"
+      - ".okf/**"
+      - "Team/reports/**"
+      - ".github/workflows/floor07-pretraining-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/factoryos/core/verification/youtube/**"
+      - "apps/web/factoryos/core/verification/VerificationEngine.ts"
+      - "apps/web/factoryos/core/compute/cas/**"
+      - "apps/web/publishing/authorization/**"
+      - "apps/web/publishing/providers/**"
+      - "apps/web/factoryos/tests/f07-*.test.ts"
+      - "training/ascalon/ontology/**"
+      - "docs/verification/f07/**"
+      - "docs/verification/ascalon/**"
+      - ".okf/**"
+      - "Team/reports/**"
+
+jobs:
+  floor07:
+    name: Floor 07 release truth + pre-training validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        run: cd apps/web && npm ci
+
+      - name: Ensure FFmpeg and FFprobe exist
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Typecheck F07 focused modules
+        working-directory: apps/web
+        run: >-
+          npx tsc --ignoreConfig --noEmit --skipLibCheck --target ES2022 --module NodeNext
+          --moduleResolution NodeNext --types node
+          factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts
+          factoryos/core/verification/youtube/F07PreTrainingAdmission.ts
+          factoryos/tests/f07-physical-truth.test.ts
+
+      - name: Run F07 physical truth tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/f07-physical-truth.test.ts --config vitest.config.ts
+
+      - name: Run F07 invariant and receipt suites
+        working-directory: apps/web
+        run: >-
+          npx vitest run
+          factoryos/tests/f07-architectural-invariants.test.ts
+          factoryos/tests/youtube-evidence-receipt.test.ts
+          factoryos/tests/youtube-remediation.test.ts
+          factoryos/tests/youtube-policy-refresh.test.ts
+          --config vitest.config.ts
+
+      - name: Validate Ascalon admission contract
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const raw = fs.readFileSync('Team/reports/floor07-pretraining-hardening-20260927.json', 'utf8');
+          const report = JSON.parse(raw);
+          if (report.status !== 'CI_ADMISSION_PENDING') throw new Error('Unexpected report state');
+          if (!Array.isArray(report.requiredFreshEvidence) || report.requiredFreshEvidence.length < 4) throw new Error('Admission evidence list missing');
+          console.log('F07 pre-training report schema: PASS');
+          NODE
