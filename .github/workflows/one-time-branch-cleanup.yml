@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   cleanup:
-    if: startsWith(github.event.head_commit.message, 'chore(branch-cleanup): execute one-time cleanup')
     runs-on: ubuntu-latest
     steps:
       - name: Delete superseded branches
