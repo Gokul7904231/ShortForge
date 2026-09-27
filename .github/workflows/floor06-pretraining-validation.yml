@@ -58,7 +58,7 @@ jobs:
       - name: Typecheck F06 changed modules
         working-directory: apps/web
         run: >-
-          npx tsc --noEmit --skipLibCheck --target ES2022 --module NodeNext
+          npx tsc --ignoreConfig --noEmit --skipLibCheck --target ES2022 --module NodeNext
           --moduleResolution NodeNext --types node
           factoryos/core/compute/contracts/ComputeContracts.ts
           factoryos/core/compute/router/ComputeRouter.ts
