@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/ascalon-cross-floor-reconciliation-20260927",
   "objective": "Reconcile executable floor contracts, Ascalon ontology, F07 admission workflow, current readiness evidence and active documentation without changing the locked F00-F07 topology or sovereign authority hierarchy.",
-  "classification": "extends existing rule",
+  "classification": "contradicts existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "sourceRefs": [
@@ -28,14 +28,44 @@
     "zap": "NOT_APPLICABLE_TO_ONTOLOGY_AND_CONTRACT_RECONCILIATION"
   },
   "conflicts": [
-    "F04 executable runtime performed visual + voice/audio media synthesis while registry and Ascalon ontology described a voice-only floor.",
-    "F07 admission workflow expected CI_ADMISSION_PENDING while the committed admission report uses CI_ADMISSION_PASS.",
-    "Ascalon trajectory capability allowlist was missing cap_temporal_precision_tts present in the ontology.",
-    "F04 physical capabilities were not represented under a canonical MEDIA_SYNTHESIZER agent identity.",
-    "Historical Ascalon readiness certification could be mistaken for current admission evidence.",
-    "Branch-hygiene documentation was stale versus the live repository."
+    {
+      "id": "CF-40-01",
+      "originalConflict": "Executable F04 already performs visual, narration and background-audio synthesis while runtime/ontology described F04 as voice-only.",
+      "status": "RESOLVED",
+      "proposedResolution": "Canonicalize F04 as Media Synthesis & Provider Execution and align runtime hierarchy tests plus Ascalon floors/hierarchy ontology."
+    },
+    {
+      "id": "CF-40-02",
+      "originalConflict": "F07 admission workflow expected CI_ADMISSION_PENDING while the committed Team report uses CI_ADMISSION_PASS.",
+      "status": "RESOLVED",
+      "proposedResolution": "Validate the committed PASS state plus training readiness and successful focused evidence in the admission workflow."
+    },
+    {
+      "id": "CF-40-03",
+      "originalConflict": "Ascalon trajectory capability allowlist omitted cap_temporal_precision_tts even though the ontology declares it.",
+      "status": "RESOLVED",
+      "proposedResolution": "Add cap_temporal_precision_tts to the canonical validator allowlist and enforce ontology-to-validator coverage by test."
+    },
+    {
+      "id": "CF-40-04",
+      "originalConflict": "F04 physical capabilities had no canonical MEDIA_SYNTHESIZER training agent.",
+      "status": "RESOLVED",
+      "proposedResolution": "Register MEDIA_SYNTHESIZER as the F04 domain worker and bind F04 capabilities to it."
+    },
+    {
+      "id": "CF-40-05",
+      "originalConflict": "Historical Ascalon readiness certification could be mistaken for current readiness.",
+      "status": "RESOLVED",
+      "proposedResolution": "Mark the historical final readiness artifact superseded and add a current reconciliation-based readiness gate."
+    },
+    {
+      "id": "CF-40-06",
+      "originalConflict": "Branch-hygiene documentation described a stale three-branch repository state while live GitHub exposes five branches.",
+      "status": "RESOLVED",
+      "proposedResolution": "Refresh branch-hygiene documentation against live GitHub state and explicitly classify unmerged/open branches."
+    }
   ],
-  "disposition": "BLOCKED_UNTIL_CI",
+  "disposition": "BLOCKED",
   "forgers": [
     "Forge Architect",
     "Forge Builder",
