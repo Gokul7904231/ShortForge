@@ -1,3 +1,7 @@
+# HISTORICAL / SUPERSEDED — DO NOT USE AS CURRENT TRAINING READINESS
+
+> This document records an earlier certification artifact. It remains in the repository for audit history only. Current Ascalon readiness must be established from `docs/ascalon/training-readiness.md`, the current ontology, current Team report, and fresh CI evidence on `main`.
+
 # Project Ascalon: Final Training Readiness Verification Report
 
 ## 1. Executive Summary
