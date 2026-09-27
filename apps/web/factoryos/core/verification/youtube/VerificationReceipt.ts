@@ -147,7 +147,7 @@ export class VerificationReceiptBuilder {
     ) {
       publishAllowed = false;
       overallOutcome = "BLOCKED";
-      publishBlockReason = publishBlockReason || "Technical forensics failed: physical media defect, invalid geometry/duration, or missing artifact SHA-256";
+      publishBlockReason = publishBlockReason || "Missing or empty placeholder artifact SHA-256 identity: independently verified physical byte digest required";
     }
 
     const youtubePolicy = {
