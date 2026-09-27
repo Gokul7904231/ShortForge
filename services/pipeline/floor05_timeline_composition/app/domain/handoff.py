@@ -331,7 +331,9 @@ class Floor05HandoffPayload(BaseModel):
     execution_mode: ExecutionMode = Field(default=ExecutionMode.HYBRID)
     provenance_hash: str = Field(..., min_length=64, max_length=64)
     ffprobe_summary: Dict[str, Any] = Field(default_factory=dict)
-    version: str = Field(default="2.0.0")
+    canonical_timeline_ir_path: Optional[str] = Field(default=None)
+    canonical_timeline_ir_fingerprint: Optional[str] = Field(default=None, min_length=64, max_length=64)
+    version: str = Field(default="2.1.0")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @model_validator(mode="after")
@@ -397,4 +399,6 @@ class Floor05HandoffPayload(BaseModel):
 
         if len(self.timeline_fingerprint) != 64:
             raise ValueError("F05 timeline_fingerprint must be SHA-256.")
+        if self.canonical_timeline_ir_path is None and self.canonical_timeline_ir_fingerprint is not None:
+            raise ValueError("F05 canonical TimelineIR fingerprint requires its serialized artifact path.")
         return self
