@@ -145,6 +145,7 @@ function renderJob(jobId: string): ComputeJob {
     requirements: {
       estimatedDurationSeconds: 0.5,
       diskSpaceMb: 1,
+      workloadType: "RENDER",
     },
     priority: "HIGH",
     timeoutMs: 60_000,
