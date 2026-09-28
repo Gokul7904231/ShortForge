@@ -186,6 +186,25 @@ export class PythonFloorBridge {
         detectorId: "python_floor_bridge",
         symptoms: errors,
         observedState: { errors, security, handoff: envelope },
+        initialEvidence: [
+          {
+            evidenceId: "bda_" + dossier.borderEventId,
+            type: "DIAGNOSTIC_OUTPUT",
+            source: "BorderDefenseAgent",
+            description: "Python floor handoff passed BDA egress inspection before case creation.",
+            data: {
+              bdaPass: dossier.policyDecision === "ALLOW" && dossier.anomalies.length === 0,
+              borderEventId: dossier.borderEventId,
+              policyDecision: dossier.policyDecision,
+              inspectionResults: dossier.inspectionResults,
+              anomalies: dossier.anomalies,
+              inputHash: dossier.inputHash,
+              outputHash: dossier.outputHash,
+            },
+            collectedAt: new Date().toISOString(),
+            confidence: 1,
+          },
+        ],
       });
     }
   }
