@@ -5,6 +5,7 @@ import type {
   JointHealingSessionRecord,
   MutationLease,
 } from "./FloorGovernanceContracts";
+import type { JointHealingSessionStore } from "./JointHealingSessionStore";
 
 interface MutableSession {
   record: JointHealingSessionRecord;
@@ -14,6 +15,29 @@ interface MutableSession {
 
 export class JointHealingSessionManager {
   private readonly sessions = new Map<string, MutableSession>();
+  private readonly store?: JointHealingSessionStore;
+
+  constructor(store?: JointHealingSessionStore) {
+    this.store = store;
+    for (const record of store?.loadAll() || []) {
+      const recovered: MutableSession = {
+        record: structuredClone(record),
+        mutationLeases: new Map(),
+        fencingEpochByResource: new Map(Object.entries(record.fencingEpochByResource).map(([key, value]) => [key, Number(value)])),
+      };
+      // A process restart invalidates in-flight mutation leases. Never resume
+      // physical healing automatically from a stale session.
+      if (recovered.record.state === "HEALING" || recovered.record.state === "VERIFYING") {
+        recovered.record = {
+          ...recovered.record,
+          state: "ESCALATED",
+          updatedAt: new Date().toISOString(),
+        };
+        this.store?.save(recovered.record);
+      }
+      this.sessions.set(record.sessionId, recovered);
+    }
+  }
 
   createSession(
     incidentId: string,
@@ -45,6 +69,7 @@ export class JointHealingSessionManager {
       mutationLeases: new Map(),
       fencingEpochByResource: new Map(),
     });
+    this.store?.save(record);
     return structuredClone(record);
   }
 
@@ -78,6 +103,7 @@ export class JointHealingSessionManager {
       state,
       updatedAt: new Date().toISOString(),
     };
+    this.store?.save(session.record);
     return structuredClone(session.record);
   }
 
@@ -125,7 +151,23 @@ export class JointHealingSessionManager {
       updatedAt: acquiredAt,
     };
 
+    this.store?.save(session.record);
     return structuredClone(lease);
+  }
+
+  noteMutationLease(lease: MutationLease): void {
+    const session = this.getSession(lease.sessionId);
+    session.mutationLeases.set(lease.resourceId, structuredClone(lease));
+    const currentEpoch = session.fencingEpochByResource.get(lease.resourceId) || 0;
+    if (lease.fencingEpoch > currentEpoch) {
+      session.fencingEpochByResource.set(lease.resourceId, lease.fencingEpoch);
+    }
+    session.record = {
+      ...session.record,
+      fencingEpochByResource: Object.fromEntries(session.fencingEpochByResource.entries()),
+      updatedAt: new Date().toISOString(),
+    };
+    this.store?.save(session.record);
   }
 
   validateMutationLease(lease: MutationLease): { valid: boolean; reason?: string } {
@@ -160,6 +202,7 @@ export class JointHealingSessionManager {
       ...session.record,
       updatedAt: new Date().toISOString(),
     };
+    this.store?.save(session.record);
     return true;
   }
 
@@ -187,6 +230,7 @@ export class JointHealingSessionManager {
       checkpoints: [...session.record.checkpoints, checkpoint],
     };
 
+    this.store?.save(session.record);
     return structuredClone(checkpoint);
   }
 
