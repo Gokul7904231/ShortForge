@@ -141,7 +141,7 @@ export class PythonFloorBridge {
       );
     }
 
-    const { security, status, outputArtifact, errors, complianceScore, executionTimeMs } = envelope;
+    const { status, outputArtifact, errors, complianceScore, executionTimeMs } = envelope;
 
     // Validate Floor state transition
     const targetStatus = status === "SUCCESS" ? "COMPLETED" : status === "DEGRADED" ? "REPAIR_REQUIRED" : "FAILED";
