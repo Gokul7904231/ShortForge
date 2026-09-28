@@ -104,6 +104,14 @@ describe("Floor Governance Cell — Wave 3 paired healing", () => {
 
     const reports = await healerEngine.dispatchHealersForCase(incident);
 
+    const closureDiagnostics = eventBus
+      .getEvents(200)
+      .filter((event) =>
+        ["JOINT_HEALING_AUDIT_FAILED", "GUARDIAN_CLOSURE_DENIED", "HEALING_BDA_REINSPECTION_FAILED"].includes(event.topic)
+      )
+      .map((event) => ({ topic: event.topic, payload: event.payload }));
+
+    expect(closureDiagnostics, JSON.stringify(closureDiagnostics)).toHaveLength(0);
     expect(reports).toHaveLength(2);
     expect(reports.every((report) => report.repairStatus === "SUCCESS")).toBe(true);
 
