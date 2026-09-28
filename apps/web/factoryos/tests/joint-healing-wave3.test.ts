@@ -109,6 +109,8 @@ describe("Floor Governance Cell — Wave 3 paired healing", () => {
 
     const resolved = await caseManager.getCase(incident.caseId);
     expect(resolved?.status).toBe("RESOLVED");
+    // All mutation leases must be released before Auditor/Guardian closure.
+    expect(healerEngine.lockManager.getAllActiveLocks()).toHaveLength(0);
 
     const events = eventBus.getEvents(200).map((event) => event.topic);
     expect(events).toContain("JOINT_HEALING_STARTED");
