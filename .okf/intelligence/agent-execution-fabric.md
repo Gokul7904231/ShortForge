@@ -43,3 +43,10 @@ A2A is the agent-to-agent interoperability layer. Remote agents exchange Tasks/M
 ## 9. Product impact
 
 This design allows ShortForge to run more capable asynchronous agents while moving deterministic memory, permission sequencing, retry identity, and recovery out of the model context and into executable state.
+
+## Validation closure
+
+- Agent Execution Fabric Validation: **PASS — 36397184661**
+- Team Change Gate: **PASS — 36397184653**
+- Validated executable head: `fa5a64b407faca57ad074b3384446778f4b217f7`
+- Broader repository CI/security lanes remain separate and are not represented as a false pass.
