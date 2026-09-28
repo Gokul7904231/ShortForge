@@ -19,7 +19,11 @@ export type DecisionValidationErrorCode =
   | "INVALID_RUBRIC_LEVEL"
   | "UNKNOWN_QUESTION"
   | "DUPLICATE_QUESTION"
-  | "MISSING_QUESTION";
+  | "MISSING_QUESTION"
+  | "ADAPTER_UNAVAILABLE"
+  | "ADAPTER_TIMEOUT"
+  | "AUTHENTICATION_FAILED"
+  | "INVALID_MODEL_RESPONSE";
 
 export interface DecisionEvidence {
   readonly evidenceIds: readonly string[];
@@ -32,11 +36,23 @@ export interface DecisionEvidence {
 
 export type CalibrationStatus = "CALIBRATED" | "UNCALIBRATED" | "ESTIMATED" | "UNKNOWN";
 
+export type DecisionProbabilitySemantics =
+  | "ABSOLUTE"
+  | "CANDIDATE_RELATIVE"
+  | "UNKNOWN";
+
+export type DecisionAuthorityClass =
+  | "DETERMINISTIC"
+  | "MODEL_ADVISORY"
+  | "SHADOW_ONLY";
+
 export interface DecisionUncertainty {
   readonly modelProbability?: number;
   readonly epistemicConfidence: number;
   readonly calibrationStatus: CalibrationStatus;
   readonly uncertaintyReason?: string;
+  readonly confidenceSource?: "MODEL" | "NONE" | "DETERMINISTIC" | "HUMAN";
+  readonly probabilitySemantics?: DecisionProbabilitySemantics;
 }
 
 export interface NoulQuestion {
@@ -123,6 +139,8 @@ export interface DecisionBatchRequest {
   readonly contextFingerprint?: string;
   readonly questions: readonly DecisionQuestion[];
   readonly sharedContext?: Record<string, unknown>;
+  readonly policyVersion?: string;
+  readonly decisionSchemaVersion?: string;
 }
 
 export interface AdapterMetadata {
@@ -130,6 +148,10 @@ export interface AdapterMetadata {
   readonly implementationVersion: string;
   readonly isProductionAuthority: boolean;
   readonly isTrainingEligible: boolean;
+  readonly authorityClass?: DecisionAuthorityClass;
+  readonly modelRef?: string;
+  readonly probabilitySemantics?: DecisionProbabilitySemantics;
+  readonly capabilityClass?: string;
 }
 
 export interface DecisionBatchResult {
