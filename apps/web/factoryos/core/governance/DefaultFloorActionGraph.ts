@@ -80,7 +80,7 @@ export function createDefaultFloorActionGraph(): FloorActionGraph {
   graph.registerAction({
     actionName: "floor.execute",
     description: "Execute an already authorized typed action through a bounded worker.",
-    actorProposers: ["FLOOR_GUARDIAN", "FG_HEALER", "COMMON_HEALER"],
+    actorProposers: ["ASCALON", "FLOOR_GUARDIAN", "FG_HEALER", "COMMON_HEALER"],
     requiredAuthority: "FLOOR_GUARDIAN",
     requiredCapability: "floor.execute",
     reversibility: "COMPENSATABLE",
