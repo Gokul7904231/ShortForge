@@ -231,5 +231,6 @@ Historical documents may contain earlier F04 voice-only terminology. Those recor
 | [./audits/floor-governance-cell-wave1-audit.md](./audits/floor-governance-cell-wave1-audit.md) | Documentation/code audit distinguishing implemented foundation from future integration. |
 | [./decisions/floor-governance-cell-wave2-20260928.md](./decisions/floor-governance-cell-wave2-20260928.md) | Wave-2 production integration decision: Guardian gate, persistent Blackboard, live Python BDA boundary, and ResolutionGate tightening. |
 | [./audits/floor-governance-cell-wave2-audit.md](./audits/floor-governance-cell-wave2-audit.md) | Wave-2 implementation audit and target-vs-current boundary record. |
+| [./decisions/floor-governance-cell-wave3-20260928.md](./decisions/floor-governance-cell-wave3-20260928.md) | Wave-3 durable paired-healing decision: parallel reasoning, fenced mutation, BDA reinspection, Auditor verification, Guardian closure. |\n| [./audits/floor-governance-cell-wave3-audit.md](./audits/floor-governance-cell-wave3-audit.md) | Wave-3 implementation and validation audit. |
 
 FGC runtime foundation lives under `apps/web/factoryos/core/governance/`. The FGC does not replace the locked F00–F07 topology or F07 release gate.
