@@ -365,6 +365,72 @@ export class GuardianKernel {
   }
 
   /**
+   * Guardian-controlled closure grant for Wave-3 paired healing.
+   * Healing agents may prove a candidate resolution, but only the floor
+   * Guardian can authorize incident closure after BDA + Auditor evidence.
+   */
+  async authorizeHealingClosure(input: {
+    incidentId: string;
+    sessionId: string;
+    evidenceRefs: readonly string[];
+    bdaPass: boolean;
+    auditorPass: boolean;
+  }): Promise<{ authorized: boolean; grantId?: string; reason: string }> {
+    if (!input.bdaPass) {
+      return { authorized: false, reason: "bda_reinspection_failed" };
+    }
+    if (!input.auditorPass) {
+      return { authorized: false, reason: "auditor_verification_failed" };
+    }
+    if (input.evidenceRefs.length === 0) {
+      return { authorized: false, reason: "closure_evidence_missing" };
+    }
+
+    const caseItem = this.caseManager
+      ? await this.caseManager.getCase(input.incidentId)
+      : null;
+    if (!caseItem || caseItem.floorId !== this.floorId) {
+      return { authorized: false, reason: "incident_not_owned_by_floor_guardian" };
+    }
+    if (caseItem.status !== "VERIFYING") {
+      return { authorized: false, reason: `incident_not_ready_for_closure:${caseItem.status}` };
+    }
+
+    const floor = this.worldState.getState().floors[this.floorId];
+    if (!floor || floor.status === "ERROR") {
+      return { authorized: false, reason: "floor_not_healthy_for_closure" };
+    }
+
+    const grantId = `guardian_closure_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
+    const closureAt = new Date().toISOString();
+
+    this.governanceCell?.blackboard.append(
+      "VERIFICATION",
+      "FLOOR_GUARDIAN",
+      "VERIFIED",
+      {
+        event: "HEALING_CLOSURE_AUTHORIZED",
+        incidentId: input.incidentId,
+        sessionId: input.sessionId,
+        grantId,
+      },
+      input.evidenceRefs
+    );
+
+    await this.eventBus.publish("GUARDIAN_CLOSURE_GRANTED", {
+      floorId: this.floorId,
+      guardianId: `guardian_${this.floorId}`,
+      incidentId: input.incidentId,
+      sessionId: input.sessionId,
+      grantId,
+      evidenceRefs: [...input.evidenceRefs],
+      grantedAt: closureAt,
+    });
+
+    return { authorized: true, grantId, reason: "guardian_closure_authorized" };
+  }
+
+  /**
    * Formal Escalation to the Overseer Control Plane.
    */
   async escalateToOverseer(
