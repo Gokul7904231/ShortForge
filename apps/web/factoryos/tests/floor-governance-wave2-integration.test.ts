@@ -59,7 +59,9 @@ describe("Floor Governance Cell — Wave 2 runtime integration", () => {
       );
 
       const restored = buildCell(new DiskFloorBlackboardJournal(root, FLOOR));
+      // Two state transitions are journaled by setState(); the explicit evidence is the third entry.
       expect(restored.blackboard.getEntries()).toHaveLength(3);
+      expect(restored.blackboard.getVerifiedEvidence()).toHaveLength(1);
       expect(restored.blackboard.getVerifiedEvidence()[0].evidenceRefs).toEqual(["evidence_01"]);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
