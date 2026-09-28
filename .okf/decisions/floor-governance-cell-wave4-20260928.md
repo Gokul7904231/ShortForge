@@ -86,11 +86,20 @@ Wave 4 does not claim:
 - replacement of the existing CognitiveRuntime;
 - adversarial robustness merely because the Council exists.
 
-## Verification plan
+## Validation evidence
 
-1. Wave-4 dedicated typecheck.
-2. Wave-4 council/fail-closed tests.
-3. Existing cognitive simulation/contradiction/fallback suites.
-4. Combined Wave 2–4 governance validation.
-5. Team Change Gate.
-6. Final .okf / Team synchronization to the verified executable SHA.
+- Wave 4 dedicated validation run `36392648796`: PASS — typecheck + Council + cognitive simulation + contradiction + fallback suites.
+- Wave 2–3 combined validation run `36392648769`: PASS — Wave 2 and Wave 3 typechecks/tests.
+- Team Change Gate `36392648822`: PASS.
+- Floor Governance Cell Validation `36392648797`: PASS.
+- Wave 3 Validation `36392648847`: PASS.
+- Obsidian Memory Validation `36392648798`: PASS.
+- Validated executable head: `7473c5c12e93bc365a2b487f6e5244a84358bc9c`.
+
+### Additional hardening discovered during Wave 4
+
+The existing contradiction-resolution regression was repaired rather than suppressed. Objective GPU/VRAM and disk telemetry now drive the contradiction probe, probe confidence is preserved on ConflictRecord, and CognitiveRuntime carries verified contradiction confidence into the final decision confidence.
+
+The Council itself remains bounded: it cannot mint capabilities, execute workers, revoke leases, or close incidents.
+
+Wave 4 is closed as an implementation wave.
