@@ -15,6 +15,19 @@ import type { CaseManager } from "../cases/CaseManager";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 
+export interface HealerDiagnosis {
+  readonly healerId: string;
+  readonly verified: boolean;
+  readonly diagnosis: string;
+  readonly independentEvidence: CaseEvidence[];
+  readonly repairPlan: {
+    readonly description: string;
+    readonly actions: RepairAction[];
+    readonly rollbackActions: RepairAction[];
+  };
+  readonly diagnosedAt: string;
+}
+
 export interface HealerAgentConfig {
   readonly healerId: string;
   readonly name: string;
@@ -106,6 +119,33 @@ export abstract class BaseHealer {
    * Reverses / rolls back the specific repair action.
    */
   abstract rollbackAction(action: RepairAction): Promise<boolean>;
+
+  /**
+   * Wave-3 reasoning-only phase.
+   * Runs independently from mutation so paired healers can reason in parallel
+   * without concurrently changing physical state.
+   */
+  async diagnose(caseItem: Case): Promise<HealerDiagnosis> {
+    const verification = await this.verifyHypothesisIndependently(caseItem);
+    const repairPlan = this.createRepairPlan(caseItem);
+
+    await this.eventBus.publish("HEALER_DIAGNOSIS_COMPLETED", {
+      healerId: this.config.healerId,
+      caseId: caseItem.caseId,
+      verified: verification.verified,
+      evidenceIds: verification.independentEvidence.map((e) => e.evidenceId),
+      actionIds: repairPlan.actions.map((a) => a.actionId),
+    });
+
+    return {
+      healerId: this.config.healerId,
+      verified: verification.verified,
+      diagnosis: verification.diagnosis,
+      independentEvidence: verification.independentEvidence,
+      repairPlan,
+      diagnosedAt: new Date().toISOString(),
+    };
+  }
 
   /**
    * Full autonomous healing workflow.
