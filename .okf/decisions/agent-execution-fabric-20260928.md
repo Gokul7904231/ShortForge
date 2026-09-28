@@ -1,7 +1,7 @@
 # Agent Execution Fabric — 2026-09-28
 
 **Classification:** extends existing rule
-**Status:** FINAL / VALIDATED on executable head fa5a64b407faca57ad074b3384446778f4b217f7
+**Status:** MERGED / VALIDATED in main via PR #47
 
 ## Decision
 
@@ -84,6 +84,10 @@ MCP remains the vertical agent-to-tool/data integration layer. AEF decides when 
 
 A2A remains the horizontal agent-to-agent interoperability layer. An external A2A task may supply messages/artifacts/proposals, but ShortForge's local AEF + FGC remain responsible for local authorization and execution.
 
+## Durable human-in-the-loop extension
+
+The final integration adds a hash-chained approval ledger, WAITING execution state, state-version/fingerprint-bound approvals, explicit resolve/resume operations, and restart-safe waiting without automatic execution.
+
 ## Current scope
 
 Implemented:
@@ -97,6 +101,7 @@ Implemented:
 - capability enforcement
 - focused regression suite
 - CI workflow
+- durable human-approval ledger and resume/rejection/expiry semantics
 
 Not claimed:
 - replacement of the existing AgentRuntime session model
@@ -118,3 +123,12 @@ See the implementation and `.okf/intelligence/agent-execution-fabric.md` for the
 - Team Change Gate: **PASS — 36397184653**
 - Validated executable head: `fa5a64b407faca57ad074b3384446778f4b217f7`
 - Broader repository CI/security lanes remain separate and are not represented as a false pass.
+
+
+## Final merge
+
+Consolidated PR: #47
+Main merge commit: `ac3352487cbfc50bc468b9d512fb0e79ac06244e`
+Final AEF validation: `36398798728` PASS
+Final governance validation: `36398799000` PASS
+Team Change Gate: `36398809648` PASS
