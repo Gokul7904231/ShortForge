@@ -11,6 +11,7 @@ import { createDefaultFloorActionGraph } from "../governance/DefaultFloorActionG
 import { ProposalOnlyAscalonAdapter } from "../governance/AscalonGuardianAdapter";
 import { DiskFloorBlackboardJournal } from "../governance/FloorBlackboardJournal";
 import { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
+import { FloorCouncil, type FloorCouncilAdvisor } from "../governance/FloorCouncil";
 
 export class GuardianManager {
   private guardians: Map<string, GuardianKernel> = new Map();
@@ -87,6 +88,12 @@ export class GuardianManager {
 
   getAllGuardians(): GuardianKernel[] {
     return Array.from(this.guardians.values());
+  }
+
+  attachGovernanceAdvisor(advisor: FloorCouncilAdvisor): void {
+    for (const guardian of this.guardians.values()) {
+      guardian.getGovernanceCell()?.getCouncil()?.setAdvisor(advisor);
+    }
   }
 
   async requestHealingClosureGrant(input: {
