@@ -177,6 +177,7 @@ export class JointHealingOrchestrator {
         diagnosis.repairPlan.actions.map((action) => action.actionId)
       )
     );
+    this.sessionManager.transition(createdSession.sessionId, "HEALING");
 
     const mutationResult = await this.executeMutations(
       incident,
