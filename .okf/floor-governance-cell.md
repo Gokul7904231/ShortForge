@@ -188,3 +188,34 @@ Implemented: Guardian gate, journal persistence, Python bridge BDA, border event
 Still not claimed: live Ascalon model execution, complete BDA coverage across every internal floor transition, durable JointHealingSession persistence, graph-aware paired-healing scheduling, workload identity, signed policy bundles, or advanced adversarial evaluation.
 
 See `.okf/decisions/floor-governance-cell-wave2-20260928.md` and `.okf/audits/floor-governance-cell-wave2-audit.md`.\n\n## 22. Wave 3 paired-healing integration\n\nWave 3 is now a validated production path for high-risk or non-local incidents:\n\n```text\nHEALING INCIDENT\n      |\n      v\npaired healer diagnosis (parallel, no mutation)\n      |\n      v\nresource/conflict grouping + fencing lease\n      |\n      v\nbounded mutation + compensation\n      |\n      v\nBDA reinspection\n      |\n      v\nIndependent Auditor\n      |\n      v\nFloor Guardian closure grant\n      |\n      v\nResolutionGate proof\n```\n\nThe existing low-risk healer path remains backward compatible. Restart recovery escalates in-flight physical healing instead of resuming stale mutation.\n\nValidated executable head: `1a53b3dacd3567c3b01b82aed867703c4303b437`. Dedicated Wave-3 run `36389319825`, combined Wave 2–3 run `36389319673`, and Team Change Gate `36389319689` passed.\n\nWave 3 does not claim live fine-tuned Ascalon inference, complete BDA coverage, workload identity, signed policy bundles, or predictive/adversarial prevention.\n\nSee `.okf/decisions/floor-governance-cell-wave3-20260928.md` and `.okf/audits/floor-governance-cell-wave3-audit.md`.
+
+## 23. Wave 4 cognitive council
+
+Wave 4 inserts a bounded Council review between proposal generation and the existing Floor Governance Cell gate:
+
+```
+Ascalon proposal
+      |
+      v
+Instructor ---- deterministic contract/action graph
+      |
+      +---- Advisor ---- CognitiveRuntime advisory assessment
+      |
+      +---- Auditor ---- deterministic evidence/trust check
+      |
+      v
+Synthesis / conflict check
+      |
+      +---- conflict / low confidence -> ESCALATE
+      |
+      v
+Floor Governance Cell / Guardian authority
+```
+
+The Council cannot mint capability grants, execute workers, revoke leases, or close incidents. It records typed CounselPackets and a reproducible phase trace in the floor governance evidence path.
+
+The current Advisor is the existing CognitiveRuntime. Fine-tuned Ascalon inference remains outside the implemented claim.
+
+Wave 4 validation remains pending until the dedicated workflow, cognitive regression suites, combined governance gate, and Team Change Gate are green on one executable head.
+
+See `.okf/decisions/floor-governance-cell-wave4-20260928.md` and `.okf/audits/floor-governance-cell-wave4-audit.md`.
