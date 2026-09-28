@@ -59,6 +59,17 @@ export class FloorActionGate {
       }
     }
 
+    // Untrusted evidence is data only. It can never authorize a mutation.
+    if (
+      proposal.inputTrust === "UNTRUSTED_EVIDENCE" &&
+      action.mutationScope.length > 0
+    ) {
+      return {
+        allowed: false,
+        reason: "untrusted_evidence_cannot_authorize_mutation",
+      };
+    }
+
     if (!this.graph.canTransition(this.lastAction(), proposal.actionName)) {
       return { allowed: false, reason: "invalid_action_graph_transition" };
     }
