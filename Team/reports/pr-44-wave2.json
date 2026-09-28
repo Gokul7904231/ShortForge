@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-Wave2",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor-governance-cell-wave1-20260928",
+  "objective": "Integrate the Wave-1 Floor Governance Cell into real Guardian mutation paths, persistent floor blackboards, Python floor boundary inspection, and proof-based incident closure without changing F00-F07 topology.",
+  "status": "IMPLEMENTED_PENDING_ACTIONS_VALIDATION",
+  "implemented": [
+    "GuardianKernel mutation decisions cross FloorGovernanceCell through GuardianGovernanceAdapter.",
+    "Persistent hash-chained FloorBlackboard journal per governed runtime Guardian.",
+    "PythonFloorBridge egress handoffs pass BorderDefenseAgent before control-plane world-state mutation.",
+    "BDA evidence is retained in bridge-created execution-failure cases.",
+    "CaseManager.resolveCase requires explicit ResolutionProof through ResolutionGate.",
+    "AutonomousFactoryController boot recovery no longer silently resolves active cases.",
+    "Wave-2 focused integration test and CI workflow added.",
+    "Bearer execution token is excluded from BorderDossier authorizationRef."
+  ],
+  "currentValidation": {
+    "wave1FGC": "PASS — run 36387377518 before latest Wave-2 commits",
+    "teamChangeGate": "PASS — run 36387377529 on the PR validation set before latest Wave-2 commits",
+    "wave2FirstRun": "FAIL — run 36387377593, typecheck caught an escaped-newline syntax defect in AutonomousFactoryController; defect corrected in commit f0f4926a0ff6563aabc1bbf97ff207a54c39d583, then further hardening commits followed.",
+    "localClone": "BLOCKED — execution environment cannot resolve github.com; repository Actions is the authoritative runtime verifier."
+  },
+  "security": [
+    "No bearer execution token is stored in BDA authorizationRef.",
+    "Ascalon remains proposal-only and does not mint authority.",
+    "Guardian remains floor-local authority.",
+    "F07 remains final production verification/release boundary."
+  ],
+  "remainingReleaseGates": [
+    "Wave-2 CI workflow must pass against the corrected PR head.",
+    "Team Change Gate should be reconfirmed on the corrected head.",
+    "Repository-wide CI baseline failures must remain separated from FGC-caused regressions.",
+    "PR merge must wait until the corrected head has positive focused evidence."
+  ],
+  "nonGoals": [
+    "Live Ascalon fine-tuned-model invocation",
+    "Complete BDA coverage of every internal floor boundary",
+    "Durable JointHealingSession persistence and graph-aware healer scheduler replacement",
+    "Workload identity / signed policy bundles",
+    "OpenLineage, in-toto/SLSA, C2PA, and GenAI OTel runtime integration",
+    "Predictive failure prevention and full adversarial evaluation suite"
+  ]
+}
