@@ -78,7 +78,7 @@ export class FloorCouncil {
   private advisor?: FloorCouncilAdvisor;
   private readonly minAdvisorConfidence: number;
   private readonly sessionStore?: FloorCouncilSessionStore;
-  private readonly memoryProvider?: FloorCouncilMemoryProvider;
+  private memoryProvider?: FloorCouncilMemoryProvider;
   private readonly memoryMaxItems: number;
   private readonly memoryMaxChars: number;
 
@@ -111,7 +111,7 @@ export class FloorCouncil {
   }
 
   setMemoryProvider(provider: FloorCouncilMemoryProvider): void {
-    Object.defineProperty(this, "memoryProvider", { value: provider, writable: false });
+    this.memoryProvider = provider;
   }
 
   async reviewProposal(input: {
