@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/floor-governance-cell-wave1-20260928",
   "objective": "Implement durable paired healing with parallel reasoning, resource-scoped fenced mutation, BDA reinspection, independent Auditor verification, and Guardian-controlled closure while preserving the existing healer substrate.",
-  "status": "IMPLEMENTED_PENDING_VALIDATION",
+  "status": "WAVE3_VALIDATED",
   "implemented": [
     "Durable JointHealingSessionStore and restart-safe JointHealingSessionManager.",
     "Reasoning-only BaseHealer.diagnose() phase.",
@@ -32,8 +32,10 @@
   "validation": {
     "wave3InitialRun": "FAIL — run 36388821725: typecheck PASS; focused tests exposed missing PLANNED -> HEALING session transition. Corrected before final validation.",
     "currentCorrectedHead": "3c02c829409a4331a5783c2ce58f4469a6dbb261",
-    "wave3CorrectedRun": "PENDING",
-    "teamChangeGate": "PENDING on current corrected head"
+    "wave3CorrectedRun": "PASS — run 36389319825 on executable head 1a53b3dacd3567c3b01b82aed867703c4303b437",
+    "teamChangeGate": "PASS — run 36389319689 on executable head",
+    "wave23CombinedRun": "PASS — run 36389319673: Wave2 typecheck PASS, Wave3 typecheck PASS, Wave3 focused tests PASS, Wave2 focused tests PASS",
+    "bdaReinspectionFix": "Fixed BorderDefenseAgent.inspect() to preserve the egress outputHash required by JointHealingAuditor; corrected in commits 5e5df3713e3c569548b9f454bebe258cc9e08a7e and 1a53b3dacd3567c3b01b82aed867703c4303b437."
   },
   "nonGoals": [
     "Live fine-tuned Ascalon inference",
@@ -42,5 +44,7 @@
     "Complete BDA coverage",
     "Workload identity and signed policy bundles",
     "Predictive prevention and full adversarial evaluation"
-  ]
+  ],
+  "validatedExecutableHead": "1a53b3dacd3567c3b01b82aed867703c4303b437",
+  "releaseConclusion": "Wave 3 validated as an implementation wave. The PR remains draft and unmerged; Wave 4 is separate."
 }
