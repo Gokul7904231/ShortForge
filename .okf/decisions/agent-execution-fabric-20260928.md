@@ -1,7 +1,7 @@
 # Agent Execution Fabric — 2026-09-28
 
 **Classification:** extends existing rule
-**Status:** IMPLEMENTED — validation pending
+**Status:** FINAL / VALIDATED on executable head fa5a64b407faca57ad074b3384446778f4b217f7
 
 ## Decision
 
@@ -111,3 +111,10 @@ Not claimed:
 Current A2A 1.0 is async-first and models stateful Tasks and Artifacts for long-running agent interactions. Current MCP evolution emphasizes stateless protocol operation, explicit task extensions, stronger authorization, and routable tool discovery. ShortForge therefore keeps A2A above the local agent boundary and MCP below the deterministic execution boundary.
 
 See the implementation and `.okf/intelligence/agent-execution-fabric.md` for the canonical mapping.
+
+## Validation closure
+
+- Agent Execution Fabric Validation: **PASS — 36397184661**
+- Team Change Gate: **PASS — 36397184653**
+- Validated executable head: `fa5a64b407faca57ad074b3384446778f4b217f7`
+- Broader repository CI/security lanes remain separate and are not represented as a false pass.
