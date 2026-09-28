@@ -1,3 +1,4 @@
+import type { ToolRegistry } from "../../tools/ToolRegistry";
 import type { ToolResult } from "../../tools/ToolContracts";
 import type { ToolExecutor } from "../../tools/ToolExecutor";
 import type { ExecutionState } from "./AgentExecutionContracts";
@@ -6,7 +7,9 @@ import { AgentExecutionRouter } from "./AgentExecutionRouter";
 export class ScopedToolExecutor {
   constructor(
     private readonly router: AgentExecutionRouter,
+    private readonly registry: ToolRegistry,
     private readonly executor: ToolExecutor,
+    private readonly grantedCapabilities: ReadonlySet<string>,
   ) {}
 
   async execute<TInput = unknown, TOutput = unknown>(
@@ -42,15 +45,50 @@ export class ScopedToolExecutor {
       };
     }
 
-    if (step.idempotency === "REQUIRED" && !context.idempotencyKey) {
+    const missingCapabilities = step.requiredCapabilities.filter(
+      (capability) => !this.grantedCapabilities.has(capability),
+    );
+
+    if (missingCapabilities.length > 0) {
       return {
         success: false,
         error: {
-          code: "IDEMPOTENCY_KEY_REQUIRED",
+          code: "STEP_CAPABILITY_NOT_GRANTED",
           message:
             "Execution step " +
             state.stepId +
-            " requires an idempotency key",
+            " requires capabilities: " +
+            missingCapabilities.join(","),
+          retryable: false,
+        },
+      };
+    }
+
+    const tool = this.registry.get(toolId);
+
+    if (!tool) {
+      return {
+        success: false,
+        error: {
+          code: "TOOL_NOT_REGISTERED",
+          message: "Tool " + toolId + " is not registered",
+          retryable: false,
+        },
+      };
+    }
+
+    if (
+      step.idempotency === "REQUIRED" &&
+      (!context.idempotencyKey || tool.supportsIdempotency !== true)
+    ) {
+      return {
+        success: false,
+        error: {
+          code: "IDEMPOTENCY_CONTRACT_NOT_SATISFIED",
+          message:
+            "Execution step " +
+            state.stepId +
+            " requires a provider/tool that supports idempotency",
           retryable: false,
         },
       };
