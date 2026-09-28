@@ -20,7 +20,7 @@ export interface BorderInspectionRequest {
   readonly expectedKeys?: readonly string[];
   readonly payload: unknown;
   readonly evidenceRefs?: readonly string[];
-  readonly policyAllowed: boolean;
+  readonly policyAllowed?: boolean;
 }
 
 export class BorderDefenseAgent {
@@ -67,7 +67,9 @@ export class BorderDefenseAgent {
   ): BorderDossier {
     const anomalies: string[] = [];
 
-    if (!request.policyAllowed) {
+    const policyAllowed = request.policyAllowed === true;
+
+    if (!policyAllowed) {
       anomalies.push("POLICY_DENIED");
     }
 
@@ -85,7 +87,7 @@ export class BorderDefenseAgent {
 
     const passed = anomalies.length === 0;
     const policyDecision: BorderDossier["policyDecision"] =
-      passed ? "ALLOW" : request.policyAllowed ? "QUARANTINE" : "DENY";
+      passed ? "ALLOW" : policyAllowed ? "QUARANTINE" : "DENY";
 
     const dossier: BorderDossier = {
       borderEventId: event.borderEventId,
@@ -123,7 +125,7 @@ export class BorderDefenseAgent {
     return this.inspect(updatedEvent, {
       ...request,
       payload: output,
-      policyAllowed: request.policyAllowed ?? true,
+      policyAllowed: request.policyAllowed ?? false,
     });
   }
 
