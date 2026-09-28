@@ -42,6 +42,13 @@ export class GuardianManager {
   }
 
   private registerDefaultGuardians(): void {
+    const ascalonAllowedModelRefs = new Set(
+      String(process.env.ASCALON_ALLOWED_MODEL_REFS || "")
+        .split(",")
+        .map((ref) => ref.trim())
+        .filter(Boolean),
+    );
+
     const floors = [
       { name: "Floor 01 Guardian (Strategy)", floorId: "floor01_strategy" },
       { name: "Floor 02 Guardian (Scripting)", floorId: "floor02_scripting" },
@@ -85,7 +92,7 @@ export class GuardianManager {
            minAdvisorConfidence: 0.7,
          }),
          eventBus: this.eventBus,
-         ascalonAdmission: new AscalonInferenceAdmissionGate(0.7),
+         ascalonAdmission: new AscalonInferenceAdmissionGate(0.7, ascalonAllowedModelRefs),
       });
 
       governanceCell.setState("READY", "Guardian runtime attached");
