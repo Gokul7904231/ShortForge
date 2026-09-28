@@ -11,7 +11,13 @@ import { createDefaultFloorActionGraph } from "../governance/DefaultFloorActionG
 import { ProposalOnlyAscalonAdapter } from "../governance/AscalonGuardianAdapter";
 import { DiskFloorBlackboardJournal } from "../governance/FloorBlackboardJournal";
 import { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
-import { FloorCouncil, type FloorCouncilAdvisor } from "../governance/FloorCouncil";
+import {
+  FloorCouncil,
+  type FloorCouncilAdvisor,
+  type FloorCouncilMemoryProvider,
+} from "../governance/FloorCouncil";
+import { DiskFloorCouncilSessionStore } from "../governance/FloorCouncilSessionStore";
+import { AscalonInferenceAdmissionGate } from "../governance/AscalonInferenceAdmission";
 
 export class GuardianManager {
   private guardians: Map<string, GuardianKernel> = new Map();
@@ -74,8 +80,12 @@ export class GuardianManager {
           "floor.human_approval",
         ],
         blackboardJournal: new DiskFloorBlackboardJournal(this.governanceStoragePath, f.floorId),
-         council: new FloorCouncil(),
+         council: new FloorCouncil({
+           sessionStore: new DiskFloorCouncilSessionStore(this.governanceStoragePath, f.floorId),
+           minAdvisorConfidence: 0.7,
+         }),
          eventBus: this.eventBus,
+         ascalonAdmission: new AscalonInferenceAdmissionGate(0.7),
       });
 
       governanceCell.setState("READY", "Guardian runtime attached");
@@ -95,6 +105,12 @@ export class GuardianManager {
   attachGovernanceAdvisor(advisor: FloorCouncilAdvisor): void {
     for (const guardian of this.guardians.values()) {
       guardian.getGovernanceCell()?.getCouncil()?.setAdvisor(advisor);
+    }
+  }
+
+  attachGovernanceMemoryProvider(provider: FloorCouncilMemoryProvider): void {
+    for (const guardian of this.guardians.values()) {
+      guardian.getGovernanceCell()?.getCouncil()?.setMemoryProvider(provider);
     }
   }
 
