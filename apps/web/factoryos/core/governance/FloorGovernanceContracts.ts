@@ -101,6 +101,18 @@ export interface ActionProposal {
   readonly stateVersion: number;
   readonly proposedAt: string;
   readonly inputTrust: "TRUSTED_SYSTEM_STATE" | "MIXED" | "UNTRUSTED_EVIDENCE";
+  /**
+   * Optional provenance emitted by a future fine-tuned Ascalon inference gateway.
+   * Legacy proposal-only callers may omit this field.
+   */
+  readonly ascalonInference?: {
+    readonly inferenceId: string;
+    readonly modelRef: string;
+    readonly adapterVersion: string;
+    readonly mode: "SHADOW" | "ADMITTED";
+    readonly contextFingerprint: string;
+    readonly observedAt: string;
+  };
 }
 
 export interface AuthorizationGrant {
