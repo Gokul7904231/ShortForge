@@ -11,9 +11,8 @@ import { FloorActionGraph } from "./FloorActionGraph";
 import { FloorBlackboard } from "./FloorBlackboard";
 import type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
 import type { GuardianDecision } from "../guardian/GuardianContracts";
-import type {
-  AscalonGuardianAdapter,
-} from "./AscalonGuardianAdapter";
+import type { AscalonGuardianAdapter } from "./AscalonGuardianAdapter";
+import { FloorCouncil } from "./FloorCouncil";
 
 export interface GovernanceExecutionResult {
   readonly success: boolean;
@@ -30,6 +29,7 @@ export interface FloorGovernanceCellConfig {
   readonly ascalon: AscalonGuardianAdapter;
   readonly capabilities: readonly string[];
   readonly blackboardJournal?: FloorBlackboardJournal;
+  readonly council?: FloorCouncil;
 }
 
 export class FloorGovernanceCell {
@@ -44,6 +44,7 @@ export class FloorGovernanceCell {
 
   private readonly actionGate: FloorActionGate;
   private readonly capabilities: ReadonlySet<string>;
+  private council?: FloorCouncil;
   private grants: AuthorizationGrant[] = [];
 
   constructor(config: FloorGovernanceCellConfig) {
@@ -54,6 +55,7 @@ export class FloorGovernanceCell {
     this.blackboard = new FloorBlackboard(this.floorId, config.blackboardJournal);
     this.actionGate = new FloorActionGate(this.actionGraph, () => this.lastAction);
     this.ascalon = config.ascalon;
+    this.council = config.council;
   }
 
   private readonly ascalon: AscalonGuardianAdapter;
@@ -101,7 +103,15 @@ export class FloorGovernanceCell {
     );
   }
 
-  setAuthorizationGrants(grants: readonly AuthorizationGrant[]): void {
+  attachCouncil(council: FloorCouncil): void {
+    this.council = council;
+  }
+
+  getCouncil(): FloorCouncil | undefined {
+    return this.council;
+  }
+
+    setAuthorizationGrants(grants: readonly AuthorizationGrant[]): void {
     this.grants = [...grants];
   }
 
@@ -119,12 +129,91 @@ export class FloorGovernanceCell {
     const availableActions = this.actionGraph
       .getNextActions(this.lastAction)
       .map((action) => action.actionName);
+    const verifiedEvidenceRefs = this.blackboard
+      .getVerifiedEvidence()
+      .flatMap((entry) => entry.evidenceRefs);
 
-    return this.ascalon.proposeNext({
+    const proposal = await this.ascalon.proposeNext({
       snapshot,
       availableActions,
-      evidenceRefs: this.blackboard.getVerifiedEvidence().flatMap((entry) => entry.evidenceRefs),
+      evidenceRefs: verifiedEvidenceRefs,
     });
+
+    if (!proposal || !this.council) return proposal;
+
+    const action = this.actionGraph.getAction(proposal.actionName);
+    if (!action) {
+      this.blackboard.append(
+        "CONFLICT",
+        "SYSTEM",
+        "VERIFIED",
+        {
+          event: "COUNCIL_REJECTED_UNKNOWN_ACTION",
+          proposalId: proposal.proposalId,
+          actionName: proposal.actionName,
+        },
+        proposal.evidenceRefs
+      );
+      return null;
+    }
+
+    const review = await this.council.reviewProposal({
+      snapshot,
+      proposal,
+      action,
+      currentAction: this.lastAction,
+      nextActions: availableActions,
+      verifiedEvidenceRefs,
+    });
+
+    for (const packet of review.counselPackets) {
+      this.blackboard.append(
+        review.decision === "APPROVE" ? "RECOMMENDATION" : "CONFLICT",
+        packet.ministerRole,
+        packet.recommendation.startsWith("SUPPORT:") ? "VERIFIED" : "DERIVED",
+        {
+          counselId: packet.counselId,
+          recommendation: packet.recommendation,
+          constraints: packet.constraints,
+          urgency: packet.urgency,
+          expectedOutcome: packet.expectedOutcome,
+          provenance: packet.provenance,
+        },
+        packet.supportingEvidence
+      );
+    }
+
+    if (review.decision !== "APPROVE") {
+      this.blackboard.append(
+        "CONFLICT",
+        "SYSTEM",
+        "DERIVED",
+        {
+          event: "COUNCIL_DECISION",
+          proposalId: proposal.proposalId,
+          decision: review.decision,
+          reason: review.reason,
+          conflicts: review.conflicts,
+        },
+        proposal.evidenceRefs
+      );
+      return null;
+    }
+
+    this.blackboard.append(
+      "RECOMMENDATION",
+      "ADVISOR",
+      "VERIFIED",
+      {
+        event: "COUNCIL_APPROVED_PROPOSAL",
+        proposalId: proposal.proposalId,
+        actionName: proposal.actionName,
+        stateVersion: proposal.stateVersion,
+      },
+      review.counselPackets.flatMap((packet) => packet.supportingEvidence)
+    );
+
+    return proposal;
   }
 
   /**
