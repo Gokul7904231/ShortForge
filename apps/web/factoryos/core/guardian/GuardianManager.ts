@@ -7,6 +7,10 @@ import { GuardianKernel } from "./GuardianKernel";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { CaseManager } from "../cases/CaseManager";
+import { createDefaultFloorActionGraph } from "../governance/DefaultFloorActionGraph";
+import { ProposalOnlyAscalonAdapter } from "../governance/AscalonGuardianAdapter";
+import { DiskFloorBlackboardJournal } from "../governance/FloorBlackboardJournal";
+import { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
 
 export class GuardianManager {
   private guardians: Map<string, GuardianKernel> = new Map();
@@ -14,15 +18,18 @@ export class GuardianManager {
   private worldState: WorldStateEngine;
   private caseManager?: CaseManager;
   private isRunning: boolean = false;
+  private governanceStoragePath?: string;
 
   constructor(
     eventBus: DurableEventBus,
     worldState: WorldStateEngine,
-    caseManager?: CaseManager
+    caseManager?: CaseManager,
+    governanceStoragePath?: string
   ) {
     this.eventBus = eventBus;
     this.worldState = worldState;
     this.caseManager = caseManager;
+    this.governanceStoragePath = governanceStoragePath;
 
     this.registerDefaultGuardians();
   }
@@ -47,6 +54,29 @@ export class GuardianManager {
         this.eventBus,
         this.caseManager
       );
+
+      const governanceCell = new FloorGovernanceCell({
+        floorId: f.floorId,
+        guardianId: `guardian_${f.floorId}`,
+        actionGraph: createDefaultFloorActionGraph(),
+        ascalon: new ProposalOnlyAscalonAdapter(async () => null),
+        capabilities: [
+          "floor.read",
+          "floor.analyze",
+          "floor.validate",
+          "floor.authorize",
+          "floor.execute",
+          "floor.verify",
+          "floor.close",
+          "floor.quarantine",
+          "floor.escalate",
+          "floor.human_approval",
+        ],
+        blackboardJournal: new DiskFloorBlackboardJournal(this.governanceStoragePath, f.floorId),
+      });
+
+      governanceCell.setState("READY", "Guardian runtime attached");
+      guardian.attachGovernanceCell(governanceCell);
       this.guardians.set(f.floorId, guardian);
     }
   }
