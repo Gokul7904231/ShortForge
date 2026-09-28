@@ -215,6 +215,77 @@ export class AutonomousFactoryController {
         this.guardianManager.requestHealingClosureGrant(request),
     });
 
+    this.guardianManager.attachGovernanceAdvisor(async ({ snapshot, proposal, action }) => {
+      const riskToSeverity = {
+        LOW: "LOW",
+        MEDIUM: "MEDIUM",
+        HIGH: "HIGH",
+        CRITICAL: "CRITICAL",
+      } as const;
+
+      const evaluation = await this.overseer.cognitiveRuntime.evaluateIncident({
+        incidentId: snapshot.activeIncidents[0] || `governance_${proposal.proposalId}`,
+        floorId: snapshot.floorId,
+        target: proposal.targetId,
+        category: "FLOOR_GOVERNANCE_COUNSEL",
+        severity: riskToSeverity[action.risk],
+        symptoms: [
+          `Review governed proposal ${proposal.actionName}`,
+          ...snapshot.constraints,
+        ],
+        observedMetrics: {
+          jobs: snapshot.jobs,
+          workers: snapshot.workers,
+          resources: snapshot.resources,
+          state: snapshot.state,
+          stateVersion: snapshot.stateVersion,
+        },
+        candidateActions: [
+          {
+            actionId: proposal.proposalId,
+            title: proposal.actionName,
+            riskLevel: action.risk,
+          },
+        ],
+        worldStateSnapshot: snapshot,
+      });
+
+      const supports = Boolean(
+        !evaluation.fallbackApplied &&
+        evaluation.candidateActionId === proposal.proposalId &&
+        evaluation.confidence >= 0.7 &&
+        evaluation.simulationEvaluated
+      );
+
+      return {
+        counselId: `counsel_advisor_${proposal.proposalId}`,
+        floorId: snapshot.floorId,
+        recommendation: supports
+          ? `SUPPORT:${proposal.actionName}`
+          : `CHALLENGE:${evaluation.recommendedAction}`,
+        supportingEvidence: Array.from(
+          new Set([...(proposal.evidenceRefs || []), ...(evaluation.evidenceIds || [])])
+        ),
+        constraints: supports
+          ? []
+          : [
+              "cognitive_runtime_did_not_support_proposal",
+              `confidence=${evaluation.confidence.toFixed(2)}`,
+              evaluation.fallbackApplied ? "cognitive_fallback_applied" : "cognitive_support_threshold_not_met",
+            ],
+        uncertainty: Math.max(0, 1 - evaluation.confidence),
+        conflictsWith: supports ? [] : [evaluation.recommendedAction],
+        urgency: action.risk,
+        expectedOutcome: evaluation.rationale,
+        rejectionConditions: supports
+          ? []
+          : ["Advisor confidence or simulation support was insufficient."],
+        provenance: `CognitiveRuntime:${evaluation.complexityLevel}`,
+        createdAt: new Date().toISOString(),
+        ministerRole: "ADVISOR",
+      };
+    });
+
     this.validatorAgent = new ValidatorAgent(this.caseManager, this.eventBus, this.worldState);
 
     this.overseer = new OverseerControlPlane(
