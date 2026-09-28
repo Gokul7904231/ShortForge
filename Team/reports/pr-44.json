@@ -88,8 +88,32 @@
     "Run repository CI and FactoryOS typecheck/tests.",
     "Run affected floor validation workflows.",
     "Review negative FGC tests, especially trust-boundary, stale-fencing and proof-based resolution cases.",
-    "Do not promote this wave to production authority until CI evidence is green and the target-vs-current gaps remain accurately documented."
+    "Do not promote this wave to production authority until CI evidence is green and the target-vs-current gaps remain accurately documented.",
+    "Track baseline CLM/LLM typecheck debt separately; do not silently attribute it to the FGC wave."
   ],
   "disposition": "BLOCKED",
-  "dispositionRationale": "Wave-1 code and documentation are implemented on the PR branch, but repository CI/security evidence is still pending; no production merge is claimed."
+  "dispositionRationale": "Wave-1 code and documentation are implemented on the PR branch, but repository CI/security evidence is still pending; no production merge is claimed.",
+  "verificationResults": {
+    "fgcValidation": {
+      "runId": 36383242667,
+      "conclusion": "success"
+    },
+    "teamChangeGate": {
+      "runId": 36383242727,
+      "conclusion": "success"
+    },
+    "affectedFloorValidation": {
+      "floor04": "PASS",
+      "floor05": "PASS",
+      "floor06": "PENDING_AT_REPORT_UPDATE",
+      "floor07": "PASS"
+    },
+    "repositoryCI": {
+      "latestObservedRunId": 36383242621,
+      "status": "IN_PROGRESS_AT_REPORT_UPDATE",
+      "baselineTypecheckFinding": "Existing main branch CI already failed on identical CLMDecisionAdapter/LLMDecisionAdapter TypeScript errors before this FGC branch.",
+      "evidenceMainRunId": 36375879960,
+      "scope": "UNRELATED_BASELINE"
+    }
+  }
 }
