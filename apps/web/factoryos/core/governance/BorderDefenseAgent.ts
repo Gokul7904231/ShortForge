@@ -7,6 +7,7 @@ import type {
 export interface BorderAdmissionRequest {
   readonly sourceFloor: string;
   readonly destinationFloor: string;
+  readonly direction?: "INGRESS" | "EGRESS";
   readonly actor: string;
   readonly contractVersion: string;
   readonly capability?: string;
@@ -47,7 +48,7 @@ export class BorderDefenseAgent {
       borderEventId: `border_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
       sourceFloor: request.sourceFloor,
       destinationFloor: request.destinationFloor,
-      direction: request.destinationFloor ? "INGRESS" : "EGRESS",
+      direction: request.direction || "INGRESS",
       actor: request.actor,
       authorizationRef: request.authorizationRef,
       contractVersion: request.contractVersion,
