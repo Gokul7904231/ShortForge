@@ -1,7 +1,7 @@
 # Floor Governance Cell Final Wave — Durable Council, Memory Context & Ascalon Admission — 2026-09-28
 
 Classification: extends existing governance rule + final bounded-cognition integration
-Status: IMPLEMENTED; CI validation in progress
+Status: FINAL / VALIDATED on executable head eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49
 Scope: Floor Governance Cell / one-floor cognitive governance boundary
 
 ## Decision
@@ -101,4 +101,4 @@ Those remain separate hardening/program boundaries.
 
 Implementation commits are on PR #44 branch feat/floor-governance-cell-wave1-20260928.
 
-Dedicated final-wave CI validation must pass before this document is marked closed.
+Dedicated final-wave workflow 36394051521 passed on eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49. Governance cross-wave checks 36394051496, 36394051567, 36394051595, 36394051504 and 36394051501 also passed. Team Change Gate 36394051500 passed. The repository-wide CI run remained a separate broader lane at closure time.
