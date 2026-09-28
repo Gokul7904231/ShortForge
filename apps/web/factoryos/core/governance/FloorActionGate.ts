@@ -63,16 +63,6 @@ export class FloorActionGate {
       return { allowed: false, reason: "invalid_action_graph_transition" };
     }
 
-    if (
-      proposal.inputTrust === "UNTRUSTED_EVIDENCE" &&
-      action.mutationScope.length > 0
-    ) {
-      return {
-        allowed: false,
-        reason: "untrusted_evidence_cannot_authorize_mutation",
-      };
-    }
-
     const grant = this.findGrant(proposal, context);
     if (!grant) {
       return { allowed: false, reason: "missing_authorization_grant" };
