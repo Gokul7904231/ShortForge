@@ -23,7 +23,7 @@ import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { LeaseManager } from "../leases/LeaseManager";
 import type { IReputationRepository } from "../database/DatabaseContracts";
 import { InMemoryReputationRepository } from "../database/InMemoryDatabase";
-import { JointHealingOrchestrator, type GuardianClosureDecision } from "./JointHealingOrchestrator";
+import { JointHealingOrchestrator, type GuardianClosureDecision, type GuardianClosureRequest } from "./JointHealingOrchestrator";
 
 export class HealerEngine {
   private healers: Map<string, BaseHealer> = new Map();
@@ -89,7 +89,7 @@ export class HealerEngine {
   enableJointHealing(options: {
     storagePath?: string;
     guardianClosureAuthorizer: (
-      request: Parameters<NonNullable<ConstructorParameters<typeof JointHealingOrchestrator>[4]["guardianClosureAuthorizer"]>>[0]
+      request: GuardianClosureRequest
     ) => Promise<GuardianClosureDecision>;
   }): void {
     this.jointHealingOrchestrator = new JointHealingOrchestrator(
