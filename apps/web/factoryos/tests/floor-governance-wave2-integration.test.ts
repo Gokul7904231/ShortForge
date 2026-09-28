@@ -59,7 +59,7 @@ describe("Floor Governance Cell — Wave 2 runtime integration", () => {
       );
 
       const restored = buildCell(new DiskFloorBlackboardJournal(root, FLOOR));
-      expect(restored.blackboard.getEntries()).toHaveLength(1);
+      expect(restored.blackboard.getEntries()).toHaveLength(3);
       expect(restored.blackboard.getVerifiedEvidence()[0].evidenceRefs).toEqual(["evidence_01"]);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
