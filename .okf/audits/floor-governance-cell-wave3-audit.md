@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-28
 **Branch:** feat/floor-governance-cell-wave1-20260928
-**Status:** implementation audit complete; runtime validation pending
+**Status:** implementation audit complete; runtime validation PASS on executable head `1a53b3dacd3567c3b01b82aed867703c4303b437`.
 
 ## Findings
 
@@ -36,4 +36,4 @@ Workload identity, signed policy bundles, artifact attestations, and end-to-end 
 
 ## Release conclusion
 
-Wave 3 is implemented as a real production path, but it remains pending until the dedicated workflow, compatibility tests, and Team Change Gate are green on the corrected executable head.
+Wave 3 is implemented as a real production path and the required validation evidence is green. Dedicated Wave-3 run `36389319825`, combined Wave 2–3 run `36389319673`, and Team Change Gate `36389319689` all passed on the validated executable head `1a53b3dacd3567c3b01b82aed867703c4303b437`.
