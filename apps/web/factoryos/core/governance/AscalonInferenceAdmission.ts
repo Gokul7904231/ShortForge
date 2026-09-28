@@ -85,7 +85,9 @@ export class AscalonInferenceAdmissionGate {
     if (!metadata.modelRef.trim()) failures.push("model_ref_missing");
     if (!metadata.adapterVersion.trim()) failures.push("adapter_version_missing");
     if (metadata.contextFingerprint !== expectedFingerprint) failures.push("context_fingerprint_mismatch");
-    if (this.allowedModelRefs.size > 0 && !this.allowedModelRefs.has(metadata.modelRef)) {
+    if (this.allowedModelRefs.size === 0) {
+      failures.push("model_ref_allowlist_not_configured");
+    } else if (!this.allowedModelRefs.has(metadata.modelRef)) {
       failures.push("model_ref_not_allowlisted");
     }
 
