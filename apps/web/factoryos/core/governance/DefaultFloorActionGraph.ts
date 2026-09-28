@@ -154,7 +154,7 @@ export function createDefaultFloorActionGraph(): FloorActionGraph {
     reversibility: "REVERSIBLE",
     risk: "MEDIUM",
     humanApproval: "NEVER",
-    preconditions: ["floor_ready"],
+    preconditions: ["governance_cycle_active"],
     requiredEvidence: [],
     resourceScope: ["incident_record"],
     mutationScope: ["incident_state"],
@@ -188,6 +188,8 @@ export function createDefaultFloorActionGraph(): FloorActionGraph {
   graph.registerTransition({ from: "floor.validate", to: "floor.quarantine", on: "FAILURE" });
   graph.registerTransition({ from: "floor.validate", to: "floor.escalate", on: "DENIED" });
   graph.registerTransition({ from: "floor.request_authorization", to: "floor.execute", on: "SUCCESS" });
+  graph.registerTransition({ from: "floor.request_authorization", to: "floor.quarantine", on: "SUCCESS" });
+  graph.registerTransition({ from: "floor.request_authorization", to: "floor.escalate", on: "SUCCESS" });
   graph.registerTransition({ from: "floor.request_authorization", to: "floor.human_approval", on: "WAITING_APPROVAL" });
   graph.registerTransition({ from: "floor.request_authorization", to: "floor.escalate", on: "DENIED" });
   graph.registerTransition({ from: "floor.human_approval", to: "floor.execute", on: "SUCCESS" });
