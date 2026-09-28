@@ -74,6 +74,8 @@ export class GuardianManager {
           "floor.human_approval",
         ],
         blackboardJournal: new DiskFloorBlackboardJournal(this.governanceStoragePath, f.floorId),
+         council: new FloorCouncil(),
+         eventBus: this.eventBus,
       });
 
       governanceCell.setState("READY", "Guardian runtime attached");
