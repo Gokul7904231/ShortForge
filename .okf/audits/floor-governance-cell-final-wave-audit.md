@@ -1,6 +1,6 @@
 # Floor Governance Cell Final Wave — Audit — 2026-09-28
 
-Status: implementation audit complete; CI validation pending at audit creation
+Status: FINAL / PASS on executable head eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49
 Branch: feat/floor-governance-cell-wave1-20260928
 
 ## Audit objective
@@ -63,4 +63,4 @@ The wave adds deterministic negative-path tests; it does not claim comprehensive
 
 ## Validation closure condition
 
-This audit becomes FINAL / PASS only after the dedicated final-wave workflow and required regression workflows report success on the final executable head.
+Closure evidence: final-wave workflow 36394051521 PASS; Wave 2–3 workflow 36394051496 PASS; Wave 3 workflow 36394051567 PASS; FGC Validation 36394051595 PASS; Wave 4 workflow 36394051504 PASS; Obsidian Memory Validation 36394051501 PASS; Team Change Gate 36394051500 PASS. The exact executable runtime head is eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49.
