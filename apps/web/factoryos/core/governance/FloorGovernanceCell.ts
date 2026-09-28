@@ -229,7 +229,7 @@ export class FloorGovernanceCell {
     proposal: ActionProposal,
     review: import("./FloorCouncil").FloorCouncilReview
   ): Promise<void> {
-    await this.eventBus?.publish?.("FLOOR_COUNCIL_REVIEW_COMPLETED", {
+    await this.eventBus.publish("FLOOR_COUNCIL_REVIEW_COMPLETED", {
       floorId: snapshot.floorId,
       proposalId: proposal.proposalId,
       actionName: proposal.actionName,
