@@ -4,7 +4,7 @@ import type {
   BlackboardEntryKind,
   CounselPacket,
   GovernanceActor,
-} from "./FloorGovernanceContracts";
+} from "./FloorGovernanceContracts";\nimport type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
 
 export class FloorBlackboard {
   private readonly entries: BlackboardEntry[] = [];
