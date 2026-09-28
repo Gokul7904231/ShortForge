@@ -136,3 +136,4 @@ export * from "./governance/JointHealingSessionStore";
 export * from "./governance/FloorActionGate";
 export * from "./governance/ResolutionGate";
 export * from "./governance/FloorGovernanceCell";
+export * from "./governance/FloorCouncil";
