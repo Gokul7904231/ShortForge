@@ -18,6 +18,19 @@ export class ScopedToolExecutor {
     input: TInput,
     context: Parameters<ToolExecutor["execute"]>[2],
   ): Promise<ToolResult<TOutput>> {
+    if (state.status !== "RUNNING") {
+      return {
+        success: false,
+        error: {
+          code: "EXECUTION_STEP_NOT_RUNNING",
+          message:
+            "Tool execution requires RUNNING state; current state is " +
+            state.status,
+          retryable: false,
+        },
+      };
+    }
+
     const step = this.router.getStep(state.stepId);
 
     if (!step) {
