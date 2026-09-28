@@ -39,6 +39,8 @@ export * from "./healers/HealerEngine";
 export * from "./healers/RepairLockManager";
 export * from "./healers/RepairDeduplicator";
 export * from "./healers/RepairDependencyAnalyzer";
+export * from "./healers/JointHealingAuditor";
+export * from "./healers/JointHealingOrchestrator";
 
 export * from "./validator/ValidatorAgent";
 
@@ -130,6 +132,7 @@ export * from "./governance/FloorBlackboardJournal";
 export * from "./governance/GuardianGovernanceAdapter";
 export * from "./governance/BorderDefenseAgent";
 export * from "./governance/JointHealingSession";
+export * from "./governance/JointHealingSessionStore";
 export * from "./governance/FloorActionGate";
 export * from "./governance/ResolutionGate";
 export * from "./governance/FloorGovernanceCell";
