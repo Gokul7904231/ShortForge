@@ -24,6 +24,7 @@ import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { CaseManager } from "../cases/CaseManager";
 import type { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
+import { GuardianGovernanceAdapter } from "../governance/GuardianGovernanceAdapter";
 
 export class GuardianKernel {
   readonly floorId: string;
@@ -49,6 +50,7 @@ export class GuardianKernel {
   private eventBus: DurableEventBus;
   private caseManager?: CaseManager;
   private governanceCell?: FloorGovernanceCell;
+  private governanceAdapter?: GuardianGovernanceAdapter;
 
   private auditIntervalMs: number;
   private heartbeatIntervalMs: number;
@@ -95,6 +97,7 @@ export class GuardianKernel {
       throw new Error(`Governance cell floor mismatch: ${cell.floorId} != ${this.floorId}`);
     }
     this.governanceCell = cell;
+    this.governanceAdapter = new GuardianGovernanceAdapter(cell);
   }
 
   getGovernanceCell(): FloorGovernanceCell | undefined {
@@ -297,11 +300,17 @@ export class GuardianKernel {
       ],
     });
 
-    const result = await this.governanceCell.executeGuardianDecision(
-      decision,
-      snapshot,
-      () => this.executeDecisionLegacy(decision, audit)
-    );
+    const result = this.governanceAdapter
+      ? await this.governanceAdapter.executeDecision(
+          decision,
+          snapshot,
+          async () => this.executeDecisionLegacy(decision, audit)
+        )
+      : await this.governanceCell.executeGuardianDecision(
+          decision,
+          snapshot,
+          () => this.executeDecisionLegacy(decision, audit)
+        );
 
     if (!result.success) {
       await this.escalateToOverseer(
