@@ -34,7 +34,7 @@ jobs:
       - name: Typecheck Agent Execution Fabric
         working-directory: apps/web
         run: |
-          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/contracts/PolicyContracts.ts             factoryos/core/tools/ToolContracts.ts             factoryos/core/tools/ToolRegistry.ts             factoryos/core/tools/ToolExecutor.ts             factoryos/core/agent/execution/AgentExecutionContracts.ts             factoryos/core/agent/execution/AgentExecutionStateStore.ts             factoryos/core/agent/execution/AgentExecutionRouter.ts             factoryos/core/agent/execution/ScopedToolExecutor.ts             factoryos/core/agent/execution/index.ts             factoryos/core/index.ts
+          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/contracts/PolicyContracts.ts             factoryos/core/tools/ToolContracts.ts             factoryos/core/tools/ToolRegistry.ts             factoryos/core/tools/ToolExecutor.ts             factoryos/core/agent/execution/AgentExecutionContracts.ts             factoryos/core/agent/execution/AgentExecutionStateStore.ts             factoryos/core/agent/execution/AgentExecutionApprovalStore.ts             factoryos/core/agent/execution/AgentExecutionRouter.ts             factoryos/core/agent/execution/ScopedToolExecutor.ts             factoryos/core/agent/execution/index.ts             factoryos/core/index.ts
 
       - name: Run Agent Execution Fabric tests
         working-directory: apps/web
