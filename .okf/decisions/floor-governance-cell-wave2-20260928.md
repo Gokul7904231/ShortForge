@@ -1,7 +1,7 @@
 # Floor Governance Cell Wave 2 — Production Integration — 2026-09-28
 
 **Classification:** integration hardening
-**Status:** implemented on PR branch; repository CI and focused Wave-2 validation are the release gate.
+**Status:** implemented on PR branch; focused Wave-2 validation is the release gate. First Wave-2 run caught and prevented a syntax regression; subsequent commits corrected it and added additional hardening.
 
 ## Objective
 
@@ -50,3 +50,10 @@ Required evidence:
 3. Team Change Gate is green.
 4. Repository CI baseline findings are distinguished from FGC-caused regressions.
 5. .okf remains synchronized with executable truth.
+
+## Verification history
+
+- Wave-1 FGC validation: PASS (run 36387377518 observed before the latest Wave-2 commits).
+- Team Change Gate: PASS (run 36387377529 observed before the latest Wave-2 commits).
+- Wave-2 validation run 36387377593: FAIL at the dedicated typecheck because an escaped-newline patch defect existed in AutonomousFactoryController. The defect was corrected before release consideration.
+- Local clone/typecheck: unavailable in the coding environment because github.com DNS/network access is unavailable. Repository Actions remain authoritative.
