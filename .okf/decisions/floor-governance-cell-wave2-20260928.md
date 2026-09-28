@@ -1,7 +1,7 @@
 # Floor Governance Cell Wave 2 — Production Integration — 2026-09-28
 
 **Classification:** integration hardening
-**Status:** implemented on PR branch; focused Wave-2 validation is the release gate. First Wave-2 run caught and prevented a syntax regression; subsequent commits corrected it and added additional hardening.
+**Status:** Wave 2 validated. The executable PR head `1fd9d2a77d1e9255f2e74be5bd8a14015bc2a9d8` passed dedicated Wave-2 typecheck and focused tests in run `36388027225`. Later commits on this branch are documentation-only truth synchronization.
 
 ## Objective
 
@@ -56,4 +56,6 @@ Required evidence:
 - Wave-1 FGC validation: PASS (run 36387377518 observed before the latest Wave-2 commits).
 - Team Change Gate: PASS (run 36387377529 observed before the latest Wave-2 commits).
 - Wave-2 validation run 36387377593: FAIL at the dedicated typecheck because an escaped-newline patch defect existed in AutonomousFactoryController. The defect was corrected before release consideration.
+- Wave-2 validation run 36388027225: PASS on executable head `1fd9d2a77d1e9255f2e74be5bd8a14015bc2a9d8`; typecheck and focused governance tests both passed.
+- The Wave-2 focused workflow was corrected to exclude the unrelated FFmpeg-dependent legacy authority test; its resolution-gate behavior is covered by the Wave-2 integration test.
 - Local clone/typecheck: unavailable in the coding environment because github.com DNS/network access is unavailable. Repository Actions remain authoritative.
