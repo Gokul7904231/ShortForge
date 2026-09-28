@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { AgentExecutionRouter } from "../../core/agent/execution/AgentExecutionRouter";
+import { AgentExecutionRouter } from "../core/agent/execution/AgentExecutionRouter";
 import {
   InMemoryAgentExecutionStateStore,
-} from "../../core/agent/execution/AgentExecutionStateStore";
+} from "../core/agent/execution/AgentExecutionStateStore";
 import type {
   ExecutionState,
   ExecutionStepContract,
-} from "../../core/agent/execution/AgentExecutionContracts";
-import { ScopedToolExecutor } from "../../core/agent/execution/ScopedToolExecutor";
-import { ToolRegistry } from "../../core/tools/ToolRegistry";
-import { ToolExecutor } from "../../core/tools/ToolExecutor";
-import { toolOk } from "../../core/tools/ToolContracts";
+} from "../core/agent/execution/AgentExecutionContracts";
+import { ScopedToolExecutor } from "../core/agent/execution/ScopedToolExecutor";
+import { ToolRegistry } from "../core/tools/ToolRegistry";
+import { ToolExecutor } from "../core/tools/ToolExecutor";
+import { toolOk } from "../core/tools/ToolContracts";
 
 const classifyStep: ExecutionStepContract = {
   stepId: "classify",
