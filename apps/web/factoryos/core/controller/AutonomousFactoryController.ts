@@ -215,7 +215,23 @@ export class AutonomousFactoryController {
         this.guardianManager.requestHealingClosureGrant(request),
     });
 
-    this.guardianManager.attachGovernanceAdvisor(async ({ snapshot, proposal, action }) => {
+    this.guardianManager.attachGovernanceMemoryProvider(async (query, maxItems, maxChars) => {
+      if (!this.memoryFabric) return null;
+      const projection = await this.memoryFabric.projectForAgent(query, maxItems, maxChars);
+      return {
+        snapshotId: `memory_${projection.generatedAt}`,
+        generatedAt: projection.generatedAt,
+        items: projection.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          provenance: item.provenance,
+          qualityScore: item.qualityScore,
+        })),
+      };
+    });
+
+    this.guardianManager.attachGovernanceAdvisor(async ({ snapshot, proposal, action, memoryContext }) => {
       const riskToSeverity = {
         LOW: "LOW",
         MEDIUM: "MEDIUM",
@@ -232,6 +248,9 @@ export class AutonomousFactoryController {
         symptoms: [
           `Review governed proposal ${proposal.actionName}`,
           ...snapshot.constraints,
+          ...(memoryContext?.items.slice(0, 4).map(
+            (item) => `Derived memory context [${item.id}]: ${item.content.slice(0, 280)}`
+          ) || []),
         ],
         observedMetrics: {
           jobs: snapshot.jobs,
@@ -266,13 +285,18 @@ export class AutonomousFactoryController {
         supportingEvidence: Array.from(
           new Set([...(proposal.evidenceRefs || []), ...(evaluation.evidenceIds || [])])
         ),
-        constraints: supports
-          ? []
-          : [
-              "cognitive_runtime_did_not_support_proposal",
+        constraints: [
+          ...(supports ? [] : ["cognitive_runtime_did_not_support_proposal"]),
+          ...(memoryContext
+            ? [`derived_memory_context_items=${memoryContext.items.length}`]
+            : ["derived_memory_context_unavailable"]),
+          ...(supports
+            ? []
+            : [
               `confidence=${evaluation.confidence.toFixed(2)}`,
               evaluation.fallbackApplied ? "cognitive_fallback_applied" : "cognitive_support_threshold_not_met",
-            ],
+            ]),
+        ],
         uncertainty: Math.max(0, 1 - evaluation.confidence),
         conflictsWith: supports ? [] : [evaluation.recommendedAction],
         urgency: action.risk,
