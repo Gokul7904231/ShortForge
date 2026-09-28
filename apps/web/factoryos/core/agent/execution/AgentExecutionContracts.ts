@@ -21,7 +21,7 @@ export type IdempotencyRequirement = "NONE" | "OPTIONAL" | "REQUIRED";
 
 export interface RetryPolicy {
   readonly maxAttempts: number;
-  readonly retryOn: readonly Array<
+  readonly retryOn: ReadonlyArray<
     "FAILED" | "TIMEOUT" | "UNKNOWN" | "RATE_LIMITED" | "TRANSIENT"
   >;
   readonly backoffMs: number;
