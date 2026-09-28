@@ -4,15 +4,37 @@ import type {
   ExecutionStepContract,
   ExecutionTransition,
 } from "./AgentExecutionContracts";
+import {
+  executionStateFingerprint,
+  type AgentExecutionApprovalStore,
+  type AgentExecutionApprovalRequest,
+  type CreateAgentApprovalInput,
+} from "./AgentExecutionApprovalStore";
 import type { AgentExecutionStateStore } from "./AgentExecutionStateStore";
 
 type ExecutionFact = boolean | string | number;
+
+export interface HumanApprovalInput {
+  readonly requestedByAgent: string;
+  readonly reason: string;
+  readonly expiresAt: string;
+}
+
+export interface HumanApprovalResumeDecision {
+  readonly allowed: boolean;
+  readonly reason: string;
+  readonly state: ExecutionState;
+  readonly approval?: AgentExecutionApprovalRequest;
+}
 
 export class AgentExecutionRouter {
   private readonly steps = new Map<string, ExecutionStepContract>();
   private readonly transitions: ExecutionTransition[] = [];
 
-  constructor(private readonly stateStore: AgentExecutionStateStore) {}
+  constructor(
+    private readonly stateStore: AgentExecutionStateStore,
+    private readonly approvalStore?: AgentExecutionApprovalStore,
+  ) {}
 
   registerStep(step: ExecutionStepContract): void {
     if (this.steps.has(step.stepId)) {
@@ -72,11 +94,42 @@ export class AgentExecutionRouter {
     return this.steps.get(stepId)?.requiredCapabilities || [];
   }
 
+  getWaitingForApproval(): ExecutionState[] {
+    return this.stateStore
+      .listOpen()
+      .filter((state) => state.status === "WAITING" && state.approvalId)
+      .map((state) => structuredClone(state));
+  }
+
   start(state: ExecutionState): ExecutionState {
     const step = this.steps.get(state.stepId);
 
     if (!step) {
       throw new Error("execution_step_not_registered:" + state.stepId);
+    }
+
+    if (state.status !== "READY") {
+      throw new Error(
+        "execution_step_not_ready:" + state.stepId + ":" + state.status,
+      );
+    }
+
+    if (
+      state.humanApprovalState === "PENDING" ||
+      state.humanApprovalState === "REJECTED"
+    ) {
+      throw new Error(
+        "human_approval_not_satisfied:" + state.stepId,
+      );
+    }
+
+    if (
+      step.humanApproval === "ALWAYS" &&
+      state.humanApprovalState !== "APPROVED"
+    ) {
+      throw new Error(
+        "human_approval_required_before_start:" + state.stepId,
+      );
     }
 
     const missingPreconditions = step.preconditions.filter(
@@ -108,10 +161,260 @@ export class AgentExecutionRouter {
     return next;
   }
 
-  recoverAfterRestart(): ExecutionState[] {
+  requestHumanApproval(
+    state: ExecutionState,
+    input: HumanApprovalInput,
+  ): {
+    readonly state: ExecutionState;
+    readonly approval: AgentExecutionApprovalRequest;
+  } {
+    if (!this.approvalStore) {
+      throw new Error("approval_store_not_configured");
+    }
+
+    const step = this.steps.get(state.stepId);
+
+    if (!step) {
+      throw new Error("execution_step_not_registered:" + state.stepId);
+    }
+
+    if (step.humanApproval === "NONE") {
+      throw new Error("human_approval_not_required:" + state.stepId);
+    }
+
+    if (state.status !== "READY") {
+      throw new Error(
+        "human_approval_requires_ready_state:" +
+          state.stepId +
+          ":" +
+          state.status,
+      );
+    }
+
+    if (!input.requestedByAgent.trim() || !input.reason.trim()) {
+      throw new Error("human_approval_request_missing_reason_or_requester");
+    }
+
+    if (new Date(input.expiresAt).getTime() <= Date.now()) {
+      throw new Error("human_approval_expiry_must_be_in_future");
+    }
+
+    const waitingState: ExecutionState = {
+      ...state,
+      status: "WAITING",
+      humanApprovalState: "PENDING",
+      stateVersion: state.stateVersion + 1,
+      lastOutcome: "human_approval_requested",
+      updatedAt: new Date().toISOString(),
+    };
+
+    const approvalInput: CreateAgentApprovalInput = {
+      executionId: waitingState.executionId,
+      missionId: waitingState.missionId,
+      runId: waitingState.runId,
+      floorId: waitingState.floorId,
+      stepId: waitingState.stepId,
+      requestedByAgent: input.requestedByAgent,
+      reason: input.reason,
+      riskLevel: step.riskLevel,
+      requestedStateVersion: waitingState.stateVersion,
+      executionStateFingerprint: executionStateFingerprint(waitingState),
+      expiresAt: input.expiresAt,
+    };
+
+    const approval = this.approvalStore.create(approvalInput);
+    const persisted: ExecutionState = {
+      ...waitingState,
+      approvalId: approval.approvalId,
+    };
+
+    this.stateStore.save(persisted);
+    return {
+      state: structuredClone(persisted),
+      approval: structuredClone(approval),
+    };
+  }
+
+  resolveHumanApproval(
+    approvalId: string,
+    decision: "APPROVED" | "REJECTED" | "CANCELLED",
+    resolvedByUserId: string,
+    resolutionReason?: string,
+    now = new Date(),
+  ): AgentExecutionApprovalRequest {
+    if (!this.approvalStore) {
+      throw new Error("approval_store_not_configured");
+    }
+
+    if (!resolvedByUserId.trim()) {
+      throw new Error("approval_resolver_identity_required");
+    }
+
+    return this.approvalStore.resolve(
+      approvalId,
+      decision,
+      resolvedByUserId,
+      resolutionReason,
+      now,
+    );
+  }
+
+  resumeAfterApproval(
+    state: ExecutionState,
+  ): HumanApprovalResumeDecision {
+    if (!this.approvalStore) {
+      return {
+        allowed: false,
+        reason: "approval_store_not_configured",
+        state: structuredClone(state),
+      };
+    }
+
+    const persisted = this.stateStore.get(state.executionId);
+
+    if (!persisted) {
+      return {
+        allowed: false,
+        reason: "execution_state_not_found",
+        state: structuredClone(state),
+      };
+    }
+
+    if (
+      persisted.stateVersion !== state.stateVersion ||
+      executionStateFingerprint(persisted) !== executionStateFingerprint(state)
+    ) {
+      return {
+        allowed: false,
+        reason: "execution_state_stale_for_approval_resume",
+        state: persisted,
+      };
+    }
+
+    if (persisted.status !== "WAITING" || !persisted.approvalId) {
+      return {
+        allowed: false,
+        reason: "execution_not_waiting_for_approval",
+        state: persisted,
+      };
+    }
+
+    const approval = this.approvalStore.get(persisted.approvalId);
+
+    if (!approval) {
+      const blocked = this.blockWaitingExecution(
+        persisted,
+        "approval_request_missing",
+      );
+      return {
+        allowed: false,
+        reason: "approval_request_missing",
+        state: blocked,
+      };
+    }
+
+    if (approval.status === "PENDING") {
+      return {
+        allowed: false,
+        reason: "approval_still_pending",
+        state: persisted,
+        approval,
+      };
+    }
+
+    if (
+      approval.requestedStateVersion !== persisted.stateVersion ||
+      approval.executionStateFingerprint !==
+        executionStateFingerprint(persisted)
+    ) {
+      const blocked = this.blockWaitingExecution(
+        persisted,
+        "approval_binding_no_longer_matches_execution_state",
+      );
+      return {
+        allowed: false,
+        reason: "approval_binding_no_longer_matches_execution_state",
+        state: blocked,
+        approval,
+      };
+    }
+
+    if (approval.status !== "APPROVED") {
+      const blocked = this.blockWaitingExecution(
+        persisted,
+        "approval_" + approval.status.toLowerCase(),
+      );
+      return {
+        allowed: false,
+        reason: "approval_" + approval.status.toLowerCase(),
+        state: blocked,
+        approval,
+      };
+    }
+
+    const resumed: ExecutionState = {
+      ...persisted,
+      status: "READY",
+      humanApprovalState: "APPROVED",
+      stateVersion: persisted.stateVersion + 1,
+      lastOutcome: "human_approval_granted",
+      lastError: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.stateStore.save(resumed);
+
+    return {
+      allowed: true,
+      reason: "human_approval_granted",
+      state: structuredClone(resumed),
+      approval,
+    };
+  }
+
+  recoverAfterRestart(now = new Date()): ExecutionState[] {
     const recovered: ExecutionState[] = [];
 
+    this.approvalStore?.expirePending(now);
+
     for (const state of this.stateStore.listOpen()) {
+      if (state.status === "WAITING") {
+        if (!state.approvalId || !this.approvalStore) {
+          recovered.push(
+            this.blockWaitingExecution(
+              state,
+              "approval_request_missing_after_restart",
+            ),
+          );
+          continue;
+        }
+
+        const approval = this.approvalStore.get(state.approvalId);
+
+        if (!approval) {
+          recovered.push(
+            this.blockWaitingExecution(
+              state,
+              "approval_request_missing_after_restart",
+            ),
+          );
+          continue;
+        }
+
+        if (approval.status === "EXPIRED" || approval.status === "REJECTED" || approval.status === "CANCELLED") {
+          recovered.push(
+            this.blockWaitingExecution(
+              state,
+              "approval_" + approval.status.toLowerCase() + "_after_restart",
+            ),
+          );
+        }
+
+        // PENDING and APPROVED are deliberately left WAITING.
+        // A human-approved task must be explicitly resumed; restart never auto-executes.
+        continue;
+      }
+
       if (state.sideEffectStatus !== "IN_FLIGHT") continue;
 
       const recoveredState: ExecutionState = {
@@ -269,6 +572,8 @@ export class AgentExecutionRouter {
           : 0,
       status: "READY",
       sideEffectStatus: "NOT_STARTED",
+      humanApprovalState: "NOT_REQUIRED",
+      approvalId: undefined,
       updatedAt: new Date().toISOString(),
     };
 
@@ -282,5 +587,21 @@ export class AgentExecutionRouter {
       nextPhase: nextStep.phase,
       transition,
     };
+  }
+
+  private blockWaitingExecution(
+    state: ExecutionState,
+    reason: string,
+  ): ExecutionState {
+    const blocked: ExecutionState = {
+      ...state,
+      status: "BLOCKED",
+      humanApprovalState: "REJECTED",
+      stateVersion: state.stateVersion + 1,
+      lastError: reason,
+      updatedAt: new Date().toISOString(),
+    };
+    this.stateStore.save(blocked);
+    return blocked;
   }
 }
