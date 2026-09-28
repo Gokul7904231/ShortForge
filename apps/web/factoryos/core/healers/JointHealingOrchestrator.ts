@@ -4,13 +4,8 @@ import type { HealerReport, RepairAction } from "../contracts/HealerContracts";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import { BorderDefenseAgent } from "../governance/BorderDefenseAgent";
-import {
-  JointHealingSessionManager,
-} from "../governance/JointHealingSession";
-import type {
-  JointHealingSessionRecord,
-  MutationLease,
-} from "../governance/FloorGovernanceContracts";
+import { JointHealingSessionManager } from "../governance/JointHealingSession";
+import type { JointHealingSessionRecord } from "../governance/FloorGovernanceContracts";
 import { DiskJointHealingSessionStore } from "../governance/JointHealingSessionStore";
 import type { CaseManager } from "../cases/CaseManager";
 import { RepairDependencyAnalyzer } from "./RepairDependencyAnalyzer";
@@ -41,6 +36,11 @@ export interface JointHealingOrchestratorOptions {
   readonly guardianClosureAuthorizer: (
     request: GuardianClosureRequest
   ) => Promise<GuardianClosureDecision>;
+}
+
+interface PairedDiagnosis {
+  readonly healer: BaseHealer;
+  readonly diagnosis: HealerDiagnosis;
 }
 
 interface MutationTask {
@@ -113,7 +113,7 @@ export class JointHealingOrchestrator {
       );
     }
 
-    const session = this.sessionManager.createSession(
+    const createdSession = this.sessionManager.createSession(
       incident.caseId,
       incident.floorId,
       healers[0].config.healerId,
@@ -121,40 +121,42 @@ export class JointHealingOrchestrator {
     );
 
     await this.eventBus.publish("JOINT_HEALING_STARTED", {
-      sessionId: session.sessionId,
+      sessionId: createdSession.sessionId,
       incidentId: incident.caseId,
       floorId: incident.floorId,
       healerIds: healers.map((healer) => healer.config.healerId),
     });
 
-    this.sessionManager.transition(session.sessionId, "DIAGNOSING");
+    this.sessionManager.transition(createdSession.sessionId, "DIAGNOSING");
 
     // Think in parallel. No healer mutation is allowed in this phase.
-    const diagnoses = await Promise.all(
-      healers.map((healer) => healer.diagnose(incident))
+    const pairedDiagnoses: PairedDiagnosis[] = await Promise.all(
+      healers.map(async (healer) => ({
+        healer,
+        diagnosis: await healer.diagnose(incident),
+      }))
     );
 
     const evidenceRefs: string[] = [];
-    for (const diagnosis of diagnoses) {
+    for (const { healer, diagnosis } of pairedDiagnoses) {
       for (const evidence of diagnosis.independentEvidence) {
-        await this.caseManager.addEvidence(incident.caseId, evidence, diagnosis.healerId);
+        await this.caseManager.addEvidence(incident.caseId, evidence, healer.config.healerId);
         evidenceRefs.push(evidence.evidenceId);
       }
     }
 
-    const allHypothesesVerified = diagnoses.every((diagnosis) => diagnosis.verified);
+    const allHypothesesVerified = pairedDiagnoses.every(({ diagnosis }) => diagnosis.verified);
     if (!allHypothesesVerified) {
-      const failed = this.sessionManager.transition(session.sessionId, "ESCALATED");
+      const escalatedSession = this.sessionManager.transition(createdSession.sessionId, "ESCALATED");
       await this.caseManager.transitionStatus(
         incident.caseId,
         "ESCALATED",
         "joint_healing_orchestrator",
         "Paired diagnosis did not independently verify the incident hypothesis"
       );
-      const reports = this.buildReports(diagnoses, new Map(), 0, "ESCALATED");
       return {
-        session: failed,
-        reports,
+        session: escalatedSession,
+        reports: this.buildReports(pairedDiagnoses, incident.caseId, new Map(), 0, "ESCALATED"),
         bdaReinspectionPassed: false,
         auditor: {
           passed: false,
@@ -166,37 +168,41 @@ export class JointHealingOrchestrator {
       };
     }
 
-    this.sessionManager.transition(session.sessionId, "PLANNED");
+    this.sessionManager.transition(createdSession.sessionId, "PLANNED");
     this.sessionManager.checkpoint(
-      session.sessionId,
+      createdSession.sessionId,
       "PLANNED",
       evidenceRefs,
-      diagnoses.flatMap((diagnosis) => diagnosis.repairPlan.actions.map((action) => action.actionId))
+      pairedDiagnoses.flatMap(({ diagnosis }) =>
+        diagnosis.repairPlan.actions.map((action) => action.actionId)
+      )
     );
 
     const mutationResult = await this.executeMutations(
       incident,
-      session.sessionId,
-      diagnoses
+      createdSession.sessionId,
+      pairedDiagnoses
     );
 
     if (!mutationResult.success) {
-      const failedSession = this.sessionManager.transition(session.sessionId, "FAILED");
+      const failedSession = this.sessionManager.transition(createdSession.sessionId, "FAILED");
       await this.caseManager.transitionStatus(
         incident.caseId,
         "FAILED",
         "joint_healing_orchestrator",
         mutationResult.reason || "Paired healing mutation failed"
       );
-      const reports = this.buildReports(
-        diagnoses,
-        mutationResult.executedActionsByHealer,
-        mutationResult.durationMs,
-        "FAILED"
-      );
+      const reportStatus: HealerReport["repairStatus"] =
+        mutationResult.executedActionsByHealer.size > 0 ? "ROLLED_BACK" : "FAILED";
       return {
         session: failedSession,
-        reports,
+        reports: this.buildReports(
+          pairedDiagnoses,
+          incident.caseId,
+          mutationResult.executedActionsByHealer,
+          mutationResult.durationMs,
+          reportStatus
+        ),
         bdaReinspectionPassed: false,
         auditor: {
           passed: false,
@@ -208,7 +214,7 @@ export class JointHealingOrchestrator {
       };
     }
 
-    this.sessionManager.transition(session.sessionId, "VERIFYING");
+    this.sessionManager.transition(createdSession.sessionId, "VERIFYING");
     await this.caseManager.transitionStatus(
       incident.caseId,
       "VERIFYING",
@@ -216,7 +222,7 @@ export class JointHealingOrchestrator {
       "Paired mutations completed; independent boundary verification required"
     );
 
-    const mutationEvidence = diagnoses.flatMap((diagnosis) =>
+    const mutationEvidence = pairedDiagnoses.flatMap(({ diagnosis }) =>
       diagnosis.repairPlan.actions.map((action) => action.actionId)
     );
 
@@ -227,25 +233,25 @@ export class JointHealingOrchestrator {
       actor: "joint_healing_orchestrator",
       contractVersion: "wave3.v1",
       capability: "healing.reinspection",
-      authorizationRef: `session:${session.sessionId}`,
+      authorizationRef: `session:${createdSession.sessionId}`,
       payload: {
-        sessionId: session.sessionId,
+        sessionId: createdSession.sessionId,
         incidentId: incident.caseId,
         floorId: incident.floorId,
         mutationEvidence,
-        diagnoses: diagnoses.map((diagnosis) => ({
-          healerId: diagnosis.healerId,
+        diagnoses: pairedDiagnoses.map(({ healer, diagnosis }) => ({
+          healerId: healer.config.healerId,
           diagnosis: diagnosis.diagnosis,
           actionIds: diagnosis.repairPlan.actions.map((action) => action.actionId),
         })),
         worldState: this.worldState.getState(),
       },
       artifactIds: [],
-      lineageRefs: [incident.caseId, session.sessionId],
+      lineageRefs: [incident.caseId, createdSession.sessionId],
     });
 
     if ("denied" in borderEvent) {
-      const escalated = this.sessionManager.transition(session.sessionId, "ESCALATED");
+      const escalated = this.sessionManager.transition(createdSession.sessionId, "ESCALATED");
       await this.caseManager.transitionStatus(
         incident.caseId,
         "ESCALATED",
@@ -254,7 +260,13 @@ export class JointHealingOrchestrator {
       );
       return {
         session: escalated,
-        reports: this.buildReports(diagnoses, mutationResult.executedActionsByHealer, mutationResult.durationMs, "ESCALATED"),
+        reports: this.buildReports(
+          pairedDiagnoses,
+          incident.caseId,
+          mutationResult.executedActionsByHealer,
+          mutationResult.durationMs,
+          "ESCALATED"
+        ),
         bdaReinspectionPassed: false,
         auditor: {
           passed: false,
@@ -266,25 +278,29 @@ export class JointHealingOrchestrator {
       };
     }
 
-    const dossier = this.bda.egress(borderEvent, {
-      sessionId: session.sessionId,
-      incidentId: incident.caseId,
-      floorId: incident.floorId,
-      policyDecision: "ALLOW",
-      mutationEvidence,
-      worldState: this.worldState.getState(),
-    }, {
-      expectedKeys: ["sessionId", "incidentId", "floorId", "mutationEvidence", "worldState"],
-      evidenceRefs: [...evidenceRefs, session.sessionId],
-      policyAllowed: true,
-    });
+    const dossier = this.bda.egress(
+      borderEvent,
+      {
+        sessionId: createdSession.sessionId,
+        incidentId: incident.caseId,
+        floorId: incident.floorId,
+        policyDecision: "ALLOW",
+        mutationEvidence,
+        worldState: this.worldState.getState(),
+      },
+      {
+        expectedKeys: ["sessionId", "incidentId", "floorId", "mutationEvidence", "worldState"],
+        evidenceRefs: [...evidenceRefs, createdSession.sessionId],
+        policyAllowed: true,
+      }
+    );
 
     await this.eventBus.publish(
       dossier.policyDecision === "ALLOW" && dossier.anomalies.length === 0
         ? "HEALING_BDA_REINSPECTION_PASSED"
         : "HEALING_BDA_REINSPECTION_FAILED",
       {
-        sessionId: session.sessionId,
+        sessionId: createdSession.sessionId,
         incidentId: incident.caseId,
         borderEventId: dossier.borderEventId,
         policyDecision: dossier.policyDecision,
@@ -295,19 +311,20 @@ export class JointHealingOrchestrator {
       {
         correlationId: incident.caseId,
         source: "joint_healing_orchestrator",
-        idempotencyKey: `jhs:bda:${session.sessionId}`,
+        idempotencyKey: `jhs:bda:${createdSession.sessionId}`,
       }
     );
 
     const reports = this.buildReports(
-      diagnoses,
+      pairedDiagnoses,
+      incident.caseId,
       mutationResult.executedActionsByHealer,
       mutationResult.durationMs,
       "SUCCESS"
     );
 
     const audit = this.auditor.verify({
-      session: this.sessionManager.get(session.sessionId)!,
+      session: this.sessionManager.get(createdSession.sessionId)!,
       caseItem: (await this.caseManager.getCase(incident.caseId))!,
       reports,
       bdaReinspection: dossier,
@@ -317,7 +334,7 @@ export class JointHealingOrchestrator {
     await this.eventBus.publish(
       audit.passed ? "JOINT_HEALING_AUDIT_PASSED" : "JOINT_HEALING_AUDIT_FAILED",
       {
-        sessionId: session.sessionId,
+        sessionId: createdSession.sessionId,
         incidentId: incident.caseId,
         passed: audit.passed,
         reasons: audit.reasons,
@@ -326,12 +343,12 @@ export class JointHealingOrchestrator {
       {
         correlationId: incident.caseId,
         source: "joint_healing_auditor",
-        idempotencyKey: `jhs:audit:${session.sessionId}`,
+        idempotencyKey: `jhs:audit:${createdSession.sessionId}`,
       }
     );
 
     if (!audit.passed) {
-      const escalated = this.sessionManager.transition(session.sessionId, "ESCALATED");
+      const escalated = this.sessionManager.transition(createdSession.sessionId, "ESCALATED");
       await this.caseManager.transitionStatus(
         incident.caseId,
         "ESCALATED",
@@ -350,7 +367,7 @@ export class JointHealingOrchestrator {
     const closure = await this.guardianClosureAuthorizer({
       incidentId: incident.caseId,
       floorId: incident.floorId,
-      sessionId: session.sessionId,
+      sessionId: createdSession.sessionId,
       evidenceRefs: Array.from(new Set([...evidenceRefs, ...audit.evidenceRefs])),
       bdaPass: true,
       auditorPass: true,
@@ -359,7 +376,7 @@ export class JointHealingOrchestrator {
     await this.eventBus.publish(
       closure.authorized ? "GUARDIAN_CLOSURE_GRANTED" : "GUARDIAN_CLOSURE_DENIED",
       {
-        sessionId: session.sessionId,
+        sessionId: createdSession.sessionId,
         incidentId: incident.caseId,
         grantId: closure.grantId,
         reason: closure.reason,
@@ -367,12 +384,12 @@ export class JointHealingOrchestrator {
       {
         correlationId: incident.caseId,
         source: "joint_healing_orchestrator",
-        idempotencyKey: `jhs:closure:${session.sessionId}`,
+        idempotencyKey: `jhs:closure:${createdSession.sessionId}`,
       }
     );
 
     if (!closure.authorized) {
-      const escalated = this.sessionManager.transition(session.sessionId, "ESCALATED");
+      const escalated = this.sessionManager.transition(createdSession.sessionId, "ESCALATED");
       await this.caseManager.transitionStatus(
         incident.caseId,
         "ESCALATED",
@@ -388,14 +405,7 @@ export class JointHealingOrchestrator {
       };
     }
 
-    const resolutionProof = {
-      incidentId: incident.caseId,
-      bdaPass: true,
-      auditorPass: true,
-      guardianClosureGrant: true,
-      verifiedAt: new Date().toISOString(),
-    } as const;
-
+    const verifiedAt = new Date().toISOString();
     await this.caseManager.recordResolution(
       incident.caseId,
       "Joint healing completed with BDA reinspection, independent Auditor verification, and Guardian closure grant.",
@@ -404,24 +414,24 @@ export class JointHealingOrchestrator {
     );
 
     await this.caseManager.resolveCase(incident.caseId, {
-      diagnosis: diagnoses.map((diagnosis) => diagnosis.diagnosis).join(" | "),
+      diagnosis: pairedDiagnoses.map(({ diagnosis }) => diagnosis.diagnosis).join(" | "),
       resolutionPlan: "Paired healer mutation completed under resource-scoped fencing.",
       healerId: healers.map((healer) => healer.config.healerId).join(","),
       actionsTaken: mutationEvidence,
-      verifiedAt: resolutionProof.verifiedAt,
-      resolutionProof,
+      verifiedAt,
+      resolutionProof: {
+        incidentId: incident.caseId,
+        bdaPass: true,
+        auditorPass: true,
+        guardianClosureGrant: true,
+        verifiedAt,
+      },
     });
 
-    const completed = this.sessionManager.complete(session.sessionId, true, true);
-    const finalReports = this.buildReports(
-      diagnoses,
-      mutationResult.executedActionsByHealer,
-      mutationResult.durationMs,
-      "SUCCESS"
-    );
+    const completed = this.sessionManager.complete(createdSession.sessionId, true, true);
 
     await this.eventBus.publish("JOINT_HEALING_COMPLETED", {
-      sessionId: session.sessionId,
+      sessionId: createdSession.sessionId,
       incidentId: incident.caseId,
       floorId: incident.floorId,
       healerIds: healers.map((healer) => healer.config.healerId),
@@ -431,7 +441,7 @@ export class JointHealingOrchestrator {
 
     return {
       session: completed,
-      reports: finalReports,
+      reports,
       bdaReinspectionPassed: true,
       auditor: audit,
       guardianClosure: closure,
@@ -441,7 +451,7 @@ export class JointHealingOrchestrator {
   private async executeMutations(
     incident: Case,
     sessionId: string,
-    diagnoses: readonly HealerDiagnosis[]
+    pairedDiagnoses: readonly PairedDiagnosis[]
   ): Promise<{
     success: boolean;
     reason?: string;
@@ -450,51 +460,31 @@ export class JointHealingOrchestrator {
   }> {
     const start = Date.now();
     const dependency = this.dependencyAnalyzer.analyzeDependency(incident);
-    const tasks = diagnoses.flatMap((diagnosis) =>
+    const dependencyResources = new Set([
+      dependency.primaryResourceId,
+      ...dependency.dependentResourceIds,
+    ]);
+
+    const tasks: MutationTask[] = pairedDiagnoses.flatMap(({ healer, diagnosis }) =>
       diagnosis.repairPlan.actions.map((action) => ({
         taskId: `mut_${randomUUID().replace(/-/g, "").slice(0, 10)}`,
         resourceId: action.target,
-        healer: diagnoses.find((item) => item.healerId === diagnosis.healerId) ? undefined : undefined,
+        healer,
         action,
       }))
     );
 
-    // Resolve healer references after flattening to keep diagnosis immutable.
-    const healerById = new Map(diagnoses.map((diagnosis, index) => [diagnosis.healerId, index]));
-    const resolvedTasks: MutationTask[] = tasks.map((task, index) => ({
-      taskId: task.taskId,
-      resourceId: task.resourceId,
-      healer: diagnoses[healerById.get(diagnoses[index % diagnoses.length].healerId) || 0] as never,
-      action: task.action,
-    }));
-
-    // The planner below uses the actual healer id encoded by each action plan.
-    // Rebuild deterministically from diagnosis order.
-    const allTasks: MutationTask[] = [];
-    for (const diagnosis of diagnoses) {
-      const owner = (diagnosis as HealerDiagnosis & { __healer?: BaseHealer }).__healer;
-      if (!owner) {
-        throw new Error(`Missing healer binding for diagnosis ${diagnosis.healerId}`);
-      }
-      for (const action of diagnosis.repairPlan.actions) {
-        allTasks.push({
-          taskId: `mut_${randomUUID().replace(/-/g, "").slice(0, 10)}`,
-          resourceId: action.target,
-          healer: owner,
-          action,
-        });
-      }
-    }
-
     const groups: MutationTask[][] = [];
-    for (const task of allTasks) {
+    for (const task of tasks) {
       let group = groups.find((candidate) =>
-        candidate.some((existing) => this.resourcesConflict(
-          existing.resourceId,
-          task.resourceId,
-          dependency.blastRadius,
-          new Set([dependency.primaryResourceId, ...dependency.dependentResourceIds])
-        ))
+        candidate.some((existing) =>
+          this.resourcesConflict(
+            existing.resourceId,
+            task.resourceId,
+            dependency.blastRadius,
+            dependencyResources
+          )
+        )
       );
       if (!group) {
         group = [];
@@ -506,74 +496,83 @@ export class JointHealingOrchestrator {
     const executedActionsByHealer = new Map<string, RepairAction[]>();
     let failure: string | undefined;
 
-    await Promise.all(groups.map(async (group) => {
-      for (const task of group.sort((a, b) => a.taskId.localeCompare(b.taskId))) {
-        if (failure) return;
+    await Promise.all(
+      groups.map(async (group) => {
+        const ordered = [...group].sort((a, b) => a.taskId.localeCompare(b.taskId));
+        for (const task of ordered) {
+          if (failure) return;
 
-        const lease = await this.lockManager.acquireMutationLease(
-          task.resourceId,
-          sessionId,
-          task.healer.config.healerId,
-          incident.caseId,
-          `healing.mutate:${task.action.actionType}`,
-          [task.action.actionType],
-          30000
-        );
-
-        if (!lease) {
-          failure = `mutation_resource_busy:${task.resourceId}`;
-          return;
-        }
-
-        this.sessionManager.noteMutationLease(lease);
-        try {
-          const valid = this.lockManager.validateMutationLease(lease);
-          if (!valid.valid || !lease.actionScope.includes(task.action.actionType)) {
-            failure = valid.reason || "mutation_lease_invalid";
-            return;
-          }
-
-          const applied = await task.healer.executeAction(task.action);
-          if (!applied) {
-            failure = `mutation_failed:${task.action.actionType}`;
-            return;
-          }
-
-          const appliedAction = {
-            ...task.action,
-            status: "APPLIED" as const,
-            executedAt: new Date().toISOString(),
-          };
-          const current = executedActionsByHealer.get(task.healer.config.healerId) || [];
-          executedActionsByHealer.set(task.healer.config.healerId, [...current, appliedAction]);
-
-          await this.eventBus.publish("JOINT_HEALING_MUTATION_APPLIED", {
+          const lease = await this.lockManager.acquireMutationLease(
+            task.resourceId,
             sessionId,
-            incidentId: incident.caseId,
-            healerId: task.healer.config.healerId,
-            resourceId: task.resourceId,
-            fencingEpoch: lease.fencingEpoch,
-            actionId: task.action.actionId,
-            actionType: task.action.actionType,
-          });
-        } catch (error) {
-          failure = error instanceof Error ? error.message : String(error);
-        } finally {
-          await this.lockManager.releaseMutationLease(lease);
+            task.healer.config.healerId,
+            incident.caseId,
+            `healing.mutate:${task.action.actionType}`,
+            [task.action.actionType],
+            30000
+          );
+
+          if (!lease) {
+            failure = `mutation_resource_busy:${task.resourceId}`;
+            return;
+          }
+
+          this.sessionManager.noteMutationLease(lease);
+
+          try {
+            const valid = this.lockManager.validateMutationLease(lease);
+            if (!valid.valid) {
+              failure = valid.reason || "mutation_lease_invalid";
+              return;
+            }
+            if (!lease.actionScope.includes(task.action.actionType)) {
+              failure = "mutation_action_scope_mismatch";
+              return;
+            }
+
+            const applied = await task.healer.executeAction(task.action);
+            if (!applied) {
+              failure = `mutation_failed:${task.action.actionType}`;
+              return;
+            }
+
+            const appliedAction: RepairAction = {
+              ...task.action,
+              status: "APPLIED",
+              executedAt: new Date().toISOString(),
+            };
+            const current = executedActionsByHealer.get(task.healer.config.healerId) || [];
+            executedActionsByHealer.set(task.healer.config.healerId, [
+              ...current,
+              appliedAction,
+            ]);
+
+            await this.eventBus.publish("JOINT_HEALING_MUTATION_APPLIED", {
+              sessionId,
+              incidentId: incident.caseId,
+              healerId: task.healer.config.healerId,
+              resourceId: task.resourceId,
+              fencingEpoch: lease.fencingEpoch,
+              actionId: task.action.actionId,
+              actionType: task.action.actionType,
+            });
+          } catch (error) {
+            failure = error instanceof Error ? error.message : String(error);
+          } finally {
+            await this.lockManager.releaseMutationLease(lease);
+          }
         }
-      }
-    }));
+      })
+    );
 
     if (failure) {
-      for (const diagnosis of diagnoses) {
-        const owner = (diagnosis as HealerDiagnosis & { __healer?: BaseHealer }).__healer;
-        if (!owner) continue;
-        const applied = executedActionsByHealer.get(owner.config.healerId) || [];
+      for (const { healer } of pairedDiagnoses) {
+        const applied = executedActionsByHealer.get(healer.config.healerId) || [];
         for (const action of [...applied].reverse()) {
           const lease = await this.lockManager.acquireMutationLease(
             action.target,
             sessionId,
-            owner.config.healerId,
+            healer.config.healerId,
             incident.caseId,
             `healing.rollback:${action.actionType}`,
             [action.actionType],
@@ -581,9 +580,8 @@ export class JointHealingOrchestrator {
           );
           if (!lease) continue;
           try {
-            const valid = this.lockManager.validateMutationLease(lease);
-            if (valid.valid) {
-              await owner.rollbackAction(action);
+            if (this.lockManager.validateMutationLease(lease).valid) {
+              await healer.rollbackAction(action);
             }
           } finally {
             await this.lockManager.releaseMutationLease(lease);
@@ -615,24 +613,23 @@ export class JointHealingOrchestrator {
   }
 
   private buildReports(
-    diagnoses: readonly HealerDiagnosis[],
+    pairedDiagnoses: readonly PairedDiagnosis[],
+    caseId: string,
     executedActionsByHealer: Map<string, RepairAction[]>,
     durationMs: number,
     status: HealerReport["repairStatus"]
   ): HealerReport[] {
-    return diagnoses.map((diagnosis) => ({
+    return pairedDiagnoses.map(({ healer, diagnosis }) => ({
       reportId: `jhr_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
-      caseId: diagnosis.repairPlan.actions[0]?.parameters?.caseId
-        ? String(diagnosis.repairPlan.actions[0].parameters.caseId)
-        : "joint-healing",
-      healerId: diagnosis.healerId,
-      specialization: "DIAGNOSTIC",
+      caseId,
+      healerId: healer.config.healerId,
+      specialization: healer.config.specialization,
       slayerHypothesisVerified: diagnosis.verified,
       rootCauseDiagnosis: diagnosis.diagnosis,
       independentEvidence: diagnosis.independentEvidence,
       repairPlan: {
         description: diagnosis.repairPlan.description,
-        actions: executedActionsByHealer.get(diagnosis.healerId) || [],
+        actions: executedActionsByHealer.get(healer.config.healerId) || [],
         rollbackActions: diagnosis.repairPlan.rollbackActions,
       },
       repairStatus: status,
