@@ -139,7 +139,7 @@ export class FloorGovernanceCell {
     const context: ActionGateContext = {
       snapshot,
       evidenceRefs: extraContext.evidenceRefs,
-      satisfiedPreconditions: (extraContext as ActionGateContext).satisfiedPreconditions || new Set<string>(),
+      satisfiedPreconditions: extraContext.satisfiedPreconditions,
       capabilities: this.capabilities,
       grants: this.grants,
       humanApprovalIds: extraContext.humanApprovalIds,
