@@ -98,6 +98,7 @@ export class BorderDefenseAgent {
       actor: event.actor,
       contractVersion: event.contractVersion,
       inputHash: event.inputHash,
+      outputHash: event.outputHash,
       artifactIds: event.artifactIds,
       lineageEdges: event.lineageRefs,
       capabilityUsed: event.capabilityUsed,
