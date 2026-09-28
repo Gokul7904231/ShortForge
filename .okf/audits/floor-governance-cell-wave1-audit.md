@@ -83,3 +83,16 @@ Before Wave 2:
 
 Wave 1 is architecturally aligned with the existing hierarchy and provides a concrete bounded-autonomy substrate. It is not yet the full production Floor Governance Cell.
 
+
+## Verification update — 2026-09-28
+
+The dedicated **Floor Governance Cell Validation** workflow passed on the current branch. It typechecks the FGC governance sources independently of the repository-wide tsconfig and executes the focused FGC Vitest suite.
+
+The repository-wide CI lane still reports pre-existing TypeScript failures in:
+
+- `factoryos/core/intelligence/decision/CLMDecisionAdapter.ts`
+- `factoryos/core/intelligence/decision/LLMDecisionAdapter.ts`
+
+The same errors are present on the current `main` baseline CI run, so they are recorded as an unrelated baseline defect rather than attributed to the FGC wave.
+
+FGC-specific code therefore has direct focused typecheck and runtime test evidence, while merge/release readiness remains gated by the repository baseline.
