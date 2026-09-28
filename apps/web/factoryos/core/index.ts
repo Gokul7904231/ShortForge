@@ -116,3 +116,18 @@ export * from "./projection/FactoryProjectionService";
 
 // Presence Subsystem
 export * from "./overseer/presence";
+
+
+/**
+ * Floor Governance Cell — bounded-autonomy control plane.
+ */
+export * from "./governance/FloorGovernanceContracts";
+export * from "./governance/FloorActionGraph";
+export * from "./governance/DefaultFloorActionGraph";
+export * from "./governance/FloorBlackboard";
+export * from "./governance/AscalonGuardianAdapter";
+export * from "./governance/BorderDefenseAgent";
+export * from "./governance/JointHealingSession";
+export * from "./governance/FloorActionGate";
+export * from "./governance/ResolutionGate";
+export * from "./governance/FloorGovernanceCell";
