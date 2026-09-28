@@ -126,6 +126,8 @@ export * from "./governance/FloorActionGraph";
 export * from "./governance/DefaultFloorActionGraph";
 export * from "./governance/FloorBlackboard";
 export * from "./governance/AscalonGuardianAdapter";
+export * from "./governance/FloorBlackboardJournal";
+export * from "./governance/GuardianGovernanceAdapter";
 export * from "./governance/BorderDefenseAgent";
 export * from "./governance/JointHealingSession";
 export * from "./governance/FloorActionGate";
