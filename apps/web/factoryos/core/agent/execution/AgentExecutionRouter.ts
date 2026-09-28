@@ -148,6 +148,14 @@ export class AgentExecutionRouter {
       throw new Error("execution_step_not_registered:" + state.stepId);
     }
 
+    if (state.status !== "RUNNING") {
+      return {
+        allowed: false,
+        reason: "outcome_requires_running_step",
+        currentStepId: state.stepId,
+      };
+    }
+
     const nextFacts: Record<string, ExecutionFact> = {
       ...state.facts,
       ...(outcome.factsPatch || {}),
