@@ -87,7 +87,7 @@ export class PythonFloorBridge {
       direction: "EGRESS",
       actor: `bridge:${security.initiatedBy}`,
       contractVersion: envelope.schemaVersion,
-      authorizationRef: security.executionToken,
+      authorizationRef: "execution:" + security.executionId,
       capability: "floor.handoff",
       payload: envelope,
       artifactIds: [],
