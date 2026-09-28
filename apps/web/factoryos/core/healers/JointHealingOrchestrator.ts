@@ -223,6 +223,10 @@ export class JointHealingOrchestrator {
       };
     }
 
+    const mutationEvidence = pairedDiagnoses.flatMap(({ diagnosis }) =>
+      diagnosis.repairPlan.actions.map((action) => action.actionId)
+    );
+
     this.sessionManager.transition(createdSession.sessionId, "VERIFYING");
     this.sessionManager.checkpoint(
       createdSession.sessionId,
@@ -235,10 +239,6 @@ export class JointHealingOrchestrator {
       "VERIFYING",
       "joint_healing_orchestrator",
       "Paired mutations completed; independent boundary verification required"
-    );
-
-    const mutationEvidence = pairedDiagnoses.flatMap(({ diagnosis }) =>
-      diagnosis.repairPlan.actions.map((action) => action.actionId)
     );
 
     const borderEvent = this.bda.admit({
