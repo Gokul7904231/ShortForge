@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR49-Repository-CI-Baseline-20260928",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/repository-ci-baseline-20260928",
+  "objective": "Restore the strict repository TypeScript CI gate without changing FGC, Agent Execution Fabric, HITL, floor topology, or authority semantics.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decisions/repository-ci-baseline-20260928.md",
+      ".okf/decisions/agent-execution-fabric-20260928.md",
+      ".okf/floor-governance-cell.md"
+    ],
+    "rulesConsidered": [
+      "Main remains the only production authority.",
+      "No new authority layer.",
+      "FGC remains authorization authority.",
+      "AEF remains execution sequencing/recovery.",
+      "Repository CI must fail on real type errors rather than suppressing them."
+    ]
+  },
+  "changes": [
+    "Declared CLM_SHADOW as a valid DecisionBatchResult.adapterUsed value.",
+    "Added subtype-preserving overloads to CLMDecisionAdapter.invalidAnswer so NOUL/CHOICE/SCORE parsing returns the concrete answer type required by each parser.",
+    "No runtime authority, capability, lease, provider, floor topology, or FGC/AEF behavior was changed."
+  ],
+  "security": {
+    "required": true,
+    "notes": "Type-only boundary correction. No secrets, credentials, authority grants, tool permissions, or security policy changes."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "INHERITED — affected security scan on main was PASS",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    ".github/workflows/ci.yml",
+    "apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionContracts.ts"
+  ],
+  "verificationPlan": [
+    "Run strict TypeScript TypeCheck & Floor 01 Contract Tests on PR #49.",
+    "Run Team Change Gate for PR #49.",
+    "Confirm architecture-specific FGC/AEF validation remains unaffected.",
+    "Merge only if required gates are green."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionRationale": "The corrective patch is implemented and submitted, but final merge is gated on fresh CI evidence.",
+  "verificationResults": {
+    "previousMainTypeCheck": "FAIL — CLMDecisionAdapter.ts at main 43c0e0e, with CLM_SHADOW union and concrete-answer subtype errors.",
+    "previousMainWebRegression": "INFORMATIONAL FAILURE — 47/243 test files and 64/1193 tests failed; workflow is configured continue-on-error.",
+    "pr49TypeCheck": "PENDING",
+    "pr49TeamGate": "PENDING"
+  }
+}

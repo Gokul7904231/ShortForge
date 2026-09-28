@@ -159,7 +159,13 @@ export interface DecisionBatchResult {
   readonly evaluatedAt: string;
   readonly answers: readonly DecisionAnswer[];
   readonly answersById: Record<string, DecisionAnswer>;
-  readonly adapterUsed: "DETERMINISTIC" | "LLM" | "JEV_SHADOW" | "HEURISTIC_SHADOW" | "HYBRID";
+  readonly adapterUsed:
+    | "DETERMINISTIC"
+    | "LLM"
+    | "JEV_SHADOW"
+    | "HEURISTIC_SHADOW"
+    | "CLM_SHADOW"
+    | "HYBRID";
   readonly totalLatencyMs: number;
   readonly minConfidence: number;
   readonly shouldEscalate: boolean; // True if minConfidence < threshold (e.g. 0.70)
