@@ -1,0 +1,45 @@
+name: Agent Execution Fabric Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/agent/execution/**"
+      - "apps/web/factoryos/core/agent/AgentRuntime.ts"
+      - "apps/web/factoryos/core/agent/AgentRuntimeContracts.ts"
+      - "apps/web/factoryos/core/tools/**"
+      - "apps/web/factoryos/tests/agent-execution-fabric.test.ts"
+      - ".okf/decisions/agent-execution-fabric-20260928.md"
+      - ".okf/intelligence/agent-execution-fabric.md"
+  workflow_dispatch:
+
+jobs:
+  agent-execution-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Typecheck Agent Execution Fabric
+        working-directory: apps/web
+        run: |
+          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/contracts/PolicyContracts.ts             factoryos/core/tools/ToolContracts.ts             factoryos/core/tools/ToolRegistry.ts             factoryos/core/tools/ToolExecutor.ts             factoryos/core/agent/execution/AgentExecutionContracts.ts             factoryos/core/agent/execution/AgentExecutionStateStore.ts             factoryos/core/agent/execution/AgentExecutionRouter.ts             factoryos/core/agent/execution/ScopedToolExecutor.ts             factoryos/core/agent/execution/index.ts             factoryos/core/index.ts
+
+      - name: Run Agent Execution Fabric tests
+        working-directory: apps/web
+        run: >
+          npx vitest run
+          factoryos/tests/agent-execution-fabric.test.ts
+          factoryos/tests/modernization/architecture-modernization.test.ts
+          --config vitest.config.ts
