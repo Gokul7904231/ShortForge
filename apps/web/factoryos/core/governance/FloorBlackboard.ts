@@ -4,12 +4,20 @@ import type {
   BlackboardEntryKind,
   CounselPacket,
   GovernanceActor,
-} from "./FloorGovernanceContracts";\nimport type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
+} from "./FloorGovernanceContracts";
+import type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
 
 export class FloorBlackboard {
   private readonly entries: BlackboardEntry[] = [];
 
-  constructor(private readonly floorId: string) {}
+  constructor(
+    private readonly floorId: string,
+    private readonly journal?: FloorBlackboardJournal
+  ) {
+    if (journal) {
+      this.entries.push(...journal.load());
+    }
+  }
 
   append(
     kind: BlackboardEntryKind,
@@ -19,7 +27,7 @@ export class FloorBlackboard {
     evidenceRefs: readonly string[] = []
   ): BlackboardEntry {
     const entry: BlackboardEntry = {
-      entryId: `bb_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
+      entryId: "bb_" + randomUUID().replace(/-/g, "").slice(0, 12),
       floorId: this.floorId,
       kind,
       author,
@@ -29,6 +37,7 @@ export class FloorBlackboard {
       createdAt: new Date().toISOString(),
     };
     this.entries.push(entry);
+    this.journal?.append(entry);
     return structuredClone(entry);
   }
 
@@ -57,7 +66,9 @@ export class FloorBlackboard {
   }
 
   getByKind(kind: BlackboardEntryKind): BlackboardEntry[] {
-    return this.entries.filter((entry) => entry.kind === kind).map((entry) => structuredClone(entry));
+    return this.entries
+      .filter((entry) => entry.kind === kind)
+      .map((entry) => structuredClone(entry));
   }
 
   getVerifiedEvidence(): BlackboardEntry[] {
