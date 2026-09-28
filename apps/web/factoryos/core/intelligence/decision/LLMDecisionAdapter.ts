@@ -234,8 +234,6 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
             calibrationStatus: "UNCALIBRATED",
           confidenceSource: "MODEL",
           probabilitySemantics: "ABSOLUTE",
-            confidenceSource: "MODEL",
-            probabilitySemantics: "ABSOLUTE",
           },
         });
       } else if (q.type === "CHOICE") {
@@ -382,8 +380,6 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
           modelProbability: 0.0,
           epistemicConfidence: 0.0,
           calibrationStatus: "UNKNOWN",
-          confidenceSource: "NONE",
-          probabilitySemantics: "UNKNOWN",
           confidenceSource: "NONE",
           probabilitySemantics: "UNKNOWN",
           uncertaintyReason: reason,
