@@ -219,3 +219,15 @@ Current runtime/training identity:
 - F07: QA Gate & Social Compliance.
 
 Historical documents may contain earlier F04 voice-only terminology. Those records are audit history, not current production or Ascalon ontology authority.
+
+
+## 12. Floor Governance Cell
+
+| Entry Point | Purpose |
+|---|---|
+| [./floor-governance-cell.md](./floor-governance-cell.md) | Canonical bounded-autonomy architecture for a governed production floor: Guardian authority, Ascalon cognition, Council/Blackboard, BDA, execution, paired healing, fencing, and closure. |
+| [./floor-design-template.md](./floor-design-template.md) | Reusable five-question design gate for new or modified floors and their action contracts. |
+| [./decisions/floor-governance-cell-wave1-20260928.md](./decisions/floor-governance-cell-wave1-20260928.md) | Wave-1 decision record and implementation boundary. |
+| [./audits/floor-governance-cell-wave1-audit.md](./audits/floor-governance-cell-wave1-audit.md) | Documentation/code audit distinguishing implemented foundation from future integration. |
+
+FGC runtime foundation lives under `apps/web/factoryos/core/governance/`. The FGC does not replace the locked F00–F07 topology or F07 release gate.
