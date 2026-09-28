@@ -11,7 +11,7 @@ export interface FloorBlackboardJournal {
 function canonicalize(value: unknown): string {
   return JSON.stringify(value, (_key, item) =>
     typeof item === "bigint" ? item.toString() : item
-  );
+  ) ?? "null";
 }
 
 function entryHash(entry: BlackboardEntry, previousHash: string): string {
