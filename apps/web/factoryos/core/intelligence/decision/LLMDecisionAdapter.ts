@@ -79,7 +79,9 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
           adapterType: "LLM",
           implementationVersion: "2.0.0",
           isProductionAuthority: true,
-          isTrainingEligible: !hasInvalid,
+          isTrainingEligible: false,
+          authorityClass: "MODEL_ADVISORY",
+          probabilitySemantics: "ABSOLUTE",
         },
       };
     } catch (err: any) {
@@ -230,6 +232,10 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
             modelProbability: prob,
             epistemicConfidence: conf,
             calibrationStatus: "UNCALIBRATED",
+          confidenceSource: "MODEL",
+          probabilitySemantics: "ABSOLUTE",
+            confidenceSource: "MODEL",
+            probabilitySemantics: "ABSOLUTE",
           },
         });
       } else if (q.type === "CHOICE") {
@@ -376,6 +382,10 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
           modelProbability: 0.0,
           epistemicConfidence: 0.0,
           calibrationStatus: "UNKNOWN",
+          confidenceSource: "NONE",
+          probabilitySemantics: "UNKNOWN",
+          confidenceSource: "NONE",
+          probabilitySemantics: "UNKNOWN",
           uncertaintyReason: reason,
         },
       };
