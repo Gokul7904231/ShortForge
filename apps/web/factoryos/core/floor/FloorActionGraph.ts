@@ -38,14 +38,12 @@ export class FloorActionGraph {
     return Array.from(this.definitions.values()).map((definition) => structuredClone(definition));
   }
 
-  /**
-   * Returns actions that are structurally eligible from the current state.
-   * This is not authorization. It only filters the graph.
-   */
   candidates(context: FloorActionContext): FloorActionDefinition[] {
     return this.list().filter((definition) => {
       if (!definition.preconditions.states?.includes(context.state)) return false;
       if (!definition.actorRoles.includes(context.actorRole)) return false;
+      if (definition.capability && !context.capabilities.includes(definition.capability)) return false;
+
       return (
         this.hasCapabilities(definition.preconditions, context) &&
         this.hasTrustedEvidence(definition.preconditions, context) &&
@@ -88,6 +86,10 @@ export class FloorActionGraph {
 
     if (definition.preconditions.states && !definition.preconditions.states.includes(context.state)) {
       reasons.push("Action " + proposal.actionId + " is not valid from state " + context.state);
+    }
+
+    if (definition.capability && !context.capabilities.includes(definition.capability)) {
+      reasons.push("Missing capability: " + definition.capability);
     }
 
     if (!this.hasFlags(definition.preconditions, context)) {
