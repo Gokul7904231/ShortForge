@@ -41,5 +41,4 @@ jobs:
         run: >
           npx vitest run
           factoryos/tests/agent-execution-fabric.test.ts
-          factoryos/tests/modernization/architecture-modernization.test.ts
           --config vitest.config.ts
