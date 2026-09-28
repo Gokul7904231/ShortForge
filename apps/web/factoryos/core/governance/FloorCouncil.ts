@@ -252,6 +252,12 @@ export class FloorCouncil {
     });
 
     phaseTrace.push("SYNTHESIS");
+    checkpoint({
+      state: "SYNTHESIS",
+      phaseTrace: [...phaseTrace],
+      counselPackets: [instructor, advisor, auditor],
+      conflicts: [...conflicts],
+    });
 
     if (instructor.recommendation !== `SUPPORT:${input.proposal.actionName}`) {
       conflicts.push("INSTRUCTOR_REJECTED_PROPOSAL");
