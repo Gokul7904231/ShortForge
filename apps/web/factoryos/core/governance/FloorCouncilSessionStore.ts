@@ -12,7 +12,21 @@ export type FloorCouncilSessionState =
   | "CLOSED"
   | "ESCALATED";
 
+export interface FloorCouncilMemoryItem {
+  readonly id: string;
+  readonly title: string;
+  readonly content: string;
+  readonly provenance: string;
+  readonly qualityScore: number;
+}
+
 export interface FloorCouncilMemoryContext {
+  readonly snapshotId: string;
+  readonly generatedAt: string;
+  readonly items: readonly FloorCouncilMemoryItem[];
+}
+
+export interface FloorCouncilMemoryReference {
   readonly snapshotId: string;
   readonly generatedAt: string;
   readonly itemIds: readonly string[];
@@ -26,7 +40,7 @@ export interface FloorCouncilSessionRecord {
   readonly actionName: string;
   readonly proposalFingerprint: string;
   readonly contextFingerprint?: string;
-  readonly memoryContext?: FloorCouncilMemoryContext;
+  readonly memoryContext?: FloorCouncilMemoryReference;
   readonly state: FloorCouncilSessionState;
   readonly phaseTrace: readonly string[];
   readonly counselPackets: readonly CounselPacket[];
