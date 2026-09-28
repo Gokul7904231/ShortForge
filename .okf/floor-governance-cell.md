@@ -292,3 +292,13 @@ Cross-wave governance validation: `36394051496`, `36394051567`, `36394051595`, `
 See:
 - .okf/decisions/floor-governance-cell-final-wave-20260928.md
 - .okf/audits/floor-governance-cell-final-wave-audit.md
+
+## 25. Final integration closeout
+
+The FGC governance roadmap and Agent Execution Fabric are now consolidated in `main` through PR #47. The remaining long-running execution gap was closed with durable human approval and restart-safe WAITING state semantics.
+
+Main merge commit: `ac3352487cbfc50bc468b9d512fb0e79ac06244e`.
+
+The authority invariant remains unchanged: **Intelligence proposes. Authority authorizes. Runtime executes. Evidence proves.**
+
+See `.okf/audits/final-integration-closeout-20260928.md`.
