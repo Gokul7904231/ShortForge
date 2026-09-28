@@ -36,7 +36,7 @@ jobs:
       - name: Typecheck FGC governance sources
         working-directory: apps/web
         run: |
-          npx tsc --noEmit             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/governance/FloorGovernanceContracts.ts             factoryos/core/governance/FloorActionGraph.ts             factoryos/core/governance/DefaultFloorActionGraph.ts             factoryos/core/governance/FloorBlackboard.ts             factoryos/core/governance/AscalonGuardianAdapter.ts             factoryos/core/governance/BorderDefenseAgent.ts             factoryos/core/governance/JointHealingSession.ts             factoryos/core/governance/FloorActionGate.ts             factoryos/core/governance/ResolutionGate.ts             factoryos/core/governance/FloorGovernanceCell.ts
+          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/governance/FloorGovernanceContracts.ts             factoryos/core/governance/FloorActionGraph.ts             factoryos/core/governance/DefaultFloorActionGraph.ts             factoryos/core/governance/FloorBlackboard.ts             factoryos/core/governance/AscalonGuardianAdapter.ts             factoryos/core/governance/BorderDefenseAgent.ts             factoryos/core/governance/JointHealingSession.ts             factoryos/core/governance/FloorActionGate.ts             factoryos/core/governance/ResolutionGate.ts             factoryos/core/governance/FloorGovernanceCell.ts
 
       - name: Run FGC focused tests
         working-directory: apps/web
