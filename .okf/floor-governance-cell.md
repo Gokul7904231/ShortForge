@@ -109,14 +109,19 @@ A locked decision is a design commitment, not implementation proof.
 - ResolutionGate
 - negative tests
 
-### Target but not yet fully integrated
+### Implemented and validated
 
 - Guardian runtime orchestration
-- durable state
-- production BDA placement
+- durable floor Blackboard state
+- production Python BDA placement
+- ResolutionGate enforcement on direct legacy resolution
+- durable paired healer scheduling for high-risk/non-local incidents
+- resource-scoped mutation fencing
+- BDA reinspection + independent Auditor + Guardian closure chain
+
+### Target but not yet fully integrated
+
 - full Advisor subsystem
-- resolution gate enforcement across legacy callers
-- durable paired healer scheduling
 - signed policy and workload identity
 - provenance/OTel integrations
 - predictive/adversarial evaluation
@@ -182,4 +187,4 @@ Implemented: Guardian gate, journal persistence, Python bridge BDA, border event
 
 Still not claimed: live Ascalon model execution, complete BDA coverage across every internal floor transition, durable JointHealingSession persistence, graph-aware paired-healing scheduling, workload identity, signed policy bundles, or advanced adversarial evaluation.
 
-See `.okf/decisions/floor-governance-cell-wave2-20260928.md` and `.okf/audits/floor-governance-cell-wave2-audit.md`.
+See `.okf/decisions/floor-governance-cell-wave2-20260928.md` and `.okf/audits/floor-governance-cell-wave2-audit.md`.\n\n## 22. Wave 3 paired-healing integration\n\nWave 3 is now a validated production path for high-risk or non-local incidents:\n\n```text\nHEALING INCIDENT\n      |\n      v\npaired healer diagnosis (parallel, no mutation)\n      |\n      v\nresource/conflict grouping + fencing lease\n      |\n      v\nbounded mutation + compensation\n      |\n      v\nBDA reinspection\n      |\n      v\nIndependent Auditor\n      |\n      v\nFloor Guardian closure grant\n      |\n      v\nResolutionGate proof\n```\n\nThe existing low-risk healer path remains backward compatible. Restart recovery escalates in-flight physical healing instead of resuming stale mutation.\n\nValidated executable head: `1a53b3dacd3567c3b01b82aed867703c4303b437`. Dedicated Wave-3 run `36389319825`, combined Wave 2–3 run `36389319673`, and Team Change Gate `36389319689` passed.\n\nWave 3 does not claim live fine-tuned Ascalon inference, complete BDA coverage, workload identity, signed policy bundles, or predictive/adversarial prevention.\n\nSee `.okf/decisions/floor-governance-cell-wave3-20260928.md` and `.okf/audits/floor-governance-cell-wave3-audit.md`.
