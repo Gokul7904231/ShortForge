@@ -1,7 +1,7 @@
 # Floor Governance Cell Wave 4 — Cognitive Council Integration — 2026-09-28
 
 **Classification:** extends existing rule + new governed-deliberation capability
-**Status:** implementation in progress; runtime validation pending
+**Status:** Wave 4 validated on executable head `7473c5c12e93bc365a2b487f6e5244a84358bc9c`.
 
 ## Decision
 
