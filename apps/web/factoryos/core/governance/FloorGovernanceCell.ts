@@ -14,6 +14,7 @@ import type { GuardianDecision } from "../guardian/GuardianContracts";
 import type { AscalonGuardianAdapter } from "./AscalonGuardianAdapter";
 import { FloorCouncil } from "./FloorCouncil";
 import type { DurableEventBus } from "../events/DurableEventBus";
+import { AscalonInferenceAdmissionGate } from "./AscalonInferenceAdmission";
 
 export interface GovernanceExecutionResult {
   readonly success: boolean;
@@ -32,6 +33,7 @@ export interface FloorGovernanceCellConfig {
   readonly blackboardJournal?: FloorBlackboardJournal;
   readonly council?: FloorCouncil;
   readonly eventBus?: DurableEventBus;
+  readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
 }
 
 export class FloorGovernanceCell {
@@ -48,6 +50,7 @@ export class FloorGovernanceCell {
   private readonly capabilities: ReadonlySet<string>;
   private council?: FloorCouncil;
   private readonly eventBus?: DurableEventBus;
+  private readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
   private grants: AuthorizationGrant[] = [];
 
   constructor(config: FloorGovernanceCellConfig) {
@@ -60,6 +63,7 @@ export class FloorGovernanceCell {
     this.ascalon = config.ascalon;
     this.council = config.council;
     this.eventBus = config.eventBus;
+    this.ascalonAdmission = config.ascalonAdmission;
   }
 
   private readonly ascalon: AscalonGuardianAdapter;
@@ -143,7 +147,52 @@ export class FloorGovernanceCell {
       evidenceRefs: verifiedEvidenceRefs,
     });
 
-    if (!proposal || !this.council) return proposal;
+    if (!proposal) return null;
+
+    if (proposal.ascalonInference && this.ascalonAdmission) {
+      const admission = this.ascalonAdmission.evaluate({
+        snapshot,
+        availableActions,
+        verifiedEvidenceRefs,
+        envelope: {
+          metadata: proposal.ascalonInference,
+          proposal,
+        },
+      });
+
+      if (this.eventBus) {
+        await this.eventBus.publish("ASCALON_INFERENCE_ADMISSION_EVALUATED", {
+          floorId: snapshot.floorId,
+          proposalId: proposal.proposalId,
+          inferenceId: proposal.ascalonInference.inferenceId,
+          modelRef: proposal.ascalonInference.modelRef,
+          mode: proposal.ascalonInference.mode,
+          admitted: admission.admitted,
+          shadowOnly: admission.shadowOnly,
+          reason: admission.reason,
+          contextFingerprint: admission.contextFingerprint,
+        });
+      }
+
+      if (!admission.admitted) {
+        this.blackboard.append(
+          "CONFLICT",
+          "SYSTEM",
+          "VERIFIED",
+          {
+            event: "ASCALON_INFERENCE_NOT_ADMITTED",
+            proposalId: proposal.proposalId,
+            mode: proposal.ascalonInference.mode,
+            reason: admission.reason,
+            shadowOnly: admission.shadowOnly,
+          },
+          proposal.evidenceRefs
+        );
+        return null;
+      }
+    }
+
+    if (!this.council) return proposal;
 
     const action = this.actionGraph.getAction(proposal.actionName);
     if (!action) {
@@ -243,6 +292,15 @@ export class FloorGovernanceCell {
       conflicts: review.conflicts,
       phaseTrace: review.phaseTrace,
       counselIds: review.counselPackets.map((packet) => packet.counselId),
+      sessionId: review.sessionId,
+      proposalFingerprint: review.proposalFingerprint,
+      memoryContext: review.memoryContext
+        ? {
+            snapshotId: review.memoryContext.snapshotId,
+            generatedAt: review.memoryContext.generatedAt,
+            itemIds: review.memoryContext.itemIds,
+          }
+        : undefined,
     });
   }
 
