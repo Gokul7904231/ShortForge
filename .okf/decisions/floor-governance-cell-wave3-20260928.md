@@ -1,7 +1,7 @@
 # Floor Governance Cell Wave 3 — Paired Healing Integration — 2026-09-28
 
 **Classification:** healing-runtime integration
-**Status:** implemented; validation pending on corrected PR head
+**Status:** Wave 3 validated. Executable head `1a53b3dacd3567c3b01b82aed867703c4303b437` passed dedicated Wave-3 validation run `36389319825` and combined Wave 2–3 validation run `36389319673`.
 
 ## Objective
 
@@ -45,12 +45,12 @@ Wave 3 does not claim:
 - workload identity or signed policy bundles;
 - predictive prevention or full adversarial evaluation.
 
-## Validation gate
+## Validation evidence
 
-Required before Wave 3 is considered closed:
+- Dedicated Wave-3 validation `36389319825`: PASS — typecheck + paired-healing tests + Phase-6 healer concurrency + healer-swarm compatibility suites.
+- Combined Wave 2–3 validation `36389319673`: PASS — Wave-2 typecheck/tests and Wave-3 typecheck/tests.
+- Team Change Gate `36389319689`: PASS.
+- Obsidian Memory Validation `36389319619`: PASS.
+- Validated executable head: `1a53b3dacd3567c3b01b82aed867703c4303b437`.
 
-1. Wave-3 typecheck passes.
-2. Wave-3 focused paired-healing tests pass.
-3. Existing Phase-6 healer concurrency and healer-swarm suites remain green.
-4. Team Change Gate is green on the corrected head.
-5. .okf and Team truth records match the verified executable SHA.
+Wave 3 is closed as an implementation wave. The PR remains draft and unmerged.
