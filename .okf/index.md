@@ -231,6 +231,7 @@ Historical documents may contain earlier F04 voice-only terminology. Those recor
 | [./audits/floor-governance-cell-final-wave-audit.md](./audits/floor-governance-cell-final-wave-audit.md) | Final-wave implementation audit and authority-boundary checks. |
 | [./decisions/agent-execution-fabric-20260928.md](./decisions/agent-execution-fabric-20260928.md) | Agent Execution Fabric decision: deterministic router, structured state, scoped tools, retry/idempotency recovery. |
 | [./intelligence/agent-execution-fabric.md](./intelligence/agent-execution-fabric.md) | Canonical execution-plane mapping for cognition, governance, routing, tools, MCP, A2A and verification. |
+| [./intelligence/a2a-boundary.md](./intelligence/a2a-boundary.md) | A2A boundary: remote-agent interoperability without importing external authority, memory or worker capabilities. |
 | [./decisions/floor-governance-cell-wave1-20260928.md](./decisions/floor-governance-cell-wave1-20260928.md) | Wave-1 decision record and implementation boundary. |
 | [./audits/floor-governance-cell-wave1-audit.md](./audits/floor-governance-cell-wave1-audit.md) | Documentation/code audit distinguishing implemented foundation from future integration. |
 | [./decisions/floor-governance-cell-wave2-20260928.md](./decisions/floor-governance-cell-wave2-20260928.md) | Wave-2 production integration decision: Guardian gate, persistent Blackboard, live Python BDA boundary, and ResolutionGate tightening. |
