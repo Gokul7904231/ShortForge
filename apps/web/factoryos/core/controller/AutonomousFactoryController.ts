@@ -269,22 +269,11 @@ export class AutonomousFactoryController {
   private async recoverStateOnBoot(): Promise<void> {
     // 1. Recover active cases
     const activeCases = await this.caseManager.getActiveCases();
-    const currentWorld = this.worldState.getState();
     for (const c of activeCases) {
       // Boot recovery may reconstruct an active incident, but it may not
       // silently resolve it. Resolution remains behind Validator/F07 evidence
       // and the explicit ResolutionGate.
-      if (!currentWorld.workers[c.targetWorker || ""]?.status || currentWorld.workers[c.targetWorker || ""]?.status !== "HEALTHY") {
-        this.worldState.addActiveCase(c.caseId);
-      } else {
-        this.worldState.addActiveCase(c.caseId);
-        await this.eventBus.publish("CASE_UPDATED", {
-          caseId: c.caseId,
-          status: c.status,
-          actor: "kernel_boot_recovery",
-          notes: "Case restored active; automatic boot resolution is prohibited by ResolutionGate.",
-        });
-      }
+      this.worldState.addActiveCase(c.caseId);
     }
 
     // 2. Reclaim expired task leases
