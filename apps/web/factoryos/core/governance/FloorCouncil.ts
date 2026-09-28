@@ -16,11 +16,19 @@ export type FloorCouncilAdvisor = (
   context: FloorCouncilAdvisorContext
 ) => Promise<CounselPacket>;
 
+export type FloorCouncilPhase =
+  | "INSTRUCTOR_REVIEW"
+  | "ADVISOR_REVIEW"
+  | "AUDITOR_REVIEW"
+  | "SYNTHESIS"
+  | "CLOSED";
+
 export interface FloorCouncilReview {
   readonly decision: "APPROVE" | "REJECT" | "ESCALATE";
   readonly reason: string;
   readonly counselPackets: readonly CounselPacket[];
   readonly conflicts: readonly string[];
+  readonly phaseTrace: readonly FloorCouncilPhase[];
   readonly reviewedAt: string;
 }
 
@@ -51,10 +59,12 @@ export class FloorCouncil {
     verifiedEvidenceRefs: readonly string[];
   }): Promise<FloorCouncilReview> {
     const reviewedAt = new Date().toISOString();
+    const phaseTrace: FloorCouncilPhase[] = ["INSTRUCTOR_REVIEW"];
     const conflicts: string[] = [];
 
     const instructor = this.buildInstructorPacket(input, reviewedAt);
     const auditor = this.buildAuditorPacket(input, instructor, reviewedAt);
+    phaseTrace.push("ADVISOR_REVIEW", "AUDITOR_REVIEW", "SYNTHESIS");
 
     let advisor: CounselPacket;
     if (!this.advisor) {
@@ -108,6 +118,7 @@ export class FloorCouncil {
         reason: "Instructor, Advisor and Auditor counsel are mutually consistent and evidence-bounded.",
         counselPackets: [instructor, advisor, auditor],
         conflicts: [],
+        phaseTrace: [...phaseTrace, "CLOSED"],
         reviewedAt,
       };
     }
@@ -123,6 +134,7 @@ export class FloorCouncil {
         : "Council members disagree or Advisor confidence is insufficient; authority must not be inferred from consensus.",
       counselPackets: [instructor, advisor, auditor],
       conflicts: Array.from(new Set(conflicts)),
+      phaseTrace: [...phaseTrace, "CLOSED"],
       reviewedAt,
     };
   }
