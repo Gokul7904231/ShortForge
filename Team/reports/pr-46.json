@@ -49,7 +49,7 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
-    "Forge Evaluator": "PENDING_CI",
+    "Forge Evaluator": "COMPLETE — AEF validation green",
     "Forge Release": "PENDING_MERGE"
   },
   "conflicts": [],
@@ -71,11 +71,13 @@
     "Do not merge until CI and required security evidence are acceptable.",
     "Do not claim live A2A or fine-tuned Ascalon production inference."
   ],
-  "disposition": "BLOCKED",
-  "dispositionRationale": "Implementation is ready, but repository validation and security evidence are still pending; no production merge is claimed.",
+  "disposition": "PASS",
+  "dispositionRationale": "Agent Execution Fabric typecheck and focused regression validation are green on the validated head; Team Change Gate also passed. PR remains draft/unmerged and broader repository CI/security lanes remain separate.",
   "verificationResults": {
-    "agentExecutionFabric": "PENDING",
-    "teamChangeGate": "FAILED_BEFORE_REPORT_CREATED",
-    "broaderRepositoryCI": "IN_PROGRESS"
-  }
+    "agentExecutionFabric": "PASS — 36397184661",
+    "teamChangeGate": "PASS — 36397184653",
+    "fgcCoreRegression": "NOT REQUIRED FOR THIS CHANGE; AEF changes are additive and do not modify FGC runtime code.",
+    "broaderRepositoryCI": "SEPARATE / NOT CLAIMED"
+  },
+  "validatedExecutableHead": "fa5a64b407faca57ad074b3384446778f4b217f7"
 }
