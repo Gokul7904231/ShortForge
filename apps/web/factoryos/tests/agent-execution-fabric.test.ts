@@ -312,11 +312,11 @@ describe("Agent Execution Fabric", () => {
     );
 
     const result = await scoped.execute(
-      {
+      router.start({
         ...baseState("refund"),
         phase: "MUTATION",
         facts: { "policy.approved": true },
-      },
+      }),
       "refund.issue",
       {},
       {
