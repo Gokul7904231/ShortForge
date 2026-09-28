@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import { AgentExecutionRouter } from "../core/agent/execution/AgentExecutionRouter";
 import {
@@ -340,9 +343,7 @@ describe("Agent Execution Fabric", () => {
 
 describe("Agent Execution Fabric — Human Approval / Durable Wait", () => {
   it("persists a human approval request, survives restart, and resumes only after explicit approval", () => {
-    const executionRoot = require("node:fs").mkdtempSync(
-      require("node:path").join(require("node:os").tmpdir(), "shortforge-hitl-"),
-    );
+    const executionRoot = fs.mkdtempSync(path.join(os.tmpdir(), "shortforge-hitl-"));
 
     try {
       const stateStore = new DiskAgentExecutionStateStore(executionRoot);
@@ -406,7 +407,7 @@ describe("Agent Execution Fabric — Human Approval / Durable Wait", () => {
       const running = restartedRouter.start(resumed.state);
       expect(running.status).toBe("RUNNING");
     } finally {
-      require("node:fs").rmSync(executionRoot, { recursive: true, force: true });
+      fs.rmSync(executionRoot, { recursive: true, force: true });
     }
   });
 
