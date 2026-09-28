@@ -1,7 +1,7 @@
 # Floor Governance Cell — Canonical Architecture
 
 **Classification:** new capability  
-**Status:** Wave 1 implemented on `feat/floor-governance-cell-wave1-20260928`  
+**Status:** Final governance wave implemented on `feat/floor-governance-cell-wave1-20260928`; validation pending  
 **Scope:** one governed ShortForge production floor.
 
 ## Decision
@@ -119,12 +119,13 @@ A locked decision is a design commitment, not implementation proof.
 - resource-scoped mutation fencing
 - BDA reinspection + independent Auditor + Guardian closure chain
 
-### Target but not yet fully integrated
+### Remaining program boundaries outside the final FGC wave
 
-- full Advisor subsystem
+- heterogeneous multi-model Advisor diversity
 - signed policy and workload identity
-- provenance/OTel integrations
-- predictive/adversarial evaluation
+- complete provenance/OTel integrations
+- comprehensive predictive/adversarial evaluation
+- deployment of the actual fine-tuned Ascalon model
 
 ## Required documentation discipline
 
@@ -223,3 +224,67 @@ Dedicated Wave 4 validation `36392648796` passed. Combined Wave 2–3 validation
 During Wave 4, an existing contradiction-resolution regression was hardened: objective GPU/VRAM and disk telemetry now drive contradiction probes, probe confidence is preserved, and verified contradiction confidence propagates into CognitiveRuntime decision confidence.
 
 See `.okf/decisions/floor-governance-cell-wave4-20260928.md` and `.okf/audits/floor-governance-cell-wave4-audit.md`.
+
+## 24. Final governance wave — durable Council and Ascalon admission
+
+The final FGC wave closes the governance implementation roadmap by making Council deliberation durable, feeding bounded verified memory into the Advisor, and defining a typed admission seam for future fine-tuned Ascalon inference.
+
+### Durable Council
+
+```text
+Ascalon proposal
+      |
+      v
+proposal fingerprint
+      |
+      v
+durable Council session
+      |
+      +--> Instructor checkpoint
+      |
+      +--> Advisor checkpoint + bounded derived memory
+      |
+      +--> Auditor checkpoint
+      |
+      +--> Synthesis checkpoint
+      |
+      v
+ CLOSED / ESCALATED
+```
+
+Council sessions are persisted per floor through an append-only hash-chained journal. An in-flight session found during restart is escalated rather than resumed.
+
+### Memory boundary
+
+The existing MemoryFabric is reused as derived context. The Council stores memory references, not authority-bearing memory state. Memory availability does not grant permission to execute an action.
+
+### Ascalon admission
+
+```text
+Future fine-tuned Ascalon
+          |
+          v
+AscalonInferenceAdmissionGate
+   |                    |
+ SHADOW              ADMITTED
+   |                    |
+record only             v
+never execute        Floor Council
+                         |
+                         v
+                 existing ActionGate
+```
+
+An admitted model proposal is still only a proposal. The gate verifies identity, floor/state version, action availability, input trust, confidence, model metadata and context fingerprint.
+
+The wave does not claim a deployed fine-tuned Ascalon model. The proposal-only adapter remains the production runtime seam until a separately validated inference gateway is connected.
+
+### Final authority invariant
+
+> Intelligence may propose. Authority may authorize. Runtime may execute. Evidence must prove.
+
+The final governance wave does not alter Overseer, Floor Guardian, BDA, ResolutionGate, worker capabilities, or F07 authority boundaries.
+
+See:
+- .okf/decisions/floor-governance-cell-final-wave-20260928.md
+- .okf/audits/floor-governance-cell-final-wave-audit.md
