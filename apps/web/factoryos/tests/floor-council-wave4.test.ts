@@ -89,6 +89,13 @@ describe("Floor Governance Cell — Wave 4 Council", () => {
       "ADVISOR",
       "AUDITOR",
     ]);
+    expect(review.phaseTrace).toEqual([
+      "INSTRUCTOR_REVIEW",
+      "ADVISOR_REVIEW",
+      "AUDITOR_REVIEW",
+      "SYNTHESIS",
+      "CLOSED",
+    ]);
   });
 
   it("escalates rather than self-authorizing when Advisor disagrees", async () => {
