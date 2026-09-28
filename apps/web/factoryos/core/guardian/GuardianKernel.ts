@@ -23,6 +23,7 @@ import { GuardianLocalWorldModel } from "./GuardianLocalWorldModel";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { CaseManager } from "../cases/CaseManager";
+import type { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
 
 export class GuardianKernel {
   readonly floorId: string;
@@ -47,6 +48,7 @@ export class GuardianKernel {
   private worldState: WorldStateEngine;
   private eventBus: DurableEventBus;
   private caseManager?: CaseManager;
+  private governanceCell?: FloorGovernanceCell;
 
   private auditIntervalMs: number;
   private heartbeatIntervalMs: number;
@@ -86,6 +88,17 @@ export class GuardianKernel {
     this.localWorldModel = new GuardianLocalWorldModel(this.floorId);
 
     this.subscribeToEvents();
+  }
+
+  attachGovernanceCell(cell: FloorGovernanceCell): void {
+    if (cell.floorId !== this.floorId) {
+      throw new Error(`Governance cell floor mismatch: ${cell.floorId} != ${this.floorId}`);
+    }
+    this.governanceCell = cell;
+  }
+
+  getGovernanceCell(): FloorGovernanceCell | undefined {
+    return this.governanceCell;
   }
 
   getState(): GuardianState {
@@ -260,7 +273,46 @@ export class GuardianKernel {
   /**
    * Executes an autonomous decision locally or escalates to Overseer.
    */
+  /** 
+   * Every legacy Guardian mutation now crosses the Floor Governance Cell.
+   * Guardian remains the authority; the governance cell supplies the typed
+   * action contract, capability/scope checks and immutable decision evidence.
+   */
   private async executeDecision(decision: GuardianDecision, audit: GuardianAuditReport): Promise<void> {
+    if (!this.governanceCell) {
+      await this.executeDecisionLegacy(decision, audit);
+      return;
+    }
+
+    const world = this.worldState.getState();
+    const activeCases = this.caseManager ? await this.caseManager.getActiveCases() : [];
+    const snapshot = this.governanceCell.createSnapshot({
+      jobs: Object.values((world as any).jobs || {}),
+      workers: Object.values(world.workers || {}),
+      resources: [world.resources],
+      activeIncidents: activeCases.map((item) => item.caseId),
+      constraints: [
+        ...(audit.health === "CRITICAL" ? ["critical_floor_state"] : []),
+        ...(decision.requiresOverseerApproval ? ["overseer_approval_required"] : []),
+      ],
+    });
+
+    const result = await this.governanceCell.executeGuardianDecision(
+      decision,
+      snapshot,
+      () => this.executeDecisionLegacy(decision, audit)
+    );
+
+    if (!result.success) {
+      await this.escalateToOverseer(
+        "HIGH",
+        `Floor governance denied Guardian action ${decision.action}: ${result.reason}`,
+        [decision, result]
+      );
+    }
+  }
+
+  private async executeDecisionLegacy(decision: GuardianDecision, audit: GuardianAuditReport): Promise<void> {
     this.stateMachine.transition("EXECUTE", `Executing ${decision.action} on ${decision.targetId}`);
     this.memory.recordDecision(decision);
 
