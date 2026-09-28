@@ -166,6 +166,8 @@ export class FloorGovernanceCell {
       verifiedEvidenceRefs,
     });
 
+    await this.publishCouncilReview(snapshot, proposal, review);
+
     for (const packet of review.counselPackets) {
       this.blackboard.append(
         review.decision === "APPROVE" ? "RECOMMENDATION" : "CONFLICT",
@@ -222,6 +224,23 @@ export class FloorGovernanceCell {
    * this method binds that decision to an explicit typed action, capability, grant
    * and execution record without making Ascalon authoritative.
    */
+  private async publishCouncilReview(
+    snapshot: FloorSnapshot,
+    proposal: ActionProposal,
+    review: import("./FloorCouncil").FloorCouncilReview
+  ): Promise<void> {
+    await this.eventBus?.publish?.("FLOOR_COUNCIL_REVIEW_COMPLETED", {
+      floorId: snapshot.floorId,
+      proposalId: proposal.proposalId,
+      actionName: proposal.actionName,
+      decision: review.decision,
+      reason: review.reason,
+      conflicts: review.conflicts,
+      phaseTrace: review.phaseTrace,
+      counselIds: review.counselPackets.map((packet) => packet.counselId),
+    });
+  }
+
   async executeGuardianDecision(
     decision: GuardianDecision,
     snapshot: FloorSnapshot,
