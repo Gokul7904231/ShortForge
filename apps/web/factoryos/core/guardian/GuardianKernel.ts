@@ -291,8 +291,8 @@ export class GuardianKernel {
     const activeCases = this.caseManager ? await this.caseManager.getActiveCases() : [];
     const snapshot = this.governanceCell.createSnapshot({
       jobs: Object.values((world as any).jobs || {}),
-      workers: Object.values(world.workers || {}),
-      resources: [world.resources],
+      workers: Object.values(world.workers || {}).map((worker) => ({ ...worker })),
+      resources: [{ ...(world.resources || {}) }],
       activeIncidents: activeCases.map((item) => item.caseId),
       constraints: [
         ...(audit.health === "CRITICAL" ? ["critical_floor_state"] : []),
