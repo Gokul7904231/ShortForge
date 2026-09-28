@@ -238,9 +238,8 @@ describe("Agent Execution Fabric", () => {
     });
 
     const executor = new ToolExecutor(registry);
-    const router = new AgentExecutionRouter(
-      new InMemoryAgentExecutionStateStore()
-    );
+    const store = new InMemoryAgentExecutionStateStore();
+    const router = new AgentExecutionRouter(store);
 
     router.registerStep(refundStep);
 
@@ -251,11 +250,11 @@ describe("Agent Execution Fabric", () => {
       new Set(["CAP_REFUND"])
     );
 
-    const state: ExecutionState = {
+    const state: ExecutionState = router.start({
       ...baseState("refund"),
       phase: "MUTATION",
       facts: { "policy.approved": true },
-    };
+    });
 
     const deniedTool = await scoped.execute(
       state,
