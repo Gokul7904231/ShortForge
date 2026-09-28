@@ -116,6 +116,7 @@ export interface ConflictRecord {
   resolutionRationale?: string;
   selectedClaim?: "A" | "B" | "SYNTHESIS";
   resolvedAt?: string;
+  resolutionConfidence?: number;
 }
 
 export interface MetaThinkingEvaluation {
