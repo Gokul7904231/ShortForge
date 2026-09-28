@@ -35,10 +35,22 @@ export class FloorActionGate {
       return { allowed: false, reason: "proposer_not_allowed_for_action" };
     }
 
-    if (
-      !context.capabilities.has(action.requiredCapability)
-    ) {
+    if (!context.capabilities.has(action.requiredCapability)) {
       return { allowed: false, reason: "required_capability_missing" };
+    }
+
+    if (
+      action.preconditions.some(
+        (precondition) => !context.satisfiedPreconditions.has(precondition)
+      )
+    ) {
+      const missing = action.preconditions.filter(
+        (precondition) => !context.satisfiedPreconditions.has(precondition)
+      );
+      return {
+        allowed: false,
+        reason: `preconditions_missing:${missing.join(",")}`,
+      };
     }
 
     for (const evidenceRef of action.requiredEvidence) {
@@ -51,12 +63,27 @@ export class FloorActionGate {
       return { allowed: false, reason: "invalid_action_graph_transition" };
     }
 
+    if (
+      proposal.inputTrust === "UNTRUSTED_EVIDENCE" &&
+      action.mutationScope.length > 0
+    ) {
+      return {
+        allowed: false,
+        reason: "untrusted_evidence_cannot_authorize_mutation",
+      };
+    }
+
     const grant = this.findGrant(proposal, context);
     if (!grant) {
       return { allowed: false, reason: "missing_authorization_grant" };
     }
 
-    if (action.humanApproval === "ALWAYS") {
+    const needsHumanApproval =
+      action.humanApproval === "ALWAYS" ||
+      (action.humanApproval === "WHEN_REQUIRED" &&
+        (action.reversibility === "IRREVERSIBLE" || action.risk === "CRITICAL"));
+
+    if (needsHumanApproval) {
       const approvalId = grant.grantId;
       if (!context.humanApprovalIds?.has(approvalId)) {
         return { allowed: false, reason: "human_approval_required" };
