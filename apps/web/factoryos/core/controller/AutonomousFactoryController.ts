@@ -185,7 +185,12 @@ export class AutonomousFactoryController {
     this.cognitivePlane = new CognitivePlaneEngine(repos.memories);
 
     // 7. Swarms, Guardians & Overseer
-    this.guardianManager = new GuardianManager(\n      this.eventBus,\n      this.worldState,\n      this.caseManager,\n      this.config.storagePath\n    );
+    this.guardianManager = new GuardianManager(
+      this.eventBus,
+      this.worldState,
+      this.caseManager,
+      this.config.storagePath
+    );
 
     this.slayerEngine = new SlayerEngine(
       this.caseManager,
