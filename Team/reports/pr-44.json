@@ -1,11 +1,11 @@
 {
   "schemaVersion": "1.0",
-  "changeId": "ShortForge-PR44-Floor-Governance-Cell-Wave1",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-FinalWave",
   "repository": "Gokul7904231/ShortForge",
   "baseRef": "main",
   "headRef": "feat/floor-governance-cell-wave1-20260928",
-  "objective": "Establish a bounded-autonomy one-floor governance cell with explicit action contracts, proposal-only Ascalon cognition, trust-separated boundary inspection, paired healing leases and fencing, and proof-based closure without changing the F00-F07 topology.",
-  "classification": "new capability",
+  "objective": "Close the bounded-autonomy Floor Governance Cell roadmap with durable Council sessions, verified derived-memory context, and a fail-closed typed admission seam for future fine-tuned Ascalon inference without changing authority ownership.",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "sourceRefs": [
@@ -17,7 +17,10 @@
       ".okf/security/worker-permissions.md",
       ".okf/decisions.md",
       ".okf/research/repo-mappings/",
-      ".okf/production-helper.md"
+      ".okf/production-helper.md",
+      ".okf/decisions/floor-governance-cell-final-wave-20260928.md",
+      ".okf/audits/floor-governance-cell-final-wave-audit.md",
+      ".okf/floor-governance-cell.md"
     ],
     "rulesConsidered": [
       "Overseer remains global authority.",
@@ -39,30 +42,28 @@
     "No complete production BDA boundary is wired into every live floor handoff; this wave provides the boundary subsystem foundation."
   ],
   "changes": [
-    "Added typed FloorGovernanceContracts.",
-    "Added FloorActionGraph and DefaultFloorActionGraph.",
-    "Added FloorActionGate with capability, precondition, state-version, trust and authorization checks.",
-    "Added FloorGovernanceCell state machine and Ascalon proposal-only adapter.",
-    "Added FloorBlackboard and typed CounselPacket projection.",
-    "Added BorderDefenseAgent admission/inspection/quarantine/egress foundation.",
-    "Added JointHealingSession manager with per-resource mutation leases and fencing epochs.",
-    "Extended RepairLockManager with fencing-aware mutation leases while preserving legacy lock callers.",
-    "Added ResolutionGate requiring BDA proof + Auditor proof + Guardian closure grant.",
-    "Added focused negative tests and reusable floor design documentation.",
-    "Added .okf decision, architecture, audit and index entries."
+    "Added durable FloorCouncilSessionStore with per-floor hash-chained persistence and restart escalation.",
+    "Added proposal fingerprinting and explicit Council phase checkpoints.",
+    "Reused existing MemoryFabric as bounded derived Advisor context; Council persists only memory references.",
+    "Added AscalonInferenceAdmissionGate with SHADOW and ADMITTED modes, context binding, confidence checks and explicit model allowlisting.",
+    "Wired admitted Ascalon proposals into the existing Council rather than directly into execution.",
+    "Added governance/admission telemetry to the MemoryFabric high-signal event set.",
+    "Added final-wave regression tests for restart recovery, memory provenance, shadow/admitted inference, direct-execution denial and allowlist fail-closed behavior.",
+    "Added final-wave CI validation workflow.",
+    "Updated .okf final-wave decision, audit and canonical architecture records."
   ],
   "security": {
     "required": true,
     "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
     "strix": "UNAVAILABLE",
     "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY-BOUNDARY_WAVE",
-    "notes": "The runtime changes are primarily typed control-plane/library contracts. Repository CI and configured security lanes remain authoritative. No external credentials or secrets were added."
+    "notes": "Final-wave runtime remains typed control-plane code. Ascalon ADMITTED mode fails closed when ASCALON_ALLOWED_MODEL_REFS is absent or the model is not allowlisted. No secrets or credentials were added."
   },
   "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
-    "Forge Evaluator": "PENDING_REPOSITORY_CI",
+    "Forge Evaluator": "PENDING_FINAL_WAVE_CI",
     "Forge Release": "PENDING_MERGE"
   },
   "conflicts": [],
@@ -84,15 +85,14 @@
     ".okf/index.md"
   ],
   "verificationPlan": [
-    "Run Team Change Gate.",
-    "Run repository CI and FactoryOS typecheck/tests.",
-    "Run affected floor validation workflows.",
-    "Review negative FGC tests, especially trust-boundary, stale-fencing and proof-based resolution cases.",
-    "Do not promote this wave to production authority until CI evidence is green and the target-vs-current gaps remain accurately documented.",
-    "Track baseline CLM/LLM typecheck debt separately; do not silently attribute it to the FGC wave."
+    "Run the dedicated Floor Governance Cell Final Wave workflow.",
+    "Run Team Change Gate plus the repository CI and affected governance/cognitive regression workflows.",
+    "Review final-wave negative tests and runtime boundary evidence.",
+    "Update this report to PASS only after the final executable head is green.",
+    "Keep fine-tuned Ascalon deployment outside the claim until a separately validated inference gateway is connected."
   ],
   "disposition": "BLOCKED",
-  "dispositionRationale": "Wave-1 code and documentation are implemented on the PR branch, but repository CI/security evidence is still pending; no production merge is claimed.",
+  "dispositionRationale": "Final-wave implementation is on the PR branch, but dedicated final-wave CI and required repository/security evidence are not yet green; no merge or production promotion is claimed.",
   "verificationResults": {
     "fgcValidation": {
       "runId": 36383242667,
@@ -115,5 +115,11 @@
       "evidenceMainRunId": 36375879960,
       "scope": "UNRELATED_BASELINE"
     }
+  },
+  "status": "FINAL_WAVE_VALIDATION_PENDING",
+  "forensics": {
+    "validatedPriorWaveHead": "7473c5c12e93bc365a2b487f6e5244a84358bc9c",
+    "finalWaveRuntimeCandidateHead": "4d6d34632694a41d0ed10210a247d91e145bb9d4",
+    "currentHead": "4d6d34632694a41d0ed10210a247d91e145bb9d4"
   }
 }
