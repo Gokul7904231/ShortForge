@@ -38,6 +38,7 @@ export interface ExecutionState {
   readonly stepAttempt: number;
   readonly stateVersion: number;
   readonly status: ExecutionStepStatus;
+  readonly facts: Readonly<Record<string, boolean | string | number>>;
   readonly sideEffectStatus:
     | "NOT_STARTED"
     | "IN_FLIGHT"
