@@ -1,6 +1,6 @@
 # Floor Governance Cell Wave 4 — Audit — 2026-09-28
 
-**Status:** implementation audit complete; runtime validation pending
+**Status:** implementation audit complete; runtime validation PASS on executable head `7473c5c12e93bc365a2b487f6e5244a84358bc9c`.
 
 ## PASS by design/code inspection
 
@@ -33,6 +33,13 @@ Council review evidence is persisted through the floor Blackboard and telemetry 
 ### Ascalon runtime
 The Ascalon adapter remains proposal-only. The current Advisor is backed by the existing CognitiveRuntime, not the future fine-tuned Ascalon inference gateway.
 
-## Release condition
+## Release conclusion
 
-Wave 4 is considered validated only when dedicated Wave-4 tests/typecheck, combined governance tests, and Team Change Gate are green on the same executable head.
+Wave 4 validation is green on executable head `7473c5c12e93bc365a2b487f6e5244a84358bc9c`.
+
+- Dedicated Wave 4 validation: PASS.
+- Combined Wave 2–3 validation: PASS.
+- Team Change Gate: PASS.
+- Existing governance/cognitive regression suites used by the new boundary: PASS.
+
+The PR remains draft and unmerged.
