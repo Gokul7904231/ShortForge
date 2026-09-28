@@ -1,7 +1,7 @@
 # Floor Governance Cell — Canonical Architecture
 
 **Classification:** new capability  
-**Status:** Final governance wave implemented on `feat/floor-governance-cell-wave1-20260928`; validation pending  
+**Status:** Final governance wave implemented and validated on `feat/floor-governance-cell-wave1-20260928`  
 **Scope:** one governed ShortForge production floor.
 
 ## Decision
@@ -284,6 +284,10 @@ The wave does not claim a deployed fine-tuned Ascalon model. The proposal-only a
 > Intelligence may propose. Authority may authorize. Runtime may execute. Evidence must prove.
 
 The final governance wave does not alter Overseer, Floor Guardian, BDA, ResolutionGate, worker capabilities, or F07 authority boundaries.
+
+Validated executable head: `eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49`.
+Final-wave validation: `36394051521` PASS.
+Cross-wave governance validation: `36394051496`, `36394051567`, `36394051595`, `36394051504`, `36394051501`, `36394051500` all PASS.
 
 See:
 - .okf/decisions/floor-governance-cell-final-wave-20260928.md
