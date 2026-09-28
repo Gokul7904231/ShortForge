@@ -216,6 +216,10 @@ The Council cannot mint capability grants, execute workers, revoke leases, or cl
 
 The current Advisor is the existing CognitiveRuntime. Fine-tuned Ascalon inference remains outside the implemented claim.
 
-Wave 4 validation remains pending until the dedicated workflow, cognitive regression suites, combined governance gate, and Team Change Gate are green on one executable head.
+Wave 4 is validated on executable head `7473c5c12e93bc365a2b487f6e5244a84358bc9c`.
+
+Dedicated Wave 4 validation `36392648796` passed. Combined Wave 2–3 validation `36392648769` passed. Team Change Gate `36392648822` passed.
+
+During Wave 4, an existing contradiction-resolution regression was hardened: objective GPU/VRAM and disk telemetry now drive contradiction probes, probe confidence is preserved, and verified contradiction confidence propagates into CognitiveRuntime decision confidence.
 
 See `.okf/decisions/floor-governance-cell-wave4-20260928.md` and `.okf/audits/floor-governance-cell-wave4-audit.md`.
