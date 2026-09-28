@@ -6,6 +6,8 @@ import type {
 } from "./AgentExecutionContracts";
 import type { AgentExecutionStateStore } from "./AgentExecutionStateStore";
 
+type ExecutionFact = boolean | string | number;
+
 export class AgentExecutionRouter {
   private readonly steps = new Map<string, ExecutionStepContract>();
   private readonly transitions: ExecutionTransition[] = [];
@@ -66,11 +68,32 @@ export class AgentExecutionRouter {
     return this.steps.get(stepId)?.allowedTools || [];
   }
 
+  getRequiredCapabilities(stepId: string): readonly string[] {
+    return this.steps.get(stepId)?.requiredCapabilities || [];
+  }
+
   start(state: ExecutionState): ExecutionState {
     const step = this.steps.get(state.stepId);
 
     if (!step) {
       throw new Error("execution_step_not_registered:" + state.stepId);
+    }
+
+    const missingPreconditions = step.preconditions.filter(
+      (precondition) => state.facts[precondition] !== true,
+    );
+
+    if (missingPreconditions.length > 0) {
+      throw new Error(
+        "execution_preconditions_missing:" +
+          missingPreconditions.join(","),
+      );
+    }
+
+    if (step.idempotency === "REQUIRED" && !state.idempotencyKey) {
+      throw new Error(
+        "execution_idempotency_key_required:" + state.stepId,
+      );
     }
 
     const next: ExecutionState = {
@@ -85,17 +108,39 @@ export class AgentExecutionRouter {
     return next;
   }
 
+  recoverAfterRestart(): ExecutionState[] {
+    const recovered: ExecutionState[] = [];
+
+    for (const state of this.stateStore.listOpen()) {
+      if (state.sideEffectStatus !== "IN_FLIGHT") continue;
+
+      const recoveredState: ExecutionState = {
+        ...state,
+        status: "UNKNOWN",
+        sideEffectStatus: "UNKNOWN",
+        stateVersion: state.stateVersion + 1,
+        lastError: "process_restart_during_side_effect",
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.stateStore.save(recoveredState);
+      recovered.push(recoveredState);
+    }
+
+    return recovered;
+  }
+
   recordOutcome(
     state: ExecutionState,
-    outcome: Pick<
-      ExecutionState,
-      | "status"
-      | "sideEffectStatus"
-      | "lastOutcome"
-      | "lastError"
-      | "evidenceRefs"
-      | "artifactRefs"
-    >
+    outcome: {
+      readonly status: ExecutionState["status"];
+      readonly sideEffectStatus: ExecutionState["sideEffectStatus"];
+      readonly lastOutcome?: string;
+      readonly lastError?: string;
+      readonly evidenceRefs: readonly string[];
+      readonly artifactRefs: readonly string[];
+      readonly factsPatch?: Readonly<Record<string, ExecutionFact>>;
+    },
   ): ExecutionRouteDecision {
     const currentStep = this.steps.get(state.stepId);
 
@@ -103,39 +148,83 @@ export class AgentExecutionRouter {
       throw new Error("execution_step_not_registered:" + state.stepId);
     }
 
+    const nextFacts: Record<string, ExecutionFact> = {
+      ...state.facts,
+      ...(outcome.factsPatch || {}),
+    };
+
+    if (outcome.status === "SUCCEEDED") {
+      for (const postcondition of currentStep.postconditions) {
+        nextFacts[postcondition] = true;
+      }
+    }
+
     const nextState: ExecutionState = {
       ...state,
       ...outcome,
+      facts: nextFacts,
       stateVersion: state.stateVersion + 1,
       updatedAt: new Date().toISOString(),
     };
 
     this.stateStore.save(nextState);
 
-    if (
-      outcome.status === "SUCCEEDED" ||
-      outcome.status === "FAILED" ||
-      outcome.status === "CANCELLED"
-    ) {
-      return {
-        allowed: true,
-        reason: "execution_terminal",
-        currentStepId: state.stepId,
-      };
-    }
-
     const transition = this.transitions.find(
       (candidate) =>
         candidate.fromStepId === state.stepId &&
-        candidate.on === outcome.status
+        candidate.on === outcome.status,
     );
 
     if (!transition) {
+      if (
+        outcome.status === "SUCCEEDED" ||
+        outcome.status === "FAILED" ||
+        outcome.status === "CANCELLED"
+      ) {
+        return {
+          allowed: true,
+          reason: "execution_terminal",
+          currentStepId: state.stepId,
+        };
+      }
+
       return {
         allowed: false,
         reason: "no_legal_transition_for_outcome",
         currentStepId: state.stepId,
       };
+    }
+
+    if (outcome.status === "FAILED" || outcome.status === "UNKNOWN") {
+      const attemptsUsed = state.stepAttempt + 1;
+      if (attemptsUsed >= currentStep.retryPolicy.maxAttempts) {
+        return {
+          allowed: false,
+          reason: "retry_budget_exhausted",
+          currentStepId: state.stepId,
+        };
+      }
+
+      if (!currentStep.retryPolicy.retryOn.includes(
+        outcome.status === "UNKNOWN" ? "UNKNOWN" : "FAILED",
+      )) {
+        return {
+          allowed: false,
+          reason: "outcome_not_retryable_for_step",
+          currentStepId: state.stepId,
+        };
+      }
+
+      if (
+        currentStep.idempotency === "REQUIRED" &&
+        !currentStep.retryPolicy.sameIdempotencyKey
+      ) {
+        return {
+          allowed: false,
+          reason: "retry_requires_same_idempotency_key",
+          currentStepId: state.stepId,
+        };
+      }
     }
 
     const nextStep = this.steps.get(transition.toStepId);
@@ -148,14 +237,16 @@ export class AgentExecutionRouter {
       };
     }
 
-    if (
-      currentStep.sideEffect !== "NONE" &&
-      outcome.status === "UNKNOWN" &&
-      currentStep.idempotency !== "REQUIRED"
-    ) {
+    const missingNextPreconditions = nextStep.preconditions.filter(
+      (precondition) => nextFacts[precondition] !== true,
+    );
+
+    if (missingNextPreconditions.length > 0) {
       return {
         allowed: false,
-        reason: "unknown_side_effect_requires_idempotency",
+        reason:
+          "next_step_preconditions_missing:" +
+          missingNextPreconditions.join(","),
         currentStepId: state.stepId,
       };
     }
