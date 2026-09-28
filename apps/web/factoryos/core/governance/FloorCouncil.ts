@@ -63,8 +63,6 @@ export class FloorCouncil {
     const conflicts: string[] = [];
 
     const instructor = this.buildInstructorPacket(input, reviewedAt);
-    const auditor = this.buildAuditorPacket(input, instructor, reviewedAt);
-    phaseTrace.push("ADVISOR_REVIEW", "AUDITOR_REVIEW", "SYNTHESIS");
 
     let advisor: CounselPacket;
     if (!this.advisor) {
@@ -91,6 +89,10 @@ export class FloorCouncil {
         verifiedEvidenceRefs: input.verifiedEvidenceRefs,
       });
     }
+
+    phaseTrace.push("ADVISOR_REVIEW");
+    const auditor = this.buildAuditorPacket(input, instructor, reviewedAt);
+    phaseTrace.push("AUDITOR_REVIEW", "SYNTHESIS");
 
     if (instructor.recommendation !== `SUPPORT:${input.proposal.actionName}`) {
       conflicts.push("INSTRUCTOR_REJECTED_PROPOSAL");
