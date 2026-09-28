@@ -122,11 +122,13 @@ describe("Agent Execution Fabric", () => {
       lastOutcome: "intent=refund",
       evidenceRefs: [],
       artifactRefs: [],
+      factsPatch: { "order.loaded": true },
     });
 
     expect(afterClassify.nextStepId).toBe("policy");
 
-    const policyState = store.get("exec_final_fabric_01")!;
+    const policyReady = store.get("exec_final_fabric_01")!;
+    const policyState = router.start(policyReady);
     const afterPolicy = router.recordOutcome(policyState, {
       status: "SUCCEEDED",
       sideEffectStatus: "CONFIRMED",
