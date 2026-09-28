@@ -157,7 +157,6 @@ export class JointHealingSessionManager {
 
   noteMutationLease(lease: MutationLease): void {
     const session = this.getSession(lease.sessionId);
-    session.mutationLeases.set(lease.resourceId, structuredClone(lease));
     const currentEpoch = session.fencingEpochByResource.get(lease.resourceId) || 0;
     if (lease.fencingEpoch > currentEpoch) {
       session.fencingEpochByResource.set(lease.resourceId, lease.fencingEpoch);
