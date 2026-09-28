@@ -1,0 +1,54 @@
+name: Floor Governance Cell Final Wave Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/governance/**"
+      - "apps/web/factoryos/core/guardian/GuardianManager.ts"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
+      - "apps/web/factoryos/core/intelligence/memory/MemoryFabricBridge.ts"
+      - "apps/web/factoryos/core/cognitive/**"
+      - "apps/web/factoryos/tests/floor-governance-final-wave.test.ts"
+      - "apps/web/factoryos/tests/floor-council-wave4.test.ts"
+      - "apps/web/factoryos/tests/cognitive-simulation-gate.test.ts"
+      - "apps/web/factoryos/tests/cognitive-evidence-contradiction.test.ts"
+      - "apps/web/factoryos/tests/cognitive-fallback-safety.test.ts"
+      - ".okf/**"
+      - "Team/reports/**"
+  workflow_dispatch:
+
+jobs:
+  final-wave-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Typecheck final governance boundary
+        working-directory: apps/web
+        run: |
+          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/governance/FloorGovernanceContracts.ts             factoryos/core/governance/FloorActionGraph.ts             factoryos/core/governance/DefaultFloorActionGraph.ts             factoryos/core/governance/FloorBlackboard.ts             factoryos/core/governance/FloorBlackboardJournal.ts             factoryos/core/governance/FloorCouncilSessionStore.ts             factoryos/core/governance/AscalonInferenceAdmission.ts             factoryos/core/governance/FloorCouncil.ts             factoryos/core/governance/FloorActionGate.ts             factoryos/core/governance/FloorGovernanceCell.ts             factoryos/core/governance/AscalonGuardianAdapter.ts             factoryos/core/guardian/GuardianContracts.ts             factoryos/core/guardian/GuardianKernel.ts             factoryos/core/guardian/GuardianManager.ts             factoryos/core/cognitive/CognitiveDecisionContext.ts             factoryos/core/cognitive/CognitiveRuntime.ts             factoryos/core/cognitive/CognitivePlaneEngine.ts             factoryos/core/controller/AutonomousFactoryController.ts             factoryos/core/intelligence/memory/MemoryFabricContracts.ts             factoryos/core/intelligence/memory/MemoryFabricProjection.ts             factoryos/core/intelligence/memory/MemoryFabricBridge.ts             factoryos/core/contracts/EventContracts.ts
+
+      - name: Run final governance and cognitive regressions
+        working-directory: apps/web
+        run: >
+          npx vitest run
+          factoryos/tests/floor-governance-final-wave.test.ts
+          factoryos/tests/floor-council-wave4.test.ts
+          factoryos/tests/cognitive-simulation-gate.test.ts
+          factoryos/tests/cognitive-evidence-contradiction.test.ts
+          factoryos/tests/cognitive-fallback-safety.test.ts
+          --config vitest.config.ts
