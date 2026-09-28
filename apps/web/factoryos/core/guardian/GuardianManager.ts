@@ -89,6 +89,27 @@ export class GuardianManager {
     return Array.from(this.guardians.values());
   }
 
+  async requestHealingClosureGrant(input: {
+    incidentId: string;
+    floorId: string;
+    sessionId: string;
+    evidenceRefs: readonly string[];
+    bdaPass: boolean;
+    auditorPass: boolean;
+  }): Promise<{ authorized: boolean; grantId?: string; reason: string }> {
+    const guardian = this.guardians.get(input.floorId);
+    if (!guardian) {
+      return { authorized: false, reason: `guardian_not_found:${input.floorId}` };
+    }
+    return guardian.authorizeHealingClosure({
+      incidentId: input.incidentId,
+      sessionId: input.sessionId,
+      evidenceRefs: input.evidenceRefs,
+      bdaPass: input.bdaPass,
+      auditorPass: input.auditorPass,
+    });
+  }
+
   async start(): Promise<void> {
     if (this.isRunning) return;
     this.isRunning = true;
