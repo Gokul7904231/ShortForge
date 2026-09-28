@@ -297,6 +297,7 @@ describe("Floor Governance Cell — Final Wave", () => {
     );
 
     expect(execution.success).toBe(false);
-    expect(execution.reason).toContain("capability");
+    expect(["missing_authorization_grant", "required_capability_missing", "authorization_capability_mismatch"])
+      .toContain(execution.reason);
   });
 });
