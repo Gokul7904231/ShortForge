@@ -87,13 +87,14 @@ export class FloorGovernanceCell {
       throw new Error(`Invalid floor governance transition ${this.state} -> ${next}`);
     }
 
+    const previous = this.state;
     this.state = next;
     this.stateVersion += 1;
     this.blackboard.append(
       "OBSERVATION",
       "FLOOR_GUARDIAN",
       "VERIFIED",
-      { event: "STATE_TRANSITION", from: this.state, to: next, reason: reason || null }
+      { event: "STATE_TRANSITION", from: previous, to: next, reason: reason || null }
     );
   }
 
@@ -127,13 +128,18 @@ export class FloorGovernanceCell {
     proposal: ActionProposal,
     snapshot: FloorSnapshot,
     execute: (proposal: ActionProposal) => Promise<void>,
-    extraContext: Pick<ActionGateContext, "evidenceRefs" | "humanApprovalIds" | "currentFencingEpoch"> = {
+    extraContext: Pick<
+      ActionGateContext,
+      "evidenceRefs" | "satisfiedPreconditions" | "humanApprovalIds" | "currentFencingEpoch"
+    > = {
       evidenceRefs: new Set<string>(),
+      satisfiedPreconditions: new Set<string>(),
     }
   ): Promise<GovernanceExecutionResult> {
     const context: ActionGateContext = {
       snapshot,
       evidenceRefs: extraContext.evidenceRefs,
+      satisfiedPreconditions: (extraContext as ActionGateContext).satisfiedPreconditions || new Set<string>(),
       capabilities: this.capabilities,
       grants: this.grants,
       humanApprovalIds: extraContext.humanApprovalIds,
