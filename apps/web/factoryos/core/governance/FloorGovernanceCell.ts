@@ -13,6 +13,7 @@ import type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
 import type { GuardianDecision } from "../guardian/GuardianContracts";
 import type { AscalonGuardianAdapter } from "./AscalonGuardianAdapter";
 import { FloorCouncil } from "./FloorCouncil";
+import type { DurableEventBus } from "../events/DurableEventBus";
 
 export interface GovernanceExecutionResult {
   readonly success: boolean;
@@ -30,6 +31,7 @@ export interface FloorGovernanceCellConfig {
   readonly capabilities: readonly string[];
   readonly blackboardJournal?: FloorBlackboardJournal;
   readonly council?: FloorCouncil;
+  readonly eventBus?: DurableEventBus;
 }
 
 export class FloorGovernanceCell {
@@ -45,6 +47,7 @@ export class FloorGovernanceCell {
   private readonly actionGate: FloorActionGate;
   private readonly capabilities: ReadonlySet<string>;
   private council?: FloorCouncil;
+  private readonly eventBus?: DurableEventBus;
   private grants: AuthorizationGrant[] = [];
 
   constructor(config: FloorGovernanceCellConfig) {
@@ -56,6 +59,7 @@ export class FloorGovernanceCell {
     this.actionGate = new FloorActionGate(this.actionGraph, () => this.lastAction);
     this.ascalon = config.ascalon;
     this.council = config.council;
+    this.eventBus = config.eventBus;
   }
 
   private readonly ascalon: AscalonGuardianAdapter;
@@ -229,6 +233,7 @@ export class FloorGovernanceCell {
     proposal: ActionProposal,
     review: import("./FloorCouncil").FloorCouncilReview
   ): Promise<void> {
+    if (!this.eventBus) return;
     await this.eventBus.publish("FLOOR_COUNCIL_REVIEW_COMPLETED", {
       floorId: snapshot.floorId,
       proposalId: proposal.proposalId,
