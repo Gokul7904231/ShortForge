@@ -119,6 +119,7 @@ export interface AuthorizationGrant {
 export interface ActionGateContext {
   readonly snapshot: FloorSnapshot;
   readonly evidenceRefs: ReadonlySet<string>;
+  readonly satisfiedPreconditions: ReadonlySet<string>;
   readonly capabilities: ReadonlySet<string>;
   readonly grants: readonly AuthorizationGrant[];
   readonly humanApprovalIds?: ReadonlySet<string>;
