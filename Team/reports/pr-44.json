@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-Wave1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor-governance-cell-wave1-20260928",
+  "objective": "Establish a bounded-autonomy one-floor governance cell with explicit action contracts, proposal-only Ascalon cognition, trust-separated boundary inspection, paired healing leases and fencing, and proof-based closure without changing the F00-F07 topology.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/hierarchy-map.md",
+      ".okf/cognitive/layer-contract.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/decisions.md",
+      ".okf/research/repo-mappings/",
+      ".okf/production-helper.md"
+    ],
+    "rulesConsidered": [
+      "Overseer remains global authority.",
+      "Floor Guardian remains highest authority inside a floor.",
+      "Ascalon remains bounded cognition and may not become sovereign authority.",
+      "Workers execute only bounded capabilities.",
+      "Healing remains bounded and evidence-driven.",
+      "F07 remains the final production verification/release boundary.",
+      "The existing F00-F07 topology is unchanged.",
+      "The mandatory .okf decision protocol remains the architectural gate."
+    ]
+  },
+  "forensicFindings": [
+    "GuardianKernel already provides a floor-local autonomy loop and GuardianPolicy already enforces cross-floor, critical, repeated-failure and irreversible-action boundaries.",
+    "The existing healer substrate has resource locks, deduplication and rollback but did not have a per-resource fencing epoch in ResourceLock contracts.",
+    "HealerEngine currently executes an allocated squad sequentially; the new JointHealingSession is therefore a foundation rather than a production scheduler replacement.",
+    "CaseManager retains a legacy direct resolveCase() escape hatch; the new ResolutionGate defines the target closure proof but is not yet wired into every legacy caller.",
+    "Advisor is currently represented mostly by concepts/UI/docs; this wave introduces CounselPacket but does not claim a production Advisor runtime.",
+    "No complete production BDA boundary is wired into every live floor handoff; this wave provides the boundary subsystem foundation."
+  ],
+  "changes": [
+    "Added typed FloorGovernanceContracts.",
+    "Added FloorActionGraph and DefaultFloorActionGraph.",
+    "Added FloorActionGate with capability, precondition, state-version, trust and authorization checks.",
+    "Added FloorGovernanceCell state machine and Ascalon proposal-only adapter.",
+    "Added FloorBlackboard and typed CounselPacket projection.",
+    "Added BorderDefenseAgent admission/inspection/quarantine/egress foundation.",
+    "Added JointHealingSession manager with per-resource mutation leases and fencing epochs.",
+    "Extended RepairLockManager with fencing-aware mutation leases while preserving legacy lock callers.",
+    "Added ResolutionGate requiring BDA proof + Auditor proof + Guardian closure grant.",
+    "Added focused negative tests and reusable floor design documentation.",
+    "Added .okf decision, architecture, audit and index entries."
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY-BOUNDARY_WAVE",
+    "notes": "The runtime changes are primarily typed control-plane/library contracts. Repository CI and configured security lanes remain authoritative. No external credentials or secrets were added."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
+    "Forge Evaluator": "PENDING_REPOSITORY_CI",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/guardian/GuardianKernel.ts",
+    "apps/web/factoryos/core/guardian/GuardianPolicy.ts",
+    "apps/web/factoryos/core/healers/HealerEngine.ts",
+    "apps/web/factoryos/core/healers/RepairLockManager.ts",
+    "apps/web/factoryos/core/cases/CaseManager.ts",
+    "apps/web/factoryos/core/validator/ValidatorAgent.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionEngine.ts",
+    "apps/web/factoryos/core/observability/TraceContext.ts",
+    "apps/web/factoryos/tests/floor-governance-cell.test.ts",
+    "docs/factoryos/floor-governance-cell.md",
+    ".okf/floor-governance-cell.md",
+    ".okf/floor-design-template.md",
+    ".okf/decisions/floor-governance-cell-wave1-20260928.md",
+    ".okf/audits/floor-governance-cell-wave1-audit.md",
+    ".okf/index.md"
+  ],
+  "verificationPlan": [
+    "Run Team Change Gate.",
+    "Run repository CI and FactoryOS typecheck/tests.",
+    "Run affected floor validation workflows.",
+    "Review negative FGC tests, especially trust-boundary, stale-fencing and proof-based resolution cases.",
+    "Do not promote this wave to production authority until CI evidence is green and the target-vs-current gaps remain accurately documented."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Wave-1 code and documentation are implemented on the PR branch, but repository CI/security evidence is still pending; no production merge is claimed."
+}
