@@ -192,7 +192,7 @@ describe("Floor Governance Cell — Final Wave", () => {
     const snapshot = makeSnapshot();
     const availableActions = ["floor.observe"];
     const fingerprint = fingerprintAscalonContext(snapshot, availableActions, []);
-    const gate = new AscalonInferenceAdmissionGate(0.7);
+    const gate = new AscalonInferenceAdmissionGate(0.7, new Set(["ascalon-test-v1"]));
 
     const admitted = gate.evaluate({
       snapshot,
@@ -270,7 +270,7 @@ describe("Floor Governance Cell — Final Wave", () => {
       ascalon: new StubAscalon(proposal),
       capabilities: ["floor.read", "floor.analyze", "floor.validate"],
       council: new FloorCouncil({ advisor: async () => supportingAdvisor() }),
-      ascalonAdmission: new AscalonInferenceAdmissionGate(0.7),
+      ascalonAdmission: new AscalonInferenceAdmissionGate(0.7, new Set(["ascalon-test-v1"])),
     });
 
     cell.setState("READY");
@@ -299,5 +299,42 @@ describe("Floor Governance Cell — Final Wave", () => {
     expect(execution.success).toBe(false);
     expect(["missing_authorization_grant", "required_capability_missing", "authorization_capability_mismatch"])
       .toContain(execution.reason);
+  });
+});
+
+
+describe("Floor Governance Cell — Final Wave — Model admission fail-closed", () => {
+  it("rejects admitted inference when no model allowlist is configured", () => {
+    const snapshot = makeSnapshot();
+    const availableActions = ["floor.observe"];
+    const fingerprint = fingerprintAscalonContext(snapshot, availableActions, []);
+    const gate = new AscalonInferenceAdmissionGate(0.7);
+
+    const result = gate.evaluate({
+      snapshot,
+      availableActions,
+      verifiedEvidenceRefs: [],
+      envelope: {
+        metadata: {
+          inferenceId: "infer_unallowlisted",
+          modelRef: "unknown-model",
+          adapterVersion: "gateway-v1",
+          mode: "ADMITTED",
+          contextFingerprint: fingerprint,
+          observedAt: new Date().toISOString(),
+        },
+        proposal: makeProposal(snapshot, "floor.observe", {
+          inferenceId: "infer_unallowlisted",
+          modelRef: "unknown-model",
+          adapterVersion: "gateway-v1",
+          mode: "ADMITTED",
+          contextFingerprint: fingerprint,
+          observedAt: new Date().toISOString(),
+        }),
+      },
+    });
+
+    expect(result.admitted).toBe(false);
+    expect(result.reason).toContain("model_ref_allowlist_not_configured");
   });
 });
