@@ -209,6 +209,12 @@ export class AutonomousFactoryController {
       repos.reputation
     );
 
+    this.healerEngine.enableJointHealing({
+      storagePath: this.config.storagePath,
+      guardianClosureAuthorizer: async (request) =>
+        this.guardianManager.requestHealingClosureGrant(request),
+    });
+
     this.validatorAgent = new ValidatorAgent(this.caseManager, this.eventBus, this.worldState);
 
     this.overseer = new OverseerControlPlane(
