@@ -68,7 +68,9 @@ export type EventTopic =
   | "TASK_PROGRESS"
   | "DELIVERY_COMPLETED"
   | "SITUATION_RECORD_DISPATCHED"
-  | "SITUATION_RECORD_CONFLICT";
+  | "SITUATION_RECORD_CONFLICT"
+  | "BORDER_INSPECTED"
+  | "BORDER_QUARANTINED";
 
 
 export interface EventEnvelope<T = Record<string, unknown>> {
