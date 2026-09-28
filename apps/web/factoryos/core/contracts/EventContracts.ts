@@ -80,7 +80,8 @@ export type EventTopic =
   | "JOINT_HEALING_AUDIT_FAILED"
   | "GUARDIAN_CLOSURE_GRANTED"
   | "GUARDIAN_CLOSURE_DENIED"
-  | "JOINT_HEALING_COMPLETED";
+  | "JOINT_HEALING_COMPLETED"
+  | "FLOOR_COUNCIL_REVIEW_COMPLETED";
 
 
 export interface EventEnvelope<T = Record<string, unknown>> {
