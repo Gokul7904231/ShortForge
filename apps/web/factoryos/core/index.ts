@@ -1,4 +1,4 @@
-/**
+/** 
  * FactoryOS v3 — Master Barrel Export
  */
 
@@ -55,6 +55,13 @@ export * from "./guardian/GuardianReportEngine";
 export * from "./guardian/GuardianDecisionEngine";
 export * from "./guardian/GuardianManager";
 export * from "./guardian/GuardianLocalWorldModel";
+
+// Floor Governance Cell (bounded autonomy foundation)
+export * from "./floor/FloorActionGraphContracts";
+export * from "./floor/FloorActionGraph";
+export * from "./floor/CounselContracts";
+export * from "./floor/AscalonGuardianAdapter";
+
 export * from "./overseer/OverseerThinkingController";
 export * from "./overseer/DecisionLedger";
 export * from "./overseer/TaskDAGPlanner";
