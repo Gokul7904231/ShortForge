@@ -44,15 +44,15 @@
   ],
   "security": {
     "required": true,
-    "notes": "Approval is durable state, not a capability grant. Resume requires exact execution state binding. No credentials, secrets, or new authority levels added.",
-    "securityLanes": "PENDING"
+    "status": "AFFECTED SECURITY LANES GREEN",
+    "notes": "Floor 01 security/dependency scan passed on the consolidated candidate. The integration itself added no secrets, credentials, or new authority level."
   },
   "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
-    "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
-    "Forge Evaluator": "PENDING_CI",
-    "Forge Release": "PENDING_MERGE"
+    "Forge Sentinel": "COMPLETE — affected security lane green",
+    "Forge Evaluator": "COMPLETE — consolidated validation green",
+    "Forge Release": "COMPLETE — merged via PR #47"
   },
   "verificationPlan": [
     "Run Agent Execution Fabric Validation including durable HITL tests.",
@@ -62,12 +62,28 @@
     "Merge only PR #47 into main if the final gates are green; close superseded PRs #44/#46 afterward.",
     "Do not claim live A2A or fine-tuned Ascalon inference."
   ],
-  "disposition": "BLOCKED",
-  "dispositionRationale": "Consolidated candidate is not yet fully validated; no main-branch merge claimed.",
+  "disposition": "PASS",
+  "dispositionRationale": "PR #47 was merged into main at ac3352487cbfc50bc468b9d512fb0e79ac06244e after governance, execution-fabric, Team Change Gate, floor and pre-training affected validation lanes were green. Repository-wide baseline failures were unchanged from main and are documented separately.",
   "verificationResults": {
-    "agentExecutionFabric": "PENDING",
-    "teamChangeGate": "FAILED_BEFORE_REPORT_CREATED",
-    "broaderRepositoryCI": "IN_PROGRESS"
+    "agentExecutionFabric": "PASS — 36398798728",
+    "finalWave": "PASS — 36398799000",
+    "wave23": "PASS — 36398799141",
+    "wave3": "PASS — 36398798929",
+    "wave4": "PASS — 36398798847",
+    "fgcValidation": "PASS — 36398798802",
+    "floor04": "PASS — 36398798726",
+    "floor05": "PASS — 36398798758",
+    "floor07": "PASS — 36398798744",
+    "floor06": "PASS — 36398798971",
+    "obsidianMemory": "PASS — 36398798875",
+    "teamChangeGate": "PASS — 36398809648",
+    "googleDriveMcp": "PASS — 36398798745",
+    "baselineTypecheck": "UNCHANGED BASELINE FAILURE — main also failed TypeCheck & Floor 01 Contract Tests",
+    "baselineInformationalWebRegression": "UNCHANGED BASELINE FAILURE — main also failed informational full-web regression",
+    "branchProtection": "NOT READABLE BY INTEGRATION"
   },
-  "conflicts": []
+  "conflicts": [],
+  "status": "FINAL_INTEGRATION_PASS",
+  "validatedExecutableHead": "cbed49f6b2d8a594f01d5847ab1a4a2c770679de",
+  "mergedMainCommit": "ac3352487cbfc50bc468b9d512fb0e79ac06244e"
 }
