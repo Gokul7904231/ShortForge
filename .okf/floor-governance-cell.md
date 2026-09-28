@@ -132,3 +132,54 @@ Any future change to the FGC must begin with the current .okf sweep and classify
 - experiment only
 
 A contradiction must be preserved explicitly and cannot silently overwrite a locked authority rule.
+
+## 21. Wave 2 runtime integration
+
+Wave 2 connects the governance substrate to real FactoryOS control paths:
+
+```text
+Guardian observation/audit/plan
+          |
+          v
+   Floor Governance Cell
+          |
+   typed action + grant
+          |
+          v
+      legacy execution
+          |
+          v
+     physical/system effect
+```
+
+### Guardian integration
+
+`GuardianKernel` remains local authority. Its autonomous mutation decisions now cross the Floor Governance Cell before the legacy execution implementation runs.
+
+The governance cell records:
+- the Guardian action;
+- target scope;
+- current floor state version;
+- required capability;
+- Guardian authorization grant;
+- execution outcome.
+
+### Persistent Blackboard
+
+`DiskFloorBlackboardJournal` stores append-only floor cognition/evidence entries under the configured FactoryOS storage directory. Entries are chained with SHA-256 hashes so restart reconstruction can detect journal tampering or truncation.
+
+### Live BDA boundary
+
+`PythonFloorBridge.handleFloorHandoff()` treats execution handoffs as egress from a floor. The handoff is inspected by BDA before world-state mutation. Border decisions are emitted as governance events, and bridge-originated failure cases retain BDA proof as diagnostic evidence.
+
+### Closure hardening
+
+`CaseManager.resolveCase()` is now a legacy compatibility path behind `ResolutionGate`. Direct closure requires explicit `ResolutionProof`. Boot recovery may reconstruct incidents but may not silently close them.
+
+### Current Wave 2 boundary
+
+Implemented: Guardian gate, journal persistence, Python bridge BDA, border events, BDA evidence retention, and direct-resolution gate.
+
+Still not claimed: live Ascalon model execution, complete BDA coverage across every internal floor transition, durable JointHealingSession persistence, graph-aware paired-healing scheduling, workload identity, signed policy bundles, or advanced adversarial evaluation.
+
+See `.okf/decisions/floor-governance-cell-wave2-20260928.md` and `.okf/audits/floor-governance-cell-wave2-audit.md`.
