@@ -49,10 +49,15 @@ export class JointHealingAuditor {
       evidenceRefs.push(...report.repairPlan.actions.map((action) => action.actionId));
     }
 
-    if (input.bdaReinspection.policyDecision !== "ALLOW" || input.bdaReinspection.anomalies.length > 0) {
+    if (
+      input.bdaReinspection.policyDecision !== "ALLOW" ||
+      input.bdaReinspection.anomalies.length > 0 ||
+      !input.bdaReinspection.outputHash
+    ) {
       reasons.push("bda_reinspection_failed");
     } else {
       evidenceRefs.push(input.bdaReinspection.borderEventId);
+      evidenceRefs.push(input.bdaReinspection.outputHash);
     }
 
     const activeSessionLocks = input.activeLocks.filter(
