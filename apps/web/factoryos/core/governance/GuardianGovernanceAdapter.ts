@@ -1,8 +1,6 @@
 import type { GuardianDecision } from "../guardian/GuardianContracts";
-import type {
-  FloorSnapshot,
-  GovernanceExecutionResult,
-} from "./FloorGovernanceContracts";
+import type { FloorSnapshot } from "./FloorGovernanceContracts";
+import type { GovernanceExecutionResult } from "./FloorGovernanceCell";
 import { FloorGovernanceCell } from "./FloorGovernanceCell";
 
 export class GuardianGovernanceAdapter {
@@ -13,6 +11,10 @@ export class GuardianGovernanceAdapter {
     snapshot: FloorSnapshot,
     execute: (decision: GuardianDecision) => Promise<void>
   ): Promise<GovernanceExecutionResult> {
-    return this.cell.executeGuardianDecision(decision, snapshot, () => execute(decision));
+    return this.cell.executeGuardianDecision(
+      decision,
+      snapshot,
+      () => execute(decision)
+    );
   }
 }
