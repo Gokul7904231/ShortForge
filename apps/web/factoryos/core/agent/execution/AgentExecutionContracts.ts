@@ -58,6 +58,7 @@ export interface ExecutionState {
     | "PENDING"
     | "APPROVED"
     | "REJECTED";
+  readonly approvalId?: string;
   readonly updatedAt: string;
 }
 
