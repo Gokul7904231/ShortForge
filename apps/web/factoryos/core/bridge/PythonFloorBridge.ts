@@ -8,6 +8,7 @@ import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { CaseManager } from "../cases/CaseManager";
 import { MissionStateMachine } from "../orchestration/MissionStateMachine";
+import { BorderDefenseAgent } from "../governance/BorderDefenseAgent";
 import type {
   FloorCommandEnvelope,
   FloorHandoffEnvelope,
@@ -24,12 +25,16 @@ export class SecurityValidationError extends Error {
 export class PythonFloorBridge {
   private seenNonces: Set<string> = new Set();
   private maxNonceAgeMs = 5 * 60 * 1000; // 5 minutes
+  private readonly bda: BorderDefenseAgent;
 
   constructor(
     private worldState: WorldStateEngine,
     private eventBus: DurableEventBus,
-    private caseManager: CaseManager
-  ) {}
+    private caseManager: CaseManager,
+    bda?: BorderDefenseAgent
+  ) {
+    this.bda = bda || new BorderDefenseAgent();
+  }
 
   /**
    * Validates security context and replay prevention.
@@ -68,9 +73,73 @@ export class PythonFloorBridge {
 
   /**
    * Processes a completion/status handoff from an execution plane floor.
+   * Every handoff is treated as an egress from the floor and passes the BDA
+   * before it can mutate control-plane world state.
    */
   async handleFloorHandoff(envelope: FloorHandoffEnvelope): Promise<void> {
     this.validateSecurityContext(envelope);
+
+    const { security } = envelope;
+
+    const borderEvent = this.bda.admit({
+      sourceFloor: security.floorId,
+      destinationFloor: "overseer_control_plane",
+      direction: "EGRESS",
+      actor: `bridge:${security.initiatedBy}`,
+      contractVersion: envelope.schemaVersion,
+      authorizationRef: security.executionToken,
+      capability: "floor.handoff",
+      payload: envelope,
+      artifactIds: [],
+      lineageRefs: [security.executionId, security.parentExecutionId || security.missionId],
+    });
+
+    if ("denied" in borderEvent) {
+      await this.eventBus.publish(
+        "BORDER_QUARANTINED",
+        {
+          sourceFloor: security.floorId,
+          destinationFloor: "overseer_control_plane",
+          reason: borderEvent.reason,
+          executionId: security.executionId,
+        },
+        { correlationId: security.missionId, source: "python_floor_bridge" }
+      );
+      throw new SecurityValidationError(`BDA rejected floor handoff: ${borderEvent.reason}`);
+    }
+
+    const dossier = this.bda.egress(borderEvent, envelope, {
+      expectedKeys: ["security", "status", "timestamp", "nonce", "schemaVersion"],
+      evidenceRefs: [security.executionId],
+      policyAllowed: true,
+    });
+
+    await this.eventBus.publish(
+      dossier.policyDecision === "ALLOW" ? "BORDER_INSPECTED" : "BORDER_QUARANTINED",
+      {
+        borderEventId: dossier.borderEventId,
+        sourceFloor: dossier.sourceFloor,
+        destinationFloor: dossier.destinationFloor,
+        policyDecision: dossier.policyDecision,
+        inspectionResults: dossier.inspectionResults,
+        anomalies: dossier.anomalies,
+        inputHash: dossier.inputHash,
+        outputHash: dossier.outputHash,
+        executionId: security.executionId,
+        missionId: security.missionId,
+      },
+      {
+        correlationId: security.missionId,
+        source: "python_floor_bridge",
+        idempotencyKey: `border:${dossier.borderEventId}`,
+      }
+    );
+
+    if (dossier.policyDecision !== "ALLOW" || dossier.anomalies.length > 0) {
+      throw new SecurityValidationError(
+        `BDA quarantined floor handoff ${dossier.borderEventId}: ${dossier.anomalies.join("; ")}`
+      );
+    }
 
     const { security, status, outputArtifact, errors, complianceScore, executionTimeMs } = envelope;
 
