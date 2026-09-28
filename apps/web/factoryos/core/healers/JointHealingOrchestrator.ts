@@ -178,6 +178,14 @@ export class JointHealingOrchestrator {
       )
     );
     this.sessionManager.transition(createdSession.sessionId, "HEALING");
+    this.sessionManager.checkpoint(
+      createdSession.sessionId,
+      "HEALING",
+      evidenceRefs,
+      pairedDiagnoses.flatMap(({ diagnosis }) =>
+        diagnosis.repairPlan.actions.map((action) => action.actionId)
+      )
+    );
 
     const mutationResult = await this.executeMutations(
       incident,
@@ -216,6 +224,12 @@ export class JointHealingOrchestrator {
     }
 
     this.sessionManager.transition(createdSession.sessionId, "VERIFYING");
+    this.sessionManager.checkpoint(
+      createdSession.sessionId,
+      "VERIFYING",
+      [...evidenceRefs, ...mutationEvidence],
+      mutationEvidence
+    );
     await this.caseManager.transitionStatus(
       incident.caseId,
       "VERIFYING",
