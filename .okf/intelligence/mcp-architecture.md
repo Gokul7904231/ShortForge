@@ -79,6 +79,16 @@ Examples:
 
 Do not route production side effects through a generic MCP merely because the external provider exposes an API.
 
+## 4.1 Agent Execution Fabric boundary
+
+MCP is never exposed merely because an agent has a capability. AEF step contracts determine the exact tool IDs exposed to a step, then verify the required capabilities and idempotency contract before delegating to ToolExecutor.
+
+The execution chain is:
+
+`Ascalon/Cognitive proposal -> Floor Council/FGC -> AgentExecutionRouter -> ScopedToolExecutor -> ToolExecutor -> MCP adapter (when needed)`
+
+An MCP response is a tool result. It is not authorization, artifact verification, or release truth.
+
 ## 5. MCP permission model
 
 MCP permissions are separate from floor-worker permissions.
