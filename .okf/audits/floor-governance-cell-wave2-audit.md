@@ -2,6 +2,8 @@
 
 **Date:** 2026-09-28
 **Branch:** feat/floor-governance-cell-wave1-20260928
+**Validated executable head:** `1fd9d2a77d1e9255f2e74be5bd8a14015bc2a9d8`
+**Wave-2 validation:** PASS — run `36388027225`
 
 ## Scope
 
@@ -51,4 +53,4 @@ Fencing-aware mutation leases exist and Wave 1 joint-healing tests are present, 
 
 ## Release conclusion
 
-Wave 2 materially upgrades the runtime from a governance scaffold to a real Guardian/BDA/closure integration boundary, but it is not the final autonomous floor implementation. Merge and production claims remain gated on the dedicated Wave-2 workflow, Team Change Gate, and repository CI evidence.
+Wave 2 materially upgrades the runtime from a governance scaffold to a real Guardian/BDA/closure integration boundary. The dedicated Wave-2 workflow passed on the executable head `1fd9d2a77d1e9255f2e74be5bd8a14015bc2a9d8`, including typecheck and focused tests. The branch remains a draft PR; Wave 2 is closed as an implementation wave, while Wave 3 remains responsible for durable paired-healing scheduling and deeper autonomous-floor capabilities.
