@@ -174,6 +174,14 @@ export class HealerEngine {
       const paired = this.allocateHealers(caseItem).slice(0, 2);
       if (paired.length === 2) {
         const execution = await this.jointHealingOrchestrator!.execute(caseItem, paired);
+        for (const report of execution.reports) {
+          const healer = this.getHealer(report.healerId);
+          if (!healer) continue;
+          const success = report.repairStatus === "SUCCESS";
+          const rolledBack = report.repairStatus === "ROLLED_BACK";
+          healer.updateReputation(success, rolledBack, report.durationMs);
+          await this.reputationRepo.saveHealerReputation(healer.getReputation());
+        }
         return [...execution.reports];
       }
     }
