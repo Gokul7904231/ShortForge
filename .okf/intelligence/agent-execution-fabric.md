@@ -50,3 +50,38 @@ This design allows ShortForge to run more capable asynchronous agents while movi
 - Team Change Gate: **PASS — 36397184653**
 - Validated executable head: `fa5a64b407faca57ad074b3384446778f4b217f7`
 - Broader repository CI/security lanes remain separate and are not represented as a false pass.
+
+## 10. Durable human-in-the-loop recovery
+
+The final integration adds a local durable approval ledger rather than keeping a worker process alive while waiting for a person.
+
+```text
+RUNNING/READY
+     |
+     | requestHumanApproval()
+     v
+WAITING + approvalId
+     |
+     +--> human rejects/expiry --> BLOCKED
+     |
+     +--> human approves
+              |
+              v
+      fingerprint + stateVersion check
+              |
+              v
+            READY
+              |
+              v
+           start()
+```
+
+The approval record stores execution/mission/run/floor/step identity; requesting agent and reason; risk level; expected execution state version; deterministic execution-state fingerprint; creation and expiry timestamps; and resolution identity and decision.
+
+A restart never auto-executes an approved waiting step. The state remains WAITING until an explicit resume operation succeeds against the same execution-state binding.
+
+An approval for a changed execution state is invalidated by the fingerprint/version check.
+
+Expired, rejected, cancelled, or missing approval records move the execution to BLOCKED.
+
+This aligns with the supplied architecture material's long-running human-wait pattern and with current A2A/MCP task designs, which represent interrupted/async work as durable task state rather than requiring a continuously alive worker. 
