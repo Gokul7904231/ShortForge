@@ -137,3 +137,6 @@ export * from "./governance/FloorActionGate";
 export * from "./governance/ResolutionGate";
 export * from "./governance/FloorGovernanceCell";
 export * from "./governance/FloorCouncil";
+
+export * from "./governance/FloorCouncilSessionStore";
+export * from "./governance/AscalonInferenceAdmission";
