@@ -1,4 +1,4 @@
-name: Floor Governance Cell Wave 2 Validation
+name: Floor Governance Cell Wave 2-3 Validation
 
 on:
   pull_request:
@@ -10,6 +10,18 @@ on:
       - "apps/web/factoryos/core/contracts/EventContracts.ts"
       - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
       - "apps/web/factoryos/tests/floor-governance-wave2-integration.test.ts"
+      - "apps/web/factoryos/core/governance/JointHealingSession.ts"
+      - "apps/web/factoryos/core/governance/JointHealingSessionStore.ts"
+      - "apps/web/factoryos/core/healers/HealerBase.ts"
+      - "apps/web/factoryos/core/healers/HealerEngine.ts"
+      - "apps/web/factoryos/core/healers/RepairLockManager.ts"
+      - "apps/web/factoryos/core/healers/JointHealingAuditor.ts"
+      - "apps/web/factoryos/core/healers/JointHealingOrchestrator.ts"
+      - "apps/web/factoryos/core/guardian/GuardianKernel.ts"
+      - "apps/web/factoryos/core/guardian/GuardianManager.ts"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
+      - "apps/web/factoryos/tests/joint-healing-wave3.test.ts"
   workflow_dispatch:
 
 jobs:
@@ -35,6 +47,20 @@ jobs:
         working-directory: apps/web
         run: |
           npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/governance/FloorGovernanceContracts.ts             factoryos/core/governance/FloorBlackboardJournal.ts             factoryos/core/governance/FloorBlackboard.ts             factoryos/core/governance/FloorActionGraph.ts             factoryos/core/governance/DefaultFloorActionGraph.ts             factoryos/core/governance/FloorActionGate.ts             factoryos/core/governance/FloorGovernanceCell.ts             factoryos/core/governance/GuardianGovernanceAdapter.ts             factoryos/core/governance/BorderDefenseAgent.ts             factoryos/core/governance/JointHealingSession.ts             factoryos/core/governance/ResolutionGate.ts             factoryos/core/guardian/GuardianContracts.ts             factoryos/core/guardian/GuardianKernel.ts             factoryos/core/guardian/GuardianManager.ts             factoryos/core/bridge/PythonFloorBridge.ts             factoryos/core/cases/CaseManager.ts             factoryos/core/contracts/EventContracts.ts             factoryos/core/controller/AutonomousFactoryController.ts
+
+      - name: Typecheck Wave 3 paired-healing boundary
+        working-directory: apps/web
+        run: |
+          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/governance/FloorGovernanceContracts.ts             factoryos/core/governance/JointHealingSession.ts             factoryos/core/governance/JointHealingSessionStore.ts             factoryos/core/governance/BorderDefenseAgent.ts             factoryos/core/governance/ResolutionGate.ts             factoryos/core/healers/HealerBase.ts             factoryos/core/healers/RepairLockManager.ts             factoryos/core/healers/RepairDependencyAnalyzer.ts             factoryos/core/healers/JointHealingAuditor.ts             factoryos/core/healers/JointHealingOrchestrator.ts             factoryos/core/healers/HealerEngine.ts             factoryos/core/guardian/GuardianContracts.ts             factoryos/core/guardian/GuardianKernel.ts             factoryos/core/guardian/GuardianManager.ts             factoryos/core/controller/AutonomousFactoryController.ts             factoryos/core/cases/CaseManager.ts             factoryos/core/contracts/EventContracts.ts
+
+      - name: Run Wave 3 focused tests
+        working-directory: apps/web
+        run: >
+          npx vitest run
+          factoryos/tests/joint-healing-wave3.test.ts
+          factoryos/tests/phase6-healer-concurrency.test.ts
+          factoryos/tests/healer-swarm.test.ts
+          --config vitest.config.ts
 
       - name: Run Wave 2 focused tests
         working-directory: apps/web
