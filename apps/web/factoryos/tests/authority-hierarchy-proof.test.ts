@@ -86,13 +86,20 @@ describe("FactoryOS Frontier v3 — Authority Model & Resilience Invariant Suite
     // Acquire task lease for the stalled worker
     await leaseManager.acquire("task_voice_999", "worker_voice_01", 1000);
 
-    // Healer applies resolution
+    // Direct legacy resolution is allowed only when independent proof is supplied.
     await caseManager.resolveCase(openCase.caseId, {
       diagnosis: "Worker voice 01 crashed; lease evicted and worker pool rebalanced",
       resolutionPlan: "Evict lease and recycle worker slot",
       healerId: "healer_worker_lifecycle",
       actionsTaken: ["Evicted lease task_voice_999", "Recycled worker_voice_01"],
       verifiedAt: new Date().toISOString(),
+      resolutionProof: {
+        incidentId: openCase.caseId,
+        bdaPass: true,
+        auditorPass: true,
+        guardianClosureGrant: true,
+        verifiedAt: new Date().toISOString(),
+      },
     });
 
     const resolvedCase = await caseManager.getCase(openCase.caseId);

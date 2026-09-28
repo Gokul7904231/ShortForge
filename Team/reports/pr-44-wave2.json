@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-Wave2",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor-governance-cell-wave1-20260928",
+  "objective": "Integrate the Wave-1 Floor Governance Cell into real Guardian mutation paths, persistent floor blackboards, Python floor boundary inspection, and proof-based incident closure without changing F00-F07 topology.",
+  "status": "WAVE2_VALIDATED",
+  "implemented": [
+    "GuardianKernel mutation decisions cross FloorGovernanceCell through GuardianGovernanceAdapter.",
+    "Persistent hash-chained FloorBlackboard journal per governed runtime Guardian.",
+    "PythonFloorBridge egress handoffs pass BorderDefenseAgent before control-plane world-state mutation.",
+    "BDA evidence is retained in bridge-created execution-failure cases.",
+    "CaseManager.resolveCase requires explicit ResolutionProof through ResolutionGate.",
+    "AutonomousFactoryController boot recovery no longer silently resolves active cases.",
+    "Wave-2 focused integration test and CI workflow added.",
+    "Bearer execution token is excluded from BorderDossier authorizationRef."
+  ],
+  "currentValidation": {
+    "wave1FGC": "PASS — run 36387377518 before latest Wave-2 commits",
+    "teamChangeGate": "PASS — current head had Team Change Gate run 36387994196 before documentation-only sync commits.",
+    "wave2FirstRun": "FAIL — run 36387377593, typecheck caught an escaped-newline syntax defect in AutonomousFactoryController; defect corrected in commit f0f4926a0ff6563aabc1bbf97ff207a54c39d583, then further hardening commits followed.",
+    "localClone": "BLOCKED — execution environment cannot resolve github.com; repository Actions is the authoritative runtime verifier.",
+    "wave2FinalRun": "PASS — run 36388027225 on executable head 1fd9d2a77d1e9255f2e74be5bd8a14015bc2a9d8"
+  },
+  "security": [
+    "No bearer execution token is stored in BDA authorizationRef.",
+    "Ascalon remains proposal-only and does not mint authority.",
+    "Guardian remains floor-local authority.",
+    "F07 remains final production verification/release boundary."
+  ],
+  "remainingReleaseGates": [
+    "Repository-wide CI baseline findings must remain separated from FGC-caused regressions.",
+    "PR merge still requires an explicit merge decision; the PR remains draft.",
+    "Wave 3 work must not be represented as part of Wave 2."
+  ],
+  "nonGoals": [
+    "Live Ascalon fine-tuned-model invocation",
+    "Complete BDA coverage of every internal floor boundary",
+    "Durable JointHealingSession persistence and graph-aware healer scheduler replacement",
+    "Workload identity / signed policy bundles",
+    "OpenLineage, in-toto/SLSA, C2PA, and GenAI OTel runtime integration",
+    "Predictive failure prevention and full adversarial evaluation suite"
+  ],
+  "validatedExecutableHead": "1fd9d2a77d1e9255f2e74be5bd8a14015bc2a9d8",
+  "recentFixes": [
+    "Fixed duplicate security binding in PythonFloorBridge.",
+    "Normalized Guardian floor snapshot worker/resource objects to governance Record shapes.",
+    "Removed duplicate uncertainty fields in LLMDecisionAdapter exposed by the focused boundary typecheck.",
+    "Corrected the blackboard reconstruction test to account for journaled governance state transitions.",
+    "Removed the FFmpeg-dependent legacy authority test from the focused Wave-2 workflow; its ResolutionGate behavior is covered by the Wave-2 integration test."
+  ]
+}

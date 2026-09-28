@@ -69,6 +69,14 @@ export interface ResourceLock {
   readonly caseId: string;
   readonly acquiredAt: string;
   readonly expiresAt: string;
+  /**
+   * Wave-1 fencing metadata. Optional for legacy lock callers; new joint-healing
+   * callers should use MutationLease with mandatory fencingEpoch/sessionId.
+   */
+  readonly sessionId?: string;
+  readonly fencingEpoch?: number;
+  readonly capabilityGrant?: string;
+  readonly actionScope?: readonly string[];
 }
 
 export interface RepairFingerprint {

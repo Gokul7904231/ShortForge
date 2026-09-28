@@ -17,6 +17,8 @@ import type { ICaseRepository } from "../database/DatabaseContracts";
 import { InMemoryCaseRepository } from "../database/InMemoryDatabase";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
+import { ResolutionGate } from "../governance/ResolutionGate";
+import type { ResolutionProof } from "../governance/FloorGovernanceContracts";
 
 export interface CreateCaseParams {
   readonly title: string;
@@ -53,15 +55,18 @@ export class CaseManager {
   private repository: ICaseRepository;
   private eventBus?: DurableEventBus;
   private worldState?: WorldStateEngine;
+  private readonly resolutionGate: ResolutionGate;
 
   constructor(
     repository: ICaseRepository = new InMemoryCaseRepository(),
     eventBus?: DurableEventBus,
-    worldState?: WorldStateEngine
+    worldState?: WorldStateEngine,
+    resolutionGate: ResolutionGate = new ResolutionGate()
   ) {
     this.repository = repository;
     this.eventBus = eventBus;
     this.worldState = worldState;
+    this.resolutionGate = resolutionGate;
   }
 
   async createCase(params: CreateCaseParams): Promise<Case> {
@@ -313,10 +318,26 @@ export class CaseManager {
 
   async resolveCase(
     caseId: string,
-    resolutionDetails?: { diagnosis?: string; resolutionPlan?: string; healerId?: string; actionsTaken?: string[]; verifiedAt?: string }
+    resolutionDetails?: {
+      diagnosis?: string;
+      resolutionPlan?: string;
+      healerId?: string;
+      actionsTaken?: string[];
+      verifiedAt?: string;
+      resolutionProof?: ResolutionProof;
+    }
   ): Promise<Case> {
     const existing = await this.repository.getCaseById(caseId);
     if (!existing) throw new Error(`Case ${caseId} not found`);
+
+    const proof = resolutionDetails?.resolutionProof;
+    if (!proof) {
+      throw new Error("ResolutionGate proof is required for direct case resolution");
+    }
+    const gate = this.resolutionGate.evaluate(proof);
+    if (!gate.allowed) {
+      throw new Error(`ResolutionGate rejected case resolution: ${gate.reason}`);
+    }
 
     if (existing.status !== "RESOLVED") {
       const prevStatus = existing.status;

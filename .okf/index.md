@@ -219,3 +219,23 @@ Current runtime/training identity:
 - F07: QA Gate & Social Compliance.
 
 Historical documents may contain earlier F04 voice-only terminology. Those records are audit history, not current production or Ascalon ontology authority.
+
+
+## 12. Floor Governance Cell
+
+| Entry Point | Purpose |
+|---|---|
+| [./floor-governance-cell.md](./floor-governance-cell.md) | Canonical bounded-autonomy architecture for a governed production floor: Guardian authority, Ascalon cognition, Council/Blackboard, BDA, execution, paired healing, fencing, and closure. |
+| [./floor-design-template.md](./floor-design-template.md) | Reusable five-question design gate for new or modified floors and their action contracts. |
+| [./decisions/floor-governance-cell-final-wave-20260928.md](./decisions/floor-governance-cell-final-wave-20260928.md) | Final-wave decision: durable Council sessions, verified derived memory context, and typed Ascalon inference admission. |
+| [./audits/floor-governance-cell-final-wave-audit.md](./audits/floor-governance-cell-final-wave-audit.md) | Final-wave implementation audit and authority-boundary checks. |
+| [./decisions/agent-execution-fabric-20260928.md](./decisions/agent-execution-fabric-20260928.md) | Agent Execution Fabric decision: deterministic router, structured state, scoped tools, retry/idempotency recovery. |
+| [./intelligence/agent-execution-fabric.md](./intelligence/agent-execution-fabric.md) | Canonical execution-plane mapping for cognition, governance, routing, tools, MCP, A2A and verification. |
+| [./intelligence/a2a-boundary.md](./intelligence/a2a-boundary.md) | A2A boundary: remote-agent interoperability without importing external authority, memory or worker capabilities. |
+| [./decisions/floor-governance-cell-wave1-20260928.md](./decisions/floor-governance-cell-wave1-20260928.md) | Wave-1 decision record and implementation boundary. |
+| [./audits/floor-governance-cell-wave1-audit.md](./audits/floor-governance-cell-wave1-audit.md) | Documentation/code audit distinguishing implemented foundation from future integration. |
+| [./decisions/floor-governance-cell-wave2-20260928.md](./decisions/floor-governance-cell-wave2-20260928.md) | Wave-2 production integration decision: Guardian gate, persistent Blackboard, live Python BDA boundary, and ResolutionGate tightening. |
+| [./audits/floor-governance-cell-wave2-audit.md](./audits/floor-governance-cell-wave2-audit.md) | Wave-2 implementation audit and target-vs-current boundary record. |
+| [./decisions/floor-governance-cell-wave3-20260928.md](./decisions/floor-governance-cell-wave3-20260928.md) | Wave-3 durable paired-healing decision: parallel reasoning, fenced mutation, BDA reinspection, Auditor verification, Guardian closure. |\n| [./audits/floor-governance-cell-wave3-audit.md](./audits/floor-governance-cell-wave3-audit.md) | Wave-3 implementation and validation audit. |\n| [./decisions/floor-governance-cell-wave4-20260928.md](./decisions/floor-governance-cell-wave4-20260928.md) | Wave-4 cognitive council decision: Instructor/Advisor/Auditor deliberation before governed proposals. |\n| [./audits/floor-governance-cell-wave4-audit.md](./audits/floor-governance-cell-wave4-audit.md) | Wave-4 council implementation and validation audit. |
+
+FGC runtime foundation lives under `apps/web/factoryos/core/governance/`. The FGC does not replace the locked F00–F07 topology or F07 release gate.

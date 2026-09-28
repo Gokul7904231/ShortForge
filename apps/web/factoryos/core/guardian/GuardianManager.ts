@@ -7,6 +7,17 @@ import { GuardianKernel } from "./GuardianKernel";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { CaseManager } from "../cases/CaseManager";
+import { createDefaultFloorActionGraph } from "../governance/DefaultFloorActionGraph";
+import { ProposalOnlyAscalonAdapter } from "../governance/AscalonGuardianAdapter";
+import { DiskFloorBlackboardJournal } from "../governance/FloorBlackboardJournal";
+import { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
+import {
+  FloorCouncil,
+  type FloorCouncilAdvisor,
+  type FloorCouncilMemoryProvider,
+} from "../governance/FloorCouncil";
+import { DiskFloorCouncilSessionStore } from "../governance/FloorCouncilSessionStore";
+import { AscalonInferenceAdmissionGate } from "../governance/AscalonInferenceAdmission";
 
 export class GuardianManager {
   private guardians: Map<string, GuardianKernel> = new Map();
@@ -14,20 +25,30 @@ export class GuardianManager {
   private worldState: WorldStateEngine;
   private caseManager?: CaseManager;
   private isRunning: boolean = false;
+  private governanceStoragePath?: string;
 
   constructor(
     eventBus: DurableEventBus,
     worldState: WorldStateEngine,
-    caseManager?: CaseManager
+    caseManager?: CaseManager,
+    governanceStoragePath?: string
   ) {
     this.eventBus = eventBus;
     this.worldState = worldState;
     this.caseManager = caseManager;
+    this.governanceStoragePath = governanceStoragePath;
 
     this.registerDefaultGuardians();
   }
 
   private registerDefaultGuardians(): void {
+    const ascalonAllowedModelRefs = new Set(
+      String(process.env.ASCALON_ALLOWED_MODEL_REFS || "")
+        .split(",")
+        .map((ref) => ref.trim())
+        .filter(Boolean),
+    );
+
     const floors = [
       { name: "Floor 01 Guardian (Strategy)", floorId: "floor01_strategy" },
       { name: "Floor 02 Guardian (Scripting)", floorId: "floor02_scripting" },
@@ -47,6 +68,35 @@ export class GuardianManager {
         this.eventBus,
         this.caseManager
       );
+
+      const governanceCell = new FloorGovernanceCell({
+        floorId: f.floorId,
+        guardianId: `guardian_${f.floorId}`,
+        actionGraph: createDefaultFloorActionGraph(),
+        ascalon: new ProposalOnlyAscalonAdapter(async () => null),
+        capabilities: [
+          "floor.read",
+          "floor.analyze",
+          "floor.validate",
+          "floor.authorize",
+          "floor.execute",
+          "floor.verify",
+          "floor.close",
+          "floor.quarantine",
+          "floor.escalate",
+          "floor.human_approval",
+        ],
+        blackboardJournal: new DiskFloorBlackboardJournal(this.governanceStoragePath, f.floorId),
+         council: new FloorCouncil({
+           sessionStore: new DiskFloorCouncilSessionStore(this.governanceStoragePath, f.floorId),
+           minAdvisorConfidence: 0.7,
+         }),
+         eventBus: this.eventBus,
+         ascalonAdmission: new AscalonInferenceAdmissionGate(0.7, ascalonAllowedModelRefs),
+      });
+
+      governanceCell.setState("READY", "Guardian runtime attached");
+      guardian.attachGovernanceCell(governanceCell);
       this.guardians.set(f.floorId, guardian);
     }
   }
@@ -57,6 +107,39 @@ export class GuardianManager {
 
   getAllGuardians(): GuardianKernel[] {
     return Array.from(this.guardians.values());
+  }
+
+  attachGovernanceAdvisor(advisor: FloorCouncilAdvisor): void {
+    for (const guardian of this.guardians.values()) {
+      guardian.getGovernanceCell()?.getCouncil()?.setAdvisor(advisor);
+    }
+  }
+
+  attachGovernanceMemoryProvider(provider: FloorCouncilMemoryProvider): void {
+    for (const guardian of this.guardians.values()) {
+      guardian.getGovernanceCell()?.getCouncil()?.setMemoryProvider(provider);
+    }
+  }
+
+  async requestHealingClosureGrant(input: {
+    incidentId: string;
+    floorId: string;
+    sessionId: string;
+    evidenceRefs: readonly string[];
+    bdaPass: boolean;
+    auditorPass: boolean;
+  }): Promise<{ authorized: boolean; grantId?: string; reason: string }> {
+    const guardian = this.guardians.get(input.floorId);
+    if (!guardian) {
+      return { authorized: false, reason: `guardian_not_found:${input.floorId}` };
+    }
+    return guardian.authorizeHealingClosure({
+      incidentId: input.incidentId,
+      sessionId: input.sessionId,
+      evidenceRefs: input.evidenceRefs,
+      bdaPass: input.bdaPass,
+      auditorPass: input.auditorPass,
+    });
   }
 
   async start(): Promise<void> {

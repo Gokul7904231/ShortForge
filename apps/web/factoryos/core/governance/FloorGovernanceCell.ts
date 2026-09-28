@@ -1,0 +1,456 @@
+import { randomUUID } from "node:crypto";
+import type {
+  ActionGateContext,
+  ActionProposal,
+  AuthorizationGrant,
+  FloorGovernanceState,
+  FloorSnapshot,
+} from "./FloorGovernanceContracts";
+import { FloorActionGate } from "./FloorActionGate";
+import { FloorActionGraph } from "./FloorActionGraph";
+import { FloorBlackboard } from "./FloorBlackboard";
+import type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
+import type { GuardianDecision } from "../guardian/GuardianContracts";
+import type { AscalonGuardianAdapter } from "./AscalonGuardianAdapter";
+import { FloorCouncil } from "./FloorCouncil";
+import type { DurableEventBus } from "../events/DurableEventBus";
+import { AscalonInferenceAdmissionGate } from "./AscalonInferenceAdmission";
+
+export interface GovernanceExecutionResult {
+  readonly success: boolean;
+  readonly state: FloorGovernanceState;
+  readonly reason: string;
+  readonly actionName?: string;
+  readonly proposalId?: string;
+}
+
+export interface FloorGovernanceCellConfig {
+  readonly floorId: string;
+  readonly guardianId: string;
+  readonly actionGraph: FloorActionGraph;
+  readonly ascalon: AscalonGuardianAdapter;
+  readonly capabilities: readonly string[];
+  readonly blackboardJournal?: FloorBlackboardJournal;
+  readonly council?: FloorCouncil;
+  readonly eventBus?: DurableEventBus;
+  readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
+}
+
+export class FloorGovernanceCell {
+  readonly floorId: string;
+  readonly guardianId: string;
+  readonly blackboard: FloorBlackboard;
+  readonly actionGraph: FloorActionGraph;
+
+  private state: FloorGovernanceState = "BOOT";
+  private stateVersion = 0;
+  private lastAction: string | "START" = "START";
+
+  private readonly actionGate: FloorActionGate;
+  private readonly capabilities: ReadonlySet<string>;
+  private council?: FloorCouncil;
+  private readonly eventBus?: DurableEventBus;
+  private readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
+  private grants: AuthorizationGrant[] = [];
+
+  constructor(config: FloorGovernanceCellConfig) {
+    this.floorId = config.floorId;
+    this.guardianId = config.guardianId;
+    this.actionGraph = config.actionGraph;
+    this.capabilities = new Set(config.capabilities);
+    this.blackboard = new FloorBlackboard(this.floorId, config.blackboardJournal);
+    this.actionGate = new FloorActionGate(this.actionGraph, () => this.lastAction);
+    this.ascalon = config.ascalon;
+    this.council = config.council;
+    this.eventBus = config.eventBus;
+    this.ascalonAdmission = config.ascalonAdmission;
+  }
+
+  private readonly ascalon: AscalonGuardianAdapter;
+
+  getState(): FloorGovernanceState {
+    return this.state;
+  }
+
+  getStateVersion(): number {
+    return this.stateVersion;
+  }
+
+  setState(next: FloorGovernanceState, reason?: string): void {
+    const legal: Partial<Record<FloorGovernanceState, FloorGovernanceState[]>> = {
+      BOOT: ["READY", "DEGRADED"],
+      READY: ["OBSERVING", "EXECUTING", "DEGRADED", "ESCALATED"],
+      OBSERVING: ["EXECUTING", "INCIDENT", "DEGRADED", "READY"],
+      EXECUTING: ["INSPECTING", "INCIDENT", "DEGRADED", "ESCALATED"],
+      INSPECTING: ["READY", "QUARANTINED", "INCIDENT", "DEGRADED"],
+      QUARANTINED: ["INCIDENT", "READY", "ESCALATED"],
+      INCIDENT: ["DIAGNOSING", "ESCALATED", "OVERSEER_ASSIST", "HUMAN_INTERVENTION"],
+      DIAGNOSING: ["HEALING", "ESCALATED", "OVERSEER_ASSIST"],
+      HEALING: ["VERIFYING", "DEGRADED", "ESCALATED", "HUMAN_INTERVENTION"],
+      VERIFYING: ["READY", "HEALING", "CLOSED", "ESCALATED"],
+      DEGRADED: ["OBSERVING", "INCIDENT", "ESCALATED", "OVERSEER_ASSIST"],
+      ESCALATED: ["OVERSEER_ASSIST", "HEALING", "HUMAN_INTERVENTION", "READY"],
+      OVERSEER_ASSIST: ["HEALING", "VERIFYING", "HUMAN_INTERVENTION", "READY"],
+      HUMAN_INTERVENTION: ["OBSERVING", "HEALING", "VERIFYING", "CLOSED"],
+      CLOSED: ["READY"],
+    };
+
+    if (next === this.state) return;
+    if (!legal[this.state]?.includes(next)) {
+      throw new Error(`Invalid floor governance transition ${this.state} -> ${next}`);
+    }
+
+    const previous = this.state;
+    this.state = next;
+    this.stateVersion += 1;
+    this.blackboard.append(
+      "OBSERVATION",
+      "FLOOR_GUARDIAN",
+      "VERIFIED",
+      { event: "STATE_TRANSITION", from: previous, to: next, reason: reason || null }
+    );
+  }
+
+  attachCouncil(council: FloorCouncil): void {
+    this.council = council;
+  }
+
+  getCouncil(): FloorCouncil | undefined {
+    return this.council;
+  }
+
+    setAuthorizationGrants(grants: readonly AuthorizationGrant[]): void {
+    this.grants = [...grants];
+  }
+
+  createSnapshot(input: Omit<FloorSnapshot, "floorId" | "state" | "stateVersion" | "observedAt">): FloorSnapshot {
+    return {
+      floorId: this.floorId,
+      state: this.state,
+      stateVersion: this.stateVersion,
+      observedAt: new Date().toISOString(),
+      ...input,
+    };
+  }
+
+  async proposeNext(snapshot: FloorSnapshot): Promise<ActionProposal | null> {
+    const availableActions = this.actionGraph
+      .getNextActions(this.lastAction)
+      .map((action) => action.actionName);
+    const verifiedEvidenceRefs = this.blackboard
+      .getVerifiedEvidence()
+      .flatMap((entry) => entry.evidenceRefs);
+
+    const proposal = await this.ascalon.proposeNext({
+      snapshot,
+      availableActions,
+      evidenceRefs: verifiedEvidenceRefs,
+    });
+
+    if (!proposal) return null;
+
+    if (proposal.ascalonInference && this.ascalonAdmission) {
+      const admission = this.ascalonAdmission.evaluate({
+        snapshot,
+        availableActions,
+        verifiedEvidenceRefs,
+        envelope: {
+          metadata: proposal.ascalonInference,
+          proposal,
+        },
+      });
+
+      if (this.eventBus) {
+        await this.eventBus.publish("ASCALON_INFERENCE_ADMISSION_EVALUATED", {
+          floorId: snapshot.floorId,
+          proposalId: proposal.proposalId,
+          inferenceId: proposal.ascalonInference.inferenceId,
+          modelRef: proposal.ascalonInference.modelRef,
+          mode: proposal.ascalonInference.mode,
+          admitted: admission.admitted,
+          shadowOnly: admission.shadowOnly,
+          reason: admission.reason,
+          contextFingerprint: admission.contextFingerprint,
+        });
+      }
+
+      if (!admission.admitted) {
+        this.blackboard.append(
+          "CONFLICT",
+          "SYSTEM",
+          "VERIFIED",
+          {
+            event: "ASCALON_INFERENCE_NOT_ADMITTED",
+            proposalId: proposal.proposalId,
+            mode: proposal.ascalonInference.mode,
+            reason: admission.reason,
+            shadowOnly: admission.shadowOnly,
+          },
+          proposal.evidenceRefs
+        );
+        return null;
+      }
+    }
+
+    if (!this.council) return proposal;
+
+    const action = this.actionGraph.getAction(proposal.actionName);
+    if (!action) {
+      this.blackboard.append(
+        "CONFLICT",
+        "SYSTEM",
+        "VERIFIED",
+        {
+          event: "COUNCIL_REJECTED_UNKNOWN_ACTION",
+          proposalId: proposal.proposalId,
+          actionName: proposal.actionName,
+        },
+        proposal.evidenceRefs
+      );
+      return null;
+    }
+
+    const review = await this.council.reviewProposal({
+      snapshot,
+      proposal,
+      action,
+      currentAction: this.lastAction,
+      nextActions: availableActions,
+      verifiedEvidenceRefs,
+    });
+
+    await this.publishCouncilReview(snapshot, proposal, review);
+
+    for (const packet of review.counselPackets) {
+      this.blackboard.append(
+        review.decision === "APPROVE" ? "RECOMMENDATION" : "CONFLICT",
+        packet.ministerRole,
+        packet.recommendation.startsWith("SUPPORT:") ? "VERIFIED" : "DERIVED",
+        {
+          counselId: packet.counselId,
+          recommendation: packet.recommendation,
+          constraints: packet.constraints,
+          urgency: packet.urgency,
+          expectedOutcome: packet.expectedOutcome,
+          provenance: packet.provenance,
+        },
+        packet.supportingEvidence
+      );
+    }
+
+    if (review.decision !== "APPROVE") {
+      this.blackboard.append(
+        "CONFLICT",
+        "SYSTEM",
+        "DERIVED",
+        {
+          event: "COUNCIL_DECISION",
+          proposalId: proposal.proposalId,
+          decision: review.decision,
+          reason: review.reason,
+          conflicts: review.conflicts,
+        },
+        proposal.evidenceRefs
+      );
+      return null;
+    }
+
+    this.blackboard.append(
+      "RECOMMENDATION",
+      "ADVISOR",
+      "VERIFIED",
+      {
+        event: "COUNCIL_APPROVED_PROPOSAL",
+        proposalId: proposal.proposalId,
+        actionName: proposal.actionName,
+        stateVersion: proposal.stateVersion,
+      },
+      review.counselPackets.flatMap((packet) => packet.supportingEvidence)
+    );
+
+    return proposal;
+  }
+
+  /**
+   * Governs a legacy Guardian decision at the mutation boundary.
+   * Existing GuardianKernel already performed observation, auditing and planning;
+   * this method binds that decision to an explicit typed action, capability, grant
+   * and execution record without making Ascalon authoritative.
+   */
+  private async publishCouncilReview(
+    snapshot: FloorSnapshot,
+    proposal: ActionProposal,
+    review: import("./FloorCouncil").FloorCouncilReview
+  ): Promise<void> {
+    if (!this.eventBus) return;
+    await this.eventBus.publish("FLOOR_COUNCIL_REVIEW_COMPLETED", {
+      floorId: snapshot.floorId,
+      proposalId: proposal.proposalId,
+      actionName: proposal.actionName,
+      decision: review.decision,
+      reason: review.reason,
+      conflicts: review.conflicts,
+      phaseTrace: review.phaseTrace,
+      counselIds: review.counselPackets.map((packet) => packet.counselId),
+      sessionId: review.sessionId,
+      proposalFingerprint: review.proposalFingerprint,
+      memoryContext: review.memoryContext
+        ? {
+            snapshotId: review.memoryContext.snapshotId,
+            generatedAt: review.memoryContext.generatedAt,
+            itemIds: review.memoryContext.itemIds,
+          }
+        : undefined,
+    });
+  }
+
+  async executeGuardianDecision(
+    decision: GuardianDecision,
+    snapshot: FloorSnapshot,
+    execute: () => Promise<void>
+  ): Promise<GovernanceExecutionResult> {
+    const actionName =
+      decision.action === "QUARANTINE_WORKER"
+        ? "floor.quarantine"
+        : decision.action === "ESCALATE"
+          ? "floor.escalate"
+          : "floor.execute";
+
+    this.lastAction = "floor.request_authorization";
+    this.blackboard.append(
+      "OBSERVATION",
+      "FLOOR_GUARDIAN",
+      "VERIFIED",
+      {
+        event: "GUARDIAN_MUTATION_GATE_OPEN",
+        action: decision.action,
+        targetId: decision.targetId,
+      }
+    );
+
+    const action = this.actionGraph.getAction(actionName);
+    if (!action) {
+      return { success: false, state: this.state, reason: "missing_governance_action:" + actionName };
+    }
+
+    const grant: AuthorizationGrant = {
+      grantId: "guardian_grant_" + randomUUID().replace(/-/g, "").slice(0, 12),
+      floorId: this.floorId,
+      actionName,
+      authorizedBy: "FLOOR_GUARDIAN",
+      capability: action.requiredCapability,
+      targetId: decision.targetId,
+      stateVersion: snapshot.stateVersion,
+      expiresAt: new Date(Date.now() + 15_000).toISOString(),
+      evidenceRefs: [],
+    };
+    this.setAuthorizationGrants([grant]);
+
+    const proposal: ActionProposal = {
+      proposalId: this.createProposalId(),
+      floorId: this.floorId,
+      actionName,
+      proposer: "FLOOR_GUARDIAN",
+      targetId: decision.targetId,
+      parameters: decision.parameters || {},
+      evidenceRefs: [],
+      expectedOutcome: decision.reason,
+      expectedPostconditions: [...action.postconditions],
+      confidence: decision.confidence,
+      stateVersion: snapshot.stateVersion,
+      proposedAt: new Date().toISOString(),
+      inputTrust: "TRUSTED_SYSTEM_STATE",
+    };
+
+    const satisfied = new Set<string>();
+    for (const precondition of action.preconditions) {
+      if (
+        precondition === "floor_ready" ||
+        precondition === "governance_cycle_active" ||
+        precondition === "candidate_validated" ||
+        precondition === "authorization_grant_present"
+      ) {
+        satisfied.add(precondition);
+      }
+    }
+
+    return this.authorizeAndExecute(proposal, snapshot, execute, {
+      evidenceRefs: new Set(),
+      satisfiedPreconditions: satisfied,
+    });
+  }
+  async authorizeAndExecute(
+    proposal: ActionProposal,
+    snapshot: FloorSnapshot,
+    execute: (proposal: ActionProposal) => Promise<void>,
+    extraContext: Pick<
+      ActionGateContext,
+      "evidenceRefs" | "satisfiedPreconditions" | "humanApprovalIds" | "currentFencingEpoch"
+    > = {
+      evidenceRefs: new Set<string>(),
+      satisfiedPreconditions: new Set<string>(),
+    }
+  ): Promise<GovernanceExecutionResult> {
+    const context: ActionGateContext = {
+      snapshot,
+      evidenceRefs: extraContext.evidenceRefs,
+      satisfiedPreconditions: extraContext.satisfiedPreconditions,
+      capabilities: this.capabilities,
+      grants: this.grants,
+      humanApprovalIds: extraContext.humanApprovalIds,
+      currentFencingEpoch: extraContext.currentFencingEpoch,
+    };
+
+    const gate = this.actionGate.authorizeProposal(proposal, context);
+    if (!gate.allowed) {
+      this.blackboard.append(
+        "VERIFICATION",
+        "FLOOR_GUARDIAN",
+        "VERIFIED",
+        {
+          event: "ACTION_DENIED",
+          proposalId: proposal.proposalId,
+          actionName: proposal.actionName,
+          reason: gate.reason,
+        },
+        proposal.evidenceRefs
+      );
+      return {
+        success: false,
+        state: this.state,
+        reason: gate.reason,
+        actionName: proposal.actionName,
+        proposalId: proposal.proposalId,
+      };
+    }
+
+    await execute(proposal);
+    this.lastAction = proposal.actionName;
+    this.stateVersion += 1;
+
+    this.blackboard.append(
+      "OBSERVATION",
+      "SYSTEM",
+      "DERIVED",
+      {
+        event: "ACTION_EXECUTED",
+        proposalId: proposal.proposalId,
+        actionName: proposal.actionName,
+        targetId: proposal.targetId,
+      },
+      proposal.evidenceRefs
+    );
+
+    return {
+      success: true,
+      state: this.state,
+      reason: "executed",
+      actionName: proposal.actionName,
+      proposalId: proposal.proposalId,
+    };
+  }
+
+  createProposalId(): string {
+    return `proposal_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
+  }
+}

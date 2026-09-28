@@ -71,6 +71,7 @@ export class ContradictionResolver {
     conflict.status = "RESOLVED";
     conflict.selectedClaim = selectedClaim;
     conflict.resolutionRationale = probe.rationale;
+    conflict.resolutionConfidence = probe.confidence;
     conflict.resolvedAt = new Date().toISOString();
 
     return structuredClone(conflict);
@@ -96,8 +97,21 @@ export class ContradictionResolver {
 
     const isCpuIssue = (objectiveMetrics.hostCpuPercent ?? 0) > 85;
     const isNetworkSocketIssue = (objectiveMetrics.tcpRetransmits ?? 0) > 20;
+    const driveAvailable = objectiveMetrics.driveAvailable;
+    const vramUsedMb = Number(objectiveMetrics.vramUsedMb ?? 0);
+    const vramTotalMb = Number(objectiveMetrics.vramTotalMb ?? 8192);
+    const vramSaturated = vramTotalMb > 0 && vramUsedMb / vramTotalMb >= 0.9;
 
-    if (claimAText.includes("cpu") && isCpuIssue && !isNetworkSocketIssue) {
+    if (claimAText.includes("disk") && driveAvailable === false) {
+      supportedClaim = "A";
+      rationale = "Diagnostic probe confirmed the drive is unavailable, supporting the storage/disk failure claim.";
+    } else if (
+      (claimBText.includes("gpu") || claimBText.includes("vram")) &&
+      vramSaturated
+    ) {
+      supportedClaim = "B";
+      rationale = `Diagnostic probe confirmed GPU VRAM saturation at ${vramUsedMb}/${vramTotalMb} MB.`;
+    } else if (claimAText.includes("cpu") && isCpuIssue && !isNetworkSocketIssue) {
       supportedClaim = "A";
       rationale = `Diagnostic probe confirmed Host CPU Saturation (${objectiveMetrics.hostCpuPercent}%), while socket buffers remained normal.`;
     } else if (claimBText.includes("tcp") || claimBText.includes("socket") || claimBText.includes("buffer")) {

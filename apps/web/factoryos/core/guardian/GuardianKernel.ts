@@ -23,6 +23,8 @@ import { GuardianLocalWorldModel } from "./GuardianLocalWorldModel";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { CaseManager } from "../cases/CaseManager";
+import type { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
+import { GuardianGovernanceAdapter } from "../governance/GuardianGovernanceAdapter";
 
 export class GuardianKernel {
   readonly floorId: string;
@@ -47,6 +49,8 @@ export class GuardianKernel {
   private worldState: WorldStateEngine;
   private eventBus: DurableEventBus;
   private caseManager?: CaseManager;
+  private governanceCell?: FloorGovernanceCell;
+  private governanceAdapter?: GuardianGovernanceAdapter;
 
   private auditIntervalMs: number;
   private heartbeatIntervalMs: number;
@@ -86,6 +90,18 @@ export class GuardianKernel {
     this.localWorldModel = new GuardianLocalWorldModel(this.floorId);
 
     this.subscribeToEvents();
+  }
+
+  attachGovernanceCell(cell: FloorGovernanceCell): void {
+    if (cell.floorId !== this.floorId) {
+      throw new Error(`Governance cell floor mismatch: ${cell.floorId} != ${this.floorId}`);
+    }
+    this.governanceCell = cell;
+    this.governanceAdapter = new GuardianGovernanceAdapter(cell);
+  }
+
+  getGovernanceCell(): FloorGovernanceCell | undefined {
+    return this.governanceCell;
   }
 
   getState(): GuardianState {
@@ -260,7 +276,52 @@ export class GuardianKernel {
   /**
    * Executes an autonomous decision locally or escalates to Overseer.
    */
+  /** 
+   * Every legacy Guardian mutation now crosses the Floor Governance Cell.
+   * Guardian remains the authority; the governance cell supplies the typed
+   * action contract, capability/scope checks and immutable decision evidence.
+   */
   private async executeDecision(decision: GuardianDecision, audit: GuardianAuditReport): Promise<void> {
+    if (!this.governanceCell) {
+      await this.executeDecisionLegacy(decision, audit);
+      return;
+    }
+
+    const world = this.worldState.getState();
+    const activeCases = this.caseManager ? await this.caseManager.getActiveCases() : [];
+    const snapshot = this.governanceCell.createSnapshot({
+      jobs: Object.values((world as any).jobs || {}),
+      workers: Object.values(world.workers || {}).map((worker) => ({ ...worker })),
+      resources: [{ ...(world.resources || {}) }],
+      activeIncidents: activeCases.map((item) => item.caseId),
+      constraints: [
+        ...(audit.health === "CRITICAL" ? ["critical_floor_state"] : []),
+        ...(decision.requiresOverseerApproval ? ["overseer_approval_required"] : []),
+      ],
+    });
+
+    const result = this.governanceAdapter
+      ? await this.governanceAdapter.executeDecision(
+          decision,
+          snapshot,
+          async () => this.executeDecisionLegacy(decision, audit)
+        )
+      : await this.governanceCell.executeGuardianDecision(
+          decision,
+          snapshot,
+          () => this.executeDecisionLegacy(decision, audit)
+        );
+
+    if (!result.success) {
+      await this.escalateToOverseer(
+        "HIGH",
+        `Floor governance denied Guardian action ${decision.action}: ${result.reason}`,
+        [decision, result]
+      );
+    }
+  }
+
+  private async executeDecisionLegacy(decision: GuardianDecision, audit: GuardianAuditReport): Promise<void> {
     this.stateMachine.transition("EXECUTE", `Executing ${decision.action} on ${decision.targetId}`);
     this.memory.recordDecision(decision);
 
@@ -301,6 +362,72 @@ export class GuardianKernel {
         break;
       }
     }
+  }
+
+  /**
+   * Guardian-controlled closure grant for Wave-3 paired healing.
+   * Healing agents may prove a candidate resolution, but only the floor
+   * Guardian can authorize incident closure after BDA + Auditor evidence.
+   */
+  async authorizeHealingClosure(input: {
+    incidentId: string;
+    sessionId: string;
+    evidenceRefs: readonly string[];
+    bdaPass: boolean;
+    auditorPass: boolean;
+  }): Promise<{ authorized: boolean; grantId?: string; reason: string }> {
+    if (!input.bdaPass) {
+      return { authorized: false, reason: "bda_reinspection_failed" };
+    }
+    if (!input.auditorPass) {
+      return { authorized: false, reason: "auditor_verification_failed" };
+    }
+    if (input.evidenceRefs.length === 0) {
+      return { authorized: false, reason: "closure_evidence_missing" };
+    }
+
+    const caseItem = this.caseManager
+      ? await this.caseManager.getCase(input.incidentId)
+      : null;
+    if (!caseItem || caseItem.floorId !== this.floorId) {
+      return { authorized: false, reason: "incident_not_owned_by_floor_guardian" };
+    }
+    if (caseItem.status !== "VERIFYING") {
+      return { authorized: false, reason: `incident_not_ready_for_closure:${caseItem.status}` };
+    }
+
+    const floor = this.worldState.getState().floors[this.floorId];
+    if (!floor || floor.status === "ERROR") {
+      return { authorized: false, reason: "floor_not_healthy_for_closure" };
+    }
+
+    const grantId = `guardian_closure_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
+    const closureAt = new Date().toISOString();
+
+    this.governanceCell?.blackboard.append(
+      "VERIFICATION",
+      "FLOOR_GUARDIAN",
+      "VERIFIED",
+      {
+        event: "HEALING_CLOSURE_AUTHORIZED",
+        incidentId: input.incidentId,
+        sessionId: input.sessionId,
+        grantId,
+      },
+      input.evidenceRefs
+    );
+
+    await this.eventBus.publish("GUARDIAN_CLOSURE_GRANTED", {
+      floorId: this.floorId,
+      guardianId: `guardian_${this.floorId}`,
+      incidentId: input.incidentId,
+      sessionId: input.sessionId,
+      grantId,
+      evidenceRefs: [...input.evidenceRefs],
+      grantedAt: closureAt,
+    });
+
+    return { authorized: true, grantId, reason: "guardian_closure_authorized" };
   }
 
   /**

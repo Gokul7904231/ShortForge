@@ -185,7 +185,12 @@ export class AutonomousFactoryController {
     this.cognitivePlane = new CognitivePlaneEngine(repos.memories);
 
     // 7. Swarms, Guardians & Overseer
-    this.guardianManager = new GuardianManager(this.eventBus, this.worldState, this.caseManager);
+    this.guardianManager = new GuardianManager(
+      this.eventBus,
+      this.worldState,
+      this.caseManager,
+      this.config.storagePath
+    );
 
     this.slayerEngine = new SlayerEngine(
       this.caseManager,
@@ -203,6 +208,107 @@ export class AutonomousFactoryController {
       this.leaseManager,
       repos.reputation
     );
+
+    this.healerEngine.enableJointHealing({
+      storagePath: this.config.storagePath,
+      guardianClosureAuthorizer: async (request) =>
+        this.guardianManager.requestHealingClosureGrant(request),
+    });
+
+    this.guardianManager.attachGovernanceMemoryProvider(async (query, maxItems, maxChars) => {
+      if (!this.memoryFabric) return null;
+      const projection = await this.memoryFabric.projectForAgent(query, maxItems, maxChars);
+      return {
+        snapshotId: `memory_${projection.generatedAt}`,
+        generatedAt: projection.generatedAt,
+        items: projection.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          provenance: item.provenance,
+          qualityScore: item.qualityScore,
+        })),
+      };
+    });
+
+    this.guardianManager.attachGovernanceAdvisor(async ({ snapshot, proposal, action, memoryContext }) => {
+      const riskToSeverity = {
+        LOW: "LOW",
+        MEDIUM: "MEDIUM",
+        HIGH: "HIGH",
+        CRITICAL: "CRITICAL",
+      } as const;
+
+      const evaluation = await this.overseer.cognitiveRuntime.evaluateIncident({
+        incidentId: snapshot.activeIncidents[0] || `governance_${proposal.proposalId}`,
+        floorId: snapshot.floorId,
+        target: proposal.targetId,
+        category: "FLOOR_GOVERNANCE_COUNSEL",
+        severity: riskToSeverity[action.risk],
+        symptoms: [
+          `Review governed proposal ${proposal.actionName}`,
+          ...snapshot.constraints,
+          ...(memoryContext?.items.slice(0, 4).map(
+            (item) => `Derived memory context [${item.id}]: ${item.content.slice(0, 280)}`
+          ) || []),
+        ],
+        observedMetrics: {
+          jobs: snapshot.jobs,
+          workers: snapshot.workers,
+          resources: snapshot.resources,
+          state: snapshot.state,
+          stateVersion: snapshot.stateVersion,
+        },
+        candidateActions: [
+          {
+            actionId: proposal.proposalId,
+            title: proposal.actionName,
+            riskLevel: action.risk,
+          },
+        ],
+        worldStateSnapshot: snapshot,
+      });
+
+      const supports = Boolean(
+        !evaluation.fallbackApplied &&
+        evaluation.candidateActionId === proposal.proposalId &&
+        evaluation.confidence >= 0.7 &&
+        evaluation.simulationEvaluated
+      );
+
+      return {
+        counselId: `counsel_advisor_${proposal.proposalId}`,
+        floorId: snapshot.floorId,
+        recommendation: supports
+          ? `SUPPORT:${proposal.actionName}`
+          : `CHALLENGE:${evaluation.recommendedAction}`,
+        supportingEvidence: Array.from(
+          new Set([...(proposal.evidenceRefs || []), ...(evaluation.evidenceIds || [])])
+        ),
+        constraints: [
+          ...(supports ? [] : ["cognitive_runtime_did_not_support_proposal"]),
+          ...(memoryContext
+            ? [`derived_memory_context_items=${memoryContext.items.length}`]
+            : ["derived_memory_context_unavailable"]),
+          ...(supports
+            ? []
+            : [
+              `confidence=${evaluation.confidence.toFixed(2)}`,
+              evaluation.fallbackApplied ? "cognitive_fallback_applied" : "cognitive_support_threshold_not_met",
+            ]),
+        ],
+        uncertainty: Math.max(0, 1 - evaluation.confidence),
+        conflictsWith: supports ? [] : [evaluation.recommendedAction],
+        urgency: action.risk,
+        expectedOutcome: evaluation.rationale,
+        rejectionConditions: supports
+          ? []
+          : ["Advisor confidence or simulation support was insufficient."],
+        provenance: `CognitiveRuntime:${evaluation.complexityLevel}`,
+        createdAt: new Date().toISOString(),
+        ministerRole: "ADVISOR",
+      };
+    });
 
     this.validatorAgent = new ValidatorAgent(this.caseManager, this.eventBus, this.worldState);
 
@@ -269,19 +375,11 @@ export class AutonomousFactoryController {
   private async recoverStateOnBoot(): Promise<void> {
     // 1. Recover active cases
     const activeCases = await this.caseManager.getActiveCases();
-    const currentWorld = this.worldState.getState();
     for (const c of activeCases) {
-      if (c.targetWorker && currentWorld.workers[c.targetWorker]?.status === "HEALTHY") {
-        await this.caseManager.resolveCase(c.caseId, {
-          diagnosis: `Worker ${c.targetWorker} verified healthy on boot recovery`,
-          resolutionPlan: "Auto-resolved during controller boot",
-          healerId: "kernel_boot_recovery",
-          actionsTaken: ["State verified healthy"],
-          verifiedAt: new Date().toISOString(),
-        });
-      } else {
-        this.worldState.addActiveCase(c.caseId);
-      }
+      // Boot recovery may reconstruct an active incident, but it may not
+      // silently resolve it. Resolution remains behind Validator/F07 evidence
+      // and the explicit ResolutionGate.
+      this.worldState.addActiveCase(c.caseId);
     }
 
     // 2. Reclaim expired task leases

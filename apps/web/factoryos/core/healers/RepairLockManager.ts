@@ -1,13 +1,17 @@
 /**
- * FactoryOS Frontier v2 — Repair Lock Manager (Shared-Resource Concurrency)
- * Enforces exclusive locking on workers, GPUs, queues, and storage during transactional repairs.
+ * FactoryOS — Repair Lock Manager
+ *
+ * Backward-compatible resource locks plus fencing-aware mutation leases.
+ * The incident is not globally locked; individual mutation resources are.
  */
 
 import type { LeaseManager } from "../leases/LeaseManager";
 import type { ResourceLock } from "../contracts/HealerContracts";
+import type { MutationLease } from "../governance/FloorGovernanceContracts";
 
 export class RepairLockManager {
   private inMemoryLocks: Map<string, ResourceLock> = new Map();
+  private fencingEpochs: Map<string, number> = new Map();
   private leaseManager?: LeaseManager;
 
   constructor(leaseManager?: LeaseManager) {
@@ -16,27 +20,37 @@ export class RepairLockManager {
 
   /**
    * Acquires exclusive lock on a protected resource.
+   *
+   * Each successful acquisition advances the fencing epoch. A stale holder
+   * can therefore be rejected even after its wall-clock lease expires.
    */
   async acquireLock(
     resourceId: string,
     healerId: string,
     caseId: string,
-    ttlMs: number = 30000
+    ttlMs: number = 30000,
+    sessionId?: string,
+    capabilityGrant?: string,
+    actionScope?: readonly string[]
   ): Promise<boolean> {
     const lockKey = `lock:resource:${resourceId}`;
 
-    // Check LeaseManager first
+    const now = Date.now();
+    const existing = this.inMemoryLocks.get(lockKey);
+    if (
+      existing &&
+      new Date(existing.expiresAt).getTime() > now
+    ) {
+      return false;
+    }
+
     if (this.leaseManager) {
       const acquired = await this.leaseManager.acquire(lockKey, healerId, ttlMs);
       if (!acquired) return false;
     }
 
-    // Check in-memory locks
-    const now = Date.now();
-    const existing = this.inMemoryLocks.get(lockKey);
-    if (existing && new Date(existing.expiresAt).getTime() > now && existing.ownerHealerId !== healerId) {
-      return false; // Resource locked by another healer
-    }
+    const fencingEpoch = (this.fencingEpochs.get(resourceId) || 0) + 1;
+    this.fencingEpochs.set(resourceId, fencingEpoch);
 
     const acquiredAt = new Date().toISOString();
     const expiresAt = new Date(now + ttlMs).toISOString();
@@ -47,14 +61,109 @@ export class RepairLockManager {
       caseId,
       acquiredAt,
       expiresAt,
+      sessionId,
+      fencingEpoch,
+      capabilityGrant,
+      actionScope: actionScope ? [...actionScope] : undefined,
     });
 
     return true;
   }
 
-  /**
-   * Renews an existing lock if owned by the requesting healer.
-   */
+  async acquireMutationLease(
+    resourceId: string,
+    sessionId: string,
+    ownerId: string,
+    incidentId: string,
+    capabilityGrant: string,
+    actionScope: readonly string[],
+    ttlMs: number = 30000
+  ): Promise<MutationLease | null> {
+    const acquired = await this.acquireLock(
+      resourceId,
+      ownerId,
+      incidentId,
+      ttlMs,
+      sessionId,
+      capabilityGrant,
+      actionScope
+    );
+    if (!acquired) return null;
+
+    const lock = this.getLock(resourceId);
+    if (!lock?.fencingEpoch) {
+      throw new Error(`Missing fencing epoch for mutation lease: ${resourceId}`);
+    }
+
+    return {
+      resourceId,
+      incidentId,
+      sessionId,
+      ownerId,
+      expiresAt: lock.expiresAt,
+      fencingEpoch: lock.fencingEpoch,
+      capabilityGrant,
+      actionScope: [...actionScope],
+      acquiredAt: lock.acquiredAt,
+    };
+  }
+
+  validateMutationLease(lease: MutationLease): { valid: boolean; reason?: string } {
+    const lock = this.getLock(lease.resourceId);
+    if (!lock) return { valid: false, reason: "lease_not_active" };
+
+    if (lock.ownerHealerId !== lease.ownerId) {
+      return { valid: false, reason: "lease_owner_mismatch" };
+    }
+    if (lock.caseId !== lease.incidentId) {
+      return { valid: false, reason: "incident_mismatch" };
+    }
+    if (lock.sessionId !== lease.sessionId) {
+      return { valid: false, reason: "session_mismatch" };
+    }
+    if (lock.fencingEpoch !== lease.fencingEpoch) {
+      return { valid: false, reason: "stale_fencing_epoch" };
+    }
+    if (lock.capabilityGrant !== lease.capabilityGrant) {
+      return { valid: false, reason: "capability_grant_mismatch" };
+    }
+    if (
+      JSON.stringify(lock.actionScope || []) !==
+      JSON.stringify(lease.actionScope || [])
+    ) {
+      return { valid: false, reason: "action_scope_mismatch" };
+    }
+
+    return { valid: true };
+  }
+
+  async renewMutationLease(
+    lease: MutationLease,
+    ttlMs: number = 30000
+  ): Promise<MutationLease | null> {
+    const validation = this.validateMutationLease(lease);
+    if (!validation.valid) return null;
+
+    const renewed = await this.renewLock(lease.resourceId, lease.ownerId, ttlMs);
+    if (!renewed) return null;
+
+    const lock = this.getLock(lease.resourceId);
+    if (!lock?.fencingEpoch) return null;
+
+    return {
+      ...lease,
+      expiresAt: lock.expiresAt,
+      fencingEpoch: lock.fencingEpoch,
+    };
+  }
+
+  async releaseMutationLease(lease: MutationLease): Promise<boolean> {
+    const validation = this.validateMutationLease(lease);
+    if (!validation.valid) return false;
+    await this.releaseLock(lease.resourceId, lease.ownerId);
+    return true;
+  }
+
   async renewLock(
     resourceId: string,
     healerId: string,
@@ -80,9 +189,6 @@ export class RepairLockManager {
     return true;
   }
 
-  /**
-   * Releases exclusive lock on a resource.
-   */
   async releaseLock(resourceId: string, healerId: string): Promise<void> {
     const lockKey = `lock:resource:${resourceId}`;
 
@@ -96,9 +202,6 @@ export class RepairLockManager {
     }
   }
 
-  /**
-   * Releases all locks held by a specific healer (e.g. upon failure or shutdown).
-   */
   async releaseAllForHealer(healerId: string): Promise<string[]> {
     const released: string[] = [];
     for (const [lockKey, lock] of Array.from(this.inMemoryLocks.entries())) {
@@ -114,8 +217,7 @@ export class RepairLockManager {
   }
 
   isLocked(resourceId: string): boolean {
-    const lock = this.getLock(resourceId);
-    return lock !== null;
+    return this.getLock(resourceId) !== null;
   }
 
   getLock(resourceId: string): ResourceLock | null {
@@ -140,6 +242,10 @@ export class RepairLockManager {
       }
     }
     return active;
+  }
+
+  getCurrentFencingEpoch(resourceId: string): number {
+    return this.fencingEpochs.get(resourceId) || 0;
   }
 
   clear(): void {

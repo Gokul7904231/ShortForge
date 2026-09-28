@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR46-Agent-Execution-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/agent-execution-fabric-20260928",
+  "objective": "Introduce a deterministic Agent Execution Fabric that separates probabilistic cognition from structured execution state, routing, scoped tools, retries, and side-effect recovery without creating a new authority plane.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/hierarchy-map.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/security/capability-security.md",
+      ".okf/intelligence/mcp-architecture.md",
+      ".okf/intelligence/agent-execution-fabric.md",
+      ".okf/intelligence/a2a-boundary.md",
+      ".okf/floor-governance-cell.md"
+    ],
+    "rulesConsidered": [
+      "Ascalon is bounded cognition and cannot become sovereign authority.",
+      "Guardian/FGC controls local authorization.",
+      "AgentRuntime is the execution harness and capability boundary.",
+      "Workers have no ambient authority.",
+      "MCP is an integration surface, not a sovereign controller.",
+      "F07 remains the final production verification/release boundary."
+    ]
+  },
+  "changes": [
+    "Added typed AgentExecutionState and ExecutionStepContract.",
+    "Added hash-chained disk/in-memory AgentExecutionStateStore.",
+    "Added deterministic AgentExecutionRouter with precondition facts, postcondition promotion, registered transitions, retry budgets and restart recovery.",
+    "In-flight side effects become UNKNOWN after restart rather than being guessed as failed or succeeded.",
+    "Added ScopedToolExecutor with step tool allowlists, capability checks and idempotency contract enforcement.",
+    "Added focused regression tests covering precondition bypass, restart ambiguity, idempotent retry, tool scoping and capability denial.",
+    "Added Agent Execution Fabric CI workflow.",
+    "Documented AEF placement relative to FGC, MCP, A2A and F07."
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_LOCAL_CONTROL-PLANE_LIBRARY_WAVE",
+    "notes": "No credentials or authority grants were added. The new execution layer only narrows execution and recovery semantics."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
+    "Forge Evaluator": "COMPLETE — AEF validation green",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/agent/execution/AgentExecutionContracts.ts",
+    "apps/web/factoryos/core/agent/execution/AgentExecutionStateStore.ts",
+    "apps/web/factoryos/core/agent/execution/AgentExecutionRouter.ts",
+    "apps/web/factoryos/core/agent/execution/ScopedToolExecutor.ts",
+    "apps/web/factoryos/tests/agent-execution-fabric.test.ts",
+    ".okf/decisions/agent-execution-fabric-20260928.md",
+    ".okf/intelligence/agent-execution-fabric.md",
+    ".okf/intelligence/a2a-boundary.md",
+    ".okf/intelligence/mcp-architecture.md"
+  ],
+  "verificationPlan": [
+    "Run Agent Execution Fabric Validation.",
+    "Run Team Change Gate.",
+    "Run affected FGC/cognitive regressions to detect architecture regressions.",
+    "Do not merge until CI and required security evidence are acceptable.",
+    "Do not claim live A2A or fine-tuned Ascalon production inference."
+  ],
+  "disposition": "PASS",
+  "dispositionRationale": "Agent Execution Fabric typecheck and focused regression validation are green on the validated head; Team Change Gate also passed. PR remains draft/unmerged and broader repository CI/security lanes remain separate.",
+  "verificationResults": {
+    "agentExecutionFabric": "PASS — 36397184661",
+    "teamChangeGate": "PASS — 36397184653",
+    "fgcCoreRegression": "NOT REQUIRED FOR THIS CHANGE; AEF changes are additive and do not modify FGC runtime code.",
+    "broaderRepositoryCI": "SEPARATE / NOT CLAIMED"
+  },
+  "validatedExecutableHead": "fa5a64b407faca57ad074b3384446778f4b217f7"
+}

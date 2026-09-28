@@ -98,6 +98,7 @@ export class CognitiveRuntime {
 
       // 5. Contradiction Resolution (if conflicting claims exist)
       let contradictionResolved = false;
+      let contradictionConfidence = 0;
       let winningClaim = "";
       if (incident.conflictingClaims && incident.conflictingClaims.length >= 2) {
         const conflict = this.plane.contradictionResolver.detectConflict(
@@ -112,6 +113,7 @@ export class CognitiveRuntime {
         );
 
         contradictionResolved = true;
+        contradictionConfidence = resolved.resolutionConfidence || 0;
         winningClaim = resolved.selectedClaim === "B" ? incident.conflictingClaims[1].claim : incident.conflictingClaims[0].claim;
         tokensConsumed += 250;
         costUsd += 0.005;
@@ -180,7 +182,8 @@ export class CognitiveRuntime {
       }
 
       const durationMs = Date.now() - startTime;
-      const calculatedConfidence = simulationEvaluated ? 0.75 : similarExperiences.length > 0 ? 0.65 : 0.5;
+      const baselineConfidence = simulationEvaluated ? 0.75 : similarExperiences.length > 0 ? 0.65 : 0.5;
+      const calculatedConfidence = Math.min(1, Math.max(baselineConfidence, contradictionConfidence));
 
       // 8. Safe User-Facing Summary (No private Chain-of-Thought)
       const rationale = `Cognitive assessment evaluated ${rootCauseTheory}. Recommended action: ${recommendedAction} based on ${

@@ -23,6 +23,7 @@ import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import type { LeaseManager } from "../leases/LeaseManager";
 import type { IReputationRepository } from "../database/DatabaseContracts";
 import { InMemoryReputationRepository } from "../database/InMemoryDatabase";
+import { JointHealingOrchestrator, type GuardianClosureDecision, type GuardianClosureRequest } from "./JointHealingOrchestrator";
 
 export class HealerEngine {
   private healers: Map<string, BaseHealer> = new Map();
@@ -32,6 +33,7 @@ export class HealerEngine {
   private leaseManager?: LeaseManager;
   private reputationRepo: IReputationRepository;
   private repairAttempts: Map<string, number> = new Map();
+  private jointHealingOrchestrator?: JointHealingOrchestrator;
 
   public readonly lockManager: RepairLockManager;
   public readonly deduplicator: RepairDeduplicator;
@@ -82,6 +84,31 @@ export class HealerEngine {
         },
       });
     }
+  }
+
+  enableJointHealing(options: {
+    storagePath?: string;
+    guardianClosureAuthorizer: (
+      request: GuardianClosureRequest
+    ) => Promise<GuardianClosureDecision>;
+  }): void {
+    this.jointHealingOrchestrator = new JointHealingOrchestrator(
+      this.caseManager,
+      this.eventBus,
+      this.worldState,
+      this.lockManager,
+      options
+    );
+  }
+
+  private shouldUseJointHealing(caseItem: Case): boolean {
+    if (!this.jointHealingOrchestrator) return false;
+    const dependency = this.dependencyAnalyzer.analyzeDependency(caseItem);
+    return (
+      caseItem.severity === "HIGH" ||
+      caseItem.severity === "CRITICAL" ||
+      dependency.blastRadius !== "LOCAL"
+    );
   }
 
   /**
@@ -143,6 +170,22 @@ export class HealerEngine {
    * Master Dispatch & Transactional Repair Loop with Concurrency & Simulation Safety
    */
   async dispatchHealersForCase(caseItem: Case): Promise<HealerReport[]> {
+    if (this.shouldUseJointHealing(caseItem)) {
+      const paired = this.allocateHealers(caseItem).slice(0, 2);
+      if (paired.length === 2) {
+        const execution = await this.jointHealingOrchestrator!.execute(caseItem, paired);
+        for (const report of execution.reports) {
+          const healer = this.getHealer(report.healerId);
+          if (!healer) continue;
+          const success = report.repairStatus === "SUCCESS";
+          const rolledBack = report.repairStatus === "ROLLED_BACK";
+          healer.updateReputation(success, rolledBack, report.durationMs);
+          await this.reputationRepo.saveHealerReputation(healer.getReputation());
+        }
+        return [...execution.reports];
+      }
+    }
+
     const primaryTarget = caseItem.targetWorker || caseItem.floorId;
     const dependency = this.dependencyAnalyzer.analyzeDependency(caseItem);
 

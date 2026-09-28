@@ -1,0 +1,43 @@
+name: Floor Governance Cell Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/governance/**"
+      - "apps/web/factoryos/core/healers/RepairLockManager.ts"
+      - "apps/web/factoryos/core/contracts/HealerContracts.ts"
+      - "apps/web/factoryos/tests/floor-governance-cell.test.ts"
+      - "docs/factoryos/floor-governance-cell.md"
+      - ".okf/floor-governance-cell.md"
+      - ".okf/floor-design-template.md"
+      - ".okf/decisions/floor-governance-cell-wave1-20260928.md"
+      - ".okf/audits/floor-governance-cell-wave1-audit.md"
+  workflow_dispatch:
+
+jobs:
+  fgc-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Typecheck FGC governance sources
+        working-directory: apps/web
+        run: |
+          npx tsc --noEmit --ignoreConfig             --target ES2022             --module ESNext             --moduleResolution bundler             --skipLibCheck             --types node             factoryos/core/governance/FloorGovernanceContracts.ts             factoryos/core/governance/FloorActionGraph.ts             factoryos/core/governance/DefaultFloorActionGraph.ts             factoryos/core/governance/FloorBlackboard.ts             factoryos/core/governance/AscalonGuardianAdapter.ts             factoryos/core/governance/BorderDefenseAgent.ts             factoryos/core/governance/JointHealingSession.ts             factoryos/core/governance/FloorActionGate.ts             factoryos/core/governance/ResolutionGate.ts             factoryos/core/governance/FloorGovernanceCell.ts
+
+      - name: Run FGC focused tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/floor-governance-cell.test.ts --config vitest.config.ts

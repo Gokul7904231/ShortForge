@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-FinalWave",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor-governance-cell-wave1-20260928",
+  "objective": "Close the bounded-autonomy Floor Governance Cell roadmap with durable Council sessions, verified derived-memory context, and a fail-closed typed admission seam for future fine-tuned Ascalon inference without changing authority ownership.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/hierarchy-map.md",
+      ".okf/cognitive/layer-contract.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/decisions.md",
+      ".okf/research/repo-mappings/",
+      ".okf/production-helper.md",
+      ".okf/decisions/floor-governance-cell-final-wave-20260928.md",
+      ".okf/audits/floor-governance-cell-final-wave-audit.md",
+      ".okf/floor-governance-cell.md"
+    ],
+    "rulesConsidered": [
+      "Overseer remains global authority.",
+      "Floor Guardian remains highest authority inside a floor.",
+      "Ascalon remains bounded cognition and may not become sovereign authority.",
+      "Workers execute only bounded capabilities.",
+      "Healing remains bounded and evidence-driven.",
+      "F07 remains the final production verification/release boundary.",
+      "The existing F00-F07 topology is unchanged.",
+      "The mandatory .okf decision protocol remains the architectural gate."
+    ]
+  },
+  "forensicFindings": [
+    "GuardianKernel already provides a floor-local autonomy loop and GuardianPolicy already enforces cross-floor, critical, repeated-failure and irreversible-action boundaries.",
+    "The existing healer substrate has resource locks, deduplication and rollback but did not have a per-resource fencing epoch in ResourceLock contracts.",
+    "HealerEngine currently executes an allocated squad sequentially; the new JointHealingSession is therefore a foundation rather than a production scheduler replacement.",
+    "CaseManager retains a legacy direct resolveCase() escape hatch; the new ResolutionGate defines the target closure proof but is not yet wired into every legacy caller.",
+    "Advisor is currently represented mostly by concepts/UI/docs; this wave introduces CounselPacket but does not claim a production Advisor runtime.",
+    "No complete production BDA boundary is wired into every live floor handoff; this wave provides the boundary subsystem foundation."
+  ],
+  "changes": [
+    "Added durable FloorCouncilSessionStore with per-floor hash-chained persistence and restart escalation.",
+    "Added proposal fingerprinting and explicit Council phase checkpoints.",
+    "Reused existing MemoryFabric as bounded derived Advisor context; Council persists only memory references.",
+    "Added AscalonInferenceAdmissionGate with SHADOW and ADMITTED modes, context binding, confidence checks and explicit model allowlisting.",
+    "Wired admitted Ascalon proposals into the existing Council rather than directly into execution.",
+    "Added governance/admission telemetry to the MemoryFabric high-signal event set.",
+    "Added final-wave regression tests for restart recovery, memory provenance, shadow/admitted inference, direct-execution denial and allowlist fail-closed behavior.",
+    "Added final-wave CI validation workflow.",
+    "Updated .okf final-wave decision, audit and canonical architecture records."
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_THIS_LIBRARY-BOUNDARY_WAVE",
+    "notes": "Final-wave runtime remains typed control-plane code. Ascalon ADMITTED mode fails closed when ASCALON_ALLOWED_MODEL_REFS is absent or the model is not allowlisted. No secrets or credentials were added."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
+    "Forge Evaluator": "COMPLETE — governance-specific validation green",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/guardian/GuardianKernel.ts",
+    "apps/web/factoryos/core/guardian/GuardianPolicy.ts",
+    "apps/web/factoryos/core/healers/HealerEngine.ts",
+    "apps/web/factoryos/core/healers/RepairLockManager.ts",
+    "apps/web/factoryos/core/cases/CaseManager.ts",
+    "apps/web/factoryos/core/validator/ValidatorAgent.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionEngine.ts",
+    "apps/web/factoryos/core/observability/TraceContext.ts",
+    "apps/web/factoryos/tests/floor-governance-cell.test.ts",
+    "docs/factoryos/floor-governance-cell.md",
+    ".okf/floor-governance-cell.md",
+    ".okf/floor-design-template.md",
+    ".okf/decisions/floor-governance-cell-wave1-20260928.md",
+    ".okf/audits/floor-governance-cell-wave1-audit.md",
+    ".okf/index.md"
+  ],
+  "verificationPlan": [
+    "Keep PR #44 draft until broader repository CI/security review is separately acceptable.",
+    "Do not claim fine-tuned Ascalon production inference; only the typed admission seam is implemented.",
+    "Treat the governance-specific validated executable head as the runtime truth for the final wave."
+  ],
+  "disposition": "PASS",
+  "dispositionRationale": "Final governance wave implementation and all governance-specific regression gates are green on the validated executable head. PR remains draft/unmerged; broader repository CI remains a separate lane and is not represented as a false pass.",
+  "verificationResults": {
+    "finalWave": "PASS — 36394051521",
+    "wave23": "PASS — 36394051496",
+    "wave3": "PASS — 36394051567",
+    "fgcValidation": "PASS — 36394051595",
+    "wave4": "PASS — 36394051504",
+    "obsidianMemoryValidation": "PASS — 36394051501",
+    "teamChangeGate": "PASS — 36394051500",
+    "floor04": "PASS — 36394051524",
+    "floor05": "PASS — 36393938476",
+    "repositoryCI": {
+      "status": "IN_PROGRESS_AT_FINAL_WAVE_CLOSURE",
+      "note": "Broader repository CI remained separate from the FGC-specific validation and is not claimed green."
+    }
+  },
+  "status": "FINAL_WAVE_VALIDATED",
+  "forensics": {
+    "validatedPriorWaveHead": "7473c5c12e93bc365a2b487f6e5244a84358bc9c",
+    "finalWaveRuntimeCandidateHead": "4d6d34632694a41d0ed10210a247d91e145bb9d4",
+    "currentHead": "4d6d34632694a41d0ed10210a247d91e145bb9d4"
+  },
+  "validatedExecutableHead": "eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49"
+}
