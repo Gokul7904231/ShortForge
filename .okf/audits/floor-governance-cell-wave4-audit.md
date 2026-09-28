@@ -43,3 +43,8 @@ Wave 4 validation is green on executable head `7473c5c12e93bc365a2b487f6e5244a84
 - Existing governance/cognitive regression suites used by the new boundary: PASS.
 
 The PR remains draft and unmerged.
+
+## Executable validation
+
+Validated executable head: `7473c5c12e93bc365a2b487f6e5244a84358bc9c`.
+Dedicated Wave 4 validation `36392648796`, combined Wave 2–3 validation `36392648769`, and Team Change Gate `36392648822` are green.
