@@ -68,5 +68,6 @@
     "agentExecutionFabric": "PENDING",
     "teamChangeGate": "FAILED_BEFORE_REPORT_CREATED",
     "broaderRepositoryCI": "IN_PROGRESS"
-  }
+  },
+  "conflicts": []
 }
