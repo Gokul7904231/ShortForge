@@ -5,6 +5,7 @@ on:
     paths:
       - "apps/web/factoryos/core/governance/FloorCouncil.ts"
       - "apps/web/factoryos/core/governance/FloorGovernanceCell.ts"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
       - "apps/web/factoryos/core/guardian/GuardianManager.ts"
       - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
       - "apps/web/factoryos/core/index.ts"
