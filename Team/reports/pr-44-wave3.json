@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-Wave3",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor-governance-cell-wave1-20260928",
+  "objective": "Implement durable paired healing with parallel reasoning, resource-scoped fenced mutation, BDA reinspection, independent Auditor verification, and Guardian-controlled closure while preserving the existing healer substrate.",
+  "status": "IMPLEMENTED_PENDING_VALIDATION",
+  "implemented": [
+    "Durable JointHealingSessionStore and restart-safe JointHealingSessionManager.",
+    "Reasoning-only BaseHealer.diagnose() phase.",
+    "JointHealingOrchestrator for exactly two distinct paired healers.",
+    "Resource/conflict-grouped mutation scheduling using existing RepairDependencyAnalyzer semantics.",
+    "RepairLockManager mutation leases with fencing epoch and action-scope validation.",
+    "Bounded compensation using existing healer rollback actions.",
+    "BDA reinspection and typed reinspection events.",
+    "Independent JointHealingAuditor.",
+    "GuardianKernel/GuardianManager closure-grant authority.",
+    "ResolutionGate-backed CaseManager closure.",
+    "Production HealerEngine routing for high-risk/non-local incidents when enabled by AutonomousFactoryController.",
+    "Wave-3 focused workflow and compatibility tests."
+  ],
+  "security": [
+    "The incident itself is not globally locked; mutation resources are leased.",
+    "Stale mutation epochs are rejected.",
+    "Action scope is validated against the mutation lease.",
+    "BDA evidence is required before closure.",
+    "Auditor evidence is required before closure.",
+    "Only the floor Guardian can authorize closure.",
+    "ResolutionGate still rejects incomplete resolution proof."
+  ],
+  "validation": {
+    "wave3InitialRun": "FAIL — run 36388821725: typecheck PASS; focused tests exposed missing PLANNED -> HEALING session transition. Corrected before final validation.",
+    "currentCorrectedHead": "3c02c829409a4331a5783c2ce58f4469a6dbb261",
+    "wave3CorrectedRun": "PENDING",
+    "teamChangeGate": "PENDING on current corrected head"
+  },
+  "nonGoals": [
+    "Live fine-tuned Ascalon inference",
+    "Automatic continuation of physical mutation after process restart",
+    "Distributed ACID semantics across arbitrary compute/provider boundaries",
+    "Complete BDA coverage",
+    "Workload identity and signed policy bundles",
+    "Predictive prevention and full adversarial evaluation"
+  ]
+}
