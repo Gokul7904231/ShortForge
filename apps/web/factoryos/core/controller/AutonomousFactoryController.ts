@@ -271,16 +271,19 @@ export class AutonomousFactoryController {
     const activeCases = await this.caseManager.getActiveCases();
     const currentWorld = this.worldState.getState();
     for (const c of activeCases) {
-      if (c.targetWorker && currentWorld.workers[c.targetWorker]?.status === "HEALTHY") {
-        await this.caseManager.resolveCase(c.caseId, {
-          diagnosis: `Worker ${c.targetWorker} verified healthy on boot recovery`,
-          resolutionPlan: "Auto-resolved during controller boot",
-          healerId: "kernel_boot_recovery",
-          actionsTaken: ["State verified healthy"],
-          verifiedAt: new Date().toISOString(),
-        });
+      // Boot recovery may reconstruct an active incident, but it may not
+      // silently resolve it. Resolution remains behind Validator/F07 evidence
+      // and the explicit ResolutionGate.
+      if (!currentWorld.workers[c.targetWorker || ""]?.status || currentWorld.workers[c.targetWorker || ""]?.status !== "HEALTHY") {
+        this.worldState.addActiveCase(c.caseId);
       } else {
         this.worldState.addActiveCase(c.caseId);
+        await this.eventBus.publish("CASE_UPDATED", {
+          caseId: c.caseId,
+          status: c.status,
+          actor: "kernel_boot_recovery",
+          notes: "Case restored active; automatic boot resolution is prohibited by ResolutionGate.",
+        });
       }
     }
 
