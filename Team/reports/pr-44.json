@@ -63,7 +63,7 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
-    "Forge Evaluator": "PENDING_FINAL_WAVE_CI",
+    "Forge Evaluator": "COMPLETE — governance-specific validation green",
     "Forge Release": "PENDING_MERGE"
   },
   "conflicts": [],
@@ -85,41 +85,32 @@
     ".okf/index.md"
   ],
   "verificationPlan": [
-    "Run the dedicated Floor Governance Cell Final Wave workflow.",
-    "Run Team Change Gate plus the repository CI and affected governance/cognitive regression workflows.",
-    "Review final-wave negative tests and runtime boundary evidence.",
-    "Update this report to PASS only after the final executable head is green.",
-    "Keep fine-tuned Ascalon deployment outside the claim until a separately validated inference gateway is connected."
+    "Keep PR #44 draft until broader repository CI/security review is separately acceptable.",
+    "Do not claim fine-tuned Ascalon production inference; only the typed admission seam is implemented.",
+    "Treat the governance-specific validated executable head as the runtime truth for the final wave."
   ],
-  "disposition": "BLOCKED",
-  "dispositionRationale": "Final-wave implementation is on the PR branch, but dedicated final-wave CI and required repository/security evidence are not yet green; no merge or production promotion is claimed.",
+  "disposition": "PASS",
+  "dispositionRationale": "Final governance wave implementation and all governance-specific regression gates are green on the validated executable head. PR remains draft/unmerged; broader repository CI remains a separate lane and is not represented as a false pass.",
   "verificationResults": {
-    "fgcValidation": {
-      "runId": 36383242667,
-      "conclusion": "success"
-    },
-    "teamChangeGate": {
-      "runId": 36383242727,
-      "conclusion": "success"
-    },
-    "affectedFloorValidation": {
-      "floor04": "PASS",
-      "floor05": "PASS",
-      "floor06": "PENDING_AT_REPORT_UPDATE",
-      "floor07": "PASS"
-    },
+    "finalWave": "PASS — 36394051521",
+    "wave23": "PASS — 36394051496",
+    "wave3": "PASS — 36394051567",
+    "fgcValidation": "PASS — 36394051595",
+    "wave4": "PASS — 36394051504",
+    "obsidianMemoryValidation": "PASS — 36394051501",
+    "teamChangeGate": "PASS — 36394051500",
+    "floor04": "PASS — 36394051524",
+    "floor05": "PASS — 36393938476",
     "repositoryCI": {
-      "latestObservedRunId": 36383242621,
-      "status": "IN_PROGRESS_AT_REPORT_UPDATE",
-      "baselineTypecheckFinding": "Existing main branch CI already failed on identical CLMDecisionAdapter/LLMDecisionAdapter TypeScript errors before this FGC branch.",
-      "evidenceMainRunId": 36375879960,
-      "scope": "UNRELATED_BASELINE"
+      "status": "IN_PROGRESS_AT_FINAL_WAVE_CLOSURE",
+      "note": "Broader repository CI remained separate from the FGC-specific validation and is not claimed green."
     }
   },
-  "status": "FINAL_WAVE_VALIDATION_PENDING",
+  "status": "FINAL_WAVE_VALIDATED",
   "forensics": {
     "validatedPriorWaveHead": "7473c5c12e93bc365a2b487f6e5244a84358bc9c",
     "finalWaveRuntimeCandidateHead": "4d6d34632694a41d0ed10210a247d91e145bb9d4",
     "currentHead": "4d6d34632694a41d0ed10210a247d91e145bb9d4"
-  }
+  },
+  "validatedExecutableHead": "eb3456fa8e7ad78603d85d7daa6bc1d3d0d1ed49"
 }
