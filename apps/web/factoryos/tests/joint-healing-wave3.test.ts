@@ -67,9 +67,9 @@ describe("Floor Governance Cell — Wave 3 paired healing", () => {
 
     const second = await lockManager.acquireMutationLease(
       "shared-resource",
-      "session-02",
-      "healer_b",
-      "incident-02",
+      "session-01",
+      "healer_a",
+      "incident-01",
       "healing.mutate",
       ["RESET_RESOURCE"],
       30000
@@ -79,7 +79,7 @@ describe("Floor Governance Cell — Wave 3 paired healing", () => {
 
     expect(lockManager.validateMutationLease(first!)).toEqual({
       valid: false,
-      reason: "lease_not_active",
+      reason: "stale_fencing_epoch",
     });
     await lockManager.releaseMutationLease(second!);
   });
