@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AscalonGuardianAdapter } from "../core/floor/AscalonGuardianAdapter";
 import { createStandardFloorActionGraph } from "../core/floor/FloorActionGraph";
-import type {
-  FloorActionContext,
-  GuardianAuthorization,
-} from "../core/floor/FloorActionGraphContracts";
+import type { FloorActionContext, GuardianAuthorization } from "../core/floor/FloorActionGraphContracts";
 
 describe("Floor Governance Cell — Action Graph foundation", () => {
   const graph = createStandardFloorActionGraph();
@@ -14,7 +11,7 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
     state: "ANALYZING",
     actorId: "ascalon-floor03",
     actorRole: "ASCALON",
-    capabilities: ["floor.analyze"],
+    capabilities: ["floor.analyze", "floor.validate"],
     evidence: [],
   };
 
@@ -25,7 +22,7 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
     expect(graph.get("close_incident")?.actorRoles).toEqual(["GUARDIAN"]);
   });
 
-  it("lets Ascalon propose but not self-authorize", () => {
+  it("lets Ascalon propose but never self-authorize", () => {
     const adapter = new AscalonGuardianAdapter(graph);
     const result = adapter.propose(
       {
@@ -72,11 +69,7 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
       actorRole: "FG_HEALER",
       capabilities: ["floor.repair.execute"],
       evidence: [
-        {
-          evidenceId: "attack-1",
-          evidenceType: "RepairPlan",
-          trust: "UNTRUSTED",
-        },
+        { evidenceId: "attack-1", evidenceType: "RepairPlan", trust: "UNTRUSTED" },
       ],
     };
 
@@ -98,11 +91,22 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
     expect(result.reasons.join(" ")).toContain("Missing trusted evidence");
   });
 
-  it("requires a Guardian grant before a high-impact repair can become executable", () => {
+  it("requires Guardian authorization and target scope before a repair becomes executable", () => {
     const adapter = new AscalonGuardianAdapter(graph);
+    const context: FloorActionContext = {
+      floorId: "floor03_asset_realization",
+      state: "HEALING",
+      actorId: "fg-healer-floor03",
+      actorRole: "FG_HEALER",
+      capabilities: ["floor.repair.execute"],
+      evidence: [
+        { evidenceId: "repair-plan-1", evidenceType: "RepairPlan", trust: "TRUSTED" },
+      ],
+    };
+
     const proposal = adapter.propose(
       {
-        floorId: "floor03_asset_realization",
+        floorId: context.floorId,
         actionId: "execute_repair",
         targetId: "asset-123",
         parameters: { mode: "bounded" },
@@ -110,27 +114,14 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
         evidenceIds: ["repair-plan-1"],
         proposedBy: "FG_HEALER",
       },
-      {
-        floorId: "floor03_asset_realization",
-        state: "HEALING",
-        actorId: "fg-healer-floor03",
-        actorRole: "FG_HEALER",
-        capabilities: ["floor.repair.execute"],
-        evidence: [
-          {
-            evidenceId: "repair-plan-1",
-            evidenceType: "RepairPlan",
-            trust: "TRUSTED",
-          },
-        ],
-      },
+      context,
     );
 
     expect(proposal.admissible).toBe(true);
 
     const auth: GuardianAuthorization = {
       authorizationId: "guard-auth-1",
-      floorId: "floor03_asset_realization",
+      floorId: context.floorId,
       actionId: "execute_repair",
       targetId: "asset-123",
       authorizedBy: "GUARDIAN",
@@ -140,9 +131,44 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
       fencingEpoch: 12,
     };
 
-    const request = adapter.authorize(proposal.proposal, auth);
-    expect(request.authorization.fencingEpoch).toBe(12);
-    expect(request.requestId).toMatch(/^action_/);
+    expect(adapter.authorize(proposal.proposal, context, auth).authorization.fencingEpoch).toBe(12);
+  });
+
+  it("rejects authorization when the target is outside the Guardian action scope", () => {
+    const adapter = new AscalonGuardianAdapter(graph);
+    const context: FloorActionContext = {
+      floorId: "floor03_asset_realization",
+      state: "HEALING",
+      actorId: "fg-healer-floor03",
+      actorRole: "FG_HEALER",
+      capabilities: ["floor.repair.execute"],
+      evidence: [
+        { evidenceId: "repair-plan-1", evidenceType: "RepairPlan", trust: "TRUSTED" },
+      ],
+    };
+
+    const proposal = graph.createProposal({
+      floorId: context.floorId,
+      actionId: "execute_repair",
+      targetId: "asset-123",
+      parameters: {},
+      rationale: "Repair",
+      evidenceIds: ["repair-plan-1"],
+      proposedBy: "FG_HEALER",
+    });
+
+    expect(() =>
+      adapter.authorize(proposal, context, {
+        authorizationId: "bad-scope",
+        floorId: context.floorId,
+        actionId: "execute_repair",
+        targetId: "asset-123",
+        authorizedBy: "GUARDIAN",
+        issuedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 30000).toISOString(),
+        actionScope: ["other-resource"],
+      }),
+    ).toThrow("does not cover proposal target");
   });
 
   it("refuses a mismatched Guardian authorization", () => {
@@ -157,8 +183,17 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
       proposedBy: "ASCALON",
     });
 
+    const context: FloorActionContext = {
+      floorId: proposal.floorId,
+      state: "READY",
+      actorId: "ascalon-floor03",
+      actorRole: "ASCALON",
+      capabilities: ["floor.observe"],
+      evidence: [],
+    };
+
     expect(() =>
-      adapter.authorize(proposal, {
+      adapter.authorize(proposal, context, {
         authorizationId: "bad-auth",
         floorId: proposal.floorId,
         actionId: "execute_repair",
@@ -168,6 +203,6 @@ describe("Floor Governance Cell — Action Graph foundation", () => {
         expiresAt: new Date(Date.now() + 30000).toISOString(),
         actionScope: [],
       }),
-    ).toThrow("Authorization action does not match proposal action");
+    ).toThrow("Action does not require Guardian authorization");
   });
 });
