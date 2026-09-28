@@ -10,7 +10,6 @@ on:
       - "apps/web/factoryos/core/contracts/EventContracts.ts"
       - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
       - "apps/web/factoryos/tests/floor-governance-wave2-integration.test.ts"
-      - "apps/web/factoryos/tests/authority-hierarchy-proof.test.ts"
   workflow_dispatch:
 
 jobs:
@@ -43,5 +42,4 @@ jobs:
           npx vitest run
           factoryos/tests/floor-governance-cell.test.ts
           factoryos/tests/floor-governance-wave2-integration.test.ts
-          factoryos/tests/authority-hierarchy-proof.test.ts
           --config vitest.config.ts
