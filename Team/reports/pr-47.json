@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR47-Final-Integration",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/shortforge-final-integration-20260928",
+  "objective": "Consolidate validated Floor Governance Cell and Agent Execution Fabric work and finish durable human-in-the-loop execution recovery without changing authority ownership.",
+  "classification": "extends existing rule",
+  "supersedes": [
+    "PR44",
+    "PR46"
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/floor-governance-cell.md",
+      ".okf/intelligence/agent-execution-fabric.md",
+      ".okf/intelligence/a2a-boundary.md",
+      ".okf/intelligence/mcp-architecture.md",
+      ".okf/decisions/floor-governance-cell-final-wave-20260928.md",
+      ".okf/decisions/agent-execution-fabric-20260928.md"
+    ],
+    "rulesConsidered": [
+      "Ascalon remains bounded cognition.",
+      "FGC/Guardian remain authority.",
+      "AgentRuntime remains execution harness.",
+      "AEF narrows sequencing and tool exposure but does not mint authority.",
+      "MCP remains tool/data integration.",
+      "A2A remains agent interoperability.",
+      "F07 remains production verification."
+    ]
+  },
+  "changes": [
+    "Consolidates FGC governance and AEF execution work into one final integration branch.",
+    "Adds durable hash-chained human approval ledger.",
+    "Adds WAITING execution state with approvalId binding.",
+    "Adds approval state-version and execution-state fingerprint binding.",
+    "Adds explicit approval resolve/resume APIs.",
+    "Adds restart-safe HITL recovery: pending waits remain waiting, expired/rejected/missing approvals block, approved waits do not auto-execute.",
+    "Adds expiry handling and stale approval protection.",
+    "Adds regression coverage for persistence, restart, state binding, expiry and no-auto-resume.",
+    "Updates AEF CI to typecheck the durable approval store."
+  ],
+  "security": {
+    "required": true,
+    "notes": "Approval is durable state, not a capability grant. Resume requires exact execution state binding. No credentials, secrets, or new authority levels added.",
+    "securityLanes": "PENDING"
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "PENDING_REPOSITORY_SECURITY_LANES",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "verificationPlan": [
+    "Run Agent Execution Fabric Validation including durable HITL tests.",
+    "Run Team Change Gate after report creation.",
+    "Run affected FGC/cognitive/regression workflows.",
+    "Review repository-wide CI/security before merge.",
+    "Merge only PR #47 into main if the final gates are green; close superseded PRs #44/#46 afterward.",
+    "Do not claim live A2A or fine-tuned Ascalon inference."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Consolidated candidate is not yet fully validated; no main-branch merge claimed.",
+  "verificationResults": {
+    "agentExecutionFabric": "PENDING",
+    "teamChangeGate": "FAILED_BEFORE_REPORT_CREATED",
+    "broaderRepositoryCI": "IN_PROGRESS"
+  }
+}
