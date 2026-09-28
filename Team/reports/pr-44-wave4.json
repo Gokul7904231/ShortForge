@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR44-Floor-Governance-Cell-Wave4",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/floor-governance-cell-wave1-20260928",
+  "validatedExecutableHead": "7473c5c12e93bc365a2b487f6e5244a84358bc9c",
+  "status": "WAVE4_VALIDATED",
+  "objective": "Add a bounded cognitive Council between Ascalon proposals and the Floor Governance Cell using deterministic Instructor/Auditor checks and existing CognitiveRuntime advisory reasoning.",
+  "implementation": [
+    "Typed FloorCouncil with explicit Instructor -> Advisor -> Auditor -> Synthesis -> Closed phase trace.",
+    "Instructor validates action graph reachability, floor/state freshness, proposer role, and evidence references.",
+    "Advisor is bounded to existing CognitiveRuntime and cannot mint authority.",
+    "Auditor validates trust and deterministic evidence constraints.",
+    "Council fail-closes on missing Advisor, stale proposals, untrusted inputs, deterministic boundary failures, or Advisor disagreement/low confidence.",
+    "Council reviews are persisted into the floor Blackboard and emitted as structured telemetry.",
+    "GuardianManager attaches a bounded Advisor contract to each governed floor.",
+    "AutonomousFactoryController wires CognitiveRuntime as that Advisor.",
+    "Objective contradiction evidence now preserves probe confidence and propagates it into final cognitive confidence.",
+    "Wave-4 focused and existing cognitive safety suites pass."
+  ],
+  "research": [
+    "2026 structured multi-agent debate research supports explicit moderators, role-specialized agents, and protocol-first deliberation.",
+    "AgentDojo remains an adversarial reference for stateful tool-using agents and indirect prompt injection.",
+    "The standalone LangGraph supervisor repository is archived; ShortForge did not add it as a dependency.",
+    "OpenAI evaluation guidance reinforces structured evaluation; ShortForge retains native deterministic evaluation infrastructure."
+  ],
+  "validation": {
+    "wave4": "PASS — 36392648796",
+    "wave23": "PASS — 36392648769",
+    "teamChangeGate": "PASS — 36392648822",
+    "fgcValidation": "PASS — 36392648797",
+    "wave3Validation": "PASS — 36392648847",
+    "obsidianMemoryValidation": "PASS — 36392648798"
+  },
+  "nonGoals": [
+    "Live fine-tuned Ascalon inference",
+    "Multiple heavyweight LLM councilors",
+    "Council authority or capability minting",
+    "Automatic closure or execution from Council consensus",
+    "Complete adversarial evaluation"
+  ],
+  "releaseNote": "The validated executable head is followed only by documentation/Team/PR-description synchronization; runtime code must not be changed in that tail."
+}
