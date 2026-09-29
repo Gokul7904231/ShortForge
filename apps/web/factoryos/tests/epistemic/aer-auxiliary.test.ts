@@ -107,6 +107,11 @@ describe("AER auxiliary production primitives", () => {
         maxProbeCount: 0,
         maxCostUnits: 0,
       },
+      expectedBenefit: 0,
+      expectedCost: 0,
+      uncertaintyBurden: 0,
+      baselineMode: "DETERMINISTIC" as const,
+      expectedValueSource: "UNAVAILABLE" as const,
       usage: {
         elapsedMs: 0,
         deepCalls: 0,
