@@ -257,6 +257,7 @@ export class AERMetricsRecorder {
   }
 
   public recordAscalonInvocation(input: {
+    readonly usageId?: string;
     readonly episodeId: string;
     readonly latencyMs: number;
     readonly costUnits?: number;
