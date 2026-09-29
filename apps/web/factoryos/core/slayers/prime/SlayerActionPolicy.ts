@@ -79,6 +79,20 @@ export class SlayerActionPolicy {
       };
     }
 
+    if (
+      (risk === "HIGH" || risk === "CRITICAL") &&
+      grant.leadershipEpoch === undefined
+    ) {
+      return {
+        allowed: false,
+        reason:
+          "High-risk Slayer enforcement requires an authorization grant bound to a Prime leadership epoch.",
+        risk,
+        requiresAuthorization,
+        requiresHumanApproval,
+      };
+    }
+
     if (grant.incidentId !== intent.incidentId) {
       return {
         allowed: false,
