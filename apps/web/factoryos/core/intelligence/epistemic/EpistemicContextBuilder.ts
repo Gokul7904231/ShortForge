@@ -26,24 +26,24 @@ function canonicalize(value: unknown): string {
 function hash(value: unknown): string {
   return createHash("sha256").update(canonicalize(value), "utf8").digest("hex");
 }
-\nfunction redactString(value: string): string {
+function redactString(value: string): string {
   let sanitized = value;
   sanitized = sanitized.replace(
-    /\\bBearer\\s+[A-Za-z0-9._~+/=-]+/gi,
+    /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi,
     "Bearer [REDACTED_SECRET]",
   );
   sanitized = sanitized.replace(
-    /((?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|password|secret|authorization)\\s*[:=]\\s*)(["']?)[^\\s,"'}]+\\2/gi,
+    /((?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|password|secret|authorization)\s*[:=]\s*)(["']?)[^\s,"'}]+\2/gi,
     "$1$2[REDACTED_SECRET]$2",
   );
   sanitized = sanitized.replace(
-    /((?:postgres|postgresql|mongodb|mysql):\\/\\/[^:]+:)[^@\\s]+(@)/gi,
+    /((?:postgres|postgresql|mongodb|mysql):\/\/[^:]+:)[^@\s]+(@)/gi,
     "$1[REDACTED_SECRET]$2",
   );
   return sanitized;
 }
 
-function redact(value: unknown, keyHint?: string): unknown {
+function redact(value: unknown): unknown {
   if (typeof value === "string") {
     return redactString(value);
   }
@@ -57,7 +57,7 @@ function redact(value: unknown, keyHint?: string): unknown {
         /^(?:password|secret|token|api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|authorization)$/i.test(
           key,
         );
-      result[key] = sensitiveKey ? "[REDACTED_SECRET]" : redact(child, key);
+      result[key] = sensitiveKey ? "[REDACTED_SECRET]" : redact(child);
     }
     return result;
   }
