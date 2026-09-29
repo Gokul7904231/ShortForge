@@ -5,7 +5,7 @@ import type {
   EpistemicHypothesis,
   EpistemicImpact,
   EpistemicMeasurement,
-  EpistemicState,
+  EpistemicState as AEREpistemicState,
   EpistemicStateStatus,
   EpistemicUnknown,
 } from "./EpistemicContracts";
@@ -66,7 +66,7 @@ export interface BuildEpistemicStateInput {
 }
 
 export class EpistemicStateEngine {
-  public build(input: BuildEpistemicStateInput): EpistemicState {
+  public build(input: BuildEpistemicStateInput): AEREpistemicState {
     const measurements = [...(input.measurements ?? [])];
     measurements.forEach(validateMeasurement);
 
