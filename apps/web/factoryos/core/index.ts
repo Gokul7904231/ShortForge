@@ -37,6 +37,7 @@ export * from "./slayers/prime/SlayerEvidenceQuorum";
 export * from "./slayers/prime/SlayerActionPolicy";
 export * from "./slayers/prime/SlayerActionExecutor";
 export * from "./slayers/prime/SlayerPrimeEngine";
+export * from "./slayers/prime/SlayerPrimeStateStore";
 
 export * from "./healers/HealerBase";
 export * from "./healers/SpecializedHealers";
