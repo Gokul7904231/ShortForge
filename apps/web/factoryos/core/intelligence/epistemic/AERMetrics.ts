@@ -29,6 +29,14 @@ export interface AEREpisodeRecord {
   readonly cacheLookups: number;
   readonly cacheHits: number;
   readonly costUnits: number;
+  readonly actualCostUsd?: number;
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly reasoningTokens?: number;
+  readonly modelRef?: string;
+  readonly provider?: string;
+  readonly baselineMode?: EpistemicCognitiveMode;
+  readonly actualMode?: EpistemicCognitiveMode;
 }
 
 interface MutableAEREpisodeRecord {
@@ -50,6 +58,14 @@ interface MutableAEREpisodeRecord {
   cacheLookups: number;
   cacheHits: number;
   costUnits: number;
+  actualCostUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  modelRef?: string;
+  provider?: string;
+  baselineMode?: EpistemicCognitiveMode;
+  actualMode?: EpistemicCognitiveMode;
 }
 
 export interface AERMetricSnapshot {
@@ -67,7 +83,9 @@ export interface AERMetricSnapshot {
   readonly cacheLookupCount: number;
   readonly cacheHitCount: number;
   readonly totalCostUnits: number;
-  readonly costPerResolvedUncertainty: number;
+  readonly totalActualCostUsd: number;
+  readonly costPerResolvedUncertainty: number | null;
+  readonly actualCostUsdPerResolvedUncertainty: number | null;
   readonly aerInvocationRate: number;
   readonly ascalonEscalationRate: number;
   readonly ascalonInvocationRate: number;
@@ -80,6 +98,8 @@ export interface AERMetricSnapshot {
   readonly falseReassuranceRate: number;
   readonly probeUsefulnessRate: number;
   readonly unnecessaryEscalationRate: number;
+  readonly shadowComparisonCount: number;
+  readonly shadowRoutingDisagreementRate: number;
 }
 
 function percentile(values: readonly number[], percentileRank: number): number {
@@ -124,6 +144,10 @@ export class AERMetricsRecorder {
       cacheLookups: 0,
       cacheHits: 0,
       costUnits: 0,
+      actualCostUsd: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      reasoningTokens: 0,
     });
   }
 
@@ -175,15 +199,55 @@ export class AERMetricsRecorder {
     if (input.hit) episode.cacheHits += 1;
   }
 
+  public recordModelUsage(input: {
+    readonly episodeId: string;
+    readonly provider: string;
+    readonly modelRef: string;
+    readonly inputTokens?: number;
+    readonly outputTokens?: number;
+    readonly reasoningTokens?: number;
+    readonly actualCostUsd?: number;
+  }): void {
+    const episode = this.requireOrCreate(input.episodeId);
+    episode.provider = input.provider;
+    episode.modelRef = input.modelRef;
+    episode.inputTokens += Math.max(0, input.inputTokens ?? 0);
+    episode.outputTokens += Math.max(0, input.outputTokens ?? 0);
+    episode.reasoningTokens += Math.max(0, input.reasoningTokens ?? 0);
+    episode.actualCostUsd += Math.max(0, input.actualCostUsd ?? 0);
+  }
+
+  public recordShadowComparison(input: {
+    readonly episodeId: string;
+    readonly actualMode: EpistemicCognitiveMode;
+    readonly baselineMode?: EpistemicCognitiveMode;
+  }): void {
+    const episode = this.requireOrCreate(input.episodeId);
+    episode.actualMode = input.actualMode;
+    episode.baselineMode = input.baselineMode ?? episode.baselineMode;
+  }
+
   public recordAscalonInvocation(input: {
     readonly episodeId: string;
     readonly latencyMs: number;
     readonly costUnits?: number;
+    readonly provider?: string;
+    readonly modelRef?: string;
+    readonly inputTokens?: number;
+    readonly outputTokens?: number;
+    readonly reasoningTokens?: number;
+    readonly actualCostUsd?: number;
   }): void {
     const episode = this.requireOrCreate(input.episodeId);
     episode.ascalonInvoked = true;
     episode.ascalonLatencyMs = Math.max(0, input.latencyMs);
     episode.costUnits += Math.max(0, input.costUnits ?? 0);
+    episode.provider = input.provider ?? episode.provider;
+    episode.modelRef = input.modelRef ?? episode.modelRef;
+    episode.inputTokens += Math.max(0, input.inputTokens ?? 0);
+    episode.outputTokens += Math.max(0, input.outputTokens ?? 0);
+    episode.reasoningTokens += Math.max(0, input.reasoningTokens ?? 0);
+    episode.actualCostUsd += Math.max(0, input.actualCostUsd ?? 0);
   }
 
   public recordOutcome(receipt: AEROutcomeReceipt): void {
@@ -276,7 +340,18 @@ export class AERMetricsRecorder {
       cacheLookupCount: cacheLookups,
       cacheHitCount: cacheHits,
       totalCostUnits: records.reduce((sum, record) => sum + record.costUnits, 0),
-      costPerResolvedUncertainty: ratio(uncertaintyCost, resolvedRecords.length),
+      totalActualCostUsd: records.reduce((sum, record) => sum + (record.actualCostUsd ?? 0), 0),
+      costPerResolvedUncertainty:
+        resolvedRecords.length > 0
+          ? uncertaintyCost / resolvedRecords.length
+          : null,
+      actualCostUsdPerResolvedUncertainty:
+        resolvedRecords.length > 0
+          ? records
+              .filter((record) => record.uncertaintyEncountered)
+              .reduce((sum, record) => sum + (record.actualCostUsd ?? 0), 0) /
+            resolvedRecords.length
+          : null,
       aerInvocationRate: ratio(aerRecords.length, records.length),
       ascalonEscalationRate: ratio(
         aerRecords.filter((record) => record.ascalonEscalationRecommended).length,
@@ -292,6 +367,20 @@ export class AERMetricsRecorder {
       falseReassuranceRate: ratio(falseReassurances, reassuranceOutcomes.length),
       probeUsefulnessRate: ratio(totalUsefulProbes, totalProbes),
       unnecessaryEscalationRate: ratio(unnecessaryEscalations, ascalonOutcomes.length),
+      shadowComparisonCount: records.filter(
+        (record) => record.baselineMode !== undefined && record.actualMode !== undefined,
+      ).length,
+      shadowRoutingDisagreementRate: ratio(
+        records.filter(
+          (record) =>
+            record.baselineMode !== undefined &&
+            record.actualMode !== undefined &&
+            record.baselineMode !== record.actualMode,
+        ).length,
+        records.filter(
+          (record) => record.baselineMode !== undefined && record.actualMode !== undefined,
+        ).length,
+      ),
     };
   }
 
