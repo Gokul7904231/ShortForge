@@ -613,7 +613,7 @@ The AER remediation pass addresses the previously identified production design g
 
 AER no longer uses only an additive uncertainty score to justify deep cognition. It compares Ascalon against a baseline using incremental expected utility, explicitly pricing incremental compute/cost and latency. Production influence is blocked when the probabilities are not backed by observed calibration unless policy explicitly enables the experimental shadow path.
 
-Recent constrained-compute and adaptive-routing research motivates this per-instance budgeted allocation pattern rather than uniform deep reasoning. citeturn772965academia97turn772965search1
+Recent references: *Adaptive Test-Time Compute Allocation for Reasoning LLMs via Constrained Policy Optimization* (2026) and *Adaptive LLM Routing under Budget Constraints* (EMNLP Findings 2025).
 
 ### Execution loop
 
@@ -621,7 +621,7 @@ AER now has a bounded investigation loop:
 
 event -> epistemic assessment -> safe probe plan -> AEF execution -> evidence -> state update -> re-assessment
 
-AER owns planning and epistemic interpretation; AEF remains the execution boundary. Durable execution systems similarly separate persisted workflow state from side-effecting operations and make deterministic and model-driven steps composable. citeturn292099search0turn292099search7
+AER owns planning and epistemic interpretation; AEF remains the execution boundary. Reference implementations: LangGraph persistence/durable execution and PydanticAI durable execution/instrumentation.
 
 ### Admission and budget reservation
 
@@ -637,10 +637,10 @@ Resolution is recorded through an outcome receipt carrying evidence references a
 
 ### Economics and telemetry
 
-AER accepts provider/model/token/actual-USD usage and exposes p50/p95 latency, cache hit rate, probe usefulness, escalation rates, and cost per resolved uncertainty. A provider-neutral cost estimator can consume existing FactoryOS model-routing metadata, while actual usage can be supplied from production telemetry. OpenTelemetry's current GenAI conventions likewise define model/provider/operation and agent/tool span fields suitable for this telemetry boundary. citeturn772965search2turn772965search3
+AER accepts provider/model/token/actual-USD usage and exposes p50/p95 latency, cache hit rate, probe usefulness, escalation rates, and cost per resolved uncertainty. A provider-neutral cost estimator can consume existing FactoryOS model-routing metadata, while actual usage can be supplied from production telemetry. Reference: OpenTelemetry GenAI semantic conventions for model/provider/operation and agent/tool spans.
 
 ### Learning loop
 
-AER now produces a conservative shadow routing candidate from observed outcomes using confidence bounds. It does not mutate the live routing policy. This keeps the learning loop compatible with contextual routing research while preserving ShortForge's current governance boundary. citeturn772965search1turn772965search0
+AER now produces a conservative shadow routing candidate from observed outcomes using confidence bounds. It does not mutate the live routing policy. This keeps the learning loop compatible with contextual routing research Reference direction: adaptive contextual routing and RouteLLM-style threshold calibration, adapted to ShortForge's stronger governance boundary.
 
 Production admission still requires ShortForge-specific replay, calibration, security, and reliability evidence; research results are design references, not proof of ShortForge performance.
