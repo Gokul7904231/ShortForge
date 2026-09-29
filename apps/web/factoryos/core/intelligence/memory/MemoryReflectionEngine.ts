@@ -21,8 +21,18 @@ export class MemoryReflectionEngine {
     const unresolvedReasons: string[] = [];
     let staleVerificationRequired = false;
 
+    const authorized = (scopeKey: string): boolean => {
+      const scopes = new Set(request.accessContext.allowedScopeKeys);
+      return (
+        scopes.has(scopeKey) ||
+        (request.accessContext.allowGlobalScope === true && scopeKey === "GLOBAL")
+      );
+    };
+
     const relevantModels = mentalModels.filter(
-      (model) => !request.scopeKey || model.scope.key === request.scopeKey,
+      (model) =>
+        authorized(model.scope.key) &&
+        (!request.scopeKey || model.scope.key === request.scopeKey),
     );
 
     for (const model of relevantModels) {
@@ -31,8 +41,9 @@ export class MemoryReflectionEngine {
       if (model.dirtySince) staleVerificationRequired = true;
     }
 
-    const observationMatches = observations.filter((item) =>
-      this.containsQuery(item, request.question),
+    const observationMatches = observations.filter(
+      (item) => authorized(item.scopeKey) && (!request.scopeKey || item.scopeKey === request.scopeKey) &&
+        this.containsQuery(item, request.question),
     );
     selected.push(...observationMatches);
 
@@ -44,8 +55,9 @@ export class MemoryReflectionEngine {
       (staleVerificationRequired && request.includeRawEvidenceOnStale !== false);
 
     if (shouldReadRawEvidence) {
-      const sourceMatches = rawEvidence.filter((item) =>
-        this.containsQuery(item, request.question),
+      const sourceMatches = rawEvidence.filter(
+        (item) => authorized(item.scopeKey) && (!request.scopeKey || item.scopeKey === request.scopeKey) &&
+          this.containsQuery(item, request.question),
       );
       selected.push(...sourceMatches);
     }
