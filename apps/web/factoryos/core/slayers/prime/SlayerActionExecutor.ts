@@ -32,6 +32,13 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
       throw new Error("ownerAgentId is required for lease revocation");
     }
 
+    if (
+      authorization.fencingEpoch !== undefined &&
+      authorization.fencingEpoch !== lease.fencingToken
+    ) {
+      throw new Error("Authorization fencing epoch does not match the reserved Slayer action fence.");
+    }
+
     const current = await this.leaseManager.getLease(taskId);
     if (!current) {
       throw new Error("Lease " + taskId + " not found");

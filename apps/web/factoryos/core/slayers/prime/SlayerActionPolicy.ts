@@ -119,6 +119,19 @@ export class SlayerActionPolicy {
       };
     }
 
+    if (
+      (grant.authorizedRole === "GUARDIAN" && !grant.authorizedBy.startsWith("guardian_")) ||
+      (grant.authorizedRole === "HUMAN_AUTHORITY" && !grant.authorizedBy.startsWith("human_"))
+    ) {
+      return {
+        allowed: false,
+        reason: "Authorization identity does not match its declared authority role.",
+        risk,
+        requiresAuthorization,
+        requiresHumanApproval,
+      };
+    }
+
     if (requiresHumanApproval && grant.authorizedRole !== "HUMAN_AUTHORITY") {
       return {
         allowed: false,

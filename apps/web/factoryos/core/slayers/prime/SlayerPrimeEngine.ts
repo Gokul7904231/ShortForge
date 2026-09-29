@@ -381,6 +381,29 @@ export class SlayerPrimeEngine {
     }
 
     const incident = this.requireIncident(intent.incidentId);
+
+    const evidenceIds = new Set(incident.evidence.map((item) => item.evidenceId));
+    const missingGrantEvidence = grant.evidenceRefs.filter((id) => !evidenceIds.has(id));
+    if (missingGrantEvidence.length > 0) {
+      const now = new Date().toISOString();
+      const receipt: SlayerEnforcementReceipt = {
+        receiptId: "slayreceipt_" + randomUUID().replace(/-/g, "").slice(0, 16),
+        intentId,
+        incidentId: intent.incidentId,
+        action: intent.action,
+        scope: intent.scope,
+        targetId: intent.targetId,
+        status: "REJECTED",
+        reason: "Authorization references evidence not present in the active incident.",
+        executionStartedAt: now,
+        executionFinishedAt: now,
+        details: { missingGrantEvidence },
+      };
+      this.receipts.set(receipt.receiptId, receipt);
+      await this.emit("SLAYER_ACTION_REJECTED", receipt);
+      return structuredClone(receipt);
+    }
+
     const latestQuorum = this.evidenceQuorum.evaluate(intent, incident.evidence);
 
     if (!latestQuorum.eligible) {
