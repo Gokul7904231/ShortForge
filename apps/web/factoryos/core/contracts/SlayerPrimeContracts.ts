@@ -69,6 +69,8 @@ export interface SlayerIncident {
   readonly suggestedScope?: SlayerPrimeScope;
   readonly actionIntentIds: string[];
   readonly notes: string[];
+  /** Highest Prime leadership epoch whose writer committed this incident state. */
+  readonly persistenceEpoch?: number;
 }
 
 export interface SlayerActionIntent {
