@@ -675,6 +675,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
     ttlMs: number,
     leadershipEpoch: number
   ): Promise<SlayerActionLease | null> {
+    await this.ready;
     if (!(await this.isLeadershipCurrent(holderId, leadershipEpoch))) return null;
 
     const counter = await this.meta.findOneAndUpdate(
