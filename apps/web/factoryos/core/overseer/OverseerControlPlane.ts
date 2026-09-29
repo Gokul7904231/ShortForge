@@ -1038,7 +1038,7 @@ export class OverseerControlPlane {
         });
         await this.eventBus.publish("TASK_STARTED", {
           taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION",
-          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, startedAt,
+          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, runId, startedAt,
         });
 
         const f02Handoff = (scope.f02Handoff || sharedScope.f02Handoff) as Record<string, any> | undefined;
