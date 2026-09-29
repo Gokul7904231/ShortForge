@@ -6,6 +6,7 @@ import {
   ProbePlanner,
   AERMetricsRecorder,
   AscalonInvocationGate,
+  evaluateAscalonValue,
   type CognitiveProbe,
 } from "../../core/intelligence/epistemic";
 
@@ -571,6 +572,47 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     expect(snapshot.unnecessaryEscalationRate).toBe(0);
     expect(snapshot.falseReassuranceRate).toBe(0);
     expect(snapshot.p95AscalonLatencyMs).toBe(40);
+  });
+
+
+  it("computes incremental expected utility rather than additive uncertainty score", () => {
+    const assessment = evaluateAscalonValue(
+      {
+        unknown: [{ unknownId: "u1", question: "q", reason: "r", material: true, evidenceRefs: [] }],
+        contradictions: [],
+        hypotheses: [],
+        impact: { affectedFloors: ["F06"], affectedArtifacts: [], severity: "HIGH", reversible: true },
+      },
+      calibratedValuePolicy,
+    );
+
+    expect(assessment.source).toBe("OBSERVED_CALIBRATION");
+    expect(assessment.incrementalResolutionProbability).toBeCloseTo(0.45);
+    expect(assessment.expectedBenefit).toBeGreaterThan(0);
+    expect(assessment.expectedCost).toBeGreaterThan(0);
+    expect(assessment.expectedValue).toBeCloseTo(
+      assessment.expectedBenefit - assessment.expectedCost,
+    );
+    expect(assessment.shouldInvokeAscalon).toBe(true);
+  });
+
+  it("blocks uncalibrated VOI from production Ascalon admission", () => {
+    const assessment = evaluateAscalonValue(
+      {
+        unknown: [{ unknownId: "u1", question: "q", reason: "r", material: true, evidenceRefs: [] }],
+        contradictions: [],
+        hypotheses: [],
+        impact: { affectedFloors: ["F06"], affectedArtifacts: [], severity: "MEDIUM", reversible: true },
+      },
+      {
+        ...calibratedValuePolicy,
+        baseline: { ...calibratedValuePolicy.baseline, source: "CONFIGURED_PRIOR" as const },
+        ascalon: { ...calibratedValuePolicy.ascalon, source: "CONFIGURED_PRIOR" as const },
+      },
+    );
+
+    expect(assessment.source).toBe("CONFIGURED_PRIOR");
+    expect(assessment.shouldInvokeAscalon).toBe(false);
   });
 
 });
