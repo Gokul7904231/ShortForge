@@ -72,6 +72,12 @@ export interface MemoryRelation {
   readonly weight?: number;
 }
 
+export type MemoryRetentionClass =
+  | "DO_NOT_LEARN"
+  | "TEMPORARY"
+  | "INTERNAL"
+  | "DURABLE";
+
 export type MemoryFreshnessState =
   | "FRESH"
   | "SLIGHTLY_STALE"
@@ -88,6 +94,7 @@ export interface MemoryFreshness {
 
 export interface MemoryObservation {
   readonly observationId: string;
+  readonly retentionClass?: MemoryRetentionClass;
   readonly scope: MemoryScope;
   readonly facetKey: string;
   readonly statement: string;
