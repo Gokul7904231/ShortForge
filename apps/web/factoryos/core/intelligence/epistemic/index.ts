@@ -13,3 +13,5 @@ export * from "./HypothesisManager";
 export * from "./AERMetrics";
 export * from "./AscalonInvocationGate";
 export * from "./AERValueModel";
+export * from "./AERInvestigationLoop";
+export * from "./AERProbeExecution";
