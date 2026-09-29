@@ -21,3 +21,4 @@ export * from "./AscalonInvocationCoordinator";
 export * from "./AERExecutionFabricBridge";
 export * from "./AERPolicyPromotionGate";
 export * from "./AEREpisodeTelemetry";
+export * from "./AERShadowReplay";
