@@ -243,12 +243,14 @@ export class AERMetricsRecorder {
     readonly executed?: boolean;
     readonly useful?: boolean;
     readonly costUnits?: number;
+    readonly actualCostUsd?: number;
   }): void {
     const episode = this.requireOrCreate(input.episodeId);
     if (input.planned) episode.probesPlanned += 1;
     if (input.executed) episode.probesExecuted += 1;
     if (input.useful) episode.usefulProbes += 1;
     episode.costUnits += Math.max(0, input.costUnits ?? 0);
+    episode.actualCostUsd += Math.max(0, input.actualCostUsd ?? 0);
     this.emit(input.episodeId, "aer.probe", {
       planned: input.planned ?? false,
       executed: input.executed ?? false,
