@@ -408,4 +408,64 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
     expect(invoked).toBe(false);
   });
 
+
+  it("rejects a direct ADMITTED Ascalon execution that lacks AER pre-call proof", async () => {
+    const graph = createDefaultFloorActionGraph();
+    const cell = new FloorGovernanceCell({
+      floorId: FLOOR,
+      guardianId: "guardian_floor04",
+      actionGraph: graph,
+      ascalon: new ProposalOnlyAscalonAdapter(async () => null),
+      capabilities: ["floor.read"],
+      ascalonAdmission: new (require("../core/governance/AscalonInferenceAdmission").AscalonInferenceAdmissionGate)(
+        0.7,
+        new Set(["ascalon-test-v1"]),
+      ),
+    });
+    cell.setState("READY", "boot verified");
+    const snapshot = cell.createSnapshot({
+      jobs: [],
+      workers: [],
+      resources: [],
+      activeIncidents: [],
+      constraints: [],
+    });
+
+    const proposal: ActionProposal = {
+      proposalId: "p_direct_ascalon",
+      floorId: FLOOR,
+      actionName: "floor.observe",
+      proposer: "ASCALON",
+      parameters: {},
+      evidenceRefs: [],
+      expectedOutcome: "observation_recorded",
+      expectedPostconditions: ["observation_recorded"],
+      confidence: 0.9,
+      stateVersion: snapshot.stateVersion,
+      proposedAt: new Date().toISOString(),
+      inputTrust: "TRUSTED_SYSTEM_STATE",
+      ascalonInference: {
+        inferenceId: "infer_direct_01",
+        modelRef: "ascalon-test-v1",
+        adapterVersion: "gateway-v1",
+        mode: "ADMITTED",
+        contextFingerprint: "forged",
+        observedAt: new Date().toISOString(),
+      },
+    };
+
+    const result = await cell.authorizeAndExecute(
+      proposal,
+      snapshot,
+      async () => undefined,
+      {
+        evidenceRefs: new Set(),
+        satisfiedPreconditions: new Set(["floor_ready"]),
+      },
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain("ascalon_inference_not_admitted");
+  });
+
 });
