@@ -40,6 +40,25 @@ describe("Closed-loop milestone wave 2026-09-29", () => {
     expect(CANONICAL_FLOOR_LOOPS).toHaveLength(8);
   });
 
+  it("hard-bounds invalid/unbounded iteration requests", async () => {
+    let calls = 0;
+    const result = await runBoundedFeedbackLoop({
+      initialOutput: { value: 0 },
+      maxIterations: Number.POSITIVE_INFINITY,
+      verify: async () => {
+        calls += 1;
+        return { pass: false };
+      },
+      isSatisfied: (feedback) => feedback.pass,
+      fingerprint: (output) => String(output.value) + "-" + calls,
+      revise: async (output) => ({ value: output.value + 1 }),
+    });
+
+    expect(result.termination).toBe("EXHAUSTED");
+    expect(result.iterations).toBe(8);
+    expect(calls).toBe(8);
+  });
+
   it("bounds iterations and terminates repeated no-progress states", async () => {
     const result = await runBoundedFeedbackLoop({
       initialOutput: { value: 1 },
