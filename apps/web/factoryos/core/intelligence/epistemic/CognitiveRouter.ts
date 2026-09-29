@@ -65,6 +65,8 @@ function recommendation(
     estimatedLatencyMs: assessment.estimatedLatencyMs,
     expectedBenefit: assessment.expectedBenefit,
     expectedCost: assessment.expectedCost,
+    incrementalCostUnits: assessment.incrementalCostUnits,
+    incrementalLatencyMs: assessment.incrementalLatencyMs,
     uncertaintyBurden: assessment.uncertaintyBurden,
     baselineMode: assessment.baselineMode,
     expectedValueSource: assessment.source,
