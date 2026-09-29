@@ -1510,7 +1510,9 @@ export class OverseerControlPlane {
           executionTimeMs,
         };
       },
-      FLOOR_VERIFICATION: async (node: any) => {
+      // Canonical F07 executor name must match FloorRegistry.requiredAgentType.
+      // This prevents the DAG executor from silently falling back to generic TOOL.
+      FLOOR_COMPLIANCE: async (node: any) => {
         const startTime = performance.now();
         const startedAt = new Date().toISOString();
         const executionId = `exec_${node.taskId}_${Date.now()}`;
