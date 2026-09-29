@@ -171,12 +171,13 @@ class TimelineCompositionWorker:
                 )
             )
 
-            if audio_req.narration_text:
+            caption_text = (audio_req.caption_text or "").strip() or audio_req.narration_text
+            if caption_text:
                 subtitles.append(
                     SubtitleItem(
                         subtitle_id=f"sub-{visual_req.scene_id}",
                         scene_id=visual_req.scene_id,
-                        text=audio_req.narration_text,
+                        text=caption_text,
                         start_time=scene_start,
                         end_time=scene_start + audio_duration,
                     )
