@@ -112,6 +112,7 @@ describe("True eight-floor single-mission production trajectory", () => {
       searchFixture = fixture.server;
       process.env.SEARCH_API_URL = fixture.url;
 
+      console.log("[E2E] phase=construct-controller");
       controller = new AutonomousFactoryController({
         storageType: "disk",
         storagePath: workDir,
@@ -119,8 +120,11 @@ describe("True eight-floor single-mission production trajectory", () => {
         autoStartSwarm: false,
         memoryFabricEnabled: false,
       });
+      console.log("[E2E] phase=boot-start");
       await controller.boot();
+      console.log("[E2E] phase=boot-complete");
 
+      let terminalFailure: string | null = null;
       const captured: CapturedEvent[] = [];
       controller.eventBus.subscribe("TASK_COMPLETED", async (event: any) => {
         captured.push({
@@ -132,6 +136,22 @@ describe("True eight-floor single-mission production trajectory", () => {
 
       const trajectoryEvents: CapturedEvent[] = [];
       const learningEvents: CapturedEvent[] = [];
+      controller.eventBus.subscribeWildcard(async (event: any) => {
+        const payload = event.payload ?? event;
+        if (
+          payload?.missionId === mission?.missionId &&
+          (event.topic === "RUN_CHECKPOINTED" ||
+            event.topic === "MISSION_FAILED" ||
+            event.topic === "MISSION_REPLANNING")
+        ) {
+          terminalFailure = `${event.topic}: ${JSON.stringify(payload)}`;
+        }
+        if (payload?.missionId === mission?.missionId && event.topic?.startsWith("TASK_")) {
+          console.log(
+            `[E2E] event=${event.topic} floor=${payload.floorId || "n/a"} runId=${payload.runId || "n/a"}`,
+          );
+        }
+      });
       controller.eventBus.subscribe("TRAJECTORY_EVALUATED", async (event: any) => {
         trajectoryEvents.push({
           topic: event.topic,
@@ -147,6 +167,7 @@ describe("True eight-floor single-mission production trajectory", () => {
         });
       });
 
+      console.log("[E2E] phase=mission-create-start");
       const mission = await controller.missionManager.createMission({
         goal: "Research and generate an evidence-backed educational YouTube Short about Python decorators.",
         scope: {
@@ -180,16 +201,21 @@ describe("True eight-floor single-mission production trajectory", () => {
           },
         },
       });
+      console.log(`[E2E] phase=mission-created missionId=${mission.missionId}`);
 
       const startedMission = await controller.missionManager.startMission(mission.missionId);
       expect(startedMission.missionId).toBe(mission.missionId);
+      console.log(`[E2E] phase=mission-started status=${startedMission.status}`);
 
       controller.overseer.recordTrajectoryPrediction(mission.missionId, true);
 
+      console.log("[E2E] phase=dispatch-start");
       const dispatch = await controller.overseer.dispatchMission(startedMission, "autonomous");
       expect(dispatch.missionId).toBe(mission.missionId);
+      console.log(`[E2E] phase=dispatch-accepted runId=${dispatch.runId}`);
 
       const trajectory = await waitFor(() => {
+        if (terminalFailure) throw new Error(`Production trajectory terminated: ${terminalFailure}`);
         const event = trajectoryEvents.find(
           (item) => item.payload.missionId === mission.missionId,
         );
