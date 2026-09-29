@@ -133,6 +133,7 @@ export class MemoryCompletionLedger {
           check: definition.check ?? null,
           expect: definition.expect ?? null,
           cwd: definition.cwd ?? null,
+          bindings: definition.bindings ?? {},
           dependsOn: definition.dependsOn ?? [],
         }),
         "utf8",
