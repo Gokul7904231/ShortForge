@@ -37,6 +37,11 @@ export type EpistemicCognitiveMode =
   | "SPECIALIST"
   | "HUMAN";
 
+export type ValueEstimateSource =
+  | "OBSERVED_CALIBRATION"
+  | "CONFIGURED_PRIOR"
+  | "UNAVAILABLE";
+
 export type AscalonInvocationReason =
   | "NO_MATERIAL_UNCERTAINTY"
   | "MICRO_SUFFICIENT"
@@ -45,6 +50,7 @@ export type AscalonInvocationReason =
   | "MULTIPLE_VIABLE_HYPOTHESES"
   | "HIGH_IMPACT_UNRESOLVED"
   | "EXPECTED_VALUE_BELOW_THRESHOLD"
+  | "VALUE_MODEL_UNCONFIGURED"
   | "ASCALON_UNAVAILABLE"
   | "ASCALON_BUDGET_EXHAUSTED"
   | "HUMAN_ESCALATION_REQUIRED";
@@ -172,6 +178,11 @@ export interface CognitiveRecommendation {
   readonly expectedValue: number;
   readonly shouldInvokeAscalon: boolean;
   readonly estimatedCostUnits: number;
+  readonly expectedBenefit: number;
+  readonly expectedCost: number;
+  readonly uncertaintyBurden: number;
+  readonly baselineMode?: EpistemicCognitiveMode;
+  readonly expectedValueSource: ValueEstimateSource;
   readonly budget: AscalonInvocationBudget;
 }
 
