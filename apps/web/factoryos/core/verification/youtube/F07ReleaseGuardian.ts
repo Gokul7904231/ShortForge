@@ -330,21 +330,13 @@ export class F07ReleaseGuardian {
           .digest("hex"),
       revise: async (state, feedback, iteration) => {
         if (state.receipt.remediationCases.length === 0) return null;
-        return this.buildRemediatedLoopState(state, options.remediate, iteration, feedback);
+        return this.buildRemediatedLoopState(state, options.remediate, iteration);
       },
     });
 
     const history = result.history.map((entry) => ({
       iteration: entry.iteration,
-      receipt: result.history[entry.iteration - 1]?.feedback ? undefined : undefined,
-      remediationCaseIds: entry.feedback.remediationCaseIds,
-    }));
-    // Reconstruct exact receipt history by replaying recorded states via the
-    // remediation callback is intentionally avoided; instead preserve a compact
-    // trace and expose the final authoritative receipt.
-    const compactHistory = result.history.map((entry) => ({
-      iteration: entry.iteration,
-      receipt: result.iterations === entry.iteration ? result.output.receipt : result.output.receipt,
+      receipt: entry.output.receipt,
       remediationCaseIds: entry.feedback.remediationCaseIds,
     }));
 
@@ -371,7 +363,7 @@ export class F07ReleaseGuardian {
 
     return {
       finalReceipt: result.output.receipt,
-      history: compactHistory,
+      history: Object.freeze(history),
       loopReceipt: receipt,
     };
   }
@@ -382,13 +374,7 @@ export class F07ReleaseGuardian {
       receipt: VerificationReceipt;
     },
     remediate: F07RemediationLoopOptions["remediate"],
-    iteration: number,
-    feedback: {
-      remediationCaseIds: readonly string[];
-      passed: boolean;
-      overallOutcome: string;
-      publishAllowed: boolean;
-    }
+    iteration: number
   ): Promise<{ params: ReleaseGuardianParams; receipt: VerificationReceipt } | null> {
     const nextParams = await remediate({
       iteration,
