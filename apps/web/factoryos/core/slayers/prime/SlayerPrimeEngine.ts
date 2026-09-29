@@ -518,13 +518,22 @@ export class SlayerPrimeEngine {
   }
 
   private async persistIncident(incident: SlayerIncident): Promise<void> {
-    await this.stateStore.upsertIncident(incident);
+    const epoch = this.leadership?.epoch;
+    const written = await this.stateStore.upsertIncident(
+      incident,
+      epoch === undefined ? undefined : { holderId: this.holderId, epoch }
+    );
+    if (!written && epoch !== undefined) {
+      throw new Error(
+        "Prime incident write rejected because a newer leadership generation owns the state."
+      );
+    }
     await this.stateStore.appendJournal({
       eventType: "INCIDENT_UPSERTED",
       occurredAt: new Date().toISOString(),
-      holderId: this.instanceId,
+      holderId: this.holderId,
       incidentId: incident.incidentId,
-      epoch: this.leadership?.epoch,
+      epoch,
     });
   }
 
