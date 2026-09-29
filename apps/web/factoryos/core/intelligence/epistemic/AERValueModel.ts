@@ -178,10 +178,9 @@ export function evaluateAscalonValue(
     baselineMode: policy.baseline.mode,
     baselineResolutionProbability: baselineP,
     ascalonResolutionProbability: ascalonP,
-    incrementalResolutionProbability: Math.max(0, ascalonP - baselineP),
+    incrementalResolutionProbability: ascalonP - baselineP,
     source,
     shouldInvokeAscalon:
-      uncertaintyBurden > 0 &&
       expectedValue >= threshold &&
       calibrationAllowed,
     reason:
