@@ -37,6 +37,24 @@ export type EpistemicCognitiveMode =
   | "SPECIALIST"
   | "HUMAN";
 
+export type AscalonInvocationReason =
+  | "NO_MATERIAL_UNCERTAINTY"
+  | "MICRO_SUFFICIENT"
+  | "MATERIAL_UNCERTAINTY"
+  | "MATERIAL_CONTRADICTION"
+  | "MULTIPLE_VIABLE_HYPOTHESES"
+  | "HIGH_IMPACT_UNRESOLVED"
+  | "EXPECTED_VALUE_BELOW_THRESHOLD"
+  | "ASALCON_UNAVAILABLE"
+  | "ASALCON_BUDGET_EXHAUSTED"
+  | "HUMAN_ESCALATION_REQUIRED";
+
+export interface AscalonInvocationBudget {
+  readonly maxTimeMs: number;
+  readonly maxCallsRemaining: number;
+  readonly maxCostUnits: number;
+}
+
 export interface EpistemicMeasurement {
   readonly measurementId: string;
   readonly dimension: string;
@@ -145,7 +163,16 @@ export interface EpistemicUsage {
 export interface CognitiveRecommendation {
   readonly mode: EpistemicCognitiveMode;
   readonly reason: string;
+  readonly reasonCode: AscalonInvocationReason;
   readonly deadlineMs: number;
+  /**
+   * Policy-derived normalized value estimate used for routing.
+   * This is a ranking/triage signal, not a probability and not truth.
+   */
+  readonly expectedValue: number;
+  readonly shouldInvokeAscalon: boolean;
+  readonly estimatedCostUnits: number;
+  readonly budget: AscalonInvocationBudget;
 }
 
 export interface EpistemicState {
@@ -181,6 +208,10 @@ export interface AscalonEpistemicHandoff {
   readonly contextFingerprint: string;
   readonly mode: "SHADOW";
   readonly modelAuthority: "ADVISORY_ONLY";
+  readonly shouldInvokeAscalon: boolean;
+  readonly invocationReason: AscalonInvocationReason;
+  readonly expectedValue: number;
+  readonly budget: AscalonInvocationBudget;
   readonly epistemicContext: EpistemicContext;
   readonly instructions: readonly string[];
 }
