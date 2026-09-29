@@ -7,6 +7,11 @@ import type {
   EpistemicUsage,
 } from "./EpistemicContracts";
 import { EpistemicBudgetController } from "./EpistemicBudget";
+import {
+  evaluateAscalonValue,
+  type AERValuePolicy,
+  type AERValueAssessment,
+} from "./AERValueModel";
 
 export interface CognitiveRoutingOptions {
   readonly deadlineMs?: number;
@@ -16,59 +21,54 @@ export interface CognitiveRoutingOptions {
   readonly specialistAvailable?: boolean;
   readonly humanEscalationAvailable?: boolean;
   readonly ascalonEstimatedCostUnits?: number;
+  readonly ascalonEstimatedLatencyMs?: number;
   readonly minimumAscalonExpectedValue?: number;
+  readonly valuePolicy?: AERValuePolicy;
 }
 
-function severityValue(severity: EpistemicState["impact"]["severity"]): number {
-  switch (severity) {
-    case "CRITICAL":
-      return 0.4;
-    case "HIGH":
-      return 0.2;
-    case "MEDIUM":
-      return 0.1;
-    case "LOW":
-    default:
-      return 0;
-  }
+function zeroValueAssessment(
+  baselineMode: CognitiveRecommendation["mode"],
+): AERValueAssessment {
+  return {
+    expectedValue: 0,
+    expectedBenefit: 0,
+    expectedCost: 0,
+    uncertaintyBurden: 0,
+    baselineMode,
+    baselineResolutionProbability: 0,
+    ascalonResolutionProbability: 0,
+    incrementalResolutionProbability: 0,
+    source: "UNAVAILABLE",
+    shouldInvokeAscalon: false,
+    reason: "AER value model is not configured.",
+  };
 }
 
-/**
- * AER expected value is deliberately a policy/routing signal.
- * It is not a probability, confidence score, truth score, or authority signal.
- */
-export function estimateAscalonExpectedValue(
-  state: Pick<EpistemicState, "unknown" | "contradictions" | "hypotheses" | "impact">,
-): number {
-  const materialUnknown = state.unknown.some((item) => item.material);
-  const materialConflict = state.contradictions.some((item) => item.material);
-  const multipleHypotheses =
-    state.hypotheses.filter((item) => item.status !== "ELIMINATED" && item.status !== "CONTRADICTED").length > 1;
-
-  if (!materialUnknown && !materialConflict && !multipleHypotheses) return 0;
-
-  return Math.min(
-    1,
-    (materialUnknown ? 0.35 : 0) +
-      (materialConflict ? 0.3 : 0) +
-      (multipleHypotheses ? 0.55 : 0) +
-      severityValue(state.impact.severity),
-  );
-}
-
-function deepReasonCode(
-  state: Pick<EpistemicState, "unknown" | "contradictions" | "hypotheses" | "impact">,
-): AscalonInvocationReason {
-  const multipleHypotheses =
-    state.hypotheses.filter((item) => item.status !== "ELIMINATED" && item.status !== "CONTRADICTED").length > 1;
-  const materialConflict = state.contradictions.some((item) => item.material);
-
-  if (state.impact.severity === "CRITICAL" || state.impact.severity === "HIGH") {
-    return "HIGH_IMPACT_UNRESOLVED";
-  }
-  if (materialConflict) return "MATERIAL_CONTRADICTION";
-  if (multipleHypotheses) return "MULTIPLE_VIABLE_HYPOTHESES";
-  return "MATERIAL_UNCERTAINTY";
+function recommendation(
+  mode: CognitiveRecommendation["mode"],
+  reason: string,
+  reasonCode: AscalonInvocationReason,
+  deadlineMs: number,
+  assessment: AERValueAssessment,
+  shouldInvokeAscalon: boolean,
+  estimatedCostUnits: number,
+  budget: AscalonInvocationBudget,
+): CognitiveRecommendation {
+  return {
+    mode,
+    reason,
+    reasonCode,
+    deadlineMs,
+    expectedValue: assessment.expectedValue,
+    shouldInvokeAscalon,
+    estimatedCostUnits,
+    expectedBenefit: assessment.expectedBenefit,
+    expectedCost: assessment.expectedCost,
+    uncertaintyBurden: assessment.uncertaintyBurden,
+    baselineMode: assessment.baselineMode,
+    expectedValueSource: assessment.source,
+    budget,
+  };
 }
 
 export class CognitiveRouter {
@@ -91,162 +91,209 @@ export class CognitiveRouter {
     const materialUnknown = state.unknown.some((item) => item.material);
     const materialConflict = state.contradictions.some((item) => item.material);
     const multipleHypotheses =
-      state.hypotheses.filter((item) => item.status !== "ELIMINATED" && item.status !== "CONTRADICTED").length > 1;
-    const expectedValue = estimateAscalonExpectedValue(state);
-    const minimumExpectedValue = Math.min(
-      1,
-      Math.max(0, options.minimumAscalonExpectedValue ?? 0.5),
-    );
+      state.hypotheses.filter(
+        (item) => item.status !== "ELIMINATED" && item.status !== "CONTRADICTED",
+      ).length > 1;
+
     const estimatedCostUnits = Math.max(
       0,
-      options.ascalonEstimatedCostUnits ?? 5,
+      options.ascalonEstimatedCostUnits ?? options.valuePolicy?.ascalon.costUnits ?? 5,
     );
-    const ascalonAvailable =
-      options.ascalonAvailable ?? options.deepAvailable ?? false;
+    const estimatedLatencyMs = Math.max(
+      1,
+      options.ascalonEstimatedLatencyMs ?? options.valuePolicy?.ascalon.latencyMs ?? 1000,
+    );
+
     const remainingBudget: AscalonInvocationBudget = {
       maxTimeMs: Math.max(0, budget.maxEpistemicTimeMs - usage.elapsedMs),
       maxCallsRemaining: Math.max(0, budget.maxDeepCalls - usage.deepCalls),
       maxCostUnits: Math.max(0, budget.maxCostUnits - usage.costUnits),
     };
 
+    const valueAssessment = options.valuePolicy
+      ? evaluateAscalonValue(state, {
+          ...options.valuePolicy,
+          ascalon: {
+            ...options.valuePolicy.ascalon,
+            costUnits: estimatedCostUnits,
+            latencyMs: estimatedLatencyMs,
+          },
+          minimumNetValue: options.minimumAscalonExpectedValue ?? options.valuePolicy.minimumNetValue,
+        })
+      : zeroValueAssessment(
+          options.microAvailable && !multipleHypotheses ? "MICRO" : "DETERMINISTIC",
+        );
+
     if (!materialUnknown && !materialConflict && !multipleHypotheses) {
-      return {
-        mode: "DETERMINISTIC",
-        reason: "No material epistemic uncertainty remains.",
-        reasonCode: "NO_MATERIAL_UNCERTAINTY",
+      return recommendation(
+        "DETERMINISTIC",
+        "No material epistemic uncertainty remains.",
+        "NO_MATERIAL_UNCERTAINTY",
         deadlineMs,
-        expectedValue,
-        shouldInvokeAscalon: false,
+        valueAssessment,
+        false,
         estimatedCostUnits,
-        budget: remainingBudget,
-      };
+        remainingBudget,
+      );
     }
 
     if (state.impact.severity === "CRITICAL" && options.humanEscalationAvailable) {
-      return {
-        mode: "HUMAN",
-        reason: "Critical-impact epistemic uncertainty requires governed human resolution.",
-        reasonCode: "HUMAN_ESCALATION_REQUIRED",
+      return recommendation(
+        "HUMAN",
+        "Critical-impact epistemic uncertainty requires governed human resolution.",
+        "HUMAN_ESCALATION_REQUIRED",
         deadlineMs,
-        expectedValue,
-        shouldInvokeAscalon: false,
+        valueAssessment,
+        false,
         estimatedCostUnits,
-        budget: remainingBudget,
-      };
+        remainingBudget,
+      );
     }
 
-    const canAffordAscalon =
-      remainingBudget.maxCallsRemaining > 0 &&
-      remainingBudget.maxCostUnits >= estimatedCostUnits;
-    const ascalonValueJustifiesCost = expectedValue >= minimumExpectedValue;
-    const deepAvailableByPolicy =
-      ascalonAvailable &&
-      this.controller.canUseDeep(usage) &&
-      canAffordAscalon &&
-      ascalonValueJustifiesCost;
+    const ascalonAvailable =
+      options.ascalonAvailable ?? options.deepAvailable ?? false;
+    const hasTimeBudget =
+      remainingBudget.maxTimeMs >= estimatedLatencyMs &&
+      estimatedLatencyMs <= deadlineMs;
+    const hasCallBudget = remainingBudget.maxCallsRemaining > 0;
+    const hasCostBudget = remainingBudget.maxCostUnits >= estimatedCostUnits;
 
-    if (deepAvailableByPolicy) {
-      return {
-        mode: "DEEP",
-        reason: "Epistemic value justifies bounded deep Ascalon cognition within the remaining cost/time budget.",
-        reasonCode: deepReasonCode(state),
-        deadlineMs,
-        expectedValue,
-        shouldInvokeAscalon: true,
-        estimatedCostUnits,
-        budget: remainingBudget,
-      };
-    }
-
-    if (ascalonAvailable && expectedValue >= minimumExpectedValue && !canAffordAscalon) {
-      const reasonCode: AscalonInvocationReason = "ASCALON_BUDGET_EXHAUSTED";
-
-      if (options.specialistAvailable) {
-        return {
-          mode: "SPECIALIST",
-          reason: "Ascalon escalation is justified but its local budget is unavailable; route to a bounded specialist instead.",
-          reasonCode,
+    if (ascalonAvailable && valueAssessment.shouldInvokeAscalon) {
+      if (!hasTimeBudget) {
+        return recommendation(
+          "SPECIALIST",
+          "Ascalon value is positive but its estimated latency does not fit the remaining epistemic deadline.",
+          "ASCALON_LATENCY_BUDGET_EXHAUSTED",
           deadlineMs,
-          expectedValue,
-          shouldInvokeAscalon: false,
+          valueAssessment,
+          false,
           estimatedCostUnits,
-          budget: remainingBudget,
-        };
+          remainingBudget,
+        );
       }
 
-      return {
-        mode: "HUMAN",
-        reason: "Ascalon escalation is justified but the local call/cost budget cannot afford it; escalate rather than exceed budget.",
-        reasonCode,
+      if (!hasCallBudget || !hasCostBudget) {
+        const reasonCode: AscalonInvocationReason = "ASCALON_BUDGET_EXHAUSTED";
+        return recommendation(
+          options.specialistAvailable ? "SPECIALIST" : "HUMAN",
+          options.specialistAvailable
+            ? "Ascalon value is positive but its call/cost budget is unavailable; route to a bounded specialist."
+            : "Ascalon value is positive but its call/cost budget is unavailable; escalate rather than exceed budget.",
+          reasonCode,
+          deadlineMs,
+          valueAssessment,
+          false,
+          estimatedCostUnits,
+          remainingBudget,
+        );
+      }
+
+      return recommendation(
+        "DEEP",
+        valueAssessment.reason,
+        multipleHypotheses
+          ? "MULTIPLE_VIABLE_HYPOTHESES"
+          : materialConflict
+            ? "MATERIAL_CONTRADICTION"
+            : "MATERIAL_UNCERTAINTY",
         deadlineMs,
-        expectedValue,
-        shouldInvokeAscalon: false,
+        valueAssessment,
+        true,
         estimatedCostUnits,
-        budget: remainingBudget,
-      };
+        remainingBudget,
+      );
+    }
+
+    // A value model can say that deep cognition would be useful while calibration
+    // policy blocks actual invocation. Preserve that fact for shadow evaluation.
+    if (
+      ascalonAvailable &&
+      valueAssessment.expectedValue > (options.valuePolicy?.minimumNetValue ?? 0) &&
+      valueAssessment.source !== "OBSERVED_CALIBRATION"
+    ) {
+      return recommendation(
+        "DEEP",
+        valueAssessment.reason,
+        "VALUE_MODEL_UNCONFIGURED",
+        deadlineMs,
+        valueAssessment,
+        false,
+        estimatedCostUnits,
+        remainingBudget,
+      );
     }
 
     if (
       options.microAvailable &&
       this.controller.canUseMicro(usage) &&
-      !multipleHypotheses &&
-      expectedValue < minimumExpectedValue
+      !multipleHypotheses
     ) {
-      return {
-        mode: "MICRO",
-        reason: "Material uncertainty exists, but the policy estimates that cheap micro cognition is sufficient for the current epistemic value.",
-        reasonCode: "MICRO_SUFFICIENT",
+      return recommendation(
+        "MICRO",
+        valueAssessment.expectedValue < 0
+          ? "Cheap micro cognition is preferred because deep cognition has negative expected utility."
+          : "Cheap micro cognition is preferred before deep escalation.",
+        "MICRO_SUFFICIENT",
         deadlineMs,
-        expectedValue,
-        shouldInvokeAscalon: false,
+        valueAssessment,
+        false,
         estimatedCostUnits,
-        budget: remainingBudget,
-      };
+        remainingBudget,
+      );
     }
 
-    if (!ascalonAvailable && expectedValue >= minimumExpectedValue) {
+    if (valueAssessment.source === "UNAVAILABLE") {
       if (options.specialistAvailable) {
-        return {
-          mode: "SPECIALIST",
-          reason: "Deep cognition is justified but Ascalon is unavailable; use a bounded specialist rather than guessing.",
-          reasonCode: "ASCALON_UNAVAILABLE",
+        return recommendation(
+          "SPECIALIST",
+          "AER value policy is not configured; use a bounded specialist rather than implicitly invoking Ascalon.",
+          "VALUE_MODEL_UNCONFIGURED",
           deadlineMs,
-          expectedValue,
-          shouldInvokeAscalon: false,
+          valueAssessment,
+          false,
           estimatedCostUnits,
-          budget: remainingBudget,
-        };
+          remainingBudget,
+        );
       }
+
+      return recommendation(
+        "HUMAN",
+        "AER value policy is not configured; escalate rather than implicitly invoking Ascalon.",
+        "VALUE_MODEL_UNCONFIGURED",
+        deadlineMs,
+        valueAssessment,
+        false,
+        estimatedCostUnits,
+        remainingBudget,
+      );
     }
 
     if (options.specialistAvailable) {
-      return {
-        mode: "SPECIALIST",
-        reason: expectedValue < minimumExpectedValue
-          ? "No deep invocation is justified by the current expected value; a specialist may provide bounded evidence."
-          : "Required cognitive capability is unavailable within the current AER policy.",
-        reasonCode: expectedValue < minimumExpectedValue
+      return recommendation(
+        "SPECIALIST",
+        valueAssessment.reason,
+        valueAssessment.expectedValue < 0
           ? "EXPECTED_VALUE_BELOW_THRESHOLD"
           : "ASCALON_UNAVAILABLE",
         deadlineMs,
-        expectedValue,
-        shouldInvokeAscalon: false,
+        valueAssessment,
+        false,
         estimatedCostUnits,
-        budget: remainingBudget,
-      };
+        remainingBudget,
+      );
     }
 
-    return {
-      mode: "HUMAN",
-      reason: "Required cognitive capability is unavailable or budget-exhausted; escalate rather than guess.",
-      reasonCode: expectedValue < minimumExpectedValue
+    return recommendation(
+      "HUMAN",
+      "No admissible low-cost cognitive route remains; escalate rather than guess.",
+      valueAssessment.expectedValue < 0
         ? "EXPECTED_VALUE_BELOW_THRESHOLD"
         : "ASCALON_UNAVAILABLE",
       deadlineMs,
-      expectedValue,
-      shouldInvokeAscalon: false,
+      valueAssessment,
+      false,
       estimatedCostUnits,
-      budget: remainingBudget,
-    };
+      remainingBudget,
+    );
   }
 }
