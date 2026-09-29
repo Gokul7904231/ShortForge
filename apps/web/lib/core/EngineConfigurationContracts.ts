@@ -51,14 +51,27 @@ export interface EngineConfigurationSchema {
   fields: EngineConfigField[];
 }
 
+export interface EngineResearchQueryRule {
+  /** Stable Content Engine-owned query operation identifier. */
+  queryKind: string;
+  /** Provider-facing query template. Reach renders this; callers never supply raw query text. */
+  queryTemplate: string;
+  /** Template parameters allowed by the engine for this query operation. */
+  requiredParameters?: string[];
+  description?: string;
+}
+
 export interface EngineResearchContract {
   required: boolean;
   dataRequirements: string[];
+  /** Reach will execute only query kinds declared here. */
+  queryRules: EngineResearchQueryRule[];
   minSources?: number;
   citationRequired?: boolean;
   freshness?: "run" | "recent" | "any";
   sourcePolicy?: string;
-  agentReachProfile?: string;
+  /** Must equal engine:<engineId> at runtime to bind the contract to the selected engine. */
+  agentReachProfile: string;
 }
 
 export interface EngineCognitiveContract {
@@ -355,6 +368,28 @@ export function getCompatibilityEngineContracts(
       dataRequirements: [
         "Topic-specific factual grounding when the engine makes factual claims.",
         "Evidence provenance must survive the F00 Research Passport boundary.",
+      ],
+      queryRules: [
+        {
+          queryKind: "TOPIC_SCAN",
+          queryTemplate: "{topic} factual background primary sources",
+          description: "Engine-bounded topic/background discovery.",
+        },
+        {
+          queryKind: "TREND_SCAN",
+          queryTemplate: "{topic} trending topics short-form content",
+          description: "Engine-bounded trend discovery.",
+        },
+        {
+          queryKind: "FACT_CHECK",
+          queryTemplate: "{topic} fact check evidence verification",
+          description: "Engine-bounded factual verification.",
+        },
+        {
+          queryKind: "COMPETITOR_SCAN",
+          queryTemplate: "{topic} short video competitor hooks formats",
+          description: "Engine-bounded competitor pattern discovery.",
+        },
       ],
       minSources: engineId === "quiz" ? 2 : 1,
       citationRequired: engineId === "quiz",
