@@ -1,0 +1,83 @@
+{
+  "reportVersion": "1.0",
+  "pr": 54,
+  "changeId": "aer-cost-optimization-2026-09-29",
+  "changeType": "AER optimization / Ascalon pre-call admission",
+  "status": "IMPLEMENTED_FOUNDATION",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceOfTruth": ".okf/index.md",
+    "relevantDomains": [
+      "AER intelligence",
+      "Ascalon cognitive layer",
+      "security / authority boundaries",
+      "DecisionEngine coexistence",
+      "observability / cost budgets",
+      "Floor Governance Cell / AEF",
+      "F07 physical verification",
+      "training / Devourer governance"
+    ]
+  },
+  "implementation": [
+    "apps/web/factoryos/core/intelligence/epistemic/EpistemicContracts.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/CognitiveRouter.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERMetrics.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AscalonInvocationGate.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AscalonEpistemicHandoff.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/EpistemicCache.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/index.ts",
+    "apps/web/factoryos/tests/epistemic/aer.test.ts",
+    "apps/web/factoryos/tests/epistemic/aer-auxiliary.test.ts",
+    ".okf/decisions/ascalon-epistemic-optimization-20260929.md",
+    "docs/ascalon/epistemic-runtime.md",
+    ".okf/intelligence/aer.md"
+  ],
+  "optimization": {
+    "primaryMetric": "cost_per_resolved_uncertainty",
+    "routing": "DETERMINISTIC -> MICRO -> DEEP(Ascalon) -> SPECIALIST/HUMAN",
+    "ascalonAdmission": [
+      "shouldInvokeAscalon",
+      "reasonCode",
+      "expectedValue",
+      "estimatedCostUnits",
+      "remaining budget"
+    ],
+    "metrics": [
+      "aerInvocationRate",
+      "ascalonEscalationRate",
+      "ascalonInvocationRate",
+      "averageProbesPerUncertainty",
+      "cacheHitRate",
+      "p50AERLatencyMs",
+      "p95AERLatencyMs",
+      "p50AscalonLatencyMs",
+      "p95AscalonLatencyMs",
+      "costPerResolvedUncertainty",
+      "falseReassuranceRate",
+      "probeUsefulnessRate",
+      "unnecessaryEscalationRate"
+    ]
+  },
+  "security": {
+    "status": "DESIGN_REVIEW_COMPLETE",
+    "notes": [
+      "AER remains advisory.",
+      "Ascalon pre-call gate is deterministic and non-executing.",
+      "No capabilities, leases, fencing, publishing, or F07 authority are granted.",
+      "Expected value and hypothesis support are routing signals only."
+    ]
+  },
+  "verification": {
+    "status": "PENDING_CI_AND_SHADOW_EVIDENCE",
+    "required": [
+      "targeted AER Vitest suite",
+      "FactoryOS TypeScript typecheck",
+      "repository CI",
+      "applicable security/Semgrep checks",
+      "shadow replay with observed outcomes"
+    ]
+  },
+  "disposition": "BLOCKED",
+  "reason": "Implementation is complete on the PR branch, but production influence remains blocked until fresh automated verification and shadow/outcome evidence are recorded."
+}
