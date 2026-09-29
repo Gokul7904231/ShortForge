@@ -301,6 +301,14 @@ export interface MemoryGateProof {
   readonly observedAt: string;
   readonly reverifiedAt?: string;
   readonly note?: string;
+  /** Optional trusted external proof anchor, e.g. an F07 Ed25519 VerificationReceipt. */
+  readonly anchor?: {
+    readonly kind: "F07_VERIFICATION_RECEIPT";
+    readonly id: string;
+    readonly digestSha256: string;
+    readonly signerKeyId: string;
+    readonly artifactSha256?: string;
+  };
 }
 
 export interface MemoryGateRecord extends MemoryGateDefinition {
