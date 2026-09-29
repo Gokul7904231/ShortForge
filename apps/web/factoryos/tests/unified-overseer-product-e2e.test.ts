@@ -10,6 +10,7 @@ import { OVERSEER_EXPRESSION_PRESETS } from "../core/overseer/presence/OverseerE
 import { OverseerPresencePolicy } from "../core/overseer/presence/OverseerPresencePolicy";
 import { AgentReachAdapter } from "../core/integrations/AgentReachAdapter";
 import { GStackTrigger } from "../core/integrations/GStackTrigger";
+import { getCompatibilityEngineContracts } from "../../lib/core/EngineConfigurationContracts";
 import * as path from "node:path";
 import * as fs from "node:fs";
 
@@ -114,7 +115,15 @@ describe("FactoryOS Frontier v2 — Unified Overseer Productization Acceptance S
 
   it("4. Agent-Reach Intelligence Integration: Proactively searches external knowledge with confidence scoring", async () => {
     const adapter = new AgentReachAdapter();
-    const result = await adapter.searchExternalKnowledge("Trending trivia formats and video pacing");
+    const result = await adapter.searchExternalKnowledge({
+      engineId: "quiz",
+      queryKind: "TREND_SCAN",
+      topic: "Trending trivia formats and video pacing",
+      researchContract: {
+        engineId: "quiz",
+        ...getCompatibilityEngineContracts("quiz").research!,
+      },
+    });
 
     expect(result.query).toBe("Trending trivia formats and video pacing");
     expect(result.findings.length).toBeGreaterThan(0);
