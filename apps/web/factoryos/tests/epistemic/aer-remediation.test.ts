@@ -11,6 +11,7 @@ import {
   AERMetricsRecorder,
   AERRoutingPolicyLearner,
   AERPolicyPromotionGate,
+  AERShadowReplayEvaluator,
   ScopedToolAERExecutionFabricBridge,
   AscalonInvocationCoordinator,
   AscalonInvocationGate,
@@ -429,6 +430,57 @@ describe("AER remediation — economics, reservations, execution loop", () => {
     expect(result.evidenceRefs).toContain("measurement:timing:001");
     expect(result.evidenceRefs).toContain("tool-evidence:timing:001");
     expect(result.costUnits).toBe(2);
+  });
+
+  it("replays historical necessity evidence without executing anything", () => {
+    const engine = new AEREngine();
+    const context = engine.assess({
+      contextSeed: "replay-context",
+      unknown: [
+        {
+          unknownId: "u1",
+          question: "needs deep reasoning",
+          reason: "multiple plausible hypotheses",
+          material: true,
+          evidenceRefs: [],
+        },
+      ],
+      budget,
+      routing: { deepAvailable: true },
+    }).context;
+
+    const replay = new AERShadowReplayEvaluator();
+    const report = replay.evaluate(
+      [
+        {
+          episodeId: "replay-1",
+          context,
+          actualMode: "DEEP",
+          outcome: {
+            outcomeId: "outcome-1",
+            episodeId: "replay-1",
+            status: "RESOLVED",
+            evidenceRefs: ["validator:1"],
+            authoritativeSource: "VERIFIED_SYSTEM",
+            verificationRef: "validator:1",
+            observedAt: "2026-09-29T00:00:00.000Z",
+            necessityAssessment: {
+              verdict: "NECESSARY",
+              method: "CONTROLLED_REPLAY",
+              evidenceRefs: ["baseline:1"],
+            },
+          },
+        },
+      ],
+      {
+        policyVersion: "candidate-v2",
+        decide: () => "MICRO",
+      },
+    );
+
+    expect(report.replayedCount).toBe(1);
+    expect(report.wouldMissNecessaryEscalation).toBe(1);
+    expect(report.wouldEscalateUnnecessarily).toBe(0);
   });
 
   it("does not qualify a shadow policy without evidence thresholds", () => {
