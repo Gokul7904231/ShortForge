@@ -12,17 +12,20 @@ import { CognitiveFallbackPolicy } from "./CognitiveFallbackPolicy";
 import { CognitiveOutcomeLearner } from "./CognitiveOutcomeLearner";
 import type { EvidenceNode } from "./CognitiveContracts";
 import type { CandidateAction } from "./simulation/SimulationDecisionEngine";
+import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
 
 export class CognitiveRuntime {
   public readonly plane: CognitivePlaneEngine;
   public readonly triageEngine: CognitiveTriageEngine;
   public readonly fallbackPolicy: CognitiveFallbackPolicy;
   public readonly outcomeLearner: CognitiveOutcomeLearner;
+  private readonly memoryLifecycle?: MemoryLifecycleService;
 
-  constructor(plane: CognitivePlaneEngine) {
+  constructor(plane: CognitivePlaneEngine, memoryLifecycle?: MemoryLifecycleService) {
     this.plane = plane;
     this.triageEngine = new CognitiveTriageEngine();
     this.fallbackPolicy = new CognitiveFallbackPolicy();
+    this.memoryLifecycle = memoryLifecycle;
     this.outcomeLearner = new CognitiveOutcomeLearner(plane.experienceMemory, plane.economics);
   }
 
@@ -61,11 +64,41 @@ export class CognitiveRuntime {
         };
       }
 
-      // 2. Experience Memory Recall
+      // 2. Canonical Memory Fabric Recall.
       const query = `${incident.category} ${incident.symptoms.join(" ")}`;
-      const similarExperiences = await this.plane.experienceMemory.recallByKeywords(query, incident.floorId, 5);
-      tokensConsumed += 100;
-      costUsd += 0.001;
+      let similarExperiences: Array<{ memoryId: string; title: string; summary: string }> = [];
+      if (this.memoryLifecycle) {
+        const memoryScopeKeys = [...(incident.memoryScopeKeys ?? []), incident.caseId, incident.floorId]
+          .filter((value): value is string => Boolean(value && value.trim()));
+        const memoryRecall = await this.memoryLifecycle.recall({
+          query,
+          accessContext: {
+            principalId: "cognitive-runtime:" + incident.incidentId,
+            allowedScopeKeys: [...new Set(memoryScopeKeys)],
+            allowGlobalScope: false,
+          },
+          maxItems: 5,
+          maxChars: 6000,
+          includeStale: false,
+          trace: true,
+        });
+        similarExperiences = memoryRecall.items.map((item) => ({
+          memoryId: item.memoryId,
+          title: item.title,
+          summary: item.content.slice(0, 1200),
+        }));
+        tokensConsumed += Math.max(20, memoryRecall.estimatedTokens);
+        costUsd += 0.001;
+      } else {
+        const legacy = await this.plane.experienceMemory.recallByKeywords(query, incident.floorId, 5);
+        similarExperiences = legacy.map((item) => ({
+          memoryId: item.memoryId,
+          title: item.title,
+          summary: item.summary,
+        }));
+        tokensConsumed += 100;
+        costUsd += 0.001;
+      }
 
       // 3. Active Context Management & Indexing
       if (incident.rawLogs && incident.rawLogs.length > 0) {
