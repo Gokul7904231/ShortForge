@@ -4,9 +4,17 @@ import { ResearchRuntime } from "../core/research/ResearchRuntime";
 import { VoiceFabric } from "../core/voice/VoiceFabric";
 import { RenderFabric } from "../core/fabric/RenderFabric";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
+import { getCompatibilityEngineContracts } from "../../lib/core/EngineConfigurationContracts";
 import type { RenderIntent } from "../core/contracts/RenderIntentContracts";
 
 describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsystem Suite", () => {
+
+const TEST_ENGINE_ID = "quiz";
+const TEST_RESEARCH_CONTRACT = {
+  engineId: TEST_ENGINE_ID,
+  ...getCompatibilityEngineContracts(TEST_ENGINE_ID).research!,
+};
+
   let controller: AutonomousFactoryController;
   let renderedArtifact: any;
 
@@ -40,6 +48,7 @@ describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsyst
     const unverifiedReport = await unverifiedRuntime.executeResearch({
       missionId: "mis_unverified_test",
       topic: "Obscure Unindexed Topic",
+      researchContract: TEST_RESEARCH_CONTRACT,
     });
     const unverifiedClaim = unverifiedReport.passport.claims.find((c) => c.claimType === "UNVERIFIED_ASSERTION");
     expect(unverifiedClaim).toBeDefined();
@@ -83,6 +92,7 @@ describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsyst
       missionId: "mis_test_research_01",
       topic: "Deep Space Black Holes",
       methodology: "TREND_SCAN",
+      researchContract: TEST_RESEARCH_CONTRACT,
     });
 
     expect(report).toBeDefined();
