@@ -841,17 +841,13 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   private async ensureIndexes(): Promise<void> {
-    try {
-      await Promise.all([
-        this.incidents.createIndex({ incidentId: 1 }, { unique: true }),
-        this.intents.createIndex({ intentId: 1 }, { unique: true }),
-        this.intents.createIndex({ dedupeKey: 1 }, { unique: true }),
-        this.receipts.createIndex({ receiptId: 1 }, { unique: true }),
-        this.actionLeases.createIndex({ actionLeaseId: 1 }, { unique: true }),
-        this.actionLeases.createIndex({ intentId: 1 }, { unique: true }),
-      ]);
-    } catch {
-      // Index creation is retried by deployment/bootstrap health checks.
-    }
+    await Promise.all([
+      this.incidents.createIndex({ incidentId: 1 }, { unique: true }),
+      this.intents.createIndex({ intentId: 1 }, { unique: true }),
+      this.intents.createIndex({ dedupeKey: 1 }, { unique: true }),
+      this.receipts.createIndex({ receiptId: 1 }, { unique: true }),
+      this.actionLeases.createIndex({ actionLeaseId: 1 }, { unique: true }),
+      this.actionLeases.createIndex({ intentId: 1 }, { unique: true }),
+    ]);
   }
 }
