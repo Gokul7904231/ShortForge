@@ -24,15 +24,17 @@ export class MemoryLifecycleService {
   private readonly retrievalEngine: MemoryRetrievalEngine;
   private readonly provenanceGuard = new MemoryProvenanceGuard();
   private readonly reflectionEngine = new MemoryReflectionEngine();
-  private readonly mentalModels = new MemoryMentalModelManager();
+  private readonly mentalModels: MemoryMentalModelManager;
 
   constructor(
     private readonly documentSource: () => readonly KnowledgeDocument[],
     observationStore: MemoryObservationStore = new InMemoryMemoryObservationStore(),
     retrievalEngine = new MemoryRetrievalEngine(),
     strategyRouter = new MemoryConsolidationStrategyRouter([]),
+    mentalModelManager = new MemoryMentalModelManager(),
   ) {
     this.observationConsolidator = new MemoryObservationConsolidator(observationStore, strategyRouter);
+    this.mentalModels = mentalModelManager;
     this.retrievalEngine = retrievalEngine;
   }
 
