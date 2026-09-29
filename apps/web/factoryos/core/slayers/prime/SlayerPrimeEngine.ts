@@ -360,12 +360,23 @@ export class SlayerPrimeEngine {
   async executeAuthorizedAction(
     intentId: string,
     grant: SlayerAuthorizationGrant,
-    holderId = this.instanceId
+    holderId = this.holderId
   ): Promise<SlayerEnforcementReceipt> {
     await this.readyPromise;
     const leadership = await this.requireLeader();
     const intent = this.actionIntents.get(intentId);
     if (!intent) throw new Error("Unknown Slayer action intent " + intentId);
+
+    const priorReceipts = this.getAllReceipts().filter(
+      (receipt) => receipt.intentId === intentId
+    );
+    const verified = priorReceipts.find((receipt) => receipt.status === "VERIFIED");
+    if (verified) return structuredClone(verified);
+
+    const uncertain = priorReceipts.find(
+      (receipt) => receipt.status === "EXECUTING" || receipt.status === "UNKNOWN"
+    );
+    if (uncertain) return structuredClone(uncertain);
 
     const incident = this.requireIncident(intent.incidentId);
     const evidenceIds = new Set(incident.evidence.map((item) => item.evidenceId));
