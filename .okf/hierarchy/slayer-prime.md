@@ -30,7 +30,7 @@ Core doctrine:
 
 > Intelligence proposes. Authority authorizes. Slayer Prime enforces. Evidence proves.
 
-Slayer Prime never treats model confidence as permission. Mutating actions require a matching Guardian/Human authorization grant, fresh evidence quorum, exact target/scope, an action lease, and a postcondition check.
+Slayer Prime never treats model confidence as permission. Mutating actions require a matching Guardian/Human authorization grant bound to the active Prime leadership term, fresh evidence quorum, exact target/scope, an action lease, and a postcondition check.
 
 ## Action lifecycle
 
@@ -75,7 +75,7 @@ FENCE, ISOLATE, TERMINATE, FLOOR_HALT, and FACTORY_HALT are contractually repres
 
 ## Concurrency
 
-A worker/task lease and Slayer action lease are different resources.
+A worker/task lease, Prime leadership lease, and Slayer action lease are different resources.
 
 - Worker/task lease: ownership of execution.
 - Slayer action lease: ownership of the enforcement mutation.
