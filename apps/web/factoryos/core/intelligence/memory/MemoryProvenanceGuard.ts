@@ -55,6 +55,20 @@ export class MemoryProvenanceGuard {
     policy: MemoryProvenancePolicy,
   ): MemoryProvenanceViolation[] {
     const failures: MemoryProvenanceViolation[] = [];
+    if (query.accessContext) {
+      const allowedScopes = new Set(query.accessContext.allowedScopeKeys);
+      const authorized =
+        allowedScopes.has(candidate.scopeKey) ||
+        (query.accessContext.allowGlobalScope === true && candidate.scopeKey === "GLOBAL");
+      if (!authorized) {
+        failures.push({
+          memoryId: candidate.memoryId,
+          code: "SCOPE_LEAK",
+          detail: "principal " + query.accessContext.principalId + " is not authorized for memory scope " + candidate.scopeKey,
+        });
+      }
+    }
+
     if (policy.requireScopeMatch !== false && query.scopeKey && candidate.scopeKey !== query.scopeKey) {
       failures.push({
         memoryId: candidate.memoryId,
