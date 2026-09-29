@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import type {
   MemoryMentalModel,
   MemoryMentalModelRefreshPlan,
@@ -7,6 +7,7 @@ import type {
   MemoryScope,
   MemorySemanticType,
 } from "./MemorySemanticsContracts";
+import { InMemoryMemoryMentalModelStore, type MemoryMentalModelStore } from "./MemoryMentalModelStore";
 
 export interface CreateMentalModelInput {
   readonly key?: string;
@@ -26,9 +27,11 @@ export interface CreateMentalModelInput {
 }
 
 export class MemoryMentalModelManager {
-  private readonly models = new Map<string, MemoryMentalModel>();
+  constructor(
+    private readonly store: MemoryMentalModelStore = new InMemoryMemoryMentalModelStore(),
+  ) {}
 
-  public create(input: CreateMentalModelInput): MemoryMentalModel {
+  public async create(input: CreateMentalModelInput): Promise<MemoryMentalModel> {
     if (input.refreshAfterConsolidation && input.refreshCron) {
       throw new Error("[MemoryMentalModel] refreshAfterConsolidation and refreshCron are mutually exclusive");
     }
@@ -42,7 +45,7 @@ export class MemoryMentalModelManager {
           .digest("hex")
           .slice(0, 20);
 
-    if (this.models.has(modelId)) {
+    if (this.store.get(modelId)) {
       throw new Error("[MemoryMentalModel] model already exists: " + modelId);
     }
 
@@ -68,20 +71,19 @@ export class MemoryMentalModelManager {
       createdAt: now,
       updatedAt: now,
     };
-    this.models.set(modelId, model);
+    await this.store.upsert(model);
     return model;
   }
 
   public get(modelId: string): MemoryMentalModel | undefined {
-    return this.models.get(modelId);
+    return this.store.get(modelId);
   }
 
   public list(scopeKey?: string): readonly MemoryMentalModel[] {
-    const values = [...this.models.values()];
-    return scopeKey ? values.filter((model) => model.scope.key === scopeKey) : values;
+    return this.store.list(scopeKey);
   }
 
-  public markDirty(modelId: string, reason: string, at = new Date().toISOString()): MemoryMentalModel {
+  public async markDirty(modelId: string, reason: string, at = new Date().toISOString()): Promise<MemoryMentalModel> {
     const model = this.require(modelId);
     return this.update(modelId, {
       dirtySince: model.dirtySince && model.dirtySince < at ? model.dirtySince : at,
@@ -144,17 +146,17 @@ export class MemoryMentalModelManager {
     };
   }
 
-  public applyRefresh(input: {
+  public async applyRefresh(input: {
     readonly modelId: string;
     readonly content: string;
     readonly sourceObservationIds: readonly string[];
     readonly evidenceRefs: readonly string[];
     readonly now?: string;
-  }): MemoryMentalModel {
+  }): Promise<MemoryMentalModel> {
     if (!input.content.trim()) throw new Error("[MemoryMentalModel] refresh content is required");
     const model = this.require(input.modelId);
     const now = input.now ?? new Date().toISOString();
-    const next = this.update(input.modelId, {
+    return this.update(input.modelId, {
       content: input.content,
       sourceObservationIds: [...new Set(input.sourceObservationIds)],
       evidenceRefs: [...new Set(input.evidenceRefs)],
@@ -164,23 +166,16 @@ export class MemoryMentalModelManager {
       dirtySince: undefined,
       dirtyReason: undefined,
     });
-    return next;
   }
 
   public sourceSetForRefresh(modelId: string, observations: readonly MemoryObservation[]): readonly MemoryObservation[] {
     const model = this.require(modelId);
-    const scoped = observations.filter((observation) => observation.scope.key === model.scope.key);
-    // Mental models are deliberately excluded because sibling models are derived,
-    // not independent evidence, preventing self-referential feedback loops.
-    return scoped.filter((observation) =>
-      model.sourceFactTypes.includes(observation.semanticType),
-    );
+    return observations
+      .filter((observation) => observation.scope.key === model.scope.key)
+      .filter((observation) => model.sourceFactTypes.includes(observation.semanticType));
   }
 
-  private update(
-    modelId: string,
-    patch: Partial<MemoryMentalModel>,
-  ): MemoryMentalModel {
+  private async update(modelId: string, patch: Partial<MemoryMentalModel>): Promise<MemoryMentalModel> {
     const current = this.require(modelId);
     const next: MemoryMentalModel = {
       ...current,
@@ -193,12 +188,12 @@ export class MemoryMentalModelManager {
       authority: "MODEL_ADVISORY",
       updatedAt: new Date().toISOString(),
     };
-    this.models.set(modelId, next);
+    await this.store.upsert(next);
     return next;
   }
 
   private require(modelId: string): MemoryMentalModel {
-    const model = this.models.get(modelId);
+    const model = this.store.get(modelId);
     if (!model) throw new Error("[MemoryMentalModel] unknown model: " + modelId);
     return model;
   }
