@@ -21,6 +21,7 @@ import type { LeaseManager } from "../leases/LeaseManager";
 import type { IReputationRepository } from "../database/DatabaseContracts";
 import { InMemoryReputationRepository } from "../database/InMemoryDatabase";
 import type { SlayerHealth, SlayerCluster } from "../contracts/SlayerContracts";
+import type { SlayerPrimeOptions } from "../contracts/SlayerPrimeContracts";
 import { SlayerPrimeEngine } from "./prime/SlayerPrimeEngine";
 
 export class SlayerEngine {
@@ -44,7 +45,8 @@ export class SlayerEngine {
     worldState: WorldStateEngine,
     reputationRepo: IReputationRepository = new InMemoryReputationRepository(),
     patrolIntervalMs: number = 2000,
-    leaseManager?: LeaseManager
+    leaseManager?: LeaseManager,
+    primeOptions: SlayerPrimeOptions = {}
   ) {
     this.caseManager = caseManager;
     this.eventBus = eventBus;
@@ -53,7 +55,7 @@ export class SlayerEngine {
     this.patrolIntervalMs = patrolIntervalMs;
     this.leaseManager = leaseManager;
     this.correlationEngine = new SlayerCorrelationEngine();
-    this.prime = new SlayerPrimeEngine(eventBus, leaseManager);
+    this.prime = new SlayerPrimeEngine(eventBus, leaseManager, primeOptions);
 
     this.registerDefaultSlayers();
 
