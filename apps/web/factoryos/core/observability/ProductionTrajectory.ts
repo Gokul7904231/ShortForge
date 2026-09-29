@@ -179,7 +179,14 @@ export class ProductionTrajectoryEvaluator {
       recoveredIterations,
       evidenceRefs: Object.freeze(evidenceRefs),
       authorityViolations: Object.freeze(authorityViolations),
-      finalOutcome: allVerified ? "SUCCESS" : verifiedFloorCount > 0 ? "INCOMPLETE" : "FAILED",
+      finalOutcome:
+        verificationStatus === "FAILED"
+          ? "FAILED"
+          : allVerified
+            ? "SUCCESS"
+            : verifiedFloorCount > 0
+              ? "INCOMPLETE"
+              : "FAILED",
       trajectoryFingerprint,
       trainingEligible,
     };
