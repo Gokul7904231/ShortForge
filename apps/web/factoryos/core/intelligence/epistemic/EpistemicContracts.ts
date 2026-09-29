@@ -200,6 +200,15 @@ export interface EpistemicUsage {
   readonly costUnits: number;
 }
 
+export interface AERCounterfactual {
+  readonly mode: EpistemicCognitiveMode;
+  readonly expectedUtility: number;
+  readonly expectedResolutionProbability: number;
+  readonly expectedCost: number;
+  readonly expectedLatencyMs: number;
+  readonly source: ValueEstimateSource;
+}
+
 export interface CognitiveRecommendation {
   readonly mode: EpistemicCognitiveMode;
   readonly reason: string;
@@ -215,9 +224,14 @@ export interface CognitiveRecommendation {
   readonly estimatedLatencyMs: number;
   readonly expectedBenefit: number;
   readonly expectedCost: number;
+  readonly incrementalCostUnits: number;
+  readonly incrementalLatencyMs: number;
   readonly uncertaintyBurden: number;
   readonly baselineMode?: EpistemicCognitiveMode;
   readonly expectedValueSource: ValueEstimateSource;
+  readonly decisionId: string;
+  readonly policyVersion: string;
+  readonly counterfactuals: readonly AERCounterfactual[];
   readonly budget: AscalonInvocationBudget;
 }
 
