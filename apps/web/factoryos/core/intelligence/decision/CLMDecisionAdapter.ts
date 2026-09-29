@@ -14,7 +14,6 @@ import {
   DecisionBatchRequest,
   DecisionBatchResult,
   DecisionProbabilitySemantics,
-  DecisionStatus,
   DecisionValidationErrorCode,
   IDecisionAdapter,
   NoulQuestion,
