@@ -110,7 +110,10 @@ export class ProductionTrajectoryEvaluator {
     const verifiedFloorCount = floors.filter((floor) => floor.verified).length;
     const missingProofCount = floors.filter((floor) => floor.proofLevel === "NONE").length;
     const failedFloorCount = floors.filter(
-      (floor) => floor.proofLevel !== "NONE" && !floor.verified,
+      (floor) =>
+        floor.proofLevel !== "NONE" &&
+        floor.proofLevel !== "HANDOFF_CONTRACT" &&
+        !floor.verified,
     ).length;
     const evidenceRefs = [...new Set(floors.flatMap((floor) => floor.evidenceRefs))];
     const totalIterations = floors.reduce((sum, floor) => sum + (floor.iterations || 0), 0);
@@ -119,10 +122,12 @@ export class ProductionTrajectoryEvaluator {
     const allProofGrade = floors.every((floor) => floor.proofLevel !== "NONE");
     const hasWeakEvidence = floors.some((floor) => floor.proofLevel === "HANDOFF_CONTRACT");
 
+    const handoffOnlyCount = floors.filter((floor) => floor.proofLevel === "HANDOFF_CONTRACT").length;
     let verificationStatus: TrajectoryVerificationStatus = "VERIFIED";
     if (authorityViolations.length > 0 || failedFloorCount > 0) verificationStatus = "FAILED";
-    else if (missingProofCount > 0 && verifiedFloorCount > 0) verificationStatus = "PARTIAL";
-    else if (missingProofCount > 0) verificationStatus = "UNVERIFIED";
+    else if (missingProofCount > 0 || handoffOnlyCount > 0) {
+      verificationStatus = verifiedFloorCount > 0 ? "PARTIAL" : "UNVERIFIED";
+    }
 
     const trainingEligible =
       verificationStatus === "VERIFIED" &&
