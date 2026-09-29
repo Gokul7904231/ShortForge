@@ -102,6 +102,7 @@ export class AEREngine {
       episodeId: input.episodeId ?? context.contextId,
       uncertaintyEncountered,
       ascalonEscalationRecommended: recommendation.shouldInvokeAscalon,
+      routedMode: recommendation.mode,
       aerLatencyMs: Date.now() - startedAt,
       assessmentCostUnits: input.assessmentCostUnits,
     });
