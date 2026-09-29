@@ -10,3 +10,5 @@ export * from "./EpistemicCache";
 export * from "./EpistemicLedger";
 export * from "./EpistemicTrigger";
 export * from "./HypothesisManager";
+export * from "./AERMetrics";
+export * from "./AscalonInvocationGate";
