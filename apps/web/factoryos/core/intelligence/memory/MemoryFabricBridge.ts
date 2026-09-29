@@ -31,6 +31,7 @@ import type {
   MemoryFabricSourceEnvelope,
 } from "./MemoryFabricContracts";
 import { MemoryFabricProjectionService } from "./MemoryFabricProjection";
+import { MemoryRetentionNormalizer } from "./MemoryRetentionNormalizer";
 
 export interface MemoryFabricBridgeConfig {
   readonly enabled?: boolean;
@@ -103,6 +104,7 @@ export class MemoryFabricBridge {
   private readonly candidateMaxChars: number;
   private readonly watchedCollections: ReadonlySet<string>;
   private readonly projectionService: MemoryFabricProjectionService;
+  private readonly retentionNormalizer = new MemoryRetentionNormalizer();
 
   private running = false;
   private unsubscribeEventBus?: () => void;
@@ -551,6 +553,18 @@ export class MemoryFabricBridge {
     if (existing) return existing;
 
     const payload = this.safeParseJson(record.payloadJson);
+    const retainedFacts = await this.retentionNormalizer.retain({
+      memoryId: raw.frontmatter.id,
+      scope: { kind: "CUSTOM", key: this.extractMemoryScope(payload) },
+      summary: record.summary,
+      payload,
+      occurredAt: record.occurredAt,
+      capturedAt: record.capturedAt,
+      sourceType: record.sourceType,
+      sourceId: record.sourceId,
+      sourceHash: record.sourceHash,
+    });
+    const primaryFact = retainedFacts[0];
     const classification = this.classifyCandidate(record, payload);
     const body = [
       "# " + classification.title,
@@ -581,14 +595,14 @@ export class MemoryFabricBridge {
       sf_memory_type: "OBSERVATION",
       sf_observation_scope: this.extractMemoryScope(payload),
       scope_key: this.extractMemoryScope(payload),
-      sf_proof_count: 0,
-      sf_supporting_memory_ids: [raw.frontmatter.id],
+      sf_proof_count: primaryFact?.evidenceRefs.length ?? 0,
+      sf_supporting_memory_ids: [raw.frontmatter.id, ...(primaryFact?.entityRefs ?? [])],
       sf_memory_history: [{
         version: 1,
         statement: record.summary,
         changedAt: record.occurredAt,
         changeType: "CREATED",
-        evidenceRefs: [raw.frontmatter.id],
+        evidenceRefs: [raw.frontmatter.id, ...(primaryFact?.evidenceRefs.map((evidence) => evidence.id) ?? [])],
       }],
       sf_authority_class: "UNKNOWN",
       title: classification.title,
@@ -623,7 +637,8 @@ export class MemoryFabricBridge {
         path: record.sourceCollection,
         captured_at: record.capturedAt,
       },
-      evidence_refs: [raw.frontmatter.id],
+      evidence_refs: [raw.frontmatter.id, ...(primaryFact?.evidenceRefs.map((evidence) => evidence.id) ?? [])],
+      entity_refs: primaryFact?.entityRefs,
       training_eligible: false,
     };
 
