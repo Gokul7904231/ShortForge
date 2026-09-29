@@ -164,6 +164,12 @@ export interface CognitiveProbe {
   readonly estimatedLatencyMs: number;
   readonly estimatedCostUnits: number;
   readonly expectedInformationGain: number; // ranking signal only, never a probability
+  /**
+   * Optional decision-aware refinement of information gain.
+   * These are planning estimates, never authoritative probabilities.
+   */
+  readonly expectedDecisionChangeProbability?: number;
+  readonly hypothesisDiscriminationScore?: number;
   readonly riskClass: ProbeRiskClass;
   readonly timeoutMs: number;
   readonly cacheable: boolean;
