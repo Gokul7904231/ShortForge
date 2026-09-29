@@ -124,6 +124,7 @@ export class ScopedToolAERExecutionFabricBridge implements AERProbeExecutor {
           0,
           this.costUnitEstimator(result, request),
         ),
+        actualCostUsd: Math.max(0, result.costUsd ?? 0),
         error: result.error?.message ?? "aef_tool_execution_failed",
       };
     }
@@ -149,6 +150,7 @@ export class ScopedToolAERExecutionFabricBridge implements AERProbeExecutor {
         0,
         envelope?.costUnits ?? this.costUnitEstimator(result, request),
       ),
+      actualCostUsd: Math.max(0, result.costUsd ?? 0),
     };
   }
 }
