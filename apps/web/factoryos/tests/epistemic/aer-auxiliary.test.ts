@@ -126,6 +126,7 @@ describe("AER auxiliary production primitives", () => {
       authorityClass: "MODEL_ADVISORY" as const,
       contextFingerprint: "fp",
       serializedTokenEstimate: 10,
+      tokenEstimateMethod: "CHARACTER_HEURISTIC" as const,
       expiresAt: "2026-09-29T00:10:00.000Z",
       redactionState: "CLEAN" as const,
     };
