@@ -111,3 +111,13 @@ The design is informed by recent work showing that adaptive test-time compute is
 
 No claim of production readiness is made by this record. The release gate remains:
 `repository CI -> targeted tests -> security validation -> shadow replay -> measured outcome evidence -> controlled promotion`.
+
+
+### Final Wave 2 accounting correction
+
+`AERProbeExecutionResult` now carries optional `actualCostUsd`, and the concrete AEF bridge maps the existing `ToolExecutor` measured `costUsd` into that result. `AERMetricsRecorder.recordProbe()` accepts and persists the measured USD amount.
+
+This closes the accounting path:
+`Tool -> ToolExecutor measured cost -> AEF bridge -> AER probe result -> AER episode economics`.
+
+The targeted remediation test verifies the measured USD value survives this boundary. Production qualification is still blocked on fresh CI/security/shadow evidence.
