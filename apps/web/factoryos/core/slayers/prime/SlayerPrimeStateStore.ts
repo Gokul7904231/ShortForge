@@ -121,6 +121,7 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async acquireLeadership(holderId: string, ttlMs: number): Promise<SlayerPrimeLeadershipLease | null> {
+    const previousEpoch = this.leadership?.epoch || 0;
     this.expireLeadershipIfNeeded();
     if (this.leadership && this.leadership.holderId !== holderId) return null;
 
@@ -129,7 +130,9 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
     const lease: SlayerPrimeLeadershipLease = {
       leaseId: current?.leaseId || "slayleader_" + randomUUID().replace(/-/g, "").slice(0, 16),
       holderId,
-      epoch: current ? current.epoch + 1 : this.nextEpoch++,
+      epoch: current
+        ? current.epoch + 1
+        : Math.max(this.nextEpoch++, previousEpoch + 1),
       acquiredAt: current?.acquiredAt || now.toISOString(),
       expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
     };
@@ -166,6 +169,7 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
       this.leadership.holderId === lease.holderId &&
       this.leadership.epoch === lease.epoch
     ) {
+      this.nextEpoch = Math.max(this.nextEpoch, lease.epoch + 1);
       this.leadership = null;
     }
   }
@@ -310,6 +314,7 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
 
   async acquireLeadership(holderId: string, ttlMs: number): Promise<SlayerPrimeLeadershipLease | null> {
     const state = this.read();
+    const previousEpoch = state.leadership?.epoch || 0;
     this.expire(state);
     if (state.leadership && state.leadership.holderId !== holderId) return null;
 
@@ -318,7 +323,9 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
     const lease: SlayerPrimeLeadershipLease = {
       leaseId: current?.leaseId || "slayleader_" + randomUUID().replace(/-/g, "").slice(0, 16),
       holderId,
-      epoch: current ? current.epoch + 1 : state.nextEpoch++,
+      epoch: current
+        ? current.epoch + 1
+        : Math.max(state.nextEpoch++, previousEpoch + 1),
       acquiredAt: current?.acquiredAt || now.toISOString(),
       expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
     };
@@ -363,6 +370,7 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
       state.leadership.holderId === lease.holderId &&
       state.leadership.epoch === lease.epoch
     ) {
+      state.nextEpoch = Math.max(state.nextEpoch, lease.epoch + 1);
       state.leadership = null;
       this.journal(state, { eventType: "LEADERSHIP_RELEASED", occurredAt: new Date().toISOString(), holderId: lease.holderId, epoch: lease.epoch });
       this.write(state);
@@ -581,7 +589,6 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
           expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
         },
         $inc: { epoch: 1 },
-        $setOnInsert: { epoch: 0 },
       },
       { upsert: true, returnDocument: "after" }
     );
@@ -618,12 +625,20 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async releaseLeadership(lease: SlayerPrimeLeadershipLease): Promise<void> {
-    await this.leadership.deleteOne({
-      _id: "singleton",
-      leaseId: lease.leaseId,
-      holderId: lease.holderId,
-      epoch: lease.epoch,
-    });
+    await this.leadership.updateOne(
+      {
+        _id: "singleton",
+        leaseId: lease.leaseId,
+        holderId: lease.holderId,
+        epoch: lease.epoch,
+      },
+      {
+        $set: {
+          holderId: "",
+          expiresAt: new Date(0).toISOString(),
+        },
+      }
+    );
   }
 
   async isLeadershipCurrent(holderId: string, epoch: number): Promise<boolean> {
