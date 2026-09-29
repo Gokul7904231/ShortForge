@@ -244,6 +244,30 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     expect(result.ascalonHandoff.mode).toBe("SHADOW");
   });
 
+  it("redacts credential-like values before Ascalon handoff", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "redaction",
+      unknown: [
+        {
+          unknownId: "u1",
+          question: "Can this provider be used?",
+          reason: "Authorization: Bearer super-secret-token",
+          material: true,
+          evidenceRefs: ["api_key=top-secret-value"],
+        },
+      ],
+      budget,
+      routing: { deepAvailable: true },
+    });
+
+    const serialized = JSON.stringify(result.context);
+    expect(serialized).not.toContain("super-secret-token");
+    expect(serialized).not.toContain("top-secret-value");
+    expect(serialized).toContain("[REDACTED_SECRET]");
+    expect(result.context.redactionState).toBe("CLEAN");
+  });
+
   it("never marks model inference as authoritative", () => {
     const engine = new EpistemicStateEngine();
     const state = engine.build({
