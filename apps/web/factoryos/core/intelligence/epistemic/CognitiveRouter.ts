@@ -161,8 +161,8 @@ export class CognitiveRouter {
     if (ascalonAvailable && expectedValue >= minimumExpectedValue && !canAffordAscalon) {
       const reasonCode: AscalonInvocationReason =
         remainingBudget.maxCallsRemaining <= 0 || remainingBudget.maxCostUnits < estimatedCostUnits
-          ? "ASALCON_BUDGET_EXHAUSTED"
-          : "ASALCON_UNAVAILABLE";
+          ? "ASCALON_BUDGET_EXHAUSTED"
+          : "ASCALON_UNAVAILABLE";
 
       if (options.specialistAvailable) {
         return {
@@ -201,7 +201,7 @@ export class CognitiveRouter {
         return {
           mode: "SPECIALIST",
           reason: "Deep cognition is justified but Ascalon is unavailable; use a bounded specialist rather than guessing.",
-          reasonCode: "ASALCON_UNAVAILABLE",
+          reasonCode: "ASCALON_UNAVAILABLE",
           deadlineMs,
           expectedValue,
           shouldInvokeAscalon: false,
@@ -219,7 +219,7 @@ export class CognitiveRouter {
           : "Required cognitive capability is unavailable within the current AER policy.",
         reasonCode: expectedValue < minimumExpectedValue
           ? "EXPECTED_VALUE_BELOW_THRESHOLD"
-          : "ASALCON_UNAVAILABLE",
+          : "ASCALON_UNAVAILABLE",
         deadlineMs,
         expectedValue,
         shouldInvokeAscalon: false,
@@ -233,7 +233,7 @@ export class CognitiveRouter {
       reason: "Required cognitive capability is unavailable or budget-exhausted; escalate rather than guess.",
       reasonCode: expectedValue < minimumExpectedValue
         ? "EXPECTED_VALUE_BELOW_THRESHOLD"
-        : "ASALCON_UNAVAILABLE",
+        : "ASCALON_UNAVAILABLE",
       deadlineMs,
       expectedValue,
       shouldInvokeAscalon: false,
