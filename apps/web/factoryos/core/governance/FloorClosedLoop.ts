@@ -18,6 +18,8 @@ export type ClosedLoopTermination =
   | "ESCALATED"
   | "NO_PROGRESS";
 
+export const MAX_CLOSED_LOOP_ITERATIONS = 8;
+
 export interface ClosedLoopIteration<TOutput, TFeedback> {
   readonly iteration: number;
   readonly output: TOutput;
@@ -48,7 +50,16 @@ export interface BoundedFeedbackLoopOptions<TOutput, TFeedback> {
 export async function runBoundedFeedbackLoop<TOutput, TFeedback>(
   options: BoundedFeedbackLoopOptions<TOutput, TFeedback>
 ): Promise<BoundedFeedbackLoopResult<TOutput, TFeedback>> {
-  const maxIterations = Math.max(1, Math.floor(options.maxIterations));
+  const requestedMaxIterations = Number(options.maxIterations);
+  const maxIterations = Math.min(
+    MAX_CLOSED_LOOP_ITERATIONS,
+    Math.max(
+      1,
+      Number.isFinite(requestedMaxIterations)
+        ? Math.floor(requestedMaxIterations)
+        : MAX_CLOSED_LOOP_ITERATIONS
+    )
+  );
   let output = options.initialOutput;
   const history: ClosedLoopIteration<TOutput, TFeedback>[] = [];
   const seen = new Set<string>();
