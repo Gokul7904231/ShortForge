@@ -137,8 +137,15 @@ export interface MemoryMentalModel {
   readonly updatedAt: string;
 }
 
+export interface MemoryAccessContext {
+  readonly principalId: string;
+  readonly allowedScopeKeys: readonly string[];
+  readonly allowGlobalScope?: boolean;
+}
+
 export interface MemoryRecallQuery {
   readonly query: string;
+  readonly accessContext?: MemoryAccessContext;
   readonly scopeKey?: string;
   readonly types?: readonly MemorySemanticType[];
   readonly tags?: readonly string[];
