@@ -17,6 +17,8 @@ export interface OutcomeFeedback {
   readonly symptoms: string[];
   readonly trajectoryId?: string;
   readonly evidenceRefs?: readonly string[];
+  readonly tokensConsumed?: number;
+  readonly modelTier?: Parameters<AgentEconomicsEngine["recordExecution"]>[0];
 }
 
 export class CognitiveOutcomeLearner {
@@ -69,7 +71,15 @@ export class CognitiveOutcomeLearner {
       trainingEligibility: verified ? "ELIGIBLE" : "INELIGIBLE",
     });
 
-    this.economics.recordExecution("LARGE_REASONER", 250, feedback.durationMs);
+    // Record economics only when production telemetry actually reports token use.
+    // Never synthesize model usage as a learning/economics signal.
+    if (feedback.tokensConsumed !== undefined && feedback.tokensConsumed >= 0) {
+      this.economics.recordExecution(
+        feedback.modelTier || "LARGE_REASONER",
+        feedback.tokensConsumed,
+        feedback.durationMs,
+      );
+    }
 
     return entry;
   }
