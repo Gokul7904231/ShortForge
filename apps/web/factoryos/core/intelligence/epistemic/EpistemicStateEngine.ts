@@ -150,6 +150,7 @@ export class EpistemicStateEngine {
         expectedValue: 0,
         shouldInvokeAscalon: false,
         estimatedCostUnits: 0,
+        estimatedLatencyMs: 0,
         expectedBenefit: 0,
         expectedCost: 0,
         uncertaintyBurden: 0,
