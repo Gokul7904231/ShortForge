@@ -11,6 +11,8 @@ export class MemoryCompletionLedger {
   private readonly gates = new Map<string, MemoryGateRecord>();
 
   public registerGate(definition: MemoryGateDefinition): MemoryGateRecord {
+    if (!definition.gateId.trim()) throw new Error("[MemoryCompletionLedger] gateId is required");
+    if (!definition.outcome.trim()) throw new Error("[MemoryCompletionLedger] observable outcome is required");
     if (this.gates.has(definition.gateId)) {
       throw new Error("[MemoryCompletionLedger] duplicate gate: " + definition.gateId);
     }
@@ -52,6 +54,14 @@ export class MemoryCompletionLedger {
     }
     if (!proof.evidenceDigest.trim()) {
       throw new Error("[MemoryCompletionLedger] evidenceDigest is required");
+    }
+    for (const dependencyId of gate.dependsOn ?? []) {
+      const dependency = this.gates.get(dependencyId);
+      if (!dependency || dependency.status !== "MET") {
+        throw new Error(
+          "[MemoryCompletionLedger] dependency is not currently proven: " + dependencyId,
+        );
+      }
     }
     const next: MemoryGateRecord = {
       ...gate,
