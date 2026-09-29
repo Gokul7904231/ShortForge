@@ -99,7 +99,7 @@ simulated. All recall is bounded by items, characters and tokens.
 
 ```text
 fresh mental model -> observation -> raw evidence
-`````text
+```text
 
 Stale derived memory triggers grounding against lower layers when policy allows.
 Reflection does not create authority.
@@ -219,3 +219,23 @@ and shadow-policy evidence remain release gates.
 LEARNING can change the next decision.
 PROOF decides whether the change is trusted.
 ```
+## 16. Implementation inventory
+
+Native files added for this integration:
+
+- `apps/web/factoryos/core/intelligence/memory/MemorySemanticsContracts.ts`
+- `MemoryRetentionNormalizer.ts`
+- `MemoryConsolidationStrategyRouter.ts`
+- `MemoryObservationConsolidator.ts`
+- `MemoryRetrievalEngine.ts`
+- `MemoryMentalModelManager.ts`
+- `MemoryReflectionEngine.ts`
+- `MemoryProvenanceGuard.ts`
+- `MemoryCompletionLedger.ts`
+- `KnowledgeStoreObservationAdapter.ts`
+- `MemoryLifecycleService.ts`
+- `apps/web/factoryos/tests/intelligence/memory-semantics.test.ts`
+
+The existing `MemoryFabricProjection` and runtime bridge were upgraded to use
+the new semantics while preserving existing lifecycle, verification and AER
+authority boundaries.
