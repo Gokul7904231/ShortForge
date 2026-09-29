@@ -17,7 +17,7 @@
     ]
   },
   "forensicFindings": [
-    "Live TASK_COMPLETED events exposed loop receipts for F00/F06/F07 but not consistently for F01-F05.",
+    "Live TASK_COMPLETED events initially exposed loop receipts for F00/F06/F07 only; the current implementation now adds runtime-closure receipts for F00-F05 and physical-proof receipts for F06/F07.",
     "Existing regression failures include missing FFmpeg/FFprobe and missing local renderer Python dependencies in the general web CI job.",
     "Several assertions still encoded the historical six/seven-floor topology.",
     "CognitiveOutcomeLearner used a synthetic 250-token economics sample for every outcome."
@@ -31,7 +31,9 @@
     "Added live trajectory/event-stream tests and partial-proof rejection tests.",
     "Updated CI to install FFmpeg/FFprobe and the local factoryos-render Python package before the full web regression suite.",
     "Updated stale eight-floor topology assertions and F03 runtime error assertion.",
-    "Added .okf decision record for the production trajectory and learning boundary."
+    "Added .okf decision record for the production trajectory and learning boundary.",
+    "Added runtime-closure receipts to live Overseer F01-F05 TASK_COMPLETED events, derived from actual canonical runtime outputs.",
+    "Added proofSource classification so trajectory evaluation distinguishes runtime closure from physical verification and requires F07 physical proof for Ascalon promotion."
   ],
   "research": [
     "OpenTelemetry GenAI observability semantic conventions",
@@ -49,7 +51,7 @@
     "notes": "No new execution authority is created. Learning promotion is explicitly fail-closed on missing verification or authority violations."
   },
   "trainingReadiness": {
-    "productionTrajectory": "OBSERVATION_AND_EVALUATION_WIRED",
+    "productionTrajectory": "LIVE_RUNTIME_CLOSURE_WIRED",
     "ascalon": "VERIFIED_TRAJECTORY_ONLY",
     "release": "F07 authority boundary unchanged"
   },
@@ -67,9 +69,10 @@
   "disposition": "PASS",
   "verificationPlan": [
     "Run strict TypeScript and dedicated production trajectory tests.",
+    "Run the real F01-F05 Guardian trajectory drill in the pre-training validation lane.",
     "Run F02/F03/F04/F05/F06/F07 and FGC validation workflows.",
-    "Run web regression after media and renderer dependency provisioning.",
-    "Do not promote a live trajectory to Ascalon training until all eight floors have authoritative loop/physical proof."
+    "Run web regression after media/renderer dependency provisioning.",
+    "Do not promote a live trajectory to Ascalon training until all eight floors have qualifying evidence and F07 physical verification is present."
   ],
   "forgers": {
     "Forge Architect": "COMPLETE",
@@ -98,7 +101,8 @@
     "A fully verified trajectory requires all eight canonical floors, evidence references and zero authority violations.",
     "The learning bridge records only outcome/process telemetry; no model chain-of-thought is stored.",
     "OpenTelemetry research supports combining spans for duration-bearing operations with events for point-in-time checkpoints/outcomes.",
-    "The current PR explicitly acknowledges that F01-F05 live DAG paths need authoritative loop receipts before a real eight-floor run can become training-eligible."
+    "F00-F05 live Overseer tasks now emit RUNTIME proof receipts derived from actual execution outputs; F06/F07 use PHYSICAL_VERIFIER proof.",
+    "Full training eligibility requires all eight canonical floors plus independent F07 physical verification."
   ],
   "dispositionRationale": "The change extends existing governance and observability architecture, adds fail-closed trajectory evaluation, and keeps Ascalon downstream of independent verification. CI evidence is pending for the current head."
 }
