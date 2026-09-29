@@ -2,7 +2,6 @@
   "reportVersion": "1.0",
   "pr": 54,
   "changeId": "aer-cost-optimization-2026-09-29",
-  "changeType": "AER optimization / Ascalon pre-call admission",
   "status": "IMPLEMENTED_FOUNDATION",
   "okf": {
     "sweepStatus": "COMPLETE",
@@ -16,6 +15,13 @@
       "Floor Governance Cell / AEF",
       "F07 physical verification",
       "training / Devourer governance"
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/decisions/ascalon-epistemic-optimization-20260929.md",
+      ".okf/intelligence/aer.md",
+      "Team/workflow/change-gate.md"
     ]
   },
   "implementation": [
@@ -60,13 +66,12 @@
     ]
   },
   "security": {
+    "required": true,
     "status": "DESIGN_REVIEW_COMPLETE",
-    "notes": [
-      "AER remains advisory.",
-      "Ascalon pre-call gate is deterministic and non-executing.",
-      "No capabilities, leases, fencing, publishing, or F07 authority are granted.",
-      "Expected value and hypothesis support are routing signals only."
-    ]
+    "notes": "AER remains advisory; Ascalon pre-call admission is deterministic; no capabilities, leases, fencing, publishing, or F07 authority are granted.",
+    "semgrep": "PENDING",
+    "strix": "NOT_RUN",
+    "zap": "NOT_APPLICABLE"
   },
   "verification": {
     "status": "PENDING_CI_AND_SHADOW_EVIDENCE",
@@ -79,5 +84,19 @@
     ]
   },
   "disposition": "BLOCKED",
-  "reason": "Implementation is complete on the PR branch, but production influence remains blocked until fresh automated verification and shadow/outcome evidence are recorded."
+  "reason": "Implementation is complete on the PR branch, but production influence remains blocked until fresh automated verification and shadow/outcome evidence are recorded.",
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/aer-cost-optimization",
+  "classification": "extends existing rule",
+  "forgerStatus": "IMPLEMENTED_FOUNDATION",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE — deterministic pre-call gate and no new side-effect capability",
+    "Forge Evaluator": "PENDING — CI/shadow evidence not yet green",
+    "Forge Release": "BLOCKED — validation pending"
+  },
+  "conflicts": []
 }
