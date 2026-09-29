@@ -606,7 +606,7 @@ export class SlayerPrimeEngine {
       | "SLAYER_ACTION_REJECTED"
       | "SLAYER_ACTION_EXECUTED"
       | "SLAYER_ENFORCEMENT_VERIFIED",
-    payload: Record<string, unknown>
+    payload: Record<string, unknown> | SlayerEnforcementReceipt
   ): Promise<void> {
     const stableKey = String(
       payload.incidentId ||
@@ -615,7 +615,7 @@ export class SlayerPrimeEngine {
         randomUUID()
     );
 
-    await this.eventBus.publish(topic, payload, {
+    await this.eventBus.publish(topic, payload as unknown as Record<string, unknown>, {
       source: this.instanceId,
       idempotencyKey:
         "slayer-prime:" + topic + ":" + stableKey,
