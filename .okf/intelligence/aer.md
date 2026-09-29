@@ -1731,3 +1731,70 @@ Tool execution
 ```
 
 This is an implementation improvement, not production-readiness evidence. Fresh CI, security validation and workload-specific shadow replay remain mandatory.
+
+
+## 2026-09-29 Memory Architecture Research Integration
+
+Hindsight's current repository separates raw world facts/experiences from consolidated observations and standing mental models, with retain / recall / reflect operations. Observations preserve supporting evidence and evolve when later evidence reinforces or contradicts a prior belief. Its documentation also warns that automatic mental-model refresh can become a recurring LLM-cost loop and provides refresh throttling.
+
+Recent memory research reinforces the direction: LongMemEval-V2 evaluates environment-specific experience such as workflow knowledge and recurring gotchas; MemForest focuses on write-efficient temporal indexing and localized refresh; Agent Zero Memory emphasizes provenance-aware parallel memory and citation-locked reading.
+
+### ShortForge decision
+
+Do not add a second memory database or make Hindsight a privileged authority. Extend the existing Memory Fabric with four logical layers:
+
+```text
+RAW EXPERIENCE
+    -> CONSOLIDATED OBSERVATION
+    -> MENTAL MODEL / PLAYBOOK
+    -> AER MEMORY STATE
+```
+
+Native lifecycle vocabulary:
+
+```text
+retain(event/evidence)
+        -> consolidate(observations)
+        -> recall(query, bounded budget)
+        -> reflect(question, candidate hypotheses)
+        -> AER epistemic state
+        -> decision / probe / Ascalon routing
+```
+
+Constraints:
+
+- retain preserves provenance; it does not establish truth.
+- consolidate may synthesize observations, but supporting evidence and contradiction history remain addressable.
+- recall returns bounded evidence packages instead of opaque raw dumps.
+- reflect may create derived mental models, but these remain advisory unless independently verified.
+- stale observations trigger revalidation against newer evidence.
+- refresh is dirty-scope/event driven or rate limited; it must not rebuild every mental model after every write.
+- sibling mental models do not recursively become evidence without an explicit policy.
+
+### Provenance lock
+
+Every learned item projected into AER or Ascalon should retain source identity, timestamp, verification state, lifecycle, conflict/supersession identity, evidence references, quality state, and freshness/validity boundaries.
+
+A learned observation may summarize evidence, but it may not outrank or erase the evidence that produced it.
+
+### Retrieval order
+
+```text
+fresh verified mental model/playbook
+        -> consolidated observations
+        -> raw verified evidence
+        -> explicitly requested raw unverified evidence
+        -> model inference as advisory context
+```
+
+### Cost rule
+
+Background reflection is an AER computation with a trigger, affected scope, information-gain estimate, latency budget, cost budget, last successful refresh, source watermark, and failure/backoff state. Failed refreshes must not retry indefinitely.
+
+### Research provenance
+
+- Hindsight: https://github.com/vectorize-io/hindsight
+- Hindsight paper: https://arxiv.org/abs/2512.12818
+- LongMemEval-V2: https://arxiv.org/abs/2605.12493
+- MemForest: https://arxiv.org/abs/2605.23986
+- Agent Zero Memory: https://arxiv.org/abs/2608.29606
