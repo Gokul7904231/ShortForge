@@ -58,21 +58,23 @@ function weakObservationFromEvent(payload: Record<string, any>): FloorTrajectory
 
 export class ProductionTrajectoryCollector {
   private readonly buffers = new Map<string, TrajectoryBuffer>();
-  private unsubscribe: (() => void) | null = null;
+  private unsubscribers: Array<() => void> = [];
 
   constructor(private readonly eventBus: DurableEventBus) {}
 
   start(): void {
-    if (this.unsubscribe) return;
-    const stop = this.eventBus.subscribeWildcard(async (event: EventEnvelope<any>) => {
-      this.ingest(event);
-    });
-    this.unsubscribe = stop;
+    if (this.unsubscribers.length > 0) return;
+    const topics = ["TASK_COMPLETED", "RUN_COMPLETED", "MISSION_COMPLETED"] as const;
+    this.unsubscribers = topics.map((topic) =>
+      this.eventBus.subscribe(topic, async (event: EventEnvelope<any>) => {
+        this.ingest(event);
+      }),
+    );
   }
 
   stop(): void {
-    this.unsubscribe?.();
-    this.unsubscribe = null;
+    for (const unsubscribe of this.unsubscribers) unsubscribe();
+    this.unsubscribers = [];
   }
 
   ingest(event: EventEnvelope<any>): void {
