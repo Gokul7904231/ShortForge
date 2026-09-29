@@ -55,7 +55,8 @@ export class AERRoutingPolicyLearner {
           ? baseline.upperBound95
           : baseline.resolutionProbability,
         costUnits: baseline.averageCostUnits,
-        latencyMs: baseline.p95LatencyMs,
+        latencyMs: baseline.p50LatencyMs,
+        latencyP95Ms: baseline.p95LatencyMs,
         source,
       },
       ascalon: {
@@ -64,7 +65,8 @@ export class AERRoutingPolicyLearner {
           ? ascalon.lowerBound95
           : ascalon.resolutionProbability,
         costUnits: ascalon.averageCostUnits,
-        latencyMs: ascalon.p95LatencyMs,
+        latencyMs: ascalon.p50LatencyMs,
+        latencyP95Ms: ascalon.p95LatencyMs,
         source,
       },
       minimumNetValue: 0,
