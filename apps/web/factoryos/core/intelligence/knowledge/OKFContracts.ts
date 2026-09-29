@@ -108,6 +108,9 @@ export interface OKFFrontmatter {
   readonly sf_mental_model_question?: string;
   readonly sf_refresh_version?: number;
   readonly sf_refresh_mode?: "FULL" | "DELTA";
+  readonly sf_refresh_after_consolidation?: boolean;
+  readonly sf_refresh_cron?: string;
+  readonly sf_recall_max_tokens?: number;
   readonly sf_min_refresh_interval_seconds?: number;
   readonly sf_last_refreshed_at?: string;
   readonly sf_dirty_since?: string;
