@@ -166,7 +166,16 @@ export abstract class BaseSlayer {
       return null; // Dampened transient signal
     }
 
-    // 4. Perform Bounded Detective Investigation
+    // 4. Publish a canonical enforcement-plane observation before filing the case.
+    // Prime is a separate authority boundary: this event never grants mutation rights.
+    await this.eventBus.publish("SLAYER_PRIME_OBSERVATION", {
+      observation,
+      sourceId: this.config.agentId,
+    }, {
+      source: this.config.agentId,
+      idempotencyKey: "slayer-prime-observation:" + observation.observationId,
+    });
+
     return await this.investigateAndSubmit(observation, worldState, confidenceEval.effectiveConfidence);
   }
 

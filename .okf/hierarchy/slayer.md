@@ -1,12 +1,18 @@
 # Hierarchy: The Slayer Engine (`SlayerEngine.ts`)
 
-> **Tier**: Sovereign Diagnostic Investigator & Circuit Breaker (Level 1)  
+> **Tier**: Enforcement / Diagnostic Investigator (Level 2)  
 > **Instance Count**: Exactly ONE Factory-Wide Engine  
-> **Source Location**: `apps/web/factoryos/core/slayer/SlayerEngine.ts` & `apps/web/factoryos/core/slayer/`
+> **Source Location**: apps/web/factoryos/core/slayers/SlayerEngine.ts & apps/web/factoryos/core/slayers/
 
 ---
 
-## 1. Architectural Philosophy: The Autonomous Circuit Breaker
+## 1. Architectural Philosophy: The Autonomous Enforcement Plane
+
+Slayer Prime is now the canonical enforcement subsystem. The legacy Slayer coordinator remains responsible for detection/patrol and case creation; Prime owns authorized containment mutations.
+
+See .okf/hierarchy/slayer-prime.md for the executable enforcement contract.
+
+## 1.1 Architectural Philosophy: The Autonomous Circuit Breaker
 
 In distributed manufacturing pipelines, uncontained errors cascade: an out-of-memory error on Floor 06 can cause Floor 05 to retry indefinitely, overloading the database and starving subsequent scheduled jobs.
 
