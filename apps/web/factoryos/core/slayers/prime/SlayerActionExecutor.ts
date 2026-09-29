@@ -209,6 +209,34 @@ export class SlayerActionExecutor {
       });
     }
 
+    if (this.leadershipGuard) {
+      const snapshot = await this.leadershipGuard.load();
+      const prior = snapshot.receipts
+        .filter((candidate) => candidate.intentId === intent.intentId)
+        .sort(
+          (a, b) =>
+            new Date(b.executionFinishedAt).getTime() -
+            new Date(a.executionFinishedAt).getTime()
+        )[0];
+
+      if (prior?.status === "VERIFIED") {
+        return prior;
+      }
+
+      if (prior?.status === "EXECUTING" || prior?.status === "UNKNOWN") {
+        return this.receipt(intent, {
+          status: "UNKNOWN",
+          reason:
+            "A prior execution may have committed; blind replay is blocked until reconciliation.",
+          started,
+          details: {
+            priorReceiptId: prior.receiptId,
+            priorStatus: prior.status,
+          },
+        });
+      }
+    }
+
     const leaseTtl = Math.max(
       1,
       Math.min(this.actionLeaseTtlMs, expiryMs - nowMs)
