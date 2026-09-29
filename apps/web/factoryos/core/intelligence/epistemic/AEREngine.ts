@@ -70,7 +70,10 @@ export class AEREngine {
         impact: state.impact,
       },
       usage,
-      input.routing,
+      {
+        ...input.routing,
+        decisionSeed: input.episodeId ?? state.contextId,
+      },
     );
 
     const enrichedState: EpistemicState = {
