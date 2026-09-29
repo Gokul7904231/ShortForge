@@ -149,12 +149,27 @@ export class ProductionTrajectoryCollector {
       throw new Error("TRAJECTORY_NOT_FOUND: no observed trajectory for mission " + missionId);
     }
 
+    // Reconcile from the durable event log before evaluating. Live subscriber
+    // delivery is intentionally best-effort, but the persisted event itself is
+    // operational evidence and must be recoverable if a subscriber was late,
+    // replaced, or temporarily failed. Scope replay to the same mission and,
+    // when available, the same run so a resumed mission cannot contaminate a
+    // single-mission trajectory with evidence from a different execution.
+    const durableEvents = await this.eventBus.replay();
+    for (const event of durableEvents) {
+      const payload = (event.payload || {}) as Record<string, any>;
+      if (payload.missionId !== missionId) continue;
+      if (buffer.runId && payload.runId && payload.runId !== buffer.runId) continue;
+      this.ingest(event);
+    }
+
+    const reconciledBuffer = this.buffers.get(missionId)!;
     const input: TrajectoryEvaluationInput = {
-      missionId: buffer.missionId,
-      runId: buffer.runId,
-      startedAt: buffer.startedAt,
+      missionId: reconciledBuffer.missionId,
+      runId: reconciledBuffer.runId,
+      startedAt: reconciledBuffer.startedAt,
       completedAt: completedAt || buffer.completedAt || new Date().toISOString(),
-      floorObservations: [...buffer.floors.values()],
+      floorObservations: [...reconciledBuffer.floors.values()],
     };
 
     const trajectory = ProductionTrajectoryEvaluator.evaluate(input);
