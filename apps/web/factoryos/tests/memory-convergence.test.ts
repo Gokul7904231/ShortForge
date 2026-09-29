@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MemoryRetrievalEngine } from "../core/intelligence/memory/MemoryRetrievalEngine";
 import { MemoryRetentionNormalizer } from "../core/intelligence/memory/MemoryRetentionNormalizer";
+import { MemoryReflectionEngine } from "../core/intelligence/memory/MemoryReflectionEngine";
 import { InMemoryMemoryObservationStore, MemoryObservationConsolidator } from "../core/intelligence/memory/MemoryObservationConsolidator";
 import type { MemoryConsolidationInput } from "../core/intelligence/memory/MemorySemanticsContracts";
 import type { KnowledgeDocument } from "../core/intelligence/knowledge/OKFContracts";
@@ -159,6 +160,27 @@ describe("Memory Fabric convergence gates", () => {
     expect(updated?.contradictingMemoryIds).toContain("memory:2");
     expect(updated?.history.at(-1)?.changeType).toBe("CONTRADICTED");
     expect(updated?.history.at(-1)?.statement).toBe("F06 uses AMD VAAPI");
+  });
+
+  it("reflection cannot cross an unauthorized memory scope", () => {
+    const engine = new MemoryReflectionEngine();
+    const request = {
+      question: "renderer",
+      accessContext,
+      maxTokens: 500,
+      includeRawEvidenceOnStale: true,
+    };
+    const candidate = {
+      ...doc("memory:local", "local renderer evidence"),
+      frontmatter: { ...doc("memory:local", "local renderer evidence").frontmatter, scope_key: "scope:test" },
+    };
+    const foreign = {
+      ...doc("memory:foreign", "foreign renderer evidence"),
+      frontmatter: { ...doc("memory:foreign", "foreign renderer evidence").frontmatter, scope_key: "scope:foreign" },
+    };
+
+    const result = engine.buildContext(request, [], [candidate as any, foreign as any], []);
+    expect(result.selectedItems.map((item) => item.memoryId)).toEqual(["memory:local"]);
   });
 
   it("blocks secrets from durable memory before fact extraction", async () => {
