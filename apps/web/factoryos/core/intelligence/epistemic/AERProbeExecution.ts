@@ -41,6 +41,7 @@ export interface AERProbeExecutionResult {
   readonly hypothesesAddedOrUpdated?: readonly EpistemicHypothesis[];
   readonly latencyMs: number;
   readonly costUnits: number;
+  readonly actualCostUsd?: number;
   readonly error?: string;
 }
 
