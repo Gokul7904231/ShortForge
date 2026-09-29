@@ -158,7 +158,30 @@ export class ProductionTrajectoryCollector {
     if (trajectory.trainingEligible && this.learningBridge) {
       const predictedSuccess = this.predictions.get(missionId);
       if (predictedSuccess !== undefined) {
-        await this.learningBridge.recordVerifiedTrajectory(trajectory, predictedSuccess);
+        const learned = await this.learningBridge.recordVerifiedTrajectory(
+          trajectory,
+          predictedSuccess,
+        );
+        await this.eventBus.publish(
+          "ASCALON_LEARNING_SIGNAL_RECORDED",
+          {
+            signalId: learned.signal.signalId,
+            trajectoryId: learned.signal.trajectoryId,
+            missionId: learned.signal.missionId,
+            runId: learned.signal.runId,
+            outcome: learned.signal.outcome,
+            predictedSuccess: learned.signal.predictedSuccess,
+            validatorPassed: learned.signal.validatorPassed,
+            verificationStatus: learned.signal.verificationStatus,
+            trainingEligible: learned.signal.trainingEligible,
+            evidenceRefs: learned.signal.evidenceRefs,
+          },
+          {
+            correlationId: trajectory.trajectoryId,
+            idempotencyKey: "ascalon-learning:" + trajectory.trajectoryFingerprint,
+            source: "production-trajectory-collector",
+          },
+        );
       }
     }
 
