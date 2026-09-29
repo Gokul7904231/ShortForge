@@ -294,7 +294,14 @@ describe("Phase 1: Research Provenance & Honest Error Semantics", () => {
   });
 
   it("8. proves trend-agent delegates to ResearchRuntime producing ResearchPassport-backed results", async () => {
-    const output = await trendAgent({ topic: "Autonomous Systems", targetSourceCount: 2 });
+    const output = await trendAgent({
+      topic: "Autonomous Systems",
+      targetSourceCount: 2,
+      researchContract: {
+        engineId: "quiz",
+        ...getCompatibilityEngineContracts("quiz").research!,
+      },
+    });
     expect(output.topic).toBe("Autonomous Systems");
     expect(output.passportId).toBeDefined();
     expect(output.report?.passport.methodology).toBe("TREND_SCAN");
