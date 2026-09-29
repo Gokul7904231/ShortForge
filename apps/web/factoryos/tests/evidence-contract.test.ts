@@ -14,7 +14,7 @@ describe("FactoryOS — Zero-Placeholder Evidence Contract Suite", () => {
     expect(ev.type).toBe("TELEMETRY");
     expect(ev.source).toBe("FactoryStateService");
     expect(ev.state).toBe("SUCCESS");
-    expect(ev.data.floorCount).toBe(7);
+    expect(ev.data.floorCount).toBe(8);
     expect(ev.data.systemLoad.cpuUsagePct).toBeGreaterThanOrEqual(0);
     expect(ev.data.systemLoad.totalMemBytes).toBeGreaterThan(0);
     expect(ev.claims).toBeDefined();
