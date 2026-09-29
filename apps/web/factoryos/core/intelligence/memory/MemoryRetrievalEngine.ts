@@ -32,6 +32,16 @@ export interface MemoryRetrievalEngineOptions {
   readonly reranker?: MemoryReranker;
   readonly relations?: readonly MemoryRetrievalRelation[];
   readonly fusionConstant?: number;
+  /**
+   * Eval-tunable channel weights for RRF. Equal weights remain the neutral
+   * default; production deployments should tune these against a labeled set.
+   */
+  readonly rrfWeights?: Partial<{
+    semantic: number;
+    lexical: number;
+    graph: number;
+    temporal: number;
+  }>;
 }
 
 const DEFAULT_RRF_K = 60;
@@ -41,12 +51,19 @@ export class MemoryRetrievalEngine {
   private readonly reranker?: MemoryReranker;
   private readonly relations: MemoryRetrievalEngineOptions["relations"];
   private readonly fusionConstant: number;
+  private readonly rrfWeights: Required<NonNullable<MemoryRetrievalEngineOptions["rrfWeights"]>>;
 
   constructor(options: MemoryRetrievalEngineOptions = {}) {
     this.semanticRetriever = options.semanticRetriever;
     this.reranker = options.reranker;
     this.relations = options.relations ?? [];
     this.fusionConstant = Math.max(1, options.fusionConstant ?? DEFAULT_RRF_K);
+    this.rrfWeights = {
+      semantic: Math.max(0, options.rrfWeights?.semantic ?? 1),
+      lexical: Math.max(0, options.rrfWeights?.lexical ?? 1),
+      graph: Math.max(0, options.rrfWeights?.graph ?? 1),
+      temporal: Math.max(0, options.rrfWeights?.temporal ?? 1),
+    };
   }
 
   public async recall(
@@ -94,10 +111,18 @@ export class MemoryRetrievalEngine {
       const graphScore = graphById.get(id) ?? 0;
       const temporalScore = temporalById.get(id) ?? 0;
       const rrf =
-        (channelRanks.semantic.get(id) ? 1 / (this.fusionConstant + channelRanks.semantic.get(id)!) : 0) +
-        (channelRanks.lexical.get(id) ? 1 / (this.fusionConstant + channelRanks.lexical.get(id)!) : 0) +
-        (channelRanks.graph.get(id) ? 1 / (this.fusionConstant + channelRanks.graph.get(id)!) : 0) +
-        (channelRanks.temporal.get(id) ? 1 / (this.fusionConstant + channelRanks.temporal.get(id)!) : 0);
+        (channelRanks.semantic.get(id)
+          ? this.rrfWeights.semantic / (this.fusionConstant + channelRanks.semantic.get(id)!)
+          : 0) +
+        (channelRanks.lexical.get(id)
+          ? this.rrfWeights.lexical / (this.fusionConstant + channelRanks.lexical.get(id)!)
+          : 0) +
+        (channelRanks.graph.get(id)
+          ? this.rrfWeights.graph / (this.fusionConstant + channelRanks.graph.get(id)!)
+          : 0) +
+        (channelRanks.temporal.get(id)
+          ? this.rrfWeights.temporal / (this.fusionConstant + channelRanks.temporal.get(id)!)
+          : 0);
 
       const freshness = this.freshness(document, now);
       const candidate: MemoryRetrievalCandidate = {
