@@ -1,3 +1,12 @@
+## Current Implementation
+
+The initial AER executable foundation is implemented in:
+`apps/web/factoryos/core/intelligence/epistemic/`
+
+The foundation currently covers contracts, deterministic-first state construction, bounded probe planning, cognitive routing, fingerprinted EpistemicContext construction, shadow Ascalon handoff, trigger suppression, hypothesis updates, cache identity, and append-only in-memory ledgering.
+
+It is shadow-only. It does not execute probes or production Ascalon inference and has not yet received fresh repository CI/security/shadow-replay admission evidence.
+
 # Ascalon Epistemic Runtime — Engineering Design
 
 ## 1. Design Intent
