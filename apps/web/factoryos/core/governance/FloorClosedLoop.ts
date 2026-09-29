@@ -50,7 +50,7 @@ export async function runBoundedFeedbackLoop<TOutput, TFeedback>(
 ): Promise<BoundedFeedbackLoopResult<TOutput, TFeedback>> {
   const maxIterations = Math.max(1, Math.floor(options.maxIterations));
   let output = options.initialOutput;
-  const history: ClosedLoopIteration<TFeedback>[] = [];
+  const history: ClosedLoopIteration<TOutput, TFeedback>[] = [];
   const seen = new Set<string>();
 
   for (let iteration = 1; iteration <= maxIterations; iteration += 1) {
