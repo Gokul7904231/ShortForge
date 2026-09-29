@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type {
   AscalonInvocationReason,
   AscalonInvocationBudget,
@@ -77,16 +78,20 @@ function recommendation(
     uncertaintyBurden: assessment.uncertaintyBurden,
     baselineMode: assessment.baselineMode,
     expectedValueSource: assessment.source,
-    decisionId: "aer_decision_" + Buffer.from(
-      JSON.stringify({
-        mode,
-        reasonCode,
-        deadlineMs,
-        expectedValue: assessment.expectedValue,
-        baselineMode: assessment.baselineMode,
-      }),
-      "utf8",
-    ).toString("base64url").slice(0, 24),
+    decisionId: "aer_decision_" +
+      createHash("sha256")
+        .update(
+          JSON.stringify({
+            mode,
+            reasonCode,
+            deadlineMs,
+            expectedValue: assessment.expectedValue,
+            baselineMode: assessment.baselineMode,
+          }),
+          "utf8",
+        )
+        .digest("hex")
+        .slice(0, 24),
     policyVersion: "aer-voi-v2",
     counterfactuals: [
       {
