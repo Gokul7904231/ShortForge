@@ -2,7 +2,6 @@ import type { EpistemicContext } from "./EpistemicContracts";
 import { AscalonInvocationGate, type AscalonInvocationAdmission } from "./AscalonInvocationGate";
 import {
   DurableEpistemicBudgetReservationStore,
-  InMemoryEpistemicBudgetReservationStore,
   type EpistemicBudgetReservation,
   type EpistemicBudgetReservationStore,
 } from "./EpistemicBudgetReservation";
