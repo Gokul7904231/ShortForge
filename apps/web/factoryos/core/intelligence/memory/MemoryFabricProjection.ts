@@ -48,6 +48,15 @@ export class MemoryFabricProjectionService {
     maxChars = 24000,
     accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
+    if (!accessContext) {
+      throw new Error("[MemoryFabricProjection] Ascalon projection requires explicit accessContext");
+    }
+    if (!accessContext.principalId.trim()) {
+      throw new Error("[MemoryFabricProjection] Ascalon principalId is required");
+    }
+    if (accessContext.allowedScopeKeys.length === 0 && accessContext.allowGlobalScope !== true) {
+      throw new Error("[MemoryFabricProjection] Ascalon projection requires at least one authorized scope");
+    }
     return this.project(query, maxItems, maxChars, "ASCALON", accessContext);
   }
 
