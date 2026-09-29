@@ -8,6 +8,7 @@ import type { Case } from "../contracts/CaseContracts";
 import type { WorldState } from "../contracts/WorldStateContracts";
 import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 import { ContextCapsule } from "../intelligence/context/ContextCapsuleContracts";
+import type { MemoryAccessContext } from "../intelligence/memory/MemorySemanticsContracts";
 
 export interface ThinkingAssessment {
   readonly mode: ThinkingMode;
@@ -29,13 +30,15 @@ export class OverseerThinkingController {
   async compileContextForAssessment(
     taskId: string,
     query: string,
-    assessment: ThinkingAssessment
+    assessment: ThinkingAssessment,
+    memoryAccessContext?: MemoryAccessContext,
   ): Promise<ContextCapsule | null> {
     if (!this.gateway) return null;
     return this.gateway.compileContextForQuery({
       taskId,
       query,
       tokenBudget: assessment.tokenBudget,
+      memoryAccessContext,
     });
   }
 
