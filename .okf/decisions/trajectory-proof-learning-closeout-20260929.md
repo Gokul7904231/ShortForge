@@ -19,7 +19,7 @@ The learning boundary is intentionally strict:
 
 ## Current proof boundary
 
-The repository can verify local floor loops and can evaluate a collected eight-floor trajectory. A true live eight-floor production trajectory must contain actual runtime evidence for every floor; missing evidence is represented as PARTIAL/UNVERIFIED rather than promoted to success.
+The repository now emits live runtime-closure receipts from F00-F05 Overseer task execution and physical-verifier receipts from F06/F07. The evaluator can therefore observe a real eight-floor production trajectory. Missing evidence is represented as PARTIAL/UNVERIFIED rather than promoted to success.
 
 ## Observability
 
@@ -32,3 +32,11 @@ TrajectoryLearningBridge passes only verified trajectory outcome data into Cogni
 ## Evaluation basis
 
 Trajectory-level evaluation follows recent agent-evaluation practice that distinguishes end-state success from the process by which agents reached it and recommends combining outcome and trajectory signals. This complements ShortForge's physical F07 verification and bounded execution model.
+
+
+## Proof taxonomy
+
+- F00-F05: RUNTIME_CLOSURE derived from actual canonical task execution results.
+- F06-F07: PHYSICAL_VERIFICATION when independent physical artifact evidence is available.
+- HANDOFF_CONTRACT never satisfies training eligibility.
+- Training eligibility requires all eight floors, no authority violations, no weak handoff-only proof, and independent F07 physical verification.
