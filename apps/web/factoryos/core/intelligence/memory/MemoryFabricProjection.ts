@@ -96,6 +96,15 @@ export class MemoryFabricProjectionService {
         occurredAt: this.stringOrUndefined(doc.frontmatter.sf_occurred_at || doc.frontmatter.occurred_at),
         validUntil: this.stringOrUndefined(doc.frontmatter.sf_valid_until || doc.frontmatter.valid_until),
         provenance: this.provenanceLabel(doc),
+        evidenceRefs: Array.isArray(doc.frontmatter.evidence_refs)
+          ? doc.frontmatter.evidence_refs.filter((ref): ref is string => typeof ref === "string")
+          : undefined,
+        conflictGroup: this.stringOrUndefined(doc.frontmatter.sf_conflict_group),
+        retrievalSignals: {
+          lexicalScore: this.lexicalOverlapScore(doc, query),
+          temporalScore: this.temporalFreshnessScore(doc, now),
+          rerankScore: this.scoreDocument(doc, query),
+        },
         content,
       };
 
@@ -161,22 +170,34 @@ export class MemoryFabricProjectionService {
 
   private scoreDocument(doc: KnowledgeDocument, query: string): number {
     const quality = this.numberOrDefault(doc.frontmatter.sf_memory_quality_score, 0.8);
-    const title = (doc.frontmatter.title || "").toLowerCase();
-    const body = doc.content.toLowerCase();
-    const q = query.trim().toLowerCase();
+    const lexical = this.lexicalOverlapScore(doc, query);
+    const freshness = this.temporalFreshnessScore(doc, Date.now());
+    return quality * 70 + lexical * 25 + freshness * 5;
+  }
 
-    let score = quality * 100;
-    if (!q) return score;
+  private lexicalOverlapScore(doc: KnowledgeDocument, query: string): number {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return 1;
+    const haystack = [
+      doc.frontmatter.id,
+      doc.frontmatter.title || "",
+      JSON.stringify(doc.frontmatter.tags || []),
+      doc.content,
+    ].join(" ").toLowerCase();
+    const tokens = trimmed.split(/[^a-z0-9_-]+/).filter(Boolean);
+    if (tokens.length === 0) return 0;
+    const hits = tokens.filter((token) => haystack.includes(token)).length;
+    return hits / tokens.length;
+  }
 
-    if (title.includes(q)) score += 40;
-    if (body.includes(q)) score += 15;
-
-    for (const token of q.split(/[^a-z0-9_-]+/).filter(Boolean)) {
-      if (title.includes(token)) score += 8;
-      if (body.includes(token)) score += 2;
-    }
-
-    return score;
+  private temporalFreshnessScore(doc: KnowledgeDocument, nowMs: number): number {
+    const occurredAt = this.stringOrUndefined(
+      doc.frontmatter.sf_occurred_at || doc.frontmatter.occurred_at,
+    );
+    if (!occurredAt) return 0.5;
+    const ageMs = Math.max(0, nowMs - Date.parse(occurredAt));
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    return Math.exp(-ageMs / thirtyDays);
   }
 
   private provenanceLabel(doc: KnowledgeDocument): string {
