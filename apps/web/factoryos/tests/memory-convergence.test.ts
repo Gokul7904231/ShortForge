@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MemoryRetrievalEngine } from "../core/intelligence/memory/MemoryRetrievalEngine";
+import { MemoryRetentionNormalizer } from "../core/intelligence/memory/MemoryRetentionNormalizer";
 import { InMemoryMemoryObservationStore, MemoryObservationConsolidator } from "../core/intelligence/memory/MemoryObservationConsolidator";
 import type { MemoryConsolidationInput } from "../core/intelligence/memory/MemorySemanticsContracts";
 import type { KnowledgeDocument } from "../core/intelligence/knowledge/OKFContracts";
@@ -159,4 +160,61 @@ describe("Memory Fabric convergence gates", () => {
     expect(updated?.history.at(-1)?.changeType).toBe("CONTRADICTED");
     expect(updated?.history.at(-1)?.statement).toBe("F06 uses AMD VAAPI");
   });
+
+  it("blocks secrets from durable memory before fact extraction", async () => {
+    const normalizer = new MemoryRetentionNormalizer();
+    const decision = normalizer.classify({
+      memoryId: "memory:secret",
+      scope: { kind: "CUSTOM", key: "scope:test" },
+      summary: "Deploy with token=super-secret-value-1234567890",
+      payload: {},
+      occurredAt: "2026-09-29T00:00:00.000Z",
+      capturedAt: "2026-09-29T00:00:00.000Z",
+      sourceType: "RUN_LOG",
+      sourceId: "run:secret",
+    });
+
+    expect(decision.retentionClass).toBe("DO_NOT_LEARN");
+    await expect(
+      normalizer.retain({
+        memoryId: "memory:secret",
+        scope: { kind: "CUSTOM", key: "scope:test" },
+        summary: "Deploy with token=super-secret-value-1234567890",
+        payload: {},
+        occurredAt: "2026-09-29T00:00:00.000Z",
+        capturedAt: "2026-09-29T00:00:00.000Z",
+        sourceType: "RUN_LOG",
+        sourceId: "run:secret",
+      }),
+    ).resolves.toEqual([]);
+  });
+
+  it("blocks high-risk PII from long-lived learned memory", async () => {
+    const normalizer = new MemoryRetentionNormalizer();
+    const decision = normalizer.classify({
+      memoryId: "memory:pii",
+      scope: { kind: "CUSTOM", key: "scope:test" },
+      summary: "Contact operator at test@example.com or +91 9876543210",
+      payload: {},
+      occurredAt: "2026-09-29T00:00:00.000Z",
+      capturedAt: "2026-09-29T00:00:00.000Z",
+      sourceType: "RUN_LOG",
+      sourceId: "run:pii",
+    });
+
+    expect(decision.retentionClass).toBe("TEMPORARY");
+    await expect(
+      normalizer.retain({
+        memoryId: "memory:pii",
+        scope: { kind: "CUSTOM", key: "scope:test" },
+        summary: "Contact operator at test@example.com or +91 9876543210",
+        payload: {},
+        occurredAt: "2026-09-29T00:00:00.000Z",
+        capturedAt: "2026-09-29T00:00:00.000Z",
+        sourceType: "RUN_LOG",
+        sourceId: "run:pii",
+      }),
+    ).resolves.toEqual([]);
+  });
+
 });
