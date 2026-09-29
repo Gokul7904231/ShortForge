@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import type {
   MemoryConsolidationInput,
   MemoryConsolidationReport,
@@ -9,7 +9,7 @@ import type {
 export interface MemoryObservationStore {
   list(scopeKey?: string): readonly MemoryObservation[];
   get(observationId: string): MemoryObservation | undefined;
-  upsert(observation: MemoryObservation): void;
+  upsert(observation: MemoryObservation): void | Promise<void>;
 }
 
 export class InMemoryMemoryObservationStore implements MemoryObservationStore {
@@ -52,10 +52,10 @@ export class MemoryObservationConsolidator {
     this.dirty.delete(scopeKey);
   }
 
-  public consolidate(
+  public async consolidate(
     inputs: readonly MemoryConsolidationInput[],
     options: MemoryConsolidationOptions = {},
-  ): MemoryConsolidationReport[] {
+  ): Promise<MemoryConsolidationReport[]> {
     const grouped = new Map<string, MemoryConsolidationInput[]>();
     for (const input of inputs) {
       const groupKey = input.scope.key + "::" + input.facetKey;
@@ -133,7 +133,7 @@ export class MemoryObservationConsolidator {
             entityRefs: input.entityRefs,
             sourceHash: input.sourceHash,
           };
-          this.store.upsert(observation);
+          await this.store.upsert(observation);
           createdCount += 1;
           observationIds.push(observation.observationId);
           continue;
@@ -201,7 +201,7 @@ export class MemoryObservationConsolidator {
           entityRefs: [...new Set([...(observation.entityRefs ?? []), ...(input.entityRefs ?? [])])],
           sourceHash: input.sourceHash ?? observation.sourceHash,
         };
-        this.store.upsert(next);
+        await this.store.upsert(next);
         updatedCount += 1;
         observationIds.push(next.observationId);
       }
