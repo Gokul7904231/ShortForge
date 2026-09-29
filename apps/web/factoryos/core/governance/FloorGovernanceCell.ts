@@ -473,6 +473,57 @@ export class FloorGovernanceCell {
       currentFencingEpoch: extraContext.currentFencingEpoch,
     };
 
+    // Direct ADMITTED Ascalon proposals must prove that they came through the
+    // AER pre-call boundary. This closes a bypass around proposeNext().
+    if (proposal.proposer === "ASCALON" && proposal.ascalonInference?.mode === "ADMITTED") {
+      if (!this.ascalonAdmission) {
+        return {
+          success: false,
+          state: this.state,
+          reason: "ascalon_admission_gate_missing",
+          actionName: proposal.actionName,
+          proposalId: proposal.proposalId,
+        };
+      }
+
+      const availableActions = this.actionGraph
+        .getNextActions(this.lastAction)
+        .map((action) => action.actionName);
+      const verifiedEvidenceRefs = this.blackboard
+        .getVerifiedEvidence()
+        .flatMap((entry) => entry.evidenceRefs);
+      const directAdmission = this.ascalonAdmission.evaluate({
+        snapshot,
+        availableActions,
+        verifiedEvidenceRefs,
+        envelope: {
+          metadata: proposal.ascalonInference,
+          proposal,
+        },
+      });
+
+      if (!directAdmission.admitted) {
+        this.blackboard.append(
+          "CONFLICT",
+          "SYSTEM",
+          "VERIFIED",
+          {
+            event: "ASCALON_DIRECT_EXECUTION_REJECTED",
+            proposalId: proposal.proposalId,
+            reason: directAdmission.reason,
+          },
+          proposal.evidenceRefs,
+        );
+        return {
+          success: false,
+          state: this.state,
+          reason: "ascalon_inference_not_admitted:" + directAdmission.reason,
+          actionName: proposal.actionName,
+          proposalId: proposal.proposalId,
+        };
+      }
+    }
+
     const gate = this.actionGate.authorizeProposal(proposal, context);
     if (!gate.allowed) {
       this.blackboard.append(
