@@ -137,6 +137,7 @@ export class MemoryRetentionNormalizer {
           verificationState: "UNVERIFIED" as const,
           authority: "UNKNOWN" as const,
           occurredAt: envelope.occurredAt,
+          retentionClass: decision.retentionClass,
           evidenceRefs: [evidence],
           entityRefs: [...new Set([...(fact.entityRefs ?? []), ...(envelope.tags ?? [])])],
           sourceHash: envelope.sourceHash,
