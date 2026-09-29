@@ -23,8 +23,16 @@ import { FFmpegRenderCompiler } from "../core/fabric/RenderFabric";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import { ArtifactResolver } from "../core/rendering/ArtifactResolver";
 import { RenderIntent } from "../core/contracts/RenderIntentContracts";
+import { getCompatibilityEngineContracts } from "../../lib/core/EngineConfigurationContracts";
 
 describe("Phase 14: Real End-to-End FactoryOS Mission Run", () => {
+
+const TEST_ENGINE_ID = "quiz";
+const TEST_RESEARCH_CONTRACT = {
+  engineId: TEST_ENGINE_ID,
+  ...getCompatibilityEngineContracts(TEST_ENGINE_ID).research!,
+};
+
   it("executes the genuine end-to-end mission pipeline and records forensic audit evidence", async () => {
     const runId = `e2e_run_${Date.now()}`;
     const startTime = Date.now();
@@ -63,6 +71,7 @@ describe("Phase 14: Real End-to-End FactoryOS Mission Run", () => {
       topic,
       intent: "Educational scientific curiosity short-form video",
       methodology: "TREND_SCAN",
+      researchContract: TEST_RESEARCH_CONTRACT,
     });
 
     expect(analystReport.passport).toBeDefined();
