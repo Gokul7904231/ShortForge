@@ -135,6 +135,9 @@ export class AERInvestigationLoop {
   ): Promise<AERInvestigationResult> {
     const maxIterations = Math.max(1, options.maxIterations ?? 3);
     const maxParallel = Math.max(1, options.maxParallelReadOnlyProbes ?? 3);
+    const investigationStartedAtMs = Date.now();
+    const episodeDeadlineAtMs =
+      investigationStartedAtMs + Math.max(0, input.budget.maxEpistemicTimeMs);
 
     let currentInput: AERAssessmentInput = { ...input };
     let assessment = this.engine.assess(currentInput);
@@ -199,8 +202,10 @@ export class AERInvestigationLoop {
 
       const started = Date.now();
       const episodeId = input.episodeId ?? assessment.context.contextId;
-      const deadlineAtMs =
-        Date.now() + state.cognitiveRecommendation.budget.maxTimeMs;
+      const deadlineAtMs = Math.min(
+        episodeDeadlineAtMs,
+        Date.now() + state.cognitiveRecommendation.budget.maxTimeMs,
+      );
 
       const results = await Promise.all(
         planned.map((probe) =>
