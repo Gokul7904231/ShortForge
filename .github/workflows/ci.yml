@@ -62,6 +62,11 @@ jobs:
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
 
+      - name: Install local renderer Python runtime
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -e packages/factoryos-render
+
       - name: Production trajectory proof suite
         run: cd apps/web && npx vitest run factoryos/tests/production-trajectory-learning.test.ts
         env:
