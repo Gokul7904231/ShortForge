@@ -89,6 +89,24 @@ export interface MemoryFabricLedgerRecord {
   readonly processedAt?: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+  /** Hindsight-style memory semantics kept as metadata, never as a new authority. */
+  readonly semanticType?: string;
+  readonly observationScope?: string;
+  readonly proofCount?: number;
+  readonly supportingMemoryIds?: readonly string[];
+  readonly contradictingMemoryIds?: readonly string[];
+  readonly memoryHistory?: readonly Record<string, unknown>[];
+  readonly mentalModelId?: string;
+  readonly mentalModelQuestion?: string;
+  readonly refreshVersion?: number;
+  readonly refreshMode?: "FULL" | "DELTA";
+  readonly minRefreshIntervalSeconds?: number;
+  readonly lastRefreshedAt?: string;
+  readonly dirtySince?: string;
+  readonly sourceFactTypes?: readonly string[];
+  readonly excludeSiblingModels?: boolean;
+  readonly entityRefs?: readonly string[];
+  readonly relationIds?: readonly string[];
 }
 
 export interface MemoryFabricOffset {
