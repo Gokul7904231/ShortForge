@@ -89,6 +89,9 @@ export class MemoryLifecycleService {
     observations: MemoryRecallResult,
     rawEvidence: MemoryRecallResult,
   ): MemoryReflectionResult {
+    if (!request.accessContext) {
+      throw new Error("[MemoryLifecycle] accessContext is required for trusted reflection");
+    }
     return this.reflectionEngine.buildContext(
       request,
       models,
