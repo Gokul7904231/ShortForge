@@ -502,7 +502,7 @@ export class MemoryFabricBridge {
       sf_id: id,
       type: "observation",
       sf_memory_type: "EXPERIENCE",
-      scope_key: String(record.payloadJson.match(/"missionId"\\s*:\\s*"([^"]+)"/)?.[1] || "GLOBAL"),
+      scope_key: this.extractMemoryScope(this.safeParseJson(record.payloadJson)),
       title: "Raw memory — " + record.sourceType + " — " + record.sourceId,
       description: "Immutable sanitized observation captured by the live ShortForge Memory Fabric.",
       status: "draft",
