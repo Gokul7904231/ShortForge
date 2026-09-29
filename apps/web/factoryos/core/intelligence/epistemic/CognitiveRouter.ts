@@ -63,6 +63,7 @@ function recommendation(
   shouldInvokeAscalon: boolean,
   estimatedCostUnits: number,
   budget: AscalonInvocationBudget,
+  decisionSeed?: string,
 ): CognitiveRecommendation {
   return {
     mode,
@@ -84,7 +85,7 @@ function recommendation(
       createHash("sha256")
         .update(
           JSON.stringify({
-            decisionSeed: options.decisionSeed ?? null,
+            decisionSeed: decisionSeed ?? null,
             mode,
             reasonCode,
             deadlineMs,
@@ -184,6 +185,7 @@ export class CognitiveRouter {
         false,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -197,6 +199,7 @@ export class CognitiveRouter {
         false,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -231,6 +234,7 @@ export class CognitiveRouter {
           false,
           estimatedCostUnits,
           remainingBudget,
+        options.decisionSeed,
         );
       }
 
@@ -247,6 +251,7 @@ export class CognitiveRouter {
           false,
           estimatedCostUnits,
           remainingBudget,
+        options.decisionSeed,
         );
       }
 
@@ -263,6 +268,7 @@ export class CognitiveRouter {
         true,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -282,6 +288,7 @@ export class CognitiveRouter {
         false,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -301,6 +308,7 @@ export class CognitiveRouter {
         false,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -315,6 +323,7 @@ export class CognitiveRouter {
           false,
           estimatedCostUnits,
           remainingBudget,
+        options.decisionSeed,
         );
       }
 
@@ -327,6 +336,7 @@ export class CognitiveRouter {
         false,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -342,6 +352,7 @@ export class CognitiveRouter {
         false,
         estimatedCostUnits,
         remainingBudget,
+      options.decisionSeed,
       );
     }
 
@@ -356,6 +367,7 @@ export class CognitiveRouter {
       false,
       estimatedCostUnits,
       remainingBudget,
+    options.decisionSeed,
     );
   }
 }
