@@ -7,6 +7,7 @@ import {
   type TrajectoryEvaluationInput,
   type TrajectoryProofLevel,
 } from "./ProductionTrajectory";
+import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 
 interface TrajectoryBuffer {
   missionId: string;
@@ -16,8 +17,8 @@ interface TrajectoryBuffer {
   floors: Map<string, FloorTrajectoryObservation>;
 }
 
-function floorObservationFromEvent(payload: Record<string, any>): FloorTrajectoryObservation | null {
-  if (!payload.floorId || !payload.loopReceipt) {
+function loopObservationFromEvent(payload: Record<string, any>): FloorTrajectoryObservation | null {
+  if (!payload.floorId || !payload.loopReceipt || typeof payload.loopReceipt !== "object") {
     return null;
   }
 
@@ -25,9 +26,10 @@ function floorObservationFromEvent(payload: Record<string, any>): FloorTrajector
   return {
     floorId: String(payload.floorId),
     loopType: receipt.loopType,
-    proofLevel: (receipt.loopType === "DETERMINISTIC_OPERATIONAL" || receipt.loopType === "VERIFICATION_REMEDIATION")
-      ? "PHYSICAL_VERIFICATION"
-      : "LOOP_RECEIPT",
+    proofLevel:
+      receipt.loopType === "DETERMINISTIC_OPERATIONAL" || receipt.loopType === "VERIFICATION_REMEDIATION"
+        ? "PHYSICAL_VERIFICATION"
+        : "LOOP_RECEIPT",
     verified: Boolean(receipt.verified),
     termination: receipt.termination,
     iterations: Number(receipt.iterations || 0),
@@ -36,34 +38,60 @@ function floorObservationFromEvent(payload: Record<string, any>): FloorTrajector
   };
 }
 
-function weakObservationFromEvent(payload: Record<string, any>): FloorTrajectoryObservation | null {
+function handoffObservationFromEvent(payload: Record<string, any>): FloorTrajectoryObservation | null {
   if (!payload.floorId || payload.loopReceipt) return null;
+
   const output = payload.output;
+  const handoff =
+    payload.handoff ||
+    payload.handoffPayload ||
+    (output && typeof output === "object" ? output.handoffPayload || output : undefined);
+
   const validated =
-    payload.status === "OK" ||
-    output?.handoff_status === "VALIDATED" ||
-    output?.handoffStatus === "VALIDATED";
+    Boolean(handoff && typeof handoff === "object" && (
+      handoff.handoff_status === "VALIDATED" ||
+      handoff.handoffStatus === "VALIDATED"
+    ));
+
+  if (!validated) {
+    return {
+      floorId: String(payload.floorId),
+      loopType: "COGNITIVE_EXECUTION",
+      proofLevel: "NONE",
+      verified: false,
+      termination: "RUNTIME_HANDOFF_UNVERIFIED",
+      iterations: 1,
+      evidenceRefs: [],
+      failureReason: "Runtime task event did not contain verifiable closure evidence.",
+    };
+  }
 
   return {
     floorId: String(payload.floorId),
     loopType: "COGNITIVE_EXECUTION",
-    proofLevel: validated ? ("HANDOFF_CONTRACT" as TrajectoryProofLevel) : "NONE",
-    verified: Boolean(validated),
-    termination: validated ? "RUNTIME_HANDOFF_VALIDATED" : "RUNTIME_HANDOFF_UNVERIFIED",
+    proofLevel: "HANDOFF_CONTRACT",
+    // A validated handoff proves the boundary contract, not the local closed loop.
+    verified: false,
+    termination: "RUNTIME_HANDOFF_VALIDATED",
     iterations: 1,
     evidenceRefs: [],
-    failureReason: validated ? undefined : "Runtime task event did not contain verifiable closure evidence.",
+    failureReason: "Validated handoff observed without a floor closed-loop receipt.",
   };
 }
 
 export class ProductionTrajectoryCollector {
   private readonly buffers = new Map<string, TrajectoryBuffer>();
+  private readonly predictions = new Map<string, boolean>();
   private unsubscribers: Array<() => void> = [];
 
-  constructor(private readonly eventBus: DurableEventBus) {}
+  constructor(
+    private readonly eventBus: DurableEventBus,
+    private readonly learningBridge?: TrajectoryLearningBridge,
+  ) {}
 
   start(): void {
     if (this.unsubscribers.length > 0) return;
+
     const topics = ["TASK_COMPLETED", "RUN_COMPLETED", "MISSION_COMPLETED"] as const;
     this.unsubscribers = topics.map((topic) =>
       this.eventBus.subscribe(topic, async (event: EventEnvelope<any>) => {
@@ -75,6 +103,10 @@ export class ProductionTrajectoryCollector {
   stop(): void {
     for (const unsubscribe of this.unsubscribers) unsubscribe();
     this.unsubscribers = [];
+  }
+
+  setPrediction(missionId: string, predictedSuccess: boolean): void {
+    this.predictions.set(missionId, predictedSuccess);
   }
 
   ingest(event: EventEnvelope<any>): void {
@@ -89,7 +121,7 @@ export class ProductionTrajectoryCollector {
       this.buffers.set(missionId, {
         missionId,
         runId: typeof payload.runId === "string" ? payload.runId : undefined,
-        startedAt: now,
+        startedAt: typeof payload.startedAt === "string" ? payload.startedAt : now,
         floors: new Map(),
       });
     }
@@ -98,7 +130,7 @@ export class ProductionTrajectoryCollector {
     if (typeof payload.runId === "string") buffer.runId = payload.runId;
 
     if (event.topic === "TASK_COMPLETED") {
-      const observation = floorObservationFromEvent(payload) || weakObservationFromEvent(payload);
+      const observation = loopObservationFromEvent(payload) || handoffObservationFromEvent(payload);
       if (observation) buffer.floors.set(observation.floorId, observation);
     }
 
@@ -107,7 +139,7 @@ export class ProductionTrajectoryCollector {
     }
   }
 
-  finalize(missionId: string, completedAt?: string): ProductionTrajectory {
+  async finalize(missionId: string, completedAt?: string): Promise<ProductionTrajectory> {
     const buffer = this.buffers.get(missionId);
     if (!buffer) {
       throw new Error("TRAJECTORY_NOT_FOUND: no observed trajectory for mission " + missionId);
@@ -122,11 +154,26 @@ export class ProductionTrajectoryCollector {
     };
 
     const trajectory = ProductionTrajectoryEvaluator.evaluate(input);
+
+    if (trajectory.trainingEligible && this.learningBridge) {
+      const predictedSuccess = this.predictions.get(missionId);
+      if (predictedSuccess !== undefined) {
+        await this.learningBridge.recordVerifiedTrajectory(trajectory, predictedSuccess);
+      }
+    }
+
     this.buffers.delete(missionId);
+    this.predictions.delete(missionId);
     return trajectory;
   }
 
   getPendingMissionIds(): readonly string[] {
     return Object.freeze([...this.buffers.keys()]);
+  }
+
+  dispose(): void {
+    this.stop();
+    this.buffers.clear();
+    this.predictions.clear();
   }
 }
