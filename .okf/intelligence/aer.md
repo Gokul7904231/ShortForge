@@ -1,12 +1,47 @@
 # Ascalon Epistemic Runtime (AER)
 
 > **Document Class:** Intelligence / Epistemic Architecture Specification
-> **Status:** TARGET ARCHITECTURE / DOCUMENTED DESIGN — NOT YET CLAIMED AS IMPLEMENTED
+> **Status:** IMPLEMENTED FOUNDATION / SHADOW-ONLY / VALIDATION PENDING
 > **Authority:** .okf source-of-truth hierarchy; executable implementation and tests outrank this document.
 > **Scope:** ShortForge Cognitive Layer (SCL), Ascalon cognition, epistemic state management, uncertainty, probe planning, evidence selection, hypothesis management, counterfactual reasoning, and cognitive routing.
 > **Canonical Pipeline:** F00 → F01 → F02 → (F03 || F04) → F05 → F06 → F07
 
 ---
+
+## Current Executable Foundation — 2026-09-29
+
+The first executable AER foundation is now present under:
+
+```
+apps/web/factoryos/core/intelligence/epistemic/
+```
+
+Implemented foundation components:
+- `EpistemicContracts.ts`
+- `EpistemicBudget.ts`
+- `ProbePlanner.ts`
+- `CognitiveRouter.ts`
+- `EpistemicStateEngine.ts`
+- `EpistemicContextBuilder.ts`
+- `AscalonEpistemicHandoff.ts`
+- `EpistemicTrigger.ts`
+- `HypothesisManager.ts`
+- `EpistemicCache.ts`
+- `EpistemicLedger.ts`
+- `AEREngine.ts`
+
+Current capability boundary:
+- builds typed epistemic state;
+- preserves measurement provenance;
+- plans safe read-only probes;
+- rejects unauthorized mutating probes;
+- enforces bounded cognition/probe budgets;
+- routes deterministic vs micro vs deep cognition;
+- builds a fingerprinted `EpistemicContext`;
+- produces a shadow/advisory Ascalon handoff;
+- supports trigger suppression, hypothesis updates, cache identity, and tamper-evident in-memory ledgering.
+
+The current implementation does **not** execute probes, call a production Ascalon checkpoint, grant authority, or alter floor execution. Fresh CI, security checks, shadow replay, calibration and production admission remain required.
 
 ## 1. Purpose
 
