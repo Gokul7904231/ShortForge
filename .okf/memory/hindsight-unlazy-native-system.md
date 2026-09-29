@@ -239,3 +239,84 @@ Native files added for this integration:
 The existing `MemoryFabricProjection` and runtime bridge were upgraded to use
 the new semantics while preserving existing lifecycle, verification and AER
 authority boundaries.
+
+
+## 17. Upstream capability coverage
+
+### Hindsight coverage
+
+| Upstream capability | ShortForge disposition |
+|---|---|
+| World facts / experiences | `MemorySemanticType` + retain normalization |
+| Observations | `MemoryObservationConsolidator` + durable OKF adapter |
+| Observation evolution / evidence / contradiction | versioned history + support/contradiction lineage |
+| Mental models | durable `MemoryMentalModelManager` + KnowledgeStore adapter |
+| Knowledge pages | mental-model persistence as markdown/OKF |
+| Retain | `MemoryRetentionNormalizer` |
+| Recall | four-channel `MemoryRetrievalEngine` + bounded budget |
+| Reflect | `MemoryReflectionEngine` |
+| Memory banks | `MemoryScope` + `MemoryAccessContext` |
+| Semantic retrieval | injected embedding provider + cosine adapter |
+| Keyword/BM25 | deterministic local sparse channel |
+| Graph retrieval | relation-aware bounded traversal |
+| Temporal retrieval | window + distance ranking |
+| RRF / reranking | native RRF + optional reranker |
+| Freshness / dirty refresh | freshness states + dirty scopes + refresh intervals |
+| Full / delta mental-model refresh | native refresh policy |
+| Sibling-model feedback prevention | `excludeSiblingModels` default |
+| 25+ provider/backend surface | intentionally provider-adapter boundary, not a second core runtime |
+| Docker / pip / Helm / Cloud | intentionally not imported; ShortForge owns deployment |
+| SDKs / CLI / LLM wrappers | represented by `IntelligenceGateway` + CLI/internal adapters |
+| MCP surface | represented through existing ShortForge MCP architecture; no generic MCP authority added |
+| Coding-agent project memory | repo-scoped Memory Fabric + `.okf` knowledge |
+
+### Unlazy coverage
+
+| Upstream capability | ShortForge disposition |
+|---|---|
+| Acceptance ledger before work | `MemoryCompletionLedger` |
+| Observable gate outcome | required `MemoryGateDefinition.outcome` |
+| CHECK / EXPECT pairing | `MemoryGateLinter` |
+| Definition-bound evidence | definition SHA-256 digest |
+| Currentness after definition drift | `REVERIFY_REQUIRED` |
+| Re-verification | `refreshDefinition` + proof replacement |
+| Explicit abandonment | `HANDOFF`, never success |
+| Leaf / branch / root hierarchy | gate `layer` field + release checks |
+| Gate dependencies | `dependsOn` and proof-time dependency enforcement |
+| Persistent proof | atomic JSON ledger store |
+| Scope isolation | memory access context |
+| Ownership / lease coordination | existing Memory Fabric writer lease |
+| Parallel / rolling execution | existing Floor Governance / AEF orchestration; not duplicated in Memory Fabric |
+| Native dispatch waves / Stop hook | existing governance boundary; not duplicated in memory |
+| Command approval / ambient environment | stays with external developer tooling and ShortForge security boundary |
+| OS/container/VM isolation | deliberately outside memory contracts |
+| Gate-lint quality signals | native non-executing `MemoryGateLinter` |
+| Reproducibility / retained raw artifacts | `MemoryEvaluationHarness` + append-only case result artifacts |
+
+## 18. Current implementation boundary
+
+Implemented now:
+`retain`, deterministic normalization, persistent observation storage, scoped
+consolidation policy, four-way retrieval, optional real embeddings, bounded
+reflection, persistent mental models, bank isolation, provenance lock, durable
+completion proof, gate lint, and reproducible memory evaluation.
+
+Adapter-only or intentionally pending:
+- production embedding/vector infrastructure;
+- production graph relation persistence beyond injected adapters;
+- an automatic LLM reflection/mental-model scheduler;
+- benchmark corpus/results for ShortForge itself;
+- security/process isolation for arbitrary shell commands.
+
+Those are explicit integration gates, not hidden assumptions.
+
+## 19. Release law
+
+```text
+Memory may retain and learn.
+AER may decide whether more cognition is worth paying for.
+Governance may authorize an action.
+AEF may execute an authorized action.
+Verification/proof may establish completion.
+No memory layer may mint production truth by itself.
+```
