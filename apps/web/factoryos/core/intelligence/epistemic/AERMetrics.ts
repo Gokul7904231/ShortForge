@@ -5,6 +5,8 @@
  * convert confidence/support into truth.
  */
 
+import type { AEROutcomeReceipt } from "./EpistemicContracts";
+
 export interface AEREpisodeRecord {
   readonly episodeId: string;
   readonly recordedAt: string;
@@ -176,16 +178,47 @@ export class AERMetricsRecorder {
     episode.costUnits += Math.max(0, input.costUnits ?? 0);
   }
 
-  public recordOutcome(input: {
-    readonly episodeId: string;
-    readonly resolvedUncertainty: boolean;
-    readonly falseReassurance?: boolean;
-    readonly ascalonWasNecessary?: boolean;
-  }): void {
-    const episode = this.requireEpisode(input.episodeId);
-    episode.resolvedUncertainty = input.resolvedUncertainty;
-    episode.falseReassurance = input.falseReassurance;
-    episode.ascalonWasNecessary = input.ascalonWasNecessary;
+  public recordOutcome(receipt: AEROutcomeReceipt): void {
+    if (!receipt.outcomeId.trim() || !receipt.episodeId.trim()) {
+      throw new Error("[AER metrics] outcome identity is required");
+    }
+    if (!receipt.verificationRef.trim()) {
+      throw new Error("[AER metrics] outcome verificationRef is required");
+    }
+    if (
+      receipt.authoritativeSource === "MODEL_INFERENCE" &&
+      receipt.status === "RESOLVED"
+    ) {
+      throw new Error("[AER metrics] model inference cannot authoritatively resolve uncertainty");
+    }
+    if (receipt.evidenceRefs.length === 0 && receipt.status === "RESOLVED") {
+      throw new Error("[AER metrics] resolved outcome requires evidenceRefs");
+    }
+
+    const episode = this.requireEpisode(receipt.episodeId);
+    const resolved =
+      receipt.status === "RESOLVED" &&
+      receipt.evidenceRefs.length > 0 &&
+      receipt.authoritativeSource !== "MODEL_INFERENCE";
+
+    episode.resolvedUncertainty = resolved;
+
+    if (
+      receipt.ascalonClaimedResolved === true &&
+      !resolved
+    ) {
+      episode.falseReassurance = true;
+    } else if (receipt.ascalonClaimedResolved === true) {
+      episode.falseReassurance = false;
+    }
+
+    const necessity = receipt.necessityAssessment;
+    if (necessity && necessity.verdict !== "INCONCLUSIVE") {
+      if (necessity.evidenceRefs.length === 0) {
+        throw new Error("[AER metrics] necessity verdict requires evidenceRefs");
+      }
+      episode.ascalonWasNecessary = necessity.verdict === "NECESSARY";
+    }
   }
 
   public snapshot(): AERMetricSnapshot {
