@@ -380,6 +380,78 @@ describe("Slayer Prime — enforcement control plane", () => {
     second.stop();
   });
 
+  it("keeps the leadership epoch stable across renewal and advances it on takeover", async () => {
+    const store = new InMemorySlayerPrimeStateStore();
+    const first = await store.acquireLeadership("prime-a", 30_000);
+    expect(first).not.toBeNull();
+
+    const renewed = await store.renewLeadership(first!, 30_000);
+    expect(renewed?.epoch).toBe(first?.epoch);
+
+    await store.releaseLeadership(renewed!);
+    const second = await store.acquireLeadership("prime-b", 30_000);
+
+    expect(second?.epoch).toBeGreaterThan(first!.epoch);
+    expect(await store.isLeadershipCurrent("prime-a", first!.epoch)).toBe(false);
+    expect(await store.isLeadershipCurrent("prime-b", second!.epoch)).toBe(true);
+  });
+
+  it("rejects a Prime revoke when the worker lease was reacquired with a newer resource fence", async () => {
+    await leaseManager.acquire("job-fence", "worker-old", 30_000);
+    const oldLease = await leaseManager.getLease("job-fence");
+    expect(oldLease?.fencingToken).toBeDefined();
+
+    const incident = await prime.ingest({
+      observation: {
+        observationId: "obs-fence",
+        floorId: "floor03_asset_realization",
+        target: "worker-old",
+        category: "WORKER_STALL",
+        severity: "HIGH",
+        description: "worker lease became stale",
+        rawMetrics: {},
+        observedAt: new Date().toISOString(),
+      },
+      evidence: [
+        evidence("ev-fence-lease", "LEASE", "lease-manager", "job-fence"),
+        evidence("ev-fence-heartbeat", "HEARTBEAT", "heartbeat-tracker", "worker-old"),
+      ],
+    });
+
+    const { intent } = await prime.planAction(
+      incident.incidentId,
+      "REVOKE_LEASE",
+      "TASK",
+      "worker-old",
+      "slayer-prime",
+      { taskId: "job-fence", ownerAgentId: "worker-old" }
+    );
+
+    await leaseManager.release("job-fence", "worker-old");
+    await leaseManager.acquire("job-fence", "worker-new", 30_000);
+    const replacement = await leaseManager.getLease("job-fence");
+    expect(replacement?.fencingToken).toBeGreaterThan(oldLease!.fencingToken!);
+
+    const receipt = await prime.executeAuthorizedAction(intent.intentId, {
+      grantId: "grant-fence",
+      incidentId: incident.incidentId,
+      action: "REVOKE_LEASE",
+      scope: "TASK",
+      targetId: "worker-old",
+      authorizedBy: "guardian_floor03",
+      authorizedRole: "GUARDIAN",
+      issuedAt: new Date().toISOString(),
+      expiresAt: future(60_000),
+      evidenceRefs: ["ev-fence-lease", "ev-fence-heartbeat"],
+      reason: "stale worker lease containment",
+    });
+
+    expect(receipt.status).toBe("STALE_ACTION");
+    const current = await leaseManager.getLease("job-fence");
+    expect(current?.ownerAgentId).toBe("worker-new");
+    expect(current?.status).toBe("ACTIVE");
+  });
+
   it("is wired into the master SlayerEngine without changing worker authority", async () => {
     const engine = new SlayerEngine(
       caseManager,
