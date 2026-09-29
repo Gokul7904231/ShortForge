@@ -33,6 +33,9 @@ export interface MemoryEvaluationCaseResult {
   readonly passed: boolean;
   readonly retrievedMemoryIds: readonly string[];
   readonly resultDigest: string;
+  readonly precisionAtK: number;
+  readonly reciprocalRank: number;
+  readonly ndcgAtK: number;
 }
 
 export interface MemoryEvaluationSummary {
@@ -42,6 +45,9 @@ export interface MemoryEvaluationSummary {
   readonly passedCount: number;
   readonly failedCount: number;
   readonly recallAtK: number;
+  readonly precisionAtK: number;
+  readonly meanReciprocalRank: number;
+  readonly ndcgAtK: number;
   readonly forbiddenHitRate: number;
   readonly unauthorizedHitRate: number;
   readonly averageLatencyMs: number;
@@ -126,6 +132,17 @@ export class MemoryEvaluationHarness {
           : 0;
         const expectedTotal = expected.size;
         const minHits = current.minHits ?? (expectedTotal > 0 ? 1 : 0);
+        const k = Math.max(1, retrieved.length);
+        const precisionAtK = expectedTotal > 0 ? expectedHits / k : 0;
+        const firstRelevantRank = retrieved.findIndex((id) => expected.has(id));
+        const reciprocalRank = firstRelevantRank >= 0 ? 1 / (firstRelevantRank + 1) : 0;
+        const idealHits = Math.min(expectedTotal, k);
+        const dcg = retrieved.reduce((sum, id, rank) => {
+          return sum + (expected.has(id) ? 1 / Math.log2(rank + 2) : 0);
+        }, 0);
+        const idcg = Array.from({ length: idealHits }, (_, rank) => 1 / Math.log2(rank + 2))
+          .reduce((sum, value) => sum + value, 0);
+        const ndcgAtK = idcg > 0 ? dcg / idcg : 0;
         const passed =
           expectedHits >= minHits &&
           forbiddenHits === 0 &&
@@ -154,6 +171,9 @@ export class MemoryEvaluationHarness {
           passed,
           retrievedMemoryIds: retrieved,
           resultDigest,
+          precisionAtK,
+          reciprocalRank,
+          ndcgAtK,
         };
         results[index] = record;
         this.options.artifactStore?.append(record);
@@ -169,6 +189,9 @@ export class MemoryEvaluationHarness {
     const passedCount = results.filter((result) => result.passed).length;
     const expectedTotal = results.reduce((sum, result) => sum + result.expectedTotal, 0);
     const expectedHits = results.reduce((sum, result) => sum + result.expectedHits, 0);
+    const averagePrecisionAtK = this.average(results.map((result) => result.precisionAtK));
+    const meanReciprocalRank = this.average(results.map((result) => result.reciprocalRank));
+    const ndcgAtK = this.average(results.map((result) => result.ndcgAtK));
     const forbiddenTotal = results.reduce((sum, result) => sum + result.forbiddenHits, 0);
     const unauthorizedTotal = results.reduce((sum, result) => sum + result.unauthorizedHits, 0);
     const latencies = results.map((result) => result.latencyMs).sort((a, b) => a - b);
@@ -199,6 +222,9 @@ export class MemoryEvaluationHarness {
       passedCount,
       failedCount: results.length - passedCount,
       recallAtK: expectedTotal > 0 ? expectedHits / expectedTotal : 1,
+      precisionAtK: averagePrecisionAtK,
+      meanReciprocalRank,
+      ndcgAtK,
       forbiddenHitRate: results.length > 0 ? forbiddenTotal / results.length : 0,
       unauthorizedHitRate: results.length > 0 ? unauthorizedTotal / results.length : 0,
       averageLatencyMs: this.average(latencies),
@@ -228,6 +254,9 @@ export class MemoryEvaluationHarness {
       passed: false,
       retrievedMemoryIds: [],
       resultDigest,
+      precisionAtK: 0,
+      reciprocalRank: 0,
+      ndcgAtK: 0,
     };
   }
 
