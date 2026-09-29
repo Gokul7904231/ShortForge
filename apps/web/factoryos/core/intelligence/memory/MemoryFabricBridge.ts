@@ -33,6 +33,7 @@ import type {
 import { MemoryFabricProjectionService } from "./MemoryFabricProjection";
 import { MemoryRetentionNormalizer } from "./MemoryRetentionNormalizer";
 import type { MemoryRetrievalEngineOptions } from "./MemoryRetrievalEngine";
+import type { MemoryAccessContext } from "./MemorySemanticsContracts";
 
 export interface MemoryFabricBridgeConfig {
   readonly enabled?: boolean;
@@ -328,12 +329,22 @@ export class MemoryFabricBridge {
     return ingested;
   }
 
-  async projectForAgent(query: string, maxItems = 12, maxChars = 12000): Promise<MemoryFabricProjection> {
-    return this.projectionService.projectForAgent(query, maxItems, maxChars);
+  async projectForAgent(
+    query: string,
+    maxItems = 12,
+    maxChars = 12000,
+    accessContext?: MemoryAccessContext,
+  ): Promise<MemoryFabricProjection> {
+    return this.projectionService.projectForAgent(query, maxItems, maxChars, accessContext);
   }
 
-  async projectForAscalon(query = "", maxItems = 32, maxChars = 24000): Promise<MemoryFabricProjection> {
-    return this.projectionService.projectForAscalon(query, maxItems, maxChars);
+  async projectForAscalon(
+    query = "",
+    maxItems = 32,
+    maxChars = 24000,
+    accessContext?: MemoryAccessContext,
+  ): Promise<MemoryFabricProjection> {
+    return this.projectionService.projectForAscalon(query, maxItems, maxChars, accessContext);
   }
 
   async getHealth(): Promise<MemoryFabricHealth> {
