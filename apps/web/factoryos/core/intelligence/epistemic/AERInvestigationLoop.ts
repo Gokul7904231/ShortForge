@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import type {
   CognitiveProbe,
   EpistemicState,
   EpistemicUsage,
 } from "./EpistemicContracts";
+import { EpistemicBudgetController } from "./EpistemicBudget";
 import {
   AEREngine,
   type AERAssessment,
@@ -71,16 +73,52 @@ function removeByIds<T, K extends keyof T>(
 function chooseProbeBatch(
   probes: readonly CognitiveProbe[],
   maxParallel: number,
+  controller: EpistemicBudgetController,
+  usage: EpistemicUsage,
 ): CognitiveProbe[] {
   const readOnly = probes.filter((probe) => probe.riskClass === "READ_ONLY");
   if (readOnly.length === 0) return [];
 
-  const parallel = readOnly.filter((probe) => probe.parallelizable);
-  if (parallel.length > 0) {
-    return parallel.slice(0, Math.max(1, maxParallel));
+  const candidates = readOnly.filter((probe) => probe.parallelizable);
+  const selected: CognitiveProbe[] = [];
+
+  for (const probe of (candidates.length > 0 ? candidates : readOnly)) {
+    const projected: EpistemicUsage = {
+      ...usage,
+      probesExecuted: usage.probesExecuted + selected.length,
+      costUnits: usage.costUnits + selected.reduce(
+        (sum, item) => sum + Math.max(0, item.estimatedCostUnits),
+        0,
+      ),
+    };
+
+    if (!controller.canRunProbe(projected, Math.max(0, probe.estimatedCostUnits))) {
+      continue;
+    }
+
+    selected.push(probe);
+    if (candidates.length === 0 || selected.length >= Math.max(1, maxParallel)) {
+      break;
+    }
   }
 
-  return readOnly.slice(0, 1);
+  return selected;
+}
+
+function epistemicContentFingerprint(state: EpistemicState): string {
+  const payload = {
+    state: state.state,
+    known: state.known,
+    unknown: state.unknown,
+    contradictions: state.contradictions,
+    measurements: state.measurements,
+    hypotheses: state.hypotheses,
+    evidenceRefs: state.evidenceRefs,
+  };
+
+  return createHash("sha256")
+    .update(JSON.stringify(payload), "utf8")
+    .digest("hex");
 }
 
 export class AERInvestigationLoop {
@@ -136,9 +174,12 @@ export class AERInvestigationLoop {
         };
       }
 
+      const controller = new EpistemicBudgetController(state.budgets);
       const planned = chooseProbeBatch(
         state.recommendedProbes,
         maxParallel,
+        controller,
+        state.usage,
       );
 
       if (planned.length === 0) {
@@ -182,6 +223,38 @@ export class AERInvestigationLoop {
       let investigationHistory = [...(currentInput.investigationHistory ?? [])];
 
       for (const result of results) {
+        if (
+          (result.status === "VERIFIED" || result.status === "OBSERVED") &&
+          result.evidenceRefs.length === 0
+        ) {
+          throw new Error(
+            `[AER] Probe ${result.probeId} returned ${result.status} without evidenceRefs.`,
+          );
+        }
+
+        if (result.latencyMs < 0 || result.costUnits < 0) {
+          throw new Error(
+            `[AER] Probe ${result.probeId} returned negative latency/cost.`,
+          );
+        }
+
+        for (const measurement of result.measurementsAdded ?? []) {
+          if (measurement.measurementType === "MODEL_INFERENCE" && measurement.authoritative) {
+            throw new Error(
+              `[AER] Probe ${result.probeId} attempted authoritative model inference.`,
+            );
+          }
+        }
+
+        if (
+          (result.resolvedUnknownIds?.length ?? 0) > 0 &&
+          result.evidenceRefs.length === 0
+        ) {
+          throw new Error(
+            `[AER] Probe ${result.probeId} cannot resolve unknowns without evidenceRefs.`,
+          );
+        }
+
         for (const ref of result.evidenceRefs) evidenceRefs.add(ref);
         known = mergeById(known, result.knownAdded ?? [], "factId");
         unknown = mergeById(unknown, result.unknownAdded ?? [], "unknownId");
@@ -273,10 +346,10 @@ export class AERInvestigationLoop {
         usage,
       };
 
-      const previousFingerprint = assessment.context.contextFingerprint;
+      const previousFingerprint = epistemicContentFingerprint(assessment.state);
       assessment = this.engine.assess(currentInput);
 
-      if (assessment.context.contextFingerprint === previousFingerprint) {
+      if (epistemicContentFingerprint(assessment.state) === previousFingerprint) {
         return {
           initialAssessment,
           finalAssessment: assessment,
