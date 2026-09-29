@@ -62,6 +62,7 @@ function recommendation(
     expectedValue: assessment.expectedValue,
     shouldInvokeAscalon,
     estimatedCostUnits,
+    estimatedLatencyMs: assessment.estimatedLatencyMs,
     expectedBenefit: assessment.expectedBenefit,
     expectedCost: assessment.expectedCost,
     uncertaintyBurden: assessment.uncertaintyBurden,
