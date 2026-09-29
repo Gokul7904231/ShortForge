@@ -49,6 +49,7 @@ import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
+import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -68,6 +69,7 @@ export class OverseerControlPlane {
   public capabilityRouter: CapabilityRouter;
   public metaThinker: StrategicMetaThinker;
   public presenceEngine: OverseerPresenceEngine;
+  public trajectoryCollector: ProductionTrajectoryCollector;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -110,6 +112,8 @@ export class OverseerControlPlane {
       this.caseManager,
       this.missionManager
     );
+    this.trajectoryCollector = new ProductionTrajectoryCollector(this.eventBus);
+    this.trajectoryCollector.start();
 
     this.registerWithWorldState();
 
@@ -129,6 +133,47 @@ export class OverseerControlPlane {
         if (missionId) {
           await this.resumeMissionExecution(missionId).catch(() => {});
         }
+      }
+    });
+    this.eventBus.subscribe("RUN_COMPLETED", async (envelope) => {
+      const missionId = (envelope.payload as any)?.missionId;
+      const runId = (envelope.payload as any)?.runId;
+      if (!missionId) return;
+      try {
+        const trajectory = this.trajectoryCollector.finalize(missionId, envelope.timestamp);
+        await this.eventBus.publish(
+          "TRAJECTORY_EVALUATED",
+          {
+            trajectoryId: trajectory.trajectoryId,
+            missionId: trajectory.missionId,
+            runId,
+            verificationStatus: trajectory.verificationStatus,
+            verifiedFloorCount: trajectory.verifiedFloorCount,
+            canonicalFloorCount: trajectory.canonicalFloorCount,
+            totalIterations: trajectory.totalIterations,
+            recoveredIterations: trajectory.recoveredIterations,
+            evidenceRefs: trajectory.evidenceRefs,
+            finalOutcome: trajectory.finalOutcome,
+            trainingEligible: trajectory.trainingEligible,
+            trajectoryFingerprint: trajectory.trajectoryFingerprint,
+          },
+          { correlationId: runId || missionId, source: "production-trajectory-evaluator" },
+        );
+      } catch (error) {
+        await this.eventBus.publish(
+          "TRAJECTORY_EVALUATED",
+          {
+            missionId,
+            runId,
+            verificationStatus: "UNVERIFIED",
+            verifiedFloorCount: 0,
+            canonicalFloorCount: 8,
+            finalOutcome: "INCOMPLETE",
+            trainingEligible: false,
+            evaluationError: error instanceof Error ? error.message : String(error),
+          },
+          { correlationId: runId || missionId, source: "production-trajectory-evaluator" },
+        );
       }
     });
   }
@@ -1647,5 +1692,9 @@ export class OverseerControlPlane {
 
   getPresenceEngine(): OverseerPresenceEngine {
     return this.presenceEngine;
+  }
+
+  getTrajectoryCollector(): ProductionTrajectoryCollector {
+    return this.trajectoryCollector;
   }
 }
