@@ -54,3 +54,7 @@ Promotion of this wave requires:
 3. AEF and FGC validation green on the same commit.
 4. Regression results distinguished from environment-only media-tool failures.
 5. Memory evaluation reports recorded with retrieval and authorization metrics.
+
+## Proof anchoring
+
+Memory gate proofs may bind to a verified F07 VerificationReceipt. The anchor is accepted only after the existing F07 VerificationReceiptVerifier validates the receipt digest and Ed25519 signature. The memory ledger remains a proof-state record; the F07 receipt remains the trusted artifact/proof issuer.
