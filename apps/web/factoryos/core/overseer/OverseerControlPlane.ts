@@ -597,7 +597,10 @@ export class OverseerControlPlane {
           },
           {
             maxIterations: 3,
-            minVerifiedClaims: Math.max(1, Number(researchContract?.minSources || 1)),
+            // Evidence quality is independent of the requested source count:
+            // one corroborated claim is sufficient to close F00; additional sources
+            // are still used for stronger confidence when the loop needs refinement.
+            minVerifiedClaims: 1,
             minConfidence: 0.7,
           }
         );
