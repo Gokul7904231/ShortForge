@@ -430,6 +430,7 @@ describe("AER remediation — economics, reservations, execution loop", () => {
     expect(result.evidenceRefs).toContain("measurement:timing:001");
     expect(result.evidenceRefs).toContain("tool-evidence:timing:001");
     expect(result.costUnits).toBe(2);
+    expect(result.actualCostUsd).toBe(0.004);
   });
 
   it("replays historical necessity evidence without executing anything", () => {
