@@ -62,6 +62,37 @@ export interface AscalonInvocationBudget {
   readonly maxCostUnits: number;
 }
 
+
+
+export type AEROutcomeStatus =
+  | "RESOLVED"
+  | "UNRESOLVED"
+  | "FAILED"
+  | "UNKNOWN";
+
+export type AEROutcomeAuthority =
+  | "F07"
+  | "VERIFIED_SYSTEM"
+  | "HUMAN_AUTHORITY"
+  | "OBSERVED_RUNTIME"
+  | "MODEL_INFERENCE";
+
+export interface AEROutcomeReceipt {
+  readonly outcomeId: string;
+  readonly episodeId: string;
+  readonly status: AEROutcomeStatus;
+  readonly evidenceRefs: readonly string[];
+  readonly authoritativeSource: AEROutcomeAuthority;
+  readonly verificationRef: string;
+  readonly observedAt: string;
+  readonly ascalonClaimedResolved?: boolean;
+  readonly necessityAssessment?: {
+    readonly verdict: "NECESSARY" | "NOT_NECESSARY" | "INCONCLUSIVE";
+    readonly method: "CONTROLLED_REPLAY" | "COUNTERFACTUAL_SIMULATION" | "HUMAN_REVIEW";
+    readonly evidenceRefs: readonly string[];
+  };
+};
+
 export interface EpistemicMeasurement {
   readonly measurementId: string;
   readonly dimension: string;
