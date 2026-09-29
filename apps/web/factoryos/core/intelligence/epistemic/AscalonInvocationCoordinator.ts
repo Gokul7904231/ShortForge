@@ -37,7 +37,7 @@ export class AscalonInvocationCoordinator {
       usage: input.context.usage,
       mode: "DEEP",
       costUnits: input.context.cognitiveRecommendation.estimatedCostUnits,
-      estimatedTimeMs: input.context.cognitiveRecommendation.deadlineMs,
+      estimatedTimeMs: input.context.cognitiveRecommendation.estimatedLatencyMs,
       ttlMs: input.ttlMs,
     });
 
