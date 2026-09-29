@@ -39,8 +39,10 @@ function classifyStatus(
   known: readonly EpistemicFact[],
   unknown: readonly EpistemicUnknown[],
   contradictions: readonly EpistemicContradiction[],
+  hasMaterialStaleEvidence: boolean,
 ): EpistemicStateStatus {
   if (contradictions.some((item) => item.material)) return "CONTRADICTED";
+  if (hasMaterialStaleEvidence) return "STALE";
   if (unknown.some((item) => item.material)) return "UNCERTAIN";
   if (known.length > 0 && known.every((item) => item.status === "INFERRED")) return "INFERRED";
   if (known.some((item) => item.status === "SUPPORTED")) return "SUPPORTED";
@@ -59,6 +61,7 @@ export interface BuildEpistemicStateInput {
   readonly investigationHistory?: readonly Record<string, unknown>[];
   readonly impact?: EpistemicImpact;
   readonly freshness?: Record<string, unknown>;
+  readonly freshnessPolicy?: Readonly<Record<string, number>>;
   readonly authorityClass?: "MODEL_ADVISORY";
 }
 
@@ -89,17 +92,37 @@ export class EpistemicStateEngine {
 
     const now = Date.now();
     const freshness = { ...(input.freshness ?? {}) };
+    let hasMaterialStaleEvidence = false;
 
     for (const measurement of measurements) {
       if (measurement.freshnessSeconds !== undefined) {
+        const policyThreshold =
+          input.freshnessPolicy?.[measurement.dimension] ?? 3600;
+        const staleAfterSeconds = Math.max(
+          0,
+          measurement.staleAfterSeconds ?? policyThreshold,
+        );
+        const stale = measurement.freshnessSeconds > staleAfterSeconds;
+
         freshness[measurement.measurementId] = {
           freshnessSeconds: measurement.freshnessSeconds,
-          stale: measurement.freshnessSeconds > 3600,
+          staleAfterSeconds,
+          stale,
+          material: measurement.material ?? false,
         };
+
+        if (stale && measurement.material === true) {
+          hasMaterialStaleEvidence = true;
+        }
       }
     }
 
-    const knownStatus = classifyStatus(known, unknown, contradictions);
+    const knownStatus = classifyStatus(
+      known,
+      unknown,
+      contradictions,
+      hasMaterialStaleEvidence,
+    );
 
     return {
       schemaVersion: "1.0",
