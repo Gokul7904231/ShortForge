@@ -12,3 +12,4 @@ export * from "./MemoryConsolidationStrategyRouter";
 export * from "./MemoryRetentionNormalizer";
 export * from "./MemoryMentalModelStore";
 export * from "./KnowledgeStoreMentalModelAdapter";
+export * from "./MemoryCompletionLedgerStore";
