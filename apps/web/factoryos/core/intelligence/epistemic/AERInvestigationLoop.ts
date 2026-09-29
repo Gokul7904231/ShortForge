@@ -11,7 +11,7 @@ import {
   type AERAssessmentInput,
 } from "./AEREngine";
 import { EpistemicLedger } from "./EpistemicLedger";
-import { AERProbeExecutor, type AERProbeExecutionResult } from "./AERProbeExecution";
+import type { AERProbeExecutor, AERProbeExecutionResult } from "./AERProbeExecution";
 
 export type AERInvestigationTermination =
   | "RESOLVED"
