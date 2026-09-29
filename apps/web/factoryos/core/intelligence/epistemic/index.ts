@@ -18,3 +18,6 @@ export * from "./AERProbeExecution";
 export * from "./AERAscalonPreCallGate";
 export * from "./EpistemicBudgetReservation";
 export * from "./AscalonInvocationCoordinator";
+export * from "./AERExecutionFabricBridge";
+export * from "./AERPolicyPromotionGate";
+export * from "./AEREpisodeTelemetry";
