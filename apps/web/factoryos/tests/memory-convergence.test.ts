@@ -189,6 +189,21 @@ describe("Memory Fabric convergence gates", () => {
     ).resolves.toEqual([]);
   });
 
+  it("defends the durable lifecycle against direct temporary-retention bypasses", async () => {
+    const normalizer = new MemoryRetentionNormalizer();
+    const temporary = await normalizer.retain({
+      memoryId: "memory:temporary",
+      scope: { kind: "CUSTOM", key: "scope:test" },
+      summary: "Contact operator at test@example.com",
+      payload: {},
+      occurredAt: "2026-09-29T00:00:00.000Z",
+      capturedAt: "2026-09-29T00:00:00.000Z",
+      sourceType: "RUN_LOG",
+      sourceId: "run:temporary",
+    });
+    expect(temporary).toEqual([]);
+  });
+
   it("blocks high-risk PII from long-lived learned memory", async () => {
     const normalizer = new MemoryRetentionNormalizer();
     const decision = normalizer.classify({
