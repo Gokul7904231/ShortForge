@@ -69,6 +69,7 @@ export class CognitiveRuntime {
       // 2. Canonical Memory Fabric Recall.
       const query = `${incident.category} ${incident.symptoms.join(" ")}`;
       let similarExperiences: Array<{ memoryId: string; title: string; summary: string }> = [];
+      let memoryEvidenceRefs: string[] = [];
       if (this.memoryLifecycle) {
         const memoryScopeKeys = [...(incident.memoryScopeKeys ?? []), incident.caseId, incident.floorId]
           .filter((value): value is string => Boolean(value && value.trim()));
@@ -112,9 +113,7 @@ export class CognitiveRuntime {
           },
         });
         tokensConsumed += memoryAER.context.serializedTokenEstimate;
-        for (const ref of memoryAER.state.evidenceRefs) {
-          if (!evidenceIds.includes(ref)) evidenceIds.push(ref);
-        }
+        memoryEvidenceRefs = [...memoryAER.state.evidenceRefs];
       } else {
         const legacy = await this.plane.experienceMemory.recallByKeywords(query, incident.floorId, 5);
         similarExperiences = legacy.map((item) => ({
@@ -153,7 +152,7 @@ export class CognitiveRuntime {
       };
       this.plane.evidenceGraph.addNode(incident.incidentId, symptomNode);
 
-      const evidenceIds = [symptomNode.nodeId];
+      const evidenceIds = [symptomNode.nodeId, ...memoryEvidenceRefs];
 
       // 5. Contradiction Resolution (if conflicting claims exist)
       let contradictionResolved = false;
