@@ -56,9 +56,10 @@ The design follows the same classes of primitives used in established distribute
 2. No fresh evidence quorum -> no enforcement.
 3. No unique action reservation -> no enforcement.
 4. No current action fence -> no enforcement.
-5. No postcondition proof -> no VERIFIED receipt.
-6. A restarted process gets a new holder identity.
-7. A new leadership generation must be greater than every previously issued generation.
-8. A stale state writer must never overwrite state committed by a newer leadership generation.
-9. Durable coordination must fail closed under uncertainty.
-10. Worker-resource mutations ultimately need resource-side fencing, not only control-plane fencing.
+5. A caller holding a previous leadership generation is stale even if the same process identity is still alive.
+6. No postcondition proof -> no VERIFIED receipt.
+7. A restarted process gets a new holder identity.
+8. A new leadership generation must be greater than every previously issued generation.
+9. A stale state writer must never overwrite state committed by a newer leadership generation.
+10. Durable coordination must fail closed under uncertainty.
+11. Worker-resource mutations ultimately need resource-side fencing, not only control-plane fencing.
