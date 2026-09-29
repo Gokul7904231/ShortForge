@@ -1,0 +1,31 @@
+{
+  "report": "ascalon-clm-aria2-reconciliation-20260929",
+  "source": "feat/ascalon-clm-aria2-upgrade-20260927",
+  "base": "main",
+  "classification": "reconciled",
+  "preserved": [
+    "CLM shadow-only candidate ranking",
+    "candidate-relative probability semantics",
+    "fail-closed validation",
+    "HTTPS allowlisted aria2 acquisition",
+    "independent SHA-256 and optional byte-length verification"
+  ],
+  "authority": {
+    "productionAuthority": false,
+    "trainingEligible": false,
+    "canGrantCapabilities": false,
+    "canCreateLeases": false,
+    "canPublish": false,
+    "canCertifyF07": false
+  },
+  "implementation": [
+    "apps/web/factoryos/core/intelligence/decision/CLMDecisionAdapter.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionEngine.ts",
+    "training/ascalon/transfer/Aria2ArtifactFetcher.ts"
+  ],
+  "tests": [
+    "apps/web/factoryos/tests/clm-decision-adapter-reconciliation.test.ts",
+    "apps/web/factoryos/tests/ascalon/aria2-artifact-fetcher-reconciliation.test.ts"
+  ],
+  "promotion": "PENDING_REPOSITORY_CI"
+}
