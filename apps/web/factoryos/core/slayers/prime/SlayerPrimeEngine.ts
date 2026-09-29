@@ -63,6 +63,7 @@ export class SlayerPrimeEngine {
   private readonly maxIncidents: number;
   private readonly maxEvidencePerIncident: number;
   private readonly stateStore: SlayerPrimeStateStore;
+  private readonly leaseManager?: LeaseManager;
   private readonly leadershipLeaseTtlMs: number;
   private readonly leadershipRenewIntervalMs: number;
 
@@ -82,6 +83,7 @@ export class SlayerPrimeEngine {
     this.incidentTtlMs = options.incidentTtlMs ?? 10 * 60_000;
     this.maxIncidents = options.maxIncidents ?? 1000;
     this.maxEvidencePerIncident = options.maxEvidencePerIncident ?? 64;
+    this.leaseManager = leaseManager;
     this.stateStore = options.stateStore || new InMemorySlayerPrimeStateStore();
     this.leadershipLeaseTtlMs = options.leadershipLeaseTtlMs ?? 15_000;
     this.leadershipRenewIntervalMs = options.leadershipRenewIntervalMs ?? 5_000;
@@ -272,8 +274,7 @@ export class SlayerPrimeEngine {
     let normalizedParameters = { ...parameters };
     if (action === "REVOKE_LEASE" && this.leaseTaskId(normalizedParameters)) {
       const taskId = String(normalizedParameters.taskId);
-      const leaseManager = this.extractLeaseManager();
-      const current = leaseManager ? await leaseManager.getLease(taskId) : null;
+      const current = this.leaseManager ? await this.leaseManager.getLease(taskId) : null;
       if (current) {
         normalizedParameters = {
           ...normalizedParameters,
@@ -569,19 +570,6 @@ export class SlayerPrimeEngine {
 
   private leaseTaskId(parameters: Record<string, unknown>): string | null {
     return parameters.taskId ? String(parameters.taskId) : null;
-  }
-
-  private extractLeaseManager(): LeaseManager | undefined {
-    const adapter = this.actionExecutorAdapter();
-    return adapter instanceof LeaseRevokeEnforcementAdapter ? this.readPrivateLeaseManager(adapter) : undefined;
-  }
-
-  private actionExecutorAdapter(): unknown {
-    return (this.actionExecutor as unknown as { adapters?: unknown[] }).adapters?.[0];
-  }
-
-  private readPrivateLeaseManager(adapter: LeaseRevokeEnforcementAdapter): LeaseManager | undefined {
-    return (adapter as unknown as { leaseManager?: LeaseManager }).leaseManager;
   }
 
   private fingerprint(floorId: string, targetId: string, category: string): string {
