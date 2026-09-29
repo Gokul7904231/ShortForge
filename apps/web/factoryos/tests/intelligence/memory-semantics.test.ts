@@ -99,7 +99,7 @@ describe("ShortForge learned-memory semantics", () => {
     expect(second[0].contradictedCount).toBe(1);
   });
 
-  it("keeps dirty state until targeted consolidation finishes", () => {
+  it("keeps dirty state until targeted consolidation finishes", async () => {
     const store = new InMemoryMemoryObservationStore();
     const consolidator = new MemoryObservationConsolidator(store);
     consolidator.markDirty("mission-2", "new_event", "2026-09-29T00:00:00.000Z");
