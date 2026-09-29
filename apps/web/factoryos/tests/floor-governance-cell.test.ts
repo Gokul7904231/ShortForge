@@ -7,6 +7,7 @@ import { JointHealingSessionManager } from "../core/governance/JointHealingSessi
 import { ResolutionGate } from "../core/governance/ResolutionGate";
 import { RepairLockManager } from "../core/healers/RepairLockManager";
 import type { ActionProposal, AuthorizationGrant } from "../core/governance/FloorGovernanceContracts";
+import { AscalonInferenceAdmissionGate } from "../core/governance/AscalonInferenceAdmission";
 
 const FLOOR = "floor04_media_synthesis";
 
@@ -417,7 +418,7 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       actionGraph: graph,
       ascalon: new ProposalOnlyAscalonAdapter(async () => null),
       capabilities: ["floor.read"],
-      ascalonAdmission: new (require("../core/governance/AscalonInferenceAdmission").AscalonInferenceAdmissionGate)(
+      ascalonAdmission: new AscalonInferenceAdmissionGate(
         0.7,
         new Set(["ascalon-test-v1"]),
       ),
