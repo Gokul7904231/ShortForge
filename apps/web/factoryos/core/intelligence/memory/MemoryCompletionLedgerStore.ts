@@ -28,12 +28,25 @@ export class JsonMemoryCompletionLedgerStore implements MemoryCompletionLedgerSt
 
   public load(): readonly MemoryGateRecord[] {
     if (!fs.existsSync(this.filePath)) return [];
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
-      return Array.isArray(parsed) ? parsed.filter(this.isGateRecord) : [];
-    } catch {
-      return [];
+      parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
+    } catch (error) {
+      throw new Error(
+        "[MemoryCompletionLedgerStore] proof ledger is unreadable: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     }
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("[MemoryCompletionLedgerStore] proof ledger root must be an array");
+    }
+
+    const gates = parsed.filter(this.isGateRecord);
+    if (gates.length !== parsed.length) {
+      throw new Error("[MemoryCompletionLedgerStore] proof ledger contains invalid gate records");
+    }
+    return gates;
   }
 
   public save(gates: readonly MemoryGateRecord[]): void {
