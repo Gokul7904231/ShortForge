@@ -183,15 +183,15 @@ export class MemoryObservationConsolidator {
           contradicting.add(input.memoryId);
           contradictedCount += 1;
           changeType = "CONTRADICTED";
-          statement = observation.statement + " [later evidence: " + input.statement + "]";
+          statement = observation.statement;
         } else if (relation === "EXTENDS") {
           supporting.add(input.memoryId);
           changeType = "EXTENDED";
-          statement = observation.statement + "; " + input.statement;
+          statement = observation.statement;
         } else if (relation === "SUPERSEDES") {
           supporting = new Set([input.memoryId]);
           changeType = "SUPERSEDED";
-          statement = input.statement + " (supersedes the prior observation)";
+          statement = input.statement;
         } else {
           supporting.add(input.memoryId);
           statement = observation.statement;
