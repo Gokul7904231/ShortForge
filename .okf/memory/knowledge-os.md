@@ -136,3 +136,27 @@ A memory artifact can become more useful without becoming more authoritative. Pr
 Efficiency rule: prefer `event -> affected scope -> dirty mark -> bounded consolidation -> rate-limited refresh` rather than a full reflection rebuild after every write. Failed refreshes must enter bounded retry/backoff.
 
 Compatibility rule: Hindsight is treated as research/reference architecture, not as a required ShortForge persistence layer. Any future adapter must terminate at the existing MemoryWriter, verification and projection boundaries.
+
+
+## 2026-09-29 Native Hindsight + Unlazy Integration
+
+ShortForge now contains a native learned-memory semantics layer rather than a second memory service.
+
+Runtime API:
+
+`retain -> consolidate -> recall -> reflect`
+
+Implemented components include:
+
+- `MemoryRetentionNormalizer` for source/evidence-preserving fact normalization;
+- `MemoryObservationConsolidator` for evidence-backed evolution, contradiction history and near-duplicate reconciliation;
+- `MemoryConsolidationStrategyRouter` for tag-scoped missions and budget policy with first-match precedence;
+- `MemoryRetrievalEngine` for semantic-adapter / lexical / graph / temporal retrieval with RRF and bounded budgets;
+- `MemoryMentalModelManager` for dirty-state, refresh throttling and full/delta refresh;
+- `MemoryProvenanceGuard` for scope/evidence/freshness/authority protection;
+- `MemoryCompletionLedger` for definition-bound proof, re-verification and explicit handoff;
+- `MemoryLifecycleService` as the composed retain/consolidate/recall/reflect surface.
+
+Unlazy semantics are deliberately absorbed as proof discipline, not as an executable runtime dependency. Hindsight semantics are deliberately absorbed as memory behavior, not as an additional database.
+
+Permanent boundary: `LEARNING != PROOF`.
