@@ -5,6 +5,45 @@
 > **Status:** LOCKED DIRECTION  
 > **Scope:** Overseer, ShortForge Cognitive Layer, worker cognition, performance architecture, and Devourer.
 
+## Ascalon Epistemic Runtime — 2026-09-29
+
+**Classification:** extends existing rule + new capability
+
+**Decision:** Introduce the **Ascalon Epistemic Runtime (AER)** as a target cognitive infrastructure layer inside the ShortForge Cognitive Layer. AER manages the epistemic state surrounding production problems before deep Ascalon reasoning is invoked.
+
+AER shall answer what is known, inferred, unknown, contradictory, stale, or unresolved; maintain competing hypotheses; identify useful evidence and probes; assess impact; and recommend the least expensive admissible cognitive mode.
+
+AER shall provide Ascalon a bounded, provenance-backed `EpistemicContext` containing:
+- current relevant facts and measurement fidelity;
+- uncertainty and its causes;
+- contradictions;
+- hypotheses and investigation history;
+- evidence references;
+- recommended probes;
+- impact and reversibility;
+- cognitive routing recommendation;
+- latency/cost/call budgets;
+- freshness.
+
+**Authority invariant:** AER is advisory. It cannot grant capabilities, mint leases, alter fencing, bypass Guardian, declare F07 success, publish artifacts, change production contracts, or rewrite Ascalon weights.
+
+**Latency invariant:** deterministic measurement first; fast/micro cognition second; deep Ascalon cognition only when material uncertainty and impact justify the cost. Every invocation is bounded by deadlines and budgets. Timeout/unavailability yields `UNRESOLVED` or governed fallback, never fabricated certainty.
+
+**Confidence invariant:** confidence is not truth. Model confidence can guide investigation but cannot establish production authority or physical validity.
+
+**Probe invariant:** AER may propose probes; probe execution remains subject to capability registration, Guardian authorization, lease/fencing and existing runtime controls.
+
+**Learning invariant:** prediction → probe → outcome relationships may feed the Ascalon/Devourer training and evaluation pipeline only after provenance and eligibility checks. Promotion remains governed.
+
+**Implementation boundary:** first implementation is shadow-only and reuses existing WorldState, ContextCompiler, DecisionEngine/Contracts, Capability Registry, Guardian/Slayer/Healer, physical verification/F07, and trajectory governance. AER does not introduce a second scheduler or authority plane.
+
+**Validation required before production influence:** deterministic-first tests, contract validation, timeout/fail-closed tests, contradiction/adversarial evidence tests, shadow replay, probe usefulness measurement, calibration analysis, latency/cost measurement, security review, and canary evidence.
+
+Canonical documents:
+- `.okf/intelligence/aer.md`
+- `docs/ascalon/epistemic-runtime.md`
+- `.okf/decisions/ascalon-epistemic-runtime-20260929.md`
+
 ## 1. Purpose
 
 This file is the root-level decision ledger for the current locked direction of ShortForge cognition and performance.
