@@ -12,6 +12,8 @@ import type {
 
 export interface AEREpisodeRecord {
   readonly episodeId: string;
+  readonly assessmentCount: number;
+  readonly assessmentAttempts: number;
   readonly recordedAt: string;
   readonly uncertaintyEncountered: boolean;
   readonly aerInvoked: boolean;
@@ -37,10 +39,13 @@ export interface AEREpisodeRecord {
   readonly provider?: string;
   readonly baselineMode?: EpistemicCognitiveMode;
   readonly actualMode?: EpistemicCognitiveMode;
+  readonly outcomeMode?: EpistemicCognitiveMode;
 }
 
 interface MutableAEREpisodeRecord {
   episodeId: string;
+  assessmentCount: number;
+  assessmentAttempts: number;
   recordedAt: string;
   uncertaintyEncountered: boolean;
   aerInvoked: boolean;
@@ -66,6 +71,7 @@ interface MutableAEREpisodeRecord {
   provider?: string;
   baselineMode?: EpistemicCognitiveMode;
   actualMode?: EpistemicCognitiveMode;
+  outcomeMode?: EpistemicCognitiveMode;
 }
 
 export interface AERMetricSnapshot {
@@ -131,6 +137,8 @@ export class AERMetricsRecorder {
 
     this.episodes.set(input.episodeId, {
       episodeId: input.episodeId,
+      assessmentCount: 0,
+      assessmentAttempts: 0,
       recordedAt: input.recordedAt ?? new Date().toISOString(),
       uncertaintyEncountered: input.uncertaintyEncountered ?? false,
       aerInvoked: input.aerInvoked,
@@ -169,10 +177,12 @@ export class AERMetricsRecorder {
 
     const episode = this.requireEpisode(input.episodeId);
     episode.aerInvoked = true;
-    episode.uncertaintyEncountered = input.uncertaintyEncountered;
+    episode.assessmentCount += 1;
+    episode.assessmentAttempts += 1;
+    episode.uncertaintyEncountered ||= input.uncertaintyEncountered;
     episode.routedMode = input.routedMode;
-    episode.ascalonEscalationRecommended = input.ascalonEscalationRecommended;
-    episode.aerLatencyMs = Math.max(0, input.aerLatencyMs);
+    episode.ascalonEscalationRecommended ||= input.ascalonEscalationRecommended;
+    episode.aerLatencyMs += Math.max(0, input.aerLatencyMs);
     episode.costUnits += Math.max(0, input.assessmentCostUnits ?? 0);
   }
 
@@ -268,6 +278,8 @@ export class AERMetricsRecorder {
     }
 
     const episode = this.requireEpisode(receipt.episodeId);
+    episode.outcomeMode = episode.routedMode;
+
     const resolved =
       receipt.status === "RESOLVED" &&
       receipt.evidenceRefs.length > 0 &&
@@ -301,7 +313,9 @@ export class AERMetricsRecorder {
     const resolvedRecords = uncertaintyRecords.filter((record) => record.resolvedUncertainty === true);
     const reassuranceOutcomes = records.filter((record) => record.falseReassurance !== undefined);
     const ascalonOutcomes = ascalonRecords.filter((record) => record.ascalonWasNecessary !== undefined);
-    const aerLatencies = aerRecords.map((record) => record.aerLatencyMs).filter((value) => value > 0);
+    const aerLatencies = aerRecords
+      .map((record) => record.assessmentCount > 0 ? record.aerLatencyMs / record.assessmentCount : 0)
+      .filter((value) => value > 0);
     const ascalonLatencies = ascalonRecords
       .map((record) => record.ascalonLatencyMs ?? 0)
       .filter((value) => value > 0);
@@ -396,7 +410,7 @@ export class AERMetricsRecorder {
   } {
     const records = [...this.episodes.values()].filter(
       (record) =>
-        record.routedMode === mode &&
+        (record.outcomeMode ?? record.routedMode) === mode &&
         record.uncertaintyEncountered &&
         record.resolvedUncertainty !== undefined,
     );
