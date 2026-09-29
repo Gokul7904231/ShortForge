@@ -127,6 +127,11 @@ export class EpistemicStateEngine {
         expectedValue: 0,
         shouldInvokeAscalon: false,
         estimatedCostUnits: 0,
+        expectedBenefit: 0,
+        expectedCost: 0,
+        uncertaintyBurden: 0,
+        baselineMode: "DETERMINISTIC",
+        expectedValueSource: "UNAVAILABLE",
         budget: {
           maxTimeMs: 0,
           maxCallsRemaining: 0,
