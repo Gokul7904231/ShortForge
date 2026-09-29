@@ -26,6 +26,7 @@ Prime authority is represented by shared state, and a mutation must carry the cu
 | Clock skew | Wall-clock disagreement | Lease expiry still depends on store timestamps; future distributed lease service should use authoritative/monotonic server semantics | Partial |
 | State rollback | Former DB primary exposes stale data | Mongo Prime collections use primary routing and majority read/write concerns; leadership proof uses bounded linearizable read | Implemented in Mongo store |
 | Event replay | Same observation/event delivered twice | Incident fingerprinting and idempotency keys | Implemented locally; durable replay transport pending |
+| Safety-index loss | Unique indexes fail or are unavailable | Mongo store readiness rejects the entire coordination path instead of running without duplicate barriers | Implemented |
 
 ## Required production topology
 
