@@ -19,7 +19,19 @@ import { FloorCouncil } from "./FloorCouncil";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import { AscalonInferenceAdmissionGate } from "./AscalonInferenceAdmission";
 
+export interface AscalonPreCallHandle extends AscalonPreCallAdmission {
+  commit(): Promise<boolean> | boolean;
+  release(): Promise<boolean> | boolean;
+}
+
 export interface AscalonPreCallGate {
+  prepare?(input: {
+    readonly snapshot: FloorSnapshot;
+    readonly availableActions: readonly string[];
+    readonly verifiedEvidenceRefs: readonly string[];
+    readonly scopeKey: string;
+  }): Promise<AscalonPreCallHandle> | AscalonPreCallHandle;
+
   evaluate(input: {
     readonly snapshot: FloorSnapshot;
     readonly availableActions: readonly string[];
@@ -156,12 +168,23 @@ export class FloorGovernanceCell {
       .flatMap((entry) => entry.evidenceRefs);
 
     let preCallAdmission: AscalonPreCallAdmission | undefined;
+    let preCallHandle: AscalonPreCallHandle | undefined;
     if (this.ascalonPreCallGate) {
-      preCallAdmission = await this.ascalonPreCallGate.evaluate({
-        snapshot,
-        availableActions,
-        verifiedEvidenceRefs,
-      });
+      if (this.ascalonPreCallGate.prepare) {
+        preCallHandle = await this.ascalonPreCallGate.prepare({
+          snapshot,
+          availableActions,
+          verifiedEvidenceRefs,
+          scopeKey: `floor:${snapshot.floorId}`,
+        });
+        preCallAdmission = preCallHandle;
+      } else {
+        preCallAdmission = await this.ascalonPreCallGate.evaluate({
+          snapshot,
+          availableActions,
+          verifiedEvidenceRefs,
+        });
+      }
 
       if (!preCallAdmission.admitted) {
         this.blackboard.append(
@@ -178,12 +201,22 @@ export class FloorGovernanceCell {
       }
     }
 
-    const proposal = await this.ascalon.proposeNext({
-      snapshot,
-      availableActions,
-      evidenceRefs: verifiedEvidenceRefs,
-      preCallAdmission,
-    });
+    let proposal: ActionProposal | null = null;
+    try {
+      proposal = await this.ascalon.proposeNext({
+        snapshot,
+        availableActions,
+        evidenceRefs: verifiedEvidenceRefs,
+        preCallAdmission,
+      });
+    } catch (error) {
+      if (preCallHandle) await preCallHandle.release();
+      throw error;
+    }
+
+    if (preCallHandle) {
+      await (proposal ? preCallHandle.commit() : preCallHandle.release());
+    }
 
     if (!proposal) return null;
 
