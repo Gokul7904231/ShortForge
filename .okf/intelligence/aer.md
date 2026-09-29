@@ -29,6 +29,10 @@ Implemented foundation components:
 - `EpistemicCache.ts`
 - `EpistemicLedger.ts`
 - `AEREngine.ts`
+- `AERExecutionFabricBridge.ts`
+- `AERShadowReplay.ts`
+- `AERPolicyPromotionGate.ts`
+- `AEREpisodeTelemetry.ts`
 
 Current capability boundary:
 - builds typed epistemic state;
@@ -41,7 +45,7 @@ Current capability boundary:
 - produces a shadow/advisory Ascalon handoff;
 - supports trigger suppression, hypothesis updates, cache identity, and tamper-evident in-memory ledgering.
 
-The current implementation does **not** execute probes, call a production Ascalon checkpoint, grant authority, or alter floor execution. Fresh CI, security checks, shadow replay, calibration and production admission remain required.
+AER does **not** execute probes directly or call a production Ascalon checkpoint. The concrete `AERExecutionFabricBridge` delegates probe execution through the existing Agent Execution Fabric, while fresh CI, security checks, shadow replay, calibration and production admission remain required.
 
 ## 1. Purpose
 
