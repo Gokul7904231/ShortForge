@@ -85,8 +85,8 @@
     },
     {
       "capabilityId": "cap_timeline_mux",
-      "version": "2.0.0",
-      "name": "Timeline Composition & Reference Render Execution",
+      "version": "2.1.0",
+      "name": "Timeline Composition, Canonical IR & Reference Evidence",
       "floorId": "floor05_timeline_composition",
       "riskClass": "MEDIUM",
       "allowedRoles": [
@@ -95,7 +95,29 @@
       ],
       "requiresGuardianGate": true,
       "timeoutMs": 300000,
-      "trainingEligible": true
+      "trainingEligible": true,
+      "proposalBoundary": "NON_AUTHORITATIVE",
+      "executionAuthority": "GUARDIAN",
+      "requiredWorkerCapability": "CAP_TIMELINE_COMPILE",
+      "sideEffects": [
+        "TIMELINE_REGISTRY_WRITE",
+        "LOCAL_REFERENCE_RENDER_EVIDENCE",
+        "TIMELINE_IR_EVIDENCE",
+        "WEBVTT_EVIDENCE"
+      ],
+      "mustNotGrant": [
+        "CAP_RENDER_DISPATCH",
+        "CAP_DELIVERY_PUBLISH",
+        "F07_RELEASE_AUTHORITY"
+      ],
+      "trainingSignals": [
+        "transition_intent",
+        "caption_intent",
+        "rational_frame_ranges",
+        "plan_fingerprint_lineage",
+        "guardian_authorization_evidence",
+        "render_replay_identity"
+      ]
     },
     {
       "capabilityId": "cap_render_dispatch",
