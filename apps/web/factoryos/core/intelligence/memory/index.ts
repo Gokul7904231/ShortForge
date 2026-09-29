@@ -10,3 +10,5 @@ export * from "./KnowledgeStoreObservationAdapter";
 export * from "./MemoryLifecycleService";
 export * from "./MemoryConsolidationStrategyRouter";
 export * from "./MemoryRetentionNormalizer";
+export * from "./MemoryMentalModelStore";
+export * from "./KnowledgeStoreMentalModelAdapter";
