@@ -801,7 +801,7 @@ export class OverseerControlPlane {
             startedAt,
             completedAt,
             strategyPayload?.handoff_status === "VALIDATED",
-            [executionId, strategyPayload?.plan_id || executionId],
+            [executionId, String(strategyPayload?.plan_id || executionId)],
           ),
         });
         return { status: "OK", floor: "floor01_strategy", output: strategyPayload, executionTimeMs };
