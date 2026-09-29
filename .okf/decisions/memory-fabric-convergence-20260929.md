@@ -48,6 +48,8 @@ Guardian / Overseer = execution authority
 11. Derived lexical/entity/graph indexes are cached from the canonical KnowledgeStore and relations. They are indexes, not a second memory authority.
 12. Evidence-aware consolidation deduplicates evidence identities, preserves typed contradiction state, and avoids textual contradiction concatenation.
 13. Memory-backed epistemic evidence is bridged into AER without granting runtime authority.
+14. Retention is classified before fact extraction: `DO_NOT_LEARN` is rejected, high-risk PII is `TEMPORARY` and is not admitted to durable learned memory, and only `DURABLE` retention reaches the canonical long-lived consolidator.
+15. Memory gate proof contracts may carry F07 receipt anchors; unkeyed definition/evidence digests are not treated as cryptographic authority.
 
 ## Research-derived constraints
 
