@@ -180,6 +180,11 @@ export class OverseerControlPlane {
     });
   }
 
+  /** Record the pre-execution success prediction used for verified trajectory learning. */
+  recordTrajectoryPrediction(missionId: string, predictedSuccess: boolean): void {
+    this.trajectoryCollector.setPrediction(missionId, predictedSuccess);
+  }
+
   async resumeMissionExecution(missionId: string): Promise<void> {
     if (!this.missionManager) return;
     for (const r of this.runs.values()) {
