@@ -393,6 +393,15 @@ export class OverseerControlPlane {
       sharedContext: {
         command: run.command,
         activeCases: (currentState as any).activeCaseIds?.length || 0,
+        // Autonomous production dispatch has a deterministic operational intent:
+        // the command has already been accepted as a mission execution request.
+        // Supplying that ground truth prevents an unconfigured advisory LLM from
+        // blocking the production path while preserving the model as advisory.
+        intent:
+          run.mode === "autonomous"
+            ? "EXECUTE_AUTONOMOUS_OPERATION"
+            : undefined,
+        generationRequired: /\\b(short|video|generate)\\b/i.test(run.command),
       },
     });
 
