@@ -28,6 +28,8 @@ export interface AERValueAssessment {
   readonly estimatedLatencyMs: number;
   readonly expectedBenefit: number;
   readonly expectedCost: number;
+  readonly incrementalCostUnits: number;
+  readonly incrementalLatencyMs: number;
   readonly uncertaintyBurden: number;
   readonly baselineMode: EpistemicCognitiveMode;
   readonly baselineResolutionProbability: number;
@@ -102,10 +104,20 @@ export function evaluateAscalonValue(
     incrementalResolutionProbability *
     (resolutionUtility + unresolvedPenalty);
 
+  const incrementalCostUnits = Math.max(
+    0,
+    Math.max(0, policy.ascalon.costUnits) -
+      Math.max(0, policy.baseline.costUnits),
+  );
+  const incrementalLatencyMs = Math.max(
+    0,
+    Math.max(0, policy.ascalon.latencyMs) -
+      Math.max(0, policy.baseline.latencyMs),
+  );
   const weightedComputeCost =
-    Math.max(0, policy.ascalon.costUnits) * Math.max(0, policy.costWeight ?? 0.1);
+    incrementalCostUnits * Math.max(0, policy.costWeight ?? 0.1);
   const weightedLatencyCost =
-    (Math.max(0, policy.ascalon.latencyMs) / 1000) *
+    (incrementalLatencyMs / 1000) *
     Math.max(0, policy.latencyWeight ?? 0.01);
   const expectedCost = uncertaintyBurden * (weightedComputeCost + weightedLatencyCost);
 
@@ -126,6 +138,8 @@ export function evaluateAscalonValue(
     estimatedLatencyMs: Math.max(0, policy.ascalon.latencyMs),
     expectedBenefit,
     expectedCost,
+    incrementalCostUnits,
+    incrementalLatencyMs,
     uncertaintyBurden,
     baselineMode: policy.baseline.mode,
     baselineResolutionProbability: baselineP,
