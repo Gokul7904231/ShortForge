@@ -51,7 +51,8 @@ export function buildMemoryDerivedIndex(
       documents.map((document) => [
         document.frontmatter.id,
         document.frontmatter.updated_at ?? "",
-        document.content.length,
+        document.frontmatter.sf_source_hash ?? "",
+        createHash("sha256").update(document.content, "utf8").digest("hex"),
         document.frontmatter.scope_key ?? document.frontmatter.sf_observation_scope ?? "",
       ].join("|")).sort().join("\n") +
       "\nRELATIONS\n" +
