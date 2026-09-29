@@ -76,11 +76,11 @@ describe("ShortForge learned-memory semantics", () => {
     const store = new InMemoryMemoryObservationStore();
     const consolidator = new MemoryObservationConsolidator(store);
 
-    const first = consolidator.consolidate([input("m1", "F06 uses AMD VAAPI")]);
+    const first = await consolidator.consolidate([input("m1", "F06 uses AMD VAAPI")]);
     expect(first[0].createdCount).toBe(1);
 
     const observationId = first[0].observationIds[0];
-    const second = consolidator.consolidate([
+    const second = await consolidator.consolidate([
       input("m2", "F06 uses AMD VAAPI", {
         type: "SUPPORTS",
         observationId,
@@ -105,7 +105,7 @@ describe("ShortForge learned-memory semantics", () => {
     consolidator.markDirty("mission-2", "new_event", "2026-09-29T00:00:00.000Z");
     expect(consolidator.dirtyScopes().has("mission-2")).toBe(true);
 
-    consolidator.consolidate([
+    await consolidator.consolidate([
       { ...input("m4", "new evidence"), scope: { kind: "MISSION", key: "mission-2" } },
     ]);
     expect(consolidator.dirtyScopes().has("mission-2")).toBe(false);
