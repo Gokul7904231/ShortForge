@@ -1798,3 +1798,30 @@ Background reflection is an AER computation with a trigger, affected scope, info
 - LongMemEval-V2: https://arxiv.org/abs/2605.12493
 - MemForest: https://arxiv.org/abs/2605.23986
 - Agent Zero Memory: https://arxiv.org/abs/2608.29606
+
+
+## 2026-09-29 Native Memory Semantics Integration
+
+AER now has a native learned-memory substrate behind the existing Memory Fabric.
+
+Before an AER episode is evaluated, memory can be handled as:
+
+`retain -> consolidate -> recall -> reflect -> epistemic state`
+
+`MemoryProvenanceGuard` is the trust boundary for retrieved memory, while `MemoryFabricProjection` applies it before Agent/Ascalon projection.
+
+The memory system supplies:
+
+- four-channel retrieval with bounded RRF/reranking;
+- observation evolution with contradiction history and evidence lineage;
+- mental-model refresh throttling and dirty-state tracking;
+- scope isolation and per-scope consolidation strategy;
+- proof-state semantics separate from learning state.
+
+These are cognitive inputs to AER, not new execution authority. AER remains the epistemic/economic layer and delegates execution to AEF. Ascalon remains behind canonical admission and governance.
+
+### New implementation status
+
+Foundation modules and regression coverage are present on `feat/aer-cost-optimization`. Production promotion still requires fresh CI, security validation, real semantic retrieval measurements, shadow replay, and end-to-end evidence.
+
+Canonical integration spec: `.okf/memory/hindsight-unlazy-native-system.md`.
