@@ -110,7 +110,10 @@ export class MemoryRetrievalEngine {
         lexicalScore,
         graphScore,
         temporalScore,
-        rerankScore: rrf,
+        // RRF remains the retrieval backbone; quality/freshness are deterministic
+        // safety priors that break ties without pretending to be semantic relevance.
+        rerankScore: rrf + this.number(document.frontmatter.sf_memory_quality_score, 0.8) * 0.005 +
+          (freshness.state === "FRESH" ? 0.002 : freshness.state === "SLIGHTLY_STALE" ? 0.001 : 0),
         channelRanks: {
           semantic: channelRanks.semantic.get(id),
           lexical: channelRanks.lexical.get(id),
