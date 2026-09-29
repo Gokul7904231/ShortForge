@@ -32,6 +32,8 @@ import type {
 } from "./MemoryFabricContracts";
 import { MemoryFabricProjectionService } from "./MemoryFabricProjection";
 import { MemoryRetentionNormalizer } from "./MemoryRetentionNormalizer";
+import { MemoryLifecycleService } from "./MemoryLifecycleService";
+import { KnowledgeStoreObservationAdapter } from "./KnowledgeStoreObservationAdapter";
 import type { MemoryRetrievalEngineOptions } from "./MemoryRetrievalEngine";
 import type { MemoryAccessContext } from "./MemorySemanticsContracts";
 
@@ -45,6 +47,11 @@ export interface MemoryFabricBridgeConfig {
   readonly candidateMaxChars?: number;
   readonly watchedCollections?: readonly string[];
   readonly retrievalOptions?: MemoryRetrievalEngineOptions;
+  /**
+   * Explicit Ascalon projection principal/scopes. Without this, no generated
+   * Ascalon projection is produced.
+   */
+  readonly ascalonAccessContext?: MemoryAccessContext;
 }
 
 const DEFAULT_COLLECTIONS = [
@@ -108,6 +115,8 @@ export class MemoryFabricBridge {
   private readonly watchedCollections: ReadonlySet<string>;
   private readonly projectionService: MemoryFabricProjectionService;
   private readonly retentionNormalizer = new MemoryRetentionNormalizer();
+  private readonly memoryLifecycle: MemoryLifecycleService;
+  private readonly ascalonAccessContext?: MemoryAccessContext;
 
   private running = false;
   private unsubscribeEventBus?: () => void;
@@ -132,6 +141,7 @@ export class MemoryFabricBridge {
     private readonly ledger: IMemoryFabricLedger,
     private readonly mongoDb?: Db | null,
     config: MemoryFabricBridgeConfig = {},
+    memoryLifecycle?: MemoryLifecycleService,
   ) {
     this.enabled = config.enabled !== false;
     this.vaultPath = path.resolve(config.vaultPath || knowledgeStore.getRootDir());
@@ -148,6 +158,16 @@ export class MemoryFabricBridge {
       this.memoryWriter,
       config.retrievalOptions,
     );
+    this.memoryLifecycle =
+      memoryLifecycle ??
+      new MemoryLifecycleService(
+        () => this.knowledgeStore.list(),
+        new KnowledgeStoreObservationAdapter(this.knowledgeStore),
+        undefined,
+        undefined,
+        undefined,
+      );
+    this.ascalonAccessContext = config.ascalonAccessContext;
 
     if (!this.enabled) {
       this.mode = "DISABLED";
@@ -344,7 +364,12 @@ export class MemoryFabricBridge {
     maxChars = 24000,
     accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
-    return this.projectionService.projectForAscalon(query, maxItems, maxChars, accessContext);
+    return this.projectionService.projectForAscalon(
+      query,
+      maxItems,
+      maxChars,
+      accessContext ?? this.ascalonAccessContext,
+    );
   }
 
   async getHealth(): Promise<MemoryFabricHealth> {
@@ -578,7 +603,13 @@ export class MemoryFabricBridge {
       sourceId: record.sourceId,
       sourceHash: record.sourceHash,
     });
-    const primaryFact = retainedFacts[0];
+    const retainedEvidenceRefs = [...new Set(
+      retainedFacts.flatMap((fact) => fact.evidenceRefs.map((evidence) => evidence.id)),
+    )];
+    const retainedEntityRefs = [...new Set(
+      retainedFacts.flatMap((fact) => [...(fact.entityRefs ?? [])]),
+    )];
+    await this.memoryLifecycle.retainMany(retainedFacts);
     const classification = this.classifyCandidate(record, payload);
     const body = [
       "# " + classification.title,
@@ -590,6 +621,12 @@ export class MemoryFabricBridge {
       "- Raw observation: [[" + raw.frontmatter.id + "]]",
       "- Source hash: " + record.sourceHash,
       record.correlationId ? "- Correlation: " + record.correlationId : "",
+      "",
+      "## Retained facts",
+      ...retainedFacts.flatMap((fact, index) => [
+        "### Fact " + (index + 1),
+        fact.statement,
+      ]),
       "",
       "## Structured payload",
       "",
@@ -616,7 +653,7 @@ export class MemoryFabricBridge {
         statement: record.summary,
         changedAt: record.occurredAt,
         changeType: "CREATED",
-        evidenceRefs: [raw.frontmatter.id, ...(primaryFact?.evidenceRefs.map((evidence) => evidence.id) ?? [])],
+        evidenceRefs: [raw.frontmatter.id, ...retainedEvidenceRefs],
       }],
       sf_authority_class: "UNKNOWN",
       title: classification.title,
@@ -635,7 +672,6 @@ export class MemoryFabricBridge {
       sf_conflict_group: conflictGroup,
       sf_occurred_at: record.occurredAt,
       sf_valid_from: record.occurredAt,
-      stale_after: new Date(new Date(record.occurredAt).getTime() + 30 * 86400000).toISOString(),
       created_at: record.createdAt,
       updated_at: new Date().toISOString(),
       tags: ["shortforge", "memory-fabric", "candidate", classification.type],
@@ -651,8 +687,8 @@ export class MemoryFabricBridge {
         path: record.sourceCollection,
         captured_at: record.capturedAt,
       },
-      evidence_refs: [raw.frontmatter.id, ...(primaryFact?.evidenceRefs.map((evidence) => evidence.id) ?? [])],
-      entity_refs: primaryFact?.entityRefs,
+      evidence_refs: [raw.frontmatter.id, ...retainedEvidenceRefs],
+      entity_refs: retainedEntityRefs,
       training_eligible: false,
     };
 
@@ -1018,8 +1054,14 @@ export class MemoryFabricBridge {
 
   private async refreshAscalonProjection(): Promise<void> {
     if (!this.running || !this.enabled) return;
+    if (!this.ascalonAccessContext) return;
 
-    const projection = await this.projectionService.projectForAscalon("", 64, 30000);
+    const projection = await this.projectionService.projectForAscalon(
+      "",
+      64,
+      30000,
+      this.ascalonAccessContext,
+    );
     const dir = path.join(this.vaultPath, "obsidian", "generated", "ascalon");
     const file = path.join(dir, "ACTIVE_MEMORY_PROJECTION.md");
 
