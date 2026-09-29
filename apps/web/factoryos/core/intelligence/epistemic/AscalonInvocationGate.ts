@@ -74,6 +74,19 @@ export class AscalonInvocationGate {
       };
     }
 
+    if (
+      recommendation.budget.maxTimeMs < recommendation.estimatedLatencyMs ||
+      recommendation.estimatedLatencyMs > recommendation.deadlineMs
+    ) {
+      return {
+        admitted: false,
+        reason: "ascalon_latency_budget_insufficient",
+        contextFingerprint: context.contextFingerprint,
+        expectedValue: recommendation.expectedValue,
+        estimatedCostUnits: recommendation.estimatedCostUnits,
+      };
+    }
+
     if (recommendation.budget.maxCostUnits < recommendation.estimatedCostUnits) {
       return {
         admitted: false,
