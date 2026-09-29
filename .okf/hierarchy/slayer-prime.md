@@ -100,6 +100,18 @@ Leadership can change between any two steps, so the executor rechecks authority 
 
 The design follows established distributed-systems patterns: Kubernetes leader election uses a shared Lease with optimistic concurrency; etcd transactions provide atomic compare-and-set-style concurrency control and monotonically increasing revisions; fencing tokens prevent delayed or resurrected clients from writing under stale ownership; durable event histories allow recovery after worker/process failure. These patterns are reflected here without claiming that Prime itself is a consensus protocol.
 
+## Distributed-safety model
+
+The critical enforcement path is deliberately ordered as:
+
+authority check -> current leadership check -> action reservation -> current action-lease check -> adapter mutation -> independent postcondition.
+
+Leadership is checked immediately before mutation because authorization and leadership can become stale while a process is paused or a network call is delayed.
+
+This follows established distributed-systems patterns: Kubernetes leader election uses shared Leases with optimistic concurrency; etcd provides atomic compare-and-set-style transactions and monotonic revisions; fencing tokens prevent delayed or resurrected clients from writing under stale ownership; durable execution systems retain progress outside the worker process so another process can reconstruct state after failure.
+
+Prime is not itself a consensus protocol. The safety of multi-host coordination depends on the guarantees of its backing state store.
+
 ## Incident storm control
 
 Repeated observations with the same floor/target/category fingerprint are merged into one logical incident within the incident TTL. This prevents repeated patrol ticks from creating an enforcement storm.
