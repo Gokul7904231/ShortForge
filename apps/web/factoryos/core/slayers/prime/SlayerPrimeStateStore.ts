@@ -190,6 +190,7 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
     ttlMs: number,
     leadershipEpoch: number
   ): Promise<SlayerActionLease | null> {
+    await this.ready;
     if (!(await this.isLeadershipCurrent(holderId, leadershipEpoch))) return null;
 
     const existing = Array.from(this.actionLeases.values()).find(
@@ -525,6 +526,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async load(): Promise<SlayerPrimeStateSnapshot> {
+    await this.ready;
     const [incidents, intents, receipts, actionLeases, leadership] = await Promise.all([
       this.incidents.find({}).toArray(),
       this.intents.find({}).toArray(),
@@ -551,10 +553,12 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async upsertIncident(incident: SlayerIncident): Promise<void> {
+    await this.ready;
     await this.incidents.replaceOne({ incidentId: incident.incidentId }, clone(incident), { upsert: true });
   }
 
   async createIntentIfAbsent(intent: SlayerActionIntent): Promise<{ created: boolean; intent: SlayerActionIntent }> {
+    await this.ready;
     try {
       await this.intents.insertOne(clone(intent));
       return { created: true, intent: clone(intent) };
@@ -570,10 +574,12 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async upsertReceipt(receipt: SlayerEnforcementReceipt): Promise<void> {
+    await this.ready;
     await this.receipts.replaceOne({ receiptId: receipt.receiptId }, clone(receipt), { upsert: true });
   }
 
   async acquireLeadership(holderId: string, ttlMs: number): Promise<SlayerPrimeLeadershipLease | null> {
+    await this.ready;
     const now = new Date();
     let result: MongoLeadershipDoc | null = null;
     try {
@@ -612,6 +618,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async renewLeadership(lease: SlayerPrimeLeadershipLease, ttlMs: number): Promise<SlayerPrimeLeadershipLease | null> {
+    await this.ready;
     const now = new Date();
     const result = await this.leadership.findOneAndUpdate(
       { _id: "singleton", leaseId: lease.leaseId, holderId: lease.holderId, epoch: lease.epoch },
@@ -634,6 +641,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async releaseLeadership(lease: SlayerPrimeLeadershipLease): Promise<void> {
+    await this.ready;
     await this.leadership.updateOne(
       {
         _id: "singleton",
@@ -651,6 +659,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async isLeadershipCurrent(holderId: string, epoch: number): Promise<boolean> {
+    await this.ready;
     const now = new Date().toISOString();
     const current = await this.leadership.findOne({
       _id: "singleton",
@@ -715,6 +724,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async getActionLease(actionLeaseId: string): Promise<SlayerActionLease | null> {
+    await this.ready;
     const doc = await this.actionLeases.findOne({ actionLeaseId });
     if (!doc) return null;
     const { _id, ...rest } = doc;
@@ -730,6 +740,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async releaseActionLease(actionLeaseId: string, holderId?: string, fencingToken?: number): Promise<void> {
+    await this.ready;
     const filter: Record<string, unknown> = { actionLeaseId, status: "ACTIVE" };
     if (holderId) filter.holderId = holderId;
     if (fencingToken !== undefined) filter.fencingToken = fencingToken;
@@ -737,6 +748,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   }
 
   async appendJournal(_entry: Omit<PersistedSlayerPrimeJournalEntry, "sequence">): Promise<void> {
+    await this.ready;
     // Prime state is already transactionally represented by the entity collections.
     // The durable event ledger remains a separate runtime concern.
   }
