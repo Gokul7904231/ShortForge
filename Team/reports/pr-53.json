@@ -56,11 +56,12 @@
     "Run Team Change Gate for PR #53.",
     "Merge only after required blocking gates are green."
   ],
-  "disposition": "PENDING_CI",
-  "dispositionRationale": "Runtime reconciliation is complete at source level; final promotion awaits fresh CI evidence.",
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Reconciliation is source-complete, but promotion is blocked until the required Team Change Gate and repository validation evidence are green.",
   "verificationResults": {
     "reconciliation": "PASS — selective port from stale PR #35 onto current main",
     "teamChangeGate": "PENDING",
     "repositoryCI": "PENDING"
-  }
+  },
+  "status": "PROMOTION_BLOCKED_PENDING_VALIDATION"
 }
