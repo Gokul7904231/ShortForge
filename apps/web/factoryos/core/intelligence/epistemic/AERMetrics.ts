@@ -9,6 +9,10 @@ import type {
   AEROutcomeReceipt,
   EpistemicCognitiveMode,
 } from "./EpistemicContracts";
+import type {
+  AEREpisodeTelemetrySink,
+  AEREpisodeTelemetryEventName,
+} from "./AEREpisodeTelemetry";
 
 export interface AEREpisodeRecord {
   readonly episodeId: string;
@@ -129,6 +133,38 @@ function ratio(numerator: number, denominator: number): number {
 
 export class AERMetricsRecorder {
   private readonly episodes = new Map<string, MutableAEREpisodeRecord>();
+
+  public constructor(
+    private readonly telemetrySink?: AEREpisodeTelemetrySink,
+  ) {}
+
+  private emit(
+    episodeId: string,
+    eventName: AEREpisodeTelemetryEventName,
+    attributes: Readonly<Record<string, string | number | boolean | null>> = {},
+    policyVersion = "aer-voi-v2",
+  ): void {
+    if (!this.telemetrySink) return;
+    const eventId =
+      "aer_evt_" +
+      Buffer.from(
+        episodeId + ":" + eventName + ":" + Date.now(),
+        "utf8",
+      ).toString("base64url");
+    try {
+      const result = this.telemetrySink.append({
+        eventId,
+        episodeId,
+        eventName,
+        timestamp: new Date().toISOString(),
+        policyVersion,
+        attributes,
+      });
+      void Promise.resolve(result).catch(() => undefined);
+    } catch {
+      // Telemetry failures must never alter runtime decisions.
+    }
+  }
   private readonly modelUsageIds = new Set<string>();
 
   public recordEvent(input: {
@@ -193,6 +229,12 @@ export class AERMetricsRecorder {
     episode.ascalonEscalationRecommended ||= input.ascalonEscalationRecommended;
     episode.aerLatencyMs += Math.max(0, input.aerLatencyMs);
     episode.costUnits += Math.max(0, input.assessmentCostUnits ?? 0);
+    this.emit(input.episodeId, "aer.assessment", {
+      route: input.routedMode ?? null,
+      uncertainty: input.uncertaintyEncountered,
+      ascalon_requested: input.ascalonEscalationRecommended,
+      latency_ms: Math.max(0, input.aerLatencyMs),
+    });
   }
 
   public recordProbe(input: {
@@ -207,6 +249,12 @@ export class AERMetricsRecorder {
     if (input.executed) episode.probesExecuted += 1;
     if (input.useful) episode.usefulProbes += 1;
     episode.costUnits += Math.max(0, input.costUnits ?? 0);
+    this.emit(input.episodeId, "aer.probe", {
+      planned: input.planned ?? false,
+      executed: input.executed ?? false,
+      useful: input.useful ?? false,
+      cost_units: Math.max(0, input.costUnits ?? 0),
+    });
   }
 
   public recordCacheLookup(input: {
@@ -240,6 +288,14 @@ export class AERMetricsRecorder {
     episode.outputTokens += Math.max(0, input.outputTokens ?? 0);
     episode.reasoningTokens += Math.max(0, input.reasoningTokens ?? 0);
     episode.actualCostUsd += Math.max(0, input.actualCostUsd ?? 0);
+    this.emit(input.episodeId, "aer.model", {
+      provider: input.provider,
+      model: input.modelRef,
+      input_tokens: input.inputTokens ?? 0,
+      output_tokens: input.outputTokens ?? 0,
+      reasoning_tokens: input.reasoningTokens ?? 0,
+      actual_cost_usd: input.actualCostUsd ?? 0,
+    });
   }
 
   public recordShadowComparison(input: {
@@ -254,6 +310,12 @@ export class AERMetricsRecorder {
     episode.baselineMode = input.baselineMode;
     episode.baselineCostUsd = input.baselineCostUsd;
     episode.baselineLatencyMs = input.baselineLatencyMs;
+    this.emit(input.episodeId, "aer.policy_shadow", {
+      actual_mode: input.actualMode,
+      baseline_mode: input.baselineMode,
+      baseline_cost_usd: input.baselineCostUsd ?? null,
+      baseline_latency_ms: input.baselineLatencyMs ?? null,
+    });
   }
 
   public recordAscalonInvocation(input: {
@@ -284,6 +346,14 @@ export class AERMetricsRecorder {
     episode.outputTokens += Math.max(0, input.outputTokens ?? 0);
     episode.reasoningTokens += Math.max(0, input.reasoningTokens ?? 0);
     episode.actualCostUsd += Math.max(0, input.actualCostUsd ?? 0);
+    this.emit(input.episodeId, "aer.model", {
+      provider: input.provider ?? null,
+      model: input.modelRef ?? null,
+      input_tokens: input.inputTokens ?? 0,
+      output_tokens: input.outputTokens ?? 0,
+      reasoning_tokens: input.reasoningTokens ?? 0,
+      actual_cost_usd: input.actualCostUsd ?? 0,
+    });
   }
 
   public recordOutcome(receipt: AEROutcomeReceipt): void {
@@ -329,6 +399,14 @@ export class AERMetricsRecorder {
       }
       episode.ascalonWasNecessary = necessity.verdict === "NECESSARY";
     }
+
+    this.emit(receipt.episodeId, "aer.outcome", {
+      status: receipt.status,
+      authoritative_source: receipt.authoritativeSource,
+      evidence_count: receipt.evidenceRefs.length,
+      verification_ref: receipt.verificationRef,
+      ascalon_claimed_resolved: receipt.ascalonClaimedResolved ?? false,
+    });
   }
 
   public snapshot(): AERMetricSnapshot {
