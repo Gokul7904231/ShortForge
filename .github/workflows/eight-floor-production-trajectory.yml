@@ -128,6 +128,10 @@ jobs:
           FLOOR02_API_KEY: ci-floor02-trajectory-key-20260929
           FLOOR03_RUNTIME_URL: http://127.0.0.1:8103
           FLOOR03_SERVICE_API_KEY: ci-floor03-trajectory-key-20260929
+          # The proof uses the same durable F03 handoff abstraction with an explicit
+          # disk-backed backend; production defaults to Firestore when this variable is absent.
+          FACTORYOS_F03_HANDOFF_STORE: LOCAL
+          FLOOR03_HANDOFF_STORE_PATH: ${{ runner.temp }}/floor03-handoffs.json
           # Keep the F04 path deterministic when no live neural-TTS credential is present.
           # The resulting audio is physically generated and verified, but remains explicitly
           # classified as degraded fallback by VoiceFabric rather than masquerading as PRIMARY.
