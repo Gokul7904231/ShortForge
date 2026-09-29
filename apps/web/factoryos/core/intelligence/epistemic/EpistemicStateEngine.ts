@@ -5,6 +5,7 @@ import type {
   EpistemicHypothesis,
   EpistemicImpact,
   EpistemicMeasurement,
+  EpistemicState,
   EpistemicStateStatus,
   EpistemicUnknown,
 } from "./EpistemicContracts";
