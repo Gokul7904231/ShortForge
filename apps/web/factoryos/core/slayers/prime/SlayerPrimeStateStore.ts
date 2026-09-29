@@ -110,6 +110,16 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
     incident: SlayerIncident,
     writer?: { holderId: string; epoch: number }
   ): Promise<boolean> {
+    const currentLeadership = this.leadership;
+    if (
+      writer &&
+      (!currentLeadership ||
+        currentLeadership.holderId !== writer.holderId ||
+        currentLeadership.epoch !== writer.epoch ||
+        new Date(currentLeadership.expiresAt).getTime() <= Date.now())
+    ) {
+      return false;
+    }
     const current = this.incidents.get(incident.incidentId);
     if (
       writer &&
@@ -315,6 +325,15 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
     writer?: { holderId: string; epoch: number }
   ): Promise<boolean> {
     const state = this.read();
+    if (
+      writer &&
+      (!state.leadership ||
+        state.leadership.holderId !== writer.holderId ||
+        state.leadership.epoch !== writer.epoch ||
+        new Date(state.leadership.expiresAt).getTime() <= Date.now())
+    ) {
+      return false;
+    }
     const current = state.incidents[incident.incidentId];
     if (
       writer &&
