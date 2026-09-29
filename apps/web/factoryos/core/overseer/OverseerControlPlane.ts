@@ -371,6 +371,7 @@ export class OverseerControlPlane {
     const currentState = this.worldState.getState();
     const assessment = this.thinkingController.assessCommand(run.command, currentState);
 
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=decision-start`);
     // 0. Typed Decision Batch Evaluation (Decision Fabric)
     const decisionEngine = new DecisionEngine();
     const batchResult = await decisionEngine.evaluateBatch({
@@ -405,11 +406,13 @@ export class OverseerControlPlane {
       },
     });
 
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=decision-complete adapter=${batchResult.adapterUsed} status=${batchResult.status || "n/a"}`);
     const selectedOption =
       batchResult.answersById["intent"]?.type === "CHOICE"
         ? (batchResult.answersById["intent"] as any).selected
         : "EXECUTE_AUTONOMOUS_OPERATION";
 
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=ledger-start`);
     // 1. Record Decision in Ledger
     const decision = await this.decisionLedger.record({
       goalId: run.runId,
@@ -423,10 +426,13 @@ export class OverseerControlPlane {
       toolsUsed: ["worldstate.get", "cases.getActive", "events.publish"],
       executionTimeMs: 50,
     });
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=ledger-complete decisionId=${decision.decisionId}`);
 
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=dag-build-start`);
     // 2. Autonomous Task DAG Generation & Floor Dispatching
     const nodes = this.generateTaskNodesForGoal(run.command);
     const dag = this.dagPlanner.createDAG(run.runId, nodes);
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=dag-build-complete nodes=${nodes.length}`);
     let maxParallelTasks = 3;
 
     if (missionId && this.missionManager) {
@@ -438,10 +444,14 @@ export class OverseerControlPlane {
       }
     }
 
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=executor-build-start`);
     const executors = this.getTaskExecutorsForFloors(missionId, run.runId);
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=executor-build-complete`);
 
     // Execute Task DAG asynchronously across target floor executors
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=dag-execute-start`);
     const completedDag = await this.dagExecutor.executeDAG(dag, executors, { maxParallelTasks });
+    console.log(`[Overseer][Trajectory] run=${run.runId} phase=dag-execute-complete status=${completedDag.status}`);
 
     if (run.command.toLowerCase().includes("operate the factory")) {
       this.activeMissionGoal = run.command;
