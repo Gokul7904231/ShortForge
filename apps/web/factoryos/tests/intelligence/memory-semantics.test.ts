@@ -152,9 +152,9 @@ describe("ShortForge learned-memory semantics", () => {
     expect(result.estimatedTokens).toBeLessThanOrEqual(20);
   });
 
-  it("marks derived memory stale and throttles mental-model refresh", () => {
+  it("marks derived memory stale and throttles mental-model refresh", async () => {
     const manager = new MemoryMentalModelManager();
-    const model = manager.create({
+    const model = await manager.create({
       key: "render-playbook",
       question: "What should F06 know about renderer failures?",
       scope: { kind: "MISSION", key: "mission-1" },
@@ -163,17 +163,17 @@ describe("ShortForge learned-memory semantics", () => {
       refreshAfterConsolidation: true,
     });
 
-    manager.markDirty(model.modelId, "new_observation", "2026-09-29T00:00:00.000Z");
+    await manager.markDirty(model.modelId, "new_observation", "2026-09-29T00:00:00.000Z");
     expect(manager.shouldRefresh(model.modelId, Date.parse("2026-09-29T00:00:00.000Z"))).toBe(true);
 
-    manager.applyRefresh({
+    await manager.applyRefresh({
       modelId: model.modelId,
       content: "Prefer measured stage timings before speculative fixes.",
       sourceObservationIds: [],
       evidenceRefs: ["e:playbook"],
       now: "2026-09-29T00:10:00.000Z",
     });
-    manager.markDirty(model.modelId, "another_event", "2026-09-29T00:20:00.000Z");
+    await manager.markDirty(model.modelId, "another_event", "2026-09-29T00:20:00.000Z");
     expect(manager.shouldRefresh(model.modelId, Date.parse("2026-09-29T00:20:01.000Z"))).toBe(false);
     expect(manager.shouldRefresh(model.modelId, Date.parse("2026-09-29T01:11:00.000Z"))).toBe(true);
   });
@@ -212,10 +212,10 @@ describe("ShortForge learned-memory semantics", () => {
       .toBe("MODEL_INFERENCE_AS_AUTHORITY");
   });
 
-  it("reflects from mental model to observations to raw evidence when stale", () => {
+  it("reflects from mental model to observations to raw evidence when stale", async () => {
     const reflection = new MemoryReflectionEngine();
     const modelManager = new MemoryMentalModelManager();
-    const model = modelManager.create({
+    const model = await modelManager.create({
       question: "What happened to F06 renderer?",
       scope: { kind: "MISSION", key: "mission-1" },
       content: "Renderer latency increased.",
