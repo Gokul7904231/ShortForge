@@ -194,6 +194,21 @@ export class SlayerActionExecutor {
       });
     }
 
+    if (
+      intent.action !== "OBSERVE" &&
+      (!grant || grant.leadershipEpoch !== leadershipEpoch)
+    ) {
+      return this.receipt(intent, {
+        status: "STALE_ACTION",
+        reason: "Authorization grant is bound to a different Prime leadership epoch.",
+        started,
+        details: {
+          grantLeadershipEpoch: grant?.leadershipEpoch,
+          currentLeadershipEpoch: leadershipEpoch,
+        },
+      });
+    }
+
     const adapter = this.adapters.find((candidate) => candidate.supports(intent.action));
     if (!adapter) {
       return this.receipt(intent, {
