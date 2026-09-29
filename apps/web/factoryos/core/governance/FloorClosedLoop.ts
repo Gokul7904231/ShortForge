@@ -18,8 +18,9 @@ export type ClosedLoopTermination =
   | "ESCALATED"
   | "NO_PROGRESS";
 
-export interface ClosedLoopIteration<TFeedback> {
+export interface ClosedLoopIteration<TOutput, TFeedback> {
   readonly iteration: number;
+  readonly output: TOutput;
   readonly feedback: TFeedback;
   readonly fingerprint: string;
 }
@@ -28,7 +29,7 @@ export interface BoundedFeedbackLoopResult<TOutput, TFeedback> {
   readonly output: TOutput;
   readonly termination: ClosedLoopTermination;
   readonly iterations: number;
-  readonly history: readonly ClosedLoopIteration<TFeedback>[];
+  readonly history: readonly ClosedLoopIteration<TOutput, TFeedback>[];
 }
 
 export interface BoundedFeedbackLoopOptions<TOutput, TFeedback> {
@@ -65,7 +66,7 @@ export async function runBoundedFeedbackLoop<TOutput, TFeedback>(
     seen.add(fingerprint);
 
     const feedback = await options.verify(output, iteration);
-    history.push({ iteration, feedback, fingerprint });
+    history.push({ iteration, output, feedback, fingerprint });
 
     if (options.isSatisfied(feedback)) {
       return {
