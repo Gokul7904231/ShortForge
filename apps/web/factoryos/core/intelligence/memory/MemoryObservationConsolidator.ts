@@ -122,6 +122,7 @@ export class MemoryObservationConsolidator {
             semanticType: "OBSERVATION",
             verificationState: this.observationVerification(input.verificationState),
             authority: this.observationAuthority(input.authority),
+            retentionClass: input.retentionClass ?? "DURABLE",
             sourceMemoryIds: [input.memoryId],
             evidenceRefs: input.evidenceRefs.map((item) => item.id),
             supportingMemoryIds:
