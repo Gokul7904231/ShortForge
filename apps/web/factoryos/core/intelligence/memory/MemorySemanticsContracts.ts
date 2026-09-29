@@ -259,6 +259,7 @@ export interface MemoryConsolidationInput {
   readonly verificationState: MemoryVerificationState;
   readonly authority: MemoryAuthorityClass;
   readonly occurredAt: string;
+  readonly retentionClass?: MemoryRetentionClass;
   readonly evidenceRefs: readonly MemoryEvidenceRef[];
   readonly entityRefs?: readonly string[];
   readonly sourceHash?: string;
