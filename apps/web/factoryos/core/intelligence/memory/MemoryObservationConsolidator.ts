@@ -89,12 +89,15 @@ export class MemoryObservationConsolidator {
           : undefined;
 
         if (!observation) {
-          const sameFacet = this.store
-            .list(scopeKey)
-            .find((candidate) =>
-              candidate.facetKey === input.facetKey &&
-              this.similarity(candidate.statement, input.statement) >= threshold,
+          const candidates = this.store.list(scopeKey);
+          const sameFacet = candidates.find((candidate) => {
+            const similarity = this.similarity(candidate.statement, input.statement);
+            const sameEntity = this.entityOverlap(candidate.entityRefs ?? [], input.entityRefs ?? []) > 0;
+            return (
+              (candidate.facetKey === input.facetKey && similarity >= threshold) ||
+              (sameEntity && similarity >= Math.max(0.65, threshold - 0.2))
             );
+          });
           observation = sameFacet;
           if (sameFacet) mergedNearDuplicates += 1;
         }
@@ -126,9 +129,13 @@ export class MemoryObservationConsolidator {
             contradictingMemoryIds:
               input.relationToExisting?.type === "CONTRADICTS" ? [input.memoryId] : [],
             relationIds: [],
-            proofCount: input.evidenceRefs.filter((item) =>
-              item.verificationState === "VERIFIED" || item.verificationState === "SUPPORTED",
-            ).length,
+            proofCount: new Set(
+              input.evidenceRefs
+                .filter((item) =>
+                  item.verificationState === "VERIFIED" || item.verificationState === "SUPPORTED",
+                )
+                .map((item) => item.id),
+            ).size,
             version: 1,
             history: [{
               version: 1,
@@ -159,6 +166,12 @@ export class MemoryObservationConsolidator {
         sourceIds.add(input.memoryId);
         const evidenceIds = new Set(observation.evidenceRefs);
         input.evidenceRefs.forEach((evidence) => evidenceIds.add(evidence.id));
+        const newlyVerifiedEvidenceIds = input.evidenceRefs
+          .filter((evidence) =>
+            evidence.verificationState === "VERIFIED" || evidence.verificationState === "SUPPORTED",
+          )
+          .map((evidence) => evidence.id)
+          .filter((id) => !observation.evidenceRefs.includes(id));
         const history: MemoryHistoryEntry[] = [...observation.history];
 
         let statement = observation.statement;
@@ -188,17 +201,14 @@ export class MemoryObservationConsolidator {
         const next: MemoryObservation = {
           ...observation,
           statement,
-          verificationState: this.observationVerification(
-            relation === "CONTRADICTS" ? "SUPPORTED" : input.verificationState,
-          ),
+          verificationState: relation === "CONTRADICTS"
+            ? "DISPUTED"
+            : this.observationVerification(input.verificationState),
           sourceMemoryIds: [...sourceIds],
           evidenceRefs: [...evidenceIds],
           supportingMemoryIds: [...supporting],
           contradictingMemoryIds: [...contradicting],
-          proofCount:
-            observation.proofCount + input.evidenceRefs.filter((item) =>
-              item.verificationState === "VERIFIED" || item.verificationState === "SUPPORTED",
-            ).length,
+          proofCount: observation.proofCount + new Set(newlyVerifiedEvidenceIds).size,
           version: observation.version + 1,
           history: [
             ...history,
@@ -235,12 +245,16 @@ export class MemoryObservationConsolidator {
         observationIds: [...new Set(observationIds)],
         strategyId: strategy?.strategyId,
         skippedForCapacity,
-        strategyId: strategy?.strategyId,
-        skippedForCapacity,
       });
     }
 
     return reports;
+  }
+
+  private entityOverlap(left: readonly string[], right: readonly string[]): number {
+    if (left.length === 0 || right.length === 0) return 0;
+    const rightSet = new Set(right);
+    return left.filter((item) => rightSet.has(item)).length / Math.max(left.length, right.length);
   }
 
   private similarity(left: string, right: string): number {
