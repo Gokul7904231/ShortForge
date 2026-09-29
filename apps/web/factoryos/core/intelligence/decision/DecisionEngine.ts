@@ -14,10 +14,14 @@ import {
 import { DeterministicDecisionAdapter } from "./DeterministicDecisionAdapter";
 import { TypeSafeJevAdapter } from "./TypeSafeJevAdapter";
 import { LLMDecisionAdapter } from "./LLMDecisionAdapter";
+import { CLMDecisionAdapter } from "./CLMDecisionAdapter";
+import { ShadowDiffRecord } from "./TypeSafeJevAdapter";
 import { DecisionLedger } from "./DecisionLedger";
 
 export interface DecisionEngineConfig {
   enableShadowJev?: boolean;
+  /** Opt-in only: CLM remains shadow-only and never changes the primary path. */
+  enableShadowClm?: boolean;
   enableDeterministicFirst?: boolean;
   escalationThreshold?: number; // Default 0.70
 }
@@ -26,6 +30,7 @@ export class DecisionEngine {
   private deterministicAdapter: DeterministicDecisionAdapter;
   private jevShadowAdapter: TypeSafeJevAdapter;
   private llmAdapter: LLMDecisionAdapter;
+  private clmShadowAdapter: CLMDecisionAdapter;
   private ledger: DecisionLedger;
   private config: Required<DecisionEngineConfig>;
 
@@ -33,10 +38,12 @@ export class DecisionEngine {
     this.deterministicAdapter = new DeterministicDecisionAdapter();
     this.jevShadowAdapter = new TypeSafeJevAdapter();
     this.llmAdapter = new LLMDecisionAdapter();
+    this.clmShadowAdapter = new CLMDecisionAdapter();
     this.ledger = DecisionLedger.getInstance();
 
     this.config = {
       enableShadowJev: config.enableShadowJev ?? true,
+      enableShadowClm: config.enableShadowClm ?? false,
       enableDeterministicFirst: config.enableDeterministicFirst ?? true,
       escalationThreshold: config.escalationThreshold ?? 0.7,
     };
@@ -140,7 +147,18 @@ export class DecisionEngine {
       }
     }
 
-    // 4. Record to Durable Decision Ledger
+    // 4. Optional CLM shadow comparison. Disabled by default and never authoritative.
+    if (this.config.enableShadowClm) {
+      try {
+        const clmResult = await this.clmShadowAdapter.evaluateBatch(request);
+        const clmDiffs = this.buildShadowDiffs(finalResult, clmResult);
+        shadowDiffs = [...(shadowDiffs ?? []), ...clmDiffs];
+      } catch (err) {
+        console.warn("[DecisionEngine] CLM shadow evaluation failed non-fatally:", err);
+      }
+    }
+
+    // 5. Record to Durable Decision Ledger
     this.ledger.recordTransaction(finalResult, {
       taskId: request.taskId,
       missionId: request.missionId,
@@ -156,5 +174,48 @@ export class DecisionEngine {
 
   public getJevShadowAdapter(): TypeSafeJevAdapter {
     return this.jevShadowAdapter;
+  }
+
+  public getClmShadowAdapter(): CLMDecisionAdapter {
+    return this.clmShadowAdapter;
+  }
+
+  private buildShadowDiffs(primary: DecisionBatchResult, shadow: DecisionBatchResult): ShadowDiffRecord[] {
+    const diffs: ShadowDiffRecord[] = [];
+
+    for (const questionId of Object.keys(primary.answersById)) {
+      const primaryAnswer = primary.answersById[questionId];
+      const shadowAnswer = shadow.answersById[questionId];
+      if (!shadowAnswer) continue;
+
+      let primarySelected: unknown;
+      let shadowSelected: unknown;
+
+      if (primaryAnswer.type === "NOUL" && shadowAnswer.type === "NOUL") {
+        primarySelected = primaryAnswer.value;
+        shadowSelected = shadowAnswer.value;
+      } else if (primaryAnswer.type === "CHOICE" && shadowAnswer.type === "CHOICE") {
+        primarySelected = primaryAnswer.selected;
+        shadowSelected = shadowAnswer.selected;
+      } else if (primaryAnswer.type === "SCORE" && shadowAnswer.type === "SCORE") {
+        primarySelected = primaryAnswer.selectedLevel;
+        shadowSelected = shadowAnswer.selectedLevel;
+      } else {
+        continue;
+      }
+
+      diffs.push({
+        batchId: primary.batchId,
+        questionId,
+        primarySelected,
+        heuristicSelected: shadowSelected,
+        agreed: primarySelected === shadowSelected,
+        primaryConfidence: primaryAnswer.confidence,
+        heuristicConfidence: shadowAnswer.confidence,
+        recordedAt: new Date().toISOString(),
+      });
+    }
+
+    return diffs;
   }
 }
