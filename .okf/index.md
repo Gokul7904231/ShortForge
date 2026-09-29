@@ -109,6 +109,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Control Hierarchy** | [`./hierarchy/`](./hierarchy/) | Overseer, Guardian, Slayer, Healer, ReMaker, Auditor, and Worker execution contracts. |
 | **Intelligence & Models** | [`./intelligence/`](./intelligence/) | AgentRuntime, Skills, Capability-First Model Routing, Evaluation suite, and Ascalon training. |
 | **Ascalon Model** | [`./intelligence/ascalon-model.md`](./intelligence/ascalon-model.md) | Project-owned fine-tuned Llama model plan: decision + generation cognition, training pipeline, inference gateway, evaluation, promotion, and Devourer integration. |
+| **Ascalon Epistemic Runtime** | [`./intelligence/aer.md`](./intelligence/aer.md) | Target epistemic runtime for state-of-knowledge management, uncertainty decomposition, probe planning, evidence orchestration, cognitive routing, and the bounded EpistemicContext handoff into Ascalon. |
 | **Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
 | **Cognitive Layer** | [`./cognitive/`](./cognitive/) | ShortForge Cognitive Layer, worker cognition contract, Devourer self-improvement program, and cross-layer improvement roadmap. |
 | **Memory & Knowledge** | [`./memory/`](./memory/) | MemoryOS, KnowledgeOS, domain-typed stores, and long-term memory promotion. |
