@@ -558,12 +558,17 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   private readonly ready: Promise<void>;
 
   constructor(db: Db) {
-    this.incidents = db.collection("slayer_prime_incidents");
-    this.intents = db.collection("slayer_prime_intents");
-    this.receipts = db.collection("slayer_prime_receipts");
-    this.actionLeases = db.collection("slayer_prime_action_leases");
-    this.leadership = db.collection("slayer_prime_leadership");
-    this.meta = db.collection("slayer_prime_meta");
+    const consistencyOptions = {
+      readPreference: "primary" as const,
+      readConcern: { level: "majority" as const },
+      writeConcern: { w: "majority" as const },
+    };
+    this.incidents = db.collection("slayer_prime_incidents", consistencyOptions);
+    this.intents = db.collection("slayer_prime_intents", consistencyOptions);
+    this.receipts = db.collection("slayer_prime_receipts", consistencyOptions);
+    this.actionLeases = db.collection("slayer_prime_action_leases", consistencyOptions);
+    this.leadership = db.collection("slayer_prime_leadership", consistencyOptions);
+    this.meta = db.collection("slayer_prime_meta", consistencyOptions);
     this.ready = this.ensureIndexes();
   }
 
@@ -730,11 +735,18 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   async isLeadershipCurrent(holderId: string, epoch: number): Promise<boolean> {
     await this.ready;
     const now = new Date().toISOString();
-    const current = await this.leadership.findOne({
-      _id: "singleton",
-      holderId,
-      expiresAt: { $gt: now },
-    });
+    const current = await this.leadership.findOne(
+      {
+        _id: "singleton",
+        holderId,
+        expiresAt: { $gt: now },
+      },
+      {
+        readPreference: "primary",
+        readConcern: { level: "linearizable" },
+        maxTimeMS: 2_000,
+      }
+    );
     return Boolean(current && current.epoch >= epoch);
   }
 
