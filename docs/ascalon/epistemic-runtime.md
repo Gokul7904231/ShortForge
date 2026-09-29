@@ -583,3 +583,24 @@ The first success criterion is not "AER sounds intelligent."
 It is:
 
 > **AER reduces epistemic uncertainty or investigation cost on real production problems without weakening evidence or authority boundaries.**
+## Cost-Efficient AER Admission
+
+AER now exposes a deterministic pre-call contract for Ascalon:
+
+shouldInvokeAscalon + reasonCode + expectedValue + estimatedCostUnits + remaining budget
+
+The expected-value field is a routing/triage signal only. It is not model confidence and cannot establish truth.
+
+The policy prefers:
+
+DETERMINISTIC -> MICRO -> DEEP(Ascalon) -> SPECIALIST/HUMAN
+
+Ascalon is requested only when the current uncertainty has enough policy-estimated value to justify its remaining call/cost budget.
+
+AscalonInvocationGate is evaluated immediately before an actual model call. It rejects non-admitted contexts, expired contexts, non-clean redaction state, exhausted call budgets, insufficient remaining cost, and invalid authority class.
+
+AERMetricsRecorder closes the measurement loop around the optimization target:
+
+cost per resolved uncertainty = total uncertainty-episode cost / resolved uncertainty count
+
+It also tracks escalation rate, probe usefulness, cache hit rate, AER/Ascalon p50/p95 latency, false reassurance, and unnecessary escalation. These metrics require observed telemetry and are not hard-coded success claims.
