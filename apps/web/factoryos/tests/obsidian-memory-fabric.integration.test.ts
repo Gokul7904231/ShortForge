@@ -69,7 +69,16 @@ async function testLiveIngestion(): Promise<void> {
   assert.equal(health.mode, "EVENT_ONLY");
   assert.equal(health.totalIngested, 1);
 
-  const agentProjection = await bridge.projectForAgent("MISSION_COMPLETED");
+  const agentProjection = await bridge.projectForAgent(
+    "MISSION_COMPLETED",
+    12,
+    12000,
+    {
+      principalId: "test-agent",
+      allowedScopeKeys: ["mission-test-001"],
+      allowGlobalScope: false,
+    },
+  );
   assert.equal(agentProjection.itemCount, 0);
 
   await store.update(candidateFiles[0].frontmatter.id, {
