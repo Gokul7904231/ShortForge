@@ -41,6 +41,7 @@ import { KnowledgeStore } from "../intelligence/knowledge/KnowledgeStore";
 import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
+import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -56,6 +57,7 @@ export interface FactoryOSConfig {
   readonly memoryFabricVaultPath?: string;
   readonly memoryFabricReconciliationIntervalMs?: number;
   readonly memoryFabricCollections?: readonly string[];
+  readonly memoryFabricAscalonScopeKeys?: readonly string[];
 }
 
 export class AutonomousFactoryController {
@@ -90,6 +92,7 @@ export class AutonomousFactoryController {
   public contentGenome: ContentGenomeTracker = new ContentGenomeTracker();
   public researchRuntime: ResearchRuntime = new ResearchRuntime();
   public memoryFabric?: MemoryFabricBridge;
+  public intelligenceGateway?: IntelligenceGateway;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -148,12 +151,14 @@ export class AutonomousFactoryController {
     // 4. Durable Event Bus
     this.eventBus = new DurableEventBus();
 
-    // 4.1 Live Memory Fabric. It is derived cognitive storage only and never
-    // becomes runtime authority. MongoDB remains operational truth; the
-    // knowledge vault is an inspectable projection consumed by agents/Ascalon.
+    // 4.1 Canonical Intelligence + Memory Fabric. The IntelligenceGateway owns
+    // the single KnowledgeStore/MemoryLifecycle instance used by cognition.
     if (this.config.memoryFabricEnabled) {
-      const knowledgeStore = new KnowledgeStore(this.config.memoryFabricVaultPath);
-      const memoryWriter = new MemoryWriter(knowledgeStore);
+      this.intelligenceGateway = new IntelligenceGateway({
+        vaultPath: this.config.memoryFabricVaultPath,
+      });
+      const knowledgeStore = this.intelligenceGateway.knowledgeStore;
+      const memoryWriter = this.intelligenceGateway.memoryWriter as MemoryWriter;
       const mongoDb = this.mongoClient?.getDb() || null;
       const ledger = mongoDb
         ? new MongoMemoryFabricLedger(mongoDb)
@@ -323,7 +328,8 @@ export class AutonomousFactoryController {
       this.cognitivePlane,
       this.missionManager,
       repos.decisions,
-      repos.taskDAGs
+      repos.taskDAGs,
+      this.intelligenceGateway?.memoryLifecycle,
     );
 
     // 8. Watchdog & Bridges
