@@ -11,10 +11,21 @@ import { FloorActionGraph } from "./FloorActionGraph";
 import { FloorBlackboard } from "./FloorBlackboard";
 import type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
 import type { GuardianDecision } from "../guardian/GuardianContracts";
-import type { AscalonGuardianAdapter } from "./AscalonGuardianAdapter";
+import type {
+  AscalonGuardianAdapter,
+  AscalonPreCallAdmission,
+} from "./AscalonGuardianAdapter";
 import { FloorCouncil } from "./FloorCouncil";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import { AscalonInferenceAdmissionGate } from "./AscalonInferenceAdmission";
+
+export interface AscalonPreCallGate {
+  evaluate(input: {
+    readonly snapshot: FloorSnapshot;
+    readonly availableActions: readonly string[];
+    readonly verifiedEvidenceRefs: readonly string[];
+  }): Promise<AscalonPreCallAdmission> | AscalonPreCallAdmission;
+}
 
 export interface GovernanceExecutionResult {
   readonly success: boolean;
@@ -34,6 +45,7 @@ export interface FloorGovernanceCellConfig {
   readonly council?: FloorCouncil;
   readonly eventBus?: DurableEventBus;
   readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
+  readonly ascalonPreCallGate?: AscalonPreCallGate;
 }
 
 export class FloorGovernanceCell {
@@ -51,6 +63,7 @@ export class FloorGovernanceCell {
   private council?: FloorCouncil;
   private readonly eventBus?: DurableEventBus;
   private readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
+  private readonly ascalonPreCallGate?: AscalonPreCallGate;
   private grants: AuthorizationGrant[] = [];
 
   constructor(config: FloorGovernanceCellConfig) {
@@ -64,6 +77,7 @@ export class FloorGovernanceCell {
     this.council = config.council;
     this.eventBus = config.eventBus;
     this.ascalonAdmission = config.ascalonAdmission;
+    this.ascalonPreCallGate = config.ascalonPreCallGate;
   }
 
   private readonly ascalon: AscalonGuardianAdapter;
@@ -141,10 +155,34 @@ export class FloorGovernanceCell {
       .getVerifiedEvidence()
       .flatMap((entry) => entry.evidenceRefs);
 
+    let preCallAdmission: AscalonPreCallAdmission | undefined;
+    if (this.ascalonPreCallGate) {
+      preCallAdmission = await this.ascalonPreCallGate.evaluate({
+        snapshot,
+        availableActions,
+        verifiedEvidenceRefs,
+      });
+
+      if (!preCallAdmission.admitted) {
+        this.blackboard.append(
+          "CONFLICT",
+          "SYSTEM",
+          "VERIFIED",
+          {
+            event: "ASCALON_PRE_CALL_NOT_ADMITTED",
+            reason: preCallAdmission.reason,
+            contextFingerprint: preCallAdmission.contextFingerprint,
+          },
+        );
+        return null;
+      }
+    }
+
     const proposal = await this.ascalon.proposeNext({
       snapshot,
       availableActions,
       evidenceRefs: verifiedEvidenceRefs,
+      preCallAdmission,
     });
 
     if (!proposal) return null;
