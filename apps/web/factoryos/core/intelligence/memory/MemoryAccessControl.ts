@@ -1,15 +1,8 @@
-import type { MemoryProvenanceGuardReport, MemoryRecallQuery, MemoryRetrievalCandidate } from "./MemorySemanticsContracts";
-
-export interface MemoryAccessContext {
-  readonly principalId: string;
-  readonly allowedScopeKeys: readonly string[];
-  readonly allowGlobalScope?: boolean;
-}
+import type { MemoryProvenanceGuardReport, MemoryRetrievalCandidate, MemoryAccessContext } from "./MemorySemanticsContracts";
 
 export class MemoryAccessControl {
   public apply(
     context: MemoryAccessContext,
-    query: MemoryRecallQuery,
     candidates: readonly MemoryRetrievalCandidate[],
   ): MemoryProvenanceGuardReport {
     const allowed = new Set(context.allowedScopeKeys);
@@ -24,7 +17,11 @@ export class MemoryAccessControl {
         return [{
           memoryId: candidate.memoryId,
           code: "SCOPE_LEAK" as const,
-          detail: "principal " + context.principalId + " is not authorized for memory scope " + candidate.scopeKey,
+          detail:
+            "principal " +
+            context.principalId +
+            " is not authorized for memory scope " +
+            candidate.scopeKey,
         }];
       }
       accepted.push(candidate);
