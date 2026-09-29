@@ -28,6 +28,7 @@ export interface AERAssessmentInput extends BuildEpistemicStateInput {
   readonly contextTtlMs?: number;
   readonly episodeId?: string;
   readonly assessmentCostUnits?: number;
+  readonly tokenEstimator?: (serialized: string) => number;
 }
 
 export interface AERAssessment {
@@ -86,6 +87,7 @@ export class AEREngine {
       budget: input.budget,
       usage,
       ttlMs: input.contextTtlMs,
+      tokenEstimator: input.tokenEstimator,
     });
 
     const ascalonAdmission = this.ascalonInvocationGate.evaluate({ context });
