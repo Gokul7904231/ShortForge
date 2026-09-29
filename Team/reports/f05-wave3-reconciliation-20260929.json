@@ -1,0 +1,10 @@
+{
+  "report": "f05-wave3-reconciliation-20260929",
+  "source_pr": 35,
+  "source_branch": "feat/floor05-pretraining-hardening-wave3-20260927",
+  "base": "main",
+  "classification": "reconciled",
+  "promotion": "PENDING_REPOSITORY_CI",
+  "preserved": ["Guardian authorization evidence","TimelineBrain proposal-only boundary","CAP_TIMELINE_COMPILE least privilege","canonical TimelineIR evidence","canonical TimelineIR fingerprint in render identity","explicit caption intent","validated WebVTT evidence","authorization and TimelineIR evidence in crash journal"],
+  "authority_boundaries": {"timeline_brain_authority":false,"f05_cap_render_dispatch":false,"f05_publish_authority":false,"f07_release_bypass":false}
+}
