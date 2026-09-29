@@ -220,15 +220,15 @@ export class AutonomousFactoryController {
         this.guardianManager.requestHealingClosureGrant(request),
     });
 
-    this.guardianManager.attachGovernanceMemoryProvider(async (query, maxItems, maxChars) => {
-      if (!this.memoryFabric) return null;
+    this.guardianManager.attachGovernanceMemoryProvider(async (query, maxItems, maxChars, floorId) => {
+      if (!this.memoryFabric || !floorId) return null;
       const projection = await this.memoryFabric.projectForAgent(
         query,
         maxItems,
         maxChars,
         {
-          principalId: "guardian-governance:" + snapshot.floorId,
-          allowedScopeKeys: [snapshot.floorId],
+          principalId: "guardian-governance:" + floorId,
+          allowedScopeKeys: [floorId],
           allowGlobalScope: false,
         },
       );
