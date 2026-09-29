@@ -160,3 +160,47 @@ Implemented components include:
 Unlazy semantics are deliberately absorbed as proof discipline, not as an executable runtime dependency. Hindsight semantics are deliberately absorbed as memory behavior, not as an additional database.
 
 Permanent boundary: `LEARNING != PROOF`.
+
+
+## 2026-09-29 Convergence Wave
+
+Memory Fabric is now the canonical learned-memory substrate for trusted cognition on the feature branch.
+
+Canonical runtime sharing:
+
+```text
+AutonomousFactoryController
+        |
+        +--> IntelligenceGateway
+        |        |
+        |        +--> KnowledgeStore
+        |        +--> MemoryWriter
+        |        +--> MemoryLifecycleService
+        |
+        +--> MemoryFabricBridge
+        |        |
+        |        +--> shared MemoryLifecycleService
+        |
+        +--> Overseer / CognitiveRuntime
+                 |
+                 +--> shared MemoryLifecycleService
+```
+
+Security invariant:
+
+```text
+trusted recall without MemoryAccessContext
+    -> DENY
+```
+
+A derived-index layer now caches lexical postings, entity postings and typed graph adjacency from the canonical KnowledgeStore. These structures are disposable/rebuildable retrieval indexes and are not an additional memory authority.
+
+Persistence invariant:
+
+```text
+Memory Fabric fields written by OKFParser
+    -> survive KnowledgeStore reload
+    -> preserve scope/entity/relation/verification metadata
+```
+
+Research/implementation status remains validation-pending; a clean branch state is not the same as a production certification.
