@@ -15,6 +15,8 @@ import {
 } from "./AERValueModel";
 
 export interface CognitiveRoutingOptions {
+  /** Stable per-episode input used to make decision identities replayable. */
+  readonly decisionSeed?: string;
   readonly deadlineMs?: number;
   readonly microAvailable?: boolean;
   readonly deepAvailable?: boolean;
@@ -82,6 +84,7 @@ function recommendation(
       createHash("sha256")
         .update(
           JSON.stringify({
+            decisionSeed: options.decisionSeed ?? null,
             mode,
             reasonCode,
             deadlineMs,
