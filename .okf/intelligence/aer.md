@@ -1646,3 +1646,26 @@ The optimization remains shadow/advisory until measured traces establish:
 - no authority bypass or provenance loss.
 
 Illustrative episode mixes are design examples only and are not performance claims.
+
+## 37. Research-Informed Remediation — 2026-09-29
+
+The current remediation incorporates patterns from recent routing, experimental-design, agent-runtime, calibration, and observability research:
+
+- **Constrained adaptive test-time compute (2026)**: allocate expensive reasoning per instance under a global compute budget instead of applying one fixed depth to every input. AER adopts this principle through explicit per-episode latency/call/cost budgets and a learned shadow policy. Reference: *Adaptive Test-Time Compute Allocation for Reasoning LLMs via Constrained Policy Optimization*.
+- **Adaptive routing under budget constraints (EMNLP Findings 2025)**: treat model routing as an online contextual decision problem with variable costs and budget constraints. AER uses the same direction for future routing-policy learning, while keeping current learning shadow-only.
+- **Bayesian experimental design for LLM information gathering (2025)**: select the next question/query using expected information gain rather than asking every available question. AER's probe planner is the runtime boundary for this strategy and remains deterministic/safety-filtered before execution.
+- **Calibration of model/judge uncertainty (2025)**: uncertainty estimates should be calibrated from observed outcomes rather than trusted because a model verbalized a confidence value. AER therefore blocks production Ascalon escalation when its value model has only uncalibrated priors unless policy explicitly permits shadow experimentation.
+- **Agent-runtime durability and persistence**: current agent runtimes emphasize durable state, checkpointing, deterministic/LLM composition, and traceable model/tool execution. AER therefore delegates actual probe execution to AEF and treats its own state as advisory/orchestration metadata rather than a second execution runtime.
+- **OpenTelemetry GenAI conventions**: model/tool telemetry should identify operation, provider, model, duration, and usage. AER now accepts provider/model/token/actual-cost telemetry and supports a pluggable token estimator.
+
+Research does not establish that the AER implementation is optimal for ShortForge. It informs the design choices; production thresholds and policies still require ShortForge-specific replay and outcome evidence.
+
+Research references:
+- RouteLLM: https://github.com/lm-sys/RouteLLM
+- Adaptive Test-Time Compute Allocation: https://arxiv.org/abs/2604.14853
+- Adaptive LLM Routing under Budget Constraints: https://aclanthology.org/2025.findings-emnlp.1301/
+- BED-LLM: https://arxiv.org/abs/2508.21184
+- Calibrating LLM Judges: https://arxiv.org/abs/2512.22245
+- LangGraph persistence/durable execution: https://github.com/langchain-ai/langgraph
+- PydanticAI durable execution/instrumentation: https://github.com/pydantic/pydantic-ai
+- OpenTelemetry GenAI semantic conventions: https://github.com/open-telemetry/semantic-conventions-genai
