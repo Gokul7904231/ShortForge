@@ -1714,3 +1714,20 @@ This remains `SHADOW-ONLY / VALIDATION PENDING`. Repository code is not promoted
 ### Research-derived principles
 
 Adaptive compute research motivates per-episode allocation rather than uniform reasoning budgets; budget-aware routing research motivates outcome-driven routing under resource constraints; Bayesian experimental-design research motivates sequential probe selection by expected information value; current OpenTelemetry GenAI conventions motivate low-cardinality model/tool/usage/duration telemetry. These sources inform architecture only; ShortForge must establish its own workload-specific evidence before promotion.
+
+
+### Accounting hardening — 2026-09-29
+
+The AEF probe bridge now preserves measured `actualCostUsd` from the existing `ToolExecutor` through the AER probe result and episode metrics path. This prevents the adaptive economics layer from silently falling back to abstract cost units when a concrete tool execution already reported monetary cost.
+
+The required evidence path is:
+```
+Tool execution
+    -> measured costUsd / evidenceId
+    -> ScopedToolAERExecutionFabricBridge
+    -> AERProbeExecutionResult
+    -> AERMetricsRecorder
+    -> shadow economics / replay
+```
+
+This is an implementation improvement, not production-readiness evidence. Fresh CI, security validation and workload-specific shadow replay remain mandatory.
