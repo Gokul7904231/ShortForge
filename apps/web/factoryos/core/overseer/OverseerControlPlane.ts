@@ -50,6 +50,7 @@ import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
+import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -87,7 +88,8 @@ export class OverseerControlPlane {
     cognitivePlane?: CognitivePlaneEngine,
     missionManager?: MissionManager,
     decisionRepo?: IDecisionRepository,
-    taskDAGRepo?: ITaskDAGRepository
+    taskDAGRepo?: ITaskDAGRepository,
+    trajectoryLearningBridge?: TrajectoryLearningBridge
   ) {
     this.caseManager = caseManager;
     this.slayerEngine = slayerEngine;
@@ -112,7 +114,7 @@ export class OverseerControlPlane {
       this.caseManager,
       this.missionManager
     );
-    this.trajectoryCollector = new ProductionTrajectoryCollector(this.eventBus);
+    this.trajectoryCollector = new ProductionTrajectoryCollector(this.eventBus, trajectoryLearningBridge);
     this.trajectoryCollector.start();
 
     this.registerWithWorldState();
@@ -140,7 +142,7 @@ export class OverseerControlPlane {
       const runId = (envelope.payload as any)?.runId;
       if (!missionId) return;
       try {
-        const trajectory = this.trajectoryCollector.finalize(missionId, envelope.timestamp);
+        const trajectory = await this.trajectoryCollector.finalize(missionId, envelope.timestamp);
         await this.eventBus.publish(
           "TRAJECTORY_EVALUATED",
           {
