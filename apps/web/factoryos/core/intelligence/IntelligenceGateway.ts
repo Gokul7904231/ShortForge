@@ -23,6 +23,8 @@ import { MemoryFabricProjectionService } from "./memory/MemoryFabricProjection";
 import { MemoryLifecycleService } from "./memory/MemoryLifecycleService";
 import { KnowledgeStoreObservationAdapter } from "./memory/KnowledgeStoreObservationAdapter";
 import { MemoryConsolidationStrategyRouter } from "./memory/MemoryConsolidationStrategyRouter";
+import { MemoryMentalModelManager } from "./memory/MemoryMentalModelManager";
+import { KnowledgeStoreMentalModelAdapter } from "./memory/KnowledgeStoreMentalModelAdapter";
 import { MemoryRetrievalEngine, type MemoryRetrievalEngineOptions } from "./memory/MemoryRetrievalEngine";
 import type { MemoryConsolidationStrategy } from "./memory/MemoryConsolidationStrategyRouter";
 
@@ -140,6 +142,7 @@ export class IntelligenceGateway {
       observationStore,
       new MemoryRetrievalEngine(options?.retrievalOptions),
       strategyRouter,
+      new MemoryMentalModelManager(new KnowledgeStoreMentalModelAdapter(this.knowledgeStore)),
     );
   }
 
