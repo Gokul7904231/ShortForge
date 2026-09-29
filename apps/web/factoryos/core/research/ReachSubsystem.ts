@@ -7,7 +7,6 @@
  * immutable research contract.
  */
 
-import { LightpandaBrowserAdapter } from "./LightpandaBrowserAdapter";
 import type { EvidenceSource } from "../contracts/ResearchPassportContracts";
 import type {
   EngineResearchContract,
@@ -80,6 +79,14 @@ function assertBoundedQueryRequest(request: ReachFetchRequest): EngineResearchQu
   const placeholders = [...rule.queryTemplate.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((m) => m[1]);
   const declaredParameters = new Set(["topic", ...(rule.requiredParameters || [])]);
 
+  for (const suppliedParameter of Object.keys(request.parameters || {})) {
+    if (!declaredParameters.has(suppliedParameter)) {
+      throw new Error(
+        `REACH_QUERY_PARAMETER_NOT_ALLOWED: parameter "${suppliedParameter}" is not declared by ${rule.queryKind}.`,
+      );
+    }
+  }
+
   for (const placeholder of placeholders) {
     if (!declaredParameters.has(placeholder)) {
       throw new Error(
@@ -129,11 +136,9 @@ function renderEngineQuery(
 }
 
 export class ReachSubsystem {
-  private browserAdapter: LightpandaBrowserAdapter;
   private testProvider?: ReachTestProvider;
 
   constructor(testProvider?: ReachTestProvider) {
-    this.browserAdapter = new LightpandaBrowserAdapter();
     this.testProvider = testProvider;
   }
 
