@@ -145,7 +145,7 @@ export interface SlayerEnforcementReceipt {
   readonly leadershipEpoch?: number;
   readonly status:
     | "AUTHORIZED" | "REJECTED" | "STALE_ACTION" | "EXECUTED"
-    | "VERIFIED" | "FAILED" | "VERIFICATION_FAILED";
+    | "EXECUTING" | "UNKNOWN" | "VERIFIED" | "FAILED" | "VERIFICATION_FAILED";
   readonly reason: string;
   readonly executionStartedAt: string;
   readonly executionFinishedAt: string;
