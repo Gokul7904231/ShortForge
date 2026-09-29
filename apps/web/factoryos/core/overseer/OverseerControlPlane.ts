@@ -771,9 +771,9 @@ export class OverseerControlPlane {
         const strategyPayload = canonicalF01;
         scope.strategy = strategyPayload;
         sharedScope.strategy = strategyPayload;
-
-        scope.strategy = strategyPayload;
-        sharedScope.strategy = strategyPayload;
+        // Preserve the canonical F01 handoff so F02 consumes the actual upstream contract.
+        scope.floor01Handoff = strategyPayload;
+        sharedScope.floor01Handoff = strategyPayload;
 
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
