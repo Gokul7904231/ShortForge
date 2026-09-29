@@ -271,6 +271,8 @@ export interface MemoryGateDefinition {
   readonly check?: string;
   readonly expect?: string;
   readonly cwd?: string;
+  /** Immutable bindings for policy/model/source versions that force re-verification when they change. */
+  readonly bindings?: Readonly<Record<string, string>>;
   readonly dependsOn?: readonly string[];
 }
 
