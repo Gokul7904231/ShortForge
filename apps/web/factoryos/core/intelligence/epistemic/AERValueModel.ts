@@ -62,10 +62,6 @@ const DEFAULT_UNRESOLVED_PENALTY: Readonly<Record<EpistemicState["impact"]["seve
   CRITICAL: 5,
 };
 
-function clampUnit(value: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
-}
-
 /**
  * Decision-theoretic VOI model comparing a baseline action with Ascalon.
  *
