@@ -41,6 +41,12 @@ import { KnowledgeStore } from "../intelligence/knowledge/KnowledgeStore";
 import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
+import {
+  DiskSlayerPrimeStateStore,
+  InMemorySlayerPrimeStateStore,
+  MongoSlayerPrimeStateStore,
+  type SlayerPrimeStateStore,
+} from "../slayers/prime/SlayerPrimeStateStore";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -74,6 +80,7 @@ export class AutonomousFactoryController {
   public guardianManager!: GuardianManager;
   public slayerEngine!: SlayerEngine;
   public healerEngine!: HealerEngine;
+  public slayerPrimeStateStore!: SlayerPrimeStateStore;
   public validatorAgent!: ValidatorAgent;
   public overseer!: OverseerControlPlane;
   public memoryEngine!: MemoryEngine;
@@ -148,6 +155,17 @@ export class AutonomousFactoryController {
     // 4. Durable Event Bus
     this.eventBus = new DurableEventBus();
 
+    // 4.0 Prime enforcement state follows the controller's persistence tier.
+    // In-memory is reserved for explicit memory-mode/test operation.
+    const mongoDbForPrime = this.mongoClient?.getDb() || null;
+    if (this.config.storageType === "disk") {
+      this.slayerPrimeStateStore = new DiskSlayerPrimeStateStore(this.config.storagePath);
+    } else if (mongoDbForPrime) {
+      this.slayerPrimeStateStore = new MongoSlayerPrimeStateStore(mongoDbForPrime);
+    } else {
+      this.slayerPrimeStateStore = new InMemorySlayerPrimeStateStore();
+    }
+
     // 4.1 Live Memory Fabric. It is derived cognitive storage only and never
     // becomes runtime authority. MongoDB remains operational truth; the
     // knowledge vault is an inspectable projection consumed by agents/Ascalon.
@@ -198,7 +216,10 @@ export class AutonomousFactoryController {
       this.worldState,
       repos.reputation,
       this.config.patrolIntervalMs,
-      this.leaseManager
+      this.leaseManager,
+      {
+        stateStore: this.slayerPrimeStateStore,
+      }
     );
 
     this.healerEngine = new HealerEngine(
