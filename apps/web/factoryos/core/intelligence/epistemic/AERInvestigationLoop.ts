@@ -42,10 +42,10 @@ function isMateriallyResolved(state: EpistemicState): boolean {
   );
 }
 
-function mergeById<T extends { readonly [key: string]: unknown }>(
+function mergeById<T, K extends keyof T>(
   base: readonly T[],
   additions: readonly T[],
-  idKey: keyof T,
+  idKey: K,
 ): T[] {
   const result = new Map<string, T>();
   for (const item of base) {
@@ -59,10 +59,10 @@ function mergeById<T extends { readonly [key: string]: unknown }>(
   return [...result.values()];
 }
 
-function removeByIds<T extends { readonly [key: string]: unknown }>(
+function removeByIds<T, K extends keyof T>(
   base: readonly T[],
   ids: readonly string[],
-  idKey: keyof T,
+  idKey: K,
 ): T[] {
   const blocked = new Set(ids);
   return base.filter((item) => !blocked.has(String(item[idKey])));
