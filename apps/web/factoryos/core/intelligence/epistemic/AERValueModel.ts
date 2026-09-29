@@ -25,6 +25,7 @@ export interface AERValuePolicy {
 
 export interface AERValueAssessment {
   readonly expectedValue: number;
+  readonly estimatedLatencyMs: number;
   readonly expectedBenefit: number;
   readonly expectedCost: number;
   readonly uncertaintyBurden: number;
@@ -122,6 +123,7 @@ export function evaluateAscalonValue(
 
   return {
     expectedValue,
+    estimatedLatencyMs: Math.max(0, policy.ascalon.latencyMs),
     expectedBenefit,
     expectedCost,
     uncertaintyBurden,
