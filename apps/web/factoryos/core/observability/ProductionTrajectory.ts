@@ -127,6 +127,12 @@ export class ProductionTrajectoryEvaluator {
     const allVerified = verifiedFloorCount === CANONICAL_FLOOR_LOOPS.length;
     const allProofGrade = floors.every((floor) => floor.proofLevel !== "NONE");
     const hasWeakEvidence = floors.some((floor) => floor.proofLevel === "HANDOFF_CONTRACT");
+    const hasIndependentFinalVerification = floors.some(
+      (floor) =>
+        floor.floorId === "floor07_compliance" &&
+        floor.proofLevel === "PHYSICAL_VERIFICATION" &&
+        floor.verified,
+    );
 
     const handoffOnlyCount = floors.filter((floor) => floor.proofLevel === "HANDOFF_CONTRACT").length;
     let verificationStatus: TrajectoryVerificationStatus = "VERIFIED";
