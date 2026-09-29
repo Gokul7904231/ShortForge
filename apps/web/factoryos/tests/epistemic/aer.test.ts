@@ -63,7 +63,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     expect(result.state.cognitiveRecommendation.mode).toBe("DETERMINISTIC");
   });
 
-  it("routes material uncertainty to micro cognition when one hypothesis remains", () => {
+  it("keeps one-hypothesis uncertainty on micro when calibrated Ascalon value is below the threshold", () => {
     const aer = new AEREngine();
     const result = aer.assess({
       contextSeed: "timing-mismatch",
@@ -93,6 +93,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
         microAvailable: true,
         deepAvailable: true,
         valuePolicy: calibratedValuePolicy,
+        minimumAscalonExpectedValue: 1,
       },
     });
 
@@ -376,7 +377,10 @@ describe("AER — Ascalon Epistemic Runtime", () => {
 
     expect(result.state.cognitiveRecommendation.mode).toBe("DEEP");
     expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(true);
-    expect(result.state.cognitiveRecommendation.expectedValue).toBeGreaterThanOrEqual(0.5);
+    expect(result.state.cognitiveRecommendation.expectedValue).toBeGreaterThan(0);
+    expect(result.state.cognitiveRecommendation.expectedBenefit).toBeGreaterThan(
+      result.state.cognitiveRecommendation.expectedCost,
+    );
     expect(result.state.cognitiveRecommendation.budget.maxCallsRemaining).toBe(2);
     expect(result.ascalonHandoff.shouldInvokeAscalon).toBe(true);
     expect(result.ascalonAdmission.admitted).toBe(true);
@@ -535,7 +539,10 @@ describe("AER — Ascalon Epistemic Runtime", () => {
         },
       ],
       budget,
-      routing: { deepAvailable: true },
+      routing: {
+        deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
+      },
     });
 
     metrics.recordProbe({
