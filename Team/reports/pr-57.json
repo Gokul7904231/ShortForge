@@ -67,7 +67,9 @@
     "Added current-leader and current-action-lease checks immediately before mutation.",
     "Added leadership-epoch protection against stale incident state overwrites.",
     "Added Mongo index-readiness gating and duplicate-key handling for election/intent races.",
-    "Added distributed hardening tests for restart takeover, stale writes, duplicate intents, stale action fences, and monotonic action tokens."
+    "Added distributed hardening tests for restart takeover, stale writes, duplicate intents, stale action fences, and monotonic action tokens.",
+    "Hardened leadership validation to require exact epoch equality, preventing a stale generation from acting after a successful renewal.",
+    "Added dedicated exact-generation fencing regression coverage."
   ],
   "evidenceRefs": [
     "apps/web/factoryos/core/contracts/SlayerPrimeContracts.ts",
@@ -86,7 +88,8 @@
     "Team/contracts/team-change-ir.md",
     "Team/scripts/validate-team-report.mjs",
     "apps/web/factoryos/core/slayers/prime/SlayerPrimeStateStore.ts",
-    "apps/web/factoryos/tests/slayer-prime-hardening.test.ts"
+    "apps/web/factoryos/tests/slayer-prime-hardening.test.ts",
+    "apps/web/factoryos/tests/slayer-prime-epoch.test.ts"
   ],
   "notes": [
     "No floor topology or sovereign authority change was introduced.",
