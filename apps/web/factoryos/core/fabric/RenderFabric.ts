@@ -275,6 +275,7 @@ export class RenderFabric {
           receipt.receiptId,
           ...(receipt.admissionRecord?.admissionId ? [receipt.admissionRecord.admissionId] : []),
         ],
+        proofSource: "PHYSICAL_VERIFIER",
       },
       message: `ComputeRouter routed ${intent.jobId} through ${receipt.providerId} and returned verified artifact ${artifactRef.sha256}.`,
     };
