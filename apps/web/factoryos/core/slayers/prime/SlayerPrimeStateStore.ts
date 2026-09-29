@@ -51,7 +51,10 @@ export interface PersistedSlayerPrimeJournalEntry {
 
 export interface SlayerPrimeStateStore {
   load(): Promise<SlayerPrimeStateSnapshot>;
-  upsertIncident(incident: SlayerIncident): Promise<void>;
+  upsertIncident(
+    incident: SlayerIncident,
+    writer?: { holderId: string; epoch: number }
+  ): Promise<boolean>;
   createIntentIfAbsent(intent: SlayerActionIntent): Promise<{
     created: boolean;
     intent: SlayerActionIntent;
@@ -103,8 +106,26 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
     });
   }
 
-  async upsertIncident(incident: SlayerIncident): Promise<void> {
-    this.incidents.set(incident.incidentId, clone(incident));
+  async upsertIncident(
+    incident: SlayerIncident,
+    writer?: { holderId: string; epoch: number }
+  ): Promise<boolean> {
+    const current = this.incidents.get(incident.incidentId);
+    if (
+      writer &&
+      current?.persistenceEpoch !== undefined &&
+      current.persistenceEpoch > writer.epoch
+    ) {
+      return false;
+    }
+    this.incidents.set(
+      incident.incidentId,
+      clone({
+        ...incident,
+        ...(writer ? { persistenceEpoch: writer.epoch } : {}),
+      })
+    );
+    return true;
   }
 
   async createIntentIfAbsent(intent: SlayerActionIntent): Promise<{ created: boolean; intent: SlayerActionIntent }> {
@@ -289,11 +310,32 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
     });
   }
 
-  async upsertIncident(incident: SlayerIncident): Promise<void> {
+  async upsertIncident(
+    incident: SlayerIncident,
+    writer?: { holderId: string; epoch: number }
+  ): Promise<boolean> {
     const state = this.read();
-    state.incidents[incident.incidentId] = clone(incident);
-    this.journal(state, { eventType: "INCIDENT_UPSERTED", occurredAt: new Date().toISOString(), incidentId: incident.incidentId });
+    const current = state.incidents[incident.incidentId];
+    if (
+      writer &&
+      current?.persistenceEpoch !== undefined &&
+      current.persistenceEpoch > writer.epoch
+    ) {
+      return false;
+    }
+    state.incidents[incident.incidentId] = clone({
+      ...incident,
+      ...(writer ? { persistenceEpoch: writer.epoch } : {}),
+    });
+    this.journal(state, {
+      eventType: "INCIDENT_UPSERTED",
+      occurredAt: new Date().toISOString(),
+      incidentId: incident.incidentId,
+      holderId: writer?.holderId,
+      epoch: writer?.epoch,
+    });
     this.write(state);
+    return true;
   }
 
   async createIntentIfAbsent(intent: SlayerActionIntent): Promise<{ created: boolean; intent: SlayerActionIntent }> {
@@ -552,9 +594,36 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
     return clone(snapshot);
   }
 
-  async upsertIncident(incident: SlayerIncident): Promise<void> {
+  async upsertIncident(
+    incident: SlayerIncident,
+    writer?: { holderId: string; epoch: number }
+  ): Promise<boolean> {
     await this.ready;
-    await this.incidents.replaceOne({ incidentId: incident.incidentId }, clone(incident), { upsert: true });
+    const document = clone({
+      ...incident,
+      ...(writer ? { persistenceEpoch: writer.epoch } : {}),
+    });
+    if (!writer) {
+      await this.incidents.replaceOne(
+        { incidentId: incident.incidentId },
+        document,
+        { upsert: true }
+      );
+      return true;
+    }
+
+    const result = await this.incidents.replaceOne(
+      {
+        incidentId: incident.incidentId,
+        $or: [
+          { persistenceEpoch: { $exists: false } },
+          { persistenceEpoch: { $lte: writer.epoch } },
+        ],
+      },
+      document,
+      { upsert: true }
+    );
+    return result.matchedCount > 0 || result.upsertedCount > 0;
   }
 
   async createIntentIfAbsent(intent: SlayerActionIntent): Promise<{ created: boolean; intent: SlayerActionIntent }> {
