@@ -272,12 +272,10 @@ describe("True eight-floor single-mission production trajectory", () => {
         process.cwd(),
         "..",
         "..",
-        "..",
-        "..",
         "artifacts",
         "eight-floor-production-trajectory-proof.json",
       );
-      mkdirSync(join(process.cwd(), "..", "..", "..", "..", "artifacts"), { recursive: true });
+      mkdirSync(join(process.cwd(), "..", "..", "artifacts"), { recursive: true });
 
       const report = {
         proofVersion: "1.0.0",
