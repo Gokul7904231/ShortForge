@@ -28,7 +28,16 @@ async function testLiveIngestion(): Promise<void> {
     writer,
     ledger,
     null,
-    { enabled: true, vaultPath: vault, batchSize: 10 },
+    {
+      enabled: true,
+      vaultPath: vault,
+      batchSize: 10,
+      ascalonAccessContext: {
+        principalId: "test-ascalon",
+        allowedScopeKeys: ["mission-test-001"],
+        allowGlobalScope: false,
+      },
+    },
   );
 
   await bridge.start();
