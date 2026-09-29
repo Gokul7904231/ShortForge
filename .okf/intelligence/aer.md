@@ -1825,3 +1825,9 @@ These are cognitive inputs to AER, not new execution authority. AER remains the 
 Foundation modules and regression coverage are present on `feat/aer-cost-optimization`. Production promotion still requires fresh CI, security validation, real semantic retrieval measurements, shadow replay, and end-to-end evidence.
 
 Canonical integration spec: `.okf/memory/hindsight-unlazy-native-system.md`.
+
+## Memory economics and evidence evaluation
+
+AER can consume MemoryEvaluationHarness metrics for retrieval latency, token spend, forbidden-hit rate, unauthorized-hit rate, and category-level recall. This is measurement infrastructure only; numeric promotion thresholds remain a separate evidence-backed policy.
+
+Memory access scope and provenance checks occur before trusted Ascalon projection. Definition-bound proof state is durable and re-verifiable, so model/policy/source binding drift invalidates old completion evidence.
