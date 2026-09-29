@@ -195,6 +195,7 @@ export class FloorGovernanceCell {
         envelope: {
           metadata: proposal.ascalonInference,
           proposal,
+          preCallAdmission,
         },
       });
 
