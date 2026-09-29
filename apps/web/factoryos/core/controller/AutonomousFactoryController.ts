@@ -163,6 +163,10 @@ export class AutonomousFactoryController {
       const ledger = mongoDb
         ? new MongoMemoryFabricLedger(mongoDb)
         : new InMemoryMemoryFabricLedger();
+      const ascalonScopeKeys =
+        this.config.memoryFabricAscalonScopeKeys?.length
+          ? [...this.config.memoryFabricAscalonScopeKeys]
+          : [];
 
       this.memoryFabric = new MemoryFabricBridge(
         this.eventBus,
@@ -175,6 +179,13 @@ export class AutonomousFactoryController {
           vaultPath: this.config.memoryFabricVaultPath,
           reconciliationIntervalMs: this.config.memoryFabricReconciliationIntervalMs,
           watchedCollections: this.config.memoryFabricCollections,
+          ascalonAccessContext: ascalonScopeKeys.length > 0
+            ? {
+                principalId: "ascalon-projection",
+                allowedScopeKeys: ascalonScopeKeys,
+                allowGlobalScope: ascalonScopeKeys.includes("GLOBAL"),
+              }
+            : undefined,
         },
       );
       await this.memoryFabric.start();
