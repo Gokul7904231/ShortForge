@@ -38,14 +38,22 @@ export class MemoryLifecycleService {
     this.retrievalEngine = retrievalEngine;
   }
 
-  public retain(input: MemoryConsolidationInput): MemoryConsolidationInput {
+  public async retain(input: MemoryConsolidationInput): Promise<MemoryConsolidationInput> {
+    this.validateRetention(input);
+    await this.observationConsolidator.consolidate([input]);
+    return input;
+  }
+
+  public async retainMany(inputs: readonly MemoryConsolidationInput[]): Promise<readonly MemoryConsolidationInput[]> {
+    inputs.forEach((input) => this.validateRetention(input));
+    if (inputs.length > 0) await this.observationConsolidator.consolidate(inputs);
+    return inputs;
+  }
+
+  private validateRetention(input: MemoryConsolidationInput): void {
     if (!input.memoryId.trim()) throw new Error("[MemoryLifecycle] memoryId is required");
     if (!input.scope.key.trim()) throw new Error("[MemoryLifecycle] scope key is required");
     if (!input.statement.trim()) throw new Error("[MemoryLifecycle] statement is required");
-    // Retain is intentionally permissive: retention records experience/evidence;
-    // verification happens later at the existing MemoryWriter/promotion boundary.
-    this.observationConsolidator.markDirty(input.scope.key, "memory_retained", input.occurredAt);
-    return input;
   }
 
   public async consolidate(
@@ -55,6 +63,9 @@ export class MemoryLifecycleService {
   }
 
   public async recall(query: MemoryRecallQuery): Promise<MemoryRecallResult> {
+    if (!query.accessContext) {
+      throw new Error("[MemoryLifecycle] accessContext is required for trusted recall");
+    }
     const raw = await this.retrievalEngine.recall(this.documentSource(), query);
     const guarded = this.provenanceGuard.inspect(query, raw.items);
     const accepted = guarded.accepted;
