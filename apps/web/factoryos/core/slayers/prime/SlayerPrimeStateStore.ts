@@ -637,6 +637,14 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
       return true;
     }
 
+    const leader = await this.leadership.findOne({
+      _id: "singleton",
+      holderId: writer.holderId,
+      epoch: writer.epoch,
+      expiresAt: { $gt: new Date().toISOString() },
+    });
+    if (!leader) return false;
+
     try {
       const result = await this.incidents.replaceOne(
         {
