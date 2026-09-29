@@ -24,9 +24,7 @@ export interface ResolvedMemoryConsolidationStrategy {
 }
 
 export class MemoryConsolidationStrategyRouter {
-  constructor(
-    private readonly strategies: readonly MemoryConsolidationStrategy[],
-  ) {}
+  constructor(private readonly strategies: readonly MemoryConsolidationStrategy[]) {}
 
   /** First matching strategy wins as a whole. */
   public resolve(scope: MemoryScope): ResolvedMemoryConsolidationStrategy | null {
@@ -65,7 +63,7 @@ export class MemoryConsolidationStrategyRouter {
 
   private matchPattern(pattern: string, value: string): boolean {
     const escaped = pattern
-      .replace(/[.*+?^${}()|[\\]\\]/g, "\\.replace(/[.+?^()|[\\]\\]/g, "\\$&")")
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       .replace(/\*/g, ".*");
     return new RegExp("^" + escaped + "$").test(value);
   }
