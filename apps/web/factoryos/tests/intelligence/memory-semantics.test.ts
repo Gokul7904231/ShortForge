@@ -8,6 +8,8 @@ import {
   MemoryProvenanceGuard,
   MemoryReflectionEngine,
   MemoryRetrievalEngine,
+  CosineMemorySemanticRetriever,
+  MemoryEvaluationHarness,
   type MemoryConsolidationInput,
   type MemoryRetrievalCandidate,
 } from "../../core/intelligence/memory";
