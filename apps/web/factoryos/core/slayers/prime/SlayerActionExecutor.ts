@@ -235,6 +235,27 @@ export class SlayerActionExecutor {
         });
       }
 
+      const currentActionLease = await this.actionLeaseStore.get(
+        actionLease.actionLeaseId
+      );
+      if (
+        !currentActionLease ||
+        currentActionLease.status !== "ACTIVE" ||
+        currentActionLease.holderId !== holderId ||
+        currentActionLease.fencingToken !== actionLease.fencingToken
+      ) {
+        return this.receipt(intent, {
+          status: "STALE_ACTION",
+          reason: "The reserved action lease is no longer current; stale mutation was rejected.",
+          started,
+          actionLease,
+          details: {
+            currentActionLeaseStatus: currentActionLease?.status || "MISSING",
+            currentActionLeaseFence: currentActionLease?.fencingToken,
+          },
+        });
+      }
+
       details = await adapter.execute(intent, grant!, actionLease);
       const verification = await adapter.verify(
         intent,
