@@ -18,6 +18,26 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     maxCostUnits: 20,
   } as const;
 
+  const calibratedValuePolicy = {
+    baseline: {
+      mode: "MICRO" as const,
+      resolutionProbability: 0.45,
+      costUnits: 1,
+      latencyMs: 100,
+      source: "OBSERVED_CALIBRATION" as const,
+    },
+    ascalon: {
+      mode: "DEEP" as const,
+      resolutionProbability: 0.9,
+      costUnits: 5,
+      latencyMs: 200,
+      source: "OBSERVED_CALIBRATION" as const,
+    },
+    minimumNetValue: 0.01,
+    costWeight: 0.1,
+    latencyWeight: 0.01,
+  };
+
   it("keeps deterministic / confirmed state out of deep cognition", () => {
     const aer = new AEREngine();
     const result = aer.assess({
@@ -71,6 +91,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       routing: {
         microAvailable: true,
         deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -110,6 +131,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       routing: {
         microAvailable: true,
         deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -237,6 +259,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       budget,
       routing: {
         deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -260,7 +283,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
         },
       ],
       budget,
-      routing: { deepAvailable: true },
+      routing: { deepAvailable: true, valuePolicy: calibratedValuePolicy },
     });
 
     const serialized = JSON.stringify(result.context);
@@ -345,8 +368,8 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       budget,
       routing: {
         deepAvailable: true,
-        ascalonEstimatedCostUnits: 5,
-        minimumAscalonExpectedValue: 0.5,
+        ascalonAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -417,7 +440,8 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       },
       routing: {
         deepAvailable: true,
-        ascalonEstimatedCostUnits: 5,
+        ascalonAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -453,7 +477,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
         },
       ],
       budget,
-      routing: { deepAvailable: true },
+      routing: { deepAvailable: true, valuePolicy: calibratedValuePolicy },
     });
 
     const gate = new AscalonInvocationGate();
