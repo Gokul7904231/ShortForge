@@ -12,3 +12,4 @@ export * from "./EpistemicTrigger";
 export * from "./HypothesisManager";
 export * from "./AERMetrics";
 export * from "./AscalonInvocationGate";
+export * from "./AERValueModel";
