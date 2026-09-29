@@ -62,6 +62,7 @@ export class MemoryObservationConsolidator {
   ): Promise<MemoryConsolidationReport[]> {
     const grouped = new Map<string, MemoryConsolidationInput[]>();
     for (const input of inputs) {
+      if (input.retentionClass === "DO_NOT_LEARN" || input.retentionClass === "TEMPORARY") continue;
       const groupKey = input.scope.key + "::" + input.facetKey;
       const list = grouped.get(groupKey) ?? [];
       list.push(input);
