@@ -7,6 +7,7 @@ export interface AscalonPreCallAdmission {
   readonly admitted: boolean;
   readonly reason: string;
   readonly contextFingerprint: string;
+  readonly reservationId?: string;
 }
 
 export interface AscalonProposalContext {
