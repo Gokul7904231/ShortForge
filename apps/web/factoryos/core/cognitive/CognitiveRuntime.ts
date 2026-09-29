@@ -13,6 +13,7 @@ import { CognitiveOutcomeLearner } from "./CognitiveOutcomeLearner";
 import type { EvidenceNode } from "./CognitiveContracts";
 import type { CandidateAction } from "./simulation/SimulationDecisionEngine";
 import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
+import { MemoryAERAdapter } from "../intelligence/memory/MemoryAERAdapter";
 
 export class CognitiveRuntime {
   public readonly plane: CognitivePlaneEngine;
@@ -20,6 +21,7 @@ export class CognitiveRuntime {
   public readonly fallbackPolicy: CognitiveFallbackPolicy;
   public readonly outcomeLearner: CognitiveOutcomeLearner;
   private readonly memoryLifecycle?: MemoryLifecycleService;
+  private readonly memoryAERAdapter = new MemoryAERAdapter();
 
   constructor(plane: CognitivePlaneEngine, memoryLifecycle?: MemoryLifecycleService) {
     this.plane = plane;
@@ -89,6 +91,30 @@ export class CognitiveRuntime {
         }));
         tokensConsumed += Math.max(20, memoryRecall.estimatedTokens);
         costUsd += 0.001;
+
+        // Feed the canonical memory result into AER as epistemic evidence.
+        // AER remains advisory; this does not grant authority or execute Ascalon.
+        const memoryAER = this.memoryAERAdapter.assess({
+          contextSeed: "memory:" + incident.incidentId,
+          recall: memoryRecall,
+          impact: {
+            affectedFloors: incident.floorId ? [incident.floorId] : [],
+            affectedArtifacts: [],
+            severity: incident.severity,
+            reversible: incident.severity !== "CRITICAL",
+          },
+          budget: {
+            maxEpistemicTimeMs: 250,
+            maxDeepCalls: 0,
+            maxMicroCalls: 0,
+            maxProbeCount: 0,
+            maxCostUnits: 0,
+          },
+        });
+        tokensConsumed += memoryAER.context.serializedTokenEstimate;
+        for (const ref of memoryAER.state.evidenceRefs) {
+          if (!evidenceIds.includes(ref)) evidenceIds.push(ref);
+        }
       } else {
         const legacy = await this.plane.experienceMemory.recallByKeywords(query, incident.floorId, 5);
         similarExperiences = legacy.map((item) => ({
