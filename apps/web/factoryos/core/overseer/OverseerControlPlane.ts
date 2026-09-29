@@ -429,7 +429,7 @@ export class OverseerControlPlane {
       }
     }
 
-    const executors = this.getTaskExecutorsForFloors(missionId);
+    const executors = this.getTaskExecutorsForFloors(missionId, run.runId);
 
     // Execute Task DAG asynchronously across target floor executors
     const completedDag = await this.dagExecutor.executeDAG(dag, executors, { maxParallelTasks });
@@ -608,7 +608,7 @@ export class OverseerControlPlane {
     ];
   }
 
-  private getTaskExecutorsForFloors(missionId?: string) {
+  private getTaskExecutorsForFloors(missionId?: string, runId?: string) {
     const sharedScope: Record<string, any> = {};
 
     return {
@@ -637,6 +637,7 @@ export class OverseerControlPlane {
           floorId: "floor00_analyst",
           workerId: "worker_analyst_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -699,6 +700,7 @@ export class OverseerControlPlane {
           floorId: "floor00_analyst",
           workerId: "worker_analyst_01",
           missionId,
+          runId,
           output: analystReport,
           loopReceipt: researchLoop.receipt,
           loopFeedback: researchLoop.feedback,
@@ -743,6 +745,7 @@ export class OverseerControlPlane {
           floorId: "floor01_strategy",
           workerId: "worker_strategy_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -788,6 +791,7 @@ export class OverseerControlPlane {
           floorId: "floor01_strategy",
           workerId: "worker_strategy_01",
           missionId,
+          runId,
           output: strategyPayload,
           startedAt,
           completedAt,
@@ -831,6 +835,7 @@ export class OverseerControlPlane {
           floorId: "floor02_scripting",
           workerId: "worker_scripting_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -981,6 +986,7 @@ export class OverseerControlPlane {
           floorId: "floor02_scripting",
           workerId: "worker_scripting_01",
           missionId,
+          runId,
           output: scriptPayload,
           startedAt,
           completedAt,
@@ -1100,6 +1106,7 @@ export class OverseerControlPlane {
           floorId: "floor04_media_synthesis",
           workerId: "worker_audio_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1138,6 +1145,7 @@ export class OverseerControlPlane {
           floorId: "floor04_media_synthesis",
           workerId: "worker_audio_01",
           missionId,
+          runId,
           output: mediaPayload,
           startedAt,
           completedAt,
@@ -1182,6 +1190,7 @@ export class OverseerControlPlane {
           floorId: "floor05_timeline_composition",
           workerId: "worker_timeline_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1280,6 +1289,7 @@ export class OverseerControlPlane {
           floorId: "floor05_timeline_composition",
           workerId: "worker_timeline_01",
           missionId,
+          runId,
           output: timelinePayload,
           startedAt,
           completedAt,
@@ -1324,6 +1334,7 @@ export class OverseerControlPlane {
           floorId: "floor06_rendering",
           workerId: "worker_render_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1444,6 +1455,7 @@ export class OverseerControlPlane {
           floorId: "floor06_rendering",
           workerId: "worker_render_01",
           missionId,
+          runId,
           jobId: targetJobId,
           output: renderOutputMessage,
           artifact: scope.artifact,
@@ -1497,6 +1509,7 @@ export class OverseerControlPlane {
           floorId: "floor07_compliance",
           workerId: "worker_compliance_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1583,6 +1596,7 @@ export class OverseerControlPlane {
           floorId: "floor07_compliance",
           workerId: "worker_compliance_01",
           missionId,
+          runId,
           jobId: targetJobId,
           output: verificationReport,
           deliveryArtifact,
