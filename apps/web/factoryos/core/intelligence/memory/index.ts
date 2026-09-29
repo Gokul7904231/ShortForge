@@ -8,3 +8,5 @@ export * from "./MemoryCompletionLedger";
 export * from "./MemoryReflectionEngine";
 export * from "./KnowledgeStoreObservationAdapter";
 export * from "./MemoryLifecycleService";
+export * from "./MemoryConsolidationStrategyRouter";
+export * from "./MemoryRetentionNormalizer";
