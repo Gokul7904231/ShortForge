@@ -10,6 +10,7 @@ import type {
   SlayerAuthorizationGrant,
 } from "../core/contracts/SlayerPrimeContracts";
 import { WorldStateEngine } from "../core/worldstate/WorldStateEngine";
+import { InMemorySlayerPrimeStateStore } from "../core/slayers/prime/SlayerPrimeStateStore";
 
 const future = (ms: number) =>
   new Date(Date.now() + ms).toISOString();
@@ -237,6 +238,146 @@ describe("Slayer Prime — enforcement control plane", () => {
 
     const lease = await leaseManager.getLease("job-9");
     expect(lease?.status).toBe("RELEASED");
+  });
+
+  it("deduplicates the same logical action proposal across repeated planning calls", async () => {
+    await leaseManager.acquire("job-dedupe", "worker-dedupe", 30_000);
+
+    const incident = await prime.ingest({
+      observation: {
+        observationId: "obs-dedupe",
+        floorId: "floor03_asset_realization",
+        target: "worker-dedupe",
+        category: "WORKER_STALL",
+        severity: "HIGH",
+        description: "worker is stale",
+        rawMetrics: {},
+        observedAt: new Date().toISOString(),
+      },
+      evidence: [
+        evidence("ev-dedupe-lease", "LEASE", "lease-manager", "job-dedupe"),
+        evidence("ev-dedupe-heartbeat", "HEARTBEAT", "heartbeat-tracker", "worker-dedupe"),
+      ],
+    });
+
+    const first = await prime.planAction(
+      incident.incidentId,
+      "REVOKE_LEASE",
+      "TASK",
+      "worker-dedupe",
+      "slayer-prime",
+      { taskId: "job-dedupe", ownerAgentId: "worker-dedupe" }
+    );
+    const second = await prime.planAction(
+      incident.incidentId,
+      "REVOKE_LEASE",
+      "TASK",
+      "worker-dedupe",
+      "another-replica",
+      { taskId: "job-dedupe", ownerAgentId: "worker-dedupe" }
+    );
+
+    expect(second.intent.intentId).toBe(first.intent.intentId);
+    expect(second.incident.actionIntentIds.filter((id) => id === first.intent.intentId)).toHaveLength(1);
+    expect(second.incident.notes.some((note) => note.includes("Existing deduplicated intent reused"))).toBe(true);
+  });
+
+  it("restores Prime incident state after a process-style restart", async () => {
+    const store = new InMemorySlayerPrimeStateStore();
+    const first = new SlayerPrimeEngine(eventBus, leaseManager, {
+      instanceId: "prime-restart-a",
+      stateStore: store,
+    });
+    first.start();
+
+    const incident = await first.ingest({
+      observation: {
+        observationId: "obs-restart",
+        floorId: "floor02_scripting",
+        target: "worker-restart",
+        category: "WORKER_STALL",
+        severity: "HIGH",
+        description: "worker stopped",
+        rawMetrics: {},
+        observedAt: new Date().toISOString(),
+      },
+    });
+    first.stop();
+
+    const second = new SlayerPrimeEngine(eventBus, leaseManager, {
+      instanceId: "prime-restart-b",
+      stateStore: store,
+    });
+    second.start();
+    await second.ingest({
+      observation: {
+        observationId: "obs-restart-2",
+        floorId: "floor02_scripting",
+        target: "worker-restart",
+        category: "WORKER_STALL",
+        severity: "HIGH",
+        description: "worker still stopped",
+        rawMetrics: {},
+        observedAt: future(100),
+      },
+    });
+
+    expect(second.getIncident(incident.incidentId)).toBeDefined();
+    expect(second.getIncident(incident.incidentId)?.observationIds).toEqual([
+      "obs-restart",
+      "obs-restart-2",
+    ]);
+    second.stop();
+  });
+
+  it("allows only one Prime replica to hold enforcement leadership in shared state", async () => {
+    const store = new InMemorySlayerPrimeStateStore();
+    const first = new SlayerPrimeEngine(eventBus, leaseManager, {
+      instanceId: "prime-leader-a",
+      stateStore: store,
+      leadershipLeaseTtlMs: 30_000,
+    });
+    const second = new SlayerPrimeEngine(eventBus, leaseManager, {
+      instanceId: "prime-leader-b",
+      stateStore: store,
+      leadershipLeaseTtlMs: 30_000,
+    });
+
+    first.start();
+    second.start();
+
+    await first.ingest({
+      observation: {
+        observationId: "obs-leader",
+        floorId: "floor03_asset_realization",
+        target: "worker-leader",
+        category: "WORKER_STALL",
+        severity: "HIGH",
+        description: "stale worker",
+        rawMetrics: {},
+        observedAt: new Date().toISOString(),
+      },
+    });
+
+    expect(first.isLeader()).toBe(true);
+    expect(second.isLeader()).toBe(false);
+    await expect(
+      second.ingest({
+        observation: {
+          observationId: "obs-should-reject",
+          floorId: "floor03_asset_realization",
+          target: "worker-other",
+          category: "WORKER_STALL",
+          severity: "HIGH",
+          description: "stale worker",
+          rawMetrics: {},
+          observedAt: new Date().toISOString(),
+        },
+      })
+    ).rejects.toThrow("not the current enforcement leader");
+
+    first.stop();
+    second.stop();
   });
 
   it("is wired into the master SlayerEngine without changing worker authority", async () => {
