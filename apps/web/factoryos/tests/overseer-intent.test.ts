@@ -33,7 +33,7 @@ describe("FactoryOS Frontier v3 — Overseer Cognitive Runtime & Intent Routing 
 
     expect(res.intent).toBe("FACTORY_TELEMETRY");
     expect(res.sourceUsed).toBe("FactoryStateService");
-    expect(res.evidence.floorCount).toBe(7);
+    expect(res.evidence.floorCount).toBe(8);
     expect(res.answer).toContain("7");
     expect(res.answer).not.toContain("agent swarm");
     expect(res.answer).not.toContain("RAG");
@@ -80,7 +80,7 @@ describe("FactoryOS Frontier v3 — Overseer Cognitive Runtime & Intent Routing 
 
     expect(res.intent).toBe("FACTORY_TELEMETRY");
     expect(res.sourceUsed).toBe("FactoryStateService");
-    expect(res.evidence.floorCount).toBe(7);
+    expect(res.evidence.floorCount).toBe(8);
   });
 
   it("7. Ambiguous Query Gate: asks for clarification instead of guessing", async () => {
