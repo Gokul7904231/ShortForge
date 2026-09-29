@@ -212,6 +212,7 @@ export interface CognitiveRecommendation {
   readonly expectedValue: number;
   readonly shouldInvokeAscalon: boolean;
   readonly estimatedCostUnits: number;
+  readonly estimatedLatencyMs: number;
   readonly expectedBenefit: number;
   readonly expectedCost: number;
   readonly uncertaintyBurden: number;
