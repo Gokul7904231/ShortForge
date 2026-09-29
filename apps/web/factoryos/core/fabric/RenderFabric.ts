@@ -21,6 +21,7 @@ import type {
   ProviderType,
 } from "../compute/contracts/ComputeContracts";
 import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
+import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 
 export interface RenderCompilationResult {
   readonly success: boolean;
@@ -38,6 +39,8 @@ export interface RenderExecutionResult {
   readonly providerUsed: "DISTRIBUTED";
   readonly compilerUsed: "FFMPEG" | "HYPERFRAMES";
   readonly receipt: ExecutionReceipt;
+  readonly failovers: readonly string[];
+  readonly loopReceipt: FloorClosedLoopReceipt;
   readonly message?: string;
 }
 
@@ -201,7 +204,7 @@ export class RenderFabric {
     };
 
     const startedAt = Date.now();
-    const { receipt } = await this.computeGateway.submitJob(
+    const { receipt, failovers } = await this.computeGateway.submitJob(
       computeJob,
       (message) => console.debug(`[RenderFabric] ${message}`),
       options.preferredProviderType
@@ -257,6 +260,22 @@ export class RenderFabric {
       providerUsed: "DISTRIBUTED",
       compilerUsed: compiler.id,
       receipt,
+      failovers: Object.freeze([...failovers]),
+      loopReceipt: {
+        floorId: "floor06_rendering",
+        loopType: "DETERMINISTIC_OPERATIONAL",
+        loopId: "f06-render-" + intent.jobId + "-" + Date.now().toString(36),
+        termination: "COMPLETED",
+        iterations: failovers.length + 1,
+        startedAt: new Date(startedAt).toISOString(),
+        completedAt: new Date().toISOString(),
+        verified: receipt.status === "COMPLETED" && Boolean(artifactRef.sha256),
+        evidenceRefs: [
+          artifactRef.sha256,
+          receipt.receiptId,
+          ...(receipt.admissionRecord?.admissionId ? [receipt.admissionRecord.admissionId] : []),
+        ],
+      },
       message: `ComputeRouter routed ${intent.jobId} through ${receipt.providerId} and returned verified artifact ${artifactRef.sha256}.`,
     };
   }

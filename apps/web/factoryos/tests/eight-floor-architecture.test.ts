@@ -156,6 +156,10 @@ describe("FactoryOS Frontier v3 — Canonical Eight-Floor Architecture & Subsyst
     expect(localExec.providerUsed).toBe("DISTRIBUTED");
     expect(localExec.compilerUsed).toBe("FFMPEG");
     expect(localExec.artifact).toBeDefined();
+    expect(localExec.loopReceipt.loopType).toBe("DETERMINISTIC_OPERATIONAL");
+    expect(localExec.loopReceipt.termination).toBe("COMPLETED");
+    expect(localExec.loopReceipt.verified).toBe(true);
+    expect(localExec.loopReceipt.evidenceRefs).toContain(localExec.artifact!.sha256);
 
     renderedArtifact = localExec.artifact;
   }, 45000);

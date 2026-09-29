@@ -14,7 +14,31 @@ import type {
   VerificationStatus,
   PassportIntegrityMetadata,
 } from "../contracts/ResearchPassportContracts";
+import { runBoundedFeedbackLoop, type FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
+
+export interface ResearchLoopOptions {
+  readonly maxIterations?: number;
+  readonly minVerifiedClaims?: number;
+  readonly minConfidence?: number;
+  readonly sourceGrowthPerIteration?: number;
+}
+
+export interface ResearchEvidenceFeedback {
+  readonly iteration: number;
+  readonly sourceCount: number;
+  readonly totalClaims: number;
+  readonly verifiedClaims: number;
+  readonly unresolvedClaims: number;
+  readonly passportConfidence: number;
+  readonly passed: boolean;
+}
+
+export interface ResearchLoopReport {
+  readonly analystReport: AnalystReport;
+  readonly feedback: readonly ResearchEvidenceFeedback[];
+  readonly receipt: FloorClosedLoopReceipt;
+}
 
 export interface ResearchRequest {
   readonly missionId: string;
@@ -286,6 +310,136 @@ export class ResearchRuntime {
       competitorSignals,
       passport,
       generatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Bounded evidence/research feedback loop.
+   *
+   * The loop never grants execution authority. It only re-queries when the
+   * current research result fails the caller's evidence-quality thresholds.
+   */
+  async executeResearchLoop(
+    request: ResearchRequest,
+    options: ResearchLoopOptions = {}
+  ): Promise<ResearchLoopReport> {
+    const startedAt = new Date().toISOString();
+    const initialReport = await this.executeResearch(request);
+
+    const minVerifiedClaims = Math.max(1, Math.floor(options.minVerifiedClaims ?? 1));
+    const minConfidence = Math.max(0, Math.min(1, options.minConfidence ?? 0.7));
+    const sourceGrowth = Math.max(1, Math.floor(options.sourceGrowthPerIteration ?? 4));
+
+    type ResearchState = { request: ResearchRequest; report: AnalystReport };
+
+    const result = await runBoundedFeedbackLoop<ResearchState, ResearchEvidenceFeedback>({
+      initialOutput: { request, report: initialReport },
+      maxIterations: options.maxIterations ?? 3,
+      verify: async (state, iteration) => {
+        const claims = state.report.passport.claims;
+        const verifiedClaims = claims.filter((claim) => claim.verificationStatus === "VERIFIED").length;
+        const unresolvedClaims = claims.filter(
+          (claim) =>
+            claim.verificationStatus === "UNVERIFIED" ||
+            claim.verificationStatus === "AMBIGUOUS" ||
+            claim.verificationStatus === "CONTRADICTED"
+        ).length;
+        return {
+          iteration,
+          sourceCount: state.report.passport.sources.length,
+          totalClaims: claims.length,
+          verifiedClaims,
+          unresolvedClaims,
+          passportConfidence: state.report.passport.confidence,
+          passed: verifiedClaims >= minVerifiedClaims && state.report.passport.confidence >= minConfidence,
+        };
+      },
+      isSatisfied: (feedback) => feedback.passed,
+      fingerprint: (state) =>
+        createHash("sha256")
+          .update(
+            JSON.stringify({
+              topic: state.request.topic,
+              sources: state.report.passport.sources.map((source) => source.url).sort(),
+              verifiedClaims: state.report.passport.claims
+                .filter((claim) => claim.verificationStatus === "VERIFIED")
+                .map((claim) => claim.statement)
+                .sort(),
+              confidence: state.report.passport.confidence,
+            })
+          )
+          .digest("hex"),
+      revise: async (state, feedback) => {
+        const nextTarget = Math.min(
+          MAX_RESEARCH_SOURCE_CAP,
+          Math.max(
+            state.report.passport.sources.length + sourceGrowth,
+            state.request.targetSourceCount ?? minVerifiedClaims + sourceGrowth
+          )
+        );
+
+        if (nextTarget <= state.report.passport.sources.length) {
+          return null;
+        }
+
+        const nextIntent = [
+          state.request.intent || "",
+          "Re-verify unresolved research claims using additional independent sources.",
+          "Prior iteration: " +
+            feedback.verifiedClaims +
+            " verified claims, " +
+            feedback.unresolvedClaims +
+            " unresolved claims.",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const nextReport = await this.executeResearch({
+          ...state.request,
+          methodology: "FULL",
+          targetSourceCount: nextTarget,
+          intent: nextIntent,
+        });
+
+        return {
+          request: {
+            ...state.request,
+            methodology: "FULL",
+            targetSourceCount: nextTarget,
+            intent: nextIntent,
+          },
+          report: nextReport,
+        };
+      },
+    });
+
+    const finalFeedback = result.history.map((entry) => entry.feedback);
+    const finalFeedbackItem = finalFeedback[finalFeedback.length - 1];
+    const completedAt = new Date().toISOString();
+
+    const receipt: FloorClosedLoopReceipt = {
+      floorId: "floor00_analyst",
+      loopType: "BOUNDED_FEEDBACK",
+      loopId: "f00-research-" + request.missionId + "-" + Date.now().toString(36),
+      termination: result.termination,
+      iterations: result.iterations,
+      startedAt,
+      completedAt,
+      verified: Boolean(finalFeedbackItem?.passed),
+      evidenceRefs: [
+        ...result.output.report.passport.sources.map((source) => source.url),
+        result.output.report.passport.passportId,
+      ],
+      failureReason:
+        result.termination === "COMPLETED"
+          ? undefined
+          : "Evidence thresholds were not satisfied within the bounded research loop.",
+    };
+
+    return {
+      analystReport: result.output.report,
+      feedback: Object.freeze(finalFeedback),
+      receipt,
     };
   }
 
