@@ -429,9 +429,16 @@ export class OverseerControlPlane {
     console.log(`[Overseer][Trajectory] run=${run.runId} phase=ledger-complete decisionId=${decision.decisionId}`);
 
     console.log(`[Overseer][Trajectory] run=${run.runId} phase=dag-build-start`);
-    // 2. Autonomous Task DAG Generation & Floor Dispatching
-    const nodes = this.generateTaskNodesForGoal(run.command);
-    const dag = this.dagPlanner.createDAG(run.runId, nodes);
+    // 2. Mission-backed production must use the authoritative eight-floor
+    // topology directly. Natural-language command matching remains only for
+    // legacy direct-control calls without a Mission identity.
+    const canonicalMissionDAG = missionId
+      ? this.dagPlanner.createEightFloorProductionDAG(run.runId, { command: run.command })
+      : null;
+    const nodes = canonicalMissionDAG
+      ? Object.values(canonicalMissionDAG.nodes)
+      : this.generateTaskNodesForGoal(run.command);
+    const dag = canonicalMissionDAG || this.dagPlanner.createDAG(run.runId, nodes);
     console.log(`[Overseer][Trajectory] run=${run.runId} phase=dag-build-complete nodes=${nodes.length}`);
     let maxParallelTasks = 3;
 
