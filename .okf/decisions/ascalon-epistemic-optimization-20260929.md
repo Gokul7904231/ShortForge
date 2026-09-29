@@ -50,3 +50,20 @@ This optimization does not grant Ascalon any new authority. AER remains advisory
 ## Validation gate
 
 The change must remain shadow/advisory until repository CI, targeted AER tests, security checks, and shadow/outcome replay establish measured behavior. Illustrative 85/10/4/1 routing mixes are not production measurements.
+
+## Remediation additions
+
+The implementation phase additionally introduced:
+
+- a decision-theoretic value model using baseline-vs-Ascalon incremental utility;
+- provider/model cost-token estimation and actual usage telemetry;
+- a bounded AER probe execution bridge to AEF;
+- a reassessment loop with batch budget accounting and verified-evidence resolution;
+- durable SQLite budget reservations and a commit/release coordinator;
+- a canonical pre-call gate integrated before Ascalon proposal generation;
+- a second governance guard against direct ADMITTED Ascalon execution bypass;
+- policy-driven material evidence freshness;
+- multi-pass episode accounting for calibration;
+- conservative observed-outcome routing policy generation retained in shadow mode.
+
+The production gate remains blocked until fresh CI/security/shadow replay evidence is observed.
