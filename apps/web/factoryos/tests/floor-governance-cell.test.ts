@@ -28,6 +28,14 @@ function grant(
   };
 }
 
+const alwaysAdmitAscalon = {
+  evaluate: async ({ snapshot }: { snapshot: { floorId: string; stateVersion: number } }) => ({
+    admitted: true,
+    reason: "test_pre_call_admitted",
+    contextFingerprint: `test:${snapshot.floorId}:${snapshot.stateVersion}`,
+  }),
+};
+
 describe("Floor Governance Cell — bounded autonomy foundation", () => {
   it("keeps Ascalon proposal-only and requires a valid action transition + Guardian grant", async () => {
     const graph = createDefaultFloorActionGraph();
@@ -50,6 +58,7 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       guardianId: "guardian_floor04",
       actionGraph: graph,
       ascalon,
+      ascalonPreCallGate: alwaysAdmitAscalon,
       capabilities: ["floor.read"],
     });
     cell.setState("READY", "boot verified");
@@ -107,6 +116,7 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       guardianId: "guardian_floor04",
       actionGraph: graph,
       ascalon,
+      ascalonPreCallGate: alwaysAdmitAscalon,
       capabilities: ["floor.execute"],
     });
     cell.setState("READY", "boot verified");
@@ -329,6 +339,7 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       guardianId: "guardian_floor04",
       actionGraph: graph,
       ascalon,
+      ascalonPreCallGate: alwaysAdmitAscalon,
       capabilities: ["floor.read"],
     });
     cell.setState("READY", "boot verified");
