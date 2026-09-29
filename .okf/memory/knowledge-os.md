@@ -108,3 +108,31 @@ The promotion boundary remains explicit:
 Unverified events remain outside the active agent/Ascalon projection. Temporal fields, provenance hashes, deterministic quality states, conflict groups and supersession provide the minimum controls for long-lived cognitive memory.
 
 The Ascalon projection is generated automatically but remains an admission projection only. training_eligible is never inferred from a successful runtime event.
+
+
+## 2026-09-29 Memory Fabric Research Upgrade
+
+Adopt the following lifecycle vocabulary from modern agent-memory systems without introducing a second persistence authority:
+
+```text
+retain -> evidence-bearing experience
+consolidate -> durable observation
+recall -> bounded retrieval
+reflect -> deeper synthesis / mental-model refresh
+```
+
+ShortForge invariant:
+
+```text
+raw observation
+   -> candidate observation
+   -> evidence-backed consolidation
+   -> verified durable memory
+   -> scoped projection
+```
+
+A memory artifact can become more useful without becoming more authoritative. Provenance, contradiction history and verification state remain attached throughout the lifecycle.
+
+Efficiency rule: prefer `event -> affected scope -> dirty mark -> bounded consolidation -> rate-limited refresh` rather than a full reflection rebuild after every write. Failed refreshes must enter bounded retry/backoff.
+
+Compatibility rule: Hindsight is treated as research/reference architecture, not as a required ShortForge persistence layer. Any future adapter must terminate at the existing MemoryWriter, verification and projection boundaries.
