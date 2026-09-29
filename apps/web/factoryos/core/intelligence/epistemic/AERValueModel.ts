@@ -9,7 +9,11 @@ export interface CognitiveOptionProfile {
   readonly resolutionProbability: number;
   readonly costUnits: number;
   readonly latencyMs: number;
+  readonly latencyP95Ms?: number;
+  readonly latencySafetyMarginMs?: number;
   readonly estimatedCostUsd?: number;
+  readonly failureProbability?: number;
+  readonly failurePenalty?: number;
   readonly source: Exclude<ValueEstimateSource, "UNAVAILABLE">;
 }
 
@@ -32,6 +36,8 @@ export interface AERValueAssessment {
   readonly expectedCost: number;
   readonly incrementalCostUnits: number;
   readonly incrementalLatencyMs: number;
+  readonly baselineExpectedUtility: number;
+  readonly ascalonExpectedUtility: number;
   readonly uncertaintyBurden: number;
   readonly baselineMode: EpistemicCognitiveMode;
   readonly baselineResolutionProbability: number;
@@ -61,30 +67,33 @@ function clampUnit(value: number): number {
 }
 
 /**
- * AER uses a binary expected-utility delta as its first decision-theoretic VOI
- * model. The model is only meaningful when resolution probabilities are
- * calibrated or explicitly declared priors.
+ * Decision-theoretic VOI model comparing a baseline action with Ascalon.
  *
- * EU(option) = P(resolve) * U(resolve)
- *              - P(unresolved) * penalty
- *              - priced runtime cost
+ * EU(action) =
+ *   P(resolve) * U(resolve)
+ *   - P(unresolved) * U(unresolved)
+ *   - operational cost
+ *   - expected failure penalty
  *
- * Net value is the incremental expected utility of Ascalon over the baseline.
+ * AER uses the incremental EU of Ascalon over the baseline for routing.
  */
 export function evaluateAscalonValue(
   state: Pick<EpistemicState, "unknown" | "contradictions" | "hypotheses" | "impact">,
   policy: AERValuePolicy,
 ): AERValueAssessment {
-  const baselineP = clampUnit(policy.baseline.resolutionProbability);
-  const ascalonP = clampUnit(policy.ascalon.resolutionProbability);
+  const clamp = (value: number) =>
+    Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+  const nonNegative = (value: number) =>
+    Math.max(0, Number.isFinite(value) ? value : 0);
 
+  const baselineP = clamp(policy.baseline.resolutionProbability);
+  const ascalonP = clamp(policy.ascalon.resolutionProbability);
   const materialUnknown = state.unknown.some((item) => item.material);
   const materialConflict = state.contradictions.some((item) => item.material);
   const activeHypothesisCount = state.hypotheses.filter(
     (item) => item.status !== "ELIMINATED" && item.status !== "CONTRADICTED",
   ).length;
 
-  // Structural burden is intentionally not called a probability.
   const uncertaintyBurden = Math.min(
     1,
     (materialUnknown ? 0.45 : 0) +
@@ -99,37 +108,55 @@ export function evaluateAscalonValue(
     policy.unresolvedPenaltyBySeverity?.[state.impact.severity] ??
     DEFAULT_UNRESOLVED_PENALTY[state.impact.severity];
 
-  const incrementalResolutionProbability = Math.max(0, ascalonP - baselineP);
+  const baselineFailureP = clamp(policy.baseline.failureProbability ?? 0);
+  const ascalonFailureP = clamp(policy.ascalon.failureProbability ?? 0);
 
-  const expectedBenefit =
-    uncertaintyBurden *
-    incrementalResolutionProbability *
-    (resolutionUtility + unresolvedPenalty);
+  const baselineExpectedUtility =
+    baselineP * resolutionUtility -
+    (1 - baselineP) * unresolvedPenalty -
+    baselineFailureP * nonNegative(policy.baseline.failurePenalty ?? unresolvedPenalty);
+
+  const ascalonExpectedUtility =
+    ascalonP * resolutionUtility -
+    (1 - ascalonP) * unresolvedPenalty -
+    ascalonFailureP * nonNegative(policy.ascalon.failurePenalty ?? unresolvedPenalty);
 
   const incrementalCostUnits = Math.max(
     0,
-    Math.max(0, policy.ascalon.costUnits) -
-      Math.max(0, policy.baseline.costUnits),
+    nonNegative(policy.ascalon.costUnits) - nonNegative(policy.baseline.costUnits),
   );
+
   const incrementalCostUsd =
     policy.ascalon.estimatedCostUsd !== undefined &&
     policy.baseline.estimatedCostUsd !== undefined
-      ? Math.max(0, policy.ascalon.estimatedCostUsd - policy.baseline.estimatedCostUsd)
+      ? Math.max(
+          0,
+          nonNegative(policy.ascalon.estimatedCostUsd) -
+            nonNegative(policy.baseline.estimatedCostUsd),
+        )
       : undefined;
+
+  const baselineLatencyMs = nonNegative(
+    policy.baseline.latencyP95Ms ?? policy.baseline.latencyMs,
+  );
+  const ascalonLatencyMs = nonNegative(
+    policy.ascalon.latencyP95Ms ?? policy.ascalon.latencyMs,
+  );
   const incrementalLatencyMs = Math.max(
     0,
-    Math.max(0, policy.ascalon.latencyMs) -
-      Math.max(0, policy.baseline.latencyMs),
+    ascalonLatencyMs - baselineLatencyMs,
   );
-  const weightedComputeCost =
+
+  const computeCost =
     incrementalCostUsd !== undefined
       ? incrementalCostUsd * Math.max(0, policy.costUsdWeight ?? 1)
       : incrementalCostUnits * Math.max(0, policy.costWeight ?? 0.1);
-  const weightedLatencyCost =
+  const latencyCost =
     (incrementalLatencyMs / 1000) *
     Math.max(0, policy.latencyWeight ?? 0.01);
-  const expectedCost = uncertaintyBurden * (weightedComputeCost + weightedLatencyCost);
 
+  const expectedBenefit = ascalonExpectedUtility - baselineExpectedUtility;
+  const expectedCost = computeCost + latencyCost;
   const expectedValue = expectedBenefit - expectedCost;
   const threshold = policy.minimumNetValue ?? 0;
   const source: ValueEstimateSource =
@@ -144,16 +171,18 @@ export function evaluateAscalonValue(
 
   return {
     expectedValue,
-    estimatedLatencyMs: Math.max(0, policy.ascalon.latencyMs),
+    estimatedLatencyMs: ascalonLatencyMs,
     expectedBenefit,
     expectedCost,
     incrementalCostUnits,
     incrementalLatencyMs,
+    baselineExpectedUtility,
+    ascalonExpectedUtility,
     uncertaintyBurden,
     baselineMode: policy.baseline.mode,
     baselineResolutionProbability: baselineP,
     ascalonResolutionProbability: ascalonP,
-    incrementalResolutionProbability,
+    incrementalResolutionProbability: Math.max(0, ascalonP - baselineP),
     source,
     shouldInvokeAscalon:
       uncertaintyBurden > 0 &&
@@ -165,7 +194,7 @@ export function evaluateAscalonValue(
         : !calibrationAllowed
           ? "Value model uses uncalibrated priors; production Ascalon escalation is blocked."
           : expectedValue < threshold
-            ? "Expected utility gain does not justify the priced Ascalon cost."
+            ? "Ascalon has no positive incremental utility after priced compute and latency."
             : "Ascalon has positive incremental expected utility over the configured baseline.",
   };
 }
