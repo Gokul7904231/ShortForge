@@ -62,6 +62,18 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
     if (current.status !== "ACTIVE") {
       throw new Error("Lease " + taskId + " is no longer ACTIVE");
     }
+
+    const leaseStartedMs = new Date(current.leaseStartedAt).getTime();
+    const intentCreatedMs = new Date(intent.createdAt).getTime();
+    if (
+      Number.isFinite(leaseStartedMs) &&
+      Number.isFinite(intentCreatedMs) &&
+      leaseStartedMs > intentCreatedMs
+    ) {
+      throw new Error(
+        "Target lease was reacquired after this action intent was created; stale Prime action rejected."
+      );
+    }
     if (
       expectedLeaseFencingToken !== undefined &&
       current.fencingToken !== undefined &&
