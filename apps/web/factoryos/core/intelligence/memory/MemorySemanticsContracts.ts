@@ -219,6 +219,7 @@ export interface MemoryRecallResult {
 export interface MemoryReflectionRequest {
   readonly question: string;
   readonly scopeKey?: string;
+  readonly accessContext: MemoryAccessContext;
   readonly maxTokens: number;
   readonly includeRawEvidenceOnStale?: boolean;
 }
