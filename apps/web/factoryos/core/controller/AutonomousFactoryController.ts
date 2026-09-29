@@ -339,6 +339,7 @@ export class AutonomousFactoryController {
       repos.decisions,
       repos.taskDAGs,
       this.intelligenceGateway?.memoryLifecycle,
+      this.intelligenceGateway,
     );
 
     // 8. Watchdog & Bridges
