@@ -39,6 +39,12 @@ export class MemoryFabricProjectionService {
     maxChars = 12000,
     accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
+    if (!accessContext) {
+      throw new Error("[MemoryFabricProjection] Agent projection requires explicit accessContext");
+    }
+    if (!accessContext.principalId.trim()) {
+      throw new Error("[MemoryFabricProjection] Agent principalId is required");
+    }
     return this.project(query, maxItems, maxChars, "AGENT", accessContext);
   }
 
