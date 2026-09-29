@@ -14,6 +14,7 @@ export type TrajectoryProofLevel =
   | "LOOP_RECEIPT"
   | "PHYSICAL_VERIFICATION"
   | "HANDOFF_CONTRACT"
+  | "RUNTIME_CLOSURE"
   | "NONE";
 
 export type TrajectoryVerificationStatus =
@@ -73,7 +74,12 @@ export function observationFromLoopReceipt(
   return {
     floorId: receipt.floorId,
     loopType: receipt.loopType,
-    proofLevel,
+    proofLevel:
+      receipt.proofSource === "PHYSICAL_VERIFIER"
+        ? "PHYSICAL_VERIFICATION"
+        : receipt.proofSource === "RUNTIME"
+          ? "RUNTIME_CLOSURE"
+          : proofLevel,
     verified: receipt.verified,
     termination: receipt.termination,
     iterations: receipt.iterations,
@@ -134,6 +140,7 @@ export class ProductionTrajectoryEvaluator {
       allVerified &&
       allProofGrade &&
       !hasWeakEvidence &&
+      hasIndependentFinalVerification &&
       authorityViolations.length === 0 &&
       evidenceRefs.length > 0;
 
