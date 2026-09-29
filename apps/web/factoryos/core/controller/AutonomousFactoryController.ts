@@ -41,6 +41,10 @@ import { KnowledgeStore } from "../intelligence/knowledge/KnowledgeStore";
 import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
+import { IndexedExperienceMemory } from "../cognitive/memory/IndexedExperienceMemory";
+import { AgentEconomicsEngine } from "../cognitive/economics/AgentEconomicsEngine";
+import { CognitiveOutcomeLearner } from "../cognitive/CognitiveOutcomeLearner";
+import { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -312,6 +316,13 @@ export class AutonomousFactoryController {
 
     this.validatorAgent = new ValidatorAgent(this.caseManager, this.eventBus, this.worldState);
 
+    const trajectoryExperienceMemory = new IndexedExperienceMemory(repos.memories);
+    const trajectoryOutcomeLearner = new CognitiveOutcomeLearner(
+      trajectoryExperienceMemory,
+      new AgentEconomicsEngine(),
+    );
+    const trajectoryLearningBridge = new TrajectoryLearningBridge(trajectoryOutcomeLearner);
+
     this.overseer = new OverseerControlPlane(
       this.caseManager,
       this.slayerEngine,
@@ -323,7 +334,8 @@ export class AutonomousFactoryController {
       this.cognitivePlane,
       this.missionManager,
       repos.decisions,
-      repos.taskDAGs
+      repos.taskDAGs,
+      trajectoryLearningBridge
     );
 
     // 8. Watchdog & Bridges
