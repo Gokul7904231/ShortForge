@@ -6,3 +6,7 @@ export * from "./EpistemicStateEngine";
 export * from "./EpistemicContextBuilder";
 export * from "./AscalonEpistemicHandoff";
 export * from "./AEREngine";
+export * from "./EpistemicCache";
+export * from "./EpistemicLedger";
+export * from "./EpistemicTrigger";
+export * from "./HypothesisManager";
