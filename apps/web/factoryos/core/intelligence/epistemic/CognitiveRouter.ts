@@ -22,6 +22,8 @@ export interface CognitiveRoutingOptions {
   readonly humanEscalationAvailable?: boolean;
   readonly ascalonEstimatedCostUnits?: number;
   readonly ascalonEstimatedLatencyMs?: number;
+  readonly ascalonLatencySafetyMarginMs?: number;
+  readonly ascalonCapabilityAvailable?: boolean;
   readonly minimumAscalonExpectedValue?: number;
   readonly valuePolicy?: AERValuePolicy;
 }
@@ -33,6 +35,11 @@ function zeroValueAssessment(
     expectedValue: 0,
     expectedBenefit: 0,
     expectedCost: 0,
+    incrementalCostUnits: 0,
+    incrementalLatencyMs: 0,
+    baselineExpectedUtility: 0,
+    ascalonExpectedUtility: 0,
+    estimatedLatencyMs: 0,
     uncertaintyBurden: 0,
     baselineMode,
     baselineResolutionProbability: 0,
@@ -70,6 +77,38 @@ function recommendation(
     uncertaintyBurden: assessment.uncertaintyBurden,
     baselineMode: assessment.baselineMode,
     expectedValueSource: assessment.source,
+    decisionId: "aer_decision_" + Buffer.from(
+      JSON.stringify({
+        mode,
+        reasonCode,
+        deadlineMs,
+        expectedValue: assessment.expectedValue,
+        baselineMode: assessment.baselineMode,
+      }),
+      "utf8",
+    ).toString("base64url").slice(0, 24),
+    policyVersion: "aer-voi-v2",
+    counterfactuals: [
+      {
+        mode: assessment.baselineMode,
+        expectedUtility: assessment.baselineExpectedUtility,
+        expectedResolutionProbability: assessment.baselineResolutionProbability,
+        expectedCost: 0,
+        expectedLatencyMs: Math.max(
+          0,
+          assessment.estimatedLatencyMs - assessment.incrementalLatencyMs,
+        ),
+        source: assessment.source,
+      },
+      {
+        mode: "DEEP",
+        expectedUtility: assessment.ascalonExpectedUtility,
+        expectedResolutionProbability: assessment.ascalonResolutionProbability,
+        expectedCost: assessment.expectedCost,
+        expectedLatencyMs: assessment.estimatedLatencyMs,
+        source: assessment.source,
+      },
+    ],
     budget,
   };
 }
@@ -154,10 +193,19 @@ export class CognitiveRouter {
     }
 
     const ascalonAvailable =
-      options.ascalonAvailable ?? options.deepAvailable ?? false;
+      options.ascalonCapabilityAvailable ??
+      options.ascalonAvailable ??
+      false;
+    const latencySafetyMarginMs = Math.max(
+      0,
+      options.ascalonLatencySafetyMarginMs ??
+        options.valuePolicy?.ascalon.latencySafetyMarginMs ??
+        250,
+    );
+    const requiredLatencyMs = estimatedLatencyMs + latencySafetyMarginMs;
     const hasTimeBudget =
-      remainingBudget.maxTimeMs >= estimatedLatencyMs &&
-      estimatedLatencyMs <= deadlineMs;
+      remainingBudget.maxTimeMs >= requiredLatencyMs &&
+      requiredLatencyMs <= deadlineMs;
     const hasCallBudget = remainingBudget.maxCallsRemaining > 0;
     const hasCostBudget = remainingBudget.maxCostUnits >= estimatedCostUnits;
 
