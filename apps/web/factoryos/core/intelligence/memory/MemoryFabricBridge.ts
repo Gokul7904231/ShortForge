@@ -1151,6 +1151,16 @@ export class MemoryFabricBridge {
     return undefined;
   }
 
+  private extractMemoryScope(payload: Record<string, unknown>): string {
+    const raw =
+      payload["missionId"] ??
+      payload["scopeKey"] ??
+      payload["workflowId"] ??
+      payload["channelId"] ??
+      payload["caseId"];
+    return typeof raw === "string" && raw.trim() ? raw : "GLOBAL";
+  }
+
   private extractConflictGroup(
     collection: string,
     document: Record<string, unknown>,
