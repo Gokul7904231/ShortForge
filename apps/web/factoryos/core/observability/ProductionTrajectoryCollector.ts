@@ -158,8 +158,10 @@ export class ProductionTrajectoryCollector {
     const durableEvents = await this.eventBus.replay();
     for (const event of durableEvents) {
       const payload = (event.payload || {}) as Record<string, any>;
-      if (payload.missionId !== missionId) continue;
-      if (buffer.runId && payload.runId && payload.runId !== buffer.runId) continue;
+      const matchesMission = payload.missionId === missionId;
+      const matchesRun = Boolean(buffer.runId && payload.runId === buffer.runId);
+      if (!matchesMission && !matchesRun) continue;
+      if (buffer.runId && matchesMission && payload.runId && payload.runId !== buffer.runId) continue;
       this.ingest(event);
     }
 
