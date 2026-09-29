@@ -146,7 +146,8 @@ AER/Ascalon may supply deeper investigation or proposals through a future adapte
 - Physical process termination: adapter required.
 - eBPF/kernel enforcement: adapter required.
 - Durable distributed event bus / cross-process observation replay: not yet complete.
-- Universal worker-resource fencing: not yet complete; legacy LeaseManager still lacks an atomic fencing-token release contract.
+- Built-in worker-resource fencing (in-memory, disk, and Mongo lease repositories): implemented.
+- Custom lease repositories must implement the optional atomic fenced-release operation for the same guarantee.
 - F07 independent verification: remains outside Slayer Prime.
 
 ## Safety invariants
