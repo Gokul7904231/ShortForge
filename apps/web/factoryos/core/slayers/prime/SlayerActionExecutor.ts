@@ -38,11 +38,11 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
       throw new Error("ownerAgentId is required for lease revocation");
     }
     if (
-      expectedLeaseFencingToken !== undefined &&
-      (!Number.isSafeInteger(expectedLeaseFencingToken) ||
-        expectedLeaseFencingToken < 1)
+      expectedLeaseFencingToken === undefined ||
+      !Number.isSafeInteger(expectedLeaseFencingToken) ||
+      expectedLeaseFencingToken < 1
     ) {
-      throw new Error("expectedLeaseFencingToken is invalid for fenced lease revocation");
+      throw new Error("expectedLeaseFencingToken is required for fenced lease revocation");
     }
 
     if (
@@ -75,8 +75,7 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
       );
     }
     if (
-      expectedLeaseFencingToken !== undefined &&
-      current.fencingToken !== undefined &&
+      current.fencingToken === undefined ||
       current.fencingToken !== expectedLeaseFencingToken
     ) {
       throw new Error(
@@ -88,7 +87,14 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
       );
     }
 
-    await this.leaseManager.release(taskId, ownerAgentId);
+    const released = await this.leaseManager.releaseFenced(
+      taskId,
+      ownerAgentId,
+      expectedLeaseFencingToken
+    );
+    if (!released) {
+      throw new Error("Worker lease fencing check failed for " + taskId);
+    }
 
     return {
       taskId,
