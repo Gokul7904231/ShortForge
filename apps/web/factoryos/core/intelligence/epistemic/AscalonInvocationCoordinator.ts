@@ -1,8 +1,10 @@
 import type { EpistemicContext } from "./EpistemicContracts";
 import { AscalonInvocationGate, type AscalonInvocationAdmission } from "./AscalonInvocationGate";
 import {
+  DurableEpistemicBudgetReservationStore,
   InMemoryEpistemicBudgetReservationStore,
   type EpistemicBudgetReservation,
+  type EpistemicBudgetReservationStore,
 } from "./EpistemicBudgetReservation";
 
 export interface AscalonInvocationPermit {
@@ -19,7 +21,8 @@ export interface AscalonInvocationPermit {
 export class AscalonInvocationCoordinator {
   public constructor(
     private readonly gate = new AscalonInvocationGate(),
-    private readonly reservations = new InMemoryEpistemicBudgetReservationStore(),
+    private readonly reservations: EpistemicBudgetReservationStore =
+      new DurableEpistemicBudgetReservationStore(),
   ) {}
 
   public prepare(input: {
