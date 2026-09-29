@@ -103,7 +103,7 @@ export class MemoryRetentionNormalizer {
 
   public async retain(envelope: RetentionEnvelope): Promise<readonly MemoryConsolidationInput[]> {
     const decision = this.classify(envelope);
-    if (decision.retentionClass === "DO_NOT_LEARN") return [];
+    if (decision.retentionClass !== "DURABLE") return [];
     const facts = await this.extractor.extract(envelope);
     return facts
       .filter((fact) => fact.statement.trim())
