@@ -19,6 +19,7 @@ import type {
   MemoryFabricProjectionItem,
 } from "./MemoryFabricContracts";
 import type { MemoryRecallQuery } from "./MemorySemanticsContracts";
+import { MemoryProvenanceGuard } from "./MemoryProvenanceGuard";
 
 export class MemoryFabricProjectionService {
   private readonly retrievalEngine: MemoryRetrievalEngine;
