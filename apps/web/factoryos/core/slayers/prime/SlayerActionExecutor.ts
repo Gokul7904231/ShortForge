@@ -8,11 +8,12 @@ import type {
   SlayerEnforcementReceipt,
   SlayerPrimeAction,
 } from "../../contracts/SlayerPrimeContracts";
-import { InMemorySlayerActionLeaseStore, type SlayerActionLeaseStore } from "./SlayerActionLease";
+import { InMemorySlayerActionLeaseStore, StateStoreSlayerActionLeaseStore, type SlayerActionLeaseStore } from "./SlayerActionLease";
+import type { SlayerPrimeStateStore } from "./SlayerPrimeStateStore";
 import { SlayerActionPolicy } from "./SlayerActionPolicy";
 
 export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
-  readonly adapterId = "lease-manager-revoke-v1";
+  readonly adapterId = "lease-manager-revoke-v2";
 
   constructor(private readonly leaseManager: LeaseManager) {}
 
@@ -27,40 +28,60 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
   ): Promise<Record<string, unknown>> {
     const taskId = String(intent.parameters.taskId || intent.targetId);
     const ownerAgentId = String(intent.parameters.ownerAgentId || "");
+    const expectedLeaseFencingToken = Number(intent.parameters.expectedLeaseFencingToken);
 
     if (!ownerAgentId) {
       throw new Error("ownerAgentId is required for lease revocation");
+    }
+    if (!Number.isSafeInteger(expectedLeaseFencingToken) || expectedLeaseFencingToken < 1) {
+      throw new Error("expectedLeaseFencingToken is required for fenced lease revocation");
     }
 
     if (
       authorization.fencingEpoch !== undefined &&
       authorization.fencingEpoch !== lease.fencingToken
     ) {
-      throw new Error("Authorization fencing epoch does not match the reserved Slayer action fence.");
+      throw new Error(
+        "Authorization fencing epoch does not match the reserved Slayer action fence."
+      );
     }
 
     const current = await this.leaseManager.getLease(taskId);
-    if (!current) {
-      throw new Error("Lease " + taskId + " not found");
-    }
-
+    if (!current) throw new Error("Lease " + taskId + " not found");
     if (current.ownerAgentId !== ownerAgentId) {
       throw new Error("Lease owner mismatch for " + taskId);
     }
-
     if (current.status !== "ACTIVE") {
       throw new Error("Lease " + taskId + " is no longer ACTIVE");
     }
+    if (current.fencingToken !== expectedLeaseFencingToken) {
+      throw new Error(
+        "Worker lease fence changed from " +
+          expectedLeaseFencingToken +
+          " to " +
+          String(current.fencingToken) +
+          "; stale action rejected."
+      );
+    }
 
-    await this.leaseManager.release(taskId, ownerAgentId);
+    const released = await this.leaseManager.release(
+      taskId,
+      ownerAgentId,
+      expectedLeaseFencingToken
+    );
+    if (!released) {
+      throw new Error("Worker lease fencing check failed for " + taskId);
+    }
 
     return {
       taskId,
       previousOwnerAgentId: ownerAgentId,
+      previousLeaseFencingToken: expectedLeaseFencingToken,
       leaseStatusBefore: current.status,
       leaseExpiresAtBefore: current.leaseExpiresAt,
       actionLeaseId: lease.actionLeaseId,
       fencingToken: lease.fencingToken,
+      leadershipEpoch: lease.leadershipEpoch,
       authorizedBy: authorization.authorizedBy,
     };
   }
@@ -88,39 +109,42 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
         taskId,
         leaseStatus: lease?.status || "MISSING",
         ownerAgentId: lease?.ownerAgentId,
+        fencingToken: lease?.fencingToken,
       },
     };
   }
 }
 
-/**
- * Transaction:
- * preconditions -> authorization -> action lease/fencing -> execute
- * -> postcondition -> receipt.
- */
 export class SlayerActionExecutor {
   private readonly actionLeaseStore: SlayerActionLeaseStore;
   private readonly policy: SlayerActionPolicy;
   private readonly adapters: SlayerEnforcementAdapter[];
   private readonly actionLeaseTtlMs: number;
+  private readonly leadershipGuard?: SlayerPrimeStateStore;
 
   constructor(options: {
     actionLeaseStore?: SlayerActionLeaseStore;
     policy?: SlayerActionPolicy;
     adapters: SlayerEnforcementAdapter[];
     actionLeaseTtlMs?: number;
+    leadershipGuard?: SlayerPrimeStateStore;
   }) {
     this.actionLeaseStore =
-      options.actionLeaseStore || new InMemorySlayerActionLeaseStore();
+      options.actionLeaseStore ||
+      (options.leadershipGuard
+        ? new StateStoreSlayerActionLeaseStore(options.leadershipGuard)
+        : new InMemorySlayerActionLeaseStore());
     this.policy = options.policy || new SlayerActionPolicy();
     this.adapters = options.adapters;
     this.actionLeaseTtlMs = options.actionLeaseTtlMs ?? 30000;
+    this.leadershipGuard = options.leadershipGuard;
   }
 
   async execute(
     intent: SlayerActionIntent,
     grant: SlayerAuthorizationGrant | undefined,
     holderId: string,
+    leadershipEpoch = 0,
     now: string = new Date().toISOString()
   ): Promise<SlayerEnforcementReceipt> {
     const started = new Date(now).toISOString();
@@ -132,6 +156,18 @@ export class SlayerActionExecutor {
         reason: policyDecision.reason,
         started,
         details: { risk: policyDecision.risk },
+      });
+    }
+
+    if (
+      this.leadershipGuard &&
+      !(await this.leadershipGuard.isLeadershipCurrent(holderId, leadershipEpoch))
+    ) {
+      return this.receipt(intent, {
+        status: "STALE_ACTION",
+        reason: "This Slayer Prime replica no longer holds the current enforcement leadership epoch.",
+        started,
+        details: { holderId, leadershipEpoch },
       });
     }
 
@@ -158,27 +194,42 @@ export class SlayerActionExecutor {
 
     const leaseTtl = Math.max(
       1,
-      Math.min(this.actionLeaseTtlMs, expiryMs - Date.now())
+      Math.min(this.actionLeaseTtlMs, expiryMs - nowMs)
     );
 
     const actionLease = await this.actionLeaseStore.acquire(
       intent,
       holderId,
-      leaseTtl
+      leaseTtl,
+      leadershipEpoch
     );
 
     if (!actionLease) {
       return this.receipt(intent, {
         status: "STALE_ACTION",
-        reason: "Another Slayer Prime instance already owns the action lease.",
+        reason:
+          "Prime leadership, action ownership, or the action's fencing precondition could not be reserved.",
         started,
-        details: {},
+        details: { holderId, leadershipEpoch },
       });
     }
 
     let details: Record<string, unknown> = {};
 
     try {
+      if (
+        this.leadershipGuard &&
+        !(await this.leadershipGuard.isLeadershipCurrent(holderId, leadershipEpoch))
+      ) {
+        return this.receipt(intent, {
+          status: "STALE_ACTION",
+          reason: "Prime lost leadership after action reservation; mutation was fenced before adapter execution.",
+          started,
+          actionLease,
+          details: {},
+        });
+      }
+
       details = await adapter.execute(intent, grant!, actionLease);
       const verification = await adapter.verify(
         intent,
@@ -219,7 +270,11 @@ export class SlayerActionExecutor {
         details,
       });
     } finally {
-      await this.actionLeaseStore.release(actionLease.actionLeaseId);
+      await this.actionLeaseStore.release(
+        actionLease.actionLeaseId,
+        holderId,
+        actionLease.fencingToken
+      );
     }
   }
 
@@ -249,6 +304,7 @@ export class SlayerActionExecutor {
       targetId: intent.targetId,
       actionLeaseId: input.actionLease?.actionLeaseId,
       fencingToken: input.actionLease?.fencingToken,
+      leadershipEpoch: input.actionLease?.leadershipEpoch,
       status: input.status,
       reason: input.reason,
       executionStartedAt: input.started,
