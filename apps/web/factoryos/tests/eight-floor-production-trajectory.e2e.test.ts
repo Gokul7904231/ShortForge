@@ -214,19 +214,36 @@ describe("True eight-floor single-mission production trajectory", () => {
       expect(dispatch.missionId).toBe(mission.missionId);
       console.log(`[E2E] phase=dispatch-accepted runId=${dispatch.runId}`);
 
-      const trajectory = await waitFor(() => {
+      // Wait only for the evaluator to emit a result. A PARTIAL/UNVERIFIED
+      // result is terminal evidence and must fail immediately rather than being
+      // retried as though it were merely delayed.
+      await waitFor(() => {
         if (terminalFailure) throw new Error(`Production trajectory terminated: ${terminalFailure}`);
         const event = trajectoryEvents.find(
           (item) => item.payload.missionId === mission.missionId,
         );
         if (!event) throw new Error("Eight-floor trajectory evaluation has not completed yet.");
-        if (event.payload.verificationStatus !== "VERIFIED") {
-          throw new Error(
-            `Trajectory was not verified: ${JSON.stringify(event.payload)}`,
-          );
-        }
         return event.payload;
       });
+
+      const trajectory = trajectoryEvents.find(
+        (item) => item.payload.missionId === mission.missionId,
+      )!.payload;
+
+      const journalEvents = controller.eventBus.getEvents(5000);
+      const journalF07 = journalEvents.find(
+        (event: any) =>
+          event.topic === "TASK_COMPLETED" &&
+          event.payload?.floorId === "floor07_compliance" &&
+          (event.payload?.missionId === mission.missionId ||
+            event.payload?.runId === dispatch.runId),
+      );
+      console.log(
+        `[E2E] journal-f07-found=${Boolean(journalF07)} missionId=${journalF07?.payload?.missionId || "n/a"} runId=${journalF07?.payload?.runId || "n/a"} proofSource=${journalF07?.payload?.loopReceipt?.proofSource || "n/a"}`,
+      );
+
+      expect(trajectory.verificationStatus).toBe("VERIFIED");
+      expect(journalF07).toBeDefined();
 
       const floorEvents = captured.filter(
         (event) =>
