@@ -8,7 +8,7 @@ export interface EpistemicLedgerRecord {
   readonly eventType:
     | "ASSESSMENT"
     | "PROBE_RESULT"
-    | "ASCA­LON_HANDOFF"
+    | "ASCALON_HANDOFF"
     | "OUTCOME";
   readonly payload: Record<string, unknown>;
   readonly previousHash: string | null;
