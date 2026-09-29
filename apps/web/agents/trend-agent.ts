@@ -12,6 +12,8 @@ export type TrendAgentInput = {
   style?: string;
   missionId?: string;
   targetSourceCount?: number;
+  /** Required: the Content Engine-owned research contract authorizing this scan. */
+  researchContract: NonNullable<ResearchRequest["researchContract"]>;
 };
 
 export interface TrendAgentOutput {
@@ -32,6 +34,7 @@ export async function trendAgent(input: TrendAgentInput): Promise<TrendAgentOutp
     intent: `Autonomous trend discovery for "${input.topic}" (${input.style || "STANDARD"})`,
     methodology: "TREND_SCAN",
     targetSourceCount: input.targetSourceCount ?? 3,
+    researchContract: input.researchContract,
   };
 
   const report = await runtime.executeResearch(request);
