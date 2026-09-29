@@ -15,6 +15,11 @@ export interface AscalonInferenceMetadata {
 export interface AscalonInferenceEnvelope {
   readonly metadata: AscalonInferenceMetadata;
   readonly proposal: ActionProposal;
+  readonly preCallAdmission?: {
+    readonly admitted: boolean;
+    readonly reason: string;
+    readonly contextFingerprint: string;
+  };
 }
 
 export interface AscalonAdmissionDecision {
@@ -89,6 +94,20 @@ export class AscalonInferenceAdmissionGate {
       failures.push("model_ref_allowlist_not_configured");
     } else if (!this.allowedModelRefs.has(metadata.modelRef)) {
       failures.push("model_ref_not_allowlisted");
+    }
+
+    if (metadata.mode === "ADMITTED" && !input.envelope.preCallAdmission?.admitted) {
+      failures.push(
+        input.envelope.preCallAdmission?.reason
+          ? "aer_pre_call_not_admitted:" + input.envelope.preCallAdmission.reason
+          : "aer_pre_call_admission_missing",
+      );
+    } else if (
+      metadata.mode === "ADMITTED" &&
+      input.envelope.preCallAdmission?.contextFingerprint &&
+      metadata.contextFingerprint !== input.envelope.preCallAdmission.contextFingerprint
+    ) {
+      failures.push("aer_pre_call_context_fingerprint_mismatch");
     }
 
     if (metadata.mode === "SHADOW") {
