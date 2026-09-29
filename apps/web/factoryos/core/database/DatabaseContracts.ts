@@ -80,7 +80,7 @@ export interface ITaskDAGRepository {
 export interface ILeaseRepository {
   acquireLease(taskId: string, ownerAgentId: string, ttlMs: number, attempt?: number): Promise<boolean>;
   renewLease(taskId: string, ownerAgentId: string, ttlMs: number): Promise<boolean>;
-  releaseLease(taskId: string, ownerAgentId: string, expectedFencingToken?: number): Promise<boolean>;
+  releaseLease(taskId: string, ownerAgentId: string): Promise<void>;
   getLease(taskId: string): Promise<TaskLease | null>;
   getExpiredLeases(): Promise<TaskLease[]>;
 }
