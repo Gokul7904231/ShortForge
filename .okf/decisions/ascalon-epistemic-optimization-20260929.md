@@ -67,3 +67,47 @@ The implementation phase additionally introduced:
 - conservative observed-outcome routing policy generation retained in shadow mode.
 
 The production gate remains blocked until fresh CI/security/shadow replay evidence is observed.
+## Remediation Wave 2 — Adaptive Epistemic Runtime Hardening
+
+### Repository-implemented upgrades
+
+This wave strengthens the foundation without granting AER execution authority.
+
+1. **Counterfactual VOI**
+   - AER evaluates baseline and Ascalon expected utility separately.
+   - Escalation is based on the incremental utility delta after priced compute and latency.
+   - Latency uses p95 when supplied and adds a configurable safety margin.
+   - Uncalibrated priors remain blocked from production Ascalon influence by default.
+
+2. **Decision artifact**
+   - Cognitive recommendations now carry a policy version, deterministic decision identity, and baseline/Ascalon counterfactuals.
+   - These fields are evidence for replay and calibration, not authorization.
+
+3. **AEF execution boundary**
+   - `ScopedToolAERExecutionFabricBridge` translates AER probe requests into the existing `ScopedToolExecutor`.
+   - AER cannot directly access the tool registry or mutate execution state.
+   - Successful tool results retain measured `costUsd`, `evidenceId`, and side-effect metadata for downstream accounting.
+
+4. **Probe quality**
+   - Optional decision-change probability and hypothesis-discrimination signals refine probe prioritization.
+   - AER still treats these as planning estimates, not truth.
+
+5. **Episode deadline**
+   - Investigation uses one episode deadline rather than resetting the time budget on every re-plan.
+
+6. **Durable telemetry contract**
+   - AER exposes a metadata-only episode telemetry sink and JSONL implementation.
+   - The sink is observational and failure-isolated; it never becomes an execution dependency.
+
+7. **Shadow policy promotion**
+   - `AERPolicyPromotionGate` checks sample size, resolution non-inferiority, false-reassurance bounds, latency regression, cost savings, and authority violations.
+   - Passing the gate only means `eligible for governed promotion`; it never mutates the live policy automatically.
+
+### Research alignment
+
+The design is informed by recent work showing that adaptive test-time compute is a constrained allocation problem, budget-aware routing benefits from contextual feedback, and sequential information gathering can be framed using Bayesian experimental design. Current OpenTelemetry GenAI conventions also provide a useful vocabulary for model identity, usage, duration, and agent/tool traces.
+
+### Evidence rule
+
+No claim of production readiness is made by this record. The release gate remains:
+`repository CI -> targeted tests -> security validation -> shadow replay -> measured outcome evidence -> controlled promotion`.
