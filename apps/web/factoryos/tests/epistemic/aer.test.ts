@@ -658,4 +658,36 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     ).toThrow("model inference cannot authoritatively resolve uncertainty");
   });
 
+
+  it("promotes material stale measurements into STALE state using policy thresholds", () => {
+    const engine = new EpistemicStateEngine();
+    const state = engine.build({
+      contextSeed: "stale-policy",
+      measurements: [
+        {
+          measurementId: "provider-heartbeat",
+          dimension: "provider.health",
+          value: "healthy",
+          measurementType: "OBSERVED_MEASUREMENT",
+          sourceRef: "provider:amd",
+          observedAt: "2026-09-29T00:00:00.000Z",
+          evidenceRefs: ["heartbeat:1"],
+          freshnessSeconds: 45,
+          material: true,
+        },
+      ],
+      freshnessPolicy: {
+        "provider.health": 30,
+      },
+    });
+
+    expect(state.state).toBe("STALE");
+    expect(state.freshness["provider-heartbeat"]).toMatchObject({
+      freshnessSeconds: 45,
+      staleAfterSeconds: 30,
+      stale: true,
+      material: true,
+    });
+  });
+
 });
