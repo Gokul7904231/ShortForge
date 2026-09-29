@@ -4,6 +4,7 @@ import type {
   MemoryEvidenceRef,
   MemorySemanticType,
   MemoryScope,
+  MemoryRetentionClass,
 } from "./MemorySemanticsContracts";
 
 export interface RetentionEnvelope {
@@ -66,12 +67,43 @@ export class DeterministicMemoryFactExtractor implements MemoryFactExtractor {
   }
 }
 
+export interface MemoryRetentionDecision {
+  readonly retentionClass: MemoryRetentionClass;
+  readonly reason: string;
+}
+
 export class MemoryRetentionNormalizer {
   constructor(
     private readonly extractor: MemoryFactExtractor = new DeterministicMemoryFactExtractor(),
   ) {}
 
+  public classify(envelope: RetentionEnvelope): MemoryRetentionDecision {
+    const serialized = JSON.stringify({
+      summary: envelope.summary,
+      payload: envelope.payload,
+      tags: envelope.tags ?? [],
+    });
+    if (MemoryRetentionNormalizer.SECRET_PATTERNS.some((pattern) => pattern.test(serialized))) {
+      return {
+        retentionClass: "DO_NOT_LEARN",
+        reason: "credential/secret pattern detected in retention material",
+      };
+    }
+    if (MemoryRetentionNormalizer.HIGH_RISK_PII_PATTERNS.some((pattern) => pattern.test(serialized))) {
+      return {
+        retentionClass: "TEMPORARY",
+        reason: "high-risk PII pattern detected; long-lived learning is blocked",
+      };
+    }
+    return {
+      retentionClass: "DURABLE",
+      reason: "no blocked sensitive-data pattern detected",
+    };
+  }
+
   public async retain(envelope: RetentionEnvelope): Promise<readonly MemoryConsolidationInput[]> {
+    const decision = this.classify(envelope);
+    if (decision.retentionClass === "DO_NOT_LEARN") return [];
     const facts = await this.extractor.extract(envelope);
     return facts
       .filter((fact) => fact.statement.trim())
@@ -112,6 +144,21 @@ export class MemoryRetentionNormalizer {
         };
       });
   }
+
+  private static SECRET_PATTERNS = [
+    /bearer\s+[a-z0-9_.-]{20,}/i,
+    /(?:ghp|github_pat|gsk_|AIzaSy)[a-z0-9_\-]{16,}/i,
+    /eyJ[a-z0-9_-]+\.[a-z0-9_-]+\.[a-z0-9_-]+/i,
+    /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/i,
+    /(?:password|passwd|api[_-]?key|secret|token)\s*[:=]\s*["'][^"']{4,}["']/i,
+    /(?:postgres|postgresql|mongodb|mysql):\/\/[^\s:]+:[^@\s]+@/i,
+  ];
+  private static HIGH_RISK_PII_PATTERNS = [
+    /\b\d{3}-\d{2}-\d{4}\b/, // SSN-like
+    /\b\d{16}\b/, // card-like digit sequence
+    /\b(?:\+?91[-\s]?)?[6-9]\d{9}\b/, // Indian mobile-like
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
+  ];
 
   private facetFor(fact: ExtractedMemoryFact): string {
     if (fact.relationToExisting?.observationId) {
