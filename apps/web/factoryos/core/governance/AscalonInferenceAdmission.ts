@@ -96,18 +96,19 @@ export class AscalonInferenceAdmissionGate {
       failures.push("model_ref_not_allowlisted");
     }
 
-    if (metadata.mode === "ADMITTED" && !input.envelope.preCallAdmission?.admitted) {
-      failures.push(
-        input.envelope.preCallAdmission?.reason
-          ? "aer_pre_call_not_admitted:" + input.envelope.preCallAdmission.reason
-          : "aer_pre_call_admission_missing",
-      );
-    } else if (
-      metadata.mode === "ADMITTED" &&
-      input.envelope.preCallAdmission?.contextFingerprint &&
-      metadata.contextFingerprint !== input.envelope.preCallAdmission.contextFingerprint
-    ) {
-      failures.push("aer_pre_call_context_fingerprint_mismatch");
+    if (metadata.mode === "ADMITTED" && input.envelope.preCallAdmission) {
+      if (!input.envelope.preCallAdmission.admitted) {
+        failures.push(
+          input.envelope.preCallAdmission.reason
+            ? "aer_pre_call_not_admitted:" + input.envelope.preCallAdmission.reason
+            : "aer_pre_call_admission_missing",
+        );
+      } else if (
+        input.envelope.preCallAdmission.contextFingerprint &&
+        metadata.contextFingerprint !== input.envelope.preCallAdmission.contextFingerprint
+      ) {
+        failures.push("aer_pre_call_context_fingerprint_mismatch");
+      }
     }
 
     if (metadata.mode === "SHADOW") {
