@@ -9,6 +9,7 @@ export interface CognitiveOptionProfile {
   readonly resolutionProbability: number;
   readonly costUnits: number;
   readonly latencyMs: number;
+  readonly estimatedCostUsd?: number;
   readonly source: Exclude<ValueEstimateSource, "UNAVAILABLE">;
 }
 
@@ -18,6 +19,7 @@ export interface AERValuePolicy {
   readonly resolutionUtilityBySeverity?: Readonly<Record<EpistemicState["impact"]["severity"], number>>;
   readonly unresolvedPenaltyBySeverity?: Readonly<Record<EpistemicState["impact"]["severity"], number>>;
   readonly costWeight?: number;
+  readonly costUsdWeight?: number;
   readonly latencyWeight?: number;
   readonly minimumNetValue?: number;
   readonly allowUncalibratedEscalation?: boolean;
@@ -109,13 +111,20 @@ export function evaluateAscalonValue(
     Math.max(0, policy.ascalon.costUnits) -
       Math.max(0, policy.baseline.costUnits),
   );
+  const incrementalCostUsd =
+    policy.ascalon.estimatedCostUsd !== undefined &&
+    policy.baseline.estimatedCostUsd !== undefined
+      ? Math.max(0, policy.ascalon.estimatedCostUsd - policy.baseline.estimatedCostUsd)
+      : undefined;
   const incrementalLatencyMs = Math.max(
     0,
     Math.max(0, policy.ascalon.latencyMs) -
       Math.max(0, policy.baseline.latencyMs),
   );
   const weightedComputeCost =
-    incrementalCostUnits * Math.max(0, policy.costWeight ?? 0.1);
+    incrementalCostUsd !== undefined
+      ? incrementalCostUsd * Math.max(0, policy.costUsdWeight ?? 1)
+      : incrementalCostUnits * Math.max(0, policy.costWeight ?? 0.1);
   const weightedLatencyCost =
     (incrementalLatencyMs / 1000) *
     Math.max(0, policy.latencyWeight ?? 0.01);
