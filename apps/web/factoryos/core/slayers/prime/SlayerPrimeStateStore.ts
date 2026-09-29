@@ -201,7 +201,7 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
       this.leadership &&
         this.leadership.holderId === holderId &&
         this.leadership.expiresAt > new Date().toISOString() &&
-        this.leadership.epoch >= epoch
+        this.leadership.epoch === epoch
     );
   }
 
@@ -211,7 +211,6 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
     ttlMs: number,
     leadershipEpoch: number
   ): Promise<SlayerActionLease | null> {
-    await this.ready;
     if (!(await this.isLeadershipCurrent(holderId, leadershipEpoch))) return null;
 
     const existing = Array.from(this.actionLeases.values()).find(
