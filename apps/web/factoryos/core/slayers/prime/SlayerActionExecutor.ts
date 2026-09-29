@@ -350,15 +350,18 @@ export class SlayerActionExecutor {
         },
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const staleAction =
+        /stale Prime action|fence changed|fencing check failed/i.test(message);
       return this.receipt(intent, {
-        status: "UNKNOWN",
+        status: staleAction ? "STALE_ACTION" : "UNKNOWN",
         reason:
           "Adapter execution began but did not produce a definitive completion signal; reconciliation is required.",
         started,
         actionLease,
         details: {
           ...details,
-          error: error instanceof Error ? error.message : String(error),
+          error: message,
         },
       });
     } finally {
