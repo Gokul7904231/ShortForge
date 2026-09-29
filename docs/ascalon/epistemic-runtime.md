@@ -604,3 +604,43 @@ AERMetricsRecorder closes the measurement loop around the optimization target:
 cost per resolved uncertainty = total uncertainty-episode cost / resolved uncertainty count
 
 It also tracks escalation rate, probe usefulness, cache hit rate, AER/Ascalon p50/p95 latency, false reassurance, and unnecessary escalation. These metrics require observed telemetry and are not hard-coded success claims.
+
+## Remediation Closure — 2026-09-29
+
+The AER remediation pass addresses the previously identified production design gaps.
+
+### Value model
+
+AER no longer uses only an additive uncertainty score to justify deep cognition. It compares Ascalon against a baseline using incremental expected utility, explicitly pricing incremental compute/cost and latency. Production influence is blocked when the probabilities are not backed by observed calibration unless policy explicitly enables the experimental shadow path.
+
+Recent constrained-compute and adaptive-routing research motivates this per-instance budgeted allocation pattern rather than uniform deep reasoning. citeturn772965academia97turn772965search1
+
+### Execution loop
+
+AER now has a bounded investigation loop:
+
+event -> epistemic assessment -> safe probe plan -> AEF execution -> evidence -> state update -> re-assessment
+
+AER owns planning and epistemic interpretation; AEF remains the execution boundary. Durable execution systems similarly separate persisted workflow state from side-effecting operations and make deterministic and model-driven steps composable. citeturn292099search0turn292099search7
+
+### Admission and budget reservation
+
+Ascalon invocation is now bracketed by:
+
+admission -> atomic budget reservation -> model call -> commit/release
+
+The canonical coordinator uses a durable SQLite reservation store by default for distributed/multi-process contention. The reservation store is explicitly replaceable with another atomic backend.
+
+### Outcome truthfulness
+
+Resolution is recorded through an outcome receipt carrying evidence references and an authoritative source. Model inference alone cannot mark uncertainty resolved. This is intentionally stricter than model-judged self-report because recent work finds reliability limits in LLM judges, especially for evidence verification. citeturn292099academia37
+
+### Economics and telemetry
+
+AER accepts provider/model/token/actual-USD usage and exposes p50/p95 latency, cache hit rate, probe usefulness, escalation rates, and cost per resolved uncertainty. A provider-neutral cost estimator can consume existing FactoryOS model-routing metadata, while actual usage can be supplied from production telemetry. OpenTelemetry's current GenAI conventions likewise define model/provider/operation and agent/tool span fields suitable for this telemetry boundary. citeturn772965search2turn772965search3
+
+### Learning loop
+
+AER now produces a conservative shadow routing candidate from observed outcomes using confidence bounds. It does not mutate the live routing policy. This keeps the learning loop compatible with contextual routing research while preserving ShortForge's current governance boundary. citeturn772965search1turn772965search0
+
+Production admission still requires ShortForge-specific replay, calibration, security, and reliability evidence; research results are design references, not proof of ShortForge performance.
