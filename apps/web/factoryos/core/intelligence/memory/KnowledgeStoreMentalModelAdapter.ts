@@ -32,6 +32,7 @@ export class KnowledgeStoreMentalModelAdapter implements MemoryMentalModelStore 
       sf_mental_model_id: model.modelId,
       sf_mental_model_question: model.question,
       sf_observation_scope: model.scope.key,
+      sf_supporting_memory_ids: [...model.sourceObservationIds],
       scope_key: model.scope.key,
       sf_refresh_version: model.version,
       sf_refresh_mode: model.refreshMode,
