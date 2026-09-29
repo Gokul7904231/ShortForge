@@ -85,7 +85,7 @@
     },
     {
       "capabilityId": "cap_timeline_mux",
-      "version": "2.1.0",
+      "version": "2.0.0",
       "name": "Timeline Composition, Canonical IR & Reference Evidence",
       "floorId": "floor05_timeline_composition",
       "riskClass": "MEDIUM",
