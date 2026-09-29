@@ -59,6 +59,8 @@ export class SlayerPrimeEngine {
 
   private readonly eventBus: DurableEventBus;
   private readonly instanceId: string;
+  /** Unique process incarnation. A restarted process never reuses the prior holder identity. */
+  private readonly holderId: string;
   private readonly incidentTtlMs: number;
   private readonly maxIncidents: number;
   private readonly maxEvidencePerIncident: number;
@@ -79,7 +81,8 @@ export class SlayerPrimeEngine {
 
   constructor(eventBus: DurableEventBus, leaseManager?: LeaseManager, options: SlayerPrimeOptions = {}) {
     this.eventBus = eventBus;
-    this.instanceId = options.instanceId || "slayer-prime-" + randomUUID().replace(/-/g, "").slice(0, 8);
+    this.instanceId = options.instanceId || "slayer-prime";
+    this.holderId = this.instanceId + ":" + randomUUID().replace(/-/g, "").slice(0, 16);
     this.incidentTtlMs = options.incidentTtlMs ?? 10 * 60_000;
     this.maxIncidents = options.maxIncidents ?? 1000;
     this.maxEvidencePerIncident = options.maxEvidencePerIncident ?? 64;
@@ -203,7 +206,7 @@ export class SlayerPrimeEngine {
       evidence: this.mergeEvidence([], input.evidence || []),
       relatedCaseIds: input.relatedCaseId ? [input.relatedCaseId] : [],
       actionIntentIds: [],
-      notes: ["Incident created by Slayer Prime leader " + this.instanceId + "."],
+      notes: ["Incident created by Slayer Prime leader " + this.holderId + "."],
     };
 
     this.incidents.set(incident.incidentId, incident);
@@ -442,6 +445,15 @@ export class SlayerPrimeEngine {
   }
 
   private async recoverAndAcquireLeadership(): Promise<void> {
+    await this.reloadPersistedState();
+    if (!this.started) return;
+    this.leadership = await this.stateStore.acquireLeadership(
+      this.holderId,
+      this.leadershipLeaseTtlMs
+    );
+  }
+
+  private async reloadPersistedState(): Promise<void> {
     const snapshot = await this.stateStore.load();
     this.incidents.clear();
     this.fingerprintIndex.clear();
@@ -454,11 +466,6 @@ export class SlayerPrimeEngine {
     }
     for (const intent of snapshot.intents) this.actionIntents.set(intent.intentId, intent);
     for (const receipt of snapshot.receipts) this.receipts.set(receipt.receiptId, receipt);
-
-    this.leadership = await this.stateStore.acquireLeadership(
-      this.instanceId,
-      this.leadershipLeaseTtlMs
-    );
   }
 
   private async maintainLeadership(): Promise<void> {
@@ -475,10 +482,16 @@ export class SlayerPrimeEngine {
         }
         this.leadership = null;
       }
-      this.leadership = await this.stateStore.acquireLeadership(
-        this.instanceId,
+      const acquired = await this.stateStore.acquireLeadership(
+        this.holderId,
         this.leadershipLeaseTtlMs
       );
+      if (acquired) {
+        this.leadership = acquired;
+        await this.reloadPersistedState();
+      } else {
+        this.leadership = null;
+      }
     } catch {
       this.leadership = null;
     }
@@ -487,7 +500,7 @@ export class SlayerPrimeEngine {
   private async isCurrentLeader(): Promise<boolean> {
     if (!this.leadership) return false;
     const current = await this.stateStore.isLeadershipCurrent(
-      this.instanceId,
+      this.holderId,
       this.leadership.epoch
     );
     if (!current) {
@@ -636,7 +649,7 @@ export class SlayerPrimeEngine {
       randomUUID()
     );
     await this.eventBus.publish(topic, payload as Record<string, unknown>, {
-      source: this.instanceId,
+      source: this.holderId,
       idempotencyKey: "slayer-prime:" + topic + ":" + stableKey,
     });
   }
