@@ -159,10 +159,7 @@ export class CognitiveRouter {
     }
 
     if (ascalonAvailable && expectedValue >= minimumExpectedValue && !canAffordAscalon) {
-      const reasonCode: AscalonInvocationReason =
-        remainingBudget.maxCallsRemaining <= 0 || remainingBudget.maxCostUnits < estimatedCostUnits
-          ? "ASCALON_BUDGET_EXHAUSTED"
-          : "ASCALON_UNAVAILABLE";
+      const reasonCode: AscalonInvocationReason = "ASCALON_BUDGET_EXHAUSTED";
 
       if (options.specialistAvailable) {
         return {
@@ -176,6 +173,17 @@ export class CognitiveRouter {
           budget: remainingBudget,
         };
       }
+
+      return {
+        mode: "HUMAN",
+        reason: "Ascalon escalation is justified but the local call/cost budget cannot afford it; escalate rather than exceed budget.",
+        reasonCode,
+        deadlineMs,
+        expectedValue,
+        shouldInvokeAscalon: false,
+        estimatedCostUnits,
+        budget: remainingBudget,
+      };
     }
 
     if (
