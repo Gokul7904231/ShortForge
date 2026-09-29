@@ -325,6 +325,14 @@ export class MemoryRetrievalEngine {
     if (!query.allowUnverified && verification !== "VERIFIED") return false;
     if (["QUARANTINED", "CONTRADICTORY", "INCOMPLETE"].includes(quality)) return false;
     if (query.scopeKey && this.scopeKey(document) !== query.scopeKey) return false;
+    if (query.accessContext) {
+      const allowedScopes = new Set(query.accessContext.allowedScopeKeys);
+      const scopeKey = this.scopeKey(document);
+      const authorized =
+        allowedScopes.has(scopeKey) ||
+        (query.accessContext.allowGlobalScope === true && scopeKey === "GLOBAL");
+      if (!authorized) return false;
+    }
     if (staleAfter && Date.parse(String(staleAfter)) <= Date.now() && query.includeStale !== true) return false;
 
     if (query.types?.length) {
