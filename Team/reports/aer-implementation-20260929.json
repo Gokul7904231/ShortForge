@@ -1,0 +1,56 @@
+{
+  "reportVersion": "1.0",
+  "changeId": "aer-implementation-2026-09-29",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceOfTruth": ".okf/index.md",
+    "reviewedDomains": [
+      "root index / decision protocol",
+      "architecture / hierarchy",
+      "security / worker permissions",
+      "cognitive / Ascalon / Devourer",
+      "memory / context",
+      "rendering / artifacts / F07",
+      "workflows / recovery",
+      "floor governance / agent execution fabric",
+      "relevant repo mappings",
+      "production-helper contract",
+      "relevant executable implementation and tests"
+    ],
+    "classification": "extends existing rule + new capability"
+  },
+  "forgers": {
+    "status": "IMPLEMENTED",
+    "scope": [
+      "AER contracts",
+      "deterministic-first epistemic state",
+      "bounded probe planning",
+      "cognitive routing",
+      "EpistemicContext builder",
+      "Ascalon shadow handoff",
+      "unit tests"
+    ]
+  },
+  "security": {
+    "status": "DESIGN_REVIEW_COMPLETE",
+    "notes": [
+      "No new side-effect capability was introduced.",
+      "Mutating probes are never planned without explicit authorization.",
+      "AER does not grant Guardian, lease, fencing, publishing, or F07 authority.",
+      "Ascalon handoff is explicitly SHADOW / ADVISORY_ONLY."
+    ]
+  },
+  "conflicts": [],
+  "verification": {
+    "status": "PENDING_CI",
+    "required": [
+      "apps/web factoryos TypeScript typecheck",
+      "targeted AER Vitest suite",
+      "repository CI",
+      "applicable Semgrep",
+      "shadow replay evidence"
+    ]
+  },
+  "disposition": "BLOCKED",
+  "reason": "Executable AER foundation is committed, but fresh CI/security evidence has not yet been observed in this environment. Production influence remains disallowed."
+}
