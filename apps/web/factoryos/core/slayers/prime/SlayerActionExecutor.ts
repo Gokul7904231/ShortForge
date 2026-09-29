@@ -266,6 +266,7 @@ export class SlayerActionExecutor {
     }
 
     let details: Record<string, unknown> = {};
+    let releaseLease = true;
 
     try {
       if (
@@ -351,6 +352,7 @@ export class SlayerActionExecutor {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      releaseLease = false;
       const staleAction =
         /stale Prime action|fence changed|fencing check failed/i.test(message);
       return this.receipt(intent, {
@@ -365,11 +367,13 @@ export class SlayerActionExecutor {
         },
       });
     } finally {
-      await this.actionLeaseStore.release(
-        actionLease.actionLeaseId,
-        holderId,
-        actionLease.fencingToken
-      );
+      if (releaseLease) {
+        await this.actionLeaseStore.release(
+          actionLease.actionLeaseId,
+          holderId,
+          actionLease.fencingToken
+        );
+      }
     }
   }
 
