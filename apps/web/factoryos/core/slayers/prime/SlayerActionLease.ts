@@ -3,22 +3,47 @@ import type {
   SlayerActionIntent,
   SlayerActionLease,
 } from "../../contracts/SlayerPrimeContracts";
+import type {
+  SlayerPrimeStateStore,
+} from "./SlayerPrimeStateStore";
 
 export interface SlayerActionLeaseStore {
   acquire(
     intent: SlayerActionIntent,
     holderId: string,
-    ttlMs: number
+    ttlMs: number,
+    leadershipEpoch?: number
   ): Promise<SlayerActionLease | null>;
   get(actionLeaseId: string): Promise<SlayerActionLease | null>;
-  release(actionLeaseId: string): Promise<void>;
+  release(actionLeaseId: string, holderId?: string, fencingToken?: number): Promise<void>;
 }
 
 /**
- * Separate from worker/task leases:
- * worker lease = permission to execute work;
- * action lease = ownership of the enforcement mutation.
+ * Compatibility adapter for Prime's historical action-lease contract.
+ * Production instances should back this with SlayerPrimeStateStore.
  */
+export class StateStoreSlayerActionLeaseStore implements SlayerActionLeaseStore {
+  constructor(private readonly stateStore: SlayerPrimeStateStore) {}
+
+  acquire(
+    intent: SlayerActionIntent,
+    holderId: string,
+    ttlMs: number,
+    leadershipEpoch = 0
+  ): Promise<SlayerActionLease | null> {
+    return this.stateStore.acquireActionLease(intent, holderId, ttlMs, leadershipEpoch);
+  }
+
+  get(actionLeaseId: string): Promise<SlayerActionLease | null> {
+    return this.stateStore.getActionLease(actionLeaseId);
+  }
+
+  release(actionLeaseId: string, holderId?: string, fencingToken?: number): Promise<void> {
+    return this.stateStore.releaseActionLease(actionLeaseId, holderId, fencingToken);
+  }
+}
+
+/** Fast single-process implementation used by isolated unit tests only. */
 export class InMemorySlayerActionLeaseStore implements SlayerActionLeaseStore {
   private readonly leases = new Map<string, SlayerActionLease>();
   private readonly activeByIntent = new Map<string, string>();
@@ -27,7 +52,8 @@ export class InMemorySlayerActionLeaseStore implements SlayerActionLeaseStore {
   async acquire(
     intent: SlayerActionIntent,
     holderId: string,
-    ttlMs: number
+    ttlMs: number,
+    leadershipEpoch = 0
   ): Promise<SlayerActionLease | null> {
     const existingId = this.activeByIntent.get(intent.intentId);
     if (existingId) {
@@ -36,9 +62,7 @@ export class InMemorySlayerActionLeaseStore implements SlayerActionLeaseStore {
         existing &&
         existing.status === "ACTIVE" &&
         new Date(existing.expiresAt).getTime() > Date.now()
-      ) {
-        return null;
-      }
+      ) return null;
     }
 
     const now = new Date();
@@ -50,6 +74,7 @@ export class InMemorySlayerActionLeaseStore implements SlayerActionLeaseStore {
       targetId: intent.targetId,
       holderId,
       fencingToken: this.nextFencingToken++,
+      leadershipEpoch,
       acquiredAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
       status: "ACTIVE",
@@ -63,11 +88,7 @@ export class InMemorySlayerActionLeaseStore implements SlayerActionLeaseStore {
   async get(actionLeaseId: string): Promise<SlayerActionLease | null> {
     const lease = this.leases.get(actionLeaseId);
     if (!lease) return null;
-
-    if (
-      lease.status === "ACTIVE" &&
-      new Date(lease.expiresAt).getTime() <= Date.now()
-    ) {
+    if (lease.status === "ACTIVE" && new Date(lease.expiresAt).getTime() <= Date.now()) {
       const expired = { ...lease, status: "EXPIRED" as const };
       this.leases.set(actionLeaseId, expired);
       if (this.activeByIntent.get(lease.intentId) === actionLeaseId) {
@@ -75,16 +96,16 @@ export class InMemorySlayerActionLeaseStore implements SlayerActionLeaseStore {
       }
       return structuredClone(expired);
     }
-
     return structuredClone(lease);
   }
 
-  async release(actionLeaseId: string): Promise<void> {
+  async release(actionLeaseId: string, holderId?: string, fencingToken?: number): Promise<void> {
     const lease = this.leases.get(actionLeaseId);
-    if (!lease) return;
+    if (!lease || lease.status !== "ACTIVE") return;
+    if (holderId && lease.holderId !== holderId) return;
+    if (fencingToken !== undefined && lease.fencingToken !== fencingToken) return;
 
-    const released = { ...lease, status: "RELEASED" as const };
-    this.leases.set(actionLeaseId, released);
+    this.leases.set(actionLeaseId, { ...lease, status: "RELEASED" });
     if (this.activeByIntent.get(lease.intentId) === actionLeaseId) {
       this.activeByIntent.delete(lease.intentId);
     }
