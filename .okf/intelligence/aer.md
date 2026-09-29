@@ -1669,3 +1669,44 @@ Research references:
 - LangGraph persistence/durable execution: https://github.com/langchain-ai/langgraph
 - PydanticAI durable execution/instrumentation: https://github.com/pydantic/pydantic-ai
 - OpenTelemetry GenAI semantic conventions: https://github.com/open-telemetry/semantic-conventions-genai
+
+## 2026-09-29 Remediation Wave 2
+
+The executable foundation has been extended toward an adaptive epistemic runtime.
+
+### New runtime guarantees
+
+- Counterfactual baseline-vs-Ascalon expected utility is explicit.
+- Incremental compute and latency are priced rather than hidden inside a single heuristic score.
+- p95 latency plus configurable safety margin participates in Ascalon admission.
+- AER decisions carry a deterministic decision identity and policy version.
+- Probes can cross into the existing Agent Execution Fabric through `ScopedToolAERExecutionFabricBridge`; AER remains non-executing.
+- Tool execution preserves measured provider metadata needed for real economics and evidence accounting.
+- Probe prioritization can incorporate expected decision change and hypothesis discrimination.
+- Investigation deadlines are episode-scoped rather than reset during re-planning.
+- Episode telemetry has a metadata-only durable sink.
+- Candidate routing policies are subject to an evidence-based shadow promotion gate.
+
+### Boundary clarification
+
+AER and governance intentionally form a two-stage admission boundary with different authority:
+
+```
+AER epistemic/economic pre-call
+        ↓
+canonical AscalonInferenceAdmissionGate
+        ↓
+proposal validation / Council / Guardian
+        ↓
+AEF execution
+```
+
+The AER pre-call layer answers whether cognition is worth attempting. The governance admission layer remains authoritative for whether a concrete Ascalon inference envelope is admitted.
+
+### Current status
+
+This remains `SHADOW-ONLY / VALIDATION PENDING`. Repository code is not promoted to production policy merely because the design or tests pass.
+
+### Research-derived principles
+
+Adaptive compute research motivates per-episode allocation rather than uniform reasoning budgets; budget-aware routing research motivates outcome-driven routing under resource constraints; Bayesian experimental-design research motivates sequential probe selection by expected information value; current OpenTelemetry GenAI conventions motivate low-cardinality model/tool/usage/duration telemetry. These sources inform architecture only; ShortForge must establish its own workload-specific evidence before promotion.
