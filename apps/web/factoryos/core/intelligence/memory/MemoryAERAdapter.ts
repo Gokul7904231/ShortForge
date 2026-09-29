@@ -14,12 +14,22 @@ export class MemoryAERAdapter {
   public constructor(private readonly engine = new AEREngine()) {}
 
   public assess(input: MemoryAERAdapterInput): AERAssessment {
-    const known: EpistemicFact[] = input.recall.items.map((item) => ({
-      factId: "memory:" + item.memoryId,
-      statement: item.content,
-      sourceRefs: [...item.evidenceRefs, "memory:" + item.memoryId],
-      status: item.verificationState === "VERIFIED" ? "CONFIRMED" : "SUPPORTED",
-    }));
+    const known: EpistemicFact[] = input.recall.items.flatMap((item) => {
+      if (item.verificationState === "DISPUTED" || item.verificationState === "UNVERIFIED") {
+        return [];
+      }
+      return [{
+        factId: "memory:" + item.memoryId,
+        statement: item.content,
+        sourceRefs: [...item.evidenceRefs, "memory:" + item.memoryId],
+        status:
+          item.verificationState === "VERIFIED"
+            ? "CONFIRMED" as const
+            : item.verificationState === "INFERRED"
+              ? "INFERRED" as const
+              : "SUPPORTED" as const,
+      }];
+    });
 
     const evidenceRefs = [
       ...new Set(input.recall.items.flatMap((item) => item.evidenceRefs)),
