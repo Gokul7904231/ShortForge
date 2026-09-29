@@ -35,6 +35,7 @@ import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
+import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
 import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
 import { ResearchRuntime } from "../research/ResearchRuntime";
@@ -85,7 +86,8 @@ export class OverseerControlPlane {
     cognitivePlane?: CognitivePlaneEngine,
     missionManager?: MissionManager,
     decisionRepo?: IDecisionRepository,
-    taskDAGRepo?: ITaskDAGRepository
+    taskDAGRepo?: ITaskDAGRepository,
+    memoryLifecycle?: MemoryLifecycleService
   ) {
     this.caseManager = caseManager;
     this.slayerEngine = slayerEngine;
@@ -95,7 +97,7 @@ export class OverseerControlPlane {
     this.worldState = worldState;
     this.memoryEngine = memoryEngine;
     this.cognitivePlane = cognitivePlane || new CognitivePlaneEngine();
-    this.cognitiveRuntime = new CognitiveRuntime(this.cognitivePlane);
+    this.cognitiveRuntime = new CognitiveRuntime(this.cognitivePlane, memoryLifecycle);
     this.missionManager = missionManager;
 
     this.thinkingController = new OverseerThinkingController();
