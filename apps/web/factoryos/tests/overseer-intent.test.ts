@@ -34,7 +34,7 @@ describe("FactoryOS Frontier v3 — Overseer Cognitive Runtime & Intent Routing 
     expect(res.intent).toBe("FACTORY_TELEMETRY");
     expect(res.sourceUsed).toBe("FactoryStateService");
     expect(res.evidence.floorCount).toBe(8);
-    expect(res.answer).toContain("7");
+    expect(res.answer).toContain("8");
     expect(res.answer).not.toContain("agent swarm");
     expect(res.answer).not.toContain("RAG");
   });
