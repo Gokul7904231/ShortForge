@@ -230,6 +230,7 @@ describe("Slayer Prime — enforcement control plane", () => {
       authorizedRole: "GUARDIAN",
       issuedAt: new Date().toISOString(),
       expiresAt: future(60_000),
+      leadershipEpoch: prime.getLeadership()!.epoch,
       evidenceRefs: ["ev-lease-9", "ev-heartbeat-9"],
       reason: "stale execution lease requires containment",
     };
@@ -450,6 +451,7 @@ describe("Slayer Prime — enforcement control plane", () => {
       authorizedRole: "GUARDIAN",
       issuedAt: new Date().toISOString(),
       expiresAt: future(60_000),
+      leadershipEpoch: prime.getLeadership()!.epoch,
       evidenceRefs: ["ev-fence-lease", "ev-fence-heartbeat"],
       reason: "stale worker lease containment",
     });
