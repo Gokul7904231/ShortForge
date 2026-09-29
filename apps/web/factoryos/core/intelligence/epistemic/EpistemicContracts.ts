@@ -103,6 +103,8 @@ export interface EpistemicMeasurement {
   readonly evidenceRefs: readonly string[];
   readonly calibrationStatus?: CalibrationStatus;
   readonly freshnessSeconds?: number;
+  readonly staleAfterSeconds?: number;
+  readonly material?: boolean;
   readonly authoritative?: boolean;
 }
 
