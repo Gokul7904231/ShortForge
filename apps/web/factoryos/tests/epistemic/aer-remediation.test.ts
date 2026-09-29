@@ -4,7 +4,6 @@ import { ScopedToolExecutor } from "../../core/agent/execution/ScopedToolExecuto
 import type { ExecutionStepContract, ExecutionState } from "../../core/agent/execution/AgentExecutionContracts";
 import { ToolRegistry } from "../../core/tools/ToolRegistry";
 import { ToolExecutor } from "../../core/tools/ToolExecutor";
-import { toolOk } from "../../core/tools/ToolContracts";
 import { describe, expect, it } from "vitest";
 import {
   AEREngine,
@@ -413,9 +412,14 @@ describe("AER remediation — economics, reservations, execution loop", () => {
       () => "probe.ffprobe",
     );
 
+    const context = new AEREngine().assess({
+      contextSeed: "aef-bridge-context",
+      budget,
+    }).context;
+
     const result = await bridge.execute({
       episodeId: "aer-aef-episode-001",
-      context: {} as never,
+      context,
       probe,
       deadlineAtMs: Date.now() + 1000,
     });
