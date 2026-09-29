@@ -50,7 +50,7 @@
     "notes": "No new network-facing authority or bypass was added. Full repository security lanes remain CI admission evidence."
   },
   "trainingReadiness": {
-    "closedLoopMilestone": "READY_FOR_CI_VALIDATION",
+    "closedLoopMilestone": "CI_VALIDATED",
     "ascalon": "PROPOSAL_LEARNING_ONLY",
     "release": "F07 authority boundary unchanged"
   },
@@ -78,20 +78,87 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "PENDING_CI",
+    "Forge Evaluator": "COMPLETE",
     "Forge Release": "PENDING_MERGE"
   },
   "conflicts": [],
   "verificationResults": {
-    "teamChangeGate": "PENDING_CI",
-    "repositoryCI": "PENDING_CI",
-    "floorValidation": "PENDING_CI"
+    "teamChangeGate": {
+      "runId": 36522288114,
+      "conclusion": "success"
+    },
+    "repositoryTypecheck": {
+      "runId": 36522287941,
+      "jobId": 109257575665,
+      "conclusion": "success"
+    },
+    "floor01Python": {
+      "jobId": 109257575860,
+      "conclusion": "success"
+    },
+    "floor01Security": {
+      "jobId": 109257651700,
+      "conclusion": "success"
+    },
+    "floor01ContainerSmoke": {
+      "jobId": 109257748229,
+      "conclusion": "success"
+    },
+    "floor02Floor03Validation": {
+      "runId": 36522288102,
+      "conclusion": "success"
+    },
+    "floor04Validation": {
+      "runId": 36522288095,
+      "conclusion": "success"
+    },
+    "floor05Validation": {
+      "runId": 36522288101,
+      "conclusion": "success"
+    },
+    "floor06Validation": {
+      "runId": 36522288106,
+      "conclusion": "success"
+    },
+    "floor07Validation": {
+      "runId": 36522287981,
+      "conclusion": "success"
+    },
+    "fgcWave2_3": {
+      "runId": 36522288147,
+      "conclusion": "success"
+    },
+    "fgcValidation": {
+      "runId": 36522288019,
+      "conclusion": "success"
+    },
+    "fgcWave4": {
+      "runId": 36522288038,
+      "conclusion": "success"
+    },
+    "fgcFinal": {
+      "runId": 36522288050,
+      "conclusion": "success"
+    },
+    "webRegressionInformational": {
+      "jobId": 109257575781,
+      "conclusion": "failure",
+      "informational": true,
+      "failedTestFiles": 50,
+      "failedTests": 66,
+      "passedTests": 1143,
+      "skippedTests": 8,
+      "policy": "continue-on-error",
+      "note": "Environment/legacy availability failures including ffmpeg/ffprobe and external AI/provider availability; blocking CI lanes are green."
+    }
   },
   "notes": [
     "The common loop substrate is deliberately bounded and cannot create authority.",
     "F07 remediation execution remains an injected upstream capability so F07 does not self-authorize repair.",
     "F06 closure is emitted only after provider execution and physical artifact verification complete.",
     "F00 evidence thresholds are independent of requested source count to avoid over-constraining corroboration.",
-    "Current ArtifactLineageGraph implementation already rejects cycles; historical traceability row R037 was refreshed."
-  ]
+    "Current ArtifactLineageGraph implementation already rejects cycles; historical traceability row R037 was refreshed.",
+    "Fresh CI evidence: all blocking lanes listed in verificationResults passed on the validated PR head; Web Regression remains informational by workflow policy."
+  ],
+  "dispositionRationale": "All required blocking validation lanes are green: strict TypeScript typecheck, F01 Python/security/container, F02/F03, F04, F05, F06, F07, all FGC waves, and Team Change Gate. The full Web Regression Suite failed only in its explicitly informational continue-on-error lane with environment/legacy availability failures; the new closed-loop milestone suite passed all 5 tests."
 }
