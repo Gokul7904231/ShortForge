@@ -28,6 +28,11 @@
       "cognitive routing",
       "EpistemicContext builder",
       "Ascalon shadow handoff",
+      "trigger suppression",
+      "hypothesis updates",
+      "cache identity/invalidation",
+      "tamper-evident epistemic ledger",
+      "defense-in-depth Ascalon-context redaction",
       "unit tests"
     ]
   },
@@ -42,7 +47,7 @@
   },
   "conflicts": [],
   "verification": {
-    "status": "PENDING_CI",
+    "status": "IN_PROGRESS",
     "required": [
       "apps/web factoryos TypeScript typecheck",
       "targeted AER Vitest suite",
