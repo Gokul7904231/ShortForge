@@ -1,6 +1,6 @@
 # Slayer Prime — Enforcement Architecture
 
-Status: IMPLEMENTED foundation / bounded production enforcement boundary
+Status: IMPLEMENTED foundation / distributed-safety hardened enforcement boundary
 
 Slayer Prime is the enforcement control plane inside the canonical Slayer layer.
 
@@ -14,13 +14,14 @@ Overseer
       v
 Guardian ---- authorizes ----> Slayer Prime
                                 |
-                                +--> incident identity
+                                +--> durable incident identity
                                 +--> evidence quorum
-                                +--> blast-radius policy
-                                +--> action lease / fencing
+                                +--> deterministic action intent
+                                +--> single-writer leadership epoch
+                                +--> action lease / monotonic fencing
                                 +--> enforcement adapter
                                 +--> postcondition verification
-                                +--> enforcement receipt
+                                +--> durable enforcement receipt
                                 |
                                 v
                               Worker
@@ -78,10 +79,26 @@ A worker/task lease and Slayer action lease are different resources.
 
 - Worker/task lease: ownership of execution.
 - Slayer action lease: ownership of the enforcement mutation.
+- Prime leadership lease: ownership of the single enforcement writer.
 
-The action lease supplies a monotonic fencing token and prevents duplicate mutation for the same action intent within the configured lease store.
+Prime now uses a process-incarnation holder identity, a monotonic leadership epoch, deterministic intent deduplication, and a separate monotonic action fence. A stale Prime replica can remain alive without retaining mutation authority.
 
-The default action lease store is in-memory for tests/offline operation. Distributed production requires a durable, strongly-consistent implementation.
+State storage has explicit tiers:
+- InMemorySlayerPrimeStateStore: tests/offline only.
+- DiskSlayerPrimeStateStore: single-host restart recovery; not a multi-host consensus mechanism.
+- MongoSlayerPrimeStateStore: shared coordination path with atomic conditional leadership, unique intent identity, and shared action-lease fencing.
+
+A production multi-host deployment must use a shared strongly-consistent store.
+
+## Distributed-safety invariants
+
+Prime's critical path is deliberately transactional in shape:
+
+authority check -> current leadership check -> action reservation -> current action-lease check -> adapter mutation -> independent postcondition.
+
+Leadership can change between any two steps, so the executor rechecks authority state immediately before mutation.
+
+The design follows established distributed-systems patterns: Kubernetes leader election uses a shared Lease with optimistic concurrency; etcd transactions provide atomic compare-and-set-style concurrency control and monotonically increasing revisions; fencing tokens prevent delayed or resurrected clients from writing under stale ownership; durable event histories allow recovery after worker/process failure. These patterns are reflected here without claiming that Prime itself is a consensus protocol.
 
 ## Incident storm control
 
@@ -98,12 +115,15 @@ AER/Ascalon may supply deeper investigation or proposals through a future adapte
 - Evidence quorum: implemented.
 - Blast-radius policy: implemented.
 - Guardian/Human authorization validation: implemented.
-- Action lease and fencing token: implemented in-memory.
+- Action lease and fencing token: implemented through the Prime state-store abstraction.
+- Single-writer leadership lease and restart-safe holder identity: implemented.
+- Deterministic cross-replica action intent dedupe: implemented.
 - Lease revocation: implemented.
 - Postcondition proof and receipt: implemented.
 - Physical process termination: adapter required.
 - eBPF/kernel enforcement: adapter required.
-- Durable distributed enforcement ledger: future adapter/store.
+- Durable distributed event bus / cross-process observation replay: not yet complete.
+- Universal worker-resource fencing: not yet complete; legacy LeaseManager still lacks an atomic fencing-token release contract.
 - F07 independent verification: remains outside Slayer Prime.
 
 ## Safety invariants
@@ -117,3 +137,7 @@ AER/Ascalon may supply deeper investigation or proposals through a future adapte
 7. Slayer Prime cannot grant itself capabilities.
 8. Slayer Prime cannot disable Guardian, Watchdog, or F07.
 9. Unsupported physical actions are rejected rather than simulated.
+10. A stale action lease cannot mutate merely because its process has resumed.
+11. Durable state recovery must precede enforcement input acceptance.
+12. Multi-host enforcement requires a shared strongly-consistent state store.
+13. Prime remains unable to disable Guardian, Watchdog, or F07.
