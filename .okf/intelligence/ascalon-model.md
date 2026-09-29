@@ -732,6 +732,56 @@ Relevant implementation areas:
 
 ---
 
+## AER — Epistemic Runtime Integration
+
+Ascalon deep cognition is now conceptually preceded by the **Ascalon Epistemic Runtime (AER)** target architecture documented at `.okf/intelligence/aer.md`.
+
+AER does not replace the existing decision core. It supplies Ascalon with a bounded, provenance-backed `EpistemicContext` containing:
+- current known facts and measurement fidelity;
+- unknowns and unresolved questions;
+- contradictions;
+- competing hypotheses;
+- investigation history;
+- recommended cognitive probes;
+- evidence references;
+- impact/blast-radius assessment;
+- cognitive routing recommendation;
+- latency, cost, and call budgets;
+- freshness information.
+
+The intended cognition chain is:
+
+```text
+WorldState
+  ↓
+AER
+  ↓
+EpistemicContext
+  ↓
+Deterministic / Fast Decision / Ascalon Deep Cognition
+  ↓
+bounded proposal
+  ↓
+Guardian + runtime
+  ↓
+execution
+  ↓
+physical verification / F07
+  ↓
+observed outcome
+  ↓
+AER epistemic feedback
+```
+
+AER may recommend what should be measured or investigated next, but it does not grant capabilities, authorize execution, replace F07, or establish physical truth.
+
+AER is a **target architecture only until executable contracts, tests, shadow replay, calibration evidence, and production admission prove it**. Its first integration stage is shadow-only.
+
+See:
+- `.okf/intelligence/aer.md`
+- `docs/ascalon/epistemic-runtime.md`
+- `.okf/decisions/ascalon-epistemic-runtime-20260929.md`
+
 ## 22. Non-Negotiable Principle
 
 > **Ascalon is the brain we train for ShortForge; FactoryOS is the body and governance system that constrains, verifies, and executes it.**
