@@ -62,6 +62,9 @@ describe("AER auxiliary production primitives", () => {
     expect(cache.get(key, 1500)).toBe("cached");
     expect(cache.get({...key, policyVersion: "p2"}, 1500)).toBeUndefined();
     expect(cache.get(key, 2501)).toBeUndefined();
+    expect(cache.stats().hits).toBe(1);
+    expect(cache.stats().misses).toBe(2);
+    expect(cache.stats().hitRate).toBeCloseTo(1 / 3);
   });
 
   it("maintains a tamper-evident append-only chain", () => {
@@ -86,7 +89,16 @@ describe("AER auxiliary production primitives", () => {
       cognitiveRecommendation: {
         mode: "DETERMINISTIC" as const,
         reason: "test",
+        reasonCode: "NO_MATERIAL_UNCERTAINTY" as const,
         deadlineMs: 10,
+        expectedValue: 0,
+        shouldInvokeAscalon: false,
+        estimatedCostUnits: 0,
+        budget: {
+          maxTimeMs: 100,
+          maxCallsRemaining: 0,
+          maxCostUnits: 0,
+        },
       },
       budgets: {
         maxEpistemicTimeMs: 100,
