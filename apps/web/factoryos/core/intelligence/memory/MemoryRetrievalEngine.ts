@@ -7,6 +7,7 @@ import type {
   MemorySemanticType,
   MemoryRelationType,
 } from "./MemorySemanticsContracts";
+import { buildMemoryDerivedIndex, type MemoryDerivedIndex } from "./MemoryDerivedIndex";
 
 export interface MemorySemanticRetriever {
   score(query: string, candidate: KnowledgeDocument): number | Promise<number>;
@@ -52,6 +53,7 @@ export class MemoryRetrievalEngine {
   private readonly relations: MemoryRetrievalEngineOptions["relations"];
   private readonly fusionConstant: number;
   private readonly rrfWeights: Required<NonNullable<MemoryRetrievalEngineOptions["rrfWeights"]>>;
+  private derivedIndex?: MemoryDerivedIndex;
 
   constructor(options: MemoryRetrievalEngineOptions = {}) {
     this.semanticRetriever = options.semanticRetriever;
@@ -74,9 +76,10 @@ export class MemoryRetrievalEngine {
       throw new Error("[MemoryRetrievalEngine] accessContext is required");
     }
     const eligible = documents.filter((document) => this.isEligible(document, query));
+    const index = this.getDerivedIndex(eligible);
     const semantic = await this.semanticChannel(eligible, query);
-    const lexical = this.lexicalChannel(eligible, query);
-    const graph = this.graphChannel(eligible, query);
+    const lexical = this.lexicalChannel(eligible, query, index);
+    const graph = this.graphChannel(eligible, query, index);
     const temporal = this.temporalChannel(eligible, query);
 
     const channels = { semantic, lexical, graph, temporal } as const;
@@ -238,74 +241,50 @@ export class MemoryRetrievalEngine {
   private lexicalChannel(
     documents: readonly KnowledgeDocument[],
     query: MemoryRecallQuery,
+    index: MemoryDerivedIndex,
   ): Array<{ id: string; score: number }> {
     const tokens = this.tokens(query.query);
     if (tokens.length === 0) return documents.map((document) => ({ id: document.frontmatter.id, score: 1 }));
 
-    const texts = documents.map((document) => ({
-      id: document.frontmatter.id,
-      tokens: this.tokens([
-        document.frontmatter.id,
-        document.frontmatter.title || "",
-        JSON.stringify(document.frontmatter.tags || []),
-        document.content,
-      ].join(" ")),
-    }));
-
-    const docCount = Math.max(1, texts.length);
-    const avgLength =
-      texts.reduce((sum, current) => sum + Math.max(1, current.tokens.length), 0) / docCount;
-    const documentFrequency = new Map<string, number>();
-    for (const text of texts) {
-      for (const token of new Set(text.tokens)) {
-        documentFrequency.set(token, (documentFrequency.get(token) ?? 0) + 1);
-      }
+    const candidateIds = new Set<string>();
+    for (const token of tokens) {
+      for (const id of index.tokenPostings.get(token) ?? []) candidateIds.add(id);
     }
 
-    const scores = texts.map((document) => {
-      const length = Math.max(1, document.tokens.length);
+    const docCount = Math.max(1, index.docCount);
+    const scores: Array<{ id: string; score: number }> = [];
+    for (const id of candidateIds) {
+      const documentTokens = index.documentTokens.get(id) ?? [];
+      const length = Math.max(1, documentTokens.length);
       const counts = new Map<string, number>();
-      document.tokens.forEach((token) => counts.set(token, (counts.get(token) ?? 0) + 1));
+      documentTokens.forEach((token) => counts.set(token, (counts.get(token) ?? 0) + 1));
 
       let score = 0;
       for (const token of tokens) {
         const tf = counts.get(token) ?? 0;
         if (!tf) continue;
-        const df = documentFrequency.get(token) ?? 0;
+        const df = index.documentFrequency.get(token) ?? 0;
         const idf = Math.log(1 + (docCount - df + 0.5) / (df + 0.5));
         const k1 = 1.2;
         const b = 0.75;
-        score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (length / Math.max(1, avgLength)))));
+        score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (length / Math.max(1, index.avgLength)))));
       }
-      return { id: document.id, score };
-    });
+      if (score > 0) scores.push({ id, score });
+    }
 
-    return scores.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score);
+    return scores.sort((a, b) => b.score - a.score);
   }
-
   private graphChannel(
     documents: readonly KnowledgeDocument[],
     query: MemoryRecallQuery,
+    index: MemoryDerivedIndex,
   ): Array<{ id: string; score: number }> {
     const entityRefs = new Set(query.entityRefs ?? []);
-    if (entityRefs.size === 0 || (this.relations ?? []).length === 0) return [];
-
-    const adjacency = new Map<string, Array<{ id: string; weight: number }>>();
-    for (const relation of this.relations ?? []) {
-      if (query.scopeKey && relation.scopeKey !== query.scopeKey) continue;
-      const edgeWeight = relation.weight ?? this.relationWeight(relation.type);
-      const forward = adjacency.get(relation.fromMemoryId) ?? [];
-      forward.push({ id: relation.toMemoryId, weight: edgeWeight });
-      adjacency.set(relation.fromMemoryId, forward);
-      const reverse = adjacency.get(relation.toMemoryId) ?? [];
-      reverse.push({ id: relation.fromMemoryId, weight: edgeWeight });
-      adjacency.set(relation.toMemoryId, reverse);
-    }
+    if (entityRefs.size === 0 || index.adjacency.size === 0) return [];
 
     const direct = new Set<string>();
-    for (const document of documents) {
-      const entities = this.stringArray(document.frontmatter.entity_refs);
-      if (entities.some((entity) => entityRefs.has(entity))) direct.add(document.frontmatter.id);
+    for (const entity of entityRefs) {
+      for (const id of index.entityPostings.get(entity) ?? []) direct.add(id);
     }
 
     const pathCost = new Map<string, number>();
@@ -318,7 +297,7 @@ export class MemoryRetrievalEngine {
     while (queue.length) {
       const current = queue.shift()!;
       if (current.depth >= 2) continue;
-      for (const edge of adjacency.get(current.id) ?? []) {
+      for (const edge of index.adjacency.get(current.id) ?? []) {
         const edgeCost = 1 / Math.max(0.1, edge.weight);
         const nextCost = current.cost + edgeCost;
         const previous = pathCost.get(edge.id);
@@ -335,7 +314,6 @@ export class MemoryRetrievalEngine {
       .map(([id, cost]) => ({ id, score: 1 / (1 + cost) }))
       .sort((a, b) => b.score - a.score);
   }
-
   private relationWeight(type: string): number {
     switch (String(type).toUpperCase()) {
       case "CONTRADICTS":
@@ -379,6 +357,13 @@ export class MemoryRetrievalEngine {
       });
 
     return scored.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score);
+  }
+
+  private getDerivedIndex(documents: readonly KnowledgeDocument[]): MemoryDerivedIndex {
+    const index = buildMemoryDerivedIndex(documents, this.relations ?? []);
+    if (this.derivedIndex?.versionKey === index.versionKey) return this.derivedIndex;
+    this.derivedIndex = index;
+    return index;
   }
 
   private hasTemporalIntent(query: string): boolean {
