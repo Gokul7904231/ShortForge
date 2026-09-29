@@ -100,7 +100,7 @@ export class MemoryObservationConsolidator {
         }
 
         if (!observation && strategy?.maxObservationsPerScope !== undefined &&
-            existingCount + observationIds.length - createdCount >= strategy.maxObservationsPerScope) {
+            existingCount + createdCount >= strategy.maxObservationsPerScope) {
           skippedForCapacity += 1;
           continue;
         }
@@ -233,6 +233,8 @@ export class MemoryObservationConsolidator {
         contradictedCount,
         mergedNearDuplicates,
         observationIds: [...new Set(observationIds)],
+        strategyId: strategy?.strategyId,
+        skippedForCapacity,
         strategyId: strategy?.strategyId,
         skippedForCapacity,
       });
