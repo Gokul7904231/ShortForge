@@ -37,10 +37,11 @@ export class AERAscalonPreCallGate {
     readonly availableActions: readonly string[];
     readonly verifiedEvidenceRefs: readonly string[];
     readonly scopeKey: string;
-  }): {
-    readonly admission: AERAscalonPreCallAdmission;
+  }): AERAscalonPreCallAdmission & {
     readonly context?: EpistemicContext;
     readonly permit?: AscalonInvocationPermit;
+    readonly commit: () => boolean;
+    readonly release: () => boolean;
   } {
     const assessment = this.engine.assess(
       this.contextFactory.buildAssessmentInput(input),
@@ -55,26 +56,26 @@ export class AERAscalonPreCallGate {
 
     if (!permit) {
       return {
-        admission: {
-          ...assessment.ascalonAdmission,
-          admitted: false,
-          reason: assessment.ascalonAdmission.admitted
-            ? "ascalon_budget_reservation_failed"
-            : assessment.ascalonAdmission.reason,
-          contextFingerprint: assessment.context.contextFingerprint,
-        },
+        ...assessment.ascalonAdmission,
+        admitted: false,
+        reason: assessment.ascalonAdmission.admitted
+          ? "ascalon_budget_reservation_failed"
+          : assessment.ascalonAdmission.reason,
+        contextFingerprint: assessment.context.contextFingerprint,
         context: assessment.context,
+        commit: () => false,
+        release: () => false,
       };
     }
 
     return {
-      admission: {
-        ...assessment.ascalonAdmission,
-        admitted: true,
-        reservationId: permit.reservation.reservationId,
-      },
+      ...assessment.ascalonAdmission,
+      admitted: true,
+      reservationId: permit.reservation.reservationId,
       context: assessment.context,
       permit,
+      commit: () => this.coordinator.commit(permit),
+      release: () => this.coordinator.release(permit),
     };
   }
 
@@ -97,17 +98,15 @@ export class AERAscalonPreCallGate {
       scopeKey: input.scopeKey ?? "floor:aer",
     });
 
-    // Compatibility method: callers that only have evaluate() receive the
-    // admission decision, while reservation-aware callers should use prepare().
-    // A successful reservation is immediately released here because evaluate()
-    // cannot safely bracket the actual model call.
+    // Compatibility method cannot bracket a model call, so release any
+    // reservation immediately. Reservation-aware callers must use prepare().
     if (prepared.permit) {
-      this.complete(prepared.permit, false);
+      prepared.release();
     }
 
     return {
-      ...prepared.admission,
-      context: prepared.context,
+      ...prepared,
+      permit: undefined,
     };
   }
 }
