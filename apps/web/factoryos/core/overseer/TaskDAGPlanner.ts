@@ -44,8 +44,12 @@ export class TaskDAGPlanner {
   createEightFloorProductionDAG(goalId: string, initialPayload: Record<string, unknown> = {}): TaskDAG {
     const allFloors = FloorRegistry.getAllFloors();
     const nodes: TaskNode[] = allFloors.map((floor) => {
-      const taskId = `task_${floor.floorId}`;
-      const dependencies = floor.predecessors.map((p) => `task_${p}`);
+      // Preserve the executor's canonical task identity while deriving topology
+      // from FloorRegistry. This avoids legacy F00 task-id drift without coupling
+      // the registry itself to runtime naming.
+      const runtimeFloorId = floor.floorId.replace(/^floor/, "f");
+      const taskId = `task_${runtimeFloorId}`;
+      const dependencies = floor.predecessors.map((p) => `task_${p.replace(/^floor/, "f")}`);
       return {
         taskId,
         name: floor.canonicalName,
