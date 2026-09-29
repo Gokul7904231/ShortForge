@@ -52,6 +52,31 @@ import { TemplateProductionPipeline } from "../templates/TemplateProductionPipel
 import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
 import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 
+function runtimeClosureReceipt(
+  floorId: string,
+  loopType: "COGNITIVE_EXECUTION",
+  executionId: string,
+  startedAt: string,
+  completedAt: string,
+  verified: boolean,
+  evidenceRefs: readonly string[],
+  iterations = 1,
+): Record<string, unknown> {
+  return {
+    floorId,
+    loopType,
+    loopId: "runtime-" + floorId + "-" + executionId,
+    termination: verified ? "COMPLETED" : "EXHAUSTED",
+    iterations: Math.max(1, iterations),
+    startedAt,
+    completedAt,
+    verified,
+    evidenceRefs: [...evidenceRefs],
+    proofSource: "RUNTIME",
+    failureReason: verified ? undefined : "Canonical runtime closure verification did not pass.",
+  };
+}
+
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
   private decisionLedger: DecisionLedger;
@@ -769,6 +794,15 @@ export class OverseerControlPlane {
           executionTimeMs,
           durationTruth: "PHYSICAL",
           consumedArtifactIds: analystOutput?.passport?.passportId ? [analystOutput.passport.passportId] : [],
+          loopReceipt: runtimeClosureReceipt(
+            "floor01_strategy",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            strategyPayload?.handoff_status === "VALIDATED",
+            [executionId, strategyPayload?.plan_id || executionId],
+          ),
         });
         return { status: "OK", floor: "floor01_strategy", output: strategyPayload, executionTimeMs };
       },
@@ -952,6 +986,16 @@ export class OverseerControlPlane {
           completedAt,
           executionTimeMs,
           durationTruth: "PHYSICAL",
+          loopReceipt: runtimeClosureReceipt(
+            "floor02_scripting",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            scriptPayload?.handoffPayload?.handoff_status === "VALIDATED" ||
+              scriptPayload?.handoffPayload?.handoff_status === "VALIDATED",
+            [executionId, scriptPayload?.handoffPayload?.script_id || executionId],
+          ),
         });
         return { status: "OK", floor: "floor02_scripting", output: scriptPayload, executionTimeMs };
       },
@@ -1018,6 +1062,16 @@ export class OverseerControlPlane {
           floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, output: assetPayload,
           handoff: canonicalF03, executionReport: f03.executionReport, startedAt, completedAt, executionTimeMs,
           durationTruth: "MEASURED", evidenceClass: "TYPED_F03_RUNTIME_HANDOFF", physicalMediaProduced: false,
+          loopReceipt: runtimeClosureReceipt(
+            "floor03_asset_realization",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            canonicalF03?.handoff_status === "VALIDATED" &&
+              Boolean(canonicalF03?.asset_plan_ir?.plan_fingerprint),
+            [executionId, canonicalF03?.asset_plan_id || executionId, canonicalF03?.asset_plan_ir?.plan_fingerprint || executionId],
+          ),
         });
         return { status: "OK", floor: "floor03_asset_realization", output: assetPayload, executionTimeMs };
       },
@@ -1091,6 +1145,15 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           producedArtifacts: [{ kind: "WAV_AUDIO", path: synthRes.localPath, sha256: synthRes.sha256 }],
           producedArtifactIds: [synthRes.sha256],
+          loopReceipt: runtimeClosureReceipt(
+            "floor04_media_synthesis",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            Boolean(synthRes.sha256) && Number(synthRes.byteLength || 0) > 0,
+            [executionId, synthRes.sha256 || executionId],
+          ),
         });
         return { status: "OK", floor: "floor04_media_synthesis", output: mediaPayload, executionTimeMs };
       },
@@ -1224,6 +1287,15 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           consumedArtifacts: scope.voiceUrl ? [{ kind: "WAV_AUDIO", path: scope.voiceUrl, sha256: consumedAudioSha256 }] : [],
           consumedArtifactIds: consumedAudioSha256 ? [consumedAudioSha256] : [],
+          loopReceipt: runtimeClosureReceipt(
+            "floor05_timeline_composition",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            Boolean(renderIntent.intentId) && Boolean(consumedAudioSha256),
+            [executionId, renderIntent.intentId, consumedAudioSha256 || executionId],
+          ),
         });
         return { status: "OK", floor: "floor05_timeline_composition", output: timelinePayload, executionTimeMs };
       },
@@ -1388,6 +1460,7 @@ export class OverseerControlPlane {
           consumedArtifactIds: sharedScope.voiceArtifact?.sha256 ? [sharedScope.voiceArtifact.sha256] : [],
           producedArtifacts: scope.artifact ? [{ kind: "MP4_VIDEO", path: finalVideoUrl, sha256: scope.artifact.sha256 }] : [],
           producedArtifactIds: scope.artifact?.sha256 ? [scope.artifact.sha256] : [],
+          loopReceipt: renderRes.loopReceipt,
         });
         return {
           status: "OK",
@@ -1519,6 +1592,23 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           consumedArtifacts: videoUrl ? [{ kind: "MP4_VIDEO", path: videoUrl, sha256: artifact?.sha256 }] : [],
           consumedArtifactIds: artifact?.sha256 ? [artifact.sha256] : [],
+          loopReceipt: {
+            floorId: "floor07_compliance",
+            loopType: "VERIFICATION_REMEDIATION",
+            loopId: "f07-runtime-" + executionId,
+            termination: verificationReport.verified ? "COMPLETED" : "EXHAUSTED",
+            iterations: 1,
+            startedAt,
+            completedAt,
+            verified: Boolean(verificationReport.verified),
+            evidenceRefs: [
+              executionId,
+              artifact?.sha256 || executionId,
+              ...(verificationReport.failures || []),
+            ],
+            proofSource: "PHYSICAL_VERIFIER",
+            failureReason: verificationReport.verified ? undefined : (verificationReport.failures || []).join("; "),
+          },
         });
         return {
           status: "OK",
