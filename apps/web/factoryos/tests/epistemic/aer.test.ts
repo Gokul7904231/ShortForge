@@ -550,15 +550,28 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       costUnits: 3,
     });
     metrics.recordOutcome({
+      outcomeId: "outcome_uncertain_01",
       episodeId: uncertain.context.contextId,
-      resolvedUncertainty: true,
-      falseReassurance: false,
-      ascalonWasNecessary: true,
+      status: "RESOLVED",
+      evidenceRefs: ["validator:uncertainty-01"],
+      authoritativeSource: "VERIFIED_SYSTEM",
+      verificationRef: "validator:uncertainty-01",
+      observedAt: "2026-09-29T00:00:00.000Z",
+      ascalonClaimedResolved: true,
+      necessityAssessment: {
+        verdict: "NECESSARY",
+        method: "CONTROLLED_REPLAY",
+        evidenceRefs: ["baseline-replay:01"],
+      },
     });
     metrics.recordOutcome({
+      outcomeId: "outcome_deterministic_01",
       episodeId: deterministic.context.contextId,
-      resolvedUncertainty: true,
-      falseReassurance: false,
+      status: "RESOLVED",
+      evidenceRefs: ["hash:1"],
+      authoritativeSource: "VERIFIED_SYSTEM",
+      verificationRef: "hash:1",
+      observedAt: "2026-09-29T00:00:00.000Z",
     });
 
     const snapshot = metrics.snapshot();
@@ -613,6 +626,36 @@ describe("AER — Ascalon Epistemic Runtime", () => {
 
     expect(assessment.source).toBe("CONFIGURED_PRIOR");
     expect(assessment.shouldInvokeAscalon).toBe(false);
+  });
+
+
+  it("rejects ungrounded or model-authored resolution outcomes", () => {
+    const metrics = new AERMetricsRecorder();
+    metrics.recordEvent({ episodeId: "outcome-1", aerInvoked: true });
+
+    expect(() =>
+      metrics.recordOutcome({
+        outcomeId: "bad-1",
+        episodeId: "outcome-1",
+        status: "RESOLVED",
+        evidenceRefs: [],
+        authoritativeSource: "VERIFIED_SYSTEM",
+        verificationRef: "missing-evidence",
+        observedAt: "2026-09-29T00:00:00.000Z",
+      }),
+    ).toThrow("resolved outcome requires evidenceRefs");
+
+    expect(() =>
+      metrics.recordOutcome({
+        outcomeId: "bad-2",
+        episodeId: "outcome-1",
+        status: "RESOLVED",
+        evidenceRefs: ["model:1"],
+        authoritativeSource: "MODEL_INFERENCE",
+        verificationRef: "model:1",
+        observedAt: "2026-09-29T00:00:00.000Z",
+      }),
+    ).toThrow("model inference cannot authoritatively resolve uncertainty");
   });
 
 });
