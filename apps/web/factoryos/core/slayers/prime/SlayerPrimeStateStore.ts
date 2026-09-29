@@ -424,14 +424,14 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
     const state = this.read();
     this.expire(state);
     const current = state.leadership;
-    return Boolean(current && current.holderId === holderId && current.epoch >= epoch && new Date(current.expiresAt).getTime() > Date.now());
+    return Boolean(current && current.holderId === holderId && current.epoch === epoch && new Date(current.expiresAt).getTime() > Date.now());
   }
 
   async acquireActionLease(intent: SlayerActionIntent, holderId: string, ttlMs: number, leadershipEpoch: number): Promise<SlayerActionLease | null> {
     const state = this.read();
     this.expire(state);
     const currentLeadership = state.leadership;
-    if (!currentLeadership || currentLeadership.holderId !== holderId || currentLeadership.epoch < leadershipEpoch || new Date(currentLeadership.expiresAt).getTime() <= Date.now()) return null;
+    if (!currentLeadership || currentLeadership.holderId !== holderId || currentLeadership.epoch !== leadershipEpoch || new Date(currentLeadership.expiresAt).getTime() <= Date.now()) return null;
 
     const active = Object.values(state.actionLeases).find(
       (candidate) => candidate.intentId === intent.intentId && candidate.status === "ACTIVE" && new Date(candidate.expiresAt).getTime() > Date.now()
@@ -617,18 +617,23 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
       return true;
     }
 
-    const result = await this.incidents.replaceOne(
-      {
-        incidentId: incident.incidentId,
-        $or: [
-          { persistenceEpoch: { $exists: false } },
-          { persistenceEpoch: { $lte: writer.epoch } },
-        ],
-      },
-      document,
-      { upsert: true }
-    );
-    return result.matchedCount > 0 || result.upsertedCount > 0;
+    try {
+      const result = await this.incidents.replaceOne(
+        {
+          incidentId: incident.incidentId,
+          $or: [
+            { persistenceEpoch: { $exists: false } },
+            { persistenceEpoch: { $lte: writer.epoch } },
+          ],
+        },
+        document,
+        { upsert: true }
+      );
+      return result.matchedCount > 0 || result.upsertedCount > 0;
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) return false;
+      throw error;
+    }
   }
 
   async createIntentIfAbsent(intent: SlayerActionIntent): Promise<{ created: boolean; intent: SlayerActionIntent }> {
@@ -747,7 +752,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
         maxTimeMS: 2_000,
       }
     );
-    return Boolean(current && current.epoch >= epoch);
+    return Boolean(current && current.epoch === epoch);
   }
 
   async acquireActionLease(
