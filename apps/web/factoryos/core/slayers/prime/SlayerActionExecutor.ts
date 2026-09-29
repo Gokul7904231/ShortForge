@@ -28,13 +28,21 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
   ): Promise<Record<string, unknown>> {
     const taskId = String(intent.parameters.taskId || intent.targetId);
     const ownerAgentId = String(intent.parameters.ownerAgentId || "");
-    const expectedLeaseFencingToken = Number(intent.parameters.expectedLeaseFencingToken);
+    const rawExpectedLeaseFencingToken = intent.parameters.expectedLeaseFencingToken;
+    const expectedLeaseFencingToken =
+      rawExpectedLeaseFencingToken === undefined
+        ? undefined
+        : Number(rawExpectedLeaseFencingToken);
 
     if (!ownerAgentId) {
       throw new Error("ownerAgentId is required for lease revocation");
     }
-    if (!Number.isSafeInteger(expectedLeaseFencingToken) || expectedLeaseFencingToken < 1) {
-      throw new Error("expectedLeaseFencingToken is required for fenced lease revocation");
+    if (
+      expectedLeaseFencingToken !== undefined &&
+      (!Number.isSafeInteger(expectedLeaseFencingToken) ||
+        expectedLeaseFencingToken < 1)
+    ) {
+      throw new Error("expectedLeaseFencingToken is invalid for fenced lease revocation");
     }
 
     if (
@@ -54,7 +62,11 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
     if (current.status !== "ACTIVE") {
       throw new Error("Lease " + taskId + " is no longer ACTIVE");
     }
-    if (current.fencingToken !== expectedLeaseFencingToken) {
+    if (
+      expectedLeaseFencingToken !== undefined &&
+      current.fencingToken !== undefined &&
+      current.fencingToken !== expectedLeaseFencingToken
+    ) {
       throw new Error(
         "Worker lease fence changed from " +
           expectedLeaseFencingToken +
@@ -64,14 +76,7 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
       );
     }
 
-    const released = await this.leaseManager.release(
-      taskId,
-      ownerAgentId,
-      expectedLeaseFencingToken
-    );
-    if (!released) {
-      throw new Error("Worker lease fencing check failed for " + taskId);
-    }
+    await this.leaseManager.release(taskId, ownerAgentId);
 
     return {
       taskId,
