@@ -53,6 +53,9 @@ export class MemoryRetrievalEngine {
     documents: readonly KnowledgeDocument[],
     query: MemoryRecallQuery,
   ): Promise<MemoryRecallResult> {
+    if (!query.accessContext) {
+      throw new Error("[MemoryRetrievalEngine] accessContext is required");
+    }
     const eligible = documents.filter((document) => this.isEligible(document, query));
     const semantic = await this.semanticChannel(eligible, query);
     const lexical = this.lexicalChannel(eligible, query);
@@ -225,10 +228,17 @@ export class MemoryRetrievalEngine {
     }));
 
     const docCount = Math.max(1, texts.length);
+    const avgLength =
+      texts.reduce((sum, current) => sum + Math.max(1, current.tokens.length), 0) / docCount;
+    const documentFrequency = new Map<string, number>();
+    for (const text of texts) {
+      for (const token of new Set(text.tokens)) {
+        documentFrequency.set(token, (documentFrequency.get(token) ?? 0) + 1);
+      }
+    }
+
     const scores = texts.map((document) => {
       const length = Math.max(1, document.tokens.length);
-      const avgLength =
-        texts.reduce((sum, current) => sum + Math.max(1, current.tokens.length), 0) / docCount;
       const counts = new Map<string, number>();
       document.tokens.forEach((token) => counts.set(token, (counts.get(token) ?? 0) + 1));
 
@@ -236,7 +246,7 @@ export class MemoryRetrievalEngine {
       for (const token of tokens) {
         const tf = counts.get(token) ?? 0;
         if (!tf) continue;
-        const df = texts.filter((candidate) => candidate.tokens.includes(token)).length;
+        const df = documentFrequency.get(token) ?? 0;
         const idf = Math.log(1 + (docCount - df + 0.5) / (df + 0.5));
         const k1 = 1.2;
         const b = 0.75;
@@ -273,26 +283,31 @@ export class MemoryRetrievalEngine {
       if (entities.some((entity) => entityRefs.has(entity))) direct.add(document.frontmatter.id);
     }
 
-    const distances = new Map<string, number>();
+    const pathCost = new Map<string, number>();
+    const queue: Array<{ id: string; cost: number; depth: number }> = [];
     for (const id of direct) {
-      distances.set(id, 0);
-      const queue = [id];
-      while (queue.length) {
-        const current = queue.shift()!;
-        const distance = distances.get(current)!;
-        if (distance >= 2) continue;
-        for (const edge of adjacency.get(current) ?? []) {
-          if (!distances.has(edge.id)) {
-            distances.set(edge.id, distance + 1);
-            queue.push(edge.id);
-          }
+      pathCost.set(id, 0);
+      queue.push({ id, cost: 0, depth: 0 });
+    }
+
+    while (queue.length) {
+      const current = queue.shift()!;
+      if (current.depth >= 2) continue;
+      for (const edge of adjacency.get(current.id) ?? []) {
+        const edgeCost = 1 / Math.max(0.1, edge.weight);
+        const nextCost = current.cost + edgeCost;
+        const previous = pathCost.get(edge.id);
+        if (previous === undefined || nextCost < previous) {
+          pathCost.set(edge.id, nextCost);
+          queue.push({ id: edge.id, cost: nextCost, depth: current.depth + 1 });
         }
       }
     }
 
-    return [...distances.entries()]
-      .filter(([id]) => documents.some((document) => document.frontmatter.id === id))
-      .map(([id, distance]) => ({ id, score: 1 / (1 + distance) }))
+    const documentIds = new Set(documents.map((document) => document.frontmatter.id));
+    return [...pathCost.entries()]
+      .filter(([id]) => documentIds.has(id))
+      .map(([id, cost]) => ({ id, score: 1 / (1 + cost) }))
       .sort((a, b) => b.score - a.score);
   }
 
