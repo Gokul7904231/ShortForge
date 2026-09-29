@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFactoryOSController } from "@/lib/overseer/factoryos-runtime";
 import { OverseerPresencePolicy } from "@/factoryos/core/overseer/presence";
-import { AgentReachAdapter } from "@/factoryos/core/integrations/AgentReachAdapter";
 import { GStackTrigger } from "@/factoryos/core/integrations/GStackTrigger";
 import { verifySession } from "@/lib/auth/auth";
 import { OverseerCognitivePipeline } from "@/factoryos/core/cognition/OverseerCognitivePipeline";
@@ -231,20 +230,18 @@ export async function POST(request: NextRequest) {
       lower.includes("github") ||
       lower.includes("trend")
     ) {
-      const adapter = new AgentReachAdapter();
-      const researchResult = await adapter.searchExternalKnowledge(trimmed);
-
-      evidence = [
-        ...researchResult.findings,
-        `Sources: ${researchResult.sourceUrls.join(", ")}`,
-        `Confidence: ${(researchResult.confidence * 100).toFixed(0)}%`,
+      // Reach is deliberately unavailable from this generic chat branch.
+      // External research must be bound to an authoritative Content Engine
+      // research contract and immutable ProductionSpec/mission context.
+      title = "Engine-Scoped Research Required";
+      confidence = 0.0;
+      evidence = [];
+      actionsTaken = [];
+      recommendations = [
+        "Select or start a Content Engine mission, then run research through its engine-owned research contract.",
       ];
-
-      actionsTaken.push(`Queried Agent-Reach External Intelligence for "${trimmed}"`);
-      title = "Agent-Reach Intelligence Findings";
-      confidence = researchResult.confidence;
-
-      answer = `Based on current technical intelligence and repository evidence:\n\n• **Trend Analysis**: Interactive short-form educational content and high-retention trivia are experiencing 42% higher engagement.\n• **Recommendation**: Produce high-contrast, automated quiz shorts with verified factual explanations and dynamic audio pacing.\n• **Repository Feasibility**: All 7 production floors are ready to ingest this pipeline.`;
+      answer =
+        "External research is now Content Engine-scoped. This chat request does not carry an authoritative engine research contract, so Reach was not queried.";
 
       presenceEngine.intentEngine.pushIntent("OBSERVING", {
         priority: "USER_INTERACTION",
