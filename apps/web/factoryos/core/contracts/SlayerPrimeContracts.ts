@@ -1,69 +1,32 @@
 /**
  * FactoryOS — Slayer Prime contracts.
  *
- * Slayer Prime is the enforcement control plane beneath Guardian authorization:
- * observe -> establish evidence -> become action-eligible -> reserve action lease
- * -> execute -> verify postcondition -> emit an enforcement receipt.
- *
- * Intelligence can propose. Guardian/Human Authority authorizes. Slayer Prime enforces.
+ * Prime is the enforcement control plane beneath Guardian authorization.
+ * Durable leadership epochs prevent split-brain; action fencing prevents stale
+ * replicas from mutating newer leases; intent identities prevent duplicate actions.
  */
 
 import type { AnomalyObservation } from "./SlayerContracts";
 
 export type SlayerPrimeIncidentState =
-  | "OBSERVED"
-  | "ANOMALOUS"
-  | "CONFIRMING"
-  | "INCIDENT_OPEN"
-  | "INVESTIGATING"
-  | "CORRELATED"
-  | "ACTION_ELIGIBLE"
-  | "AUTHORIZATION_PENDING"
-  | "AUTHORIZED"
-  | "ACTION_RESERVED"
-  | "CONTAINING"
-  | "CONTAINED"
-  | "HANDOFF"
-  | "VERIFYING"
-  | "CLOSED"
-  | "UNKNOWN"
-  | "CONFLICTED"
-  | "STALE"
-  | "DENIED"
-  | "QUARANTINED"
-  | "ACTION_FAILED"
-  | "VERIFICATION_FAILED"
-  | "ESCALATED";
+  | "OBSERVED" | "ANOMALOUS" | "CONFIRMING" | "INCIDENT_OPEN"
+  | "INVESTIGATING" | "CORRELATED" | "ACTION_ELIGIBLE"
+  | "AUTHORIZATION_PENDING" | "AUTHORIZED" | "ACTION_RESERVED"
+  | "CONTAINING" | "CONTAINED" | "HANDOFF" | "VERIFYING" | "CLOSED"
+  | "UNKNOWN" | "CONFLICTED" | "STALE" | "DENIED" | "QUARANTINED"
+  | "ACTION_FAILED" | "VERIFICATION_FAILED" | "ESCALATED";
 
 export type SlayerPrimeAction =
-  | "OBSERVE"
-  | "PROTECT"
-  | "CONTAIN"
-  | "FENCE"
-  | "REVOKE_LEASE"
-  | "ISOLATE"
-  | "TERMINATE"
-  | "FLOOR_HALT"
-  | "FACTORY_HALT";
+  | "OBSERVE" | "PROTECT" | "CONTAIN" | "FENCE" | "REVOKE_LEASE"
+  | "ISOLATE" | "TERMINATE" | "FLOOR_HALT" | "FACTORY_HALT";
 
 export type SlayerPrimeScope =
-  | "WORKER"
-  | "TASK"
-  | "QUEUE"
-  | "RESOURCE_POOL"
-  | "PROVIDER"
-  | "FLOOR"
-  | "FACTORY";
+  | "WORKER" | "TASK" | "QUEUE" | "RESOURCE_POOL" | "PROVIDER"
+  | "FLOOR" | "FACTORY";
 
 export type SlayerEvidenceClass =
-  | "HEARTBEAT"
-  | "LEASE"
-  | "RUNTIME_STATE"
-  | "TELEMETRY"
-  | "TRACE"
-  | "ARTIFACT"
-  | "KERNEL"
-  | "AUTHORITY";
+  | "HEARTBEAT" | "LEASE" | "RUNTIME_STATE" | "TELEMETRY" | "TRACE"
+  | "ARTIFACT" | "KERNEL" | "AUTHORITY";
 
 export type SlayerEvidenceTrust = "TRUSTED" | "DEGRADED" | "UNTRUSTED";
 
@@ -110,6 +73,8 @@ export interface SlayerIncident {
 
 export interface SlayerActionIntent {
   readonly intentId: string;
+  /** Stable cross-replica identity for the same logical action proposal. */
+  readonly dedupeKey: string;
   readonly incidentId: string;
   readonly action: SlayerPrimeAction;
   readonly scope: SlayerPrimeScope;
@@ -145,7 +110,10 @@ export interface SlayerActionLease {
   readonly action: SlayerPrimeAction;
   readonly targetId: string;
   readonly holderId: string;
+  /** Monotonic action fence. Never reused after a new reservation. */
   readonly fencingToken: number;
+  /** Prime leadership generation present when the action was reserved. */
+  readonly leadershipEpoch?: number;
   readonly acquiredAt: string;
   readonly expiresAt: string;
   readonly status: "ACTIVE" | "RELEASED" | "EXPIRED";
@@ -172,14 +140,10 @@ export interface SlayerEnforcementReceipt {
   readonly targetId: string;
   readonly actionLeaseId?: string;
   readonly fencingToken?: number;
+  readonly leadershipEpoch?: number;
   readonly status:
-    | "AUTHORIZED"
-    | "REJECTED"
-    | "STALE_ACTION"
-    | "EXECUTED"
-    | "VERIFIED"
-    | "FAILED"
-    | "VERIFICATION_FAILED";
+    | "AUTHORIZED" | "REJECTED" | "STALE_ACTION" | "EXECUTED"
+    | "VERIFIED" | "FAILED" | "VERIFICATION_FAILED";
   readonly reason: string;
   readonly executionStartedAt: string;
   readonly executionFinishedAt: string;
@@ -214,6 +178,9 @@ export interface SlayerPrimeOptions {
   readonly maxIncidents?: number;
   readonly maxEvidencePerIncident?: number;
   readonly adapters?: SlayerEnforcementAdapter[];
+  readonly stateStore?: import("../slayers/prime/SlayerPrimeStateStore").SlayerPrimeStateStore;
+  readonly leadershipLeaseTtlMs?: number;
+  readonly leadershipRenewIntervalMs?: number;
 }
 
 export interface SlayerPrimeObservationInput {
