@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: true-eight-floor-production-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   proof:
     name: Single-mission F00-F07 production-path proof
