@@ -26,7 +26,7 @@ export class KnowledgeStoreObservationAdapter implements MemoryObservationStore 
     return this.fromDocument(document);
   }
 
-  public upsert(observation: MemoryObservation): void {
+  public async upsert(observation: MemoryObservation): Promise<void> {
     const frontmatter = {
       type: "observation" as const,
       title: "Observation: " + observation.facetKey,
@@ -64,14 +64,14 @@ export class KnowledgeStoreObservationAdapter implements MemoryObservationStore 
 
     const existing = this.store.get(observation.observationId);
     if (existing) {
-      void this.store.update(observation.observationId, {
+      await this.store.update(observation.observationId, {
         frontmatter,
         content: this.contentFor(observation),
       });
       return;
     }
 
-    void this.store.create({
+    await this.store.create({
       frontmatter: {
         ...frontmatter,
         id: observation.observationId,
