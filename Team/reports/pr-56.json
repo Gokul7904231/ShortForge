@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR56-Production-Trajectory-Proof-Learning",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/trajectory-proof-learning-closeout-20260929",
+  "objective": "Prove floor closure through runtime trajectory evidence, harden deterministic repository regression prerequisites, and gate Ascalon learning on independently verified production outcomes.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Intelligence proposes; authority authorizes; runtime executes; evidence proves.",
+      "F07 remains independent final verification and release authority.",
+      "A handoff contract does not constitute closed-loop proof.",
+      "Unverified, synthetic, or partial trajectories are ineligible for Ascalon training.",
+      "Observability may record process telemetry but does not grant authority."
+    ]
+  },
+  "forensicFindings": [
+    "Live TASK_COMPLETED events exposed loop receipts for F00/F06/F07 but not consistently for F01-F05.",
+    "Existing regression failures include missing FFmpeg/FFprobe and missing local renderer Python dependencies in the general web CI job.",
+    "Several assertions still encoded the historical six/seven-floor topology.",
+    "CognitiveOutcomeLearner used a synthetic 250-token economics sample for every outcome."
+  ],
+  "changes": [
+    "Added ProductionTrajectory evaluator with canonical eight-floor coverage, proof grades, outcome status, fingerprints, authority-violation handling and strict training eligibility.",
+    "Added live ProductionTrajectoryCollector over DurableEventBus TASK_COMPLETED/RUN/MISSION events.",
+    "Integrated trajectory collection into Overseer and connected the learning bridge to the existing memory repository.",
+    "Added AscalonLearningSignal emission only from fully verified trajectories and explicit pre-execution predictions.",
+    "Removed synthetic economics telemetry from verified outcome learning.",
+    "Added live trajectory/event-stream tests and partial-proof rejection tests.",
+    "Updated CI to install FFmpeg/FFprobe and the local factoryos-render Python package before the full web regression suite.",
+    "Updated stale eight-floor topology assertions and F03 runtime error assertion.",
+    "Added .okf decision record for the production trajectory and learning boundary."
+  ],
+  "research": [
+    "OpenTelemetry GenAI observability semantic conventions",
+    "OpenTelemetry event semantic conventions",
+    "Trajectory-aware agent evaluation research (PTA-IRT, September 2026)",
+    "Trajectory-level judging research on silent failures (August 2026)",
+    "Continuous evaluation of executable agent skills (August 2026)"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_OBSERVABILITY_AND_LEARNING_BOUNDARY",
+    "notes": "No new execution authority is created. Learning promotion is explicitly fail-closed on missing verification or authority violations."
+  },
+  "trainingReadiness": {
+    "productionTrajectory": "OBSERVATION_AND_EVALUATION_WIRED",
+    "ascalon": "VERIFIED_TRAJECTORY_ONLY",
+    "release": "F07 authority boundary unchanged"
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/observability/ProductionTrajectory.ts",
+    "apps/web/factoryos/core/observability/ProductionTrajectoryCollector.ts",
+    "apps/web/factoryos/core/cognitive/TrajectoryLearningBridge.ts",
+    "apps/web/factoryos/core/cognitive/CognitiveOutcomeLearner.ts",
+    "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+    "apps/web/factoryos/core/controller/AutonomousFactoryController.ts",
+    "apps/web/factoryos/tests/production-trajectory-learning.test.ts",
+    ".okf/decisions/trajectory-proof-learning-closeout-20260929.md",
+    ".github/workflows/ci.yml"
+  ],
+  "disposition": "PASS",
+  "verificationPlan": [
+    "Run strict TypeScript and dedicated production trajectory tests.",
+    "Run F02/F03/F04/F05/F06/F07 and FGC validation workflows.",
+    "Run web regression after media and renderer dependency provisioning.",
+    "Do not promote a live trajectory to Ascalon training until all eight floors have authoritative loop/physical proof."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "IN_PROGRESS",
+    "Forge Evaluator": "IN_PROGRESS",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "localStaticReview": {
+      "status": "COMPLETE",
+      "note": "Repository source-of-truth and authority boundaries reviewed."
+    },
+    "ci": {
+      "status": "PENDING",
+      "note": "PR CI run created for current head."
+    },
+    "productionTrajectorySuite": {
+      "status": "PENDING",
+      "note": "Dedicated suite added to CI blocking job."
+    }
+  },
+  "notes": [
+    "The collector intentionally marks handoff-only events as HANDOFF_CONTRACT and verified=false.",
+    "A fully verified trajectory requires all eight canonical floors, evidence references and zero authority violations.",
+    "The learning bridge records only outcome/process telemetry; no model chain-of-thought is stored.",
+    "OpenTelemetry research supports combining spans for duration-bearing operations with events for point-in-time checkpoints/outcomes.",
+    "The current PR explicitly acknowledges that F01-F05 live DAG paths need authoritative loop receipts before a real eight-floor run can become training-eligible."
+  ],
+  "dispositionRationale": "The change extends existing governance and observability architecture, adds fail-closed trajectory evaluation, and keeps Ascalon downstream of independent verification. CI evidence is pending for the current head."
+}
