@@ -5,6 +5,7 @@ import type {
   MemoryRetrievalCandidate,
   MemoryRetrievalTrace,
   MemorySemanticType,
+  MemoryRelationType,
 } from "./MemorySemanticsContracts";
 
 export interface MemorySemanticRetriever {
@@ -15,19 +16,21 @@ export interface MemoryReranker {
   score(query: string, candidate: MemoryRetrievalCandidate): number | Promise<number>;
 }
 
+interface MemoryRetrievalRelation {
+  readonly relationId: string;
+  readonly fromMemoryId: string;
+  readonly toMemoryId: string;
+  readonly type: MemoryRelationType | string;
+  readonly scopeKey: string;
+  readonly createdAt: string;
+  readonly evidenceRefs: readonly string[];
+  readonly weight?: number;
+}
+
 export interface MemoryRetrievalEngineOptions {
   readonly semanticRetriever?: MemorySemanticRetriever;
   readonly reranker?: MemoryReranker;
-  readonly relations?: readonly {
-    relationId: string;
-    fromMemoryId: string;
-    toMemoryId: string;
-    type: string;
-    scopeKey: string;
-    createdAt: string;
-    evidenceRefs: readonly string[];
-    weight?: number;
-  }[];
+  readonly relations?: readonly MemoryRetrievalRelation[];
   readonly fusionConstant?: number;
 }
 
@@ -70,17 +73,23 @@ export class MemoryRetrievalEngine {
       for (const entry of results) allIds.add(entry.id);
     }
 
+    const eligibleById = new Map(eligible.map((entry) => [entry.frontmatter.id, entry]));
+    const lexicalById = new Map(lexical.map((entry) => [entry.id, entry.score]));
+    const semanticById = new Map(semantic.map((entry) => [entry.id, entry.score]));
+    const graphById = new Map(graph.map((entry) => [entry.id, entry.score]));
+    const temporalById = new Map(temporal.map((entry) => [entry.id, entry.score]));
+
     const now = Date.now();
     const candidates: MemoryRetrievalCandidate[] = [];
 
     for (const id of allIds) {
-      const document = eligible.find((entry) => entry.frontmatter.id === id);
+      const document = eligibleById.get(id);
       if (!document) continue;
 
-      const lexicalScore = lexical.find((entry) => entry.id === id)?.score ?? 0;
-      const semanticScore = semantic.find((entry) => entry.id === id)?.score ?? 0;
-      const graphScore = graph.find((entry) => entry.id === id)?.score ?? 0;
-      const temporalScore = temporal.find((entry) => entry.id === id)?.score ?? 0;
+      const lexicalScore = lexicalById.get(id) ?? 0;
+      const semanticScore = semanticById.get(id) ?? 0;
+      const graphScore = graphById.get(id) ?? 0;
+      const temporalScore = temporalById.get(id) ?? 0;
       const rrf =
         (channelRanks.semantic.get(id) ? 1 / (this.fusionConstant + channelRanks.semantic.get(id)!) : 0) +
         (channelRanks.lexical.get(id) ? 1 / (this.fusionConstant + channelRanks.lexical.get(id)!) : 0) +
@@ -113,7 +122,7 @@ export class MemoryRetrievalEngine {
         // RRF remains the retrieval backbone; quality/freshness are deterministic
         // safety priors that break ties without pretending to be semantic relevance.
         rerankScore: rrf + this.number(document.frontmatter.sf_memory_quality_score, 0.8) * 0.005 +
-          (freshness.state === "FRESH" ? 0.002 : freshness.state === "SLIGHTLY_STALE" ? 0.001 : 0),
+          (freshness.state === "FRESH" ? 0.002 : 0),
         channelRanks: {
           semantic: channelRanks.semantic.get(id),
           lexical: channelRanks.lexical.get(id),
@@ -139,8 +148,7 @@ export class MemoryRetrievalEngine {
     }
 
     if (query.includeStale !== true) {
-      const nonStale = ranked.filter((candidate) => !candidate.stale);
-      if (nonStale.length > 0) ranked = nonStale;
+      ranked = ranked.filter((candidate) => !candidate.stale);
     }
 
     const maxItems = Math.max(1, query.maxItems ?? 12);
@@ -234,7 +242,7 @@ export class MemoryRetrievalEngine {
         const b = 0.75;
         score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (length / Math.max(1, avgLength)))));
       }
-      return { id: document.id, score };
+      return { id: document.frontmatter.id, score };
     });
 
     return scores.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score);
@@ -247,17 +255,16 @@ export class MemoryRetrievalEngine {
     const entityRefs = new Set(query.entityRefs ?? []);
     if (entityRefs.size === 0 || this.relations.length === 0) return [];
 
-    const adjacency = new Map<string, string[]>();
-    for (const relation of this.relations) {
+    const adjacency = new Map<string, Array<{ id: string; weight: number }>>();
+    for (const relation of this.relations ?? []) {
       if (query.scopeKey && relation.scopeKey !== query.scopeKey) continue;
-      adjacency.set(relation.fromMemoryId, [
-        ...(adjacency.get(relation.fromMemoryId) ?? []),
-        relation.toMemoryId,
-      ]);
-      adjacency.set(relation.toMemoryId, [
-        ...(adjacency.get(relation.toMemoryId) ?? []),
-        relation.fromMemoryId,
-      ]);
+      const edgeWeight = relation.weight ?? this.relationWeight(relation.type);
+      const forward = adjacency.get(relation.fromMemoryId) ?? [];
+      forward.push({ id: relation.toMemoryId, weight: edgeWeight });
+      adjacency.set(relation.fromMemoryId, forward);
+      const reverse = adjacency.get(relation.toMemoryId) ?? [];
+      reverse.push({ id: relation.fromMemoryId, weight: edgeWeight });
+      adjacency.set(relation.toMemoryId, reverse);
     }
 
     const direct = new Set<string>();
@@ -274,10 +281,10 @@ export class MemoryRetrievalEngine {
         const current = queue.shift()!;
         const distance = distances.get(current)!;
         if (distance >= 2) continue;
-        for (const next of adjacency.get(current) ?? []) {
-          if (!distances.has(next)) {
-            distances.set(next, distance + 1);
-            queue.push(next);
+        for (const edge of adjacency.get(current) ?? []) {
+          if (!distances.has(edge.id)) {
+            distances.set(edge.id, distance + 1);
+            queue.push(edge.id);
           }
         }
       }
@@ -289,10 +296,30 @@ export class MemoryRetrievalEngine {
       .sort((a, b) => b.score - a.score);
   }
 
+  private relationWeight(type: string): number {
+    switch (String(type).toUpperCase()) {
+      case "CONTRADICTS":
+        return 1.0;
+      case "SUPERSEDES":
+      case "CAUSED_BY":
+      case "PRECEDES":
+        return 0.9;
+      case "SUPPORTS":
+      case "EXTENDS":
+        return 0.8;
+      case "ABOUT_ENTITY":
+        return 0.7;
+      default:
+        return 0.6;
+    }
+  }
+
   private temporalChannel(
     documents: readonly KnowledgeDocument[],
     query: MemoryRecallQuery,
   ): Array<{ id: string; score: number }> {
+    if (!query.temporalWindow && !this.hasTemporalIntent(query.query)) return [];
+
     const now = Date.parse(query.queryTimestamp ?? new Date().toISOString());
     const start = query.temporalWindow?.startAt ? Date.parse(query.temporalWindow.startAt) : undefined;
     const end = query.temporalWindow?.endAt ? Date.parse(query.temporalWindow.endAt) : undefined;
@@ -312,6 +339,12 @@ export class MemoryRetrievalEngine {
       });
 
     return scored.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score);
+  }
+
+  private hasTemporalIntent(query: string): boolean {
+    return /\b(yesterday|today|tomorrow|recent|recently|latest|last|previous|before|after|since|until|when|timeline|historical|history|changed|change|occurred|happened)\b/i.test(
+      query,
+    );
   }
 
   private isEligible(document: KnowledgeDocument, query: MemoryRecallQuery): boolean {
