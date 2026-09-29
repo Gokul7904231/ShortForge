@@ -40,6 +40,9 @@ export interface AEREpisodeRecord {
   readonly baselineMode?: EpistemicCognitiveMode;
   readonly actualMode?: EpistemicCognitiveMode;
   readonly outcomeMode?: EpistemicCognitiveMode;
+  readonly baselineCostUsd?: number;
+  readonly baselineLatencyMs?: number;
+
 }
 
 interface MutableAEREpisodeRecord {
@@ -72,6 +75,9 @@ interface MutableAEREpisodeRecord {
   baselineMode?: EpistemicCognitiveMode;
   actualMode?: EpistemicCognitiveMode;
   outcomeMode?: EpistemicCognitiveMode;
+  baselineCostUsd?: number;
+  baselineLatencyMs?: number;
+
 }
 
 export interface AERMetricSnapshot {
@@ -106,6 +112,8 @@ export interface AERMetricSnapshot {
   readonly unnecessaryEscalationRate: number;
   readonly shadowComparisonCount: number;
   readonly shadowRoutingDisagreementRate: number;
+  readonly shadowCostSavingsUsd: number | null;
+  readonly shadowLatencyDeltaMs: number | null;
 }
 
 function percentile(values: readonly number[], percentileRank: number): number {
@@ -121,6 +129,7 @@ function ratio(numerator: number, denominator: number): number {
 
 export class AERMetricsRecorder {
   private readonly episodes = new Map<string, MutableAEREpisodeRecord>();
+  private readonly modelUsageIds = new Set<string>();
 
   public recordEvent(input: {
     readonly episodeId: string;
@@ -210,6 +219,7 @@ export class AERMetricsRecorder {
   }
 
   public recordModelUsage(input: {
+    readonly usageId?: string;
     readonly episodeId: string;
     readonly provider: string;
     readonly modelRef: string;
@@ -217,8 +227,13 @@ export class AERMetricsRecorder {
     readonly outputTokens?: number;
     readonly reasoningTokens?: number;
     readonly actualCostUsd?: number;
+    readonly actualLatencyMs?: number;
   }): void {
     const episode = this.requireOrCreate(input.episodeId);
+    if (input.usageId) {
+      if (this.modelUsageIds.has(input.usageId)) return;
+      this.modelUsageIds.add(input.usageId);
+    }
     episode.provider = input.provider;
     episode.modelRef = input.modelRef;
     episode.inputTokens += Math.max(0, input.inputTokens ?? 0);
@@ -230,11 +245,15 @@ export class AERMetricsRecorder {
   public recordShadowComparison(input: {
     readonly episodeId: string;
     readonly actualMode: EpistemicCognitiveMode;
-    readonly baselineMode?: EpistemicCognitiveMode;
+    readonly baselineMode: EpistemicCognitiveMode;
+    readonly baselineCostUsd?: number;
+    readonly baselineLatencyMs?: number;
   }): void {
     const episode = this.requireOrCreate(input.episodeId);
     episode.actualMode = input.actualMode;
-    episode.baselineMode = input.baselineMode ?? episode.baselineMode;
+    episode.baselineMode = input.baselineMode;
+    episode.baselineCostUsd = input.baselineCostUsd;
+    episode.baselineLatencyMs = input.baselineLatencyMs;
   }
 
   public recordAscalonInvocation(input: {
@@ -252,6 +271,12 @@ export class AERMetricsRecorder {
     episode.ascalonInvoked = true;
     episode.ascalonLatencyMs = Math.max(0, input.latencyMs);
     episode.costUnits += Math.max(0, input.costUnits ?? 0);
+    if (input.usageId) {
+      if (this.modelUsageIds.has(input.usageId)) {
+        return;
+      }
+      this.modelUsageIds.add(input.usageId);
+    }
     episode.provider = input.provider ?? episode.provider;
     episode.modelRef = input.modelRef ?? episode.modelRef;
     episode.inputTokens += Math.max(0, input.inputTokens ?? 0);
@@ -395,6 +420,36 @@ export class AERMetricsRecorder {
           (record) => record.baselineMode !== undefined && record.actualMode !== undefined,
         ).length,
       ),
+      shadowCostSavingsUsd: (() => {
+        const comparable = records.filter(
+          (record) =>
+            record.baselineCostUsd !== undefined &&
+            record.actualCostUsd !== undefined,
+        );
+        return comparable.length > 0
+          ? comparable.reduce(
+              (sum, record) =>
+                sum + (record.baselineCostUsd ?? 0) - (record.actualCostUsd ?? 0),
+              0,
+            )
+          : null;
+      })(),
+      shadowLatencyDeltaMs: (() => {
+        const comparable = records.filter(
+          (record) =>
+            record.baselineLatencyMs !== undefined &&
+            record.aerLatencyMs > 0,
+        );
+        return comparable.length > 0
+          ? comparable.reduce(
+              (sum, record) =>
+                sum +
+                (record.aerLatencyMs / Math.max(1, record.assessmentCount)) -
+                (record.baselineLatencyMs ?? 0),
+              0,
+            ) / comparable.length
+          : null;
+      })(),
     };
   }
 
