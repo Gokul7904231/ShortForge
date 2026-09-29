@@ -55,6 +55,18 @@ jobs:
       - name: Install dependencies
         run: cd apps/web && npm ci
 
+      - name: Install FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Production trajectory proof suite
+        run: cd apps/web && npx vitest run factoryos/tests/production-trajectory-learning.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
       - name: Full Vitest regression suite
         run: cd apps/web && npm test
         env:
