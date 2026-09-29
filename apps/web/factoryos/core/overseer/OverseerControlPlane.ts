@@ -581,19 +581,27 @@ export class OverseerControlPlane {
           productionSpec?.engine?.contracts?.research ?? undefined;
 
         const researchRuntime = new ResearchRuntime();
-        const analystReport = await researchRuntime.executeResearch({
-          missionId: missionId || "direct",
-          topic,
-          audience:
-            scope.engineSnapshot?.effectiveConfig?.audience ??
-            productionSpec?.configuration?.content?.audience,
-          methodology: "TREND_SCAN",
-          researchContract,
-          targetSourceCount: researchContract?.minSources,
-          intent:
-            researchContract?.sourcePolicy ??
-            "Floor 00 evidence acquisition for the selected Content Engine.",
-        });
+        const researchLoop = await researchRuntime.executeResearchLoop(
+          {
+            missionId: missionId || "direct",
+            topic,
+            audience:
+              scope.engineSnapshot?.effectiveConfig?.audience ??
+              productionSpec?.configuration?.content?.audience,
+            methodology: "TREND_SCAN",
+            researchContract,
+            targetSourceCount: researchContract?.minSources,
+            intent:
+              researchContract?.sourcePolicy ??
+              "Floor 00 evidence acquisition for the selected Content Engine.",
+          },
+          {
+            maxIterations: 3,
+            minVerifiedClaims: Math.max(1, Number(researchContract?.minSources || 1)),
+            minConfidence: 0.7,
+          }
+        );
+        const analystReport = researchLoop.analystReport;
 
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
@@ -612,6 +620,8 @@ export class OverseerControlPlane {
           workerId: "worker_analyst_01",
           missionId,
           output: analystReport,
+          loopReceipt: researchLoop.receipt,
+          loopFeedback: researchLoop.feedback,
           startedAt,
           completedAt,
           executionTimeMs,
@@ -619,7 +629,14 @@ export class OverseerControlPlane {
           producedArtifacts: analystReport.passport ? [{ kind: "PASSPORT", id: analystReport.passport.passportId }] : [],
           producedArtifactIds: analystReport.passport ? [analystReport.passport.passportId] : [],
         });
-        return { status: "OK", floor: "floor00_analyst", output: analystReport, executionTimeMs };
+        return {
+          status: researchLoop.receipt.verified ? "OK" : "EVIDENCE_INSUFFICIENT",
+          floor: "floor00_analyst",
+          output: analystReport,
+          loopReceipt: researchLoop.receipt,
+          loopFeedback: researchLoop.feedback,
+          executionTimeMs,
+        };
       },
       FLOOR_STRATEGY: async (node: any) => {
         const startTime = performance.now();
