@@ -96,17 +96,39 @@ async function testLiveIngestion(): Promise<void> {
   assert.equal(promoted.frontmatter.sf_quality_state, "VALID");
   assert.equal(promoted.frontmatter.training_eligible, false);
 
-  const projectedAgentMemory = await bridge.projectForAgent("MISSION_COMPLETED");
+  const projectedAgentMemory = await bridge.projectForAgent("MISSION_COMPLETED", 12, 12000, {
+    principalId: "test-agent",
+    allowedScopeKeys: ["mission-test-001"],
+    allowGlobalScope: false,
+  });
   assert.equal(projectedAgentMemory.itemCount, 1);
 
-  const projectedAscalonBeforeAdmission = await bridge.projectForAscalon();
+  const projectedAscalonBeforeAdmission = await bridge.projectForAscalon(
+    "",
+    32,
+    24000,
+    {
+      principalId: "test-ascalon",
+      allowedScopeKeys: ["mission-test-001"],
+      allowGlobalScope: false,
+    },
+  );
   assert.equal(projectedAscalonBeforeAdmission.itemCount, 0);
 
   await store.update(promoted.frontmatter.id, {
     frontmatter: { training_eligible: true },
   });
 
-  const projectedAscalon = await bridge.projectForAscalon();
+  const projectedAscalon = await bridge.projectForAscalon(
+    "",
+    32,
+    24000,
+    {
+      principalId: "test-ascalon",
+      allowedScopeKeys: ["mission-test-001"],
+      allowGlobalScope: false,
+    },
+  );
   assert.equal(projectedAscalon.itemCount, 1);
 
   await bridge.stop();
