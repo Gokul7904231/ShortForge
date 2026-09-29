@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { MemoryConsolidationStrategyRouter } from "./MemoryConsolidationStrategyRouter";
 import type {
   MemoryConsolidationInput,
   MemoryConsolidationReport,
@@ -37,7 +38,10 @@ export interface MemoryConsolidationOptions {
 export class MemoryObservationConsolidator {
   private readonly dirty = new Map<string, { since: string; reason: string }>();
 
-  constructor(private readonly store: MemoryObservationStore) {}
+  constructor(
+    private readonly store: MemoryObservationStore,
+    private readonly strategyRouter = new MemoryConsolidationStrategyRouter([]),
+  ) {}
 
   public markDirty(scopeKey: string, reason: string, at = new Date().toISOString()): void {
     const existing = this.dirty.get(scopeKey);
@@ -74,7 +78,10 @@ export class MemoryObservationConsolidator {
       let updatedCount = 0;
       let contradictedCount = 0;
       let mergedNearDuplicates = 0;
+      let skippedForCapacity = 0;
       const observationIds: string[] = [];
+      const strategy = this.strategyRouter.resolve(group[0].scope);
+      const existingCount = this.store.list(scopeKey).length;
 
       for (const input of [...group].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))) {
         let observation = input.relationToExisting?.observationId
@@ -90,6 +97,12 @@ export class MemoryObservationConsolidator {
             );
           observation = sameFacet;
           if (sameFacet) mergedNearDuplicates += 1;
+        }
+
+        if (!observation && strategy?.maxObservationsPerScope !== undefined &&
+            existingCount + observationIds.length - createdCount >= strategy.maxObservationsPerScope) {
+          skippedForCapacity += 1;
+          continue;
         }
 
         if (!observation) {
@@ -220,6 +233,8 @@ export class MemoryObservationConsolidator {
         contradictedCount,
         mergedNearDuplicates,
         observationIds: [...new Set(observationIds)],
+        strategyId: strategy?.strategyId,
+        skippedForCapacity,
       });
     }
 
