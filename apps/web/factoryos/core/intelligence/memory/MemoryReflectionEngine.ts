@@ -39,7 +39,11 @@ export class MemoryReflectionEngine {
     const hasStaleObservation = observationMatches.some((item) => item.stale);
     staleVerificationRequired ||= hasStaleObservation;
 
-    if (staleVerificationRequired || selected.length === 0) {
+    const shouldReadRawEvidence =
+      selected.length === 0 ||
+      (staleVerificationRequired && request.includeRawEvidenceOnStale !== false);
+
+    if (shouldReadRawEvidence) {
       const sourceMatches = rawEvidence.filter((item) =>
         this.containsQuery(item, request.question),
       );
