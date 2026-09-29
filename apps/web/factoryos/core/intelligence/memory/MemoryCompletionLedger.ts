@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { InMemoryMemoryCompletionLedgerStore, type MemoryCompletionLedgerStore } from "./MemoryCompletionLedgerStore";
 import type {
   MemoryCompletionSnapshot,
   MemoryGateDefinition,
@@ -9,6 +10,12 @@ import type {
 
 export class MemoryCompletionLedger {
   private readonly gates = new Map<string, MemoryGateRecord>();
+
+  constructor(
+    private readonly store: MemoryCompletionLedgerStore = new InMemoryMemoryCompletionLedgerStore(),
+  ) {
+    for (const gate of this.store.load()) this.gates.set(gate.gateId, gate);
+  }
 
   public registerGate(definition: MemoryGateDefinition): MemoryGateRecord {
     if (!definition.gateId.trim()) throw new Error("[MemoryCompletionLedger] gateId is required");
@@ -22,6 +29,7 @@ export class MemoryCompletionLedger {
       status: "PENDING",
     };
     this.gates.set(definition.gateId, record);
+    this.persist();
     return record;
   }
 
@@ -41,6 +49,7 @@ export class MemoryCompletionLedger {
       abandonmentReason: existing.abandonmentReason,
     };
     this.gates.set(definition.gateId, record);
+    this.persist();
     return record;
   }
 
@@ -70,6 +79,7 @@ export class MemoryCompletionLedger {
       abandonmentReason: undefined,
     };
     this.gates.set(gate.gateId, next);
+    this.persist();
     return next;
   }
 
@@ -83,6 +93,7 @@ export class MemoryCompletionLedger {
       proof: undefined,
     };
     this.gates.set(gateId, next);
+    this.persist();
     return next;
   }
 
@@ -139,6 +150,10 @@ export class MemoryCompletionLedger {
         "utf8",
       )
       .digest("hex");
+  }
+
+  private persist(): void {
+    this.store.save(this.list());
   }
 
   private require(gateId: string): MemoryGateRecord {
