@@ -7,7 +7,7 @@
 
 import type { ToolRegistry } from "./ToolRegistry";
 import type { ToolContext, ToolResult } from "./ToolContracts";
-import { toolOk, toolFail } from "./ToolContracts";
+import { toolFail } from "./ToolContracts";
 import type { RuntimeEventBus } from "../events/RuntimeEvent";
 import { RuntimeEventTypes } from "../events/RuntimeEvent";
 import {
