@@ -13,3 +13,7 @@ export * from "./MemoryRetentionNormalizer";
 export * from "./MemoryMentalModelStore";
 export * from "./KnowledgeStoreMentalModelAdapter";
 export * from "./MemoryCompletionLedgerStore";
+export * from "./MemoryEmbeddingRetriever";
+export * from "./MemoryEvaluationHarness";
+export * from "./MemoryAccessControl";
+export * from "./MemoryGateLinter";
