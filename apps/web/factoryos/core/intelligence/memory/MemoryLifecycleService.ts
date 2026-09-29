@@ -44,9 +44,9 @@ export class MemoryLifecycleService {
     return input;
   }
 
-  public consolidate(
+  public async consolidate(
     inputs: readonly MemoryConsolidationInput[],
-  ): readonly MemoryConsolidationReport[] {
+  ): Promise<readonly MemoryConsolidationReport[]> {
     return this.observationConsolidator.consolidate(inputs);
   }
 
