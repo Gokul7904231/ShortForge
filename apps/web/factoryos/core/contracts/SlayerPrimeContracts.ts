@@ -100,7 +100,8 @@ export interface SlayerAuthorizationGrant {
   readonly authorizedRole: SlayerAuthorizationRole;
   readonly issuedAt: string;
   readonly expiresAt: string;
-  readonly fencingEpoch?: number;
+  /** Leadership term the authority observed when issuing this grant. */
+  readonly leadershipEpoch?: number;
   readonly evidenceRefs: string[];
   readonly reason: string;
 }
