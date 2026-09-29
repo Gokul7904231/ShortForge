@@ -121,7 +121,16 @@ export class EpistemicStateEngine {
       cognitiveRecommendation: {
         mode: "DETERMINISTIC",
         reason: "Epistemic state constructed; routing pending.",
+        reasonCode: "NO_MATERIAL_UNCERTAINTY",
         deadlineMs: 1,
+        expectedValue: 0,
+        shouldInvokeAscalon: false,
+        estimatedCostUnits: 0,
+        budget: {
+          maxTimeMs: 0,
+          maxCallsRemaining: 0,
+          maxCostUnits: 0,
+        },
       },
       budgets: {
         maxEpistemicTimeMs: 0,
