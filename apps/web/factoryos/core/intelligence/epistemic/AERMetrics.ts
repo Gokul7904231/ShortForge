@@ -333,13 +333,13 @@ export class AERMetricsRecorder {
     const episode = this.requireOrCreate(input.episodeId);
     episode.ascalonInvoked = true;
     episode.ascalonLatencyMs = Math.max(0, input.latencyMs);
-    episode.costUnits += Math.max(0, input.costUnits ?? 0);
     if (input.usageId) {
       if (this.modelUsageIds.has(input.usageId)) {
         return;
       }
       this.modelUsageIds.add(input.usageId);
     }
+    episode.costUnits += Math.max(0, input.costUnits ?? 0);
     episode.provider = input.provider ?? episode.provider;
     episode.modelRef = input.modelRef ?? episode.modelRef;
     episode.inputTokens += Math.max(0, input.inputTokens ?? 0);
