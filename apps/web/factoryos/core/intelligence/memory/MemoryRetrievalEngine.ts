@@ -137,7 +137,7 @@ export class MemoryRetrievalEngine {
         qualityScore: this.number(document.frontmatter.sf_memory_quality_score, 0.8),
         occurredAt: this.string(document.frontmatter.sf_occurred_at || document.frontmatter.occurred_at),
         validUntil: this.string(document.frontmatter.sf_valid_until || document.frontmatter.valid_until),
-        stale: freshness.state !== "FRESH",
+        stale: freshness.state === "STALE",
         freshness,
         evidenceRefs: this.stringArray(document.frontmatter.evidence_refs),
         provenance: this.provenance(document),
