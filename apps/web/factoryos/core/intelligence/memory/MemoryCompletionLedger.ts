@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { InMemoryMemoryCompletionLedgerStore, type MemoryCompletionLedgerStore } from "./MemoryCompletionLedgerStore";
+import { MemoryGateLinter } from "./MemoryGateLinter";
 import type {
   MemoryCompletionSnapshot,
   MemoryGateDefinition,
@@ -126,6 +127,21 @@ export class MemoryCompletionLedger {
       handoffCount,
       evaluatedAt: now,
     };
+  }
+
+  public lint() {
+    return new MemoryGateLinter().lint(
+      this.list().map((gate) => ({
+        gateId: gate.gateId,
+        layer: gate.layer,
+        outcome: gate.outcome,
+        check: gate.check,
+        expect: gate.expect,
+        cwd: gate.cwd,
+        bindings: gate.bindings,
+        dependsOn: gate.dependsOn,
+      })),
+    );
   }
 
   public canReleaseLayer(layer: "LEAF" | "BRANCH" | "ROOT"): boolean {
