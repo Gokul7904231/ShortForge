@@ -14,7 +14,7 @@ describe("FactoryOS — Single Source of Truth Authority Suite", () => {
     expect(result.sourceUsed).toBe("FactoryStateService");
     expect(result.evidenceRecord).toBeDefined();
     expect(result.evidenceRecord?.type).toBe("TELEMETRY");
-    expect(result.evidence.floorCount).toBe(7);
+    expect(result.evidence.floorCount).toBe(8);
   });
 
   it("02: Routes CURRENT_TREND to TrendResearchService with real evidence", async () => {
