@@ -176,7 +176,8 @@ export class InMemorySlayerPrimeStateStore implements SlayerPrimeStateStore {
     const now = new Date();
     const renewed: SlayerPrimeLeadershipLease = {
       ...this.leadership,
-      epoch: this.leadership.epoch + 1,
+      // Renewal extends the current term; only a holder change creates a new fencing epoch.
+      epoch: this.leadership.epoch,
       expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
     };
     this.leadership = renewed;
@@ -395,7 +396,8 @@ export class DiskSlayerPrimeStateStore implements SlayerPrimeStateStore {
     const now = new Date();
     const renewed = {
       ...state.leadership,
-      epoch: state.leadership.epoch + 1,
+      // Renewal extends the current term; only a holder change creates a new fencing epoch.
+      epoch: state.leadership.epoch,
       expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
     };
     state.leadership = renewed;
@@ -704,7 +706,6 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
         $set: {
           expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
         },
-        $inc: { epoch: 1 },
       },
       { returnDocument: "after" }
     );
