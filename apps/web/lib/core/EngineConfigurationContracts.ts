@@ -185,6 +185,108 @@ export function validateEngineConfigurationSchema(
   return { valid: errors.length === 0, errors };
 }
 
+export interface EngineResearchContractValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+/**
+ * Validates the immutable research contract before it can enter a
+ * ProductionSpec / Reach execution boundary.
+ */
+export function validateEngineResearchContract(
+  engineId: string,
+  contract?: EngineResearchContract,
+): EngineResearchContractValidationResult {
+  const errors: string[] = [];
+
+  if (!engineId || !engineId.trim()) {
+    errors.push("Engine ID is required.");
+  }
+
+  if (!contract) {
+    errors.push("Engine research contract is required.");
+    return { valid: false, errors };
+  }
+
+  if (contract.required !== true) {
+    return { valid: true, errors };
+  }
+
+  const expectedProfile = "engine:" + engineId;
+  if (contract.agentReachProfile !== expectedProfile) {
+    errors.push(
+      "agentReachProfile must equal " + expectedProfile + ".",
+    );
+  }
+
+  if (!Array.isArray(contract.queryRules) || contract.queryRules.length === 0) {
+    errors.push("At least one engine research query rule is required.");
+    return { valid: false, errors };
+  }
+
+  const seenKinds = new Set<string>();
+  for (const rule of contract.queryRules) {
+    if (!rule.queryKind || !rule.queryKind.trim()) {
+      errors.push("Every research query rule requires a queryKind.");
+      continue;
+    }
+
+    if (seenKinds.has(rule.queryKind)) {
+      errors.push("Duplicate research query kind: " + rule.queryKind + ".");
+    }
+    seenKinds.add(rule.queryKind);
+
+    if (!rule.queryTemplate || !rule.queryTemplate.trim()) {
+      errors.push("Query rule " + rule.queryKind + " requires a queryTemplate.");
+      continue;
+    }
+
+    const placeholders = [...rule.queryTemplate.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map(
+      (match) => match[1],
+    );
+    const declaredParameters = new Set([
+      "topic",
+      ...(rule.requiredParameters || []),
+    ]);
+
+    if (!placeholders.includes("topic")) {
+      errors.push(
+        "Query rule " + rule.queryKind + " must bind the {topic} placeholder.",
+      );
+    }
+
+    for (const placeholder of placeholders) {
+      if (!declaredParameters.has(placeholder)) {
+        errors.push(
+          "Query rule " +
+            rule.queryKind +
+            " contains undeclared placeholder {" +
+            placeholder +
+            "}.",
+        );
+      }
+    }
+
+    const uniqueRequired = new Set(rule.requiredParameters || []);
+    if (uniqueRequired.size !== (rule.requiredParameters || []).length) {
+      errors.push(
+        "Query rule " + rule.queryKind + " contains duplicate required parameters.",
+      );
+    }
+
+    if (uniqueRequired.has("topic")) {
+      errors.push(
+        "Query rule " +
+          rule.queryKind +
+          " must not redundantly declare topic as a required parameter.",
+      );
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 export function getConfigurationDefaults(
   schema?: EngineConfigurationSchema
 ): Record<string, any> {
