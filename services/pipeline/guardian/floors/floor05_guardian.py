@@ -12,7 +12,8 @@ from factoryos.guardian.capabilities.registry import CapabilityRegistry
 from factoryos.guardian.contracts.guardian_report import GuardianReport
 from factoryos.guardian.contracts.guardian_state import ExecutionMode
 from factoryos.guardian.core.guardian import GuardianEngine
-from floors.floor05_timeline_composition.app.domain.handoff import Floor05HandoffPayload, Floor05Input
+from floors.floor05_timeline_composition.app.domain.handoff import GuardianAuthorizationContext, Floor05HandoffPayload, Floor05Input
+from factoryos.guardian.floors.floor05_reasoning import Floor05ReasoningEngine
 from floors.floor05_timeline_composition.app.services.pipeline import Floor05PipelineService
 
 logger = structlog.get_logger(__name__)
@@ -25,7 +26,11 @@ def build_floor05_registry(pipeline_service: Optional[Floor05PipelineService] = 
 
     def run_timeline_pipeline_handler(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         inp = context["input_data"]
-        handoff = service.run_pipeline(inp)
+        raw_auth = context.get("_guardian_authorization")
+        if not raw_auth:
+            raise RuntimeError("Floor 05 worker execution requires Guardian authorization evidence.")
+        authorization = GuardianAuthorizationContext.model_validate(raw_auth)
+        handoff = service.run_pipeline(inp, authorization)
         context["handoff_payload"] = handoff.model_dump()
         return {
             "status": "success",
@@ -44,7 +49,9 @@ def build_floor05_registry(pipeline_service: Optional[Floor05PipelineService] = 
         Capability(
             name="timeline_composition_pipeline_worker",
             floor_id="floor05",
-            description="Executes timeline composition, video rendering, double validation, and transaction commit",
+            description="Executes bounded TimelineIR composition and local reference rendering after Guardian authorization",
+            permissions=frozenset({"CAP_TIMELINE_COMPILE"}),
+            side_effects=frozenset({"TIMELINE_REGISTRY_WRITE", "LOCAL_REFERENCE_RENDER_EVIDENCE", "TIMELINE_IR_EVIDENCE", "WEBVTT_EVIDENCE"}),
             handler=run_timeline_pipeline_handler,
         )
     )
@@ -57,7 +64,11 @@ class Floor05Guardian:
     def __init__(self, pipeline_service: Optional[Floor05PipelineService] = None):
         self.pipeline_service = pipeline_service or Floor05PipelineService()
         self.registry = build_floor05_registry(self.pipeline_service)
-        self.engine = GuardianEngine(floor_id="floor05", registry=self.registry)
+        self.engine = GuardianEngine(
+            floor_id="floor05",
+            registry=self.registry,
+            reasoning_engine=Floor05ReasoningEngine(),
+        )
 
     def execute(self, input_data: Floor05Input) -> GuardianReport:
         """Run autonomous Guardian execution loop for Floor 05."""

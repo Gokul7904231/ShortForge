@@ -256,6 +256,8 @@ class ReferenceRenderWorker:
         floor04_payload: Floor04HandoffPayload,
         timeline_spec: TimelineSpec,
         storage_root: str,
+        authorization_reference: str = "",
+        canonical_timeline_ir_fingerprint: str | None = None,
     ) -> Tuple[RenderJobSpecification, str, str]:
         ffmpeg = cls._require_tools()
         SourceManifestVerifier.verify_visuals(floor04_payload.synthesized_visual_assets)
@@ -284,6 +286,7 @@ class ReferenceRenderWorker:
             timeline_spec=timeline_spec,
             renderer_id=cls.RENDERER_ID,
             renderer_version=cls.RENDERER_VERSION,
+            canonical_timeline_ir_fingerprint=canonical_timeline_ir_fingerprint,
         )
         render_job_id = f"job-{uuid4().hex[:12]}"
         video_path = root / f"render_{render_job_id}.mp4"
@@ -299,7 +302,7 @@ class ReferenceRenderWorker:
             render_input_hash=render_input_hash,
             renderer_id=cls.RENDERER_ID,
             renderer_version=cls.RENDERER_VERSION,
-            authorization_reference=f"guardian-floor05:{request_id}",
+            authorization_reference=authorization_reference,
             attempt_id=1,
             idempotency_key=f"render:{render_input_hash}",
             state=RenderJobState.REQUESTED,

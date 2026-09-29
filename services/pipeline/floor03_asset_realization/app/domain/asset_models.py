@@ -55,6 +55,7 @@ class AudioAssetRequirement(BaseModel):
     sequence_index: int = Field(..., ge=1)
     voice_id: Optional[str] = None
     narration_text: str = Field(..., min_length=1)
+    caption_text: Optional[str] = Field(default=None, description="F02-owned on-screen wording preserved for downstream subtitle composition.")
     speech_rate: float = Field(default=2.5, ge=0.1, le=10.0)
     estimated_speech_duration_seconds: float = Field(..., ge=0.0)
 
