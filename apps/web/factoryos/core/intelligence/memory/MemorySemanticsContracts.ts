@@ -262,6 +262,8 @@ export interface MemoryConsolidationReport {
   readonly contradictedCount: number;
   readonly mergedNearDuplicates: number;
   readonly observationIds: readonly string[];
+  readonly strategyId?: string;
+  readonly skippedForCapacity: number;
 }
 
 export interface MemoryGateDefinition {
