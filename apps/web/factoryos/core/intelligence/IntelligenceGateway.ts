@@ -20,6 +20,11 @@ import { ContextCapsule, IContextCompiler } from "./context/ContextCapsuleContra
 import { MemoryWriter } from "./writer/MemoryWriter";
 import { CandidateMemoryProposal, IMemoryWriter } from "./writer/MemoryWriterContracts";
 import { MemoryFabricProjectionService } from "./memory/MemoryFabricProjection";
+import { MemoryLifecycleService } from "./memory/MemoryLifecycleService";
+import { KnowledgeStoreObservationAdapter } from "./memory/KnowledgeStoreObservationAdapter";
+import { MemoryConsolidationStrategyRouter } from "./memory/MemoryConsolidationStrategyRouter";
+import { MemoryRetrievalEngine, type MemoryRetrievalEngineOptions } from "./memory/MemoryRetrievalEngine";
+import type { MemoryConsolidationStrategy } from "./memory/MemoryConsolidationStrategyRouter";
 
 export interface SystemDoctorReport {
   readonly status: "HEALTHY" | "DEGRADED" | "BROKEN";
@@ -47,11 +52,14 @@ export class IntelligenceGateway {
   public readonly contextCompiler: IContextCompiler;
   public readonly memoryWriter: IMemoryWriter;
   public readonly memoryFabric: MemoryFabricProjectionService;
+  public readonly memoryLifecycle: MemoryLifecycleService;
 
   constructor(options?: {
     graphPath?: string;
     vaultPath?: string;
     customRuntime?: IRuntimeStateProvider;
+    retrievalOptions?: MemoryRetrievalEngineOptions;
+    consolidationStrategies?: readonly MemoryConsolidationStrategy[];
   }) {
     // 1. Structural Graph Provider
     let targetGraphPath = options?.graphPath;
@@ -120,6 +128,18 @@ export class IntelligenceGateway {
     this.memoryFabric = new MemoryFabricProjectionService(
       this.knowledgeStore,
       this.memoryWriter as MemoryWriter,
+      options?.retrievalOptions,
+    );
+
+    const observationStore = new KnowledgeStoreObservationAdapter(this.knowledgeStore);
+    const strategyRouter = new MemoryConsolidationStrategyRouter(
+      options?.consolidationStrategies ?? [],
+    );
+    this.memoryLifecycle = new MemoryLifecycleService(
+      () => this.knowledgeStore.list(),
+      observationStore,
+      new MemoryRetrievalEngine(options?.retrievalOptions),
+      strategyRouter,
     );
   }
 
