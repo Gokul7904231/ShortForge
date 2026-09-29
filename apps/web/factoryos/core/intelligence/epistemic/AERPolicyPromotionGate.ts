@@ -61,9 +61,9 @@ export class AERPolicyPromotionGate {
 
     const baselineCost = baseline.costUsdPerResolvedUncertainty;
     const candidateCost = candidate.costUsdPerResolvedUncertainty;
-    if (
-      baselineCost !== null &&
-      candidateCost !== null &&
+    if (baselineCost === null || candidateCost === null) {
+      reasons.push("cost_evidence_missing");
+    } else if (
       candidateCost > baselineCost - criteria.minCostSavingsUsd
     ) {
       reasons.push("minimum_cost_savings_not_demonstrated");
