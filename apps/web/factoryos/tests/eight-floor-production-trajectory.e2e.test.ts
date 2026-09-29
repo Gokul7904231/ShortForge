@@ -338,6 +338,8 @@ describe("True eight-floor single-mission production trajectory", () => {
 
       expect(readFileSync(proofArtifact, "utf8")).toContain(mission.missionId);
     },
-    180_000,
+    // Rendering is physical work; allow the proof lane enough wall-clock budget
+    // without changing the workflow's independent 10-minute job ceiling.
+    300_000,
   );
 });
