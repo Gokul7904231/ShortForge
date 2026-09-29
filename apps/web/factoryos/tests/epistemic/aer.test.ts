@@ -4,6 +4,8 @@ import {
   EpistemicBudgetController,
   EpistemicStateEngine,
   ProbePlanner,
+  AERMetricsRecorder,
+  AscalonInvocationGate,
   type CognitiveProbe,
 } from "../../core/intelligence/epistemic";
 
@@ -313,4 +315,238 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       }),
     ).toThrow("cannot be authoritative");
   });
+
+  it("makes Ascalon admission explicit and cost-aware", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "deep-admission",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder configuration regressed",
+          support: 0.55,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "asset transfer is the bottleneck",
+          support: 0.45,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget,
+      routing: {
+        deepAvailable: true,
+        ascalonEstimatedCostUnits: 5,
+        minimumAscalonExpectedValue: 0.5,
+      },
+    });
+
+    expect(result.state.cognitiveRecommendation.mode).toBe("DEEP");
+    expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(true);
+    expect(result.state.cognitiveRecommendation.expectedValue).toBeGreaterThanOrEqual(0.5);
+    expect(result.state.cognitiveRecommendation.budget.maxCallsRemaining).toBe(2);
+    expect(result.ascalonHandoff.shouldInvokeAscalon).toBe(true);
+    expect(result.ascalonAdmission.admitted).toBe(true);
+  });
+
+  it("keeps low-value uncertainty on the micro path", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "micro-path",
+      unknown: [
+        {
+          unknownId: "u1",
+          question: "Does the timeline fit measured narration?",
+          reason: "small timing ambiguity",
+          material: true,
+          evidenceRefs: ["voice:1", "timeline:1"],
+        },
+      ],
+      budget,
+      routing: {
+        microAvailable: true,
+        deepAvailable: true,
+        ascalonEstimatedCostUnits: 5,
+        minimumAscalonExpectedValue: 0.5,
+      },
+    });
+
+    expect(result.state.cognitiveRecommendation.mode).toBe("MICRO");
+    expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(false);
+    expect(result.state.cognitiveRecommendation.reasonCode).toBe("MICRO_SUFFICIENT");
+  });
+
+  it("blocks deep Ascalon escalation when the remaining cost budget cannot afford it", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "cost-block",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder configuration regressed",
+          support: 0.55,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "asset transfer is the bottleneck",
+          support: 0.45,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget: {
+        ...budget,
+        maxCostUnits: 3,
+      },
+      routing: {
+        deepAvailable: true,
+        ascalonEstimatedCostUnits: 5,
+      },
+    });
+
+    expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(false);
+    expect(result.state.cognitiveRecommendation.reasonCode).toBe("ASCALON_BUDGET_EXHAUSTED");
+    expect(result.ascalonAdmission.admitted).toBe(false);
+  });
+
+  it("applies the deterministic Ascalon pre-call gate", () => {
+    const aer = new AEREngine();
+    const deep = aer.assess({
+      contextSeed: "gate",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder configuration regressed",
+          support: 0.55,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "asset transfer is the bottleneck",
+          support: 0.45,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget,
+      routing: { deepAvailable: true },
+    });
+
+    const gate = new AscalonInvocationGate();
+    expect(gate.evaluate({ context: deep.context }).admitted).toBe(true);
+
+    const expired = gate.evaluate({
+      context: deep.context,
+      nowMs: Date.parse(deep.context.expiresAt) + 1,
+    });
+    expect(expired.admitted).toBe(false);
+    expect(expired.reason).toBe("epistemic_context_expired_or_invalid");
+  });
+
+  it("tracks cost per resolved uncertainty and routing efficiency", () => {
+    const metrics = new AERMetricsRecorder();
+    metrics.recordEvent({ episodeId: "skipped", aerInvoked: false });
+
+    const aer = new AEREngine(metrics);
+    const deterministic = aer.assess({
+      contextSeed: "metric-deterministic",
+      known: [
+        {
+          factId: "f1",
+          statement: "hash matches",
+          sourceRefs: ["hash:1"],
+          status: "CONFIRMED",
+        },
+      ],
+      budget,
+    });
+
+    const uncertain = aer.assess({
+      contextSeed: "metric-uncertain",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder regression",
+          support: 0.6,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "transfer bottleneck",
+          support: 0.4,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget,
+      routing: { deepAvailable: true },
+    });
+
+    metrics.recordProbe({
+      episodeId: uncertain.context.contextId,
+      executed: true,
+      useful: true,
+      costUnits: 1,
+    });
+    metrics.recordAscalonInvocation({
+      episodeId: uncertain.context.contextId,
+      latencyMs: 40,
+      costUnits: 3,
+    });
+    metrics.recordOutcome({
+      episodeId: uncertain.context.contextId,
+      resolvedUncertainty: true,
+      falseReassurance: false,
+      ascalonWasNecessary: true,
+    });
+    metrics.recordOutcome({
+      episodeId: deterministic.context.contextId,
+      resolvedUncertainty: true,
+      falseReassurance: false,
+    });
+
+    const snapshot = metrics.snapshot();
+    expect(snapshot.episodeCount).toBe(3);
+    expect(snapshot.aerInvocationRate).toBeCloseTo(2 / 3);
+    expect(snapshot.ascalonEscalationRate).toBeCloseTo(1 / 2);
+    expect(snapshot.ascalonInvocationRate).toBeCloseTo(1 / 2);
+    expect(snapshot.averageProbesPerUncertainty).toBe(1);
+    expect(snapshot.costPerResolvedUncertainty).toBe(4);
+    expect(snapshot.probeUsefulnessRate).toBe(1);
+    expect(snapshot.unnecessaryEscalationRate).toBe(0);
+    expect(snapshot.falseReassuranceRate).toBe(0);
+    expect(snapshot.p95AscalonLatencyMs).toBe(40);
+  });
+
 });
