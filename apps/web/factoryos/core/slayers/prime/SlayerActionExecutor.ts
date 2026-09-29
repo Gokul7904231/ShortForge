@@ -345,11 +345,15 @@ export class SlayerActionExecutor {
       });
     } catch (error) {
       return this.receipt(intent, {
-        status: "FAILED",
-        reason: error instanceof Error ? error.message : String(error),
+        status: "UNKNOWN",
+        reason:
+          "Adapter execution began but did not produce a definitive completion signal; reconciliation is required.",
         started,
         actionLease,
-        details,
+        details: {
+          ...details,
+          error: error instanceof Error ? error.message : String(error),
+        },
       });
     } finally {
       await this.actionLeaseStore.release(
