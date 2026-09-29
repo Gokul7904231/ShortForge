@@ -113,7 +113,9 @@ export class MemoryObservationConsolidator {
             contradictingMemoryIds:
               input.relationToExisting?.type === "CONTRADICTS" ? [input.memoryId] : [],
             relationIds: [],
-            proofCount: new Set(input.evidenceRefs.map((item) => item.id)).size,
+            proofCount: input.evidenceRefs.filter((item) =>
+              item.verificationState === "VERIFIED" || item.verificationState === "SUPPORTED",
+            ).length,
             version: 1,
             history: [{
               version: 1,
@@ -180,7 +182,10 @@ export class MemoryObservationConsolidator {
           evidenceRefs: [...evidenceIds],
           supportingMemoryIds: [...supporting],
           contradictingMemoryIds: [...contradicting],
-          proofCount: evidenceIds.size,
+          proofCount:
+            observation.proofCount + input.evidenceRefs.filter((item) =>
+              item.verificationState === "VERIFIED" || item.verificationState === "SUPPORTED",
+            ).length,
           version: observation.version + 1,
           history: [
             ...history,
