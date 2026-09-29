@@ -5,13 +5,17 @@
  * convert confidence/support into truth.
  */
 
-import type { AEROutcomeReceipt } from "./EpistemicContracts";
+import type {
+  AEROutcomeReceipt,
+  EpistemicCognitiveMode,
+} from "./EpistemicContracts";
 
 export interface AEREpisodeRecord {
   readonly episodeId: string;
   readonly recordedAt: string;
   readonly uncertaintyEncountered: boolean;
   readonly aerInvoked: boolean;
+  readonly routedMode?: EpistemicCognitiveMode;
   readonly ascalonEscalationRecommended: boolean;
   readonly ascalonInvoked: boolean;
   readonly resolvedUncertainty?: boolean;
@@ -32,6 +36,7 @@ interface MutableAEREpisodeRecord {
   recordedAt: string;
   uncertaintyEncountered: boolean;
   aerInvoked: boolean;
+  routedMode?: EpistemicCognitiveMode;
   ascalonEscalationRecommended: boolean;
   ascalonInvoked: boolean;
   resolvedUncertainty?: boolean;
@@ -109,6 +114,7 @@ export class AERMetricsRecorder {
       recordedAt: input.recordedAt ?? new Date().toISOString(),
       uncertaintyEncountered: input.uncertaintyEncountered ?? false,
       aerInvoked: input.aerInvoked,
+      routedMode: undefined,
       ascalonEscalationRecommended: false,
       ascalonInvoked: false,
       aerLatencyMs: 0,
@@ -125,6 +131,7 @@ export class AERMetricsRecorder {
     readonly episodeId: string;
     readonly uncertaintyEncountered: boolean;
     readonly ascalonEscalationRecommended: boolean;
+    readonly routedMode?: EpistemicCognitiveMode;
     readonly aerLatencyMs: number;
     readonly assessmentCostUnits?: number;
     readonly recordedAt?: string;
@@ -139,6 +146,7 @@ export class AERMetricsRecorder {
     const episode = this.requireEpisode(input.episodeId);
     episode.aerInvoked = true;
     episode.uncertaintyEncountered = input.uncertaintyEncountered;
+    episode.routedMode = input.routedMode;
     episode.ascalonEscalationRecommended = input.ascalonEscalationRecommended;
     episode.aerLatencyMs = Math.max(0, input.aerLatencyMs);
     episode.costUnits += Math.max(0, input.assessmentCostUnits ?? 0);
@@ -284,6 +292,65 @@ export class AERMetricsRecorder {
       falseReassuranceRate: ratio(falseReassurances, reassuranceOutcomes.length),
       probeUsefulnessRate: ratio(totalUsefulProbes, totalProbes),
       unnecessaryEscalationRate: ratio(unnecessaryEscalations, ascalonOutcomes.length),
+    };
+  }
+
+  public getModeCalibration(mode: EpistemicCognitiveMode): {
+    readonly sampleCount: number;
+    readonly resolvedCount: number;
+    readonly resolutionProbability: number;
+    readonly lowerBound95: number;
+    readonly upperBound95: number;
+    readonly averageCostUnits: number;
+    readonly p50LatencyMs: number;
+    readonly p95LatencyMs: number;
+  } {
+    const records = [...this.episodes.values()].filter(
+      (record) =>
+        record.routedMode === mode &&
+        record.uncertaintyEncountered &&
+        record.resolvedUncertainty !== undefined,
+    );
+    const sampleCount = records.length;
+    const resolvedCount = records.filter(
+      (record) => record.resolvedUncertainty === true,
+    ).length;
+    const z = 1.96;
+    const p = sampleCount > 0 ? resolvedCount / sampleCount : 0;
+    const z2 = z * z;
+    const denominator = 1 + z2 / Math.max(1, sampleCount);
+    const center =
+      sampleCount > 0
+        ? (p + z2 / (2 * sampleCount)) / denominator
+        : 0;
+    const halfWidth =
+      sampleCount > 0
+        ? (z *
+            Math.sqrt(
+              (p * (1 - p)) / sampleCount +
+                z2 / (4 * sampleCount * sampleCount),
+            )) /
+          denominator
+        : 0;
+    const modeCosts = records.map((record) => record.costUnits);
+    const modeLatencies = records
+      .map((record) =>
+        mode === "DEEP" ? record.ascalonLatencyMs ?? record.aerLatencyMs : record.aerLatencyMs,
+      )
+      .filter((value) => value > 0);
+
+    return {
+      sampleCount,
+      resolvedCount,
+      resolutionProbability: p,
+      lowerBound95: Math.max(0, center - halfWidth),
+      upperBound95: Math.min(1, center + halfWidth),
+      averageCostUnits:
+        modeCosts.length > 0
+          ? modeCosts.reduce((sum, value) => sum + value, 0) / modeCosts.length
+          : 0,
+      p50LatencyMs: percentile(modeLatencies, 50),
+      p95LatencyMs: percentile(modeLatencies, 95),
     };
   }
 
