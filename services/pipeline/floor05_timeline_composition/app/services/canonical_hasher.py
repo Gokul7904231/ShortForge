@@ -98,6 +98,7 @@ class CanonicalHasher:
         renderer_id: str,
         renderer_version: str,
         render_profile: str = "STANDARD_SHORTS",
+        canonical_timeline_ir_fingerprint: str | None = None,
     ) -> str:
         f04_snapshot = {
             "source_asset_plan_fingerprint": floor04_payload.source_asset_plan_fingerprint,
@@ -157,6 +158,7 @@ class CanonicalHasher:
             "canonicalization_version": cls.CANONICALIZATION_VERSION,
             "f04_snapshot": f04_snapshot,
             "timeline_snapshot": cls.timeline_snapshot(timeline_spec),
+            "canonical_timeline_ir_fingerprint": canonical_timeline_ir_fingerprint,
             "render_spec": render_spec,
             "renderer_identity": renderer_id,
             "renderer_version": renderer_version,
