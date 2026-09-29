@@ -46,11 +46,11 @@ export class LeaseRevokeEnforcementAdapter implements SlayerEnforcementAdapter {
     }
 
     if (
-      authorization.fencingEpoch !== undefined &&
-      authorization.fencingEpoch !== lease.fencingToken
+      authorization.leadershipEpoch !== undefined &&
+      authorization.leadershipEpoch !== lease.leadershipEpoch
     ) {
       throw new Error(
-        "Authorization fencing epoch does not match the reserved Slayer action fence."
+        "Authorization leadership epoch does not match the reserved Prime leadership term."
       );
     }
 
