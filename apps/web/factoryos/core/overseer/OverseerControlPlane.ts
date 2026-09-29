@@ -1091,7 +1091,7 @@ export class OverseerControlPlane {
         const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
         await this.eventBus.publish("TASK_COMPLETED", {
           taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION", executionId,
-          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, output: assetPayload,
+          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, runId, output: assetPayload,
           handoff: canonicalF03, executionReport: f03.executionReport, startedAt, completedAt, executionTimeMs,
           durationTruth: "MEASURED", evidenceClass: "TYPED_F03_RUNTIME_HANDOFF", physicalMediaProduced: false,
           loopReceipt: runtimeClosureReceipt(
