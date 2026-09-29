@@ -252,7 +252,7 @@ export class MemoryRetrievalEngine {
         const b = 0.75;
         score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (length / Math.max(1, avgLength)))));
       }
-      return { id: document.frontmatter.id, score };
+      return { id: document.id, score };
     });
 
     return scores.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score);
@@ -263,7 +263,7 @@ export class MemoryRetrievalEngine {
     query: MemoryRecallQuery,
   ): Array<{ id: string; score: number }> {
     const entityRefs = new Set(query.entityRefs ?? []);
-    if (entityRefs.size === 0 || this.relations.length === 0) return [];
+    if (entityRefs.size === 0 || (this.relations ?? []).length === 0) return [];
 
     const adjacency = new Map<string, Array<{ id: string; weight: number }>>();
     for (const relation of this.relations ?? []) {
