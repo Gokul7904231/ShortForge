@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { CaseManager } from "../core/cases/CaseManager";
 import { DurableEventBus } from "../core/events/DurableEventBus";
 import { InMemoryLeaseRepository } from "../core/database/InMemoryDatabase";
@@ -10,7 +13,10 @@ import type {
   SlayerAuthorizationGrant,
 } from "../core/contracts/SlayerPrimeContracts";
 import { WorldStateEngine } from "../core/worldstate/WorldStateEngine";
-import { InMemorySlayerPrimeStateStore } from "../core/slayers/prime/SlayerPrimeStateStore";
+import {
+  DiskSlayerPrimeStateStore,
+  InMemorySlayerPrimeStateStore,
+} from "../core/slayers/prime/SlayerPrimeStateStore";
 
 const future = (ms: number) =>
   new Date(Date.now() + ms).toISOString();
@@ -282,8 +288,9 @@ describe("Slayer Prime — enforcement control plane", () => {
     expect(second.incident.notes.some((note) => note.includes("Existing deduplicated intent reused"))).toBe(true);
   });
 
-  it("restores Prime incident state after a process-style restart", async () => {
-    const store = new InMemorySlayerPrimeStateStore();
+  it("restores Prime incident state after a real disk-backed restart", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "shortforge-slayer-prime-"));
+    const store = new DiskSlayerPrimeStateStore(directory);
     const first = new SlayerPrimeEngine(eventBus, leaseManager, {
       instanceId: "prime-restart-a",
       stateStore: store,
@@ -328,6 +335,7 @@ describe("Slayer Prime — enforcement control plane", () => {
       "obs-restart-2",
     ]);
     second.stop();
+    rmSync(directory, { recursive: true, force: true });
   });
 
   it("allows only one Prime replica to hold enforcement leadership in shared state", async () => {
