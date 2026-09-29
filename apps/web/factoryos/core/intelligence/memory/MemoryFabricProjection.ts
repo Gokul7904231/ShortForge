@@ -22,6 +22,7 @@ import type { MemoryRecallQuery } from "./MemorySemanticsContracts";
 
 export class MemoryFabricProjectionService {
   private readonly retrievalEngine: MemoryRetrievalEngine;
+  private readonly provenanceGuard = new MemoryProvenanceGuard();
 
   constructor(
     private readonly knowledgeStore: KnowledgeStore,
@@ -90,7 +91,10 @@ export class MemoryFabricProjectionService {
     };
 
     const result = await this.retrievalEngine.recall(candidateDocs, recallQuery);
-    const items: MemoryFabricProjectionItem[] = result.items.map((item) => ({
+    const guarded = mode === "ASCALON"
+      ? this.provenanceGuard.guardForAscalon(recallQuery, result.items)
+      : this.provenanceGuard.inspect(recallQuery, result.items);
+    const items: MemoryFabricProjectionItem[] = guarded.accepted.map((item) => ({
       id: item.memoryId,
       title: item.title,
       type: item.semanticType,
