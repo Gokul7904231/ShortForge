@@ -100,6 +100,17 @@ Leadership can change between any two steps, so the executor rechecks authority 
 
 The design follows established distributed-systems patterns: Kubernetes leader election uses a shared Lease with optimistic concurrency; etcd transactions provide atomic compare-and-set-style concurrency control and monotonically increasing revisions; fencing tokens prevent delayed or resurrected clients from writing under stale ownership; durable event histories allow recovery after worker/process failure. These patterns are reflected here without claiming that Prime itself is a consensus protocol.
 
+## Crash-window handling
+
+Prime persists an EXECUTING receipt after action reservation and before the enforcement adapter is invoked. This creates an externalized record of the dangerous window where a process can disappear after beginning an effect but before returning its final result.
+
+On a later execution of the same intent:
+- VERIFIED is returned idempotently.
+- EXECUTING or UNKNOWN blocks blind replay.
+- A reconciler must establish the authoritative postcondition before the intent can safely continue.
+
+This follows the newer agent-runtime emphasis on deterministic replay and runtime-verifiable execution history: the goal is to make an action trajectory reconstructible, not merely to log the final answer.
+
 ## Distributed-safety model
 
 The critical enforcement path is deliberately ordered as:
