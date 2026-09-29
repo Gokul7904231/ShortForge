@@ -92,7 +92,7 @@ export class ProductionTrajectoryCollector {
   start(): void {
     if (this.unsubscribers.length > 0) return;
 
-    const topics = ["TASK_COMPLETED", "RUN_COMPLETED", "MISSION_COMPLETED"] as const;
+    const topics = ["TASK_COMPLETED", "RUN_COMPLETED", "RUN_CHECKPOINTED", "MISSION_COMPLETED"] as const;
     this.unsubscribers = topics.map((topic) =>
       this.eventBus.subscribe(topic, async (event: EventEnvelope<any>) => {
         this.ingest(event);
@@ -134,7 +134,11 @@ export class ProductionTrajectoryCollector {
       if (observation) buffer.floors.set(observation.floorId, observation);
     }
 
-    if (event.topic === "RUN_COMPLETED" || event.topic === "MISSION_COMPLETED") {
+    if (
+      event.topic === "RUN_COMPLETED" ||
+      event.topic === "MISSION_COMPLETED" ||
+      (event.topic === "RUN_CHECKPOINTED" && payload.status === "failed")
+    ) {
       buffer.completedAt = now;
     }
   }
