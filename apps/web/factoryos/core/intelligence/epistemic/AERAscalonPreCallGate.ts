@@ -25,6 +25,17 @@ export interface AERAscalonPreCallAdmission extends AscalonInvocationAdmission {
   readonly reservationId?: string;
 }
 
+export interface AERAscalonPreCallHandle extends AERAscalonPreCallAdmission {
+  readonly context?: EpistemicContext;
+  readonly permit?: AscalonInvocationPermit;
+  readonly commit: () => boolean;
+  readonly release: () => boolean;
+}
+
+export interface AERAscalonPreCallEvaluation extends AERAscalonPreCallAdmission {
+  readonly context?: EpistemicContext;
+}
+
 export class AERAscalonPreCallGate {
   public constructor(
     private readonly engine: AEREngine,
@@ -37,12 +48,7 @@ export class AERAscalonPreCallGate {
     readonly availableActions: readonly string[];
     readonly verifiedEvidenceRefs: readonly string[];
     readonly scopeKey: string;
-  }): AERAscalonPreCallAdmission & {
-    readonly context?: EpistemicContext;
-    readonly permit?: AscalonInvocationPermit;
-    readonly commit: () => boolean;
-    readonly release: () => boolean;
-  } {
+  }): AERAscalonPreCallHandle {
     const assessment = this.engine.assess(
       this.contextFactory.buildAssessmentInput(input),
     );
@@ -90,9 +96,7 @@ export class AERAscalonPreCallGate {
     readonly availableActions: readonly string[];
     readonly verifiedEvidenceRefs: readonly string[];
     readonly scopeKey?: string;
-  }): AERAscalonPreCallAdmission & {
-    readonly context?: EpistemicContext;
-  } {
+  }): AERAscalonPreCallEvaluation {
     const prepared = this.prepare({
       ...input,
       scopeKey: input.scopeKey ?? "floor:aer",
@@ -106,7 +110,6 @@ export class AERAscalonPreCallGate {
 
     return {
       ...prepared,
-      permit: undefined,
     };
   }
 }
