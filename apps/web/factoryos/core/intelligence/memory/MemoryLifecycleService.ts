@@ -40,20 +40,26 @@ export class MemoryLifecycleService {
 
   public async retain(input: MemoryConsolidationInput): Promise<MemoryConsolidationInput> {
     this.validateRetention(input);
+    if (this.isNonDurable(input)) return input;
     await this.observationConsolidator.consolidate([input]);
     return input;
   }
 
   public async retainMany(inputs: readonly MemoryConsolidationInput[]): Promise<readonly MemoryConsolidationInput[]> {
     inputs.forEach((input) => this.validateRetention(input));
-    if (inputs.length > 0) await this.observationConsolidator.consolidate(inputs);
-    return inputs;
+    const durable = inputs.filter((input) => !this.isNonDurable(input));
+    if (durable.length > 0) await this.observationConsolidator.consolidate(durable);
+    return durable;
   }
 
   private validateRetention(input: MemoryConsolidationInput): void {
     if (!input.memoryId.trim()) throw new Error("[MemoryLifecycle] memoryId is required");
     if (!input.scope.key.trim()) throw new Error("[MemoryLifecycle] scope key is required");
     if (!input.statement.trim()) throw new Error("[MemoryLifecycle] statement is required");
+  }
+
+  private isNonDurable(input: MemoryConsolidationInput): boolean {
+    return input.retentionClass === "DO_NOT_LEARN" || input.retentionClass === "TEMPORARY";
   }
 
   public async consolidate(
