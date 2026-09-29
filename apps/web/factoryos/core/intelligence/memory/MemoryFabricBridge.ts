@@ -595,8 +595,8 @@ export class MemoryFabricBridge {
       sf_memory_type: "OBSERVATION",
       sf_observation_scope: this.extractMemoryScope(payload),
       scope_key: this.extractMemoryScope(payload),
-      sf_proof_count: primaryFact?.evidenceRefs.length ?? 0,
-      sf_supporting_memory_ids: [raw.frontmatter.id, ...(primaryFact?.entityRefs ?? [])],
+      sf_proof_count: 0,
+      sf_supporting_memory_ids: [raw.frontmatter.id],
       sf_memory_history: [{
         version: 1,
         statement: record.summary,
