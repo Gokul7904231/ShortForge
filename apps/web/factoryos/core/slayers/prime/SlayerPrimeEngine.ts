@@ -429,18 +429,24 @@ export class SlayerPrimeEngine {
     return STATE_TRANSITIONS[from]?.includes(to) ?? false;
   }
 
-  transitionIncident(incidentId: string, to: SlayerPrimeIncidentState, note?: string): SlayerIncident {
+  async transitionIncident(
+    incidentId: string,
+    to: SlayerPrimeIncidentState,
+    note?: string
+  ): Promise<SlayerIncident> {
+    await this.readyPromise;
+    await this.requireLeader();
     const incident = this.requireIncident(incidentId);
     if (!this.canTransition(incident.state, to)) {
       throw new Error("Invalid Slayer Prime incident transition from " + incident.state + " to " + to);
     }
-    const next = {
+    const next: SlayerIncident = {
       ...incident,
       state: to,
       notes: note ? [...incident.notes, note].slice(-20) : incident.notes,
     };
     this.incidents.set(incidentId, next);
-    void this.persistIncident(next);
+    await this.persistIncident(next);
     return structuredClone(next);
   }
 
