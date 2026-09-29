@@ -16,6 +16,7 @@ import type {
 } from "../contracts/ResearchPassportContracts";
 import { runBoundedFeedbackLoop, type FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
+import type { EngineResearchContract } from "../../../lib/core/EngineConfigurationContracts";
 
 export interface ResearchLoopOptions {
   readonly maxIterations?: number;
@@ -48,14 +49,8 @@ export interface ResearchRequest {
   readonly targetSourceCount?: number;
   readonly scheduleInstanceId?: string;
   readonly audience?: string;
-  readonly researchContract?: {
-    readonly engineId?: string;
-    readonly dataRequirements?: string[];
-    readonly minSources?: number;
-    readonly citationRequired?: boolean;
-    readonly freshness?: "run" | "recent" | "any";
-    readonly sourcePolicy?: string;
-    readonly agentReachProfile?: string;
+  readonly researchContract?: EngineResearchContract & {
+    readonly engineId: string;
   };
 }
 
@@ -182,13 +177,46 @@ export class ResearchRuntime {
     }
 
     // 1. Source Discovery via Reach.
-    // Production callers should supply engine research requirements (or an
-    // explicit targetSourceCount); the methodology fallback exists only for
-    // standalone/legacy invocations.
+    // Reach is contract-gated: F00 cannot acquire external information unless
+    // the selected Content Engine explicitly authorizes the query operation.
+    const researchContract = request.researchContract;
+
+    if (!researchContract) {
+      throw new Error(
+        "F00_RESEARCH_CONTRACT_REQUIRED: Floor 00 external research requires a bound Content Engine research contract.",
+      );
+    }
+
+    if (!researchContract.required) {
+      throw new Error(
+        `F00_RESEARCH_NOT_AUTHORIZED: Content Engine "${researchContract.engineId}" does not authorize external research for this request.`,
+      );
+    }
+
+    const queryKindByMethodology: Record<
+      NonNullable<ResearchRequest["methodology"]>,
+      string
+    > = {
+      QUICK: "TOPIC_SCAN",
+      FULL: "TOPIC_SCAN",
+      FACT_CHECK: "FACT_CHECK",
+      TREND_SCAN: "TREND_SCAN",
+      COMPETITOR_SCAN: "COMPETITOR_SCAN",
+    };
+
+    const queryKind = queryKindByMethodology[methodology];
+
+    if (!queryKind) {
+      throw new Error(
+        `F00_RESEARCH_QUERY_KIND_UNMAPPED: methodology ${methodology} has no Content Engine query mapping.`,
+      );
+    }
+
     const requestedSourceCount =
       request.targetSourceCount ??
-      request.researchContract?.minSources ??
+      researchContract.minSources ??
       (methodology === "QUICK" ? 2 : 4);
+
     const maxSources = Math.min(
       MAX_RESEARCH_SOURCE_CAP,
       Math.max(
@@ -196,14 +224,19 @@ export class ResearchRuntime {
         Math.floor(
           Number.isFinite(Number(requestedSourceCount))
             ? Number(requestedSourceCount)
-            : 1
-        )
-      )
+            : 1,
+        ),
+      ),
     );
 
     const acquiredSources = await this.reach.acquireSources({
-      queryOrUrl: request.topic,
-      type: "QUERY",
+      engineId: researchContract.engineId,
+      queryKind,
+      topic: request.topic,
+      parameters: {
+        ...(request.audience ? { audience: request.audience } : {}),
+      },
+      researchContract,
       maxSources,
       callerFloor: "floor00_analyst",
       intent: request.intent,
