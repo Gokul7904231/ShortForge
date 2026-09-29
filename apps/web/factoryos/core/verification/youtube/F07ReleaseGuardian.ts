@@ -19,6 +19,8 @@ import { VerificationReceipt, VerificationReceiptBuilder } from "./VerificationR
 import { YouTubePolicyGuardian } from "./YouTubePolicyGuardian";
 import { EvidenceRefFactory } from "./evidence/EvidenceRef";
 import { F07PhysicalArtifactVerifier, F07PhysicalArtifactVerification } from "./physical/F07PhysicalArtifactVerifier";
+import { createHash } from "node:crypto";
+import { runBoundedFeedbackLoop, type FloorClosedLoopReceipt } from "../../governance/FloorClosedLoop";
 
 export interface ReleaseGuardianParams {
   readonly video: CandidateVideoContext;
@@ -28,6 +30,36 @@ export interface ReleaseGuardianParams {
   readonly localMediaPath?: string;
   readonly artifactSha256?: string;
   readonly artifactCasRef?: string;
+}
+
+
+export interface F07RemediationLoopContext {
+  readonly iteration: number;
+  readonly params: ReleaseGuardianParams;
+  readonly receipt: VerificationReceipt;
+  readonly remediationCases: readonly RemediationCase[];
+}
+
+export interface F07RemediationLoopOptions {
+  readonly maxIterations?: number;
+  /**
+   * Executes an authorized upstream repair/rerun. This callback is deliberately
+   * outside F07's verification authority so F07 can verify the replacement
+   * artifact without authoring or self-authorizing the repair.
+   */
+  readonly remediate: (
+    context: F07RemediationLoopContext
+  ) => Promise<ReleaseGuardianParams | null>;
+}
+
+export interface F07RemediationLoopResult {
+  readonly finalReceipt: VerificationReceipt;
+  readonly history: readonly {
+    iteration: number;
+    receipt: VerificationReceipt;
+    remediationCaseIds: readonly string[];
+  }[];
+  readonly loopReceipt: FloorClosedLoopReceipt;
 }
 
 export class F07ReleaseGuardian {
@@ -245,4 +277,130 @@ export class F07ReleaseGuardian {
       evidenceRefs,
     });
   }
+
+  /**
+   * Bounded verification/remediation loop.
+   *
+   * F07 remains an independent verifier. Repair execution is injected by the
+   * caller (normally ReMaker/Overseer) and must return a new artifact/input
+   * context; F07 then re-verifies it. The loop stops on PASS, exhaustion,
+   * explicit escalation, or no-progress.
+   */
+  public async verifyReleaseLoop(
+    params: ReleaseGuardianParams,
+    options: F07RemediationLoopOptions
+  ): Promise<F07RemediationLoopResult> {
+    const startedAt = new Date().toISOString();
+    type LoopState = {
+      params: ReleaseGuardianParams;
+      receipt: VerificationReceipt;
+    };
+
+    const initialReceipt = await this.verifyRelease(params);
+
+    const result = await runBoundedFeedbackLoop<LoopState, {
+      passed: boolean;
+      remediationCaseIds: readonly string[];
+      overallOutcome: string;
+      publishAllowed: boolean;
+    }>({
+      initialOutput: { params, receipt: initialReceipt },
+      maxIterations: options.maxIterations ?? 3,
+      verify: async (state) => ({
+        passed:
+          state.receipt.youtubePolicy.publishAllowed &&
+          state.receipt.remediationCases.length === 0,
+        remediationCaseIds: state.receipt.remediationCases.map((item) => item.caseId),
+        overallOutcome: state.receipt.youtubePolicy.overallOutcome,
+        publishAllowed: state.receipt.youtubePolicy.publishAllowed,
+      }),
+      isSatisfied: (feedback) => feedback.passed,
+      fingerprint: (state) =>
+        createHash("sha256")
+          .update(
+            JSON.stringify({
+              artifactId: state.receipt.artifactId,
+              artifactSha256: state.receipt.artifactSha256,
+              contentGenomeHash: state.receipt.contentGenomeHash,
+              policySnapshotHash: state.receipt.policySnapshotHash,
+              outcome: state.receipt.youtubePolicy.overallOutcome,
+              remediationCaseIds: state.receipt.remediationCases.map((item) => item.caseId).sort(),
+            })
+          )
+          .digest("hex"),
+      revise: async (state, feedback, iteration) => {
+        if (state.receipt.remediationCases.length === 0) return null;
+        return this.buildRemediatedLoopState(state, options.remediate, iteration, feedback);
+      },
+    });
+
+    const history = result.history.map((entry) => ({
+      iteration: entry.iteration,
+      receipt: result.history[entry.iteration - 1]?.feedback ? undefined : undefined,
+      remediationCaseIds: entry.feedback.remediationCaseIds,
+    }));
+    // Reconstruct exact receipt history by replaying recorded states via the
+    // remediation callback is intentionally avoided; instead preserve a compact
+    // trace and expose the final authoritative receipt.
+    const compactHistory = result.history.map((entry) => ({
+      iteration: entry.iteration,
+      receipt: result.iterations === entry.iteration ? result.output.receipt : result.output.receipt,
+      remediationCaseIds: entry.feedback.remediationCaseIds,
+    }));
+
+    const finalFeedback = result.history[result.history.length - 1]?.feedback;
+    const receipt: FloorClosedLoopReceipt = {
+      floorId: "floor07_compliance",
+      loopType: "VERIFICATION_REMEDIATION",
+      loopId: "f07-release-" + params.video.videoId + "-" + Date.now().toString(36),
+      termination: result.termination,
+      iterations: result.iterations,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      verified: Boolean(finalFeedback?.passed),
+      evidenceRefs: [
+        result.output.receipt.artifactSha256,
+        result.output.receipt.receiptId,
+        ...result.output.receipt.remediationCases.map((item) => item.caseId),
+      ],
+      failureReason:
+        result.termination === "COMPLETED"
+          ? undefined
+          : "F07 verification/remediation loop did not reach a verified publishable state.",
+    };
+
+    return {
+      finalReceipt: result.output.receipt,
+      history: compactHistory,
+      loopReceipt: receipt,
+    };
+  }
+
+  private async buildRemediatedLoopState(
+    state: {
+      params: ReleaseGuardianParams;
+      receipt: VerificationReceipt;
+    },
+    remediate: F07RemediationLoopOptions["remediate"],
+    iteration: number,
+    feedback: {
+      remediationCaseIds: readonly string[];
+      passed: boolean;
+      overallOutcome: string;
+      publishAllowed: boolean;
+    }
+  ): Promise<{ params: ReleaseGuardianParams; receipt: VerificationReceipt } | null> {
+    const nextParams = await remediate({
+      iteration,
+      params: state.params,
+      receipt: state.receipt,
+      remediationCases: state.receipt.remediationCases,
+    });
+
+    if (!nextParams) return null;
+
+    const nextReceipt = await this.verifyRelease(nextParams);
+    return { params: nextParams, receipt: nextReceipt };
+  }
+
 }
