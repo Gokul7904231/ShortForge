@@ -49,7 +49,12 @@ export interface ResearchRequest {
   readonly targetSourceCount?: number;
   readonly scheduleInstanceId?: string;
   readonly audience?: string;
-  readonly researchContract?: EngineResearchContract & {
+  /**
+   * Immutable Content Engine-owned authorization for all external research.
+   * Optional at the type level is intentionally forbidden: callers must bind
+   * a Content Engine before constructing a production research request.
+   */
+  readonly researchContract: EngineResearchContract & {
     readonly engineId: string;
   };
 }
