@@ -80,15 +80,16 @@
       "unnecessaryEscalationRate"
     ],
     "remediation": [
-      "Decision-theoretic incremental utility model comparing Ascalon against baseline.",
-      "Calibration-aware deep admission using observed outcome history.",
-      "Bounded Probe -> AEF -> Evidence -> Reassessment loop.",
-      "Atomic durable SQLite budget reservations for concurrent Ascalon calls.",
-      "Evidence-backed outcome receipts; model inference cannot authoritatively resolve uncertainty.",
-      "Policy-driven material evidence freshness and STALE state.",
-      "Actual token/model/provider/USD telemetry and idempotent usage recording.",
-      "Baseline shadow routing disagreement plus cost/latency comparison fields.",
-      "Direct admitted Ascalon execution is rejected without pre-call proof."
+      "Decision-theoretic incremental expected utility/value model.",
+      "Calibration-aware Ascalon escalation; uncalibrated priors remain blocked from production influence.",
+      "Model-routing-backed cost/token estimation seam plus actual model/token/USD telemetry.",
+      "Bounded Probe -> AEF -> Evidence -> Reassessment investigation loop.",
+      "Verified-evidence requirements for epistemic resolution updates.",
+      "Material stale evidence becomes explicit STALE state with policy-driven freshness thresholds.",
+      "Atomic budget reservations with durable SQLite implementation and coordinator commit/release.",
+      "Canonical AER pre-call admission bridged into Floor Governance and direct Ascalon execution bypass rejected.",
+      "Multi-pass episode accounting and evidence-backed outcome receipts.",
+      "Conservative observed-outcome routing policy learner retained shadow-only."
     ]
   },
   "security": {
@@ -102,17 +103,17 @@
   "verification": {
     "status": "PENDING_FRESH_CI_AND_SHADOW_EVIDENCE",
     "required": [
-      "targeted AER Vitest remediation suite",
+      "targeted AER remediation suite",
       "FactoryOS strict TypeScript typecheck",
       "repository CI",
       "Floor Governance validation",
       "security/Semgrep validation",
-      "shadow replay against current production traces",
-      "baseline vs AER outcome/cost comparison"
+      "shadow replay against real production traces",
+      "baseline/control comparison of resolution, cost, latency, and false reassurance"
     ]
   },
   "disposition": "BLOCKED",
-  "reason": "Major design flaws have been remediated in code, but fresh CI and outcome replay evidence is not yet complete. Production influence remains blocked.",
+  "reason": "Core AER remediation is implemented, but the latest CI cycle is still pending and ShortForge-specific shadow/outcome evidence is not yet proven. Production influence remains blocked.",
   "schemaVersion": "1.0",
   "repository": "Gokul7904231/ShortForge",
   "baseRef": "main",
