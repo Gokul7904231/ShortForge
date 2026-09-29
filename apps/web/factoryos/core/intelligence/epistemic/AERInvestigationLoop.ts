@@ -5,6 +5,7 @@ import type {
   EpistemicUsage,
 } from "./EpistemicContracts";
 import { EpistemicBudgetController } from "./EpistemicBudget";
+import { validateMeasurement } from "./EpistemicContracts";
 import {
   AEREngine,
   type AERAssessment,
@@ -239,19 +240,24 @@ export class AERInvestigationLoop {
         }
 
         for (const measurement of result.measurementsAdded ?? []) {
-          if (measurement.measurementType === "MODEL_INFERENCE" && measurement.authoritative) {
-            throw new Error(
-              `[AER] Probe ${result.probeId} attempted authoritative model inference.`,
-            );
-          }
+          validateMeasurement(measurement);
         }
 
         if (
           (result.resolvedUnknownIds?.length ?? 0) > 0 &&
-          result.evidenceRefs.length === 0
+          (result.status !== "VERIFIED" || result.evidenceRefs.length === 0)
         ) {
           throw new Error(
-            `[AER] Probe ${result.probeId} cannot resolve unknowns without evidenceRefs.`,
+            `[AER] Probe ${result.probeId} cannot resolve unknowns unless VERIFIED evidence is returned.`,
+          );
+        }
+
+        if (
+          (result.resolvedContradictionIds?.length ?? 0) > 0 &&
+          (result.status !== "VERIFIED" || result.evidenceRefs.length === 0)
+        ) {
+          throw new Error(
+            `[AER] Probe ${result.probeId} cannot resolve contradictions unless VERIFIED evidence is returned.`,
           );
         }
 
