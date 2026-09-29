@@ -97,6 +97,8 @@ describe("AER auxiliary production primitives", () => {
         estimatedLatencyMs: 0,
         expectedBenefit: 0,
         expectedCost: 0,
+        incrementalCostUnits: 0,
+        incrementalLatencyMs: 0,
         uncertaintyBurden: 0,
         baselineMode: "DETERMINISTIC" as const,
         expectedValueSource: "UNAVAILABLE" as const,
