@@ -1562,3 +1562,87 @@ The proposed long-term Ascalon architecture becomes:
 > **AER determines the state of knowledge and the best next epistemic operation. Ascalon reasons over that state. FactoryOS executes only through authorized deterministic boundaries. F07 and physical evidence remain the final truth mechanism.**
 
 This architecture is a target design until executable contracts, tests, shadow evidence, and production admission prove otherwise.
+## 36. Cost-Efficiency Admission and Outcome Measurement
+
+The AER optimization target is **cost per resolved uncertainty**, not tokens per request.
+
+### Explicit Ascalon admission contract
+
+Every AER recommendation now carries:
+
+- shouldInvokeAscalon
+- reasonCode
+- expectedValue
+- estimatedCostUnits
+- remaining Ascalon budget
+
+expectedValue is a bounded policy/routing signal, not a probability, confidence score, truth score, or authority signal.
+
+Ascalon deep cognition is admissible only when:
+
+1. material epistemic uncertainty exists;
+2. the policy-estimated expected value meets the configured threshold;
+3. Ascalon is available;
+4. the remaining deep-call budget is positive;
+5. the remaining cost budget can afford the estimated call;
+6. the context is still valid and redacted.
+
+A deterministic AscalonInvocationGate performs the final pre-call check. It never invokes Ascalon itself.
+
+### Routing intent
+
+Preferred runtime behavior:
+
+DETERMINISTIC -> MICRO -> DEEP(Ascalon) -> SPECIALIST/HUMAN
+
+The cheapest admissible epistemic path is preferred. Deep Ascalon is an escalation, not a default dependency.
+
+### Runtime metrics
+
+AERMetricsRecorder measures:
+
+- AER invocation rate;
+- Ascalon escalation recommendation rate;
+- actual Ascalon invocation rate;
+- average probes per uncertainty;
+- cache hit rate;
+- AER p50/p95 latency;
+- Ascalon p50/p95 latency;
+- cost per resolved uncertainty;
+- false-reassurance rate;
+- probe usefulness rate;
+- unnecessary-escalation rate.
+
+Outcome-qualified measures require actual observed outcomes. No illustrative target is stored as production performance evidence.
+
+### Episode instrumentation
+
+A complete episode is:
+
+event -> AER assessment -> optional probes -> optional Ascalon invocation -> observed outcome
+
+All monetary/compute accounting enters the metric ledger as costUnits. The unit can be mapped to actual provider/model cost by the production telemetry adapter without changing the AER contract.
+
+### Optimization objective
+
+AER should improve:
+
+resolved uncertainty / costUnits
+
+while keeping false reassurance, redundant probes, unnecessary Ascalon escalation, and p95 latency bounded.
+
+The system must optimize for useful resolution, not merely fewer model calls.
+
+### Production gate
+
+The optimization remains shadow/advisory until measured traces establish:
+
+- lower unnecessary deep escalation than the baseline routing policy;
+- useful-probe rate above the agreed floor;
+- measured cache benefit where caching is enabled;
+- stable AER p95 latency;
+- bounded Ascalon cost per resolved uncertainty;
+- acceptable false-reassurance rate;
+- no authority bypass or provenance loss.
+
+Illustrative episode mixes are design examples only and are not performance claims.
