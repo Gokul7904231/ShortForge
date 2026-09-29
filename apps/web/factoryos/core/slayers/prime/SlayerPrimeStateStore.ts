@@ -512,6 +512,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
   private readonly actionLeases: Collection<SlayerActionLease & { _id?: string }>;
   private readonly leadership: Collection<MongoLeadershipDoc>;
   private readonly meta: Collection<MongoMetaDoc>;
+  private readonly ready: Promise<void>;
 
   constructor(db: Db) {
     this.incidents = db.collection("slayer_prime_incidents");
@@ -520,7 +521,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
     this.actionLeases = db.collection("slayer_prime_action_leases");
     this.leadership = db.collection("slayer_prime_leadership");
     this.meta = db.collection("slayer_prime_meta");
-    void this.ensureIndexes();
+    this.ready = this.ensureIndexes();
   }
 
   async load(): Promise<SlayerPrimeStateSnapshot> {
@@ -558,6 +559,7 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
       await this.intents.insertOne(clone(intent));
       return { created: true, intent: clone(intent) };
     } catch (error) {
+      if ((error as { code?: number }).code !== 11000) throw error;
       const existing = await this.intents.findOne({ dedupeKey: intent.dedupeKey });
       if (existing) {
         const { _id, ...rest } = existing;
@@ -573,14 +575,17 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
 
   async acquireLeadership(holderId: string, ttlMs: number): Promise<SlayerPrimeLeadershipLease | null> {
     const now = new Date();
-    const result = await this.leadership.findOneAndUpdate(
-      {
-        _id: "singleton",
-        $or: [
-          { holderId },
-          { expiresAt: { $lte: now.toISOString() } },
-        ],
-      },
+    let result: MongoLeadershipDoc | null = null;
+    try {
+      result = await this.leadership.findOneAndUpdate(
+        {
+          _id: "singleton",
+          $or: [
+            { holderId },
+            { holderId: "" },
+            { expiresAt: { $lte: now.toISOString() } },
+          ],
+        },
       {
         $set: {
           leaseId: "slayleader_" + randomUUID().replace(/-/g, "").slice(0, 16),
@@ -590,8 +595,12 @@ export class MongoSlayerPrimeStateStore implements SlayerPrimeStateStore {
         },
         $inc: { epoch: 1 },
       },
-      { upsert: true, returnDocument: "after" }
-    );
+        { upsert: true, returnDocument: "after" }
+      ) as unknown as MongoLeadershipDoc | null;
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) return null;
+      throw error;
+    }
     if (!result) return null;
     return clone({
       leaseId: result.leaseId,
