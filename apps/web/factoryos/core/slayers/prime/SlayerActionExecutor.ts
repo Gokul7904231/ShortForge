@@ -296,6 +296,22 @@ export class SlayerActionExecutor {
         });
       }
 
+      const executionMarker = this.receipt(intent, {
+        status: "EXECUTING",
+        reason:
+          "Action reservation committed; adapter execution is now allowed.",
+        started,
+        actionLease,
+        details: {
+          adapterId: adapter.adapterId,
+          actionLeaseId: actionLease.actionLeaseId,
+        },
+      });
+
+      if (this.leadershipGuard) {
+        await this.leadershipGuard.upsertReceipt(executionMarker);
+      }
+
       details = await adapter.execute(intent, grant!, actionLease);
       const verification = await adapter.verify(
         intent,
