@@ -366,4 +366,46 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
     expect(result.success).toBe(false);
     expect(result.reason).toBe("unknown_action:floor.publish_unknown");
   });
+
+  it("never invokes the Ascalon proposer without a pre-call admission", async () => {
+    let invoked = false;
+    const ascalon = new ProposalOnlyAscalonAdapter(async ({ snapshot }) => {
+      invoked = true;
+      return {
+        proposalId: "p_should_not_run",
+        floorId: snapshot.floorId,
+        actionName: "floor.observe",
+        proposer: "ASCALON",
+        parameters: {},
+        evidenceRefs: [],
+        expectedOutcome: "observation_recorded",
+        expectedPostconditions: ["observation_recorded"],
+        stateVersion: snapshot.stateVersion,
+        proposedAt: new Date().toISOString(),
+        inputTrust: "TRUSTED_SYSTEM_STATE",
+      };
+    });
+
+    const snapshot: import("../core/governance/FloorGovernanceContracts").FloorSnapshot = {
+      floorId: FLOOR,
+      state: "READY",
+      stateVersion: 1,
+      observedAt: new Date().toISOString(),
+      jobs: [],
+      workers: [],
+      resources: [],
+      activeIncidents: [],
+      constraints: [],
+    };
+
+    const proposal = await ascalon.proposeNext({
+      snapshot,
+      availableActions: ["floor.observe"],
+      evidenceRefs: [],
+    });
+
+    expect(proposal).toBeNull();
+    expect(invoked).toBe(false);
+  });
+
 });
