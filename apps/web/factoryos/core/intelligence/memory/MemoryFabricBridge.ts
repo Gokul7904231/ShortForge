@@ -32,6 +32,7 @@ import type {
 } from "./MemoryFabricContracts";
 import { MemoryFabricProjectionService } from "./MemoryFabricProjection";
 import { MemoryRetentionNormalizer } from "./MemoryRetentionNormalizer";
+import type { MemoryRetrievalEngineOptions } from "./MemoryRetrievalEngine";
 
 export interface MemoryFabricBridgeConfig {
   readonly enabled?: boolean;
@@ -42,6 +43,7 @@ export interface MemoryFabricBridgeConfig {
   readonly rawMaxChars?: number;
   readonly candidateMaxChars?: number;
   readonly watchedCollections?: readonly string[];
+  readonly retrievalOptions?: MemoryRetrievalEngineOptions;
 }
 
 const DEFAULT_COLLECTIONS = [
@@ -143,6 +145,7 @@ export class MemoryFabricBridge {
     this.projectionService = new MemoryFabricProjectionService(
       this.knowledgeStore,
       this.memoryWriter,
+      config.retrievalOptions,
     );
 
     if (!this.enabled) {
