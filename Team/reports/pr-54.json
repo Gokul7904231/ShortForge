@@ -2,7 +2,7 @@
   "reportVersion": "1.0",
   "pr": 54,
   "changeId": "aer-cost-optimization-2026-09-29",
-  "status": "IMPLEMENTED_FOUNDATION",
+  "status": "REMEDIATION_IMPLEMENTED_FOUNDATION",
   "okf": {
     "sweepStatus": "COMPLETE",
     "sourceOfTruth": ".okf/index.md",
@@ -26,18 +26,33 @@
   },
   "implementation": [
     "apps/web/factoryos/core/intelligence/epistemic/EpistemicContracts.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERValueModel.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERCostEstimator.ts",
     "apps/web/factoryos/core/intelligence/epistemic/CognitiveRouter.ts",
     "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
     "apps/web/factoryos/core/intelligence/epistemic/AERMetrics.ts",
-    "apps/web/factoryos/core/intelligence/epistemic/AscalonInvocationGate.ts",
-    "apps/web/factoryos/core/intelligence/epistemic/AscalonEpistemicHandoff.ts",
     "apps/web/factoryos/core/intelligence/epistemic/EpistemicCache.ts",
-    "apps/web/factoryos/core/intelligence/epistemic/index.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/EpistemicStateEngine.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERInvestigationLoop.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERProbeExecution.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetReservation.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AscalonInvocationGate.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AscalonInvocationCoordinator.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERAscalonPreCallGate.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERRoutingPolicyLearner.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AscalonEpistemicHandoff.ts",
+    "apps/web/factoryos/core/governance/AscalonGuardianAdapter.ts",
+    "apps/web/factoryos/core/governance/AscalonInferenceAdmission.ts",
+    "apps/web/factoryos/core/governance/FloorGovernanceCell.ts",
+    "apps/web/factoryos/core/guardian/GuardianManager.ts",
     "apps/web/factoryos/tests/epistemic/aer.test.ts",
     "apps/web/factoryos/tests/epistemic/aer-auxiliary.test.ts",
+    "apps/web/factoryos/tests/epistemic/aer-remediation.test.ts",
+    "apps/web/factoryos/tests/floor-governance-cell.test.ts",
+    "apps/web/factoryos/tests/floor-governance-wave2-integration.test.ts",
     ".okf/decisions/ascalon-epistemic-optimization-20260929.md",
-    "docs/ascalon/epistemic-runtime.md",
-    ".okf/intelligence/aer.md"
+    ".okf/intelligence/aer.md",
+    "docs/ascalon/epistemic-runtime.md"
   ],
   "optimization": {
     "primaryMetric": "cost_per_resolved_uncertainty",
@@ -63,28 +78,41 @@
       "falseReassuranceRate",
       "probeUsefulnessRate",
       "unnecessaryEscalationRate"
+    ],
+    "remediation": [
+      "Decision-theoretic incremental utility model comparing Ascalon against baseline.",
+      "Calibration-aware deep admission using observed outcome history.",
+      "Bounded Probe -> AEF -> Evidence -> Reassessment loop.",
+      "Atomic durable SQLite budget reservations for concurrent Ascalon calls.",
+      "Evidence-backed outcome receipts; model inference cannot authoritatively resolve uncertainty.",
+      "Policy-driven material evidence freshness and STALE state.",
+      "Actual token/model/provider/USD telemetry and idempotent usage recording.",
+      "Baseline shadow routing disagreement plus cost/latency comparison fields.",
+      "Direct admitted Ascalon execution is rejected without pre-call proof."
     ]
   },
   "security": {
     "required": true,
     "status": "DESIGN_REVIEW_COMPLETE",
-    "notes": "AER remains advisory; Ascalon pre-call admission is deterministic; no capabilities, leases, fencing, publishing, or F07 authority are granted.",
+    "notes": "AER remains advisory. Ascalon proposals require a pre-call admission path; execution remains under governance/AEF and F07.",
     "semgrep": "PENDING",
     "strix": "NOT_RUN",
     "zap": "NOT_APPLICABLE"
   },
   "verification": {
-    "status": "PENDING_CI_AND_SHADOW_EVIDENCE",
+    "status": "PENDING_FRESH_CI_AND_SHADOW_EVIDENCE",
     "required": [
-      "targeted AER Vitest suite",
-      "FactoryOS TypeScript typecheck",
+      "targeted AER Vitest remediation suite",
+      "FactoryOS strict TypeScript typecheck",
       "repository CI",
-      "applicable security/Semgrep checks",
-      "shadow replay with observed outcomes"
+      "Floor Governance validation",
+      "security/Semgrep validation",
+      "shadow replay against current production traces",
+      "baseline vs AER outcome/cost comparison"
     ]
   },
   "disposition": "BLOCKED",
-  "reason": "Implementation is complete on the PR branch, but production influence remains blocked until fresh automated verification and shadow/outcome evidence are recorded.",
+  "reason": "Major design flaws have been remediated in code, but fresh CI and outcome replay evidence is not yet complete. Production influence remains blocked.",
   "schemaVersion": "1.0",
   "repository": "Gokul7904231/ShortForge",
   "baseRef": "main",
