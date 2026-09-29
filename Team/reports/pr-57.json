@@ -60,6 +60,11 @@
     "Wired canonical Slayer observations into Slayer Prime.",
     "Wired Slayer Prime into SlayerEngine lifecycle and parallelized specialized patrol execution.",
     "Added dedicated Slayer Prime tests.",
+    "Added durable Prime incident, intent, receipt, leadership, and action-lease state-store abstraction.",
+    "Added unique process-incarnation identity and monotonic leadership epochs for split-brain resistance.",
+    "Added deterministic cross-replica intent deduplication and pre-execution EXECUTING marker.",
+    "Added worker lease fencing tokens and atomic fenced release for built-in lease repositories.",
+    "Retain action reservation across ambiguous adapter outcomes to prevent immediate blind replay.",
     "Updated Slayer hierarchy documentation and added Slayer Prime .okf contract.",
     "Added durable Prime state-store abstraction with in-memory, single-host disk, and shared Mongo implementations.",
     "Added Prime leadership lease with unique process-incarnation identity and monotonic leadership epochs.",
@@ -126,7 +131,19 @@
       "conclusion": "IN_PROGRESS"
     },
     "slayerPrimeTests": {
-      "status": "PENDING_CI"
+      "status": "PENDING_CI",
+      "coverage": [
+        "incident dedupe",
+        "evidence quorum",
+        "authorization rejection",
+        "authorized lease revoke",
+        "postcondition proof",
+        "action-intent dedupe",
+        "real disk restart recovery",
+        "single-writer leadership",
+        "leadership term stability",
+        "worker lease fencing / stale revoke rejection"
+      ]
     }
   }
 }
