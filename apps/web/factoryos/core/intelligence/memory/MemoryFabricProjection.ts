@@ -18,7 +18,7 @@ import type {
   MemoryFabricProjection,
   MemoryFabricProjectionItem,
 } from "./MemoryFabricContracts";
-import type { MemoryRecallQuery } from "./MemorySemanticsContracts";
+import type { MemoryAccessContext, MemoryRecallQuery } from "./MemorySemanticsContracts";
 import { MemoryProvenanceGuard } from "./MemoryProvenanceGuard";
 
 export class MemoryFabricProjectionService {
@@ -37,16 +37,18 @@ export class MemoryFabricProjectionService {
     query: string,
     maxItems = 12,
     maxChars = 12000,
+    accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
-    return this.project(query, maxItems, maxChars, "AGENT");
+    return this.project(query, maxItems, maxChars, "AGENT", accessContext);
   }
 
   async projectForAscalon(
     query = "",
     maxItems = 32,
     maxChars = 24000,
+    accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
-    return this.project(query, maxItems, maxChars, "ASCALON");
+    return this.project(query, maxItems, maxChars, "ASCALON", accessContext);
   }
 
   async proposeVerifiedMemory(proposal: CandidateMemoryProposal): Promise<KnowledgeDocument> {
@@ -74,6 +76,7 @@ export class MemoryFabricProjectionService {
     maxItems: number,
     maxChars: number,
     mode: "AGENT" | "ASCALON",
+    accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
     this.knowledgeStore.reload();
 
@@ -84,6 +87,7 @@ export class MemoryFabricProjectionService {
 
     const recallQuery: MemoryRecallQuery = {
       query,
+      accessContext,
       maxItems,
       maxChars,
       maxTokens: Math.ceil(maxChars / 4),
