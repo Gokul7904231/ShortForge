@@ -11,7 +11,7 @@ import type {
 } from "./EpistemicContracts";
 import type {
   AEREpisodeTelemetrySink,
-  AEREpisodeTelemetryEventName,
+  AEREpisodeEventName,
 } from "./AEREpisodeTelemetry";
 
 export interface AEREpisodeRecord {
@@ -140,7 +140,7 @@ export class AERMetricsRecorder {
 
   private emit(
     episodeId: string,
-    eventName: AEREpisodeTelemetryEventName,
+    eventName: AEREpisodeEventName,
     attributes: Readonly<Record<string, string | number | boolean | null>> = {},
     policyVersion = "aer-voi-v2",
   ): void {
