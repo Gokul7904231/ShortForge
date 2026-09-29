@@ -117,6 +117,14 @@ export interface MemoryFabricHealth {
   readonly vaultPath: string;
 }
 
+export interface MemoryFabricRetrievalSignals {
+  readonly semanticScore?: number;
+  readonly lexicalScore?: number;
+  readonly graphScore?: number;
+  readonly temporalScore?: number;
+  readonly rerankScore?: number;
+}
+
 export interface MemoryFabricProjectionItem {
   readonly id: string;
   readonly title: string;
@@ -129,6 +137,9 @@ export interface MemoryFabricProjectionItem {
   readonly occurredAt?: string;
   readonly validUntil?: string;
   readonly provenance: string;
+  readonly evidenceRefs?: readonly string[];
+  readonly conflictGroup?: string;
+  readonly retrievalSignals?: MemoryFabricRetrievalSignals;
   readonly content: string;
 }
 
