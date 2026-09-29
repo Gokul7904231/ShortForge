@@ -1831,3 +1831,27 @@ Canonical integration spec: `.okf/memory/hindsight-unlazy-native-system.md`.
 AER can consume MemoryEvaluationHarness metrics for retrieval latency, token spend, forbidden-hit rate, unauthorized-hit rate, and category-level recall. This is measurement infrastructure only; numeric promotion thresholds remain a separate evidence-backed policy.
 
 Memory access scope and provenance checks occur before trusted Ascalon projection. Definition-bound proof state is durable and re-verifiable, so model/policy/source binding drift invalidates old completion evidence.
+
+
+## 2026-09-29 Memory Fabric Convergence
+
+AER now has an explicit bridge from canonical Memory Fabric recall into epistemic state construction.
+
+```text
+Memory Fabric recall
+      |
+      v
+MemoryAERAdapter
+      |
+      v
+EpistemicStateEngine / AER
+      |
+      +--> uncertainty + contradiction + evidence refs
+      |
+      v
+bounded advisory routing
+```
+
+This integration is advisory only. Memory does not gain authority by entering AER, and AER does not gain execution authority by consuming memory.
+
+The runtime still requires fresh shadow/replay evidence before AER policy promotion. In particular, the repository does not currently claim that mental-model refresh is autonomously scheduled: `MemoryMentalModelManager` provides dirty/refresh planning, but production scheduling and AER economic admission for refresh remain a future hardening requirement.
