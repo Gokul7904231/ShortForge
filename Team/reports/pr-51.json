@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR51-Movie-Intelligence-Reconciliation-20260929",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/movie-intelligence-wave1-20260929",
+  "objective": "Promote Movie Intelligence Wave 1 research artifacts onto current main without changing production runtime, authority, or floor topology.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/research/movie-intelligence-wave1.md",
+      ".okf/index.md",
+      "Team/workflow/change-gate.md"
+    ],
+    "rulesConsidered": [
+      "Research artifacts must not mint runtime authority.",
+      "Main remains the production source of truth.",
+      "No hidden production floor may be introduced by research promotion."
+    ]
+  },
+  "changes": [
+    "Promoted nine Movie Intelligence Wave 1 research/mapping artifacts from the isolated research branch.",
+    "No production runtime or authority implementation was added.",
+    "Research boundaries remain explicitly documented."
+  ],
+  "security": {
+    "required": true,
+    "notes": "Research-only documentation and repository mapping changes; no credentials, permissions, runtime handlers, or authority changes."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "NOT_APPLICABLE",
+    "Forge Sentinel": "COMPLETE — research-only boundary",
+    "Forge Evaluator": "PENDING_REPOSITORY_CI",
+    "Forge Release": "PENDING"
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    ".okf/research/movie-intelligence-wave1.md",
+    ".okf/research/repo-mappings/bharathchalla-actionformer.md",
+    ".okf/research/repo-mappings/breakthrough-pyscenedetect.md",
+    ".okf/research/repo-mappings/facebookresearch-sam2-grounded-sam2.md",
+    ".okf/research/repo-mappings/fil-mp-moviechat.md",
+    ".okf/research/repo-mappings/google-autoflip.md",
+    ".okf/research/repo-mappings/mcg-nju-videochat3.md",
+    ".okf/research/repo-mappings/opengvlab-videochat-flash.md",
+    ".okf/research/repo-mappings/soczech-transnetv2.md"
+  ],
+  "verificationPlan": [
+    "Run Team Change Gate for PR #51.",
+    "Run repository CI and affected floor validation lanes.",
+    "Merge only after required blocking gates are green."
+  ],
+  "disposition": "PENDING_CI",
+  "dispositionRationale": "Research promotion is structurally reconciled; final disposition awaits fresh CI evidence.",
+  "verificationResults": {
+    "reconciliation": "PASS — fresh branch from current main; research-only files promoted",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "productionRuntimeChanges": "NONE"
+  }
+}
