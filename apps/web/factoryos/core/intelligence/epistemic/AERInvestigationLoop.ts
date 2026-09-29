@@ -314,6 +314,7 @@ export class AERInvestigationLoop {
             (result.resolvedUnknownIds?.length ?? 0) > 0 ||
             (result.resolvedContradictionIds?.length ?? 0) > 0,
           costUnits: result.costUnits,
+          actualCostUsd: result.actualCostUsd,
         });
 
         this.ledger.append({
