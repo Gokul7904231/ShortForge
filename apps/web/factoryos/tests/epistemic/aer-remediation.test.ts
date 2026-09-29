@@ -1,9 +1,18 @@
+import { AgentExecutionRouter } from "../../core/agent/execution/AgentExecutionRouter";
+import { InMemoryAgentExecutionStateStore } from "../../core/agent/execution/AgentExecutionStateStore";
+import { ScopedToolExecutor } from "../../core/agent/execution/ScopedToolExecutor";
+import type { ExecutionStepContract, ExecutionState } from "../../core/agent/execution/AgentExecutionContracts";
+import { ToolRegistry } from "../../core/tools/ToolRegistry";
+import { ToolExecutor } from "../../core/tools/ToolExecutor";
+import { toolOk } from "../../core/tools/ToolContracts";
 import { describe, expect, it } from "vitest";
 import {
   AEREngine,
   AERInvestigationLoop,
   AERMetricsRecorder,
   AERRoutingPolicyLearner,
+  AERPolicyPromotionGate,
+  ScopedToolAERExecutionFabricBridge,
   AscalonInvocationCoordinator,
   AscalonInvocationGate,
   EpistemicCache,
@@ -312,4 +321,145 @@ describe("AER remediation — economics, reservations, execution loop", () => {
       candidate.valuePolicy.baseline.resolutionProbability + 1,
     );
   });
+
+  it("routes a real probe through ScopedToolExecutor and preserves evidence/cost metadata", async () => {
+    const registry = new ToolRegistry();
+    registry.register({
+      id: "probe.ffprobe",
+      name: "FFprobe timing",
+      version: "1.0.0",
+      description: "Read-only media timing probe",
+      capability: "CAP_FFPROBE",
+      riskLevel: "LOW",
+      sideEffects: "READ_ONLY",
+      execute: async () => ({
+        success: true,
+        output: {
+          status: "VERIFIED" as const,
+          evidenceRefs: ["measurement:timing:001"],
+          costUnits: 2,
+        },
+        costUsd: 0.004,
+        evidenceId: "tool-evidence:timing:001",
+      }),
+    });
+
+    const step: ExecutionStepContract = {
+      stepId: "aer_probe",
+      phase: "DIAGNOSIS",
+      allowedTools: ["probe.ffprobe"],
+      requiredCapabilities: ["CAP_FFPROBE"],
+      preconditions: [],
+      postconditions: [],
+      sideEffect: "NONE",
+      idempotency: "NONE",
+      retryPolicy: {
+        maxAttempts: 1,
+        retryOn: [],
+        backoffMs: 0,
+        sameIdempotencyKey: false,
+      },
+      evidenceRequirements: [],
+      humanApproval: "NONE",
+      riskLevel: "LOW",
+    };
+
+    const stateStore = new InMemoryAgentExecutionStateStore();
+    const router = new AgentExecutionRouter(stateStore);
+    router.registerStep(step);
+
+    const ready: ExecutionState = {
+      executionId: "aer-aef-exec-001",
+      missionId: "mission-aer-001",
+      runId: "run-aer-001",
+      stepId: "aer_probe",
+      stepAttempt: 0,
+      stateVersion: 1,
+      status: "READY",
+      facts: {},
+      sideEffectStatus: "NOT_STARTED",
+      evidenceRefs: [],
+      artifactRefs: [],
+      humanApprovalState: "NOT_REQUIRED",
+      updatedAt: new Date().toISOString(),
+    };
+
+    const scoped = new ScopedToolExecutor(
+      router,
+      registry,
+      new ToolExecutor(registry),
+      new Set(["CAP_FFPROBE"]),
+    );
+
+    const running = router.start(ready);
+    const probe = {
+      probeId: "timing-probe",
+      type: "FFPROBE_TIMING",
+      target: { path: "artifact.mp4" },
+      requiredCapabilities: ["CAP_FFPROBE"],
+      estimatedLatencyMs: 20,
+      estimatedCostUnits: 1,
+      expectedInformationGain: 0.9,
+      riskClass: "READ_ONLY" as const,
+      timeoutMs: 1000,
+      cacheable: true,
+      parallelizable: true,
+      evidenceProduced: ["measurement:timing:001"],
+    };
+
+    const bridge = new ScopedToolAERExecutionFabricBridge(
+      scoped,
+      () => running,
+      () => "probe.ffprobe",
+    );
+
+    const result = await bridge.execute({
+      episodeId: "aer-aef-episode-001",
+      context: {} as never,
+      probe,
+      deadlineAtMs: Date.now() + 1000,
+    });
+
+    expect(result.status).toBe("VERIFIED");
+    expect(result.executorRunId).toBe("aer-aef-exec-001");
+    expect(result.evidenceRefs).toContain("measurement:timing:001");
+    expect(result.evidenceRefs).toContain("tool-evidence:timing:001");
+    expect(result.costUnits).toBe(2);
+  });
+
+  it("does not qualify a shadow policy without evidence thresholds", () => {
+    const gate = new AERPolicyPromotionGate();
+    const baseline = {
+      policyVersion: "baseline-v1",
+      sampleCount: 100,
+      resolvedRateLower95: 0.70,
+      resolvedRateUpper95: 0.82,
+      falseReassuranceRateUpper95: 0.01,
+      costUsdPerResolvedUncertainty: 0.10,
+      p95LatencyMs: 1000,
+      authorityViolationCount: 0,
+    };
+    const candidate = {
+      ...baseline,
+      policyVersion: "candidate-v2",
+      sampleCount: 20,
+      resolvedRateLower95: 0.71,
+    };
+
+    const result = gate.evaluate({
+      baseline,
+      candidate,
+      criteria: {
+        minSamples: 50,
+        maxFalseReassuranceUpper95: 0.02,
+        maxLatencyRegressionMs: 100,
+        minCostSavingsUsd: 0.001,
+        maxResolutionLowerBoundRegression: 0.01,
+      },
+    });
+
+    expect(result.eligible).toBe(false);
+    expect(result.reasons).toContain("candidate_sample_size_insufficient");
+  });
+
 });
