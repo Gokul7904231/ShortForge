@@ -192,9 +192,12 @@ export class CognitiveRouter {
       );
     }
 
+    // ascalonCapabilityAvailable is the canonical capability signal.
+    // ascalonAvailable/deepAvailable remain compatibility aliases during migration.
     const ascalonAvailable =
       options.ascalonCapabilityAvailable ??
       options.ascalonAvailable ??
+      options.deepAvailable ??
       false;
     const latencySafetyMarginMs = Math.max(
       0,
