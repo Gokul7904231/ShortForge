@@ -7,6 +7,7 @@ import {
 import { MemoryRetrievalEngine } from "./MemoryRetrievalEngine";
 import { MemoryProvenanceGuard } from "./MemoryProvenanceGuard";
 import { MemoryReflectionEngine } from "./MemoryReflectionEngine";
+import { MemoryConsolidationStrategyRouter } from "./MemoryConsolidationStrategyRouter";
 import { MemoryMentalModelManager } from "./MemoryMentalModelManager";
 import type {
   MemoryConsolidationInput,
@@ -29,8 +30,9 @@ export class MemoryLifecycleService {
     private readonly documentSource: () => readonly KnowledgeDocument[],
     observationStore: MemoryObservationStore = new InMemoryMemoryObservationStore(),
     retrievalEngine = new MemoryRetrievalEngine(),
+    strategyRouter = new MemoryConsolidationStrategyRouter([]),
   ) {
-    this.observationConsolidator = new MemoryObservationConsolidator(observationStore);
+    this.observationConsolidator = new MemoryObservationConsolidator(observationStore, strategyRouter);
     this.retrievalEngine = retrievalEngine;
   }
 
