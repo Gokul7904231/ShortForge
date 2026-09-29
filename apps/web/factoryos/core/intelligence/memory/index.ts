@@ -6,3 +6,5 @@ export * from "./MemoryMentalModelManager";
 export * from "./MemoryProvenanceGuard";
 export * from "./MemoryCompletionLedger";
 export * from "./MemoryReflectionEngine";
+export * from "./KnowledgeStoreObservationAdapter";
+export * from "./MemoryLifecycleService";
