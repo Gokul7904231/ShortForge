@@ -16,6 +16,7 @@
       ".okf/hierarchy-map.md",
       ".okf/security/worker-permissions.md",
       ".okf/hierarchy/slayer.md",
+      ".okf/research/slayer-prime-distributed-safety.md",
       ".okf/hierarchy/slayer-prime.md",
       ".okf/decision-protocol.md"
     ]
@@ -120,6 +121,28 @@
     "Forge Sentinel": "COMPLETE",
     "Forge Evaluator": "IN_PROGRESS_CI",
     "Forge Release": "PENDING_CI"
+  },
+  "hardeningWave": {
+    "status": "IMPLEMENTED_PENDING_FINAL_CI",
+    "latestCommit": "4700a16a5c1a050f96af8bf9ec4916b95d7600c7",
+    "controls": [
+      "durable Prime state store",
+      "single-writer leadership epochs",
+      "unique process-incarnation identity",
+      "deterministic intent deduplication",
+      "worker lease fencing",
+      "leadership-bound authorization",
+      "pre-execution EXECUTING marker",
+      "unknown-outcome replay blocking",
+      "persistence-tier bootstrap wiring",
+      "restart/split-brain/fence tests"
+    ],
+    "remainingGaps": [
+      "DurableEventBus remains process-local",
+      "Disk state is single-host only",
+      "Unknown side effects still need an explicit reconciliation worker",
+      "Physical kernel/eBPF adapters are not implemented"
+    ]
   },
   "verificationResults": {
     "teamChangeGate": {
