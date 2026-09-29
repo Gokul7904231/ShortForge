@@ -26,6 +26,10 @@ function receipt(floorId: string, verified = true, iterations = 1): FloorClosedL
     completedAt: new Date().toISOString(),
     verified,
     evidenceRefs: ["evidence:" + floorId],
+    proofSource:
+      floorId === "floor06_rendering" || floorId === "floor07_compliance"
+        ? "PHYSICAL_VERIFIER"
+        : "RUNTIME",
   };
 }
 
