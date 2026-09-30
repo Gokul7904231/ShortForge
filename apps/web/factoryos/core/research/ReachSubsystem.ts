@@ -1,42 +1,38 @@
 /**
  * ShortForge Reach — Controlled External Information Access Subsystem
- * Gated, policy-aware interface providing source access, normalized data, and evidence.
- *
- * Reach is intentionally NOT a generic query oracle.
- * Every production query must be rendered from the selected Content Engine's
- * immutable research contract.
+ * Contract-gated research acquisition with provider-independent routing.
  */
 
 import type { EvidenceSource } from "../contracts/ResearchPassportContracts";
-import type {
-  EngineResearchContract,
-  EngineResearchQueryRule,
-} from "../../../lib/core/EngineConfigurationContracts";
-import { randomUUID, createHash } from "node:crypto";
+import type { EngineResearchQueryRule } from "../../../lib/core/EngineConfigurationContracts";
+import { deduplicateEvidenceSources } from "./ReachCache";
+import {
+  ReachProviderRouter,
+  type ReachRouterOptions,
+} from "./ReachProviderRouter";
+import type { ReachFetchRequest } from "./ReachContracts";
+import { randomUUID } from "node:crypto";
 
-export interface ReachFetchRequest {
-  readonly engineId: string;
-  readonly queryKind: string;
-  readonly topic: string;
-  readonly parameters?: Readonly<Record<string, string>>;
-  readonly researchContract: EngineResearchContract;
-  readonly maxSources?: number;
-  readonly callerFloor?: string;
-  readonly intent?: string;
-}
+export type { ReachFetchRequest } from "./ReachContracts";
 
-/**
- * Test-only provider hook. It still receives the fully validated/rendered
- * research request, so unit tests can verify the same contract boundary.
- */
 export interface ReachTestProvider {
   isTestFixture: true;
-  acquire(request: ReachFetchRequest & { readonly renderedQuery: string }): Promise<EvidenceSource[]>;
+  acquire(
+    request: ReachFetchRequest & { readonly renderedQuery: string },
+  ): Promise<EvidenceSource[]>;
 }
 
-function assertBoundedQueryRequest(request: ReachFetchRequest): EngineResearchQueryRule {
+export interface ReachSubsystemOptions extends ReachRouterOptions {
+  readonly testProvider?: ReachTestProvider;
+}
+
+function assertBoundedQueryRequest(
+  request: ReachFetchRequest,
+): EngineResearchQueryRule {
   if (!request.engineId || !request.engineId.trim()) {
-    throw new Error("REACH_ENGINE_ID_REQUIRED: Content Engine identity is required.");
+    throw new Error(
+      "REACH_ENGINE_ID_REQUIRED: Content Engine identity is required.",
+    );
   }
 
   if (!request.researchContract || request.researchContract.required !== true) {
@@ -45,10 +41,15 @@ function assertBoundedQueryRequest(request: ReachFetchRequest): EngineResearchQu
     );
   }
 
-  const expectedProfile = `engine:${request.engineId}`;
+  const expectedProfile = "engine:" + request.engineId;
+
   if (request.researchContract.agentReachProfile !== expectedProfile) {
     throw new Error(
-      `REACH_ENGINE_PROFILE_MISMATCH: expected ${expectedProfile}, received ${request.researchContract.agentReachProfile || "missing"}.`,
+      "REACH_ENGINE_PROFILE_MISMATCH: expected " +
+        expectedProfile +
+        ", received " +
+        (request.researchContract.agentReachProfile || "missing") +
+        ".",
     );
   }
 
@@ -59,7 +60,9 @@ function assertBoundedQueryRequest(request: ReachFetchRequest): EngineResearchQu
   }
 
   if (!request.queryKind || !request.queryKind.trim()) {
-    throw new Error("REACH_QUERY_KIND_REQUIRED: Content Engine query kind is required.");
+    throw new Error(
+      "REACH_QUERY_KIND_REQUIRED: Content Engine query kind is required.",
+    );
   }
 
   if (!request.topic || !request.topic.trim()) {
@@ -72,17 +75,31 @@ function assertBoundedQueryRequest(request: ReachFetchRequest): EngineResearchQu
 
   if (!rule) {
     throw new Error(
-      `REACH_QUERY_KIND_NOT_ALLOWED: engine ${request.engineId} does not authorize query kind ${request.queryKind}.`,
+      "REACH_QUERY_KIND_NOT_ALLOWED: engine " +
+        request.engineId +
+        " does not authorize query kind " +
+        request.queryKind +
+        ".",
     );
   }
 
-  const placeholders = [...rule.queryTemplate.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map((m) => m[1]);
-  const declaredParameters = new Set(["topic", ...(rule.requiredParameters || [])]);
+  const placeholders = [
+    ...rule.queryTemplate.matchAll(/\{([a-zA-Z0-9_]+)\}/g),
+  ].map((match) => match[1]);
+
+  const declaredParameters = new Set([
+    "topic",
+    ...(rule.requiredParameters || []),
+  ]);
 
   for (const suppliedParameter of Object.keys(request.parameters || {})) {
     if (!declaredParameters.has(suppliedParameter)) {
       throw new Error(
-        `REACH_QUERY_PARAMETER_NOT_ALLOWED: parameter "${suppliedParameter}" is not declared by ${rule.queryKind}.`,
+        "REACH_QUERY_PARAMETER_NOT_ALLOWED: parameter \"" +
+          suppliedParameter +
+          "\" is not declared by " +
+          rule.queryKind +
+          ".",
       );
     }
   }
@@ -90,19 +107,28 @@ function assertBoundedQueryRequest(request: ReachFetchRequest): EngineResearchQu
   for (const placeholder of placeholders) {
     if (!declaredParameters.has(placeholder)) {
       throw new Error(
-        `REACH_QUERY_TEMPLATE_INVALID: undeclared template parameter {${placeholder}} in ${rule.queryKind}.`,
+        "REACH_QUERY_TEMPLATE_INVALID: undeclared template parameter {" +
+          placeholder +
+          "} in " +
+          rule.queryKind +
+          ".",
       );
     }
   }
 
   for (const parameter of rule.requiredParameters || []) {
-    const value = parameter === "topic"
-      ? request.topic
-      : request.parameters?.[parameter];
+    const value =
+      parameter === "topic"
+        ? request.topic
+        : request.parameters?.[parameter];
 
     if (!value || String(value).trim() === "") {
       throw new Error(
-        `REACH_QUERY_PARAMETER_REQUIRED: parameter "${parameter}" is required for ${rule.queryKind}.`,
+        "REACH_QUERY_PARAMETER_REQUIRED: parameter \"" +
+          parameter +
+          "\" is required for " +
+          rule.queryKind +
+          ".",
       );
     }
   }
@@ -125,33 +151,44 @@ function renderEngineQuery(
     .trim();
 
   if (!rendered) {
-    throw new Error("REACH_RENDERED_QUERY_EMPTY: Content Engine query rendered to an empty string.");
+    throw new Error(
+      "REACH_RENDERED_QUERY_EMPTY: Content Engine query rendered to an empty string.",
+    );
   }
 
   if (rendered.length > 2000) {
-    throw new Error("REACH_RENDERED_QUERY_TOO_LARGE: rendered query exceeds 2000 characters.");
+    throw new Error(
+      "REACH_RENDERED_QUERY_TOO_LARGE: rendered query exceeds 2000 characters.",
+    );
   }
 
   return rendered;
 }
 
 export class ReachSubsystem {
-  private testProvider?: ReachTestProvider;
+  private readonly testProvider?: ReachTestProvider;
+  private readonly router: ReachProviderRouter;
 
-  constructor(testProvider?: ReachTestProvider) {
-    this.testProvider = testProvider;
+  constructor(
+    testProviderOrOptions?: ReachTestProvider | ReachSubsystemOptions,
+  ) {
+    if (
+      testProviderOrOptions &&
+      "isTestFixture" in testProviderOrOptions
+    ) {
+      this.testProvider = testProviderOrOptions;
+      this.router = new ReachProviderRouter();
+      return;
+    }
+
+    const options = (testProviderOrOptions || {}) as ReachSubsystemOptions;
+    this.testProvider = options.testProvider;
+    this.router = new ReachProviderRouter(options);
   }
 
-  /**
-   * Acquires external sources.
-   *
-   * IMPORTANT:
-   * - No raw/free-form production query is accepted.
-   * - No direct URL retrieval is accepted through this production path.
-   * - The query sent to an external provider is rendered exclusively from
-   *   the Content Engine research contract + bounded request parameters.
-   */
-  async acquireSources(request: ReachFetchRequest): Promise<EvidenceSource[]> {
+  async acquireSources(
+    request: ReachFetchRequest,
+  ): Promise<EvidenceSource[]> {
     const rule = assertBoundedQueryRequest(request);
     const renderedQuery = renderEngineQuery(request, rule);
 
@@ -160,71 +197,57 @@ export class ReachSubsystem {
         ...request,
         renderedQuery,
       });
-      return testSources.map((s) => ({
-        ...s,
-        extractionMethod: "TEST_FIXTURE" as const,
-        sourceStatus: "TEST_FIXTURE" as const,
-      }));
-    }
 
-    const sources: EvidenceSource[] = [];
-    const now = new Date().toISOString();
-    const searchApiUrl = process.env.SEARCH_API_URL;
-
-    if (!searchApiUrl) {
-      return [];
-    }
-
-    try {
-      const res = await fetch(
-        `${searchApiUrl}?q=${encodeURIComponent(renderedQuery)}`,
-        {
-          signal: AbortSignal.timeout(5000),
-        },
+      return deduplicateEvidenceSources(
+        testSources.map((source) => ({
+          ...source,
+          extractionMethod: "TEST_FIXTURE" as const,
+          sourceStatus: "TEST_FIXTURE" as const,
+          provider: "TEST_FIXTURE",
+          providerRequestId:
+            source.providerRequestId ||
+            "test_" + randomUUID().slice(0, 8),
+          renderedQuery,
+        })),
       );
-
-      if (!res.ok) {
-        return [];
-      }
-
-      const data = await res.json();
-
-      if (!Array.isArray(data.results)) {
-        return [];
-      }
-
-      for (const item of data.results.slice(0, request.maxSources || 5)) {
-        if (!item?.url || typeof item.url !== "string") {
-          continue;
-        }
-
-        const itemHash = createHash("sha256")
-          .update(item.snippet || item.title || "", "utf8")
-          .digest("hex");
-
-        sources.push({
-          id: `src_${randomUUID().substring(0, 8)}`,
-          url: item.url,
-          title: item.title || renderedQuery,
-          publisher:
-            item.publisher ||
-            (item.url ? new URL(item.url).hostname : "Search Provider"),
-          retrievedAt: now,
-          extractionMethod: "API_FEED",
-          snippet: (item.snippet || "").slice(0, 600),
-          reliabilityScore:
-            typeof item.score === "number" ? item.score : 0.85,
-          contentHash: itemHash,
-          sourceStatus: "ONLINE",
-        });
-      }
-
-      return sources;
-    } catch (err: any) {
-      console.warn(
-        `[ReachSubsystem] Engine-scoped search failed: ${err?.message || "unknown error"}`,
-      );
-      return [];
     }
+
+    const result = await this.router.acquire(
+      request,
+      renderedQuery,
+    );
+
+    return result.sources.map((source) => ({
+      ...source,
+      renderedQuery: source.renderedQuery || renderedQuery,
+    }));
   }
 }
+
+export {
+  ReachResearchCache,
+  deduplicateEvidenceSources,
+} from "./ReachCache";
+
+export {
+  ReachProviderRouter,
+  InMemoryReachTelemetry,
+} from "./ReachProviderRouter";
+
+export type {
+  ReachResearchMode,
+  ReachProviderId,
+  ReachProviderCapability,
+  ReachProvider,
+  ReachProviderRequest,
+  ReachProviderResponse,
+  ReachProviderHealthSnapshot,
+  ReachEvent,
+  ReachTelemetrySink,
+} from "./ReachContracts";
+
+export {
+  SearXNGProvider,
+  DecodoFastSearchProvider,
+  DecodoWebScrapingProvider,
+} from "./ReachProviders";
