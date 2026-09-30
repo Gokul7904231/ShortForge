@@ -309,11 +309,14 @@ export class MongoTaskDAGRepository implements ITaskDAGRepository {
   }
 }
 
-export class MongoLeaseRepository implements ILeaseRepository {
-  constructor(private db: Db) {}
 
-  private get col(): Collection<TaskLease & { _id?: string }> {
-    return this.db.collection("leases");
+export class MongoLeaseRepository implements ILeaseRepository {
+  private readonly col: Collection<TaskLease & { _id?: string }>;
+  private readonly meta: Collection<{ _id: string; nextFencingToken?: number }>;
+
+  constructor(private db: Db) {
+    this.col = db.collection("leases");
+    this.meta = db.collection("lease_fencing_meta");
   }
 
   async acquireLease(taskId: string, ownerAgentId: string, ttlMs: number, attempt: number = 1): Promise<boolean> {
@@ -322,10 +325,15 @@ export class MongoLeaseRepository implements ILeaseRepository {
 
     const existing = await this.col.findOne({ taskId });
     if (existing && existing.status === "ACTIVE" && new Date(existing.leaseExpiresAt) > now) {
-      if (existing.ownerAgentId !== ownerAgentId) {
-        return false;
-      }
+      if (existing.ownerAgentId !== ownerAgentId) return false;
     }
+
+    const counter = await this.meta.findOneAndUpdate(
+      { _id: "singleton" },
+      { $inc: { nextFencingToken: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+    const fencingToken = Math.max(1, counter?.nextFencingToken || 1);
 
     const lease: TaskLease = {
       taskId,
@@ -333,6 +341,7 @@ export class MongoLeaseRepository implements ILeaseRepository {
       leaseStartedAt: now.toISOString(),
       leaseExpiresAt: expiresAt,
       attempt,
+      fencingToken,
       heartbeatAt: now.toISOString(),
       status: "ACTIVE",
     };
@@ -344,7 +353,6 @@ export class MongoLeaseRepository implements ILeaseRepository {
   async renewLease(taskId: string, ownerAgentId: string, ttlMs: number): Promise<boolean> {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlMs).toISOString();
-
     const res = await this.col.updateOne(
       { taskId, ownerAgentId, status: "ACTIVE" },
       { $set: { heartbeatAt: now.toISOString(), leaseExpiresAt: expiresAt } }
@@ -357,6 +365,23 @@ export class MongoLeaseRepository implements ILeaseRepository {
       { taskId, ownerAgentId },
       { $set: { status: "RELEASED" } }
     );
+  }
+
+  async releaseLeaseIfFenced(
+    taskId: string,
+    ownerAgentId: string,
+    expectedFencingToken: number
+  ): Promise<boolean> {
+    const result = await this.col.updateOne(
+      {
+        taskId,
+        ownerAgentId,
+        status: "ACTIVE",
+        fencingToken: expectedFencingToken,
+      },
+      { $set: { status: "RELEASED" } }
+    );
+    return result.matchedCount === 1;
   }
 
   async getLease(taskId: string): Promise<TaskLease | null> {
@@ -372,13 +397,6 @@ export class MongoLeaseRepository implements ILeaseRepository {
     return docs.map(({ _id, ...rest }) => rest as TaskLease);
   }
 }
-
-import type { IMissionRepository } from "./DatabaseContracts";
-import type { Mission } from "../contracts/MissionContracts";
-import { InMemoryMissionRepository } from "./InMemoryDatabase";
-
-import { MissionConcurrencyConflictError } from "../missions/MissionErrors";
-
 export class MongoMissionRepository implements IMissionRepository {
   constructor(private db: Db) {}
 
