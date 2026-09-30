@@ -162,8 +162,34 @@ export class OKFParser {
       yamlLines.push(`  captured_at: ${prov.captured_at}`);
     }
 
-    // --- 3. Live Memory Fabric extension fields ---
+    // --- 3. ShortForge memory extension fields ---
+    // Persist every field used by the Memory Fabric. JSON flow values are valid
+    // YAML and preserve nested arrays/objects without lossy custom parsing.
     const extensionFields: Array<[string, unknown]> = [
+      ["sf_memory_type", fm.sf_memory_type],
+      ["sf_observation_scope", fm.sf_observation_scope],
+      ["sf_proof_count", fm.sf_proof_count],
+      ["sf_supporting_memory_ids", fm.sf_supporting_memory_ids],
+      ["sf_contradicting_memory_ids", fm.sf_contradicting_memory_ids],
+      ["sf_memory_history", fm.sf_memory_history],
+      ["sf_mental_model_id", fm.sf_mental_model_id],
+      ["sf_mental_model_question", fm.sf_mental_model_question],
+      ["sf_refresh_version", fm.sf_refresh_version],
+      ["sf_refresh_mode", fm.sf_refresh_mode],
+      ["sf_refresh_after_consolidation", fm.sf_refresh_after_consolidation],
+      ["sf_refresh_cron", fm.sf_refresh_cron],
+      ["sf_recall_max_tokens", fm.sf_recall_max_tokens],
+      ["sf_min_refresh_interval_seconds", fm.sf_min_refresh_interval_seconds],
+      ["sf_last_refreshed_at", fm.sf_last_refreshed_at],
+      ["sf_dirty_since", fm.sf_dirty_since],
+      ["sf_source_fact_types", fm.sf_source_fact_types],
+      ["sf_exclude_sibling_models", fm.sf_exclude_sibling_models],
+      ["sf_authority_class", fm.sf_authority_class],
+      ["entity_refs", fm.entity_refs],
+      ["relation_ids", fm.relation_ids],
+      ["scope_key", fm.scope_key],
+      ["mission_id", fm.mission_id],
+      ["channel_id", fm.channel_id],
       ["sf_quality_state", fm.sf_quality_state],
       ["sf_memory_quality_score", fm.sf_memory_quality_score],
       ["sf_source_hash", fm.sf_source_hash],
@@ -176,17 +202,16 @@ export class OKFParser {
       ["sf_promoted_at", fm.sf_promoted_at],
       ["sf_evidence_reference", fm.sf_evidence_reference],
       ["sf_validity_reason", fm.sf_validity_reason],
+      ["sf_training_eligible", fm.sf_training_eligible],
+      ["training_eligible", fm.training_eligible],
+      ["evidence_refs", fm.evidence_refs],
     ];
+
     for (const [key, value] of extensionFields) {
-      if (value !== undefined && value !== null) {
-        yamlLines.push(key + ": " + this.escapeYamlString(String(value)));
-      }
-    }
-    if (fm.sf_training_eligible !== undefined) yamlLines.push("sf_training_eligible: " + String(fm.sf_training_eligible));
-    if (fm.training_eligible !== undefined) yamlLines.push("training_eligible: " + String(fm.training_eligible));
-    if (Array.isArray(fm.evidence_refs) && fm.evidence_refs.length > 0) {
-      yamlLines.push("evidence_refs:");
-      for (const evidenceRef of fm.evidence_refs) yamlLines.push("  - " + this.escapeYamlString(String(evidenceRef)));
+      if (value === undefined || value === null) continue;
+      const serialized =
+        typeof value === "object" ? JSON.stringify(value) : this.escapeYamlString(String(value));
+      yamlLines.push(key + ": " + serialized);
     }
 
     yamlLines.push("---");
@@ -282,6 +307,14 @@ export class OKFParser {
   private static parseScalar(val: string): unknown {
     if ((val.startsWith("[") && !val.endsWith("]")) || (val.startsWith("{") && !val.endsWith("}"))) {
       throw new Error(`Malformed YAML scalar syntax: unclosed collection bracket in '${val}'`);
+    }
+    if ((val.startsWith("[") && val.endsWith("]")) || (val.startsWith("{") && val.endsWith("}"))) {
+      try {
+        return JSON.parse(val);
+      } catch {
+        // Fall through to the existing scalar behavior for YAML flow syntax
+        // that is not strict JSON.
+      }
     }
     if (val.startsWith('"')) {
       if (!val.endsWith('"') || val.length === 1) {

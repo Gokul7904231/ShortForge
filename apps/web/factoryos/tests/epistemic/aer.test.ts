@@ -4,6 +4,9 @@ import {
   EpistemicBudgetController,
   EpistemicStateEngine,
   ProbePlanner,
+  AERMetricsRecorder,
+  AscalonInvocationGate,
+  evaluateAscalonValue,
   type CognitiveProbe,
 } from "../../core/intelligence/epistemic";
 
@@ -15,6 +18,26 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     maxProbeCount: 5,
     maxCostUnits: 20,
   } as const;
+
+  const calibratedValuePolicy = {
+    baseline: {
+      mode: "MICRO" as const,
+      resolutionProbability: 0.45,
+      costUnits: 1,
+      latencyMs: 100,
+      source: "OBSERVED_CALIBRATION" as const,
+    },
+    ascalon: {
+      mode: "DEEP" as const,
+      resolutionProbability: 0.9,
+      costUnits: 5,
+      latencyMs: 200,
+      source: "OBSERVED_CALIBRATION" as const,
+    },
+    minimumNetValue: 0.01,
+    costWeight: 0.1,
+    latencyWeight: 0.01,
+  };
 
   it("keeps deterministic / confirmed state out of deep cognition", () => {
     const aer = new AEREngine();
@@ -40,7 +63,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
     expect(result.state.cognitiveRecommendation.mode).toBe("DETERMINISTIC");
   });
 
-  it("routes material uncertainty to micro cognition when one hypothesis remains", () => {
+  it("keeps one-hypothesis uncertainty on micro when calibrated Ascalon value is below the threshold", () => {
     const aer = new AEREngine();
     const result = aer.assess({
       contextSeed: "timing-mismatch",
@@ -69,6 +92,8 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       routing: {
         microAvailable: true,
         deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
+        minimumAscalonExpectedValue: 1,
       },
     });
 
@@ -108,6 +133,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       routing: {
         microAvailable: true,
         deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -235,6 +261,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       budget,
       routing: {
         deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
       },
     });
 
@@ -258,7 +285,7 @@ describe("AER — Ascalon Epistemic Runtime", () => {
         },
       ],
       budget,
-      routing: { deepAvailable: true },
+      routing: { deepAvailable: true, valuePolicy: calibratedValuePolicy },
     });
 
     const serialized = JSON.stringify(result.context);
@@ -313,4 +340,361 @@ describe("AER — Ascalon Epistemic Runtime", () => {
       }),
     ).toThrow("cannot be authoritative");
   });
+
+  it("makes Ascalon admission explicit and cost-aware", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "deep-admission",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder configuration regressed",
+          support: 0.55,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "asset transfer is the bottleneck",
+          support: 0.45,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget,
+      routing: {
+        deepAvailable: true,
+        ascalonAvailable: true,
+        valuePolicy: calibratedValuePolicy,
+      },
+    });
+
+    expect(result.state.cognitiveRecommendation.mode).toBe("DEEP");
+    expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(true);
+    expect(result.state.cognitiveRecommendation.expectedValue).toBeGreaterThan(0);
+    expect(result.state.cognitiveRecommendation.expectedBenefit).toBeGreaterThan(
+      result.state.cognitiveRecommendation.expectedCost,
+    );
+    expect(result.state.cognitiveRecommendation.budget.maxCallsRemaining).toBe(2);
+    expect(result.ascalonHandoff.shouldInvokeAscalon).toBe(true);
+    expect(result.ascalonAdmission.admitted).toBe(true);
+  });
+
+  it("keeps low-value uncertainty on the micro path", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "micro-path",
+      unknown: [
+        {
+          unknownId: "u1",
+          question: "Does the timeline fit measured narration?",
+          reason: "small timing ambiguity",
+          material: true,
+          evidenceRefs: ["voice:1", "timeline:1"],
+        },
+      ],
+      budget,
+      routing: {
+        microAvailable: true,
+        deepAvailable: true,
+        ascalonEstimatedCostUnits: 5,
+        minimumAscalonExpectedValue: 0.5,
+      },
+    });
+
+    expect(result.state.cognitiveRecommendation.mode).toBe("MICRO");
+    expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(false);
+    expect(result.state.cognitiveRecommendation.reasonCode).toBe("MICRO_SUFFICIENT");
+  });
+
+  it("blocks deep Ascalon escalation when the remaining cost budget cannot afford it", () => {
+    const aer = new AEREngine();
+    const result = aer.assess({
+      contextSeed: "cost-block",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder configuration regressed",
+          support: 0.55,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "asset transfer is the bottleneck",
+          support: 0.45,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget: {
+        ...budget,
+        maxCostUnits: 3,
+      },
+      routing: {
+        deepAvailable: true,
+        ascalonAvailable: true,
+        valuePolicy: calibratedValuePolicy,
+      },
+    });
+
+    expect(result.state.cognitiveRecommendation.shouldInvokeAscalon).toBe(false);
+    expect(result.state.cognitiveRecommendation.reasonCode).toBe("ASCALON_BUDGET_EXHAUSTED");
+    expect(result.ascalonAdmission.admitted).toBe(false);
+  });
+
+  it("applies the deterministic Ascalon pre-call gate", () => {
+    const aer = new AEREngine();
+    const deep = aer.assess({
+      contextSeed: "gate",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder configuration regressed",
+          support: 0.55,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "asset transfer is the bottleneck",
+          support: 0.45,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget,
+      routing: { deepAvailable: true, valuePolicy: calibratedValuePolicy },
+    });
+
+    const gate = new AscalonInvocationGate();
+    expect(gate.evaluate({ context: deep.context }).admitted).toBe(true);
+
+    const expired = gate.evaluate({
+      context: deep.context,
+      nowMs: Date.parse(deep.context.expiresAt) + 1,
+    });
+    expect(expired.admitted).toBe(false);
+    expect(expired.reason).toBe("epistemic_context_expired_or_invalid");
+  });
+
+  it("tracks cost per resolved uncertainty and routing efficiency", () => {
+    const metrics = new AERMetricsRecorder();
+    metrics.recordEvent({ episodeId: "skipped", aerInvoked: false });
+
+    const aer = new AEREngine(metrics);
+    const deterministic = aer.assess({
+      contextSeed: "metric-deterministic",
+      known: [
+        {
+          factId: "f1",
+          statement: "hash matches",
+          sourceRefs: ["hash:1"],
+          status: "CONFIRMED",
+        },
+      ],
+      budget,
+    });
+
+    const uncertain = aer.assess({
+      contextSeed: "metric-uncertain",
+      hypotheses: [
+        {
+          hypothesisId: "h1",
+          statement: "encoder regression",
+          support: 0.6,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+        {
+          hypothesisId: "h2",
+          statement: "transfer bottleneck",
+          support: 0.4,
+          status: "VIABLE",
+          evidenceRefs: [],
+          requiredProbeIds: [],
+          createdAt: "2026-09-29T00:00:00.000Z",
+          updatedAt: "2026-09-29T00:00:00.000Z",
+        },
+      ],
+      budget,
+      routing: {
+        deepAvailable: true,
+        valuePolicy: calibratedValuePolicy,
+      },
+    });
+
+    metrics.recordProbe({
+      episodeId: uncertain.context.contextId,
+      executed: true,
+      useful: true,
+      costUnits: 1,
+    });
+    metrics.recordAscalonInvocation({
+      episodeId: uncertain.context.contextId,
+      latencyMs: 40,
+      costUnits: 3,
+    });
+    metrics.recordOutcome({
+      outcomeId: "outcome_uncertain_01",
+      episodeId: uncertain.context.contextId,
+      status: "RESOLVED",
+      evidenceRefs: ["validator:uncertainty-01"],
+      authoritativeSource: "VERIFIED_SYSTEM",
+      verificationRef: "validator:uncertainty-01",
+      observedAt: "2026-09-29T00:00:00.000Z",
+      ascalonClaimedResolved: true,
+      necessityAssessment: {
+        verdict: "NECESSARY",
+        method: "CONTROLLED_REPLAY",
+        evidenceRefs: ["baseline-replay:01"],
+      },
+    });
+    metrics.recordOutcome({
+      outcomeId: "outcome_deterministic_01",
+      episodeId: deterministic.context.contextId,
+      status: "RESOLVED",
+      evidenceRefs: ["hash:1"],
+      authoritativeSource: "VERIFIED_SYSTEM",
+      verificationRef: "hash:1",
+      observedAt: "2026-09-29T00:00:00.000Z",
+    });
+
+    const snapshot = metrics.snapshot();
+    expect(snapshot.episodeCount).toBe(3);
+    expect(snapshot.aerInvocationRate).toBeCloseTo(2 / 3);
+    expect(snapshot.ascalonEscalationRate).toBeCloseTo(1 / 2);
+    expect(snapshot.ascalonInvocationRate).toBeCloseTo(1 / 2);
+    expect(snapshot.averageProbesPerUncertainty).toBe(1);
+    expect(snapshot.costPerResolvedUncertainty).toBe(4);
+    expect(snapshot.probeUsefulnessRate).toBe(1);
+    expect(snapshot.unnecessaryEscalationRate).toBe(0);
+    expect(snapshot.falseReassuranceRate).toBe(0);
+    expect(snapshot.p95AscalonLatencyMs).toBe(40);
+  });
+
+
+  it("computes incremental expected utility rather than additive uncertainty score", () => {
+    const assessment = evaluateAscalonValue(
+      {
+        unknown: [{ unknownId: "u1", question: "q", reason: "r", material: true, evidenceRefs: [] }],
+        contradictions: [],
+        hypotheses: [],
+        impact: { affectedFloors: ["F06"], affectedArtifacts: [], severity: "HIGH", reversible: true },
+      },
+      calibratedValuePolicy,
+    );
+
+    expect(assessment.source).toBe("OBSERVED_CALIBRATION");
+    expect(assessment.incrementalResolutionProbability).toBeCloseTo(0.45);
+    expect(assessment.expectedBenefit).toBeGreaterThan(0);
+    expect(assessment.expectedCost).toBeGreaterThan(0);
+    expect(assessment.expectedValue).toBeCloseTo(
+      assessment.expectedBenefit - assessment.expectedCost,
+    );
+    expect(assessment.shouldInvokeAscalon).toBe(true);
+  });
+
+  it("blocks uncalibrated VOI from production Ascalon admission", () => {
+    const assessment = evaluateAscalonValue(
+      {
+        unknown: [{ unknownId: "u1", question: "q", reason: "r", material: true, evidenceRefs: [] }],
+        contradictions: [],
+        hypotheses: [],
+        impact: { affectedFloors: ["F06"], affectedArtifacts: [], severity: "MEDIUM", reversible: true },
+      },
+      {
+        ...calibratedValuePolicy,
+        baseline: { ...calibratedValuePolicy.baseline, source: "CONFIGURED_PRIOR" as const },
+        ascalon: { ...calibratedValuePolicy.ascalon, source: "CONFIGURED_PRIOR" as const },
+      },
+    );
+
+    expect(assessment.source).toBe("CONFIGURED_PRIOR");
+    expect(assessment.shouldInvokeAscalon).toBe(false);
+  });
+
+
+  it("rejects ungrounded or model-authored resolution outcomes", () => {
+    const metrics = new AERMetricsRecorder();
+    metrics.recordEvent({ episodeId: "outcome-1", aerInvoked: true });
+
+    expect(() =>
+      metrics.recordOutcome({
+        outcomeId: "bad-1",
+        episodeId: "outcome-1",
+        status: "RESOLVED",
+        evidenceRefs: [],
+        authoritativeSource: "VERIFIED_SYSTEM",
+        verificationRef: "missing-evidence",
+        observedAt: "2026-09-29T00:00:00.000Z",
+      }),
+    ).toThrow("resolved outcome requires evidenceRefs");
+
+    expect(() =>
+      metrics.recordOutcome({
+        outcomeId: "bad-2",
+        episodeId: "outcome-1",
+        status: "RESOLVED",
+        evidenceRefs: ["model:1"],
+        authoritativeSource: "MODEL_INFERENCE",
+        verificationRef: "model:1",
+        observedAt: "2026-09-29T00:00:00.000Z",
+      }),
+    ).toThrow("model inference cannot authoritatively resolve uncertainty");
+  });
+
+
+  it("promotes material stale measurements into STALE state using policy thresholds", () => {
+    const engine = new EpistemicStateEngine();
+    const state = engine.build({
+      contextSeed: "stale-policy",
+      measurements: [
+        {
+          measurementId: "provider-heartbeat",
+          dimension: "provider.health",
+          value: "healthy",
+          measurementType: "OBSERVED_MEASUREMENT",
+          sourceRef: "provider:amd",
+          observedAt: "2026-09-29T00:00:00.000Z",
+          evidenceRefs: ["heartbeat:1"],
+          freshnessSeconds: 45,
+          material: true,
+        },
+      ],
+      freshnessPolicy: {
+        "provider.health": 30,
+      },
+    });
+
+    expect(state.state).toBe("STALE");
+    expect(state.freshness["provider-heartbeat"]).toMatchObject({
+      freshnessSeconds: 45,
+      staleAfterSeconds: 30,
+      stale: true,
+      material: true,
+    });
+  });
+
 });

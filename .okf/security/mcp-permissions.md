@@ -21,6 +21,53 @@ Reserved MCP capability names:
 
 These names do not automatically exist in the executable CapabilityRegistry until implemented and tested.
 
+
+## 3. Blender MCP posture
+
+### CAP_MCP_BLENDER_USE
+
+Permits a worker to use the ShortForge Blender MCP gateway for explicitly granted semantic Blender actions.
+
+Allowed baseline floors:
+- F03 Asset Realization
+- F04 Media Synthesis
+- F05 Timeline Composition
+- F06 Rendering
+
+Requires:
+- explicit worker/session capability grant
+- blender.mcp executable capability present and production-routable
+- Guardian authorization for mutating/high-risk actions
+- private Blender addon socket boundary
+- runtime MCP tool discovery
+- semantic-action resolution
+- post-mutation observation
+- physical artifact verification for render/export
+
+Does not permit:
+- arbitrary MCP tool selection from model output
+- capability minting
+- lease/fencing changes
+- F07 release authority
+- publication authority
+- unrestricted Python
+
+### CAP_MCP_BLENDER_PYTHON_EXECUTE
+
+Reserved for explicitly authorized workflows only.
+
+Requires:
+- CAP_MCP_BLENDER_USE
+- Guardian grant with auditable certificate
+- explicit PYTHON_EXECUTE semantic action
+- runtime flag BLENDER_MCP_ALLOW_PYTHON=true
+- arguments.code present
+- independent post-execution verification
+
+Default state: **DENIED / DISABLED**.
+
+Arbitrary Blender Python must never be treated as the normal path when a constrained semantic action can express the requested operation.
+
 ## 3. Google Drive posture
 
 ### CAP_MCP_DRIVE_READ

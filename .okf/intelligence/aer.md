@@ -29,6 +29,10 @@ Implemented foundation components:
 - `EpistemicCache.ts`
 - `EpistemicLedger.ts`
 - `AEREngine.ts`
+- `AERExecutionFabricBridge.ts`
+- `AERShadowReplay.ts`
+- `AERPolicyPromotionGate.ts`
+- `AEREpisodeTelemetry.ts`
 
 Current capability boundary:
 - builds typed epistemic state;
@@ -41,7 +45,7 @@ Current capability boundary:
 - produces a shadow/advisory Ascalon handoff;
 - supports trigger suppression, hypothesis updates, cache identity, and tamper-evident in-memory ledgering.
 
-The current implementation does **not** execute probes, call a production Ascalon checkpoint, grant authority, or alter floor execution. Fresh CI, security checks, shadow replay, calibration and production admission remain required.
+AER does **not** execute probes directly or call a production Ascalon checkpoint. The concrete `AERExecutionFabricBridge` delegates probe execution through the existing Agent Execution Fabric, while fresh CI, security checks, shadow replay, calibration and production admission remain required.
 
 ## 1. Purpose
 
@@ -1562,3 +1566,292 @@ The proposed long-term Ascalon architecture becomes:
 > **AER determines the state of knowledge and the best next epistemic operation. Ascalon reasons over that state. FactoryOS executes only through authorized deterministic boundaries. F07 and physical evidence remain the final truth mechanism.**
 
 This architecture is a target design until executable contracts, tests, shadow evidence, and production admission prove otherwise.
+## 36. Cost-Efficiency Admission and Outcome Measurement
+
+The AER optimization target is **cost per resolved uncertainty**, not tokens per request.
+
+### Explicit Ascalon admission contract
+
+Every AER recommendation now carries:
+
+- shouldInvokeAscalon
+- reasonCode
+- expectedValue
+- estimatedCostUnits
+- remaining Ascalon budget
+
+expectedValue is a bounded policy/routing signal, not a probability, confidence score, truth score, or authority signal.
+
+Ascalon deep cognition is admissible only when:
+
+1. material epistemic uncertainty exists;
+2. the policy-estimated expected value meets the configured threshold;
+3. Ascalon is available;
+4. the remaining deep-call budget is positive;
+5. the remaining cost budget can afford the estimated call;
+6. the context is still valid and redacted.
+
+A deterministic AscalonInvocationGate performs the final pre-call check. It never invokes Ascalon itself.
+
+### Routing intent
+
+Preferred runtime behavior:
+
+DETERMINISTIC -> MICRO -> DEEP(Ascalon) -> SPECIALIST/HUMAN
+
+The cheapest admissible epistemic path is preferred. Deep Ascalon is an escalation, not a default dependency.
+
+### Runtime metrics
+
+AERMetricsRecorder measures:
+
+- AER invocation rate;
+- Ascalon escalation recommendation rate;
+- actual Ascalon invocation rate;
+- average probes per uncertainty;
+- cache hit rate;
+- AER p50/p95 latency;
+- Ascalon p50/p95 latency;
+- cost per resolved uncertainty;
+- false-reassurance rate;
+- probe usefulness rate;
+- unnecessary-escalation rate.
+
+Outcome-qualified measures require actual observed outcomes. No illustrative target is stored as production performance evidence.
+
+### Episode instrumentation
+
+A complete episode is:
+
+event -> AER assessment -> optional probes -> optional Ascalon invocation -> observed outcome
+
+All monetary/compute accounting enters the metric ledger as costUnits. The unit can be mapped to actual provider/model cost by the production telemetry adapter without changing the AER contract.
+
+### Optimization objective
+
+AER should improve:
+
+resolved uncertainty / costUnits
+
+while keeping false reassurance, redundant probes, unnecessary Ascalon escalation, and p95 latency bounded.
+
+The system must optimize for useful resolution, not merely fewer model calls.
+
+### Production gate
+
+The optimization remains shadow/advisory until measured traces establish:
+
+- lower unnecessary deep escalation than the baseline routing policy;
+- useful-probe rate above the agreed floor;
+- measured cache benefit where caching is enabled;
+- stable AER p95 latency;
+- bounded Ascalon cost per resolved uncertainty;
+- acceptable false-reassurance rate;
+- no authority bypass or provenance loss.
+
+Illustrative episode mixes are design examples only and are not performance claims.
+
+## 37. Research-Informed Remediation — 2026-09-29
+
+The current remediation incorporates patterns from recent routing, experimental-design, agent-runtime, calibration, and observability research:
+
+- **Constrained adaptive test-time compute (2026)**: allocate expensive reasoning per instance under a global compute budget instead of applying one fixed depth to every input. AER adopts this principle through explicit per-episode latency/call/cost budgets and a learned shadow policy. Reference: *Adaptive Test-Time Compute Allocation for Reasoning LLMs via Constrained Policy Optimization*.
+- **Adaptive routing under budget constraints (EMNLP Findings 2025)**: treat model routing as an online contextual decision problem with variable costs and budget constraints. AER uses the same direction for future routing-policy learning, while keeping current learning shadow-only.
+- **Bayesian experimental design for LLM information gathering (2025)**: select the next question/query using expected information gain rather than asking every available question. AER's probe planner is the runtime boundary for this strategy and remains deterministic/safety-filtered before execution.
+- **Calibration of model/judge uncertainty (2025)**: uncertainty estimates should be calibrated from observed outcomes rather than trusted because a model verbalized a confidence value. AER therefore blocks production Ascalon escalation when its value model has only uncalibrated priors unless policy explicitly permits shadow experimentation.
+- **Agent-runtime durability and persistence**: current agent runtimes emphasize durable state, checkpointing, deterministic/LLM composition, and traceable model/tool execution. AER therefore delegates actual probe execution to AEF and treats its own state as advisory/orchestration metadata rather than a second execution runtime.
+- **OpenTelemetry GenAI conventions**: model/tool telemetry should identify operation, provider, model, duration, and usage. AER now accepts provider/model/token/actual-cost telemetry and supports a pluggable token estimator.
+
+Research does not establish that the AER implementation is optimal for ShortForge. It informs the design choices; production thresholds and policies still require ShortForge-specific replay and outcome evidence.
+
+Research references:
+- RouteLLM: https://github.com/lm-sys/RouteLLM
+- Adaptive Test-Time Compute Allocation: https://arxiv.org/abs/2604.14853
+- Adaptive LLM Routing under Budget Constraints: https://aclanthology.org/2025.findings-emnlp.1301/
+- BED-LLM: https://arxiv.org/abs/2508.21184
+- Calibrating LLM Judges: https://arxiv.org/abs/2512.22245
+- LangGraph persistence/durable execution: https://github.com/langchain-ai/langgraph
+- PydanticAI durable execution/instrumentation: https://github.com/pydantic/pydantic-ai
+- OpenTelemetry GenAI semantic conventions: https://github.com/open-telemetry/semantic-conventions-genai
+
+## 2026-09-29 Remediation Wave 2
+
+The executable foundation has been extended toward an adaptive epistemic runtime.
+
+### New runtime guarantees
+
+- Counterfactual baseline-vs-Ascalon expected utility is explicit.
+- Incremental compute and latency are priced rather than hidden inside a single heuristic score.
+- p95 latency plus configurable safety margin participates in Ascalon admission.
+- AER decisions carry a deterministic decision identity and policy version.
+- Probes can cross into the existing Agent Execution Fabric through `ScopedToolAERExecutionFabricBridge`; AER remains non-executing.
+- Tool execution preserves measured provider metadata needed for real economics and evidence accounting.
+- Probe prioritization can incorporate expected decision change and hypothesis discrimination.
+- Investigation deadlines are episode-scoped rather than reset during re-planning.
+- Episode telemetry has a metadata-only durable sink.
+- Candidate routing policies are subject to an evidence-based shadow promotion gate.
+
+### Boundary clarification
+
+AER and governance intentionally form a two-stage admission boundary with different authority:
+
+```
+AER epistemic/economic pre-call
+        ↓
+canonical AscalonInferenceAdmissionGate
+        ↓
+proposal validation / Council / Guardian
+        ↓
+AEF execution
+```
+
+The AER pre-call layer answers whether cognition is worth attempting. The governance admission layer remains authoritative for whether a concrete Ascalon inference envelope is admitted.
+
+### Current status
+
+This remains `SHADOW-ONLY / VALIDATION PENDING`. Repository code is not promoted to production policy merely because the design or tests pass.
+
+### Research-derived principles
+
+Adaptive compute research motivates per-episode allocation rather than uniform reasoning budgets; budget-aware routing research motivates outcome-driven routing under resource constraints; Bayesian experimental-design research motivates sequential probe selection by expected information value; current OpenTelemetry GenAI conventions motivate low-cardinality model/tool/usage/duration telemetry. These sources inform architecture only; ShortForge must establish its own workload-specific evidence before promotion.
+
+
+### Accounting hardening — 2026-09-29
+
+The AEF probe bridge now preserves measured `actualCostUsd` from the existing `ToolExecutor` through the AER probe result and episode metrics path. This prevents the adaptive economics layer from silently falling back to abstract cost units when a concrete tool execution already reported monetary cost.
+
+The required evidence path is:
+```
+Tool execution
+    -> measured costUsd / evidenceId
+    -> ScopedToolAERExecutionFabricBridge
+    -> AERProbeExecutionResult
+    -> AERMetricsRecorder
+    -> shadow economics / replay
+```
+
+This is an implementation improvement, not production-readiness evidence. Fresh CI, security validation and workload-specific shadow replay remain mandatory.
+
+
+## 2026-09-29 Memory Architecture Research Integration
+
+Hindsight's current repository separates raw world facts/experiences from consolidated observations and standing mental models, with retain / recall / reflect operations. Observations preserve supporting evidence and evolve when later evidence reinforces or contradicts a prior belief. Its documentation also warns that automatic mental-model refresh can become a recurring LLM-cost loop and provides refresh throttling.
+
+Recent memory research reinforces the direction: LongMemEval-V2 evaluates environment-specific experience such as workflow knowledge and recurring gotchas; MemForest focuses on write-efficient temporal indexing and localized refresh; Agent Zero Memory emphasizes provenance-aware parallel memory and citation-locked reading.
+
+### ShortForge decision
+
+Do not add a second memory database or make Hindsight a privileged authority. Extend the existing Memory Fabric with four logical layers:
+
+```text
+RAW EXPERIENCE
+    -> CONSOLIDATED OBSERVATION
+    -> MENTAL MODEL / PLAYBOOK
+    -> AER MEMORY STATE
+```
+
+Native lifecycle vocabulary:
+
+```text
+retain(event/evidence)
+        -> consolidate(observations)
+        -> recall(query, bounded budget)
+        -> reflect(question, candidate hypotheses)
+        -> AER epistemic state
+        -> decision / probe / Ascalon routing
+```
+
+Constraints:
+
+- retain preserves provenance; it does not establish truth.
+- consolidate may synthesize observations, but supporting evidence and contradiction history remain addressable.
+- recall returns bounded evidence packages instead of opaque raw dumps.
+- reflect may create derived mental models, but these remain advisory unless independently verified.
+- stale observations trigger revalidation against newer evidence.
+- refresh is dirty-scope/event driven or rate limited; it must not rebuild every mental model after every write.
+- sibling mental models do not recursively become evidence without an explicit policy.
+
+### Provenance lock
+
+Every learned item projected into AER or Ascalon should retain source identity, timestamp, verification state, lifecycle, conflict/supersession identity, evidence references, quality state, and freshness/validity boundaries.
+
+A learned observation may summarize evidence, but it may not outrank or erase the evidence that produced it.
+
+### Retrieval order
+
+```text
+fresh verified mental model/playbook
+        -> consolidated observations
+        -> raw verified evidence
+        -> explicitly requested raw unverified evidence
+        -> model inference as advisory context
+```
+
+### Cost rule
+
+Background reflection is an AER computation with a trigger, affected scope, information-gain estimate, latency budget, cost budget, last successful refresh, source watermark, and failure/backoff state. Failed refreshes must not retry indefinitely.
+
+### Research provenance
+
+- Hindsight: https://github.com/vectorize-io/hindsight
+- Hindsight paper: https://arxiv.org/abs/2512.12818
+- LongMemEval-V2: https://arxiv.org/abs/2605.12493
+- MemForest: https://arxiv.org/abs/2605.23986
+- Agent Zero Memory: https://arxiv.org/abs/2608.29606
+
+
+## 2026-09-29 Native Memory Semantics Integration
+
+AER now has a native learned-memory substrate behind the existing Memory Fabric.
+
+Before an AER episode is evaluated, memory can be handled as:
+
+`retain -> consolidate -> recall -> reflect -> epistemic state`
+
+`MemoryProvenanceGuard` is the trust boundary for retrieved memory, while `MemoryFabricProjection` applies it before Agent/Ascalon projection.
+
+The memory system supplies:
+
+- four-channel retrieval with bounded RRF/reranking;
+- observation evolution with contradiction history and evidence lineage;
+- mental-model refresh throttling and dirty-state tracking;
+- scope isolation and per-scope consolidation strategy;
+- proof-state semantics separate from learning state.
+
+These are cognitive inputs to AER, not new execution authority. AER remains the epistemic/economic layer and delegates execution to AEF. Ascalon remains behind canonical admission and governance.
+
+### New implementation status
+
+Foundation modules and regression coverage are present on `feat/aer-cost-optimization`. Production promotion still requires fresh CI, security validation, real semantic retrieval measurements, shadow replay, and end-to-end evidence.
+
+Canonical integration spec: `.okf/memory/hindsight-unlazy-native-system.md`.
+
+## Memory economics and evidence evaluation
+
+AER can consume MemoryEvaluationHarness metrics for retrieval latency, token spend, forbidden-hit rate, unauthorized-hit rate, and category-level recall. This is measurement infrastructure only; numeric promotion thresholds remain a separate evidence-backed policy.
+
+Memory access scope and provenance checks occur before trusted Ascalon projection. Definition-bound proof state is durable and re-verifiable, so model/policy/source binding drift invalidates old completion evidence.
+
+
+## 2026-09-29 Memory Fabric Convergence
+
+AER now has an explicit bridge from canonical Memory Fabric recall into epistemic state construction.
+
+```text
+Memory Fabric recall
+      |
+      v
+MemoryAERAdapter
+      |
+      v
+EpistemicStateEngine / AER
+      |
+      +--> uncertainty + contradiction + evidence refs
+      |
+      v
+bounded advisory routing
+```
+
+This integration is advisory only. Memory does not gain authority by entering AER, and AER does not gain execution authority by consuming memory.
+
+The runtime still requires fresh shadow/replay evidence before AER policy promotion. In particular, the repository does not currently claim that mental-model refresh is autonomously scheduled: `MemoryMentalModelManager` provides dirty/refresh planning, but production scheduling and AER economic admission for refresh remain a future hardening requirement.

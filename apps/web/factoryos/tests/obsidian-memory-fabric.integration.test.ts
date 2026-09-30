@@ -28,7 +28,16 @@ async function testLiveIngestion(): Promise<void> {
     writer,
     ledger,
     null,
-    { enabled: true, vaultPath: vault, batchSize: 10 },
+    {
+      enabled: true,
+      vaultPath: vault,
+      batchSize: 10,
+      ascalonAccessContext: {
+        principalId: "test-ascalon",
+        allowedScopeKeys: ["mission-test-001"],
+        allowGlobalScope: false,
+      },
+    },
   );
 
   await bridge.start();
@@ -69,7 +78,16 @@ async function testLiveIngestion(): Promise<void> {
   assert.equal(health.mode, "EVENT_ONLY");
   assert.equal(health.totalIngested, 1);
 
-  const agentProjection = await bridge.projectForAgent("MISSION_COMPLETED");
+  const agentProjection = await bridge.projectForAgent(
+    "MISSION_COMPLETED",
+    12,
+    12000,
+    {
+      principalId: "test-agent",
+      allowedScopeKeys: ["mission-test-001"],
+      allowGlobalScope: false,
+    },
+  );
   assert.equal(agentProjection.itemCount, 0);
 
   await store.update(candidateFiles[0].frontmatter.id, {
@@ -96,17 +114,39 @@ async function testLiveIngestion(): Promise<void> {
   assert.equal(promoted.frontmatter.sf_quality_state, "VALID");
   assert.equal(promoted.frontmatter.training_eligible, false);
 
-  const projectedAgentMemory = await bridge.projectForAgent("MISSION_COMPLETED");
+  const projectedAgentMemory = await bridge.projectForAgent("MISSION_COMPLETED", 12, 12000, {
+    principalId: "test-agent",
+    allowedScopeKeys: ["mission-test-001"],
+    allowGlobalScope: false,
+  });
   assert.equal(projectedAgentMemory.itemCount, 1);
 
-  const projectedAscalonBeforeAdmission = await bridge.projectForAscalon();
+  const projectedAscalonBeforeAdmission = await bridge.projectForAscalon(
+    "",
+    32,
+    24000,
+    {
+      principalId: "test-ascalon",
+      allowedScopeKeys: ["mission-test-001"],
+      allowGlobalScope: false,
+    },
+  );
   assert.equal(projectedAscalonBeforeAdmission.itemCount, 0);
 
   await store.update(promoted.frontmatter.id, {
     frontmatter: { training_eligible: true },
   });
 
-  const projectedAscalon = await bridge.projectForAscalon();
+  const projectedAscalon = await bridge.projectForAscalon(
+    "",
+    32,
+    24000,
+    {
+      principalId: "test-ascalon",
+      allowedScopeKeys: ["mission-test-001"],
+      allowGlobalScope: false,
+    },
+  );
   assert.equal(projectedAscalon.itemCount, 1);
 
   await bridge.stop();
