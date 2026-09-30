@@ -28,7 +28,8 @@
     "Initialized ProductionTrajectoryCollector and bounded trajectory evaluation on RUN_COMPLETED.",
     "Retained bounded F00 research-loop behavior and current Reach/AER mainline logic.",
     "Preserved trajectory validation/e2e coverage through reconciled test files.",
-    "Avoided reintroducing branch-only snapshots where current main already contained equivalent content."
+    "Avoided reintroducing branch-only snapshots where current main already contained equivalent content.",
+    "Published RenderFabric.loopReceipt on the F06 TASK_COMPLETED event so the trajectory collector receives the physical verification proof."
   ],
   "research": [
     "Existing ShortForge production trajectory contracts and current mainline implementation",
@@ -73,7 +74,8 @@
     "reconciliation": "COMPLETE",
     "fileLevelConflicts": "0",
     "localTests": "NOT_RE-RUN_IN_GITHUB_AGENT_ENVIRONMENT",
-    "githubCI": "PENDING"
+    "githubCI": "PENDING",
+    "trajectoryE2E": "RE-RUN_AFTER_F06_PHYSICAL_LOOP_RECEIPT_FIX"
   },
   "disposition": "PASS",
   "notes": [
