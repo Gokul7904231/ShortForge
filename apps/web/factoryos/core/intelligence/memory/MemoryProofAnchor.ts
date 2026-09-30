@@ -1,4 +1,4 @@
-import { VerificationReceiptVerifier, type VerificationReceipt } from "../verification/youtube/VerificationReceipt";
+import { VerificationReceiptVerifier, type VerificationReceipt } from "../../verification/youtube/VerificationReceipt";
 import type { MemoryGateProof } from "./MemorySemanticsContracts";
 
 export interface TrustedMemoryProofAnchor {
