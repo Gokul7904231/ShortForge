@@ -83,19 +83,19 @@ function defaultBudgetCapacity(): Partial<
   Record<DecodoBudgetCapability, number>
 > {
   return {
-    DECODO_FAST_SEARCH_BUDGET: Number(
+    DECODO_FAST_SEARCH: Number(
       process.env.DECODO_FAST_SEARCH_BUDGET || 0,
     ),
-    DECODO_WEB_STANDARD_BUDGET: Number(
+    DECODO_WEB_STANDARD: Number(
       process.env.DECODO_WEB_STANDARD_BUDGET || 0,
     ),
-    DECODO_WEB_JS_BUDGET: Number(
+    DECODO_WEB_JS: Number(
       process.env.DECODO_WEB_JS_BUDGET || 0,
     ),
-    DECODO_WEB_PREMIUM_BUDGET: Number(
+    DECODO_WEB_PREMIUM: Number(
       process.env.DECODO_WEB_PREMIUM_BUDGET || 0,
     ),
-    DECODO_WEB_PREMIUM_JS_BUDGET: Number(
+    DECODO_WEB_PREMIUM_JS: Number(
       process.env.DECODO_WEB_PREMIUM_JS_BUDGET || 0,
     ),
   };
@@ -273,7 +273,9 @@ export class ReachProviderRouter {
     const ordered: ReachProvider[] = [];
 
     const add = (provider?: ReachProvider) => {
-      if (provider && !ordered.includes(provider)) ordered.push(provider);
+      if (provider && !ordered.includes(provider)) {
+        ordered.push(provider);
+      }
     };
 
     if (mode === "PRECISION") {
