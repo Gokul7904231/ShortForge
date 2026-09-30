@@ -1,12 +1,13 @@
+import { describe, expect, it } from "vitest";
 import {
   resolveBlenderActionAgainstTools,
 } from "../../apps/web/factoryos/core/comms/BlenderMcpAdapter";
-import type { BlenderMcpToolDescriptor } from "../../apps/web/factoryos/core/comms/BlenderMcpContracts";
+import type { BlenderToolDescriptor } from "../../apps/web/factoryos/core/comms/BlenderMcpContracts";
 
-const tools = (names: string[]): BlenderMcpToolDescriptor[] =>
+const tools = (names: string[]): BlenderToolDescriptor[] =>
   names.map((name) => ({ name, description: name }));
 
-test("scene inspection resolves to the discovered inspection tool", () => {
+it("scene inspection resolves to the discovered inspection tool", () => {
   const result = resolveBlenderActionAgainstTools(
     "SCENE_INSPECT",
     tools(["get_scene_info", "execute_blender_code"]),
@@ -19,7 +20,7 @@ test("scene inspection resolves to the discovered inspection tool", () => {
   });
 });
 
-test("mutation resolves to execute_blender_code only when it is actually advertised", () => {
+it("mutation resolves to execute_blender_code only when it is actually advertised", () => {
   expect(
     resolveBlenderActionAgainstTools(
       "OBJECT_CREATE",
@@ -37,7 +38,7 @@ test("mutation resolves to execute_blender_code only when it is actually adverti
   ).toBe("execute_blender_code");
 });
 
-test("Geometry Nodes configuration never resolves to an inspection-only tool", () => {
+it("Geometry Nodes configuration never resolves to an inspection-only tool", () => {
   const result = resolveBlenderActionAgainstTools(
     "GEOMETRY_NODES_CONFIGURE",
     tools(["describe_node_type", "execute_blender_code"]),
@@ -46,7 +47,7 @@ test("Geometry Nodes configuration never resolves to an inspection-only tool", (
   expect(result.toolName).toBe("execute_blender_code");
 });
 
-test("multi-provider asset search is unresolved without provider-specific selection", () => {
+it("multi-provider asset search is unresolved without provider-specific selection", () => {
   const result = resolveBlenderActionAgainstTools(
     "ASSET_SEARCH",
     tools(["search_polyhaven_assets", "search_sketchfab_models", "search_polypizza_models"]),
@@ -56,7 +57,7 @@ test("multi-provider asset search is unresolved without provider-specific select
   expect(result.reasonCode).toBe("AMBIGUOUS_TOOL");
 });
 
-test("arbitrary Blender Python is blocked by default", () => {
+it("arbitrary Blender Python is blocked by default", () => {
   const result = resolveBlenderActionAgainstTools(
     "PYTHON_EXECUTE",
     tools(["execute_blender_code"]),
@@ -66,7 +67,7 @@ test("arbitrary Blender Python is blocked by default", () => {
   expect(result.reasonCode).toBe("PYTHON_DISABLED");
 });
 
-test("arbitrary Blender Python can resolve only when explicitly enabled", () => {
+it("arbitrary Blender Python can resolve only when explicitly enabled", () => {
   const result = resolveBlenderActionAgainstTools(
     "PYTHON_EXECUTE",
     tools(["execute_blender_code"]),

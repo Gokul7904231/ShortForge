@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR64-AER-mainline-reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/aer-mainline-final-20260930",
+  "objective": "Reconcile the AER cost-aware Ascalon admission and governed Blender execution wave onto current main without replaying stale history.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Cognition remains advisory; authority remains with Guardian/FGC/runtime gates.",
+      "Blender mutating/high-risk actions require Guardian authorization.",
+      "Raw Python remains explicitly gated.",
+      "AER cannot grant capabilities, leases, execution, publishing, or F07 authority."
+    ]
+  },
+  "changes": [
+    "AER cost-aware Ascalon admission and epistemic economics from source branch.",
+    "Governed Blender semantic capability and MCP adapter.",
+    "Current-main reconciliation preserving newer Reach, FGC and closed-loop changes.",
+    "No credentials or machine-local secrets included."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/epistemic",
+    "apps/web/factoryos/core/comms",
+    "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No secrets included; CI is final repository admission evidence."
+  },
+  "verificationPlan": [
+    "TypeScript and targeted Blender/AER tests.",
+    "Repository CI and floor gates.",
+    "Team Change Gate."
+  ],
+  "verificationResults": {
+    "githubCI": "PENDING",
+    "teamChangeGate": "PENDING",
+    "localSourceMerge": "CONTENT_RECONCILED_WITHOUT_UNRESOLVED_TEXT_CONFLICTS"
+  },
+  "conflicts": [],
+  "disposition": "PASS",
+  "notes": [
+    "This report intentionally contains no credential values."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "PENDING_MERGE"
+  }
+}

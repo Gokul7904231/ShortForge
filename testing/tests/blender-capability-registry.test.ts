@@ -1,6 +1,7 @@
+import { describe, expect, it } from "vitest";
 import { CapabilityRegistry } from "../../apps/web/factoryos/core/cognitive/CapabilityRegistry";
 
-test("Blender MCP is exposed through the canonical Capability Registry", () => {
+it("Blender MCP is exposed through the canonical Capability Registry", () => {
   const registry = new CapabilityRegistry();
   const capability = registry.get("blender.mcp");
 
@@ -12,7 +13,7 @@ test("Blender MCP is exposed through the canonical Capability Registry", () => {
   expect(capability?.policy?.auditPolicy).toBe("EVIDENCE_REQUIRED");
 });
 
-test("Blender MCP policy spans only the intended visual/rendering floors", () => {
+it("Blender MCP policy spans only the intended visual/rendering floors", () => {
   const registry = new CapabilityRegistry();
   const capability = registry.get("blender.mcp");
   expect(capability?.policy?.allowedFloors).toEqual([
