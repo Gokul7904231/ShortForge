@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CapabilityRegistry } from "../../apps/web/factoryos/core/cognitive/CapabilityRegistry";
 
-test("Blender MCP is exposed through the canonical Capability Registry", () => {
+it("Blender MCP is exposed through the canonical Capability Registry", () => {
   const registry = new CapabilityRegistry();
   const capability = registry.get("blender.mcp");
 
