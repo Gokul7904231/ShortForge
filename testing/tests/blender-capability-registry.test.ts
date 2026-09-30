@@ -13,7 +13,7 @@ it("Blender MCP is exposed through the canonical Capability Registry", () => {
   expect(capability?.policy?.auditPolicy).toBe("EVIDENCE_REQUIRED");
 });
 
-test("Blender MCP policy spans only the intended visual/rendering floors", () => {
+it("Blender MCP policy spans only the intended visual/rendering floors", () => {
   const registry = new CapabilityRegistry();
   const capability = registry.get("blender.mcp");
   expect(capability?.policy?.allowedFloors).toEqual([
