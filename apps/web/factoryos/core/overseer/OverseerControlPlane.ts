@@ -651,8 +651,6 @@ export class OverseerControlPlane {
             intent:
               researchContract?.sourcePolicy ??
               "Floor 00 evidence acquisition for the selected Content Engine.",
-            researchMode:
-              process.env.NODE_ENV === "test" ? "NORMAL" : undefined,
           },
           {
             maxIterations: 3,
@@ -1462,7 +1460,7 @@ export class OverseerControlPlane {
             3,
           policyViolations: [],
         });
-        
+
         const f07LoopReceipt: FloorClosedLoopReceipt = {
           floorId: "floor07_compliance",
           loopType: "VERIFICATION_REMEDIATION",
