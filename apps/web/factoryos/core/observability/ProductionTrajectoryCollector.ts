@@ -130,8 +130,37 @@ export class ProductionTrajectoryCollector {
     if (typeof payload.runId === "string") buffer.runId = payload.runId;
 
     if (event.topic === "TASK_COMPLETED") {
-      const observation = loopObservationFromEvent(payload) || handoffObservationFromEvent(payload);
-      if (observation) buffer.floors.set(observation.floorId, observation);
+      const observation =
+        loopObservationFromEvent(payload) || handoffObservationFromEvent(payload);
+
+      if (observation) {
+        const existing = buffer.floors.get(observation.floorId);
+        const proofRank: Record<TrajectoryProofLevel, number> = {
+          NONE: 0,
+          HANDOFF_CONTRACT: 1,
+          LOOP_RECEIPT: 2,
+          RUNTIME_CLOSURE: 3,
+          PHYSICAL_VERIFICATION: 4,
+        };
+
+        const shouldReplace =
+          !existing ||
+          proofRank[observation.proofLevel] > proofRank[existing.proofLevel] ||
+          (
+            proofRank[observation.proofLevel] === proofRank[existing.proofLevel] &&
+            observation.verified &&
+            !existing.verified
+          ) ||
+          (
+            proofRank[observation.proofLevel] === proofRank[existing.proofLevel] &&
+            observation.verified === existing.verified &&
+            observation.evidenceRefs.length > existing.evidenceRefs.length
+          );
+
+        if (shouldReplace) {
+          buffer.floors.set(observation.floorId, observation);
+        }
+      }
     }
 
     if (
