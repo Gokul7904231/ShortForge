@@ -107,7 +107,7 @@ function sanitizeHtmlToText(html: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -276,7 +276,7 @@ export class DecodoFastSearchProvider implements ReachProvider {
         method: "POST",
         headers: authHeader(this.auth, this.authScheme),
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(12000),
       });
 
       if (!response.ok) {
@@ -407,7 +407,7 @@ export class DecodoWebScrapingProvider implements ReachProvider {
         method: "POST",
         headers: authHeader(this.auth, this.authScheme),
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!response.ok) {
