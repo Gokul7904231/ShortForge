@@ -27,6 +27,37 @@ export class LeaseManager {
     await this.repository.releaseLease(taskId, agentId);
   }
 
+  /**
+   * Fenced release: mutate the worker lease only when the observed
+   * lease generation still matches.
+   */
+  async releaseFenced(
+    taskId: string,
+    agentId: string,
+    expectedFencingToken: number
+  ): Promise<boolean> {
+    if (this.repository.releaseLeaseIfFenced) {
+      return this.repository.releaseLeaseIfFenced(
+        taskId,
+        agentId,
+        expectedFencingToken,
+      );
+    }
+
+    const current = await this.repository.getLease(taskId);
+    if (
+      !current ||
+      current.ownerAgentId !== agentId ||
+      current.status !== "ACTIVE" ||
+      current.fencingToken !== expectedFencingToken
+    ) {
+      return false;
+    }
+
+    await this.repository.releaseLease(taskId, agentId);
+    return true;
+  }
+
   async getLease(taskId: string): Promise<TaskLease | null> {
     return this.repository.getLease(taskId);
   }
