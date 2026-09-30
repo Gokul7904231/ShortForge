@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { EvidenceSource } from "../contracts/ResearchPassportContracts";
 import {
   ReachResearchCache,
+  canonicalizeSourceUrl,
   deduplicateEvidenceSources,
 } from "./ReachCache";
 import {
@@ -79,26 +80,105 @@ function providerSupports(
   return provider.capabilities.includes(capability);
 }
 
+function budgetFromEnv(
+  explicitBudgetEnv: string,
+  credentialEnv: string,
+): number {
+  const explicitRaw = process.env[explicitBudgetEnv]?.trim();
+
+  if (explicitRaw) {
+    const explicit = Number(explicitRaw);
+    if (Number.isFinite(explicit) && explicit >= 0) {
+      return explicit;
+    }
+  }
+
+  return process.env[credentialEnv]?.trim() ? 100 : 0;
+}
+
 function defaultBudgetCapacity(): Partial<
   Record<DecodoBudgetCapability, number>
 > {
   return {
-    DECODO_FAST_SEARCH: Number(
-      process.env.DECODO_FAST_SEARCH_BUDGET || 0,
+    DECODO_FAST_SEARCH: budgetFromEnv(
+      "DECODO_FAST_SEARCH_BUDGET",
+      "DECODO_FAST_SEARCH_API_KEY",
     ),
-    DECODO_WEB_STANDARD: Number(
-      process.env.DECODO_WEB_STANDARD_BUDGET || 0,
+    DECODO_WEB_STANDARD: budgetFromEnv(
+      "DECODO_WEB_STANDARD_BUDGET",
+      "DECODO_WEB_SCRAPING_API_KEY",
     ),
-    DECODO_WEB_JS: Number(
-      process.env.DECODO_WEB_JS_BUDGET || 0,
+    DECODO_WEB_JS: budgetFromEnv(
+      "DECODO_WEB_JS_BUDGET",
+      "DECODO_WEB_SCRAPING_API_KEY",
     ),
-    DECODO_WEB_PREMIUM: Number(
-      process.env.DECODO_WEB_PREMIUM_BUDGET || 0,
+    DECODO_WEB_PREMIUM: budgetFromEnv(
+      "DECODO_WEB_PREMIUM_BUDGET",
+      "DECODO_WEB_SCRAPING_API_KEY",
     ),
-    DECODO_WEB_PREMIUM_JS: Number(
-      process.env.DECODO_WEB_PREMIUM_JS_BUDGET || 0,
+    DECODO_WEB_PREMIUM_JS: budgetFromEnv(
+      "DECODO_WEB_PREMIUM_JS_BUDGET",
+      "DECODO_WEB_SCRAPING_API_KEY",
     ),
   };
+}
+
+function mergeDeepEvidenceSources(
+  baseline: readonly EvidenceSource[],
+  enriched: readonly EvidenceSource[],
+): EvidenceSource[] {
+  const byUrl = new Map<string, EvidenceSource>();
+
+  for (const source of baseline) {
+    byUrl.set(canonicalizeSourceUrl(source.url), source);
+  }
+
+  for (const source of enriched) {
+    const key = canonicalizeSourceUrl(source.url);
+    const existing = byUrl.get(key);
+
+    if (
+      !existing ||
+      source.extractionMethod === "HTTP_SCRAPE"
+    ) {
+      byUrl.set(key, source);
+    }
+  }
+
+  return deduplicateEvidenceSources([...byUrl.values()]);
+}
+
+function capCorroborationSources(
+  sources: readonly EvidenceSource[],
+  target: number,
+): EvidenceSource[] {
+  const deduped = deduplicateEvidenceSources(sources);
+  if (deduped.length <= target) return deduped;
+
+  const selected: EvidenceSource[] = [];
+  const selectedIds = new Set<string>();
+
+  const add = (source?: EvidenceSource) => {
+    if (!source || selected.length >= target) return;
+    if (selectedIds.has(source.id)) return;
+    selectedIds.add(source.id);
+    selected.push(source);
+  };
+
+  const providers = [
+    ...new Set(deduped.map((source) => source.provider).filter(Boolean)),
+  ];
+
+  for (const provider of providers) {
+    add(deduped.find((source) => source.provider === provider));
+  }
+
+  for (const source of deduped) {
+    add(source);
+    if (selected.length >= target) break;
+  }
+
+  return selected;
 }
 
 function budgetForProvider(
@@ -565,7 +645,14 @@ export class ReachProviderRouter {
           mode === "CORROBORATION" &&
           providersUsed.length >= 2
         ) {
-          collected.splice(0, collected.length, ...deduped);
+          collected.splice(
+            0,
+            collected.length,
+            ...capCorroborationSources(
+              deduped,
+              Math.min(target, Math.max(needed, providersUsed.length)),
+            ),
+          );
           break;
         }
       } catch (error) {
@@ -618,15 +705,19 @@ export class ReachProviderRouter {
           );
 
           if (retrieved) {
-            collected.push(...retrieved.sources);
+            dedupedSources = mergeDeepEvidenceSources(
+              dedupedSources,
+              retrieved.sources,
+            );
           }
         }
-
-        dedupedSources = deduplicateEvidenceSources(collected);
       }
     }
 
-    dedupedSources = dedupedSources.slice(0, target);
+    dedupedSources =
+      mode === "CORROBORATION"
+        ? capCorroborationSources(dedupedSources, target)
+        : dedupedSources.slice(0, target);
     this.cache.set(request, renderedQuery, dedupedSources);
 
     return {
