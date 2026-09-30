@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR63-AER-Fingerprint-Stability",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/epistemic-logical-fingerprint-stability",
+  "objective": "Restore deterministic logical-state fingerprints by excluding only volatile usage.elapsedMs from the fingerprint projection.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Epistemic fingerprints represent logical state, not wall-clock timing.",
+      "No authority boundary or capability is granted by this fix."
+    ]
+  },
+  "changes": [
+    "computeFingerprint now clones object state and excludes usage.elapsedMs before hashing.",
+    "Non-object inputs preserve existing fingerprint behavior."
+  ],
+  "security": {
+    "required": true,
+    "status": "PASS",
+    "notes": "No secrets, endpoints, or authorization behavior changed."
+  },
+  "verificationPlan": [
+    "Run Team Change Gate and repository CI.",
+    "Merge only after required blocking checks are green."
+  ],
+  "verificationResults": {
+    "localTest": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "githubCI": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "No credentials are included."
+  ],
+  "forgerStatus": "IMPLEMENTED",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_GITHUB_VALIDATION",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": []
+}
