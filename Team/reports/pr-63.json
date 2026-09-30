@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "fix/epistemic-logical-fingerprint-stability",
   "objective": "Restore deterministic logical-state fingerprints by excluding only volatile usage.elapsedMs from the fingerprint projection.",
-  "classification": "bugfix",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -33,5 +33,14 @@
   "disposition": "PASS",
   "notes": [
     "No credentials are included."
-  ]
+  ],
+  "forgerStatus": "IMPLEMENTED",
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_GITHUB_VALIDATION",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": []
 }
