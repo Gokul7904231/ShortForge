@@ -95,21 +95,39 @@ function readResults(data: any): Record<string, unknown>[] {
   return [];
 }
 
+function sanitizeHtmlToText(html: string): string {
+  return html
+    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\\s+/g, " ")
+    .trim();
+}
+
 function extractPageText(data: any): string {
   const candidates = [
-    data?.content,
-    data?.markdown,
-    data?.html,
-    data?.results?.[0]?.content,
-    data?.results?.[0]?.markdown,
-    data?.results?.[0]?.html,
-    data?.results?.[0]?.content?.markdown,
-    data?.results?.[0]?.content?.html,
+    { value: data?.content, html: false },
+    { value: data?.markdown, html: false },
+    { value: data?.html, html: true },
+    { value: data?.results?.[0]?.content, html: false },
+    { value: data?.results?.[0]?.markdown, html: false },
+    { value: data?.results?.[0]?.html, html: true },
+    { value: data?.results?.[0]?.content?.markdown, html: false },
+    { value: data?.results?.[0]?.content?.html, html: true },
   ];
 
-  for (const value of candidates) {
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
+  for (const candidate of candidates) {
+    if (typeof candidate.value === "string" && candidate.value.trim()) {
+      return candidate.html
+        ? sanitizeHtmlToText(candidate.value)
+        : candidate.value.trim();
     }
   }
 
@@ -314,6 +332,7 @@ export class DecodoWebScrapingProvider implements ReachProvider {
   private readonly auth: string;
   private readonly proxyPool: "standard" | "premium";
   private readonly headless: "html" | "none";
+  private readonly authScheme: "Basic" | "Bearer";
 
   constructor(
     endpoint =
