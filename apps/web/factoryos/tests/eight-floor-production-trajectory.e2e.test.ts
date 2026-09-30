@@ -114,7 +114,7 @@ describe("True eight-floor single-mission production trajectory", () => {
       const fixture = await startSearchFixture();
       searchFixture = fixture.server;
       process.env.SEARCH_API_URL = fixture.url;
-      process.env.SEARXNG_BASE_URL = fixture.url;
+      process.env.SEARXNG_BASE_URL = fixture.url.replace(/\/search$/, "");
 
       console.log("[E2E] phase=construct-controller");
       controller = new AutonomousFactoryController({
