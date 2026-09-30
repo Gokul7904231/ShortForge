@@ -190,7 +190,20 @@ export class EpistemicStateEngine {
   }
 
   public computeFingerprint(state: unknown): string {
-    return fingerprint(state);
+    if (!state || typeof state !== "object" || Array.isArray(state)) {
+      return fingerprint(state);
+    }
+
+    const logicalState = structuredClone(state as Record<string, unknown>);
+    const usage = logicalState.usage;
+
+    if (usage && typeof usage === "object" && !Array.isArray(usage)) {
+      const logicalUsage = { ...(usage as Record<string, unknown>) };
+      delete logicalUsage.elapsedMs;
+      logicalState.usage = logicalUsage;
+    }
+
+    return fingerprint(logicalState);
   }
 
   public validateModelSupport(value: number): void {
