@@ -94,6 +94,10 @@ function envArgs(env = process.env): readonly string[] {
 }
 
 export function readBlenderMcpConfig(env = process.env): BlenderMcpAdapterConfig {
+  const production = env.NODE_ENV === "production";
+  const safeMode = production ? "1" : (env.BLENDER_MCP_SAFE_MODE || "1");
+  const disableTelemetry = production ? "true" : (env.DISABLE_TELEMETRY || "true");
+
   return {
     enabled: env.BLENDER_MCP_ENABLED === "true",
     command: env.BLENDER_MCP_COMMAND || DEFAULT_MCP_COMMAND,
@@ -102,8 +106,8 @@ export function readBlenderMcpConfig(env = process.env): BlenderMcpAdapterConfig
     env: {
       BLENDER_HOST: env.BLENDER_HOST || "localhost",
       BLENDER_PORT: env.BLENDER_PORT || "9876",
-      BLENDER_MCP_SAFE_MODE: env.BLENDER_MCP_SAFE_MODE || "1",
-      DISABLE_TELEMETRY: env.DISABLE_TELEMETRY || "true",
+      BLENDER_MCP_SAFE_MODE: safeMode,
+      DISABLE_TELEMETRY: disableTelemetry,
     },
     protocolVersion: env.BLENDER_MCP_PROTOCOL_VERSION || DEFAULT_MCP_PROTOCOL_VERSION,
     requestTimeoutMs: Number(env.BLENDER_MCP_REQUEST_TIMEOUT_MS || DEFAULT_REQUEST_TIMEOUT_MS),
@@ -284,6 +288,43 @@ export class BlenderMcpAdapter {
     }
   }
 
+  public async probe(): Promise<{ healthy: boolean; addonStatus?: unknown; sceneObserved?: boolean; reason?: string }> {
+    try {
+      const snapshot = await this.connect();
+      let addonStatus: unknown;
+      let sceneObserved = false;
+
+      if (snapshot.tools.some((tool) => tool.name === "get_addon_status")) {
+        const result = await this.request("tools/call", {
+          name: "get_addon_status",
+          arguments: {},
+        });
+        addonStatus = result.result || result.error || null;
+      }
+
+      if (snapshot.tools.some((tool) => tool.name === "get_scene_info")) {
+        const result = await this.request("tools/call", {
+          name: "get_scene_info",
+          arguments: {},
+        });
+        sceneObserved = !Boolean(result.result?.isError) && !result.error;
+      }
+
+      return {
+        healthy: Boolean(sceneObserved),
+        addonStatus,
+        sceneObserved,
+        reason: sceneObserved ? undefined : "Required Blender scene inspection did not complete",
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        sceneObserved: false,
+        reason: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
   public async disconnect(): Promise<void> {
     this.connected = false;
     this.failAllPending(new Error("Blender MCP connection closed"));
@@ -427,6 +468,17 @@ export class BlenderMcpAdapter {
       action: request.action,
       toolName,
       requestDigestSha256,
+      capabilitySnapshotDigestSha256: sha256({
+        protocolVersion: snapshot.protocolVersion,
+        serverName: snapshot.serverName,
+        serverVersion: snapshot.serverVersion,
+        tools: snapshot.tools.map((tool) => ({
+          name: tool.name,
+          inputSchema: tool.inputSchema,
+        })),
+      }),
+      runtimeProtocolVersion: snapshot.protocolVersion,
+      runtimeServerVersion: snapshot.serverVersion,
       startedAt,
       completedAt,
       durationMs,
