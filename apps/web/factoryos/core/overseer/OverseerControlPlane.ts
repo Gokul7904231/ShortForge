@@ -425,7 +425,7 @@ export class OverseerControlPlane {
         dagId: completedDag.dagId,
         dagStatus: completedDag.status,
       };
-      run.status = "running";
+      run.status = completedDag.status === "COMPLETED" ? "completed" : "failed";
     } else {
       run.status = completedDag.status === "COMPLETED" ? "completed" : "failed";
       run.result = {
