@@ -187,6 +187,7 @@ export class OverseerControlPlane {
             canonicalFloorCount: trajectory.canonicalFloorCount,
             totalIterations: trajectory.totalIterations,
             recoveredIterations: trajectory.recoveredIterations,
+            floors: trajectory.floors,
             evidenceRefs: trajectory.evidenceRefs,
             finalOutcome: trajectory.finalOutcome,
             trainingEligible: trajectory.trainingEligible,
