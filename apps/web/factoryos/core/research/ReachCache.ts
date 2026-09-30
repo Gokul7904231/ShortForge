@@ -40,6 +40,7 @@ export class ReachResearchCache {
       engineId: request.engineId,
       queryKind: request.queryKind,
       renderedQuery,
+      mode: request.mode ?? "INFERRED",
       parameters,
       freshness: request.researchContract.freshness ?? "any",
     });
