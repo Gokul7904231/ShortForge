@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR59-Reach-Decodo-Key-Separation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/reach-decodo-key-separation-hardening",
+  "objective": "Land the locally validated Reach provider hardening with capability-scoped Decodo credentials, current Web Scraping API routing, SearXNG discovery, bounded budget handling, multi-provider corroboration, and deep retrieval enrichment.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Reach is provider-independent; retrieval providers are replaceable resources.",
+      "F00 remains the evidence verification authority.",
+      "Decodo credentials must be isolated by provider capability and never committed.",
+      "CORROBORATION must preserve multi-provider evidence provenance.",
+      "DEEP retrieval may enrich an already-discovered source without being suppressed by URL deduplication."
+    ]
+  },
+  "forensicFindings": [
+    "The merged Reach provider fabric still read a legacy DECODO_BASIC_AUTH for both Decodo Fast Search and Web Scraping.",
+    "The current local integration uses separate Fast Search and Web Scraping credentials successfully.",
+    "Deep scrape enrichment could be lost when URL deduplication retained the initial search candidate.",
+    "Bounded CORROBORATION output could favor the first provider when source caps were applied.",
+    "The Web Scraping integration needed to align with the current v2 endpoint and avoid sending a none-valued headless field."
+  ],
+  "changes": [
+    "Fast Search now reads DECODO_FAST_SEARCH_API_KEY only.",
+    "Web Scraping now reads DECODO_WEB_SCRAPING_API_KEY only.",
+    "Optional Basic/Bearer auth scheme overrides are provider-scoped.",
+    "Web Scraping defaults to https://scraper-api.decodo.com/v2/scrape and omits headless when disabled.",
+    "SearXNG timeout increased to 10 seconds; Decodo Fast Search to 12 seconds; Web Scraping to 15 seconds.",
+    "HTML scrape output is sanitized before downstream text extraction.",
+    "Router initializes a bounded 100-operation development allowance when a Decodo credential is configured and no explicit budget is supplied.",
+    "Deep retrieval replaces an existing same-URL search candidate with HTTP_SCRAPE evidence so enrichment is retained.",
+    "CORROBORATION source capping preserves representation from each successful provider when possible.",
+    "Added a unit test proving Fast Search and Web Scraping use separate credentials."
+  ],
+  "research": [
+    "SearXNG search API and container deployment documentation",
+    "Decodo Fast Search API and Web Scraping API documentation",
+    "Existing ShortForge Reach contract, cache, budget, and provenance architecture"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_LIBRARY-BOUNDARY_CHANGE",
+    "notes": "No real credentials are committed. Provider credentials are read only from environment variables. CI remains the final repository security admission evidence."
+  },
+  "trainingReadiness": {
+    "reachProviderFabric": "LOCAL_LIVE_VALIDATED",
+    "ascalon": "UNCHANGED / PROPOSAL_LEARNING_BOUNDARY",
+    "authority": "F00 verification boundary unchanged"
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/research/ReachProviders.ts",
+    "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+    "apps/web/factoryos/tests/reach-provider-fabric.test.ts",
+    ".okf/research/reach.md",
+    "apps/web/.env.render.production.example"
+  ],
+  "verificationPlan": [
+    "Run repository CI and relevant FactoryOS tests.",
+    "Run Team Change Gate.",
+    "Confirm the blocking GitHub Actions lanes are green on this PR head.",
+    "Merge only after required blocking CI lanes are green."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "localLive": {
+      "searxng": "HTTP 200",
+      "decodoFastSearch": "HTTP 200",
+      "decodoWebScraping": "HTTP 200",
+      "normal": "VALIDATED",
+      "precision": "VALIDATED",
+      "corroboration": "VALIDATED",
+      "deep": "VALIDATED"
+    },
+    "localTypecheck": "PASS",
+    "localReachProviderTests": "12/12 PASS",
+    "githubCI": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "This report deliberately contains no credential values.",
+    "Local live validation was performed against the user's configured environment; GitHub Actions provides the repository-level merge gate."
+  ]
+}
