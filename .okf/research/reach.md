@@ -1,125 +1,86 @@
-# Research: Reach Engine & AgentReach Boundary
+# Research: Reach Provider Fabric
 
-> **Status**: CANONICAL / IMPLEMENTATION-ALIGNED / CONTRACT-GATED  
-> **Current implementation**: `apps/web/factoryos/core/research/ReachSubsystem.ts` and `apps/web/factoryos/core/integrations/AgentReachAdapter.ts`
+> Status: CANONICAL / IMPLEMENTATION-ALIGNED / CONTRACT-GATED
+> Scope: Floor 00 external research acquisition
 
-## 1. Current boundary
+## 1. Core invariant
 
-Reach is an external-information acquisition subsystem.
+Reach is the permanent research capability; retrieval providers are replaceable resources.
 
-Current supported paths are:
+Content Engine Contract -> F00 Research -> Reach Gate -> Cache -> Provider Router -> Evidence Intake -> F00 Verification -> Research Passport.
 
-1. **Direct URL** → `LightpandaBrowserAdapter.navigateAndExtract()`
-2. **Query** → configured `SEARCH_API_URL`
-3. **No configured query provider** → empty evidence result
-4. **Test** → injected `ReachTestProvider`
+Ascalon requests research intent but does not select retrieval providers.
 
-The query path is now **hard-bound to a Content Engine-specific research contract**.
+## 2. Provider roles
 
-Production Reach accepts no arbitrary query string. F00 must provide:
-- selected `engineId`;
-- engine-declared `queryKind`;
-- engine-owned `queryTemplate` from the research contract;
-- only parameters declared by that query rule.
+### SearXNG
+Default low-cost/open-source discovery provider. It is a discovery layer, not an unlimited guarantee: upstream search engines can throttle, block, or become unavailable.
 
-Reach renders the provider-facing query itself. Direct URL retrieval is no longer part of the production research acquisition path.
+### Decodo Fast Search
+Quota-governed structured search for precision/current research or fallback when baseline acquisition is insufficient.
 
-The enforced architecture is:
+### Decodo Web Scraping
+Quota-governed deep retrieval for a URL already discovered by Reach. It is not an arbitrary caller-controlled URL capability.
 
-```text
-Content Engine Research Contract
-        ↓
-F00 Research Specification
-        ↓
-AgentReach query plan
-        ↓
-ReachSubsystem
-        ↓
-EvidenceSource[]
-```
+## 3. Research modes
 
-## 2. Honest failure semantics
+NORMAL: SearXNG first; Decodo fallback.
+PRECISION: Decodo Fast Search first; SearXNG fallback.
+DEEP: baseline search, then Decodo Web Scraping for selected discovered sources.
+CORROBORATION: query SearXNG and Decodo independently, then deduplicate before counting evidence sources.
 
-The current implementation intentionally fails closed:
+Default inference: TOPIC_SCAN -> NORMAL; FACT_CHECK/TREND_SCAN/COMPETITOR_SCAN -> PRECISION. F00 may explicitly request a mode.
 
-- empty AgentReach query → `NO_EVIDENCE`;
-- failed query provider → no fabricated sources;
-- direct URL retrieval failure → explicit unavailable source state;
-- AgentReach only exposes online sources as usable findings;
-- no synthetic placeholder URLs are created.
+## 4. Cache boundary
 
-One important distinction is preserved:
+Cache is consulted before provider calls.
+Identity binds engine, query kind, rendered engine-owned query, declared parameters, freshness, and research mode.
+Cache is an acquisition optimization, not a proof of truth.
 
-**Reach may expose an unavailable retrieval record for diagnostics; ResearchRuntime removes unavailable/unreachable records before treating sources as evidence.**
+## 5. Decodo budget boundary
 
-## 3. Current data integrity
+Separate ledgers exist for:
+- DECODO_FAST_SEARCH
+- DECODO_WEB_STANDARD
+- DECODO_WEB_JS
+- DECODO_WEB_PREMIUM
+- DECODO_WEB_PREMIUM_JS
 
-An `EvidenceSource` contains:
+A Decodo operation reserves quota before the network call, commits on completion, and releases on failure.
+Vendor quotas are configuration, not hard-coded truth.
 
-- source ID;
-- URL;
-- title;
-- publisher when known;
-- retrieval timestamp;
-- extraction method;
-- snippet;
-- reliability score;
-- optional content hash;
-- source status and quality.
+Before multi-instance production, the budget governor must be backed by a shared durable store so reservations remain atomic across workers.
 
-The current implementation does **not** independently verify the truth of an HTTP response merely because the transport succeeded.
+## 6. Reliability boundary
 
-## 4. Current vs target
+Provider calls have bounded timeouts, bounded retry, exponential backoff, circuit breaking, health state, and fallback.
+Provider failure must not become Reach failure.
 
-| Dimension | Current | Target |
-|---|---|---|
-| URL browser | Lightpanda adapter | Expanded browser/provider fleet |
-| Search | `SEARCH_API_URL` | Engine-specific research plans over multiple providers |
-| Query authorization | Previously generic | **Required Content Engine query rule + engine profile binding** |
-| Query construction | Caller supplied raw query | **Reach renders from engine-owned template** |
-| Direct URLs | Supported by old Reach path | **Not accepted in production research acquisition** |
-| Source truth | Transport + normalized metadata | Source-specific verification and corroboration |
-| Social intelligence | Not a dedicated direct platform scraper | Engine-specific platform adapters |
-| AgentReach contract | Generic query/domain/maxSources | Research-contract-driven bounded query plans |
-| Failure semantics | Fail closed / no synthetic sources | Same invariant with richer diagnostics |
+## 7. Evidence/provenance
 
-## 5. Governance invariant
+Each normalized source can retain provider, provider request ID, rendered query, URL, retrieval timestamp, extraction method, content hash, and status.
+Provider output is candidate evidence only. F00 remains responsible for verification/corroboration.
 
-AgentReach is an information-acquisition capability. It cannot:
+## 8. Security boundary
 
-- invent evidence;
-- authorize content;
-- bypass F00;
-- bypass .okf policy;
-- grant worker capabilities;
-- override F07.
+Production Reach fails closed for missing or invalid Content Engine contracts, unauthorized caller floors, undeclared query kinds/parameters/templates, and arbitrary legacy AgentReach queries.
 
+## 9. Configuration
 
-## 6. Contract-gate invariants
+SEARXNG_BASE_URL
+DECODO_BASIC_AUTH
+DECODO_FAST_SEARCH_URL
+DECODO_WEB_API_URL
+DECODO_WEB_PROXY_POOL
+DECODO_WEB_HEADLESS
+DECODO_FAST_SEARCH_BUDGET
+DECODO_WEB_STANDARD_BUDGET
+DECODO_WEB_JS_BUDGET
+DECODO_WEB_PREMIUM_BUDGET
+DECODO_WEB_PREMIUM_JS_BUDGET
 
-The production boundary now fails closed when:
-- a Content Engine research contract is missing;
-- the contract is not marked `required`;
-- `agentReachProfile` does not exactly match `engine:<engineId>`;
-- the query kind is not declared by the selected engine;
-- the query template contains undeclared parameters;
-- a required query parameter is missing;
-- the caller is not `floor00_analyst`.
+Secrets must not be committed.
 
-The legacy `AgentReachAdapter.searchExternalKnowledge(query)` surface remains only as a compatibility signature and returns `NO_EVIDENCE` with `REACH_ENGINE_CONTRACT_REQUIRED`; it no longer executes arbitrary research.
+## 10. Implementation invariant
 
-## 7. Current Content Engine query model
-
-A Content Engine research contract declares query operations such as:
-
-```text
-engine:quiz
-├── TOPIC_SCAN
-├── FACT_CHECK
-├── TREND_SCAN
-└── COMPETITOR_SCAN
-```
-
-Each operation owns its provider-facing template. F00 selects the operation from its bounded methodology mapping; Reach performs the rendering and acquisition.
-
-This preserves flexibility through multiple engine-defined operations while keeping the network boundary deterministic and auditable.
+F00 owns research judgment; Reach owns information acquisition; SearXNG provides default discovery; Decodo provides quota-governed specialized acquisition; and no retrieval provider certifies truth.
