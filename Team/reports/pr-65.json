@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR65-Slayer-Prime-Mainline-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/slayer-prime-mainline-final-20260930",
+  "objective": "Land the Slayer Prime enforcement control plane onto current mainline through a clean three-way reconciliation.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Guardian/Human authorization remains the authority boundary.",
+      "Prime cannot invent unsupported physical actions or bypass floor authority.",
+      "Action lease and leadership epochs provide stale-writer protection.",
+      "Durable state is the recovery source, not model cognition."
+    ]
+  },
+  "changes": [
+    "Slayer Prime typed contracts and enforcement engine.",
+    "Action leases, evidence quorum, deterministic intent dedupe and epoch fencing.",
+    "Durable state-store implementations and hardening tests.",
+    "Current-mainline reconciliation preserving newer runtime changes."
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No secrets included; required repository CI remains the admission gate."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/slayers/prime",
+    "apps/web/factoryos/core/contracts/SlayerPrimeContracts.ts"
+  ],
+  "verificationPlan": [
+    "Run repository CI and Prime tests.",
+    "Run Team Change Gate.",
+    "Merge only after required blocking lanes are green."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "githubCI": "PENDING",
+    "teamChangeGate": "PENDING",
+    "mergeReconciliation": "NO_UNRESOLVED_CONTENT_CONFLICTS"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "No credentials or local machine paths are included."
+  ]
+}
