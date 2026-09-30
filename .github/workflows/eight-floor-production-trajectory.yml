@@ -80,6 +80,9 @@ jobs:
             export FLOOR02_ENV=test
             export FLOOR02_API_KEY="${F02_KEY}"
             export FLOOR02_MEMORY_PATH="${RUNNER_TEMP}/floor02-memory.json"
+            # CI trajectory proof must not accidentally inherit a real model credential.
+            # This keeps F02 on its bounded deterministic fallback path in test mode.
+            unset FLOOR02_LLM_API_KEY OPENAI_API_KEY GEMINI_API_KEY FLOOR02_LLM_BASE_URL DEFAULT_LLM_BASE_URL
             export FLOOR02_EXECUTION_REPORT_PATH="${RUNNER_TEMP}/floor02-reports"
             cd services/pipeline/floor02_scripting
             python -m uvicorn main:app --host 127.0.0.1 --port 8102               >"${RUNNER_TEMP}/shortforge-trajectory/f02.log" 2>&1
