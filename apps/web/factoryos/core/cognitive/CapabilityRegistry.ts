@@ -24,6 +24,7 @@ export class CapabilityRegistry {
   private static instance?: CapabilityRegistry;
   private capabilities: Map<string, CapabilityMetadata> = new Map();
   private handlers: Map<string, CapabilityHandler<any, any>> = new Map();
+  private readonly blenderMcpAdapter = new BlenderMcpAdapter();
 
   constructor() {
     this.registerDefaults();
@@ -1146,8 +1147,7 @@ export class CapabilityRegistry {
         }
 
         try {
-          const adapter = new BlenderMcpAdapter();
-          const observation = await adapter.execute({
+          const observation = await this.blenderMcpAdapter.execute({
             missionId: req.missionId,
             jobId: req.jobId,
             floorId: req.floorId || "floor06_rendering",
@@ -1167,7 +1167,7 @@ export class CapabilityRegistry {
             ],
             outputData: {
               observation,
-              blenderMcpStatus: adapter.status(),
+              blenderMcpStatus: this.blenderMcpAdapter.status(),
             },
             durationMs: observation.durationMs,
           };
