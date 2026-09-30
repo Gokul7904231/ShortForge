@@ -7,7 +7,12 @@ on:
       - "services/pipeline/floor04_media_synthesis/**"
       - "services/pipeline/floor05_timeline_composition/**"
       - "services/pipeline/floor06_rendering/**"
+      - "services/pipeline/guardian/floors/floor01_guardian.py"
+      - "services/pipeline/guardian/floors/floor02_guardian.py"
+      - "services/pipeline/guardian/floors/floor03_guardian.py"
+      - "services/pipeline/guardian/floors/floor04_guardian.py"
       - "services/pipeline/guardian/floors/floor05_guardian.py"
+      - "services/pipeline/tests/test_production_trajectory_guardian_drill.py"
       - "training/ascalon/ontology/capabilities.json"
       - ".okf/**"
       - "Team/reports/**"
@@ -69,6 +74,12 @@ jobs:
           assert cap["riskClass"] == "MEDIUM"
           print("Ascalon F05 execution capability gate: PASS")
           PY
+
+      - name: Run real F01-F05 Guardian trajectory drill
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline:${{ github.workspace }}/services/pipeline/floor01_strategy:${{ github.workspace }}/apps/web
+        run: |
+          python -m pytest services/pipeline/tests/test_production_trajectory_guardian_drill.py -q
 
       - name: Run Floor 05 tests
         env:

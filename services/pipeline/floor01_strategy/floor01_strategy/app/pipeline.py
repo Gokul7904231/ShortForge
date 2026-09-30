@@ -433,7 +433,7 @@ class Floor01Pipeline:
                     if selected_candidate.model_generated
                     else ExecutionMode.DETERMINISTIC_FALLBACK
                 ),
-                research_context=inp.research_context,
+                research_context=inp.research_context.model_dump() if inp.research_context else None,
                 topic=topic_res,
                 strategy=selected_candidate.strategy,
                 content_plan=content_res,

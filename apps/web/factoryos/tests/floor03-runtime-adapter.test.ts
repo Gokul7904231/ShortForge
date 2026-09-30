@@ -14,7 +14,7 @@ describe("Floor03RuntimeAdapter", () => {
           script_ir: { schema_version: "2.0" },
         },
       })
-    ).rejects.toThrow("canonical Python Floor 03 runtime is not configured");
+    ).rejects.toThrow("Canonical Python Floor 03 runtime is not configured.");
   });
 
   it("accepts only a validated AssetPlanIR 1.4.0 response", async () => {

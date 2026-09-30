@@ -245,29 +245,35 @@ describe("ShortForge / FactoryOS — Architectural Convergence & Production DAG"
     });
   });
 
-  describe("5. 6-Floor Task DAG Planner", () => {
-    it("creates the authoritative 6-floor DAG with correct dependency chains", () => {
+  describe("5. Canonical Eight-Floor Task DAG Planner", () => {
+    it("creates the canonical eight-floor DAG with correct dependency chains", () => {
       const planner = new TaskDAGPlanner();
-      const dag = planner.createSixFloorProductionDAG("goal_generate_short");
+      const dag = planner.createEightFloorProductionDAG("goal_generate_short");
 
       const nodeKeys = Object.keys(dag.nodes);
-      expect(nodeKeys).toHaveLength(6);
+      expect(nodeKeys).toHaveLength(8);
       expect(nodeKeys).toEqual([
-        "task_f01_strategy",
-        "task_f02_scripting",
-        "task_f03_asset_realization",
-        "task_f04_media_synthesis",
-        "task_f05_timeline_composition",
-        "task_f06_rendering",
+        "task_floor00_analyst",
+        "task_floor01_strategy",
+        "task_floor02_scripting",
+        "task_floor03_asset_realization",
+        "task_floor04_media_synthesis",
+        "task_floor05_timeline_composition",
+        "task_floor06_rendering",
+        "task_floor07_compliance",
       ]);
 
-      // Verify dependencies
-      expect(dag.nodes["task_f01_strategy"].dependencies).toEqual([]);
-      expect(dag.nodes["task_f02_scripting"].dependencies).toEqual(["task_f01_strategy"]);
-      expect(dag.nodes["task_f03_asset_realization"].dependencies).toEqual(["task_f02_scripting"]);
-      expect(dag.nodes["task_f04_media_synthesis"].dependencies).toEqual(["task_f03_asset_realization"]);
-      expect(dag.nodes["task_f05_timeline_composition"].dependencies).toEqual(["task_f04_media_synthesis"]);
-      expect(dag.nodes["task_f06_rendering"].dependencies).toEqual(["task_f05_timeline_composition"]);
+      expect(dag.nodes["task_floor00_analyst"].dependencies).toEqual([]);
+      expect(dag.nodes["task_floor01_strategy"].dependencies).toEqual(["task_floor00_analyst"]);
+      expect(dag.nodes["task_floor02_scripting"].dependencies).toEqual(["task_floor01_strategy"]);
+      expect(dag.nodes["task_floor03_asset_realization"].dependencies).toEqual(["task_floor02_scripting"]);
+      expect(dag.nodes["task_floor04_media_synthesis"].dependencies).toEqual(["task_floor02_scripting"]);
+      expect(dag.nodes["task_floor05_timeline_composition"].dependencies).toEqual([
+        "task_floor03_asset_realization",
+        "task_floor04_media_synthesis",
+      ]);
+      expect(dag.nodes["task_floor06_rendering"].dependencies).toEqual(["task_floor05_timeline_composition"]);
+      expect(dag.nodes["task_floor07_compliance"].dependencies).toEqual(["task_floor06_rendering"]);
     });
   });
 

@@ -470,6 +470,7 @@ export class ResearchRuntime {
         ...result.output.report.passport.sources.map((source) => source.url),
         result.output.report.passport.passportId,
       ],
+      proofSource: "RUNTIME",
       failureReason:
         result.termination === "COMPLETED"
           ? undefined
