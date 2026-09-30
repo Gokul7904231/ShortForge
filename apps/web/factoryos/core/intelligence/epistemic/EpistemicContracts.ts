@@ -37,6 +37,62 @@ export type EpistemicCognitiveMode =
   | "SPECIALIST"
   | "HUMAN";
 
+export type ValueEstimateSource =
+  | "OBSERVED_CALIBRATION"
+  | "CONFIGURED_PRIOR"
+  | "UNAVAILABLE";
+
+export type AscalonInvocationReason =
+  | "NO_MATERIAL_UNCERTAINTY"
+  | "MICRO_SUFFICIENT"
+  | "MATERIAL_UNCERTAINTY"
+  | "MATERIAL_CONTRADICTION"
+  | "MULTIPLE_VIABLE_HYPOTHESES"
+  | "HIGH_IMPACT_UNRESOLVED"
+  | "EXPECTED_VALUE_BELOW_THRESHOLD"
+  | "VALUE_MODEL_UNCONFIGURED"
+  | "ASCALON_LATENCY_BUDGET_EXHAUSTED"
+  | "ASCALON_UNAVAILABLE"
+  | "ASCALON_BUDGET_EXHAUSTED"
+  | "HUMAN_ESCALATION_REQUIRED";
+
+export interface AscalonInvocationBudget {
+  readonly maxTimeMs: number;
+  readonly maxCallsRemaining: number;
+  readonly maxCostUnits: number;
+}
+
+
+
+export type AEROutcomeStatus =
+  | "RESOLVED"
+  | "UNRESOLVED"
+  | "FAILED"
+  | "UNKNOWN";
+
+export type AEROutcomeAuthority =
+  | "F07"
+  | "VERIFIED_SYSTEM"
+  | "HUMAN_AUTHORITY"
+  | "OBSERVED_RUNTIME"
+  | "MODEL_INFERENCE";
+
+export interface AEROutcomeReceipt {
+  readonly outcomeId: string;
+  readonly episodeId: string;
+  readonly status: AEROutcomeStatus;
+  readonly evidenceRefs: readonly string[];
+  readonly authoritativeSource: AEROutcomeAuthority;
+  readonly verificationRef: string;
+  readonly observedAt: string;
+  readonly ascalonClaimedResolved?: boolean;
+  readonly necessityAssessment?: {
+    readonly verdict: "NECESSARY" | "NOT_NECESSARY" | "INCONCLUSIVE";
+    readonly method: "CONTROLLED_REPLAY" | "COUNTERFACTUAL_SIMULATION" | "HUMAN_REVIEW";
+    readonly evidenceRefs: readonly string[];
+  };
+};
+
 export interface EpistemicMeasurement {
   readonly measurementId: string;
   readonly dimension: string;
@@ -47,6 +103,8 @@ export interface EpistemicMeasurement {
   readonly evidenceRefs: readonly string[];
   readonly calibrationStatus?: CalibrationStatus;
   readonly freshnessSeconds?: number;
+  readonly staleAfterSeconds?: number;
+  readonly material?: boolean;
   readonly authoritative?: boolean;
 }
 
@@ -106,6 +164,12 @@ export interface CognitiveProbe {
   readonly estimatedLatencyMs: number;
   readonly estimatedCostUnits: number;
   readonly expectedInformationGain: number; // ranking signal only, never a probability
+  /**
+   * Optional decision-aware refinement of information gain.
+   * These are planning estimates, never authoritative probabilities.
+   */
+  readonly expectedDecisionChangeProbability?: number;
+  readonly hypothesisDiscriminationScore?: number;
   readonly riskClass: ProbeRiskClass;
   readonly timeoutMs: number;
   readonly cacheable: boolean;
@@ -142,10 +206,41 @@ export interface EpistemicUsage {
   readonly costUnits: number;
 }
 
+export interface AERCounterfactual {
+  readonly mode: EpistemicCognitiveMode;
+  readonly expectedUtility: number;
+  readonly expectedResolutionProbability: number;
+  readonly expectedCost: number;
+  readonly expectedLatencyMs: number;
+  readonly source: ValueEstimateSource;
+}
+
 export interface CognitiveRecommendation {
   readonly mode: EpistemicCognitiveMode;
   readonly reason: string;
+  readonly reasonCode: AscalonInvocationReason;
   readonly deadlineMs: number;
+  /**
+   * Policy-derived normalized value estimate used for routing.
+   * This is a ranking/triage signal, not a probability and not truth.
+   */
+  readonly expectedValue: number;
+  readonly shouldInvokeAscalon: boolean;
+  readonly estimatedCostUnits: number;
+  readonly estimatedLatencyMs: number;
+  readonly expectedBenefit: number;
+  readonly expectedCost: number;
+  readonly baselineExpectedUtility?: number;
+  readonly ascalonExpectedUtility?: number;
+  readonly incrementalCostUnits: number;
+  readonly incrementalLatencyMs: number;
+  readonly uncertaintyBurden: number;
+  readonly baselineMode?: EpistemicCognitiveMode;
+  readonly expectedValueSource: ValueEstimateSource;
+  readonly decisionId: string;
+  readonly policyVersion: string;
+  readonly counterfactuals: readonly AERCounterfactual[];
+  readonly budget: AscalonInvocationBudget;
 }
 
 export interface EpistemicState {
@@ -171,6 +266,7 @@ export interface EpistemicState {
 export interface EpistemicContext extends EpistemicState {
   readonly contextFingerprint: string;
   readonly serializedTokenEstimate: number;
+  readonly tokenEstimateMethod: "CHARACTER_HEURISTIC" | "EXTERNAL_TOKENIZER";
   readonly expiresAt: string;
   readonly redactionState: "CLEAN";
 }
@@ -181,6 +277,10 @@ export interface AscalonEpistemicHandoff {
   readonly contextFingerprint: string;
   readonly mode: "SHADOW";
   readonly modelAuthority: "ADVISORY_ONLY";
+  readonly shouldInvokeAscalon: boolean;
+  readonly invocationReason: AscalonInvocationReason;
+  readonly expectedValue: number;
+  readonly budget: AscalonInvocationBudget;
   readonly epistemicContext: EpistemicContext;
   readonly instructions: readonly string[];
 }

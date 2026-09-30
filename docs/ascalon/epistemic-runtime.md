@@ -583,3 +583,64 @@ The first success criterion is not "AER sounds intelligent."
 It is:
 
 > **AER reduces epistemic uncertainty or investigation cost on real production problems without weakening evidence or authority boundaries.**
+## Cost-Efficient AER Admission
+
+AER now exposes a deterministic pre-call contract for Ascalon:
+
+shouldInvokeAscalon + reasonCode + expectedValue + estimatedCostUnits + remaining budget
+
+The expected-value field is a routing/triage signal only. It is not model confidence and cannot establish truth.
+
+The policy prefers:
+
+DETERMINISTIC -> MICRO -> DEEP(Ascalon) -> SPECIALIST/HUMAN
+
+Ascalon is requested only when the current uncertainty has enough policy-estimated value to justify its remaining call/cost budget.
+
+AscalonInvocationGate is evaluated immediately before an actual model call. It rejects non-admitted contexts, expired contexts, non-clean redaction state, exhausted call budgets, insufficient remaining cost, and invalid authority class.
+
+AERMetricsRecorder closes the measurement loop around the optimization target:
+
+cost per resolved uncertainty = total uncertainty-episode cost / resolved uncertainty count
+
+It also tracks escalation rate, probe usefulness, cache hit rate, AER/Ascalon p50/p95 latency, false reassurance, and unnecessary escalation. These metrics require observed telemetry and are not hard-coded success claims.
+
+## Remediation Closure — 2026-09-29
+
+The AER remediation pass addresses the previously identified production design gaps.
+
+### Value model
+
+AER no longer uses only an additive uncertainty score to justify deep cognition. It compares Ascalon against a baseline using incremental expected utility, explicitly pricing incremental compute/cost and latency. Production influence is blocked when the probabilities are not backed by observed calibration unless policy explicitly enables the experimental shadow path.
+
+Recent references: *Adaptive Test-Time Compute Allocation for Reasoning LLMs via Constrained Policy Optimization* (2026) and *Adaptive LLM Routing under Budget Constraints* (EMNLP Findings 2025).
+
+### Execution loop
+
+AER now has a bounded investigation loop:
+
+event -> epistemic assessment -> safe probe plan -> AEF execution -> evidence -> state update -> re-assessment
+
+AER owns planning and epistemic interpretation; AEF remains the execution boundary. Reference implementations: LangGraph persistence/durable execution and PydanticAI durable execution/instrumentation.
+
+### Admission and budget reservation
+
+Ascalon invocation is now bracketed by:
+
+admission -> atomic budget reservation -> model call -> commit/release
+
+The canonical coordinator uses a durable SQLite reservation store by default for distributed/multi-process contention. The reservation store is explicitly replaceable with another atomic backend.
+
+### Outcome truthfulness
+
+Resolution is recorded through an outcome receipt carrying evidence references and an authoritative source. Model inference alone cannot mark uncertainty resolved. This is intentionally stricter than model-judged self-report because recent work finds reliability limits in LLM judges, especially for evidence verification. citeturn292099academia37
+
+### Economics and telemetry
+
+AER accepts provider/model/token/actual-USD usage and exposes p50/p95 latency, cache hit rate, probe usefulness, escalation rates, and cost per resolved uncertainty. A provider-neutral cost estimator can consume existing FactoryOS model-routing metadata, while actual usage can be supplied from production telemetry. Reference: OpenTelemetry GenAI semantic conventions for model/provider/operation and agent/tool spans.
+
+### Learning loop
+
+AER now produces a conservative shadow routing candidate from observed outcomes using confidence bounds. It does not mutate the live routing policy. This keeps the learning loop compatible with contextual routing research Reference direction: adaptive contextual routing and RouteLLM-style threshold calibration, adapted to ShortForge's stronger governance boundary.
+
+Production admission still requires ShortForge-specific replay, calibration, security, and reliability evidence; research results are design references, not proof of ShortForge performance.

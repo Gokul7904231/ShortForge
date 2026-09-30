@@ -5,6 +5,7 @@ import type {
   EpistemicHypothesis,
   EpistemicImpact,
   EpistemicMeasurement,
+  EpistemicState as AEREpistemicState,
   EpistemicStateStatus,
   EpistemicState,
   EpistemicUnknown,
@@ -39,8 +40,10 @@ function classifyStatus(
   known: readonly EpistemicFact[],
   unknown: readonly EpistemicUnknown[],
   contradictions: readonly EpistemicContradiction[],
+  hasMaterialStaleEvidence: boolean,
 ): EpistemicStateStatus {
   if (contradictions.some((item) => item.material)) return "CONTRADICTED";
+  if (hasMaterialStaleEvidence) return "STALE";
   if (unknown.some((item) => item.material)) return "UNCERTAIN";
   if (known.length > 0 && known.every((item) => item.status === "INFERRED")) return "INFERRED";
   if (known.some((item) => item.status === "SUPPORTED")) return "SUPPORTED";
@@ -59,11 +62,12 @@ export interface BuildEpistemicStateInput {
   readonly investigationHistory?: readonly Record<string, unknown>[];
   readonly impact?: EpistemicImpact;
   readonly freshness?: Record<string, unknown>;
+  readonly freshnessPolicy?: Readonly<Record<string, number>>;
   readonly authorityClass?: "MODEL_ADVISORY";
 }
 
 export class EpistemicStateEngine {
-  public build(input: BuildEpistemicStateInput): EpistemicState {
+  public build(input: BuildEpistemicStateInput): AEREpistemicState {
     const measurements = [...(input.measurements ?? [])];
     measurements.forEach(validateMeasurement);
 
@@ -89,17 +93,37 @@ export class EpistemicStateEngine {
 
     const now = Date.now();
     const freshness = { ...(input.freshness ?? {}) };
+    let hasMaterialStaleEvidence = false;
 
     for (const measurement of measurements) {
       if (measurement.freshnessSeconds !== undefined) {
+        const policyThreshold =
+          input.freshnessPolicy?.[measurement.dimension] ?? 3600;
+        const staleAfterSeconds = Math.max(
+          0,
+          measurement.staleAfterSeconds ?? policyThreshold,
+        );
+        const stale = measurement.freshnessSeconds > staleAfterSeconds;
+
         freshness[measurement.measurementId] = {
           freshnessSeconds: measurement.freshnessSeconds,
-          stale: measurement.freshnessSeconds > 3600,
+          staleAfterSeconds,
+          stale,
+          material: measurement.material ?? false,
         };
+
+        if (stale && measurement.material === true) {
+          hasMaterialStaleEvidence = true;
+        }
       }
     }
 
-    const knownStatus = classifyStatus(known, unknown, contradictions);
+    const knownStatus = classifyStatus(
+      known,
+      unknown,
+      contradictions,
+      hasMaterialStaleEvidence,
+    );
 
     return {
       schemaVersion: "1.0",
@@ -122,7 +146,29 @@ export class EpistemicStateEngine {
       cognitiveRecommendation: {
         mode: "DETERMINISTIC",
         reason: "Epistemic state constructed; routing pending.",
+        reasonCode: "NO_MATERIAL_UNCERTAINTY",
         deadlineMs: 1,
+        expectedValue: 0,
+        shouldInvokeAscalon: false,
+        estimatedCostUnits: 0,
+        estimatedLatencyMs: 0,
+        expectedBenefit: 0,
+        expectedCost: 0,
+        incrementalCostUnits: 0,
+        incrementalLatencyMs: 0,
+        baselineExpectedUtility: 0,
+        ascalonExpectedUtility: 0,
+        uncertaintyBurden: 0,
+        baselineMode: "DETERMINISTIC",
+        expectedValueSource: "UNAVAILABLE",
+        decisionId: "aer_decision_pending",
+        policyVersion: "aer-voi-v2",
+        counterfactuals: [],
+        budget: {
+          maxTimeMs: 0,
+          maxCallsRemaining: 0,
+          maxCostUnits: 0,
+        },
       },
       budgets: {
         maxEpistemicTimeMs: 0,

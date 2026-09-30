@@ -1520,3 +1520,9 @@ Ascalon admission remains evidence-gated: current runtime/ontology consistency, 
 **Supersession:** Historical readiness certificates remain for provenance but cannot be used as current admission evidence.
 
 **Verification:** Required mainline reconciliation gates pass; Web Regression remains informational only.
+
+## AER Cost-Efficiency Admission — 2026-09-29
+
+Decision record: `.okf/decisions/ascalon-epistemic-optimization-20260929.md`
+
+The AER runtime now treats **cost per resolved uncertainty** as the primary optimization metric and exposes an explicit, deterministic Ascalon pre-call admission contract: `shouldInvokeAscalon`, `reasonCode`, `expectedValue`, `estimatedCostUnits`, and remaining budget. Deep Ascalon cognition remains advisory/shadow-only until CI, security, and outcome-replay evidence validates the optimization.
