@@ -118,7 +118,7 @@ export function readBlenderMcpConfig(env = process.env): BlenderMcpAdapterConfig
 }
 
 function validateToolArguments(
-  tool: BlenderMcpToolDescriptor,
+  tool: BlenderToolDescriptor,
   args: Record<string, unknown>,
 ): string[] {
   const schema = tool.inputSchema;
