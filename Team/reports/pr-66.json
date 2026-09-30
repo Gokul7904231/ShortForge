@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR66-AER-Cost-Aware-Mainline-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/aer-mainline-final2-20260930",
+  "objective": "Land AER cost-aware Ascalon admission and epistemic economics on the Slayer-updated mainline without replaying stale branch history.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "AER remains advisory/epistemic and cannot grant authority.",
+      "Guardian/FGC/runtime gates remain authoritative.",
+      "Cognitive recommendations remain bounded by explicit budgets and deterministic admission.",
+      "No credentials or model secrets are committed."
+    ]
+  },
+  "changes": [
+    "AER cost-aware admission primitives and epistemic routing economics",
+    "Updated epistemic-state fingerprint stability",
+    "Current-mainline reconciliation after Slayer Prime merge"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No secrets included; CI is repository admission evidence."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/epistemic",
+    "apps/web/factoryos/core/intelligence/epistemic/AERAscalonPreCallGate.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts"
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Run AER/epistemic tests and repository CI.",
+    "Run Team Change Gate and relevant floor gates.",
+    "Merge only after required blocking lanes pass."
+  ],
+  "verificationResults": {
+    "contentReconciliation": "NO_UNRESOLVED_CONFLICTS",
+    "githubCI": "PENDING",
+    "teamChangeGate": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "No credentials are present in this report."
+  ]
+}
