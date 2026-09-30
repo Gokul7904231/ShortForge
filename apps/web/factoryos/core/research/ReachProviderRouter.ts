@@ -540,6 +540,18 @@ export class ReachProviderRouter {
         collected.push(...response.sources);
 
         const deduped = deduplicateEvidenceSources(collected);
+        if (deduped.length < collected.length) {
+          this.telemetry.record({
+            type: "EVIDENCE_DEDUPED",
+            at: new Date().toISOString(),
+            provider: provider.id,
+            requestId: requestTraceId,
+            metadata: {
+              before: collected.length,
+              after: deduped.length,
+            },
+          });
+        }
 
         if (
           mode !== "CORROBORATION" &&
@@ -559,6 +571,15 @@ export class ReachProviderRouter {
       } catch (error) {
         this.markFailure(provider, error);
         fallbackCount += 1;
+        this.telemetry.record({
+          type: "FALLBACK",
+          at: new Date().toISOString(),
+          provider: provider.id,
+          requestId: requestTraceId,
+          metadata: {
+            reason: error instanceof Error ? error.message : String(error),
+          },
+        });
       }
     }
 
