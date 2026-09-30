@@ -71,6 +71,23 @@ def test_real_f01_to_f05_guardian_trajectory(tmp_path: Path):
             platform="youtube_shorts",
             content_format="educational_short",
             learning_level="intermediate",
+            research_context={
+                "passport_id": f"passport-{mission_id}",
+                "mission_id": mission_id,
+                "integrity_verified": True,
+                "question": "Python decorators",
+                "confidence": 0.95,
+                "source_count": 2,
+                "verified_claim_count": 2,
+                "unresolved_issue_count": 0,
+                "freshness": "run",
+                "key_findings": [
+                    "Python decorators wrap callable objects.",
+                    "Decorators can modify or replace callable behavior.",
+                ],
+                "evidence": [],
+                "provenance": ["fixture:trajectory-test"],
+            },
         )
     )
     o01 = observation("floor01_strategy", r01)
