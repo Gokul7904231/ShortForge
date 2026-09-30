@@ -45,5 +45,12 @@
   "disposition": "PASS",
   "notes": [
     "This report intentionally contains no credential values."
-  ]
+  ],
+  "forgerStatus": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "PENDING_MERGE"
+  }
 }
