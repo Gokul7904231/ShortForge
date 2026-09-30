@@ -30,9 +30,12 @@ export type BlenderSemanticAction =
 
 export type BlenderActionRisk = "READ_ONLY" | "MUTATING" | "HIGH_RISK" | "CRITICAL";
 
+export type BlenderExecutionMode = "DIRECT_MCP" | "STRUCTURED_SCRIPT" | "RAW_PYTHON";
+
 export interface BlenderActionDefinition {
   readonly action: BlenderSemanticAction;
   readonly risk: BlenderActionRisk;
+  readonly executionMode: BlenderExecutionMode;
   readonly requiresGuardianGate: boolean;
   readonly preferredTools: readonly string[];
   readonly fallbackTools?: readonly string[];
@@ -97,6 +100,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "SCENE_INSPECT",
     risk: "READ_ONLY",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: false,
     preferredTools: ["get_scene_info"],
     description: "Inspect current Blender scene state and objects.",
@@ -104,6 +108,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "OBJECT_INSPECT",
     risk: "READ_ONLY",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: false,
     preferredTools: ["get_object_info"],
     description: "Inspect a named Blender object.",
@@ -111,6 +116,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "VIEWPORT_CAPTURE",
     risk: "READ_ONLY",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: false,
     preferredTools: ["get_viewport_screenshot", "viewport_capture"],
     description: "Capture visual evidence of the current Blender viewport.",
@@ -118,6 +124,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "OBJECT_CREATE",
     risk: "MUTATING",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Create Blender objects using a controlled script transaction.",
@@ -125,6 +132,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "OBJECT_UPDATE",
     risk: "MUTATING",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Modify object transforms, modifiers, collections or properties.",
@@ -132,6 +140,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "OBJECT_DELETE",
     risk: "HIGH_RISK",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Delete Blender objects or scene data.",
@@ -139,6 +148,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "MATERIAL_UPDATE",
     risk: "MUTATING",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Create or modify materials and shader node graphs.",
@@ -146,6 +156,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "CAMERA_CONFIGURE",
     risk: "MUTATING",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Configure cameras, framing and camera motion.",
@@ -153,6 +164,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "LIGHTING_CONFIGURE",
     risk: "MUTATING",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Configure lights and lighting rigs.",
@@ -160,6 +172,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "ANIMATION_CONFIGURE",
     risk: "MUTATING",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Create or modify keyframes, actions and animation state.",
@@ -167,6 +180,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "GEOMETRY_NODES_CONFIGURE",
     risk: "HIGH_RISK",
+    executionMode: "RAW_PYTHON",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     fallbackTools: ["describe_node_type"],
@@ -175,6 +189,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "SIMULATION_CONFIGURE",
     risk: "HIGH_RISK",
+    executionMode: "RAW_PYTHON",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Configure physics or simulation data.",
@@ -182,6 +197,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "COMPOSITOR_CONFIGURE",
     risk: "MUTATING",
+    executionMode: "RAW_PYTHON",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Configure compositor node trees and post-processing.",
@@ -189,6 +205,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "SEQUENCE_CONFIGURE",
     risk: "MUTATING",
+    executionMode: "RAW_PYTHON",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Configure Blender's Video Sequence Editor.",
@@ -196,6 +213,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "ASSET_SEARCH",
     risk: "READ_ONLY",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: false,
     preferredTools: [
       "search_polyhaven_assets",
@@ -207,6 +225,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "ASSET_IMPORT",
     risk: "MUTATING",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: true,
     preferredTools: [
       "download_polyhaven_asset",
@@ -221,6 +240,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "ASSET_GENERATE",
     risk: "HIGH_RISK",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: true,
     preferredTools: [
       "generate_hyper3d_model_via_text",
@@ -233,6 +253,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "SCENE_EXPORT",
     risk: "MUTATING",
+    executionMode: "DIRECT_MCP",
     requiresGuardianGate: true,
     preferredTools: ["export_scene"],
     description: "Export scene data for downstream systems.",
@@ -240,6 +261,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "RENDER",
     risk: "HIGH_RISK",
+    executionMode: "STRUCTURED_SCRIPT",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Render a physical image/video artifact from Blender.",
@@ -247,6 +269,7 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
   {
     action: "PYTHON_EXECUTE",
     risk: "CRITICAL",
+    executionMode: "RAW_PYTHON",
     requiresGuardianGate: true,
     preferredTools: ["execute_blender_code"],
     description: "Run arbitrary Blender Python. Explicitly disabled unless the caller grants the dangerous capability.",
