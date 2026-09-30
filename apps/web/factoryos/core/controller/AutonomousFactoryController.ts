@@ -42,6 +42,10 @@ import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
 import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
+import { IndexedExperienceMemory } from "../cognitive/memory/IndexedExperienceMemory";
+import { AgentEconomicsEngine } from "../cognitive/economics/AgentEconomicsEngine";
+import { CognitiveOutcomeLearner } from "../cognitive/CognitiveOutcomeLearner";
+import { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
