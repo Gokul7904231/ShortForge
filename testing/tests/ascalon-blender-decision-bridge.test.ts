@@ -66,8 +66,8 @@ it("arbitrary Blender Python requires Guardian authorization and code", () => {
   });
 
   expect(result.valid).toBe(false);
-  expect(result.errors).toContain("PYTHON_EXECUTE requires an explicit Guardian grant");
-  expect(result.errors).toContain("PYTHON_EXECUTE requires arguments.code");
+  expect(result.errors).toContain("Raw Python-backed Blender action PYTHON_EXECUTE requires an explicit Guardian grant");
+  expect(result.errors).toContain("Raw Python-backed Blender action PYTHON_EXECUTE requires arguments.code");
 });
 
 it("bridge emits canonical blender.mcp capability requests", () => {
