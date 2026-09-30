@@ -240,9 +240,7 @@ export class ResearchRuntime {
       engineId: researchContract.engineId,
       queryKind,
       topic: request.topic,
-      parameters: {
-        ...(request.audience ? { audience: request.audience } : {}),
-      },
+      parameters: {},
       researchContract,
       maxSources,
       callerFloor: "floor00_analyst",
