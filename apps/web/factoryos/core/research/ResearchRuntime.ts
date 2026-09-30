@@ -294,7 +294,7 @@ export class ResearchRuntime {
         .map((c) => c.statement),
       confidence: passportConfidence,
       provenance: {
-        reachProvider: "reach-http-browser",
+        reachProvider: "reach-provider-fabric",
         agentId: "worker_analyst_01",
         floorId: "floor00_analyst",
       },
