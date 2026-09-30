@@ -708,6 +708,7 @@ export class OverseerControlPlane {
           floorId: "floor00_analyst",
           workerId: "worker_analyst_01",
           missionId,
+          runId,
           output: analystReport,
           loopReceipt: researchLoop.receipt,
           loopFeedback: researchLoop.feedback,
@@ -1564,6 +1565,7 @@ export class OverseerControlPlane {
           startedAt,
           completedAt: new Date().toISOString(),
           verified: Boolean(verificationReport.verified),
+          proofSource: "PHYSICAL_VERIFIER",
           evidenceRefs: [
             "f07:verification-engine",
             ...(artifact?.sha256 ? ["artifact:" + artifact.sha256] : []),
