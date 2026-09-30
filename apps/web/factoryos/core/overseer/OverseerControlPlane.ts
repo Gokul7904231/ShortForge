@@ -53,6 +53,7 @@ import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
+import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -1459,6 +1460,24 @@ export class OverseerControlPlane {
             3,
           policyViolations: [],
         });
+        
+        const f07LoopReceipt: FloorClosedLoopReceipt = {
+          floorId: "floor07_compliance",
+          loopType: "VERIFICATION_REMEDIATION",
+          loopId: "f07-release-" + targetJobId + "-" + executionId,
+          termination: verificationReport.verified ? "COMPLETED" : "EXHAUSTED",
+          iterations: 1,
+          startedAt,
+          completedAt: new Date().toISOString(),
+          verified: Boolean(verificationReport.verified),
+          evidenceRefs: [
+            "f07:verification-engine",
+            ...(artifact?.sha256 ? ["artifact:" + artifact.sha256] : []),
+          ],
+          failureReason: verificationReport.verified
+            ? undefined
+            : verificationReport.failures.join("; "),
+        };
 
         if (!verificationReport.verified) {
           await this.caseManager.createCase({
@@ -1516,6 +1535,7 @@ export class OverseerControlPlane {
           missionId,
           jobId: targetJobId,
           output: verificationReport,
+          loopReceipt: f07LoopReceipt,
           deliveryArtifact,
           startedAt,
           completedAt,
