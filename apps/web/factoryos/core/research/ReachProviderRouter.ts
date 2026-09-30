@@ -705,11 +705,12 @@ export class ReachProviderRouter {
           );
 
           if (retrieved) {
-            collected.push(...retrieved.sources);
+            dedupedSources = mergeDeepEvidenceSources(
+              dedupedSources,
+              retrieved.sources,
+            );
           }
         }
-
-        dedupedSources = deduplicateEvidenceSources(collected);
       }
     }
 
