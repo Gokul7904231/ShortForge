@@ -69,6 +69,11 @@ export * from "./intelligence/memory/MemoryFabricContracts";
 export * from "./intelligence/memory/MongoMemoryFabricLedger";
 export * from "./intelligence/memory/MemoryFabricProjection";
 export * from "./intelligence/memory/MemoryFabricBridge";
+export * from "./comms/CommsFabric";
+export * from "./comms/SituationComms";
+export * from "./comms/BlenderMcpContracts";
+export * from "./comms/BlenderMcpAdapter";
+export * from "./intelligence/visual/AscalonBlenderDecisionBridge";
 
 // Cognitive Operating Plane (Frontier v2)
 export * from "./cognitive/CognitiveContracts";
