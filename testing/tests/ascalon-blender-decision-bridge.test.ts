@@ -19,7 +19,7 @@ const base = {
   environment: "test" as const,
 };
 
-test("read-only scene inspection does not require a Guardian certificate", () => {
+it("read-only scene inspection does not require a Guardian certificate", () => {
   const result = validateAscalonBlenderDecision({
     ...base,
     semanticAction: "SCENE_INSPECT",
