@@ -116,6 +116,54 @@ export function readBlenderMcpConfig(env = process.env): BlenderMcpAdapterConfig
   };
 }
 
+function validateToolArguments(
+  tool: BlenderMcpToolDescriptor,
+  args: Record<string, unknown>,
+): string[] {
+  const schema = tool.inputSchema;
+  if (!schema || typeof schema !== "object") return [];
+
+  const errors: string[] = [];
+  const required = Array.isArray(schema.required) ? schema.required : [];
+  for (const key of required) {
+    if (typeof key === "string" && args[key] === undefined) {
+      errors.push(`Missing required MCP argument '${key}' for tool '${tool.name}'`);
+    }
+  }
+
+  const properties =
+    schema.properties && typeof schema.properties === "object"
+      ? (schema.properties as Record<string, unknown>)
+      : {};
+
+  for (const [key, definition] of Object.entries(properties)) {
+    if (args[key] === undefined || !definition || typeof definition !== "object") continue;
+    const type = (definition as Record<string, unknown>).type;
+    const value = args[key];
+
+    if (type === "string" && typeof value !== "string") {
+      errors.push(`MCP argument '${key}' must be string`);
+    } else if (type === "number" && typeof value !== "number") {
+      errors.push(`MCP argument '${key}' must be number`);
+    } else if (type === "integer" && (!Number.isInteger(value) || typeof value !== "number")) {
+      errors.push(`MCP argument '${key}' must be integer`);
+    } else if (type === "boolean" && typeof value !== "boolean") {
+      errors.push(`MCP argument '${key}' must be boolean`);
+    } else if (type === "array" && !Array.isArray(value)) {
+      errors.push(`MCP argument '${key}' must be array`);
+    } else if (type === "object" && (typeof value !== "object" || value === null || Array.isArray(value))) {
+      errors.push(`MCP argument '${key}' must be object`);
+    }
+
+    const enumValues = (definition as Record<string, unknown>).enum;
+    if (Array.isArray(enumValues) && !enumValues.some((entry) => Object.is(entry, value))) {
+      errors.push(`MCP argument '${key}' has unsupported enum value`);
+    }
+  }
+
+  return errors;
+}
+
 export function resolveBlenderActionAgainstTools(
   action: BlenderSemanticAction,
   tools: readonly BlenderMcpToolDescriptor[],
@@ -396,13 +444,23 @@ export class BlenderMcpAdapter {
       const provider = typeof request.arguments.provider === "string"
         ? request.arguments.provider.trim().toLowerCase()
         : "";
-      const selected = this.selectProviderTool(request.action, provider, snapshot.tools);
+      const selected = this.selectProviderTool(request.action, provider, snapshot.tools, request.arguments);
       if (!selected) {
         throw new Error(
           `Blender ${request.action} requires an explicit supported provider; received '${provider || "none"}'`,
         );
       }
       return this.callAndObserve(request, selected);
+    }
+
+    const resolvedTool = snapshot.tools.find((tool) => tool.name === resolution.toolName);
+    if (!resolvedTool) {
+      throw new Error(`Resolved Blender tool '${resolution.toolName}' disappeared from the live capability snapshot`);
+    }
+
+    const schemaErrors = validateToolArguments(resolvedTool, request.arguments);
+    if (schemaErrors.length > 0) {
+      throw new Error(`Blender MCP argument contract rejected: ${schemaErrors.join("; ")}`);
     }
 
     return this.callAndObserve(request, resolution.toolName);
@@ -412,6 +470,7 @@ export class BlenderMcpAdapter {
     action: BlenderSemanticAction,
     provider: string,
     tools: readonly BlenderMcpToolDescriptor[],
+    args: Record<string, unknown> = {},
   ): string | undefined {
     if (!provider) return undefined;
 
@@ -435,6 +494,18 @@ export class BlenderMcpAdapter {
         tripo: "generate_tripo_model",
       },
     };
+
+    if (action === "ASSET_GENERATE" && provider === "hyper3d") {
+      const hasImageInput =
+        typeof args.input_image_url === "string" ||
+        typeof args.image_url === "string" ||
+        Array.isArray(args.images);
+
+      const imageTool = "generate_hyper3d_model_via_images";
+      const textTool = "generate_hyper3d_model_via_text";
+      if (hasImageInput && tools.some((candidate) => candidate.name === imageTool)) return imageTool;
+      if (!hasImageInput && tools.some((candidate) => candidate.name === textTool)) return textTool;
+    }
 
     const tool = wanted[action]?.[provider];
     return tool && tools.some((candidate) => candidate.name === tool) ? tool : undefined;
@@ -581,8 +652,8 @@ export class BlenderMcpAdapter {
   }
 
   private onStdoutLine(line: string): void {
-    this.responseBytes += Buffer.byteLength(line, "utf8");
-    if (this.responseBytes > this.config.maxResponseBytes) {
+    const lineBytes = Buffer.byteLength(line, "utf8");
+    if (lineBytes > this.config.maxResponseBytes) {
       const error = new Error("Blender MCP response budget exceeded");
       this.lastError = error.message;
       this.failAllPending(error);
@@ -635,6 +706,6 @@ export class BlenderMcpAdapter {
       this.process.kill("SIGTERM");
     }
     this.process = undefined;
-    this.responseBytes = 0;
+    // stdout is bounded per JSON response line; no cumulative response counter is required.
   }
 }
