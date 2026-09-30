@@ -93,21 +93,7 @@ export class ProbePlanner {
         };
       }
 
-      const decisionChangeProbability = Math.max(
-        0,
-        Math.min(1, probe.expectedDecisionChangeProbability ?? 1),
-      );
-      const discrimination = Math.max(
-        0,
-        Math.min(1, probe.hypothesisDiscriminationScore ?? 1),
-      );
-      const decisionAwareInformationValue =
-        probe.expectedInformationGain *
-        decisionChangeProbability *
-        (0.5 + 0.5 * discrimination);
-
-      const utilityScore =
-        decisionAwareInformationValue / normalizedCost(probe);
+      const utilityScore = probe.expectedInformationGain / normalizedCost(probe);
       return { ...probe, utilityScore };
     });
 

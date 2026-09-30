@@ -42,6 +42,12 @@ import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
 import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
+import {
+  DiskSlayerPrimeStateStore,
+  InMemorySlayerPrimeStateStore,
+  MongoSlayerPrimeStateStore,
+  type SlayerPrimeStateStore,
+} from "../slayers/prime/SlayerPrimeStateStore";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -93,6 +99,7 @@ export class AutonomousFactoryController {
   public researchRuntime: ResearchRuntime = new ResearchRuntime();
   public memoryFabric?: MemoryFabricBridge;
   public intelligenceGateway?: IntelligenceGateway;
+  public slayerPrimeStateStore!: SlayerPrimeStateStore;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -150,6 +157,17 @@ export class AutonomousFactoryController {
 
     // 4. Durable Event Bus
     this.eventBus = new DurableEventBus();
+
+    // 4.0 Prime enforcement state follows the controller's persistence tier.
+    // In-memory is reserved for explicit memory-mode/test operation.
+    const mongoDbForPrime = this.mongoClient?.getDb() || null;
+    if (this.config.storageType === "disk") {
+      this.slayerPrimeStateStore = new DiskSlayerPrimeStateStore(this.config.storagePath);
+    } else if (mongoDbForPrime) {
+      this.slayerPrimeStateStore = new MongoSlayerPrimeStateStore(mongoDbForPrime);
+    } else {
+      this.slayerPrimeStateStore = new InMemorySlayerPrimeStateStore();
+    }
 
     // 4.1 Canonical Intelligence + Memory Fabric. The IntelligenceGateway owns
     // the single KnowledgeStore/MemoryLifecycle instance used by cognition.
@@ -214,7 +232,10 @@ export class AutonomousFactoryController {
       this.worldState,
       repos.reputation,
       this.config.patrolIntervalMs,
-      this.leaseManager
+      this.leaseManager,
+      {
+        stateStore: this.slayerPrimeStateStore,
+      }
     );
 
     this.healerEngine = new HealerEngine(

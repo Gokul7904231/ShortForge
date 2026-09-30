@@ -7,7 +7,6 @@ import { JointHealingSessionManager } from "../core/governance/JointHealingSessi
 import { ResolutionGate } from "../core/governance/ResolutionGate";
 import { RepairLockManager } from "../core/healers/RepairLockManager";
 import type { ActionProposal, AuthorizationGrant } from "../core/governance/FloorGovernanceContracts";
-import { AscalonInferenceAdmissionGate } from "../core/governance/AscalonInferenceAdmission";
 
 const FLOOR = "floor04_media_synthesis";
 
@@ -28,14 +27,6 @@ function grant(
     evidenceRefs: [],
   };
 }
-
-const alwaysAdmitAscalon = {
-  evaluate: async ({ snapshot }: { snapshot: { floorId: string; stateVersion: number } }) => ({
-    admitted: true,
-    reason: "test_pre_call_admitted",
-    contextFingerprint: `test:${snapshot.floorId}:${snapshot.stateVersion}`,
-  }),
-};
 
 describe("Floor Governance Cell — bounded autonomy foundation", () => {
   it("keeps Ascalon proposal-only and requires a valid action transition + Guardian grant", async () => {
@@ -59,7 +50,6 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       guardianId: "guardian_floor04",
       actionGraph: graph,
       ascalon,
-      ascalonPreCallGate: alwaysAdmitAscalon,
       capabilities: ["floor.read"],
     });
     cell.setState("READY", "boot verified");
@@ -117,7 +107,6 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       guardianId: "guardian_floor04",
       actionGraph: graph,
       ascalon,
-      ascalonPreCallGate: alwaysAdmitAscalon,
       capabilities: ["floor.execute"],
     });
     cell.setState("READY", "boot verified");
@@ -340,7 +329,6 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
       guardianId: "guardian_floor04",
       actionGraph: graph,
       ascalon,
-      ascalonPreCallGate: alwaysAdmitAscalon,
       capabilities: ["floor.read"],
     });
     cell.setState("READY", "boot verified");
@@ -367,106 +355,4 @@ describe("Floor Governance Cell — bounded autonomy foundation", () => {
     expect(result.success).toBe(false);
     expect(result.reason).toBe("unknown_action:floor.publish_unknown");
   });
-
-  it("never invokes the Ascalon proposer without a pre-call admission", async () => {
-    let invoked = false;
-    const ascalon = new ProposalOnlyAscalonAdapter(async ({ snapshot }) => {
-      invoked = true;
-      return {
-        proposalId: "p_should_not_run",
-        floorId: snapshot.floorId,
-        actionName: "floor.observe",
-        proposer: "ASCALON",
-        parameters: {},
-        evidenceRefs: [],
-        expectedOutcome: "observation_recorded",
-        expectedPostconditions: ["observation_recorded"],
-        stateVersion: snapshot.stateVersion,
-        proposedAt: new Date().toISOString(),
-        inputTrust: "TRUSTED_SYSTEM_STATE",
-      };
-    });
-
-    const snapshot: import("../core/governance/FloorGovernanceContracts").FloorSnapshot = {
-      floorId: FLOOR,
-      state: "READY",
-      stateVersion: 1,
-      observedAt: new Date().toISOString(),
-      jobs: [],
-      workers: [],
-      resources: [],
-      activeIncidents: [],
-      constraints: [],
-    };
-
-    const proposal = await ascalon.proposeNext({
-      snapshot,
-      availableActions: ["floor.observe"],
-      evidenceRefs: [],
-    });
-
-    expect(proposal).toBeNull();
-    expect(invoked).toBe(false);
-  });
-
-
-  it("rejects a direct ADMITTED Ascalon execution that lacks AER pre-call proof", async () => {
-    const graph = createDefaultFloorActionGraph();
-    const cell = new FloorGovernanceCell({
-      floorId: FLOOR,
-      guardianId: "guardian_floor04",
-      actionGraph: graph,
-      ascalon: new ProposalOnlyAscalonAdapter(async () => null),
-      capabilities: ["floor.read"],
-      ascalonAdmission: new AscalonInferenceAdmissionGate(
-        0.7,
-        new Set(["ascalon-test-v1"]),
-      ),
-    });
-    cell.setState("READY", "boot verified");
-    const snapshot = cell.createSnapshot({
-      jobs: [],
-      workers: [],
-      resources: [],
-      activeIncidents: [],
-      constraints: [],
-    });
-
-    const proposal: ActionProposal = {
-      proposalId: "p_direct_ascalon",
-      floorId: FLOOR,
-      actionName: "floor.observe",
-      proposer: "ASCALON",
-      parameters: {},
-      evidenceRefs: [],
-      expectedOutcome: "observation_recorded",
-      expectedPostconditions: ["observation_recorded"],
-      confidence: 0.9,
-      stateVersion: snapshot.stateVersion,
-      proposedAt: new Date().toISOString(),
-      inputTrust: "TRUSTED_SYSTEM_STATE",
-      ascalonInference: {
-        inferenceId: "infer_direct_01",
-        modelRef: "ascalon-test-v1",
-        adapterVersion: "gateway-v1",
-        mode: "ADMITTED",
-        contextFingerprint: "forged",
-        observedAt: new Date().toISOString(),
-      },
-    };
-
-    const result = await cell.authorizeAndExecute(
-      proposal,
-      snapshot,
-      async () => undefined,
-      {
-        evidenceRefs: new Set(),
-        satisfiedPreconditions: new Set(["floor_ready"]),
-      },
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.reason).toContain("ascalon_inference_not_admitted");
-  });
-
 });

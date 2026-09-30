@@ -2,68 +2,39 @@
  * ShortForge / FactoryOS — Memory Fabric Agent & Ascalon Projection
  *
  * Read policy is bounded and evidence-aware.
- * Retrieval is delegated to the native hybrid engine so Memory Fabric can
- * evolve from lexical-only reads to semantic/graph/temporal retrieval without
- * introducing a second memory database.
+ * Write policy always terminates at MemoryWriter; this service never mutates
+ * runtime state, Mongo operational collections, Guardian state, or .okf law.
  */
+
 import { MemoryWriter } from "../writer/MemoryWriter";
 import type { CandidateMemoryProposal } from "../writer/MemoryWriterContracts";
 import type { KnowledgeDocument } from "../knowledge/OKFContracts";
 import { KnowledgeStore } from "../knowledge/KnowledgeStore";
-import {
-  MemoryRetrievalEngine,
-  type MemoryRetrievalEngineOptions,
-} from "./MemoryRetrievalEngine";
 import type {
   MemoryFabricProjection,
   MemoryFabricProjectionItem,
 } from "./MemoryFabricContracts";
-import type { MemoryAccessContext, MemoryRecallQuery } from "./MemorySemanticsContracts";
-import { MemoryProvenanceGuard } from "./MemoryProvenanceGuard";
 
 export class MemoryFabricProjectionService {
-  private readonly retrievalEngine: MemoryRetrievalEngine;
-  private readonly provenanceGuard = new MemoryProvenanceGuard();
-
   constructor(
     private readonly knowledgeStore: KnowledgeStore,
     private readonly memoryWriter: MemoryWriter,
-    retrievalOptions: MemoryRetrievalEngineOptions = {},
-  ) {
-    this.retrievalEngine = new MemoryRetrievalEngine(retrievalOptions);
-  }
+  ) {}
 
   async projectForAgent(
     query: string,
     maxItems = 12,
     maxChars = 12000,
-    accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
-    if (!accessContext) {
-      throw new Error("[MemoryFabricProjection] Agent projection requires explicit accessContext");
-    }
-    if (!accessContext.principalId.trim()) {
-      throw new Error("[MemoryFabricProjection] Agent principalId is required");
-    }
-    return this.project(query, maxItems, maxChars, "AGENT", accessContext);
+    return this.project(query, maxItems, maxChars, "AGENT");
   }
 
   async projectForAscalon(
     query = "",
     maxItems = 32,
     maxChars = 24000,
-    accessContext?: MemoryAccessContext,
   ): Promise<MemoryFabricProjection> {
-    if (!accessContext) {
-      throw new Error("[MemoryFabricProjection] Ascalon projection requires explicit accessContext");
-    }
-    if (!accessContext.principalId.trim()) {
-      throw new Error("[MemoryFabricProjection] Ascalon principalId is required");
-    }
-    if (accessContext.allowedScopeKeys.length === 0 && accessContext.allowGlobalScope !== true) {
-      throw new Error("[MemoryFabricProjection] Ascalon projection requires at least one authorized scope");
-    }
-    return this.project(query, maxItems, maxChars, "ASCALON", accessContext);
+    return this.project(query, maxItems, maxChars, "ASCALON");
   }
 
   async proposeVerifiedMemory(proposal: CandidateMemoryProposal): Promise<KnowledgeDocument> {
@@ -74,7 +45,6 @@ export class MemoryFabricProjectionService {
         sf_quality_state: "VALID",
         sf_memory_quality_score: 0.95,
         training_eligible: false,
-        sf_memory_type: "OBSERVATION",
       },
     });
   }
@@ -86,66 +56,61 @@ export class MemoryFabricProjectionService {
     return this.knowledgeStore.search(query, { limit: maxItems });
   }
 
-  private async project(
+  private project(
     query: string,
     maxItems: number,
     maxChars: number,
     mode: "AGENT" | "ASCALON",
-    accessContext?: MemoryAccessContext,
-  ): Promise<MemoryFabricProjection> {
+  ): MemoryFabricProjection {
+    // Obsidian/human edits occur outside the process; refresh the semantic store before every bounded read.
     this.knowledgeStore.reload();
 
     const now = Date.now();
     const candidateDocs = this.knowledgeStore
       .list({ sf_lifecycle: "active" })
-      .filter((doc) => this.isProjectable(doc, mode, now));
+      .filter((doc) => this.isProjectable(doc, mode, now))
+      .filter((doc) => this.matchesQuery(doc, query));
 
-    const recallQuery: MemoryRecallQuery = {
-      query,
-      accessContext,
-      maxItems,
-      maxChars,
-      maxTokens: Math.ceil(maxChars / 4),
-      includeStale: false,
-      trace: true,
-    };
+    const sorted = candidateDocs.sort((a, b) => {
+      const scoreA = this.scoreDocument(a, query);
+      const scoreB = this.scoreDocument(b, query);
+      return scoreB - scoreA;
+    });
 
-    const result = await this.retrievalEngine.recall(candidateDocs, recallQuery);
-    const guarded = mode === "ASCALON"
-      ? this.provenanceGuard.guardForAscalon(recallQuery, result.items)
-      : this.provenanceGuard.inspect(recallQuery, result.items);
-    const items: MemoryFabricProjectionItem[] = guarded.accepted.map((item) => ({
-      id: item.memoryId,
-      title: item.title,
-      type: item.semanticType,
-      lifecycle: "active",
-      epistemicState: item.verificationState === "VERIFIED" ? "sourced" : "observed",
-      verificationState: item.verificationState.toLowerCase(),
-      qualityState: item.qualityState as MemoryFabricProjectionItem["qualityState"],
-      qualityScore: item.qualityScore,
-      occurredAt: item.occurredAt,
-      validUntil: item.validUntil,
-      provenance: item.provenance,
-      evidenceRefs: item.evidenceRefs,
-      conflictGroup: this.stringOrUndefined(
-        candidateDocs.find((doc) => doc.frontmatter.id === item.memoryId)?.frontmatter.sf_conflict_group,
-      ),
-      retrievalSignals: {
-        semanticScore: item.semanticScore,
-        lexicalScore: item.lexicalScore,
-        graphScore: item.graphScore,
-        temporalScore: item.temporalScore,
-        rerankScore: item.rerankScore,
-      },
-      content: item.content,
-    }));
+    const items: MemoryFabricProjectionItem[] = [];
+    let usedChars = 0;
 
+    for (const doc of sorted.slice(0, Math.max(1, maxItems))) {
+      const content = this.trimToBudget(doc.content, Math.max(250, maxChars - usedChars));
+      if (!content) continue;
+
+      const item: MemoryFabricProjectionItem = {
+        id: doc.frontmatter.id,
+        title: doc.frontmatter.title || doc.frontmatter.id,
+        type: doc.frontmatter.type || "reference",
+        lifecycle: String(doc.frontmatter.sf_lifecycle || "active"),
+        epistemicState: String(doc.frontmatter.sf_epistemic_state || "sourced"),
+        verificationState: String(doc.frontmatter.sf_verification_state || "verified"),
+        qualityState: String(doc.frontmatter.sf_quality_state || "VALID") as MemoryFabricProjectionItem["qualityState"],
+        qualityScore: this.numberOrDefault(doc.frontmatter.sf_memory_quality_score, 0.9),
+        occurredAt: this.stringOrUndefined(doc.frontmatter.sf_occurred_at || doc.frontmatter.occurred_at),
+        validUntil: this.stringOrUndefined(doc.frontmatter.sf_valid_until || doc.frontmatter.valid_until),
+        provenance: this.provenanceLabel(doc),
+        content,
+      };
+
+      items.push(item);
+      usedChars += content.length;
+      if (usedChars >= maxChars) break;
+    }
+
+    const generatedAt = new Date().toISOString();
     return {
-      generatedAt: result.generatedAt,
+      generatedAt,
       query,
       mode,
       itemCount: items.length,
-      estimatedTokens: result.estimatedTokens,
+      estimatedTokens: Math.ceil(usedChars / 4),
       items,
     };
   }
@@ -156,18 +121,79 @@ export class MemoryFabricProjectionService {
     nowMs: number,
   ): boolean {
     const fm = doc.frontmatter;
-    const lifecycle = String(fm.sf_lifecycle || "").toLowerCase();
-    const verification = String(fm.sf_verification_state || fm.verification || "").toLowerCase();
-    const quality = String(fm.sf_quality_state || "VALID").toUpperCase();
+    const lifecycle = String(fm.sf_lifecycle || "");
+    const verification = String(fm.sf_verification_state || fm.verification || "");
+    const quality = String(fm.sf_quality_state || "VALID");
     const staleAfter = fm.stale_after || fm.sf_valid_until;
 
     if (lifecycle !== "active") return false;
     if (verification !== "verified") return false;
-    if (["QUARANTINED", "CONTRADICTORY", "INCOMPLETE"].includes(quality)) return false;
+    if (["QUARANTINED", "CONTRADICTORY", "STALE", "INCOMPLETE"].includes(quality)) return false;
+
     if (staleAfter && Date.parse(String(staleAfter)) <= nowMs) return false;
-    if (mode === "ASCALON" && fm.training_eligible !== true) return false;
+
+    if (mode === "ASCALON") {
+      return fm.training_eligible === true;
+    }
 
     return true;
+  }
+
+  private matchesQuery(doc: KnowledgeDocument, query: string): boolean {
+    const trimmed = query.trim();
+    if (!trimmed) return true;
+
+    const haystack = [
+      doc.frontmatter.id,
+      doc.frontmatter.title || "",
+      JSON.stringify(doc.frontmatter.tags || []),
+      doc.content,
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return trimmed
+      .toLowerCase()
+      .split(/[^a-z0-9_-]+/)
+      .filter(Boolean)
+      .every((token) => haystack.includes(token));
+  }
+
+  private scoreDocument(doc: KnowledgeDocument, query: string): number {
+    const quality = this.numberOrDefault(doc.frontmatter.sf_memory_quality_score, 0.8);
+    const title = (doc.frontmatter.title || "").toLowerCase();
+    const body = doc.content.toLowerCase();
+    const q = query.trim().toLowerCase();
+
+    let score = quality * 100;
+    if (!q) return score;
+
+    if (title.includes(q)) score += 40;
+    if (body.includes(q)) score += 15;
+
+    for (const token of q.split(/[^a-z0-9_-]+/).filter(Boolean)) {
+      if (title.includes(token)) score += 8;
+      if (body.includes(token)) score += 2;
+    }
+
+    return score;
+  }
+
+  private provenanceLabel(doc: KnowledgeDocument): string {
+    const p = doc.frontmatter.sf_provenance || doc.frontmatter.provenance;
+    if (!p) return "UNSPECIFIED";
+
+    return p.source_type + ":" + p.source_id;
+  }
+
+  private trimToBudget(content: string, budget: number): string {
+    if (budget <= 0) return "";
+    if (content.length <= budget) return content;
+    return content.slice(0, Math.max(0, budget - 64)) + "\n\n[BOUNDED_PROJECTION_TRUNCATED]";
+  }
+
+  private numberOrDefault(value: unknown, fallback: number): number {
+    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
   }
 
   private stringOrUndefined(value: unknown): string | undefined {

@@ -15,7 +15,6 @@ import { VerificationEngine } from "../core/verification/VerificationEngine";
 import { ArtifactResolver } from "../core/rendering/ArtifactResolver";
 import { RemoteRenderStateMachine } from "../core/rendering/RemoteRenderStateMachine";
 import { RenderFabric } from "../core/fabric/RenderFabric";
-import { getCompatibilityEngineContracts } from "../../lib/core/EngineConfigurationContracts";
 
 // Helper functions using native ffmpeg to generate genuine test media fixtures
 function generateTestMp4(outputPath: string, width = 1080, height = 1920, duration = 1): void {
@@ -175,7 +174,6 @@ describe("FactoryOS P0-H Adversarial Failure-Injection Gates (H1 - H15)", () => 
       const report = await runtime.executeResearch({
         missionId: "mis_no_source_test",
         topic: "Obscure Unknown Hypothesis",
-        researchContract: TEST_RESEARCH_CONTRACT,
       });
       const unverified = report.passport.claims.find((c) => c.claimType === "UNVERIFIED_ASSERTION");
       expect(unverified).toBeDefined();
@@ -209,7 +207,6 @@ describe("FactoryOS P0-H Adversarial Failure-Injection Gates (H1 - H15)", () => 
         missionId: "mis_contradiction_test",
         topic: "Flat Earth Proof",
         intent: "Myth debunking analysis",
-        researchContract: TEST_RESEARCH_CONTRACT,
       });
 
       const passport = report.passport;
@@ -267,7 +264,6 @@ describe("FactoryOS P0-H Adversarial Failure-Injection Gates (H1 - H15)", () => 
         missionId: "mis_corroboration_test",
         topic: "Artificial Intelligence Video Generation",
         intent: "Technical benchmarking",
-        researchContract: TEST_RESEARCH_CONTRACT,
       });
 
       const passport = report.passport;

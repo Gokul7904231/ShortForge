@@ -6,6 +6,14 @@ export * from "./contracts/WorldStateContracts";
 export * from "./contracts/CaseContracts";
 export * from "./contracts/EventContracts";
 export * from "./contracts/SlayerContracts";
+export * from "./contracts/SlayerPrimeContracts";
+export * from "./slayers/prime/SlayerActionLease";
+export * from "./slayers/prime/SlayerEvidenceQuorum";
+export * from "./slayers/prime/SlayerActionPolicy";
+export * from "./slayers/prime/SlayerActionExecutor";
+export * from "./slayers/prime/SlayerPrimeEngine";
+export * from "./slayers/prime/SlayerPrimeStateStore";
+
 export * from "./contracts/HealerContracts";
 export * from "./contracts/ValidatorContracts";
 export * from "./contracts/OverseerThinkingContracts";

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonSystemCapabilities",
-  "version": "1.3.0",
+  "version": "1.2.1",
   "description": "Authoritative machine-readable registry of executable capabilities in ShortForge",
   "capabilities": [
     {
@@ -192,29 +192,6 @@
       "requiresGuardianGate": true,
       "timeoutMs": 30000,
       "trainingEligible": true
-    },
-    {
-      "capabilityId": "blender.mcp",
-      "version": "1.0.0",
-      "name": "Blender MCP Semantic Visual Execution",
-      "floorId": "cross_floor_visual_execution",
-      "riskClass": "HIGH",
-      "allowedRoles": [
-        "OVERSEER",
-        "CREATOR",
-        "MEDIA_SYNTHESIZER",
-        "TIMELINE_COMPOSER",
-        "RENDER_ROUTER"
-      ],
-      "requiresGuardianGate": true,
-      "timeoutMs": 120000,
-      "trainingEligible": true,
-      "provider": "ahujasid/mcp-for-blender",
-      "sourceRepository": "https://github.com/ahujasid/mcp-for-blender",
-      "actionSelectionBoundary": "ASCALON_SEMANTIC_ACTION",
-      "runtimeResolutionBoundary": "BLENDER_MCP_TOOLS_LIST",
-      "executionAuthority": "CAPABILITY_REGISTRY",
-      "verificationBoundary": "INDEPENDENT_SCENE_OR_ARTIFACT_OBSERVATION"
     }
   ]
 }

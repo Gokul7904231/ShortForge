@@ -346,9 +346,22 @@ export class DiskTaskDAGRepository implements ITaskDAGRepository {
 
 export class DiskLeaseRepository implements ILeaseRepository {
   private file: string;
+  private counterFile: string;
 
   constructor(baseDir: string) {
     this.file = path.join(baseDir, "leases", "active_leases.json");
+    this.counterFile = path.join(baseDir, "leases", "fencing_counter.txt");
+  }
+
+  private nextFencingToken(): number {
+    let current = 0;
+    if (fs.existsSync(this.counterFile)) {
+      const parsed = Number.parseInt(fs.readFileSync(this.counterFile, "utf-8"), 10);
+      if (Number.isSafeInteger(parsed) && parsed >= 0) current = parsed;
+    }
+    const next = current + 1;
+    fs.writeFileSync(this.counterFile, String(next), "utf-8");
+    return next;
   }
 
   private readMap(): Map<string, TaskLease> {
@@ -383,6 +396,7 @@ export class DiskLeaseRepository implements ILeaseRepository {
       leaseStartedAt: now.toISOString(),
       leaseExpiresAt: new Date(now.getTime() + ttlMs).toISOString(),
       attempt,
+      fencingToken: this.nextFencingToken(),
       heartbeatAt: now.toISOString(),
       status: "ACTIVE",
     };
@@ -419,6 +433,29 @@ export class DiskLeaseRepository implements ILeaseRepository {
       map.set(taskId, updated);
       this.writeMap(map);
     }
+  }
+
+  async releaseLeaseIfFenced(
+    taskId: string,
+    ownerAgentId: string,
+    expectedFencingToken: number
+  ): Promise<boolean> {
+    const map = this.readMap();
+    const existing = map.get(taskId);
+    if (
+      !existing ||
+      existing.ownerAgentId !== ownerAgentId ||
+      existing.status !== "ACTIVE" ||
+      existing.fencingToken !== expectedFencingToken
+    ) {
+      return false;
+    }
+    map.set(taskId, {
+      ...existing,
+      status: "RELEASED",
+    });
+    this.writeMap(map);
+    return true;
   }
 
   async getLease(taskId: string): Promise<TaskLease | null> {

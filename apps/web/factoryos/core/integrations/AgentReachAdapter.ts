@@ -1,21 +1,14 @@
 /**
  * FactoryOS v3 — AgentReach External Intelligence Adapter
  * Authoritative provider boundary connecting autonomous agents to real external research sources.
- *
- * AgentReach is intentionally contract-bound:
- * Content Engine -> Research Contract -> AgentReach -> ReachSubsystem -> evidence.
+ * Adheres strictly to the Anti-Contamination Charter: never fabricates URLs or synthetic findings.
  */
 
-import {
-  ReachSubsystem,
-  type ReachFetchRequest,
-} from "../research/ReachSubsystem";
+import { ReachSubsystem, type ReachFetchRequest } from "../research/ReachSubsystem";
 import type { EvidenceSource } from "../contracts/ResearchPassportContracts";
 
 export interface ExternalResearchResult {
   readonly query: string;
-  readonly engineId?: string;
-  readonly queryKind?: string;
   readonly domain?: string;
   readonly findings: string[];
   readonly sourceUrls: string[];
@@ -34,32 +27,14 @@ export class AgentReachAdapter {
   }
 
   /**
-   * Production contract-bound API.
+   * Executes external research across web, docs, or social endpoints via the ReachSubsystem.
    */
-  async searchExternalKnowledge(
-    request: ReachFetchRequest,
-  ): Promise<ExternalResearchResult>;
-
-  /**
-   * Legacy API intentionally retained only as a fail-closed compatibility
-   * surface. It can no longer execute an arbitrary query.
-   */
-  async searchExternalKnowledge(
-    query: string,
-    domain?: string,
-    maxSources?: number,
-  ): Promise<ExternalResearchResult>;
-
-  async searchExternalKnowledge(
-    requestOrQuery: ReachFetchRequest | string,
-    domain?: string,
-    maxSources: number = 3,
-  ): Promise<ExternalResearchResult> {
+  async searchExternalKnowledge(query: string, domain?: string, maxSources: number = 3): Promise<ExternalResearchResult> {
     const retrievedAt = new Date().toISOString();
 
-    if (typeof requestOrQuery === "string") {
+    if (!query || query.trim() === "") {
       return {
-        query: requestOrQuery,
+        query,
         domain,
         findings: [],
         sourceUrls: [],
@@ -67,31 +42,26 @@ export class AgentReachAdapter {
         confidence: 0.0,
         status: "NO_EVIDENCE",
         retrievedAt,
-        error:
-          "REACH_ENGINE_CONTRACT_REQUIRED: arbitrary AgentReach queries are disabled; provide a Content Engine-bound research contract.",
+        error: "Empty query provided to AgentReachAdapter",
       };
     }
 
-    const request = requestOrQuery;
-
     try {
-      const sources = await this.reachSubsystem.acquireSources({
-        ...request,
-        maxSources:
-          request.maxSources ??
-          Math.min(Math.max(Math.floor(maxSources), 1), 20),
-        callerFloor: request.callerFloor ?? "floor00_analyst",
-      });
+      const request: ReachFetchRequest = {
+        queryOrUrl: domain ? `${query} site:${domain}` : query,
+        type: query.startsWith("http://") || query.startsWith("https://") ? "URL" : "QUERY",
+        maxSources,
+        callerFloor: "floor00_analyst",
+        intent: `Domain-scoped intelligence retrieval for: ${query}`,
+      };
 
-      const onlineSources = sources.filter(
-        (source) => source.sourceStatus === "ONLINE",
-      );
+      const sources = await this.reachSubsystem.acquireSources(request);
+      const onlineSources = sources.filter((s) => s.sourceStatus === "ONLINE");
 
       if (onlineSources.length === 0) {
         return {
-          query: request.topic,
-          engineId: request.engineId,
-          queryKind: request.queryKind,
+          query,
+          domain,
           findings: [],
           sourceUrls: [],
           sources: [],
@@ -102,21 +72,16 @@ export class AgentReachAdapter {
       }
 
       const findings = onlineSources.map(
-        (s) => `[${s.publisher || "Source"}]: ${s.snippet || s.title}`,
+        (s) => `[${s.publisher || "Source"}]: ${s.snippet || s.title}`
       );
-
       const sourceUrls = onlineSources.map((s) => s.url);
-
       const avgReliability =
-        onlineSources.reduce(
-          (acc, s) => acc + (s.reliabilityScore ?? 0.5),
-          0,
-        ) / onlineSources.length;
+        onlineSources.reduce((acc, s) => acc + (s.reliabilityScore ?? 0.5), 0) /
+        onlineSources.length;
 
       return {
-        query: request.topic,
-        engineId: request.engineId,
-        queryKind: request.queryKind,
+        query,
+        domain,
         findings,
         sourceUrls,
         sources: onlineSources,
@@ -126,9 +91,8 @@ export class AgentReachAdapter {
       };
     } catch (err: any) {
       return {
-        query: request.topic,
-        engineId: request.engineId,
-        queryKind: request.queryKind,
+        query,
+        domain,
         findings: [],
         sourceUrls: [],
         sources: [],

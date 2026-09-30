@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getCompatibilityEngineConfiguration,
-  getCompatibilityEngineContracts,
   validateEngineConfigurationSchema,
-  validateEngineResearchContract,
 } from "../../lib/core/EngineConfigurationContracts";
 import { compileProductionSpec } from "../core/engines/ProductionSpecCompiler";
 import type { EngineDefinition } from "../../lib/core/EngineContracts";
@@ -36,7 +34,7 @@ function buildEngine(): EngineDefinition {
     },
     validation: { schemaVersion: "1.0" },
     configuration: getCompatibilityEngineConfiguration("quiz"),
-    contracts: getCompatibilityEngineContracts("quiz"),
+    contracts: {},
     manifestVersion: "1.0",
     configVersion: 1,
     createdAt: new Date(0).toISOString(),
@@ -81,37 +79,6 @@ describe("ProductionSpec", () => {
     ]);
     expect(result.spec.compilation.hash).toHaveLength(64);
     expect(result.spec.immutable).toBe(true);
-  });
-
-
-
-  it("rejects an engine without a valid Reach research contract", () => {
-    const engine = {
-      ...buildEngine(),
-      contracts: {
-        ...getCompatibilityEngineContracts("quiz"),
-        research: {
-          ...getCompatibilityEngineContracts("quiz").research!,
-          agentReachProfile: "engine:other",
-        },
-      },
-    } as EngineDefinition;
-
-    const validation = validateEngineResearchContract(
-      engine.engineId,
-      engine.contracts.research,
-    );
-
-    expect(validation.valid).toBe(false);
-    expect(validation.errors.join(" ")).toMatch(/agentReachProfile/i);
-
-    expect(() =>
-      compileProductionSpec({
-        jobId: "job_test_invalid_reach_contract",
-        engine,
-        userConfig: { topic: "Invalid contract test" },
-      }),
-    ).toThrow(/research contract validation failed/i);
   });
 
   it("rejects unsupported enum values", () => {

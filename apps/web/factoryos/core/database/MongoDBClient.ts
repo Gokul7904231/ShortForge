@@ -310,10 +310,12 @@ export class MongoTaskDAGRepository implements ITaskDAGRepository {
 }
 
 export class MongoLeaseRepository implements ILeaseRepository {
-  constructor(private db: Db) {}
+  private readonly col: Collection<TaskLease & { _id?: string }>;
+  private readonly meta: Collection<{ _id: string; nextFencingToken?: number }>;
 
-  private get col(): Collection<TaskLease & { _id?: string }> {
-    return this.db.collection("leases");
+  constructor(private db: Db) {
+    this.col = db.collection("leases");
+    this.meta = db.collection("lease_fencing_meta");
   }
 
   async acquireLease(taskId: string, ownerAgentId: string, ttlMs: number, attempt: number = 1): Promise<boolean> {
@@ -327,12 +329,20 @@ export class MongoLeaseRepository implements ILeaseRepository {
       }
     }
 
+    const counter = await this.meta.findOneAndUpdate(
+      { _id: "singleton" },
+      { $inc: { nextFencingToken: 1 } },
+      { upsert: true, returnDocument: "after" }
+    );
+    const fencingToken = Math.max(1, counter?.nextFencingToken || 1);
+
     const lease: TaskLease = {
       taskId,
       ownerAgentId,
       leaseStartedAt: now.toISOString(),
       leaseExpiresAt: expiresAt,
       attempt,
+      fencingToken,
       heartbeatAt: now.toISOString(),
       status: "ACTIVE",
     };
@@ -357,6 +367,23 @@ export class MongoLeaseRepository implements ILeaseRepository {
       { taskId, ownerAgentId },
       { $set: { status: "RELEASED" } }
     );
+  }
+
+  async releaseLeaseIfFenced(
+    taskId: string,
+    ownerAgentId: string,
+    expectedFencingToken: number
+  ): Promise<boolean> {
+    const result = await this.col.updateOne(
+      {
+        taskId,
+        ownerAgentId,
+        status: "ACTIVE",
+        fencingToken: expectedFencingToken,
+      },
+      { $set: { status: "RELEASED" } }
+    );
+    return result.matchedCount === 1;
   }
 
   async getLease(taskId: string): Promise<TaskLease | null> {

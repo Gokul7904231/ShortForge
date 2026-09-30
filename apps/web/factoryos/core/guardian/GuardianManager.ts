@@ -18,7 +18,6 @@ import {
 } from "../governance/FloorCouncil";
 import { DiskFloorCouncilSessionStore } from "../governance/FloorCouncilSessionStore";
 import { AscalonInferenceAdmissionGate } from "../governance/AscalonInferenceAdmission";
-import type { AscalonPreCallGate } from "../governance/FloorGovernanceCell";
 
 export class GuardianManager {
   private guardians: Map<string, GuardianKernel> = new Map();
@@ -27,20 +26,17 @@ export class GuardianManager {
   private caseManager?: CaseManager;
   private isRunning: boolean = false;
   private governanceStoragePath?: string;
-  private readonly ascalonPreCallGate?: AscalonPreCallGate;
 
   constructor(
     eventBus: DurableEventBus,
     worldState: WorldStateEngine,
     caseManager?: CaseManager,
-    governanceStoragePath?: string,
-    ascalonPreCallGate?: AscalonPreCallGate
+    governanceStoragePath?: string
   ) {
     this.eventBus = eventBus;
     this.worldState = worldState;
     this.caseManager = caseManager;
     this.governanceStoragePath = governanceStoragePath;
-    this.ascalonPreCallGate = ascalonPreCallGate;
 
     this.registerDefaultGuardians();
   }
@@ -97,7 +93,6 @@ export class GuardianManager {
          }),
          eventBus: this.eventBus,
          ascalonAdmission: new AscalonInferenceAdmissionGate(0.7, ascalonAllowedModelRefs),
-        ascalonPreCallGate: this.ascalonPreCallGate,
       });
 
       governanceCell.setState("READY", "Guardian runtime attached");

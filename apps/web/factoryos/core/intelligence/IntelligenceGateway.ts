@@ -20,14 +20,6 @@ import { ContextCapsule, IContextCompiler } from "./context/ContextCapsuleContra
 import { MemoryWriter } from "./writer/MemoryWriter";
 import { CandidateMemoryProposal, IMemoryWriter } from "./writer/MemoryWriterContracts";
 import { MemoryFabricProjectionService } from "./memory/MemoryFabricProjection";
-import { MemoryLifecycleService } from "./memory/MemoryLifecycleService";
-import { KnowledgeStoreObservationAdapter } from "./memory/KnowledgeStoreObservationAdapter";
-import { MemoryConsolidationStrategyRouter } from "./memory/MemoryConsolidationStrategyRouter";
-import { MemoryMentalModelManager } from "./memory/MemoryMentalModelManager";
-import { KnowledgeStoreMentalModelAdapter } from "./memory/KnowledgeStoreMentalModelAdapter";
-import { MemoryRetrievalEngine, type MemoryRetrievalEngineOptions } from "./memory/MemoryRetrievalEngine";
-import type { MemoryAccessContext } from "./memory/MemorySemanticsContracts";
-import type { MemoryConsolidationStrategy } from "./memory/MemoryConsolidationStrategyRouter";
 
 export interface SystemDoctorReport {
   readonly status: "HEALTHY" | "DEGRADED" | "BROKEN";
@@ -55,14 +47,11 @@ export class IntelligenceGateway {
   public readonly contextCompiler: IContextCompiler;
   public readonly memoryWriter: IMemoryWriter;
   public readonly memoryFabric: MemoryFabricProjectionService;
-  public readonly memoryLifecycle: MemoryLifecycleService;
 
   constructor(options?: {
     graphPath?: string;
     vaultPath?: string;
     customRuntime?: IRuntimeStateProvider;
-    retrievalOptions?: MemoryRetrievalEngineOptions;
-    consolidationStrategies?: readonly MemoryConsolidationStrategy[];
   }) {
     // 1. Structural Graph Provider
     let targetGraphPath = options?.graphPath;
@@ -131,19 +120,6 @@ export class IntelligenceGateway {
     this.memoryFabric = new MemoryFabricProjectionService(
       this.knowledgeStore,
       this.memoryWriter as MemoryWriter,
-      options?.retrievalOptions,
-    );
-
-    const observationStore = new KnowledgeStoreObservationAdapter(this.knowledgeStore);
-    const strategyRouter = new MemoryConsolidationStrategyRouter(
-      options?.consolidationStrategies ?? [],
-    );
-    this.memoryLifecycle = new MemoryLifecycleService(
-      () => this.knowledgeStore.list(),
-      observationStore,
-      new MemoryRetrievalEngine(options?.retrievalOptions),
-      strategyRouter,
-      new MemoryMentalModelManager(new KnowledgeStoreMentalModelAdapter(this.knowledgeStore)),
     );
   }
 
@@ -155,58 +131,8 @@ export class IntelligenceGateway {
     taskId: string;
     query: string;
     tokenBudget?: number;
-    memoryAccessContext?: MemoryAccessContext;
   }): Promise<ContextCapsule> {
-    const retrieval = params.memoryAccessContext
-      ? {
-          items: (await this.memoryLifecycle.recall({
-            query: params.query,
-            accessContext: params.memoryAccessContext,
-            maxItems: 12,
-            maxChars: Math.max(2000, (params.tokenBudget ?? 2500) * 3),
-            maxTokens: params.tokenBudget ?? 2500,
-            includeStale: false,
-            trace: true,
-          })).items.map((item) => ({
-            id: item.memoryId,
-            sourceType: "KNOWLEDGE" as const,
-            sourceId: item.memoryId,
-            titleOrPath: item.title,
-            relevance: Math.max(0, Math.min(1, item.rerankScore)),
-            finalScore: Math.max(0, Math.min(1, item.rerankScore)),
-            authority:
-              item.authority === "F07" ||
-              item.authority === "VERIFIED_SYSTEM" ||
-              item.authority === "HUMAN_AUTHORITY"
-                ? "AUTHORITATIVE" as const
-                : item.authority === "MODEL_ADVISORY"
-                  ? "INFERRED" as const
-                  : "DERIVED" as const,
-            freshness: item.freshness.checkedAt,
-            epistemicStatus: item.verificationState === "VERIFIED" ? "sourced" as const : "observed" as const,
-            verification:
-              item.verificationState === "VERIFIED"
-                ? "verified" as const
-                : item.verificationState === "DISPUTED"
-                  ? "disputed" as const
-                  : "unverified" as const,
-            snippet: item.content.slice(0, 1200),
-            metadata: {
-              memoryType: item.semanticType,
-              scopeKey: item.scopeKey,
-              evidenceRefs: item.evidenceRefs,
-              provenance: item.provenance,
-              retrievalSignals: {
-                semantic: item.semanticScore,
-                lexical: item.lexicalScore,
-                graph: item.graphScore,
-                temporal: item.temporalScore,
-                rerank: item.rerankScore,
-              },
-            },
-          })),
-        }
-      : await this.retrievalPlanner.retrieve(params.query);
+    const retrieval = await this.retrievalPlanner.retrieve(params.query);
     const snap = await this.runtimeState.getSnapshot();
 
     return this.contextCompiler.compile({

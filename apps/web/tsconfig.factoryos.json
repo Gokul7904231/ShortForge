@@ -3,16 +3,12 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
   "include": [
     "factoryos/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "factoryos/**/*.test.ts",
-    "factoryos/**/tests/**/*.ts"
+    "node_modules"
   ]
 }

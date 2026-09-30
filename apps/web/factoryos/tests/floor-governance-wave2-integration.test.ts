@@ -20,21 +20,12 @@ import type { FloorHandoffEnvelope } from "../core/contracts/FloorProtocolContra
 
 const FLOOR = "floor04_media_synthesis";
 
-const alwaysAdmitAscalon = {
-  evaluate: async ({ snapshot }: { snapshot: { floorId: string; stateVersion: number } }) => ({
-    admitted: true,
-    reason: "test_pre_call_admitted",
-    contextFingerprint: `test:${snapshot.floorId}:${snapshot.stateVersion}`,
-  }),
-};
-
 function buildCell(journal = new InMemoryFloorBlackboardJournal()): FloorGovernanceCell {
   const cell = new FloorGovernanceCell({
     floorId: FLOOR,
     guardianId: "guardian_floor04",
     actionGraph: createDefaultFloorActionGraph(),
     ascalon: new ProposalOnlyAscalonAdapter(async () => null),
-    ascalonPreCallGate: alwaysAdmitAscalon,
     capabilities: [
       "floor.read",
       "floor.analyze",

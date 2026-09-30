@@ -1,100 +1,85 @@
-# Research: Reach Provider Fabric
+# Research: Reach Engine & AgentReach Boundary
 
-> Status: CANONICAL / IMPLEMENTATION-ALIGNED / CONTRACT-GATED
-> Scope: Floor 00 external research acquisition
+> **Status**: CANONICAL / IMPLEMENTATION-ALIGNED  
+> **Current implementation**: `apps/web/factoryos/core/research/ReachSubsystem.ts` and `apps/web/factoryos/core/integrations/AgentReachAdapter.ts`
 
-## 1. Core invariant
+## 1. Current boundary
 
-Reach is the permanent research capability; retrieval providers are replaceable resources.
+Reach is an external-information acquisition subsystem.
 
-Content Engine Contract -> F00 Research -> Reach Gate -> Cache -> Provider Router -> Evidence Intake -> F00 Verification -> Research Passport.
+Current supported paths are:
 
-Ascalon requests research intent but does not select retrieval providers.
+1. **Direct URL** → `LightpandaBrowserAdapter.navigateAndExtract()`
+2. **Query** → configured `SEARCH_API_URL`
+3. **No configured query provider** → empty evidence result
+4. **Test** → injected `ReachTestProvider`
 
-## 2. Provider roles
+The current query path is generic. It is **not yet hard-bound to a Content Engine-specific query schema**.
 
-### SearXNG
-Default low-cost/open-source discovery provider. It is a discovery layer, not an unlimited guarantee: upstream search engines can throttle, block, or become unavailable.
+The intended next architecture is:
 
-### Decodo Fast Search
-Quota-governed structured search for precision/current research or fallback when baseline acquisition is insufficient.
+```text
+Content Engine Research Contract
+        ↓
+F00 Research Specification
+        ↓
+AgentReach query plan
+        ↓
+ReachSubsystem
+        ↓
+EvidenceSource[]
+```
 
-### Decodo Web Scraping
-Quota-governed deep retrieval for a URL already discovered by Reach. It is not an arbitrary caller-controlled URL capability.
+## 2. Honest failure semantics
 
-## 3. Research modes
+The current implementation intentionally fails closed:
 
-NORMAL: SearXNG first; Decodo fallback.
-PRECISION: Decodo Fast Search first; SearXNG fallback.
-DEEP: baseline search, then Decodo Web Scraping for selected discovered sources.
-CORROBORATION: query SearXNG and Decodo independently, then deduplicate before counting evidence sources.
+- empty AgentReach query → `NO_EVIDENCE`;
+- failed query provider → no fabricated sources;
+- direct URL retrieval failure → explicit unavailable source state;
+- AgentReach only exposes online sources as usable findings;
+- no synthetic placeholder URLs are created.
 
-Default inference: TOPIC_SCAN -> NORMAL; FACT_CHECK/TREND_SCAN/COMPETITOR_SCAN -> PRECISION. F00 may explicitly request a mode.
+One important distinction is preserved:
 
-## 4. Cache boundary
+**Reach may expose an unavailable retrieval record for diagnostics; ResearchRuntime removes unavailable/unreachable records before treating sources as evidence.**
 
-Cache is consulted before provider calls.
-Identity binds engine, query kind, rendered engine-owned query, declared parameters, freshness, and research mode.
-Cache is an acquisition optimization, not a proof of truth.
+## 3. Current data integrity
 
-## 5. Decodo budget boundary
+An `EvidenceSource` contains:
 
-Separate ledgers exist for:
-- DECODO_FAST_SEARCH
-- DECODO_WEB_STANDARD
-- DECODO_WEB_JS
-- DECODO_WEB_PREMIUM
-- DECODO_WEB_PREMIUM_JS
+- source ID;
+- URL;
+- title;
+- publisher when known;
+- retrieval timestamp;
+- extraction method;
+- snippet;
+- reliability score;
+- optional content hash;
+- source status and quality.
 
-A Decodo operation reserves quota before the network call, commits on completion, and releases on failure.
-Vendor quotas are configuration, not hard-coded truth.
+The current implementation does **not** independently verify the truth of an HTTP response merely because the transport succeeded.
 
-Before multi-instance production, the budget governor must be backed by a shared durable store so reservations remain atomic across workers.
+## 4. Current vs target
 
-## 6. Reliability boundary
+| Dimension | Current | Target |
+|---|---|---|
+| URL browser | Lightpanda adapter | Expanded browser/provider fleet |
+| Search | `SEARCH_API_URL` | Engine-specific research plans over multiple providers |
+| Source truth | Transport + normalized metadata | Source-specific verification and corroboration |
+| Social intelligence | Not a dedicated direct platform scraper | Engine-specific platform adapters |
+| AgentReach contract | Generic query/domain/maxSources | Research-contract-driven bounded query plans |
+| Failure semantics | Fail closed / no synthetic sources | Same invariant with richer diagnostics |
 
-Provider calls have bounded timeouts, bounded retry, exponential backoff, circuit breaking, health state, and fallback.
-Provider failure must not become Reach failure.
+## 5. Governance invariant
 
-## 7. Evidence/provenance
+AgentReach is an information-acquisition capability. It cannot:
 
-Each normalized source can retain provider, provider request ID, rendered query, URL, retrieval timestamp, extraction method, content hash, and status.
-Provider output is candidate evidence only. F00 remains responsible for verification/corroboration.
+- invent evidence;
+- authorize content;
+- bypass F00;
+- bypass .okf policy;
+- grant worker capabilities;
+- override F07.
 
-## 8. Security boundary
-
-Production Reach fails closed for missing or invalid Content Engine contracts, unauthorized caller floors, undeclared query kinds/parameters/templates, and arbitrary legacy AgentReach queries.
-
-## 9. Configuration
-
-SEARXNG_BASE_URL
-
-Decodo credentials are isolated by capability:
-- DECODO_API_KEY: account/public API operations only; not used as a Reach provider credential.
-- DECODO_FAST_SEARCH_API_KEY: Fast Search authentication.
-- DECODO_WEB_SCRAPING_API_KEY: Web Scraping authentication.
-
-Optional authentication scheme overrides:
-- DECODO_FAST_SEARCH_AUTH_SCHEME=Basic|Bearer (default: Basic)
-- DECODO_WEB_SCRAPING_AUTH_SCHEME=Basic|Bearer (default: Basic)
-
-Provider endpoints:
-- DECODO_FAST_SEARCH_URL (default: https://fastsearch.decodo.com/v0/search)
-- DECODO_WEB_API_URL (default: https://scraper-api.decodo.com/v2/scrape)
-- DECODO_WEB_PROXY_POOL=standard|premium
-- DECODO_WEB_HEADLESS=none|html
-
-Budget overrides:
-- DECODO_FAST_SEARCH_BUDGET
-- DECODO_WEB_STANDARD_BUDGET
-- DECODO_WEB_JS_BUDGET
-- DECODO_WEB_PREMIUM_BUDGET
-- DECODO_WEB_PREMIUM_JS_BUDGET
-
-When a Decodo credential is configured and no explicit budget override is supplied, the router initializes a bounded local development allowance of 100 operations for that capability. This is an operational fallback, not vendor quota truth; production deployments should set explicit budgets and later back them with a shared durable ledger.
-
-Secrets must not be committed.
-
-## 10. Implementation invariant
-
-F00 owns research judgment; Reach owns information acquisition; SearXNG provides default discovery; Decodo provides quota-governed specialized acquisition; and no retrieval provider certifies truth.

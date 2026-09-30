@@ -16,8 +16,6 @@ import type {
 } from "../contracts/ResearchPassportContracts";
 import { runBoundedFeedbackLoop, type FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
-import type { EngineResearchContract } from "../../../lib/core/EngineConfigurationContracts";
-import type { ReachResearchMode } from "./ReachContracts";
 
 export interface ResearchLoopOptions {
   readonly maxIterations?: number;
@@ -50,14 +48,14 @@ export interface ResearchRequest {
   readonly targetSourceCount?: number;
   readonly scheduleInstanceId?: string;
   readonly audience?: string;
-  readonly researchMode?: ReachResearchMode;
-  /**
-   * Immutable Content Engine-owned authorization for all external research.
-   * Optional at the type level is intentionally forbidden: callers must bind
-   * a Content Engine before constructing a production research request.
-   */
-  readonly researchContract: EngineResearchContract & {
-    readonly engineId: string;
+  readonly researchContract?: {
+    readonly engineId?: string;
+    readonly dataRequirements?: string[];
+    readonly minSources?: number;
+    readonly citationRequired?: boolean;
+    readonly freshness?: "run" | "recent" | "any";
+    readonly sourcePolicy?: string;
+    readonly agentReachProfile?: string;
   };
 }
 
@@ -184,46 +182,13 @@ export class ResearchRuntime {
     }
 
     // 1. Source Discovery via Reach.
-    // Reach is contract-gated: F00 cannot acquire external information unless
-    // the selected Content Engine explicitly authorizes the query operation.
-    const researchContract = request.researchContract;
-
-    if (!researchContract) {
-      throw new Error(
-        "F00_RESEARCH_CONTRACT_REQUIRED: Floor 00 external research requires a bound Content Engine research contract.",
-      );
-    }
-
-    if (!researchContract.required) {
-      throw new Error(
-        `F00_RESEARCH_NOT_AUTHORIZED: Content Engine "${researchContract.engineId}" does not authorize external research for this request.`,
-      );
-    }
-
-    const queryKindByMethodology: Record<
-      NonNullable<ResearchRequest["methodology"]>,
-      string
-    > = {
-      QUICK: "TOPIC_SCAN",
-      FULL: "TOPIC_SCAN",
-      FACT_CHECK: "FACT_CHECK",
-      TREND_SCAN: "TREND_SCAN",
-      COMPETITOR_SCAN: "COMPETITOR_SCAN",
-    };
-
-    const queryKind = queryKindByMethodology[methodology];
-
-    if (!queryKind) {
-      throw new Error(
-        `F00_RESEARCH_QUERY_KIND_UNMAPPED: methodology ${methodology} has no Content Engine query mapping.`,
-      );
-    }
-
+    // Production callers should supply engine research requirements (or an
+    // explicit targetSourceCount); the methodology fallback exists only for
+    // standalone/legacy invocations.
     const requestedSourceCount =
       request.targetSourceCount ??
-      researchContract.minSources ??
+      request.researchContract?.minSources ??
       (methodology === "QUICK" ? 2 : 4);
-
     const maxSources = Math.min(
       MAX_RESEARCH_SOURCE_CAP,
       Math.max(
@@ -231,21 +196,17 @@ export class ResearchRuntime {
         Math.floor(
           Number.isFinite(Number(requestedSourceCount))
             ? Number(requestedSourceCount)
-            : 1,
-        ),
-      ),
+            : 1
+        )
+      )
     );
 
     const acquiredSources = await this.reach.acquireSources({
-      engineId: researchContract.engineId,
-      queryKind,
-      topic: request.topic,
-      parameters: {},
-      researchContract,
+      queryOrUrl: request.topic,
+      type: "QUERY",
       maxSources,
       callerFloor: "floor00_analyst",
       intent: request.intent,
-      mode: request.researchMode,
     });
 
     // Reach may return an explicit UNAVAILABLE/UNREACHABLE source record so the
@@ -292,7 +253,7 @@ export class ResearchRuntime {
         .map((c) => c.statement),
       confidence: passportConfidence,
       provenance: {
-        reachProvider: "reach-provider-fabric",
+        reachProvider: "reach-http-browser",
         agentId: "worker_analyst_01",
         floorId: "floor00_analyst",
       },
@@ -314,7 +275,6 @@ export class ResearchRuntime {
         citationRequired: request.researchContract?.citationRequired,
         freshness: request.researchContract?.freshness,
         agentReachProfile: request.researchContract?.agentReachProfile,
-        researchMode: request.researchMode,
       },
     };
 

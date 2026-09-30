@@ -31,11 +31,6 @@ import type {
   MemoryFabricSourceEnvelope,
 } from "./MemoryFabricContracts";
 import { MemoryFabricProjectionService } from "./MemoryFabricProjection";
-import { MemoryRetentionNormalizer } from "./MemoryRetentionNormalizer";
-import { MemoryLifecycleService } from "./MemoryLifecycleService";
-import { KnowledgeStoreObservationAdapter } from "./KnowledgeStoreObservationAdapter";
-import type { MemoryRetrievalEngineOptions } from "./MemoryRetrievalEngine";
-import type { MemoryAccessContext } from "./MemorySemanticsContracts";
 
 export interface MemoryFabricBridgeConfig {
   readonly enabled?: boolean;
@@ -46,12 +41,6 @@ export interface MemoryFabricBridgeConfig {
   readonly rawMaxChars?: number;
   readonly candidateMaxChars?: number;
   readonly watchedCollections?: readonly string[];
-  readonly retrievalOptions?: MemoryRetrievalEngineOptions;
-  /**
-   * Explicit Ascalon projection principal/scopes. Without this, no generated
-   * Ascalon projection is produced.
-   */
-  readonly ascalonAccessContext?: MemoryAccessContext;
 }
 
 const DEFAULT_COLLECTIONS = [
@@ -114,9 +103,6 @@ export class MemoryFabricBridge {
   private readonly candidateMaxChars: number;
   private readonly watchedCollections: ReadonlySet<string>;
   private readonly projectionService: MemoryFabricProjectionService;
-  private readonly retentionNormalizer = new MemoryRetentionNormalizer();
-  private readonly memoryLifecycle: MemoryLifecycleService;
-  private readonly ascalonAccessContext?: MemoryAccessContext;
 
   private running = false;
   private unsubscribeEventBus?: () => void;
@@ -141,7 +127,6 @@ export class MemoryFabricBridge {
     private readonly ledger: IMemoryFabricLedger,
     private readonly mongoDb?: Db | null,
     config: MemoryFabricBridgeConfig = {},
-    memoryLifecycle?: MemoryLifecycleService,
   ) {
     this.enabled = config.enabled !== false;
     this.vaultPath = path.resolve(config.vaultPath || knowledgeStore.getRootDir());
@@ -156,18 +141,7 @@ export class MemoryFabricBridge {
     this.projectionService = new MemoryFabricProjectionService(
       this.knowledgeStore,
       this.memoryWriter,
-      config.retrievalOptions,
     );
-    this.memoryLifecycle =
-      memoryLifecycle ??
-      new MemoryLifecycleService(
-        () => this.knowledgeStore.list(),
-        new KnowledgeStoreObservationAdapter(this.knowledgeStore),
-        undefined,
-        undefined,
-        undefined,
-      );
-    this.ascalonAccessContext = config.ascalonAccessContext;
 
     if (!this.enabled) {
       this.mode = "DISABLED";
@@ -349,27 +323,12 @@ export class MemoryFabricBridge {
     return ingested;
   }
 
-  async projectForAgent(
-    query: string,
-    maxItems = 12,
-    maxChars = 12000,
-    accessContext?: MemoryAccessContext,
-  ): Promise<MemoryFabricProjection> {
-    return this.projectionService.projectForAgent(query, maxItems, maxChars, accessContext);
+  async projectForAgent(query: string, maxItems = 12, maxChars = 12000): Promise<MemoryFabricProjection> {
+    return this.projectionService.projectForAgent(query, maxItems, maxChars);
   }
 
-  async projectForAscalon(
-    query = "",
-    maxItems = 32,
-    maxChars = 24000,
-    accessContext?: MemoryAccessContext,
-  ): Promise<MemoryFabricProjection> {
-    return this.projectionService.projectForAscalon(
-      query,
-      maxItems,
-      maxChars,
-      accessContext ?? this.ascalonAccessContext,
-    );
+  async projectForAscalon(query = "", maxItems = 32, maxChars = 24000): Promise<MemoryFabricProjection> {
+    return this.projectionService.projectForAscalon(query, maxItems, maxChars);
   }
 
   async getHealth(): Promise<MemoryFabricHealth> {
@@ -542,8 +501,6 @@ export class MemoryFabricBridge {
       id,
       sf_id: id,
       type: "observation",
-      sf_memory_type: "EXPERIENCE",
-      scope_key: this.extractMemoryScope(this.safeParseJson(record.payloadJson)),
       title: "Raw memory — " + record.sourceType + " — " + record.sourceId,
       description: "Immutable sanitized observation captured by the live ShortForge Memory Fabric.",
       status: "draft",
@@ -592,24 +549,6 @@ export class MemoryFabricBridge {
     if (existing) return existing;
 
     const payload = this.safeParseJson(record.payloadJson);
-    const retainedFacts = await this.retentionNormalizer.retain({
-      memoryId: raw.frontmatter.id,
-      scope: { kind: "CUSTOM", key: this.extractMemoryScope(payload) },
-      summary: record.summary,
-      payload,
-      occurredAt: record.occurredAt,
-      capturedAt: record.capturedAt,
-      sourceType: record.sourceType,
-      sourceId: record.sourceId,
-      sourceHash: record.sourceHash,
-    });
-    const retainedEvidenceRefs = [...new Set(
-      retainedFacts.flatMap((fact) => fact.evidenceRefs.map((evidence) => evidence.id)),
-    )];
-    const retainedEntityRefs = [...new Set(
-      retainedFacts.flatMap((fact) => [...(fact.entityRefs ?? [])]),
-    )];
-    await this.memoryLifecycle.retainMany(retainedFacts);
     const classification = this.classifyCandidate(record, payload);
     const body = [
       "# " + classification.title,
@@ -621,12 +560,6 @@ export class MemoryFabricBridge {
       "- Raw observation: [[" + raw.frontmatter.id + "]]",
       "- Source hash: " + record.sourceHash,
       record.correlationId ? "- Correlation: " + record.correlationId : "",
-      "",
-      "## Retained facts",
-      ...retainedFacts.flatMap((fact, index) => [
-        "### Fact " + (index + 1),
-        fact.statement,
-      ]),
       "",
       "## Structured payload",
       "",
@@ -643,19 +576,6 @@ export class MemoryFabricBridge {
       id,
       sf_id: id,
       type: classification.type,
-      sf_memory_type: "OBSERVATION",
-      sf_observation_scope: this.extractMemoryScope(payload),
-      scope_key: this.extractMemoryScope(payload),
-      sf_proof_count: 0,
-      sf_supporting_memory_ids: [raw.frontmatter.id],
-      sf_memory_history: [{
-        version: 1,
-        statement: record.summary,
-        changedAt: record.occurredAt,
-        changeType: "CREATED",
-        evidenceRefs: [raw.frontmatter.id, ...retainedEvidenceRefs],
-      }],
-      sf_authority_class: "UNKNOWN",
       title: classification.title,
       description: "Compiled candidate derived from a measured ShortForge runtime observation.",
       status: "draft",
@@ -672,6 +592,7 @@ export class MemoryFabricBridge {
       sf_conflict_group: conflictGroup,
       sf_occurred_at: record.occurredAt,
       sf_valid_from: record.occurredAt,
+      stale_after: new Date(new Date(record.occurredAt).getTime() + 30 * 86400000).toISOString(),
       created_at: record.createdAt,
       updated_at: new Date().toISOString(),
       tags: ["shortforge", "memory-fabric", "candidate", classification.type],
@@ -687,8 +608,7 @@ export class MemoryFabricBridge {
         path: record.sourceCollection,
         captured_at: record.capturedAt,
       },
-      evidence_refs: [raw.frontmatter.id, ...retainedEvidenceRefs],
-      entity_refs: retainedEntityRefs,
+      evidence_refs: [raw.frontmatter.id],
       training_eligible: false,
     };
 
@@ -844,8 +764,6 @@ export class MemoryFabricBridge {
         sf_verification_state: "verified",
         sf_quality_state: "VALID",
         sf_memory_quality_score: 0.95,
-        sf_memory_type: "OBSERVATION",
-        sf_authority_class: "VERIFIED_SYSTEM",
         sf_promoted_from: candidate.frontmatter.id,
         sf_promoted_at: now,
         sf_evidence_reference: evidenceReference,
@@ -1054,14 +972,8 @@ export class MemoryFabricBridge {
 
   private async refreshAscalonProjection(): Promise<void> {
     if (!this.running || !this.enabled) return;
-    if (!this.ascalonAccessContext) return;
 
-    const projection = await this.projectionService.projectForAscalon(
-      "",
-      64,
-      30000,
-      this.ascalonAccessContext,
-    );
+    const projection = await this.projectionService.projectForAscalon("", 64, 30000);
     const dir = path.join(this.vaultPath, "obsidian", "generated", "ascalon");
     const file = path.join(dir, "ACTIVE_MEMORY_PROJECTION.md");
 
@@ -1202,16 +1114,6 @@ export class MemoryFabricBridge {
     }
 
     return undefined;
-  }
-
-  private extractMemoryScope(payload: Record<string, unknown>): string {
-    const raw =
-      payload["missionId"] ??
-      payload["scopeKey"] ??
-      payload["workflowId"] ??
-      payload["channelId"] ??
-      payload["caseId"];
-    return typeof raw === "string" && raw.trim() ? raw : "GLOBAL";
   }
 
   private extractConflictGroup(

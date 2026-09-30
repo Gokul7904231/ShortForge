@@ -76,7 +76,7 @@ export class EpistemicLedger {
         return false;
       }
 
-      const unsigned: Omit<EpistemicLedgerRecord, "recordHash"> = {
+      const unsigned = {
         sequence: record.sequence,
         recordedAt: record.recordedAt,
         contextFingerprint: record.contextFingerprint,
@@ -84,7 +84,7 @@ export class EpistemicLedger {
         payload: record.payload,
         previousHash: record.previousHash,
       };
-      const expected: string = createHash("sha256")
+      const expected = createHash("sha256")
         .update(canonicalize(unsigned), "utf8")
         .digest("hex");
 

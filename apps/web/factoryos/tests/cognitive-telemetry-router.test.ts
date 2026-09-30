@@ -64,18 +64,4 @@ describe("FactoryOS Frontier v2 — Cognitive Telemetry & Capability Router Suit
       });
     }).toThrow(/No permitted capability tool found/);
   });
-
-  it("04: Capability Router exposes Blender as a governed visual capability", () => {
-    const result = router.routeCapability({
-      taskDescription: "Create a governed Blender visual scene",
-      targetCategory: "VISUAL_RENDER",
-      maxRiskTolerance: 0.9,
-      callerPermissions: ["blender:use"],
-    });
-
-    expect(result.selectedTool.toolId).toBe("tool_blender_mcp");
-    expect(result.selectedTool.requiresGuardianApproval).toBe(true);
-    expect(result.selectedTool.permissionsRequired).toContain("blender:use");
-  });
-
 });

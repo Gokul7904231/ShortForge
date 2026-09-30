@@ -102,6 +102,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Production Floors** | [`./floors/`](./floors/) | Deep specifications for Floors 00 through 07, inputs, outputs, contracts, and failure modes. |
 | **Mandatory Decision Protocol** | [./decision-protocol.md](./decision-protocol.md) | Mandatory end-to-end .okf review gate before architecture, research, model, worker, security, rendering, or workflow decisions. |
 | **Worker Permissions** | [./security/worker-permissions.md](./security/worker-permissions.md) | Canonical floor-by-floor capability grants, forbidden capabilities, attenuation, leases, fencing, and worker security rules. |
+| **Slayer Prime** | [./hierarchy/slayer-prime.md](./hierarchy/slayer-prime.md)<br>[./hierarchy/slayer-prime-hardening.md](./hierarchy/slayer-prime-hardening.md) | Authorized enforcement boundary, distributed leadership, fencing, persistence, failure matrix, and production safety invariants. |
 | **Engineering Stack** | [./engineering-stack.md](./engineering-stack.md) | Locked media stack: TimelineIR + Remotion + AgentTube-derived scene lifecycle + RenderFabric / FFmpeg. |
 | **Production Helper** | [./production-helper.md](./production-helper.md) | Routine validation workflow for P0 hardening, static security, runtime convergence, staging, and release evidence. |
 | **Devourer Charter** | [./devourer.md](./devourer.md) | Root-level controlled self-improvement charter; detailed cognitive implementation remains in .okf/cognitive/devourer.md. |

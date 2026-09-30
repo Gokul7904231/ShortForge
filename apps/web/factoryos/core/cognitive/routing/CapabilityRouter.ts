@@ -6,7 +6,7 @@
 export interface CapabilityTool {
   readonly toolId: string;
   readonly name: string;
-  readonly category: "TELEMETRY" | "CODEBASE" | "EXTERNAL_INTEL" | "FLOOR_ACTION" | "DATABASE" | "COMPUTATION" | "VISUAL_RENDER";
+  readonly category: "TELEMETRY" | "CODEBASE" | "EXTERNAL_INTEL" | "FLOOR_ACTION" | "DATABASE" | "COMPUTATION";
   readonly description: string;
   readonly inputSchema: Record<string, unknown>;
   readonly outputSchema: Record<string, unknown>;
@@ -84,32 +84,6 @@ export class CapabilityRouter {
   }
 
   private registerDefaultCapabilities(): void {
-    this.registerTool({
-      toolId: "tool_blender_mcp",
-      name: "Blender MCP Visual Execution Gateway",
-      category: "VISUAL_RENDER",
-      description: "Routes semantic Blender visual actions to the governed mcp-for-blender worker adapter",
-      inputSchema: {
-        missionId: "string",
-        jobId: "string",
-        floorId: "string",
-        semanticAction: "string",
-        arguments: "object",
-      },
-      outputSchema: {
-        success: "boolean",
-        semanticAction: "string",
-        resolvedTool: "string",
-        verificationEvidenceRequired: "boolean",
-      },
-      permissionsRequired: ["blender:use"],
-      riskScore: 0.8,
-      averageLatencyMs: 500,
-      costPerInvocationUsd: 0.0,
-      reliabilityScore: 0.9,
-      requiresGuardianApproval: true,
-    });
-
     this.registerTool({
       toolId: "tool_internal_telemetry",
       name: "Internal Telemetry Inspection",

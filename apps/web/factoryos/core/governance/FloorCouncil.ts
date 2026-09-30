@@ -30,7 +30,6 @@ export type FloorCouncilMemoryProvider = (
   query: string,
   maxItems: number,
   maxChars: number,
-  floorId?: string,
 ) => Promise<FloorCouncilMemoryContext | null>;
 
 export type FloorCouncilPhase =
@@ -143,8 +142,7 @@ export class FloorCouncil {
         memoryContext = (await this.memoryProvider(
           `${input.snapshot.floorId} ${input.proposal.actionName} ${input.proposal.expectedOutcome}`,
           this.memoryMaxItems,
-          this.memoryMaxChars,
-          input.snapshot.floorId
+          this.memoryMaxChars
         )) || undefined;
       } catch {
         // Memory is derived context. Its unavailability must never become authority.

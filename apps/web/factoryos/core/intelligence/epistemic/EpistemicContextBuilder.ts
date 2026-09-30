@@ -69,7 +69,6 @@ export interface BuildEpistemicContextOptions {
   readonly budget: EpistemicBudget;
   readonly usage?: EpistemicUsage;
   readonly ttlMs?: number;
-  readonly tokenEstimator?: (serialized: string) => number;
 }
 
 export class EpistemicContextBuilder {
@@ -89,23 +88,12 @@ export class EpistemicContextBuilder {
       usage: EpistemicUsage;
     };
     const serialized = JSON.stringify(contextPayload);
-    const hasExternalTokenizer = options.tokenEstimator !== undefined;
-    const serializedTokenEstimate = Math.max(
-      0,
-      Math.floor(
-        options.tokenEstimator?.(serialized) ??
-          Math.ceil(serialized.length / 4),
-      ),
-    );
     const expiresAt = new Date(Date.now() + (options.ttlMs ?? 300000)).toISOString();
 
     return {
       ...contextPayload,
       contextFingerprint: hash(contextPayload),
-      serializedTokenEstimate,
-      tokenEstimateMethod: hasExternalTokenizer
-        ? "EXTERNAL_TOKENIZER"
-        : "CHARACTER_HEURISTIC",
+      serializedTokenEstimate: Math.ceil(serialized.length / 4),
       expiresAt,
       redactionState: "CLEAN",
     };

@@ -43,8 +43,6 @@ export interface IncidentContext {
   readonly conflictingClaims?: Array<{ agentId: string; claim: string }>;
   readonly candidateActions?: Array<{ actionId: string; title: string; riskLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" }>;
   readonly worldStateSnapshot?: unknown;
-  /** Explicit memory-bank scopes available to the cognitive runtime. */
-  readonly memoryScopeKeys?: readonly string[];
 }
 
 export interface CognitiveDecisionResponse {

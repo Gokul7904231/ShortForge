@@ -14,7 +14,6 @@ import type {
 import { VoiceFabric } from "../voice/VoiceFabric";
 import { RenderFabric } from "../fabric/RenderFabric";
 import { ReachSubsystem } from "../research/ReachSubsystem";
-import { BlenderMcpAdapter } from "../comms/BlenderMcpAdapter";
 
 export type CapabilityHandler<T = Record<string, unknown>, R = Record<string, unknown>> = (
   req: CapabilityExecutionRequest<T>
@@ -24,7 +23,6 @@ export class CapabilityRegistry {
   private static instance?: CapabilityRegistry;
   private capabilities: Map<string, CapabilityMetadata> = new Map();
   private handlers: Map<string, CapabilityHandler<any, any>> = new Map();
-  private readonly blenderMcpAdapter = new BlenderMcpAdapter();
 
   constructor() {
     this.registerDefaults();
@@ -536,7 +534,7 @@ export class CapabilityRegistry {
         provenance: { adoptionMode: "CLEAN_ROOM_REIMPLEMENTATION", documentedAt: "2026-09-08" },
         policy: {
           allowedRoles: ["SYSTEM", "ADMIN", "CREATOR"],
-          allowedFloors: ["floor00_analyst"],
+          allowedFloors: ["floor00_analyst", "floor01_strategy"],
           environments: ["development", "staging", "production", "test"],
           networkAccess: "RESTRICTED",
           dataAccess: "READ_ONLY",
@@ -644,24 +642,13 @@ export class CapabilityRegistry {
       },
       async (req) => {
         const start = Date.now();
-        const input = (req.inputData || {}) as Record<string, any>;
-        const researchContract = input.researchContract;
-        if (!researchContract || !input.engineId || !input.queryKind || !input.topic) {
-          throw new Error(
-            "REACH_ENGINE_CONTRACT_REQUIRED: research.web requires engineId, queryKind, topic, and an engine-owned researchContract.",
-          );
-        }
-
+        const query = (req.inputData as any)?.query || "Top trends";
         const reach = new ReachSubsystem();
         const sources = await reach.acquireSources({
-          engineId: String(input.engineId),
-          queryKind: String(input.queryKind),
-          topic: String(input.topic),
-          parameters: input.parameters || {},
-          researchContract,
+          queryOrUrl: query,
+          type: "QUERY",
           maxSources: 3,
           callerFloor: req.floorId || "floor00_analyst",
-          intent: typeof input.intent === "string" ? input.intent : undefined,
         });
         const latency = Date.now() - start;
         const avgReliability = sources.length > 0
@@ -672,14 +659,9 @@ export class CapabilityRegistry {
           requestExecutionId: req.requestExecutionId,
           capabilityId: "research.web",
           status: sources.length > 0 ? "SUCCESS" : "FAILED",
-          findings: [
-            `Discovered and parsed ${sources.length} sources for engine ${input.engineId} / ${input.queryKind}.`,
-          ],
+          findings: [`Discovered and parsed ${sources.length} sources for query: "${query}"`],
           outputData: {
-            engineId: String(input.engineId),
-            queryKind: String(input.queryKind),
-            topic: String(input.topic),
-            renderedQuery: "Engine-owned query template rendered inside ReachSubsystem.",
+            query,
             sourcesCount: sources.length,
             sources,
             measuredConfidence: confidence,
@@ -1045,160 +1027,5 @@ export class CapabilityRegistry {
         };
       }
     );
-    // Blender MCP — external visual execution surface.
-    // Semantic action selection stays above the adapter; this capability is the
-    // only registry-authorized gateway into mcp-for-blender.
-    this.register(
-      {
-        id: "blender.mcp",
-        name: "Blender MCP Semantic Visual Execution",
-        version: "1.0.0",
-        type: "VISUAL",
-        targetAnomalies: [
-          "BLENDER_SCENE_MISMATCH",
-          "BLENDER_RENDER_FAILURE",
-          "BLENDER_ASSET_FAILURE",
-          "BLENDER_SCRIPT_REJECTED",
-        ],
-        riskLevel: "HIGH",
-        maxRetries: 2,
-        timeoutMs: 120000,
-        requiresGuardianGate: true,
-        implementationStatus: "EXTERNAL",
-        isProductionRoutable: true,
-        executionClass: "PRODUCTION",
-        provider: "mcp-for-blender",
-        runtime: "python",
-        health: "DEGRADED",
-        latencyMs: 500,
-        costPerInvocationUsd: 0,
-        qualityRating: 1,
-        licenseMetadata: {
-          spdx: "MIT",
-          copyleft: false,
-          commercialPermitted: true,
-        },
-        provenance: {
-          sourceRepo: "https://github.com/ahujasid/mcp-for-blender",
-          adoptionMode: "ISOLATED_PROVIDER",
-          documentedAt: "2026-09-30",
-        },
-        policy: {
-          allowedRoles: [
-            "SYSTEM",
-            "ADMIN",
-            "OVERSEER",
-            "CREATOR",
-            "MEDIA_SYNTHESIZER",
-            "TIMELINE_COMPOSER",
-            "RENDER_ROUTER",
-          ],
-          allowedFloors: [
-            "floor03_asset_realization",
-            "floor04_media_synthesis",
-            "floor05_timeline_composition",
-            "floor06_rendering",
-          ],
-          environments: ["development", "staging", "production", "test"],
-          networkAccess: "RESTRICTED",
-          dataAccess: "READ_WRITE",
-          secretRequirements: [],
-          securityClass: "RESTRICTED",
-          commercialUsageAllowed: true,
-          auditPolicy: "EVIDENCE_REQUIRED",
-        },
-        trainingEligibility: "ELIGIBLE",
-        inputSchema: {
-          required: ["action", "arguments"],
-          properties: {
-            action: {
-              enum: [
-                "SCENE_INSPECT",
-                "OBJECT_INSPECT",
-                "VIEWPORT_CAPTURE",
-                "OBJECT_CREATE",
-                "OBJECT_UPDATE",
-                "OBJECT_DELETE",
-                "MATERIAL_UPDATE",
-                "CAMERA_CONFIGURE",
-                "LIGHTING_CONFIGURE",
-                "ANIMATION_CONFIGURE",
-                "GEOMETRY_NODES_CONFIGURE",
-                "SIMULATION_CONFIGURE",
-                "COMPOSITOR_CONFIGURE",
-                "SEQUENCE_CONFIGURE",
-                "ASSET_SEARCH",
-                "ASSET_IMPORT",
-                "ASSET_GENERATE",
-                "SCENE_EXPORT",
-                "RENDER",
-                "PYTHON_EXECUTE",
-              ],
-            },
-            arguments: { type: "object" },
-          },
-        },
-        outputSchema: {
-          required: ["action", "toolName", "success", "requestDigestSha256"],
-        },
-      },
-      async (req) => {
-        const start = Date.now();
-        const action = (req.inputData as Record<string, unknown>)?.action;
-        const args = (req.inputData as Record<string, unknown>)?.arguments;
-        const allowPythonExecution = Boolean(
-          (req.inputData as Record<string, unknown>)?.allowPythonExecution,
-        );
-        const userPrompt = (req.inputData as Record<string, unknown>)?.userPrompt;
-
-        if (typeof action !== "string" || !args || typeof args !== "object") {
-          return {
-            requestExecutionId: req.requestExecutionId,
-            capabilityId: "blender.mcp",
-            status: "REJECTED",
-            error: "Blender MCP requires a semantic action and object arguments",
-            findings: ["Malformed Blender MCP execution request"],
-            durationMs: Date.now() - start,
-          };
-        }
-
-        try {
-          const observation = await this.blenderMcpAdapter.execute({
-            missionId: req.missionId,
-            jobId: req.jobId,
-            floorId: req.floorId || "floor06_rendering",
-            action: action as any,
-            arguments: args as Record<string, unknown>,
-            allowPythonExecution,
-            userPrompt: typeof userPrompt === "string" ? userPrompt : undefined,
-          });
-
-          return {
-            requestExecutionId: req.requestExecutionId,
-            capabilityId: "blender.mcp",
-            status: observation.success ? "SUCCESS" : "FAILED",
-            findings: [
-              `Blender MCP action ${observation.action} resolved to ${observation.toolName}`,
-              ...observation.verificationHints,
-            ],
-            outputData: {
-              observation,
-              blenderMcpStatus: this.blenderMcpAdapter.status(),
-            },
-            durationMs: observation.durationMs,
-          };
-        } catch (error) {
-          return {
-            requestExecutionId: req.requestExecutionId,
-            capabilityId: "blender.mcp",
-            status: "FAILED",
-            error: error instanceof Error ? error.message : String(error),
-            findings: ["Blender MCP capability execution failed closed"],
-            durationMs: Date.now() - start,
-          };
-        }
-      },
-    );
-
   }
 }

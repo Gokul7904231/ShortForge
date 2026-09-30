@@ -12,22 +12,17 @@ import { CognitiveFallbackPolicy } from "./CognitiveFallbackPolicy";
 import { CognitiveOutcomeLearner } from "./CognitiveOutcomeLearner";
 import type { EvidenceNode } from "./CognitiveContracts";
 import type { CandidateAction } from "./simulation/SimulationDecisionEngine";
-import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
-import { MemoryAERAdapter } from "../intelligence/memory/MemoryAERAdapter";
 
 export class CognitiveRuntime {
   public readonly plane: CognitivePlaneEngine;
   public readonly triageEngine: CognitiveTriageEngine;
   public readonly fallbackPolicy: CognitiveFallbackPolicy;
   public readonly outcomeLearner: CognitiveOutcomeLearner;
-  private readonly memoryLifecycle?: MemoryLifecycleService;
-  private readonly memoryAERAdapter = new MemoryAERAdapter();
 
-  constructor(plane: CognitivePlaneEngine, memoryLifecycle?: MemoryLifecycleService) {
+  constructor(plane: CognitivePlaneEngine) {
     this.plane = plane;
     this.triageEngine = new CognitiveTriageEngine();
     this.fallbackPolicy = new CognitiveFallbackPolicy();
-    this.memoryLifecycle = memoryLifecycle;
     this.outcomeLearner = new CognitiveOutcomeLearner(plane.experienceMemory, plane.economics);
   }
 
@@ -66,64 +61,11 @@ export class CognitiveRuntime {
         };
       }
 
-      // 2. Canonical Memory Fabric Recall.
+      // 2. Experience Memory Recall
       const query = `${incident.category} ${incident.symptoms.join(" ")}`;
-      let similarExperiences: Array<{ memoryId: string; title: string; summary: string }> = [];
-      let memoryEvidenceRefs: string[] = [];
-      if (this.memoryLifecycle) {
-        const memoryScopeKeys = [...(incident.memoryScopeKeys ?? []), incident.caseId, incident.floorId]
-          .filter((value): value is string => Boolean(value && value.trim()));
-        const memoryRecall = await this.memoryLifecycle.recall({
-          query,
-          accessContext: {
-            principalId: "cognitive-runtime:" + incident.incidentId,
-            allowedScopeKeys: [...new Set(memoryScopeKeys)],
-            allowGlobalScope: false,
-          },
-          maxItems: 5,
-          maxChars: 6000,
-          includeStale: false,
-          trace: true,
-        });
-        similarExperiences = memoryRecall.items.map((item) => ({
-          memoryId: item.memoryId,
-          title: item.title,
-          summary: item.content.slice(0, 1200),
-        }));
-        tokensConsumed += Math.max(20, memoryRecall.estimatedTokens);
-        costUsd += 0.001;
-
-        // Feed the canonical memory result into AER as epistemic evidence.
-        // AER remains advisory; this does not grant authority or execute Ascalon.
-        const memoryAER = this.memoryAERAdapter.assess({
-          contextSeed: "memory:" + incident.incidentId,
-          recall: memoryRecall,
-          impact: {
-            affectedFloors: incident.floorId ? [incident.floorId] : [],
-            affectedArtifacts: [],
-            severity: incident.severity,
-            reversible: incident.severity !== "CRITICAL",
-          },
-          budget: {
-            maxEpistemicTimeMs: 250,
-            maxDeepCalls: 0,
-            maxMicroCalls: 0,
-            maxProbeCount: 0,
-            maxCostUnits: 0,
-          },
-        });
-        tokensConsumed += memoryAER.context.serializedTokenEstimate;
-        memoryEvidenceRefs = [...memoryAER.state.evidenceRefs];
-      } else {
-        const legacy = await this.plane.experienceMemory.recallByKeywords(query, incident.floorId, 5);
-        similarExperiences = legacy.map((item) => ({
-          memoryId: item.memoryId,
-          title: item.title,
-          summary: item.summary,
-        }));
-        tokensConsumed += 100;
-        costUsd += 0.001;
-      }
+      const similarExperiences = await this.plane.experienceMemory.recallByKeywords(query, incident.floorId, 5);
+      tokensConsumed += 100;
+      costUsd += 0.001;
 
       // 3. Active Context Management & Indexing
       if (incident.rawLogs && incident.rawLogs.length > 0) {
@@ -152,7 +94,7 @@ export class CognitiveRuntime {
       };
       this.plane.evidenceGraph.addNode(incident.incidentId, symptomNode);
 
-      const evidenceIds = [symptomNode.nodeId, ...memoryEvidenceRefs];
+      const evidenceIds = [symptomNode.nodeId];
 
       // 5. Contradiction Resolution (if conflicting claims exist)
       let contradictionResolved = false;
