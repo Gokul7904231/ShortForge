@@ -304,8 +304,7 @@ export class DecodoWebScrapingProvider implements ReachProvider {
   private readonly headless: "html" | "none";
 
   constructor(
-    endpoint = process.env.DECODO_WEB_API_URL ||
-      "https://scraper-api.decodo.com/v2/scrape",
+    endpoint = process.env.DECODO_WEB_API_URL || "",
     auth = process.env.DECODO_BASIC_AUTH || "",
     proxyPool =
       process.env.DECODO_WEB_PROXY_POOL === "premium"
@@ -334,6 +333,12 @@ export class DecodoWebScrapingProvider implements ReachProvider {
   }
 
   async retrieve(input: ReachProviderRequest): Promise<ReachProviderResponse> {
+    if (!this.endpoint) {
+      throw new ReachProviderError(
+        "DECODO_WEB_API_URL is not configured.",
+      );
+    }
+
     if (!this.auth) {
       throw new ReachProviderError("DECODO_BASIC_AUTH is not configured.");
     }
