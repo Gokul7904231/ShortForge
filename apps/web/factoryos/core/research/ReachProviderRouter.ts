@@ -569,7 +569,22 @@ export class ReachProviderRouter {
           break;
         }
       } catch (error) {
-        this.markFailure(provider, error);
+        const budgetExhausted =
+          error instanceof ReachProviderError &&
+          error.message.startsWith("Provider budget exhausted for ");
+
+        if (budgetExhausted) {
+          this.telemetry.record({
+            type: "PROVIDER_SKIPPED",
+            at: new Date().toISOString(),
+            provider: provider.id,
+            requestId: requestTraceId,
+            metadata: { reason: "BUDGET_EXHAUSTED" },
+          });
+        } else {
+          this.markFailure(provider, error);
+        }
+
         fallbackCount += 1;
         this.telemetry.record({
           type: "FALLBACK",
