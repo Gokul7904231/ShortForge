@@ -840,6 +840,7 @@ export class OverseerControlPlane {
           floorId: "floor02_scripting",
           workerId: "worker_scripting_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -990,12 +991,23 @@ export class OverseerControlPlane {
           floorId: "floor02_scripting",
           workerId: "worker_scripting_01",
           missionId,
+          runId,
           output: scriptPayload,
           startedAt,
           completedAt,
           executionTimeMs,
           durationTruth: "PHYSICAL",
-        });
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor02_scripting",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            scriptPayload?.handoffPayload?.handoff_status === "VALIDATED",
+            [executionId, String(scriptPayload?.handoffPayload?.script_id || executionId)],
+          ),
+        }});
         return { status: "OK", floor: "floor02_scripting", output: scriptPayload, executionTimeMs };
       },
       FLOOR_ASSET_REALIZATION: async (node: any) => {
@@ -1012,7 +1024,8 @@ export class OverseerControlPlane {
         });
         await this.eventBus.publish("TASK_STARTED", {
           taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION",
-          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, startedAt,
+          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId,
+          runId, startedAt,
         });
 
         const f02Handoff = (scope.f02Handoff || sharedScope.f02Handoff) as Record<string, any> | undefined;
@@ -1058,10 +1071,26 @@ export class OverseerControlPlane {
         const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
         await this.eventBus.publish("TASK_COMPLETED", {
           taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION", executionId,
-          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, output: assetPayload,
+          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId,
+          runId, output: assetPayload,
           handoff: canonicalF03, executionReport: f03.executionReport, startedAt, completedAt, executionTimeMs,
           durationTruth: "MEASURED", evidenceClass: "TYPED_F03_RUNTIME_HANDOFF", physicalMediaProduced: false,
-        });
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor03_asset_realization",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            canonicalF03?.handoff_status === "VALIDATED" &&
+              Boolean(canonicalF03?.asset_plan_ir?.plan_fingerprint),
+            [
+              executionId,
+              canonicalF03?.asset_plan_id || executionId,
+              canonicalF03?.asset_plan_ir?.plan_fingerprint || executionId,
+            ],
+          ),
+        }});
         return { status: "OK", floor: "floor03_asset_realization", output: assetPayload, executionTimeMs };
       },
       FLOOR_MEDIA_SYNTHESIS: async (node: any) => {
@@ -1128,6 +1157,7 @@ export class OverseerControlPlane {
           floorId: "floor04_media_synthesis",
           workerId: "worker_audio_01",
           missionId,
+          runId,
           output: mediaPayload,
           startedAt,
           completedAt,
@@ -1135,7 +1165,17 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           producedArtifacts: [{ kind: "WAV_AUDIO", path: synthRes.localPath, sha256: synthRes.sha256 }],
           producedArtifactIds: [synthRes.sha256],
-        });
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor04_media_synthesis",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            Boolean(synthRes.sha256) && Number(synthRes.byteLength || 0) > 0,
+            [executionId, synthRes.sha256 || executionId],
+          ),
+        }});
         return { status: "OK", floor: "floor04_media_synthesis", output: mediaPayload, executionTimeMs };
       },
       FLOOR_TIMELINE_COMPOSITION: async (node: any) => {
@@ -1262,6 +1302,7 @@ export class OverseerControlPlane {
           floorId: "floor05_timeline_composition",
           workerId: "worker_timeline_01",
           missionId,
+          runId,
           output: timelinePayload,
           startedAt,
           completedAt,
@@ -1269,7 +1310,17 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           consumedArtifacts: scope.voiceUrl ? [{ kind: "WAV_AUDIO", path: scope.voiceUrl, sha256: consumedAudioSha256 }] : [],
           consumedArtifactIds: consumedAudioSha256 ? [consumedAudioSha256] : [],
-        });
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor05_timeline_composition",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            Boolean(renderIntent.intentId) && Boolean(consumedAudioSha256),
+            [executionId, renderIntent.intentId, consumedAudioSha256 || executionId],
+          ),
+        }});
         return { status: "OK", floor: "floor05_timeline_composition", output: timelinePayload, executionTimeMs };
       },
       FLOOR_RENDERING: async (node: any) => {
@@ -1418,6 +1469,7 @@ export class OverseerControlPlane {
           floorId: "floor06_rendering",
           workerId: "worker_render_01",
           missionId,
+          runId,
           jobId: targetJobId,
           output: renderOutputMessage,
           artifact: scope.artifact,
@@ -1470,6 +1522,7 @@ export class OverseerControlPlane {
           floorId: "floor07_compliance",
           workerId: "worker_compliance_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1574,6 +1627,7 @@ export class OverseerControlPlane {
           floorId: "floor07_compliance",
           workerId: "worker_compliance_01",
           missionId,
+          runId,
           jobId: targetJobId,
           output: verificationReport,
           loopReceipt: f07LoopReceipt,
