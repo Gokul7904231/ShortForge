@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { AutonomousFactoryController } from "../core/controller/AutonomousFactoryController";
+import { getCompatibilityEngineContracts } from "../../lib/core/EngineConfigurationContracts";
 
 const CANONICAL_FLOORS = [
   "floor00_analyst",
@@ -187,6 +188,7 @@ describe("True eight-floor single-mission production trajectory", () => {
             engine: {
               contracts: {
                 research: {
+                  ...getCompatibilityEngineContracts("quiz").research!,
                   minSources: 2,
                   citationRequired: true,
                   sourcePolicy: "local verified research fixture",
