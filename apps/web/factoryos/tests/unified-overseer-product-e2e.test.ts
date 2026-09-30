@@ -126,9 +126,20 @@ describe("FactoryOS Frontier v2 — Unified Overseer Productization Acceptance S
     });
 
     expect(result.query).toBe("Trending trivia formats and video pacing");
-    expect(result.findings.length).toBeGreaterThan(0);
-    expect(result.sourceUrls.length).toBeGreaterThan(0);
-    expect(result.confidence).toBeGreaterThanOrEqual(0.9);
+
+    if (process.env.SEARCH_API_URL) {
+      expect(result.status).toBe("ONLINE");
+      expect(result.findings.length).toBeGreaterThan(0);
+      expect(result.sourceUrls.length).toBeGreaterThan(0);
+      expect(result.confidence).toBeGreaterThanOrEqual(0.9);
+    } else {
+      // The production contract is fail-closed: without a configured external
+      // search provider, no synthetic evidence may be manufactured.
+      expect(["NO_EVIDENCE", "UNAVAILABLE"]).toContain(result.status);
+      expect(result.findings).toHaveLength(0);
+      expect(result.sourceUrls).toHaveLength(0);
+      expect(result.confidence).toBe(0);
+    }
   });
 
   it("5. GStack Software Engineering Diagnostics: Triggers bounded non-destructive investigation", async () => {

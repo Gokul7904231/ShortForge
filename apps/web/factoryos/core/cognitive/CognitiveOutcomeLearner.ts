@@ -3,7 +3,6 @@
  * Closes the feedback loop between cognitive decisions and verified Validator outcomes.
  */
 
-import { randomUUID } from "node:crypto";
 import type { IndexedExperienceMemory, ExperienceMemoryEntry } from "./memory/IndexedExperienceMemory";
 import type { AgentEconomicsEngine } from "./economics/AgentEconomicsEngine";
 
@@ -16,6 +15,10 @@ export interface OutcomeFeedback {
   readonly validatorPassed: boolean;
   readonly durationMs: number;
   readonly symptoms: string[];
+  readonly trajectoryId?: string;
+  readonly evidenceRefs?: readonly string[];
+  readonly tokensConsumed?: number;
+  readonly modelTier?: Parameters<AgentEconomicsEngine["recordExecution"]>[0];
 }
 
 export class CognitiveOutcomeLearner {
@@ -30,6 +33,8 @@ export class CognitiveOutcomeLearner {
 
   /**
    * Records verified outcome and persists experiential learning.
+   * Verified operational outcomes are explicitly promoted as real evidence so
+   * downstream Ascalon training pipelines can distinguish them from simulation.
    */
   async recordOutcome(feedback: OutcomeFeedback): Promise<ExperienceMemoryEntry> {
     const isAccurate = feedback.predictedSuccess === feedback.validatorPassed;
@@ -37,26 +42,44 @@ export class CognitiveOutcomeLearner {
     this.recentPredictionErrors.push(predictionError);
     if (this.recentPredictionErrors.length > 50) this.recentPredictionErrors.shift();
 
-    // 1. Persist to Indexed Experience Memory
+    const category = feedback.category === "PRODUCTION_TRAJECTORY" ? "FLOOR_PERFORMANCE" : "ANOMALY_RESOLUTION";
+    const verified = Boolean(feedback.evidenceRefs?.length) && feedback.validatorPassed;
+    const outcomeStatus = feedback.validatorPassed ? "SUCCESS" : "FAILED";
+
     const entry = await this.experienceMemory.storeExperience({
-      category: "ANOMALY_RESOLUTION",
-      title: `${feedback.category} resolution on ${feedback.floorId || "global"}`,
-      summary: `Applied ${feedback.proposedAction} for ${feedback.symptoms.join("; ")} with validator score ${feedback.validatorPassed ? 1.0 : 0.0}.`,
+      category,
+      title: feedback.category + " resolution on " + (feedback.floorId || "global"),
+      summary: "Applied " + feedback.proposedAction + " for " + feedback.symptoms.join("; ") + " with validator score " + (feedback.validatorPassed ? 1.0 : 0.0) + ".",
       fullEvidence: {
         incidentId: feedback.incidentId,
+        trajectoryId: feedback.trajectoryId,
         category: feedback.category,
         floorId: feedback.floorId,
         symptoms: feedback.symptoms,
         proposedAction: feedback.proposedAction,
-        outcome: feedback.validatorPassed ? "SUCCESS" : "FAILURE",
+        outcome: outcomeStatus,
         durationMs: feedback.durationMs,
+        evidenceRefs: feedback.evidenceRefs || [],
+        predictionCorrect: isAccurate,
       },
       floorId: feedback.floorId,
-      confidence: feedback.validatorPassed ? 0.95 : 0.4,
+      confidence: verified ? 0.95 : 0.4,
+      experienceType: verified ? "REAL_OPERATIONAL" : "REPLAY",
+      verificationStatus: verified ? "VERIFIED" : "UNVERIFIED",
+      outcomeStatus,
+      authority: verified ? "AUTHORITATIVE" : "UNVERIFIED",
+      trainingEligibility: verified ? "ELIGIBLE" : "INELIGIBLE",
     });
 
-    // 2. Track Economics Telemetry
-    this.economics.recordExecution("LARGE_REASONER", 250, feedback.durationMs);
+    // Record economics only when production telemetry actually reports token use.
+    // Never synthesize model usage as a learning/economics signal.
+    if (feedback.tokensConsumed !== undefined && feedback.tokensConsumed >= 0) {
+      this.economics.recordExecution(
+        feedback.modelTier || "LARGE_REASONER",
+        feedback.tokensConsumed,
+        feedback.durationMs,
+      );
+    }
 
     return entry;
   }

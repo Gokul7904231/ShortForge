@@ -40,6 +40,8 @@ import type { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
 import { ResearchRuntime } from "../research/ResearchRuntime";
+import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
+import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 import { VoiceFabric } from "../voice/VoiceFabric";
 import { RenderFabric } from "../fabric/RenderFabric";
 import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentContracts";
@@ -51,6 +53,35 @@ import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
+import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
+
+function runtimeClosureReceipt(
+  floorId: string,
+  loopType: "COGNITIVE_EXECUTION",
+  executionId: string,
+  startedAt: string,
+  completedAt: string,
+  verified: boolean,
+  evidenceRefs: readonly string[],
+  iterations = 1,
+): Record<string, unknown> {
+  return {
+    floorId,
+    loopType,
+    loopId: "runtime-" + floorId + "-" + executionId,
+    termination: verified ? "COMPLETED" : "EXHAUSTED",
+    iterations: Math.max(1, iterations),
+    startedAt,
+    completedAt,
+    verified,
+    evidenceRefs: [...evidenceRefs],
+    proofSource: "RUNTIME",
+    failureReason: verified
+      ? undefined
+      : "Canonical runtime closure verification did not pass.",
+  };
+}
+
 
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
@@ -70,6 +101,7 @@ export class OverseerControlPlane {
   public capabilityRouter: CapabilityRouter;
   public metaThinker: StrategicMetaThinker;
   public presenceEngine: OverseerPresenceEngine;
+  public trajectoryCollector: ProductionTrajectoryCollector;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -89,7 +121,8 @@ export class OverseerControlPlane {
     decisionRepo?: IDecisionRepository,
     taskDAGRepo?: ITaskDAGRepository,
     memoryLifecycle?: MemoryLifecycleService,
-    intelligenceGateway?: IntelligenceGateway
+    intelligenceGateway?: IntelligenceGateway,
+    trajectoryLearningBridge?: TrajectoryLearningBridge
   ) {
     this.caseManager = caseManager;
     this.slayerEngine = slayerEngine;
@@ -114,6 +147,8 @@ export class OverseerControlPlane {
       this.caseManager,
       this.missionManager
     );
+    this.trajectoryCollector = new ProductionTrajectoryCollector(this.eventBus, trajectoryLearningBridge);
+    this.trajectoryCollector.start();
 
     this.registerWithWorldState();
 
@@ -135,6 +170,53 @@ export class OverseerControlPlane {
         }
       }
     });
+    this.eventBus.subscribe("RUN_COMPLETED", async (envelope) => {
+      const missionId = (envelope.payload as any)?.missionId;
+      const runId = (envelope.payload as any)?.runId;
+      if (!missionId) return;
+      try {
+        const trajectory = await this.trajectoryCollector.finalize(missionId, envelope.timestamp);
+        await this.eventBus.publish(
+          "TRAJECTORY_EVALUATED",
+          {
+            trajectoryId: trajectory.trajectoryId,
+            missionId: trajectory.missionId,
+            runId,
+            verificationStatus: trajectory.verificationStatus,
+            verifiedFloorCount: trajectory.verifiedFloorCount,
+            canonicalFloorCount: trajectory.canonicalFloorCount,
+            totalIterations: trajectory.totalIterations,
+            recoveredIterations: trajectory.recoveredIterations,
+            floors: trajectory.floors,
+            evidenceRefs: trajectory.evidenceRefs,
+            finalOutcome: trajectory.finalOutcome,
+            trainingEligible: trajectory.trainingEligible,
+            trajectoryFingerprint: trajectory.trajectoryFingerprint,
+          },
+          { correlationId: runId || missionId, source: "production-trajectory-evaluator" },
+        );
+      } catch (error) {
+        await this.eventBus.publish(
+          "TRAJECTORY_EVALUATED",
+          {
+            missionId,
+            runId,
+            verificationStatus: "UNVERIFIED",
+            verifiedFloorCount: 0,
+            canonicalFloorCount: 8,
+            finalOutcome: "INCOMPLETE",
+            trainingEligible: false,
+            evaluationError: error instanceof Error ? error.message : String(error),
+          },
+          { correlationId: runId || missionId, source: "production-trajectory-evaluator" },
+        );
+      }
+    });
+  }
+
+  /** Record the pre-execution success prediction used for verified trajectory learning. */
+  recordTrajectoryPrediction(missionId: string, predictedSuccess: boolean): void {
+    this.trajectoryCollector.setPrediction(missionId, predictedSuccess);
   }
 
   async resumeMissionExecution(missionId: string): Promise<void> {
@@ -356,7 +438,7 @@ export class OverseerControlPlane {
       }
     }
 
-    const executors = this.getTaskExecutorsForFloors(missionId);
+    const executors = this.getTaskExecutorsForFloors(missionId, run.runId);
 
     // Execute Task DAG asynchronously across target floor executors
     const completedDag = await this.dagExecutor.executeDAG(dag, executors, { maxParallelTasks });
@@ -372,7 +454,7 @@ export class OverseerControlPlane {
         dagId: completedDag.dagId,
         dagStatus: completedDag.status,
       };
-      run.status = "running";
+      run.status = completedDag.status === "COMPLETED" ? "completed" : "failed";
     } else {
       run.status = completedDag.status === "COMPLETED" ? "completed" : "failed";
       run.result = {
@@ -535,7 +617,7 @@ export class OverseerControlPlane {
     ];
   }
 
-  private getTaskExecutorsForFloors(missionId?: string) {
+  private getTaskExecutorsForFloors(missionId?: string, runId?: string) {
     const sharedScope: Record<string, any> = {};
 
     return {
@@ -564,6 +646,7 @@ export class OverseerControlPlane {
           floorId: "floor00_analyst",
           workerId: "worker_analyst_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -626,6 +709,7 @@ export class OverseerControlPlane {
           floorId: "floor00_analyst",
           workerId: "worker_analyst_01",
           missionId,
+          runId,
           output: analystReport,
           loopReceipt: researchLoop.receipt,
           loopFeedback: researchLoop.feedback,
@@ -670,6 +754,7 @@ export class OverseerControlPlane {
           floorId: "floor01_strategy",
           workerId: "worker_strategy_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -715,12 +800,22 @@ export class OverseerControlPlane {
           floorId: "floor01_strategy",
           workerId: "worker_strategy_01",
           missionId,
+          runId,
           output: strategyPayload,
           startedAt,
           completedAt,
           executionTimeMs,
           durationTruth: "PHYSICAL",
           consumedArtifactIds: analystOutput?.passport?.passportId ? [analystOutput.passport.passportId] : [],
+          loopReceipt: runtimeClosureReceipt(
+            "floor01_strategy",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            strategyPayload?.handoff_status === "VALIDATED",
+            [executionId, String(strategyPayload?.plan_id || executionId)],
+          ),
         });
         return { status: "OK", floor: "floor01_strategy", output: strategyPayload, executionTimeMs };
       },
@@ -749,6 +844,7 @@ export class OverseerControlPlane {
           floorId: "floor02_scripting",
           workerId: "worker_scripting_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -899,11 +995,22 @@ export class OverseerControlPlane {
           floorId: "floor02_scripting",
           workerId: "worker_scripting_01",
           missionId,
+          runId,
           output: scriptPayload,
           startedAt,
           completedAt,
           executionTimeMs,
           durationTruth: "PHYSICAL",
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor02_scripting",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            scriptPayload?.handoffPayload?.handoff_status === "VALIDATED",
+            [executionId, String(scriptPayload?.handoffPayload?.script_id || executionId)],
+          ),
         });
         return { status: "OK", floor: "floor02_scripting", output: scriptPayload, executionTimeMs };
       },
@@ -921,7 +1028,8 @@ export class OverseerControlPlane {
         });
         await this.eventBus.publish("TASK_STARTED", {
           taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION",
-          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, startedAt,
+          executionId, floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId,
+          runId, startedAt,
         });
 
         const f02Handoff = (scope.f02Handoff || sharedScope.f02Handoff) as Record<string, any> | undefined;
@@ -967,9 +1075,25 @@ export class OverseerControlPlane {
         const executionTimeMs = Math.max(1, Math.round(endTime - startTime));
         await this.eventBus.publish("TASK_COMPLETED", {
           taskId: node.taskId, taskNodeId: node.taskId, capabilityId: "FLOOR_ASSET_REALIZATION", executionId,
-          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId, output: assetPayload,
+          floorId: "floor03_asset_realization", workerId: "worker_assets_01", missionId,
+          runId, output: assetPayload,
           handoff: canonicalF03, executionReport: f03.executionReport, startedAt, completedAt, executionTimeMs,
           durationTruth: "MEASURED", evidenceClass: "TYPED_F03_RUNTIME_HANDOFF", physicalMediaProduced: false,
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor03_asset_realization",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            canonicalF03?.handoff_status === "VALIDATED" &&
+              Boolean(canonicalF03?.asset_plan_ir?.plan_fingerprint),
+            [
+              executionId,
+              canonicalF03?.asset_plan_id || executionId,
+              canonicalF03?.asset_plan_ir?.plan_fingerprint || executionId,
+            ],
+          ),
         });
         return { status: "OK", floor: "floor03_asset_realization", output: assetPayload, executionTimeMs };
       },
@@ -998,6 +1122,7 @@ export class OverseerControlPlane {
           floorId: "floor04_media_synthesis",
           workerId: "worker_audio_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1036,6 +1161,7 @@ export class OverseerControlPlane {
           floorId: "floor04_media_synthesis",
           workerId: "worker_audio_01",
           missionId,
+          runId,
           output: mediaPayload,
           startedAt,
           completedAt,
@@ -1043,6 +1169,16 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           producedArtifacts: [{ kind: "WAV_AUDIO", path: synthRes.localPath, sha256: synthRes.sha256 }],
           producedArtifactIds: [synthRes.sha256],
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor04_media_synthesis",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            Boolean(synthRes.sha256) && Number(synthRes.byteLength || 0) > 0,
+            [executionId, synthRes.sha256 || executionId],
+          ),
         });
         return { status: "OK", floor: "floor04_media_synthesis", output: mediaPayload, executionTimeMs };
       },
@@ -1071,6 +1207,7 @@ export class OverseerControlPlane {
           floorId: "floor05_timeline_composition",
           workerId: "worker_timeline_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1169,6 +1306,7 @@ export class OverseerControlPlane {
           floorId: "floor05_timeline_composition",
           workerId: "worker_timeline_01",
           missionId,
+          runId,
           output: timelinePayload,
           startedAt,
           completedAt,
@@ -1176,6 +1314,16 @@ export class OverseerControlPlane {
           durationTruth: "PHYSICAL",
           consumedArtifacts: scope.voiceUrl ? [{ kind: "WAV_AUDIO", path: scope.voiceUrl, sha256: consumedAudioSha256 }] : [],
           consumedArtifactIds: consumedAudioSha256 ? [consumedAudioSha256] : [],
+        
+          loopReceipt: runtimeClosureReceipt(
+            "floor05_timeline_composition",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            Boolean(renderIntent.intentId) && Boolean(consumedAudioSha256),
+            [executionId, renderIntent.intentId, consumedAudioSha256 || executionId],
+          ),
         });
         return { status: "OK", floor: "floor05_timeline_composition", output: timelinePayload, executionTimeMs };
       },
@@ -1204,6 +1352,7 @@ export class OverseerControlPlane {
           floorId: "floor06_rendering",
           workerId: "worker_render_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1324,6 +1473,7 @@ export class OverseerControlPlane {
           floorId: "floor06_rendering",
           workerId: "worker_render_01",
           missionId,
+          runId,
           jobId: targetJobId,
           output: renderOutputMessage,
           artifact: scope.artifact,
@@ -1340,6 +1490,7 @@ export class OverseerControlPlane {
           consumedArtifactIds: sharedScope.voiceArtifact?.sha256 ? [sharedScope.voiceArtifact.sha256] : [],
           producedArtifacts: scope.artifact ? [{ kind: "MP4_VIDEO", path: finalVideoUrl, sha256: scope.artifact.sha256 }] : [],
           producedArtifactIds: scope.artifact?.sha256 ? [scope.artifact.sha256] : [],
+          loopReceipt: renderRes.loopReceipt,
         });
         return {
           status: "OK",
@@ -1376,6 +1527,7 @@ export class OverseerControlPlane {
           floorId: "floor07_compliance",
           workerId: "worker_compliance_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1407,6 +1559,25 @@ export class OverseerControlPlane {
             3,
           policyViolations: [],
         });
+
+        const f07LoopReceipt: FloorClosedLoopReceipt = {
+          floorId: "floor07_compliance",
+          loopType: "VERIFICATION_REMEDIATION",
+          loopId: "f07-release-" + targetJobId + "-" + executionId,
+          termination: verificationReport.verified ? "COMPLETED" : "EXHAUSTED",
+          iterations: 1,
+          startedAt,
+          completedAt: new Date().toISOString(),
+          verified: Boolean(verificationReport.verified),
+          proofSource: "PHYSICAL_VERIFIER",
+          evidenceRefs: [
+            "f07:verification-engine",
+            ...(artifact?.sha256 ? ["artifact:" + artifact.sha256] : []),
+          ],
+          failureReason: verificationReport.verified
+            ? undefined
+            : verificationReport.failures.join("; "),
+        };
 
         if (!verificationReport.verified) {
           await this.caseManager.createCase({
@@ -1462,8 +1633,10 @@ export class OverseerControlPlane {
           floorId: "floor07_compliance",
           workerId: "worker_compliance_01",
           missionId,
+          runId,
           jobId: targetJobId,
           output: verificationReport,
+          loopReceipt: f07LoopReceipt,
           deliveryArtifact,
           startedAt,
           completedAt,

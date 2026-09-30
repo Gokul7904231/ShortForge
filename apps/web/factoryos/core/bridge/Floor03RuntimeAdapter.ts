@@ -98,7 +98,7 @@ export class Floor03RuntimeAdapter {
       if (
         !handoff ||
         handoff.floor_id !== "floor03_asset_realization" ||
-        handoff.floor_version !== "2.3.0" ||
+        handoff.floor_version !== "2.3.1" ||
         handoff.handoff_status !== "VALIDATED" ||
         !handoff.asset_plan_ir ||
         handoff.asset_plan_ir.schema_version !== "1.4.0" ||

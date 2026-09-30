@@ -44,8 +44,12 @@ export class TaskDAGPlanner {
   createEightFloorProductionDAG(goalId: string, initialPayload: Record<string, unknown> = {}): TaskDAG {
     const allFloors = FloorRegistry.getAllFloors();
     const nodes: TaskNode[] = allFloors.map((floor) => {
-      const taskId = `task_${floor.floorId}`;
-      const dependencies = floor.predecessors.map((p) => `task_${p}`);
+      // Preserve the executor's canonical task identity while deriving topology
+      // from FloorRegistry. This avoids legacy F00 task-id drift without coupling
+      // the registry itself to runtime naming.
+      const runtimeFloorId = floor.floorId.replace(/^floor/, "f");
+      const taskId = `task_${runtimeFloorId}`;
+      const dependencies = floor.predecessors.map((p) => `task_${p.replace(/^floor/, "f")}`);
       return {
         taskId,
         name: floor.canonicalName,
@@ -88,12 +92,16 @@ export class TaskDAGExecutor {
   async executeDAG(
     dag: TaskDAG,
     executors: Record<string, TaskExecutorFunction>,
-    options?: { maxParallelTasks?: number }
+    options?: { maxParallelTasks?: number; executionTimeoutMs?: number }
   ): Promise<TaskDAG> {
     dag.status = "RUNNING";
     await this.repository.saveDAG(dag);
 
     const maxParallel = options?.maxParallelTasks && options.maxParallelTasks > 0 ? options.maxParallelTasks : Infinity;
+    const executionTimeoutMs =
+      options?.executionTimeoutMs && options.executionTimeoutMs > 0
+        ? Math.min(Math.max(options.executionTimeoutMs, 5_000), 300_000)
+        : 60_000;
 
     while (dag.status === "RUNNING") {
       const readyNodes = this.findReadyNodes(dag);
@@ -142,7 +150,25 @@ export class TaskDAGExecutor {
           const executor = executors[node.requiredAgentType] || executors["TOOL"] || (async () => ({ status: "OK" }));
 
           try {
-            const result = await executor(node);
+            console.log(
+              `[TaskDAGExecutor] run=${dag.goalId} task=${node.taskId} phase=execute-start attempt=${node.attemptCount}`,
+            );
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              const timer = setTimeout(
+                () =>
+                  reject(
+                    new Error(
+                      `DAG_NODE_TIMEOUT: task ${node.taskId} exceeded ${executionTimeoutMs}ms`,
+                    ),
+                  ),
+                executionTimeoutMs,
+              );
+              (timer as any).unref?.();
+            });
+            const result = await Promise.race([executor(node), timeoutPromise]);
+            console.log(
+              `[TaskDAGExecutor] run=${dag.goalId} task=${node.taskId} phase=execute-complete`,
+            );
             node.status = "SUCCEEDED";
             node.result = result;
             node.completedAt = new Date().toISOString();

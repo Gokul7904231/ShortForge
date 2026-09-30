@@ -139,4 +139,5 @@ export interface FloorClosedLoopReceipt {
   readonly verified: boolean;
   readonly evidenceRefs: readonly string[];
   readonly failureReason?: string;
+  readonly proofSource?: "GUARDIAN" | "RUNTIME" | "PHYSICAL_VERIFIER";
 }
