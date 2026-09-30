@@ -68,16 +68,30 @@ Production Reach fails closed for missing or invalid Content Engine contracts, u
 ## 9. Configuration
 
 SEARXNG_BASE_URL
-DECODO_BASIC_AUTH
-DECODO_FAST_SEARCH_URL
-DECODO_WEB_API_URL
-DECODO_WEB_PROXY_POOL
-DECODO_WEB_HEADLESS
-DECODO_FAST_SEARCH_BUDGET
-DECODO_WEB_STANDARD_BUDGET
-DECODO_WEB_JS_BUDGET
-DECODO_WEB_PREMIUM_BUDGET
-DECODO_WEB_PREMIUM_JS_BUDGET
+
+Decodo credentials are isolated by capability:
+- DECODO_API_KEY: account/public API operations only; not used as a Reach provider credential.
+- DECODO_FAST_SEARCH_API_KEY: Fast Search authentication.
+- DECODO_WEB_SCRAPING_API_KEY: Web Scraping authentication.
+
+Optional authentication scheme overrides:
+- DECODO_FAST_SEARCH_AUTH_SCHEME=Basic|Bearer (default: Basic)
+- DECODO_WEB_SCRAPING_AUTH_SCHEME=Basic|Bearer (default: Basic)
+
+Provider endpoints:
+- DECODO_FAST_SEARCH_URL (default: https://fastsearch.decodo.com/v0/search)
+- DECODO_WEB_API_URL (default: https://scraper-api.decodo.com/v2/scrape)
+- DECODO_WEB_PROXY_POOL=standard|premium
+- DECODO_WEB_HEADLESS=none|html
+
+Budget overrides:
+- DECODO_FAST_SEARCH_BUDGET
+- DECODO_WEB_STANDARD_BUDGET
+- DECODO_WEB_JS_BUDGET
+- DECODO_WEB_PREMIUM_BUDGET
+- DECODO_WEB_PREMIUM_JS_BUDGET
+
+When a Decodo credential is configured and no explicit budget override is supplied, the router initializes a bounded local development allowance of 100 operations for that capability. This is an operational fallback, not vendor quota truth; production deployments should set explicit budgets and later back them with a shared durable ledger.
 
 Secrets must not be committed.
 
