@@ -97,6 +97,8 @@ describe("True eight-floor single-mission production trajectory", () => {
       await controller.shutdown().catch(() => {});
       controller = null;
     }
+    delete process.env.SEARCH_API_URL;
+    delete process.env.SEARXNG_BASE_URL;
     if (searchFixture) {
       await new Promise<void>((resolve) => searchFixture!.close(() => resolve()));
       searchFixture = null;
@@ -112,7 +114,7 @@ describe("True eight-floor single-mission production trajectory", () => {
       const fixture = await startSearchFixture();
       searchFixture = fixture.server;
       process.env.SEARCH_API_URL = fixture.url;
-      process.env.SEARXNG_BASE_URL = fixture.url.replace(/\/search$/, "");
+      process.env.SEARXNG_BASE_URL = fixture.url;
 
       console.log("[E2E] phase=construct-controller");
       controller = new AutonomousFactoryController({
@@ -171,7 +173,7 @@ describe("True eight-floor single-mission production trajectory", () => {
 
       console.log("[E2E] phase=mission-create-start");
       const mission = await controller.missionManager.createMission({
-        goal: "Operate the factory autonomously to research and generate an evidence-backed educational YouTube Shorts video about Python decorators.",
+        goal: "Research and generate an evidence-backed educational YouTube Short about Python decorators.",
         scope: {
           topic: "Python decorators",
           jobId: `job_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
@@ -188,11 +190,9 @@ describe("True eight-floor single-mission production trajectory", () => {
             engine: {
               contracts: {
                 research: {
+                  engineId: "quiz",
                   ...getCompatibilityEngineContracts("quiz").research!,
-                  minSources: 2,
-                  citationRequired: true,
                   sourcePolicy: "local verified research fixture",
-                  freshness: "any",
                 },
               },
             },
