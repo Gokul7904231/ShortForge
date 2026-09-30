@@ -306,11 +306,11 @@ export class DecodoWebScrapingProvider implements ReachProvider {
   constructor(
     endpoint = process.env.DECODO_WEB_API_URL || "",
     auth = process.env.DECODO_BASIC_AUTH || "",
-    proxyPool =
+    proxyPool: "standard" | "premium" =
       process.env.DECODO_WEB_PROXY_POOL === "premium"
         ? "premium"
         : "standard",
-    headless =
+    headless: "html" | "none" =
       process.env.DECODO_WEB_HEADLESS === "html" ? "html" : "none",
   ) {
     this.endpoint = endpoint;
