@@ -204,6 +204,18 @@ export class AutonomousFactoryController {
     this.memoryEngine = new MemoryEngine(repos.memories);
     this.cognitivePlane = new CognitivePlaneEngine(repos.memories);
 
+    // 6.1 Verified production-trajectory learning path. This bridge receives
+    // only independently verified outcomes; it never grants runtime authority.
+    const trajectoryExperienceMemory = new IndexedExperienceMemory(repos.memories);
+    const trajectoryEconomics = new AgentEconomicsEngine();
+    const trajectoryOutcomeLearner = new CognitiveOutcomeLearner(
+      trajectoryExperienceMemory,
+      trajectoryEconomics,
+    );
+    const trajectoryLearningBridge = new TrajectoryLearningBridge(
+      trajectoryOutcomeLearner,
+    );
+
     // 7. Swarms, Guardians & Overseer
     this.guardianManager = new GuardianManager(
       this.eventBus,
@@ -355,6 +367,7 @@ export class AutonomousFactoryController {
       repos.taskDAGs,
       this.intelligenceGateway?.memoryLifecycle,
       this.intelligenceGateway,
+      trajectoryLearningBridge,
     );
 
     // 8. Watchdog & Bridges
