@@ -24,7 +24,7 @@ import {
   type BlenderActionRequest,
   type BlenderCapabilitySnapshot,
   type BlenderExecutionObservation,
-  type BlenderMcpToolDescriptor,
+  type BlenderToolDescriptor,
   type BlenderSemanticAction,
   type BlenderActionResolution,
 } from "./BlenderMcpContracts";
@@ -167,7 +167,7 @@ function validateToolArguments(
 
 export function resolveBlenderActionAgainstTools(
   action: BlenderSemanticAction,
-  tools: readonly BlenderMcpToolDescriptor[],
+  tools: readonly BlenderToolDescriptor[],
   allowPythonExecution: boolean,
 ): BlenderActionResolution {
   const definition = BLENDER_ACTIONS.find((entry) => entry.action === action);
@@ -394,8 +394,8 @@ export class BlenderMcpAdapter {
     );
   }
 
-  private async listAllTools(): Promise<BlenderMcpToolDescriptor[]> {
-    const all: BlenderMcpToolDescriptor[] = [];
+  private async listAllTools(): Promise<BlenderToolDescriptor[]> {
+    const all: BlenderToolDescriptor[] = [];
     let cursor: string | undefined;
 
     do {
@@ -450,7 +450,7 @@ export class BlenderMcpAdapter {
           `Blender ${request.action} requires an explicit supported provider; received '${provider || "none"}'`,
         );
       }
-      return this.callAndObserve(request, selected);
+      return this.callAndObserve(request, selected, request.arguments);
     }
 
     const resolvedTool = snapshot.tools.find((tool) => tool.name === resolution.toolName);
@@ -498,7 +498,7 @@ export class BlenderMcpAdapter {
   private selectProviderTool(
     action: BlenderSemanticAction,
     provider: string,
-    tools: readonly BlenderMcpToolDescriptor[],
+    tools: readonly BlenderToolDescriptor[],
     args: Record<string, unknown> = {},
   ): string | undefined {
     if (!provider) return undefined;
@@ -545,6 +545,7 @@ export class BlenderMcpAdapter {
     toolName: string,
     toolArguments: Record<string, unknown>,
   ): Promise<BlenderExecutionObservation> {
+    const snapshot = this.getSnapshot();
     const startedAt = new Date().toISOString();
     const started = Date.now();
     const requestDigestSha256 = sha256({
