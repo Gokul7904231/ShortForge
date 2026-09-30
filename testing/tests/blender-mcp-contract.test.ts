@@ -4,7 +4,7 @@ import {
 } from "../../apps/web/factoryos/core/comms/BlenderMcpAdapter";
 import type { BlenderToolDescriptor } from "../../apps/web/factoryos/core/comms/BlenderMcpContracts";
 
-const tools = (names: string[]): BlenderMcpToolDescriptor[] =>
+const tools = (names: string[]): BlenderToolDescriptor[] =>
   names.map((name) => ({ name, description: name }));
 
 test("scene inspection resolves to the discovered inspection tool", () => {
