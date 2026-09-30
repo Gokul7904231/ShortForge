@@ -244,6 +244,21 @@ describe("True eight-floor single-mission production trajectory", () => {
       console.log(
         `[E2E] journal-f07-found=${Boolean(journalF07)} missionId=${journalF07?.payload?.missionId || "n/a"} runId=${journalF07?.payload?.runId || "n/a"} proofSource=${journalF07?.payload?.loopReceipt?.proofSource || "n/a"}`,
       );
+      console.log(
+        "[E2E] trajectory-floors=" +
+          JSON.stringify(
+            (trajectory.floors || []).map((floor: any) => ({
+              floorId: floor.floorId,
+              proofLevel: floor.proofLevel,
+              verified: floor.verified,
+              loopType: floor.loopType,
+              failureReason: floor.failureReason || null,
+              evidenceRefs: Array.isArray(floor.evidenceRefs)
+                ? floor.evidenceRefs.length
+                : 0,
+            })),
+          ),
+      );
 
       expect(trajectory.verificationStatus).toBe("VERIFIED");
       expect(journalF07).toBeDefined();
