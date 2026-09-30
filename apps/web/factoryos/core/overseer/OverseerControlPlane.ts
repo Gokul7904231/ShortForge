@@ -40,6 +40,8 @@ import type { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
 import { ResearchRuntime } from "../research/ResearchRuntime";
+import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
+import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 import { VoiceFabric } from "../voice/VoiceFabric";
 import { RenderFabric } from "../fabric/RenderFabric";
 import type { RenderIntent, RenderArtifact } from "../contracts/RenderIntentContracts";
@@ -70,6 +72,7 @@ export class OverseerControlPlane {
   public capabilityRouter: CapabilityRouter;
   public metaThinker: StrategicMetaThinker;
   public presenceEngine: OverseerPresenceEngine;
+  public trajectoryCollector: ProductionTrajectoryCollector;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -89,7 +92,8 @@ export class OverseerControlPlane {
     decisionRepo?: IDecisionRepository,
     taskDAGRepo?: ITaskDAGRepository,
     memoryLifecycle?: MemoryLifecycleService,
-    intelligenceGateway?: IntelligenceGateway
+    intelligenceGateway?: IntelligenceGateway,
+    trajectoryLearningBridge?: TrajectoryLearningBridge
   ) {
     this.caseManager = caseManager;
     this.slayerEngine = slayerEngine;
@@ -114,6 +118,8 @@ export class OverseerControlPlane {
       this.caseManager,
       this.missionManager
     );
+    this.trajectoryCollector = new ProductionTrajectoryCollector(this.eventBus, trajectoryLearningBridge);
+    this.trajectoryCollector.start();
 
     this.registerWithWorldState();
 
@@ -135,6 +141,52 @@ export class OverseerControlPlane {
         }
       }
     });
+    this.eventBus.subscribe("RUN_COMPLETED", async (envelope) => {
+      const missionId = (envelope.payload as any)?.missionId;
+      const runId = (envelope.payload as any)?.runId;
+      if (!missionId) return;
+      try {
+        const trajectory = await this.trajectoryCollector.finalize(missionId, envelope.timestamp);
+        await this.eventBus.publish(
+          "TRAJECTORY_EVALUATED",
+          {
+            trajectoryId: trajectory.trajectoryId,
+            missionId: trajectory.missionId,
+            runId,
+            verificationStatus: trajectory.verificationStatus,
+            verifiedFloorCount: trajectory.verifiedFloorCount,
+            canonicalFloorCount: trajectory.canonicalFloorCount,
+            totalIterations: trajectory.totalIterations,
+            recoveredIterations: trajectory.recoveredIterations,
+            evidenceRefs: trajectory.evidenceRefs,
+            finalOutcome: trajectory.finalOutcome,
+            trainingEligible: trajectory.trainingEligible,
+            trajectoryFingerprint: trajectory.trajectoryFingerprint,
+          },
+          { correlationId: runId || missionId, source: "production-trajectory-evaluator" },
+        );
+      } catch (error) {
+        await this.eventBus.publish(
+          "TRAJECTORY_EVALUATED",
+          {
+            missionId,
+            runId,
+            verificationStatus: "UNVERIFIED",
+            verifiedFloorCount: 0,
+            canonicalFloorCount: 8,
+            finalOutcome: "INCOMPLETE",
+            trainingEligible: false,
+            evaluationError: error instanceof Error ? error.message : String(error),
+          },
+          { correlationId: runId || missionId, source: "production-trajectory-evaluator" },
+        );
+      }
+    });
+  }
+
+  /** Record the pre-execution success prediction used for verified trajectory learning. */
+  recordTrajectoryPrediction(missionId: string, predictedSuccess: boolean): void {
+    this.trajectoryCollector.setPrediction(missionId, predictedSuccess);
   }
 
   async resumeMissionExecution(missionId: string): Promise<void> {
