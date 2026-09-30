@@ -15,7 +15,7 @@
  * This file is Node-only. Do not import it into Edge/Cloudflare bundles.
  */
 
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface, type Interface as ReadLineInterface } from "node:readline";
 import {
@@ -222,7 +222,6 @@ export class BlenderMcpAdapter {
   private snapshot?: BlenderCapabilitySnapshot;
   private lastError?: string;
   private connected = false;
-  private responseBytes = 0;
 
   constructor(config: BlenderMcpAdapterConfig = readBlenderMcpConfig()) {
     this.config = {
