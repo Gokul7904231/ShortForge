@@ -21,6 +21,8 @@ import type { LeaseManager } from "../leases/LeaseManager";
 import type { IReputationRepository } from "../database/DatabaseContracts";
 import { InMemoryReputationRepository } from "../database/InMemoryDatabase";
 import type { SlayerHealth, SlayerCluster } from "../contracts/SlayerContracts";
+import type { SlayerPrimeOptions } from "../contracts/SlayerPrimeContracts";
+import { SlayerPrimeEngine } from "./prime/SlayerPrimeEngine";
 
 export class SlayerEngine {
   private slayers: Map<string, BaseSlayer> = new Map();
@@ -30,6 +32,7 @@ export class SlayerEngine {
   private leaseManager?: LeaseManager;
   private reputationRepo: IReputationRepository;
   public readonly correlationEngine: SlayerCorrelationEngine;
+  public readonly prime: SlayerPrimeEngine;
 
   private isRunning: boolean = false;
   private isPatrolling: boolean = false;
@@ -42,7 +45,8 @@ export class SlayerEngine {
     worldState: WorldStateEngine,
     reputationRepo: IReputationRepository = new InMemoryReputationRepository(),
     patrolIntervalMs: number = 2000,
-    leaseManager?: LeaseManager
+    leaseManager?: LeaseManager,
+    primeOptions: SlayerPrimeOptions = {}
   ) {
     this.caseManager = caseManager;
     this.eventBus = eventBus;
@@ -51,6 +55,7 @@ export class SlayerEngine {
     this.patrolIntervalMs = patrolIntervalMs;
     this.leaseManager = leaseManager;
     this.correlationEngine = new SlayerCorrelationEngine();
+    this.prime = new SlayerPrimeEngine(eventBus, leaseManager, primeOptions);
 
     this.registerDefaultSlayers();
 
@@ -104,9 +109,14 @@ export class SlayerEngine {
     return Array.from(this.slayers.values()).map((s) => s.getHealth());
   }
 
+  getPrime(): SlayerPrimeEngine {
+    return this.prime;
+  }
+
   async start(): Promise<void> {
     if (this.isRunning) return;
     this.isRunning = true;
+    this.prime.start();
 
     // Load persisted reputations and reacquire zone leases
     for (const slayer of this.slayers.values()) {
@@ -129,6 +139,7 @@ export class SlayerEngine {
 
   async stop(): Promise<void> {
     this.isRunning = false;
+    this.prime.stop();
     if (this.patrolTimer) {
       clearInterval(this.patrolTimer);
       this.patrolTimer = null;

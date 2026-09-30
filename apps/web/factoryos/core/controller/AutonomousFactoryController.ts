@@ -42,6 +42,12 @@ import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
 import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
+import {
+  DiskSlayerPrimeStateStore,
+  InMemorySlayerPrimeStateStore,
+  MongoSlayerPrimeStateStore,
+  type SlayerPrimeStateStore,
+} from "../slayers/prime/SlayerPrimeStateStore";
 
 export interface FactoryOSConfig {
   readonly storageType?: "memory" | "disk" | "mongo";
@@ -93,6 +99,7 @@ export class AutonomousFactoryController {
   public researchRuntime: ResearchRuntime = new ResearchRuntime();
   public memoryFabric?: MemoryFabricBridge;
   public intelligenceGateway?: IntelligenceGateway;
+  public slayerPrimeStateStore!: SlayerPrimeStateStore;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -142,6 +149,16 @@ export class AutonomousFactoryController {
       }
     } else {
       repos = DatabaseFactory.createRepositories(null);
+    }
+
+    // Prime state follows the controller persistence tier.
+    // No persistence mode is silently upgraded or downgraded.
+    if (this.config.storageType === "disk") {
+      this.slayerPrimeStateStore = new DiskSlayerPrimeStateStore(this.config.storagePath);
+    } else if (this.config.storageType === "mongo" && this.mongoClient?.getDb()) {
+      this.slayerPrimeStateStore = new MongoSlayerPrimeStateStore(this.mongoClient.getDb()!);
+    } else {
+      this.slayerPrimeStateStore = new InMemorySlayerPrimeStateStore();
     }
 
     // 3. World State Engine
@@ -214,7 +231,8 @@ export class AutonomousFactoryController {
       this.worldState,
       repos.reputation,
       this.config.patrolIntervalMs,
-      this.leaseManager
+      this.leaseManager,
+      { stateStore: this.slayerPrimeStateStore }
     );
 
     this.healerEngine = new HealerEngine(
