@@ -72,6 +72,10 @@ function request(mode?: ReachFetchRequest["mode"]): ReachFetchRequest {
 }
 
 describe("Reach Provider Fabric", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
   it("uses dedicated Decodo credentials for each provider", async () => {
     vi.stubEnv("DECODO_BASIC_AUTH", "legacy-secret");
     vi.stubEnv("DECODO_FAST_SEARCH_API_KEY", "fast-secret");
