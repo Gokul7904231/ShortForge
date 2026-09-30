@@ -116,11 +116,15 @@ function extractPageText(data: any): string {
   return "";
 }
 
-function authHeader(auth: string): Record<string, string> {
+function authHeader(
+  auth: string,
+  scheme: "Basic" | "Bearer" = "Basic",
+): Record<string, string> {
+  const token = auth.trim().replace(/^(Basic|Bearer)\s+/i, "");
   return {
     Accept: "application/json",
     "Content-Type": "application/json",
-    Authorization: auth.startsWith("Basic ") ? auth : "Basic " + auth,
+    Authorization: scheme + " " + token,
   };
 }
 
@@ -157,7 +161,7 @@ export class SearXNGProvider implements ReachProvider {
     try {
       const response = await fetch(url, {
         headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
@@ -211,19 +215,27 @@ export class DecodoFastSearchProvider implements ReachProvider {
 
   private readonly endpoint: string;
   private readonly auth: string;
+  private readonly authScheme: "Basic" | "Bearer";
 
   constructor(
     endpoint = process.env.DECODO_FAST_SEARCH_URL ||
       "https://fastsearch.decodo.com/v0/search",
-    auth = process.env.DECODO_BASIC_AUTH || "",
+    auth = process.env.DECODO_FAST_SEARCH_API_KEY || "",
+    authScheme: "Basic" | "Bearer" =
+      process.env.DECODO_FAST_SEARCH_AUTH_SCHEME === "Bearer"
+        ? "Bearer"
+        : "Basic",
   ) {
     this.endpoint = endpoint;
     this.auth = auth;
+    this.authScheme = authScheme;
   }
 
   async search(input: ReachProviderRequest): Promise<ReachProviderResponse> {
     if (!this.auth) {
-      throw new ReachProviderError("DECODO_BASIC_AUTH is not configured.");
+      throw new ReachProviderError(
+        "DECODO_FAST_SEARCH_API_KEY is not configured.",
+      );
     }
 
     const requestId = "decodo_search_" + randomUUID().slice(0, 8);
@@ -244,9 +256,9 @@ export class DecodoFastSearchProvider implements ReachProvider {
     try {
       const response = await fetch(this.endpoint, {
         method: "POST",
-        headers: authHeader(this.auth),
+        headers: authHeader(this.auth, this.authScheme),
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!response.ok) {
@@ -304,19 +316,26 @@ export class DecodoWebScrapingProvider implements ReachProvider {
   private readonly headless: "html" | "none";
 
   constructor(
-    endpoint = process.env.DECODO_WEB_API_URL || "",
-    auth = process.env.DECODO_BASIC_AUTH || "",
+    endpoint =
+      process.env.DECODO_WEB_API_URL ||
+      "https://scraper-api.decodo.com/v2/scrape",
+    auth = process.env.DECODO_WEB_SCRAPING_API_KEY || "",
     proxyPool: "standard" | "premium" =
       process.env.DECODO_WEB_PROXY_POOL === "premium"
         ? "premium"
         : "standard",
     headless: "html" | "none" =
       process.env.DECODO_WEB_HEADLESS === "html" ? "html" : "none",
+    authScheme: "Basic" | "Bearer" =
+      process.env.DECODO_WEB_SCRAPING_AUTH_SCHEME === "Bearer"
+        ? "Bearer"
+        : "Basic",
   ) {
     this.endpoint = endpoint;
     this.auth = auth;
     this.proxyPool = proxyPool;
     this.headless = headless;
+    this.authScheme = authScheme;
   }
 
   budgetCapability() {
@@ -340,7 +359,9 @@ export class DecodoWebScrapingProvider implements ReachProvider {
     }
 
     if (!this.auth) {
-      throw new ReachProviderError("DECODO_BASIC_AUTH is not configured.");
+      throw new ReachProviderError(
+        "DECODO_WEB_SCRAPING_API_KEY is not configured.",
+      );
     }
 
     if (!input.sourceUrl) {
@@ -356,13 +377,16 @@ export class DecodoWebScrapingProvider implements ReachProvider {
       target: "universal",
       url: input.sourceUrl,
       proxy_pool: this.proxyPool,
-      headless: this.headless,
     };
+
+    if (this.headless !== "none") {
+      payload.headless = this.headless;
+    }
 
     try {
       const response = await fetch(this.endpoint, {
         method: "POST",
-        headers: authHeader(this.auth),
+        headers: authHeader(this.auth, this.authScheme),
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(12000),
       });
