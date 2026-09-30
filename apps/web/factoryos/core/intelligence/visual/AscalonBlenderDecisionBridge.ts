@@ -17,6 +17,7 @@ import type {
   CapabilityExecutionRequest,
   CapabilityExecutionResult,
 } from "../../contracts/CapabilityContracts";
+import { randomUUID } from "node:crypto";
 import type { ExecutionInitiator } from "../../contracts/FloorProtocolContracts";
 import { CapabilityRegistry } from "../../cognitive/CapabilityRegistry";
 import {
@@ -143,9 +144,7 @@ export class AscalonBlenderDecisionBridge {
     };
 
     return {
-      requestExecutionId: `ascalon_blender_${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2, 10)}`,
+      requestExecutionId: `ascalon_blender_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
       capabilityId: "blender.mcp",
       missionId: decision.missionId,
       jobId: decision.jobId,
