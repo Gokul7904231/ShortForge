@@ -309,7 +309,6 @@ export class MongoTaskDAGRepository implements ITaskDAGRepository {
   }
 }
 
-
 export class MongoLeaseRepository implements ILeaseRepository {
   private readonly col: Collection<TaskLease & { _id?: string }>;
   private readonly meta: Collection<{ _id: string; nextFencingToken?: number }>;
@@ -393,10 +392,14 @@ export class MongoLeaseRepository implements ILeaseRepository {
 
   async getExpiredLeases(): Promise<TaskLease[]> {
     const now = new Date().toISOString();
-    const docs = await this.col.find({ status: "ACTIVE", leaseExpiresAt: { $lte: now } }).toArray();
+    const docs = await this.col.find({
+      status: "ACTIVE",
+      leaseExpiresAt: { $lte: now },
+    }).toArray();
     return docs.map(({ _id, ...rest }) => rest as TaskLease);
   }
 }
+
 export class MongoMissionRepository implements IMissionRepository {
   constructor(private db: Db) {}
 
