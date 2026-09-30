@@ -295,7 +295,7 @@ function compileRender(args: Record<string, unknown>): string {
   const lines = [
     "import bpy",
     "scene = bpy.context.scene",
-    `scene.render.filepath = bpy.path.abspath(${json('//')})`.replace("bpy.path.abspath(\"//\")", `bpy.path.abspath(${json('//' + safePath)})`),
+    `scene.render.filepath = bpy.path.abspath(${json('//' + safePath)})`,
     ...(engine ? [`scene.render.engine = ${json(engine)}`] : []),
     ...(resolutionX !== undefined ? [`scene.render.resolution_x = ${resolutionX}`] : []),
     ...(resolutionY !== undefined ? [`scene.render.resolution_y = ${resolutionY}`] : []),
