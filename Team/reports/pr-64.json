@@ -46,7 +46,7 @@
   "notes": [
     "This report intentionally contains no credential values."
   ],
-  "forgerStatus": {
+  "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
