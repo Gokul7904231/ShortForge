@@ -316,6 +316,7 @@ export class ResearchRuntime {
         citationRequired: request.researchContract?.citationRequired,
         freshness: request.researchContract?.freshness,
         agentReachProfile: request.researchContract?.agentReachProfile,
+        researchMode: request.researchMode,
       },
     };
 
