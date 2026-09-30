@@ -1,0 +1,162 @@
+name: True Eight-Floor Production Trajectory
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: true-eight-floor-production-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    name: Single-mission F00-F07 production-path proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Install Python floor dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "services/pipeline/floor01_strategy[test]"
+          python -m pip install "fastapi>=0.115,<1" "pydantic>=2.7,<3" "pydantic-settings>=2.4,<3" "structlog>=24,<27" "uvicorn[standard]>=0.30,<1" "httpx>=0.28,<1"
+
+      - name: Install FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Install canonical local renderer
+        run: python -m pip install -e packages/factoryos-render
+
+      - name: Start canonical F01, F02 and F03 services
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/services/pipeline
+          F01_KEY: ci-floor01-trajectory-key-20260929
+          F02_KEY: ci-floor02-trajectory-key-20260929
+          F03_KEY: ci-floor03-trajectory-key-20260929
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${RUNNER_TEMP}/shortforge-trajectory"
+          mkdir -p "${RUNNER_TEMP}/floor02-reports"
+
+          (
+            export FLOOR01_ENVIRONMENT=production
+            export FLOOR01_SERVICE_API_KEY="${F01_KEY}"
+            export FLOOR01_MEMORY_FILE_PATH="${RUNNER_TEMP}/floor01-memory.json"
+            cd services/pipeline/floor01_strategy
+            python -m uvicorn floor01_strategy.main:app --host 127.0.0.1 --port 8101               >"${RUNNER_TEMP}/shortforge-trajectory/f01.log" 2>&1
+          ) &
+          echo $! > "${RUNNER_TEMP}/shortforge-trajectory/f01.pid"
+
+          (
+            export FLOOR02_ENV=test
+            export FLOOR02_API_KEY="${F02_KEY}"
+            export FLOOR02_MEMORY_PATH="${RUNNER_TEMP}/floor02-memory.json"
+            export FLOOR02_EXECUTION_REPORT_PATH="${RUNNER_TEMP}/floor02-reports"
+            cd services/pipeline/floor02_scripting
+            python -m uvicorn main:app --host 127.0.0.1 --port 8102               >"${RUNNER_TEMP}/shortforge-trajectory/f02.log" 2>&1
+          ) &
+          echo $! > "${RUNNER_TEMP}/shortforge-trajectory/f02.pid"
+
+          (
+            export DEFAULT_API_KEY="${F03_KEY}"
+            export STORAGE_PATH="${RUNNER_TEMP}/floor03-memory.json"
+            cd services/pipeline/floor03_asset_realization
+            python -m uvicorn main:app --host 127.0.0.1 --port 8103               >"${RUNNER_TEMP}/shortforge-trajectory/f03.log" 2>&1
+          ) &
+          echo $! > "${RUNNER_TEMP}/shortforge-trajectory/f03.pid"
+
+      - name: Wait for canonical floor readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for i in $(seq 1 60); do
+            f01=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8101/health || true)
+            f02=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8102/health || true)
+            f03=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8103/v1/assets/health || true)
+
+            if [ "$f01" = "200" ] && [ "$f02" = "200" ] && [ "$f03" = "200" ]; then
+              echo "F01/F02/F03 canonical services are ready."
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Canonical floor readiness failed."
+          cat "${RUNNER_TEMP}/shortforge-trajectory/f01.log" || true
+          cat "${RUNNER_TEMP}/shortforge-trajectory/f02.log" || true
+          cat "${RUNNER_TEMP}/shortforge-trajectory/f03.log" || true
+          exit 1
+
+      - name: Execute true single-mission eight-floor trajectory
+        working-directory: apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NODE_ENV: test
+          FLOOR01_SERVICE_URL: http://127.0.0.1:8101
+          FLOOR01_SERVICE_API_KEY: ci-floor01-trajectory-key-20260929
+          FLOOR02_RUNTIME_URL: http://127.0.0.1:8102
+          FLOOR02_API_KEY: ci-floor02-trajectory-key-20260929
+          FLOOR03_RUNTIME_URL: http://127.0.0.1:8103
+          FLOOR03_SERVICE_API_KEY: ci-floor03-trajectory-key-20260929
+          # The proof uses the same durable F03 handoff abstraction with an explicit
+          # disk-backed backend; production defaults to Firestore when this variable is absent.
+          FACTORYOS_F03_HANDOFF_STORE: LOCAL
+          FLOOR03_HANDOFF_STORE_PATH: ${{ runner.temp }}/floor03-handoffs.json
+          # Keep the F04 path deterministic when no live neural-TTS credential is present.
+          # The resulting audio is physically generated and verified, but remains explicitly
+          # classified as degraded fallback by VoiceFabric rather than masquerading as PRIMARY.
+          EDGE_TTS_ENABLED: "false"
+        run: npx vitest run factoryos/tests/eight-floor-production-trajectory.e2e.test.ts --reporter=verbose
+
+      - name: Upload trajectory proof and service logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eight-floor-production-trajectory-proof
+          path: |
+            artifacts/eight-floor-production-trajectory-proof.json
+            ${{ runner.temp }}/shortforge-trajectory/*.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop canonical floor services
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          for floor in f01 f02 f03; do
+            pid_file="${RUNNER_TEMP}/shortforge-trajectory/${floor}.pid"
+            if [ -f "$pid_file" ]; then
+              kill "$(cat "$pid_file")" >/dev/null 2>&1 || true
+            fi
+          done
