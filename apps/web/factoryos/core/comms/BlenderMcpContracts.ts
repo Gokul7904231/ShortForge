@@ -165,7 +165,8 @@ export const BLENDER_ACTIONS: readonly BlenderActionDefinition[] = [
     action: "GEOMETRY_NODES_CONFIGURE",
     risk: "HIGH_RISK",
     requiresGuardianGate: true,
-    preferredTools: ["describe_node_type", "execute_blender_code"],
+    preferredTools: ["execute_blender_code"],
+    fallbackTools: ["describe_node_type"],
     description: "Inspect and build Geometry Nodes networks.",
   },
   {
