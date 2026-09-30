@@ -169,7 +169,7 @@ describe("True eight-floor single-mission production trajectory", () => {
 
       console.log("[E2E] phase=mission-create-start");
       const mission = await controller.missionManager.createMission({
-        goal: "Research and generate an evidence-backed educational YouTube Short about Python decorators.",
+        goal: "Research and generate an evidence-backed educational YouTube Shorts video about Python decorators.",
         scope: {
           topic: "Python decorators",
           jobId: `job_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
