@@ -46,6 +46,7 @@ export interface AscalonBlenderDecision {
   readonly environment?: "development" | "staging" | "production" | "test";
   readonly initiatedBy?: ExecutionInitiator;
   readonly userPrompt?: string;
+  readonly rawPythonReason?: string;
 }
 
 export interface AscalonBlenderDecisionValidation {
@@ -92,12 +93,15 @@ export function validateAscalonBlenderDecision(
     }
   }
 
-  if (decision.semanticAction === "PYTHON_EXECUTE") {
+  if (definition.executionMode === "RAW_PYTHON") {
     if (!decision.guardianAuthorization?.granted) {
-      errors.push("PYTHON_EXECUTE requires an explicit Guardian grant");
+      errors.push(`Raw Python-backed Blender action ${decision.semanticAction} requires an explicit Guardian grant`);
     }
-    if (decision.arguments.code === undefined) {
-      errors.push("PYTHON_EXECUTE requires arguments.code");
+    if (typeof decision.arguments.code !== "string" || decision.arguments.code.trim().length === 0) {
+      errors.push(`Raw Python-backed Blender action ${decision.semanticAction} requires arguments.code`);
+    }
+    if (!decision.rawPythonReason?.trim()) {
+      errors.push(`Raw Python-backed Blender action ${decision.semanticAction} requires rawPythonReason`);
     }
   }
 
@@ -107,6 +111,12 @@ export function validateAscalonBlenderDecision(
     actionRisk: definition.risk,
     requiresGuardianGate: definition.requiresGuardianGate,
   };
+}
+
+function definitionFor(action: BlenderSemanticAction) {
+  const definition = getAction(action);
+  if (!definition) throw new Error(`Unknown Blender semantic action: ${action}`);
+  return definition;
 }
 
 export class AscalonBlenderDecisionBridge {
@@ -136,11 +146,12 @@ export class AscalonBlenderDecisionBridge {
         ...decision.arguments,
         ...(decision.provider ? { provider: decision.provider } : {}),
       },
-      allowPythonExecution: decision.semanticAction === "PYTHON_EXECUTE",
+      allowPythonExecution: definitionFor(decision.semanticAction).executionMode === "RAW_PYTHON",
       rationale: decision.rationale,
       preconditions: decision.preconditions ? [...decision.preconditions] : [],
       guardianAuthorization: decision.guardianAuthorization,
       userPrompt: decision.userPrompt,
+      rawPythonReason: decision.rawPythonReason,
     };
 
     return {
