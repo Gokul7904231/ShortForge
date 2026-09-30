@@ -89,31 +89,31 @@ This prevents a large interactive stream from starving control-plane messages.
 
 ### NVIDIA OpenShell
 
-OpenShell separates gateway control-plane authority from local runtime enforcement and uses authenticated long-lived supervisor sessions, multiplexed control/relay traffic, capability reporting, scoped authorization, bounded request handling, and last-known-good configuration. FactoryOS should adopt the architectural separation, not copy OpenShell implementation details. citeturn675162search3turn496228search0turn496228search2
+OpenShell separates gateway control-plane authority from local runtime enforcement and uses authenticated long-lived supervisor sessions, multiplexed control/relay traffic, capability reporting, scoped authorization, bounded request handling, and last-known-good configuration. FactoryOS should adopt the architectural separation, not copy OpenShell implementation details.
 
 ### MCP for Blender
 
-The Blender MCP project demonstrates a simple JSON command/response protocol over sockets plus explicit addon protocol-version/capability handshakes and a persistent connection. FactoryOS should retain this friendliness but add stronger identity, scope, causality, delivery receipts, and authorization. citeturn980885search4turn496228search1
+The Blender MCP project demonstrates a simple JSON command/response protocol over sockets plus explicit addon protocol-version/capability handshakes and a persistent connection. FactoryOS should retain this friendliness but add stronger identity, scope, causality, delivery receipts, and authorization.
 
 ### Elasticsearch
 
-Elasticsearch uses explicit request/response/action/listener/task concepts and a node-to-node transport layer. FactoryOS can apply the same conceptual split: request metadata and lifecycle tracking should be explicit, with operation identity independent from transport connection identity. citeturn496228search4
+Elasticsearch uses explicit request/response/action/listener/task concepts and a node-to-node transport layer. FactoryOS can apply the same conceptual split: request metadata and lifecycle tracking should be explicit, with operation identity independent from transport connection identity.
 
 ### Worktrunk
 
-Worktrunk treats parallel agent execution as a first-class workflow with explicit worktree context and ordered lifecycle hooks. FactoryOS Comms should likewise carry explicit worker context and allow lifecycle hooks around session/dispatch/close rather than relying on implicit shell state. citeturn496228search5turn496228search8
+Worktrunk treats parallel agent execution as a first-class workflow with explicit worktree context and ordered lifecycle hooks. FactoryOS Comms should likewise carry explicit worker context and allow lifecycle hooks around session/dispatch/close rather than relying on implicit shell state.
 
 ### PageIndex
 
-PageIndex shows the value of reasoning over explicit structure and producing traceable references instead of opaque similarity-only retrieval. Comms should therefore preserve structured references, source identity, and evidence links rather than collapsing important state into free-text messages. citeturn980885search2turn980885search6
+PageIndex shows the value of reasoning over explicit structure and producing traceable references instead of opaque similarity-only retrieval. Comms should therefore preserve structured references, source identity, and evidence links rather than collapsing important state into free-text messages.
 
 ### ReClip / FxEmbed
 
-These projects reinforce a useful edge principle: keep adapters lightweight and let the protocol boundary absorb transport/integration complexity. ReClip emphasizes deduplication for media downloads, while FxEmbed is a serverless edge adapter. In FactoryOS, integration adapters should not become a second comms protocol or state store. citeturn496228search10turn496228search9
+These projects reinforce a useful edge principle: keep adapters lightweight and let the protocol boundary absorb transport/integration complexity. ReClip emphasizes deduplication for media downloads, while FxEmbed is a serverless edge adapter. In FactoryOS, integration adapters should not become a second comms protocol or state store.
 
 ### Current agent-communication research
 
-A 2026 taxonomy of LLM-agent communication protocols identifies counterparty, payload, interaction state, discovery, and schema flexibility as core dimensions and observes a trend toward federated layered protocol stacks. A 2026 study argues current protocols are stronger on transport/streaming/schema/lifecycle than on context alignment, clarification, and verification. This supports making semantic alignment, provenance, and policy explicit in FactoryOS rather than treating them as prompt conventions. citeturn966184academia0turn966184academia1
+A 2026 taxonomy of LLM-agent communication protocols identifies counterparty, payload, interaction state, discovery, and schema flexibility as core dimensions and observes a trend toward federated layered protocol stacks. A 2026 study argues current protocols are stronger on transport/streaming/schema/lifecycle than on context alignment, clarification, and verification. This supports making semantic alignment, provenance, and policy explicit in FactoryOS rather than treating them as prompt conventions.
 
 ## FactoryOS invariants
 
