@@ -200,7 +200,7 @@ describe("Phase 1: Research Provenance & Honest Error Semantics", () => {
         missionId: "mis_missing_f00_topic",
         topic: "   ",
       })
-    ).rejects.toThrow("F00 ResearchRuntime requires a non-empty topic");
+    ).rejects.toThrow("Floor 00 ResearchRuntime requires a non-empty topic.");
   });
 
   it("8b. excludes unavailable Reach records from ResearchPassport evidence", async () => {
