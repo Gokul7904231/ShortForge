@@ -7,7 +7,7 @@ import type { BlenderToolDescriptor } from "../../apps/web/factoryos/core/comms/
 const tools = (names: string[]): BlenderToolDescriptor[] =>
   names.map((name) => ({ name, description: name }));
 
-test("scene inspection resolves to the discovered inspection tool", () => {
+it("scene inspection resolves to the discovered inspection tool", () => {
   const result = resolveBlenderActionAgainstTools(
     "SCENE_INSPECT",
     tools(["get_scene_info", "execute_blender_code"]),
