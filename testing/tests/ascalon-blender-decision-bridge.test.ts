@@ -31,7 +31,7 @@ it("read-only scene inspection does not require a Guardian certificate", () => {
   expect(result.actionRisk).toBe("READ_ONLY");
 });
 
-test("mutating Blender decisions require Guardian authorization", () => {
+it("mutating Blender decisions require Guardian authorization", () => {
   const result = validateAscalonBlenderDecision({
     ...base,
     semanticAction: "OBJECT_CREATE",
@@ -43,7 +43,7 @@ test("mutating Blender decisions require Guardian authorization", () => {
   expect(result.errors).toContain("Guardian authorization is required for Blender action OBJECT_CREATE");
 });
 
-test("multi-provider asset decisions require an explicit provider", () => {
+it("multi-provider asset decisions require an explicit provider", () => {
   const result = validateAscalonBlenderDecision({
     ...base,
     semanticAction: "ASSET_SEARCH",
@@ -57,7 +57,7 @@ test("multi-provider asset decisions require an explicit provider", () => {
   );
 });
 
-test("arbitrary Blender Python requires Guardian authorization and code", () => {
+it("arbitrary Blender Python requires Guardian authorization and code", () => {
   const result = validateAscalonBlenderDecision({
     ...base,
     semanticAction: "PYTHON_EXECUTE",
@@ -70,7 +70,7 @@ test("arbitrary Blender Python requires Guardian authorization and code", () => 
   expect(result.errors).toContain("PYTHON_EXECUTE requires arguments.code");
 });
 
-test("bridge emits canonical blender.mcp capability requests", () => {
+it("bridge emits canonical blender.mcp capability requests", () => {
   const bridge = new AscalonBlenderDecisionBridge({} as any);
   const request = bridge.buildCapabilityRequest(base);
 
