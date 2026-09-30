@@ -1,7 +1,8 @@
+import { describe, expect, it } from "vitest";
 import {
   resolveBlenderActionAgainstTools,
 } from "../../apps/web/factoryos/core/comms/BlenderMcpAdapter";
-import type { BlenderMcpToolDescriptor } from "../../apps/web/factoryos/core/comms/BlenderMcpContracts";
+import type { BlenderToolDescriptor } from "../../apps/web/factoryos/core/comms/BlenderMcpContracts";
 
 const tools = (names: string[]): BlenderMcpToolDescriptor[] =>
   names.map((name) => ({ name, description: name }));
