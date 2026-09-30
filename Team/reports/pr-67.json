@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR67-Trajectory-Mainline-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/trajectory-mainline-final-20260930",
+  "objective": "Land production trajectory proof and bounded Ascalon learning onto the latest mainline while preserving Slayer Prime and AER changes.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Intelligence proposes; authority authorizes; runtime executes; evidence proves.",
+      "F07 remains independent verification/release authority.",
+      "Trajectory learning is observational/evaluative and requires complete verified F00-F07 evidence.",
+      "Current mainline authority and safety changes remain canonical during reconciliation."
+    ]
+  },
+  "forensicFindings": [
+    "The trajectory branch was based on an older mainline and was stale after Slayer Prime and AER merges.",
+    "The trajectory collector had a real missing-dependency wiring defect: the controller constructed the learning classes only after the fix, but the old branch path did not pass the bridge.",
+    "F06 physical loop proof was not present on the TASK_COMPLETED event until the earlier reconciliation fix."
+  ],
+  "changes": [
+    "Wired IndexedExperienceMemory -> AgentEconomicsEngine -> CognitiveOutcomeLearner -> TrajectoryLearningBridge into AutonomousFactoryController.",
+    "Published F06 RenderFabric physical loopReceipt through TASK_COMPLETED.",
+    "Preserved eight-floor trajectory evaluator/collector and learning eligibility boundary.",
+    "Merged branch-only trajectory files onto latest main while keeping current mainline EventContracts/authority additions."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/observability/ProductionTrajectory.ts",
+    "apps/web/factoryos/core/observability/ProductionTrajectoryCollector.ts",
+    "apps/web/factoryos/core/cognitive/TrajectoryLearningBridge.ts",
+    "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No secrets included."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Run True Eight-Floor Production Trajectory.",
+    "Run CI and floor validation.",
+    "Run Team Change Gate.",
+    "Merge only after required blocking lanes are green."
+  ],
+  "verificationResults": {
+    "contentReconciliation": "NO_UNRESOLVED_CONFLICTS",
+    "githubCI": "PENDING",
+    "trajectoryE2E": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "No credentials are present in this report."
+  ]
+}
