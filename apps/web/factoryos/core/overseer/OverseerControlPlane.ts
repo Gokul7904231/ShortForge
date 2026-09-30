@@ -1490,6 +1490,7 @@ export class OverseerControlPlane {
           consumedArtifactIds: sharedScope.voiceArtifact?.sha256 ? [sharedScope.voiceArtifact.sha256] : [],
           producedArtifacts: scope.artifact ? [{ kind: "MP4_VIDEO", path: finalVideoUrl, sha256: scope.artifact.sha256 }] : [],
           producedArtifactIds: scope.artifact?.sha256 ? [scope.artifact.sha256] : [],
+          loopReceipt: renderRes.loopReceipt,
         });
         return {
           status: "OK",
