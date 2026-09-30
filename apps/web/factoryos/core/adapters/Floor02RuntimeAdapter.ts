@@ -98,7 +98,7 @@ function buildCompatibilityFloor01Handoff(input: Floor02RuntimeInput): Record<st
       difficulty_level: strategy.learningLevel || "beginner",
       prerequisites: [],
       learning_objectives: [`Understand ${topic}`],
-      bloom_taxonomy_level: "UNDERSTAND",
+      bloom_taxonomy_level: "Understand",
       concept_dependencies: [],
       knowledge_gap_hypothesis: [],
       assessment_opportunities: [],
