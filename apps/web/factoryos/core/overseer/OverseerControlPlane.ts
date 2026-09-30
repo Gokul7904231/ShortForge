@@ -55,6 +55,34 @@ import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 
+function runtimeClosureReceipt(
+  floorId: string,
+  loopType: "COGNITIVE_EXECUTION",
+  executionId: string,
+  startedAt: string,
+  completedAt: string,
+  verified: boolean,
+  evidenceRefs: readonly string[],
+  iterations = 1,
+): Record<string, unknown> {
+  return {
+    floorId,
+    loopType,
+    loopId: "runtime-" + floorId + "-" + executionId,
+    termination: verified ? "COMPLETED" : "EXHAUSTED",
+    iterations: Math.max(1, iterations),
+    startedAt,
+    completedAt,
+    verified,
+    evidenceRefs: [...evidenceRefs],
+    proofSource: "RUNTIME",
+    failureReason: verified
+      ? undefined
+      : "Canonical runtime closure verification did not pass.",
+  };
+}
+
+
 export class OverseerControlPlane {
   private thinkingController: OverseerThinkingController;
   private decisionLedger: DecisionLedger;
@@ -409,7 +437,7 @@ export class OverseerControlPlane {
       }
     }
 
-    const executors = this.getTaskExecutorsForFloors(missionId);
+    const executors = this.getTaskExecutorsForFloors(missionId, run.runId);
 
     // Execute Task DAG asynchronously across target floor executors
     const completedDag = await this.dagExecutor.executeDAG(dag, executors, { maxParallelTasks });
@@ -588,7 +616,7 @@ export class OverseerControlPlane {
     ];
   }
 
-  private getTaskExecutorsForFloors(missionId?: string) {
+  private getTaskExecutorsForFloors(missionId?: string, runId?: string) {
     const sharedScope: Record<string, any> = {};
 
     return {
@@ -617,6 +645,7 @@ export class OverseerControlPlane {
           floorId: "floor00_analyst",
           workerId: "worker_analyst_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -774,6 +803,15 @@ export class OverseerControlPlane {
           executionTimeMs,
           durationTruth: "PHYSICAL",
           consumedArtifactIds: analystOutput?.passport?.passportId ? [analystOutput.passport.passportId] : [],
+          loopReceipt: runtimeClosureReceipt(
+            "floor01_strategy",
+            "COGNITIVE_EXECUTION",
+            executionId,
+            startedAt,
+            completedAt,
+            strategyPayload?.handoff_status === "VALIDATED",
+            [executionId, String(strategyPayload?.plan_id || executionId)],
+          ),
         });
         return { status: "OK", floor: "floor01_strategy", output: strategyPayload, executionTimeMs };
       },
@@ -1051,6 +1089,7 @@ export class OverseerControlPlane {
           floorId: "floor04_media_synthesis",
           workerId: "worker_audio_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1124,6 +1163,7 @@ export class OverseerControlPlane {
           floorId: "floor05_timeline_composition",
           workerId: "worker_timeline_01",
           missionId,
+          runId,
           startedAt,
         });
 
@@ -1257,6 +1297,7 @@ export class OverseerControlPlane {
           floorId: "floor06_rendering",
           workerId: "worker_render_01",
           missionId,
+          runId,
           startedAt,
         });
 
