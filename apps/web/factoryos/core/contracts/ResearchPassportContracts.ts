@@ -114,6 +114,7 @@ export interface ResearchPassport {
     readonly citationRequired?: boolean;
     readonly freshness?: "run" | "recent" | "any";
     readonly agentReachProfile?: string;
+    readonly researchMode?: "NORMAL" | "PRECISION" | "DEEP" | "CORROBORATION";
   };
   integrity?: PassportIntegrityMetadata;
 }
