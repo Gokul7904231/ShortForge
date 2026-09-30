@@ -8,11 +8,14 @@ import type { Case, CaseStatus } from "../contracts/CaseContracts";
 import type { DecisionRecord, TaskDAG, TaskNode } from "../contracts/OverseerThinkingContracts";
 import type { SlayerReputation } from "../contracts/SlayerContracts";
 import type { HealerReputation } from "../contracts/HealerContracts";
+import type { Mission } from "../contracts/MissionContracts";
+import { MissionConcurrencyConflictError } from "../missions/MissionErrors";
 import {
   InMemoryCaseRepository,
   InMemoryDecisionRepository,
   InMemoryLeaseRepository,
   InMemoryMemoryRepository,
+  InMemoryMissionRepository,
   InMemoryReputationRepository,
   InMemoryTaskDAGRepository,
   InMemoryWorldStateRepository,
@@ -25,6 +28,7 @@ import type {
   IReputationRepository,
   ITaskDAGRepository,
   IWorldStateRepository,
+  IMissionRepository,
   MemoryRecord,
   TaskLease,
 } from "./DatabaseContracts";
