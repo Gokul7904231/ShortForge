@@ -1,5 +1,8 @@
 import type { ReachProviderId } from "./ReachContracts";
 
+import { randomUUID } from "node:crypto";
+import type { ReachProviderId } from "./ReachContracts";
+
 export type DecodoBudgetCapability =
   | "DECODO_FAST_SEARCH"
   | "DECODO_WEB_STANDARD"
@@ -77,7 +80,7 @@ export class DecodoBudgetGovernor {
         "decodo_res_" +
         Date.now().toString(36) +
         "_" +
-        Math.random().toString(36).slice(2, 8),
+        randomUUID().slice(0, 12),
       capability,
       provider,
       units: normalizedUnits,
