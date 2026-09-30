@@ -81,6 +81,9 @@ export interface BlenderExecutionObservation {
   readonly action: BlenderSemanticAction;
   readonly toolName: string;
   readonly requestDigestSha256: string;
+  readonly capabilitySnapshotDigestSha256: string;
+  readonly runtimeProtocolVersion: string;
+  readonly runtimeServerVersion: string;
   readonly startedAt: string;
   readonly completedAt: string;
   readonly durationMs: number;
