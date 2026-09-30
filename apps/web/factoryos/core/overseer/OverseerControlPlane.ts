@@ -1007,7 +1007,7 @@ export class OverseerControlPlane {
             scriptPayload?.handoffPayload?.handoff_status === "VALIDATED",
             [executionId, String(scriptPayload?.handoffPayload?.script_id || executionId)],
           ),
-        }});
+        });
         return { status: "OK", floor: "floor02_scripting", output: scriptPayload, executionTimeMs };
       },
       FLOOR_ASSET_REALIZATION: async (node: any) => {
@@ -1090,7 +1090,7 @@ export class OverseerControlPlane {
               canonicalF03?.asset_plan_ir?.plan_fingerprint || executionId,
             ],
           ),
-        }});
+        });
         return { status: "OK", floor: "floor03_asset_realization", output: assetPayload, executionTimeMs };
       },
       FLOOR_MEDIA_SYNTHESIS: async (node: any) => {
@@ -1175,7 +1175,7 @@ export class OverseerControlPlane {
             Boolean(synthRes.sha256) && Number(synthRes.byteLength || 0) > 0,
             [executionId, synthRes.sha256 || executionId],
           ),
-        }});
+        });
         return { status: "OK", floor: "floor04_media_synthesis", output: mediaPayload, executionTimeMs };
       },
       FLOOR_TIMELINE_COMPOSITION: async (node: any) => {
@@ -1320,7 +1320,7 @@ export class OverseerControlPlane {
             Boolean(renderIntent.intentId) && Boolean(consumedAudioSha256),
             [executionId, renderIntent.intentId, consumedAudioSha256 || executionId],
           ),
-        }});
+        });
         return { status: "OK", floor: "floor05_timeline_composition", output: timelinePayload, executionTimeMs };
       },
       FLOOR_RENDERING: async (node: any) => {
