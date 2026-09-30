@@ -312,7 +312,7 @@ export class DecodoWebScrapingProvider implements ReachProvider {
         ? "premium"
         : "standard",
     headless =
-      process.env.DECODO_WEB_HEADLESS === "none" ? "none" : "html",
+      process.env.DECODO_WEB_HEADLESS === "html" ? "html" : "none",
   ) {
     this.endpoint = endpoint;
     this.auth = auth;
