@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { EvidenceSource } from "../core/contracts/ResearchPassportContracts";
 import { DecodoBudgetGovernor } from "../core/research/ReachBudgetGovernor";
 import { ReachResearchCache } from "../core/research/ReachCache";
+import { DecodoWebScrapingProvider } from "../core/research/ReachProviders";
 import { InMemoryReachTelemetry, ReachProviderRouter } from "../core/research/ReachProviderRouter";
 import type { ReachFetchRequest, ReachProvider, ReachProviderRequest, ReachProviderResponse } from "../core/research/ReachContracts";
 
@@ -216,6 +217,17 @@ describe("Reach Provider Fabric", () => {
     expect(first.cacheHit).toBe(false);
     expect(second.cacheHit).toBe(true);
     expect(calls).toBe(1);
+  });
+
+
+
+  it("defaults Decodo web retrieval to standard/non-JS budget mode", () => {
+    const provider = new DecodoWebScrapingProvider(
+      "https://example.invalid",
+      "test-auth",
+    );
+
+    expect(provider.budgetCapability()).toBe("DECODO_WEB_STANDARD");
   });
 
   it("corroborates with both providers and deduplicates the same URL", async () => {
