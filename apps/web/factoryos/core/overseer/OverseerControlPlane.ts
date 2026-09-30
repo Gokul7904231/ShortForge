@@ -799,6 +799,7 @@ export class OverseerControlPlane {
           floorId: "floor01_strategy",
           workerId: "worker_strategy_01",
           missionId,
+          runId,
           output: strategyPayload,
           startedAt,
           completedAt,
