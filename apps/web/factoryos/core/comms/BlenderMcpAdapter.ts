@@ -18,6 +18,7 @@
 import { createHash } from "node:crypto";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface, type Interface as ReadLineInterface } from "node:readline";
+import { compileStructuredBlenderAction } from "./BlenderActionScriptCompiler";
 import {
   BLENDER_ACTIONS,
   type BlenderActionRequest,
@@ -457,12 +458,41 @@ export class BlenderMcpAdapter {
       throw new Error(`Resolved Blender tool '${resolution.toolName}' disappeared from the live capability snapshot`);
     }
 
-    const schemaErrors = validateToolArguments(resolvedTool, request.arguments);
+    const definition = BLENDER_ACTIONS.find((entry) => entry.action === request.action);
+    if (!definition) {
+      throw new Error(`Unknown Blender semantic action '${request.action}'`);
+    }
+
+    let toolArguments: Record<string, unknown>;
+    if (definition.executionMode === "STRUCTURED_SCRIPT") {
+      const compiled = compileStructuredBlenderAction(request.action, request.arguments);
+      toolArguments = {
+        code: compiled.code,
+        user_prompt: compiled.userPrompt || request.userPrompt || "",
+      };
+    } else if (definition.executionMode === "RAW_PYTHON") {
+      if (!request.allowPythonExecution || !this.config.allowPythonExecution) {
+        throw new Error(
+          `Raw Python-backed Blender action '${request.action}' is disabled; explicit Python capability is required`,
+        );
+      }
+      if (typeof request.arguments.code !== "string" || request.arguments.code.trim().length === 0) {
+        throw new Error(`Raw Python-backed Blender action '${request.action}' requires arguments.code`);
+      }
+      toolArguments = {
+        code: request.arguments.code,
+        user_prompt: request.userPrompt || request.arguments.user_prompt || "",
+      };
+    } else {
+      toolArguments = { ...request.arguments };
+    }
+
+    const schemaErrors = validateToolArguments(resolvedTool, toolArguments);
     if (schemaErrors.length > 0) {
       throw new Error(`Blender MCP argument contract rejected: ${schemaErrors.join("; ")}`);
     }
 
-    return this.callAndObserve(request, resolution.toolName);
+    return this.callAndObserve(request, resolution.toolName, toolArguments);
   }
 
   private selectProviderTool(
@@ -513,6 +543,7 @@ export class BlenderMcpAdapter {
   private async callAndObserve(
     request: BlenderActionRequest,
     toolName: string,
+    toolArguments: Record<string, unknown>,
   ): Promise<BlenderExecutionObservation> {
     const startedAt = new Date().toISOString();
     const started = Date.now();
@@ -523,10 +554,11 @@ export class BlenderMcpAdapter {
       action: request.action,
       arguments: this.redactForDigest(request.arguments),
     });
+    const resolvedArgumentsDigestSha256 = sha256(this.redactForDigest(toolArguments));
 
     const result = await this.request("tools/call", {
       name: toolName,
-      arguments: request.arguments,
+      arguments: toolArguments,
     });
 
     const completedAt = new Date().toISOString();
@@ -547,6 +579,7 @@ export class BlenderMcpAdapter {
           inputSchema: tool.inputSchema,
         })),
       }),
+      resolvedArgumentsDigestSha256,
       runtimeProtocolVersion: snapshot.protocolVersion,
       runtimeServerVersion: snapshot.serverVersion,
       startedAt,
