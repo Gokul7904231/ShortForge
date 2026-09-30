@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { EvidenceSource } from "../core/contracts/ResearchPassportContracts";
 import { DecodoBudgetGovernor } from "../core/research/ReachBudgetGovernor";
 import { ReachResearchCache } from "../core/research/ReachCache";
-import { DecodoWebScrapingProvider } from "../core/research/ReachProviders";
+import {
+  DecodoFastSearchProvider,
+  DecodoWebScrapingProvider,
+} from "../core/research/ReachProviders";
 import { InMemoryReachTelemetry, ReachProviderRouter } from "../core/research/ReachProviderRouter";
 import type { ReachFetchRequest, ReachProvider, ReachProviderRequest, ReachProviderResponse } from "../core/research/ReachContracts";
 
@@ -69,6 +72,61 @@ function request(mode?: ReachFetchRequest["mode"]): ReachFetchRequest {
 }
 
 describe("Reach Provider Fabric", () => {
+  it("uses dedicated Decodo credentials for each provider", async () => {
+    vi.stubEnv("DECODO_BASIC_AUTH", "legacy-secret");
+    vi.stubEnv("DECODO_FAST_SEARCH_API_KEY", "fast-secret");
+    vi.stubEnv("DECODO_WEB_SCRAPING_API_KEY", "web-secret");
+    vi.stubEnv("DECODO_WEB_API_URL", "https://scraper.example/v2/scrape");
+
+    const calls: Array<{ url: string; authorization: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        calls.push({
+          url: String(input),
+          authorization: String(
+            new Headers(init?.headers).get("Authorization"),
+          ),
+        });
+
+        return new Response(
+          JSON.stringify({
+            results: [
+              {
+                url: "https://example.com/result",
+                title: "Example",
+                snippet: "evidence",
+              },
+            ],
+            content: "Example page content",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }),
+    );
+
+    const fast = new DecodoFastSearchProvider();
+    await fast.search({
+      request: request("PRECISION"),
+      renderedQuery: "quantum computing fact check sources",
+    });
+
+    const web = new DecodoWebScrapingProvider();
+    await web.retrieve({
+      request: request("DEEP"),
+      renderedQuery: "quantum computing facts primary sources",
+      sourceUrl: "https://example.com/result",
+    });
+
+    expect(calls[0]?.authorization).toBe("Basic fast-secret");
+    expect(calls[1]?.authorization).toBe("Basic web-secret");
+    expect(calls[0]?.url).toContain("fastsearch.decodo.com");
+    expect(calls[1]?.url).toBe("https://scraper.example/v2/scrape");
+  });
+
   it("uses SearXNG first for normal research", async () => {
     const calls: string[] = [];
     const router = new ReachProviderRouter({
