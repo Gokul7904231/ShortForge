@@ -86,7 +86,10 @@ export type EventTopic =
   | "SLAYER_PRIME_OBSERVATION"
   | "SLAYER_INCIDENT_OPENED"
   | "SLAYER_INCIDENT_UPDATED"
-  | "SLAYER_ACTION_PLANNED";
+  | "SLAYER_ACTION_PLANNED"
+  | "SLAYER_ACTION_REJECTED"
+  | "SLAYER_ACTION_EXECUTED"
+  | "SLAYER_ENFORCEMENT_VERIFIED";
 
 
 export interface EventEnvelope<T = Record<string, unknown>> {
