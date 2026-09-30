@@ -1,85 +1,86 @@
-# Research: Reach Engine & AgentReach Boundary
+# Research: Reach Provider Fabric
 
-> **Status**: CANONICAL / IMPLEMENTATION-ALIGNED  
-> **Current implementation**: `apps/web/factoryos/core/research/ReachSubsystem.ts` and `apps/web/factoryos/core/integrations/AgentReachAdapter.ts`
+> Status: CANONICAL / IMPLEMENTATION-ALIGNED / CONTRACT-GATED
+> Scope: Floor 00 external research acquisition
 
-## 1. Current boundary
+## 1. Core invariant
 
-Reach is an external-information acquisition subsystem.
+Reach is the permanent research capability; retrieval providers are replaceable resources.
 
-Current supported paths are:
+Content Engine Contract -> F00 Research -> Reach Gate -> Cache -> Provider Router -> Evidence Intake -> F00 Verification -> Research Passport.
 
-1. **Direct URL** → `LightpandaBrowserAdapter.navigateAndExtract()`
-2. **Query** → configured `SEARCH_API_URL`
-3. **No configured query provider** → empty evidence result
-4. **Test** → injected `ReachTestProvider`
+Ascalon requests research intent but does not select retrieval providers.
 
-The current query path is generic. It is **not yet hard-bound to a Content Engine-specific query schema**.
+## 2. Provider roles
 
-The intended next architecture is:
+### SearXNG
+Default low-cost/open-source discovery provider. It is a discovery layer, not an unlimited guarantee: upstream search engines can throttle, block, or become unavailable.
 
-```text
-Content Engine Research Contract
-        ↓
-F00 Research Specification
-        ↓
-AgentReach query plan
-        ↓
-ReachSubsystem
-        ↓
-EvidenceSource[]
-```
+### Decodo Fast Search
+Quota-governed structured search for precision/current research or fallback when baseline acquisition is insufficient.
 
-## 2. Honest failure semantics
+### Decodo Web Scraping
+Quota-governed deep retrieval for a URL already discovered by Reach. It is not an arbitrary caller-controlled URL capability.
 
-The current implementation intentionally fails closed:
+## 3. Research modes
 
-- empty AgentReach query → `NO_EVIDENCE`;
-- failed query provider → no fabricated sources;
-- direct URL retrieval failure → explicit unavailable source state;
-- AgentReach only exposes online sources as usable findings;
-- no synthetic placeholder URLs are created.
+NORMAL: SearXNG first; Decodo fallback.
+PRECISION: Decodo Fast Search first; SearXNG fallback.
+DEEP: baseline search, then Decodo Web Scraping for selected discovered sources.
+CORROBORATION: query SearXNG and Decodo independently, then deduplicate before counting evidence sources.
 
-One important distinction is preserved:
+Default inference: TOPIC_SCAN -> NORMAL; FACT_CHECK/TREND_SCAN/COMPETITOR_SCAN -> PRECISION. F00 may explicitly request a mode.
 
-**Reach may expose an unavailable retrieval record for diagnostics; ResearchRuntime removes unavailable/unreachable records before treating sources as evidence.**
+## 4. Cache boundary
 
-## 3. Current data integrity
+Cache is consulted before provider calls.
+Identity binds engine, query kind, rendered engine-owned query, declared parameters, freshness, and research mode.
+Cache is an acquisition optimization, not a proof of truth.
 
-An `EvidenceSource` contains:
+## 5. Decodo budget boundary
 
-- source ID;
-- URL;
-- title;
-- publisher when known;
-- retrieval timestamp;
-- extraction method;
-- snippet;
-- reliability score;
-- optional content hash;
-- source status and quality.
+Separate ledgers exist for:
+- DECODO_FAST_SEARCH
+- DECODO_WEB_STANDARD
+- DECODO_WEB_JS
+- DECODO_WEB_PREMIUM
+- DECODO_WEB_PREMIUM_JS
 
-The current implementation does **not** independently verify the truth of an HTTP response merely because the transport succeeded.
+A Decodo operation reserves quota before the network call, commits on completion, and releases on failure.
+Vendor quotas are configuration, not hard-coded truth.
 
-## 4. Current vs target
+Before multi-instance production, the budget governor must be backed by a shared durable store so reservations remain atomic across workers.
 
-| Dimension | Current | Target |
-|---|---|---|
-| URL browser | Lightpanda adapter | Expanded browser/provider fleet |
-| Search | `SEARCH_API_URL` | Engine-specific research plans over multiple providers |
-| Source truth | Transport + normalized metadata | Source-specific verification and corroboration |
-| Social intelligence | Not a dedicated direct platform scraper | Engine-specific platform adapters |
-| AgentReach contract | Generic query/domain/maxSources | Research-contract-driven bounded query plans |
-| Failure semantics | Fail closed / no synthetic sources | Same invariant with richer diagnostics |
+## 6. Reliability boundary
 
-## 5. Governance invariant
+Provider calls have bounded timeouts, bounded retry, exponential backoff, circuit breaking, health state, and fallback.
+Provider failure must not become Reach failure.
 
-AgentReach is an information-acquisition capability. It cannot:
+## 7. Evidence/provenance
 
-- invent evidence;
-- authorize content;
-- bypass F00;
-- bypass .okf policy;
-- grant worker capabilities;
-- override F07.
+Each normalized source can retain provider, provider request ID, rendered query, URL, retrieval timestamp, extraction method, content hash, and status.
+Provider output is candidate evidence only. F00 remains responsible for verification/corroboration.
 
+## 8. Security boundary
+
+Production Reach fails closed for missing or invalid Content Engine contracts, unauthorized caller floors, undeclared query kinds/parameters/templates, and arbitrary legacy AgentReach queries.
+
+## 9. Configuration
+
+SEARXNG_BASE_URL
+DECODO_BASIC_AUTH
+DECODO_FAST_SEARCH_URL
+DECODO_WEB_API_URL
+DECODO_WEB_PROXY_POOL
+DECODO_WEB_HEADLESS
+DECODO_FAST_SEARCH_BUDGET
+DECODO_WEB_STANDARD_BUDGET
+DECODO_WEB_JS_BUDGET
+DECODO_WEB_PREMIUM_BUDGET
+DECODO_WEB_PREMIUM_JS_BUDGET
+
+Secrets must not be committed.
+
+## 10. Implementation invariant
+
+F00 owns research judgment; Reach owns information acquisition; SearXNG provides default discovery; Decodo provides quota-governed specialized acquisition; and no retrieval provider certifies truth.

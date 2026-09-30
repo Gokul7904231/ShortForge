@@ -1,3 +1,4 @@
+import { getCompatibilityEngineContracts } from "../../lib/core/EngineConfigurationContracts";
 /**
  * FactoryOS v3 — Architecture Modernization Verification Suite
  * Exhaustively validates all Phase 1 architectural modernizations:
@@ -229,6 +230,7 @@ describe("Phase 1: Research Provenance & Honest Error Semantics", () => {
       topic: "Unavailable research subject",
       researchContract: {
         engineId: "quiz",
+        ...getCompatibilityEngineContracts("quiz").research!,
         minSources: 2,
         citationRequired: true,
         agentReachProfile: "engine:quiz",
@@ -292,7 +294,14 @@ describe("Phase 1: Research Provenance & Honest Error Semantics", () => {
   });
 
   it("8. proves trend-agent delegates to ResearchRuntime producing ResearchPassport-backed results", async () => {
-    const output = await trendAgent({ topic: "Autonomous Systems", targetSourceCount: 2 });
+    const output = await trendAgent({
+      topic: "Autonomous Systems",
+      targetSourceCount: 2,
+      researchContract: {
+        engineId: "quiz",
+        ...getCompatibilityEngineContracts("quiz").research!,
+      },
+    });
     expect(output.topic).toBe("Autonomous Systems");
     expect(output.passportId).toBeDefined();
     expect(output.report?.passport.methodology).toBe("TREND_SCAN");

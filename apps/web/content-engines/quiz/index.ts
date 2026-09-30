@@ -158,6 +158,28 @@ const quizContracts = {
       "Factual claims must be grounded by evidence appropriate to the topic.",
       "Questions and answers need source-backed verification before release.",
     ],
+    queryRules: [
+      {
+        queryKind: "TOPIC_SCAN",
+        queryTemplate: "{topic} facts definitions statistics primary sources",
+        description: "Discover factual material appropriate for quiz question construction.",
+      },
+      {
+        queryKind: "FACT_CHECK",
+        queryTemplate: "{topic} fact check answer verification sources",
+        description: "Verify candidate quiz answers against external evidence.",
+      },
+      {
+        queryKind: "TREND_SCAN",
+        queryTemplate: "{topic} trending quiz topics short-form formats",
+        description: "Discover current topic/format signals for quiz content.",
+      },
+      {
+        queryKind: "COMPETITOR_SCAN",
+        queryTemplate: "{topic} quiz shorts hooks questions competitor videos",
+        description: "Analyze public competitor patterns relevant to this engine.",
+      },
+    ],
     minSources: 2,
     citationRequired: true,
     freshness: "any" as const,

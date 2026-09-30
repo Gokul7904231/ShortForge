@@ -534,7 +534,7 @@ export class CapabilityRegistry {
         provenance: { adoptionMode: "CLEAN_ROOM_REIMPLEMENTATION", documentedAt: "2026-09-08" },
         policy: {
           allowedRoles: ["SYSTEM", "ADMIN", "CREATOR"],
-          allowedFloors: ["floor00_analyst", "floor01_strategy"],
+          allowedFloors: ["floor00_analyst"],
           environments: ["development", "staging", "production", "test"],
           networkAccess: "RESTRICTED",
           dataAccess: "READ_ONLY",
@@ -642,13 +642,24 @@ export class CapabilityRegistry {
       },
       async (req) => {
         const start = Date.now();
-        const query = (req.inputData as any)?.query || "Top trends";
+        const input = (req.inputData || {}) as Record<string, any>;
+        const researchContract = input.researchContract;
+        if (!researchContract || !input.engineId || !input.queryKind || !input.topic) {
+          throw new Error(
+            "REACH_ENGINE_CONTRACT_REQUIRED: research.web requires engineId, queryKind, topic, and an engine-owned researchContract.",
+          );
+        }
+
         const reach = new ReachSubsystem();
         const sources = await reach.acquireSources({
-          queryOrUrl: query,
-          type: "QUERY",
+          engineId: String(input.engineId),
+          queryKind: String(input.queryKind),
+          topic: String(input.topic),
+          parameters: input.parameters || {},
+          researchContract,
           maxSources: 3,
           callerFloor: req.floorId || "floor00_analyst",
+          intent: typeof input.intent === "string" ? input.intent : undefined,
         });
         const latency = Date.now() - start;
         const avgReliability = sources.length > 0
@@ -659,9 +670,14 @@ export class CapabilityRegistry {
           requestExecutionId: req.requestExecutionId,
           capabilityId: "research.web",
           status: sources.length > 0 ? "SUCCESS" : "FAILED",
-          findings: [`Discovered and parsed ${sources.length} sources for query: "${query}"`],
+          findings: [
+            `Discovered and parsed ${sources.length} sources for engine ${input.engineId} / ${input.queryKind}.`,
+          ],
           outputData: {
-            query,
+            engineId: String(input.engineId),
+            queryKind: String(input.queryKind),
+            topic: String(input.topic),
+            renderedQuery: "Engine-owned query template rendered inside ReachSubsystem.",
             sourcesCount: sources.length,
             sources,
             measuredConfidence: confidence,

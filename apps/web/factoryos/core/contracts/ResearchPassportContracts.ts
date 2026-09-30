@@ -23,13 +23,32 @@ export interface EvidenceSource {
   readonly title: string;
   readonly publisher?: string;
   readonly retrievedAt: string;
-  readonly extractionMethod: "HTTP_SCRAPE" | "BROWSER_DOM" | "API_FEED" | "USER_PROVIDED" | "TEST_FIXTURE";
+  readonly extractionMethod:
+    | "HTTP_SCRAPE"
+    | "BROWSER_DOM"
+    | "API_FEED"
+    | "USER_PROVIDED"
+    | "TEST_FIXTURE";
   readonly snippet: string;
-  readonly reliabilityScore: number; // 0.0 to 1.0
+  readonly reliabilityScore: number;
   readonly isPrimarySource?: boolean;
   readonly contentHash?: string;
-  readonly sourceStatus?: "ONLINE" | "UNREACHABLE" | "UNAVAILABLE" | "VERIFIED" | "UNVERIFIED" | "TEST_FIXTURE";
-  readonly sourceQuality?: "TIER_1_PRIMARY" | "TIER_2_SECONDARY" | "TIER_3_TERTIARY" | "UNTRUSTED" | "UNVERIFIED";
+  readonly sourceStatus?:
+    | "ONLINE"
+    | "UNREACHABLE"
+    | "UNAVAILABLE"
+    | "VERIFIED"
+    | "UNVERIFIED"
+    | "TEST_FIXTURE";
+  readonly sourceQuality?:
+    | "TIER_1_PRIMARY"
+    | "TIER_2_SECONDARY"
+    | "TIER_3_TERTIARY"
+    | "UNTRUSTED"
+    | "UNVERIFIED";
+  readonly provider?: string;
+  readonly providerRequestId?: string;
+  readonly renderedQuery?: string;
 }
 
 export interface ResearchClaim {
@@ -40,18 +59,22 @@ export interface ResearchClaim {
   readonly sourceReference?: string;
   readonly supportingSources?: string[];
   readonly contradictingSources?: string[];
-  readonly contradictionDegree?: number; // 0.0 to 1.0
+  readonly contradictionDegree?: number;
   readonly retrievedAt: string;
   readonly extractionMethod: string;
-  readonly verificationMethod: "DIRECT_MATCH" | "CROSS_SOURCE_CORROBORATION" | "GROUNDED_LLM" | "NONE";
+  readonly verificationMethod:
+    | "DIRECT_MATCH"
+    | "CROSS_SOURCE_CORROBORATION"
+    | "GROUNDED_LLM"
+    | "NONE";
   readonly verificationStatus: VerificationStatus;
-  readonly confidence: number; // 0.0 to 1.0
+  readonly confidence: number;
   readonly provenance: string;
 }
 
 export interface PassportIntegrityMetadata {
-  readonly contentHash: string; // SHA-256 of canonical payload
-  readonly integrityMac: string; // HMAC-SHA256
+  readonly contentHash: string;
+  readonly integrityMac: string;
   readonly algorithm: "HMAC-SHA256" | "ED25519";
   readonly keyId: string;
   readonly canonicalizationVersion: "JCS-v1";
@@ -63,11 +86,16 @@ export interface ResearchPassport {
   readonly missionId: string;
   readonly question: string;
   readonly intent: string;
-  readonly methodology: "QUICK" | "FULL" | "FACT_CHECK" | "TREND_SCAN" | "COMPETITOR_SCAN";
+  readonly methodology:
+    | "QUICK"
+    | "FULL"
+    | "FACT_CHECK"
+    | "TREND_SCAN"
+    | "COMPETITOR_SCAN";
   readonly sources: EvidenceSource[];
   readonly claims: ResearchClaim[];
   readonly unresolvedIssues: string[];
-  readonly confidence: number; // 0.0 to 1.0
+  readonly confidence: number;
   readonly provenance: {
     readonly reachProvider: string;
     readonly agentId: string;
@@ -86,6 +114,7 @@ export interface ResearchPassport {
     readonly citationRequired?: boolean;
     readonly freshness?: "run" | "recent" | "any";
     readonly agentReachProfile?: string;
+    readonly researchMode?: "NORMAL" | "PRECISION" | "DEEP" | "CORROBORATION";
   };
   integrity?: PassportIntegrityMetadata;
 }
@@ -104,7 +133,11 @@ export interface AnalystReport {
   readonly keyFindings: string[];
   readonly hookIntelligence: {
     readonly recommendedHook: string;
-    readonly hookArchetype: "CURIOSITY_GAP" | "PROVOCATIVE_QUESTION" | "STATISTICAL_SHOCK" | "CONTRARIAN";
+    readonly hookArchetype:
+      | "CURIOSITY_GAP"
+      | "PROVOCATIVE_QUESTION"
+      | "STATISTICAL_SHOCK"
+      | "CONTRARIAN";
     readonly estimatedRetentionBoost: number;
     readonly competitiveRetentionCurve?: number[];
     readonly fidelity: ResearchMeasurementFidelity;

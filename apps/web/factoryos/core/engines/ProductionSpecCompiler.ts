@@ -4,6 +4,7 @@ import type { EngineDefinition } from "../../../lib/core/EngineContracts";
 import {
   getConfigurationDefaults,
   type EngineConfigField,
+  validateEngineResearchContract,
 } from "../../../lib/core/EngineConfigurationContracts";
 import type {
   ProductionSpec,
@@ -139,6 +140,20 @@ export function compileProductionSpec(
   input: CompileProductionSpecInput
 ): CompileProductionSpecResult {
   const schema = input.engine.configuration;
+  const researchValidation = input.engine.contracts?.research
+    ? validateEngineResearchContract(
+        input.engine.engineId,
+        input.engine.contracts.research,
+      )
+    : { valid: false, errors: ["Engine research contract is required."] };
+
+  if (!researchValidation.valid) {
+    throw new Error(
+      "ProductionSpec research contract validation failed: " +
+        researchValidation.errors.join(" "),
+    );
+  }
+
   const defaults = getConfigurationDefaults(schema);
   const merged = { ...defaults, ...input.userConfig };
   const errors: string[] = [];
