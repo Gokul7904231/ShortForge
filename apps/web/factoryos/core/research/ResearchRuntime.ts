@@ -17,6 +17,7 @@ import type {
 import { runBoundedFeedbackLoop, type FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { EngineResearchContract } from "../../../lib/core/EngineConfigurationContracts";
+import type { ReachResearchMode } from "./ReachContracts";
 
 export interface ResearchLoopOptions {
   readonly maxIterations?: number;
@@ -49,6 +50,7 @@ export interface ResearchRequest {
   readonly targetSourceCount?: number;
   readonly scheduleInstanceId?: string;
   readonly audience?: string;
+  readonly researchMode?: ReachResearchMode;
   /**
    * Immutable Content Engine-owned authorization for all external research.
    * Optional at the type level is intentionally forbidden: callers must bind
@@ -245,6 +247,7 @@ export class ResearchRuntime {
       maxSources,
       callerFloor: "floor00_analyst",
       intent: request.intent,
+      mode: request.researchMode,
     });
 
     // Reach may return an explicit UNAVAILABLE/UNREACHABLE source record so the
