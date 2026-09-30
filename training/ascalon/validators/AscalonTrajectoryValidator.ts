@@ -152,6 +152,89 @@ export class AscalonTrajectoryValidator {
       });
     }
 
+    // 5b. Blender semantic decision integrity
+    const semanticAction = trajectory.decision?.semanticAction;
+    const resolvedTool = trajectory.execution?.resolvedTool;
+    const blenderDomain = trajectory.decision?.domain === "BLENDER";
+    const blenderKnownActions = [
+      "SCENE_INSPECT",
+      "OBJECT_INSPECT",
+      "VIEWPORT_CAPTURE",
+      "OBJECT_CREATE",
+      "OBJECT_UPDATE",
+      "OBJECT_DELETE",
+      "MATERIAL_UPDATE",
+      "CAMERA_CONFIGURE",
+      "LIGHTING_CONFIGURE",
+      "ANIMATION_CONFIGURE",
+      "GEOMETRY_NODES_CONFIGURE",
+      "SIMULATION_CONFIGURE",
+      "COMPOSITOR_CONFIGURE",
+      "SEQUENCE_CONFIGURE",
+      "ASSET_SEARCH",
+      "ASSET_IMPORT",
+      "ASSET_GENERATE",
+      "SCENE_EXPORT",
+      "RENDER",
+      "PYTHON_EXECUTE",
+    ];
+
+    if (blenderDomain && (!semanticAction || !blenderKnownActions.includes(semanticAction))) {
+      issues.push({
+        code: "BLENDER_UNKNOWN_SEMANTIC_ACTION",
+        severity: "BLOCKING",
+        message: `Blender trajectory contains an unknown semantic action: ${String(semanticAction)}`,
+      });
+    }
+
+    if (blenderDomain && !resolvedTool) {
+      issues.push({
+        code: "BLENDER_MISSING_RESOLVED_TOOL",
+        severity: "BLOCKING",
+        message: "Blender trajectory is missing the runtime-resolved MCP tool.",
+      });
+    }
+
+    if (
+      blenderDomain &&
+      ["ASSET_SEARCH", "ASSET_IMPORT", "ASSET_GENERATE"].includes(String(semanticAction)) &&
+      !trajectory.decision?.provider
+    ) {
+      issues.push({
+        code: "BLENDER_PROVIDER_AMBIGUITY",
+        severity: "BLOCKING",
+        message: "Multi-provider Blender asset action is missing an explicit provider decision.",
+      });
+    }
+
+    if (
+      blenderDomain &&
+      semanticAction === "PYTHON_EXECUTE" &&
+      trajectory.authorization?.authorized !== true
+    ) {
+      issues.push({
+        code: "BLENDER_PYTHON_UNAUTHORIZED",
+        severity: "BLOCKING",
+        message: "Arbitrary Blender Python is not authorized by the trajectory.",
+      });
+    }
+
+    if (
+      blenderDomain &&
+      trajectory.outcome?.status === "SUCCESS" &&
+      ["OBJECT_CREATE", "OBJECT_UPDATE", "OBJECT_DELETE", "MATERIAL_UPDATE", "CAMERA_CONFIGURE",
+       "LIGHTING_CONFIGURE", "ANIMATION_CONFIGURE", "GEOMETRY_NODES_CONFIGURE",
+       "SIMULATION_CONFIGURE", "COMPOSITOR_CONFIGURE", "SEQUENCE_CONFIGURE", "RENDER", "SCENE_EXPORT"]
+        .includes(String(semanticAction)) &&
+      !trajectory.outcome?.verificationEvidenceId
+    ) {
+      issues.push({
+        code: "BLENDER_MISSING_POST_EXECUTION_VERIFICATION",
+        severity: "BLOCKING",
+        message: "Mutating Blender success lacks an independent verification evidence reference.",
+      });
+    }
+
     // 6. Guardian Authorization Integrity
     const authRequested = trajectory.authorization?.requested;
     const isAuthorized = trajectory.authorization?.authorized;
