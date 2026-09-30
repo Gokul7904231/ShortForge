@@ -5,6 +5,20 @@ interface CacheEntry<T> {
   readonly expiresAt: number;
 }
 
+export interface EpistemicCacheLookup<T> {
+  readonly hit: boolean;
+  readonly value: T | undefined;
+}
+
+export interface EpistemicCacheStats {
+  readonly hits: number;
+  readonly misses: number;
+  readonly sets: number;
+  readonly evictions: number;
+  readonly size: number;
+  readonly hitRate: number;
+}
+
 function canonicalize(value: unknown): string {
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value) ?? "null";
@@ -41,20 +55,33 @@ export interface EpistemicCacheKey {
 
 export class EpistemicCache<T> {
   private readonly entries = new Map<string, CacheEntry<T>>();
+  private hits = 0;
+  private misses = 0;
+  private sets = 0;
+  private evictions = 0;
 
   constructor(private readonly maxEntries = 256, private readonly ttlMs = 300000) {}
 
   public get(key: EpistemicCacheKey, now = Date.now()): T | undefined {
+    return this.getWithTelemetry(key, now).value;
+  }
+
+  public getWithTelemetry(key: EpistemicCacheKey, now = Date.now()): EpistemicCacheLookup<T> {
     const cacheKey = keyFor(key);
     const entry = this.entries.get(cacheKey);
-    if (!entry) return undefined;
+    if (!entry) {
+      this.misses += 1;
+      return { hit: false, value: undefined };
+    }
 
     if (entry.expiresAt <= now) {
       this.entries.delete(cacheKey);
-      return undefined;
+      this.misses += 1;
+      return { hit: false, value: undefined };
     }
 
-    return entry.value;
+    this.hits += 1;
+    return { hit: true, value: entry.value };
   }
 
   public set(key: EpistemicCacheKey, value: T, now = Date.now()): void {
@@ -64,16 +91,37 @@ export class EpistemicCache<T> {
       value,
       expiresAt: now + this.ttlMs,
     });
+    this.sets += 1;
 
     while (this.entries.size > Math.max(1, this.maxEntries)) {
       const oldest = this.entries.keys().next().value;
       if (typeof oldest !== "string") break;
       this.entries.delete(oldest);
+      this.evictions += 1;
     }
   }
 
   public clear(): void {
     this.entries.clear();
+  }
+
+  public resetStats(): void {
+    this.hits = 0;
+    this.misses = 0;
+    this.sets = 0;
+    this.evictions = 0;
+  }
+
+  public stats(): EpistemicCacheStats {
+    const lookups = this.hits + this.misses;
+    return {
+      hits: this.hits,
+      misses: this.misses,
+      sets: this.sets,
+      evictions: this.evictions,
+      size: this.entries.size,
+      hitRate: lookups > 0 ? this.hits / lookups : 0,
+    };
   }
 
   public get size(): number {

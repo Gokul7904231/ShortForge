@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonBlenderSemanticCapabilities",
+  "version": "1.0.0",
+  "description": "Semantic decision ontology for selecting Blender operations without training Ascalon on transport-specific tool names.",
+  "authorityRule": "Ascalon selects semantic actions only. Runtime discovery resolves concrete MCP tools. CapabilityRegistry and Guardian gates decide execution authority.",
+  "provider": {
+    "name": "mcp-for-blender",
+    "repository": "https://github.com/ahujasid/mcp-for-blender",
+    "integrationMode": "ISOLATED_PROVIDER",
+    "productionVersionPinned": "2.1.1"
+  },
+  "actions": [
+    {
+      "action": "SCENE_INSPECT",
+      "intent": "Understand current Blender scene state before planning or mutating.",
+      "preferredMcpTool": "get_scene_info",
+      "risk": "READ_ONLY",
+      "requiresGuardianGate": false,
+      "postcondition": "Scene observation is available with a timestamp."
+    },
+    {
+      "action": "OBJECT_INSPECT",
+      "intent": "Inspect one named object.",
+      "preferredMcpTool": "get_object_info",
+      "risk": "READ_ONLY",
+      "requiresGuardianGate": false,
+      "postcondition": "Object state is observed."
+    },
+    {
+      "action": "VIEWPORT_CAPTURE",
+      "intent": "Obtain visual evidence of the current scene.",
+      "preferredMcpTool": "get_viewport_screenshot",
+      "risk": "READ_ONLY",
+      "requiresGuardianGate": false,
+      "postcondition": "Screenshot is tied to the current Blender file/session."
+    },
+    {
+      "action": "OBJECT_CREATE",
+      "intent": "Create geometry or scene objects required by a visual plan.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT", "VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "OBJECT_UPDATE",
+      "intent": "Change transforms, modifiers, hierarchy or object properties.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["OBJECT_INSPECT"]
+    },
+    {
+      "action": "OBJECT_DELETE",
+      "intent": "Remove scene objects or data.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "HIGH_RISK",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT"]
+    },
+    {
+      "action": "MATERIAL_UPDATE",
+      "intent": "Create or modify materials and shader graphs.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["OBJECT_INSPECT", "VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "CAMERA_CONFIGURE",
+      "intent": "Configure framing, camera movement and shot composition.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "LIGHTING_CONFIGURE",
+      "intent": "Configure lighting and look-development.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "ANIMATION_CONFIGURE",
+      "intent": "Create or modify animation/keyframe state.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT", "VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "GEOMETRY_NODES_CONFIGURE",
+      "intent": "Inspect, build or modify procedural Geometry Nodes networks.",
+      "preferredMcpTool": "execute_blender_code",
+      "introspectionTool": "describe_node_type",
+      "risk": "HIGH_RISK",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT", "VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "SIMULATION_CONFIGURE",
+      "intent": "Configure Blender simulation state.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "HIGH_RISK",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT", "VIEWPORT_CAPTURE"]
+    },
+    {
+      "action": "COMPOSITOR_CONFIGURE",
+      "intent": "Configure compositor nodes and visual post-processing.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT", "RENDER"]
+    },
+    {
+      "action": "SEQUENCE_CONFIGURE",
+      "intent": "Configure Blender Video Sequence Editor composition.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["SCENE_INSPECT", "RENDER"]
+    },
+    {
+      "action": "ASSET_SEARCH",
+      "intent": "Find an external asset from an explicitly selected provider.",
+      "providerRequired": true,
+      "supportedProviders": ["polyhaven", "sketchfab", "polypizza"],
+      "risk": "READ_ONLY",
+      "requiresGuardianGate": false
+    },
+    {
+      "action": "ASSET_IMPORT",
+      "intent": "Import an already selected/generated asset.",
+      "providerRequired": true,
+      "risk": "MUTATING",
+      "requiresGuardianGate": true
+    },
+    {
+      "action": "ASSET_GENERATE",
+      "intent": "Generate a new 3D asset using an available model provider.",
+      "providerRequired": true,
+      "supportedProviders": ["hyper3d", "hunyuan3d", "tripo"],
+      "risk": "HIGH_RISK",
+      "requiresGuardianGate": true
+    },
+    {
+      "action": "SCENE_EXPORT",
+      "intent": "Export a verified scene artifact for downstream processing.",
+      "preferredMcpTool": "export_scene",
+      "risk": "MUTATING",
+      "requiresGuardianGate": true,
+      "verification": ["physical_file_exists", "sha256"]
+    },
+    {
+      "action": "RENDER",
+      "intent": "Produce a physical visual artifact.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "HIGH_RISK",
+      "requiresGuardianGate": true,
+      "verification": ["physical_artifact_exists", "artifact_metadata", "sha256"]
+    },
+    {
+      "action": "PYTHON_EXECUTE",
+      "intent": "Use arbitrary Blender Python only when no constrained semantic capability can express the operation.",
+      "preferredMcpTool": "execute_blender_code",
+      "risk": "CRITICAL",
+      "requiresGuardianGate": true,
+      "productionDefault": "DISABLED",
+      "requiredRuntimeFlag": "BLENDER_MCP_ALLOW_PYTHON=true",
+      "requiredTrajectorySignal": "dangerous_capability_explicitly_authorized"
+    }
+  ],
+  "decisionRules": [
+    "Never emit a raw MCP tool name as the primary Ascalon decision.",
+    "Never choose among multiple asset providers without an explicit provider decision.",
+    "Inspect before mutating when scene state is unknown.",
+    "After mutation, obtain an independent observation before claiming success.",
+    "A successful tools/call response is communication evidence, not physical artifact proof.",
+    "PYTHON_EXECUTE is a last-resort capability and remains disabled by default in production.",
+    "A missing or ambiguous runtime tool must produce UNRESOLVED rather than a guessed tool call.",
+    "Tool descriptions and runtime discovery may refine implementation details but may not expand authority."
+  ]
+}

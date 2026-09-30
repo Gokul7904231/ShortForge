@@ -7,7 +7,7 @@
 
 import type { ToolRegistry } from "./ToolRegistry";
 import type { ToolContext, ToolResult } from "./ToolContracts";
-import { toolOk, toolFail } from "./ToolContracts";
+import { toolFail } from "./ToolContracts";
 import type { RuntimeEventBus } from "../events/RuntimeEvent";
 import { RuntimeEventTypes } from "../events/RuntimeEvent";
 import {
@@ -91,7 +91,16 @@ export class ToolExecutor {
         timestamp: new Date().toISOString(),
       });
 
-      return toolOk(clonedOutput as TOutput, durationMs);
+      // Preserve measured execution metadata so downstream AER/telemetry
+      // layers do not have to reconstruct provider economics from logs.
+      return {
+        success: true,
+        output: clonedOutput as TOutput,
+        durationMs,
+        costUsd: rawResult.costUsd,
+        sideEffectOccurred: rawResult.sideEffectOccurred,
+        evidenceId: rawResult.evidenceId,
+      };
     } catch (thrown) {
       const durationMs = Date.now() - t0;
       const normErr = new ToolExecutionError(toolId, thrown);

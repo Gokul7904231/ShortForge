@@ -11,10 +11,33 @@ import { FloorActionGraph } from "./FloorActionGraph";
 import { FloorBlackboard } from "./FloorBlackboard";
 import type { FloorBlackboardJournal } from "./FloorBlackboardJournal";
 import type { GuardianDecision } from "../guardian/GuardianContracts";
-import type { AscalonGuardianAdapter } from "./AscalonGuardianAdapter";
+import type {
+  AscalonGuardianAdapter,
+  AscalonPreCallAdmission,
+} from "./AscalonGuardianAdapter";
 import { FloorCouncil } from "./FloorCouncil";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import { AscalonInferenceAdmissionGate } from "./AscalonInferenceAdmission";
+
+export interface AscalonPreCallHandle extends AscalonPreCallAdmission {
+  commit(): Promise<boolean> | boolean;
+  release(): Promise<boolean> | boolean;
+}
+
+export interface AscalonPreCallGate {
+  prepare?(input: {
+    readonly snapshot: FloorSnapshot;
+    readonly availableActions: readonly string[];
+    readonly verifiedEvidenceRefs: readonly string[];
+    readonly scopeKey: string;
+  }): Promise<AscalonPreCallHandle> | AscalonPreCallHandle;
+
+  evaluate(input: {
+    readonly snapshot: FloorSnapshot;
+    readonly availableActions: readonly string[];
+    readonly verifiedEvidenceRefs: readonly string[];
+  }): Promise<AscalonPreCallAdmission> | AscalonPreCallAdmission;
+}
 
 export interface GovernanceExecutionResult {
   readonly success: boolean;
@@ -34,6 +57,7 @@ export interface FloorGovernanceCellConfig {
   readonly council?: FloorCouncil;
   readonly eventBus?: DurableEventBus;
   readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
+  readonly ascalonPreCallGate?: AscalonPreCallGate;
 }
 
 export class FloorGovernanceCell {
@@ -51,6 +75,7 @@ export class FloorGovernanceCell {
   private council?: FloorCouncil;
   private readonly eventBus?: DurableEventBus;
   private readonly ascalonAdmission?: AscalonInferenceAdmissionGate;
+  private readonly ascalonPreCallGate?: AscalonPreCallGate;
   private grants: AuthorizationGrant[] = [];
 
   constructor(config: FloorGovernanceCellConfig) {
@@ -64,6 +89,7 @@ export class FloorGovernanceCell {
     this.council = config.council;
     this.eventBus = config.eventBus;
     this.ascalonAdmission = config.ascalonAdmission;
+    this.ascalonPreCallGate = config.ascalonPreCallGate;
   }
 
   private readonly ascalon: AscalonGuardianAdapter;
@@ -141,11 +167,56 @@ export class FloorGovernanceCell {
       .getVerifiedEvidence()
       .flatMap((entry) => entry.evidenceRefs);
 
-    const proposal = await this.ascalon.proposeNext({
-      snapshot,
-      availableActions,
-      evidenceRefs: verifiedEvidenceRefs,
-    });
+    let preCallAdmission: AscalonPreCallAdmission | undefined;
+    let preCallHandle: AscalonPreCallHandle | undefined;
+    if (this.ascalonPreCallGate) {
+      if (this.ascalonPreCallGate.prepare) {
+        preCallHandle = await this.ascalonPreCallGate.prepare({
+          snapshot,
+          availableActions,
+          verifiedEvidenceRefs,
+          scopeKey: `floor:${snapshot.floorId}`,
+        });
+        preCallAdmission = preCallHandle;
+      } else {
+        preCallAdmission = await this.ascalonPreCallGate.evaluate({
+          snapshot,
+          availableActions,
+          verifiedEvidenceRefs,
+        });
+      }
+
+      if (!preCallAdmission.admitted) {
+        this.blackboard.append(
+          "CONFLICT",
+          "SYSTEM",
+          "VERIFIED",
+          {
+            event: "ASCALON_PRE_CALL_NOT_ADMITTED",
+            reason: preCallAdmission.reason,
+            contextFingerprint: preCallAdmission.contextFingerprint,
+          },
+        );
+        return null;
+      }
+    }
+
+    let proposal: ActionProposal | null = null;
+    try {
+      proposal = await this.ascalon.proposeNext({
+        snapshot,
+        availableActions,
+        evidenceRefs: verifiedEvidenceRefs,
+        preCallAdmission,
+      });
+    } catch (error) {
+      if (preCallHandle) await preCallHandle.release();
+      throw error;
+    }
+
+    if (preCallHandle) {
+      await (proposal ? preCallHandle.commit() : preCallHandle.release());
+    }
 
     if (!proposal) return null;
 
@@ -157,6 +228,7 @@ export class FloorGovernanceCell {
         envelope: {
           metadata: proposal.ascalonInference,
           proposal,
+          preCallAdmission,
         },
       });
 
@@ -400,6 +472,57 @@ export class FloorGovernanceCell {
       humanApprovalIds: extraContext.humanApprovalIds,
       currentFencingEpoch: extraContext.currentFencingEpoch,
     };
+
+    // Direct ADMITTED Ascalon proposals must prove that they came through the
+    // AER pre-call boundary. This closes a bypass around proposeNext().
+    if (proposal.proposer === "ASCALON" && proposal.ascalonInference?.mode === "ADMITTED") {
+      if (!this.ascalonAdmission) {
+        return {
+          success: false,
+          state: this.state,
+          reason: "ascalon_admission_gate_missing",
+          actionName: proposal.actionName,
+          proposalId: proposal.proposalId,
+        };
+      }
+
+      const availableActions = this.actionGraph
+        .getNextActions(this.lastAction)
+        .map((action) => action.actionName);
+      const verifiedEvidenceRefs = this.blackboard
+        .getVerifiedEvidence()
+        .flatMap((entry) => entry.evidenceRefs);
+      const directAdmission = this.ascalonAdmission.evaluate({
+        snapshot,
+        availableActions,
+        verifiedEvidenceRefs,
+        envelope: {
+          metadata: proposal.ascalonInference,
+          proposal,
+        },
+      });
+
+      if (!directAdmission.admitted) {
+        this.blackboard.append(
+          "CONFLICT",
+          "SYSTEM",
+          "VERIFIED",
+          {
+            event: "ASCALON_DIRECT_EXECUTION_REJECTED",
+            proposalId: proposal.proposalId,
+            reason: directAdmission.reason,
+          },
+          proposal.evidenceRefs,
+        );
+        return {
+          success: false,
+          state: this.state,
+          reason: "ascalon_inference_not_admitted:" + directAdmission.reason,
+          actionName: proposal.actionName,
+          proposalId: proposal.proposalId,
+        };
+      }
+    }
 
     const gate = this.actionGate.authorizeProposal(proposal, context);
     if (!gate.allowed) {
