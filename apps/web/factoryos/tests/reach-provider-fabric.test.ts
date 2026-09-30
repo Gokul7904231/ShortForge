@@ -314,7 +314,7 @@ describe("Reach Provider Fabric", () => {
     });
 
     const result = await router.acquire(
-      { ...request(), mode: "CORROBORATION" },
+      { ...request(), maxSources: 3, mode: "CORROBORATION" },
       "quantum computing facts primary sources",
     );
 
@@ -323,6 +323,9 @@ describe("Reach Provider Fabric", () => {
       "DECODO_FAST_SEARCH",
     ]);
     expect(result.sources).toHaveLength(3);
+    expect(
+      new Set(result.sources.map((source) => source.provider)),
+    ).toEqual(new Set(["SEARXNG", "DECODO_FAST_SEARCH"]));
     expect(
       telemetry.list().some(
         (event: any) => event.type === "PROVIDER_SUCCESS",
