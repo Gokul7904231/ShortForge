@@ -77,8 +77,8 @@ function sha256(value: unknown): string {
     .digest("hex");
 }
 
-function envArgs(): readonly string[] {
-  const raw = process.env.BLENDER_MCP_ARGS_JSON;
+function envArgs(env = process.env): readonly string[] {
+  const raw = env.BLENDER_MCP_ARGS_JSON;
   if (!raw) return DEFAULT_MCP_ARGS;
   try {
     const parsed = JSON.parse(raw);
@@ -97,7 +97,7 @@ export function readBlenderMcpConfig(env = process.env): BlenderMcpAdapterConfig
   return {
     enabled: env.BLENDER_MCP_ENABLED === "true",
     command: env.BLENDER_MCP_COMMAND || DEFAULT_MCP_COMMAND,
-    args: env.BLENDER_MCP_ARGS_JSON ? envArgs() : DEFAULT_MCP_ARGS,
+    args: env.BLENDER_MCP_ARGS_JSON ? envArgs(env) : DEFAULT_MCP_ARGS,
     cwd: env.BLENDER_MCP_CWD || undefined,
     env: {
       BLENDER_HOST: env.BLENDER_HOST || "localhost",
@@ -109,6 +109,55 @@ export function readBlenderMcpConfig(env = process.env): BlenderMcpAdapterConfig
     requestTimeoutMs: Number(env.BLENDER_MCP_REQUEST_TIMEOUT_MS || DEFAULT_REQUEST_TIMEOUT_MS),
     maxResponseBytes: Number(env.BLENDER_MCP_MAX_RESPONSE_BYTES || DEFAULT_MAX_RESPONSE_BYTES),
     allowPythonExecution: env.BLENDER_MCP_ALLOW_PYTHON === "true",
+  };
+}
+
+export function resolveBlenderActionAgainstTools(
+  action: BlenderSemanticAction,
+  tools: readonly BlenderMcpToolDescriptor[],
+  allowPythonExecution: boolean,
+): BlenderActionResolution {
+  const definition = BLENDER_ACTIONS.find((entry) => entry.action === action);
+  if (!definition) {
+    return { resolved: false, action, reasonCode: "INVALID_ACTION", candidates: [] };
+  }
+
+  if (action === "PYTHON_EXECUTE" && !allowPythonExecution) {
+    return {
+      resolved: false,
+      action,
+      reasonCode: "PYTHON_DISABLED",
+      candidates: [...definition.preferredTools],
+    };
+  }
+
+  const available = new Set(tools.map((tool) => tool.name));
+  const candidates = definition.preferredTools.filter((name) => available.has(name));
+
+  if (candidates.length === 0) {
+    return {
+      resolved: false,
+      action,
+      reasonCode: "NO_RUNTIME_TOOL",
+      candidates: [...definition.preferredTools],
+    };
+  }
+
+  if (["ASSET_SEARCH", "ASSET_IMPORT", "ASSET_GENERATE"].includes(action) && candidates.length > 1) {
+    return {
+      resolved: false,
+      action,
+      reasonCode: "AMBIGUOUS_TOOL",
+      candidates,
+    };
+  }
+
+  return {
+    resolved: true,
+    action,
+    toolName: candidates[0],
+    reasonCode: "RESOLVED",
+    candidates,
   };
 }
 
@@ -208,19 +257,7 @@ export class BlenderMcpAdapter {
 
       await this.notify("notifications/initialized", {});
 
-      const tools = await this.request("tools/list", {});
-      const listedTools = Array.isArray(tools.result?.tools) ? tools.result.tools : [];
-      const descriptors: BlenderMcpToolDescriptor[] = listedTools
-        .filter((tool): tool is Record<string, unknown> => !!tool && typeof tool === "object")
-        .map((tool) => ({
-          name: String(tool.name || ""),
-          description: typeof tool.description === "string" ? tool.description : undefined,
-          inputSchema:
-            tool.inputSchema && typeof tool.inputSchema === "object"
-              ? (tool.inputSchema as Record<string, unknown>)
-              : undefined,
-        }))
-        .filter((tool) => tool.name.length > 0);
+      const descriptors = await this.listAllTools();
 
       if (descriptors.length === 0) {
         throw new Error("Blender MCP returned an empty tools/list; refusing to treat the server as operational");
@@ -261,56 +298,40 @@ export class BlenderMcpAdapter {
   }
 
   public resolveAction(action: BlenderSemanticAction): BlenderActionResolution {
-    const definition = BLENDER_ACTIONS.find((entry) => entry.action === action);
-    if (!definition) {
-      return {
-        resolved: false,
-        action,
-        reasonCode: "INVALID_ACTION",
-        candidates: [],
-      };
-    }
-
-    if (action === "PYTHON_EXECUTE" && !this.config.allowPythonExecution) {
-      return {
-        resolved: false,
-        action,
-        reasonCode: "PYTHON_DISABLED",
-        candidates: [...definition.preferredTools],
-      };
-    }
-
-    const tools = this.getSnapshot().tools;
-    const available = new Set(tools.map((tool) => tool.name));
-    const candidates = definition.preferredTools.filter((name) => available.has(name));
-
-    if (candidates.length === 0) {
-      return {
-        resolved: false,
-        action,
-        reasonCode: "NO_RUNTIME_TOOL",
-        candidates: [...definition.preferredTools],
-      };
-    }
-
-    // For ambiguous multi-provider families the semantic argument must select a
-    // provider explicitly; the resolver itself never guesses across providers.
-    if (["ASSET_SEARCH", "ASSET_IMPORT", "ASSET_GENERATE"].includes(action) && candidates.length > 1) {
-      return {
-        resolved: false,
-        action,
-        reasonCode: "AMBIGUOUS_TOOL",
-        candidates,
-      };
-    }
-
-    return {
-      resolved: true,
+    return resolveBlenderActionAgainstTools(
       action,
-      toolName: candidates[0],
-      reasonCode: "RESOLVED",
-      candidates,
-    };
+      this.getSnapshot().tools,
+      this.config.allowPythonExecution,
+    );
+  }
+
+  private async listAllTools(): Promise<BlenderMcpToolDescriptor[]> {
+    const all: BlenderMcpToolDescriptor[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const response = await this.request("tools/list", cursor ? { cursor } : {});
+      const listed = Array.isArray(response.result?.tools) ? response.result.tools : [];
+      for (const tool of listed) {
+        if (!tool || typeof tool !== "object") continue;
+        const raw = tool as Record<string, unknown>;
+        const name = typeof raw.name === "string" ? raw.name : "";
+        if (!name) continue;
+        all.push({
+          name,
+          description: typeof raw.description === "string" ? raw.description : undefined,
+          inputSchema:
+            raw.inputSchema && typeof raw.inputSchema === "object"
+              ? (raw.inputSchema as Record<string, unknown>)
+              : undefined,
+        });
+      }
+      cursor = typeof response.result?.nextCursor === "string"
+        ? response.result.nextCursor
+        : undefined;
+    } while (cursor && all.length < 500);
+
+    return all;
   }
 
   public async execute(request: BlenderActionRequest): Promise<BlenderExecutionObservation> {
