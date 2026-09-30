@@ -233,6 +233,7 @@ export class InMemoryTaskDAGRepository implements ITaskDAGRepository {
 
 export class InMemoryLeaseRepository implements ILeaseRepository {
   private leases: Map<string, TaskLease> = new Map();
+  private nextFencingToken = 1;
 
   async acquireLease(taskId: string, ownerAgentId: string, ttlMs: number, attempt: number = 1): Promise<boolean> {
     const now = new Date();
@@ -251,6 +252,7 @@ export class InMemoryLeaseRepository implements ILeaseRepository {
       leaseStartedAt: now.toISOString(),
       leaseExpiresAt: expiresAt,
       attempt,
+      fencingToken: this.nextFencingToken++,
       heartbeatAt: now.toISOString(),
       status: "ACTIVE",
     };
@@ -281,6 +283,25 @@ export class InMemoryLeaseRepository implements ILeaseRepository {
         status: "RELEASED",
       });
     }
+  }
+
+  async releaseLeaseIfFenced(
+    taskId: string,
+    ownerAgentId: string,
+    expectedFencingToken: number
+  ): Promise<boolean> {
+    const lease = this.leases.get(taskId);
+    if (
+      !lease ||
+      lease.ownerAgentId !== ownerAgentId ||
+      lease.status !== "ACTIVE" ||
+      lease.fencingToken !== expectedFencingToken
+    ) {
+      return false;
+    }
+
+    this.leases.set(taskId, { ...lease, status: "RELEASED" });
+    return true;
   }
 
   async getLease(taskId: string): Promise<TaskLease | null> {

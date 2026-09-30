@@ -31,6 +31,13 @@ export * from "./slayers/SpecializedSlayers";
 export * from "./slayers/SlayerEngine";
 export * from "./slayers/SlayerConfidenceEngine";
 export * from "./slayers/SlayerCorrelationEngine";
+export * from "./contracts/SlayerPrimeContracts";
+export * from "./slayers/prime/SlayerActionLease";
+export * from "./slayers/prime/SlayerEvidenceQuorum";
+export * from "./slayers/prime/SlayerActionPolicy";
+export * from "./slayers/prime/SlayerActionExecutor";
+export * from "./slayers/prime/SlayerPrimeEngine";
+export * from "./slayers/prime/SlayerPrimeStateStore";
 
 export * from "./healers/HealerBase";
 export * from "./healers/SpecializedHealers";

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-SlayerPrime-Mainline-20260930",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/slayer-prime-mainline-clean-20260930",
+  "objective": "Reconcile Slayer Prime onto the current mainline without replaying stale feature-branch snapshots.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Intelligence proposes; authority authorizes; runtime executes; evidence proves.",
+      "Slayer Prime remains beneath Guardian authorization and cannot mint authority.",
+      "Stale workers require monotonic fencing and current leadership rechecks before mutation.",
+      "Current mainline contracts are authoritative when reconciling stale feature work."
+    ]
+  },
+  "forensicFindings": [
+    "The original Slayer Prime branch diverged from main before the latest Reach/AER/FGC/trajectory integrations.",
+    "The clean reconciliation needed Prime-specific files plus minimal event, worker-lease, controller lifecycle, and barrel-export changes.",
+    "No stale mainline snapshots from the original Slayer branch are copied into this candidate."
+  ],
+  "changes": [
+    "Added Slayer Prime contracts, engine, state stores, action policy, action lease, action executor, evidence quorum, and regression tests.",
+    "Added four Prime event topics to the canonical EventTopic union.",
+    "Added optional worker lease fencing-token contract and fenced release implementations for in-memory, disk, and Mongo repositories.",
+    "Added LeaseManager.releaseFenced with fail-closed fallback checks.",
+    "Integrated Slayer Prime lifecycle into SlayerEngine start/stop.",
+    "Selected Prime persistence tier from the existing controller storage mode and Mongo connection state.",
+    "Exported Prime contracts/runtime through the FactoryOS core barrel."
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No credentials or secrets were added. Prime mutation remains bounded by Guardian authorization, evidence quorum, action lease fencing, and leadership epoch checks."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/contracts/SlayerPrimeContracts.ts",
+    "apps/web/factoryos/core/slayers/prime/SlayerPrimeEngine.ts",
+    "apps/web/factoryos/core/slayers/prime/SlayerPrimeStateStore.ts",
+    "apps/web/factoryos/core/slayers/prime/SlayerActionExecutor.ts",
+    "apps/web/factoryos/core/tests/slayer-prime.test.ts"
+  ],
+  "verificationPlan": [
+    "Run CI and all required FactoryOS gates.",
+    "Run the Slayer Prime focused test suite.",
+    "Inspect failures without weakening governance assertions.",
+    "Merge only after required blocking lanes are green."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "verificationResults": {
+    "reconciliation": "COMPLETE",
+    "staleSnapshotsExcluded": true,
+    "localFocusedTests": "PENDING_REMOTE_RUN",
+    "githubCI": "PENDING"
+  },
+  "disposition": "PASS",
+  "conflicts": [],
+  "notes": [
+    "This report contains no credential values.",
+    "The original PR #57 is not used as a direct merge candidate; this PR is the current-main reconciliation."
+  ]
+}
