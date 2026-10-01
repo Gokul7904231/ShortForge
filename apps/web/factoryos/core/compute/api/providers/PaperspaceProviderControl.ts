@@ -49,7 +49,7 @@ export class PaperspaceProviderControl
   private readonly apiKey = process.env.PAPERSPACE_API_KEY;
 
   constructor() {
-    super(this.metadata.baseUrl, undefined, 15000, this.apiKey ? { "X-API-Key": this.apiKey } : {});
+    super(this.metadata.baseUrl, this.apiKey);
   }
 
   async validateCredentials(): Promise<CredentialValidationResult> {
