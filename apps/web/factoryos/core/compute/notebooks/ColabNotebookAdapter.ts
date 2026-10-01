@@ -26,6 +26,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       canValidateCredentials: true,
       canProvision: true,
       canExecuteCode: false,
+      canInvokeHostedFunction: false,
       canReadOutputs: false,
       canReadLogs: false,
       canTerminate: true,
