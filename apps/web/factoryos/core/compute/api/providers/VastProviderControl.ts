@@ -368,19 +368,49 @@ export class VastProviderControl
         image: request.image,
       }),
     });
+
+    let reachedRunning = false;
+    let lastResource: ProviderResource | undefined;
+    try {
+      const deadline = Date.now() + request.timeoutMs;
+      while (Date.now() < deadline) {
+        lastResource = await this.getResource(provisioned.reference.resourceId);
+        if (lastResource.state === "RUNNING" || lastResource.state === "READY") {
+          reachedRunning = true;
+          break;
+        }
+        if (lastResource.state === "FAILED" || lastResource.state === "TERMINATED") {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    } finally {
+      // A probe must never leave a billable marketplace instance behind.
+      try {
+        await this.terminate({
+          reference: provisioned.reference,
+          wait: true,
+          reason: "ShortForge API render-launch probe complete",
+        });
+      } catch {}
+    }
+
     return {
       providerId: this.metadata.providerId,
       providerType: "VAST",
       verificationLevel: "RENDER_LAUNCH_VERIFIED",
-      passed: provisioned.state === "PROVISIONING" || provisioned.state === "READY",
+      passed: reachedRunning,
       resourceId: provisioned.reference.resourceId,
       evidence: [
-        "Vast.ai accepted a GPU offer and returned an instance id.",
-        "The render command was attached to the provider's onstart/args launch configuration.",
-        "Physical artifact verification is intentionally not claimed because this control API does not expose an equivalent command/file-read surface.",
+        "Vast.ai returned a live rentable GPU offer.",
+        "Vast.ai accepted the instance creation request and returned a resource id.",
+        reachedRunning
+          ? "The provisioned instance reached RUNNING/READY while the render entrypoint was configured."
+          : `The instance did not reach RUNNING/READY within ${request.timeoutMs}ms (last state: ${lastResource?.state || "UNKNOWN"}).`,
+        "Physical artifact verification is intentionally not claimed in the API-only boundary.",
       ],
       limitation:
-        "Full PHYSICAL_RENDER_VERIFIED proof requires a worker/SSH or provider-exposed execution/log/file channel; this adapter deliberately remains API-control-only.",
+        "RENDER_LAUNCH_VERIFIED proves provider-side resource acquisition and configured startup execution, not that the MP4 artifact was physically produced and independently retrieved. That requires the worker/SSH plane.",
     };
   }
 }
