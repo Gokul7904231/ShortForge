@@ -22,6 +22,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       canValidateCredentials: true,
       canProvision: true,
       canExecuteCode: true,
+      canInvokeHostedFunction: false,
       canReadOutputs: true,
       canReadLogs: true,
       canTerminate: true,
