@@ -6,7 +6,7 @@
 |---|---|---|
 | Blender MCP | F03-F06 3D scene/asset/render operations | Existing governed gateway |
 | Playwright MCP | F00/F01 web research and page-grounded inspection | Navigation allowlist; interaction separately gated |
-| ComfyUI MCP | F03-F06 generative visual workflows | Bounded workflow roots; production license gate |
+| ComfyUI MCP | F04-F06 programmable visual transformation plus optional generation | Recipe-bound workflow roots; production license gate |
 | Qdrant MCP | Memory Fabric derived ANN retrieval | Production read; writes projection-only |
 | Google Drive MCP | Bounded artifact/knowledge import-export | Existing |
 | GitHub | Engineering/research integration | Existing |
@@ -44,7 +44,21 @@ Browser output is research evidence, not F07 media proof.
 
 ## ComfyUI
 
-Use for image generation, workflow execution, template discovery, workflow validation, and output retrieval.
+Use as a programmable visual transformation engine over already-resolved ShortForge assets, plus optional generation when an explicit generative asset requirement exists. The normal asset path remains cache/B2 -> Wikimedia/Openverse -> policy -> ranking.
+
+Transformation execution is recipe-bound:
+- stage a resolved source image into the bounded Comfy input area;
+- materialize a trusted transformation recipe with fixed node bindings;
+- validate the workflow against the live ComfyUI install;
+- execute the workflow with Guardian authorization;
+- wait for the exact job to finish and fetch its outputs;
+- curate, hash, and store the result as a new derived asset;
+- preserve parent asset identity and license/attribution metadata.
+
+Initial production candidate: `upscale-2x-realesrgan`.
+Future recipe classes: img2img restyle, inpaint, 9:16 outpaint, detail enhancement.
+
+Ascalon sees a high-level `TRANSFORM_VISUAL_ASSET` capability. It does not get arbitrary workflow authoring or arbitrary Comfy tool selection.
 
 Workflow and output paths must be under COMFY_MCP_ALLOWED_ROOTS.
 
