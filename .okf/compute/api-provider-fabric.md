@@ -1,0 +1,75 @@
+# ShortForge API Provider Fabric
+
+Status: IMPLEMENTATION TRACK — API-ONLY / WORKER-PLANE EXCLUDED
+
+Date: 2026-10-01
+
+## Boundary
+
+The provider API fabric is responsible only for cloud-resource control:
+
+- credentials/auth validation;
+- account context and provider quota where the provider exposes it;
+- live/dynamic offer discovery;
+- resource provisioning;
+- resource state observation;
+- idempotency and ambiguous-outcome reconciliation;
+- provider rate-limit/error normalization;
+- lifecycle termination;
+- API render-probe capability classification.
+
+It does not execute the ShortForge worker, own rendering state, store the production artifact, or certify F07.
+
+## Provider set
+
+| Provider | API version / boundary | Discovery | Provision | Render launch via provider API | Physical render proof without worker plane |
+|---|---|---|---|---|---|
+| Vast.ai | REST v0 | Dynamic GPU marketplace | GPU instance | YES via `onstart` / container args | NOT CLAIMED |
+| RunPod | REST v2 | GPU/datacenter catalog | Pod | YES via container `args` | NOT CLAIMED |
+| Daytona | current REST + Toolbox API | GPU sandbox types | Sandbox | YES | YES, API command execution + remote SHA/ffprobe evidence |
+| Paperspace | REST v1 | machine availability | Machine | YES via startup script | NOT CLAIMED |
+| Modal | JS SDK 0.11.x | Resource request | Sandbox | YES | YES, SDK exec/filesystem/stdout allow direct verification |
+
+## Verification taxonomy
+
+### CONTROL_PLANE_VERIFIED
+
+Credential/authentication, provider reachability and documented lifecycle operations were observed against the provider API.
+
+### RENDER_LAUNCH_VERIFIED
+
+The live provider API accepted a GPU resource request and attached the supplied render command to the provider execution mechanism (for example Vast `onstart`, RunPod Pod `args`, or Paperspace startup script).
+
+This proves API-driven launch capability, not successful artifact creation.
+
+### PHYSICAL_RENDER_VERIFIED
+
+A provider API/SDK directly executed the render process and made sufficient artifact evidence available to the test harness to establish a non-empty artifact, digest and media probe without a ShortForge worker.
+
+Current direct candidates in this API-only boundary are Daytona and Modal.
+
+## Why this distinction exists
+
+Vast, RunPod and Paperspace can provision compute and configure an entrypoint/startup command through their documented control APIs. Their documented control surface does not provide a uniform API for arbitrary command execution plus local artifact retrieval from a running machine. Therefore the API fabric must not manufacture a "render completed" receipt for these providers.
+
+A later worker-plane adapter can use the resource returned by this API fabric (SSH, exposed port, or worker endpoint) without changing the control contracts.
+
+## Current official documentation anchors
+
+- Vast.ai REST API: https://docs.vast.ai/api-reference/introduction
+- Vast.ai instance creation: https://docs.vast.ai/api-reference/instances/create-instance
+- RunPod REST API v2: https://docs.runpod.io/api-reference-v2/overview
+- RunPod v2 create Pod: https://docs.runpod.io/api-reference-v2/create-pod
+- RunPod v2 delete Pod: https://docs.runpod.io/api-reference-v2/delete-pod
+- Daytona GPU Sandboxes: https://www.daytona.io/docs/en/sandboxes/
+- Paperspace REST API: https://docs.paperspace.com/api-reference/
+- Paperspace Machines: https://docs.paperspace.com/api-reference/machines/
+- Paperspace Startup Scripts: https://docs.paperspace.com/api-reference/startup-scripts/
+- Modal JS Sandbox API: https://modal.com/docs/sdk/js/latest/Sandbox
+- Modal JS SDK releases: https://modal.com/docs/sdk/js/releases
+
+## Research-derived design references
+
+SkyPilot demonstrates heterogeneous provider normalization; dstack explicitly distinguishes online GPU marketplace offers from offline/static catalogs and has dedicated RunPod/Vast.ai backends; Kueue demonstrates admission/resource-class separation; Crossplane demonstrates desired-state reconciliation.
+
+These are architectural references only. ShortForge retains ComputeRouter as its single scheduling authority and does not add a second scheduler/workflow engine.
