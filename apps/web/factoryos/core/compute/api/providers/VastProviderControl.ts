@@ -42,9 +42,9 @@ export class VastProviderControl
       canReadResource: true,
       canProvision: true,
       canTerminate: true,
-      canExecuteCommandByApi: false,
+      canExecuteCommandByApi: true,
       canReadFilesByApi: false,
-      canVerifyPhysicalRenderByApi: false,
+      canVerifyPhysicalRenderByApi: true,
     },
   };
 
@@ -351,12 +351,24 @@ export class VastProviderControl
       );
     }
 
+    const outputPath = request.outputPath || "/tmp/shortforge-api-probe.mp4";
+    const marker = "SHORTFORGE_RENDER_PROBE=";
+    const wrappedCommand = [
+      "set -e",
+      request.renderCommand,
+      `test -s ${outputPath}`,
+      `SHA=\$(sha256sum ${outputPath} | awk '{print \$1}')`,
+      `BYTES=\$(stat -c '%s' ${outputPath})`,
+      `PROBE=\$(ffprobe -v error -show_format -show_streams -of json ${outputPath} | base64 -w0)`,
+      `echo "${marker}{\\\"sha256\\\":\\"${SHA}\\\",\\\"byteLength\\\":${BYTES},\\\"probeBase64\\\":\\"${PROBE}\\\"}"`,
+    ].join("; ");
+
     const idempotencyKey = `render-probe:${Date.now()}`;
     const provisioned = await this.provision({
       idempotencyKey,
       image: request.image,
       offerId: offer.offerId,
-      command: request.renderCommand,
+      command: `bash -lc ${JSON.stringify(wrappedCommand)}`,
       gpuType: offer.accelerator?.type,
       gpuCount: offer.accelerator?.count,
       cpuCores: request.cpuCores,
@@ -369,48 +381,77 @@ export class VastProviderControl
       }),
     });
 
-    let reachedRunning = false;
+    let probePayload: any;
     let lastResource: ProviderResource | undefined;
     try {
       const deadline = Date.now() + request.timeoutMs;
       while (Date.now() < deadline) {
         lastResource = await this.getResource(provisioned.reference.resourceId);
-        if (lastResource.state === "RUNNING" || lastResource.state === "READY") {
-          reachedRunning = true;
-          break;
-        }
-        if (lastResource.state === "FAILED" || lastResource.state === "TERMINATED") {
-          break;
-        }
+        if (lastResource.state === "FAILED" || lastResource.state === "TERMINATED") break;
+
+        try {
+          const logsResponse = await this.transport.request<any>({
+            method: "GET",
+            path: `/instances/${encodeURIComponent(provisioned.reference.resourceId)}/logs/`,
+            retryMode: "SAFE",
+            timeoutMs: 10000,
+          });
+          const raw = typeof logsResponse.data === "string"
+            ? logsResponse.data
+            : JSON.stringify(logsResponse.data || "");
+          const match = raw.match(new RegExp(`${marker}(\\{.*\\})`));
+          if (match) {
+            probePayload = JSON.parse(match[1]);
+            break;
+          }
+        } catch {}
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     } finally {
-      // A probe must never leave a billable marketplace instance behind.
       try {
         await this.terminate({
           reference: provisioned.reference,
           wait: true,
-          reason: "ShortForge API render-launch probe complete",
+          reason: "ShortForge API render probe cleanup",
         });
+      } catch {}
+    }
+
+    const passed = Boolean(
+      probePayload?.sha256 &&
+      Number(probePayload?.byteLength) > 0 &&
+      probePayload?.probeBase64,
+    );
+
+    let mediaProbe: Record<string, unknown> | undefined;
+    if (probePayload?.probeBase64) {
+      try {
+        mediaProbe = JSON.parse(Buffer.from(probePayload.probeBase64, "base64").toString("utf8"));
       } catch {}
     }
 
     return {
       providerId: this.metadata.providerId,
       providerType: "VAST",
-      verificationLevel: "RENDER_LAUNCH_VERIFIED",
-      passed: reachedRunning,
+      verificationLevel: passed ? "PHYSICAL_RENDER_VERIFIED" : "RENDER_LAUNCH_VERIFIED",
+      passed,
       resourceId: provisioned.reference.resourceId,
+      artifactSha256: probePayload?.sha256,
+      artifactByteLength: probePayload?.byteLength,
+      mediaProbe,
       evidence: [
         "Vast.ai returned a live rentable GPU offer.",
-        "Vast.ai accepted the instance creation request and returned a resource id.",
-        reachedRunning
-          ? "The provisioned instance reached RUNNING/READY while the render entrypoint was configured."
-          : `The instance did not reach RUNNING/READY within ${request.timeoutMs}ms (last state: ${lastResource?.state || "UNKNOWN"}).`,
-        "Physical artifact verification is intentionally not claimed in the API-only boundary.",
+        "Vast.ai accepted the GPU instance creation request and configured the render entrypoint.",
+        lastResource
+          ? `Last observed provider resource state: ${lastResource.state}.`
+          : "Provider resource state could not be observed.",
+        passed
+          ? "Vast.ai instance logs contained provider-side proof that the render produced a non-empty artifact, SHA-256, byte length and ffprobe metadata."
+          : "The provider logs did not expose a completed render-proof marker before timeout.",
       ],
-      limitation:
-        "RENDER_LAUNCH_VERIFIED proves provider-side resource acquisition and configured startup execution, not that the MP4 artifact was physically produced and independently retrieved. That requires the worker/SSH plane.",
+      limitation: passed
+        ? "The API proves physical rendering inside the remote instance, but ShortForge has not yet independently downloaded and re-hashed the artifact. That remains the worker/F06 artifact-verification plane."
+        : "Physical render proof was not observed. Later worker/SSH evidence is required.",
     };
   }
 }
