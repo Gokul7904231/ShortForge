@@ -311,12 +311,7 @@
       "provider": "Comfy-Org/comfy-mcp",
       "sourceRepository": "https://github.com/Comfy-Org/comfy-mcp",
       "semanticActions": [
-        "COMFY_SERVER_INFO",
-        "COMFY_VALIDATE_WORKFLOW",
-        "COMFY_UPLOAD_INPUT",
-        "COMFY_TRANSFORM_ASSET",
-        "COMFY_WAIT_JOB",
-        "COMFY_FETCH_TRANSFORM_OUTPUT"
+        "TRANSFORM_VISUAL_ASSET"
       ],
       "executionBoundary": "RECIPE_BOUND_COMFYUI_WORKFLOW",
       "transformationOperations": [
@@ -336,7 +331,14 @@
         "transformationId"
       ],
       "verificationBoundary": "PHYSICAL_OUTPUT_HASH_AND_INSPECTION",
-      "productionRequirement": "EXPLICIT_COMMERCIAL_COMFY_MCP_LICENSE_MODE"
+      "productionRequirement": "EXPLICIT_COMMERCIAL_COMFY_MCP_LICENSE_MODE",
+      "transformSteps": [
+        "UPSCALE_2X",
+        "IMG2IMG_RESTYLE",
+        "INPAINT",
+        "OUTPAINT_9_16",
+        "DETAIL_ENHANCE"
+      ]
     },
     {
       "capabilityId": "mcp.qdrant.memory-search",
