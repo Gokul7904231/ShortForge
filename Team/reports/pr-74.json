@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR74-Notebook-Fabric-V1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/notebook-fabric-v1-main-20261001",
+  "objective": "Ship provider-neutral Notebook Fabric for Basic users while preserving Local Rendering and admin-only Sandbox/API-GPU expansion boundaries.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/compute/notebook-fabric.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added Kaggle, Colab, Paperspace, Lightning AI and HF ZeroGPU provider adapters.",
+    "Added NotebookRouter, NotebookRegistry, durable NotebookOperationJournal and capability metadata.",
+    "Kept provider credentials out-of-band from journal payloads.",
+    "Added blocking repository CI coverage for notebook contract tests.",
+    "Preserved the notebook-to-F06 authority boundary and F07 artifact acceptance."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/notebooks",
+    "apps/web/factoryos/tests/notebook-fabric.test.ts",
+    ".github/workflows/notebook-fabric.yml",
+    ".okf/compute/notebook-fabric.md",
+    ".env.notebooks.example"
+  ],
+  "notes": [
+    "Basic users get Local Rendering + Notebook Compute in v1.",
+    "Admin-only Sandbox/API-GPU access remains outside this Basic User surface.",
+    "Self-hosted sandbox connections are intentionally excluded because Local Rendering covers user-owned machines.",
+    "Live provider validation requires explicit external credentials and is never implicit in CI."
+  ],
+  "verificationResults": {
+    "notebookContractTests": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "affectedFloorValidation": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass blocking FactoryOS typecheck and notebook contract tests.",
+    "Pass Team Change Gate and affected floor validation.",
+    "Run explicit live provider validation only when user-owned credentials are available.",
+    "Merge only after required blocking lanes are green."
+  ]
+}
