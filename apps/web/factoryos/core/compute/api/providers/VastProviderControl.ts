@@ -53,7 +53,10 @@ export class VastProviderControl
   private readonly apiKey = process.env.VAST_API_KEY;
 
   constructor() {
-    super(this.metadata.baseUrl, process.env.VAST_API_KEY);
+    super(
+      process.env.VAST_API_BASE_URL || "https://console.vast.ai/api/v0",
+      process.env.VAST_API_KEY,
+    );
   }
 
   async validateCredentials(): Promise<CredentialValidationResult> {
@@ -396,7 +399,7 @@ export class VastProviderControl
       `SHA=\$(sha256sum ${outputPath} | awk '{print \$1}')`,
       `BYTES=\$(stat -c '%s' ${outputPath})`,
       `PROBE=\$(ffprobe -v error -show_format -show_streams -of json ${outputPath} | base64 -w0)`,
-      `echo "${marker}{\\\"sha256\\\":\\"${SHA}\\\",\\\"byteLength\\\":${BYTES},\\\"probeBase64\\\":\\"${PROBE}\\\"}"`,
+      `echo "${marker}{\\\"sha256\\\":\\"\${SHA}\\\",\\\"byteLength\\\":\${BYTES},\\\"probeBase64\\\":\\"\${PROBE}\\\"}"`,
     ].join("; ");
 
     const idempotencyKey = `render-probe:${Date.now()}`;
