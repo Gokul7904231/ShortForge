@@ -7,6 +7,7 @@ import type {
   NotebookProvisionRequest,
   NotebookProvisionResult,
   NotebookRuntime,
+  NotebookCredentialBundle,
 } from "./NotebookContracts";
 
 export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
@@ -33,9 +34,10 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
     gpuTypes: ["RTX Pro 6000 Blackwell"],
   };
 
-  async validateCredentials(): Promise<NotebookCredentialValidation> {
+  async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
     const requiredKeys = ["HF_ZEROGPU_SPACE", "HF_ZEROGPU_API_NAME"];
-    const missingKeys = requiredKeys.filter((key) => !process.env[key]);
+    const env = { ...process.env, ...(credentials || {}) };
+    const missingKeys = requiredKeys.filter((key) => !env[key]);
     if (missingKeys.length) {
       return {
         configured: false,
@@ -48,7 +50,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
       };
     }
 
-    const space = process.env.HF_ZEROGPU_SPACE!;
+    const space = (credentials?.HF_ZEROGPU_SPACE || process.env.HF_ZEROGPU_SPACE)!;
     const host = space.includes(".hf.space")
       ? space.replace(/^https?:\/\//, "").replace(/\/+$/, "")
       : space.replace("/", "-") + ".hf.space";
@@ -58,7 +60,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
         "https://" + host + "/gradio_api/openapi.json",
         {
           headers: {
-            ...(process.env.HF_TOKEN
+            ...((credentials?.HF_TOKEN || process.env.HF_TOKEN)
               ? { Authorization: "Bearer " + process.env.HF_TOKEN }
               : {}),
           },
@@ -95,13 +97,13 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
     }
   }
 
-  async provision(_request: NotebookProvisionRequest): Promise<NotebookProvisionResult> {
+  async provision(_request: NotebookProvisionRequest, _credentials?: NotebookCredentialBundle): Promise<NotebookProvisionResult> {
     throw new Error(
       "HF_ZEROGPU_PROVISION_UNSUPPORTED: ZeroGPU allocates shared GPU time per Space function call.",
     );
   }
 
-  async getRuntime(resourceId: string): Promise<NotebookRuntime> {
+  async getRuntime(resourceId: string, _credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     return {
       providerId: this.metadata.providerId,
       providerType: "HF_ZEROGPU",
@@ -113,9 +115,9 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async execute(request: NotebookExecutionRequest): Promise<NotebookExecutionResult> {
+  async execute(request: NotebookExecutionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
     const space = process.env.HF_ZEROGPU_SPACE;
-    const apiName = process.env.HF_ZEROGPU_API_NAME;
+    const apiName = (credentials?.HF_ZEROGPU_API_NAME || process.env.HF_ZEROGPU_API_NAME);
 
     if (!space || !apiName) {
       return {
@@ -236,7 +238,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
     }
   }
 
-  async terminate(runtime: NotebookRuntime): Promise<NotebookRuntime> {
+  async terminate(runtime: NotebookRuntime, _credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     return {
       ...runtime,
       state: "TERMINATED",
