@@ -24,8 +24,8 @@ It does not execute the ShortForge worker, own rendering state, store the produc
 
 | Provider | API version / boundary | Discovery | Provision | Render launch via provider API | Physical render proof without worker plane |
 |---|---|---|---|---|---|
-| Vast.ai | REST v0 | Dynamic GPU marketplace | GPU instance | YES via `onstart` / container args | NOT CLAIMED |
-| RunPod | REST v2 | GPU/datacenter catalog | Pod | YES via container `args` | NOT CLAIMED |
+| Vast.ai | REST v0 | Dynamic GPU marketplace | GPU instance | YES via `onstart` / container args | API log proof supported; independent artifact retrieval remains later |
+| RunPod | REST v2 | GPU/datacenter catalog | Pod | YES via container `args` | API log proof supported; independent artifact retrieval remains later |
 | Daytona | current REST + Toolbox API | GPU sandbox types | Sandbox | YES | YES, API command execution + remote SHA/ffprobe evidence |
 | Paperspace | REST v1 | machine availability | Machine | YES via startup script | NOT CLAIMED |
 | Modal | JS SDK 0.11.x | Resource request | Sandbox | YES | YES, SDK exec/filesystem/stdout allow direct verification |
@@ -46,11 +46,11 @@ This proves API-driven launch capability, not successful artifact creation.
 
 A provider API/SDK directly executed the render process and made sufficient artifact evidence available to the test harness to establish a non-empty artifact, digest and media probe without a ShortForge worker.
 
-Current direct candidates in this API-only boundary are Daytona and Modal.
+Current API-only direct physical-render evidence paths are Vast.ai, RunPod v2, Daytona, and Modal. Paperspace remains launch-verified because this adapter does not yet have a documented, portable API path to inspect the running machine's output.
 
 ## Why this distinction exists
 
-Vast, RunPod and Paperspace can provision compute and configure an entrypoint/startup command through their documented control APIs. Their documented control surface does not provide a uniform API for arbitrary command execution plus local artifact retrieval from a running machine. Therefore the API fabric must not manufacture a "render completed" receipt for these providers.
+Vast.ai and RunPod v2 expose provider-side logs that can carry a self-verifying render marker, so the API harness can prove that the remote command produced a non-empty file and report SHA-256/size/media metadata. This remains provider-side evidence rather than the independent control-plane artifact download/re-hash required by the later F06/CAS boundary. Paperspace currently remains launch-only in this API-only phase.
 
 A later worker-plane adapter can use the resource returned by this API fabric (SSH, exposed port, or worker endpoint) without changing the control contracts.
 
