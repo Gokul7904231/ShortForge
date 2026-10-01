@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import getSafeDatabase, { type SafeDatabase } from "../../../lib/safe-sqlite";
+import getSafeDatabase, { type SafeDatabase } from "@/lib/safe-sqlite";
 import type {
   ApiProviderType,
   ProviderOperationRecord,
