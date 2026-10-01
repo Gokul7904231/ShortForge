@@ -80,7 +80,9 @@ export interface ProviderApiMetadata {
     canReadResource: boolean;
     canProvision: boolean;
     canTerminate: boolean;
+    canConfigureEntrypointByApi: boolean;
     canExecuteCommandByApi: boolean;
+    canReadLogsByApi: boolean;
     canReadFilesByApi: boolean;
     canVerifyPhysicalRenderByApi: boolean;
   };
