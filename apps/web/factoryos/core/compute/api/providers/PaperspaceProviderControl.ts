@@ -49,7 +49,7 @@ export class PaperspaceProviderControl
   private readonly apiKey = process.env.PAPERSPACE_API_KEY;
 
   constructor() {
-    super(this.metadata.baseUrl, this.apiKey);
+    super(this.metadata.baseUrl, undefined, 15000, this.apiKey ? { "X-API-Key": this.apiKey } : {});
   }
 
   async validateCredentials(): Promise<CredentialValidationResult> {
@@ -67,7 +67,7 @@ export class PaperspaceProviderControl
     try {
       const response = await this.transport.request<any>({
         method: "GET",
-        path: "/auth/session",
+        path: "/machines",
         retryMode: "SAFE",
       });
       return {
@@ -384,9 +384,8 @@ export class PaperspaceProviderControl
       request.timeoutMs,
     );
 
-    let termination: TerminationResult | undefined;
     try {
-      termination = await this.terminate({
+      await this.terminate({
         reference: provisioned.reference,
         wait: false,
         reason: "API render probe complete",
