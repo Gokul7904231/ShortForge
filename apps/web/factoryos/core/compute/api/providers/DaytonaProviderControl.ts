@@ -356,76 +356,79 @@ result["probe"] = subprocess.run(["ffprobe","-v","error","-show_format","-show_s
 print("SHORTFORGE_RENDER_PROBE="+json.dumps(result, separators=(",",":")))
 `;
 
-    const response = await fetch(
-      `${this.proxyBase.replace(/\/+$/, "")}/toolbox/${encodeURIComponent(provisioned.reference.resourceId)}/process/code-run`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
+    let response: Response | undefined;
+    let text = "";
+    try {
+      response = await fetch(
+        `${this.proxyBase.replace(/\/+$/, "")}/toolbox/${encodeURIComponent(provisioned.reference.resourceId)}/process/code-run`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code }),
+          signal: AbortSignal.timeout(request.timeoutMs),
         },
-        body: JSON.stringify({ code }),
-        signal: AbortSignal.timeout(request.timeoutMs),
-      },
-    );
-    const text = await response.text();
-    if (!response.ok) {
+      );
+      text = await response.text();
+      if (!response.ok) {
+        return {
+          providerId: this.metadata.providerId,
+          providerType: "DAYTONA",
+          verificationLevel: "CONTROL_PLANE_VERIFIED",
+          passed: false,
+          resourceId: provisioned.reference.resourceId,
+          stdout: text,
+          evidence: [`Daytona code-run endpoint returned HTTP ${response.status}.`],
+        };
+      }
+
+      const match = text.match(/SHORTFORGE_RENDER_PROBE=(\{.*\})/s);
+      let evidencePayload: any = undefined;
+      try {
+        evidencePayload = match ? JSON.parse(match[1]) : undefined;
+      } catch {}
+
+      const passed =
+        evidencePayload?.exitCode === 0 &&
+        Number(evidencePayload?.byteLength) > 0 &&
+        Boolean(evidencePayload?.sha256);
+
       return {
         providerId: this.metadata.providerId,
         providerType: "DAYTONA",
-        verificationLevel: "CONTROL_PLANE_VERIFIED",
-        passed: false,
+        verificationLevel: passed
+          ? "PHYSICAL_RENDER_VERIFIED"
+          : "CONTROL_PLANE_VERIFIED",
+        passed,
         resourceId: provisioned.reference.resourceId,
-        stdout: text,
-        evidence: [`Daytona code-run endpoint returned HTTP ${response.status}.`],
+        exitCode: evidencePayload?.exitCode,
+        artifactSha256: evidencePayload?.sha256,
+        artifactByteLength: evidencePayload?.byteLength,
+        mediaProbe: evidencePayload?.probe ? JSON.parse(evidencePayload.probe) : undefined,
+        stdout: evidencePayload?.stdout || text,
+        stderr: evidencePayload?.stderr,
+        evidence: [
+          "Daytona API created a GPU sandbox.",
+          "Daytona process/code-run API executed the render command.",
+          passed
+            ? "The API-executed command produced a non-empty artifact and SHA-256 was computed inside the sandbox."
+            : "The API-executed command did not produce a verifiable artifact.",
+        ],
+        limitation: passed
+          ? undefined
+          : "The configured Daytona image must contain bash, ffmpeg, ffprobe, Python, and the requested render dependencies.",
       };
+    } finally {
+      try {
+        await this.terminate({
+          reference: provisioned.reference,
+          wait: true,
+          reason: "ShortForge API render probe cleanup",
+        });
+      } catch {}
     }
-
-    const match = text.match(/SHORTFORGE_RENDER_PROBE=(\{.*\})/s);
-    let evidencePayload: any = undefined;
-    try {
-      evidencePayload = match ? JSON.parse(match[1]) : undefined;
-    } catch {}
-
-    const passed =
-      evidencePayload?.exitCode === 0 &&
-      Number(evidencePayload?.byteLength) > 0 &&
-      Boolean(evidencePayload?.sha256);
-
-    try {
-      await this.terminate({
-        reference: provisioned.reference,
-        wait: true,
-        reason: "ShortForge API render probe complete",
-      });
-    } catch {}
-
-    return {
-      providerId: this.metadata.providerId,
-      providerType: "DAYTONA",
-      verificationLevel: passed
-        ? "PHYSICAL_RENDER_VERIFIED"
-        : "CONTROL_PLANE_VERIFIED",
-      passed,
-      resourceId: provisioned.reference.resourceId,
-      exitCode: evidencePayload?.exitCode,
-      artifactSha256: evidencePayload?.sha256,
-      artifactByteLength: evidencePayload?.byteLength,
-      mediaProbe: evidencePayload?.probe ? JSON.parse(evidencePayload.probe) : undefined,
-      stdout: evidencePayload?.stdout || text,
-      stderr: evidencePayload?.stderr,
-      evidence: [
-        "Daytona API created a GPU sandbox.",
-        "Daytona process/code-run API executed the render command.",
-        passed
-          ? "The API-executed command produced a non-empty artifact and SHA-256 was computed inside the sandbox."
-          : "The render command did not produce a verifiable artifact.",
-      ],
-      limitation: passed
-        ? undefined
-        : "The configured Daytona image must contain bash, ffmpeg, ffprobe, Python, and the requested render dependencies.",
-    };
-  }
 
   private async waitForReady(resourceId: string, timeoutMs: number): Promise<boolean> {
     const deadline = Date.now() + timeoutMs;
