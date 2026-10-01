@@ -187,6 +187,16 @@ export interface PipelineConfig {
   };
 }
 
+export interface VisualTransformPlan {
+  enabled: boolean;
+  guardianCertificateId?: string;
+  steps: Array<{
+    recipeId: string;
+    operation: "UPSCALE_2X" | "IMG2IMG_RESTYLE" | "INPAINT" | "OUTPAINT_9_16" | "DETAIL_ENHANCE";
+    parameters?: Record<string, unknown>;
+  }>;
+}
+
 export interface VisualContext {
   jobId: string;
   sceneIndex: number;
@@ -205,4 +215,6 @@ export interface VisualContext {
   history: PipelineHistory;
   metrics: Record<string, number>; // Time markers in ms
   config: PipelineConfig;
+  /** Optional governed ComfyUI transformation; disabled by default. */
+  transformPlan?: VisualTransformPlan;
 }
