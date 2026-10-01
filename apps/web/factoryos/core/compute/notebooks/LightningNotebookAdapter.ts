@@ -159,7 +159,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       };
     }
 
-    const python = process.env.LIGHTNING_PYTHON || "python3";
+    const python = ({ ...process.env, ...(credentials || {}) }).LIGHTNING_PYTHON || "python3";
     const command = Array.isArray(request.command)
       ? request.command.join(" ")
       : request.command;
