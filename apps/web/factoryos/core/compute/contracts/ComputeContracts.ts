@@ -15,7 +15,10 @@ export type ProviderType =
   | "PERSISTENT_WORKER"
   | "AMD"
   | "RUNPOD"
-  | "VAST";
+  | "VAST"
+  | "DAYTONA"
+  | "PAPERSPACE"
+  | "MODAL";
 
 export type ProviderExecutionModel =
   | "LOCAL_PROCESS"
