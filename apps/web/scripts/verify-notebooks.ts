@@ -48,6 +48,13 @@ async function main() {
   const validation = await adapter.validateCredentials();
   console.log(JSON.stringify(validation, null, 2));
 
+  if (selected === "HF_ZEROGPU") {
+    console.log(
+      "ZeroGPU selected: public Space configuration does not require account authentication in the same way as VM providers.",
+    );
+    return;
+  }
+
   if (!validation.authenticated) {
     throw new Error(
       "Notebook provider " + selected + " is not authenticated/configured.",
