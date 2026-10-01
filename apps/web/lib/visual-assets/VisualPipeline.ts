@@ -19,6 +19,7 @@ import { VisualPackageBuilder } from "./VisualPackageBuilder";
 import { VisualRecommendationEngine } from "./VisualRecommendationEngine";
 import { VisualCritic } from "./VisualCritic";
 import { VisualContext, CandidateAsset, SceneVisualPackage } from "./VisualIntelligenceTypes";
+import { ComfyVisualTransformEngine } from "../../factoryos/core/visual/ComfyVisualTransformEngine";
 
 export class VisualPipeline {
   private intentAnalyzer = new SceneIntentAnalyzer();
@@ -35,6 +36,7 @@ export class VisualPipeline {
   private packageBuilder = new VisualPackageBuilder();
   private critic = new VisualCritic();
   private storage = getStorageProvider();
+  private comfyTransformer = new ComfyVisualTransformEngine();
   private cacheDir = path.resolve(process.cwd(), "data", "visual-assets-cache");
 
   constructor() {
@@ -129,6 +131,27 @@ export class VisualPipeline {
     // Download/Load file to local cache using Content-Addressable Storage (CAS)
     if (resolvedAsset) {
       resolvedAsset.path = await this.ensureLocalCachePath(resolvedAsset, context);
+    }
+
+    // Optional governed transformation: retrieval remains the source-of-truth path;
+    // ComfyUI is invoked only when an explicit transform plan is present.
+    if (resolvedAsset && context.transformPlan?.enabled && context.transformPlan.steps.length > 0) {
+      if (!context.transformPlan.guardianCertificateId?.trim()) {
+        throw new Error("visual_transform_guardian_certificate_required");
+      }
+      const transformResult = await this.comfyTransformer.transform({
+        missionId: context.jobId,
+        jobId: context.jobId,
+        floorId: "floor04_media_synthesis",
+        environment: process.env.NODE_ENV === "production" ? "production" : "development",
+        sourceAsset: resolvedAsset,
+        steps: context.transformPlan.steps,
+        guardianCertificateId: context.transformPlan.guardianCertificateId,
+      });
+      resolvedAsset = transformResult.asset;
+      context.selectedAsset = resolvedAsset;
+      context.candidates = [...context.candidates, resolvedAsset];
+      context.metrics.comfyTransformTime = transformResult.lineage.length > 0 ? Date.now() - tStart : 0;
     }
 
     // Pass 7: Visual Style configuration mapping
