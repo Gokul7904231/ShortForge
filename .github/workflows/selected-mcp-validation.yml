@@ -1,0 +1,48 @@
+name: Selected MCP Fabric Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/mcp/**"
+      - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
+      - "apps/web/factoryos/core/index.ts"
+      - "apps/web/factoryos/tests/selected-mcp-gateway.test.ts"
+      - "apps/web/.env.selected-mcp.example"
+      - "docs/operations/selected-mcp-fabric.md"
+      - ".okf/intelligence/mcp-architecture.md"
+      - ".okf/security/mcp-permissions.md"
+      - ".okf/decisions.md"
+      - ".okf/research/repo-mappings/selected-mcp-shortforge-20261001.md"
+  push:
+    branches: [main, "feat/**", "fix/**"]
+    paths:
+      - "apps/web/factoryos/core/mcp/**"
+      - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
+      - "apps/web/factoryos/core/index.ts"
+      - "apps/web/factoryos/tests/selected-mcp-gateway.test.ts"
+
+jobs:
+  contract-validation:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: FactoryOS typecheck
+        run: npm run factoryos:typecheck
+      - name: Selected MCP policy tests
+        run: npx vitest run factoryos/tests/selected-mcp-gateway.test.ts --config vitest.config.ts
+      - name: Policy text checks
+        shell: bash
+        run: |
+          grep -q "MCP is not ambient authority" ../../.okf/security/mcp-permissions.md
+          grep -q "FFmpeg MCP" ../../.okf/intelligence/mcp-architecture.md
+          grep -q "verification-required" ../../docs/operations/selected-mcp-fabric.md
