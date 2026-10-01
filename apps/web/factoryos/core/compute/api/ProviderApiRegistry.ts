@@ -135,9 +135,42 @@ export class ProviderApiRegistry {
       }
     }
 
-    this.journal.transition(operation.operationId, "ACCEPTED", {
-      acceptedAt: new Date().toISOString(),
-    });
+    // IMPORTANT: do not mark a mutation ACCEPTED before the provider call.
+    // A process crash between those two points would make the journal claim an
+    // external side effect that may never have happened.
+    //
+    // REQUESTED -> provider call -> PROVISIONING/READY is the safe sequence.
+    // If the provider call has an ambiguous outcome, the adapter error is
+    // journaled as UNKNOWN and reconciliation is required before a new create.
+    if (operation.state !== "REQUESTED") {
+      if (operation.state === "UNKNOWN") {
+        throw new Error(
+          `PROVISION_RECONCILIATION_REQUIRED: ${operation.operationId}`,
+        );
+      }
+      if (operation.externalResourceId) {
+        const resource = await adapter.getResource(operation.externalResourceId);
+        const state =
+          resource.state === "READY" || resource.state === "RUNNING"
+            ? "READY"
+            : resource.state === "TERMINATED"
+              ? "TERMINATED"
+              : "UNKNOWN";
+        return {
+          operationId: operation.operationId,
+          reference: {
+            providerId: adapter.metadata.providerId,
+            providerType: type,
+            resourceId: operation.externalResourceId,
+            idempotencyKey: request.idempotencyKey,
+            operationId: operation.operationId,
+          },
+          state,
+          acceptedAt: operation.acceptedAt || operation.requestedAt,
+          reconciliationRequired: state === "UNKNOWN",
+        };
+      }
+    }
 
     try {
       const result = await adapter.provision(request);
