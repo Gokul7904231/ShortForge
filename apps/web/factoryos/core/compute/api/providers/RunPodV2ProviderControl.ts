@@ -172,13 +172,14 @@ export class RunPodV2ProviderControl
     const body: Record<string, unknown> = {
       name,
       image: request.image,
+      startSsh: true,
       gpu: {
         id: gpuType,
         count: request.gpuCount || 1,
         ...(request.minVramMb ? { minRamPerGpu: Math.ceil(request.minVramMb / 1024) } : {}),
         ...(request.cpuCores ? { minVcpuCountPerGpu: Math.ceil(request.cpuCores / (request.gpuCount || 1)) } : {}),
       },
-      ...(request.diskGb ? { disk: { containerDiskInGb: request.diskGb } } : {}),
+      ...(request.diskGb ? { disk: request.diskGb } : {}),
       ...(request.environmentVariables ? { env: request.environmentVariables } : {}),
       ...(request.ports ? { ports: request.ports } : {}),
       ...(request.region ? { dataCenterIds: [request.region] } : {}),
