@@ -45,7 +45,7 @@ export class ProviderApiRegistry {
     return [...this.adapters.values()];
   }
 
-  metadata(): ReturnType<ProviderControlAdapter["metadata"]>[] {
+  metadata(): ProviderApiMetadata[] {
     return this.list().map((a) => a.metadata);
   }
 
