@@ -30,7 +30,7 @@ The production MCP set is intentionally small:
 | Google Drive | Bounded artifact/knowledge import-export | EXISTING | Storage integration |
 | Blender MCP | 3D asset/scene/render operations | EXISTING | Governed visual execution |
 | Playwright MCP | F00/F01 browser research and inspection | SELECTED / IMPLEMENTED | Scoped research sensor |
-| ComfyUI MCP | F03-F06 generative visual workflows | SELECTED / IMPLEMENTED | Isolated provider |
+| ComfyUI MCP | F04-F06 programmable visual transformation and optional generation | SELECTED / IMPLEMENTED | Recipe-bound visual transformation provider |
 | Qdrant MCP | Derived Memory Fabric ANN retrieval | SELECTED / IMPLEMENTED | Projection/index only |
 
 FFmpeg MCP, Filesystem MCP, Obsidian MCP, Remotion MCP and Docker MCP Gateway are deliberately not selected in this wave because their useful responsibilities are already covered by canonical ShortForge subsystems or broader infrastructure boundaries.
@@ -164,3 +164,35 @@ The selected gateway exposes:
 - Qdrant: derived-memory find and projection-only derived store.
 
 All selected MCP results remain untrusted until domain verification.
+
+
+## 9. ComfyUI as a programmable visual transformation engine
+
+The existing Visual Asset System remains retrieval-first:
+
+`cache/B2 -> Wikimedia/Openverse -> policy -> ranking -> scene asset`
+
+ComfyUI MCP does not replace that path. It operates on a resolved asset when a transformation is explicitly requested.
+
+Canonical transformation loop:
+
+`ResolvedAsset -> TransformPlan -> trusted recipe -> stage input -> validate workflow -> run -> wait -> fetch -> curate/hash -> derived asset -> F07`
+
+The recipe is the programmable unit. Ascalon may propose a semantic operation such as UPSCALE_2X or IMG2IMG_RESTYLE, but it does not author arbitrary ComfyUI graphs.
+
+Every derived asset carries parent asset identity, parent SHA-256, recipe ID/version, parameter digest and transformation ID. The parent remains immutable.
+
+This unlocks production uses such as:
+- AI upscaling of low-resolution Wikimedia/Openverse assets;
+- subject-preserving image-to-image style harmonization;
+- bounded inpainting for damaged/unwanted regions;
+- 9:16 outpainting when a source asset cannot be safely cropped;
+- detail enhancement before composition.
+
+Simple deterministic operations such as ordinary crop, resize and color conversion remain local ShortForge responsibilities when AI transformation is unnecessary.
+
+This preserves the separation:
+- Retrieval providers find the source.
+- ComfyUI transforms the source.
+- Asset storage/CAS identifies the result.
+- F07 verifies the physical artifact.
