@@ -297,3 +297,24 @@ The API provider fabric distinguishes provider-side render evidence from F06 ind
 - Paperspace: machine creation and startup-script launch are implemented; this API-only adapter does not claim physical render proof because a portable machine output/log inspection path has not been established.
 
 The live verification workflow remains manual-only and credentials/capacity dependent. No current repository evidence should mark a provider as live-verified until the real probe passes.
+
+## Notebook & Interactive Compute Fabric — 2026-10-01
+
+The notebook plane is a distinct execution substrate and is not part of the production worker fleet by default.
+
+Canonical providers:
+- Kaggle Kernel
+- Google Colab Runtime
+- Paperspace machine-backed notebook
+- Lightning Studio
+- Hugging Face ZeroGPU Space function
+
+The notebook fabric exposes capability and payment-evidence metadata, durable operation journaling, provider-specific lifecycle adapters, and a separate validation workflow.
+
+Boundary invariant:
+Notebook registration does not grant F06 worker authority. Production-worker promotion requires independent worker bootstrap, heartbeat/lease/fencing, artifact upload, independent digest verification, and F07 acceptance.
+
+Hugging Face ZeroGPU is modeled as shared Gradio function execution rather than a notebook VM. Google Colab control is limited to its documented beta runtime API surface. Paperspace uses the current v1 machine API rather than retired legacy notebook endpoints.
+
+No-card information is represented conservatively:
+NO_CARD_STATED is reserved for provider documentation that explicitly supports the claim; NO_CARD_NOT_ESTABLISHED means the repository has not established the absence of a payment requirement.
