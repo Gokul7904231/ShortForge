@@ -329,20 +329,37 @@ export class VastProviderControl
   }
 
   async renderProbe(request: RenderProbeRequest): Promise<RenderProbeResult> {
-    const provisioned = await this.provision({
-      idempotencyKey: `render-probe:${Date.now()}`,
-      image: request.image,
-      command: request.renderCommand,
+    const offers = await this.discoverOffers({
       gpuType: request.gpuType,
       gpuCount: request.gpuCount,
+      maxOffers: 5,
+      acceleratorRequired: true,
+      onDemandOnly: true,
+    });
+    const offer = offers[0];
+    if (!offer) {
+      throw new ProviderApiError(
+        "Vast.ai has no live rentable GPU offer matching the render probe.",
+        { providerCode: "VAST_NO_RENTABLE_OFFER", retryable: false },
+      );
+    }
+
+    const idempotencyKey = `render-probe:${Date.now()}`;
+    const provisioned = await this.provision({
+      idempotencyKey,
+      image: request.image,
+      offerId: offer.offerId,
+      command: request.renderCommand,
+      gpuType: offer.accelerator?.type,
+      gpuCount: offer.accelerator?.count,
       cpuCores: request.cpuCores,
       memoryMb: request.memoryMb,
       diskGb: request.diskGb,
       maxDurationSeconds: Math.ceil(request.timeoutMs / 1000),
       name: this.deterministicName("shortforge-probe", {
-        idempotencyKey: `probe-${Date.now()}`,
+        idempotencyKey,
         image: request.image,
-      } as ProvisionRequest),
+      }),
     });
     return {
       providerId: this.metadata.providerId,
