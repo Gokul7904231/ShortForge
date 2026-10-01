@@ -286,3 +286,14 @@ Render proof is classified honestly:
 - Modal: documented JS SDK Sandbox entrypoint/exec/filesystem surfaces can run and inspect the render command output.
 
 A provider is not admitted as a production render worker merely because its resource-creation API returns HTTP 2xx. Physical F06 acceptance remains downstream and independent.
+
+
+## F06 API-provider render-evidence classification — 2026-10-01
+
+The API provider fabric distinguishes provider-side render evidence from F06 independent artifact acceptance.
+
+- Vast.ai and RunPod v2: provider logs can expose a self-verifying marker containing artifact size, SHA-256 and ffprobe metadata. This is sufficient to establish that the provider-side command created the requested render artifact, but F06 must later download the artifact and recompute the digest independently.
+- Daytona and Modal: their API execution surfaces can run the render command and return equivalent provider-side evidence directly.
+- Paperspace: machine creation and startup-script launch are implemented; this API-only adapter does not claim physical render proof because a portable machine output/log inspection path has not been established.
+
+The live verification workflow remains manual-only and credentials/capacity dependent. No current repository evidence should mark a provider as live-verified until the real probe passes.
