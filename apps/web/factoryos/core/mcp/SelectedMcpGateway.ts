@@ -3,6 +3,11 @@ import * as path from "node:path";
 import { URL } from "node:url";
 import { getSelectedMcpAction, resolveSelectedMcpTool, sha256Json, type McpExecutionObservation, type McpExecutionRequest, type McpServerConfig, type SelectedMcpServerId } from "./McpContracts";
 import { StdioMcpAdapter } from "./StdioMcpAdapter";
+import type {
+  CapabilityExecutionRequest,
+  CapabilityExecutionResult,
+  CapabilityMetadata,
+} from "../contracts/CapabilityContracts";
 
 export interface SelectedMcpConfig {
   readonly enabled:boolean;
@@ -166,4 +171,265 @@ export class SelectedMcpGateway {
     };
   }
   async disconnectAll(){await Promise.all(Array.from(this.adapters.values()).map(x=>x.disconnect()));}
+}
+
+
+type McpCapabilityRequest = CapabilityExecutionRequest<Record<string, unknown>>;
+type McpCapabilityResult = CapabilityExecutionResult<Record<string, unknown>>;
+type McpCapabilityHandler = (request: McpCapabilityRequest) => Promise<McpCapabilityResult>;
+
+export interface CapabilityRegistrationSink {
+  register(metadata: CapabilityMetadata, handler: McpCapabilityHandler): void;
+}
+
+function actionInput(request: McpCapabilityRequest): { readonly action?: string; readonly arguments?: Record<string, unknown>; readonly guardianAuthorization?: { granted: boolean; certificateId?: string } } {
+  const input = request.inputData;
+  const action = typeof input.action === "string" ? input.action : undefined;
+  const args = input.arguments && typeof input.arguments === "object"
+    ? input.arguments as Record<string, unknown>
+    : undefined;
+  const guardianAuthorization = input.guardianAuthorization && typeof input.guardianAuthorization === "object"
+    ? input.guardianAuthorization as { granted: boolean; certificateId?: string }
+    : undefined;
+  return { action, arguments: args, guardianAuthorization };
+}
+
+async function executeRegisteredMcp(
+  gateway: SelectedMcpGateway,
+  request: McpCapabilityRequest,
+  capabilityId: string,
+  serverId: SelectedMcpServerId,
+  defaultFloor: string,
+): Promise<McpCapabilityResult> {
+  const input = actionInput(request);
+  if (!input.action || !input.arguments) {
+    return {
+      requestExecutionId: request.requestExecutionId,
+      capabilityId,
+      status: "REJECTED",
+      error: "MCP capability requires a semantic action and object arguments",
+      findings: ["Malformed selected MCP capability request"],
+      durationMs: 0,
+    };
+  }
+
+  try {
+    const observation = await gateway.execute({
+      serverId,
+      action: input.action,
+      missionId: request.missionId,
+      jobId: request.jobId,
+      floorId: request.floorId ?? defaultFloor,
+      environment: request.environment ?? "production",
+      arguments: input.arguments,
+      guardianAuthorization: input.guardianAuthorization,
+    });
+    return {
+      requestExecutionId: request.requestExecutionId,
+      capabilityId,
+      status: observation.success ? "SUCCESS" : "FAILED",
+      findings: [...observation.verificationHints],
+      outputData: { observation },
+      guardianCertificateId: input.guardianAuthorization?.certificateId,
+      durationMs: observation.durationMs,
+    };
+  } catch (error) {
+    return {
+      requestExecutionId: request.requestExecutionId,
+      capabilityId,
+      status: "FAILED",
+      error: error instanceof Error ? error.message : String(error),
+      findings: ["Selected MCP gateway execution failed closed"],
+      durationMs: 0,
+    };
+  }
+}
+
+export function registerSelectedMcpCapabilities(
+  sink: CapabilityRegistrationSink,
+): void {
+  const config = readSelectedMcpConfig();
+  const gateway = new SelectedMcpGateway(config);
+
+  sink.register(
+    {
+      id: "mcp.playwright.research",
+      name: "Playwright MCP Research Gateway",
+      version: "1.0.0",
+      type: "RESEARCH",
+      targetAnomalies: ["RESEARCH_BROWSER_REQUIRED", "WEB_SOURCE_INSPECTION_REQUIRED", "BROWSER_VERIFICATION_REQUIRED"],
+      riskLevel: "MEDIUM",
+      maxRetries: 1,
+      timeoutMs: 60000,
+      requiresGuardianGate: false,
+      implementationStatus: "EXTERNAL",
+      isProductionRoutable: config.playwright.enabled,
+      executionClass: "PRODUCTION",
+      provider: "microsoft/playwright-mcp",
+      runtime: "browser",
+      licenseMetadata: { spdx: "Apache-2.0", copyleft: false, commercialPermitted: true },
+      provenance: { sourceRepo: "https://github.com/microsoft/playwright-mcp", adoptionMode: "ISOLATED_PROVIDER", documentedAt: "2026-10-01" },
+      policy: {
+        allowedRoles: ["SYSTEM", "ADMIN", "OVERSEER", "F00_ANALYST", "F01_STRATEGIST", "RESEARCHER"],
+        allowedFloors: ["floor00_analyst", "floor01_strategy"],
+        environments: ["development", "staging", "production", "test"],
+        networkAccess: "RESTRICTED",
+        dataAccess: "READ_ONLY",
+        secretRequirements: [],
+        securityClass: "RESTRICTED",
+        commercialUsageAllowed: true,
+        auditPolicy: "EVIDENCE_REQUIRED",
+      },
+      trainingEligibility: "ELIGIBLE",
+    },
+    async (request) =>
+      executeRegisteredMcp(gateway, request, "mcp.playwright.research", "playwright", "floor00_analyst"),
+  );
+
+  sink.register(
+    {
+      id: "mcp.playwright.interact",
+      name: "Playwright MCP Guarded Interaction Gateway",
+      version: "1.0.0",
+      type: "BROWSER",
+      targetAnomalies: ["BROWSER_INTERACTION_REQUIRED"],
+      riskLevel: "HIGH",
+      maxRetries: 1,
+      timeoutMs: 60000,
+      requiresGuardianGate: true,
+      implementationStatus: "EXTERNAL",
+      isProductionRoutable: config.playwright.enabled && config.playwright.allowInteraction,
+      executionClass: "PRODUCTION",
+      provider: "microsoft/playwright-mcp",
+      runtime: "browser",
+      licenseMetadata: { spdx: "Apache-2.0", copyleft: false, commercialPermitted: true },
+      provenance: { sourceRepo: "https://github.com/microsoft/playwright-mcp", adoptionMode: "ISOLATED_PROVIDER", documentedAt: "2026-10-01" },
+      policy: {
+        allowedRoles: ["SYSTEM", "ADMIN", "OVERSEER", "RESEARCHER"],
+        allowedFloors: ["floor00_analyst", "floor01_strategy"],
+        environments: ["development", "staging", "test"],
+        networkAccess: "RESTRICTED",
+        dataAccess: "READ_ONLY",
+        secretRequirements: [],
+        consentRequirements: ["GUARDIAN_CERTIFICATE"],
+        securityClass: "RESTRICTED",
+        commercialUsageAllowed: true,
+        auditPolicy: "NON_REPUDIATION",
+      },
+      trainingEligibility: "ELIGIBLE",
+    },
+    async (request) =>
+      executeRegisteredMcp(gateway, request, "mcp.playwright.interact", "playwright", "floor00_analyst"),
+  );
+
+  sink.register(
+    {
+      id: "mcp.comfyui.visual",
+      name: "ComfyUI MCP Visual Generation Gateway",
+      version: "1.0.0",
+      type: "VISUAL",
+      targetAnomalies: ["VISUAL_GENERATION_REQUIRED", "COMFY_WORKFLOW_FAILURE", "ASSET_GENERATION_FAILURE"],
+      riskLevel: "HIGH",
+      maxRetries: 2,
+      timeoutMs: 180000,
+      requiresGuardianGate: true,
+      implementationStatus: "EXTERNAL",
+      isProductionRoutable: config.comfyui.enabled && config.comfyui.licenseMode === "commercial",
+      executionClass: "PRODUCTION",
+      provider: "Comfy-Org/comfy-mcp",
+      runtime: "python",
+      costPerInvocationUsd: 0,
+      licenseMetadata: {
+        spdx: "AGPL-3.0-or-later OR LicenseRef-Comfy-Commercial",
+        copyleft: true,
+        commercialPermitted: config.comfyui.licenseMode === "commercial",
+      },
+      provenance: { sourceRepo: "https://github.com/Comfy-Org/comfy-mcp", adoptionMode: "ISOLATED_PROVIDER", documentedAt: "2026-10-01" },
+      policy: {
+        allowedRoles: ["SYSTEM", "ADMIN", "OVERSEER", "CREATOR", "MEDIA_SYNTHESIZER", "ASSET_REALIZER", "TIMELINE_COMPOSER", "RENDER_ROUTER"],
+        allowedFloors: ["floor03_asset_realization", "floor04_media_synthesis", "floor05_timeline_composition", "floor06_rendering"],
+        environments: ["development", "staging", "production", "test"],
+        networkAccess: "RESTRICTED",
+        dataAccess: "READ_WRITE",
+        secretRequirements: [],
+        securityClass: "RESTRICTED",
+        commercialUsageAllowed: config.comfyui.licenseMode === "commercial",
+        auditPolicy: "EVIDENCE_REQUIRED",
+      },
+      trainingEligibility: "ELIGIBLE",
+    },
+    async (request) =>
+      executeRegisteredMcp(gateway, request, "mcp.comfyui.visual", "comfyui", "floor03_asset_realization"),
+  );
+
+  sink.register(
+    {
+      id: "mcp.qdrant.memory-search",
+      name: "Qdrant MCP Memory Search (Derived ANN)",
+      version: "1.0.0",
+      type: "ANALYSIS",
+      targetAnomalies: ["MEMORY_RECALL_REQUIRED", "SEMANTIC_RETRIEVAL_REQUIRED"],
+      riskLevel: "LOW",
+      maxRetries: 2,
+      timeoutMs: 30000,
+      requiresGuardianGate: false,
+      implementationStatus: "EXTERNAL",
+      isProductionRoutable: config.qdrant.enabled,
+      executionClass: "PRODUCTION",
+      provider: "qdrant/mcp-server-qdrant",
+      runtime: "python",
+      licenseMetadata: { spdx: "Apache-2.0", copyleft: false, commercialPermitted: true },
+      provenance: { sourceRepo: "https://github.com/qdrant/mcp-server-qdrant", adoptionMode: "ISOLATED_PROVIDER", documentedAt: "2026-10-01" },
+      policy: {
+        allowedRoles: ["SYSTEM", "ADMIN", "OVERSEER", "F00_ANALYST", "F01_STRATEGIST", "CREATOR", "MEDIA_SYNTHESIZER", "ASSET_REALIZER", "TIMELINE_COMPOSER"],
+        allowedFloors: ["floor00_analyst", "floor01_strategy", "floor02_scripting", "floor03_asset_realization", "floor04_media_synthesis", "floor05_timeline_composition", "floor06_rendering"],
+        environments: ["development", "staging", "production", "test"],
+        networkAccess: "RESTRICTED",
+        dataAccess: "READ_ONLY",
+        secretRequirements: [],
+        securityClass: "RESTRICTED",
+        commercialUsageAllowed: true,
+        auditPolicy: "EVIDENCE_REQUIRED",
+      },
+      trainingEligibility: "ELIGIBLE",
+    },
+    async (request) =>
+      executeRegisteredMcp(gateway, request, "mcp.qdrant.memory-search", "qdrant", "floor00_analyst"),
+  );
+
+  sink.register(
+    {
+      id: "mcp.qdrant.memory-derived-write",
+      name: "Qdrant MCP Memory Derived Projection",
+      version: "1.0.0",
+      type: "ANALYSIS",
+      targetAnomalies: ["MEMORY_INDEX_REFRESH_REQUIRED"],
+      riskLevel: "MEDIUM",
+      maxRetries: 1,
+      timeoutMs: 30000,
+      requiresGuardianGate: true,
+      implementationStatus: "EXTERNAL",
+      isProductionRoutable: false,
+      executionClass: "PROTOTYPE",
+      provider: "qdrant/mcp-server-qdrant",
+      runtime: "python",
+      licenseMetadata: { spdx: "Apache-2.0", copyleft: false, commercialPermitted: true },
+      provenance: { sourceRepo: "https://github.com/qdrant/mcp-server-qdrant", adoptionMode: "ISOLATED_PROVIDER", documentedAt: "2026-10-01" },
+      policy: {
+        allowedRoles: ["SYSTEM", "ADMIN", "OVERSEER"],
+        allowedFloors: ["floor00_analyst", "floor01_strategy"],
+        environments: ["development", "staging", "test"],
+        networkAccess: "RESTRICTED",
+        dataAccess: "READ_WRITE",
+        secretRequirements: [],
+        consentRequirements: ["GUARDIAN_CERTIFICATE"],
+        securityClass: "RESTRICTED",
+        commercialUsageAllowed: true,
+        auditPolicy: "NON_REPUDIATION",
+      },
+      trainingEligibility: "PENDING_REVIEW",
+    },
+    async (request) =>
+      executeRegisteredMcp(gateway, request, "mcp.qdrant.memory-derived-write", "qdrant", "floor00_analyst"),
+  );
 }
