@@ -1,6 +1,6 @@
 # ShortForge / FactoryOS — MCP Architecture
 
-> **Status:** LOCKED DIRECTION / GOOGLE DRIVE MCP IMPLEMENTED (UNVERIFIED IN THIS COMMIT)
+> **Status:** LOCKED DIRECTION / SELECTED MCP FABRIC IMPLEMENTED
 > **Purpose:** Define the role of Model Context Protocol (MCP) integrations without creating a second authority plane.
 
 ## 1. MCP role
@@ -22,15 +22,24 @@ MCP access sits outside this authority chain unless a future decision explicitly
 
 ## 2. Essential MCP set
 
-The current minimum MCP set is intentionally small:
+The production MCP set is intentionally small:
 
 | MCP | Role | Status | Boundary |
 |---|---|---|---|
-| GitHub | Engineering source, code review, Devourer repository research | EXISTING | Development / governance |
-| Google Drive | Artifact/knowledge import-export and operator file management | IMPLEMENTED | Bounded storage integration |
-| Browser / DevTools MCP | F00 web research, diagnostics, browser-grounded inspection | PLANNED / OPTIONAL HOST | Sensor/research only |
+| GitHub | Engineering source, code review, Devourer research | EXISTING | Development / governance |
+| Google Drive | Bounded artifact/knowledge import-export | EXISTING | Storage integration |
+| Blender MCP | 3D asset/scene/render operations | EXISTING | Governed visual execution |
+| Playwright MCP | F00/F01 browser research and inspection | SELECTED / IMPLEMENTED | Scoped research sensor |
+| ComfyUI MCP | F03-F06 generative visual workflows | SELECTED / IMPLEMENTED | Isolated provider |
+| Qdrant MCP | Derived Memory Fabric ANN retrieval | SELECTED / IMPLEMENTED | Projection/index only |
 
-A fourth MCP is not automatically required. Add another MCP only when a concrete workflow cannot be served by the existing provider-adapter or internal subsystem.
+FFmpeg MCP, Filesystem MCP, Obsidian MCP, Remotion MCP and Docker MCP Gateway are deliberately not selected in this wave because their useful responsibilities are already covered by canonical ShortForge subsystems or broader infrastructure boundaries.
+
+### Selected MCP execution boundary
+
+Ascalon -> FGC/Action Graph -> Agent Execution Router -> CapabilityRegistry -> SelectedMcpGateway -> MCP -> result/evidence -> F07
+
+The model never gets unrestricted MCP tool selection.
 
 ## 3. Google Drive MCP
 
@@ -143,3 +152,15 @@ When evaluating a new MCP, classify it as:
 Prefer reusing an existing internal adapter when it already provides the needed production boundary.
 
 For any non-trivial MCP change, perform the complete .okf sweep first and consult relevant repository mappings and production-helper evidence.
+
+
+## 8. Selected MCP Fabric
+
+The detailed implementation is in apps/web/factoryos/core/mcp/.
+
+The selected gateway exposes:
+- Playwright: navigation, snapshot, find, guarded click.
+- ComfyUI: server info, template discovery, workflow validation, workflow run, image generation, output fetch.
+- Qdrant: derived-memory find and projection-only derived store.
+
+All selected MCP results remain untrusted until domain verification.
