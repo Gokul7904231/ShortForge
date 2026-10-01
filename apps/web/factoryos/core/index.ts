@@ -83,6 +83,8 @@ export * from "./comms/BlenderMcpAdapter";
 export * from "./mcp/McpContracts";
 export * from "./mcp/StdioMcpAdapter";
 export * from "./mcp/SelectedMcpGateway";
+export * from "./visual/ComfyTransformRecipes";
+export * from "./visual/ComfyVisualTransformEngine";
 export * from "./intelligence/visual/AscalonBlenderDecisionBridge";
 
 // Cognitive Operating Plane (Frontier v2)
