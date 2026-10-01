@@ -1526,3 +1526,37 @@ Ascalon admission remains evidence-gated: current runtime/ontology consistency, 
 Decision record: `.okf/decisions/ascalon-epistemic-optimization-20260929.md`
 
 The AER runtime now treats **cost per resolved uncertainty** as the primary optimization metric and exposes an explicit, deterministic Ascalon pre-call admission contract: `shouldInvokeAscalon`, `reasonCode`, `expectedValue`, `estimatedCostUnits`, and remaining budget. Deep Ascalon cognition remains advisory/shadow-only until CI, security, and outcome-replay evidence validates the optimization.
+
+
+## 35. Selected MCP Fabric — 2026-10-01
+
+Selected new MCPs:
+- Playwright MCP for F00/F01 web research and page-grounded inspection.
+- ComfyUI MCP for F03-F06 generative visual workflows.
+- Qdrant MCP for derived Memory Fabric ANN retrieval.
+
+Existing and retained:
+- Blender MCP.
+- Google Drive MCP.
+- GitHub engineering/research integration.
+
+Not selected in this wave:
+- FFmpeg MCP: duplicates canonical RenderFabric/FFmpegService.
+- Filesystem MCP: overly ambient compared with ShortForge's bounded workspace controls.
+- Obsidian MCP: knowledge projection already exists.
+- Remotion MCP: TimelineIR/Render Compiler already owns deterministic Remotion execution.
+- Docker MCP Gateway: deployment isolation, not a business capability.
+
+Security invariants:
+- no ambient MCP authority;
+- no model-selected arbitrary tool names;
+- Guardian/FGC/AEF remain the execution gates;
+- Qdrant is derived-only;
+- Comfy spending consent is not model-controlled;
+- browser navigation requires a configured hostname allowlist;
+- MCP output never equals F07 proof.
+
+Implementation:
+- apps/web/factoryos/core/mcp/McpContracts.ts
+- apps/web/factoryos/core/mcp/StdioMcpAdapter.ts
+- apps/web/factoryos/core/mcp/SelectedMcpGateway.ts
