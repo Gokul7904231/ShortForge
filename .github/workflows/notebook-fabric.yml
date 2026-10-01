@@ -1,0 +1,90 @@
+name: notebook-fabric
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/compute/notebooks/**"
+      - "apps/web/factoryos/tests/notebook-fabric.test.ts"
+      - "apps/web/scripts/verify-notebooks.ts"
+      - ".okf/compute/notebook-fabric.md"
+      - ".github/workflows/notebook-fabric.yml"
+      - ".env.notebooks.example"
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Optional live provider validation"
+        required: false
+        default: "NONE"
+        type: choice
+        options:
+          - NONE
+          - KAGGLE
+          - COLAB
+          - PAPERSPACE
+          - LIGHTNING
+          - HF_ZEROGPU
+      live:
+        description: "Explicitly allow external provider calls"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+      - name: Notebook contract tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/notebook-fabric.test.ts
+
+  live:
+    if: \${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Install Kaggle CLI
+        if: \${{ inputs.provider == 'KAGGLE' }}
+        run: python -m pip install --upgrade kaggle
+      - name: Install Lightning SDK
+        if: \${{ inputs.provider == 'LIGHTNING' }}
+        run: python -m pip install --upgrade lightning-sdk
+      - name: Export selected provider
+        env:
+          NOTEBOOK_PROVIDER: \${{ inputs.provider }}
+        run: echo "NOTEBOOK_PROVIDER=$NOTEBOOK_PROVIDER" >> "$GITHUB_ENV"
+      - name: Validate live notebook provider
+        env:
+          KAGGLE_USERNAME: \${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: \${{ secrets.KAGGLE_KEY }}
+          COLAB_ACCESS_TOKEN: \${{ secrets.COLAB_ACCESS_TOKEN }}
+          PAPERSPACE_API_KEY: \${{ secrets.PAPERSPACE_API_KEY }}
+          PAPERSPACE_TEMPLATE_ID: \${{ secrets.PAPERSPACE_TEMPLATE_ID }}
+          PAPERSPACE_MACHINE_TYPE: \${{ secrets.PAPERSPACE_MACHINE_TYPE }}
+          PAPERSPACE_REGION: \${{ secrets.PAPERSPACE_REGION }}
+          LIGHTNING_USER_ID: \${{ secrets.LIGHTNING_USER_ID }}
+          LIGHTNING_API_KEY: \${{ secrets.LIGHTNING_API_KEY }}
+          HF_ZEROGPU_SPACE: \${{ secrets.HF_ZEROGPU_SPACE }}
+          HF_ZEROGPU_API_NAME: \${{ secrets.HF_ZEROGPU_API_NAME }}
+          HF_TOKEN: \${{ secrets.HF_TOKEN }}
+        working-directory: apps/web
+        run: npm run factoryos:verify:notebooks
