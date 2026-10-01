@@ -44,9 +44,9 @@ export class RunPodV2ProviderControl
       canReadResource: true,
       canProvision: true,
       canTerminate: true,
-      canExecuteCommandByApi: false,
+      canExecuteCommandByApi: true,
       canReadFilesByApi: false,
-      canVerifyPhysicalRenderByApi: false,
+      canVerifyPhysicalRenderByApi: true,
     },
   };
 
@@ -324,6 +324,18 @@ export class RunPodV2ProviderControl
       );
     }
 
+    const outputPath = request.outputPath || "/tmp/shortforge-api-probe.mp4";
+    const marker = "SHORTFORGE_RENDER_PROBE=";
+    const wrappedCommand = [
+      "set -e",
+      request.renderCommand,
+      `test -s ${outputPath}`,
+      `SHA=\$(sha256sum ${outputPath} | awk '{print \$1}')`,
+      `BYTES=\$(stat -c '%s' ${outputPath})`,
+      `PROBE=\$(ffprobe -v error -show_format -show_streams -of json ${outputPath} | base64 -w0)`,
+      `echo "${marker}{\\\"sha256\\\":\\"${SHA}\\\",\\\"byteLength\\\":${BYTES},\\\"probeBase64\\\":\\"${PROBE}\\\"}"`,
+    ].join("; ");
+
     const idempotencyKey = `render-probe:${Date.now()}`;
     const provisioned = await this.provision({
       idempotencyKey,
@@ -335,51 +347,85 @@ export class RunPodV2ProviderControl
       memoryMb: request.memoryMb,
       diskGb: request.diskGb,
       region: offer.location?.datacenter,
-      command: request.renderCommand,
+      command: `bash -lc ${JSON.stringify(wrappedCommand)}`,
       maxDurationSeconds: Math.ceil(request.timeoutMs / 1000),
     });
 
-    let started = false;
-    let finalState: ProviderResource["state"] = provisioned.state;
+    let probePayload: any;
+    let lastResource: ProviderResource | undefined;
     try {
       const deadline = Date.now() + request.timeoutMs;
       while (Date.now() < deadline) {
-        const resource = await this.getResource(provisioned.reference.resourceId);
-        finalState = resource.state;
-        if (resource.state === "RUNNING" || resource.state === "READY") {
-          started = true;
-          break;
-        }
-        if (resource.state === "FAILED" || resource.state === "TERMINATED") break;
+        lastResource = await this.getResource(provisioned.reference.resourceId);
+        if (lastResource.state === "FAILED" || lastResource.state === "TERMINATED") break;
+
+        try {
+          const response = await fetch(
+            `https://api.runpod.io/v2/pods/${encodeURIComponent(provisioned.reference.resourceId)}/logs`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.RUNPOD_API_KEY || ""}`,
+                Accept: "text/event-stream, application/json, text/plain",
+              },
+              signal: AbortSignal.timeout(Math.min(10000, Math.max(1000, deadline - Date.now()))),
+            },
+          );
+          if (response.ok) {
+            const raw = await response.text();
+            const match = raw.match(new RegExp(`${marker}(\\{.*\\})`));
+            if (match) {
+              probePayload = JSON.parse(match[1]);
+              break;
+            }
+          }
+        } catch {}
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     } finally {
-      // Probes are disposable. Do not leave a billable Pod behind.
       try {
         await this.terminate({
           reference: provisioned.reference,
           wait: false,
-          reason: "ShortForge API render-launch probe complete",
+          reason: "ShortForge API render probe cleanup",
         });
+      } catch {}
+    }
+
+    const passed = Boolean(
+      probePayload?.sha256 &&
+      Number(probePayload?.byteLength) > 0 &&
+      probePayload?.probeBase64,
+    );
+
+    let mediaProbe: Record<string, unknown> | undefined;
+    if (probePayload?.probeBase64) {
+      try {
+        mediaProbe = JSON.parse(Buffer.from(probePayload.probeBase64, "base64").toString("utf8"));
       } catch {}
     }
 
     return {
       providerId: this.metadata.providerId,
       providerType: "RUNPOD",
-      verificationLevel: "RENDER_LAUNCH_VERIFIED",
-      passed: started,
+      verificationLevel: passed ? "PHYSICAL_RENDER_VERIFIED" : "RENDER_LAUNCH_VERIFIED",
+      passed,
       resourceId: provisioned.reference.resourceId,
+      artifactSha256: probePayload?.sha256,
+      artifactByteLength: probePayload?.byteLength,
+      mediaProbe,
       evidence: [
         "RunPod REST v2 returned a matching GPU catalog entry.",
-        "RunPod REST v2 accepted Pod creation and supplied the render command as container args.",
-        started
-          ? "The Pod reached RUNNING/READY within the probe timeout."
-          : `The Pod did not reach RUNNING/READY within ${request.timeoutMs}ms (last state: ${finalState}).`,
-        "Physical artifact verification remains outside the API-only control boundary.",
+        "RunPod REST v2 accepted Pod creation with the render command supplied as container args.",
+        lastResource
+          ? `Last observed Pod state: ${lastResource.state}.`
+          : "Pod state could not be observed.",
+        passed
+          ? "RunPod Pod logs contained provider-side proof that the render produced a non-empty artifact, SHA-256, byte length and ffprobe metadata."
+          : "RunPod Pod logs did not expose a completed render-proof marker before timeout.",
       ],
-      limitation:
-        "RENDER_LAUNCH_VERIFIED proves resource acquisition and configured container execution, not independently verified MP4 creation. Later worker/SSH execution evidence is required.",
+      limitation: passed
+        ? "The API proves physical rendering inside the Pod, but ShortForge has not yet independently downloaded and re-hashed the artifact. That remains the worker/F06 artifact-verification plane."
+        : "Physical render proof was not observed. Later worker/SSH evidence is required.",
     };
   }
 }
