@@ -62,6 +62,8 @@ export interface ComputeProviderDefinition {
 
 export interface ConnectionCreateInput {
   providerId: string;
+  providerFamily?: ComputeProviderFamily;
+  authMethod?: ComputeConnectionAuthMethod;
   displayName?: string;
   credentials: ComputeConnectionSecretBundle;
   metadata?: Record<string, string>;
