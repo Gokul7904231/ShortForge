@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonSystemCapabilities",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Authoritative machine-readable registry of executable capabilities in ShortForge",
   "capabilities": [
     {
@@ -291,6 +291,52 @@
       ],
       "executionBoundary": "LOCAL_COMFYUI_EXTERNAL_PROCESS",
       "verificationBoundary": "PHYSICAL_OUTPUT_HASH_AND_INSPECTION"
+    },
+    {
+      "capabilityId": "mcp.comfyui.transform",
+      "version": "1.0.0",
+      "name": "ComfyUI MCP Programmable Visual Transformation",
+      "floorId": "cross_floor_visual_execution",
+      "riskClass": "HIGH",
+      "allowedRoles": [
+        "OVERSEER",
+        "MEDIA_SYNTHESIZER",
+        "ASSET_REALIZER",
+        "TIMELINE_COMPOSER",
+        "RENDER_ROUTER"
+      ],
+      "requiresGuardianGate": true,
+      "timeoutMs": 300000,
+      "trainingEligible": true,
+      "provider": "Comfy-Org/comfy-mcp",
+      "sourceRepository": "https://github.com/Comfy-Org/comfy-mcp",
+      "semanticActions": [
+        "COMFY_SERVER_INFO",
+        "COMFY_VALIDATE_WORKFLOW",
+        "COMFY_UPLOAD_INPUT",
+        "COMFY_TRANSFORM_ASSET",
+        "COMFY_WAIT_JOB",
+        "COMFY_FETCH_TRANSFORM_OUTPUT"
+      ],
+      "executionBoundary": "RECIPE_BOUND_COMFYUI_WORKFLOW",
+      "transformationOperations": [
+        "UPSCALE_2X",
+        "IMG2IMG_RESTYLE",
+        "INPAINT",
+        "OUTPAINT_9_16",
+        "DETAIL_ENHANCE"
+      ],
+      "parentAssetImmutable": true,
+      "lineageRequired": [
+        "parentAssetId",
+        "parentSha256",
+        "recipeId",
+        "recipeVersion",
+        "parametersSha256",
+        "transformationId"
+      ],
+      "verificationBoundary": "PHYSICAL_OUTPUT_HASH_AND_INSPECTION",
+      "productionRequirement": "EXPLICIT_COMMERCIAL_COMFY_MCP_LICENSE_MODE"
     },
     {
       "capabilityId": "mcp.qdrant.memory-search",
