@@ -36,6 +36,10 @@ A notebook provider is never considered production-render eligible merely becaus
 
 * Colab runtime API access is beta/allowlisted.
 
+## Routing
+
+NotebookRouter applies capability constraints before selection. Under the strict no-card policy, only NO_CARD_STATED is admitted; NO_CARD_NOT_ESTABLISHED is excluded rather than guessed.
+
 ## Truthfulness rules
 
 - No-card classification is evidence-based. The model distinguishes NO_CARD_STATED from NO_CARD_NOT_ESTABLISHED.
