@@ -186,7 +186,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         state: "QUEUED",
         updatedAt: new Date().toISOString(),
         gpuType: accelerator,
-        gpuCount: 1,
+        gpuCount: accelerator.includes("T4") ? 2 : 1,
         providerMetadata: {
           workDir,
           outputDir,
