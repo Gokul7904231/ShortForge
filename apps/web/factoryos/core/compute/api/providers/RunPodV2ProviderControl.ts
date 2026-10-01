@@ -55,7 +55,10 @@ export class RunPodV2ProviderControl
   private readonly apiKey = process.env.RUNPOD_API_KEY;
 
   constructor() {
-    super(this.metadata.baseUrl, this.apiKey);
+    super(
+      process.env.RUNPOD_API_BASE_URL || "https://api.runpod.io/v2",
+      process.env.RUNPOD_API_KEY,
+    );
   }
 
   async validateCredentials(): Promise<CredentialValidationResult> {
@@ -407,7 +410,7 @@ export class RunPodV2ProviderControl
       `SHA=\$(sha256sum ${outputPath} | awk '{print \$1}')`,
       `BYTES=\$(stat -c '%s' ${outputPath})`,
       `PROBE=\$(ffprobe -v error -show_format -show_streams -of json ${outputPath} | base64 -w0)`,
-      `echo "${marker}{\\\"sha256\\\":\\"${SHA}\\\",\\\"byteLength\\\":${BYTES},\\\"probeBase64\\\":\\"${PROBE}\\\"}"`,
+      `echo "${marker}{\\\"sha256\\\":\\"\${SHA}\\\",\\\"byteLength\\\":\${BYTES},\\\"probeBase64\\\":\\"\${PROBE}\\\"}"`,
     ].join("; ");
 
     const idempotencyKey = `render-probe:${Date.now()}`;
