@@ -361,18 +361,12 @@ export class RunPodV2ProviderControl
         if (lastResource.state === "FAILED" || lastResource.state === "TERMINATED") break;
 
         try {
-          const response = await fetch(
-            `https://api.runpod.io/v2/pods/${encodeURIComponent(provisioned.reference.resourceId)}/logs`,
-            {
-              headers: {
-                Authorization: `Bearer ${process.env.RUNPOD_API_KEY || ""}`,
-                Accept: "text/event-stream, application/json, text/plain",
-              },
-              signal: AbortSignal.timeout(Math.min(10000, Math.max(1000, deadline - Date.now()))),
-            },
+          const raw = await this.readRunPodLogsUntilMarker(
+            provisioned.reference.resourceId,
+            marker,
+            Math.min(15000, Math.max(1000, deadline - Date.now())),
           );
-          if (response.ok) {
-            const raw = await response.text();
+          if (raw) {
             const match = raw.match(new RegExp(`${marker}(\\{.*\\})`));
             if (match) {
               probePayload = JSON.parse(match[1]);
@@ -429,4 +423,49 @@ export class RunPodV2ProviderControl
         : "Physical render proof was not observed. Later worker/SSH evidence is required.",
     };
   }
+  private async readRunPodLogsUntilMarker(
+    podId: string,
+    marker: string,
+    timeoutMs: number,
+  ): Promise<string> {
+    const response = await fetch(
+      `https://api.runpod.io/v2/pods/${encodeURIComponent(podId)}/logs`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.RUNPOD_API_KEY || ""}`,
+          Accept: "text/event-stream, application/json, text/plain",
+        },
+        signal: AbortSignal.timeout(timeoutMs),
+      },
+    );
+
+    const body = response.body;
+    if (!response.ok) {
+      throw new ProviderApiError(
+        `RunPod logs endpoint returned HTTP ${response.status}`,
+        { status: response.status, retryable: response.status >= 500, ambiguous: false },
+      );
+    }
+    if (!body) return await response.text();
+
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        if (buffer.includes(marker)) break;
+        // Bound memory even if a noisy container emits huge logs.
+        if (buffer.length > 2_000_000) {
+          buffer = buffer.slice(-1_000_000);
+        }
+      }
+    } finally {
+      try { await reader.cancel(); } catch {}
+    }
+    return buffer;
+  }
+
 }
