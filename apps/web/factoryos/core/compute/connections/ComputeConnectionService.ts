@@ -94,6 +94,8 @@ export class ComputeConnectionService {
 
     return computeConnectionStore.create(user.uid, {
       providerId: provider.providerId,
+      providerFamily: provider.providerFamily,
+      authMethod: provider.authMethod,
       displayName: input.displayName || provider.displayName,
       credentials,
       metadata: input.metadata,
