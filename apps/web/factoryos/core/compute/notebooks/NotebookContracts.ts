@@ -46,6 +46,7 @@ export interface NotebookCapabilities {
   canValidateCredentials: boolean;
   canProvision: boolean;
   canExecuteCode: boolean;
+  canInvokeHostedFunction: boolean;
   canReadOutputs: boolean;
   canReadLogs: boolean;
   canTerminate: boolean;
