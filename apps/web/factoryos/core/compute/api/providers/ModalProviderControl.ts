@@ -83,13 +83,9 @@ export class ModalProviderControl
     try {
       const ModalClient = modalModule().ModalClient;
       const modal = new ModalClient();
-      const listResult = await modal.sandboxes.list();
-      if (listResult && listResult[Symbol.asyncIterator]) {
-        const iterator = listResult[Symbol.asyncIterator]();
-        await iterator.next();
-      } else {
-        await Promise.resolve(listResult);
-      }
+      const listResult = modal.sandboxes.experimentalList();
+      const iterator = listResult[Symbol.asyncIterator]();
+      await iterator.next();
       return {
         configured: true,
         authenticated: true,
