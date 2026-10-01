@@ -364,7 +364,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     await runProcess(
       "kaggle",
       ["kernels", "delete", runtime.resourceId, "-y"],
-      { timeoutMs: 30_000 },
+      { timeoutMs: 30_000, env: { ...process.env, ...(credentials || {}) } },
     ).catch(() => undefined);
 
     return {
@@ -374,8 +374,8 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async reconcile(runtime: NotebookRuntime): Promise<NotebookReconciliationResult> {
-    const current = await this.getRuntime(runtime.resourceId);
+  async reconcile(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookReconciliationResult> {
+    const current = await this.getRuntime(runtime.resourceId, credentials);
     return {
       runtime: current,
       found: current.state !== "UNKNOWN",
