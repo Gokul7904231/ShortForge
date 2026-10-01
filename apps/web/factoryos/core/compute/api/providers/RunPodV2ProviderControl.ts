@@ -338,19 +338,48 @@ export class RunPodV2ProviderControl
       command: request.renderCommand,
       maxDurationSeconds: Math.ceil(request.timeoutMs / 1000),
     });
+
+    let started = false;
+    let finalState: ProviderResource["state"] = provisioned.state;
+    try {
+      const deadline = Date.now() + request.timeoutMs;
+      while (Date.now() < deadline) {
+        const resource = await this.getResource(provisioned.reference.resourceId);
+        finalState = resource.state;
+        if (resource.state === "RUNNING" || resource.state === "READY") {
+          started = true;
+          break;
+        }
+        if (resource.state === "FAILED" || resource.state === "TERMINATED") break;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    } finally {
+      // Probes are disposable. Do not leave a billable Pod behind.
+      try {
+        await this.terminate({
+          reference: provisioned.reference,
+          wait: false,
+          reason: "ShortForge API render-launch probe complete",
+        });
+      } catch {}
+    }
+
     return {
       providerId: this.metadata.providerId,
       providerType: "RUNPOD",
       verificationLevel: "RENDER_LAUNCH_VERIFIED",
-      passed: ["PROVISIONING", "RUNNING"].includes(provisioned.state),
+      passed: started,
       resourceId: provisioned.reference.resourceId,
       evidence: [
-        "RunPod REST v2 accepted a Pod creation request.",
-        "The render command was supplied as the Pod container args.",
-        "Physical artifact verification remains outside the documented control API surface used by this adapter.",
+        "RunPod REST v2 returned a matching GPU catalog entry.",
+        "RunPod REST v2 accepted Pod creation and supplied the render command as container args.",
+        started
+          ? "The Pod reached RUNNING/READY within the probe timeout."
+          : `The Pod did not reach RUNNING/READY within ${request.timeoutMs}ms (last state: ${finalState}).`,
+        "Physical artifact verification remains outside the API-only control boundary.",
       ],
       limitation:
-        "Full PHYSICAL_RENDER_VERIFIED proof requires worker/SSH/file/log access in a later plane; this provider remains API-control-only in this phase.",
+        "RENDER_LAUNCH_VERIFIED proves resource acquisition and configured container execution, not independently verified MP4 creation. Later worker/SSH execution evidence is required.",
     };
   }
 }
