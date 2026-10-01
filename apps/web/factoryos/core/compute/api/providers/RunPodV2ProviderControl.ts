@@ -251,6 +251,40 @@ export class RunPodV2ProviderControl
     };
   }
 
+  async reconcileProvision(
+    request: ProvisionRequest,
+    operation: import("../ProviderApiContracts").ProviderOperationRecord,
+  ): Promise<ProvisionAccepted | undefined> {
+    const response = await this.transport.request<any>({
+      method: "GET",
+      path: "/pods",
+      retryMode: "SAFE",
+    });
+    const rows = Array.isArray(response.data)
+      ? response.data
+      : response.data?.pods || response.data?.data || [];
+    const expectedName =
+      request.name || this.deterministicName("shortforge-api", request);
+    const match = rows.find((row: any) =>
+      String(row.name || "").trim() === expectedName &&
+      !["TERMINATED", "EXITED", "ERROR", "FAILED"].includes(
+        String(row.status || "").toUpperCase(),
+      ),
+    );
+    if (!match?.id) return undefined;
+
+    return {
+      operationId: operation.operationId,
+      reference: this.ref("RUNPOD", String(match.id), request.idempotencyKey, operation.operationId),
+      state: ["RUNNING", "READY"].includes(String(match.status || "").toUpperCase())
+        ? "READY"
+        : "PROVISIONING",
+      acceptedAt: operation.requestedAt,
+      reconciliationRequired: false,
+      rawResponse: match,
+    };
+  }
+
   async getResource(resourceId: string): Promise<ProviderResource> {
     const response = await this.transport.request<any>({
       method: "GET",
