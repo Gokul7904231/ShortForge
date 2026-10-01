@@ -226,7 +226,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       {
         method: "DELETE",
         headers: {
-          Authorization: "Bearer " + (process.env.COLAB_ACCESS_TOKEN || ""),
+          Authorization: "Bearer " + (credentials?.COLAB_ACCESS_TOKEN || process.env.COLAB_ACCESS_TOKEN || ""),
         },
       },
     );
