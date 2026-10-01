@@ -217,6 +217,56 @@ function actionInput(request: McpCapabilityRequest): { readonly action?: string;
   return { action, arguments: args, guardianAuthorization };
 }
 
+async function executeComfyTransformCapability(
+  gateway: SelectedMcpGateway,
+  request: McpCapabilityRequest,
+): Promise<McpCapabilityResult> {
+  const input = request.inputData as Record<string, unknown>;
+  const sourceAsset = input.sourceAsset;
+  const steps = input.steps;
+  const guardianCertificateId = typeof input.guardianCertificateId === "string" ? input.guardianCertificateId : "";
+  if (!sourceAsset || typeof sourceAsset !== "object" || !Array.isArray(steps) || !guardianCertificateId.trim()) {
+    return {
+      requestExecutionId: request.requestExecutionId,
+      capabilityId: "mcp.comfyui.transform",
+      status: "REJECTED",
+      error: "Comfy transform capability requires sourceAsset, steps, and guardianCertificateId",
+      durationMs: 0,
+    };
+  }
+  const { ComfyVisualTransformEngine } = await import("../visual/ComfyVisualTransformEngine");
+  try {
+    const result = await new ComfyVisualTransformEngine(gateway).transform({
+      missionId: request.missionId,
+      jobId: request.jobId,
+      floorId: (request.floorId ?? "floor04_media_synthesis") as
+        "floor04_media_synthesis" | "floor05_timeline_composition" | "floor06_rendering",
+      environment: request.environment ?? "production",
+      sourceAsset: sourceAsset as any,
+      steps: steps as any,
+      guardianCertificateId,
+    });
+    return {
+      requestExecutionId: request.requestExecutionId,
+      capabilityId: "mcp.comfyui.transform",
+      status: "SUCCESS",
+      findings: ["Comfy transformation completed; derived asset remains non-F07-truth until independent verification."],
+      outputData: result as any,
+      guardianCertificateId,
+      durationMs: 0,
+    };
+  } catch (error) {
+    return {
+      requestExecutionId: request.requestExecutionId,
+      capabilityId: "mcp.comfyui.transform",
+      status: "FAILED",
+      error: error instanceof Error ? error.message : String(error),
+      findings: ["Governed Comfy transform engine failed closed"],
+      durationMs: 0,
+    };
+  }
+}
+
 async function executeRegisteredMcp(
   gateway: SelectedMcpGateway,
   request: McpCapabilityRequest,
@@ -377,7 +427,7 @@ export function registerSelectedMcpCapabilities(
       },
       trainingEligibility: "ELIGIBLE",
     },
-    async (request) => executeRegisteredMcp(gateway, request, "mcp.comfyui.transform", "comfyui", "floor04_media_synthesis"),
+    async (request) => executeComfyTransformCapability(gateway, request),
   );
 
   sink.register(
