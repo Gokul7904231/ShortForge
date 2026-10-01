@@ -7,6 +7,7 @@ import type {
   NotebookProvisionResult,
   NotebookRuntime,
   NotebookCredentialValidation,
+  NotebookCredentialBundle,
 } from "./NotebookContracts";
 import { NotebookOperationJournal } from "./NotebookOperationJournal";
 
@@ -53,6 +54,7 @@ export class NotebookRegistry {
   async provision(
     type: NotebookProviderType,
     request: NotebookProvisionRequest,
+    credentials?: NotebookCredentialBundle,
   ): Promise<NotebookProvisionResult> {
     const adapter = this.require(type);
     const op = this.journal.start({
@@ -73,14 +75,14 @@ export class NotebookRegistry {
 
     if (op.resourceId && ["READY", "RUNNING", "QUEUED", "STARTING"].includes(op.state)) {
       return {
-        runtime: await adapter.getRuntime(op.resourceId),
+        runtime: await adapter.getRuntime(op.resourceId, credentials),
         reconciliationRequired: op.reconciliationRequired,
         evidence: ["Reused durable notebook provision operation " + op.operationId + "."],
       };
     }
 
     try {
-      const result = await adapter.provision(request);
+      const result = await adapter.provision(request, credentials);
       this.journal.transition(op.operationId, result.runtime.state, {
         resourceId: result.runtime.resourceId,
         reconciliationRequired: result.reconciliationRequired,
@@ -103,6 +105,7 @@ export class NotebookRegistry {
     type: NotebookProviderType,
     request: NotebookExecutionRequest,
     idempotencyKey = "execute:" + type + ":" + Date.now(),
+    credentials?: NotebookCredentialBundle,
   ): Promise<NotebookExecutionResult> {
     const adapter = this.require(type);
     const op = this.journal.start({
@@ -118,7 +121,7 @@ export class NotebookRegistry {
     });
 
     try {
-      const result = await adapter.execute(request);
+      const result = await adapter.execute(request, credentials);
       this.journal.transition(
         op.operationId,
         result.status === "SUCCEEDED"
@@ -148,7 +151,7 @@ export class NotebookRegistry {
     }
   }
 
-  async terminate(type: NotebookProviderType, runtime: NotebookRuntime): Promise<NotebookRuntime> {
+  async terminate(type: NotebookProviderType, runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const adapter = this.require(type);
     const op = this.journal.start({
       providerId: adapter.metadata.providerId,
@@ -163,7 +166,7 @@ export class NotebookRegistry {
       requestPayload: runtime,
     });
 
-    const terminated = await adapter.terminate(runtime);
+    const terminated = await adapter.terminate(runtime, credentials);
     this.journal.transition(op.operationId, terminated.state, {
       resourceId: terminated.resourceId,
     });
