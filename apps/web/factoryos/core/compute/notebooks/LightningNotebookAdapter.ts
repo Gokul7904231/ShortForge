@@ -50,10 +50,9 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       };
     }
 
-    const python = process.env.LIGHTNING_PYTHON || "python3";
     const probe = await runProcess(
-      python,
-      ["-c", "from lightning_sdk import Studio; print('SHORTFORGE_LIGHTNING_SDK_OK')"],
+      "lightning",
+      ["mmt", "list", "--all"],
       { timeoutMs: 30_000 },
     );
 
@@ -66,13 +65,13 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       checkedAt: new Date().toISOString(),
       evidence: [
         probe.exitCode === 0
-          ? "lightning-sdk import probe succeeded."
-          : probe.stderr || probe.stdout || "lightning-sdk is unavailable.",
+          ? "Lightning authenticated API call (mmt list --all) succeeded."
+          : probe.stderr || probe.stdout || "Lightning authentication check failed.",
       ],
       errorMessage:
         probe.exitCode === 0
           ? undefined
-          : "Lightning SDK environment is not ready.",
+          : "Lightning CLI authentication check failed.",
     };
   }
 
