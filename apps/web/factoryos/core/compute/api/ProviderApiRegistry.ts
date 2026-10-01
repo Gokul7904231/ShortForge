@@ -4,6 +4,7 @@ import type {
   CredentialValidationResult,
   OfferDiscoveryRequest,
   ProviderAccountContext,
+  ProviderApiMetadata,
   ProviderControlAdapter,
   ProviderQuota,
   ProviderResource,
@@ -118,6 +119,14 @@ export class ProviderApiRegistry {
     });
 
     if (operation.state !== "REQUESTED") {
+      if (
+        operation.state === "FAILED" ||
+        operation.state === "TERMINATED"
+      ) {
+        throw new Error(
+          `PROVISION_IDEMPOTENCY_KEY_ALREADY_COMPLETED: ${operation.operationId}`,
+        );
+      }
       if (operation.externalResourceId) {
         return {
           operationId: operation.operationId,
@@ -196,6 +205,21 @@ export class ProviderApiRegistry {
         },
       };
     } catch (error: any) {
+      // DELETE is semantically idempotent: an already-absent resource is
+      // considered terminated rather than a failed destructive mutation.
+      if (error?.status === 404 && operation.operation === "TERMINATE") {
+        this.journal.transition(operation.operationId, "TERMINATED", {
+          completedAt: new Date().toISOString(),
+          reconciliationRequired: false,
+        });
+        return {
+          operationId: operation.operationId,
+          reference: request.reference,
+          state: "TERMINATED",
+          completedAt: new Date().toISOString(),
+          reconciliationRequired: false,
+        };
+      }
       const ambiguous = error instanceof ProviderApiError && error.ambiguous;
       this.journal.transition(
         operation.operationId,
