@@ -12,3 +12,5 @@ export * from "./providers/GitHubActionsComputeProvider";
 export * from "./providers/PersistentWorkerComputeProvider";
 export * from "./router/ComputeRouter";
 export * from "./gateway/ComputeGateway";
+
+export * from "./api";
