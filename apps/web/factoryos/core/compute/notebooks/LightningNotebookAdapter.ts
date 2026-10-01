@@ -7,6 +7,7 @@ import type {
   NotebookProvisionRequest,
   NotebookProvisionResult,
   NotebookRuntime,
+  NotebookCredentialBundle,
 } from "./NotebookContracts";
 import { runProcess } from "./NotebookUtils";
 
@@ -34,9 +35,10 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     gpuTypes: ["T4", "A10G", "V100", "A100"],
   };
 
-  async validateCredentials(): Promise<NotebookCredentialValidation> {
+  async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
+    const env = { ...process.env, ...(credentials || {}) };
     const requiredKeys = ["LIGHTNING_USER_ID", "LIGHTNING_API_KEY"];
-    const missingKeys = requiredKeys.filter((key) => !process.env[key]);
+    const missingKeys = requiredKeys.filter((key) => !env[key]);
 
     if (missingKeys.length) {
       return {
@@ -53,7 +55,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     const probe = await runProcess(
       "lightning",
       ["mmt", "list", "--all"],
-      { timeoutMs: 30_000 },
+      { timeoutMs: 30_000, env },
     );
 
     return {
@@ -75,8 +77,8 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async provision(request: NotebookProvisionRequest): Promise<NotebookProvisionResult> {
-    const validation = await this.validateCredentials();
+  async provision(request: NotebookProvisionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookProvisionResult> {
+    const validation = await this.validateCredentials(credentials);
     if (!validation.authenticated) {
       throw new Error(
         "LIGHTNING_PROVIDER_BLOCKED: SDK, credentials, or account configuration unavailable.",
@@ -84,8 +86,8 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     }
 
     const studio = request.name;
-    const machine = request.gpuType || process.env.LIGHTNING_MACHINE || "T4";
-    const python = process.env.LIGHTNING_PYTHON || "python3";
+    const machine = request.gpuType || ({ ...process.env, ...(credentials || {}) }).LIGHTNING_MACHINE || "T4";
+    const python = ({ ...process.env, ...(credentials || {}) }).LIGHTNING_PYTHON || "python3";
 
     const script = [
       "from lightning_sdk import Studio, Machine",
@@ -99,7 +101,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     const result = await runProcess(
       python,
       ["-c", script],
-      { timeoutMs: request.timeoutMs || 120_000 },
+      { timeoutMs: request.timeoutMs || 120_000, env: { ...process.env, ...(credentials || {}) } },
     );
 
     if (result.exitCode !== 0) {
@@ -125,7 +127,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async getRuntime(resourceId: string): Promise<NotebookRuntime> {
+  async getRuntime(resourceId: string, _credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     return {
       providerId: this.metadata.providerId,
       providerType: "LIGHTNING",
@@ -139,11 +141,11 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async execute(request: NotebookExecutionRequest): Promise<NotebookExecutionResult> {
+  async execute(request: NotebookExecutionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
     const runtime =
       request.runtime ||
       (request.provision
-        ? (await this.provision(request.provision)).runtime
+        ? (await this.provision(request.provision, credentials)).runtime
         : undefined);
 
     if (!runtime) {
@@ -173,7 +175,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     const result = await runProcess(
       python,
       ["-c", script],
-      { timeoutMs: request.timeoutMs },
+      { timeoutMs: request.timeoutMs, env: { ...process.env, ...(credentials || {}) } },
     );
 
     if (result.exitCode !== 0) {
@@ -205,14 +207,14 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async terminate(runtime: NotebookRuntime): Promise<NotebookRuntime> {
+  async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const python = process.env.LIGHTNING_PYTHON || "python3";
     const script =
       "from lightning_sdk import Studio; Studio(" +
       JSON.stringify(runtime.resourceId) +
       ").stop(); print('SHORTFORGE_LIGHTNING_STUDIO_STOPPED')";
 
-    await runProcess(python, ["-c", script], { timeoutMs: 60_000 }).catch(
+    await runProcess(python, ["-c", script], { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } }).catch(
       () => undefined,
     );
 
