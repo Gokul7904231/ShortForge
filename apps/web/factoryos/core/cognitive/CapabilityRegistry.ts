@@ -15,6 +15,7 @@ import { VoiceFabric } from "../voice/VoiceFabric";
 import { RenderFabric } from "../fabric/RenderFabric";
 import { ReachSubsystem } from "../research/ReachSubsystem";
 import { BlenderMcpAdapter } from "../comms/BlenderMcpAdapter";
+import { registerSelectedMcpCapabilities } from "../mcp/SelectedMcpGateway";
 
 export type CapabilityHandler<T = Record<string, unknown>, R = Record<string, unknown>> = (
   req: CapabilityExecutionRequest<T>
@@ -28,6 +29,7 @@ export class CapabilityRegistry {
 
   constructor() {
     this.registerDefaults();
+    registerSelectedMcpCapabilities(this);
   }
 
   public static getInstance(): CapabilityRegistry {
