@@ -20,7 +20,8 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
     capabilities: {
       canValidateCredentials: false,
       canProvision: false,
-      canExecuteCode: true,
+      canExecuteCode: false,
+      canInvokeHostedFunction: true,
       canReadOutputs: true,
       canReadLogs: false,
       canTerminate: false,
@@ -29,7 +30,6 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
       productionWorkerEligible: false,
       note: "ZeroGPU is a shared function-execution substrate for Spaces, not a notebook VM.",
     },
-    maxSessionSeconds: 60,
     gpuTypes: ["RTX Pro 6000 Blackwell"],
   };
 
@@ -216,7 +216,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
         stdout: complete ? complete[1] : streamText,
         evidence: [
           "Gradio Space API call completed.",
-          "Execution used the ZeroGPU shared-function model.",
+          "Execution invoked a hosted ZeroGPU function; it did not execute arbitrary ShortForge code on a generic VM.",
         ],
         limitation:
           "ZeroGPU does not expose a generic notebook filesystem/VM for ShortForge artifact ownership.",
