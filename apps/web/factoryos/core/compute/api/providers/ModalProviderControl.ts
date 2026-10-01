@@ -173,7 +173,7 @@ export class ModalProviderControl
         : ["bash", "-lc", request.command]
       : ["sleep", "infinity"];
 
-    const params: Record<string, unknown> = {
+    const params: any = {
       command,
       timeoutMs: Math.max(1000, (request.maxDurationSeconds || 3600) * 1000),
       ...(request.gpuType || request.offerId
@@ -265,9 +265,6 @@ export class ModalProviderControl
     const modal = new ModalClient();
     const app = await modal.apps.fromName(this.appName, { createIfMissing: true });
     const image = modal.images.fromRegistry(request.image);
-    const command = Array.isArray(request.renderCommand)
-      ? request.renderCommand
-      : ["bash", "-lc", request.renderCommand];
     const outputPath = request.outputPath || "/tmp/shortforge-api-probe.mp4";
     const verifyCommand = [
       "bash",
