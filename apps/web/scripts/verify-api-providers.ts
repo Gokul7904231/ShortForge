@@ -57,10 +57,6 @@ async function main(): Promise<void> {
   if (!providerArg) {
     throw new Error("SHORTFORGE_API_PROVIDER is required in live probe mode.");
   }
-  if (!process.env.SHORTFORGE_RENDER_PROBE_IMAGE) {
-    throw new Error("SHORTFORGE_RENDER_PROBE_IMAGE is required in live probe mode.");
-  }
-
   const adapter = registry.get(providerArg);
   if (!adapter) throw new Error(`Unknown API provider: ${providerArg}`);
   if (!adapter.renderProbe) {
@@ -72,8 +68,18 @@ async function main(): Promise<void> {
     throw new Error(`${providerArg} is not authenticated; refusing live provisioning.`);
   }
 
+  if (
+    providerArg !== "PAPERSPACE" &&
+    !process.env.SHORTFORGE_RENDER_PROBE_IMAGE
+  ) {
+    throw new Error("SHORTFORGE_RENDER_PROBE_IMAGE is required for this provider.");
+  }
+  if (providerArg === "PAPERSPACE" && !process.env.PAPERSPACE_TEMPLATE_ID) {
+    throw new Error("PAPERSPACE_TEMPLATE_ID is required for a Paperspace live render probe.");
+  }
+
   const result = await adapter.renderProbe({
-    image: process.env.SHORTFORGE_RENDER_PROBE_IMAGE,
+    image: process.env.SHORTFORGE_RENDER_PROBE_IMAGE || "paperspace-template-controlled",
     gpuType: process.env.SHORTFORGE_RENDER_PROBE_GPU,
     gpuCount: Number(process.env.SHORTFORGE_RENDER_PROBE_GPU_COUNT || 1),
     cpuCores: Number(process.env.SHORTFORGE_RENDER_PROBE_CPU || 2),
