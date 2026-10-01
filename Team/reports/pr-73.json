@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR73-Notebook-Fabric-V1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/api-provider-fabric-20261001",
+  "headRef": "feat/notebook-fabric-v1-clean-20261001",
+  "objective": "Cleanly add the Notebook Fabric to the current API-provider base without carrying divergent history.",
+  "classification": "new capability",
+  "productBoundary": {
+    "basicUsers": [
+      "LOCAL_RENDER",
+      "NOTEBOOK"
+    ],
+    "admins": [
+      "LOCAL_RENDER",
+      "NOTEBOOK",
+      "SANDBOX",
+      "API_GPU"
+    ],
+    "selfHostedSandbox": "OUT_OF_SCOPE_V1"
+  },
+  "changes": [
+    "Kaggle, Colab, Paperspace, Lightning, HF ZeroGPU adapters",
+    "NotebookRouter/Registry/OperationJournal/contracts",
+    "Credential-free operation journal and per-call credential injection",
+    "Contract tests and manual-only live validation",
+    "Notebook-to-worker authority boundary and artifact verification"
+  ],
+  "security": {
+    "status": "PASS_BY_DESIGN",
+    "notes": [
+      "No provider secrets committed.",
+      "No raw credentials in NotebookOperationJournal.",
+      "Notebook execution does not grant F06 worker authority."
+    ]
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/notebooks",
+    "apps/web/factoryos/tests/notebook-fabric.test.ts",
+    ".github/workflows/notebook-fabric.yml",
+    ".okf/compute/notebook-fabric.md"
+  ],
+  "verificationPlan": [
+    "FactoryOS typecheck",
+    "Notebook contract tests",
+    "Team Change Gate",
+    "Existing floor validation lanes",
+    "Live provider validation only with explicit user-owned credentials"
+  ],
+  "disposition": "BLOCKED_UNTIL_CI",
+  "notes": [
+    "Clean replacement for superseded PR #70 and divergent PR #71."
+  ]
+}
