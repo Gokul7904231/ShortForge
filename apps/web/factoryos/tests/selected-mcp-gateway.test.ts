@@ -46,7 +46,7 @@ describe("Selected MCP Fabric policy", () => {
       information: "derived memory candidate",
       metadata: { memoryId: "mem_001", evidenceRefs: ["ev_001"] },
     }, "shortforge-derived-memory");
-    expect(sanitized.collection_name).toBe("shortforge-derived-memory");
+    expect(sanitized.collection_name).toBeUndefined();
     expect((sanitized.metadata as Record<string, unknown>).projectionOnly).toBe(true);
     expect((sanitized.metadata as Record<string, unknown>).canonicalAuthority).toBe("memory-fabric");
 
