@@ -124,12 +124,9 @@ export class VastProviderControl
     };
     if (request.gpuType) payload.gpu_name = request.gpuType;
     if (request.gpuCount) payload.num_gpus = request.gpuCount;
-    if (request.region) payload.geolocation = request.region;
-    if (request.regions?.length) payload.geolocation = request.regions;
-    if (request.maxHourlyPrice !== undefined) payload.dph_total = { max: request.maxHourlyPrice };
-    if (request.minVramMb !== undefined) payload.gpu_ram = { min: request.minVramMb / 1024 };
-    if (request.minCpuCores !== undefined) payload.cpu_cores = { min: request.minCpuCores };
-    if (request.minMemoryMb !== undefined) payload.cpu_ram = { min: request.minMemoryMb / 1024 };
+    // Keep the provider request limited to documented, portable offer filters.
+    // Additional resource constraints are applied after normalization so an API
+    // schema change in a marketplace filter cannot break discovery.
 
     const response = await this.transport.request<any>({
       method: "POST",
@@ -187,7 +184,17 @@ export class VastProviderControl
         },
         providerMetadata: row,
       } satisfies ComputeOffer;
-    }).filter((offer: ComputeOffer) => Boolean(offer.offerId));
+    })
+    .filter((offer: ComputeOffer) => {
+      if (!offer.offerId) return false;
+      if (request.maxHourlyPrice !== undefined && (offer.pricing?.hourly ?? Infinity) > request.maxHourlyPrice) return false;
+      if (request.minVramMb !== undefined && (offer.accelerator?.vramMb ?? 0) < request.minVramMb) return false;
+      if (request.minCpuCores !== undefined && (offer.compute.cpuCores ?? 0) < request.minCpuCores) return false;
+      if (request.minMemoryMb !== undefined && (offer.compute.memoryMb ?? 0) < request.minMemoryMb) return false;
+      if (request.region && String(offer.location?.region || "").toLowerCase() !== request.region.toLowerCase()) return false;
+      if (request.regions?.length && !request.regions.some((region) => String(offer.location?.region || "").toLowerCase() === region.toLowerCase())) return false;
+      return true;
+    });
   }
 
   async provision(request: ProvisionRequest): Promise<ProvisionAccepted> {
