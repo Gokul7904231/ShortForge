@@ -68,6 +68,8 @@ export interface NotebookProviderMetadata {
   gpuTypes?: string[];
 }
 
+export type NotebookCredentialBundle = Readonly<Record<string, string>>;
+
 export interface NotebookCredentialValidation {
   configured: boolean;
   authenticated: boolean;
@@ -152,10 +154,10 @@ export interface NotebookReconciliationResult {
 
 export interface NotebookProviderAdapter {
   readonly metadata: NotebookProviderMetadata;
-  validateCredentials(): Promise<NotebookCredentialValidation>;
-  provision(request: NotebookProvisionRequest): Promise<NotebookProvisionResult>;
-  getRuntime(resourceId: string): Promise<NotebookRuntime>;
-  execute(request: NotebookExecutionRequest): Promise<NotebookExecutionResult>;
-  terminate(runtime: NotebookRuntime): Promise<NotebookRuntime>;
-  reconcile?(runtime: NotebookRuntime): Promise<NotebookReconciliationResult>;
+  validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation>;
+  provision(request: NotebookProvisionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookProvisionResult>;
+  getRuntime(resourceId: string, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime>;
+  execute(request: NotebookExecutionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult>;
+  terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime>;
+  reconcile?(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookReconciliationResult>;
 }
