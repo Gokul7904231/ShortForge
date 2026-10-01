@@ -8,6 +8,7 @@ import type {
   NotebookProvisionRequest,
   NotebookProvisionResult,
   NotebookRuntime,
+  NotebookCredentialBundle,
 } from "./NotebookContracts";
 
 const BASE = "https://colaboratory.googleapis.com";
@@ -37,9 +38,9 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     },
   };
 
-  async validateCredentials(): Promise<NotebookCredentialValidation> {
+  async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
     const requiredKeys = ["COLAB_ACCESS_TOKEN"];
-    const token = process.env.COLAB_ACCESS_TOKEN;
+    const token = credentials?.COLAB_ACCESS_TOKEN || process.env.COLAB_ACCESS_TOKEN;
 
     if (!token) {
       return {
@@ -88,8 +89,8 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     }
   }
 
-  async provision(request: NotebookProvisionRequest): Promise<NotebookProvisionResult> {
-    const validation = await this.validateCredentials();
+  async provision(request: NotebookProvisionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookProvisionResult> {
+    const validation = await this.validateCredentials(credentials);
     if (!validation.authenticated) {
       throw new Error(
         "COLAB_PROVIDER_BLOCKED: credential or API allowlist unavailable.",
@@ -116,7 +117,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       {
         method: "POST",
         headers: {
-          Authorization: "Bearer " + process.env.COLAB_ACCESS_TOKEN,
+          Authorization: "Bearer " + (credentials?.COLAB_ACCESS_TOKEN || process.env.COLAB_ACCESS_TOKEN),
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ runtimeSpec }),
@@ -140,6 +141,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     const completed = await this.waitOperation(
       String(operation.name),
       request.timeoutMs || 120_000,
+      credentials,
     );
 
     if (!completed?.response?.name) {
@@ -159,12 +161,12 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async getRuntime(resourceId: string): Promise<NotebookRuntime> {
+  async getRuntime(resourceId: string, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const response = await fetch(
       BASE + "/v1beta/runtimes/" + encodeURIComponent(resourceId),
       {
         headers: {
-          Authorization: "Bearer " + (process.env.COLAB_ACCESS_TOKEN || ""),
+          Authorization: "Bearer " + (credentials?.COLAB_ACCESS_TOKEN || process.env.COLAB_ACCESS_TOKEN || ""),
         },
       },
     );
@@ -204,7 +206,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async execute(_request: NotebookExecutionRequest): Promise<NotebookExecutionResult> {
+  async execute(_request: NotebookExecutionRequest, _credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
     return {
       providerType: "COLAB",
       verificationLevel: "CONTROL_PLANE_VERIFIED",
@@ -218,7 +220,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async terminate(runtime: NotebookRuntime): Promise<NotebookRuntime> {
+  async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const response = await fetch(
       BASE + "/v1beta/runtimes/" + encodeURIComponent(runtime.resourceId),
       {
@@ -240,7 +242,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  private async waitOperation(name: string, timeoutMs: number): Promise<any> {
+  private async waitOperation(name: string, timeoutMs: number, credentials?: NotebookCredentialBundle): Promise<any> {
     const started = Date.now();
 
     while (Date.now() - started < timeoutMs) {
