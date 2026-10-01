@@ -469,6 +469,8 @@ print("SHORTFORGE_RENDER_PROBE="+json.dumps(result, separators=(",",":")))
       } catch {}
     }
 
+  }
+
   private async waitForReady(resourceId: string, timeoutMs: number): Promise<boolean> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
