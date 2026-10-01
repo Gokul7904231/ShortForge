@@ -14,3 +14,5 @@ export * from "./router/ComputeRouter";
 export * from "./gateway/ComputeGateway";
 
 export * from "./api";
+
+export * from "./notebooks";
