@@ -22,8 +22,8 @@ on:
         required: false
         default: ""
       render_gpu:
-        description: "Provider GPU type/id used by the live probe"
-        required: false
+        description: "Provider GPU type/id/machine type used by the live probe"
+        required: true
         default: ""
       render_command:
         description: "Bounded render command; output should be the default /tmp/shortforge-api-probe.mp4"
@@ -75,6 +75,8 @@ jobs:
       DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
       PAPERSPACE_API_KEY: ${{ secrets.PAPERSPACE_API_KEY }}
       PAPERSPACE_TEMPLATE_ID: ${{ secrets.PAPERSPACE_TEMPLATE_ID }}
+      PAPERSPACE_MACHINE_TYPES: ${{ secrets.PAPERSPACE_MACHINE_TYPES }}
+      PAPERSPACE_REGIONS: ${{ secrets.PAPERSPACE_REGIONS }}
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       SHORTFORGE_LIVE_API_PROBE: "1"
