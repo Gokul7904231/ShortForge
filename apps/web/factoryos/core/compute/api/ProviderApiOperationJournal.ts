@@ -66,11 +66,21 @@ export class ProviderApiOperationJournal {
   }
 
   start(request: StartOperationRequest): ProviderOperationRecord {
+    const requestHash = createHash("sha256")
+      .update(JSON.stringify(request.requestPayload))
+      .digest("hex");
     const existing = this.findByIdempotencyKey(
       request.providerId,
       request.idempotencyKey,
     );
-    if (existing) return existing;
+    if (existing) {
+      if (existing.requestHash !== requestHash) {
+        throw new Error(
+          `IDEMPOTENCY_KEY_REUSE_CONFLICT: ${request.providerId}:${request.idempotencyKey}`,
+        );
+      }
+      return existing;
+    }
 
     const record: ProviderOperationRecord = {
       operationId: `pop_${randomUUID().replace(/-/g, "").slice(0, 20)}`,
@@ -81,9 +91,7 @@ export class ProviderApiOperationJournal {
       operation: request.operation,
       state: "REQUESTED",
       idempotencyKey: request.idempotencyKey,
-      requestHash: createHash("sha256")
-        .update(JSON.stringify(request.requestPayload))
-        .digest("hex"),
+      requestHash,
       attempt: 1,
       requestedAt: new Date().toISOString(),
       expiresAt: request.expiresAt,
