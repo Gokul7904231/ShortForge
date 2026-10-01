@@ -556,3 +556,14 @@ The reference artifact is evidence consumed by the F05/F06 contract; it is not t
 `provider receipt → physical SHA-256/size → ffprobe → FFmpeg decode smoke → F06 completion`
 
 Ascalon/SCL may recommend a provider or failover route from observed evidence, but it cannot grant `CAP_RENDER_DISPATCH`, mark the artifact verified, or convert a provider receipt into a final success claim.
+
+
+Selected MCP capability grants:
+- CAP_MCP_PLAYWRIGHT_RESEARCH
+- CAP_MCP_PLAYWRIGHT_INTERACT
+- CAP_MCP_COMFY_READ
+- CAP_MCP_COMFY_EXECUTE
+- CAP_MCP_QDRANT_READ
+- CAP_MCP_QDRANT_DERIVED_WRITE
+
+These remain explicit session/task capabilities. No worker receives them by default; F07 never delegates release authority to an MCP.
