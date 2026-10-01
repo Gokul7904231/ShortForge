@@ -217,7 +217,7 @@ export class ComfyVisualTransformEngine {
         jobId: request.jobId,
         floorId: request.floorId,
         environment: request.environment,
-        arguments: { workflow_path: workflowPath, wait: false },
+        arguments: { workflow_path: workflowPath, recipe_id: recipe.recipeId, workflow_sha256: workflowDigest, wait: false },
         guardianAuthorization: { granted: true, certificateId: request.guardianCertificateId }
       });
       if (!run.success) throw new Error("comfy_transform_execution_failed");
