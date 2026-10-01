@@ -61,7 +61,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
         {
           headers: {
             ...((credentials?.HF_TOKEN || process.env.HF_TOKEN)
-              ? { Authorization: "Bearer " + process.env.HF_TOKEN }
+              ? { Authorization: "Bearer " + (credentials?.HF_TOKEN || process.env.HF_TOKEN) }
               : {}),
           },
         },
@@ -116,7 +116,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
   }
 
   async execute(request: NotebookExecutionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
-    const space = process.env.HF_ZEROGPU_SPACE;
+    const space = credentials?.HF_ZEROGPU_SPACE || process.env.HF_ZEROGPU_SPACE;
     const apiName = (credentials?.HF_ZEROGPU_API_NAME || process.env.HF_ZEROGPU_API_NAME);
 
     if (!space || !apiName) {
