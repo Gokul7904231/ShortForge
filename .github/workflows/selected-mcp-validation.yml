@@ -4,10 +4,17 @@ on:
   pull_request:
     paths:
       - "apps/web/factoryos/core/mcp/**"
+      - "apps/web/factoryos/core/visual/**"
+      - "training/ascalon/ontology/capabilities.json"
+      - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
       - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
       - "apps/web/factoryos/core/index.ts"
       - "apps/web/factoryos/tests/selected-mcp-gateway.test.ts"
+      - "apps/web/factoryos/tests/comfy-visual-transform.test.ts"
+      - "apps/web/factoryos/tests/comfy-visual-transform.test.ts"
       - "apps/web/.env.selected-mcp.example"
+      - "training/ascalon/ontology/capabilities.json"
+      - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
       - "docs/operations/selected-mcp-fabric.md"
       - ".okf/intelligence/mcp-architecture.md"
       - ".okf/security/mcp-permissions.md"
@@ -17,6 +24,7 @@ on:
     branches: [main, "feat/**", "fix/**"]
     paths:
       - "apps/web/factoryos/core/mcp/**"
+      - "apps/web/factoryos/core/visual/**"
       - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
       - "apps/web/factoryos/core/index.ts"
       - "apps/web/factoryos/tests/selected-mcp-gateway.test.ts"
@@ -39,10 +47,12 @@ jobs:
       - name: FactoryOS typecheck
         run: npm run factoryos:typecheck
       - name: Selected MCP policy tests
-        run: npx vitest run factoryos/tests/selected-mcp-gateway.test.ts --config vitest.config.ts
+        run: npx vitest run factoryos/tests/selected-mcp-gateway.test.ts factoryos/tests/comfy-visual-transform.test.ts --config vitest.config.ts
       - name: Policy text checks
         shell: bash
         run: |
           grep -q "MCP is not ambient authority" ../../.okf/security/mcp-permissions.md
           grep -q "FFmpeg MCP" ../../.okf/intelligence/mcp-architecture.md
           grep -q "verification-required" ../../docs/operations/selected-mcp-fabric.md
+          grep -q "TRANSFORM_VISUAL_ASSET" ../../.okf/intelligence/mcp-architecture.md
+          grep -q "recipe-bound" ../../docs/operations/selected-mcp-fabric.md
