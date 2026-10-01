@@ -211,6 +211,43 @@ export class DaytonaProviderControl
     };
   }
 
+  async reconcileProvision(
+    request: ProvisionRequest,
+    operation: import("../ProviderApiContracts").ProviderOperationRecord,
+  ): Promise<ProvisionAccepted | undefined> {
+    const response = await this.transport.request<any>({
+      method: "GET",
+      path: "/sandbox",
+      retryMode: "SAFE",
+    });
+    const rows = Array.isArray(response.data)
+      ? response.data
+      : response.data?.items || response.data?.sandboxes || response.data?.data || [];
+    const expectedName =
+      request.name || this.deterministicName("shortforge-api", request);
+    const match = rows.find((row: any) =>
+      String(row.name || "").trim() === expectedName &&
+      !["TERMINATED", "DELETED", "ERROR", "FAILED"].includes(
+        String(row.state || row.status || row.lifecycleState || "").toUpperCase(),
+      ),
+    );
+    if (!match?.id && !match?.sandboxId) return undefined;
+    const resourceId = String(match.id || match.sandboxId);
+
+    return {
+      operationId: operation.operationId,
+      reference: this.ref("DAYTONA", resourceId, request.idempotencyKey, operation.operationId),
+      state: ["READY", "RUNNING"].includes(
+        String(match.state || match.status || "").toUpperCase(),
+      )
+        ? "READY"
+        : "PROVISIONING",
+      acceptedAt: operation.requestedAt,
+      reconciliationRequired: false,
+      rawResponse: match,
+    };
+  }
+
   async getResource(resourceId: string): Promise<ProviderResource> {
     const response = await this.transport.request<any>({
       method: "GET",
