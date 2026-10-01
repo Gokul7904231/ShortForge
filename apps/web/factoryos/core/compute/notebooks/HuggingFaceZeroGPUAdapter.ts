@@ -206,7 +206,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
 
       const streamText = await response.text();
       const complete = streamText.match(
-        /event:\\s*complete\\s*\\ndata:\\s*(.*?)(?:\\n\\n|$)/s,
+        /event:\\s*complete\\s*\\ndata:\\s*([\\s\\S]*?)(?:\\n\\n|$)/,
       );
 
       return {
