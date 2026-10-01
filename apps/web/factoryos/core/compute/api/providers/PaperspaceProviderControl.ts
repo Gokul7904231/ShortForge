@@ -247,6 +247,40 @@ export class PaperspaceProviderControl
     };
   }
 
+  async reconcileProvision(
+    request: ProvisionRequest,
+    operation: import("../ProviderApiContracts").ProviderOperationRecord,
+  ): Promise<ProvisionAccepted | undefined> {
+    const response = await this.transport.request<any>({
+      method: "GET",
+      path: "/machines",
+      retryMode: "SAFE",
+    });
+    const rows = Array.isArray(response.data)
+      ? response.data
+      : response.data?.items || response.data?.machines || response.data?.data || [];
+    const expectedName =
+      request.name || this.deterministicName("shortforge-api", request);
+    const match = rows.find((row: any) =>
+      String(row.name || "").trim() === expectedName &&
+      !["TERMINATED", "DELETED", "ERROR", "FAILED"].includes(
+        String(row.state || row.status || "").toUpperCase(),
+      ),
+    );
+    if (!match?.id) return undefined;
+
+    return {
+      operationId: operation.operationId,
+      reference: this.ref("PAPERSPACE", String(match.id), request.idempotencyKey, operation.operationId),
+      state: ["RUNNING", "READY"].includes(String(match.state || match.status || "").toUpperCase())
+        ? "READY"
+        : "PROVISIONING",
+      acceptedAt: operation.requestedAt,
+      reconciliationRequired: false,
+      rawResponse: match,
+    };
+  }
+
   async getResource(resourceId: string): Promise<ProviderResource> {
     const response = await this.transport.request<any>({
       method: "GET",
