@@ -330,6 +330,15 @@ export interface ProviderControlAdapter {
   getQuota(): Promise<ProviderQuota>;
   discoverOffers(request?: OfferDiscoveryRequest): Promise<ComputeOffer[]>;
   provision(request: ProvisionRequest): Promise<ProvisionAccepted>;
+  /**
+   * Optional recovery hook for a timed-out/ambiguous PROVISION request.
+   * Implementations must discover an already-created resource using a
+   * deterministic provider-visible identity rather than creating another one.
+   */
+  reconcileProvision?(
+    request: ProvisionRequest,
+    operation: ProviderOperationRecord,
+  ): Promise<ProvisionAccepted | undefined>;
   getResource(resourceId: string): Promise<ProviderResource>;
   terminate(request: TerminateRequest): Promise<TerminationResult>;
   reconcile(reference: ResourceReference): Promise<ReconciliationResult>;
