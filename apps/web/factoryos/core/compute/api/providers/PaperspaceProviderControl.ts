@@ -346,15 +346,32 @@ export class PaperspaceProviderControl
   }
 
   async renderProbe(request: RenderProbeRequest): Promise<RenderProbeResult> {
-    const provisioned = await this.provision({
-      idempotencyKey: `render-probe:${Date.now()}`,
-      image: request.image,
+    const offers = await this.discoverOffers({
       gpuType: request.gpuType,
       gpuCount: request.gpuCount,
+      maxOffers: 10,
+      acceleratorRequired: true,
+      region: process.env.PAPERSPACE_REGION,
+      regions: process.env.PAPERSPACE_REGION ? [process.env.PAPERSPACE_REGION] : undefined,
+    });
+    const offer = offers.find((candidate) => candidate.providerMetadata.available !== false) || offers[0];
+    if (!offer) {
+      throw new ProviderApiError(
+        "Paperspace returned no configured machine availability for the render probe.",
+        { providerCode: "PAPERSPACE_NO_AVAILABLE_MACHINE", retryable: false },
+      );
+    }
+
+    const idempotencyKey = `render-probe:${Date.now()}`;
+    const provisioned = await this.provision({
+      idempotencyKey,
+      image: request.image,
+      gpuType: offer.accelerator?.type,
+      gpuCount: request.gpuCount || offer.accelerator?.count || 1,
       cpuCores: request.cpuCores,
       memoryMb: request.memoryMb,
       diskGb: request.diskGb,
-      region: process.env.PAPERSPACE_REGION,
+      region: offer.location?.region,
       command: request.renderCommand,
       maxDurationSeconds: Math.ceil(request.timeoutMs / 1000),
       providerOptions: {
