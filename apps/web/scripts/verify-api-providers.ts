@@ -67,6 +67,11 @@ async function main(): Promise<void> {
   if (!credential?.authenticated) {
     throw new Error(`${providerArg} is not authenticated; refusing live provisioning.`);
   }
+  if (!process.env.SHORTFORGE_RENDER_PROBE_GPU) {
+    throw new Error(
+      "SHORTFORGE_RENDER_PROBE_GPU is required so the live probe cannot silently fall back to CPU compute.",
+    );
+  }
 
   if (
     providerArg !== "PAPERSPACE" &&
