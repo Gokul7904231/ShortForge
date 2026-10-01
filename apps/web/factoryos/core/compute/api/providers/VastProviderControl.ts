@@ -247,6 +247,40 @@ export class VastProviderControl
     };
   }
 
+  async reconcileProvision(
+    request: ProvisionRequest,
+    operation: import("../ProviderApiContracts").ProviderOperationRecord,
+  ): Promise<ProvisionAccepted | undefined> {
+    const response = await this.transport.request<any>({
+      method: "GET",
+      path: "/instances/",
+      retryMode: "SAFE",
+    });
+    const rows = Array.isArray(response.data)
+      ? response.data
+      : response.data?.instances || response.data?.data || [];
+    const expectedName =
+      request.name || this.deterministicName("shortforge-api", request);
+    const match = rows.find((row: any) =>
+      String(row.label || row.name || "").trim() === expectedName &&
+      ["running", "loading", "starting"].includes(
+        String(row.actual_status || row.status || "").toLowerCase(),
+      ),
+    );
+    if (!match?.id) return undefined;
+
+    return {
+      operationId: operation.operationId,
+      reference: this.ref("VAST", String(match.id), request.idempotencyKey, operation.operationId),
+      state: String(match.actual_status || match.status).toLowerCase() === "running"
+        ? "READY"
+        : "PROVISIONING",
+      acceptedAt: operation.requestedAt,
+      reconciliationRequired: false,
+      rawResponse: match,
+    };
+  }
+
   async getResource(resourceId: string): Promise<ProviderResource> {
     const response = await this.transport.request<any>({
       method: "GET",
