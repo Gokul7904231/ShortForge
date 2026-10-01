@@ -42,7 +42,10 @@ export function readSelectedMcpConfig(env:NodeJS.ProcessEnv=process.env):Selecte
       protocolVersion:env.PLAYWRIGHT_MCP_PROTOCOL_VERSION||"2025-11-25",requestTimeoutMs:positiveInt(env.PLAYWRIGHT_MCP_TIMEOUT_MS,60000),maxResponseBytes:positiveInt(env.PLAYWRIGHT_MCP_MAX_RESPONSE_BYTES,8388608),
       navigateAllowlist:csv(env.PLAYWRIGHT_MCP_NAV_ALLOWLIST),allowInteraction:env.PLAYWRIGHT_MCP_ALLOW_INTERACTION==="true"},
     comfyui:{serverId:"comfyui",enabled:enabled&&env.COMFY_MCP_ENABLED==="true",command:env.COMFY_MCP_COMMAND||"comfy-mcp",args:comfyArgs,cwd:env.COMFY_MCP_CWD||undefined,
-      env:{COMFY_PROJECT:env.COMFY_MCP_PROJECT||"",COMFY_BIN:env.COMFY_MCP_BIN||""},protocolVersion:env.COMFY_MCP_PROTOCOL_VERSION||"2025-11-25",
+      env:{
+        ...(env.COMFY_MCP_PROJECT?{COMFY_PROJECT:env.COMFY_MCP_PROJECT}:{}),
+        ...(env.COMFY_MCP_BIN?{COMFY_BIN:env.COMFY_MCP_BIN}:{}),
+      },protocolVersion:env.COMFY_MCP_PROTOCOL_VERSION||"2025-11-25",
       requestTimeoutMs:positiveInt(env.COMFY_MCP_TIMEOUT_MS,180000),maxResponseBytes:positiveInt(env.COMFY_MCP_MAX_RESPONSE_BYTES,16777216),
       allowedRoots:roots,licenseMode:env.COMFY_MCP_LICENSE_MODE==="commercial"?"commercial":"disabled"},
     qdrant:{serverId:"qdrant",enabled:enabled&&env.QDRANT_MCP_ENABLED==="true",command:env.QDRANT_MCP_COMMAND||"uvx",args:qArgs,cwd:env.QDRANT_MCP_CWD||undefined,
