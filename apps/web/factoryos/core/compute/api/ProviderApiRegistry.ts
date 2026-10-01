@@ -181,21 +181,6 @@ export class ProviderApiRegistry {
         },
       };
     } catch (error: any) {
-      // DELETE is semantically idempotent: an already-absent resource is
-      // considered terminated rather than a failed destructive mutation.
-      if (error?.status === 404 && operation.operation === "TERMINATE") {
-        this.journal.transition(operation.operationId, "TERMINATED", {
-          completedAt: new Date().toISOString(),
-          reconciliationRequired: false,
-        });
-        return {
-          operationId: operation.operationId,
-          reference: request.reference,
-          state: "TERMINATED",
-          completedAt: new Date().toISOString(),
-          reconciliationRequired: false,
-        };
-      }
       const ambiguous = error instanceof ProviderApiError && error.ambiguous;
       if (ambiguous && adapter.reconcileProvision) {
         try {
@@ -249,7 +234,7 @@ export class ProviderApiRegistry {
     if (!adapter.renderProbe) {
       throw new Error(`API provider ${type} does not expose a render probe.`);
     }
-    const idempotencyKey = `render-probe:${type}:${request.image}:${request.gpuType || "default"}`;
+    const idempotencyKey = `render-probe:${type}:${Date.now()}:${request.gpuType || "default"}`;
     const operation = this.journal.start({
       factoryExecutionId,
       missionId,
@@ -324,6 +309,21 @@ export class ProviderApiRegistry {
       );
       return { ...result, operationId: operation.operationId };
     } catch (error: any) {
+      // DELETE is semantically idempotent: an already-absent resource is
+      // considered terminated rather than a failed destructive mutation.
+      if (error?.status === 404) {
+        this.journal.transition(operation.operationId, "TERMINATED", {
+          completedAt: new Date().toISOString(),
+          reconciliationRequired: false,
+        });
+        return {
+          operationId: operation.operationId,
+          reference: request.reference,
+          state: "TERMINATED",
+          completedAt: new Date().toISOString(),
+          reconciliationRequired: false,
+        };
+      }
       const ambiguous = error instanceof ProviderApiError && error.ambiguous;
       this.journal.transition(
         operation.operationId,
