@@ -6,8 +6,6 @@
  * certify F07 artifacts.
  */
 
-import type { ProviderType } from "../contracts/ComputeContracts";
-
 export type ApiProviderType =
   | "VAST"
   | "RUNPOD"
