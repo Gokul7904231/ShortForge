@@ -1,3 +1,4 @@
+import type { NotebookCredentialBundle } from "./NotebookContracts";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -11,6 +12,7 @@ import type {
   NotebookProvisionResult,
   NotebookRuntime,
   NotebookReconciliationResult,
+  NotebookCredentialBundle,
 } from "./NotebookContracts";
 import { fileEvidence, runProcess } from "./NotebookUtils";
 
@@ -47,9 +49,10 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     },
   };
 
-  async validateCredentials(): Promise<NotebookCredentialValidation> {
+  async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
+    const env = { ...process.env, ...(credentials || {}) };
     const requiredKeys = ["KAGGLE_USERNAME", "KAGGLE_KEY"];
-    const missingKeys = requiredKeys.filter((key) => !process.env[key]);
+    const missingKeys = requiredKeys.filter((key) => !env[key]);
 
     if (missingKeys.length) {
       return {
@@ -66,7 +69,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     const result = await runProcess(
       "kaggle",
       ["kernels", "list", "--mine", "--page", "1"],
-      { timeoutMs: 30_000 },
+      { timeoutMs: 30_000, env },
     );
 
     return {
@@ -88,8 +91,8 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async provision(request: NotebookProvisionRequest): Promise<NotebookProvisionResult> {
-    const validation = await this.validateCredentials();
+  async provision(request: NotebookProvisionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookProvisionResult> {
+    const validation = await this.validateCredentials(credentials);
     if (!validation.authenticated) {
       throw new Error("KAGGLE_PROVIDER_BLOCKED: credentials or CLI unavailable.");
     }
@@ -100,7 +103,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
-    const username = process.env.KAGGLE_USERNAME!;
+    const username = ({ ...process.env, ...(credentials || {}) }).KAGGLE_USERNAME!;
     const slug =
       "shortforge-" +
       request.name
@@ -167,7 +170,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         "--timeout",
         String(timeoutSeconds),
       ],
-      { timeoutMs: 60_000 },
+      { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } },
     );
 
     if (push.exitCode !== 0) {
@@ -201,11 +204,11 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async getRuntime(resourceId: string): Promise<NotebookRuntime> {
+  async getRuntime(resourceId: string, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const result = await runProcess(
       "kaggle",
       ["kernels", "status", resourceId],
-      { timeoutMs: 30_000 },
+      { timeoutMs: 30_000, env: { ...process.env, ...(credentials || {}) } },
     );
     return {
       providerId: this.metadata.providerId,
@@ -218,7 +221,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async execute(request: NotebookExecutionRequest): Promise<NotebookExecutionResult> {
+  async execute(request: NotebookExecutionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
     let runtime = request.runtime;
     let created: NotebookProvisionResult | undefined;
 
@@ -243,7 +246,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       }
 
       const started = Date.now();
-      let state = (await this.getRuntime(runtime.resourceId)).state;
+      let state = (await this.getRuntime(runtime.resourceId, credentials)).state;
 
       while (state === "QUEUED" || state === "STARTING" || state === "RUNNING" || state === "READY") {
         if (Date.now() - started > request.timeoutMs) {
@@ -283,7 +286,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       const download = await runProcess(
         "kaggle",
         ["kernels", "output", runtime.resourceId, "-p", outputDir, "-o"],
-        { timeoutMs: 60_000 },
+        { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } },
       );
 
       if (download.exitCode !== 0) {
@@ -357,7 +360,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     }
   }
 
-  async terminate(runtime: NotebookRuntime): Promise<NotebookRuntime> {
+  async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     await runProcess(
       "kaggle",
       ["kernels", "delete", runtime.resourceId, "-y"],
