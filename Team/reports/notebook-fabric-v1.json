@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Notebook-Fabric-V1-Main",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/notebook-fabric-v1-main-20261001",
+  "productBoundary": {
+    "basicUsers": [
+      "LOCAL_RENDER",
+      "NOTEBOOK"
+    ],
+    "admins": [
+      "LOCAL_RENDER",
+      "NOTEBOOK",
+      "SANDBOX",
+      "API_GPU"
+    ],
+    "selfHostedSandbox": "OUT_OF_SCOPE_V1"
+  },
+  "providers": [
+    "KAGGLE",
+    "COLAB",
+    "PAPERSPACE",
+    "LIGHTNING",
+    "HF_ZEROGPU"
+  ],
+  "security": [
+    "credentials out-of-band",
+    "notebook operation journal is secret-free",
+    "no notebook worker promotion",
+    "F07 remains authoritative"
+  ],
+  "verificationPlan": [
+    "blocking CI typecheck",
+    "blocking notebook contract tests",
+    "Team Change Gate",
+    "existing floor validation",
+    "manual live probes with explicit credentials"
+  ],
+  "disposition": "BLOCKED_UNTIL_CI"
+}

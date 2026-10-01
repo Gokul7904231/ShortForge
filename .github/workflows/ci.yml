@@ -32,6 +32,11 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
+      - name: Notebook Fabric Contract Tests
+        run: cd apps/web && npx vitest run factoryos/tests/notebook-fabric.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
       - name: AER Epistemic Runtime Tests
         run: cd apps/web && npx vitest run factoryos/tests/epistemic/aer.test.ts factoryos/tests/epistemic/aer-auxiliary.test.ts
         env:
