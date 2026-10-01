@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR76-Compute-Connection-Hub-V1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/notebook-fabric-v1-main-20261001",
+  "headRef": "feat/connection-hub-v1-clean-20261001",
+  "objective": "Ship the V1 Compute Connection Hub as the credential-safe connection surface for Local and implemented Notebook compute while staging Admin-only Sandbox/API-GPU providers.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/compute/connection-hub.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added a user-scoped Compute Connection Hub with encrypted credential storage.",
+    "Added trusted provider catalog and role-gated provider visibility.",
+    "Added deterministic provider presentation order for API and UI consumers.",
+    "Added explicit connection verification for implemented Notebook providers.",
+    "Kept credentials out of operation journals, MCP prompts, client-side persisted state, and F06 worker authority.",
+    "Staged Sandbox/API-GPU provider definitions without enabling unimplemented adapters."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/connections",
+    "apps/web/factoryos/core/compute/connections.ts",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts",
+    ".github/workflows/compute-connection-hub.yml",
+    ".okf/compute/connection-hub.md"
+  ],
+  "notes": [
+    "Basic users receive Local Rendering + Notebook Compute only.",
+    "Admin-only providers remain non-connectable until a real adapter is implemented.",
+    "Credential encryption fails closed in production when CREDENTIAL_ENCRYPTION_KEY is missing.",
+    "Live provider validation remains explicit and credential-controlled."
+  ],
+  "verificationResults": {
+    "connectionHubTypecheck": "PASS",
+    "connectionHubContractTests": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "affectedFloorValidation": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass blocking FactoryOS typecheck and connection hub contract tests.",
+    "Pass Team Change Gate and repository/affected-floor validation.",
+    "Retarget onto main after Notebook Fabric merge.",
+    "Merge only after required blocking lanes are green."
+  ]
+}
