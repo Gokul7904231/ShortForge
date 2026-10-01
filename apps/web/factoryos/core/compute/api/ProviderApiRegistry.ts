@@ -159,6 +159,7 @@ export class ProviderApiRegistry {
     try {
       const result = await adapter.provision(request);
       this.journal.transition(operation.operationId, "PROVISIONING", {
+        acceptedAt: new Date().toISOString(),
         externalResourceId: result.reference.resourceId,
         providerRequestId: result.providerRequestId,
         reconciliationRequired: result.reconciliationRequired,
@@ -196,6 +197,34 @@ export class ProviderApiRegistry {
         };
       }
       const ambiguous = error instanceof ProviderApiError && error.ambiguous;
+      if (ambiguous && adapter.reconcileProvision) {
+        try {
+          const recovered = await adapter.reconcileProvision(request, operation);
+          if (recovered) {
+            this.journal.transition(operation.operationId, "PROVISIONING", {
+              externalResourceId: recovered.reference.resourceId,
+              acceptedAt: new Date().toISOString(),
+              reconciliationRequired: recovered.reconciliationRequired,
+              metadata: recovered.rawResponse || {},
+            });
+            if (recovered.state === "READY") {
+              this.journal.transition(operation.operationId, "READY", {
+                readyAt: new Date().toISOString(),
+                reconciliationRequired: false,
+              });
+            }
+            return {
+              ...recovered,
+              operationId: operation.operationId,
+              reference: {
+                ...recovered.reference,
+                operationId: operation.operationId,
+                idempotencyKey: request.idempotencyKey,
+              },
+            };
+          }
+        } catch {}
+      }
       this.journal.transition(
         operation.operationId,
         ambiguous ? "UNKNOWN" : "FAILED",
@@ -206,6 +235,54 @@ export class ProviderApiRegistry {
           reconciliationRequired: ambiguous,
         },
       );
+      throw error;
+    }
+  }
+
+  async renderProbe(
+    type: ApiProviderType,
+    request: import("./ProviderApiContracts").RenderProbeRequest,
+    factoryExecutionId?: string,
+    missionId?: string,
+  ): Promise<import("./ProviderApiContracts").RenderProbeResult> {
+    const adapter = this.require(type);
+    if (!adapter.renderProbe) {
+      throw new Error(`API provider ${type} does not expose a render probe.`);
+    }
+    const idempotencyKey = `render-probe:${type}:${request.image}:${request.gpuType || "default"}`;
+    const operation = this.journal.start({
+      factoryExecutionId,
+      missionId,
+      providerId: adapter.metadata.providerId,
+      providerType: type,
+      operation: "RENDER_PROBE",
+      idempotencyKey,
+      requestPayload: request,
+    });
+
+    try {
+      const result = await adapter.renderProbe(request);
+      this.journal.transition(operation.operationId, "COMPLETED", {
+        completedAt: new Date().toISOString(),
+        reconciliationRequired: false,
+        metadata: {
+          passed: result.passed,
+          verificationLevel: result.verificationLevel,
+          resourceId: result.resourceId,
+          artifactSha256: result.artifactSha256,
+          artifactByteLength: result.artifactByteLength,
+          evidence: result.evidence,
+          limitation: result.limitation,
+        },
+      });
+      return result;
+    } catch (error: any) {
+      this.journal.transition(operation.operationId, "FAILED", {
+        providerRequestId: error?.providerRequestId,
+        providerErrorCode: error?.providerCode,
+        providerErrorMessage: error?.message || String(error),
+        reconciliationRequired: false,
+      });
       throw error;
     }
   }
