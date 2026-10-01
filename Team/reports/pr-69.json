@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR69-API-Provider-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/api-provider-fabric-20261001",
+  "objective": "Add the provider-neutral API compute control fabric for administrator-only remote compute without changing the F06 worker authority boundary.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Provider control APIs do not automatically grant F06 worker authority.",
+      "External provider mutations require durable idempotency and ambiguity-safe reconciliation.",
+      "Physical render proof cannot be fabricated from control-plane acceptance alone.",
+      "Secrets are environment/repository-secret inputs and are never committed."
+    ]
+  },
+  "changes": [
+    "Provider-neutral API control contracts and normalized capability/offer metadata",
+    "Durable SQLite WAL operation journal and ambiguity-safe transport",
+    "Vast.ai, RunPod v2, Daytona, Paperspace, and Modal adapters",
+    "Manual live-probe workflow with credentials supplied only through GitHub Secrets"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No provider secrets committed; live mutation workflow is manual-only and explicitly gated."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/api",
+    "apps/web/factoryos/tests/provider-api-fabric.test.ts",
+    ".github/workflows/api-provider-fabric.yml",
+    ".okf/compute/api-provider-fabric.md"
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "IN_PROGRESS",
+    "Forge Release": "PENDING"
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Run API provider typecheck and contract tests from apps/web.",
+    "Run relevant floor, Team Change Gate, and repository CI lanes.",
+    "Run provider-specific live probes only with explicit live=true and user-controlled credentials.",
+    "Merge only after required blocking checks are green."
+  ],
+  "verificationResults": {
+    "contentReconciliation": "NO_UNRESOLVED_CONFLICTS",
+    "githubCI": "PENDING",
+    "teamChangeGate": "PENDING"
+  },
+  "disposition": "BLOCKED",
+  "notes": [
+    "Release remains blocked until the current API provider verification and repository gates pass."
+  ]
+}

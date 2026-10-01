@@ -1,0 +1,103 @@
+name: API Provider Fabric Verification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/factoryos/core/compute/api/**"
+      - "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts"
+      - "apps/web/factoryos/core/compute/index.ts"
+      - "apps/web/factoryos/tests/provider-api-fabric.test.ts"
+      - "apps/web/package.json"
+      - ".okf/compute/**"
+      - ".github/workflows/api-provider-fabric.yml"
+  workflow_dispatch:
+    inputs:
+      live_provider:
+        description: "Optional live provider (VAST, RUNPOD, DAYTONA, PAPERSPACE, MODAL)"
+        required: false
+        default: ""
+      render_image:
+        description: "Container image with ffmpeg/ffprobe for live render probe"
+        required: false
+        default: ""
+      render_gpu:
+        description: "Provider GPU type/id/machine type used by the live probe"
+        required: true
+        default: ""
+      render_command:
+        description: "Bounded render command; output should be the default /tmp/shortforge-api-probe.mp4"
+        required: false
+        default: "ffmpeg -hide_banner -loglevel error -f lavfi -i color=c=black:s=320x568:r=30:d=1 -f lavfi -i anullsrc=r=44100:cl=mono:d=1 -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac /tmp/shortforge-api-probe.mp4"
+      live:
+        description: "Set true to create a real provider resource and run the selected API probe"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-provider-fabric-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: API provider contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+      - name: Provider API contract tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/provider-api-fabric.test.ts --reporter=verbose
+
+  live:
+    name: Optional live API render probe
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.live_provider != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VAST_API_KEY: ${{ secrets.VAST_API_KEY }}
+      RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+      DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
+      PAPERSPACE_API_KEY: ${{ secrets.PAPERSPACE_API_KEY }}
+      PAPERSPACE_TEMPLATE_ID: ${{ secrets.PAPERSPACE_TEMPLATE_ID }}
+      PAPERSPACE_MACHINE_TYPES: ${{ secrets.PAPERSPACE_MACHINE_TYPES }}
+      PAPERSPACE_REGIONS: ${{ secrets.PAPERSPACE_REGIONS }}
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      SHORTFORGE_LIVE_API_PROBE: "1"
+      SHORTFORGE_API_PROVIDER: ${{ inputs.live_provider }}
+      SHORTFORGE_RENDER_PROBE_IMAGE: ${{ inputs.render_image }}
+      SHORTFORGE_RENDER_PROBE_GPU: ${{ inputs.render_gpu }}
+      SHORTFORGE_RENDER_PROBE_COMMAND: ${{ inputs.render_command }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Install Modal SDK when selected
+        if: ${{ inputs.live_provider == 'MODAL' }}
+        working-directory: apps/web
+        run: npm install --no-save modal@0.11.0
+      - name: Run live provider API probe
+        working-directory: apps/web
+        run: npm run factoryos:verify:api

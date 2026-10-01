@@ -252,3 +252,48 @@ Topology remains F02 -> (F03 || F04) -> F05.
 The executable and Ascalon-canonical definition of F04 is **Media Synthesis & Provider Execution** (`MEDIA`). F04 physically realizes trusted media requirements, including visual assets plus voice/narration and background audio, with provider selection, physical validation, rights/provenance registration and crash-safe persistence.
 
 Historical voice-only descriptions are retained only as audit history and must not be used for current training trajectories.
+
+
+## F06 API provider control plane — 2026-10-01
+
+The API-provider phase is a control-plane boundary and is intentionally separate from the worker execution plane.
+
+Canonical API-provider flow:
+
+`ComputeRouter placement intent → ProviderApiRegistry → normalized ComputeOffer → ProviderControlAdapter → provider API → ProviderApiOperationJournal → reconciliation → provisioned resource`
+
+The API fabric now has explicit adapters for:
+- Vast.ai REST v0;
+- RunPod REST v2;
+- Daytona current sandbox API;
+- Paperspace REST v1;
+- Modal JavaScript SDK.
+
+The provider layer distinguishes **provider**, **offer**, **resource**, and **operation**. Dynamic marketplace offers are not treated as static provider capabilities.
+
+Mutation safety:
+- non-idempotent API mutations are not automatically retried after an ambiguous network outcome;
+- deterministic idempotency keys are journaled;
+- ambiguous provisioning becomes `UNKNOWN` and requires reconciliation before a new create;
+- lifecycle state is durable in SQLite WAL storage;
+- provider-specific rate/error semantics are normalized at the transport boundary.
+
+Render proof is classified honestly:
+- Vast.ai: API can attach a render command to instance startup, but this API-only phase does not claim physical artifact verification;
+- RunPod v2: API can supply a render command as Pod container args, but this phase does not claim physical artifact verification;
+- Paperspace: API can attach a one-time startup script to machine creation, but this phase does not claim physical artifact verification;
+- Daytona: documented API execution surface can run the render command and return remote SHA/size/media-probe evidence;
+- Modal: documented JS SDK Sandbox entrypoint/exec/filesystem surfaces can run and inspect the render command output.
+
+A provider is not admitted as a production render worker merely because its resource-creation API returns HTTP 2xx. Physical F06 acceptance remains downstream and independent.
+
+
+## F06 API-provider render-evidence classification — 2026-10-01
+
+The API provider fabric distinguishes provider-side render evidence from F06 independent artifact acceptance.
+
+- Vast.ai and RunPod v2: provider logs can expose a self-verifying marker containing artifact size, SHA-256 and ffprobe metadata. This is sufficient to establish that the provider-side command created the requested render artifact, but F06 must later download the artifact and recompute the digest independently.
+- Daytona and Modal: their API execution surfaces can run the render command and return equivalent provider-side evidence directly.
+- Paperspace: machine creation and startup-script launch are implemented; this API-only adapter does not claim physical render proof because a portable machine output/log inspection path has not been established.
+
+The live verification workflow remains manual-only and credentials/capacity dependent. No current repository evidence should mark a provider as live-verified until the real probe passes.
