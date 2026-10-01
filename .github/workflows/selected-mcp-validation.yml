@@ -6,18 +6,15 @@ on:
       - "apps/web/factoryos/core/mcp/**"
       - "apps/web/factoryos/core/visual/**"
       - "apps/web/factoryos/assets/comfy-transforms/**"
-      - "apps/web/factoryos/assets/comfy-transforms/**"
-      - "training/ascalon/ontology/capabilities.json"
-      - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
       - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
       - "apps/web/factoryos/core/index.ts"
       - "apps/web/factoryos/tests/selected-mcp-gateway.test.ts"
-      - "apps/web/factoryos/tests/comfy-visual-transform.test.ts"
       - "apps/web/factoryos/tests/comfy-visual-transform.test.ts"
       - "apps/web/.env.selected-mcp.example"
       - "training/ascalon/ontology/capabilities.json"
       - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
       - "docs/operations/selected-mcp-fabric.md"
+      - "docs/architecture/comfy-visual-transformation-engine.md"
       - ".okf/intelligence/mcp-architecture.md"
       - ".okf/security/mcp-permissions.md"
       - ".okf/decisions.md"
@@ -27,9 +24,18 @@ on:
     paths:
       - "apps/web/factoryos/core/mcp/**"
       - "apps/web/factoryos/core/visual/**"
+      - "apps/web/factoryos/assets/comfy-transforms/**"
       - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
       - "apps/web/factoryos/core/index.ts"
       - "apps/web/factoryos/tests/selected-mcp-gateway.test.ts"
+      - "apps/web/factoryos/tests/comfy-visual-transform.test.ts"
+      - "apps/web/.env.selected-mcp.example"
+      - "training/ascalon/ontology/capabilities.json"
+      - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
+      - "docs/operations/selected-mcp-fabric.md"
+      - "docs/architecture/comfy-visual-transformation-engine.md"
+      - ".okf/intelligence/mcp-architecture.md"
+      - ".okf/security/mcp-permissions.md"
 
 jobs:
   contract-validation:
@@ -48,7 +54,7 @@ jobs:
         run: npm ci
       - name: FactoryOS typecheck
         run: npm run factoryos:typecheck
-      - name: Selected MCP policy tests
+      - name: Selected MCP and transform tests
         run: npx vitest run factoryos/tests/selected-mcp-gateway.test.ts factoryos/tests/comfy-visual-transform.test.ts --config vitest.config.ts
       - name: Policy text checks
         shell: bash
@@ -58,3 +64,4 @@ jobs:
           grep -q "verification-required" ../../docs/operations/selected-mcp-fabric.md
           grep -q "TRANSFORM_VISUAL_ASSET" ../../.okf/intelligence/mcp-architecture.md
           grep -q "recipe-bound" ../../docs/operations/selected-mcp-fabric.md
+          grep -q "parentSha256" ../../docs/architecture/comfy-visual-transformation-engine.md
