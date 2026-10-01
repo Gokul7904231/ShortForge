@@ -119,42 +119,17 @@ export class ProviderApiRegistry {
     });
 
     if (operation.state !== "REQUESTED") {
+      if (operation.state === "UNKNOWN") {
+        throw new Error(
+          `PROVISION_RECONCILIATION_REQUIRED: ${operation.operationId}`,
+        );
+      }
       if (
         operation.state === "FAILED" ||
         operation.state === "TERMINATED"
       ) {
         throw new Error(
           `PROVISION_IDEMPOTENCY_KEY_ALREADY_COMPLETED: ${operation.operationId}`,
-        );
-      }
-      if (operation.externalResourceId) {
-        return {
-          operationId: operation.operationId,
-          reference: {
-            providerId: adapter.metadata.providerId,
-            providerType: type,
-            resourceId: operation.externalResourceId,
-            idempotencyKey: request.idempotencyKey,
-            operationId: operation.operationId,
-          },
-          state: operation.state === "READY" ? "READY" : "UNKNOWN",
-          acceptedAt: operation.acceptedAt || operation.requestedAt,
-          reconciliationRequired: operation.state === "UNKNOWN",
-        };
-      }
-    }
-
-    // IMPORTANT: do not mark a mutation ACCEPTED before the provider call.
-    // A process crash between those two points would make the journal claim an
-    // external side effect that may never have happened.
-    //
-    // REQUESTED -> provider call -> PROVISIONING/READY is the safe sequence.
-    // If the provider call has an ambiguous outcome, the adapter error is
-    // journaled as UNKNOWN and reconciliation is required before a new create.
-    if (operation.state !== "REQUESTED") {
-      if (operation.state === "UNKNOWN") {
-        throw new Error(
-          `PROVISION_RECONCILIATION_REQUIRED: ${operation.operationId}`,
         );
       }
       if (operation.externalResourceId) {
