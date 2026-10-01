@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR70-Notebook-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/api-provider-fabric-20261001",
+  "headRef": "feat/notebook-fabric-20261001",
+  "objective": "Add the provider-specific Notebook & Interactive Compute Fabric for basic-user BYOC notebook execution while preserving separation from the production worker plane.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Basic users are limited to the notebook compute surface in v1; API/GPU and sandbox fabrics remain administrator-only.",
+      "Notebook providers do not automatically become F06 production workers.",
+      "Provider-specific runtime differences must be represented honestly instead of normalized into unsupported VM semantics.",
+      "Credential state is fail-closed and payment claims are evidence-based."
+    ]
+  },
+  "changes": [
+    "Kaggle, Colab, Paperspace, Lightning, and HF ZeroGPU adapters",
+    "Notebook contracts, registry, router, and durable operation journal",
+    "Manual live-validation workflow and no-network contract tests",
+    "Notebook-to-worker promotion boundary and physical artifact verification requirements"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": "No credentials committed; live validation is manual and secrets remain GitHub Actions inputs."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/notebooks",
+    "apps/web/factoryos/tests/notebook-fabric.test.ts",
+    ".github/workflows/notebook-fabric.yml",
+    ".okf/compute/notebook-fabric.md"
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "IN_PROGRESS",
+    "Forge Sentinel": "PENDING",
+    "Forge Evaluator": "PENDING",
+    "Forge Release": "PENDING"
+  },
+  "conflicts": [],
+  "verificationPlan": [
+    "Install dependencies from apps/web and run FactoryOS typecheck.",
+    "Run notebook contract tests without provider credentials.",
+    "Perform explicit live validation for available user-owned provider accounts.",
+    "Verify basic-user routing cannot invoke sandbox/API/GPU fabrics.",
+    "Merge only after stacked API and notebook gates are green."
+  ],
+  "verificationResults": {
+    "contentReconciliation": "NO_UNRESOLVED_CONFLICTS",
+    "githubCI": "PENDING",
+    "teamChangeGate": "PENDING"
+  },
+  "disposition": "BLOCKED",
+  "notes": [
+    "Release remains blocked until the stacked API provider base and notebook contract gates pass."
+  ]
+}
