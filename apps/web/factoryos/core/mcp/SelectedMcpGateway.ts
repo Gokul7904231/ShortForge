@@ -46,7 +46,12 @@ export function readSelectedMcpConfig(env:NodeJS.ProcessEnv=process.env):Selecte
       requestTimeoutMs:positiveInt(env.COMFY_MCP_TIMEOUT_MS,180000),maxResponseBytes:positiveInt(env.COMFY_MCP_MAX_RESPONSE_BYTES,16777216),
       allowedRoots:roots,licenseMode:env.COMFY_MCP_LICENSE_MODE==="commercial"?"commercial":"disabled"},
     qdrant:{serverId:"qdrant",enabled:enabled&&env.QDRANT_MCP_ENABLED==="true",command:env.QDRANT_MCP_COMMAND||"uvx",args:qArgs,cwd:env.QDRANT_MCP_CWD||undefined,
-      env:{QDRANT_URL:env.QDRANT_URL||"",QDRANT_API_KEY:env.QDRANT_API_KEY||"",COLLECTION_NAME:collection,QDRANT_LOCAL_PATH:env.QDRANT_LOCAL_PATH||""},
+      env:{
+        ...(env.QDRANT_URL ? {QDRANT_URL:env.QDRANT_URL} : {}),
+        ...(env.QDRANT_API_KEY ? {QDRANT_API_KEY:env.QDRANT_API_KEY} : {}),
+        COLLECTION_NAME:collection,
+        ...(env.QDRANT_LOCAL_PATH ? {QDRANT_LOCAL_PATH:env.QDRANT_LOCAL_PATH} : {}),
+      },
       protocolVersion:env.QDRANT_MCP_PROTOCOL_VERSION||"2025-11-25",requestTimeoutMs:positiveInt(env.QDRANT_MCP_TIMEOUT_MS,30000),maxResponseBytes:positiveInt(env.QDRANT_MCP_MAX_RESPONSE_BYTES,4194304),
       derivedCollection:collection}
   };
@@ -83,7 +88,7 @@ export function sanitizeQdrantStoreArguments(input:Record<string,unknown>,collec
   if(typeof input.information!=="string"||!input.information.trim()) throw new Error("qdrant_information_required");
   const metadata=input.metadata&&typeof input.metadata==="object"?{...(input.metadata as Record<string,unknown>)}:{};
   if(metadata.canonicalAuthority!==undefined&&metadata.canonicalAuthority!=="memory-fabric") throw new Error("qdrant_store_must_be_memory_fabric_projection");
-  return {information:input.information,metadata:{...metadata,projectionOnly:true,canonicalAuthority:"memory-fabric",derivedIndex:"qdrant",indexUpdatedAt:new Date().toISOString()},collection_name:collection};
+  return {information:input.information,metadata:{...metadata,projectionOnly:true,canonicalAuthority:"memory-fabric",derivedIndex:"qdrant",indexUpdatedAt:new Date().toISOString()}};
 }
 function requireGuardian(request:McpExecutionRequest):void{
   if(!request.guardianAuthorization?.granted) throw new Error("guardian_authorization_required_for:"+request.action);
@@ -130,7 +135,8 @@ export class SelectedMcpGateway {
     let args={...request.arguments};
     if(request.serverId==="comfyui")args=sanitizeComfyArguments(request.action,args,this.config.comfyui.allowedRoots);
     if(request.serverId==="qdrant"&&request.action==="MEMORY_STORE_DERIVED")args=sanitizeQdrantStoreArguments(args,this.config.qdrant.derivedCollection);
-    if(request.serverId==="qdrant"&&request.action==="MEMORY_FIND")args.collection_name=this.config.qdrant.derivedCollection;
+    // Qdrant collection identity is bound by the MCP server process environment.
+    // Do not pass collection_name: current qdrant-mcp may omit it from the tool schema when a default collection is configured.
 
     const adapter=this.adapters.get(request.serverId)!;
     const snapshot=await adapter.connect();
