@@ -62,7 +62,10 @@ export class DaytonaProviderControl
     process.env.DAYTONA_PROXY_BASE_URL || "https://proxy.app.daytona.io";
 
   constructor() {
-    super(this.metadata.baseUrl, this.apiKey);
+    super(
+      process.env.DAYTONA_API_BASE_URL || "https://app.daytona.io/api",
+      process.env.DAYTONA_API_KEY,
+    );
   }
 
   async validateCredentials(): Promise<CredentialValidationResult> {
@@ -423,7 +426,7 @@ print("SHORTFORGE_RENDER_PROBE="+json.dumps(result, separators=(",",":")))
         };
       }
 
-      const match = text.match(/SHORTFORGE_RENDER_PROBE=(\{.*\})/s);
+      const match = text.match(/SHORTFORGE_RENDER_PROBE=(\{[\s\S]*\})/);
       let evidencePayload: any = undefined;
       try {
         evidencePayload = match ? JSON.parse(match[1]) : undefined;
@@ -468,6 +471,7 @@ print("SHORTFORGE_RENDER_PROBE="+json.dumps(result, separators=(",",":")))
         });
       } catch {}
     }
+  }
 
   private async waitForReady(resourceId: string, timeoutMs: number): Promise<boolean> {
     const deadline = Date.now() + timeoutMs;
