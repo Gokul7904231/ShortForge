@@ -59,10 +59,6 @@ async function main(): Promise<void> {
   }
   const adapter = registry.get(providerArg);
   if (!adapter) throw new Error(`Unknown API provider: ${providerArg}`);
-  if (!adapter.renderProbe) {
-    throw new Error(`${providerArg} has no API render-probe implementation.`);
-  }
-
   const credential = validation[providerArg];
   if (!credential?.authenticated) {
     throw new Error(`${providerArg} is not authenticated; refusing live provisioning.`);
@@ -83,7 +79,7 @@ async function main(): Promise<void> {
     throw new Error("PAPERSPACE_TEMPLATE_ID is required for a Paperspace live render probe.");
   }
 
-  const result = await adapter.renderProbe({
+  const result = await registry.renderProbe(providerArg, {
     image: process.env.SHORTFORGE_RENDER_PROBE_IMAGE || "paperspace-template-controlled",
     gpuType: process.env.SHORTFORGE_RENDER_PROBE_GPU,
     gpuCount: Number(process.env.SHORTFORGE_RENDER_PROBE_GPU_COUNT || 1),
