@@ -21,8 +21,8 @@ function collection() {
   return db.collection("computeConnections");
 }
 
-function toPublic(record: ComputeConnection): PublicComputeConnection {
-  const { userId: _userId, ...publicRecord } = record;
+function toPublic(record: ComputeConnection | StoredComputeConnection): PublicComputeConnection {
+  const { userId: _userId, encryptedSecrets: _encryptedSecrets, ...publicRecord } = record as StoredComputeConnection;
   return {
     ...publicRecord,
     secretKeys: Object.keys(record.maskedSecrets),
@@ -60,9 +60,9 @@ export class ComputeConnectionStore {
       connectionId,
       userId,
       providerId: input.providerId,
-      providerFamily: "NOTEBOOK",
+      providerFamily: input.providerFamily || "NOTEBOOK",
       displayName: input.displayName || input.providerId,
-      authMethod: "CREDENTIAL_BUNDLE",
+      authMethod: input.authMethod || "CREDENTIAL_BUNDLE",
       status: "UNVERIFIED",
       externalAccountId: input.externalAccountId,
       maskedSecrets,
