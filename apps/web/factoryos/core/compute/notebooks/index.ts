@@ -24,3 +24,4 @@ export function createDefaultNotebookRegistry(): NotebookRegistry {
   registry.register(new HuggingFaceZeroGPUAdapter());
   return registry;
 }
+export * from "./NotebookRouter";
