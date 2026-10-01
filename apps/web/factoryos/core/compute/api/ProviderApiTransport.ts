@@ -194,7 +194,11 @@ export class ProviderApiTransport {
             status: response.status,
             providerCode:
               payload && typeof payload === "object"
-                ? String(payload.code || payload.error_code || "")
+                ? String(
+                    (payload as Record<string, unknown>).code ||
+                      (payload as Record<string, unknown>).error_code ||
+                      "",
+                  )
                 : undefined,
             providerRequestId: requestId,
             retryAfterMs: parseRetryAfter(response.headers.get("retry-after")),
