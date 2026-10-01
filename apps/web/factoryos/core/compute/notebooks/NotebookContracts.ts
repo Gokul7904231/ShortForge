@@ -86,6 +86,7 @@ export interface NotebookProvisionRequest {
   image?: string;
   templateId?: string;
   command?: string | string[];
+  outputPath?: string;
   gpuType?: string;
   gpuCount?: number;
   cpuCores?: number;
