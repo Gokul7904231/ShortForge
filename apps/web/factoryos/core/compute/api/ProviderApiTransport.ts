@@ -111,6 +111,7 @@ export class ProviderApiTransport {
     private readonly baseUrl: string,
     private readonly bearerToken?: string,
     private readonly defaultTimeoutMs = 15000,
+    private readonly defaultHeaders: Record<string, string> = {},
   ) {}
 
   public async request<T = unknown>(
@@ -164,6 +165,7 @@ export class ProviderApiTransport {
       Accept: "application/json",
       ...(req.body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(this.bearerToken ? { Authorization: `Bearer ${this.bearerToken}` } : {}),
+      ...this.defaultHeaders,
       ...(req.idempotencyKey ? { "Idempotency-Key": req.idempotencyKey } : {}),
       ...(req.headers || {}),
     };
