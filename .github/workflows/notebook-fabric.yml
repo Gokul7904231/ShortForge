@@ -14,10 +14,10 @@ on:
       provider:
         description: "Optional live provider validation"
         required: false
-        default: ""
+        default: "NONE"
         type: choice
         options:
-          - ""
+          - NONE
           - KAGGLE
           - COLAB
           - PAPERSPACE
@@ -43,7 +43,7 @@ jobs:
       - run: npm --prefix apps/web exec vitest run factoryos/tests/notebook-fabric.test.ts
 
   live:
-    if: \${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != '' }}
+    if: \${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
