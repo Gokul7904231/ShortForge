@@ -1,5 +1,7 @@
 /** Selected MCP gateway: Playwright, ComfyUI, Qdrant. Node-only. */
 import * as path from "node:path";
+import * as fs from "node:fs";
+import { createHash } from "node:crypto";
 import { URL } from "node:url";
 import { getSelectedMcpAction, resolveSelectedMcpTool, sha256Json, type McpExecutionObservation, type McpExecutionRequest, type McpServerConfig, type SelectedMcpServerId } from "./McpContracts";
 import { StdioMcpAdapter } from "./StdioMcpAdapter";
@@ -12,7 +14,7 @@ import type {
 export interface SelectedMcpConfig {
   readonly enabled:boolean;
   readonly playwright:McpServerConfig & {readonly navigateAllowlist:readonly string[];readonly allowInteraction:boolean};
-  readonly comfyui:McpServerConfig & {readonly allowedRoots:readonly string[];readonly licenseMode:"disabled"|"commercial"};
+  readonly comfyui:McpServerConfig & {readonly allowedRoots:readonly string[];readonly licenseMode:"disabled"|"commercial";readonly transformRoot:string};
   readonly qdrant:McpServerConfig & {readonly derivedCollection:string};
 }
 
@@ -52,7 +54,7 @@ export function readSelectedMcpConfig(env:NodeJS.ProcessEnv=process.env):Selecte
         ...(env.COMFY_MCP_BIN?{COMFY_BIN:env.COMFY_MCP_BIN}:{}),
       },protocolVersion:env.COMFY_MCP_PROTOCOL_VERSION||"2025-11-25",
       requestTimeoutMs:positiveInt(env.COMFY_MCP_TIMEOUT_MS,180000),maxResponseBytes:positiveInt(env.COMFY_MCP_MAX_RESPONSE_BYTES,16777216),
-      allowedRoots:roots,licenseMode:env.COMFY_MCP_LICENSE_MODE==="commercial"?"commercial":"disabled"},
+      allowedRoots:roots,transformRoot:path.resolve(env.COMFY_MCP_TRANSFORM_ROOT||path.join(process.cwd(),"data","comfy-transform-runtime")),licenseMode:env.COMFY_MCP_LICENSE_MODE==="commercial"?"commercial":"disabled"},
     qdrant:{serverId:"qdrant",enabled:enabled&&env.QDRANT_MCP_ENABLED==="true",command:env.QDRANT_MCP_COMMAND||"uvx",args:qArgs,cwd:env.QDRANT_MCP_CWD||undefined,
       env:{
         ...(env.QDRANT_URL ? {QDRANT_URL:env.QDRANT_URL} : {}),
@@ -76,18 +78,35 @@ export function isBrowserHostAllowed(value:string,allowlist:readonly string[]):b
   const host=u.hostname.toLowerCase();
   return allowlist.some(x=>{const a=x.toLowerCase();return host===a||host.endsWith("."+a);});
 }
-export function sanitizeComfyArguments(action:string,input:Record<string,unknown>,roots:readonly string[]):Record<string,unknown>{
+export function sanitizeComfyArguments(action:string,input:Record<string,unknown>,roots:readonly string[],transformRoot?:string):Record<string,unknown>{
   const args={...input};
-  if(action==="COMFY_VALIDATE_WORKFLOW"||action==="COMFY_RUN_WORKFLOW"){
+  if(action==="COMFY_VALIDATE_WORKFLOW"||action==="COMFY_RUN_WORKFLOW"||action==="COMFY_TRANSFORM_ASSET"){
     if(typeof args.workflow_path!=="string") throw new Error("comfy_workflow_path_required");
     if(!isPathWithinRoots(args.workflow_path,roots)) throw new Error("comfy_workflow_path_outside_allowlist");
   }
-  if(action==="COMFY_FETCH_OUTPUTS"){
+  if(action==="COMFY_FETCH_OUTPUTS"||action==="COMFY_FETCH_TRANSFORM_OUTPUT"){
     if(typeof args.out_dir!=="string") throw new Error("comfy_output_dir_required");
     if(!isPathWithinRoots(args.out_dir,roots)) throw new Error("comfy_output_dir_outside_allowlist");
   }
   if(action==="COMFY_RUN_WORKFLOW"||action==="COMFY_GENERATE_IMAGE"){
     delete args.confirm_spend; delete args.allow_spend; args.confirm_spend=false;
+  }
+  if(action==="COMFY_UPLOAD_INPUT"){
+    if(!Array.isArray(args.paths)||args.paths.length===0) throw new Error("comfy_upload_paths_required");
+    if(!transformRoot||!args.paths.every(value=>typeof value==="string"&&isPathWithinRoots(value,[transformRoot]))) throw new Error("comfy_upload_path_outside_transform_root");
+    args.overwrite=false;
+  }
+  if(action==="COMFY_WAIT_JOB"){
+    if(args.action!=="wait") throw new Error("comfy_wait_action_must_be_wait");
+    if(typeof args.prompt_id!=="string"||!args.prompt_id.trim()) throw new Error("comfy_prompt_id_required");
+    const timeout=Number(args.timeout_seconds??120);
+    if(!Number.isFinite(timeout)||timeout<1||timeout>300) throw new Error("comfy_wait_timeout_out_of_bounds");
+    args.timeout_seconds=Math.floor(timeout);
+  }
+  if(action==="COMFY_TRANSFORM_ASSET"){
+    if(!transformRoot||typeof args.recipe_id!=="string"||!args.recipe_id.trim()) throw new Error("comfy_transform_recipe_id_required");
+    if(typeof args.workflow_path!=="string"||!isPathWithinRoots(args.workflow_path,[transformRoot])) throw new Error("comfy_transform_workflow_outside_transform_root");
+    if(typeof args.workflow_sha256!=="string"||!/^[a-f0-9]{64}$/i.test(args.workflow_sha256)) throw new Error("comfy_transform_workflow_digest_required");
   }
   return args;
 }
@@ -132,7 +151,7 @@ export class SelectedMcpGateway {
     const action=getSelectedMcpAction(request.serverId,request.action);
     if(!action)throw new Error("mcp_action_not_registered:"+request.serverId+":"+request.action);
 
-    if(["BROWSER_CLICK","COMFY_RUN_WORKFLOW","COMFY_GENERATE_IMAGE","COMFY_FETCH_OUTPUTS","MEMORY_STORE_DERIVED"].includes(request.action))requireGuardian(request);
+    if(["BROWSER_CLICK","COMFY_RUN_WORKFLOW","COMFY_GENERATE_IMAGE","COMFY_FETCH_OUTPUTS","COMFY_UPLOAD_INPUT","COMFY_TRANSFORM_ASSET","COMFY_WAIT_JOB","COMFY_FETCH_TRANSFORM_OUTPUT","MEMORY_STORE_DERIVED"].includes(request.action))requireGuardian(request);
 
     if(request.action==="BROWSER_NAVIGATE"){
       if(typeof request.arguments.url!=="string")throw new Error("browser_url_required");
@@ -141,11 +160,15 @@ export class SelectedMcpGateway {
     if(request.action==="BROWSER_CLICK"&&!this.config.playwright.allowInteraction)throw new Error("browser_interaction_disabled");
 
     let args={...request.arguments};
-    if(request.serverId==="comfyui")args=sanitizeComfyArguments(request.action,args,this.config.comfyui.allowedRoots);
+    if(request.serverId==="comfyui")args=sanitizeComfyArguments(request.action,args,this.config.comfyui.allowedRoots,this.config.comfyui.transformRoot);
     if(request.serverId==="qdrant"&&request.action==="MEMORY_STORE_DERIVED")args=sanitizeQdrantStoreArguments(args,this.config.qdrant.derivedCollection);
     // Qdrant collection identity is bound by the MCP server process environment.
     // Do not pass collection_name: current qdrant-mcp may omit it from the tool schema when a default collection is configured.
 
+    if(request.serverId==="comfyui"&&request.action==="COMFY_TRANSFORM_ASSET"){
+      const currentDigest=createHash("sha256").update(fs.readFileSync(args.workflow_path as string)).digest("hex");
+      if(currentDigest.toLowerCase()!==(args.workflow_sha256 as string).toLowerCase()) throw new Error("comfy_transform_workflow_digest_mismatch");
+    }
     const adapter=this.adapters.get(request.serverId)!;
     const snapshot=await adapter.connect();
     const toolName=resolveSelectedMcpTool(action,snapshot.tools);
@@ -320,6 +343,41 @@ export function registerSelectedMcpCapabilities(
     },
     async (request) =>
       executeRegisteredMcp(gateway, request, "mcp.playwright.interact", "playwright", "floor00_analyst"),
+  );
+
+  sink.register(
+    {
+      id: "mcp.comfyui.transform",
+      name: "ComfyUI MCP Programmable Visual Transformation Gateway",
+      version: "1.0.0",
+      type: "VISUAL",
+      targetAnomalies: ["VISUAL_TRANSFORM_REQUIRED", "VISUAL_UPSCALE_REQUIRED", "VISUAL_RESTYLE_REQUIRED", "VISUAL_INPAINT_REQUIRED", "VISUAL_OUTPAINT_REQUIRED"],
+      riskLevel: "HIGH",
+      maxRetries: 1,
+      timeoutMs: 300000,
+      requiresGuardianGate: true,
+      implementationStatus: "EXTERNAL",
+      isProductionRoutable: config.comfyui.enabled && config.comfyui.licenseMode === "commercial",
+      executionClass: "PRODUCTION",
+      provider: "Comfy-Org/comfy-mcp",
+      runtime: "python",
+      licenseMetadata: { spdx: "AGPL-3.0-or-later OR LicenseRef-Comfy-Commercial", copyleft: true, commercialPermitted: config.comfyui.licenseMode === "commercial" },
+      provenance: { sourceRepo: "https://github.com/Comfy-Org/comfy-mcp", adoptionMode: "ISOLATED_PROVIDER", documentedAt: "2026-10-01" },
+      policy: {
+        allowedRoles: ["SYSTEM", "ADMIN", "OVERSEER", "MEDIA_SYNTHESIZER", "ASSET_REALIZER", "TIMELINE_COMPOSER", "RENDER_ROUTER"],
+        allowedFloors: ["floor04_media_synthesis", "floor05_timeline_composition", "floor06_rendering"],
+        environments: ["development", "staging", "production", "test"],
+        networkAccess: "RESTRICTED",
+        dataAccess: "READ_WRITE",
+        secretRequirements: [],
+        consentRequirements: ["GUARDIAN_CERTIFICATE"],
+        securityClass: "RESTRICTED",
+        commercialUsageAllowed: config.comfyui.licenseMode === "commercial",
+        auditPolicy: "EVIDENCE_REQUIRED",
+      },
+      trainingEligibility: "ELIGIBLE",
+    },
+    async (request) => executeRegisteredMcp(gateway, request, "mcp.comfyui.transform", "comfyui", "floor04_media_synthesis"),
   );
 
   sink.register(
