@@ -49,6 +49,7 @@ export const KNOWN_CAPABILITIES = [
   "mcp.playwright.research",
   "mcp.playwright.interact",
   "mcp.comfyui.visual",
+  "mcp.comfyui.transform",
   "mcp.qdrant.memory-search",
   "mcp.qdrant.memory-derived-write",
   "blender.scene.inspect",
