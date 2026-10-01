@@ -50,6 +50,10 @@ export interface CandidateAsset {
   // Behavioral retrieval metrics
   retentionRate?: number;
   ctr?: number;
+  /** Derived visual lineage when an asset is transformed by a governed provider. */
+  derivedFromAssetId?: string;
+  derivedFromSha256?: string;
+  transformation?: Record<string, unknown>;
 }
 
 export interface StyleProfileConfig {
