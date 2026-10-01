@@ -139,7 +139,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
 
     const command = Array.isArray(request.command)
       ? request.command.map((part) => JSON.stringify(part)).join(" ")
-      : request.command || "python -c \\"print('ShortForge Kaggle notebook probe')\\"";
+      : request.command || `python -c "print('ShortForge Kaggle notebook probe')"`;
 
     const script = this.workerScript(
       command,
