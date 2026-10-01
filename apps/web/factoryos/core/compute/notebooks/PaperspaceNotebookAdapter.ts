@@ -97,16 +97,17 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
+    const env = { ...process.env, ...(credentials || {}) };
     const body = {
       name: request.name,
       machineType:
-        request.metadata?.machineType || process.env.PAPERSPACE_MACHINE_TYPE,
-      region: request.region || process.env.PAPERSPACE_REGION,
-      templateId: request.templateId || process.env.PAPERSPACE_TEMPLATE_ID,
+        request.metadata?.machineType || env.PAPERSPACE_MACHINE_TYPE,
+      region: request.region || env.PAPERSPACE_REGION,
+      templateId: request.templateId || env.PAPERSPACE_TEMPLATE_ID,
       diskSize:
-        request.diskGb || Number(process.env.PAPERSPACE_DISK_GB || "50"),
+        request.diskGb || Number(env.PAPERSPACE_DISK_GB || "50"),
       startOnCreate: true,
-      ...(process.env.PAPERSPACE_STARTUP_SCRIPT_ID
+      ...(env.PAPERSPACE_STARTUP_SCRIPT_ID
         ? { startupScriptId: process.env.PAPERSPACE_STARTUP_SCRIPT_ID }
         : {}),
     };
