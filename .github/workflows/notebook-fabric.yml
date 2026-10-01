@@ -38,9 +38,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm --prefix apps/web run factoryos:typecheck
-      - run: npm --prefix apps/web exec vitest run factoryos/tests/notebook-fabric.test.ts
+          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+      - name: Notebook contract tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/notebook-fabric.test.ts
 
   live:
     if: \${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE' }}
@@ -51,7 +59,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
       - name: Install Kaggle CLI
         if: \${{ inputs.provider == 'KAGGLE' }}
         run: python -m pip install --upgrade kaggle
@@ -76,4 +86,5 @@ jobs:
           HF_ZEROGPU_SPACE: \${{ secrets.HF_ZEROGPU_SPACE }}
           HF_ZEROGPU_API_NAME: \${{ secrets.HF_ZEROGPU_API_NAME }}
           HF_TOKEN: \${{ secrets.HF_TOKEN }}
-        run: npm --prefix apps/web run factoryos:verify:notebooks
+        working-directory: apps/web
+        run: npm run factoryos:verify:notebooks
