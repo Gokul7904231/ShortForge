@@ -88,5 +88,15 @@ describe("Provider API Fabric", () => {
       reconciliationRequired: true,
     });
     expect(journal.get(a.operationId)?.reconciliationRequired).toBe(true);
+
+    expect(() =>
+      journal.start({
+        providerId: "api_vast",
+        providerType: "VAST",
+        operation: "PROVISION",
+        idempotencyKey: "test-idempotency-1",
+        requestPayload: { gpu: "H100" },
+      }),
+    ).toThrow("IDEMPOTENCY_KEY_REUSE_CONFLICT");
   });
 });
