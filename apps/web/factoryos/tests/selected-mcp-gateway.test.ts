@@ -56,3 +56,31 @@ describe("Selected MCP Fabric policy", () => {
     }, "shortforge-derived-memory")).toThrow("qdrant_store_must_be_memory_fabric_projection");
   });
 });
+
+
+  it("bounds the programmable Comfy transformation surface", () => {
+    const roots = ["/tmp/shortforge/comfy"];
+    const transformRoot = "/tmp/shortforge/comfy/transforms";
+    const upload = sanitizeComfyArguments("COMFY_UPLOAD_INPUT", {
+      paths: ["/tmp/shortforge/comfy/transforms/job/input/source.jpg"],
+      overwrite: true
+    }, roots, transformRoot);
+    expect(upload.overwrite).toBe(false);
+
+    expect(() => sanitizeComfyArguments("COMFY_UPLOAD_INPUT", {
+      paths: ["/tmp/shortforge/secret.txt"]
+    }, roots, transformRoot)).toThrow("comfy_upload_path_outside_transform_root");
+
+    expect(() => sanitizeComfyArguments("COMFY_TRANSFORM_ASSET", {
+      workflow_path: "/tmp/shortforge/comfy/transforms/job/workflow.json",
+      recipe_id: "upscale-2x-realesrgan",
+      workflow_sha256: "not-a-digest"
+    }, roots, transformRoot)).toThrow("comfy_transform_workflow_digest_required");
+
+    const wait = sanitizeComfyArguments("COMFY_WAIT_JOB", {
+      action: "wait",
+      prompt_id: "prompt-1",
+      timeout_seconds: 9999
+    }, roots, transformRoot);
+    expect(wait.timeout_seconds).toBeUndefined();
+  });
