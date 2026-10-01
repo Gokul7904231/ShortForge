@@ -52,14 +52,24 @@ describe("Provider API Fabric", () => {
     const daytona = new DaytonaProviderControl();
     const modal = new ModalProviderControl();
 
+    expect(vast.metadata.controlCapabilities.canConfigureEntrypointByApi).toBe(true);
+    expect(runpod.metadata.controlCapabilities.canConfigureEntrypointByApi).toBe(true);
+    expect(paperspace.metadata.controlCapabilities.canConfigureEntrypointByApi).toBe(true);
+    expect(daytona.metadata.controlCapabilities.canConfigureEntrypointByApi).toBe(true);
+    expect(modal.metadata.controlCapabilities.canConfigureEntrypointByApi).toBe(true);
+
     expect(vast.metadata.controlCapabilities.canExecuteCommandByApi).toBe(false);
     expect(runpod.metadata.controlCapabilities.canExecuteCommandByApi).toBe(false);
     expect(paperspace.metadata.controlCapabilities.canExecuteCommandByApi).toBe(false);
     expect(daytona.metadata.controlCapabilities.canExecuteCommandByApi).toBe(true);
     expect(modal.metadata.controlCapabilities.canExecuteCommandByApi).toBe(true);
 
-    expect(vast.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(false);
-    expect(runpod.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(false);
+    expect(vast.metadata.controlCapabilities.canReadLogsByApi).toBe(true);
+    expect(runpod.metadata.controlCapabilities.canReadLogsByApi).toBe(true);
+    expect(paperspace.metadata.controlCapabilities.canReadLogsByApi).toBe(false);
+
+    expect(vast.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(true);
+    expect(runpod.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(true);
     expect(paperspace.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(false);
     expect(daytona.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(true);
     expect(modal.metadata.controlCapabilities.canVerifyPhysicalRenderByApi).toBe(true);
