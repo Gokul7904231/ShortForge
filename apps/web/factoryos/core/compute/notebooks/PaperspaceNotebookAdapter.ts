@@ -7,6 +7,7 @@ import type {
   NotebookProvisionRequest,
   NotebookProvisionResult,
   NotebookRuntime,
+  NotebookCredentialBundle,
 } from "./NotebookContracts";
 
 const BASE = "https://api.paperspace.com/v1";
@@ -34,14 +35,15 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     },
   };
 
-  async validateCredentials(): Promise<NotebookCredentialValidation> {
+  async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
     const requiredKeys = [
       "PAPERSPACE_API_KEY",
       "PAPERSPACE_TEMPLATE_ID",
       "PAPERSPACE_MACHINE_TYPE",
       "PAPERSPACE_REGION",
     ];
-    const missingKeys = requiredKeys.filter((key) => !process.env[key]);
+    const env = { ...process.env, ...(credentials || {}) };
+    const missingKeys = requiredKeys.filter((key) => !env[key]);
 
     if (missingKeys.length) {
       return {
@@ -56,7 +58,7 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     }
 
     try {
-      const response = await this.request("/machines");
+      const response = await this.request("/machines", {}, credentials);
       return {
         configured: true,
         authenticated: response.ok,
@@ -87,8 +89,8 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     }
   }
 
-  async provision(request: NotebookProvisionRequest): Promise<NotebookProvisionResult> {
-    const validation = await this.validateCredentials();
+  async provision(request: NotebookProvisionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookProvisionResult> {
+    const validation = await this.validateCredentials(credentials);
     if (!validation.authenticated) {
       throw new Error(
         "PAPERSPACE_PROVIDER_BLOCKED: credentials or machine configuration unavailable.",
@@ -112,7 +114,7 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     const response = await this.request("/machines", {
       method: "POST",
       body: JSON.stringify(body),
-    });
+    }, credentials);
 
     if (!response.ok) {
       throw new Error(
@@ -146,9 +148,11 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async getRuntime(resourceId: string): Promise<NotebookRuntime> {
+  async getRuntime(resourceId: string, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const response = await this.request(
       "/machines/" + encodeURIComponent(resourceId),
+      {},
+      credentials,
     );
 
     if (response.status === 404) {
@@ -182,7 +186,7 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async execute(_request: NotebookExecutionRequest): Promise<NotebookExecutionResult> {
+  async execute(_request: NotebookExecutionRequest, _credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
     return {
       providerType: "PAPERSPACE",
       verificationLevel: "CONTROL_PLANE_VERIFIED",
@@ -196,10 +200,11 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  async terminate(runtime: NotebookRuntime): Promise<NotebookRuntime> {
+  async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const response = await this.request(
       "/machines/" + encodeURIComponent(runtime.resourceId),
       { method: "DELETE" },
+      credentials,
     );
 
     if (!response.ok && response.status !== 404) {
@@ -215,13 +220,13 @@ export class PaperspaceNotebookAdapter implements NotebookProviderAdapter {
     };
   }
 
-  private async request(path: string, init: RequestInit = {}): Promise<Response> {
+  private async request(path: string, init: RequestInit = {}, credentials?: NotebookCredentialBundle): Promise<Response> {
     return fetch(BASE + path, {
       ...init,
       headers: {
         Accept: "application/json",
         Authorization:
-          "Bearer " + (process.env.PAPERSPACE_API_KEY || ""),
+          "Bearer " + (credentials?.PAPERSPACE_API_KEY || process.env.PAPERSPACE_API_KEY || ""),
         ...(init.body !== undefined
           ? { "Content-Type": "application/json" }
           : {}),
