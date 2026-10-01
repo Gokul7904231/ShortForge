@@ -5,6 +5,8 @@ on:
     paths:
       - "apps/web/factoryos/core/mcp/**"
       - "apps/web/factoryos/core/visual/**"
+      - "apps/web/factoryos/assets/comfy-transforms/**"
+      - "apps/web/factoryos/assets/comfy-transforms/**"
       - "training/ascalon/ontology/capabilities.json"
       - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
       - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
