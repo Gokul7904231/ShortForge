@@ -122,7 +122,8 @@ export class RunPodV2ProviderControl
     const rows = Array.isArray(response.data)
       ? response.data
       : response.data?.gpus || response.data?.data || [];
-    return rows
+
+    const normalized = rows
       .filter((row: any) => !request.gpuType || String(gpuId(row)).toLowerCase().includes(request.gpuType.toLowerCase()))
       .slice(0, request.maxOffers || 50)
       .map((row: any) => ({
@@ -157,6 +158,42 @@ export class RunPodV2ProviderControl
         providerMetadata: row,
       }))
       .filter((offer: ComputeOffer) => Boolean(offer.offerId));
+
+    // When a specific GPU is requested, query the v2 availability-aware GPU
+    // endpoint as a second step. This turns the catalog from a static type list
+    // into a live placement signal without making the provider adapter invent
+    // capacity.
+    if (request.gpuType && normalized.length) {
+      const refreshed: ComputeOffer[] = [];
+      for (const offer of normalized) {
+        try {
+          const detail = await this.transport.request<any>({
+            method: "GET",
+            path: `/catalog/gpus/${encodeURIComponent(offer.offerId)}?include=AVAILABILITY&product=POD&count=${request.gpuCount || 1}`,
+            retryMode: "SAFE",
+          });
+          const available =
+            detail.data?.availability ??
+            detail.data?.podAvailability ??
+            detail.data?.data?.availability;
+          refreshed.push({
+            ...offer,
+            capacityConfidence:
+              available !== undefined ? "LIVE" : offer.capacityConfidence,
+            providerMetadata: {
+              ...offer.providerMetadata,
+              availability: available,
+              availabilityResponse: detail.data,
+            },
+          });
+        } catch {
+          refreshed.push(offer);
+        }
+      }
+      return refreshed;
+    }
+
+    return normalized;
   }
 
   async provision(request: ProvisionRequest): Promise<ProvisionAccepted> {
