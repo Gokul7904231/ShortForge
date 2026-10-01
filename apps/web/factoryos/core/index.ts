@@ -80,6 +80,9 @@ export * from "./comms/CommsFabric";
 export * from "./comms/SituationComms";
 export * from "./comms/BlenderMcpContracts";
 export * from "./comms/BlenderMcpAdapter";
+export * from "./mcp/McpContracts";
+export * from "./mcp/StdioMcpAdapter";
+export * from "./mcp/SelectedMcpGateway";
 export * from "./intelligence/visual/AscalonBlenderDecisionBridge";
 
 // Cognitive Operating Plane (Frontier v2)
