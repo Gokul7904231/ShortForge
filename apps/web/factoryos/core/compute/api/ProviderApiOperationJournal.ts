@@ -92,7 +92,7 @@ export class ProviderApiOperationJournal {
     };
 
     this.db.prepare(`
-      INSERT INTO provider_api_operations (
+      INSERT OR IGNORE INTO provider_api_operations (
         operation_id, factory_execution_id, mission_id, provider_id,
         provider_type, operation, state, idempotency_key, request_hash,
         attempt, requested_at, expires_at, reconciliation_required, metadata_json
@@ -114,7 +114,15 @@ export class ProviderApiOperationJournal {
       JSON.stringify(record.metadata),
     );
 
-    return record;
+    const persisted = this.get(record.operationId);
+    if (persisted) return persisted;
+    // Another process won the provider/idempotency key race.
+    const raced = this.findByIdempotencyKey(
+      request.providerId,
+      request.idempotencyKey,
+    );
+    if (raced) return raced;
+    throw new Error("Provider operation journal insert was not persisted.");
   }
 
   findByIdempotencyKey(
