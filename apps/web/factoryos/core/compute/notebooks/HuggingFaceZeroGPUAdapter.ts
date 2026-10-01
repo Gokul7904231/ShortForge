@@ -36,19 +36,63 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
   async validateCredentials(): Promise<NotebookCredentialValidation> {
     const requiredKeys = ["HF_ZEROGPU_SPACE", "HF_ZEROGPU_API_NAME"];
     const missingKeys = requiredKeys.filter((key) => !process.env[key]);
-    const configured = missingKeys.length === 0;
+    if (missingKeys.length) {
+      return {
+        configured: false,
+        authenticated: false,
+        providerReachable: false,
+        requiredKeys,
+        missingKeys,
+        checkedAt: new Date().toISOString(),
+        evidence: ["ZeroGPU Space endpoint configuration is incomplete."],
+      };
+    }
 
-    return {
-      configured,
-      authenticated: configured,
-      providerReachable: configured,
-      requiredKeys,
-      missingKeys,
-      checkedAt: new Date().toISOString(),
-      evidence: configured
-        ? ["ZeroGPU Gradio Space endpoint configuration is present."]
-        : ["Configure a public or authorized Gradio Space endpoint before execution."],
-    };
+    const space = process.env.HF_ZEROGPU_SPACE!;
+    const host = space.includes(".hf.space")
+      ? space.replace(/^https?:\/\//, "").replace(/\/+$/, "")
+      : space.replace("/", "-") + ".hf.space";
+
+    try {
+      const response = await fetch(
+        "https://" + host + "/gradio_api/openapi.json",
+        {
+          headers: {
+            ...(process.env.HF_TOKEN
+              ? { Authorization: "Bearer " + process.env.HF_TOKEN }
+              : {}),
+          },
+        },
+      );
+
+      return {
+        configured: true,
+        authenticated: response.ok,
+        providerReachable: true,
+        requiredKeys,
+        missingKeys: [],
+        checkedAt: new Date().toISOString(),
+        evidence: [
+          response.ok
+            ? "Gradio Space OpenAPI endpoint is reachable."
+            : "Gradio Space OpenAPI endpoint returned HTTP " + response.status + ".",
+        ],
+        errorMessage: response.ok
+          ? undefined
+          : "Unable to validate the configured Gradio Space endpoint.",
+      };
+    } catch (error: any) {
+      return {
+        configured: true,
+        authenticated: false,
+        providerReachable: false,
+        requiredKeys,
+        missingKeys: [],
+        checkedAt: new Date().toISOString(),
+        evidence: ["Gradio Space endpoint validation failed."],
+        errorMessage: error?.message || String(error),
+      };
+    }
   }
 
   async provision(_request: NotebookProvisionRequest): Promise<NotebookProvisionResult> {
