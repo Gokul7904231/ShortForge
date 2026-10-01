@@ -310,14 +310,31 @@ export class RunPodV2ProviderControl
   }
 
   async renderProbe(request: RenderProbeRequest): Promise<RenderProbeResult> {
-    const provisioned = await this.provision({
-      idempotencyKey: `render-probe:${Date.now()}`,
-      image: request.image,
+    const offers = await this.discoverOffers({
       gpuType: request.gpuType,
       gpuCount: request.gpuCount,
+      maxOffers: 10,
+      acceleratorRequired: true,
+    });
+    const offer = offers[0];
+    if (!offer) {
+      throw new ProviderApiError(
+        "RunPod catalog returned no GPU matching the render probe.",
+        { providerCode: "RUNPOD_NO_GPU_OFFER", retryable: false },
+      );
+    }
+
+    const idempotencyKey = `render-probe:${Date.now()}`;
+    const provisioned = await this.provision({
+      idempotencyKey,
+      image: request.image,
+      offerId: offer.offerId,
+      gpuType: offer.accelerator?.type || offer.offerId,
+      gpuCount: request.gpuCount || offer.accelerator?.count || 1,
       cpuCores: request.cpuCores,
       memoryMb: request.memoryMb,
       diskGb: request.diskGb,
+      region: offer.location?.datacenter,
       command: request.renderCommand,
       maxDurationSeconds: Math.ceil(request.timeoutMs / 1000),
     });
