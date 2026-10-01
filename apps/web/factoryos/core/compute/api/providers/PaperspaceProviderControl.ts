@@ -51,7 +51,10 @@ export class PaperspaceProviderControl
   private readonly apiKey = process.env.PAPERSPACE_API_KEY;
 
   constructor() {
-    super(this.metadata.baseUrl, this.apiKey);
+    super(
+      process.env.PAPERSPACE_API_BASE_URL || "https://api.paperspace.com/v1",
+      process.env.PAPERSPACE_API_KEY,
+    );
   }
 
   async validateCredentials(): Promise<CredentialValidationResult> {
