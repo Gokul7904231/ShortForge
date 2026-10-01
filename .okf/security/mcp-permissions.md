@@ -217,3 +217,46 @@ For any new MCP capability:
 
 ## 11. Selected MCP rule
 No selected MCP becomes ambient authority. A capability grant exposes a semantic action set, never an arbitrary remote tool list.
+
+
+## 10.1 ComfyUI programmable visual transformation
+
+### CAP_MCP_COMFY_TRANSFORM
+
+ComfyUI is also exposed as a transformation engine for already-retrieved visual assets.
+
+Allowed execution path:
+- F04 Media Synthesis
+- F05 Timeline Composition
+- F06 Rendering
+
+The transformation path is recipe-bound:
+1. ShortForge selects a registered transformation recipe.
+2. Source media is staged under COMFY_MCP_TRANSFORM_ROOT.
+3. The engine materializes a recipe workflow and records its SHA-256 digest.
+4. The gateway validates the workflow against the live ComfyUI install.
+5. The gateway requires the recipe ID, workflow path, and matching workflow digest.
+6. ComfyUI executes the approved graph.
+7. Outputs are copied to a bounded transform output directory.
+8. ShortForge validates, hashes, curates, and stores the result as a derived asset with parent lineage.
+
+Initial recipe:
+- upscale-2x-realesrgan
+
+Planned recipe classes:
+- IMG2IMG_RESTYLE
+- INPAINT
+- OUTPAINT_9_16
+- DETAIL_ENHANCE
+
+These recipe classes are not production-routable until an executable recipe and fresh validation exist.
+
+The transformation layer must not:
+- replace Wikimedia/Openverse retrieval as the default asset source;
+- mutate or delete the parent asset;
+- accept arbitrary workflow JSON authored by the model;
+- treat a Comfy job success response as F07 proof;
+- alter source license/attribution metadata;
+- grant release or publication authority.
+
+For transformed media, license/attribution metadata is inherited from the parent asset unless an explicit policy proves a different disposition.
