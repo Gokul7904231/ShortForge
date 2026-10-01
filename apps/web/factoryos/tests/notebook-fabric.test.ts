@@ -6,6 +6,7 @@ import { ColabNotebookAdapter } from "../core/compute/notebooks/ColabNotebookAda
 import { PaperspaceNotebookAdapter } from "../core/compute/notebooks/PaperspaceNotebookAdapter";
 import { LightningNotebookAdapter } from "../core/compute/notebooks/LightningNotebookAdapter";
 import { HuggingFaceZeroGPUAdapter } from "../core/compute/notebooks/HuggingFaceZeroGPUAdapter";
+import { NotebookRouter } from "../core/compute/notebooks/NotebookRouter";
 
 const originalEnv = { ...process.env };
 
@@ -86,6 +87,30 @@ describe("Notebook & Interactive Compute Fabric", () => {
       "NO_CARD_STATED",
       "NO_CARD_NOT_ESTABLISHED",
     ]);
+  });
+
+  it("routes strict no-card workloads only to providers with explicit no-card evidence", () => {
+    const router = new NotebookRouter([
+      new KaggleNotebookAdapter(),
+      new ColabNotebookAdapter(),
+      new PaperspaceNotebookAdapter(),
+      new LightningNotebookAdapter(),
+      new HuggingFaceZeroGPUAdapter(),
+    ]);
+
+    const decision = router.route({
+      gpuRequired: true,
+      noCardOnly: true,
+    });
+
+    expect(decision.admitted).toBe(true);
+    expect(decision.selectedProvider).toBe("LIGHTNING");
+    expect(
+      decision.candidates.find((candidate) => candidate.providerType === "KAGGLE")?.admitted,
+    ).toBe(false);
+    expect(
+      decision.candidates.find((candidate) => candidate.providerType === "LIGHTNING")?.admitted,
+    ).toBe(true);
   });
 
   it("keeps notebook registration independent from ComputeRouter", () => {
