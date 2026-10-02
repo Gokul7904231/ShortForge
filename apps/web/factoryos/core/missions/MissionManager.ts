@@ -487,6 +487,54 @@ export class MissionManager {
     return structuredClone(updated);
   }
 
+  async syncDAGTasksToMission(
+    missionId: string,
+    dag: import("../contracts/OverseerThinkingContracts").TaskDAG,
+    actorId = "overseer",
+  ): Promise<MissionTask[]> {
+    const created: MissionTask[] = [];
+    for (const node of Object.values(dag.nodes)) {
+      const existing = await this.getMissionTask(missionId, node.taskId);
+      if (existing) continue;
+
+      const state: MissionTaskWorkState =
+        node.status === "SUCCEEDED"
+          ? "DONE"
+          : node.status === "RUNNING"
+            ? "RUNNING"
+            : node.status === "FAILED"
+              ? "FAILED"
+              : node.dependencies.length === 0
+                ? "READY"
+                : "TODO";
+
+      const task = await this.createMissionTask(
+        missionId,
+        {
+          taskId: node.taskId,
+          name: node.name,
+          executionType: "HYBRID",
+          ownerAgent: node.assignedAgentId || node.requiredAgentType,
+          capabilityRequired: node.requiredAgentType,
+          input: node.payload,
+          expectedOutputType: "TASK_RESULT",
+          timeoutMs: 300000,
+          maxRetries: Math.max(0, node.maxAttempts - 1),
+          dependencyTaskIds: [...node.dependencies],
+          requiresReview: false,
+          idempotencyKey: `dag:${dag.dagId}:node:${node.taskId}`,
+          workState: state,
+          sourceDagId: dag.dagId,
+          sourceDagNodeId: node.taskId,
+          workerLane: node.requiredAgentType,
+        } as any,
+        actorId,
+      );
+      created.push(task);
+    }
+    return created;
+  }
+
   async createMissionTask(
     missionId: string,
     input: Omit<MissionTask, "missionId" | "status" | "retryCount" | "workEvents"> & {
