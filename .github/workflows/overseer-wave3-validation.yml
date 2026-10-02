@@ -34,4 +34,4 @@ jobs:
         run: python -m pip install semgrep==1.174.0
       - name: Wave 3 static security scan
         run: |
-          semgrep scan             --config production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             apps/web/factoryos/core/agent             apps/web/app/api/overseer/agents/workforce
+          semgrep scan             --config ../../production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             factoryos/core/agent             app/api/overseer/agents/workforce
