@@ -665,7 +665,9 @@ export class AgentIntercomStore {
   }
 
   private toCommsAuthorization(auth: AgentIntercomAuth): CommsAuthorizationContext {
-    const kinds = auth.allowedKinds.flatMap((kind) => kind === "MESSAGE" ? ["EVENT" as const] : ["COMMAND" as const]);
+    const kinds = auth.allowedKinds.flatMap((kind) =>
+      kind === "MESSAGE" ? ["INTERCOM_MESSAGE" as const] : ["COMMAND" as const]
+    );
     return {
       principal: auth.principal,
       allowedMissionIds: auth.allowedMissionIds,
