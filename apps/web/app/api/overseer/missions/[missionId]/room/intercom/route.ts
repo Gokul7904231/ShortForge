@@ -65,6 +65,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
         ttlMs: body.ttlMs,
         maxAttempts: body.maxAttempts,
       });
+      await controller.collaborationStore.appendMessage(
+        await controller.missionManager.getMission(missionId).then((mission) => {
+          if (!mission) throw new Error("MISSION_NOT_FOUND");
+          return mission;
+        }),
+        actor,
+        {
+          body: String(body.text || ""),
+          taskId: body.taskId,
+          kind: "MESSAGE",
+        },
+      );
       return NextResponse.json({ success: true, data: message }, { status: 201 });
     }
 
@@ -88,6 +100,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
         ttlMs: body.ttlMs,
         correlationId: body.correlationId,
         causationId: body.causationId,
+      });
+      const mission = await controller.missionManager.getMission(missionId);
+      if (!mission) throw new Error("MISSION_NOT_FOUND");
+      await controller.collaborationStore.appendMessage(mission, actor, {
+        body: `Handoff → ${target}: ${String(body.objective || "")}`,
+        taskId: body.taskId,
+        kind: "HANDOFF",
+        metadata: {
+          delegationId: delegation.delegationId,
+          requiredCapability: body.requiredCapability,
+        },
       });
       return NextResponse.json({ success: true, data: delegation }, { status: 201 });
     }
