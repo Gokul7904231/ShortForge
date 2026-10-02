@@ -9,7 +9,7 @@ import * as path from "node:path";
 import { db } from "../../../lib/firebase-admin";
 import { AssetCurator } from "../../../lib/visual-assets/AssetCurator";
 import { getStorageProvider } from "../../../lib/visual-assets/StorageProvider";
-import type { CandidateAsset } from "../../../lib/visual-assets/VisualIntelligenceTypes";
+import type { CandidateAsset, VisualTransformLineage } from "../../../lib/visual-assets/VisualIntelligenceTypes";
 import { SelectedMcpGateway } from "../mcp/SelectedMcpGateway";
 import { getComfyTransformRecipe, type ComfyVisualTransformOperation } from "./ComfyTransformRecipes";
 
@@ -27,17 +27,6 @@ export interface VisualTransformRequest {
   readonly sourceAsset: CandidateAsset;
   readonly steps: readonly VisualTransformStep[];
   readonly guardianCertificateId: string;
-}
-
-export interface VisualTransformLineage {
-  readonly transformationId: string;
-  readonly parentAssetId: string;
-  readonly parentSha256: string;
-  readonly recipeId: string;
-  readonly recipeVersion: string;
-  readonly operation: ComfyVisualTransformOperation;
-  readonly parametersSha256: string;
-  readonly createdAt: string;
 }
 
 export interface VisualTransformResult {
