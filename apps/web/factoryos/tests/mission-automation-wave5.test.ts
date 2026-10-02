@@ -72,10 +72,16 @@ describe("Wave 5 Mission Automation & Fleet Orchestration", () => {
     await expect(store.createRecipe({ actorId: "viewer", workspaceRole: "VIEWER" }, { name: "Blocked", steps: [{ stepId: "one", name: "One", ownerAgent: "research-slayer", capabilityRequired: "RESEARCH", expectedOutputType: "R" }] })).rejects.toThrow("AUTOMATION_RECIPE_MUTATION_FORBIDDEN");
   });
 
-  it("projects safe fleet activity and supports mission/agent filtering", async () => {
+  it("projects fleet activity and supports mission filtering", async () => {
     const { store } = harness();
-    await store["handleEvent"]?.({} as any).catch?.(() => {});
-    const activity = await store.activity({ limit: 10 });
-    expect(activity.items).toEqual([]);
+    const recipe = await store.createRecipe(actor, { name: "Activity flow", steps: [{ stepId: "one", name: "One", ownerAgent: "research-slayer", capabilityRequired: "RESEARCH", expectedOutputType: "RESULT" }] });
+    const published = await store.updateRecipe(actor, recipe.recipeId, { status: "PUBLISHED", expectedVersion: recipe.version });
+    const launch = await store.launchRecipe(actor, { recipeId: published.recipeId, goal: "Observe activity", mode: "CREATE_ONLY" });
+    const all = await store.activity({ limit: 20 });
+    expect(all.items.some((item) => item.topic === "AUTOMATION_RECIPE_CREATED")).toBe(true);
+    expect(all.items.some((item) => item.missionId === launch.missionId)).toBe(true);
+    const filtered = await store.activity({ missionId: launch.missionId, limit: 20 });
+    expect(filtered.items.length).toBeGreaterThan(0);
+    expect(filtered.items.every((item) => item.missionId === launch.missionId)).toBe(true);
   });
 });
