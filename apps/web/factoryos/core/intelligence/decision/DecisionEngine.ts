@@ -1,7 +1,7 @@
 /**
  * ShortForge / FactoryOS — Decision Engine
  *
- * Coordinates typed decision evaluation across Deterministic, LLM, and Shadow Jev adapters.
+ * Coordinates deterministic, GLiDE fast-decision, LLM, and shadow decision adapters.
  * Enforces Ponytail economy (deterministic first), shadow learning, and durable ledgering.
  */
 
@@ -63,7 +63,7 @@ export class DecisionEngine {
   public async evaluateBatch(request: DecisionBatchRequest): Promise<DecisionBatchResult> {
     const t0 = Date.now();
     let finalAnswersById: Record<string, DecisionAnswer> = {};
-    let adapterUsed: "DETERMINISTIC" | "LLM" | "HYBRID" = "DETERMINISTIC";
+    let adapterUsed: "DETERMINISTIC" | "GLIDE" | "LLM" | "HYBRID" = "DETERMINISTIC";
 
     // 1. Deterministic Evaluation First (Ponytail Economy: 0 tokens)
     let unresolvedQuestions = request.questions;
