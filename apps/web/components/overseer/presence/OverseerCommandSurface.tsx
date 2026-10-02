@@ -19,6 +19,7 @@ import type { FactoryMetrics } from "./OverseerMetricsHUD";
 import type { ChatMessage, OverseerMode } from "./OverseerChat";
 import { Activity, Layers, ShieldCheck, Bot } from "lucide-react";
 import { useAuth } from "@/lib/auth/hooks";
+import { MissionRoomPanel } from "../collaboration/MissionRoomPanel";
 
 const OverseerProgressiveDisclosure = dynamic(
   () => import("./OverseerProgressiveDisclosure").then((mod) => mod.OverseerProgressiveDisclosure),
@@ -320,6 +321,7 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
   };
 
   const accentColor = "#1769E8";
+  const primaryMissionId = stateData?.missions?.[0]?.missionId || null;
 
   return (
     <div
@@ -369,6 +371,11 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
             }}
             accentColor={accentColor}
           />
+        </section>
+
+        {/* Wave 1: shared human + agent mission collaboration surface */}
+        <section className="w-full max-w-4xl mx-auto mt-5">
+          <MissionRoomPanel missionId={primaryMissionId} accentColor={accentColor} />
         </section>
       </div>
 

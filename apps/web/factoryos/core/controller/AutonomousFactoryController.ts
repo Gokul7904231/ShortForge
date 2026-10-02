@@ -28,6 +28,7 @@ import { OverseerAPIHandler } from "../overseer/api/OverseerAPIHandler";
 import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
 import { MissionManager } from "../missions/MissionManager";
 import { GuardianManager } from "../guardian/GuardianManager";
+import { MissionCollaborationStore } from "../collaboration/MissionCollaborationStore";
 
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
 import { InstructorSubsystem } from "../instructor/InstructorSubsystem";
@@ -83,6 +84,7 @@ export class AutonomousFactoryController {
   public leaseManager!: LeaseManager;
   public caseManager!: CaseManager;
   public missionManager!: MissionManager;
+  public collaborationStore!: MissionCollaborationStore;
   public guardianManager!: GuardianManager;
   public slayerEngine!: SlayerEngine;
   public healerEngine!: HealerEngine;
@@ -216,6 +218,12 @@ export class AutonomousFactoryController {
     this.leaseManager = new LeaseManager(repos.leases);
     this.caseManager = new CaseManager(repos.cases, this.eventBus, this.worldState);
     this.missionManager = new MissionManager(repos.missions, this.eventBus, this.worldState, repos.cases, repos.taskDAGs);
+    this.collaborationStore = new MissionCollaborationStore({
+      eventBus: this.eventBus,
+      workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
+      mongoDb: this.mongoClient?.getDb() || undefined,
+      diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+    });
 
     // 6. Memory & Cognitive Engine
     this.memoryEngine = new MemoryEngine(repos.memories);
