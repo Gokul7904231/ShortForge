@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR93-Overseer-Wave5-Fleet-Orchestration",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/overseer-wave3-agent-workforce-20261002",
+  "headRef": "feat/overseer-wave5-fleet-orchestration-20261002",
+  "objective": "Add versioned mission automation recipes, deterministic task materialization, and durable fleet activity projection.",
+  "rules": [
+    "Recipes are coordination intent, not execution authority.",
+    "Mission Work remains canonical work state.",
+    "FGC/AEF remain execution authorization/runtime boundaries.",
+    "F07 remains independent production truth.",
+    "Workforce capability grants are not minted by recipes.",
+    "No second broker or authoritative state store."
+  ],
+  "security": {
+    "auth": "Authenticated recipe/activity APIs; mutations require EDITOR/ADMIN/OWNER.",
+    "capability": "Managed workforce target agents must be ACTIVE and already possess requested capabilities.",
+    "metadata": "Fleet activity persists a bounded allowlist of non-secret metadata.",
+    "semgrep": "PENDING"
+  },
+  "validation": {
+    "status": "IN_PROGRESS",
+    "typecheck": "PENDING",
+    "tests": "PENDING",
+    "semgrep": "PENDING",
+    "strix": "INHERITED/UNPROVEN — cumulative Wave 3 security gate remains independent."
+  },
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Wave 5 release remains cumulative with Wave 3. Wave 5 itself must pass focused typecheck/tests/Semgrep; cumulative release still depends on the inherited Wave 3 security requirement.",
+  "validatedHead": null
+}
