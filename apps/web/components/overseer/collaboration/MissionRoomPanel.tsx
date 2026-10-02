@@ -697,16 +697,13 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
                               )}
 
                               <div className="mt-2 flex flex-wrap gap-1.5">
-                                {state === "RUNNING" && Boolean(task.requiresReview) && (
-                                  <button type="button" onClick={() => void runAction("request_review", { summary: "Review requested from Overseer Dashboard." })} className="px-2 py-1 rounded-md bg-[#1769E8]/10 text-[#1769E8] text-[8px] font-mono font-bold">Review</button>
-                                )}
                                 {state === "REVIEW" && (
                                   <>
                                     <button type="button" onClick={() => void runAction("complete", { summary: "Review approved by operator." })} className="px-2 py-1 rounded-md bg-[#19C37D]/10 text-[#137A4D] text-[8px] font-mono font-bold">Approve</button>
                                     <button type="button" onClick={() => void runAction("request_changes", { reason: "Changes requested from Overseer Dashboard." })} className="px-2 py-1 rounded-md bg-[#F5B942]/10 text-[#8A6500] text-[8px] font-mono font-bold">Rework</button>
                                   </>
                                 )}
-                                {["TODO", "READY", "RUNNING"].includes(state) && (
+                                {["TODO", "READY"].includes(state) && (
                                   <button type="button" onClick={() => void runAction("block", { reason: "Blocked by operator from Overseer Dashboard." })} className="px-2 py-1 rounded-md bg-[#FF5A67]/5 text-[#C33A47] text-[8px] font-mono font-bold">Block</button>
                                 )}
                                 {state === "BLOCKED" && (
