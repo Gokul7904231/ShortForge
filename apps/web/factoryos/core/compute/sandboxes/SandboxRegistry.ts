@@ -3,6 +3,8 @@ import type {
   SandboxCredentialValidation,
   SandboxExecutionRequest,
   SandboxExecutionResult,
+  SandboxFileDownloadRequest,
+  SandboxFileTransferRequest,
   SandboxProviderAdapter,
   SandboxProviderType,
   SandboxProvisionRequest,
@@ -33,6 +35,18 @@ export class SandboxRegistry {
 
   async waitReady(type: SandboxProviderType, resourceId: string, timeoutMs?: number, credentials?: SandboxCredentialBundle): Promise<SandboxRuntime> {
     return this.require(type).waitReady(resourceId, timeoutMs, credentials);
+  }
+
+  async uploadFile(type: SandboxProviderType, request: SandboxFileTransferRequest, credentials?: SandboxCredentialBundle): Promise<void> {
+    const adapter = this.require(type);
+    if (!adapter.uploadFile) throw new Error("Sandbox provider does not support file upload: " + type);
+    return adapter.uploadFile(request, credentials);
+  }
+
+  async downloadFile(type: SandboxProviderType, request: SandboxFileDownloadRequest, credentials?: SandboxCredentialBundle): Promise<void> {
+    const adapter = this.require(type);
+    if (!adapter.downloadFile) throw new Error("Sandbox provider does not support file download: " + type);
+    return adapter.downloadFile(request, credentials);
   }
 
   async execute(type: SandboxProviderType, request: SandboxExecutionRequest, credentials?: SandboxCredentialBundle): Promise<SandboxExecutionResult> {
