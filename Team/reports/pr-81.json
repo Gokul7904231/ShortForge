@@ -60,7 +60,8 @@
     "apps/web/factoryos/core/compute/router/ComputeRouter.ts",
     "apps/web/factoryos/tests/glide-decision-adapter.test.ts",
     "apps/web/factoryos/tests/glide-worker-selection-advisor.test.ts",
-    ".okf/decisions/glide-decision-system-20261002.md"
+    ".okf/decisions/glide-decision-system-20261002.md",
+    ".github/workflows/glide-decision.yml"
   ],
   "notes": [
     "GLiDE is advisory/shadow-only in this change.",
@@ -76,7 +77,8 @@
     "teamChangeGate": "PENDING",
     "repositoryCI": "PENDING",
     "affectedFloorValidation": "PENDING",
-    "liveGlideProviderProbe": "NOT_RUN_NO_CREDENTIALS"
+    "liveGlideProviderProbe": "NOT_RUN_NO_CREDENTIALS",
+    "glideDedicatedCI": "PENDING"
   },
   "verificationPlan": [
     "Pass GLiDE adapter and worker-advisor unit tests.",
