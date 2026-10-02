@@ -92,7 +92,7 @@ export class TaskDAGExecutor {
   async executeDAG(
     dag: TaskDAG,
     executors: Record<string, TaskExecutorFunction>,
-    options?: { maxParallelTasks?: number; executionTimeoutMs?: number }
+    options?: { maxParallelTasks?: number; executionTimeoutMs?: number; missionId?: string }
   ): Promise<TaskDAG> {
     dag.status = "RUNNING";
     await this.repository.saveDAG(dag);
@@ -133,6 +133,21 @@ export class TaskDAGExecutor {
           node.startedAt = new Date().toISOString();
           node.attemptCount += 1;
           await this.repository.updateTaskNode(dag.dagId, node);
+          if (this.eventBus) {
+            await this.eventBus.publish("TASK_STARTED", {
+              dagId: dag.dagId,
+              goalId: dag.goalId,
+              missionId: options?.missionId,
+              taskId: node.taskId,
+              assignedAgentId: node.assignedAgentId || "dag_worker",
+              attempt: node.attemptCount,
+              status: node.status,
+            }, {
+              source: "task_dag_executor",
+              correlationId: dag.dagId,
+              idempotencyKey: `dag:${dag.dagId}:task:${node.taskId}:started:${node.attemptCount}`,
+            });
+          }
 
           if (this.leaseManager) {
             await this.leaseManager.acquire(node.taskId, node.assignedAgentId || "dag_worker", 60000, node.attemptCount);
@@ -172,13 +187,58 @@ export class TaskDAGExecutor {
             node.status = "SUCCEEDED";
             node.result = result;
             node.completedAt = new Date().toISOString();
+            if (this.eventBus) {
+              await this.eventBus.publish("TASK_COMPLETED", {
+                dagId: dag.dagId,
+                goalId: dag.goalId,
+                missionId: options?.missionId,
+                taskId: node.taskId,
+                assignedAgentId: node.assignedAgentId || "dag_worker",
+                attempt: node.attemptCount,
+                status: node.status,
+              }, {
+                source: "task_dag_executor",
+                correlationId: dag.dagId,
+                idempotencyKey: `dag:${dag.dagId}:task:${node.taskId}:completed:${node.attemptCount}`,
+              });
+            }
           } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err);
             if (node.attemptCount < node.maxAttempts) {
               node.status = "RETRYING";
+              if (this.eventBus) {
+                await this.eventBus.publish("TASK_RETRYING", {
+                  dagId: dag.dagId,
+                  goalId: dag.goalId,
+                  missionId: options?.missionId,
+                  taskId: node.taskId,
+                  attempt: node.attemptCount,
+                  maxAttempts: node.maxAttempts,
+                  error: errorMsg,
+                }, {
+                  source: "task_dag_executor",
+                  correlationId: dag.dagId,
+                  idempotencyKey: `dag:${dag.dagId}:task:${node.taskId}:retry:${node.attemptCount}`,
+                });
+              }
             } else {
               node.status = "FAILED";
               node.error = errorMsg;
+              if (this.eventBus) {
+                await this.eventBus.publish("TASK_FAILED", {
+                  dagId: dag.dagId,
+                  goalId: dag.goalId,
+                  missionId: options?.missionId,
+                  taskId: node.taskId,
+                  attempt: node.attemptCount,
+                  maxAttempts: node.maxAttempts,
+                  error: errorMsg,
+                }, {
+                  source: "task_dag_executor",
+                  correlationId: dag.dagId,
+                  idempotencyKey: `dag:${dag.dagId}:task:${node.taskId}:failed:${node.attemptCount}`,
+                });
+              }
             }
           } finally {
             if (this.leaseManager) {
