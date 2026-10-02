@@ -43,8 +43,8 @@
   ],
   "security": {
     "required": true,
-    "semgrep": "PENDING",
-    "strix": "UNPROVEN — inherited Wave 3 Strix gate has no configured LLM Actions secret and local environment has no Docker/Strix.",
+    "semgrep": "PASS — Wave 4 validation run 36978269973; 2 repository rules applied to exact Wave 4 security files with 0 findings",
+    "strix": "INHERITED BLOCKER — Wave 3 Strix workflow remains unproven because no supported LLM Actions secret is configured; Wave 4 has no independent dynamic Strix result.",
     "zap": "NOT_APPLICABLE",
     "notes": "Focused Wave 4 Semgrep is part of the dedicated validation workflow. No raw credentials are stored by Wave 4."
   },
@@ -52,8 +52,8 @@
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "IN_PROGRESS",
-    "Forge Release": "BLOCKED — waiting on focused validation and Strix policy evidence"
+    "Forge Evaluator": "COMPLETE — typecheck passed; 3 focused suites passed; 12 tests in Wave 4 file plus Comms/Mission regression suites passed",
+    "Forge Release": "BLOCKED — cumulative stack inherits Wave 3 Strix security blocker"
   },
   "verificationPlan": [
     "Run dedicated Wave 4 npm ci and typecheck.",
@@ -62,10 +62,15 @@
     "Run repository Team Change Gate.",
     "Keep release blocked while inherited Strix requirement remains unproven."
   ],
-  "verificationResults": {},
+  "verificationResults": {
+    "overseerWave4": "PASS — 36978269973; npm ci + typecheck + focused Comms/Wave4/Mission tests + Semgrep 0 findings",
+    "wave4Semgrep": "PASS — 36978269973; exact Wave 4 security paths, 0 findings",
+    "teamChangeGate": "PENDING_REFRESH_AFTER_FINAL_EVIDENCE",
+    "inheritedWave3Strix": "BLOCKED — no supported LLM Actions secret configured in repository"
+  },
   "conflicts": [],
   "disposition": "BLOCKED",
-  "status": "WAVE4_VALIDATION_IN_PROGRESS",
-  "dispositionRationale": "Implementation is present on a stacked feature branch. Release remains blocked until focused Wave 4 validation completes and the inherited Strix security requirement is either executed or explicitly resolved by repository security policy.",
-  "validatedExecutableHead": "300da89061f131d8e25755e49324c864861b636d2"
+  "status": "WAVE4_IMPLEMENTATION_COMPLETE_CUMULATIVE_RELEASE_BLOCKED",
+  "dispositionRationale": "Wave 4 implementation and focused security evidence are complete. The cumulative stack remains blocked because the existing Wave 3 security policy requires a Strix dynamic proof that is unavailable in the repository due to missing LLM Actions credentials.",
+  "validatedExecutableHead": "62a22600143a6877e608c1a71336c452f0c2cd92"
 }
