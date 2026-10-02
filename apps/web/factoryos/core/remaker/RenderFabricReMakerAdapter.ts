@@ -32,7 +32,7 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
       );
     }
 
-    const plannedIds = [...plan.changedNodeIds].sort();
+    const plannedIds = [...plan.renderSceneIds].sort();
     const actualIds = [...intent.repairScope.forceSceneIds].sort();
 
     if (JSON.stringify(plannedIds) !== JSON.stringify(actualIds)) {
