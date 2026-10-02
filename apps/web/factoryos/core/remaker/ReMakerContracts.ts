@@ -49,6 +49,8 @@ export interface ReMakerTargetScope {
 export interface ReMakerAuthorization {
   readonly capabilityId: "CAP_REMAKER_REPAIR";
   readonly grantId: string;
+  readonly leaseId: string;
+  readonly holderId: string;
   readonly fencingToken: number;
   readonly expiresAt: string;
   readonly authorizedBy: string;
@@ -95,6 +97,7 @@ export interface ReMakerPlan {
   readonly policyId: string;
   readonly action: ReMakerAction;
   readonly target: ReMakerTargetScope;
+  readonly authorization: ReMakerAuthorization;
   readonly frameRange: ReMakerFrameRange;
   readonly changedNodeIds: readonly string[];
   readonly renderSceneIds: readonly string[];
