@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR80-Sandbox-Connection-V1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/compute-connection-sandbox-v1-20261002",
+  "objective": "Connect the implemented PandaStack Sandbox Fabric to the Compute Connection Hub while preserving Basic/ADMIN boundaries and credential isolation.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/compute/connection-hub.md",
+      ".okf/compute/sandbox-fabric.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Enabled the implemented PandaStack Sandbox provider in the trusted catalog.",
+    "Added sandbox connection credential validation and server-side credential retrieval.",
+    "Extended the connection verification route to the Sandbox family.",
+    "Added admin-only sandbox visibility and connection-boundary contract tests."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    "apps/web/factoryos/core/compute/connections/SandboxConnectionService.ts",
+    "apps/web/app/api/compute/connections/[connectionId]/route.ts",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts"
+  ],
+  "notes": [
+    "PandaStack remains Admin-only.",
+    "Basic users cannot see or attach Sandbox providers.",
+    "Credentials remain server-side and encrypted.",
+    "F06 worker eligibility remains false for Sandbox Fabric."
+  ],
+  "verificationResults": {
+    "connectionHubTypecheck": "PENDING",
+    "connectionHubContractTests": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "affectedFloorValidation": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass strict FactoryOS typecheck and connection-hub contract tests.",
+    "Pass Team Change Gate and repository/floor validation.",
+    "Merge only after all required blocking lanes are green."
+  ]
+}
