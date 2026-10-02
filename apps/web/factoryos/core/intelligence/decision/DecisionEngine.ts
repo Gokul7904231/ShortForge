@@ -23,7 +23,9 @@ export interface DecisionEngineConfig {
   enableShadowJev?: boolean;
   /** Opt-in only: CLM remains shadow-only and never changes the primary path. */
   enableShadowClm?: boolean;
-  /** Opt-in only: GLiDE remains shadow-only until ShortForge routing calibration gates pass. */
+  /** Optional Fast Decision tier: deterministic -> GLiDE -> deeper LLM/Ascalon when uncertain. */
+  enableGlideFastPath?: boolean;
+  /** Optional pure shadow comparison; never affects the primary decision. */
   enableShadowGlide?: boolean;
   glide?: Partial<GlideDecisionAdapterConfig>;
   enableDeterministicFirst?: boolean;
@@ -50,6 +52,7 @@ export class DecisionEngine {
     this.config = {
       enableShadowJev: config.enableShadowJev ?? true,
       enableShadowClm: config.enableShadowClm ?? false,
+      enableGlideFastPath: config.enableGlideFastPath ?? false,
       enableShadowGlide: config.enableShadowGlide ?? false,
       glide: config.glide ?? {},
       enableDeterministicFirst: config.enableDeterministicFirst ?? true,
@@ -90,7 +93,40 @@ export class DecisionEngine {
       }
     }
 
-    // 2. LLM Evaluation for remaining unresolved questions
+    // 2. GLiDE Fast Decision tier for unresolved questions.
+    if (unresolvedQuestions.length > 0 && this.config.enableGlideFastPath) {
+      const glideSubRequest: DecisionBatchRequest = {
+        ...request,
+        questions: unresolvedQuestions,
+      };
+
+      try {
+        const glideResult = await this.glideShadowAdapter.evaluateBatch(glideSubRequest);
+        const acceptedQuestions: typeof unresolvedQuestions[number][] = [];
+
+        for (const q of unresolvedQuestions) {
+          const ans = glideResult.answersById[q.id];
+          if (ans && ans.status === "VALID" && !glideResult.shouldEscalate) {
+            finalAnswersById[q.id] = ans;
+          } else {
+            acceptedQuestions.push(q);
+          }
+        }
+
+        unresolvedQuestions = acceptedQuestions;
+
+        if (unresolvedQuestions.length === 0) {
+          adapterUsed = adapterUsed === "HYBRID" ? "HYBRID" : "GLIDE";
+        } else if (adapterUsed !== "HYBRID" && Object.keys(finalAnswersById).length > 0) {
+          adapterUsed = "HYBRID";
+        }
+      } catch (err) {
+        // GLiDE is a speed optimization. Never let its outage break the deeper fallback.
+        console.warn("[DecisionEngine] GLiDE fast path failed; escalating:", err);
+      }
+    }
+
+    // 3. LLM Evaluation for remaining unresolved questions
     if (unresolvedQuestions.length > 0) {
       const llmSubRequest: DecisionBatchRequest = {
         ...request,
@@ -138,7 +174,7 @@ export class DecisionEngine {
       },
     };
 
-    // 3. Shadow Jev Evaluation in parallel (Safe learning loop)
+    // 4. Shadow Jev Evaluation in parallel (Safe learning loop)
     let shadowDiffs: any[] | undefined;
     if (this.config.enableShadowJev) {
       try {
@@ -155,7 +191,7 @@ export class DecisionEngine {
       }
     }
 
-    // 4. Optional CLM shadow comparison. Disabled by default and never authoritative.
+    // 5. Optional CLM shadow comparison. Disabled by default and never authoritative.
     if (this.config.enableShadowClm) {
       try {
         const clmResult = await this.clmShadowAdapter.evaluateBatch(request);
@@ -166,7 +202,7 @@ export class DecisionEngine {
       }
     }
 
-    // 5. Optional GLiDE shadow comparison. GLiDE must never affect the primary result here.
+    // 6. Optional GLiDE shadow comparison. GLiDE must never affect the primary result here.
     if (this.config.enableShadowGlide) {
       try {
         const glideResult = await this.glideShadowAdapter.evaluateBatch(request);
@@ -177,7 +213,7 @@ export class DecisionEngine {
       }
     }
 
-    // 6. Record to Durable Decision Ledger
+    // 7. Record to Durable Decision Ledger
     this.ledger.recordTransaction(finalResult, {
       taskId: request.taskId,
       missionId: request.missionId,
