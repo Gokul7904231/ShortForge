@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "shortforge-kaggle-notebook": {
+      "command": "npx",
+      "args": ["tsx", "tools/mcp/kaggle-notebook-mcp/src/index.ts"],
+      "cwd": "/absolute/path/to/ShortForge"
+    },
+    "shortforge-colab-notebook": {
+      "command": "npx",
+      "args": ["tsx", "tools/mcp/colab-notebook-mcp/src/index.ts"],
+      "cwd": "/absolute/path/to/ShortForge"
+    },
+    "shortforge-lightning-notebook": {
+      "command": "npx",
+      "args": ["tsx", "tools/mcp/lightning-notebook-mcp/src/index.ts"],
+      "cwd": "/absolute/path/to/ShortForge"
+    }
+  }
+}
