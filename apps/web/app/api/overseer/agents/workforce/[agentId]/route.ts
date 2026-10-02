@@ -19,7 +19,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { agentId } = await context.params;
     const actor = await resolveCollaborationActor(request);
     const controller = await getFactoryOSController();
-    const agent = await controller.agentWorkforceStore.get(agentId, actor.actorId);
+    const agent = await controller.agentWorkforceStore.get(agentId, {
+      principalId: actor.actorId,
+      workspaceRole: actor.workspaceRole,
+    });
     if (!agent) return NextResponse.json({ success: false, error: "Agent not found or access denied." }, { status: 404 });
     return NextResponse.json({ success: true, data: agent });
   } catch (error: any) {
