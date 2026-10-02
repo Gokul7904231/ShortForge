@@ -16,9 +16,7 @@ import type {
   AgentWorkforceGrantInput,
   AgentWorkforceMember,
   AgentWorkforceProfile,
-  AgentWorkforceRole,
   AgentWorkforceSnapshot,
-  AgentWorkforceStatus,
   AgentWorkforceUpdateInput,
 } from "./AgentWorkforceContracts";
 
