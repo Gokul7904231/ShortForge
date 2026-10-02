@@ -64,10 +64,15 @@ export class ProviderBackedShortForgeWorker implements ShortForgeRenderWorker {
       this.provider.getCapability(),
       this.provider.getHealth(),
     ]);
+    const available = health.state === "HEALTHY"
+      ? await this.provider.isAvailable()
+      : false;
 
     const reasons: string[] = [];
     if (health.state === "BLOCKED" || health.state === "DRAINING") {
       reasons.push("worker-health-" + health.state.toLowerCase());
+    } else if (!available) {
+      reasons.push("worker-not-currently-available");
     }
     if (!capability.supportedWorkloads.includes(job.workloadType)) {
       reasons.push("workload-not-supported");
