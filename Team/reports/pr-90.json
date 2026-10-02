@@ -40,17 +40,17 @@
   ],
   "security": {
     "required": true,
-    "semgrep": "UNPROVEN",
-    "strix": "NOT_APPLICABLE",
+    "semgrep": "RUNNING",
+    "strix": "UNPROVEN",
     "zap": "NOT_APPLICABLE",
-    "notes": "No raw secrets are stored by Wave 3; focused security behavior is covered by tests and repository security workflows remain authoritative."
+    "notes": "Focused Wave 3 Semgrep gate added for new workforce/control-plane files. Existing repository static findings remain baseline; Strix is not run in this environment because Docker-backed dynamic testing is not part of the Wave 3 implementation host."
   },
   "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
-    "Forge Sentinel": "COMPLETE",
-    "Forge Evaluator": "IN_PROGRESS",
-    "Forge Release": "PENDING"
+    "Forge Sentinel": "COMPLETE — capability, credential, membership, and execution-eligibility boundaries",
+    "Forge Evaluator": "COMPLETE — focused typecheck and targeted Wave 2/Wave 3 tests passed",
+    "Forge Release": "PENDING — waiting for refreshed security/CI gate"
   },
   "verificationPlan": [
     "Run focused Wave 3 npm ci/typecheck/tests.",
@@ -59,9 +59,19 @@
     "Confirm workforce agents appear in Mission Room and paused agents cannot claim work."
   ],
   "disposition": "BLOCKED",
-  "dispositionRationale": "Implementation is complete; validation is still in flight. No PASS claim is made until required checks report results.",
-  "verificationResults": {},
+  "dispositionRationale": "Focused Wave 3 implementation validation and Team Change Gate have passed. Final disposition remains blocked until the refreshed Wave 3 Semgrep/security gate and required CI complete.",
+  "verificationResults": {
+    "overseerWave3": "PASS — 36973629711",
+    "teamChangeGate": "PASS — 36973629710",
+    "floor01TypecheckContractSecurity": "PASS — 36973629714 affected jobs",
+    "floor01PythonV2": "PASS — 36973629714",
+    "googleDriveMcp": "PASS — 36973629818",
+    "obsidianMemory": "PASS — 36973629733",
+    "selectedMcpFabric": "BASELINE FAILURE — policy-text grep misses TRANSFORM_VISUAL_ASSET on main as well; six MCP/transform tests and FactoryOS typecheck passed",
+    "semgrepWave3": "RUNNING — focused error-severity scan added in refreshed workflow",
+    "ci": "IN_PROGRESS"
+  },
   "conflicts": [],
-  "status": "WAVE3_VALIDATION_IN_PROGRESS",
-  "validatedExecutableHead": "37e5fe4ff35cc677899ec73f24d65d457c1989a5"
+  "status": "WAVE3_FINAL_VALIDATION_IN_PROGRESS",
+  "validatedExecutableHead": "e4b2c8d6e69fe087f99c546ccf74db02bbb7e4a5"
 }
