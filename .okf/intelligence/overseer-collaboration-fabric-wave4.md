@@ -1,6 +1,6 @@
 # Overseer Collaboration & Work Fabric — Wave 4
 
-**Status:** IMPLEMENTED ON FEATURE BRANCH
+**Status:** LANDED ON MAINLINE
 **Product layer:** Agent Intercom & Governed Delegation
 
 ## Purpose
