@@ -14,6 +14,7 @@ on:
       - "packages/factoryos-render/**"
       - "apps/web/factoryos/tests/remaker-*.test.ts"
       - "apps/web/factoryos/tests/guardian-remaker-capability.test.ts"
+      - "apps/web/factoryos/tests/remaker-training-boundary.test.ts"
       - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
       - "training/ascalon/generation/scenario_generator/ScenarioGenerator.ts"
       - "training/ascalon/ontology/capabilities.json"
@@ -53,7 +54,7 @@ jobs:
 
       - name: Ascalon ReMaker training-boundary tests
         working-directory: apps/web
-        run: npx vitest run factoryos/tests/ascalon/ascalon-training-readiness.test.ts
+        run: npx vitest run factoryos/tests/ascalon/ascalon-training-readiness.test.ts factoryos/tests/remaker-training-boundary.test.ts
 
       - name: Install FFmpeg / FFprobe
         run: |
