@@ -140,8 +140,14 @@ function router(): ComputeRouter {
 describe("compute resilience chaos matrix", () => {
   it("skips a dead worker during admission and uses a live worker", async () => {
     const r = router();
-    r.registerProvider(new ChaosProvider("dead", { available: false }));
-    r.registerProvider(new ChaosProvider("live", { executionMs: 2 }));
+    const dead = new ChaosProvider("dead", { available: false });
+    const live = new ChaosProvider("live", { executionMs: 2 });
+    const pool = new ComputePool();
+    pool.registerWorker(new ProviderBackedShortForgeWorker(dead, "LOCAL"));
+    pool.registerWorker(new ProviderBackedShortForgeWorker(live, "LOCAL"));
+    r.bindWorkerPool(pool);
+    r.registerProvider(dead);
+    r.registerProvider(live);
 
     const planned = await r.planProvider(job("dead-worker"));
     expect(planned.selectedProvider.id).toBe("live");
