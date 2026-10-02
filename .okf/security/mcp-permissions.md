@@ -177,3 +177,86 @@ For any new MCP capability:
 6. run production-helper checks
 7. record the decision in `.okf/decisions.md`
 8. update the executable CapabilityRegistry before production use
+
+
+## 10. Selected MCP capabilities
+
+### CAP_MCP_PLAYWRIGHT_RESEARCH
+- F00/F01 research only.
+- Navigation requires the configured PLAYWRIGHT_MCP_NAV_ALLOWLIST.
+- Browser file access is restricted; unrestricted file access is disabled.
+- Results are observations/evidence inputs, not F07 proof.
+
+### CAP_MCP_PLAYWRIGHT_INTERACT
+- Explicit click actions only.
+- Disabled by default.
+- Guardian certificate required.
+- Does not grant publication, credential, or secret authority.
+
+### CAP_MCP_COMFY_READ
+- server_info, search_templates, validate_workflow only.
+- No execution side effects.
+
+### CAP_MCP_COMFY_EXECUTE
+- run_workflow, generate_image, fetch_outputs.
+- Workflow/output paths must be inside COMFY_MCP_ALLOWED_ROOTS.
+- confirm_spend is forced false by the ShortForge gateway.
+- Hosted proprietary production requires explicit COMFY_MCP_LICENSE_MODE=commercial.
+- Comfy MCP never becomes the canonical media authority; RenderFabric/F07 remain authoritative.
+
+### CAP_MCP_QDRANT_READ
+- qdrant-find only.
+- Collection identity is pinned by the MCP server environment to a shortforge-derived-* collection.
+- Results are derived retrieval candidates and require canonical Memory Fabric recheck.
+
+### CAP_MCP_QDRANT_DERIVED_WRITE
+- qdrant-store only.
+- Development/staging only.
+- projectionOnly=true and canonicalAuthority=memory-fabric are injected.
+- Cannot create, mutate, supersede, or verify canonical Memory Fabric facts.
+
+## 11. Selected MCP rule
+No selected MCP becomes ambient authority. A capability grant exposes a semantic action set, never an arbitrary remote tool list.
+
+
+## 10.1 ComfyUI programmable visual transformation
+
+### CAP_MCP_COMFY_TRANSFORM
+
+ComfyUI is also exposed as a transformation engine for already-retrieved visual assets.
+
+Allowed execution path:
+- F04 Media Synthesis
+- F05 Timeline Composition
+- F06 Rendering
+
+The transformation path is recipe-bound:
+1. ShortForge selects a registered transformation recipe.
+2. Source media is staged under COMFY_MCP_TRANSFORM_ROOT.
+3. The engine materializes a recipe workflow and records its SHA-256 digest.
+4. The gateway validates the workflow against the live ComfyUI install.
+5. The gateway requires the recipe ID, workflow path, and matching workflow digest.
+6. ComfyUI executes the approved graph.
+7. Outputs are copied to a bounded transform output directory.
+8. ShortForge validates, hashes, curates, and stores the result as a derived asset with parent lineage.
+
+Initial recipe:
+- upscale-2x-realesrgan
+
+Planned recipe classes:
+- IMG2IMG_RESTYLE
+- INPAINT
+- OUTPAINT_9_16
+- DETAIL_ENHANCE
+
+These recipe classes are not production-routable until an executable recipe and fresh validation exist.
+
+The transformation layer must not:
+- replace Wikimedia/Openverse retrieval as the default asset source;
+- mutate or delete the parent asset;
+- accept arbitrary workflow JSON authored by the model;
+- treat a Comfy job success response as F07 proof;
+- alter source license/attribution metadata;
+- grant release or publication authority.
+
+For transformed media, license/attribution metadata is inherited from the parent asset unless an explicit policy proves a different disposition.

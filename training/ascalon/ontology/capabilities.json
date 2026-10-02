@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonSystemCapabilities",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "description": "Authoritative machine-readable registry of executable capabilities in ShortForge",
   "capabilities": [
     {
@@ -215,6 +215,177 @@
       "runtimeResolutionBoundary": "BLENDER_MCP_TOOLS_LIST",
       "executionAuthority": "CAPABILITY_REGISTRY",
       "verificationBoundary": "INDEPENDENT_SCENE_OR_ARTIFACT_OBSERVATION"
+    },
+    {
+      "capabilityId": "mcp.playwright.research",
+      "version": "1.0.0",
+      "name": "Playwright MCP Research Gateway",
+      "floorId": "cross_floor_research",
+      "riskClass": "MEDIUM",
+      "allowedRoles": [
+        "OVERSEER",
+        "F00_ANALYST",
+        "F01_STRATEGIST",
+        "RESEARCHER"
+      ],
+      "requiresGuardianGate": false,
+      "timeoutMs": 60000,
+      "trainingEligible": true,
+      "provider": "microsoft/playwright-mcp",
+      "sourceRepository": "https://github.com/microsoft/playwright-mcp",
+      "semanticActions": [
+        "BROWSER_NAVIGATE",
+        "BROWSER_SNAPSHOT",
+        "BROWSER_FIND"
+      ],
+      "authorizationBoundary": "NAVIGATION_HOST_ALLOWLIST",
+      "verificationBoundary": "SOURCE_EVIDENCE_RECHECK"
+    },
+    {
+      "capabilityId": "mcp.playwright.interact",
+      "version": "1.0.0",
+      "name": "Playwright MCP Guarded Interaction Gateway",
+      "floorId": "cross_floor_research",
+      "riskClass": "HIGH",
+      "allowedRoles": [
+        "OVERSEER",
+        "RESEARCHER"
+      ],
+      "requiresGuardianGate": true,
+      "timeoutMs": 60000,
+      "trainingEligible": true,
+      "provider": "microsoft/playwright-mcp",
+      "sourceRepository": "https://github.com/microsoft/playwright-mcp",
+      "semanticActions": [
+        "BROWSER_CLICK"
+      ],
+      "mustRequireGuardianCertificate": true,
+      "verificationBoundary": "INTERACTION_RESULT_RECHECK"
+    },
+    {
+      "capabilityId": "mcp.comfyui.visual",
+      "version": "1.0.0",
+      "name": "ComfyUI MCP Visual Generation Gateway",
+      "floorId": "cross_floor_visual_execution",
+      "riskClass": "HIGH",
+      "allowedRoles": [
+        "OVERSEER",
+        "CREATOR",
+        "MEDIA_SYNTHESIZER",
+        "ASSET_REALIZER",
+        "TIMELINE_COMPOSER",
+        "RENDER_ROUTER"
+      ],
+      "requiresGuardianGate": true,
+      "timeoutMs": 180000,
+      "trainingEligible": true,
+      "provider": "Comfy-Org/comfy-mcp",
+      "sourceRepository": "https://github.com/Comfy-Org/comfy-mcp",
+      "semanticActions": [
+        "COMFY_SERVER_INFO",
+        "COMFY_SEARCH_TEMPLATES",
+        "COMFY_VALIDATE_WORKFLOW",
+        "COMFY_RUN_WORKFLOW",
+        "COMFY_GENERATE_IMAGE",
+        "COMFY_FETCH_OUTPUTS"
+      ],
+      "executionBoundary": "LOCAL_COMFYUI_EXTERNAL_PROCESS",
+      "verificationBoundary": "PHYSICAL_OUTPUT_HASH_AND_INSPECTION"
+    },
+    {
+      "capabilityId": "mcp.comfyui.transform",
+      "version": "1.0.0",
+      "name": "ComfyUI MCP Programmable Visual Transformation",
+      "floorId": "cross_floor_visual_execution",
+      "riskClass": "HIGH",
+      "allowedRoles": [
+        "OVERSEER",
+        "MEDIA_SYNTHESIZER",
+        "ASSET_REALIZER",
+        "TIMELINE_COMPOSER",
+        "RENDER_ROUTER"
+      ],
+      "requiresGuardianGate": true,
+      "timeoutMs": 300000,
+      "trainingEligible": true,
+      "provider": "Comfy-Org/comfy-mcp",
+      "sourceRepository": "https://github.com/Comfy-Org/comfy-mcp",
+      "semanticActions": [
+        "TRANSFORM_VISUAL_ASSET"
+      ],
+      "executionBoundary": "RECIPE_BOUND_COMFYUI_WORKFLOW",
+      "transformationOperations": [
+        "UPSCALE_2X",
+        "IMG2IMG_RESTYLE",
+        "INPAINT",
+        "OUTPAINT_9_16",
+        "DETAIL_ENHANCE"
+      ],
+      "parentAssetImmutable": true,
+      "lineageRequired": [
+        "parentAssetId",
+        "parentSha256",
+        "recipeId",
+        "recipeVersion",
+        "parametersSha256",
+        "transformationId"
+      ],
+      "verificationBoundary": "PHYSICAL_OUTPUT_HASH_AND_INSPECTION",
+      "productionRequirement": "EXPLICIT_COMMERCIAL_COMFY_MCP_LICENSE_MODE",
+      "transformSteps": [
+        "UPSCALE_2X",
+        "IMG2IMG_RESTYLE",
+        "INPAINT",
+        "OUTPAINT_9_16",
+        "DETAIL_ENHANCE"
+      ]
+    },
+    {
+      "capabilityId": "mcp.qdrant.memory-search",
+      "version": "1.0.0",
+      "name": "Qdrant MCP Memory Search (Derived ANN)",
+      "floorId": "cross_floor_memory",
+      "riskClass": "LOW",
+      "allowedRoles": [
+        "OVERSEER",
+        "F00_ANALYST",
+        "F01_STRATEGIST",
+        "CREATOR",
+        "MEDIA_SYNTHESIZER",
+        "ASSET_REALIZER",
+        "TIMELINE_COMPOSER"
+      ],
+      "requiresGuardianGate": false,
+      "timeoutMs": 30000,
+      "trainingEligible": true,
+      "provider": "qdrant/mcp-server-qdrant",
+      "sourceRepository": "https://github.com/qdrant/mcp-server-qdrant",
+      "semanticActions": [
+        "MEMORY_FIND"
+      ],
+      "authorityModel": "DERIVED_ONLY",
+      "verificationBoundary": "CANONICAL_MEMORY_FABRIC_RECHECK"
+    },
+    {
+      "capabilityId": "mcp.qdrant.memory-derived-write",
+      "version": "1.0.0",
+      "name": "Qdrant MCP Memory Derived Projection",
+      "floorId": "cross_floor_memory",
+      "riskClass": "MEDIUM",
+      "allowedRoles": [
+        "OVERSEER"
+      ],
+      "requiresGuardianGate": true,
+      "timeoutMs": 30000,
+      "trainingEligible": false,
+      "provider": "qdrant/mcp-server-qdrant",
+      "sourceRepository": "https://github.com/qdrant/mcp-server-qdrant",
+      "semanticActions": [
+        "MEMORY_STORE_DERIVED"
+      ],
+      "executionBoundary": "STAGING_DERIVED_INDEX_ONLY",
+      "authorityModel": "DERIVED_ONLY",
+      "productionRoutable": false
     }
   ]
 }

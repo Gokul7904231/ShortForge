@@ -50,6 +50,21 @@ export interface CandidateAsset {
   // Behavioral retrieval metrics
   retentionRate?: number;
   ctr?: number;
+  /** Derived visual lineage when an asset is transformed by a governed provider. */
+  derivedFromAssetId?: string;
+  derivedFromSha256?: string;
+  transformation?: VisualTransformLineage;
+}
+
+export interface VisualTransformLineage {
+  readonly transformationId: string;
+  readonly parentAssetId: string;
+  readonly parentSha256: string;
+  readonly recipeId: string;
+  readonly recipeVersion: string;
+  readonly operation: "UPSCALE_2X" | "IMG2IMG_RESTYLE" | "INPAINT" | "OUTPAINT_9_16" | "DETAIL_ENHANCE";
+  readonly parametersSha256: string;
+  readonly createdAt: string;
 }
 
 export interface StyleProfileConfig {
@@ -183,6 +198,16 @@ export interface PipelineConfig {
   };
 }
 
+export interface VisualTransformPlan {
+  enabled: boolean;
+  guardianCertificateId?: string;
+  steps: Array<{
+    recipeId: string;
+    operation: "UPSCALE_2X" | "IMG2IMG_RESTYLE" | "INPAINT" | "OUTPAINT_9_16" | "DETAIL_ENHANCE";
+    parameters?: Record<string, unknown>;
+  }>;
+}
+
 export interface VisualContext {
   jobId: string;
   sceneIndex: number;
@@ -201,4 +226,6 @@ export interface VisualContext {
   history: PipelineHistory;
   metrics: Record<string, number>; // Time markers in ms
   config: PipelineConfig;
+  /** Optional governed ComfyUI transformation; disabled by default. */
+  transformPlan?: VisualTransformPlan;
 }
