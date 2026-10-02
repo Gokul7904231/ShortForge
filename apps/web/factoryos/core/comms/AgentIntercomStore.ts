@@ -53,8 +53,10 @@ class InMemoryIntercomRepository implements IntercomRepository {
   private readonly sessions = new Map<string, AgentIntercomSession>();
 
   async getMessage(id: string) { return structuredClone(this.messages.get(id) || null); }
-  async listMessages(missionId: string) {
-    return [...this.messages.values()].filter((x) => x.envelope.meta.scope.missionId === missionId).map(structuredClone);
+  async listMessages(missionId: string): Promise<AgentIntercomMessage[]> {
+    return [...this.messages.values()]
+      .filter((x) => x.envelope.meta.scope.missionId === missionId)
+      .map((x) => structuredClone(x));
   }
   async saveMessage(message: AgentIntercomMessage, expectedVersion?: number) {
     const current = this.messages.get(message.intercomId);
@@ -417,6 +419,7 @@ export class AgentIntercomStore {
     const saved = await this.repo.saveDelegation(delegation);
     const messagePayload: AgentIntercomPayload = {
       kind: "DELEGATION_REQUEST",
+      text: objective,
       taskId: input.taskId,
       delegationId,
       objective,
@@ -427,7 +430,6 @@ export class AgentIntercomStore {
       missionId: input.missionId,
       floorId: input.floorId,
       target: input.target,
-      text: objective,
       taskId: input.taskId,
       correlationId,
       causationId: input.causationId,
