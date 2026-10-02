@@ -51,6 +51,7 @@ export const AgentWorkforcePanel: React.FC<AgentWorkforcePanelProps> = ({ accent
     modelId: "",
   });
   const [managerDrafts, setManagerDrafts] = useState<Record<string, { principalId: string; role: "EDITOR" | "USER" }>>({});
+  const [configDrafts, setConfigDrafts] = useState<Record<string, { description: string; providerId: string; modelId: string }>>({});
   const [integrationDrafts, setIntegrationDrafts] = useState<Record<string, { integrationId: string; provider: string; connectionRef: string; scope: string }>>({});
 
   const load = async () => {
@@ -226,44 +227,71 @@ export const AgentWorkforcePanel: React.FC<AgentWorkforcePanelProps> = ({ accent
                     <div className="text-[9px] font-mono font-bold uppercase text-[#667085]">Shared configuration</div>
                     <div className="mt-2 grid grid-cols-1 gap-2">
                       <input
-                        defaultValue={agent.description}
-                        onBlur={(e) => {
-                          const value = e.target.value.trim();
-                          if (value !== agent.description) void updateAgent(agent, { description: value });
-                        }}
+                        value={(configDrafts[agent.agentId]?.description ?? agent.description)}
+                        onChange={(e) => setConfigDrafts({
+                          ...configDrafts,
+                          [agent.agentId]: {
+                            description: e.target.value,
+                            providerId: configDrafts[agent.agentId]?.providerId ?? agent.preferredModel?.providerId ?? "",
+                            modelId: configDrafts[agent.agentId]?.modelId ?? agent.preferredModel?.modelId ?? "",
+                          },
+                        })}
                         placeholder="Agent description"
                         className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <input
-                          defaultValue={agent.preferredModel?.providerId || ""}
-                          onBlur={(e) => {
-                            const providerId = e.target.value.trim();
-                            const modelId = agent.preferredModel?.modelId || "";
-                            if (providerId && modelId && providerId !== (agent.preferredModel?.providerId || "")) {
-                              void updateAgent(agent, { preferredModel: { providerId, modelId } });
-                            }
-                          }}
+                          value={(configDrafts[agent.agentId]?.providerId ?? agent.preferredModel?.providerId ?? "")}
+                          onChange={(e) => setConfigDrafts({
+                            ...configDrafts,
+                            [agent.agentId]: {
+                              description: configDrafts[agent.agentId]?.description ?? agent.description,
+                              providerId: e.target.value,
+                              modelId: configDrafts[agent.agentId]?.modelId ?? agent.preferredModel?.modelId ?? "",
+                            },
+                          })}
                           placeholder="Preferred provider"
                           className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]"
                         />
                         <input
-                          defaultValue={agent.preferredModel?.modelId || ""}
-                          onBlur={(e) => {
-                            const modelId = e.target.value.trim();
-                            const providerId = agent.preferredModel?.providerId || "";
-                            if (providerId && modelId && modelId !== (agent.preferredModel?.modelId || "")) {
-                              void updateAgent(agent, { preferredModel: { providerId, modelId } });
-                            }
-                          }}
+                          value={(configDrafts[agent.agentId]?.modelId ?? agent.preferredModel?.modelId ?? "")}
+                          onChange={(e) => setConfigDrafts({
+                            ...configDrafts,
+                            [agent.agentId]: {
+                              description: configDrafts[agent.agentId]?.description ?? agent.description,
+                              providerId: configDrafts[agent.agentId]?.providerId ?? agent.preferredModel?.providerId ?? "",
+                              modelId: e.target.value,
+                            },
+                          })}
                           placeholder="Preferred model"
                           className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]"
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const draft = configDrafts[agent.agentId] || {
+                            description: agent.description,
+                            providerId: agent.preferredModel?.providerId || "",
+                            modelId: agent.preferredModel?.modelId || "",
+                          };
+                          const patch: Record<string, unknown> = { description: draft.description.trim() };
+                          if (draft.providerId.trim() && draft.modelId.trim()) {
+                            patch.preferredModel = {
+                              providerId: draft.providerId.trim(),
+                              modelId: draft.modelId.trim(),
+                            };
+                          }
+                          void updateAgent(agent, patch);
+                        }}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#1769E8]/10 px-2.5 py-1.5 text-[9px] font-mono font-bold text-[#1769E8]"
+                      >
+                        <Save className="w-3 h-3" /> Save configuration
+                      </button>
                     </div>
                     <div className="mt-2 flex items-center gap-1 text-[8px] text-[#667085]">
                       <CheckCircle2 className="w-3 h-3 text-[#19C37D]" />
-                      Prompt, model, capability, and tool changes stay subject to workforce policy.
+                      Configuration saves atomically with an agent version check.
                     </div>
                   </div>
 
