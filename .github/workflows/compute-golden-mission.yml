@@ -51,6 +51,7 @@ jobs:
         run: |
           echo "FACTORYOS_FFMPEG_PATH=$(command -v ffmpeg)" >> "$GITHUB_ENV"
           python -c "import PIL; print('Pillow', PIL.__version__)"
+          python -c "from factoryos_render.diagnostics.doctor import SystemDoctor; import json; print(json.dumps(SystemDoctor().run_diagnostics(), indent=2))"
           ffmpeg -version | head -n 1
 
       - name: Setup Node.js 22
