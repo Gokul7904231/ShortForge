@@ -72,8 +72,8 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     credentialKeys: ["PANDASTACK_API_KEY"],
     configurableKeys: [],
     roles: ["ADMIN"],
-    implemented: false,
-    description: "Hosted sandbox backend; admin-only in v1 until the real adapter is wired.",
+    implemented: true,
+    description: "Hosted sandbox execution backend for admin-only isolated workloads.",
   },
   {
     providerId: "sandbox_vibengine",
