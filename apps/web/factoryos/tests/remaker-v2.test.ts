@@ -42,7 +42,7 @@ function request() {
     target: { kind: "VISUAL_ASSET" as const, sceneIds: ["scene_02"] },
     allowedActions: ["regenerate scene"],
     forbiddenActions: [],
-    requestedChangeDigest: "patch_scene_02_v1",
+    requestedChangeDigest: "d".repeat(64),
     parentArtifact: {
       artifactId: "art_old",
       sha256: "a".repeat(64),
