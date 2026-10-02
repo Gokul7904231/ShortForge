@@ -46,4 +46,4 @@ jobs:
         run: npm run factoryos:typecheck
 
       - name: Run canonical golden mission
-        run: npx tsx ../testing/cli/mission.ts golden-short-001 --json
+        run: npx tsx ../../testing/cli/mission.ts golden-short-001 --json
