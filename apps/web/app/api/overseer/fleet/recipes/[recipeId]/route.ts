@@ -4,8 +4,8 @@ import { resolveCollaborationActor } from "@/lib/overseer/collaboration-auth";
 
 interface RouteContext { params: Promise<{ recipeId: string }>; }
 
-export async function GET(_: NextRequest, context: RouteContext) {
-  try { const { recipeId } = await context.params; const controller = await getFactoryOSController(); const recipe = await controller.missionAutomationStore.getRecipe(recipeId); if (!recipe) return NextResponse.json({ success:false,error:"Automation recipe not found." },{status:404}); return NextResponse.json({success:true,data:recipe}); }
+export async function GET(request: NextRequest, context: RouteContext) {
+  try { await resolveCollaborationActor(request); const { recipeId } = await context.params; const controller = await getFactoryOSController(); const recipe = await controller.missionAutomationStore.getRecipe(recipeId); if (!recipe) return NextResponse.json({ success:false,error:"Automation recipe not found." },{status:404}); return NextResponse.json({success:true,data:recipe}); }
   catch (error:any) { return NextResponse.json({success:false,error:error?.message||"Failed to load recipe."},{status:500}); }
 }
 
