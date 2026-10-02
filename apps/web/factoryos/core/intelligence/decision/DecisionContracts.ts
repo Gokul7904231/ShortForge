@@ -163,6 +163,7 @@ export interface DecisionBatchResult {
     | "DETERMINISTIC"
     | "LLM"
     | "JEV_SHADOW"
+    | "GLIDE"
     | "HEURISTIC_SHADOW"
     | "CLM_SHADOW"
     | "GLIDE_SHADOW"
