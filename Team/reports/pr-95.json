@@ -14,10 +14,11 @@
     "No second broker or authoritative state store."
   ],
   "security": {
-    "auth": "Authenticated recipe/activity APIs; mutations require EDITOR/ADMIN/OWNER.",
-    "capability": "Managed workforce target agents must be ACTIVE and already possess requested capabilities.",
-    "metadata": "Fleet activity persists a bounded allowlist of non-secret metadata.",
-    "semgrep": "PENDING"
+    "required": true,
+    "semgrep": "PENDING",
+    "strix": "INHERITED/UNPROVEN — cumulative Wave 3 Strix security requirement remains unresolved because no supported LLM Actions secret is configured.",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Wave 5 contains no raw credentials. Recipe launch validates active managed agents and existing capability grants. Fleet activity persists only a bounded allowlist of operational metadata."
   },
   "validation": {
     "status": "IN_PROGRESS",
@@ -27,6 +28,69 @@
     "strix": "INHERITED/UNPROVEN — cumulative Wave 3 security gate remains independent."
   },
   "disposition": "BLOCKED",
-  "dispositionRationale": "Wave 5 release remains cumulative with Wave 3. Wave 5 itself must pass focused typecheck/tests/Semgrep; cumulative release still depends on the inherited Wave 3 security requirement.",
-  "validatedHead": null
+  "dispositionRationale": "Wave 5 implementation is designed as a coordination/control-plane layer and must pass its own focused validation. Even after Wave 5 passes, the cumulative branch remains release-blocked by the inherited Wave 3 Strix security requirement.",
+  "validatedHead": null,
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/intelligence/comms-fabric.md",
+      ".okf/intelligence/agent-runtime.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave2.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave3.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave4.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave5.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/security/mcp-permissions.md"
+    ],
+    "rulesConsidered": [
+      "Recipes define coordination intent and do not grant execution authority.",
+      "Mission Work remains canonical work state.",
+      "FGC/AEF remain authorization/runtime boundaries.",
+      "F07 remains independent production truth.",
+      "Workforce capabilities are never minted by recipes.",
+      "Fleet Activity is a derived projection, not an authority store.",
+      "No second executor, broker, scheduler, or raw credential store is introduced.",
+      "Existing emotional Overseer face/presence remains the primary Dashboard identity."
+    ]
+  },
+  "forensicsFindings": [
+    "Existing MissionWorkManager already provides dependency-aware durable MissionTask state, leases, retries, review and reclamation.",
+    "Existing AgentWorkforceStore already provides workspace-scoped agent identity, ACTIVE/PAUSED/ARCHIVED lifecycle, and capability references.",
+    "Existing AgentIntercomStore provides mission-scoped communication and governed delegation; Wave 5 composes it rather than replacing it.",
+    "Existing DurableEventBus provides the event substrate; Wave 5 adds a durable workspace-scoped Fleet Activity projection.",
+    "No existing automation recipe abstraction or reusable mission launch composition was found, so Wave 5 introduces that layer."
+  ],
+  "changes": [
+    "Added versioned Mission Automation Recipe contracts and persistence.",
+    "Added recipe DAG validation including duplicate, unknown-dependency, self-dependency and cycle rejection.",
+    "Added DRAFT/PUBLISHED/ARCHIVED recipe lifecycle with optimistic concurrency.",
+    "Added explicit CREATE_ONLY and START_MISSION launch modes.",
+    "Materialized canonical MissionTasks through MissionWorkManager in deterministic topological order.",
+    "Added launch idempotency and durable launch records.",
+    "Added managed-workforce ACTIVE and required-capability checks.",
+    "Added durable Fleet Activity projection from DurableEventBus.",
+    "Added mission/agent/topic activity filters with cursor pagination.",
+    "Added authenticated recipe and activity APIs.",
+    "Added Overseer Dashboard Fleet Orchestration UI.",
+    "Preserved FGC/AEF/F07 authority boundaries and the existing emotional Overseer face."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "IN_PROGRESS — awaiting repository Wave 5 focused security gate",
+    "Forge Evaluator": "PENDING — focused validation queued",
+    "Forge Release": "BLOCKED — cumulative release inherits Wave 3 Strix requirement"
+  },
+  "verificationPlan": [
+    "Run Wave 5 npm ci and strict typecheck.",
+    "Run Wave 5 orchestration tests plus Mission Collaboration and Agent Intercom regression suites.",
+    "Run focused Wave 5 Semgrep on exact affected security paths.",
+    "Run Team Change Gate against this PR report.",
+    "Keep main cumulative release gated while inherited Wave 3 Strix proof remains unresolved."
+  ],
+  "verificationResults": {},
+  "status": "WAVE5_VALIDATION_IN_PROGRESS",
+  "validatedExecutableHead": null
 }
