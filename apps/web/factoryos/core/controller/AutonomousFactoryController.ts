@@ -31,6 +31,7 @@ import { GuardianManager } from "../guardian/GuardianManager";
 import { MissionWorkManager } from "../work/MissionWorkManager";
 import { MissionCollaborationStore } from "../collaboration/MissionCollaborationStore";
 import { AgentWorkforceStore } from "../agent/AgentWorkforceStore";
+import { AgentIntercomStore } from "../comms/AgentIntercomStore";
 
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
 import { InstructorSubsystem } from "../instructor/InstructorSubsystem";
@@ -89,6 +90,7 @@ export class AutonomousFactoryController {
   public workManager!: MissionWorkManager;
   public collaborationStore!: MissionCollaborationStore;
   public agentWorkforceStore!: AgentWorkforceStore;
+  public agentIntercomStore!: AgentIntercomStore;
   public guardianManager!: GuardianManager;
   public slayerEngine!: SlayerEngine;
   public healerEngine!: HealerEngine;
@@ -233,6 +235,13 @@ export class AutonomousFactoryController {
       workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
       mongoDb: this.mongoClient?.getDb() || undefined,
       diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+    });
+    this.agentIntercomStore = new AgentIntercomStore({
+      eventBus: this.eventBus,
+      workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
+      mongoDb: this.mongoClient?.getDb() || undefined,
+      diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+      workforce: this.agentWorkforceStore,
     });
     this.workManager = new MissionWorkManager(
       this.missionManager,
