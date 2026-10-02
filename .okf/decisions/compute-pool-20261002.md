@@ -1,6 +1,6 @@
 # Compute Pool — Hosted Worker Convergence — 2026-10-02
 
-Status: IMPLEMENTED — awaiting CI and physical provider activation
+Status: IMPLEMENTED — focused CI and golden pool-to-F07 proof PASS
 
 ## Goal
 
@@ -50,10 +50,10 @@ A provider saying "completed" is not enough. Render completion requires a physic
 
 ## Remaining activation/proof
 
-1. Run CI and fix any compile/test failures.
+1. Focused Compute Pool, sandbox, GLiDE, governance, and golden pool-to-F07 validation are PASS.
 2. Bind real provider credentials and render commands in a controlled environment.
 3. Execute distributed rendering on at least two non-local workers.
-4. Run chaos cases: unavailable worker, dead worker, timeout, slow worker, capacity saturation.
-5. Run the existing golden-short-001 mission through RenderFabric and verify pool -> artifact -> CAS -> F07.
+4. Automated unavailable/capacity/timeout/invalid-artifact cases are PASS; execute the same chaos matrix against live non-local providers.
+5. Golden compute boundary through RenderFabric -> pool -> artifact -> CAS -> F07 is PASS. The full canonical mission remains delivery-credential gated in CI.
 6. Promote GLiDE from shadow/canary only after measured calibration and failover evidence.
 7. Optimize using measured telemetry, not provider marketing estimates.
