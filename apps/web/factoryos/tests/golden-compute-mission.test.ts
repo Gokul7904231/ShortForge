@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { GOLDEN_SHORT_001 } from "../../../testing/scenarios/golden/golden-short-001";
+import { GOLDEN_SHORT_001 } from "../../../../testing/scenarios/golden/golden-short-001";
 import { RenderFabric } from "../core/fabric/RenderFabric";
 import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
