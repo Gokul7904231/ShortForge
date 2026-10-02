@@ -1,6 +1,6 @@
 # Overseer Collaboration & Work Fabric — Wave 5
 
-**Status:** IMPLEMENTED ON FEATURE BRANCH
+**Status:** LANDED ON MAINLINE
 **Product layer:** Fleet Orchestration & Mission Automation
 
 ## Purpose
