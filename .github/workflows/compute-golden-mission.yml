@@ -1,0 +1,49 @@
+name: Compute Golden Mission
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/compute/**"
+      - "apps/web/factoryos/core/fabric/**"
+      - "apps/web/factoryos/core/controller/**"
+      - "testing/**"
+      - ".okf/compute/**"
+      - "Team/reports/pr-83.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/factoryos/core/compute/**"
+      - "apps/web/factoryos/core/fabric/**"
+      - "testing/**"
+
+jobs:
+  golden:
+    name: Golden mission through unified ComputePool
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      FASTINO_GLIDE_ENABLED: "false"
+      FASTINO_GLIDE_ROUTING_MODE: "OFF"
+      NODE_ENV: "test"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+
+      - name: Run canonical golden mission
+        run: npx tsx ../testing/cli/mission.ts golden-short-001 --json
