@@ -145,7 +145,7 @@ describe("compute resilience chaos matrix", () => {
 
     const planned = await r.planProvider(job("dead-worker"));
     expect(planned.selectedProvider.id).toBe("live");
-    expect(planned.rejectionReasons.dead).toContain("Worker pool preflight");
+    expect(planned.rejectionReasons.dead).toContain("not currently available");
 
     const result = await r.dispatchWithFailover(job("dead-worker"));
     expect(result.receipt.providerId).toBe("live");
