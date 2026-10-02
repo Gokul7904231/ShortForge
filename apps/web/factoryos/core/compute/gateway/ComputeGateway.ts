@@ -51,9 +51,15 @@ export class ComputeGateway {
           })
         : undefined;
 
+    const telemetryMinSamples = this.parsePositiveInt(
+      process.env.COMPUTE_TELEMETRY_MIN_SAMPLES,
+      3,
+    );
+
     this.router = new ComputeRouter(policy, {
       glideWorkerSelectionAdvisor,
       glideRoutingMode: glideMode,
+      telemetryMinSamples,
     });
     this.cas = ContentAddressedStore.getInstance();
     this.pool = new ComputePool();
@@ -98,6 +104,12 @@ export class ComputeGateway {
   private parseGlideMode(value: string): GlideRoutingMode {
     const normalized = value.trim().toUpperCase();
     return normalized === "SHADOW" || normalized === "CANARY" ? normalized : "OFF";
+  }
+
+  private parsePositiveInt(value: string | undefined, fallback: number): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(1, Math.min(100, Math.round(parsed)));
   }
 
   private parseDecisionTimeoutMs(value: string | undefined, fallback: number): number {
