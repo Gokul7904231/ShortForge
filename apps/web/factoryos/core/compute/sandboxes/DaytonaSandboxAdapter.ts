@@ -202,9 +202,12 @@ export class DaytonaSandboxAdapter implements SandboxProviderAdapter {
     timeoutMs = 60_000,
     credentials?: SandboxCredentialBundle,
   ): Promise<SandboxRuntime> {
-    const sandbox = await clientFor(credentials).get(resourceId);
-    await clientFor(credentials).start(sandbox, Math.max(1, Math.ceil(timeoutMs / 1000)));
-    return this.getRuntime(resourceId, credentials);
+    const client = clientFor(credentials);
+    const sandbox = await client.get(resourceId);
+    if (stateOf(sandbox) !== "RUNNING" && stateOf(sandbox) !== "READY") {
+      await client.start(sandbox, Math.max(1, Math.ceil(timeoutMs / 1000)));
+    }
+    return toRuntime(await client.get(resourceId));
   }
 
   async uploadFile(
