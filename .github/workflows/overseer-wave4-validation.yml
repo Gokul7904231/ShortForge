@@ -38,4 +38,4 @@ jobs:
         run: python -m pip install semgrep==1.174.0
       - name: Wave 4 static security scan
         run: |
-          semgrep scan             --config ../../production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             factoryos/core/comms             app/api/overseer/missions/[missionId]/room/intercom             lib/overseer/agent-intercom-auth.ts
+          semgrep scan             --config ../../production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             factoryos/core/comms/AgentIntercomContracts.ts             factoryos/core/comms/AgentIntercomStore.ts             factoryos/core/comms/CommsFabric.ts             "app/api/overseer/missions/[missionId]/room/intercom/route.ts"             "app/api/overseer/missions/[missionId]/room/intercom/sessions/route.ts"             lib/overseer/agent-intercom-auth.ts
