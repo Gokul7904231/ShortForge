@@ -86,9 +86,11 @@ function request() {
     authorization: {
       capabilityId: "CAP_REMAKER_REPAIR" as const,
       grantId: "grant_01",
+      leaseId: "lease_01",
+      holderId: "remaker:repair_01",
       fencingToken: 4,
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
-      authorizedBy: "FLOOR_GUARDIAN",
+      authorizedBy: "guardian_floor06_rendering",
     },
     budget: { maxAttempts: 2, maxDurationMs: 10_000 },
     evidenceRefs: ["ev_01"],
