@@ -23,12 +23,17 @@ import { LightningComputeProvider } from "../providers/LightningComputeProvider"
 import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
 import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
 import { AmdComputeProvider } from "../providers/AmdComputeProvider";
+import { KaggleNotebookComputeProvider } from "../providers/KaggleNotebookComputeProvider";
+import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeProvider";
+import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../sandboxes";
+import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 
 export class ComputeGateway {
   private static instance: ComputeGateway | null = null;
   private router: ComputeRouter;
   private cas: ContentAddressedStore;
+  private pool: ComputePool;
 
   private constructor(policy: ComputePolicy = DEFAULT_COMPUTE_POLICY) {
     const glideMode = this.parseGlideMode(
@@ -52,14 +57,27 @@ export class ComputeGateway {
       glideRoutingMode: glideMode,
     });
     this.cas = ContentAddressedStore.getInstance();
+    this.pool = new ComputePool();
 
-    // Register canonical providers
-    this.router.registerProvider(new LocalComputeProvider());
-    this.router.registerProvider(new PersistentWorkerComputeProvider());
-    this.router.registerProvider(new AmdComputeProvider());
-    this.router.registerProvider(new LightningComputeProvider());
-    this.router.registerProvider(new KaggleComputeProvider());
-    this.router.registerProvider(new GitHubActionsComputeProvider());
+    this.registerPoolProvider(new LocalComputeProvider(), "LOCAL");
+    this.registerPoolProvider(new AmdComputeProvider(), "API_GPU");
+    this.registerPoolProvider(new KaggleNotebookComputeProvider(), "NOTEBOOK");
+
+    // Hosted sandboxes are real workers only when their render command/output
+    // contract is configured. Unconfigured ones fail closed and never become
+    // routing candidates.
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
+        adapter: new DaytonaSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
+        adapter: new ModalSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
   }
 
   public static getInstance(policy?: ComputePolicy): ComputeGateway {
@@ -80,8 +98,20 @@ export class ComputeGateway {
     return Math.max(250, Math.min(3000, Math.round(parsed)));
   }
 
+  private registerPoolProvider(
+    provider: import("../providers/ComputeProvider").IComputeProvider,
+    surface: ComputeSurface,
+  ): void {
+    this.pool.registerProvider(provider, surface);
+    this.router.registerProvider(provider);
+  }
+
   public getRouter(): ComputeRouter {
     return this.router;
+  }
+
+  public getPool(): ComputePool {
+    return this.pool;
   }
 
   public getCAS(): ContentAddressedStore {
