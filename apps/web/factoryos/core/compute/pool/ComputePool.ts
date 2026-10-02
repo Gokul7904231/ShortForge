@@ -67,14 +67,14 @@ export class ComputePool {
   }
 
   async getEligibleWorkers(job: ComputeJob): Promise<ComputePoolCandidate[]> {
-    const candidates: ComputePoolCandidate[] = [];
-    for (const worker of this.workers.values()) {
-      const preflight = await worker.canAccept(job);
-      if (preflight.admitted) {
-        candidates.push({ worker, preflight });
-      }
-    }
-    return candidates;
+    const workers = this.getWorkers();
+    const results = await Promise.all(
+      workers.map(async (worker) => ({
+        worker,
+        preflight: await worker.canAccept(job),
+      })),
+    );
+    return results.filter((candidate) => candidate.preflight.admitted);
   }
 
   async snapshot(job?: ComputeJob): Promise<ComputePoolWorkerSnapshot[]> {
