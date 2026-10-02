@@ -236,11 +236,14 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
             ],
           };
         }
-        created = await this.provision({
-          ...request.provision,
-          command: request.command,
-          outputPath: request.outputPath,
-        });
+        created = await this.provision(
+          {
+            ...request.provision,
+            command: request.command,
+            outputPath: request.outputPath,
+          },
+          credentials,
+        );
         runtime = created.runtime;
       }
 
