@@ -53,6 +53,7 @@ export class ComputeGateway {
     });
     this.cas = ContentAddressedStore.getInstance();
     this.pool = new ComputePool();
+    this.router.bindWorkerPool(this.pool);
 
     this.registerPoolProvider(new LocalComputeProvider(), "LOCAL");
     this.registerPoolProvider(new AmdComputeProvider(), "API_GPU");
