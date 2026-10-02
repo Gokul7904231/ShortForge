@@ -15,6 +15,15 @@ This document translates `.okf/intelligence/aer.md` into an implementation-orien
 
 It is intentionally a **design target**, not an implementation claim. The first implementation should be introduced in shadow mode and proven against real FactoryOS trajectories before it is allowed to influence production routing.
 
+### 1.1 GLiDE Fast Decision Tier
+
+The executable AER path now includes Fastino GLiDE as a fast, typed decision tier. Deterministic rules remain first; GLiDE is used for bounded structured decisions; deeper Ascalon cognition is used when the fast tier is unavailable or materially uncertain.
+
+For compute-worker routing:
+
+`eligible candidates -> GLiDE -> selected eligible worker -> ComputeRouter handoff -> worker -> F07`
+
+GLiDE routing is OFF by default. SHADOW never blocks the render path. CANARY may only reorder the existing deterministic eligible set and is not enabled by default. See `.okf/decisions/glide-decision-system-20261002.md`.
 ## 2. Existing Components AER Builds Around
 
 AER should reuse, not fork, existing ShortForge infrastructure:
