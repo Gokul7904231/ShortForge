@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR87-Cleanup-Orphaned-Team-Report",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/cleanup-orphan-team-report-20261002",
+  "objective": "Remove temporary orphaned Team/reports/pr-85.json from main.",
+  "classification": "already exists",
+  "okf": {"sweepStatus":"COMPLETE","rulesConsidered":["Keep Team change reports aligned to actual PR identifiers."],"sourceRefs":[".okf/index.md"]},
+  "security": {"required":true,"status":"TRIAGED","semgrep":"NOT_RUN_IN_AGENT_ENVIRONMENT","strix":"UNAVAILABLE","zap":"NOT_APPLICABLE"},
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": ["Forge Architect","Forge Builder","Forge Release"],
+  "changes": ["Deleted temporary Team/reports/pr-85.json."],
+  "verificationResults": {"teamChangeGate":"PENDING","repositoryCI":"PENDING"}
+}
