@@ -30,3 +30,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test -- --run factoryos/tests/agent-workforce.test.ts factoryos/tests/mission-work-manager.test.ts
+      - name: Install Semgrep
+        run: python -m pip install semgrep==1.174.0
+      - name: Wave 3 static security scan
+        run: |
+          semgrep scan             --config production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             apps/web/factoryos/core/agent             apps/web/app/api/overseer/agents/workforce
