@@ -4,12 +4,20 @@ on:
   pull_request:
     paths:
       - "apps/web/factoryos/core/remaker/**"
+      - "apps/web/factoryos/core/guardian/GuardianReMakerCapabilityIssuer.ts"
+      - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
+      - "apps/web/factoryos/core/contracts/CapabilityContracts.ts"
       - "apps/web/factoryos/core/verification/youtube/remediation/**"
       - "apps/web/factoryos/core/fabric/RenderFabric.ts"
       - "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
       - "apps/web/factoryos/core/render/LocalRenderAdapter.ts"
       - "packages/factoryos-render/**"
       - "apps/web/factoryos/tests/remaker-*.test.ts"
+      - "apps/web/factoryos/tests/guardian-remaker-capability.test.ts"
+      - "training/ascalon/validators/AscalonTrajectoryValidator.ts"
+      - "training/ascalon/generation/scenario_generator/ScenarioGenerator.ts"
+      - "training/ascalon/ontology/capabilities.json"
+      - "docs/verification/ascalon/remaker-v2-training-admission-20261002.md"
       - ".okf/**"
   push:
     branches:
@@ -41,7 +49,11 @@ jobs:
 
       - name: ReMaker contract tests
         working-directory: apps/web
-        run: npx vitest run factoryos/tests/remaker-v2.test.ts factoryos/tests/remaker-handoff.test.ts factoryos/tests/youtube-remediation.test.ts
+        run: npx vitest run factoryos/tests/remaker-v2.test.ts factoryos/tests/remaker-handoff.test.ts factoryos/tests/youtube-remediation.test.ts factoryos/tests/guardian-remaker-capability.test.ts
+
+      - name: Ascalon ReMaker training-boundary tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/ascalon/ascalon-training-readiness.test.ts
 
       - name: Install FFmpeg / FFprobe
         run: |
