@@ -222,7 +222,8 @@ class Renderer:
             rebuilt_scene_ids.append(scene.scene_id)
             rendered_scene_paths.append(cached_dest)
 
-            state.completed_scenes.append(scene.scene_id)
+            if scene.scene_id not in state.completed_scenes:
+                state.completed_scenes.append(scene.scene_id)
             state.scene_artifacts[scene.scene_id] = cached_dest
             self.checkpoints.save(state)
 
