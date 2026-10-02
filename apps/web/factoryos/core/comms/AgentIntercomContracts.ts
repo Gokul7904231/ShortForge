@@ -79,6 +79,7 @@ export interface AgentIntercomAuth {
   readonly allowedLanes: readonly CommsLane[];
   readonly allowedKinds: readonly AgentIntercomKind[];
   readonly allowedCapabilities: readonly CommsCapability[];
+  readonly allowedTargetPrincipals?: readonly string[];
   readonly allowBroadcast?: boolean;
 }
 
@@ -90,6 +91,7 @@ export interface AgentIntercomSendInput {
   readonly taskId?: string;
   readonly correlationId?: string;
   readonly causationId?: string;
+  readonly idempotencyKey?: string;
   readonly delivery?: CommsDelivery;
   readonly priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   readonly ttlMs?: number;
