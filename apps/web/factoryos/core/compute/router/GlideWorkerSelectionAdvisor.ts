@@ -11,7 +11,10 @@ import type {
   DecisionBatchRequest,
 } from "../../intelligence/decision/DecisionContracts";
 import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionAdapter";
-import type { ScheduledProviderCandidate } from "./ComputeRouter";
+import type {
+  ProviderPerformanceTelemetry,
+  ScheduledProviderCandidate,
+} from "./ComputeRouter";
 
 export interface GlideWorkerSelectionAdvice {
   readonly status: "ADVISED" | "UNRESOLVED";
@@ -57,6 +60,7 @@ export class GlideWorkerSelectionAdvisor {
       timeoutMs: number;
     },
     candidates: readonly ScheduledProviderCandidate[],
+    telemetry?: ReadonlyMap<string, ProviderPerformanceTelemetry>,
   ): Promise<GlideWorkerSelectionAdvice> {
     const startedAt = Date.now();
     const candidateProviderIds = candidates.map((candidate) => candidate.provider.id);
@@ -132,17 +136,7 @@ export class GlideWorkerSelectionAdvisor {
           utilityScore: candidate.utilityScore,
         },
         observedHistory: (() => {
-          const routerTelemetry = (candidate.provider as unknown as {
-            __factoryosTelemetry?: {
-              totalAttempts: number;
-              successfulExecutions: number;
-              failedExecutions: number;
-              avgStartupMs: number;
-              avgExecutionMs: number;
-              avgTransferMs: number;
-              avgTotalMs: number;
-            };
-          }).__factoryosTelemetry;
+          const routerTelemetry = telemetry?.get(candidate.provider.id);
 
           return routerTelemetry
             ? {
