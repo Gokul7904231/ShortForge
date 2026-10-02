@@ -18,7 +18,7 @@ import type {
   MissionRoomMessage,
   MissionRoomSnapshot,
 } from "@/factoryos/core/collaboration/MissionCollaborationContracts";
-import type { AgentDelegationRequest } from "@/factoryos/core/comms/AgentIntercomContracts";
+import type { AgentIntercomDelegationRequest } from "@/factoryos/core/comms/AgentIntercomContracts";
 import type { MissionWorkBoardSnapshot } from "@/factoryos/core/work/MissionWorkManager";
 
 type PanelView = "THREAD" | "CANVAS" | "WORK" | "HANDOFFS";
@@ -62,7 +62,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   const [risks, setRisks] = useState<string[]>([]);
   const [newDecision, setNewDecision] = useState("");
   const [newRisk, setNewRisk] = useState("");
-  const [delegations, setDelegations] = useState<AgentDelegationRequest[]>([]);
+  const [delegations, setDelegations] = useState<AgentIntercomDelegationRequest[]>([]);
   const [handoffTarget, setHandoffTarget] = useState("");
   const [handoffObjective, setHandoffObjective] = useState("");
   const [handoffCapability, setHandoffCapability] = useState("");
@@ -278,7 +278,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
               )}
             </div>
             <p className="mt-1 text-[11px] text-[#667085] dark:text-[#A8B2C1]">
-              ${room?.name || "Mission collaboration workspace"} · ${snapshot?.mission?.status || "NOT OPEN"}
+              {String(room?.name || "Mission collaboration workspace")} · {String(snapshot?.mission?.status || "NOT OPEN")}
             </p>
           </div>
 
