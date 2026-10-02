@@ -79,7 +79,7 @@
   "forgers": {
     "Forge Architect": "COMPLETE",
     "Forge Builder": "COMPLETE",
-    "Forge Sentinel": "IN_PROGRESS — awaiting repository Wave 5 focused security gate",
+    "Forge Sentinel": "PENDING — Wave 5 focused Semgrep is the remaining implementation security gate",
     "Forge Evaluator": "PENDING — focused validation queued",
     "Forge Release": "BLOCKED — cumulative release inherits Wave 3 Strix requirement"
   },
@@ -92,5 +92,6 @@
   ],
   "verificationResults": {},
   "status": "WAVE5_VALIDATION_IN_PROGRESS",
-  "validatedExecutableHead": null
+  "validatedExecutableHead": null,
+  "conflicts": []
 }
