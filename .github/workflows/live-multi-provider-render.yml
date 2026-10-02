@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   live-render:
-    name: Real ${{ inputs.provider }} render through ComputePool
+    name: ${{ inputs.provider }} render through ComputePool
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -28,11 +28,42 @@ jobs:
       AMD_WORKER_SECRET: ${{ secrets.AMD_WORKER_SECRET }}
       KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
       KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      KAGGLE_RENDER_GPU_TYPE: ${{ vars.KAGGLE_RENDER_GPU_TYPE }}
+      KAGGLE_WORKER_STARTUP_SECONDS: ${{ vars.KAGGLE_WORKER_STARTUP_SECONDS }}
+      KAGGLE_WORKER_TRANSFER_MBPS: ${{ vars.KAGGLE_WORKER_TRANSFER_MBPS }}
+      KAGGLE_RENDER_COMMAND: >-
+        ffmpeg -y
+        -f lavfi -i color=c=black:s=1080x1920:r=30:d=2
+        -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100
+        -t 2 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest
+        /kaggle/working/shortforge-output.mp4
       DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
       DAYTONA_API_URL: ${{ secrets.DAYTONA_API_URL }}
       DAYTONA_TARGET: ${{ secrets.DAYTONA_TARGET }}
+      DAYTONA_SANDBOX_IMAGE: ${{ vars.DAYTONA_SANDBOX_IMAGE }}
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_SANDBOX_APP_NAME: ${{ vars.MODAL_SANDBOX_APP_NAME }}
+      MODAL_SANDBOX_IMAGE: ${{ vars.MODAL_SANDBOX_IMAGE }}
+      SHORTFORGE_SANDBOX_OUTPUT_PATH: /tmp/shortforge/output.mp4
+      SHORTFORGE_SANDBOX_RENDER_COMMAND: >-
+        set -e
+        if ! command -v ffmpeg >/dev/null 2>&1; then
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -qq
+            apt-get install -y -qq ffmpeg
+          else
+            echo "ffmpeg is required in the configured hosted sandbox image" >&2
+            exit 127
+          fi
+        fi
+        mkdir -p /tmp/shortforge
+        ffmpeg -y
+        -f lavfi -i color=c=black:s=1080x1920:r=30:d=2
+        -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100
+        -t 2 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest
+        "$SHORTFORGE_OUTPUT_PATH"
+
     defaults:
       run:
         working-directory: apps/web
@@ -46,7 +77,39 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Install live sandbox SDKs
+        run: npm install --no-save --no-package-lock @daytona/sdk@0.220.0 modal@0.11.0
       - name: FactoryOS strict typecheck
         run: npm run factoryos:typecheck
+      - name: Validate provider-specific activation configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$LIVE_COMPUTE_PROVIDER_TYPE" in
+            AMD)
+              test -n "$AMD_WORKER_URL"
+              test -n "$AMD_WORKER_SECRET"
+              ;;
+            KAGGLE)
+              test -n "$KAGGLE_USERNAME"
+              test -n "$KAGGLE_KEY"
+              test -n "$KAGGLE_RENDER_COMMAND"
+              ;;
+            DAYTONA)
+              test -n "$DAYTONA_API_KEY"
+              test -n "$SHORTFORGE_SANDBOX_RENDER_COMMAND"
+              test -n "$SHORTFORGE_SANDBOX_OUTPUT_PATH"
+              ;;
+            MODAL)
+              test -n "$MODAL_TOKEN_ID"
+              test -n "$MODAL_TOKEN_SECRET"
+              test -n "$SHORTFORGE_SANDBOX_RENDER_COMMAND"
+              test -n "$SHORTFORGE_SANDBOX_OUTPUT_PATH"
+              ;;
+            *)
+              echo "Unsupported provider: $LIVE_COMPUTE_PROVIDER_TYPE" >&2
+              exit 2
+              ;;
+          esac
       - name: Run physical provider smoke
         run: npx vitest run factoryos/tests/live-multi-provider-render.test.ts --config vitest.config.ts --reporter=verbose
