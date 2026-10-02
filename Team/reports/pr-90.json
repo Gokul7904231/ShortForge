@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR90-Overseer-Wave3-Agent-Workforce",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/overseer-wave3-agent-workforce-20261002",
+  "objective": "Add workspace-scoped co-manageable agent workforce capabilities on top of Wave 1/2 without changing FGC/AEF/F07 authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/security/identity.md",
+      ".okf/security/capability-security.md",
+      ".okf/intelligence/agent-execution-fabric.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave1.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave2.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave3.md"
+    ],
+    "rulesConsidered": [
+      "Agent configuration does not mint execution authority.",
+      "FGC/Guardian remain the mutation boundary.",
+      "AEF remains deterministic execution.",
+      "Capability grants are explicit and bounded.",
+      "Raw credentials do not belong in agent profiles.",
+      "F07 remains independent production truth."
+    ]
+  },
+  "changes": [
+    "Durable workspace agent identities",
+    "OWNER/EDITOR/USER co-management",
+    "ACTIVE/PAUSED/ARCHIVED lifecycle",
+    "Shared model/response/configuration settings",
+    "Connection-reference integration bindings",
+    "Sensitive-field redaction",
+    "Capability/tool escalation guard",
+    "Inactive-agent work-claim guard",
+    "Mission Room workforce roster integration",
+    "Overseer Dashboard workforce UI"
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "UNPROVEN",
+    "strix": "NOT_APPLICABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "No raw secrets are stored by Wave 3; focused security behavior is covered by tests and repository security workflows remain authoritative."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "IN_PROGRESS",
+    "Forge Release": "PENDING"
+  },
+  "verificationPlan": [
+    "Run focused Wave 3 npm ci/typecheck/tests.",
+    "Run repository CI and affected governance/security workflows.",
+    "Patch failures before merge.",
+    "Confirm workforce agents appear in Mission Room and paused agents cannot claim work."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Implementation is complete; validation is still in flight. No PASS claim is made until required checks report results.",
+  "verificationResults": {},
+  "conflicts": [],
+  "status": "WAVE3_VALIDATION_IN_PROGRESS",
+  "validatedExecutableHead": "37e5fe4ff35cc677899ec73f24d65d457c1989a5"
+}
