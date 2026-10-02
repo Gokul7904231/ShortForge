@@ -413,6 +413,41 @@ export class GuardianKernel {
         floorId: this.floorId,
         authorizedBy: `guardian_${this.floorId}`,
       });
+
+      this.governanceCell?.blackboard.append(
+        "EVIDENCE",
+        "FLOOR_GUARDIAN",
+        "VERIFIED",
+        {
+          event: "REMAKER_CAPABILITY_GRANTED",
+          missionId: input.missionId,
+          caseId: input.caseId,
+          repairId: input.repairId,
+          grantId: authorization.grantId,
+          leaseId: authorization.leaseId,
+          holderId: authorization.holderId,
+          fencingToken: authorization.fencingToken,
+          expiresAt: authorization.expiresAt,
+        },
+        input.evidenceRefs,
+      );
+
+      await this.eventBus.publish("REMAKER_CAPABILITY_GRANTED", {
+        floorId: this.floorId,
+        missionId: input.missionId,
+        caseId: input.caseId,
+        repairId: input.repairId,
+        capabilityId: authorization.capabilityId,
+        grantId: authorization.grantId,
+        leaseId: authorization.leaseId,
+        holderId: authorization.holderId,
+        fencingToken: authorization.fencingToken,
+        expiresAt: authorization.expiresAt,
+        evidenceRefs: [...input.evidenceRefs],
+        authorizedBy: authorization.authorizedBy,
+        timestamp: new Date().toISOString(),
+      });
+
       return {
         authorized: true,
         authorization,
