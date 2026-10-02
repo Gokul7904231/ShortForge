@@ -1,0 +1,63 @@
+name: Live Hosted Sandbox Render Proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Hosted sandbox provider"
+        required: true
+        default: DAYTONA
+        type: choice
+        options:
+          - DAYTONA
+          - MODAL
+      image:
+        description: "Sandbox image containing ffmpeg"
+        required: true
+        default: python:3.12
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  live-sandbox:
+    name: ${{ inputs.provider }} physical render smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SHORTFORGE_LIVE_SANDBOX_PROVIDER: ${{ inputs.provider }}
+      SHORTFORGE_LIVE_SANDBOX_IMAGE: ${{ inputs.image }}
+      SHORTFORGE_LIVE_SANDBOX_OUTPUT_PATH: /tmp/shortforge/live-smoke.mp4
+      SHORTFORGE_LIVE_SANDBOX_RENDER_COMMAND: >-
+        mkdir -p /tmp/shortforge &&
+        ffmpeg -y -f lavfi -i color=c=black:s=320x568:d=1
+        -f lavfi -i anullsrc=r=48000:cl=mono -shortest
+        -c:v libx264 -pix_fmt yuv420p -c:a aac
+        {{OUTPUT_PATH}}
+      DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
+      DAYTONA_API_URL: ${{ secrets.DAYTONA_API_URL }}
+      DAYTONA_TARGET: ${{ secrets.DAYTONA_TARGET }}
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_SANDBOX_APP_NAME: ${{ secrets.MODAL_SANDBOX_APP_NAME }}
+      MODAL_SANDBOX_IMAGE: ${{ inputs.image }}
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install optional hosted sandbox SDKs
+        run: npm install --no-save @daytona/sdk modal
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+      - name: Run live hosted sandbox proof
+        run: npx vitest run factoryos/tests/live-hosted-sandbox.test.ts --config vitest.config.ts --reporter=verbose
