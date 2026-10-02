@@ -10,7 +10,7 @@ on:
 
       - "apps/web/factoryos/tests/**"
       - ".okf/compute/**"
-      - "../../../testing/scenarios/golden/golden-short-001.ts"
+      - "testing/scenarios/golden/golden-short-001.ts"
       - ".github/workflows/compute-golden-mission.yml"
       - "Team/reports/pr-83.json"
   push:
