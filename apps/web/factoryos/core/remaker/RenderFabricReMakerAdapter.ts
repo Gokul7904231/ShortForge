@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { RenderIntent } from "../contracts/RenderIntentContracts";
 import { RenderFabric } from "../fabric/RenderFabric";
 import { TimelineIRValidator, type TimelineIR } from "../timeline/TimelineIR";
+import { LeaseManager } from "../leases/LeaseManager";
 import type {
   ReMakerExecutionOutput,
   ReMakerExecutionPort,
@@ -42,8 +43,20 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
     private readonly buildPatchedState: (
       plan: ReMakerPlan
     ) => Promise<ReMakerPatchedState> | ReMakerPatchedState,
-    private readonly renderFabric: RenderFabric = new RenderFabric()
+    private readonly renderFabric: RenderFabric = new RenderFabric(),
+    private readonly leaseManager: LeaseManager = new LeaseManager()
   ) {}
+
+  public async assertLease(plan: ReMakerPlan): Promise<boolean> {
+    const lease = await this.leaseManager.getLease(plan.authorization.leaseId);
+    if (!lease) return false;
+    return (
+      lease.status === "ACTIVE" &&
+      lease.ownerAgentId === plan.authorization.holderId &&
+      lease.fencingToken === plan.authorization.fencingToken &&
+      Date.parse(lease.leaseExpiresAt) > Date.now()
+    );
+  }
 
   public async execute(plan: ReMakerPlan): Promise<ReMakerExecutionOutput> {
     const patched = await this.buildPatchedState(plan);
