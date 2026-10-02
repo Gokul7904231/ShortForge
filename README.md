@@ -57,6 +57,7 @@ Level 2: GOVERNANCE, SAFETY & COGNITIVE INTELLIGENCE
          ├── Kernel Guardian (Authoritative Policy & Structural Invariant Gate)
          ├── Typed Decision Fabric (Noul, Choice, Score Primitives with Epistemic Confidence)
          ├── Shadow-Mode Jev Intelligence (TypeSafeJevAdapter & DecisionLedger)
+         ├── GLiDE Fast Decision Core (advisory/shadow worker-selection intelligence)
          └── Token Economy (CallGate, 10-Class RetryClassifier, ContextCompiler v2)
 
 Level 3: ORCHESTRATION DAG (7-Floor Manufacturing Assembly Line)
@@ -630,3 +631,7 @@ furnished to do so, subject to the following conditions:
 <p align="center">
   <b>ShortForge</b> — Engineered with precision by AI Architects, LLM Engineers, and Distributed Systems Researchers.
 </p>
+
+### GLiDE Decision System
+
+The Fast Decision Core can use Fastino GLiDE for bounded, typed worker-selection advice. Hard eligibility remains deterministic; GLiDE is advisory until ShortForge-specific calibration and canary gates pass. See `.okf/decisions/glide-decision-system-20261002.md`.
