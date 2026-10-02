@@ -38,7 +38,6 @@ export interface ReMakerTargetScope {
     readonly startMs: number;
     readonly endMs: number;
   };
-  /** Optional spatial region in normalized [0,1] coordinates. */
   readonly region?: {
     readonly x: number;
     readonly y: number;
@@ -80,7 +79,7 @@ export interface ReMakerRequest {
   readonly allowedActions: readonly string[];
   readonly forbiddenActions: readonly string[];
   readonly parentArtifact: ReMakerParentArtifact;
-  /** Digest of the requested patch/change set. Different patches must never share idempotency. */
+  /** Cryptographic digest of the requested patch/change set. */
   readonly requestedChangeDigest: string;
   readonly authorization: ReMakerAuthorization;
   readonly budget: ReMakerBudget;
@@ -97,7 +96,9 @@ export interface ReMakerPlan {
   readonly action: ReMakerAction;
   readonly target: ReMakerTargetScope;
   readonly frameRange: ReMakerFrameRange;
+  /** Logical TimelineIR nodes that the patch is allowed to change. */
   readonly changedNodeIds: readonly string[];
+  /** Physical visual scenes that must actually be rebuilt to materialize the patch. */
   readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
   readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
@@ -122,7 +123,8 @@ export interface ReMakerExecutionOutput {
   readonly preservedNodeIds: readonly string[];
   readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
   readonly rendererReceiptId?: string;
-  readonly physicalValidation?: {
+  /** Required: ReMaker accepts no candidate without physical render proof. */
+  readonly physicalValidation: {
     readonly passed: boolean;
     readonly decodeSmokePassed?: boolean;
     readonly durationSeconds?: number;
@@ -152,12 +154,15 @@ export interface ReMakerReceipt {
   readonly parentArtifactSha256: string;
   readonly candidateArtifact?: ReMakerCandidateArtifact;
   readonly changedNodeIds: readonly string[];
+  readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
+  readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
   readonly attempts: number;
   readonly termination: ReMakerTermination;
   readonly startedAt: string;
   readonly completedAt: string;
   readonly f07Required: true;
   readonly evidenceRefs: readonly string[];
+  readonly rendererReceiptId?: string;
   readonly error?: string;
 }
