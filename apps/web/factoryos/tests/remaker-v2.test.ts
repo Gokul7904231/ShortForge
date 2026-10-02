@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ReMakerEngine } from "../core/remaker/ReMakerEngine";
 import { ReMakerImpactAnalyzer } from "../core/remaker/ReMakerImpactAnalyzer";
-import type { ReMakerExecutionPort, ReMakerPlan } from "../core/remaker/ReMakerContracts";
+import type {
+  ReMakerExecutionPort,
+  ReMakerPlan,
+} from "../core/remaker/ReMakerContracts";
 import type { TimelineIR } from "../core/timeline/TimelineIR";
 
 function timeline(): TimelineIR {
@@ -13,11 +16,35 @@ function timeline(): TimelineIR {
     canvas: { width: 1080, height: 1920, fps: 30, aspectRatio: "9:16" },
     totalDurationMs: 10000,
     visualTracks: [
-      { clipId: "scene_01", assetId: "a1", assetType: "IMAGE", src: "cas://a1", timelineStartMs: 0, durationMs: 5000, zIndex: 1 },
-      { clipId: "scene_02", assetId: "a2", assetType: "IMAGE", src: "cas://a2", timelineStartMs: 5000, durationMs: 5000, zIndex: 1 },
+      {
+        clipId: "scene_01",
+        assetId: "a1",
+        assetType: "IMAGE",
+        src: "cas://a1",
+        timelineStartMs: 0,
+        durationMs: 5000,
+        zIndex: 1,
+      },
+      {
+        clipId: "scene_02",
+        assetId: "a2",
+        assetType: "IMAGE",
+        src: "cas://a2",
+        timelineStartMs: 5000,
+        durationMs: 5000,
+        zIndex: 1,
+      },
     ],
     audioTracks: [
-      { audioId: "voice_01", trackType: "VOICE", src: "cas://v1", timelineStartMs: 0, durationMs: 10000, volume: 1, verifiedDurationMs: 10000 },
+      {
+        audioId: "voice_01",
+        trackType: "VOICE",
+        src: "cas://v1",
+        timelineStartMs: 0,
+        durationMs: 10000,
+        volume: 1,
+        verifiedDurationMs: 10000,
+      },
     ],
     subtitleTracks: [
       {
@@ -25,7 +52,12 @@ function timeline(): TimelineIR {
         text: "hello",
         startMs: 1000,
         endMs: 2000,
-        style: { fontFamily: "Inter", fontSize: 64, primaryColor: "#fff", animation: "NONE" },
+        style: {
+          fontFamily: "Inter",
+          fontSize: 64,
+          primaryColor: "#fff",
+          animation: "NONE",
+        },
       },
     ],
     provenanceDigest: "timeline_digest_01",
@@ -76,6 +108,7 @@ describe("ReMaker v2", () => {
     expect(impact.directNodeIds).toEqual(["scene_02"]);
     expect(impact.renderSceneIds).toEqual(["scene_02"]);
     expect(impact.preservedNodeIds).toContain("scene_01");
+    expect(impact.preservedNodeFingerprints.scene_01).toMatch(/^[a-f0-9]{64}$/);
     expect(impact.frameRange.startFrame).toBe(148);
     expect(impact.frameRange.endFrame).toBe(299);
   });
@@ -106,6 +139,7 @@ describe("ReMaker v2", () => {
           preservedNodeIds: [...plan.preservedNodeIds],
           preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
           rendererReceiptId: "render_01",
+          observedTimelineDigest: "timeline_digest_01",
           physicalValidation: { passed: true, decodeSmokePassed: true },
         };
       },
@@ -118,6 +152,8 @@ describe("ReMaker v2", () => {
     expect(first.termination).toBe("COMPLETED");
     expect(second.idempotencyKey).toBe(first.idempotencyKey);
     expect(calls).toBe(1);
+    expect(first.candidateRevision).toBe(2);
+    expect(first.f07Required).toBe(true);
   });
 
   it("fails closed when the execution port violates preservation", async () => {
@@ -141,10 +177,7 @@ describe("ReMaker v2", () => {
 
     const receipt = await new ReMakerEngine().execute(request(), port);
     expect(receipt.termination).toBe("EXECUTION_FAILED");
-    expect(receipt.f07Required).toBe(true);
   });
-});
-
 
   it("rejects a candidate that fails physical validation", async () => {
     const port: ReMakerExecutionPort = {
@@ -165,10 +198,7 @@ describe("ReMaker v2", () => {
       },
     };
 
-    const receipt = await new ReMakerEngine().execute(
-      request(),
-      port
-    );
+    const receipt = await new ReMakerEngine().execute(request(), port);
     expect(receipt.termination).toBe("EXECUTION_FAILED");
   });
 
@@ -191,10 +221,7 @@ describe("ReMaker v2", () => {
       },
     };
 
-    const receipt = await new ReMakerEngine().execute(
-      request(),
-      port
-    );
+    const receipt = await new ReMakerEngine().execute(request(), port);
     expect(receipt.termination).toBe("EXECUTION_FAILED");
   });
 
@@ -227,3 +254,4 @@ describe("ReMaker v2", () => {
     expect(plan.renderSceneIds).toEqual(["scene_02"]);
     expect(plan.changedNodeIds).toContain("scene_02");
   });
+});
