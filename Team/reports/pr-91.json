@@ -14,7 +14,7 @@
       "F07 and CAS remain physical truth gates.",
       "No self-hosted PandaStack sandbox is introduced."
     ],
-    "sourceRefs": [".okf/index.md", ".okf/architecture.md", ".okf/compute/production-roadmap-20261002.md"]
+    "sourceRefs": [".okf/index.md", ".okf/architecture.md", ".okf/compute/production-roadmap-20261002.md", ".okf/compute/live-provider-activation.md"]
   },
   "security": {
     "required": true,
@@ -32,7 +32,8 @@
     "Added sandbox activation configuration checks for Daytona and Modal.",
     "Added runtime installation of @daytona/sdk and modal for the manual live workflow.",
     "Kept the installation out of package-lock.json because registry access is unavailable in the agent environment.",
-    "Preserved the existing RenderFabric -> ComputePool -> ComputeRouter -> provider -> CAS -> F07 smoke path."
+    "Preserved the existing RenderFabric -> ComputePool -> ComputeRouter -> provider -> CAS -> F07 smoke path.",
+    "Added a repeatable operator runbook and marked Phase 7 activation-ready without claiming a live provider run."
   ],
   "evidenceRefs": [
     ".github/workflows/live-multi-provider-render.yml",
