@@ -165,7 +165,8 @@ export interface CommsAdmissionDecision {
     | "CAPABILITY_UNSUPPORTED"
     | "SCHEMA_UNSUPPORTED"
     | "TTL_EXPIRED"
-    | "PAYLOAD_TOO_LARGE";
+    | "PAYLOAD_TOO_LARGE"
+    | "TARGET_SCOPE_DENIED";
   readonly policyVersion: string;
 }
 
@@ -181,6 +182,10 @@ export function admitComms(
   const now = new Date(nowMs).getTime();
   if (envelope.meta.expiresAt && Date.parse(envelope.meta.expiresAt) <= now) {
     return { admitted: false, reasonCode: "TTL_EXPIRED", policyVersion: COMMS_PROTOCOL_VERSION };
+  }
+
+  if (envelope.meta.protocolVersion !== COMMS_PROTOCOL_VERSION) {
+    return { admitted: false, reasonCode: "SCHEMA_UNSUPPORTED", policyVersion: COMMS_PROTOCOL_VERSION };
   }
 
   if (envelope.meta.source.principalId !== auth.principal.principalId) {
@@ -199,6 +204,19 @@ export function admitComms(
     return { admitted: false, reasonCode: "FLOOR_SCOPE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
   }
 
+  if (
+    envelope.meta.scope.allowedPrincipals?.length &&
+    !envelope.meta.scope.allowedPrincipals.includes(auth.principal.principalId)
+  ) {
+    return { admitted: false, reasonCode: "TARGET_SCOPE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
+  }
+
+  if (envelope.meta.target !== "BROADCAST" && envelope.meta.target.principalId !== auth.principal.principalId) {
+    if (envelope.meta.target.principalId !== auth.principal.principalId) {
+      return { admitted: false, reasonCode: "TARGET_SCOPE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
+    }
+  }
+
   if (!auth.allowedLanes.includes(envelope.meta.lane)) {
     return { admitted: false, reasonCode: "LANE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
   }
@@ -209,6 +227,11 @@ export function admitComms(
 
   if (envelope.meta.target === "BROADCAST" && !auth.allowBroadcast) {
     return { admitted: false, reasonCode: "BROADCAST_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
+  }
+
+  const negotiatedSchema = capabilities.some((c) => c.enabled && c.lanes.includes(envelope.meta.lane) && (c.maxPayloadBytes === undefined || Buffer.byteLength(JSON.stringify(envelope.payload), "utf8") <= c.maxPayloadBytes));
+  if (!negotiatedSchema) {
+    return { admitted: false, reasonCode: "PAYLOAD_TOO_LARGE", policyVersion: COMMS_PROTOCOL_VERSION };
   }
 
   const capability = capabilities.find((c) =>
