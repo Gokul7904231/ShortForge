@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { TimelineIR } from "../timeline/TimelineIR";
+import { TimelineIRValidator, type TimelineIR } from "../timeline/TimelineIR";
 import { ReMakerImpactAnalyzer } from "./ReMakerImpactAnalyzer";
 import type {
   ReMakerExecutionPort,
@@ -77,6 +77,8 @@ export class ReMakerEngine {
       changedNodeIds: impact.directNodeIds,
       renderSceneIds: impact.renderSceneIds,
       preservedNodeIds: impact.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
+      preservedNodeFingerprints: impact.preservedNodeFingerprints,
       parentArtifact: input.parentArtifact,
       idempotencyKey,
       maxAttempts: Math.max(1, input.budget.maxAttempts),
@@ -117,6 +119,7 @@ export class ReMakerEngine {
           changedNodeIds: plan.changedNodeIds,
           renderSceneIds: plan.renderSceneIds,
           preservedNodeIds: plan.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
           attempts,
           termination: "AUTHORIZATION_EXPIRED",
           startedAt,
@@ -141,6 +144,7 @@ export class ReMakerEngine {
             changedNodeIds: plan.changedNodeIds,
             renderSceneIds: plan.renderSceneIds,
             preservedNodeIds: plan.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
             attempts,
             termination: "EXECUTION_FAILED",
             startedAt,
@@ -164,6 +168,7 @@ export class ReMakerEngine {
           changedNodeIds: plan.changedNodeIds,
           renderSceneIds: plan.renderSceneIds,
           preservedNodeIds: plan.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
           attempts,
           termination: "BUDGET_EXHAUSTED",
           startedAt,
@@ -190,6 +195,7 @@ export class ReMakerEngine {
             changedNodeIds: plan.changedNodeIds,
             renderSceneIds: plan.renderSceneIds,
             preservedNodeIds: plan.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
             attempts,
             termination: "EXECUTION_FAILED",
             startedAt,
@@ -202,7 +208,85 @@ export class ReMakerEngine {
         continue;
       }
 
+      if (output.physicalValidation?.passed !== true) {
+        if (attempts >= plan.maxAttempts) {
+          return this.finish({
+            repairId: plan.repairId,
+            caseId: plan.caseId,
+            planId: plan.planId,
+            idempotencyKey: plan.idempotencyKey,
+            parentArtifactId: plan.parentArtifact.artifactId,
+            parentArtifactSha256: plan.parentArtifact.sha256,
+            changedNodeIds: output.changedNodeIds,
+            renderSceneIds: plan.renderSceneIds,
+            preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
+            preservedNodeFingerprints: output.preservedNodeFingerprints,
+            attempts,
+            termination: "EXECUTION_FAILED",
+            startedAt,
+            completedAt: new Date().toISOString(),
+            f07Required: true,
+            evidenceRefs: input.evidenceRefs,
+            error: "Candidate artifact did not pass physical validation.",
+          });
+        }
+        continue;
+      }
+
       const actualChanged = new Set(output.changedNodeIds);
+      const plannedChanged = new Set(plan.changedNodeIds);
+      if (output.changedNodeIds.some((id) => !plannedChanged.has(id))) {
+        return this.finish({
+          repairId: plan.repairId,
+          caseId: plan.caseId,
+          planId: plan.planId,
+          idempotencyKey: plan.idempotencyKey,
+          parentArtifactId: plan.parentArtifact.artifactId,
+          parentArtifactSha256: plan.parentArtifact.sha256,
+          candidateArtifact: output.candidateArtifact,
+          changedNodeIds: output.changedNodeIds,
+          renderSceneIds: plan.renderSceneIds,
+          preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
+          preservedNodeFingerprints: output.preservedNodeFingerprints,
+          attempts,
+          termination: "EXECUTION_FAILED",
+          startedAt,
+          completedAt: new Date().toISOString(),
+          f07Required: true,
+          evidenceRefs: input.evidenceRefs,
+          error: "Execution reported a node outside the approved changed-node scope.",
+        });
+      }
+
+      const actualPreservedFingerprints = output.preservedNodeFingerprints || {};
+      for (const preservedId of plan.preservedNodeIds) {
+        if (actualPreservedFingerprints[preservedId] !== plan.preservedNodeFingerprints[preservedId]) {
+          return this.finish({
+            repairId: plan.repairId,
+            caseId: plan.caseId,
+            planId: plan.planId,
+            idempotencyKey: plan.idempotencyKey,
+            parentArtifactId: plan.parentArtifact.artifactId,
+            parentArtifactSha256: plan.parentArtifact.sha256,
+            candidateArtifact: output.candidateArtifact,
+            changedNodeIds: output.changedNodeIds,
+            renderSceneIds: plan.renderSceneIds,
+            preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
+            preservedNodeFingerprints: actualPreservedFingerprints,
+            attempts,
+            termination: "EXECUTION_FAILED",
+            startedAt,
+            completedAt: new Date().toISOString(),
+            f07Required: true,
+            evidenceRefs: input.evidenceRefs,
+            error: "Execution failed preserved-node fingerprint invariant.",
+          });
+        }
+      }
+
       for (const required of plan.changedNodeIds) {
         if (!actualChanged.has(required)) {
           return this.finish({
@@ -216,6 +300,7 @@ export class ReMakerEngine {
             changedNodeIds: output.changedNodeIds,
             renderSceneIds: plan.renderSceneIds,
             preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
             attempts,
             termination: "EXECUTION_FAILED",
             startedAt,
@@ -240,6 +325,7 @@ export class ReMakerEngine {
             changedNodeIds: output.changedNodeIds,
             renderSceneIds: plan.renderSceneIds,
             preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
             attempts,
             termination: "EXECUTION_FAILED",
             startedAt,
@@ -271,6 +357,7 @@ export class ReMakerEngine {
           changedNodeIds: output.changedNodeIds,
           renderSceneIds: plan.renderSceneIds,
           preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
           attempts,
           termination: "NO_PROGRESS",
           startedAt,
@@ -293,6 +380,7 @@ export class ReMakerEngine {
         changedNodeIds: output.changedNodeIds,
         renderSceneIds: plan.renderSceneIds,
         preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
         attempts,
         termination: "COMPLETED",
         startedAt,
@@ -314,6 +402,7 @@ export class ReMakerEngine {
       changedNodeIds: plan.changedNodeIds,
       renderSceneIds: plan.renderSceneIds,
       preservedNodeIds: plan.preservedNodeIds,
+          preservedNodeFingerprints: plan.preservedNodeFingerprints,
       attempts,
       termination: "BUDGET_EXHAUSTED",
       startedAt,
@@ -324,6 +413,13 @@ export class ReMakerEngine {
   }
 
   private validateRequest(input: ReMakerPlanInput): void {
+    const timelineValidation = TimelineIRValidator.validate(input.timeline);
+    if (!timelineValidation.valid) {
+      throw new Error(
+        "[ReMakerEngine] Invalid TimelineIR: " + timelineValidation.errors.join("; ")
+      );
+    }
+
     if (!input.repairId || !input.caseId || !input.missionId) {
       throw new Error("[ReMakerEngine] repairId, caseId and missionId are required.");
     }
