@@ -43,8 +43,8 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
     private readonly buildPatchedState: (
       plan: ReMakerPlan
     ) => Promise<ReMakerPatchedState> | ReMakerPatchedState,
-    private readonly renderFabric: RenderFabric = new RenderFabric(),
-    private readonly leaseManager: LeaseManager = new LeaseManager()
+    private readonly renderFabric: RenderFabric,
+    private readonly leaseManager: LeaseManager
   ) {}
 
   public async assertLease(plan: ReMakerPlan): Promise<boolean> {
