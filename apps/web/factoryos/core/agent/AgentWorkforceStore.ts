@@ -412,6 +412,22 @@ export class AgentWorkforceStore {
     return this.redactForManagers(saved, principalId, workspaceRole);
   }
 
+  /**
+   * Internal execution-plane check.
+   * Unmanaged built-in agents remain governed by their existing runtime.
+   * Managed workforce agents must be ACTIVE to receive new work.
+   */
+  async isActiveForExecution(agentId: string): Promise<boolean> {
+    const agent = await this.repository.get(this.workspaceId, agentId);
+    return !agent || agent.status === "ACTIVE";
+  }
+
+  async getExecutionProfile(agentId: string): Promise<AgentWorkforceProfile | null> {
+    const agent = await this.repository.get(this.workspaceId, agentId);
+    if (!agent || agent.status !== "ACTIVE") return null;
+    return structuredClone(agent);
+  }
+
   async canUse(agentId: string, principalId: string): Promise<boolean> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent || agent.status !== "ACTIVE") return false;
