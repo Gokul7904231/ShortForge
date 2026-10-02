@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR89-PostMerge-Typecheck-Stabilization",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/post-merge-typecheck-20261002",
+  "objective": "Restore clean mainline TypeScript validation after PR #83 merge.",
+  "classification": "already exists",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Canonical event contracts remain authoritative.",
+      "Collaboration is product-layer only and does not grant execution authority.",
+      "Authentication role mapping must fail closed for lower-privilege users."
+    ],
+    "sourceRefs": [".okf/index.md", ".okf/architecture.md", ".okf/decisions/compute-pool-20261002.md"]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Changes are contract/type fixes only; no credential or execution-authority changes."
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": ["Forge Architect", "Forge Builder", "Forge Evaluator", "Forge Release"],
+  "changes": [
+    "Added four Mission Collaboration topics to EventTopic.",
+    "Stabilized MissionManager created-task narrowing before event publication.",
+    "Mapped USER auth role to collaboration VIEWER.",
+    "Replaced invalid JSX template-style interpolation with explicit expressions."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/contracts/EventContracts.ts",
+    "apps/web/factoryos/core/missions/MissionManager.ts",
+    "apps/web/lib/overseer/collaboration-auth.ts",
+    "apps/web/components/overseer/collaboration/MissionRoomPanel.tsx"
+  ],
+  "verificationResults": {
+    "factoryosTypecheck": "PENDING",
+    "computePoolCI": "PENDING",
+    "computeGoldenMission": "PENDING",
+    "fullRepositoryCI": "PENDING",
+    "teamChangeGate": "PENDING"
+  },
+  "notes": ["No compute-pool authority or provider behavior is changed by this stabilization PR."]
+}

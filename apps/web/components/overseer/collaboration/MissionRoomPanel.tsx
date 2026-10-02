@@ -263,7 +263,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
               )}
             </div>
             <p className="mt-1 text-[11px] text-[#667085] dark:text-[#A8B2C1]">
-              ${room?.name || "Mission collaboration workspace"} · ${snapshot?.mission?.status || "NOT OPEN"}
+              {room?.name || "Mission collaboration workspace"} · {String(snapshot?.mission?.status || "NOT OPEN")}
             </p>
           </div>
 

@@ -11,7 +11,14 @@ export async function resolveCollaborationActor(
       actorId: user.uid,
       displayName: user.name || user.email?.split("@")[0] || "Operator",
       type: "HUMAN",
-      workspaceRole: user.role || "VIEWER",
+      workspaceRole:
+        user.role === "OWNER"
+          ? "OWNER"
+          : user.role === "ADMIN"
+            ? "ADMIN"
+            : user.role === "EDITOR"
+              ? "EDITOR"
+              : "VIEWER",
     };
   } catch (error) {
     if (process.env.NODE_ENV === "production") {
