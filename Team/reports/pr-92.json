@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR92-Overseer-Wave4-Agent-Intercom",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/overseer-wave3-agent-workforce-20261002",
+  "headRef": "feat/overseer-wave4-agent-intercom-20261002",
+  "objective": "Add mission-scoped Agent Intercom, governed delegation, durable peer sessions, delivery receipts, replay, and Mission Room Handoffs without changing FGC/AEF/F07 authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/intelligence/comms-fabric.md",
+      ".okf/intelligence/agent-runtime.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave3.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave4.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/security/mcp-permissions.md"
+    ],
+    "rulesConsidered": [
+      "Comms does not grant execution authority.",
+      "Mission scope is the minimum collaboration security boundary.",
+      "FGC/Guardian remain authorization and mutation boundaries.",
+      "AEF remains deterministic execution.",
+      "F07 remains independent truth.",
+      "Delegation cannot mint capabilities.",
+      "No second broker or authoritative state store is introduced."
+    ]
+  },
+  "changes": [
+    "Mission-scoped Agent Intercom built on Comms Fabric v2 and DurableEventBus.",
+    "Dedicated intercom message kind and capability.",
+    "Durable in-memory/disk/Mongo message, delegation, and session state.",
+    "Explicit delivery lifecycle and bounded retry/dead-letter.",
+    "Idempotent sends and explicit replay cursor.",
+    "Peer hello protocol check and capability/schema negotiation.",
+    "Heartbeat and stale-session degradation.",
+    "Target allowlist and payload admission.",
+    "Delegation acceptance restricted to the target principal.",
+    "Managed-agent capability eligibility enforced for delegated capability requests.",
+    "Mission Room Handoffs surface and intercom projection.",
+    "Authenticated mission intercom and session APIs."
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "PENDING",
+    "strix": "UNPROVEN — inherited Wave 3 Strix gate has no configured LLM Actions secret and local environment has no Docker/Strix.",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Focused Wave 4 Semgrep is part of the dedicated validation workflow. No raw credentials are stored by Wave 4."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "IN_PROGRESS",
+    "Forge Release": "BLOCKED — waiting on focused validation and Strix policy evidence"
+  },
+  "verificationPlan": [
+    "Run dedicated Wave 4 npm ci and typecheck.",
+    "Run Comms Fabric, Agent Intercom, and Mission Collaboration tests.",
+    "Run focused Semgrep with repository security rules.",
+    "Run repository Team Change Gate.",
+    "Keep release blocked while inherited Strix requirement remains unproven."
+  ],
+  "verificationResults": {},
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "status": "WAVE4_VALIDATION_IN_PROGRESS",
+  "dispositionRationale": "Implementation is present on a stacked feature branch. Release remains blocked until focused Wave 4 validation completes and the inherited Strix security requirement is either executed or explicitly resolved by repository security policy.",
+  "validatedExecutableHead": "300da89061f131d8e25755e49324c864861b636d2"
+}
