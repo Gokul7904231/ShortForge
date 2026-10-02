@@ -3,6 +3,7 @@ import type { ReMakerFrameRange, ReMakerTargetScope } from "./ReMakerContracts";
 
 export interface ReMakerImpact {
   readonly directNodeIds: readonly string[];
+  readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
   readonly frameRange: ReMakerFrameRange;
   readonly blastRadiusFrames: number;
@@ -75,6 +76,14 @@ export class ReMakerImpactAnalyzer {
       rawEndFrame + haloFrames
     );
 
+    const renderSceneIds = timeline.visualTracks
+      .filter((clip) => {
+        const clipStart = toFrame(clip.timelineStartMs, fps);
+        const clipEnd = endFrame(clip.timelineStartMs + clip.durationMs, fps);
+        return clipEnd >= startFrame && clipStart <= endFrame;
+      })
+      .map((clip) => clip.clipId);
+
     const preserved: string[] = [];
     for (const clip of timeline.visualTracks) {
       if (!direct.has(clip.clipId)) preserved.push(clip.clipId);
@@ -88,6 +97,7 @@ export class ReMakerImpactAnalyzer {
 
     return Object.freeze({
       directNodeIds: Object.freeze(Array.from(direct)),
+      renderSceneIds: Object.freeze(renderSceneIds),
       preservedNodeIds: Object.freeze(preserved),
       frameRange: Object.freeze({
         startFrame,
