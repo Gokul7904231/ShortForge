@@ -17,10 +17,10 @@ import type {
  */
 export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
   constructor(
-    private readonly renderFabric: RenderFabric = new RenderFabric(),
     private readonly buildPatchedIntent: (
       plan: ReMakerPlan
-    ) => Promise<RenderIntent> | RenderIntent
+    ) => Promise<RenderIntent> | RenderIntent,
+    private readonly renderFabric: RenderFabric = new RenderFabric()
   ) {}
 
   public async execute(plan: ReMakerPlan): Promise<ReMakerExecutionOutput> {
@@ -43,7 +43,7 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
 
     const result = await this.renderFabric.executeRender(intent);
 
-    if (!result.artifact) {
+    if (!result.artifact || !result.loopReceipt.verified) {
       throw new Error(
         "[RenderFabricReMakerAdapter] RenderFabric completed without a physical artifact."
       );
