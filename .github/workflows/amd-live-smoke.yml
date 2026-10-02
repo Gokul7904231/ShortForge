@@ -1,0 +1,40 @@
+name: AMD Distributed Render Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "Run the real AMD render smoke"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  amd-live:
+    name: F06 RenderFabric -> AMD worker
+    if: ${{ inputs.live == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AMD_WORKER_URL: ${{ secrets.AMD_WORKER_URL }}
+      AMD_WORKER_SECRET: ${{ secrets.AMD_WORKER_SECRET }}
+      RUN_LIVE_AMD: "1"
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+      - name: Run AMD physical render smoke
+        run: npx vitest run factoryos/tests/amd-live-smoke.test.ts --config vitest.config.ts --reporter=verbose
