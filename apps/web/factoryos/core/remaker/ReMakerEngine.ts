@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { TimelineIRValidator, type TimelineIR } from "../timeline/TimelineIR";
 import { ReMakerImpactAnalyzer } from "./ReMakerImpactAnalyzer";
 import type {
+  ReMakerExecutionOutput,
   ReMakerExecutionPort,
   ReMakerPlan,
   ReMakerReceipt,
@@ -75,6 +76,7 @@ export class ReMakerEngine {
       repairId: input.repairId,
       caseId: input.caseId,
       missionId: input.missionId,
+      policyId: input.policyId,
       action: input.action,
       target: input.target,
       frameRange: impact.frameRange,
@@ -83,6 +85,7 @@ export class ReMakerEngine {
       preservedNodeIds: impact.preservedNodeIds,
       preservedNodeFingerprints: impact.preservedNodeFingerprints,
       parentArtifact: input.parentArtifact,
+      requestedChangeDigest: input.requestedChangeDigest,
       idempotencyKey,
       maxAttempts: Math.max(1, input.budget.maxAttempts),
       maxDurationMs: Math.max(1000, input.budget.maxDurationMs),
@@ -115,35 +118,33 @@ export class ReMakerEngine {
 
       if (Date.now() > Date.parse(input.authorization.expiresAt)) {
         return this.finish(this.receipt({
-          plan,
-          attempts,
-          startedAt,
-          termination: "AUTHORIZATION_EXPIRED",
+          plan, attempts, startedAt, termination: "AUTHORIZATION_EXPIRED",
           evidenceRefs: input.evidenceRefs,
+        }));
+      }
+
+      if (port.assertLease && !(await port.assertLease(plan))) {
+        return this.finish(this.receipt({
+          plan, attempts, startedAt, termination: "FENCING_LOST",
+          evidenceRefs: input.evidenceRefs,
+          error: "ReMaker lease/fencing validation failed before execution.",
         }));
       }
 
       if (Date.now() - startedAtMs >= plan.maxDurationMs) {
         return this.finish(this.receipt({
-          plan,
-          attempts,
-          startedAt,
-          termination: "BUDGET_EXHAUSTED",
+          plan, attempts, startedAt, termination: "BUDGET_EXHAUSTED",
           evidenceRefs: input.evidenceRefs,
-          error: "Repair wall-clock budget exhausted.",
         }));
       }
 
-      let output;
+      let output: ReMakerExecutionOutput;
       try {
         output = await port.execute(plan);
       } catch (error) {
         if (attempts >= plan.maxAttempts) {
           return this.finish(this.receipt({
-            plan,
-            attempts,
-            startedAt,
-            termination: "EXECUTION_FAILED",
+            plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             error: error instanceof Error ? error.message : String(error),
           }));
@@ -151,35 +152,48 @@ export class ReMakerEngine {
         continue;
       }
 
-      if (Date.now() - startedAtMs >= plan.maxDurationMs) {
+      if (port.assertLease && !(await port.assertLease(plan))) {
         return this.finish(this.receipt({
-          plan,
-          attempts,
-          startedAt,
-          termination: "BUDGET_EXHAUSTED",
+          plan, attempts, startedAt, termination: "FENCING_LOST",
           evidenceRefs: input.evidenceRefs,
-          error: "Repair wall-clock budget exhausted after execution.",
+          candidateArtifact: output.candidateArtifact,
+          changedNodeIds: output.changedNodeIds,
+          preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: output.preservedNodeFingerprints,
+          rendererReceiptId: output.rendererReceiptId,
+          observedTimelineDigest: output.observedTimelineDigest,
+          error: "ReMaker lease/fencing validation failed after execution.",
         }));
       }
 
-      const invalidArtifact =
+      if (Date.now() - startedAtMs >= plan.maxDurationMs) {
+        return this.finish(this.receipt({
+          plan, attempts, startedAt, termination: "BUDGET_EXHAUSTED",
+          evidenceRefs: input.evidenceRefs,
+          candidateArtifact: output.candidateArtifact,
+          changedNodeIds: output.changedNodeIds,
+          preservedNodeIds: output.preservedNodeIds,
+          preservedNodeFingerprints: output.preservedNodeFingerprints,
+          rendererReceiptId: output.rendererReceiptId,
+          observedTimelineDigest: output.observedTimelineDigest,
+        }));
+      }
+
+      if (
         !isSha256(output.candidateArtifact.sha256) ||
         output.candidateArtifact.byteLength <= 0 ||
-        output.candidateArtifact.sha256.toLowerCase() === plan.parentArtifact.sha256.toLowerCase();
-
-      if (invalidArtifact) {
+        output.candidateArtifact.sha256.toLowerCase() === plan.parentArtifact.sha256.toLowerCase()
+      ) {
         if (attempts >= plan.maxAttempts) {
           return this.finish(this.receipt({
-            plan,
-            attempts,
-            startedAt,
-            termination: "EXECUTION_FAILED",
+            plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
-            error: "Execution port returned an invalid or unchanged candidate artifact.",
             candidateArtifact: output.candidateArtifact,
             changedNodeIds: output.changedNodeIds,
             preservedNodeIds: output.preservedNodeIds,
             preservedNodeFingerprints: output.preservedNodeFingerprints,
+            rendererReceiptId: output.rendererReceiptId,
+            error: "Execution returned an invalid or unchanged candidate artifact.",
           }));
         }
         continue;
@@ -188,17 +202,15 @@ export class ReMakerEngine {
       if (output.physicalValidation.passed !== true) {
         if (attempts >= plan.maxAttempts) {
           return this.finish(this.receipt({
-            plan,
-            attempts,
-            startedAt,
-            termination: "EXECUTION_FAILED",
+            plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
-            error: "Candidate artifact did not pass physical validation.",
             candidateArtifact: output.candidateArtifact,
             changedNodeIds: output.changedNodeIds,
             preservedNodeIds: output.preservedNodeIds,
             preservedNodeFingerprints: output.preservedNodeFingerprints,
             rendererReceiptId: output.rendererReceiptId,
+            observedTimelineDigest: output.observedTimelineDigest,
+            error: "Candidate artifact did not pass physical validation.",
           }));
         }
         continue;
@@ -207,34 +219,30 @@ export class ReMakerEngine {
       const plannedChanged = new Set(plan.changedNodeIds);
       if (output.changedNodeIds.some((id) => !plannedChanged.has(id))) {
         return this.finish(this.receipt({
-          plan,
-          attempts,
-          startedAt,
-          termination: "EXECUTION_FAILED",
+          plan, attempts, startedAt, termination: "EXECUTION_FAILED",
           evidenceRefs: input.evidenceRefs,
-          error: "Execution reported a node outside the approved changed-node scope.",
           candidateArtifact: output.candidateArtifact,
           changedNodeIds: output.changedNodeIds,
           preservedNodeIds: output.preservedNodeIds,
           preservedNodeFingerprints: output.preservedNodeFingerprints,
           rendererReceiptId: output.rendererReceiptId,
+          observedTimelineDigest: output.observedTimelineDigest,
+          error: "Execution reported a node outside the approved changed-node scope.",
         }));
       }
 
       for (const required of plan.changedNodeIds) {
         if (!output.changedNodeIds.includes(required)) {
           return this.finish(this.receipt({
-            plan,
-            attempts,
-            startedAt,
-            termination: "EXECUTION_FAILED",
+            plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
-            error: "Execution did not report every planned changed node.",
             candidateArtifact: output.candidateArtifact,
             changedNodeIds: output.changedNodeIds,
             preservedNodeIds: output.preservedNodeIds,
             preservedNodeFingerprints: output.preservedNodeFingerprints,
             rendererReceiptId: output.rendererReceiptId,
+            observedTimelineDigest: output.observedTimelineDigest,
+            error: "Execution did not report every planned changed node.",
           }));
         }
       }
@@ -242,36 +250,29 @@ export class ReMakerEngine {
       for (const preserved of plan.preservedNodeIds) {
         if (!output.preservedNodeIds.includes(preserved)) {
           return this.finish(this.receipt({
-            plan,
-            attempts,
-            startedAt,
-            termination: "EXECUTION_FAILED",
+            plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
-            error: "Execution failed preserved-node identity invariant.",
             candidateArtifact: output.candidateArtifact,
             changedNodeIds: output.changedNodeIds,
             preservedNodeIds: output.preservedNodeIds,
             preservedNodeFingerprints: output.preservedNodeFingerprints,
             rendererReceiptId: output.rendererReceiptId,
+            observedTimelineDigest: output.observedTimelineDigest,
+            error: "Execution failed preserved-node identity invariant.",
           }));
         }
 
-        if (
-          output.preservedNodeFingerprints[preserved] !==
-          plan.preservedNodeFingerprints[preserved]
-        ) {
+        if (output.preservedNodeFingerprints[preserved] !== plan.preservedNodeFingerprints[preserved]) {
           return this.finish(this.receipt({
-            plan,
-            attempts,
-            startedAt,
-            termination: "EXECUTION_FAILED",
+            plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
-            error: "Execution failed preserved-node fingerprint invariant.",
             candidateArtifact: output.candidateArtifact,
             changedNodeIds: output.changedNodeIds,
             preservedNodeIds: output.preservedNodeIds,
             preservedNodeFingerprints: output.preservedNodeFingerprints,
             rendererReceiptId: output.rendererReceiptId,
+            observedTimelineDigest: output.observedTimelineDigest,
+            error: "Execution failed preserved-node fingerprint invariant.",
           }));
         }
       }
@@ -281,44 +282,38 @@ export class ReMakerEngine {
         changed: [...output.changedNodeIds].sort(),
         preserved: [...output.preservedNodeIds].sort(),
         preservedFingerprints: output.preservedNodeFingerprints,
+        observedTimelineDigest: output.observedTimelineDigest || null,
       }));
 
       if (progressFingerprint === lastProgressFingerprint) {
         return this.finish(this.receipt({
-          plan,
-          attempts,
-          startedAt,
-          termination: "NO_PROGRESS",
+          plan, attempts, startedAt, termination: "NO_PROGRESS",
           evidenceRefs: input.evidenceRefs,
           candidateArtifact: output.candidateArtifact,
           changedNodeIds: output.changedNodeIds,
           preservedNodeIds: output.preservedNodeIds,
           preservedNodeFingerprints: output.preservedNodeFingerprints,
           rendererReceiptId: output.rendererReceiptId,
+          observedTimelineDigest: output.observedTimelineDigest,
         }));
       }
 
       lastProgressFingerprint = progressFingerprint;
 
       return this.finish(this.receipt({
-        plan,
-        attempts,
-        startedAt,
-        termination: "COMPLETED",
+        plan, attempts, startedAt, termination: "COMPLETED",
         evidenceRefs: input.evidenceRefs,
         candidateArtifact: output.candidateArtifact,
         changedNodeIds: output.changedNodeIds,
         preservedNodeIds: output.preservedNodeIds,
         preservedNodeFingerprints: output.preservedNodeFingerprints,
         rendererReceiptId: output.rendererReceiptId,
+        observedTimelineDigest: output.observedTimelineDigest,
       }));
     }
 
     return this.finish(this.receipt({
-      plan,
-      attempts,
-      startedAt,
-      termination: "BUDGET_EXHAUSTED",
+      plan, attempts, startedAt, termination: "BUDGET_EXHAUSTED",
       evidenceRefs: input.evidenceRefs,
     }));
   }
@@ -326,9 +321,7 @@ export class ReMakerEngine {
   private validateRequest(input: ReMakerPlanInput): void {
     const timelineValidation = TimelineIRValidator.validate(input.timeline);
     if (!timelineValidation.valid) {
-      throw new Error(
-        "[ReMakerEngine] Invalid TimelineIR: " + timelineValidation.errors.join("; ")
-      );
+      throw new Error("[ReMakerEngine] Invalid TimelineIR: " + timelineValidation.errors.join("; "));
     }
 
     if (!input.repairId || !input.caseId || !input.missionId || !input.policyId) {
@@ -341,10 +334,6 @@ export class ReMakerEngine {
 
     if (input.parentArtifact.byteLength <= 0 || input.parentArtifact.revision < 0) {
       throw new Error("[ReMakerEngine] Parent artifact metadata is invalid.");
-    }
-
-    if (!input.parentArtifact.timelineDigest) {
-      throw new Error("[ReMakerEngine] Parent TimelineIR digest is required.");
     }
 
     if (!isSha256(input.requestedChangeDigest)) {
@@ -363,15 +352,12 @@ export class ReMakerEngine {
       throw new Error("[ReMakerEngine] Production repair requires a CAS-bound parent artifact.");
     }
 
-    if (
-      !Number.isInteger(input.authorization.fencingToken) ||
-      input.authorization.fencingToken < 0
-    ) {
+    if (!Number.isInteger(input.authorization.fencingToken) || input.authorization.fencingToken < 0) {
       throw new Error("[ReMakerEngine] Invalid fencing token.");
     }
 
-    if (!Number.isFinite(Date.parse(input.authorization.expiresAt)) ||
-        Date.parse(input.authorization.expiresAt) <= Date.now()) {
+    const expiryMs = Date.parse(input.authorization.expiresAt);
+    if (!Number.isFinite(expiryMs) || expiryMs <= Date.now()) {
       throw new Error("[ReMakerEngine] Repair authorization is expired or malformed.");
     }
 
@@ -379,16 +365,21 @@ export class ReMakerEngine {
       throw new Error("[ReMakerEngine] Repair budget is invalid.");
     }
 
+    if (input.budget.maxCostUnits !== undefined && input.budget.maxCostUnits < 0) {
+      throw new Error("[ReMakerEngine] Repair cost budget is invalid.");
+    }
+
     if (!TARGET_KINDS[input.action].includes(input.target.kind)) {
       throw new Error("[ReMakerEngine] Repair action does not match the target kind.");
     }
 
     if (input.target.frameRangeMs) {
+      const { startMs, endMs } = input.target.frameRangeMs;
       if (
-        !Number.isFinite(input.target.frameRangeMs.startMs) ||
-        !Number.isFinite(input.target.frameRangeMs.endMs) ||
-        input.target.frameRangeMs.startMs < 0 ||
-        input.target.frameRangeMs.endMs <= input.target.frameRangeMs.startMs
+        !Number.isFinite(startMs) ||
+        !Number.isFinite(endMs) ||
+        startMs < 0 ||
+        endMs <= startMs
       ) {
         throw new Error("[ReMakerEngine] Repair frame range is invalid.");
       }
@@ -438,22 +429,30 @@ export class ReMakerEngine {
     preservedNodeIds?: readonly string[];
     preservedNodeFingerprints?: Readonly<Record<string, string>>;
     rendererReceiptId?: string;
+    observedTimelineDigest?: string;
     error?: string;
   }): ReMakerReceipt {
     return Object.freeze({
       repairId: args.plan.repairId,
       caseId: args.plan.caseId,
+      missionId: args.plan.missionId,
+      policyId: args.plan.policyId,
       planId: args.plan.planId,
+      planDigest: args.plan.planDigest,
+      requestedChangeDigest: args.plan.requestedChangeDigest,
       idempotencyKey: args.plan.idempotencyKey,
       parentArtifactId: args.plan.parentArtifact.artifactId,
       parentArtifactSha256: args.plan.parentArtifact.sha256,
+      parentRevision: args.plan.parentArtifact.revision,
+      candidateRevision: args.plan.parentArtifact.revision + 1,
       candidateArtifact: args.candidateArtifact,
       changedNodeIds: Object.freeze([...(args.changedNodeIds || args.plan.changedNodeIds)]),
-      renderSceneIds: args.plan.renderSceneIds,
+      renderSceneIds: Object.freeze([...args.plan.renderSceneIds]),
       preservedNodeIds: Object.freeze([...(args.preservedNodeIds || args.plan.preservedNodeIds)]),
       preservedNodeFingerprints: Object.freeze(
         args.preservedNodeFingerprints || args.plan.preservedNodeFingerprints
       ),
+      observedTimelineDigest: args.observedTimelineDigest,
       attempts: args.attempts,
       termination: args.termination,
       startedAt: args.startedAt,
