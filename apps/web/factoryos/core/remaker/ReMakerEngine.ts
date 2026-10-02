@@ -57,6 +57,7 @@ export class ReMakerEngine {
         timelineDigest: input.parentArtifact.timelineDigest,
         action: input.action,
         target: input.target,
+        requestedChangeDigest: input.requestedChangeDigest,
       })
     );
 
@@ -68,6 +69,7 @@ export class ReMakerEngine {
       target: input.target,
       frameRange: impact.frameRange,
       changedNodeIds: impact.directNodeIds,
+      renderSceneIds: impact.renderSceneIds,
       preservedNodeIds: impact.preservedNodeIds,
       parentArtifact: input.parentArtifact,
       idempotencyKey,
@@ -107,6 +109,7 @@ export class ReMakerEngine {
           parentArtifactId: plan.parentArtifact.artifactId,
           parentArtifactSha256: plan.parentArtifact.sha256,
           changedNodeIds: plan.changedNodeIds,
+          renderSceneIds: plan.renderSceneIds,
           preservedNodeIds: plan.preservedNodeIds,
           attempts,
           termination: "AUTHORIZATION_EXPIRED",
@@ -163,7 +166,11 @@ export class ReMakerEngine {
         });
       }
 
-      if (!isSha256(output.candidateArtifact.sha256) || output.candidateArtifact.byteLength <= 0) {
+      if (
+        !isSha256(output.candidateArtifact.sha256) ||
+        output.candidateArtifact.byteLength <= 0 ||
+        output.candidateArtifact.sha256.toLowerCase() === plan.parentArtifact.sha256.toLowerCase()
+      ) {
         if (attempts >= plan.maxAttempts) {
           return this.finish({
             repairId: plan.repairId,
@@ -251,6 +258,7 @@ export class ReMakerEngine {
           parentArtifactSha256: plan.parentArtifact.sha256,
           candidateArtifact: output.candidateArtifact,
           changedNodeIds: output.changedNodeIds,
+          renderSceneIds: plan.renderSceneIds,
           preservedNodeIds: output.preservedNodeIds,
           attempts,
           termination: "NO_PROGRESS",
@@ -311,6 +319,9 @@ export class ReMakerEngine {
     }
     if (!input.parentArtifact.timelineDigest) {
       throw new Error("[ReMakerEngine] Parent TimelineIR digest is required.");
+    }
+    if (!input.requestedChangeDigest) {
+      throw new Error("[ReMakerEngine] requestedChangeDigest is required for idempotent patch identity.");
     }
     if (input.authorization.capabilityId !== "CAP_REMAKER_REPAIR") {
       throw new Error("[ReMakerEngine] Missing CAP_REMAKER_REPAIR authorization.");
