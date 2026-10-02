@@ -225,6 +225,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
   async execute(request: NotebookExecutionRequest, credentials?: NotebookCredentialBundle): Promise<NotebookExecutionResult> {
     let runtime = request.runtime;
     let created: NotebookProvisionResult | undefined;
+    let preserveRuntime = false;
 
     try {
       if (!runtime) {
@@ -265,6 +266,53 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         state === "UNKNOWN"
       ) {
         if (Date.now() - started > request.timeoutMs) {
+          const outputDir = String(
+            runtime.providerMetadata.outputDir ||
+              path.join(os.tmpdir(), "shortforge-kaggle-output-" + Date.now()),
+          );
+          const artifactProbe = await this.downloadArtifact(
+            runtime.resourceId,
+            request,
+            outputDir,
+            credentials,
+          );
+          const logs = await runProcess(
+            "kaggle",
+            ["kernels", "logs", runtime.resourceId],
+            { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } },
+          ).catch((error) => ({
+            exitCode: 1,
+            stdout: "",
+            stderr: String(error),
+          }));
+
+          if (
+            artifactProbe.artifactPath &&
+            artifactProbe.artifactSha256 &&
+            (artifactProbe.artifactByteLength || 0) >= 1024
+          ) {
+            return {
+              providerType: "KAGGLE",
+              runtimeId: runtime.resourceId,
+              verificationLevel: "PHYSICAL_ARTIFACT_VERIFIED",
+              status: "SUCCEEDED",
+              exitCode: 0,
+              stdout: artifactProbe.stdout,
+              artifactPath: artifactProbe.artifactPath,
+              artifactSha256: artifactProbe.artifactSha256,
+              artifactByteLength: artifactProbe.artifactByteLength,
+              evidence: [
+                "Kaggle status polling reached its control timeout.",
+                "Kaggle output download succeeded during timeout reconciliation.",
+                "ShortForge recomputed SHA-256 and byte length locally.",
+              ],
+            };
+          }
+
+          if (process.env.KAGGLE_KEEP_FAILED_RUNTIME === "1") {
+            preserveRuntime = true;
+          }
+
           return {
             providerType: "KAGGLE",
             runtimeId: runtime.resourceId,
@@ -274,9 +322,14 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
               "Kaggle kernel exceeded the ShortForge control timeout.",
               "Last Kaggle status output: " +
                 String(observedRuntime.providerMetadata.statusOutput || "").slice(-1000),
+              "Last Kaggle status error: " +
+                String(observedRuntime.providerMetadata.statusError || "").slice(-1000),
+              "Kaggle log tail: " +
+                String(logs.stdout || logs.stderr || "").slice(-4000),
+              artifactProbe.error || "Kaggle output reconciliation did not produce a usable MP4.",
             ],
             limitation:
-              "Hosted Kaggle provisioning can remain queued for several minutes; increase NOTEBOOK_LIVE_TIMEOUT_MS when validating under capacity pressure.",
+              "Kaggle hosted execution can remain queued or running under capacity pressure. The timeout path now performs artifact and log reconciliation before deciding failure.",
           };
         }
 
@@ -299,49 +352,39 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         runtime.providerMetadata.outputDir ||
           path.join(os.tmpdir(), "shortforge-kaggle-output-" + Date.now()),
       );
-      await fs.mkdir(outputDir, { recursive: true });
-
-      const download = await runProcess(
-        "kaggle",
-        ["kernels", "output", runtime.resourceId, "-p", outputDir, "-o"],
-        { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } },
+      const artifactProbe = await this.downloadArtifact(
+        runtime.resourceId,
+        request,
+        outputDir,
+        credentials,
       );
 
-      if (download.exitCode !== 0) {
+      if (artifactProbe.error) {
         return {
           providerType: "KAGGLE",
           runtimeId: runtime.resourceId,
           verificationLevel: "CODE_EXECUTION_VERIFIED",
           status: "FAILED",
-          stdout: download.stdout,
-          stderr: download.stderr,
-          evidence: ["Kaggle output download failed."],
+          stdout: artifactProbe.stdout,
+          stderr: artifactProbe.stderr,
+          evidence: [artifactProbe.error],
         };
       }
 
-      const files = await fs.readdir(outputDir);
-      const artifactName = request.outputPath
-        ? path.basename(request.outputPath)
-        : files.find((file) => file.toLowerCase().endsWith(".mp4"));
-      const artifact = artifactName
-        ? path.join(outputDir, artifactName)
-        : undefined;
-
-      if (!artifact) {
+      if (!artifactProbe.artifactPath) {
         return {
           providerType: "KAGGLE",
           runtimeId: runtime.resourceId,
           verificationLevel: "CODE_EXECUTION_VERIFIED",
           status: "SUCCEEDED",
-          stdout: download.stdout,
+          stdout: artifactProbe.stdout,
           evidence: [
             "Kaggle kernel completed and output was downloaded; no MP4 artifact was requested or found.",
           ],
         };
       }
 
-      const evidence = await fileEvidence(artifact);
-      if (evidence.artifactByteLength <= 0) {
+      if ((artifactProbe.artifactByteLength || 0) <= 0) {
         return {
           providerType: "KAGGLE",
           runtimeId: runtime.resourceId,
@@ -357,10 +400,10 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         verificationLevel: "PHYSICAL_ARTIFACT_VERIFIED",
         status: "SUCCEEDED",
         exitCode: 0,
-        stdout: download.stdout,
-        artifactPath: artifact,
-        artifactSha256: evidence.artifactSha256,
-        artifactByteLength: evidence.artifactByteLength,
+        stdout: artifactProbe.stdout,
+        artifactPath: artifactProbe.artifactPath,
+        artifactSha256: artifactProbe.artifactSha256,
+        artifactByteLength: artifactProbe.artifactByteLength,
         evidence: [
           "Kaggle kernel executed.",
           "Physical output was downloaded through the Kaggle CLI.",
@@ -368,7 +411,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         ],
       };
     } finally {
-      if (runtime?.resourceId) {
+      if (runtime?.resourceId && !preserveRuntime) {
         await this.terminate(runtime, credentials).catch(() => undefined);
       }
       const workDir = created?.runtime.providerMetadata.workDir;
@@ -376,6 +419,68 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         await fs.rm(String(workDir), { recursive: true, force: true }).catch(() => undefined);
       }
     }
+  }
+
+  private async downloadArtifact(
+    resourceId: string,
+    request: NotebookExecutionRequest,
+    outputDir: string,
+    credentials?: NotebookCredentialBundle,
+  ): Promise<{
+    artifactPath?: string;
+    artifactSha256?: string;
+    artifactByteLength?: number;
+    stdout: string;
+    stderr: string;
+    error?: string;
+  }> {
+    await fs.mkdir(outputDir, { recursive: true });
+
+    const download = await runProcess(
+      "kaggle",
+      ["kernels", "output", resourceId, "-p", outputDir, "-o"],
+      { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } },
+    );
+
+    if (download.exitCode !== 0) {
+      return {
+        stdout: download.stdout,
+        stderr: download.stderr,
+        error: "Kaggle output download failed: " + (download.stderr || download.stdout),
+      };
+    }
+
+    const files = await fs.readdir(outputDir);
+    const artifactName = request.outputPath
+      ? path.basename(request.outputPath)
+      : files.find((file) => file.toLowerCase().endsWith(".mp4"));
+    const artifact = artifactName
+      ? path.join(outputDir, artifactName)
+      : undefined;
+
+    if (!artifact) {
+      return {
+        stdout: download.stdout,
+        stderr: download.stderr,
+      };
+    }
+
+    const evidence = await fileEvidence(artifact);
+    if (evidence.artifactByteLength <= 0) {
+      return {
+        stdout: download.stdout,
+        stderr: download.stderr,
+        error: "Downloaded Kaggle artifact is empty.",
+      };
+    }
+
+    return {
+      stdout: download.stdout,
+      stderr: download.stderr,
+      artifactPath: artifact,
+      artifactSha256: evidence.artifactSha256,
+      artifactByteLength: evidence.artifactByteLength,
+    };
   }
 
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
