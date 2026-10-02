@@ -311,28 +311,33 @@ export class MissionWorkManager {
     }
 
     const now = new Date().toISOString();
-    return this.mutate(missionId, taskId, "RUNNING", agentId, (current) => {
-      const attempts: MissionTaskAttempt[] = [...(current.attempts || [])];
-      attempts.push({
-        attempt,
-        startedAt: now,
-        workerId: agentId,
-        outcome: "RUNNING",
-      });
-      current.workState = "RUNNING";
-      current.assignedAt = now;
-      current.lastHeartbeatAt = now;
-      current.attempts = attempts.slice(-20);
-      current.error = undefined;
-      current.blockedReason = undefined;
-      current.workEvents = [
-        ...(current.workEvents || []),
-        this.event(current, "STARTED", agentId, now, `Task claimed by ${agentId}`, {
+    try {
+      return await this.mutate(missionId, taskId, "RUNNING", agentId, (current) => {
+        const attempts: MissionTaskAttempt[] = [...(current.attempts || [])];
+        attempts.push({
           attempt,
-          leaseMs: ttlMs,
-        }),
-      ].slice(-100);
-    });
+          startedAt: now,
+          workerId: agentId,
+          outcome: "RUNNING",
+        });
+        current.workState = "RUNNING";
+        current.assignedAt = now;
+        current.lastHeartbeatAt = now;
+        current.attempts = attempts.slice(-20);
+        current.error = undefined;
+        current.blockedReason = undefined;
+        current.workEvents = [
+          ...(current.workEvents || []),
+          this.event(current, "STARTED", agentId, now, `Task claimed by ${agentId}`, {
+            attempt,
+            leaseMs: ttlMs,
+          }),
+        ].slice(-100);
+      });
+    } catch (error) {
+      await this.leases.release(taskId, agentId);
+      throw error;
+    }
   }
 
   async heartbeatTask(
@@ -362,7 +367,7 @@ export class MissionWorkManager {
     summary = "Work is ready for review.",
   ): Promise<MissionTask> {
     const now = new Date().toISOString();
-    return this.mutate(missionId, taskId, "REVIEW", actorId, (current) => {
+    const result = await this.mutate(missionId, taskId, "REVIEW", actorId, (current) => {
       if (normalizedState(current) !== "RUNNING") {
         throw new Error(`Task ${taskId} must be RUNNING before review can be requested.`);
       }
@@ -378,6 +383,11 @@ export class MissionWorkManager {
         this.event(current, "REVIEW_REQUESTED", actorId, now, summary, { reviewerId }),
       ].slice(-100);
     });
+    const lease = await this.leases.getLease(taskId);
+    if (lease && lease.ownerAgentId === actorId) {
+      await this.leases.release(taskId, actorId);
+    }
+    return result;
   }
 
   async requestChanges(
