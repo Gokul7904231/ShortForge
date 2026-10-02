@@ -41,7 +41,7 @@
   "security": {
     "required": true,
     "semgrep": "PASS — focused Wave 3 scan run 36974638093; 2 rules / 13 files / 0 findings",
-    "strix": "UNPROVEN",
+    "strix": "UNPROVEN — local execution environment has no Docker/Strix; dedicated GitHub Strix gate added in .github/workflows/overseer-wave3-strix.yml and requires an existing supported LLM repository secret.",
     "zap": "NOT_APPLICABLE",
     "notes": "Focused Semgrep completed successfully. Existing repository-wide Semgrep warnings remain historical/baseline and are not introduced by Wave 3. Strix dynamic testing remains unproven because Docker-backed dynamic testing is not part of this validation environment."
   },
@@ -50,7 +50,7 @@
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
     "Forge Evaluator": "COMPLETE — 3 test files / 23 tests passed; typecheck passed",
-    "Forge Release": "READY — focused Wave 3 validation and Team Change Gate passed"
+    "Forge Release": "BLOCKED — Strix adversarial proof required by canonical Team security policy"
   },
   "verificationPlan": [
     "Run focused Wave 3 npm ci/typecheck/tests.",
@@ -58,8 +58,8 @@
     "Patch failures before merge.",
     "Confirm workforce agents appear in Mission Room and paused agents cannot claim work."
   ],
-  "disposition": "PASS",
-  "dispositionRationale": "Wave 3 implementation, typecheck, focused collaboration/workforce tests, focused Semgrep, and Team Change Gate all passed. The remaining Selected MCP documentation-grep failure is a pre-existing baseline condition confirmed on main, not a Wave 3 regression. Strix remains unproven because Docker-backed dynamic testing is unavailable.",
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Wave 3 implementation, typecheck, 3 focused test suites (23 tests), focused Semgrep, and Team Change Gate requirements other than Strix are satisfied. Canonical security policy requires Strix for this permission change when Docker is available; the current local execution host has no Docker/Strix. A dedicated GitHub runner workflow has been added to obtain that proof using an existing repository LLM secret.",
   "verificationResults": {
     "overseerWave3": "PASS — 36974638093; npm ci + typecheck + 3 focused test files / 23 tests + focused Semgrep 0 findings",
     "teamChangeGate": "PASS — 36974638061",
@@ -69,9 +69,10 @@
     "obsidianMemory": "PASS — 36973638107 on prior code-equivalent head",
     "selectedMcpFabric": "BASELINE FAILURE — contract-validation docs grep for TRANSFORM_VISUAL_ASSET is absent on main as well; not a Wave 3 regression",
     "semgrepWave3": "RUNNING — focused error-severity scan added in refreshed workflow",
-    "ci": "IN_PROGRESS — repository-wide CI is broader/non-blocking for Wave 3 merge"
+    "ci": "IN_PROGRESS — repository-wide CI is broader/non-blocking for Wave 3 merge",
+    "strixWave3": "PENDING — dedicated GitHub Strix workflow added; no scan result yet"
   },
   "conflicts": [],
-  "status": "READY_FOR_RELEASE",
-  "validatedExecutableHead": "77678de4926b925e929a77a66557eb9e7625f5de"
+  "status": "AWAITING_STRIX_SECURITY_PROOF",
+  "validatedExecutableHead": "d5cfee9a2027392a8cda686827c2102272d11400"
 }
