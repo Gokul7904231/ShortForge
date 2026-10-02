@@ -434,6 +434,7 @@ export class OverseerControlPlane {
       if (mission) {
         maxParallelTasks = mission.budget.maxParallelTasks || 3;
         await this.missionManager.addTaskToMission(missionId, dag.dagId);
+        await this.missionManager.syncDAGTasksToMission(missionId, dag);
         await this.missionManager.updateProgress(missionId, 0, nodes.length);
       }
     }
@@ -441,7 +442,10 @@ export class OverseerControlPlane {
     const executors = this.getTaskExecutorsForFloors(missionId, run.runId);
 
     // Execute Task DAG asynchronously across target floor executors
-    const completedDag = await this.dagExecutor.executeDAG(dag, executors, { maxParallelTasks });
+    const completedDag = await this.dagExecutor.executeDAG(dag, executors, {
+      maxParallelTasks,
+      missionId,
+    });
 
     if (run.command.toLowerCase().includes("operate the factory")) {
       this.activeMissionGoal = run.command;

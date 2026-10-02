@@ -9,6 +9,7 @@ import type { DurableEventBus } from "../events/DurableEventBus";
 import type { CaseManager } from "../cases/CaseManager";
 import type { LeaseManager } from "../leases/LeaseManager";
 import type { MissionManager } from "../missions/MissionManager";
+import type { MissionWorkManager } from "../work/MissionWorkManager";
 import { HeartbeatTracker, DEFAULT_WATCHDOG_POLICY } from "./HeartbeatTracker";
 import type {
   AgentHeartbeatRecord,
@@ -40,6 +41,7 @@ export class FactoryWatchdog {
   private caseManager: CaseManager;
   private leaseManager?: LeaseManager;
   private missionManager?: MissionManager;
+  private workManager?: MissionWorkManager;
   private isRunning: boolean = false;
   private monitorInterval: NodeJS.Timeout | null = null;
   private failureCounts: Map<string, number> = new Map();
@@ -54,7 +56,8 @@ export class FactoryWatchdog {
     leaseManager?: LeaseManager,
     staleThresholdMs: number = 15000,
     missionManager?: MissionManager,
-    policy: Partial<WatchdogSupervisionPolicy> = {}
+    policy: Partial<WatchdogSupervisionPolicy> = {},
+    workManager?: MissionWorkManager,
   ) {
     this.worldState = worldState;
     this.eventBus = eventBus;
@@ -62,6 +65,7 @@ export class FactoryWatchdog {
     this.leaseManager = leaseManager;
     this.staleThresholdMs = staleThresholdMs;
     this.missionManager = missionManager;
+    this.workManager = workManager;
     this.heartbeatTracker = new HeartbeatTracker({
       staleThresholdMs,
       ...policy,
@@ -209,7 +213,16 @@ export class FactoryWatchdog {
       }
     }
 
-    // 3. Inspect expired task and resource leases
+    // 3. Reclaim durable mission work before releasing orphan leases.
+    if (this.workManager && this.missionManager) {
+      const activeMissions = await this.missionManager.getActiveMissions();
+      for (const mission of activeMissions) {
+        const recovered = await this.workManager.reclaimExpired(mission.missionId, "factory_watchdog");
+        reclaimed.push(...recovered.map((task) => task.taskId));
+      }
+    }
+
+    // 4. Inspect any remaining expired leases that are not attached to durable mission work.
     if (this.leaseManager) {
       const expiredLeases = await this.leaseManager.getRecoverableTasks();
       for (const lease of expiredLeases) {
@@ -222,7 +235,7 @@ export class FactoryWatchdog {
       }
     }
 
-    // 4. Sweep active mission budgets
+    // 5. Sweep active mission budgets
     let missionBreaches: { missionId: string; breachReason: string }[] | undefined;
     if (this.missionManager && typeof (this.missionManager as any).checkActiveMissionBudgets === "function") {
       const breaches = await (this.missionManager as any).checkActiveMissionBudgets();

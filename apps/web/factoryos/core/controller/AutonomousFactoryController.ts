@@ -28,6 +28,7 @@ import { OverseerAPIHandler } from "../overseer/api/OverseerAPIHandler";
 import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
 import { MissionManager } from "../missions/MissionManager";
 import { GuardianManager } from "../guardian/GuardianManager";
+import { MissionWorkManager } from "../work/MissionWorkManager";
 import { MissionCollaborationStore } from "../collaboration/MissionCollaborationStore";
 
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
@@ -84,6 +85,7 @@ export class AutonomousFactoryController {
   public leaseManager!: LeaseManager;
   public caseManager!: CaseManager;
   public missionManager!: MissionManager;
+  public workManager!: MissionWorkManager;
   public collaborationStore!: MissionCollaborationStore;
   public guardianManager!: GuardianManager;
   public slayerEngine!: SlayerEngine;
@@ -218,6 +220,7 @@ export class AutonomousFactoryController {
     this.leaseManager = new LeaseManager(repos.leases);
     this.caseManager = new CaseManager(repos.cases, this.eventBus, this.worldState);
     this.missionManager = new MissionManager(repos.missions, this.eventBus, this.worldState, repos.cases, repos.taskDAGs);
+    this.workManager = new MissionWorkManager(this.missionManager, this.leaseManager, this.eventBus);
     this.collaborationStore = new MissionCollaborationStore({
       eventBus: this.eventBus,
       workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
@@ -398,7 +401,9 @@ export class AutonomousFactoryController {
       this.caseManager,
       this.leaseManager,
       30000,
-      this.missionManager
+      this.missionManager,
+      {},
+      this.workManager,
     );
 
     this.pythonBridge = new PythonFloorBridge(this.worldState, this.eventBus, this.caseManager);

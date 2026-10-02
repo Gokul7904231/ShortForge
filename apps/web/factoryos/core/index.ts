@@ -107,6 +107,7 @@ export * from "./missions/MissionCompletionEvaluator";
 export * from "./missions/MissionConcurrencyController";
 export * from "./missions/MissionEventPublisher";
 export * from "./missions/MissionErrors";
+export * from "./work/MissionWorkManager";
 
 // Frontier v3 Core Primitives & Subsystems
 export * from "./context/ContextEngine";
