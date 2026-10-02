@@ -32,7 +32,7 @@
     "notes": "Provider credentials remain environment/connection scoped. Hosted sandbox credentials are not sent into GLiDE state or routing telemetry."
   },
   "conflicts": [],
-  "disposition": "CONDITIONAL",
+  "disposition": "BLOCKED",
   "forgers": [
     "Forge Architect",
     "Forge Builder",
