@@ -365,7 +365,7 @@ export class AgentIntercomStore {
         attempt: 1,
         retryable: true,
         correlationId: envelope.meta.correlationId,
-        causationId: envelope.meta.causationId,
+        causationId: input.idempotencyKey ? `idempotency:${input.idempotencyKey}` : envelope.meta.causationId,
       },
     };
     try {
