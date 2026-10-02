@@ -110,6 +110,7 @@ export interface AgentDelegationCreateInput {
 }
 
 export interface AgentIntercomSession {
+  readonly missionId: string;
   readonly hello: CommsPeerHello;
   readonly state: CommsSessionState;
   readonly lastSeenAt: string;
