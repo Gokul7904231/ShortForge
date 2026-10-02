@@ -224,7 +224,7 @@ export class AgentIntercomStore {
       principal: local,
       sessionId,
       capabilities: negotiated.capabilities,
-      supportedSchemaVersions: [...schemaVersions],
+      supportedSchemaVersions: negotiated.schemaVersions,
       sentAt: now,
     };
     const state = {
@@ -671,7 +671,7 @@ export class AgentIntercomStore {
     await this.eventBus.publish(topic as any, payload, {
       source: "agent_intercom",
       correlationId,
-      idempotencyKey: causationId,
+      idempotencyKey: causationId ? `${causationId}:${topic}` : undefined,
     });
   }
 }
