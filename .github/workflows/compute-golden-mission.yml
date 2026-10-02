@@ -10,6 +10,7 @@ on:
 
       - "apps/web/factoryos/tests/**"
       - ".okf/compute/**"
+      - "../../../testing/scenarios/golden/golden-short-001.ts"
       - ".github/workflows/compute-golden-mission.yml"
       - "Team/reports/pr-83.json"
   push:
@@ -50,5 +51,5 @@ jobs:
       - name: FactoryOS strict typecheck
         run: npm run factoryos:typecheck
 
-      - name: Run canonical golden mission
-        run: npx tsx ../../testing/cli/mission.ts golden-short-001 --json
+      - name: Run golden compute boundary mission
+        run: npx vitest run factoryos/tests/golden-compute-mission.test.ts --config vitest.config.ts --reporter=verbose
