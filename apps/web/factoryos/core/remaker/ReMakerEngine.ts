@@ -333,8 +333,8 @@ export class ReMakerEngine {
     if (!input.parentArtifact.timelineDigest) {
       throw new Error("[ReMakerEngine] Parent TimelineIR digest is required.");
     }
-    if (!input.requestedChangeDigest) {
-      throw new Error("[ReMakerEngine] requestedChangeDigest is required for idempotent patch identity.");
+    if (!isSha256(input.requestedChangeDigest)) {
+      throw new Error("[ReMakerEngine] requestedChangeDigest must be a SHA-256 digest.");
     }
     if (input.authorization.capabilityId !== "CAP_REMAKER_REPAIR") {
       throw new Error("[ReMakerEngine] Missing CAP_REMAKER_REPAIR authorization.");
