@@ -179,6 +179,7 @@ export class KaggleNotebookComputeProvider extends BaseComputeProvider {
       };
 
       onProgress?.("Submitting render worker to Kaggle.");
+      const notebookStartedAt = Date.now();
       const result = await this.adapter.execute(
         {
           provision: request,
@@ -249,10 +250,10 @@ export class KaggleNotebookComputeProvider extends BaseComputeProvider {
         metrics: {
           startupTimeMs:
             Number(process.env.KAGGLE_WORKER_STARTUP_SECONDS || 35) * 1000,
-          executionTimeMs: result.durationMs || 0,
+          executionTimeMs: Math.max(0, Date.now() - notebookStartedAt),
           transferTimeMs: Math.max(
             0,
-            Date.now() - startedAt - (result.durationMs || 0),
+            Date.now() - startedAt - (Math.max(0, Date.now() - notebookStartedAt)),
           ),
           totalTimeMs: Date.now() - startedAt,
         },
