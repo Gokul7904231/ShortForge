@@ -247,6 +247,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
 
   private async waitOperation(name: string, timeoutMs: number, credentials?: NotebookCredentialBundle): Promise<any> {
     const started = Date.now();
+    const token = credentials?.COLAB_ACCESS_TOKEN || process.env.COLAB_ACCESS_TOKEN || "";
 
     while (Date.now() - started < timeoutMs) {
       const response = await fetch(
