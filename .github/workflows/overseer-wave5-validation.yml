@@ -1,0 +1,51 @@
+name: Overseer Collaboration Wave 5 Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/orchestration/**"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/factoryos/core/database/MongoDBClient.ts"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
+      - "apps/web/factoryos/core/index.ts"
+      - "apps/web/app/api/overseer/fleet/**"
+      - "apps/web/components/overseer/collaboration/FleetOrchestrationPanel.tsx"
+      - "apps/web/components/overseer/presence/OverseerCommandSurface.tsx"
+      - "apps/web/factoryos/tests/mission-automation-wave5.test.ts"
+      - ".okf/intelligence/overseer-collaboration-fabric-wave5.md"
+      - "Team/reports/pr-95.json"
+      - ".okf/index.md"
+  workflow_dispatch:
+
+jobs:
+  wave5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -- --run factoryos/tests/mission-automation-wave5.test.ts factoryos/tests/mission-collaboration.test.ts factoryos/tests/agent-intercom-wave4.test.ts factoryos/core/comms/CommsFabric.test.ts
+      - name: Install Semgrep
+        run: python -m pip install semgrep==1.174.0
+      - name: Wave 5 static security scan
+        run: |
+          semgrep scan \
+            --config ../../production-helper/semgrep/rules/shortforge-rules.yaml \
+            --severity ERROR \
+            --error \
+            factoryos/core/orchestration/MissionAutomationContracts.ts \
+            factoryos/core/orchestration/MissionAutomationStore.ts \
+            factoryos/core/comms/CommsFabric.ts \
+            "app/api/overseer/fleet/recipes/route.ts" \
+            "app/api/overseer/fleet/recipes/[recipeId]/route.ts" \
+            "app/api/overseer/fleet/recipes/[recipeId]/launch/route.ts" \
+            "app/api/overseer/fleet/activity/route.ts"

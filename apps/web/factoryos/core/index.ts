@@ -165,3 +165,6 @@ export * from "./agent/execution";
 
 export * from "./comms/AgentIntercomContracts";
 export * from "./comms/AgentIntercomStore";
+
+export * from "./orchestration/MissionAutomationContracts";
+export * from "./orchestration/MissionAutomationStore";
