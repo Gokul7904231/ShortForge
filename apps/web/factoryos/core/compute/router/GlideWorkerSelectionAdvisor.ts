@@ -91,6 +91,19 @@ export class GlideWorkerSelectionAdvisor {
         eligible: true,
         availability: {
           activeJobs: candidate.health.activeJobs,
+          maxConcurrency: candidate.capability.maxConcurrency,
+          loadRatio:
+            candidate.capability.maxConcurrency > 0
+              ? Math.min(
+                  1,
+                  candidate.health.activeJobs /
+                    candidate.capability.maxConcurrency,
+                )
+              : 1,
+          freeSlots: Math.max(
+            0,
+            candidate.capability.maxConcurrency - candidate.health.activeJobs,
+          ),
           successRate: candidate.health.successRate,
           avgLatencyMs: candidate.health.avgLatencyMs,
         },
@@ -108,8 +121,46 @@ export class GlideWorkerSelectionAdvisor {
         estimates: {
           totalSeconds: candidate.estimatedTotalSeconds,
           executionSeconds: candidate.scoreBreakdown.executionEstSeconds,
+          queueWaitSeconds: candidate.scoreBreakdown.queueWaitSeconds,
+          startupSeconds: candidate.scoreBreakdown.startupEstSeconds,
+          transferSeconds:
+            candidate.scoreBreakdown.inputTransferSeconds +
+            candidate.scoreBreakdown.outputTransferSeconds,
+          verificationSeconds: candidate.scoreBreakdown.verificationSeconds,
+          deadlineSlackSeconds:
+            job.timeoutMs / 1000 - candidate.estimatedTotalSeconds,
           utilityScore: candidate.utilityScore,
         },
+        observedHistory: (() => {
+          const routerTelemetry = (candidate.provider as unknown as {
+            __factoryosTelemetry?: {
+              totalAttempts: number;
+              successfulExecutions: number;
+              failedExecutions: number;
+              avgStartupMs: number;
+              avgExecutionMs: number;
+              avgTransferMs: number;
+              avgTotalMs: number;
+            };
+          }).__factoryosTelemetry;
+
+          return routerTelemetry
+            ? {
+                attempts: routerTelemetry.totalAttempts,
+                successfulExecutions: routerTelemetry.successfulExecutions,
+                failedExecutions: routerTelemetry.failedExecutions,
+                observedSuccessRate:
+                  routerTelemetry.totalAttempts > 0
+                    ? routerTelemetry.successfulExecutions /
+                      routerTelemetry.totalAttempts
+                    : null,
+                observedAvgStartupMs: routerTelemetry.avgStartupMs,
+                observedAvgExecutionMs: routerTelemetry.avgExecutionMs,
+                observedAvgTransferMs: routerTelemetry.avgTransferMs,
+                observedAvgTotalMs: routerTelemetry.avgTotalMs,
+              }
+            : null;
+        })(),
       })),
     };
 
