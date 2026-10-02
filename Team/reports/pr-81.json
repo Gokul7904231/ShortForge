@@ -61,7 +61,8 @@
     "apps/web/factoryos/tests/glide-decision-adapter.test.ts",
     "apps/web/factoryos/tests/glide-worker-selection-advisor.test.ts",
     ".okf/decisions/glide-decision-system-20261002.md",
-    ".github/workflows/glide-decision.yml"
+    ".github/workflows/glide-decision.yml",
+    "apps/web/factoryos/tests/glide-compute-router-mode.test.ts"
   ],
   "notes": [
     "GLiDE is advisory/shadow-only in this change.",
