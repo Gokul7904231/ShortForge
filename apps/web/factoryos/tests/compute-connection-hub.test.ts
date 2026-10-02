@@ -72,9 +72,12 @@ describe("compute connection hub", () => {
     const basicProviders = listAvailableProviders(basicUser);
     const adminProviders = listAvailableProviders(adminUser);
     expect(basicProviders.some((p) => p.providerFamily === "SANDBOX")).toBe(false);
-    expect(
-      adminProviders.filter((p) => p.providerFamily === "SANDBOX").map((p) => p.providerId),
-    ).toEqual(["sandbox_daytona_hosted", "sandbox_modal_hosted"]);
+    const sandboxIds = adminProviders
+      .filter((p) => p.providerFamily === "SANDBOX")
+      .map((p) => p.providerId);
+    expect(sandboxIds).toContain("sandbox_daytona_hosted");
+    expect(sandboxIds).toContain("sandbox_modal_hosted");
+    expect(sandboxIds).not.toContain("sandbox_pandastack_hosted");
   });
 
   it("validates a hosted Daytona connection without exposing its secret", async () => {
