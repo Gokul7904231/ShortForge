@@ -602,8 +602,11 @@ export class MissionManager {
 
     this.activeMissions.set(missionId, updatedMission);
     if (!created) throw new Error(`Failed to create task for mission ${missionId}`);
-    await this.publishTaskWorkEvent(created.workEvents?.[created.workEvents.length - 1]);
-    return structuredClone(created);
+    const createdTask = created as MissionTask;
+    await this.publishTaskWorkEvent(
+      createdTask.workEvents?.[createdTask.workEvents.length - 1],
+    );
+    return structuredClone(createdTask);
   }
 
   async updateMissionTask(
