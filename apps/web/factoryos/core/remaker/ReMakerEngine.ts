@@ -86,6 +86,7 @@ export class ReMakerEngine {
       policyId: input.policyId,
       action: input.action,
       target: input.target,
+      authorization: input.authorization,
       frameRange: impact.frameRange,
       changedNodeIds: impact.directNodeIds,
       renderSceneIds: impact.renderSceneIds,
@@ -371,8 +372,13 @@ export class ReMakerEngine {
       throw new Error("[ReMakerEngine] Missing CAP_REMAKER_REPAIR authorization.");
     }
 
-    if (!input.authorization.grantId || !input.authorization.authorizedBy) {
-      throw new Error("[ReMakerEngine] Authorization grant and issuer are required.");
+    if (
+      !input.authorization.grantId ||
+      !input.authorization.leaseId ||
+      !input.authorization.holderId ||
+      !input.authorization.authorizedBy
+    ) {
+      throw new Error("[ReMakerEngine] Authorization grant, lease, holder and issuer are required.");
     }
 
     if (!input.parentArtifact.casRef) {
