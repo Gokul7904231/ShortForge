@@ -3,6 +3,7 @@ import { verifySession } from "@/lib/auth/auth";
 import {
   computeConnectionStore,
   validateNotebookConnection,
+  validateSandboxConnection,
 } from "@/factoryos/core/compute/connections";
 
 export const dynamic = "force-dynamic";
@@ -26,15 +27,20 @@ export async function POST(
       return errorResponse(new Error("COMPUTE_CONNECTION_NOT_FOUND"), 404);
     }
 
-    if (connection.providerFamily !== "NOTEBOOK") {
-      return errorResponse(
-        new Error("COMPUTE_CONNECTION_VALIDATION_NOT_IMPLEMENTED:" + connection.providerId),
-        409,
-      );
+    if (connection.providerFamily === "NOTEBOOK") {
+      const result = await validateNotebookConnection(user.uid, connectionId);
+      return NextResponse.json({ success: true, result });
     }
 
-    const result = await validateNotebookConnection(user.uid, connectionId);
-    return NextResponse.json({ success: true, result });
+    if (connection.providerFamily === "SANDBOX") {
+      const result = await validateSandboxConnection(user.uid, connectionId);
+      return NextResponse.json({ success: true, result });
+    }
+
+    return errorResponse(
+      new Error("COMPUTE_CONNECTION_VALIDATION_NOT_IMPLEMENTED:" + connection.providerId),
+      409,
+    );
   } catch (error) {
     return errorResponse(error, 400);
   }
