@@ -1,5 +1,7 @@
 /** FactoryOS Wave 5 — Mission Automation & Fleet Orchestration contracts. */
 
+import type { TaskExecutionType } from "../contracts/MissionContracts";
+
 export type AutomationRecipeStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type AutomationLaunchMode = "CREATE_ONLY" | "START_MISSION";
 export type OrchestrationLaunchState = "PLANNED" | "MATERIALIZED" | "STARTED" | "FAILED";
@@ -10,7 +12,7 @@ export interface AutomationRecipeStep {
   readonly ownerAgent: string;
   readonly capabilityRequired: string;
   readonly expectedOutputType: string;
-  readonly executionType?: "LOCAL" | "REMOTE" | "HYBRID";
+  readonly executionType?: TaskExecutionType;
   readonly dependencyStepIds?: readonly string[];
   readonly input?: Record<string, unknown>;
   readonly timeoutMs?: number;
