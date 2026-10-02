@@ -21,6 +21,7 @@ import { Activity, Layers, ShieldCheck, Bot } from "lucide-react";
 import { useAuth } from "@/lib/auth/hooks";
 import { MissionRoomPanel } from "../collaboration/MissionRoomPanel";
 import { AgentWorkforcePanel } from "../collaboration/AgentWorkforcePanel";
+import { FleetOrchestrationPanel } from "../collaboration/FleetOrchestrationPanel";
 
 const OverseerProgressiveDisclosure = dynamic(
   () => import("./OverseerProgressiveDisclosure").then((mod) => mod.OverseerProgressiveDisclosure),
@@ -382,6 +383,11 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
         {/* Wave 3: workspace-scoped, co-manageable agent workforce */}
         <section className="w-full">
           <AgentWorkforcePanel accentColor={accentColor} />
+        </section>
+
+        {/* Wave 5: reusable mission recipes + fleet activity projection */}
+        <section className="w-full">
+          <FleetOrchestrationPanel accentColor={accentColor} />
         </section>
       </div>
 
