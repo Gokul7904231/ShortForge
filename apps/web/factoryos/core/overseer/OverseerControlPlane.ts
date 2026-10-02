@@ -442,7 +442,10 @@ export class OverseerControlPlane {
     const executors = this.getTaskExecutorsForFloors(missionId, run.runId);
 
     // Execute Task DAG asynchronously across target floor executors
-    const completedDag = await this.dagExecutor.executeDAG(dag, executors, { maxParallelTasks });
+    const completedDag = await this.dagExecutor.executeDAG(dag, executors, {
+      maxParallelTasks,
+      missionId,
+    });
 
     if (run.command.toLowerCase().includes("operate the factory")) {
       this.activeMissionGoal = run.command;
