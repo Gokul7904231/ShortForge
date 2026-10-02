@@ -102,7 +102,7 @@ export class DecisionEngine {
 
       try {
         const glideResult = await this.glideShadowAdapter.evaluateBatch(glideSubRequest);
-        const acceptedQuestions: typeof unresolvedQuestions[number][] = [];
+        const acceptedQuestions: typeof unresolvedQuestions = [];
 
         for (const q of unresolvedQuestions) {
           const ans = glideResult.answersById[q.id];
