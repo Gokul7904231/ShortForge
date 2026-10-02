@@ -189,11 +189,16 @@ export class AgentWorkforceStore {
     }
   }
 
-  async list(): Promise<AgentWorkforceSnapshot> {
+  async list(principal?: AgentWorkforcePrincipal): Promise<AgentWorkforceSnapshot> {
     const agents = await this.repository.list(this.workspaceId);
+    const visible = principal?.workspaceRole === "OWNER" || principal?.workspaceRole === "ADMIN"
+      ? agents
+      : principal
+        ? agents.filter((agent) => agent.members.some((member) => member.active && member.principalId === principal.principalId))
+        : [];
     return {
       workspaceId: this.workspaceId,
-      agents: agents.map((agent) => this.redactForMembers(agent)),
+      agents: visible.map((agent) => this.authorizedView(agent, principal?.principalId) || this.redactForMembers(agent)),
     };
   }
 
