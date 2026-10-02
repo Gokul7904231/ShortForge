@@ -73,8 +73,11 @@ export interface ProviderPerformanceTelemetry {
   failureLog: Array<{ timestamp: string; jobId: string; reason: string }>;
 }
 
+export type GlideRoutingMode = "OFF" | "SHADOW" | "CANARY";
+
 export interface ComputeRouterOptions {
   readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
+  readonly glideRoutingMode?: GlideRoutingMode;
 }
 
 export class ComputeRouter {
@@ -84,6 +87,7 @@ export class ComputeRouter {
   private receipts: ExecutionReceipt[] = [];
   private readonly artifactVerifier = new RenderArtifactVerifier();
   private readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
+  private readonly glideRoutingMode: GlideRoutingMode;
 
   constructor(
     policy: ComputePolicy = DEFAULT_COMPUTE_POLICY,
@@ -91,6 +95,7 @@ export class ComputeRouter {
   ) {
     this.policy = policy;
     this.glideWorkerSelectionAdvisor = options.glideWorkerSelectionAdvisor;
+    this.glideRoutingMode = options.glideRoutingMode ?? "OFF";
   }
 
   public registerProvider(provider: IComputeProvider): void {
@@ -268,23 +273,67 @@ export class ComputeRouter {
     // Sort by utility score ascending (lowest cost = best score)
     candidates.sort((a, b) => a.utilityScore - b.utilityScore);
 
-    const selected = candidates[0];
-    const glideWorkerAdvice = this.glideWorkerSelectionAdvisor
-      ? await this.glideWorkerSelectionAdvisor.advise(job, candidates)
-      : undefined;
+    const deterministicSelected = candidates[0];
+    let selected = deterministicSelected;
+    let orderedCandidates = candidates;
+    let glideWorkerAdvice: GlideWorkerSelectionAdvice | undefined;
 
-    const admissionRecord = {
+    if (this.glideWorkerSelectionAdvisor && this.glideRoutingMode === "CANARY") {
+      glideWorkerAdvice = await this.glideWorkerSelectionAdvisor.advise(job, candidates);
+      if (
+        glideWorkerAdvice.status === "ADVISED" &&
+        glideWorkerAdvice.selectedProviderId
+      ) {
+        const glideCandidate = candidates.find(
+          (candidate) => candidate.provider.id === glideWorkerAdvice!.selectedProviderId,
+        );
+        if (glideCandidate) {
+          orderedCandidates = [
+            glideCandidate,
+            ...candidates.filter(
+              (candidate) => candidate.provider.id !== glideCandidate.provider.id,
+            ),
+          ];
+          selected = orderedCandidates[0];
+        }
+      }
+    } else if (
+      this.glideWorkerSelectionAdvisor &&
+      this.glideRoutingMode === "SHADOW"
+    ) {
+      // Shadow must never add GLiDE latency to the real render route.
+      void this.glideWorkerSelectionAdvisor.advise(job, candidates).catch((error: unknown) => {
+        console.warn("[ComputeRouter] GLiDE shadow advice failed non-fatally:", error);
+      });
+    }
+
+    const admissionRecord: import("../contracts/ComputeContracts").RenderAdmissionRecord = {
       admissionId: "admission_" + job.jobId + "_" + Date.now().toString(36),
       jobId: job.jobId,
       policyVersion: this.policy.policyVersion || "1.0.0",
       selectedProviderId: selected.provider.id,
       selectedProviderType: selected.provider.type,
       selectedUtilityScore: selected.utilityScore,
-      candidateProviderIds: candidates.map((candidate) => candidate.provider.id),
+      candidateProviderIds: orderedCandidates.map((candidate) => candidate.provider.id),
       rejectionReasons: { ...rejectionReasons },
       capabilitySnapshot: selected.capability,
       healthSnapshot: selected.health,
       evaluatedAt: new Date().toISOString(),
+      glideDecision: glideWorkerAdvice
+        ? {
+            mode: this.glideRoutingMode,
+            modelRef: glideWorkerAdvice.modelRef,
+            decisionBatchId: glideWorkerAdvice.decisionBatchId,
+            selectedProviderId: glideWorkerAdvice.selectedProviderId,
+            deterministicProviderId: deterministicSelected.provider.id,
+            selectedConfidence: glideWorkerAdvice.selectedConfidence,
+            selectedProbability: glideWorkerAdvice.selectedProbability,
+            candidateProviderIds: [...glideWorkerAdvice.candidateProviderIds],
+            latencyMs: glideWorkerAdvice.latencyMs,
+            status: glideWorkerAdvice.status,
+            reason: glideWorkerAdvice.reason,
+          }
+        : undefined,
     };
 
     return {
@@ -293,7 +342,7 @@ export class ComputeRouter {
       selectedProvider: selected.provider,
       scoreBreakdown: selected.scoreBreakdown,
       reason: selected.suitabilityReason,
-      evaluatedCandidates: candidates,
+      evaluatedCandidates: orderedCandidates,
       rejectionReasons,
       admissionRecord,
       glideWorkerAdvice,
