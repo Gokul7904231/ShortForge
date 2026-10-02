@@ -83,6 +83,9 @@ export interface RenderReceipt {
   cache_hits: number;
   cache_misses: number;
   scenes_rendered: string[];
+  scenes_rebuilt?: string[];
+  repair_mode?: string | null;
+  forced_scene_ids?: string[];
   validation: {
     is_valid: boolean;
     file_exists: boolean;
