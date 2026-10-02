@@ -76,6 +76,7 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
       },
       changedNodeIds: Object.freeze([...plan.changedNodeIds]),
       preservedNodeIds: Object.freeze([...plan.preservedNodeIds]),
+      preservedNodeFingerprints: Object.freeze({ ...plan.preservedNodeFingerprints }),
       rendererReceiptId: result.receipt.receiptId,
       physicalValidation: {
         passed: result.loopReceipt.verified,
