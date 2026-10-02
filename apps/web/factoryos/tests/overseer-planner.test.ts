@@ -3,6 +3,7 @@ import { OverseerThinkingController } from "../core/overseer/OverseerThinkingCon
 import { DecisionLedger } from "../core/overseer/DecisionLedger";
 import { TaskDAGPlanner, TaskDAGExecutor } from "../core/overseer/TaskDAGPlanner";
 import { WorldStateEngine } from "../core/worldstate/WorldStateEngine";
+import { LeaseManager } from "../core/leases/LeaseManager";
 import type { TaskNode } from "../core/contracts/OverseerThinkingContracts";
 
 describe("FactoryOS v1 — Overseer Thinking, Planning & Decision Suite", () => {
@@ -108,3 +109,35 @@ describe("FactoryOS v1 — Overseer Thinking, Planning & Decision Suite", () => 
     expect(executedDAG.nodes["task_3"].status).toBe("SUCCEEDED");
   });
 });
+
+
+  it("04: TaskDAGExecutor never executes a task when its lease claim is rejected", async () => {
+    const leaseManager = new LeaseManager(undefined, 60000);
+    await leaseManager.acquire("task_locked", "other-worker", 60000, 1);
+
+    const guardedExecutor = new TaskDAGExecutor(undefined, undefined, leaseManager);
+    const dag = dagPlanner.createDAG("goal_locked", [{
+      taskId: "task_locked",
+      name: "Locked task",
+      description: "Must not execute without a lease",
+      requiredAgentType: "TOOL",
+      dependencies: [],
+      payload: {},
+      status: "PENDING",
+      attemptCount: 0,
+      maxAttempts: 1,
+    }]);
+
+    let executed = false;
+    const result = await guardedExecutor.executeDAG(dag, {
+      TOOL: async () => {
+        executed = true;
+        return { output: "must not happen" };
+      },
+    });
+
+    expect(executed).toBe(false);
+    expect(result.status).toBe("FAILED");
+    expect(result.nodes.task_locked.status).toBe("FAILED");
+    expect(result.nodes.task_locked.error).toContain("TASK_LEASE_UNAVAILABLE");
+  });
