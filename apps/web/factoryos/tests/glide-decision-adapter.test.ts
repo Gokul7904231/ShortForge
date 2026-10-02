@@ -82,7 +82,7 @@ describe("GLiDE Decision Adapter", () => {
           risk: {
             type: "score",
             score: 0,
-            expected_level: 0.35,
+            expected_level: 0.6,
             confidence: 0.4,
             probabilities: { "0": 0.6, "1": 0.2, "2": 0.2 },
             legend: {
@@ -142,7 +142,7 @@ describe("GLiDE Decision Adapter", () => {
     if (risk.type === "SCORE") {
       expect(risk.selectedLevel).toBe(10);
       expect(risk.selectedLabel).toBe("LOW");
-      expect(risk.score).toBeCloseTo(0.175, 5);
+      expect(risk.score).toBeCloseTo(0.3, 5);
     }
   });
 
@@ -156,7 +156,7 @@ describe("GLiDE Decision Adapter", () => {
           worker: {
             type: "score",
             score: 2,
-            expected_level: 1.6,
+            expected_level: 1.7,
             confidence: 0.7,
             probabilities: { "0": 0.1, "1": 0.1, "2": 0.8 },
           },
@@ -180,7 +180,7 @@ describe("GLiDE Decision Adapter", () => {
     expect(answer.type).toBe("SCORE");
     if (answer.type === "SCORE") {
       expect(answer.selectedLevel).toBe(30);
-      expect(answer.score).toBeCloseTo(0.8, 5);
+      expect(answer.score).toBeCloseTo(0.85, 5);
       expect(answer.confidence).toBeCloseTo(0.7, 5);
     }
   });
