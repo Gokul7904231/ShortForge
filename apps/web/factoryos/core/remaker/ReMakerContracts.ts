@@ -51,6 +51,8 @@ export interface ReMakerAuthorization {
   readonly grantId: string;
   readonly leaseId: string;
   readonly holderId: string;
+  readonly action: ReMakerAction;
+  readonly targetScopeDigest: string;
   readonly fencingToken: number;
   readonly expiresAt: string;
   readonly authorizedBy: string;
