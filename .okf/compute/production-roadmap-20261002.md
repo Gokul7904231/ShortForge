@@ -8,7 +8,7 @@
 | 4. Add Ascalon decision layer | DONE | GLiDE fast/shadow/canary decision tier; hard admission remains deterministic |
 | 5. Add smart selection | DONE | Capability + health + load + ETA + observed reliability/latency telemetry |
 | 6. Add automatic failover | DONE | Availability recheck, timeout/error failover, physical artifact failover |
-| 7. Real distributed rendering | CODE-READY | Manual live smoke supports AMD/Kaggle/Daytona/Modal; requires live provider credentials/configuration |
+| 7. Real distributed rendering | ACTIVATION-READY | Manual live smoke supports AMD/Kaggle/Daytona/Modal; requires live provider credentials/configuration |
 | 8. Prove speed + reliability | CODE-COMPLETE | Chaos matrix covers dead worker, saturation, timeout, telemetry learning; live provider stress still requires credentials |
 | 9. Golden mission | DONE AT COMPUTE BOUNDARY | RenderFabric -> ComputePool -> provider -> CAS -> F07 passes; full mission delivery is a separate integration gate |
 | 10. Optimize | CODE-COMPLETE | 3-sample telemetry promotion floor; measured startup/execution/transfer data feeds utility scoring |
