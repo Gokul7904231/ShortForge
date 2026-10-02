@@ -73,6 +73,32 @@ export class GuardianReMakerCapabilityIssuer {
       throw new Error("[GuardianReMakerCapabilityIssuer] " + policy.reason);
     }
 
+    const admission = await this.registry.execute({
+      requestExecutionId: `capremaker_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+      capabilityId: GuardianReMakerCapabilityIssuer.CAPABILITY_ID,
+      missionId: input.missionId,
+      jobId: `repair_${input.repairId}`,
+      floorId: input.floorId,
+      initiatedBy: "system",
+      callerRole: "FLOOR_GUARDIAN",
+      environment: "production",
+      timestamp: new Date().toISOString(),
+      inputData: {
+        repairId: input.repairId,
+        missionId: input.missionId,
+        caseId: input.caseId,
+        requestedChangeDigest: input.requestedChangeDigest,
+        evidenceRefs: [...input.evidenceRefs],
+      },
+    });
+
+    if (admission.status !== "SUCCESS" || admission.outputData?.admitted !== true) {
+      throw new Error(
+        "[GuardianReMakerCapabilityIssuer] Capability registry rejected ReMaker admission: " +
+        (admission.error || admission.policyRejectionReason || "unknown_reason"),
+      );
+    }
+
     const grantId = "remaker_grant_" + randomUUID().replace(/-/g, "").slice(0, 16);
     const leaseAcquired = await this.leaseManager.acquire(
       grantId,
