@@ -46,4 +46,4 @@ jobs:
         run: npm run factoryos:typecheck
 
       - name: GLiDE adapter and worker selection tests
-        run: npx vitest run factoryos/tests/glide-decision-adapter.test.ts factoryos/tests/glide-worker-selection-advisor.test.ts --config vitest.config.ts
+        run: npx vitest run factoryos/tests/glide-decision-adapter.test.ts factoryos/tests/glide-worker-selection-advisor.test.ts factoryos/tests/glide-compute-router-mode.test.ts --config vitest.config.ts
