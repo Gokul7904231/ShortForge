@@ -220,7 +220,7 @@ export class AutonomousFactoryController {
     this.leaseManager = new LeaseManager(repos.leases);
     this.caseManager = new CaseManager(repos.cases, this.eventBus, this.worldState);
     this.missionManager = new MissionManager(repos.missions, this.eventBus, this.worldState, repos.cases, repos.taskDAGs);
-    this.workManager = new MissionWorkManager(this.missionManager, this.leaseManager);
+    this.workManager = new MissionWorkManager(this.missionManager, this.leaseManager, this.eventBus);
     this.collaborationStore = new MissionCollaborationStore({
       eventBus: this.eventBus,
       workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
