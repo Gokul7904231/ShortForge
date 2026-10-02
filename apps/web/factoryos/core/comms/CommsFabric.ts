@@ -31,6 +31,7 @@ export type CommsMessageKind =
   | "HEARTBEAT"
   | "CAPABILITY"
   | "EVENT"
+  | "INTERCOM_MESSAGE"
   | "CANCEL"
   | "RENEGOTIATE";
 
@@ -273,6 +274,8 @@ export function capabilityForKind(kind: CommsMessageKind): CommsCapability["name
       return "HEARTBEAT";
     case "EVENT":
       return "SITUATION_RECORD";
+    case "INTERCOM_MESSAGE":
+      return "INTERCOM_MESSAGE";
   }
 }
 
