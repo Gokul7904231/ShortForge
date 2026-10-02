@@ -71,7 +71,7 @@ describe("GLiDE Decision Adapter", () => {
           worker: {
             type: "choice",
             choice: "daytona",
-            confidence: 0.55,
+            confidence: 0.4,
             probabilities: { daytona: 0.65, runpod: 0.1, vast: 0.25 },
           },
           ready: {
@@ -157,7 +157,7 @@ describe("GLiDE Decision Adapter", () => {
             type: "score",
             score: 2,
             expected_level: 1.6,
-            confidence: 0.2,
+            confidence: 0.7,
             probabilities: { "0": 0.1, "1": 0.1, "2": 0.8 },
           },
         },
@@ -281,7 +281,7 @@ describe("GLiDE Decision Adapter", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result.status).toBe("UNRESOLVED");
-    expect(result.answers[0].validationErrorCode).toBe("ADAPTER_UNAVAILABLE");
+    expect(result.answers[0].validationErrorCode).toBe("AUTHENTICATION_FAILED");
   });
 
   it("fails closed when the provider does not respond before the ShortForge decision budget", async () => {
