@@ -39,9 +39,10 @@ export class ReMakerHandoff {
       );
     }
 
-    if (!caseItem.targetScope) {
-      // Target must be supplied explicitly by the upstream repair authority.
-      // A finding description is never treated as a target.
+    if (!input.targetScope) {
+      throw new Error(
+        "[ReMakerHandoff] Explicit target scope is required; finding text is never parsed as scope."
+      );
     }
 
     if (!input.requestedChangeDigest || !/^[a-f0-9]{64}$/i.test(input.requestedChangeDigest)) {
