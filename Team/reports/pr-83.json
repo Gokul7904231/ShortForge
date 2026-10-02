@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/compute-pool-20261002",
   "objective": "Converge hosted sandbox, notebook, API GPU, and local render-capable workers behind one ComputePool and ComputeRouter while preserving deterministic admission and F07 physical truth.",
-  "classification": "architecture + capability",
+  "classification": "new capability",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -32,7 +32,7 @@
     "notes": "Provider credentials remain environment/connection scoped. Hosted sandbox credentials are not sent into GLiDE state or routing telemetry."
   },
   "conflicts": [],
-  "disposition": "BLOCKED_PENDING_VERIFICATION",
+  "disposition": "BLOCKED",
   "forgers": [
     "Forge Architect",
     "Forge Builder",
