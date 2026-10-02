@@ -1,60 +1,243 @@
-# Hierarchy: The Overseer (`OverseerControlPlane.ts`)
+# Hierarchy: Overseer
 
-> **Tier**: Factory Supreme Control Plane (Level 1, beneath Human Authority)  
-> **Instance Count**: Exactly ONE per Factory Cluster  
-> **Source Location**: `apps/web/factoryos/core/overseer/OverseerControlPlane.ts` & `apps/web/factoryos/core/overseer/TaskDAGPlanner.ts`
-> **Operational Contract:** [`./overseer-operational-contract.md`](./overseer-operational-contract.md) — current capabilities, activation/stop rules, command/authorization boundaries, handoffs, and required target behavior.
-
----
-
-## 1. Architectural Philosophy: The Sovereign Orchestration Authority
-
-The **Overseer** is the supreme operational control plane of FactoryOS under Human Authority. It is the primary factory-wide authority responsible for accepting mission dispatches from the `AutonomousScheduler`, synthesizing the execution plan, coordinating floor specialists, managing cluster state, and guaranteeing end-to-end execution integrity.
-
-Crucially, the Overseer delegates specialized regulatory powers to peer sovereign authorities while retaining overall pipeline command:
-- **Overseer** $\longrightarrow$ Floor orchestration, task DAG scheduling, state lifecycle.
-- **Guardian** $\longrightarrow$ Sovereign policy, capability gating, and boundary enforcement.
-- **Slayer** $\longrightarrow$ Circuit breaking, watchdog timeouts, and emergency killswitches.
-- **Healer** $\longrightarrow$ Bounded self-healing, state reconciliation, and LKG rollback.
-
-```
-┌────────────────────────────────────────────────────────┐
-│                        Overseer                        │
-│                (Supreme Control Plane)                 │
-├───────────────────────────┬────────────────────────────┤
-│  AutonomousScheduler      │ Canonical 8-Floor DAG      │
-│  (Intake & Quotas)        │ (F00->F01->F02->F03||F04..)│
-└─────────────┬─────────────┴─────────────┬──────────────┘
-              │                           │
-              ▼ Sovereign Delegation      ▼ Production Workers
-┌───────────────────────────┐   ┌────────────────────────┐
-│  Guardian (Policy Gate)   │   │  F00 Market Analyst    │
-│  Slayer (Killswitch)      │   │  F01 Strategy          │
-│  Healer (Bounded Repair)  │   │  F02 Scripting         │
-│  Auditor (Compliance)     │   │  F03-F06 Realization   │
-│  Remaker (Evolution)      │   │  F07 QA Verification   │
-└───────────────────────────┘   └────────────────────────┘
-```
+**Status:** AUTHORITATIVE ARCHITECTURAL SUMMARY / IMPLEMENTATION-GROUNDED  
+**Level:** 1 — Factory Supreme Control Plane, beneath Human Authority  
+**Canonical implementation:** `apps/web/factoryos/core/overseer/OverseerControlPlane.ts`  
+**Planning implementation:** `apps/web/factoryos/core/overseer/TaskDAGPlanner.ts`  
+**Detailed operating contract:** [`./overseer-operational-contract.md`](./overseer-operational-contract.md)
 
 ---
 
-## 2. CURRENT vs TARGET Architecture Status
+## 1. Simple definition
 
-| Architectural Dimension | CURRENT Implementation | TARGET Implementation |
-|:------------------------|:-----------------------|:----------------------|
-| **Pipeline DAG Model** | Canonical 8-floor DAG (`createEightFloorProductionDAG` with parallel F03/F04) | Dynamic sub-DAG generation supporting multi-format and interactive branching |
-| **Scheduler Intake** | Single intake path: `AutonomousScheduler` -> `ScheduleInstance` -> `Mission` | Distributed priority queue with speculative multi-mission pre-planning |
-| **State Persistence** | SQLite / in-memory store in `FactoryStateService.ts` | Multi-region distributed state store with Paxos/Raft consistency |
-| **Telemetry Streaming** | Server-Sent Events (SSE) via `OverseerPresenceEngine` | Real-time bi-directional WebSockets with interactive human steering |
-| **Authority Separation**| Clean separation of Overseer, Guardian, Slayer, Healer | Formally verified actor supervision trees with immutable boundary contracts |
+**Overseer is the factory commander.**
+
+It receives missions and commands, reads factory state, decides what work is needed, builds the work plan, dispatches work, monitors execution, coordinates recovery, and drives the system toward independently verified completion.
+
+Human Authority remains above Overseer.
 
 ---
 
-## 3. Core Operational Responsibilities
+## 2. Authority position
 
-1. **Mission Intake**: Ingests `ScheduleInstance` records from the `AutonomousScheduler` and initializes mission context.
-2. **DAG Compilation**: Compiles the canonical 8-floor production DAG from `FloorRegistry.ts`:
-   $$\text{F00} \rightarrow \text{F01} \rightarrow \text{F02} \rightarrow (\text{F03} \parallel \text{F04}) \rightarrow \text{F05} \rightarrow \text{F06} \rightarrow \text{F07}$$
-3. **Execution Gating**: Submits task execution requests through the **Guardian** pre-execution gates before dispatching to worker pools.
-4. **Presence Telemetry**: Streams live thought traces, floor transitions, and resource consumption to the frontend via `OverseerPresenceEngine`.
-5. **Decision Ledger Audit**: Maintains an append-only cryptographic ledger of all orchestrator decisions.
+    HUMAN AUTHORITY
+          |
+          v
+       OVERSEER
+          |
+    +-----+------+----------------+
+    |            |                |
+ Guardian      Slayer           Healer
+ policy        enforcement      recovery
+    |            |                |
+    +------------+----------------+
+                 |
+           Worker / Floor Fleet
+                 |
+                F07
+             verification
+
+Rules:
+
+- Overseer owns factory-wide orchestration.
+- Guardian owns capability/policy authorization.
+- Slayer owns enforcement and lease revocation.
+- Healer owns bounded recovery.
+- Workers own bounded task execution.
+- F07 owns independent media verification/release truth.
+- Ascalon/SCL supplies cognition; it does not become authority.
+
+---
+
+## 3. What Overseer does today
+
+| Capability | Current status |
+|---|---|
+| Natural-language command intake | IMPLEMENTED |
+| Mission creation/start/dispatch | IMPLEMENTED |
+| Mission resume after recovery | IMPLEMENTED |
+| 8-floor DAG generation | IMPLEMENTED |
+| F03/F04 parallelization | IMPLEMENTED |
+| Floor task execution adapters | IMPLEMENTED |
+| WorldState monitoring | IMPLEMENTED |
+| Periodic supervision | IMPLEMENTED |
+| Event-driven anomaly/case response | IMPLEMENTED |
+| Cognitive incident evaluation | IMPLEMENTED |
+| REFLEX / DELIBERATE / DEEP reasoning selection | IMPLEMENTED |
+| DecisionLedger recording | IMPLEMENTED |
+| Healer dispatch coordination | IMPLEMENTED |
+| Validator/F07 handoff | IMPLEMENTED |
+| RenderFabric physical rendering dispatch | IMPLEMENTED |
+| Production trajectory collection | IMPLEMENTED |
+| Mission budget/lifecycle control | IMPLEMENTED in MissionManager |
+| CapabilityRouter | PRESENT / IMPLEMENTED COMPONENT |
+| Direct per-task Guardian capability gate | PARTIAL |
+| Lease/fencing on Overseer-created TaskDAGExecutor | PARTIAL |
+| Semantic intent → dynamic sub-DAG planning | NOT YET |
+| Pure worker-owned floor execution | NOT YET |
+
+---
+
+## 4. When Overseer activates
+
+Overseer activates when the FactoryOS runtime starts its autonomous swarm, when a mission is dispatched, or when its active supervision loop receives relevant events.
+
+Current activation sources include:
+
+- FactoryOS startup;
+- operational command submission;
+- mission dispatch;
+- `ANOMALY_DETECTED`;
+- `CASE_CREATED`;
+- `MISSION_STARTED`;
+- active-mission boot recovery.
+
+---
+
+## 5. How Overseer works
+
+    OBSERVE
+       ↓
+    ASSESS
+       ↓
+    PLAN
+       ↓
+    AUTHORIZE THROUGH GOVERNANCE BOUNDARIES
+       ↓
+    DISPATCH
+       ↓
+    MONITOR
+       ↓
+    VERIFY
+       ↓
+    COMPLETE / REPLAN / RECOVER / ESCALATE
+       ↓
+    LEARN
+
+Current implementation details:
+
+1. Read WorldState.
+2. Assess reasoning mode with OverseerThinkingController.
+3. Run typed DecisionEngine evaluation.
+4. Record the decision.
+5. Generate TaskNodes.
+6. Build the DAG.
+7. Attach it to the mission.
+8. Dispatch floor executors.
+9. Monitor task/case state.
+10. Use Healer/Slayer/Validator boundaries as required.
+11. Publish run and trajectory evidence.
+12. Complete the mission only through MissionManager completion evaluation.
+
+---
+
+## 6. Current command boundary
+
+A command is **not** the same thing as authorization.
+
+    COMMAND
+       |
+    Overseer
+       |
+    CAPABILITY / POLICY CHECK
+       |
+    Guardian
+       |
+    LEASE / RUNTIME
+       |
+    Worker
+       |
+    PHYSICAL RESULT
+       |
+    F07 VERIFICATION
+
+The application operator surface is protected by the application authentication/middleware boundary. Internal FactoryOS operator routes require authenticated administrator/owner access.
+
+---
+
+## 7. What Overseer hands off
+
+| Destination | Overseer handoff |
+|---|---|
+| MissionManager | mission lifecycle, task linkage, progress, completion |
+| Guardian | protected capability authorization / policy gate |
+| Slayer | anomaly enforcement, worker/lease containment |
+| Healer | bounded recovery and repair |
+| Floor workers | typed task work and dependencies |
+| F07 | produced media for independent verification |
+| Learning pipeline | verified production trajectory evidence |
+
+---
+
+## 8. What Overseer must never own
+
+- self-issued capabilities;
+- policy bypass;
+- fencing-token mutation;
+- unrestricted worker killing;
+- unlimited repair;
+- self-verification;
+- silent model promotion;
+- unrestricted production-policy changes;
+- external MCP sovereignty;
+- unverified artifact truth.
+
+---
+
+## 9. Current gaps to close
+
+### Gap 1 — Workerization
+
+`OverseerControlPlane.ts` currently contains substantial floor execution logic in `getTaskExecutorsForFloors()`.
+
+Target:
+
+    Overseer
+       |
+    WorkerTaskContract
+       |
+    Agent Runtime
+       |
+    Specialized Worker
+
+Overseer should decide **what / why / where / who / authority / stop condition**.
+
+Workers should implement **how**.
+
+### Gap 2 — Lease/fencing
+
+`TaskDAGExecutor` supports `LeaseManager`, but the current Overseer constructor does not inject the canonical LeaseManager.
+
+Target: every protected task must be lease/fencing enforced at runtime.
+
+### Gap 3 — Semantic planning
+
+Current `generateTaskNodesForGoal()` is partly keyword-driven.
+
+Target: typed semantic mission planning should select the smallest valid sub-DAG from mission intent, constraints, capabilities, resources, and current state.
+
+### Gap 4 — Per-task authorization
+
+Current architecture documents Guardian as the authorization boundary, but direct per-task runtime enforcement from Overseer into every floor executor remains incomplete.
+
+Target: no protected worker action executes without an explicit capability/grant/scope/lease contract.
+
+---
+
+## 10. Final rule
+
+> **Overseer is the commander, not the worker.**
+
+It coordinates the factory.
+
+Guardian authorizes.
+
+Slayer enforces.
+
+Healer repairs.
+
+Workers execute.
+
+F07 verifies.
+
+Human Authority remains above the system.
