@@ -44,7 +44,9 @@ export const FleetOrchestrationPanel: React.FC<Props> = ({ accentColor = "#1769E
       const res = await fetch("/api/overseer/fleet/recipes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", name: recipeName, description: recipeDescription, steps }) });
       const json = await res.json(); if (!res.ok || !json.success) throw new Error(json.error || "Unable to create recipe.");
       const created = json.data as MissionAutomationRecipe;
-      await fetch(`/api/overseer/fleet/recipes/${created.recipeId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "PUBLISHED", expectedVersion: created.version }) });
+      const publishRes = await fetch(`/api/overseer/fleet/recipes/${created.recipeId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "PUBLISHED", expectedVersion: created.version }) });
+      const publishJson = await publishRes.json();
+      if (!publishRes.ok || !publishJson.success) throw new Error(publishJson.error || "Unable to publish recipe.");
       setRecipeName(""); setRecipeDescription(""); setSteps([emptyStep()]); setShowCreate(false); await load();
     } catch (err: any) { setError(err?.message || "Unable to create recipe."); }
   };
