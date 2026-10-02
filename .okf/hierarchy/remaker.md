@@ -2,7 +2,8 @@
 
 > **Tier**: Surgical Asset Reconstruction & Media Repair (Level 1)  
 > **Instance Count**: Exactly ONE Factory-Wide ReMaker Engine  
-> **Source Location**: `apps/web/factoryos/core/remaker/` & `apps/web/factoryos/core/timeline/TimelineIR.ts`
+> **Source Location**: `apps/web/factoryos/core/remaker/` & `apps/web/factoryos/core/timeline/TimelineIR.ts`  
+> **Runtime Status (2026-10-02)**: ReMaker v2 contracts and impact planning are implemented on this branch. Physical execution remains on the existing RenderFabric → Compute Fabric path.
 
 ---
 
@@ -43,8 +44,8 @@ The **ReMaker** specializes in surgical, deterministic reconstruction. By levera
 
 | Architectural Dimension | CURRENT Implementation | TARGET Implementation |
 |:------------------------|:-----------------------|:----------------------|
-| **Repair Granularity** | Track-level and segment-level re-rendering via `TimelineIR` | Frame-level differential re-encoding with motion vector reuse |
-| **Blueprint Tracking** | Serialized `TimelineIR` JSON stored in mission artifact manifest | Versioned Git-like timeline commit tree with automated branching & merging |
+| **Repair Granularity** | Scene/track/segment surgical planning + forced scene-local re-render | Frame-level differential re-encoding with codec/motion-vector reuse (experimental) |
+| **Blueprint Tracking** | TimelineIR digest + immutable parent artifact + deterministic idempotency key | Versioned Git-like timeline commit tree with automated branching & merging |
 | **Codec Normalization** | FFmpeg wrapper enforcing H.264 / AAC / YUV420p profiles | Hardware-accelerated NVENC / VideoToolbox batch normalizer |
 
 ---
@@ -54,3 +55,22 @@ The **ReMaker** specializes in surgical, deterministic reconstruction. By levera
 - **Idempotent Patching**: ReMaker operations must preserve non-defective clip timestamps and asset hashes.
 - **Trace Context Continuity**: Patched artifacts inherit the parent `traceId` and record a patch increment in their lineage manifest.
 - **Verification Loop**: Any artifact patched by ReMaker must be re-evaluated by Floor 07 before publication.
+
+
+## ReMaker v2 — current engineering contract
+
+ReMaker is a surgical repair coordinator. It does not own a second renderer and it never certifies its own repair.
+
+Activation requires:
+- an F07 remediation case with an explicit concrete target;
+- a CAS-bound parent artifact and matching TimelineIR digest;
+- a short-lived CAP_REMAKER_REPAIR grant with fencing token;
+- an allowlisted repair action and bounded repair budget.
+
+Execution is:
+F07 finding -> ReMaker impact analysis -> repair plan -> RenderFabric/Compute Fabric -> immutable candidate -> CAS/lineage receipt -> F07 re-verification.
+
+A surgical plan must name the affected TimelineIR nodes. Unchanged nodes are preserved. The physical renderer can bypass cached artifacts only for the explicitly forced repair scenes; unrelated scenes stay cache-backed.
+
+ReMaker stops on success, authorization expiry, fencing failure, stale/invalid parent, no progress, execution failure, or budget exhaustion.
+
