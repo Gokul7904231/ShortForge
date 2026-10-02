@@ -100,6 +100,7 @@ export interface MissionRoomMessageInput {
   readonly threadId?: string;
   readonly taskId?: string;
   readonly kind?: RoomMessageKind;
+  readonly metadata?: Record<string, unknown>;
 }
 
 export interface MissionRoomParticipantInput {
