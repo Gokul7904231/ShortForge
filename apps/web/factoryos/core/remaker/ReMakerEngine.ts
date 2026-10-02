@@ -35,7 +35,13 @@ const ACTION_ALIASES: Record<string, readonly string[]> = {
   REGENERATE_AUDIO_SEGMENT: ["regenerate audio", "regenerate narration", "regenerate narration-only segment"],
   SHIFT_TIMING: ["shift timing", "adjust timing", "timeline repair"],
   REBUILD_SCENE: ["rebuild scene", "regenerate affected stage", "regenerate scene"],
-  RENDER_WINDOW: ["render window", "surgical partial render", "partial rerender", "re-render affected region"],
+  RENDER_WINDOW: [
+    "render window",
+    "surgical partial render",
+    "partial rerender",
+    "re-render affected region",
+    "render affected scenes only",
+  ],
 };
 
 export interface ReMakerPlanInput extends ReMakerRequest {
