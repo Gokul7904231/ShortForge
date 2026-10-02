@@ -1,0 +1,29 @@
+name: sandbox-fabric
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/compute/sandboxes/**"
+      - "apps/web/factoryos/tests/sandbox-fabric.test.ts"
+      - ".okf/compute/sandbox-fabric.md"
+      - ".github/workflows/sandbox-fabric.yml"
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: FactoryOS typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+      - name: Sandbox Fabric contract tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/sandbox-fabric.test.ts
