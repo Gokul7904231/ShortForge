@@ -254,6 +254,9 @@ export class AgentWorkforceStore {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
     this.assertCanEdit(agent, principalId, workspaceRole);
+    if ((input.allowedCapabilities !== undefined || input.allowedToolIds !== undefined) && !this.isWorkspaceAdmin(workspaceRole)) {
+      throw new Error("AGENT_CAPABILITY_MANAGEMENT_REQUIRED");
+    }
 
     const updated: AgentWorkforceProfile = {
       ...agent,
@@ -358,9 +361,12 @@ export class AgentWorkforceStore {
   ): Promise<AgentWorkforceProfile> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
-    this.assertCanEdit(agent, principalId, workspaceRole);
+    this.assertCanManageIntegration(agent, principalId, workspaceRole);
     if (!input.integrationId.trim() || !input.provider.trim() || !input.connectionRef.trim() || !input.scope.trim()) {
       throw new Error("AGENT_INTEGRATION_BINDING_REQUIRED");
+    }
+    if (this.looksLikeSecret(input.connectionRef)) {
+      throw new Error("AGENT_INTEGRATION_SECRET_FORBIDDEN");
     }
     const binding: AgentIntegrationBinding = {
       integrationId: input.integrationId.trim(),
@@ -389,7 +395,7 @@ export class AgentWorkforceStore {
   ): Promise<AgentWorkforceProfile> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
-    this.assertCanEdit(agent, principalId, workspaceRole);
+    this.assertCanManageIntegration(agent, principalId, workspaceRole);
     const saved = await this.repository.save({
       ...agent,
       integrations: agent.integrations.filter((item) => item.integrationId !== integrationId),
@@ -410,6 +416,26 @@ export class AgentWorkforceStore {
   async canEdit(agentId: string, principalId: string): Promise<boolean> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     return Boolean(agent && agent.status === "ACTIVE" && this.editableRoles(agent, principalId).length > 0);
+  }
+
+  private isWorkspaceAdmin(workspaceRole?: AgentWorkforcePrincipal["workspaceRole"]): boolean {
+    return workspaceRole === "OWNER" || workspaceRole === "ADMIN";
+  }
+
+  private assertCanManageIntegration(
+    agent: AgentWorkforceProfile,
+    principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): void {
+    if (this.isWorkspaceAdmin(workspaceRole)) return;
+    const member = agent.members.find((item) => item.active && item.principalId === principalId);
+    if (!member || member.role !== "OWNER") {
+      throw new Error("AGENT_INTEGRATION_MANAGEMENT_REQUIRED");
+    }
+  }
+
+  private looksLikeSecret(value: string): boolean {
+    return /^(sk-|ghp_|github_pat_|AIza|xox[baprs]-)|^Bearer\s|password\s*=|api[_-]?key\s*=|secret\s*=|token\s*=/i.test(value.trim());
   }
 
   private assertCanEdit(
