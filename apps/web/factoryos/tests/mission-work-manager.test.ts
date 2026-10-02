@@ -115,6 +115,57 @@ describe("Wave 2 Durable Mission Work Manager", () => {
     expect(failed.failureStreak).toBe(3);
   });
 
+  it("reclaims an expired worker lease back to READY within the retry budget", async () => {
+    const { work, missionId } = await setup();
+
+    await work.createTask(missionId, {
+      taskId: "task_reclaim",
+      name: "Lease expiry",
+      ownerAgent: "agent-a",
+      capabilityRequired: "TEST",
+      expectedOutputType: "RESULT",
+      maxRetries: 2,
+    });
+
+    await work.claimTask(missionId, "task_reclaim", "agent-a", 1);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const recovered = await work.reclaimExpired(missionId);
+    expect(recovered[0]?.taskId).toBe("task_reclaim");
+    expect(recovered[0]?.workState).toBe("READY");
+    expect(recovered[0]?.retryCount).toBe(1);
+  });
+
+  it("projects execution lifecycle events into the durable MissionTask state", async () => {
+    const { work, eventBus, missionId } = await setup();
+
+    await work.createTask(missionId, {
+      taskId: "task_project",
+      name: "Projected execution",
+      ownerAgent: "agent-a",
+      capabilityRequired: "TEST",
+      expectedOutputType: "RESULT",
+    });
+
+    await eventBus.publish("TASK_STARTED", {
+      missionId,
+      taskId: "task_project",
+      attempt: 1,
+      assignedAgentId: "agent-a",
+    }, { source: "task_dag_executor", correlationId: "dag_test" });
+
+    expect((await work.board(missionId)).columns.RUNNING.map((task) => task.taskId)).toContain("task_project");
+
+    await eventBus.publish("TASK_COMPLETED", {
+      missionId,
+      taskId: "task_project",
+      attempt: 1,
+      assignedAgentId: "agent-a",
+    }, { source: "task_dag_executor", correlationId: "dag_test" });
+
+    expect((await work.board(missionId)).columns.DONE.map((task) => task.taskId)).toContain("task_project");
+  });
+
   it("records durable lifecycle events on the mission work item", async () => {
     const { work, eventBus, missionId } = await setup();
 
