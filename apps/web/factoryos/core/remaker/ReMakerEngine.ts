@@ -111,6 +111,7 @@ export class ReMakerEngine {
     const startedAtMs = Date.now();
     const startedAt = new Date(startedAtMs).toISOString();
     let lastProgressFingerprint = "";
+    let lastFailedCandidateFingerprint = "";
     let attempts = 0;
 
     while (attempts < plan.maxAttempts) {
@@ -200,6 +201,25 @@ export class ReMakerEngine {
       }
 
       if (output.physicalValidation.passed !== true) {
+        const failedCandidateFingerprint = sha256(stableStringify({
+          artifact: output.candidateArtifact.sha256,
+          timeline: output.observedTimelineDigest || null,
+        }));
+        if (failedCandidateFingerprint === lastFailedCandidateFingerprint) {
+          return this.finish(this.receipt({
+            plan, attempts, startedAt, termination: "NO_PROGRESS",
+            evidenceRefs: input.evidenceRefs,
+            candidateArtifact: output.candidateArtifact,
+            changedNodeIds: output.changedNodeIds,
+            preservedNodeIds: output.preservedNodeIds,
+            preservedNodeFingerprints: output.preservedNodeFingerprints,
+            rendererReceiptId: output.rendererReceiptId,
+            observedTimelineDigest: output.observedTimelineDigest,
+            error: "Repeated identical failed candidate; stopping repair loop.",
+          }));
+        }
+        lastFailedCandidateFingerprint = failedCandidateFingerprint;
+
         if (attempts >= plan.maxAttempts) {
           return this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
