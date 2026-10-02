@@ -6,28 +6,42 @@ on:
       - "apps/web/factoryos/core/compute/notebooks/**"
       - "apps/web/factoryos/tests/notebook-fabric.test.ts"
       - "apps/web/scripts/verify-notebooks.ts"
+      - "apps/web/scripts/verify-notebook-mcps.mjs"
       - ".okf/compute/notebook-fabric.md"
+      - ".okf/compute/notebook-mcp.md"
       - ".github/workflows/notebook-fabric.yml"
       - ".env.notebooks.example"
+      - "tools/mcp/kaggle-notebook-mcp/**"
+      - "tools/mcp/colab-notebook-mcp/**"
+      - "tools/mcp/lightning-notebook-mcp/**"
+      - "tools/mcp/notebook-mcp.example.json"
   workflow_dispatch:
     inputs:
       provider:
-        description: "Optional live provider validation"
-        required: false
-        default: "NONE"
+        description: "Live provider to validate"
+        required: true
+        default: "KAGGLE"
         type: choice
         options:
-          - NONE
           - KAGGLE
           - COLAB
-          - PAPERSPACE
           - LIGHTNING
-          - HF_ZEROGPU
+          - NONE
       live:
         description: "Explicitly allow external provider calls"
         required: true
         default: false
         type: boolean
+      colab_provision:
+        description: "For COLAB, create/delete one runtime during the smoke"
+        required: true
+        default: false
+        type: boolean
+      lightning_machine:
+        description: "For LIGHTNING, machine name used by the smoke"
+        required: true
+        default: "CPU"
+        type: string
 
 jobs:
   contract:
@@ -39,15 +53,36 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Install dependencies
+      - name: Install app dependencies
         working-directory: apps/web
         run: npm ci
-      - name: Typecheck
+      - name: FactoryOS typecheck
         working-directory: apps/web
         run: npm run factoryos:typecheck
       - name: Notebook contract tests
         working-directory: apps/web
         run: npx vitest run factoryos/tests/notebook-fabric.test.ts
+
+  mcp_contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        provider:
+          - kaggle-notebook-mcp
+          - colab-notebook-mcp
+          - lightning-notebook-mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install MCP package dependencies
+        working-directory: tools/mcp/${{ matrix.provider }}
+        run: npm install --no-audit --no-fund
+      - name: Typecheck MCP package
+        working-directory: tools/mcp/${{ matrix.provider }}
+        run: npm run typecheck
 
   live:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE' }}
@@ -59,7 +94,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Install dependencies
+      - name: Install app dependencies
         working-directory: apps/web
         run: npm ci
       - name: Install Kaggle CLI
@@ -68,23 +103,40 @@ jobs:
       - name: Install Lightning SDK
         if: ${{ inputs.provider == 'LIGHTNING' }}
         run: python -m pip install --upgrade lightning-sdk
-      - name: Export selected provider
+      - name: Install ffmpeg
+        if: ${{ inputs.provider == 'KAGGLE' }}
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install notebook MCP packages
+        run: |
+          npm install --prefix tools/mcp/kaggle-notebook-mcp --no-audit --no-fund
+          npm install --prefix tools/mcp/colab-notebook-mcp --no-audit --no-fund
+          npm install --prefix tools/mcp/lightning-notebook-mcp --no-audit --no-fund
+      - name: Export live controls
         env:
           NOTEBOOK_PROVIDER: ${{ inputs.provider }}
-        run: echo "NOTEBOOK_PROVIDER=$NOTEBOOK_PROVIDER" >> "$GITHUB_ENV"
-      - name: Validate live notebook provider
+          NOTEBOOK_LIVE: "1"
+          COLAB_LIVE_PROVISION: ${{ inputs.colab_provision }}
+          LIGHTNING_LIVE_MACHINE: ${{ inputs.lightning_machine }}
+        run: |
+          echo "NOTEBOOK_PROVIDER=$NOTEBOOK_PROVIDER" >> "$GITHUB_ENV"
+          echo "NOTEBOOK_LIVE=$NOTEBOOK_LIVE" >> "$GITHUB_ENV"
+          echo "COLAB_LIVE_PROVISION=$COLAB_LIVE_PROVISION" >> "$GITHUB_ENV"
+          echo "LIGHTNING_LIVE_MACHINE=$LIGHTNING_LIVE_MACHINE" >> "$GITHUB_ENV"
+      - name: Provider live smoke
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
-          PAPERSPACE_API_KEY: ${{ secrets.PAPERSPACE_API_KEY }}
-          PAPERSPACE_TEMPLATE_ID: ${{ secrets.PAPERSPACE_TEMPLATE_ID }}
-          PAPERSPACE_MACHINE_TYPE: ${{ secrets.PAPERSPACE_MACHINE_TYPE }}
-          PAPERSPACE_REGION: ${{ secrets.PAPERSPACE_REGION }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
-          HF_ZEROGPU_SPACE: ${{ secrets.HF_ZEROGPU_SPACE }}
-          HF_ZEROGPU_API_NAME: ${{ secrets.HF_ZEROGPU_API_NAME }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         working-directory: apps/web
         run: npm run factoryos:verify:notebooks
+      - name: MCP live smoke
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
+          LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          NOTEBOOK_MCP_PROVIDER: ${{ inputs.provider }}
+        run: node apps/web/scripts/verify-notebook-mcps.mjs
