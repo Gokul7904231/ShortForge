@@ -139,6 +139,23 @@ describe("GLiDE worker selection advisor", () => {
         candidate("runpod", 12, 45, 1),
         candidate("vast", 14, 70, 0),
       ],
+      new Map([
+        [
+          "daytona",
+          {
+            providerId: "daytona",
+            providerType: "LOCAL",
+            totalAttempts: 10,
+            successfulExecutions: 9,
+            failedExecutions: 1,
+            avgStartupMs: 40,
+            avgExecutionMs: 1200,
+            avgTransferMs: 150,
+            avgTotalMs: 1390,
+            failureLog: [],
+          },
+        ],
+      ]),
     );
 
     expect(result.status).toBe("ADVISED");
@@ -157,6 +174,8 @@ describe("GLiDE worker selection advisor", () => {
     ]);
 
     expect(body.state.candidates).toHaveLength(3);
+    expect(body.state.candidates[0].observedHistory.observedSuccessRate).toBeCloseTo(0.9, 5);
+    expect(body.state.candidates[0].observedHistory.observedAvgTotalMs).toBe(1390);
     expect(body.state.candidates.every((item: any) => item.eligible === true)).toBe(true);
     expect(body.state.candidates.map((item: any) => item.providerId)).toEqual([
       "daytona",
