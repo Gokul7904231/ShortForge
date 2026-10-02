@@ -18,6 +18,7 @@ import type {
 } from "../contracts/MissionContracts";
 import type { MissionTask as MissionTaskType } from "../contracts/MissionContracts";
 import type { MissionManager } from "../missions/MissionManager";
+import type { DurableEventBus } from "../events/DurableEventBus";
 import type { LeaseManager } from "../leases/LeaseManager";
 import type { TaskLease } from "../database/DatabaseContracts";
 
@@ -87,7 +88,107 @@ export class MissionWorkManager {
   constructor(
     private readonly missions: MissionManager,
     private readonly leases: LeaseManager,
-  ) {}
+    private readonly eventBus?: DurableEventBus,
+  ) {
+    this.subscribeToExecutionEvents();
+  }
+
+  private subscribeToExecutionEvents(): void {
+    if (!this.eventBus) return;
+
+    const sync = async (event: any) => {
+      if (event?.source === "mission_work_manager") return;
+      const payload = event?.payload || event;
+      const missionId = payload?.missionId;
+      const taskId = payload?.taskId;
+      if (!missionId || !taskId) return;
+
+      const current = await this.missions.getMissionTask(missionId, taskId);
+      if (!current) return;
+
+      const now = new Date().toISOString();
+      const actorId = String(payload?.assignedAgentId || payload?.workerId || "task_dag_executor");
+      const eventMap: Record<string, MissionTaskWorkEvent["type"]> = {
+        TASK_STARTED: "STARTED",
+        TASK_RETRYING: "RETRY_SCHEDULED",
+        TASK_FAILED: "FAILED",
+        TASK_COMPLETED: "COMPLETED",
+      };
+      const workEventType = eventMap[event?.topic];
+      if (!workEventType) return;
+
+      await this.missions.updateMissionTask(missionId, taskId, (task) => {
+        const incomingAttempt = Number(payload?.attempt || 0);
+        if (event?.topic === "TASK_STARTED") {
+          task.workState = "RUNNING";
+          task.assignedAt = now;
+          task.lastHeartbeatAt = now;
+          if (payload?.assignedAgentId) task.ownerAgent = String(payload.assignedAgentId);
+          const attempts = [...(task.attempts || [])];
+          if (!attempts.some((attempt) => attempt.attempt === incomingAttempt)) {
+            attempts.push({
+              attempt: incomingAttempt || attempts.length + 1,
+              startedAt: now,
+              workerId: actorId,
+              outcome: "RUNNING",
+            });
+          }
+          task.attempts = attempts.slice(-20);
+        } else if (event?.topic === "TASK_RETRYING") {
+          task.retryCount = Math.max(task.retryCount || 0, Math.max(0, incomingAttempt - 1));
+          task.workState = "READY";
+          task.error = typeof payload?.error === "string" ? payload.error : task.error;
+          task.failureStreak = (task.failureStreak || 0) + 1;
+        } else if (event?.topic === "TASK_FAILED") {
+          task.retryCount = Math.max(task.retryCount || 0, incomingAttempt);
+          task.workState = "FAILED";
+          task.error = typeof payload?.error === "string" ? payload.error : "Task execution failed.";
+          task.failureStreak = (task.failureStreak || 0) + 1;
+          task.circuitState = task.failureStreak >= 3 ? "OPEN" : "CLOSED";
+        } else if (event?.topic === "TASK_COMPLETED") {
+          task.workState = task.requiresReview ? "REVIEW" : "DONE";
+          task.completedAt = now;
+          task.failureStreak = 0;
+          task.circuitState = "CLOSED";
+          if (task.requiresReview) {
+            task.review = {
+              requestedAt: now,
+              requestedBy: "task_dag_executor",
+              summary: "Execution completed; human review required before board completion.",
+            };
+          }
+          if (task.attempts?.length) {
+            const attempts = [...task.attempts];
+            const latest = attempts[attempts.length - 1];
+            attempts[attempts.length - 1] = {
+              ...latest,
+              finishedAt: now,
+              outcome: "COMPLETED",
+            };
+            task.attempts = attempts;
+          }
+        }
+
+        task.workEvents = [
+          ...(task.workEvents || []),
+          this.event(task, workEventType, actorId, now, `Execution event: ${event?.topic}`, {
+            source: event?.source || "task_dag_executor",
+            dagId: payload?.dagId,
+            attempt: payload?.attempt,
+            error: payload?.error,
+          }),
+        ].slice(-100);
+      });
+
+      if (event?.topic === "TASK_COMPLETED") {
+        await this.refreshReadiness(missionId, "work-kernel");
+      }
+    };
+
+    for (const topic of ["TASK_STARTED", "TASK_RETRYING", "TASK_FAILED", "TASK_COMPLETED"] as const) {
+      this.eventBus.subscribe(topic, sync as any);
+    }
+  }
 
   async createTask(
     missionId: string,
