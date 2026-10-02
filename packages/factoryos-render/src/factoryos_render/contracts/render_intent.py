@@ -64,7 +64,6 @@ class SceneIntent:
     is_locked: bool = False
 
 @dataclass
-@dataclass
 class SurgicalRenderScope:
     mode: str = "SURGICAL_SCENE"
     repair_id: str = ""
