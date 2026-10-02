@@ -297,11 +297,18 @@ export class AgentIntercomStore {
     for (const session of sessions) {
       const last = Date.parse(session.state.lastHeartbeatAt);
       if (session.state.state === "READY" && nowMs - last > session.state.deadAfterMs) {
-        await this.repo.saveSession({
+        const degraded = await this.repo.saveSession({
           ...session,
           state: { ...session.state, state: "DEGRADED" },
           lastSeenAt: session.lastSeenAt,
         }, session.version);
+        await this.publish("AGENT_INTERCOM_SESSION_DEGRADED", {
+          missionId: degraded.missionId,
+          sessionId: degraded.state.sessionId,
+          local: degraded.state.local,
+          remote: degraded.state.remote,
+          lastHeartbeatAt: degraded.state.lastHeartbeatAt,
+        }, degraded.state.sessionId, `session-degraded:${degraded.state.sessionId}`);
         changed += 1;
       }
     }
@@ -614,13 +621,14 @@ export class AgentIntercomStore {
   private makeEnvelope(source: CommsPrincipal, input: Pick<AgentIntercomSendInput, "missionId" | "floorId" | "target" | "correlationId" | "causationId" | "delivery" | "priority" | "ttlMs">, payload: AgentIntercomPayload, expiresAt?: string): CommsEnvelope<AgentIntercomPayload> {
     const serialized = JSON.stringify(payload);
     const digest = createHash("sha256").update(serialized).digest("hex");
+    const command = payload.kind === "DELEGATION_REQUEST" || payload.kind === "DELEGATION_RESPONSE";
     return {
       meta: {
         messageId: `msg_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
-        messageKind: payload.kind === "DELEGATION_REQUEST" || payload.kind === "DELEGATION_RESPONSE" ? "COMMAND" : "EVENT",
+        messageKind: command ? "COMMAND" : "EVENT",
         protocolVersion: COMMS_PROTOCOL_VERSION,
-        interaction: "REQUEST_RESPONSE",
-        lane: "CONTROL",
+        interaction: command ? "REQUEST_RESPONSE" : "ONE_WAY",
+        lane: command ? "CONTROL" : "EVENT",
         delivery: input.delivery || "AT_LEAST_ONCE",
         priority: input.priority || "NORMAL",
         createdAt: new Date().toISOString(),
