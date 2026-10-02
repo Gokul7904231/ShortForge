@@ -41,7 +41,7 @@
   "security": {
     "required": true,
     "semgrep": "PASS — focused Wave 3 scan run 36974638093; 2 rules / 13 files / 0 findings",
-    "strix": "UNPROVEN — local execution environment has no Docker/Strix; dedicated GitHub Strix gate added in .github/workflows/overseer-wave3-strix.yml and requires an existing supported LLM repository secret.",
+    "strix": "UNPROVEN — Strix workflow 36975204944 ran on GitHub and failed before installation because no supported LLM repository Actions secret was configured; local host also has no Docker/Strix.",
     "zap": "NOT_APPLICABLE",
     "notes": "Focused Semgrep completed successfully. Existing repository-wide Semgrep warnings remain historical/baseline and are not introduced by Wave 3. Strix dynamic testing remains unproven because Docker-backed dynamic testing is not part of this validation environment."
   },
@@ -50,7 +50,7 @@
     "Forge Builder": "COMPLETE",
     "Forge Sentinel": "COMPLETE",
     "Forge Evaluator": "COMPLETE — 3 test files / 23 tests passed; typecheck passed",
-    "Forge Release": "BLOCKED — Strix adversarial proof required by canonical Team security policy"
+    "Forge Release": "BLOCKED — canonical Team security policy requires Strix proof for this permission change"
   },
   "verificationPlan": [
     "Run focused Wave 3 npm ci/typecheck/tests.",
@@ -59,7 +59,7 @@
     "Confirm workforce agents appear in Mission Room and paused agents cannot claim work."
   ],
   "disposition": "BLOCKED",
-  "dispositionRationale": "Wave 3 implementation, typecheck, 3 focused test suites (23 tests), focused Semgrep, and Team Change Gate requirements other than Strix are satisfied. Canonical security policy requires Strix for this permission change when Docker is available; the current local execution host has no Docker/Strix. A dedicated GitHub runner workflow has been added to obtain that proof using an existing repository LLM secret.",
+  "dispositionRationale": "Wave 3 implementation and deterministic validation are complete, but the canonical security policy requires Strix for this permission change. The dedicated GitHub Strix workflow is present, but execution is blocked by missing repository Actions LLM credentials; no valid Strix finding/clean result exists.",
   "verificationResults": {
     "overseerWave3": "PASS — 36974638093; npm ci + typecheck + 3 focused test files / 23 tests + focused Semgrep 0 findings",
     "teamChangeGate": "PASS — 36974638061",
@@ -70,9 +70,9 @@
     "selectedMcpFabric": "BASELINE FAILURE — contract-validation docs grep for TRANSFORM_VISUAL_ASSET is absent on main as well; not a Wave 3 regression",
     "semgrepWave3": "RUNNING — focused error-severity scan added in refreshed workflow",
     "ci": "IN_PROGRESS — repository-wide CI is broader/non-blocking for Wave 3 merge",
-    "strixWave3": "PENDING — dedicated GitHub Strix workflow added; no scan result yet"
+    "strixWave3": "BLOCKED — workflow 36975204944: no supported LLM secret configured"
   },
   "conflicts": [],
-  "status": "AWAITING_STRIX_SECURITY_PROOF",
-  "validatedExecutableHead": "d5cfee9a2027392a8cda686827c2102272d11400"
+  "status": "BLOCKED_STRIX_SECRET",
+  "validatedExecutableHead": "ad2937de6075952340b4b2dc6a6a5df0e2a14f3a"
 }
