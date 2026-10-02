@@ -279,7 +279,7 @@ export class ComputeRouter {
     let glideWorkerAdvice: GlideWorkerSelectionAdvice | undefined;
 
     if (this.glideWorkerSelectionAdvisor && this.glideRoutingMode === "CANARY") {
-      glideWorkerAdvice = await this.glideWorkerSelectionAdvisor.advise(job, candidates);
+      glideWorkerAdvice = await this.glideWorkerSelectionAdvisor.advise(job, candidates, this.telemetry);
       if (
         glideWorkerAdvice.status === "ADVISED" &&
         glideWorkerAdvice.selectedProviderId
@@ -302,7 +302,7 @@ export class ComputeRouter {
       this.glideRoutingMode === "SHADOW"
     ) {
       // Shadow must never add GLiDE latency to the real render route.
-      void this.glideWorkerSelectionAdvisor.advise(job, candidates).catch((error: unknown) => {
+      void this.glideWorkerSelectionAdvisor.advise(job, candidates, this.telemetry).catch((error: unknown) => {
         console.warn("[ComputeRouter] GLiDE shadow advice failed non-fatally:", error);
       });
     }
