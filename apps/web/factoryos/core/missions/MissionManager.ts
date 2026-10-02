@@ -576,7 +576,6 @@ export class MissionManager {
 
       const now = new Date().toISOString();
       task.status = this.legacyStatusForWorkState(task.workState || this.workStateFromLegacyStatus(task.status));
-      task.updatedAt = now as never;
 
       mission.tasks[index] = task;
       mission.updatedAt = now;
