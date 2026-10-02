@@ -5,6 +5,7 @@ import type { CommsCapability, CommsPeerHello, CommsPrincipal } from "../core/co
 import { DurableEventBus } from "../core/events/DurableEventBus";
 
 const messageCapabilities: CommsCapability[] = [
+  { name: "INTERCOM_MESSAGE", version: "1.0.0", enabled: true, lanes: ["EVENT"], maxPayloadBytes: 32000, maxInflight: 8 },
   { name: "SITUATION_RECORD", version: "1.0.0", enabled: true, lanes: ["EVENT"], maxPayloadBytes: 32000, maxInflight: 8 },
   { name: "COMMAND", version: "1.0.0", enabled: true, lanes: ["CONTROL"], maxPayloadBytes: 32000, maxInflight: 8 },
   { name: "REQUEST_RESPONSE", version: "1.0.0", enabled: true, lanes: ["CONTROL"], maxPayloadBytes: 32000, maxInflight: 8 },
@@ -43,7 +44,7 @@ describe("Wave 4 Agent Intercom & Delegation", () => {
 
     expect(sent.deliveryState).toBe("DISPATCHED");
     expect(sent.envelope.meta.lane).toBe("EVENT");
-    expect(sent.envelope.meta.messageKind).toBe("EVENT");
+    expect(sent.envelope.meta.messageKind).toBe("INTERCOM_MESSAGE");
 
     const delivered = await s.deliver(sent.intercomId, "worker_research");
     const acked = await s.ack(delivered.intercomId, "worker_research");
