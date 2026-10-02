@@ -117,8 +117,72 @@ export class ReMakerEngine {
         });
       }
 
-      const output = await port.execute(plan);
+      let output;
+      try {
+        output = await port.execute(plan);
+      } catch (error) {
+        if (attempts >= plan.maxAttempts) {
+          return this.finish({
+            repairId: plan.repairId,
+            caseId: plan.caseId,
+            planId: plan.planId,
+            idempotencyKey: plan.idempotencyKey,
+            parentArtifactId: plan.parentArtifact.artifactId,
+            parentArtifactSha256: plan.parentArtifact.sha256,
+            changedNodeIds: plan.changedNodeIds,
+            preservedNodeIds: plan.preservedNodeIds,
+            attempts,
+            termination: "EXECUTION_FAILED",
+            startedAt,
+            completedAt: new Date().toISOString(),
+            f07Required: true,
+            evidenceRefs: input.evidenceRefs,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+        continue;
+      }
+
+      if (Date.now() - Date.parse(startedAt) > plan.maxDurationMs) {
+        return this.finish({
+          repairId: plan.repairId,
+          caseId: plan.caseId,
+          planId: plan.planId,
+          idempotencyKey: plan.idempotencyKey,
+          parentArtifactId: plan.parentArtifact.artifactId,
+          parentArtifactSha256: plan.parentArtifact.sha256,
+          changedNodeIds: plan.changedNodeIds,
+          preservedNodeIds: plan.preservedNodeIds,
+          attempts,
+          termination: "BUDGET_EXHAUSTED",
+          startedAt,
+          completedAt: new Date().toISOString(),
+          f07Required: true,
+          evidenceRefs: input.evidenceRefs,
+          error: "Repair wall-clock budget exhausted.",
+        });
+      }
+
       if (!isSha256(output.candidateArtifact.sha256) || output.candidateArtifact.byteLength <= 0) {
+        if (attempts >= plan.maxAttempts) {
+          return this.finish({
+            repairId: plan.repairId,
+            caseId: plan.caseId,
+            planId: plan.planId,
+            idempotencyKey: plan.idempotencyKey,
+            parentArtifactId: plan.parentArtifact.artifactId,
+            parentArtifactSha256: plan.parentArtifact.sha256,
+            changedNodeIds: plan.changedNodeIds,
+            preservedNodeIds: plan.preservedNodeIds,
+            attempts,
+            termination: "EXECUTION_FAILED",
+            startedAt,
+            completedAt: new Date().toISOString(),
+            f07Required: true,
+            evidenceRefs: input.evidenceRefs,
+            error: "Execution port returned an invalid candidate artifact.",
+          });
+        }
         continue;
       }
 
@@ -251,6 +315,9 @@ export class ReMakerEngine {
     if (input.authorization.capabilityId !== "CAP_REMAKER_REPAIR") {
       throw new Error("[ReMakerEngine] Missing CAP_REMAKER_REPAIR authorization.");
     }
+    if (!input.parentArtifact.casRef) {
+      throw new Error("[ReMakerEngine] Production repair requires a CAS-bound parent artifact.");
+    }
     if (!Number.isInteger(input.authorization.fencingToken) || input.authorization.fencingToken < 0) {
       throw new Error("[ReMakerEngine] Invalid fencing token.");
     }
@@ -259,6 +326,33 @@ export class ReMakerEngine {
     }
     if (input.budget.maxAttempts < 1 || input.budget.maxDurationMs < 1000) {
       throw new Error("[ReMakerEngine] Repair budget is invalid.");
+    }
+
+    const targetKinds: Record<ReMakerRequest["action"], readonly ReMakerRequest["target"]["kind"][]> = {
+      REALIGN_SUBTITLE: ["SUBTITLE"],
+      REPLACE_ASSET: ["VISUAL_ASSET"],
+      REGENERATE_AUDIO_SEGMENT: ["AUDIO"],
+      SHIFT_TIMING: ["TIMING", "MULTI_TRACK"],
+      REBUILD_SCENE: ["VISUAL_ASSET", "MULTI_TRACK"],
+      RENDER_WINDOW: ["RENDER_REGION", "VISUAL_ASSET", "AUDIO", "SUBTITLE", "MULTI_TRACK"],
+    };
+    if (!targetKinds[input.action].includes(input.target.kind)) {
+      throw new Error("[ReMakerEngine] Repair action does not match the target kind.");
+    }
+
+    if (input.target.region) {
+      const r = input.target.region;
+      if (
+        r.x < 0 || r.y < 0 ||
+        r.width <= 0 || r.height <= 0 ||
+        r.x + r.width > 1 || r.y + r.height > 1
+      ) {
+        throw new Error("[ReMakerEngine] Repair region must stay inside normalized [0,1] bounds.");
+      }
+    }
+
+    if (input.timeline.provenanceDigest !== input.parentArtifact.timelineDigest) {
+      throw new Error("[ReMakerEngine] TimelineIR digest does not match the authorized parent artifact.");
     }
 
     const normalizedAllowed = input.allowedActions.map((v) => v.trim().toLowerCase());
