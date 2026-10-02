@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { missionId } = await context.params;
     const actor = await resolveCollaborationActor(request);
     const controller = await getFactoryOSController();
-    const auth = await buildMissionIntercomAuth(controller, missionId, actor);
+    await buildMissionIntercomAuth(controller, missionId, actor);
     const url = new URL(request.url);
     const cursor = url.searchParams.get("cursor") || undefined;
     const limit = Number(url.searchParams.get("limit") || 50);
