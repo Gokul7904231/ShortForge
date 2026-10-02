@@ -899,6 +899,8 @@ export class CapabilityRegistry {
             "missionId",
             "caseId",
             "requestedChangeDigest",
+            "action",
+            "targetScopeDigest",
             "evidenceRefs",
           ],
         },
@@ -919,12 +921,19 @@ export class CapabilityRegistry {
         const evidenceRefs = Array.isArray(input.evidenceRefs)
           ? input.evidenceRefs.filter((v): v is string => typeof v === "string")
           : [];
+        const action = typeof input.action === "string" ? input.action : "";
+        const targetScopeDigest =
+          typeof input.targetScopeDigest === "string"
+            ? input.targetScopeDigest
+            : "";
 
         if (
           !repairId ||
           !missionId ||
           !caseId ||
+          !action ||
           !/^[a-f0-9]{64}$/i.test(changeDigest) ||
+          !/^[a-f0-9]{64}$/i.test(targetScopeDigest) ||
           evidenceRefs.length === 0
         ) {
           return {
@@ -943,6 +952,8 @@ export class CapabilityRegistry {
             missionId,
             caseId,
             requestedChangeDigest: changeDigest,
+            action,
+            targetScopeDigest,
             evidenceRefs,
           }))
           .digest("hex");
