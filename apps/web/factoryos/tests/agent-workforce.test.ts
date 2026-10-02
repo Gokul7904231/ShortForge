@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { AgentWorkforceStore } from "../core/agent/AgentWorkforceStore";
+import { MissionManager } from "../core/missions/MissionManager";
+import { InMemoryMissionRepository } from "../core/database/InMemoryDatabase";
+import { LeaseManager } from "../core/leases/LeaseManager";
+import { MissionWorkManager } from "../core/work/MissionWorkManager";
 import { DurableEventBus } from "../core/events/DurableEventBus";
 
 describe("Wave 3 Agent Workforce", () => {
@@ -65,6 +69,36 @@ describe("Wave 3 Agent Workforce", () => {
     }, "admin", "ADMIN");
 
     expect(updated.description).toBe("Updated by workspace admin");
+  });
+
+  it("pausing a managed agent prevents it from claiming new mission work", async () => {
+    const { store } = setup();
+    const missions = new MissionManager(new InMemoryMissionRepository());
+    const leases = new LeaseManager();
+    const work = new MissionWorkManager(missions, leases, undefined, store);
+    const mission = await missions.createMission({
+      missionId: "mission_agent_pause",
+      goal: "Agent pause integration",
+    });
+    await missions.startMission(mission.missionId);
+
+    const agent = await store.create({
+      name: "Paused Worker",
+      role: "WORKER",
+    }, "alice");
+
+    await work.createTask(mission.missionId, {
+      taskId: "task_paused_worker",
+      name: "Blocked claim",
+      ownerAgent: agent.agentId,
+      capabilityRequired: "TEST",
+      expectedOutputType: "RESULT",
+    });
+
+    await store.update(agent.agentId, { status: "PAUSED" }, "alice");
+    await expect(
+      work.claimTask(mission.missionId, "task_paused_worker", agent.agentId),
+    ).rejects.toThrow("AGENT_WORKFORCE_AGENT_INACTIVE");
   });
 
   it("redacts agent system prompts and connection references from regular users", async () => {
