@@ -30,6 +30,9 @@ import { MissionManager } from "../missions/MissionManager";
 import { GuardianManager } from "../guardian/GuardianManager";
 import { MissionWorkManager } from "../work/MissionWorkManager";
 import { MissionCollaborationStore } from "../collaboration/MissionCollaborationStore";
+import { AgentWorkforceStore } from "../agent/AgentWorkforceStore";
+import { AgentIntercomStore } from "../comms/AgentIntercomStore";
+import { MissionAutomationStore } from "../orchestration/MissionAutomationStore";
 
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
 import { InstructorSubsystem } from "../instructor/InstructorSubsystem";
@@ -87,6 +90,9 @@ export class AutonomousFactoryController {
   public missionManager!: MissionManager;
   public workManager!: MissionWorkManager;
   public collaborationStore!: MissionCollaborationStore;
+  public agentWorkforceStore!: AgentWorkforceStore;
+  public agentIntercomStore!: AgentIntercomStore;
+  public missionAutomationStore!: MissionAutomationStore;
   public guardianManager!: GuardianManager;
   public slayerEngine!: SlayerEngine;
   public healerEngine!: HealerEngine;
@@ -220,12 +226,39 @@ export class AutonomousFactoryController {
     this.leaseManager = new LeaseManager(repos.leases);
     this.caseManager = new CaseManager(repos.cases, this.eventBus, this.worldState);
     this.missionManager = new MissionManager(repos.missions, this.eventBus, this.worldState, repos.cases, repos.taskDAGs);
-    this.workManager = new MissionWorkManager(this.missionManager, this.leaseManager, this.eventBus);
     this.collaborationStore = new MissionCollaborationStore({
       eventBus: this.eventBus,
       workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
       mongoDb: this.mongoClient?.getDb() || undefined,
       diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+    });
+    this.agentWorkforceStore = new AgentWorkforceStore({
+      eventBus: this.eventBus,
+      workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
+      mongoDb: this.mongoClient?.getDb() || undefined,
+      diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+    });
+    this.agentIntercomStore = new AgentIntercomStore({
+      eventBus: this.eventBus,
+      workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
+      mongoDb: this.mongoClient?.getDb() || undefined,
+      diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+      workforce: this.agentWorkforceStore,
+    });
+    this.workManager = new MissionWorkManager(
+      this.missionManager,
+      this.leaseManager,
+      this.eventBus,
+      this.agentWorkforceStore,
+    );
+    this.missionAutomationStore = new MissionAutomationStore({
+      eventBus: this.eventBus,
+      workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
+      mongoDb: this.mongoClient?.getDb() || undefined,
+      diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+      missionManager: this.missionManager,
+      workManager: this.workManager,
+      workforce: this.agentWorkforceStore,
     });
 
     // 6. Memory & Cognitive Engine
@@ -511,6 +544,7 @@ export class AutonomousFactoryController {
       await this.overseer.presenceEngine.stop();
     }
     if (this.watchdog) this.watchdog.stop();
+    if (this.missionAutomationStore) this.missionAutomationStore.dispose();
 
     if (this.worldState) await this.worldState.persist();
 

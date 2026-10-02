@@ -137,6 +137,7 @@ export class TaskDAGExecutor {
           const workerId = node.assignedAgentId || "dag_worker";
           let leaseAcquired = true;
           let heartbeatTimer: NodeJS.Timeout | null = null;
+          let leaseFencingToken: number | undefined;
           const leaseTtlMs = 60000;
 
           try {
@@ -150,6 +151,8 @@ export class TaskDAGExecutor {
             if (!leaseAcquired) {
               throw new Error(`TASK_LEASE_UNAVAILABLE: task ${node.taskId} could not acquire its execution lease.`);
             }
+            const acquiredLease = await this.leaseManager.getLease(node.taskId);
+            leaseFencingToken = acquiredLease?.fencingToken;
 
             heartbeatTimer = setInterval(() => {
               this.leaseManager!
@@ -281,7 +284,11 @@ export class TaskDAGExecutor {
           } finally {
             if (heartbeatTimer) clearInterval(heartbeatTimer);
             if (this.leaseManager && leaseAcquired) {
-              await this.leaseManager.release(node.taskId, workerId);
+              if (leaseFencingToken !== undefined) {
+                await this.leaseManager.releaseFenced(node.taskId, workerId, leaseFencingToken);
+              } else {
+                await this.leaseManager.release(node.taskId, workerId);
+              }
             }
             await this.repository.updateTaskNode(dag.dagId, node);
           }

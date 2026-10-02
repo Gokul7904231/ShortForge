@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR92-Overseer-Wave4-Agent-Intercom",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/overseer-wave3-agent-workforce-20261002",
+  "headRef": "feat/overseer-wave4-agent-intercom-20261002",
+  "objective": "Add mission-scoped Agent Intercom, governed delegation, durable peer sessions, delivery receipts, replay, and Mission Room Handoffs without changing FGC/AEF/F07 authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/intelligence/comms-fabric.md",
+      ".okf/intelligence/agent-runtime.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave3.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave4.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/security/mcp-permissions.md"
+    ],
+    "rulesConsidered": [
+      "Comms does not grant execution authority.",
+      "Mission scope is the minimum collaboration security boundary.",
+      "FGC/Guardian remain authorization and mutation boundaries.",
+      "AEF remains deterministic execution.",
+      "F07 remains independent truth.",
+      "Delegation cannot mint capabilities.",
+      "No second broker or authoritative state store is introduced."
+    ]
+  },
+  "changes": [
+    "Mission-scoped Agent Intercom built on Comms Fabric v2 and DurableEventBus.",
+    "Dedicated intercom message kind and capability.",
+    "Durable in-memory/disk/Mongo message, delegation, and session state.",
+    "Explicit delivery lifecycle and bounded retry/dead-letter.",
+    "Idempotent sends and explicit replay cursor.",
+    "Peer hello protocol check and capability/schema negotiation.",
+    "Heartbeat and stale-session degradation.",
+    "Target allowlist and payload admission.",
+    "Delegation acceptance restricted to the target principal.",
+    "Managed-agent capability eligibility enforced for delegated capability requests.",
+    "Mission Room Handoffs surface and intercom projection.",
+    "Authenticated mission intercom and session APIs."
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "PASS — Wave 4 validation run 36978269973; 2 repository rules applied to exact Wave 4 security files with 0 findings",
+    "strix": "INHERITED BLOCKER — Wave 3 Strix workflow remains unproven because no supported LLM Actions secret is configured; Wave 4 has no independent dynamic Strix result.",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Focused Wave 4 Semgrep is part of the dedicated validation workflow. No raw credentials are stored by Wave 4."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE — typecheck passed; 3 focused suites passed; 12 tests in Wave 4 file plus Comms/Mission regression suites passed",
+    "Forge Release": "BLOCKED — cumulative stack inherits Wave 3 Strix security blocker"
+  },
+  "verificationPlan": [
+    "Run dedicated Wave 4 npm ci and typecheck.",
+    "Run Comms Fabric, Agent Intercom, and Mission Collaboration tests.",
+    "Run focused Semgrep with repository security rules.",
+    "Run repository Team Change Gate.",
+    "Keep release blocked while inherited Strix requirement remains unproven."
+  ],
+  "verificationResults": {
+    "overseerWave4": "PASS — 36978269973; npm ci + typecheck + focused Comms/Wave4/Mission tests + Semgrep 0 findings",
+    "wave4Semgrep": "PASS — 36978269973; exact Wave 4 security paths, 0 findings",
+    "teamChangeGate": "PENDING_REFRESH_AFTER_FINAL_EVIDENCE",
+    "inheritedWave3Strix": "BLOCKED — no supported LLM Actions secret configured in repository"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "status": "WAVE4_IMPLEMENTATION_COMPLETE_CUMULATIVE_RELEASE_BLOCKED",
+  "dispositionRationale": "Wave 4 implementation and focused security evidence are complete. The cumulative stack remains blocked because the existing Wave 3 security policy requires a Strix dynamic proof that is unavailable in the repository due to missing LLM Actions credentials.",
+  "validatedExecutableHead": "62a22600143a6877e608c1a71336c452f0c2cd92"
+}

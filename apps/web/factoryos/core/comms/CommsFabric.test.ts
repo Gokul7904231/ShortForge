@@ -8,6 +8,7 @@ import {
 } from "./CommsFabric";
 
 const capabilities: CommsCapability[] = [
+  { name: "INTERCOM_MESSAGE", version: "1.0.0", enabled: true, lanes: ["EVENT"] },
   { name: "SITUATION_RECORD", version: "1.0.0", enabled: true, lanes: ["EVENT"] },
   { name: "COMMAND", version: "1.0.0", enabled: true, lanes: ["CONTROL"] },
   { name: "QUERY", version: "1.0.0", enabled: true, lanes: ["CONTROL"] },
@@ -106,4 +107,33 @@ test("Retry gate is bounded and requires retryable failure", () => {
   expect(shouldRetry("NACKED", 1, 3, true)).toBe(true);
   expect(shouldRetry("NACKED", 3, 3, true)).toBe(false);
   expect(shouldRetry("NACKED", 1, 3, false)).toBe(false);
+});
+
+
+test("Comms admission rejects protocol version mismatch", () => {
+  expect(
+    admitComms(envelope({ protocolVersion: "1.0.0" }), auth, capabilities).reasonCode,
+  ).toBe("SCHEMA_UNSUPPORTED");
+});
+
+test("Comms admission enforces explicit target allowlists when provided", () => {
+  const targetRestricted = {
+    ...auth,
+    allowedTargetPrincipals: ["guardian-3"],
+  };
+  expect(admitComms(envelope(), targetRestricted, capabilities).admitted).toBe(true);
+  expect(
+    admitComms(
+      envelope({ target: { principalId: "other", kind: "GUARDIAN", floorId: "F03" } }),
+      targetRestricted,
+      capabilities,
+    ).reasonCode,
+  ).toBe("TARGET_SCOPE_DENIED");
+});
+
+test("Comms admission enforces payload limits after scope and identity checks", () => {
+  const limited: CommsCapability[] = [
+    { name: "SITUATION_RECORD", version: "1.0.0", enabled: true, lanes: ["EVENT"], maxPayloadBytes: 5 },
+  ];
+  expect(admitComms(envelope(), auth, limited).reasonCode).toBe("PAYLOAD_TOO_LARGE");
 });

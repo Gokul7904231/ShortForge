@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
     }
 
     const controller = await getFactoryOSController();
+    const workforce = await controller.agentWorkforceStore.list({
+      principalId: user.uid || "operator_dev",
+      workspaceRole: user.role,
+    });
     const slayers = controller.slayerEngine.getAllSlayers().map((item) => ({
       agentId: item.config.agentId,
       name: item.config.name,
@@ -28,6 +32,18 @@ export async function GET(request: NextRequest) {
       specialization: item.config.specialization,
     }));
 
+    const workforceAgents = workforce.agents.filter((agent) => agent.status === "ACTIVE").map((agent) => ({
+      agentId: agent.agentId,
+      name: agent.name,
+      role: agent.role,
+      specialization: agent.specialization,
+      status: agent.status,
+      preferredModel: agent.preferredModel,
+      allowedCapabilities: agent.allowedCapabilities,
+      responseMode: agent.responseMode,
+      workforceManaged: true,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
@@ -37,6 +53,7 @@ export async function GET(request: NextRequest) {
           { agentId: "validator", name: "Validator", role: "VALIDATOR", specialization: "Independent verification and proof" },
           ...slayers,
           ...healers,
+          ...workforceAgents,
         ],
       },
     });

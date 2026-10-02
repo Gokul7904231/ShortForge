@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR90-Overseer-Wave3-Agent-Workforce",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/overseer-wave3-agent-workforce-20261002",
+  "objective": "Add workspace-scoped co-manageable agent workforce capabilities on top of Wave 1/2 without changing FGC/AEF/F07 authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/security/identity.md",
+      ".okf/security/capability-security.md",
+      ".okf/intelligence/agent-execution-fabric.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave1.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave2.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave3.md"
+    ],
+    "rulesConsidered": [
+      "Agent configuration does not mint execution authority.",
+      "FGC/Guardian remain the mutation boundary.",
+      "AEF remains deterministic execution.",
+      "Capability grants are explicit and bounded.",
+      "Raw credentials do not belong in agent profiles.",
+      "F07 remains independent production truth."
+    ]
+  },
+  "changes": [
+    "Durable workspace agent identities",
+    "OWNER/EDITOR/USER co-management",
+    "ACTIVE/PAUSED/ARCHIVED lifecycle",
+    "Shared model/response/configuration settings",
+    "Connection-reference integration bindings",
+    "Sensitive-field redaction",
+    "Capability/tool escalation guard",
+    "Inactive-agent work-claim guard",
+    "Mission Room workforce roster integration",
+    "Overseer Dashboard workforce UI"
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "PASS — focused Wave 3 scan run 36974638093; 2 rules / 13 files / 0 findings",
+    "strix": "UNPROVEN — Strix workflow 36975204944 ran on GitHub and failed before installation because no supported LLM repository Actions secret was configured; local host also has no Docker/Strix.",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Focused Semgrep completed successfully. Existing repository-wide Semgrep warnings remain historical/baseline and are not introduced by Wave 3. Strix dynamic testing remains unproven because Docker-backed dynamic testing is not part of this validation environment."
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE — 3 test files / 23 tests passed; typecheck passed",
+    "Forge Release": "BLOCKED — canonical Team security policy requires Strix proof for this permission change"
+  },
+  "verificationPlan": [
+    "Run focused Wave 3 npm ci/typecheck/tests.",
+    "Run repository CI and affected governance/security workflows.",
+    "Patch failures before merge.",
+    "Confirm workforce agents appear in Mission Room and paused agents cannot claim work."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionRationale": "Wave 3 implementation and deterministic validation are complete, but the canonical security policy requires Strix for this permission change. The dedicated GitHub Strix workflow is present, but execution is blocked by missing repository Actions LLM credentials; no valid Strix finding/clean result exists.",
+  "verificationResults": {
+    "overseerWave3": "PASS — 36974638093; npm ci + typecheck + 3 focused test files / 23 tests + focused Semgrep 0 findings",
+    "teamChangeGate": "PASS — 36974638061",
+    "floor01TypecheckContractSecurity": "PASS — affected jobs in batch",
+    "floor01PythonV2": "PASS — affected job in batch",
+    "googleDriveMcp": "PASS — 36973638043 on prior code-equivalent head",
+    "obsidianMemory": "PASS — 36973638107 on prior code-equivalent head",
+    "selectedMcpFabric": "BASELINE FAILURE — contract-validation docs grep for TRANSFORM_VISUAL_ASSET is absent on main as well; not a Wave 3 regression",
+    "semgrepWave3": "RUNNING — focused error-severity scan added in refreshed workflow",
+    "ci": "IN_PROGRESS — repository-wide CI is broader/non-blocking for Wave 3 merge",
+    "strixWave3": "BLOCKED — workflow 36975204944: no supported LLM secret configured"
+  },
+  "conflicts": [],
+  "status": "BLOCKED_STRIX_SECRET",
+  "validatedExecutableHead": "ad2937de6075952340b4b2dc6a6a5df0e2a14f3a"
+}

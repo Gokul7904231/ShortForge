@@ -19,6 +19,7 @@ import type {
 import type { MissionTask as MissionTaskType } from "../contracts/MissionContracts";
 import type { MissionManager } from "../missions/MissionManager";
 import type { DurableEventBus } from "../events/DurableEventBus";
+import type { AgentWorkforceStore } from "../agent/AgentWorkforceStore";
 import type { LeaseManager } from "../leases/LeaseManager";
 import type { TaskLease } from "../database/DatabaseContracts";
 
@@ -89,6 +90,7 @@ export class MissionWorkManager {
     private readonly missions: MissionManager,
     private readonly leases: LeaseManager,
     private readonly eventBus?: DurableEventBus,
+    private readonly workforce?: AgentWorkforceStore,
   ) {
     this.subscribeToExecutionEvents();
   }
@@ -292,6 +294,10 @@ export class MissionWorkManager {
   ): Promise<MissionTask> {
     const task = await this.missions.getMissionTask(missionId, taskId);
     if (!task) throw new Error(`Task ${taskId} not found.`);
+
+    if (this.workforce && !(await this.workforce.isActiveForExecution(agentId))) {
+      throw new Error(`AGENT_WORKFORCE_AGENT_INACTIVE: agent ${agentId} is paused or archived.`);
+    }
 
     const state = normalizedState(task);
     if (state !== "READY") {

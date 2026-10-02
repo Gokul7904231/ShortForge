@@ -399,6 +399,7 @@ export class MissionCollaborationStore {
       threadId: input.threadId,
       taskId: input.taskId,
       mentions: extractKnownMentions(body, room.participants),
+      metadata: input.metadata ? structuredClone(input.metadata) : undefined,
     };
 
     await this.repository.saveMessage(message);

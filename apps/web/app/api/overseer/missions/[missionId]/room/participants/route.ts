@@ -36,6 +36,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: false, error: "participantId, displayName, and type are required." }, { status: 400 });
     }
 
+    if (input.type === "AGENT" && String(input.participantId).startsWith("agent_")) {
+      const workforceAgent = await controller.agentWorkforceStore.getExecutionProfile(String(input.participantId));
+      if (!workforceAgent) {
+        return NextResponse.json({
+          success: false,
+          error: "Workspace-managed agent not found or not active.",
+        }, { status: 400 });
+      }
+    }
+
     const room = await controller.collaborationStore.addParticipant(missionId, {
       participantId: input.participantId,
       displayName: input.displayName,

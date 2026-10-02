@@ -7,18 +7,12 @@ export async function resolveCollaborationActor(
 ): Promise<CollaborationActor> {
   try {
     const { user } = await verifySession(request);
+    const workspaceRole = user.role === "USER" ? "VIEWER" : (user.role || "VIEWER");
     return {
       actorId: user.uid,
       displayName: user.name || user.email?.split("@")[0] || "Operator",
       type: "HUMAN",
-      workspaceRole:
-        user.role === "OWNER"
-          ? "OWNER"
-          : user.role === "ADMIN"
-            ? "ADMIN"
-            : user.role === "EDITOR"
-              ? "EDITOR"
-              : "VIEWER",
+      workspaceRole,
     };
   } catch (error) {
     if (process.env.NODE_ENV === "production") {

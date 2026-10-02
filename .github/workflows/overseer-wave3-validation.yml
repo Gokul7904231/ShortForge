@@ -1,0 +1,37 @@
+name: Overseer Wave 3 Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/agent/**"
+      - "apps/web/factoryos/core/work/**"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/app/api/overseer/agents/**"
+      - "apps/web/components/overseer/collaboration/**"
+      - "apps/web/components/overseer/presence/OverseerCommandSurface.tsx"
+      - "apps/web/factoryos/tests/agent-workforce.test.ts"
+      - "apps/web/factoryos/tests/mission-work-manager.test.ts"
+      - ".okf/intelligence/overseer-collaboration-fabric-wave3.md"
+
+jobs:
+  wave3:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -- --run factoryos/tests/agent-workforce.test.ts factoryos/tests/mission-work-manager.test.ts factoryos/tests/mission-collaboration.test.ts
+      - name: Install Semgrep
+        run: python -m pip install semgrep==1.174.0
+      - name: Wave 3 static security scan
+        run: |
+          semgrep scan             --config ../../production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             factoryos/core/agent             app/api/overseer/agents/workforce             app/api/overseer/missions/[missionId]/room/participants/route.ts

@@ -1,0 +1,41 @@
+name: Overseer Collaboration Wave 4 Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/comms/**"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - "apps/web/factoryos/core/database/MongoDBClient.ts"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
+      - "apps/web/app/api/overseer/missions/[missionId]/room/intercom/**"
+      - "apps/web/app/api/overseer/missions/[missionId]/room/participants/route.ts"
+      - "apps/web/lib/overseer/agent-intercom-auth.ts"
+      - "apps/web/components/overseer/collaboration/MissionRoomPanel.tsx"
+      - "apps/web/factoryos/tests/agent-intercom-wave4.test.ts"
+      - "apps/web/factoryos/tests/mission-collaboration.test.ts"
+      - ".okf/intelligence/overseer-collaboration-fabric-wave4.md"
+      - ".okf/index.md"
+  workflow_dispatch:
+
+jobs:
+  wave4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -- --run factoryos/core/comms/CommsFabric.test.ts factoryos/tests/agent-intercom-wave4.test.ts factoryos/tests/mission-collaboration.test.ts
+      - name: Install Semgrep
+        run: python -m pip install semgrep==1.174.0
+      - name: Wave 4 static security scan
+        run: |
+          semgrep scan             --config ../../production-helper/semgrep/rules/shortforge-rules.yaml             --severity ERROR             --error             factoryos/core/comms/AgentIntercomContracts.ts             factoryos/core/comms/AgentIntercomStore.ts             factoryos/core/comms/CommsFabric.ts             "app/api/overseer/missions/[missionId]/room/intercom/route.ts"             "app/api/overseer/missions/[missionId]/room/intercom/sessions/route.ts"             lib/overseer/agent-intercom-auth.ts
