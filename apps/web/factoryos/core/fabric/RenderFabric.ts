@@ -363,6 +363,19 @@ export class RenderFabric {
         captions: intent.tracks.captions,
         audioTrack: primaryAudio,
       },
+      repair_scope: intent.repairScope
+        ? {
+            mode: intent.repairScope.mode,
+            repair_id: intent.repairScope.repairId,
+            force_scene_ids: [...intent.repairScope.forceSceneIds],
+            affected_frame_range: intent.repairScope.affectedFrameRange
+              ? [
+                  intent.repairScope.affectedFrameRange.startFrame,
+                  intent.repairScope.affectedFrameRange.endFrame,
+                ]
+              : undefined,
+          }
+        : undefined,
     };
   }
 }
