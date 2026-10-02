@@ -324,6 +324,12 @@ export class AgentIntercomStore {
     const authz = this.toCommsAuthorization(auth);
     const decision = admitComms(envelope, authz, capabilities);
     if (!decision.admitted) throw new Error(`INTERCOM_ADMISSION_DENIED:${decision.reasonCode}`);
+    if (input.idempotencyKey) {
+      const existing = (await this.repo.listMessages(input.missionId))
+        .find((message) => message.envelope.meta.causationId === `idempotency:${input.idempotencyKey}`);
+      if (existing) return structuredClone(existing);
+    }
+
     await this.assertAgentAvailable(auth.principal);
     await this.assertAgentAvailable(input.target);
     await this.enforceLaneQuota(input.missionId, envelope.meta.lane);
@@ -347,18 +353,21 @@ export class AgentIntercomStore {
         causationId: envelope.meta.causationId,
       },
     };
-    const admitted = await this.transitionMessage(message, "admit");
-    const queued = await this.transitionMessage(admitted, "queue");
-    const dispatched = await this.transitionMessage(queued, "dispatch");
+    try {
+      const admitted = await this.transitionMessage(message, "admit");
+      const queued = await this.transitionMessage(admitted, "queue");
+      const dispatched = await this.transitionMessage(queued, "dispatch");
 
-    await this.publish("AGENT_INTERCOM_DELIVERY", {
-      intercomId: dispatched.intercomId,
-      envelope: dispatched.envelope,
-      deliveryState: dispatched.deliveryState,
-    }, dispatched.envelope.meta.correlationId, dispatched.envelope.meta.messageId);
+      await this.publish("AGENT_INTERCOM_DELIVERY", {
+        intercomId: dispatched.intercomId,
+        envelope: dispatched.envelope,
+        deliveryState: dispatched.deliveryState,
+      }, dispatched.envelope.meta.correlationId, dispatched.envelope.meta.messageId);
 
-    await this.releaseLaneQuota(input.missionId, envelope.meta.lane);
-    return dispatched;
+      return dispatched;
+    } finally {
+      await this.releaseLaneQuota(input.missionId, envelope.meta.lane);
+    }
   }
 
   async createDelegation(auth: AgentIntercomAuth, input: AgentDelegationCreateInput): Promise<AgentDelegationRequest> {
@@ -384,7 +393,7 @@ export class AgentIntercomStore {
       requiredCapability: input.requiredCapability,
       context: input.context ? structuredClone(input.context) : undefined,
       correlationId,
-      causationId: input.causationId,
+      causationId: input.idempotencyKey ? `idempotency:${input.idempotencyKey}` : input.causationId,
       state: "REQUESTED",
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -432,7 +441,16 @@ export class AgentIntercomStore {
         causationId: input.causationId,
       },
     };
-    await this.repo.saveMessage(message);
+    const admitted = await this.transitionMessage(message, "admit");
+    const queued = await this.transitionMessage(admitted, "queue");
+    const dispatched = await this.transitionMessage(queued, "dispatch");
+
+    await this.publish("AGENT_INTERCOM_DELIVERY", {
+      intercomId: dispatched.intercomId,
+      envelope: dispatched.envelope,
+      deliveryState: dispatched.deliveryState,
+    }, correlationId, dispatched.envelope.meta.messageId);
+
     await this.publish("AGENT_DELEGATION_REQUESTED", {
       delegationId,
       missionId: input.missionId,
