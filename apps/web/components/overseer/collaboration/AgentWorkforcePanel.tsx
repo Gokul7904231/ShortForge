@@ -270,9 +270,11 @@ export const AgentWorkforcePanel: React.FC<AgentWorkforcePanelProps> = ({ accent
                       <Link2 className="w-3 h-3" /> Bind reference
                     </button>
                     <div className="mt-2 flex gap-1.5">
-                      <button type="button" onClick={() => void updateAgent(agent, { status: agent.status === "ACTIVE" ? "PAUSED" : "ACTIVE" })} className="inline-flex items-center gap-1 rounded-lg bg-[#F5B942]/10 px-2.5 py-1.5 text-[9px] font-mono font-bold text-[#8A6500]">
-                        {agent.status === "ACTIVE" ? "Pause agent" : "Resume agent"}
-                      </button>
+                      {agent.status !== "ARCHIVED" && (
+                        <button type="button" onClick={() => void updateAgent(agent, { status: agent.status === "ACTIVE" ? "PAUSED" : "ACTIVE" })} className="inline-flex items-center gap-1 rounded-lg bg-[#F5B942]/10 px-2.5 py-1.5 text-[9px] font-mono font-bold text-[#8A6500]">
+                          {agent.status === "ACTIVE" ? "Pause agent" : "Resume agent"}
+                        </button>
+                      )}
                       {agent.status !== "ARCHIVED" && (
                         <button type="button" onClick={() => void updateAgent(agent, { status: "ARCHIVED" })} className="inline-flex items-center gap-1 rounded-lg bg-[#FF5A67]/5 px-2.5 py-1.5 text-[9px] font-mono font-bold text-[#C33A47]">
                           Archive
