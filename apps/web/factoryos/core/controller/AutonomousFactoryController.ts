@@ -32,6 +32,7 @@ import { MissionWorkManager } from "../work/MissionWorkManager";
 import { MissionCollaborationStore } from "../collaboration/MissionCollaborationStore";
 import { AgentWorkforceStore } from "../agent/AgentWorkforceStore";
 import { AgentIntercomStore } from "../comms/AgentIntercomStore";
+import { MissionAutomationStore } from "../orchestration/MissionAutomationStore";
 
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
 import { InstructorSubsystem } from "../instructor/InstructorSubsystem";
@@ -91,6 +92,7 @@ export class AutonomousFactoryController {
   public collaborationStore!: MissionCollaborationStore;
   public agentWorkforceStore!: AgentWorkforceStore;
   public agentIntercomStore!: AgentIntercomStore;
+  public missionAutomationStore!: MissionAutomationStore;
   public guardianManager!: GuardianManager;
   public slayerEngine!: SlayerEngine;
   public healerEngine!: HealerEngine;
@@ -249,6 +251,15 @@ export class AutonomousFactoryController {
       this.eventBus,
       this.agentWorkforceStore,
     );
+    this.missionAutomationStore = new MissionAutomationStore({
+      eventBus: this.eventBus,
+      workspaceId: process.env.FACTORYOS_WORKSPACE_ID || "factoryos",
+      mongoDb: this.mongoClient?.getDb() || undefined,
+      diskPath: this.config.storageType === "disk" ? this.config.storagePath : undefined,
+      missionManager: this.missionManager,
+      workManager: this.workManager,
+      workforce: this.agentWorkforceStore,
+    });
 
     // 6. Memory & Cognitive Engine
     this.memoryEngine = new MemoryEngine(repos.memories);
