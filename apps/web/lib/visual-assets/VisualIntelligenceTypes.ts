@@ -53,7 +53,18 @@ export interface CandidateAsset {
   /** Derived visual lineage when an asset is transformed by a governed provider. */
   derivedFromAssetId?: string;
   derivedFromSha256?: string;
-  transformation?: Record<string, unknown>;
+  transformation?: VisualTransformLineage;
+}
+
+export interface VisualTransformLineage {
+  readonly transformationId: string;
+  readonly parentAssetId: string;
+  readonly parentSha256: string;
+  readonly recipeId: string;
+  readonly recipeVersion: string;
+  readonly operation: "UPSCALE_2X" | "IMG2IMG_RESTYLE" | "INPAINT" | "OUTPAINT_9_16" | "DETAIL_ENHANCE";
+  readonly parametersSha256: string;
+  readonly createdAt: string;
 }
 
 export interface StyleProfileConfig {
