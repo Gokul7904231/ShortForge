@@ -179,3 +179,13 @@ Focused Semgrep runs only the new security-sensitive Wave 4 paths and fails on e
 
 ## Expected next wave
 Wave 5 can build on this stable collaboration protocol for higher-level fleet orchestration, shared agent activity streams, and mission-level automation recipes without changing the authority boundaries.
+
+## Final validation evidence
+
+- Dedicated Wave 4 validation run **36978269973** passed.
+- npm ci passed.
+- npm run typecheck passed.
+- Focused Comms Fabric, Agent Intercom, and Mission Collaboration tests passed.
+- Focused Wave 4 Semgrep passed with **0 findings** on the exact affected security paths.
+- Team Change Gate for the Wave 4 report is expected to validate the BLOCKED cumulative-release disposition because the inherited Wave 3 Strix proof remains unavailable.
+- Wave 4 does not modify the existing Overseer emotional face/presence subsystem.
