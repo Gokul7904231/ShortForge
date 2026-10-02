@@ -697,21 +697,6 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
   }
 
   private invalidAnswer(
-    question: NoulQuestion,
-    code: DecisionValidationErrorCode,
-    reason: string,
-  ): NoulAnswer;
-  private invalidAnswer(
-    question: ChoiceQuestion<any>,
-    code: DecisionValidationErrorCode,
-    reason: string,
-  ): ChoiceAnswer<any>;
-  private invalidAnswer(
-    question: ScoreQuestion,
-    code: DecisionValidationErrorCode,
-    reason: string,
-  ): ScoreAnswer;
-  private invalidAnswer(
     question: NoulQuestion | ChoiceQuestion<any> | ScoreQuestion,
     code: DecisionValidationErrorCode,
     reason: string,
