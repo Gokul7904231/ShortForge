@@ -24,7 +24,9 @@
     "factoryos:eval:quiz": "vitest run factoryos/tests/quiz-eval.test.ts",
     "factoryos:demo": "npx vite-node factoryos/demo.ts",
     "factoryos:production:demo": "npx vite-node factoryos/demo-production.ts",
-    "factoryos:verify:api": "npx vite-node scripts/verify-api-providers.ts"
+    "factoryos:verify:api": "npx vite-node scripts/verify-api-providers.ts",
+    "factoryos:verify:notebooks": "npx vite-node scripts/verify-notebooks.ts",
+    "factoryos:verify:notebook-mcps": "node scripts/verify-notebook-mcps.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.14",

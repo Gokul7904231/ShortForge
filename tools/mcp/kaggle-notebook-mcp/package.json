@@ -1,0 +1,22 @@
+{
+  "name": "@shortforge/kaggle-notebook-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ShortForge-owned MCP for bounded Kaggle notebook connection diagnostics.",
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^6.0.3"
+  }
+}

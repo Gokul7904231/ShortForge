@@ -98,13 +98,16 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     }
 
     const requestId = randomUUID();
-    const runtimeId = request.idempotencyKey
-      .replace(/[^a-zA-Z0-9_-]/g, "")
-      .slice(0, 50);
+    const rawRuntimeId = request.idempotencyKey
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 54);
+    const runtimeId = ("shortforge-" + rawRuntimeId).slice(0, 63).replace(/-+$/g, "") || "shortforge-runtime";
 
     const runtimeSpec: Record<string, unknown> = {
       variant: request.gpuType ? "VARIANT_GPU" : "VARIANT_CPU",
-      ...(request.gpuType ? { accelerator: request.gpuType } : {}),
+      accelerator: request.gpuType || "NONE",
       shape: "SHAPE_STANDARD",
     };
 
@@ -150,7 +153,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
-    const runtime = await this.getRuntime(String(completed.response.name));
+    const runtime = await this.getRuntime(String(completed.response.name), credentials);
     return {
       runtime,
       reconciliationRequired: false,
@@ -244,13 +247,14 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
 
   private async waitOperation(name: string, timeoutMs: number, credentials?: NotebookCredentialBundle): Promise<any> {
     const started = Date.now();
+    const token = credentials?.COLAB_ACCESS_TOKEN || process.env.COLAB_ACCESS_TOKEN || "";
 
     while (Date.now() - started < timeoutMs) {
       const response = await fetch(
-        BASE + "/v1beta/" + name,
+        BASE + "/v1/" + name,
         {
           headers: {
-            Authorization: "Bearer " + (process.env.COLAB_ACCESS_TOKEN || ""),
+            Authorization: "Bearer " + token,
           },
         },
       );
