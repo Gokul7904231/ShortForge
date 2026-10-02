@@ -173,6 +173,7 @@ class Renderer:
         rendered_scene_paths: List[str] = []
         cache_hits = 0
         cache_misses = 0
+        rebuilt_scene_ids: List[str] = []
         forced_scene_ids = set(intent.repair_scope.force_scene_ids) if intent.repair_scope else set()
 
         # Step 1: Render individual scenes
@@ -218,6 +219,7 @@ class Renderer:
 
             # Store in cache
             cached_dest = self.cache.store_scene_artifact(scene_h, scene_tmp_path)
+            rebuilt_scene_ids.append(scene.scene_id)
             rendered_scene_paths.append(cached_dest)
 
             state.completed_scenes.append(scene.scene_id)
@@ -299,7 +301,8 @@ class Renderer:
                 cache_hits=cache_hits,
                 cache_misses=cache_misses,
                 validation=validation,
-                scenes_rendered=[s.scene_id for s in comp.scenes if s.scene_id in forced_scene_ids],
+                scenes_rendered=[s.scene_id for s in comp.scenes],
+                scenes_rebuilt=rebuilt_scene_ids,
                 repair_mode=intent.repair_scope.mode if intent.repair_scope else None,
                 forced_scene_ids=sorted(forced_scene_ids),
             )
