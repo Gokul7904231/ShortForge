@@ -59,6 +59,12 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   const [risks, setRisks] = useState<string[]>([]);
   const [newDecision, setNewDecision] = useState("");
   const [newRisk, setNewRisk] = useState("");
+  const [availableAgents, setAvailableAgents] = useState<Array<{
+    agentId: string;
+    name: string;
+    role: string;
+    specialization?: string;
+  }>>([]);
 
   const room = snapshot?.room || null;
   const participants = room?.participants.filter((item) => item.active) || [];
@@ -115,15 +121,23 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
 
   useEffect(() => {
     void fetchSnapshot(true);
+    fetch("/api/overseer/agents", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.success && Array.isArray(json.data?.agents)) {
+          setAvailableAgents(json.data.agents);
+        }
+      })
+      .catch(() => {});
   }, [missionId]);
 
   useEffect(() => {
-    if (!room || !missionId) return;
+    if (!room || !missionId || view !== "THREAD") return;
     const interval = setInterval(() => {
       void fetchSnapshot(false);
     }, 5000);
     return () => clearInterval(interval);
-  }, [room?.roomId, missionId]);
+  }, [room?.roomId, missionId, view]);
 
   async function openRoom() {
     if (!missionId) return;
@@ -286,6 +300,47 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
             {participants.length > 10 && (
               <span className="text-[10px] text-[#667085]">+{participants.length - 10}</span>
             )}
+          </div>
+        )}
+        {room && availableAgents.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[9px] uppercase tracking-wider font-mono text-[#667085] mr-1">
+              Agent roster
+            </span>
+            {availableAgents
+              .filter((agent) => !participants.some((participant) => participant.participantId === agent.agentId))
+              .slice(0, 6)
+              .map((agent) => (
+                <button
+                  key={agent.agentId}
+                  type="button"
+                  title={agent.specialization || agent.role}
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/overseer/missions/${missionId}/room/participants`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          participantId: agent.agentId,
+                          displayName: agent.name,
+                          type: "AGENT",
+                          responseMode: agent.role === "OVERSEER" || agent.role === "COGNITIVE" ? "JOINS_CONVERSATION" : "MENTION_ONLY",
+                          specialization: agent.specialization,
+                        }),
+                      });
+                      const json = await res.json();
+                      if (!res.ok || !json.success) throw new Error(json.error || "Unable to add agent.");
+                      await fetchSnapshot(false);
+                    } catch (err: any) {
+                      setError(err?.message || "Unable to add agent to room.");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#1769E8]/15 bg-[#1769E8]/5 px-2 py-1 text-[9px] font-mono text-[#1769E8] hover:bg-[#1769E8]/10"
+                >
+                  <Plus className="w-3 h-3" />
+                  {agent.name}
+                </button>
+              ))}
           </div>
         )}
       </div>
