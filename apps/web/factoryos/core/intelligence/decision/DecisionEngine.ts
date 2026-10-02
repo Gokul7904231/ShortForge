@@ -64,6 +64,7 @@ export class DecisionEngine {
     const t0 = Date.now();
     let finalAnswersById: Record<string, DecisionAnswer> = {};
     let adapterUsed: "DETERMINISTIC" | "GLIDE" | "LLM" | "HYBRID" = "DETERMINISTIC";
+    let usedGlideFastPath = false;
 
     // 1. Deterministic Evaluation First (Ponytail Economy: 0 tokens)
     let unresolvedQuestions = request.questions;
@@ -102,6 +103,7 @@ export class DecisionEngine {
 
       try {
         const glideResult = await this.glideShadowAdapter.evaluateBatch(glideSubRequest);
+        usedGlideFastPath = glideResult.status === "VALID";
         const acceptedQuestions: typeof unresolvedQuestions = [];
 
         for (const q of unresolvedQuestions) {
@@ -170,7 +172,8 @@ export class DecisionEngine {
         adapterType: adapterUsed,
         implementationVersion: "2.0.0",
         isProductionAuthority: true,
-        isTrainingEligible: !hasUnresolved,
+        // GLiDE fast-path outputs are not training-eligible until tied to verified outcomes.
+        isTrainingEligible: !hasUnresolved && !usedGlideFastPath,
       },
     };
 
