@@ -130,7 +130,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: true, data: delegation });
     }
 
-    return NextResponse({ success: false, error: `Unknown intercom action: ${action}` }, { status: 400 });
+    return NextResponse.json({ success: false, error: `Unknown intercom action: ${action}` }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message || "Intercom operation failed." }, { status: statusFor(error) });
   }
