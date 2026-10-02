@@ -1,0 +1,70 @@
+name: Overseer Wave 3 Strix Security
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/agent/**"
+      - "apps/web/app/api/overseer/agents/workforce/**"
+      - "apps/web/app/api/overseer/missions/[missionId]/room/participants/route.ts"
+      - "apps/web/components/overseer/collaboration/**"
+      - "apps/web/components/overseer/presence/OverseerCommandSurface.tsx"
+      - ".okf/security/**"
+      - ".okf/intelligence/overseer-collaboration-fabric-wave3.md"
+      - "Team/reports/pr-90.json"
+      - ".github/workflows/overseer-wave3-strix.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  strix:
+    runs-on: ubuntu-latest
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      STRIX_REASONING_EFFORT: high
+      STRIX_RUNTIME_BACKEND: docker
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select configured LLM provider
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${OPENROUTER_API_KEY:-}" ]]; then
+            echo "STRIX_LLM=openrouter/z-ai/glm-5.3" >> "$GITHUB_ENV"
+            echo "LLM_API_KEY=${OPENROUTER_API_KEY}" >> "$GITHUB_ENV"
+            echo "Selected configured OpenRouter provider."
+          elif [[ -n "${OPENAI_API_KEY:-}" ]]; then
+            echo "STRIX_LLM=openai/gpt-5.4" >> "$GITHUB_ENV"
+            echo "LLM_API_KEY=${OPENAI_API_KEY}" >> "$GITHUB_ENV"
+            echo "Selected configured OpenAI provider."
+          elif [[ -n "${GEMINI_API_KEY:-}" ]]; then
+            echo "STRIX_LLM=gemini/gemini-3.7-flash" >> "$GITHUB_ENV"
+            echo "LLM_API_KEY=${GEMINI_API_KEY}" >> "$GITHUB_ENV"
+            echo "Selected configured Gemini provider."
+          elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+            echo "STRIX_LLM=anthropic/claude-sonnet-4-6" >> "$GITHUB_ENV"
+            echo "LLM_API_KEY=${ANTHROPIC_API_KEY}" >> "$GITHUB_ENV"
+            echo "Selected configured Anthropic provider."
+          else
+            echo "::error::No supported Strix LLM secret is configured. Add one of OPENROUTER_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, or ANTHROPIC_API_KEY to repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Install Strix
+        run: python3 -m pip install --user strix-agent
+
+      - name: Run focused white-box Strix scan
+        run: |
+          ~/.local/bin/strix -n -t .             --scan-mode quick             --max-budget 10
+
+      - name: Upload Strix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shortforge-wave3-strix
+          path: strix_runs/
+          if-no-files-found: ignore
