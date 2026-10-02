@@ -381,6 +381,19 @@ export class ReMakerEngine {
       throw new Error("[ReMakerEngine] Authorization grant, lease, holder and issuer are required.");
     }
 
+    if (!input.authorization.authorizedBy.startsWith("guardian_")) {
+      throw new Error("[ReMakerEngine] ReMaker authorization must originate from a Guardian.");
+    }
+
+    if (input.authorization.action !== input.action) {
+      throw new Error("[ReMakerEngine] Authorization is attenuated to a different repair action.");
+    }
+
+    const expectedTargetScopeDigest = sha256(stableStringify(input.target));
+    if (input.authorization.targetScopeDigest !== expectedTargetScopeDigest) {
+      throw new Error("[ReMakerEngine] Authorization is attenuated to a different repair target.");
+    }
+
     if (!input.parentArtifact.casRef) {
       throw new Error("[ReMakerEngine] Production repair requires a CAS-bound parent artifact.");
     }
