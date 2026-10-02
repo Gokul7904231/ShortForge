@@ -112,7 +112,7 @@ describe("GLiDE Decision Adapter", () => {
 
     const call = fetchMock.mock.calls[0];
     expect(call[0]).toBe("https://api.fastino.ai/v1/systemone");
-    expect(call[1].headers["X-API-Key"]).toBe("secret-value");
+    expect(call[1].headers["Authorization"]).toBe("Bearer secret-value");
 
     const body = JSON.parse(call[1].body);
     expect(body.model).toBe("fastino/GLiDE");
