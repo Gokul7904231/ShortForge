@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR83-Unified-Compute-Pool",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/compute-pool-20261002",
+  "objective": "Converge hosted sandbox, notebook, API GPU, and local render-capable workers behind one ComputePool and ComputeRouter while preserving deterministic admission and F07 physical truth.",
+  "classification": "architecture + capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "No self-hosted PandaStack sandbox.",
+      "Only real artifact-producing workers may enter render routing.",
+      "Deterministic capability, health, policy, lease, and fencing boundaries remain authoritative.",
+      "GLiDE/Ascalon is advisory until calibration and promotion evidence exists.",
+      "Physical artifact truth remains owned by F06/F07 verification and CAS."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/architecture.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/rendering/render-fabric.md",
+      ".okf/decisions/compute-pool-20261002.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Provider credentials remain environment/connection scoped. Hosted sandbox credentials are not sent into GLiDE state or routing telemetry."
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED_PENDING_VERIFICATION",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Replaced PandaStack sandbox contracts and registration with hosted Daytona and Modal adapters.",
+    "Added canonical ShortForgeRenderWorker contract and ComputePool registry.",
+    "Wrapped Kaggle hosted notebook execution as a physical-artifact-producing render worker.",
+    "Wrapped hosted Daytona/Modal sandboxes as render workers only when a real render command/output contract is configured.",
+    "Bound ComputeRouter to ComputePool hard preflight.",
+    "Added telemetry-aware startup/execution/reliability scoring.",
+    "Added explicit worker preflight state to the Ascalon/GLiDE decision packet.",
+    "Added pool, capacity, timeout, and F06 physical-artifact failover tests.",
+    "Added compute-pool CI."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/pool/ShortForgeRenderWorker.ts",
+    "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+    "apps/web/factoryos/core/compute/router/ComputeRouter.ts",
+    "apps/web/factoryos/core/compute/router/GlideWorkerSelectionAdvisor.ts",
+    "apps/web/factoryos/core/compute/providers/KaggleNotebookComputeProvider.ts",
+    "apps/web/factoryos/core/compute/providers/HostedSandboxComputeProvider.ts",
+    "apps/web/factoryos/core/compute/sandboxes/DaytonaSandboxAdapter.ts",
+    "apps/web/factoryos/core/compute/sandboxes/ModalSandboxAdapter.ts",
+    "apps/web/factoryos/tests/compute-pool.test.ts",
+    "apps/web/factoryos/tests/f06-render-admission.test.ts",
+    ".github/workflows/compute-pool.yml",
+    ".okf/compute/sandbox-fabric.md"
+  ],
+  "verificationResults": {
+    "computePoolCI": "PENDING",
+    "factoryosTypecheck": "PENDING",
+    "sandboxCI": "PENDING",
+    "teamChangeGate": "PENDING",
+    "fullRepositoryCI": "PENDING",
+    "liveHostedProviderProbe": "NOT_RUN_NO_PROVIDER_CREDENTIALS",
+    "distributedPhysicalRender": "PENDING",
+    "goldenMissionThroughUnifiedPool": "PENDING",
+    "glideCalibration": "PENDING"
+  },
+  "notes": [
+    "RunPod/Vast control-plane adapters are intentionally not registered as render workers because their current provider classes do not execute and return physical artifacts truthfully.",
+    "Legacy provider classes remain discoverable for compatibility but are excluded from the unified ComputePool.",
+    "GLiDE selection remains advisory and cannot bypass hard worker admission."
+  ]
+}
