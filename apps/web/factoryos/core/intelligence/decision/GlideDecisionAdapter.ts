@@ -30,7 +30,6 @@ import type {
 } from "./DecisionContracts";
 
 type JsonRecord = Record<string, unknown>;
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export interface GlideDecisionAdapterConfig {
   readonly baseUrl: string;
@@ -152,7 +151,11 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
       return this.parseResponse(request, payload, Date.now() - startedAt);
     } catch (error: unknown) {
       const code: DecisionValidationErrorCode =
-        error instanceof GlideTimeoutError ? "ADAPTER_TIMEOUT" : "ADAPTER_UNAVAILABLE";
+        error instanceof GlideTimeoutError
+          ? "ADAPTER_TIMEOUT"
+          : error instanceof GlideHttpError && (error.status === 401 || error.status === 403)
+            ? "AUTHENTICATION_FAILED"
+            : "ADAPTER_UNAVAILABLE";
 
       return this.unresolvedBatch(
         request,
@@ -446,7 +449,7 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
       uncertainty: {
         modelProbability: Number(probability),
         epistemicConfidence: confidence,
-        calibrationStatus: "CALIBRATED",
+        calibrationStatus: "UNCALIBRATED",
         confidenceSource: "MODEL",
         probabilitySemantics: "ABSOLUTE",
       },
@@ -530,7 +533,7 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
       uncertainty: {
         modelProbability: typed[selected],
         epistemicConfidence: confidence,
-        calibrationStatus: "CALIBRATED",
+        calibrationStatus: "UNCALIBRATED",
         confidenceSource: "MODEL",
         probabilitySemantics: "CANDIDATE_RELATIVE",
       },
@@ -626,7 +629,7 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
       uncertainty: {
         modelProbability: bestProbability,
         epistemicConfidence: confidence,
-        calibrationStatus: "CALIBRATED",
+        calibrationStatus: "UNCALIBRATED",
         confidenceSource: "MODEL",
         probabilitySemantics: "CANDIDATE_RELATIVE",
       },
