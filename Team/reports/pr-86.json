@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR86-MissionCollaborationEventTopic",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/typecheck-mission-collab-event-topic-20261002",
+  "objective": "Restore strict EventTopic typing in MissionCollaborationStore publishing boundary.",
+  "classification": "already exists",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Event bus topics use the canonical EventTopic contract.",
+      "No authority boundary is changed.",
+      "No secrets or provider behavior is changed."
+    ],
+    "sourceRefs": [".okf/index.md", ".okf/architecture.md"]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": ["Forge Architect","Forge Builder","Forge Evaluator","Forge Release"],
+  "changes": ["Typed MissionCollaborationStore.publish with EventTopic and imported the canonical contract."],
+  "verificationResults": {"factoryosTypecheck":"PENDING","fullRepositoryCI":"PENDING","teamChangeGate":"PENDING"}
+}
