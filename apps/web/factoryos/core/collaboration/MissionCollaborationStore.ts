@@ -227,6 +227,11 @@ export class MissionCollaborationStore {
     actor: CollaborationActor,
     createInput: { name?: string; description?: string } = {},
   ): Promise<MissionRoom> {
+    if (actor.type !== "HUMAN") throw new Error("Only authenticated human actors can create mission rooms.");
+    if (actor.workspaceRole === "VIEWER") {
+      throw new Error("Mission room creation requires EDITOR, ADMIN, or OWNER access.");
+    }
+
     const existing = await this.repository.getRoom(mission.missionId);
     if (existing) {
       if (!this.canReadRoom(existing, actor)) {
