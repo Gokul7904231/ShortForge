@@ -15,6 +15,7 @@ import {
   ProviderType,
 } from "../contracts/ComputeContracts";
 import { ComputeRouter, RoutingDecision } from "../router/ComputeRouter";
+import { GlideWorkerSelectionAdvisor } from "../router/GlideWorkerSelectionAdvisor";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
 import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
@@ -29,7 +30,12 @@ export class ComputeGateway {
   private cas: ContentAddressedStore;
 
   private constructor(policy: ComputePolicy = DEFAULT_COMPUTE_POLICY) {
-    this.router = new ComputeRouter(policy);
+    const glideWorkerSelectionAdvisor =
+      process.env.FASTINO_GLIDE_ENABLED === "true"
+        ? new GlideWorkerSelectionAdvisor()
+        : undefined;
+
+    this.router = new ComputeRouter(policy, { glideWorkerSelectionAdvisor });
     this.cas = ContentAddressedStore.getInstance();
 
     // Register canonical providers
