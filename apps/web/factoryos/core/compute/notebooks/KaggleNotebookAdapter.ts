@@ -128,7 +128,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       language: "python",
       kernel_type: "script",
       is_private: "true",
-      enable_gpu: "true",
+      enable_gpu: request.gpuType ? "true" : "false",
       enable_internet: "true",
       dataset_sources: [],
       competition_sources: [],
@@ -154,7 +154,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
 
     const accelerator = request.gpuType
       ? this.mapAccelerator(request.gpuType)
-      : "NvidiaTeslaT4";
+      : undefined;
     const timeoutSeconds = Math.min(
       43_200,
       Math.max(1, Math.floor((request.timeoutMs || DEFAULT_TIMEOUT_MS) / 1000)),
@@ -167,8 +167,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         "push",
         "-p",
         workDir,
-        "--accelerator",
-        accelerator,
+        ...(accelerator ? ["--accelerator", accelerator] : []),
         "--timeout",
         String(timeoutSeconds),
       ],
@@ -191,12 +190,12 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         state: "QUEUED",
         updatedAt: new Date().toISOString(),
         gpuType: accelerator,
-        gpuCount: accelerator.includes("T4") ? 2 : 1,
+        gpuCount: accelerator?.includes("T4") ? 2 : accelerator ? 1 : 0,
         providerMetadata: {
           workDir,
           outputDir,
           kernelSlug: slug,
-          requestedAccelerator: accelerator,
+          requestedAccelerator: accelerator ?? "CPU",
         },
       },
       reconciliationRequired: false,
