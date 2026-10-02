@@ -5,7 +5,14 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { Mission, MissionCompletionResult, MissionScope } from "../contracts/MissionContracts";
+import type {
+  Mission,
+  MissionCompletionResult,
+  MissionScope,
+  MissionTask,
+  MissionTaskWorkEvent,
+  MissionTaskWorkState,
+} from "../contracts/MissionContracts";
 import type { ICaseRepository, IMissionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
 import { InMemoryMissionRepository } from "../database/InMemoryDatabase";
 import type { DurableEventBus } from "../events/DurableEventBus";
@@ -478,6 +485,170 @@ export class MissionManager {
 
     this.activeMissions.set(missionId, updated);
     return structuredClone(updated);
+  }
+
+  async createMissionTask(
+    missionId: string,
+    input: Omit<MissionTask, "missionId" | "status" | "retryCount" | "workEvents"> & {
+      status?: MissionTask["status"];
+      retryCount?: number;
+      workState?: MissionTaskWorkState;
+      workEvents?: MissionTaskWorkEvent[];
+    },
+    actorId = "overseer",
+  ): Promise<MissionTask> {
+    let created: MissionTask | null = null;
+    const updatedMission = await this.concurrencyController.executeAtomicUpdate(missionId, async (mission) => {
+      mission.tasks = mission.tasks ? [...mission.tasks] : [];
+
+      const existing = mission.tasks.find(
+        (task) =>
+          task.taskId === input.taskId ||
+          (input.idempotencyKey && task.idempotencyKey === input.idempotencyKey),
+      );
+      if (existing) {
+        created = structuredClone(existing);
+        return;
+      }
+
+      const dependencies = [...(input.dependencyTaskIds || [])];
+      const initialState: MissionTaskWorkState =
+        input.workState ||
+        (dependencies.length === 0 ? "READY" : "TODO");
+      const now = new Date().toISOString();
+      const task: MissionTask = {
+        ...(input as MissionTask),
+        missionId,
+        status: input.status || this.legacyStatusForWorkState(initialState),
+        retryCount: input.retryCount || 0,
+        workState: initialState,
+        dependencyTaskIds: dependencies,
+        circuitState: input.circuitState || "CLOSED",
+        failureStreak: input.failureStreak || 0,
+        attempts: input.attempts ? structuredClone(input.attempts) : [],
+        workEvents: input.workEvents ? structuredClone(input.workEvents) : [],
+      };
+
+      const event: MissionTaskWorkEvent = {
+        eventId: `workevt_${randomUUID().replace(/-/g, "").slice(0, 14)}`,
+        taskId: task.taskId,
+        missionId,
+        type: "CREATED",
+        actorId,
+        timestamp: now,
+        summary: `Task created: ${task.name}`,
+        metadata: { workState: initialState, dependencies },
+      };
+      task.workEvents = [...(task.workEvents || []), event].slice(-100);
+
+      mission.tasks.push(task);
+      mission.progress.totalTasks = mission.tasks.length;
+      mission.updatedAt = now;
+      mission.eventHistory.push({
+        timestamp: now,
+        eventType: "TASK_CREATED",
+        message: `Task ${task.taskId} created for mission ${missionId}`,
+      });
+      created = structuredClone(task);
+    });
+
+    this.activeMissions.set(missionId, updatedMission);
+    if (!created) throw new Error(`Failed to create task for mission ${missionId}`);
+    await this.publishTaskWorkEvent(created.workEvents?.[created.workEvents.length - 1]);
+    return structuredClone(created);
+  }
+
+  async updateMissionTask(
+    missionId: string,
+    taskId: string,
+    updater: (task: MissionTask, mission: Mission) => void | Promise<void>,
+  ): Promise<MissionTask> {
+    let updatedTask: MissionTask | null = null;
+    let emittedEvent: MissionTaskWorkEvent | undefined;
+
+    const updatedMission = await this.concurrencyController.executeAtomicUpdate(missionId, async (mission) => {
+      mission.tasks = mission.tasks ? [...mission.tasks] : [];
+      const index = mission.tasks.findIndex((task) => task.taskId === taskId);
+      if (index < 0) throw new MissionNotFoundError(`Task ${taskId} in mission ${missionId}`);
+
+      const task = structuredClone(mission.tasks[index]);
+      await updater(task, mission);
+
+      const now = new Date().toISOString();
+      task.status = this.legacyStatusForWorkState(task.workState || this.workStateFromLegacyStatus(task.status));
+      task.updatedAt = now as never;
+
+      mission.tasks[index] = task;
+      mission.updatedAt = now;
+      updatedTask = structuredClone(task);
+
+      if (task.workEvents && task.workEvents.length > 0) {
+        emittedEvent = task.workEvents[task.workEvents.length - 1];
+      }
+    });
+
+    this.activeMissions.set(missionId, updatedMission);
+    if (!updatedTask) throw new Error(`Task ${taskId} update failed`);
+    if (emittedEvent) await this.publishTaskWorkEvent(emittedEvent);
+    return structuredClone(updatedTask);
+  }
+
+  async getMissionTask(missionId: string, taskId: string): Promise<MissionTask | null> {
+    const mission = await this.getMission(missionId);
+    const task = mission?.tasks?.find((item) => item.taskId === taskId);
+    return task ? structuredClone(task) : null;
+  }
+
+  async getMissionTasks(missionId: string): Promise<MissionTask[]> {
+    const mission = await this.getMission(missionId);
+    return structuredClone(mission?.tasks || []);
+  }
+
+  private workStateFromLegacyStatus(status: MissionTask["status"]): MissionTaskWorkState {
+    switch (status) {
+      case "RUNNING": return "RUNNING";
+      case "COMPLETED": return "DONE";
+      case "FAILED": return "FAILED";
+      default: return "TODO";
+    }
+  }
+
+  private legacyStatusForWorkState(state: MissionTaskWorkState): MissionTask["status"] {
+    switch (state) {
+      case "RUNNING": return "RUNNING";
+      case "DONE": return "COMPLETED";
+      case "FAILED": return "FAILED";
+      case "ARCHIVED": return "COMPLETED";
+      default: return "PENDING";
+    }
+  }
+
+  private async publishTaskWorkEvent(event?: MissionTaskWorkEvent): Promise<void> {
+    if (!event || !this.eventBus) return;
+    const topicByType: Record<MissionTaskWorkEvent["type"], string> = {
+      CREATED: "TASK_CREATED",
+      READY: "TASK_READY",
+      STARTED: "TASK_STARTED",
+      HEARTBEAT: "TASK_HEARTBEAT",
+      BLOCKED: "TASK_BLOCKED",
+      UNBLOCKED: "TASK_UNBLOCKED",
+      REVIEW_REQUESTED: "TASK_REVIEW_REQUESTED",
+      CHANGES_REQUESTED: "TASK_CHANGES_REQUESTED",
+      COMPLETED: "TASK_COMPLETED",
+      FAILED: "TASK_FAILED",
+      RETRY_SCHEDULED: "TASK_RETRYING",
+      RECLAIMED: "TASK_RECLAIMED",
+      ARCHIVED: "TASK_ARCHIVED",
+    };
+    await this.eventBus.publish(topicByType[event.type] as any, {
+      ...event,
+      taskId: event.taskId,
+      missionId: event.missionId,
+    }, {
+      source: "mission_work_manager",
+      correlationId: `mission:${event.missionId}:task:${event.taskId}`,
+      idempotencyKey: event.eventId,
+    });
   }
 
   async updateProgress(
