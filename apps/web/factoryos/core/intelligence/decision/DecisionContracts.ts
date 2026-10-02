@@ -165,6 +165,7 @@ export interface DecisionBatchResult {
     | "JEV_SHADOW"
     | "HEURISTIC_SHADOW"
     | "CLM_SHADOW"
+    | "GLIDE_SHADOW"
     | "HYBRID";
   readonly totalLatencyMs: number;
   readonly minConfidence: number;
