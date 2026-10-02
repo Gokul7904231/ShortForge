@@ -43,4 +43,4 @@ jobs:
         run: npm run factoryos:typecheck
 
       - name: Compute and sandbox tests
-        run: npx vitest run factoryos/tests/sandbox-fabric.test.ts factoryos/tests/compute-connection-hub.test.ts factoryos/tests/glide-compute-router-mode.test.ts --config vitest.config.ts
+        run: npx vitest run factoryos/tests/sandbox-fabric.test.ts factoryos/tests/compute-connection-hub.test.ts factoryos/tests/compute-pool.test.ts factoryos/tests/glide-compute-router-mode.test.ts --config vitest.config.ts
