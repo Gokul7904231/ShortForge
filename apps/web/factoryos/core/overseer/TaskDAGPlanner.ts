@@ -139,6 +139,7 @@ export class TaskDAGExecutor {
           let heartbeatTimer: NodeJS.Timeout | null = null;
           const leaseTtlMs = 60000;
 
+          try {
           if (this.leaseManager) {
             leaseAcquired = await this.leaseManager.acquire(
               node.taskId,
@@ -202,7 +203,6 @@ export class TaskDAGExecutor {
 
           const executor = executors[node.requiredAgentType] || executors["TOOL"] || (async () => ({ status: "OK" }));
 
-          try {
             console.log(
               `[TaskDAGExecutor] run=${dag.goalId} task=${node.taskId} phase=execute-start attempt=${node.attemptCount}`,
             );
