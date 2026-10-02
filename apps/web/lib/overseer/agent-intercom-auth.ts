@@ -4,6 +4,7 @@ import type { AutonomousFactoryController } from "@/factoryos/core/controller/Au
 import type { CommsCapability, CommsPrincipal } from "@/factoryos/core/comms/CommsFabric";
 
 export const MISSION_INTERCOM_CAPABILITIES: readonly CommsCapability[] = [
+  { name: "INTERCOM_MESSAGE", version: "1.0.0", enabled: true, lanes: ["EVENT"], maxPayloadBytes: 32768, maxInflight: 32 },
   { name: "SITUATION_RECORD", version: "1.0.0", enabled: true, lanes: ["EVENT"], maxPayloadBytes: 32768, maxInflight: 32 },
   { name: "COMMAND", version: "1.0.0", enabled: true, lanes: ["CONTROL"], maxPayloadBytes: 32768, maxInflight: 16 },
   { name: "REQUEST_RESPONSE", version: "1.0.0", enabled: true, lanes: ["CONTROL"], maxPayloadBytes: 32768, maxInflight: 16 },
