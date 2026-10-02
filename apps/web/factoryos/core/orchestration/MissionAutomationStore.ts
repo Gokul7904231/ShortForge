@@ -150,6 +150,7 @@ export class MissionAutomationStore {
     const steps = this.normalizeSteps(input.steps);
     this.validateSteps(steps);
     const now = new Date().toISOString();
+    if (typeof input.name !== "string" || !input.name.trim() || input.name.trim().length > 120) throw new Error("AUTOMATION_RECIPE_NAME_INVALID");
     const recipe: MissionAutomationRecipe = {
       recipeId: "recipe_" + randomUUID().replace(/-/g, "").slice(0, 14),
       workspaceId: this.workspaceId,
@@ -165,7 +166,7 @@ export class MissionAutomationStore {
         priority: safeInt(input.missionDefaults?.priority, 2, 1, 5),
         failurePolicy: input.missionDefaults?.failurePolicy || "REPLAN",
         maxTokens: safeInt(input.missionDefaults?.maxTokens, 50000, 1000, 10000000),
-        maxCostUsd: typeof input.missionDefaults?.maxCostUsd === "number" ? Math.max(0, input.missionDefaults.maxCostUsd) : 0.5,
+        maxCostUsd: typeof input.missionDefaults?.maxCostUsd === "number" && Number.isFinite(input.missionDefaults.maxCostUsd) ? Math.max(0, input.missionDefaults.maxCostUsd) : 0.5,
         maxDurationMs: safeInt(input.missionDefaults?.maxDurationMs, 3600000, 10000, 7 * 24 * 60 * 60 * 1000),
         maxParallelTasks: safeInt(input.missionDefaults?.maxParallelTasks, 5, 1, 100),
       },
