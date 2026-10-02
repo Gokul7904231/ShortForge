@@ -157,13 +157,19 @@ export class ComputeRouter {
   public async planProvider(job: ComputeJob, preferredProviderType?: ProviderType): Promise<RoutingDecision> {
     const candidates: ScheduledProviderCandidate[] = [];
     const rejectionReasons: Record<string, string> = {};
-    const poolCandidateIds = this.workerPool
-      ? new Set((await this.workerPool.getEligibleWorkers(job)).map((candidate) => candidate.worker.providerId))
+    const poolPreflights = this.workerPool
+      ? new Map(
+          (await this.workerPool.getEligibleWorkers(job)).map((candidate) => [
+            candidate.worker.providerId,
+            candidate.preflight,
+          ]),
+        )
       : undefined;
 
     for (const provider of this.providers.values()) {
       // The unified pool is the authoritative worker eligibility boundary.
-      if (poolCandidateIds && !poolCandidateIds.has(provider.id)) {
+      const poolPreflight = poolPreflights?.get(provider.id);
+      if (poolPreflights && !poolPreflight) {
         rejectionReasons[provider.id] = "Worker pool preflight rejected provider.";
         continue;
       }
@@ -181,23 +187,15 @@ export class ComputeRouter {
         continue;
       }
 
-      // 2. Health check
-      const health = await provider.getHealth();
+      // 2/3. Use the pool's just-computed health/capability snapshot. This keeps
+      // planning fast by avoiding a second round of provider probes.
+      const health = poolPreflight?.health || await provider.getHealth();
       if (health.state === "BLOCKED" || health.state === "DRAINING") {
         rejectionReasons[provider.id] = `Provider is ${health.state}: ${health.failureReason || "Unhealthy"}`;
         continue;
       }
 
-      // 3. Capability check
-      const capability = await provider.getCapability();
-
-      // Availability is a hard admission check, not a ranking hint. This prevents
-      // a provider at capacity from being selected and failing only after dispatch.
-      const available = await provider.isAvailable();
-      if (!available) {
-        rejectionReasons[provider.id] = "Provider is not currently available for dispatch.";
-        continue;
-      }
+      const capability = poolPreflight?.capability || await provider.getCapability();
 
       if (!capability.supportedWorkloads.includes(job.workloadType)) {
         rejectionReasons[provider.id] = `Provider does not support workload ${job.workloadType}`;
@@ -418,6 +416,23 @@ export class ComputeRouter {
       }
 
       try {
+        // Last-moment availability check: capacity/health may change between
+        // planning and dispatch. If it does, skip the worker and fail over.
+        if (!(await provider.isAvailable())) {
+          const reason = "WORKER_BECAME_UNAVAILABLE_BEFORE_DISPATCH";
+          if (tel) {
+            tel.failedExecutions++;
+            tel.failureLog.push({
+              timestamp: new Date().toISOString(),
+              jobId: job.jobId,
+              reason,
+            });
+          }
+          failovers.push(`Provider ${provider.id} unavailable before dispatch`);
+          onProgress?.(`Provider ${provider.id} became unavailable before dispatch. Failing over.`);
+          continue;
+        }
+
         const receipt = await provider.executeJob(job, onProgress);
         const renderCompletionWithoutArtifact =
           job.workloadType === "RENDER" &&
