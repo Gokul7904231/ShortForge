@@ -369,10 +369,10 @@ export class RenderFabric {
             repair_id: intent.repairScope.repairId,
             force_scene_ids: [...intent.repairScope.forceSceneIds],
             affected_frame_range: intent.repairScope.affectedFrameRange
-              ? [
-                  intent.repairScope.affectedFrameRange.startFrame,
-                  intent.repairScope.affectedFrameRange.endFrame,
-                ]
+              ? {
+                  start_frame: intent.repairScope.affectedFrameRange.startFrame,
+                  end_frame: intent.repairScope.affectedFrameRange.endFrame,
+                }
               : undefined,
           }
         : undefined,
