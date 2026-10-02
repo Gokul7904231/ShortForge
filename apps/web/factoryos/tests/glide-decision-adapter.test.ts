@@ -153,7 +153,7 @@ describe("GLiDE Decision Adapter", () => {
       headers: new Headers(),
       json: async () => ({
         answers: {
-          worker: {
+          risk: {
             type: "score",
             score: 2,
             expected_level: 1.7,
@@ -234,7 +234,7 @@ describe("GLiDE Decision Adapter", () => {
             worker: {
               type: "choice",
               choice: "daytona",
-              confidence: 0.8,
+              confidence: 0.75,
               probabilities: { daytona: 0.85, runpod: 0.1, vast: 0.05 },
             },
           },
@@ -285,7 +285,23 @@ describe("GLiDE Decision Adapter", () => {
   });
 
   it("fails closed when the provider does not respond before the ShortForge decision budget", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise(() => undefined)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          const signal = init?.signal;
+          if (signal?.aborted) {
+            reject(new DOMException("Aborted", "AbortError"));
+            return;
+          }
+          signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+      ),
+    );
 
     const result = await new GlideDecisionAdapter({
       enabled: true,
