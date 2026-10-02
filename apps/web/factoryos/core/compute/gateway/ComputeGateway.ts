@@ -2,14 +2,13 @@
  * FactoryOS Distributed Compute Gateway
  *
  * Front door for compute dispatch across FactoryOS and ShortForge.
- * Initializes default providers (Local, Kaggle, Lightning, GitHub Actions, Persistent Worker)
+ * Initializes only render-capable workers into the unified ComputePool.
  * and manages job lifecycle, CAS registration, and receipt verification.
  */
 
 import {
   ComputeJob,
   ComputePolicy,
-  ComputeRequirements,
   ExecutionReceipt,
   DEFAULT_COMPUTE_POLICY,
   ProviderType,
@@ -18,10 +17,6 @@ import { ComputeRouter, RoutingDecision, type GlideRoutingMode } from "../router
 import { GlideWorkerSelectionAdvisor } from "../router/GlideWorkerSelectionAdvisor";
 import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionAdapter";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
-import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
-import { LightningComputeProvider } from "../providers/LightningComputeProvider";
-import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
-import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
 import { AmdComputeProvider } from "../providers/AmdComputeProvider";
 import { KaggleNotebookComputeProvider } from "../providers/KaggleNotebookComputeProvider";
 import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeProvider";
