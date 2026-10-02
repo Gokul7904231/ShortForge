@@ -70,7 +70,7 @@ describe("Wave 2 Durable Mission Work Manager", () => {
   });
 
   it("requires review before completing review-gated work and supports rework", async () => {
-    const { work, missionId } = await setup();
+    const { work, leases, missionId } = await setup();
 
     await work.createTask(missionId, {
       taskId: "task_review",
