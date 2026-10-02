@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-LiveProviderActivation-20261002",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/live-provider-activation-20261002",
+  "objective": "Harden the existing live multi-provider render workflow so provider activation checks credentials, render-command configuration, and required server-side SDK availability.",
+  "classification": "extends existing rule",
+  "security": {
+    "required": true,
+    "status": "IMPLEMENTATION_LANDED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "disposition": "LANDED_WITH_LIVE_EVIDENCE_PENDING",
+  "changes": [
+    "Provider-specific live render configuration for AMD, Kaggle, Daytona, and Modal.",
+    "Runtime installation of Daytona and Modal SDKs for the manual live workflow.",
+    "Activation checks fail closed when required credentials or render configuration are absent.",
+    "Preserved RenderFabric -> ComputePool -> ComputeRouter -> provider -> CAS -> F07 boundaries."
+  ],
+  "verificationResults": {
+    "liveProviderPhysicalRender": "PENDING_PROVIDER_CREDENTIALS",
+    "distributedFailoverStress": "PENDING_PROVIDER_CREDENTIALS"
+  }
+}
