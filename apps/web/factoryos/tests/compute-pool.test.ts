@@ -138,6 +138,33 @@ describe("unified compute pool", () => {
     ]);
   });
 
+  it("rejects a worker that is already at capacity", async () => {
+    const pool = new ComputePool();
+    const saturated = provider("saturated", {
+      providerType: "DAYTONA",
+      executionModel: "CLOUD_JOB",
+      maxConcurrency: 1,
+    });
+    saturated.getHealth = async () => ({
+      state: "HEALTHY",
+      lastCheckedAt: new Date().toISOString(),
+      consecutiveFailures: 0,
+      activeJobs: 1,
+      successRate: 1,
+      avgLatencyMs: 10,
+    });
+    saturated.isAvailable = async () => false;
+
+    pool.registerWorker(
+      new ProviderBackedShortForgeWorker(saturated, "SANDBOX"),
+    );
+
+    const eligible = await pool.getEligibleWorkers(renderJob());
+    expect(eligible).toHaveLength(0);
+    const snapshot = await pool.snapshot(renderJob());
+    expect(snapshot[0]?.reasons).toContain("worker-not-currently-available");
+  });
+
   it("hard eligibility rejects a worker before advisory selection", async () => {
     const pool = new ComputePool();
     pool.registerWorker(
