@@ -383,6 +383,12 @@ export class AgentIntercomStore {
     if (objective.length > 4000) throw new Error("DELEGATION_OBJECTIVE_TOO_LARGE");
     await this.assertAgentAvailable(auth.principal);
     await this.assertAgentAvailable(input.target);
+    if (input.requiredCapability && input.target.principalId.startsWith("agent_")) {
+      const targetProfile = await this.workforce?.getExecutionProfile(input.target.principalId);
+      if (!targetProfile || !targetProfile.allowedCapabilities.includes(input.requiredCapability)) {
+        throw new Error("DELEGATION_CAPABILITY_UNAVAILABLE");
+      }
+    }
 
     const now = new Date();
     const delegationId = `delegation_${randomUUID().replace(/-/g, "").slice(0, 14)}`;
