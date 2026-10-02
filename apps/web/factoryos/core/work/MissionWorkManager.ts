@@ -123,7 +123,6 @@ export class MissionWorkManager {
           task.workState = "RUNNING";
           task.assignedAt = now;
           task.lastHeartbeatAt = now;
-          if (payload?.assignedAgentId) task.ownerAgent = String(payload.assignedAgentId);
           const attempts = [...(task.attempts || [])];
           if (!attempts.some((attempt) => attempt.attempt === incomingAttempt)) {
             attempts.push({
