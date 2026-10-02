@@ -48,6 +48,7 @@ export interface SandboxCredentialValidation {
   checkedAt: string;
   evidence: string[];
   errorCode?: string;
+  errorMessage?: string;
 }
 
 export interface SandboxProvisionRequest {
