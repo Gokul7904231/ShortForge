@@ -177,11 +177,24 @@ class RenderIntent:
         rs = data.get("repair_scope")
         if isinstance(rs, dict) and rs.get("mode") == "SURGICAL_SCENE":
             raw_range = rs.get("affected_frame_range")
+            if isinstance(raw_range, dict):
+                range_start = raw_range.get("start_frame")
+                range_end = raw_range.get("end_frame")
+                normalized_range = (
+                    (int(range_start), int(range_end))
+                    if isinstance(range_start, (int, float)) and isinstance(range_end, (int, float))
+                    else None
+                )
+            elif isinstance(raw_range, list) and len(raw_range) == 2:
+                normalized_range = tuple(int(v) for v in raw_range)
+            else:
+                normalized_range = None
+
             repair_scope = SurgicalRenderScope(
                 mode="SURGICAL_SCENE",
                 repair_id=str(rs.get("repair_id", "")),
                 force_scene_ids=[str(v) for v in rs.get("force_scene_ids", [])],
-                affected_frame_range=tuple(raw_range) if isinstance(raw_range, list) and len(raw_range) == 2 else None,
+                affected_frame_range=normalized_range,
             )
 
         return cls(
