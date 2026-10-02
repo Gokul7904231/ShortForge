@@ -154,6 +154,20 @@ export interface RenderAdmissionRecord {
   capabilitySnapshot: ProviderCapability;
   healthSnapshot: ProviderHealth;
   evaluatedAt: string;
+  /** Optional GLiDE advisory record. Never grants authority or changes F07 truth. */
+  glideDecision?: {
+    mode: "SHADOW" | "CANARY";
+    modelRef: string;
+    decisionBatchId: string;
+    selectedProviderId?: string;
+    deterministicProviderId: string;
+    selectedConfidence: number;
+    selectedProbability?: number;
+    candidateProviderIds: string[];
+    latencyMs: number;
+    status: "ADVISED" | "UNRESOLVED";
+    reason: string;
+  };
 }
 
 export interface ExecutionReceipt {

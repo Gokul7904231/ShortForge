@@ -5,7 +5,7 @@
  * deterministic resolution, shadow-mode Jev comparison, and DecisionEngine batching.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { DecisionEngine } from "../core/intelligence/decision/DecisionEngine";
 import { DeterministicDecisionAdapter } from "../core/intelligence/decision/DeterministicDecisionAdapter";
 import { TypeSafeJevAdapter } from "../core/intelligence/decision/TypeSafeJevAdapter";
@@ -19,6 +19,10 @@ import {
 describe("Typed Decision Fabric Suite", () => {
   beforeEach(() => {
     // Fresh state before each test
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("1. DeterministicDecisionAdapter resolves known facts with 1.0 confidence and 0 tokens", async () => {
@@ -222,5 +226,79 @@ describe("Typed Decision Fabric Suite", () => {
     // Low confidence triggers escalation
     expect(result.minConfidence).toBeLessThan(0.75);
     expect(result.shouldEscalate).toBe(true);
+  });
+
+  it("6. DecisionEngine uses GLiDE as the fast tier after deterministic resolution", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({
+          model: "glide",
+          answers: {
+            executionMode: {
+              type: "choice",
+              choice: "REFLEX",
+              confidence: 0.75,
+              probabilities: {
+                REFLEX: 0.85,
+                DELIBERATE: 0.10,
+                DEEP: 0.05,
+              },
+            },
+          },
+        }),
+        text: async () => "",
+      }),
+    );
+
+    const engine = new DecisionEngine({
+      enableShadowJev: false,
+      enableDeterministicFirst: true,
+      enableGlideFastPath: true,
+      enableShadowGlide: false,
+      glide: {
+        enabled: true,
+        apiKey: "test-key",
+        maxRetries: 0,
+      },
+    });
+
+    const request: DecisionBatchRequest = {
+      batchId: "batch_glide_fast_01",
+      questions: [
+        {
+          id: "executionMode",
+          type: "CHOICE",
+          question: "Which execution mode should be used?",
+          options: ["REFLEX", "DELIBERATE", "DEEP"],
+        },
+      ],
+      sharedContext: {
+        requestedMode: "unknown-to-deterministic-layer",
+        renderDeadlineSeconds: 30,
+        workersAvailable: 4,
+      },
+    };
+
+    const result = await engine.evaluateBatch(request);
+
+    expect(result.adapterUsed).toBe("GLIDE");
+    expect(result.status).toBe("VALID");
+    expect(result.shouldEscalate).toBe(false);
+    expect(result.minConfidence).toBeCloseTo(0.75, 5);
+
+    const answer = result.answersById.executionMode;
+    expect(answer.type).toBe("CHOICE");
+    if (answer.type === "CHOICE") {
+      expect(answer.selected).toBe("REFLEX");
+      expect(answer.uncertainty?.probabilitySemantics).toBe(
+        "CANDIDATE_RELATIVE",
+      );
+    }
+
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

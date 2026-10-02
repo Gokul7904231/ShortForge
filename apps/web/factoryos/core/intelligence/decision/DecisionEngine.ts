@@ -1,7 +1,7 @@
 /**
  * ShortForge / FactoryOS — Decision Engine
  *
- * Coordinates typed decision evaluation across Deterministic, LLM, and Shadow Jev adapters.
+ * Coordinates deterministic, GLiDE fast-decision, LLM, and shadow decision adapters.
  * Enforces Ponytail economy (deterministic first), shadow learning, and durable ledgering.
  */
 
@@ -15,6 +15,7 @@ import { DeterministicDecisionAdapter } from "./DeterministicDecisionAdapter";
 import { TypeSafeJevAdapter } from "./TypeSafeJevAdapter";
 import { LLMDecisionAdapter } from "./LLMDecisionAdapter";
 import { CLMDecisionAdapter } from "./CLMDecisionAdapter";
+import { GlideDecisionAdapter, type GlideDecisionAdapterConfig } from "./GlideDecisionAdapter";
 import { ShadowDiffRecord } from "./TypeSafeJevAdapter";
 import { DecisionLedger } from "./DecisionLedger";
 
@@ -22,6 +23,11 @@ export interface DecisionEngineConfig {
   enableShadowJev?: boolean;
   /** Opt-in only: CLM remains shadow-only and never changes the primary path. */
   enableShadowClm?: boolean;
+  /** Optional Fast Decision tier: deterministic -> GLiDE -> deeper LLM/Ascalon when uncertain. */
+  enableGlideFastPath?: boolean;
+  /** Optional pure shadow comparison; never affects the primary decision. */
+  enableShadowGlide?: boolean;
+  glide?: Partial<GlideDecisionAdapterConfig>;
   enableDeterministicFirst?: boolean;
   escalationThreshold?: number; // Default 0.70
 }
@@ -31,6 +37,7 @@ export class DecisionEngine {
   private jevShadowAdapter: TypeSafeJevAdapter;
   private llmAdapter: LLMDecisionAdapter;
   private clmShadowAdapter: CLMDecisionAdapter;
+  private glideShadowAdapter: GlideDecisionAdapter;
   private ledger: DecisionLedger;
   private config: Required<DecisionEngineConfig>;
 
@@ -39,11 +46,15 @@ export class DecisionEngine {
     this.jevShadowAdapter = new TypeSafeJevAdapter();
     this.llmAdapter = new LLMDecisionAdapter();
     this.clmShadowAdapter = new CLMDecisionAdapter();
+    this.glideShadowAdapter = new GlideDecisionAdapter(config.glide ?? {});
     this.ledger = DecisionLedger.getInstance();
 
     this.config = {
       enableShadowJev: config.enableShadowJev ?? true,
       enableShadowClm: config.enableShadowClm ?? false,
+      enableGlideFastPath: config.enableGlideFastPath ?? false,
+      enableShadowGlide: config.enableShadowGlide ?? false,
+      glide: config.glide ?? {},
       enableDeterministicFirst: config.enableDeterministicFirst ?? true,
       escalationThreshold: config.escalationThreshold ?? 0.7,
     };
@@ -52,7 +63,8 @@ export class DecisionEngine {
   public async evaluateBatch(request: DecisionBatchRequest): Promise<DecisionBatchResult> {
     const t0 = Date.now();
     let finalAnswersById: Record<string, DecisionAnswer> = {};
-    let adapterUsed: "DETERMINISTIC" | "LLM" | "HYBRID" = "DETERMINISTIC";
+    let adapterUsed: "DETERMINISTIC" | "GLIDE" | "LLM" | "HYBRID" = "DETERMINISTIC";
+    let usedGlideFastPath = false;
 
     // 1. Deterministic Evaluation First (Ponytail Economy: 0 tokens)
     let unresolvedQuestions = request.questions;
@@ -82,7 +94,41 @@ export class DecisionEngine {
       }
     }
 
-    // 2. LLM Evaluation for remaining unresolved questions
+    // 2. GLiDE Fast Decision tier for unresolved questions.
+    if (unresolvedQuestions.length > 0 && this.config.enableGlideFastPath) {
+      const glideSubRequest: DecisionBatchRequest = {
+        ...request,
+        questions: unresolvedQuestions,
+      };
+
+      try {
+        const glideResult = await this.glideShadowAdapter.evaluateBatch(glideSubRequest);
+        usedGlideFastPath = glideResult.status === "VALID";
+        const acceptedQuestions: typeof unresolvedQuestions = [];
+
+        for (const q of unresolvedQuestions) {
+          const ans = glideResult.answersById[q.id];
+          if (ans && ans.status === "VALID" && !glideResult.shouldEscalate) {
+            finalAnswersById[q.id] = ans;
+          } else {
+            acceptedQuestions.push(q);
+          }
+        }
+
+        unresolvedQuestions = acceptedQuestions;
+
+        if (unresolvedQuestions.length === 0) {
+          adapterUsed = adapterUsed === "HYBRID" ? "HYBRID" : "GLIDE";
+        } else if (adapterUsed !== "HYBRID" && Object.keys(finalAnswersById).length > 0) {
+          adapterUsed = "HYBRID";
+        }
+      } catch (err) {
+        // GLiDE is a speed optimization. Never let its outage break the deeper fallback.
+        console.warn("[DecisionEngine] GLiDE fast path failed; escalating:", err);
+      }
+    }
+
+    // 3. LLM Evaluation for remaining unresolved questions
     if (unresolvedQuestions.length > 0) {
       const llmSubRequest: DecisionBatchRequest = {
         ...request,
@@ -126,11 +172,12 @@ export class DecisionEngine {
         adapterType: adapterUsed,
         implementationVersion: "2.0.0",
         isProductionAuthority: true,
-        isTrainingEligible: !hasUnresolved,
+        // GLiDE fast-path outputs are not training-eligible until tied to verified outcomes.
+        isTrainingEligible: !hasUnresolved && !usedGlideFastPath,
       },
     };
 
-    // 3. Shadow Jev Evaluation in parallel (Safe learning loop)
+    // 4. Shadow Jev Evaluation in parallel (Safe learning loop)
     let shadowDiffs: any[] | undefined;
     if (this.config.enableShadowJev) {
       try {
@@ -147,7 +194,7 @@ export class DecisionEngine {
       }
     }
 
-    // 4. Optional CLM shadow comparison. Disabled by default and never authoritative.
+    // 5. Optional CLM shadow comparison. Disabled by default and never authoritative.
     if (this.config.enableShadowClm) {
       try {
         const clmResult = await this.clmShadowAdapter.evaluateBatch(request);
@@ -158,7 +205,18 @@ export class DecisionEngine {
       }
     }
 
-    // 5. Record to Durable Decision Ledger
+    // 6. Optional GLiDE shadow comparison. GLiDE must never affect the primary result here.
+    if (this.config.enableShadowGlide) {
+      try {
+        const glideResult = await this.glideShadowAdapter.evaluateBatch(request);
+        const glideDiffs = this.buildShadowDiffs(finalResult, glideResult);
+        shadowDiffs = [...(shadowDiffs ?? []), ...glideDiffs];
+      } catch (err) {
+        console.warn("[DecisionEngine] GLiDE shadow evaluation failed non-fatally:", err);
+      }
+    }
+
+    // 7. Record to Durable Decision Ledger
     this.ledger.recordTransaction(finalResult, {
       taskId: request.taskId,
       missionId: request.missionId,
@@ -178,6 +236,10 @@ export class DecisionEngine {
 
   public getClmShadowAdapter(): CLMDecisionAdapter {
     return this.clmShadowAdapter;
+  }
+
+  public getGlideShadowAdapter(): GlideDecisionAdapter {
+    return this.glideShadowAdapter;
   }
 
   private buildShadowDiffs(primary: DecisionBatchResult, shadow: DecisionBatchResult): ShadowDiffRecord[] {

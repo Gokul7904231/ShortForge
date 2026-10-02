@@ -40,7 +40,7 @@ Current capability boundary:
 - plans safe read-only probes;
 - rejects unauthorized mutating probes;
 - enforces bounded cognition/probe budgets;
-- routes deterministic vs micro vs deep cognition;
+- routes deterministic vs fast/micro vs deep cognition;
 - builds a fingerprinted `EpistemicContext`;
 - produces a shadow/advisory Ascalon handoff;
 - supports trigger suppression, hypothesis updates, cache identity, and tamper-evident in-memory ledgering.
@@ -92,7 +92,19 @@ The missing architectural question is:
 
 AER fills that gap.
 
-### 2.1 AER is not another LLM
+### 2.1 ### 2.3 Fast Decision Core — GLiDE
+
+ShortForge now has an executable GLiDE Fast Decision Core adapter and worker-selection advisor. It sits after deterministic eligibility and before deeper cognition.
+
+Canonical fast path:
+
+`deterministic hard gates -> GLiDE fast decision -> deep Ascalon/LLM when unresolved`
+
+For compute selection, GLiDE sees only the already-eligible candidate set and receives measured/estimated state such as health, active load, capability, historical success rate, startup estimate, transfer estimate, and deadline. It cannot grant capability, create leases, change fencing, dispatch by itself, or certify F07.
+
+GLiDE is configured as OFF / SHADOW / CANARY for worker routing. SHADOW is non-blocking so it cannot add render latency. CANARY is the only mode that may reorder an already-eligible candidate list, and it remains gated by confidence and later ShortForge calibration evidence.
+
+AER is not another LLM
 
 AER is a runtime/orchestration concept composed of:
 

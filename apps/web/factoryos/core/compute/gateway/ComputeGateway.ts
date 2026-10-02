@@ -14,7 +14,9 @@ import {
   DEFAULT_COMPUTE_POLICY,
   ProviderType,
 } from "../contracts/ComputeContracts";
-import { ComputeRouter, RoutingDecision } from "../router/ComputeRouter";
+import { ComputeRouter, RoutingDecision, type GlideRoutingMode } from "../router/ComputeRouter";
+import { GlideWorkerSelectionAdvisor } from "../router/GlideWorkerSelectionAdvisor";
+import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionAdapter";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
 import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
@@ -29,7 +31,26 @@ export class ComputeGateway {
   private cas: ContentAddressedStore;
 
   private constructor(policy: ComputePolicy = DEFAULT_COMPUTE_POLICY) {
-    this.router = new ComputeRouter(policy);
+    const glideMode = this.parseGlideMode(
+      process.env.FASTINO_GLIDE_ROUTING_MODE ?? "OFF",
+    );
+
+    const glideWorkerSelectionAdvisor =
+      glideMode !== "OFF" && process.env.FASTINO_GLIDE_ENABLED === "true"
+        ? new GlideWorkerSelectionAdvisor({
+            adapter: new GlideDecisionAdapter({
+              timeoutMs: this.parseDecisionTimeoutMs(
+                process.env.FASTINO_GLIDE_WORKER_TIMEOUT_MS,
+                750,
+              ),
+            }),
+          })
+        : undefined;
+
+    this.router = new ComputeRouter(policy, {
+      glideWorkerSelectionAdvisor,
+      glideRoutingMode: glideMode,
+    });
     this.cas = ContentAddressedStore.getInstance();
 
     // Register canonical providers
@@ -46,6 +67,17 @@ export class ComputeGateway {
       ComputeGateway.instance = new ComputeGateway(policy);
     }
     return ComputeGateway.instance;
+  }
+
+  private parseGlideMode(value: string): GlideRoutingMode {
+    const normalized = value.trim().toUpperCase();
+    return normalized === "SHADOW" || normalized === "CANARY" ? normalized : "OFF";
+  }
+
+  private parseDecisionTimeoutMs(value: string | undefined, fallback: number): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.max(250, Math.min(3000, Math.round(parsed)));
   }
 
   public getRouter(): ComputeRouter {

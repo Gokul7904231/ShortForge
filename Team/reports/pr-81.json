@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR81-GLiDE-Fast-Decision-System",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/glide-decision-system-20261002",
+  "objective": "Add the first GLiDE-backed Fast Decision Core path for evidence-aware compute-worker selection while preserving deterministic ComputeRouter and AER authority boundaries.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Deterministic eligibility and policy remain authoritative for compute admission.",
+      "Model probability and epistemic confidence remain distinct and provenance-tagged.",
+      "AER/Ascalon remains advisory until calibration and promotion gates pass.",
+      "Workers have no ambient authority; routing cannot grant capabilities or leases.",
+      "Physical artifact truth remains owned by verification/F07."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/intelligence/aer.md",
+      ".okf/decisions/ascalon-epistemic-runtime-20260929.md",
+      ".okf/cognitive/performance.md",
+      ".okf/decisions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "No provider secrets are committed. GLiDE credentials are environment-only and the adapter validates the provider origin."
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added GlideDecisionAdapter using Fastino /v1/systemone and X-API-Key authentication.",
+    "Added strict Noul, Choice, and Score response validation with confidence consistency checks.",
+    "Added bounded retry handling for 425, 429, and 503 plus fail-closed timeout behavior.",
+    "Added GlideWorkerSelectionAdvisor for closed-set worker selection using capability, health, load, latency, and deadline evidence.",
+    "Added optional shadow-only GLiDE integration to ComputeRouter.",
+    "Added adapter and worker-advisor contract tests.",
+    "Added the GLiDE .okf decision record and promotion gates."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/decision/GlideDecisionAdapter.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionEngine.ts",
+    "apps/web/factoryos/core/intelligence/decision/DecisionContracts.ts",
+    "apps/web/factoryos/core/compute/router/GlideWorkerSelectionAdvisor.ts",
+    "apps/web/factoryos/core/compute/router/ComputeRouter.ts",
+    "apps/web/factoryos/tests/glide-decision-adapter.test.ts",
+    "apps/web/factoryos/tests/glide-worker-selection-advisor.test.ts",
+    ".okf/decisions/glide-decision-system-20261002.md",
+    ".github/workflows/glide-decision.yml",
+    "apps/web/factoryos/tests/glide-compute-router-mode.test.ts"
+  ],
+  "notes": [
+    "GLiDE is advisory/shadow-only in this change.",
+    "ComputeRouter hard eligibility gates remain authoritative.",
+    "The worker-selection advisor can select only from the deterministic eligible candidate set.",
+    "FASTINO_API_KEY is never included in prompts, state, telemetry, or committed files.",
+    "Authoritative GLiDE routing requires ShortForge-specific replay, calibration, latency, deadline-miss, false-reassurance, failover, and canary evidence."
+  ],
+  "verificationResults": {
+    "glideAdapterUnitTests": "PENDING_CI",
+    "glideWorkerAdvisorTests": "PENDING_CI",
+    "factoryosTypecheck": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "affectedFloorValidation": "PENDING",
+    "liveGlideProviderProbe": "NOT_RUN_NO_CREDENTIALS",
+    "glideDedicatedCI": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass GLiDE adapter and worker-advisor unit tests.",
+    "Pass strict FactoryOS typecheck and repository CI.",
+    "Pass Team Change Gate and affected-floor validations.",
+    "Run an explicit live GLiDE probe only with user-controlled Fastino credentials.",
+    "Keep the production router on deterministic selection until calibration/promotion evidence is sufficient.",
+    "After promotion, canary GLiDE selection against deterministic routing and verify automatic failover under worker/provider failure."
+  ]
+}
