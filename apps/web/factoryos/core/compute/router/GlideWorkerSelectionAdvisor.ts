@@ -122,6 +122,14 @@ export class GlideWorkerSelectionAdvisor {
           transferMbps: candidate.capability.transferBandwidthMbps,
           maxConcurrency: candidate.capability.maxConcurrency,
         },
+        preflight: {
+          canRun: true,
+          isHealthy: candidate.health.state === "HEALTHY",
+          isFree:
+            candidate.health.activeJobs < candidate.capability.maxConcurrency,
+          canFinishByDeadline:
+            candidate.estimatedTotalSeconds <= job.timeoutMs / 1000,
+        },
         estimates: {
           totalSeconds: candidate.estimatedTotalSeconds,
           executionSeconds: candidate.scoreBreakdown.executionEstSeconds,
@@ -166,7 +174,7 @@ export class GlideWorkerSelectionAdvisor {
           id: "selectedWorker",
           type: "CHOICE",
           question:
-            "Which eligible compute worker should execute this render to maximize the chance of finishing within the deadline while balancing current availability, expected completion time, capability fit, and reliability?",
+            "Which eligible compute worker should execute this render, considering the deterministic preflight answers: can it run, is it healthy, is it free, and can it finish by the deadline?",
           options: candidateProviderIds,
         },
         {
