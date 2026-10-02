@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       specialization: item.config.specialization,
     }));
 
-    const workforceAgents = workforce.agents.map((agent) => ({
+    const workforceAgents = workforce.agents.filter((agent) => agent.status === "ACTIVE").map((agent) => ({
       agentId: agent.agentId,
       name: agent.name,
       role: agent.role,
