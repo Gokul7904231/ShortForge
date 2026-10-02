@@ -259,13 +259,17 @@ export class AscalonTrajectoryValidator {
       if (!/^[a-f0-9]{64}$/i.test(String(remaker?.parentArtifactSha256 || ""))) {
         missing.push("parentArtifactSha256");
       }
-      if (!/^[a-f0-9]{64}$/i.test(String(remaker?.timelineDigest || ""))) {
+      if (typeof remaker?.timelineDigest !== "string" || remaker.timelineDigest.length === 0) {
         missing.push("timelineDigest");
       }
-      if (!Array.isArray(remaker?.preservedNodeIds) || remaker.preservedNodeIds.length === 0) {
+      if (!Array.isArray(remaker?.preservedNodeIds)) {
         missing.push("preservedNodeIds");
       }
-      if (!Array.isArray(remaker?.preservedNodeFingerprints) || remaker.preservedNodeFingerprints.length === 0) {
+      if (
+        !remaker?.preservedNodeFingerprints ||
+        typeof remaker.preservedNodeFingerprints !== "object" ||
+        Array.isArray(remaker.preservedNodeFingerprints)
+      ) {
         missing.push("preservedNodeFingerprints");
       }
       if (outcome?.status !== "SUCCESS" || outcome?.verified !== true || !outcome?.verificationEvidenceId) {
