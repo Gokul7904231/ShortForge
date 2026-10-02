@@ -5,6 +5,7 @@
  * the execution kernel; it does not replace MissionManager, FGC, AEF, or F07.
  */
 
+import type { EventTopic } from "../contracts/EventContracts";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -475,7 +476,7 @@ export class MissionCollaborationStore {
     return this.repository.listMessages(room.roomId, limit, threadId);
   }
 
-  private async publish(type: string, payload: Record<string, unknown>): Promise<void> {
+  private async publish(type: EventTopic, payload: Record<string, unknown>): Promise<void> {
     if (!this.eventBus) return;
     await this.eventBus.publish(type, payload, {
       source: "mission_collaboration_store",
