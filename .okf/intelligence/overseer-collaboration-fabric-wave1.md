@@ -90,3 +90,17 @@ The UX direction is informed by Hyperagent Rooms, Slack team conversation patter
 - Hermes demonstrates durable work state, dependencies, review, heartbeat, and event-oriented handoffs.
 
 Wave 1 deliberately implements only the collaboration substrate. Durable Kanban execution controls belong to a later work-management wave.
+
+
+## Wave 1 acceptance checklist
+
+- [x] Mission-scoped shared room exists beside the existing Overseer Command Center.
+- [x] Human membership gates room reads and writes.
+- [x] Named agents have explicit response modes.
+- [x] Shared conversation supports root messages and replies.
+- [x] Messages can link to canonical MissionTask ids.
+- [x] Known @mentions are resolved to room participant ids.
+- [x] Mission Canvas projects canonical mission state and keeps human notes separate.
+- [x] Collaboration state is persisted independently from execution state.
+- [x] Room events are emitted onto the existing DurableEventBus.
+- [x] No room action directly invokes a provider, MCP tool, floor mutation, or F07 decision.
