@@ -11,6 +11,7 @@ import * as path from "node:path";
 import type { Db, Collection } from "mongodb";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type {
+  AgentIntegrationBinding,
   AgentWorkforceCreateInput,
   AgentWorkforceGrantInput,
   AgentWorkforceMember,
@@ -151,6 +152,19 @@ class MongoWorkforceRepository implements WorkforceRepository {
   }
 }
 
+export interface AgentWorkforcePrincipal {
+  readonly principalId: string;
+  readonly workspaceRole?: "VIEWER" | "EDITOR" | "ADMIN" | "OWNER";
+}
+
+export interface AgentIntegrationBindingInput {
+  readonly integrationId: string;
+  readonly provider: string;
+  readonly connectionRef: string;
+  readonly scope: string;
+  readonly status?: AgentIntegrationBinding["status"];
+}
+
 export interface AgentWorkforceStoreOptions {
   readonly workspaceId?: string;
   readonly eventBus?: DurableEventBus;
@@ -230,10 +244,11 @@ export class AgentWorkforceStore {
     agentId: string,
     input: AgentWorkforceUpdateInput,
     principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
   ): Promise<AgentWorkforceProfile> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
-    this.assertCanEdit(agent, principalId);
+    this.assertCanEdit(agent, principalId, workspaceRole);
 
     const updated: AgentWorkforceProfile = {
       ...agent,
@@ -270,10 +285,11 @@ export class AgentWorkforceStore {
     agentId: string,
     input: AgentWorkforceGrantInput,
     principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
   ): Promise<AgentWorkforceProfile> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
-    this.assertCanManageMembers(agent, principalId);
+    this.assertCanManageMembers(agent, principalId, workspaceRole);
     if (!input.principalId.trim()) throw new Error("AGENT_MEMBER_PRINCIPAL_REQUIRED");
 
     const members = [...agent.members].filter((member) => member.principalId !== input.principalId.trim());
@@ -301,10 +317,15 @@ export class AgentWorkforceStore {
     return this.redactForManagers(saved, principalId);
   }
 
-  async revoke(agentId: string, principalIdToRevoke: string, actorId: string): Promise<AgentWorkforceProfile> {
+  async revoke(
+    agentId: string,
+    principalIdToRevoke: string,
+    actorId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): Promise<AgentWorkforceProfile> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
-    this.assertCanManageMembers(agent, actorId);
+    this.assertCanManageMembers(agent, actorId, workspaceRole);
     if (principalIdToRevoke === agent.creatorId) {
       throw new Error("The original agent creator cannot be removed.");
     }
@@ -324,6 +345,57 @@ export class AgentWorkforceStore {
     return this.redactForManagers(saved, actorId);
   }
 
+  async bindIntegration(
+    agentId: string,
+    input: AgentIntegrationBindingInput,
+    principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): Promise<AgentWorkforceProfile> {
+    const agent = await this.repository.get(this.workspaceId, agentId);
+    if (!agent) throw new Error("AGENT_NOT_FOUND");
+    this.assertCanEdit(agent, principalId, workspaceRole);
+    if (!input.integrationId.trim() || !input.provider.trim() || !input.connectionRef.trim() || !input.scope.trim()) {
+      throw new Error("AGENT_INTEGRATION_BINDING_REQUIRED");
+    }
+    const binding: AgentIntegrationBinding = {
+      integrationId: input.integrationId.trim(),
+      provider: input.provider.trim(),
+      connectionRef: input.connectionRef.trim(),
+      scope: input.scope.trim(),
+      status: input.status || "CONNECTED",
+    };
+    const integrations = agent.integrations.filter((item) => item.integrationId !== binding.integrationId);
+    integrations.push(binding);
+    const saved = await this.repository.save({ ...agent, integrations }, agent.version);
+    await this.publish("AGENT_WORKFORCE_INTEGRATION_BOUND", {
+      agentId: saved.agentId,
+      integrationId: binding.integrationId,
+      provider: binding.provider,
+      scope: binding.scope,
+    }, principalId);
+    return this.redactForManagers(saved, principalId);
+  }
+
+  async removeIntegration(
+    agentId: string,
+    integrationId: string,
+    principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): Promise<AgentWorkforceProfile> {
+    const agent = await this.repository.get(this.workspaceId, agentId);
+    if (!agent) throw new Error("AGENT_NOT_FOUND");
+    this.assertCanEdit(agent, principalId, workspaceRole);
+    const saved = await this.repository.save({
+      ...agent,
+      integrations: agent.integrations.filter((item) => item.integrationId !== integrationId),
+    }, agent.version);
+    await this.publish("AGENT_WORKFORCE_INTEGRATION_REMOVED", {
+      agentId: saved.agentId,
+      integrationId,
+    }, principalId);
+    return this.redactForManagers(saved, principalId);
+  }
+
   async canUse(agentId: string, principalId: string): Promise<boolean> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent || agent.status !== "ACTIVE") return false;
@@ -335,19 +407,28 @@ export class AgentWorkforceStore {
     return Boolean(agent && agent.status === "ACTIVE" && this.editableRoles(agent, principalId).length > 0);
   }
 
-  private assertCanEdit(agent: AgentWorkforceProfile, principalId: string): void {
+  private assertCanEdit(
+    agent: AgentWorkforceProfile,
+    principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): void {
+    if (workspaceRole === "OWNER" || workspaceRole === "ADMIN") return;
     const member = agent.members.find((item) => item.active && item.principalId === principalId);
     if (!member || !["OWNER", "EDITOR"].includes(member.role)) {
       throw new Error("AGENT_EDIT_PERMISSION_REQUIRED");
     }
   }
 
-  private assertCanManageMembers(agent: AgentWorkforceProfile, principalId: string): void {
+  private assertCanManageMembers(
+    agent: AgentWorkforceProfile,
+    principalId: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): void {
+    if (workspaceRole === "OWNER" || workspaceRole === "ADMIN") return;
     const member = agent.members.find((item) => item.active && item.principalId === principalId);
     if (!member || !["OWNER", "EDITOR"].includes(member.role)) {
       throw new Error("AGENT_MEMBER_MANAGEMENT_REQUIRED");
     }
-    if (member.role !== "OWNER" && principalId === agent.creatorId) return;
   }
 
   private editableRoles(agent: AgentWorkforceProfile, principalId: string): AgentWorkforceMember[] {
