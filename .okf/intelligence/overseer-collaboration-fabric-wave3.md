@@ -93,3 +93,13 @@ The emotional Overseer face/presence remains untouched as the primary identity s
 - [x] Mission Room access to active workspace agents
 - [x] Dashboard Agent Workforce surface
 - [x] Dedicated Wave 3 tests
+## Final validation evidence
+
+- Wave 3 focused validation run **36974638093** passed.
+- npm ci passed.
+- npm run typecheck passed.
+- Mission collaboration, durable work, and agent workforce suites passed: **3 test files / 23 tests**.
+- Focused Semgrep scan passed: **2 rules / 13 files / 0 findings**.
+- Team Change Gate **36974638061** passed on the validated code head.
+- Selected MCP Fabric retains a known baseline documentation-grep failure for TRANSFORM_VISUAL_ASSET; the same absence exists on main and is not introduced by Wave 3.
+- Strix remains **UNPROVEN** because Docker-backed dynamic testing is unavailable.
