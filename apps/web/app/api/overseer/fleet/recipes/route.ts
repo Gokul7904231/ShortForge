@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFactoryOSController } from "@/lib/overseer/factoryos-runtime";
 import { resolveCollaborationActor } from "@/lib/overseer/collaboration-auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await resolveCollaborationActor(request);
     const controller = await getFactoryOSController();
     return NextResponse.json({ success: true, data: { recipes: await controller.missionAutomationStore.listRecipes(), launches: await controller.missionAutomationStore.listLaunches() } });
   } catch (error: any) {
