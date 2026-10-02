@@ -96,7 +96,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
     return map;
   }, [messages]);
 
-  async function fetchSnapshot(showSpinner = true) {
+  async function fetchSnapshot(showSpinner = true, syncCanvas = true) {
     if (!missionId) {
       setSnapshot(null);
       return;
@@ -117,7 +117,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
           .catch(() => {});
       }
       const currentCanvas = json.data?.room?.canvas;
-      if (currentCanvas) {
+      if (syncCanvas && currentCanvas) {
         setNotes(currentCanvas.workingNotes || "");
         setDecisions(currentCanvas.decisions || []);
         setRisks(currentCanvas.risks || []);
@@ -144,7 +144,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   useEffect(() => {
     if (!room || !missionId) return;
     const interval = setInterval(() => {
-      void fetchSnapshot(false);
+      void fetchSnapshot(false, false);
     }, view === "THREAD" ? 5000 : 7000);
     return () => clearInterval(interval);
   }, [room?.roomId, missionId, view]);
