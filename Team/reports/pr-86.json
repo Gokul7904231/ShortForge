@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "fix/typecheck-mission-collab-event-topic-20261002",
   "objective": "Restore strict EventTopic typing in MissionCollaborationStore publishing boundary.",
-  "classification": "bug fix",
+  "classification": "already exists",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
