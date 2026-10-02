@@ -753,6 +753,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
             </div>
           )}
         </div>
+      )}
     </section>
   );
 };
