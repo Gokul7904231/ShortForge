@@ -223,6 +223,51 @@ export const AgentWorkforcePanel: React.FC<AgentWorkforcePanelProps> = ({ accent
               {isOpen && (
                 <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
                   <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3">
+                    <div className="text-[9px] font-mono font-bold uppercase text-[#667085]">Shared configuration</div>
+                    <div className="mt-2 grid grid-cols-1 gap-2">
+                      <input
+                        defaultValue={agent.description}
+                        onBlur={(e) => {
+                          const value = e.target.value.trim();
+                          if (value !== agent.description) void updateAgent(agent, { description: value });
+                        }}
+                        placeholder="Agent description"
+                        className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          defaultValue={agent.preferredModel?.providerId || ""}
+                          onBlur={(e) => {
+                            const providerId = e.target.value.trim();
+                            const modelId = agent.preferredModel?.modelId || "";
+                            if (providerId && modelId && providerId !== (agent.preferredModel?.providerId || "")) {
+                              void updateAgent(agent, { preferredModel: { providerId, modelId } });
+                            }
+                          }}
+                          placeholder="Preferred provider"
+                          className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]"
+                        />
+                        <input
+                          defaultValue={agent.preferredModel?.modelId || ""}
+                          onBlur={(e) => {
+                            const modelId = e.target.value.trim();
+                            const providerId = agent.preferredModel?.providerId || "";
+                            if (providerId && modelId && modelId !== (agent.preferredModel?.modelId || "")) {
+                              void updateAgent(agent, { preferredModel: { providerId, modelId } });
+                            }
+                          }}
+                          placeholder="Preferred model"
+                          className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 text-[8px] text-[#667085]">
+                      <CheckCircle2 className="w-3 h-3 text-[#19C37D]" />
+                      Prompt, model, capability, and tool changes stay subject to workforce policy.
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3">
                     <div className="flex items-center gap-2 text-[9px] font-mono font-bold uppercase text-[#667085]"><Users className="w-3 h-3" /> Co-managers</div>
                     <div className="mt-2 space-y-1.5">
                       {agent.members.filter((member) => member.active).map((member) => (
