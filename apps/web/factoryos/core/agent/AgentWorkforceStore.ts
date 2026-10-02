@@ -252,6 +252,9 @@ export class AgentWorkforceStore {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) throw new Error("AGENT_NOT_FOUND");
     this.assertCanEdit(agent, principalId, workspaceRole);
+    if (agent.status === "ARCHIVED" && input.status && input.status !== "ARCHIVED") {
+      throw new Error("AGENT_ARCHIVED_TERMINAL");
+    }
     if ((input.allowedCapabilities !== undefined || input.allowedToolIds !== undefined) && !this.isWorkspaceAdmin(workspaceRole)) {
       throw new Error("AGENT_CAPABILITY_MANAGEMENT_REQUIRED");
     }
@@ -284,7 +287,7 @@ export class AgentWorkforceStore {
       preferredModel: saved.preferredModel,
       allowedCapabilities: saved.allowedCapabilities,
     }, principalId);
-    return this.redactForManagers(saved, principalId);
+    return this.redactForManagers(saved, principalId, workspaceRole);
   }
 
   async grant(
@@ -297,6 +300,7 @@ export class AgentWorkforceStore {
     if (!agent) throw new Error("AGENT_NOT_FOUND");
     this.assertCanManageMembers(agent, principalId, workspaceRole);
     if (!input.principalId.trim()) throw new Error("AGENT_MEMBER_PRINCIPAL_REQUIRED");
+    if (!["OWNER", "EDITOR", "USER"].includes(input.role)) throw new Error("AGENT_MEMBER_ROLE_INVALID");
 
     const members = [...agent.members].filter((member) => member.principalId !== input.principalId.trim());
     members.push({
@@ -320,7 +324,7 @@ export class AgentWorkforceStore {
       principalId: input.principalId,
       role: input.role,
     }, principalId);
-    return this.redactForManagers(saved, principalId);
+    return this.redactForManagers(saved, principalId, workspaceRole);
   }
 
   async revoke(
@@ -335,6 +339,9 @@ export class AgentWorkforceStore {
     if (principalIdToRevoke === agent.creatorId) {
       throw new Error("The original agent creator cannot be removed.");
     }
+    if (!agent.members.some((member) => member.active && member.principalId === principalIdToRevoke)) {
+      throw new Error("AGENT_MEMBER_NOT_FOUND");
+    }
     const saved = await this.repository.save(
       {
         ...agent,
@@ -348,7 +355,7 @@ export class AgentWorkforceStore {
       agentId: saved.agentId,
       principalId: principalIdToRevoke,
     }, actorId);
-    return this.redactForManagers(saved, actorId);
+    return this.redactForManagers(saved, actorId, workspaceRole);
   }
 
   async bindIntegration(
@@ -382,7 +389,7 @@ export class AgentWorkforceStore {
       provider: binding.provider,
       scope: binding.scope,
     }, principalId);
-    return this.redactForManagers(saved, principalId);
+    return this.redactForManagers(saved, principalId, workspaceRole);
   }
 
   async removeIntegration(
@@ -402,7 +409,7 @@ export class AgentWorkforceStore {
       agentId: saved.agentId,
       integrationId,
     }, principalId);
-    return this.redactForManagers(saved, principalId);
+    return this.redactForManagers(saved, principalId, workspaceRole);
   }
 
   async canUse(agentId: string, principalId: string): Promise<boolean> {
