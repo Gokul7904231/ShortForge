@@ -104,6 +104,7 @@ describe("ReMaker v2", () => {
           },
           changedNodeIds: [...plan.changedNodeIds],
           preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
           rendererReceiptId: "render_01",
           physicalValidation: { passed: true, decodeSmokePassed: true },
         };
@@ -132,6 +133,8 @@ describe("ReMaker v2", () => {
           },
           changedNodeIds: [...plan.changedNodeIds],
           preservedNodeIds: [],
+          preservedNodeFingerprints: {},
+          physicalValidation: { passed: true },
         };
       },
     };
@@ -141,3 +144,72 @@ describe("ReMaker v2", () => {
     expect(receipt.f07Required).toBe(true);
   });
 });
+
+
+  it("rejects a candidate that fails physical validation", async () => {
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        return {
+          candidateArtifact: {
+            artifactId: "art_bad",
+            sha256: "e".repeat(64),
+            byteLength: 2000,
+            uri: "cas://bad",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          physicalValidation: { passed: false, decodeSmokePassed: false },
+        };
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(
+      request(),
+      port
+    );
+    expect(receipt.termination).toBe("EXECUTION_FAILED");
+  });
+
+  it("rejects a candidate that reports an extra changed node", async () => {
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        return {
+          candidateArtifact: {
+            artifactId: "art_extra",
+            sha256: "f".repeat(64),
+            byteLength: 2000,
+            uri: "cas://extra",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds, "scene_01"],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          physicalValidation: { passed: true },
+        };
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(
+      request(),
+      port
+    );
+    expect(receipt.termination).toBe("EXECUTION_FAILED");
+  });
+
+  it("supports a pure frame-window target", () => {
+    const plan = new ReMakerEngine().plan({
+      ...request(),
+      action: "RENDER_WINDOW",
+      requestedChangeDigest: "1".repeat(64),
+      target: {
+        kind: "RENDER_REGION",
+        frameRangeMs: { startMs: 5100, endMs: 5200 },
+      },
+      allowedActions: ["render affected scenes only"],
+    });
+
+    expect(plan.renderSceneIds).toEqual(["scene_02"]);
+    expect(plan.changedNodeIds).toContain("scene_02");
+  });
