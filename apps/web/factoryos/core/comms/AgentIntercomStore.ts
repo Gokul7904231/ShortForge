@@ -75,7 +75,10 @@ class InMemoryIntercomRepository implements IntercomRepository {
   }
   async getSession(id: string) { return structuredClone(this.sessions.get(id) || null); }
   async listSessions(missionId: string) {
-    return [...this.sessions.values()].filter((x) => x.state.heartbeatIntervalMs >= 0 && x.state.sessionId.includes(missionId)).map(structuredClone);
+    return [...this.sessions.values()].filter((x) => x.missionId === missionId).map((x) => structuredClone(x));
+  }
+  async listSessionsAll() {
+    return [...this.sessions.values()].map((x) => structuredClone(x));
   }
   async saveSession(session: AgentIntercomSession, expectedVersion?: number) {
     const current = this.sessions.get(session.state.sessionId);
@@ -228,7 +231,7 @@ export class AgentIntercomStore {
       capabilities: [...capabilities],
       state: "READY" as const,
     };
-    const saved = await this.repo.saveSession({ hello, state, lastSeenAt: now, version: 1 });
+    const saved = await this.repo.saveSession({ missionId, hello, state, lastSeenAt: now, version: 1 });
     await this.publish("AGENT_INTERCOM_SESSION_READY", {
       sessionId,
       missionId,
@@ -256,7 +259,7 @@ export class AgentIntercomStore {
 
   async degradeStaleSessions(nowMs = Date.now()): Promise<number> {
     let changed = 0;
-    const sessions = await this.repo.listSessionsAll?.() || [];
+    const sessions = await (this.repo as any).listSessionsAll?.() || [];
     for (const session of sessions) {
       const last = Date.parse(session.state.lastHeartbeatAt);
       if (session.state.state === "READY" && nowMs - last > session.state.deadAfterMs) {
@@ -355,17 +358,6 @@ export class AgentIntercomStore {
       version: 1,
     };
     const saved = await this.repo.saveDelegation(delegation);
-    await this.send(auth, {
-      missionId: input.missionId,
-      floorId: input.floorId,
-      target: input.target,
-      text: objective,
-      taskId: input.taskId,
-      correlationId,
-      causationId: input.causationId,
-      priority: "HIGH",
-      ttlMs: input.ttlMs,
-    });
     const messagePayload: AgentIntercomPayload = {
       kind: "DELEGATION_REQUEST",
       text: objective,
