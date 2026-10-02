@@ -86,7 +86,7 @@ jobs:
         run: npm ci
 
       - name: Install live sandbox SDKs
-        run: npm install --no-save @daytona/sdk@0.220.0 modal@0.11.0
+        run: npm install --no-save --no-package-lock @daytona/sdk@0.220.0 modal@0.11.0
 
       - name: FactoryOS strict typecheck
         run: npm run factoryos:typecheck
