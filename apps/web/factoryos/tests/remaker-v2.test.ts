@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { ReMakerEngine } from "../core/remaker/ReMakerEngine";
 import { ReMakerImpactAnalyzer } from "../core/remaker/ReMakerImpactAnalyzer";
@@ -6,6 +7,15 @@ import type {
   ReMakerPlan,
 } from "../core/remaker/ReMakerContracts";
 import type { TimelineIR } from "../core/timeline/TimelineIR";
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+  const record = value as Record<string, unknown>;
+  return "{" + Object.keys(record).sort().map((key) =>
+    JSON.stringify(key) + ":" + stableStringify(record[key])
+  ).join(",") + "}";
+}
 
 function timeline(): TimelineIR {
   return {
@@ -65,6 +75,11 @@ function timeline(): TimelineIR {
 }
 
 function request() {
+  const target = { kind: "VISUAL_ASSET" as const, sceneIds: ["scene_02"] };
+  const targetScopeDigest = createHash("sha256")
+    .update(stableStringify(target))
+    .digest("hex");
+
   return {
     repairId: "repair_01",
     caseId: "case_01",
@@ -88,6 +103,8 @@ function request() {
       grantId: "grant_01",
       leaseId: "lease_01",
       holderId: "remaker:repair_01",
+      action: "REBUILD_SCENE",
+      targetScopeDigest,
       fencingToken: 4,
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       authorizedBy: "guardian_floor06_rendering",
