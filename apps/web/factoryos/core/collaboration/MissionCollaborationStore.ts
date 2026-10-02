@@ -229,6 +229,9 @@ export class MissionCollaborationStore {
   ): Promise<MissionRoom> {
     const existing = await this.repository.getRoom(mission.missionId);
     if (existing) {
+      if (!this.canReadRoom(existing, actor)) {
+        throw new Error("Mission room access denied.");
+      }
       const projected = {
         ...existing,
         canvas: buildCanvas(mission, existing.canvas),
