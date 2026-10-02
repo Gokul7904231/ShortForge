@@ -66,6 +66,7 @@ export interface CommsCapability {
     | "COMMAND"
     | "QUERY"
     | "REQUEST_RESPONSE"
+    | "INTERCOM_MESSAGE"
     | "STREAM"
     | "RELAY"
     | "CANCEL"
