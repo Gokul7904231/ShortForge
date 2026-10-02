@@ -198,14 +198,14 @@ export class AgentWorkforceStore {
         : [];
     return {
       workspaceId: this.workspaceId,
-      agents: visible.map((agent) => this.authorizedView(agent, principal?.principalId) || this.redactForMembers(agent)),
+      agents: visible.map((agent) => this.authorizedView(agent, principal) || this.redactForMembers(agent)),
     };
   }
 
-  async get(agentId: string, principalId?: string): Promise<AgentWorkforceProfile | null> {
+  async get(agentId: string, principal?: AgentWorkforcePrincipal): Promise<AgentWorkforceProfile | null> {
     const agent = await this.repository.get(this.workspaceId, agentId);
     if (!agent) return null;
-    return this.authorizedView(agent, principalId);
+    return this.authorizedView(agent, principal);
   }
 
   async create(input: AgentWorkforceCreateInput, principalId: string): Promise<AgentWorkforceProfile> {
@@ -440,19 +440,25 @@ export class AgentWorkforceStore {
     return agent.members.filter((member) => member.active && member.principalId === principalId && ["OWNER", "EDITOR"].includes(member.role));
   }
 
-  private authorizedView(agent: AgentWorkforceProfile, principalId?: string): AgentWorkforceProfile | null {
-    if (!principalId) return this.redactForMembers(agent);
-    if (!agent.members.some((member) => member.active && member.principalId === principalId)) return null;
-    return this.editableRoles(agent, principalId).length > 0
-      ? this.redactForManagers(agent, principalId)
+  private authorizedView(agent: AgentWorkforceProfile, principal?: AgentWorkforcePrincipal): AgentWorkforceProfile | null {
+    if (!principal?.principalId) return this.redactForMembers(agent);
+    const workspaceAdmin = principal.workspaceRole === "OWNER" || principal.workspaceRole === "ADMIN";
+    if (!workspaceAdmin && !agent.members.some((member) => member.active && member.principalId === principal.principalId)) return null;
+    return workspaceAdmin || this.editableRoles(agent, principal.principalId).length > 0
+      ? this.redactForManagers(agent, principal.principalId, principal.workspaceRole)
       : this.redactForMembers(agent);
   }
 
-  private redactForManagers(agent: AgentWorkforceProfile, principalId?: string): AgentWorkforceProfile {
+  private redactForManagers(
+    agent: AgentWorkforceProfile,
+    principalId?: string,
+    workspaceRole?: AgentWorkforcePrincipal["workspaceRole"],
+  ): AgentWorkforceProfile {
+    const workspaceAdmin = workspaceRole === "OWNER" || workspaceRole === "ADMIN";
     const member = principalId
       ? agent.members.find((item) => item.active && item.principalId === principalId)
       : undefined;
-    if (!member || !["OWNER", "EDITOR"].includes(member.role)) return this.redactForMembers(agent);
+    if (!workspaceAdmin && (!member || !["OWNER", "EDITOR"].includes(member.role))) return this.redactForMembers(agent);
     return structuredClone(agent);
   }
 
