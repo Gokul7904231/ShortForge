@@ -65,6 +65,17 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     description: "Hugging Face Space hosted GPU function.",
   },
   {
+    providerId: "sandbox_pandastack_hosted",
+    providerFamily: "SANDBOX",
+    displayName: "PandaStack Hosted",
+    authMethod: "API_KEY",
+    credentialKeys: ["PANDASTACK_API_KEY"],
+    configurableKeys: [],
+    roles: ["ADMIN"],
+    implemented: true,
+    description: "Hosted sandbox execution backend for admin-only isolated workloads.",
+  },
+  {
     providerId: "sandbox_vibengine",
     providerFamily: "SANDBOX",
     displayName: "Vibengine",
@@ -150,7 +161,7 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     configurableKeys: [],
     roles: ["ADMIN"],
     implemented: false,
-    description: "Container/microVM sandbox backend; admin-only in v1 until the real adapter is wired.",
+    description: "Container/microVM backend; admin-only in v1 until the real adapter is wired.",
   },
   {
     providerId: "api_vast",
