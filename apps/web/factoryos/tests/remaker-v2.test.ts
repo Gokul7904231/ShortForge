@@ -156,6 +156,36 @@ describe("ReMaker v2", () => {
     expect(first.f07Required).toBe(true);
   });
 
+  it("deduplicates completed repairs across engine instances when they share a store", async () => {
+    const { InMemoryReMakerIdempotencyStore } = await import("../core/remaker/ReMakerIdempotencyStore");
+    const store = new InMemoryReMakerIdempotencyStore();
+    let calls = 0;
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        calls += 1;
+        return {
+          candidateArtifact: {
+            artifactId: "art_shared",
+            sha256: "9".repeat(64),
+            byteLength: 2000,
+            uri: "cas://shared",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          physicalValidation: { passed: true },
+        };
+      },
+    };
+
+    const first = await new ReMakerEngine(store).execute(request(), port);
+    const second = await new ReMakerEngine(store).execute(request(), port);
+
+    expect(first.idempotencyKey).toBe(second.idempotencyKey);
+    expect(calls).toBe(1);
+  });
+
   it("fails closed when the execution port violates preservation", async () => {
     const port: ReMakerExecutionPort = {
       async execute(plan: ReMakerPlan) {
