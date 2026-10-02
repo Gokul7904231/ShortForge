@@ -14,7 +14,13 @@ export async function GET(request: NextRequest) {
       principalId: actor.actorId,
       workspaceRole: actor.workspaceRole,
     });
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data,
+      permissions: {
+        canCreate: canCreate(actor.workspaceRole),
+      },
+    });
   } catch (error: any) {
     const status = error?.message === "UNAUTHORIZED" ? 401 : 500;
     return NextResponse.json({ success: false, error: error?.message || "Failed to fetch agent workforce." }, { status });
