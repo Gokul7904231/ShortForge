@@ -544,6 +544,7 @@ export class AutonomousFactoryController {
       await this.overseer.presenceEngine.stop();
     }
     if (this.watchdog) this.watchdog.stop();
+    if (this.missionAutomationStore) this.missionAutomationStore.dispose();
 
     if (this.worldState) await this.worldState.persist();
 
