@@ -548,6 +548,10 @@ export class AgentIntercomStore {
     };
   }
 
+  async listSessions(missionId: string): Promise<AgentIntercomSession[]> {
+    return this.repo.listSessions(missionId);
+  }
+
   async getMessage(intercomId: string): Promise<AgentIntercomMessage | null> { return this.repo.getMessage(intercomId); }
 
   async ack(intercomId: string, consumerId: string): Promise<AgentIntercomMessage> {
