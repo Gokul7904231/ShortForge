@@ -48,7 +48,7 @@ async function runLive(provider: NotebookProviderType) {
     // Kaggle GPU notebook provisioning can spend several minutes in queue
     // before the worker reaches RUNNING. Keep the live proof bounded, but do not
     // turn normal hosted-capacity latency into a false failure.
-    const timeoutMs = Number(process.env.NOTEBOOK_LIVE_TIMEOUT_MS || 300000);
+    const timeoutMs = Number(process.env.NOTEBOOK_LIVE_TIMEOUT_MS || 1200000);
     const outputPath = "/kaggle/working/shortforge-live-notebook-probe.mp4";
     const result = await adapter.execute(
       {
