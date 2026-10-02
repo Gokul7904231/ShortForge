@@ -46,8 +46,12 @@ jobs:
       - name: Install canonical local renderer
         run: python -m pip install -e ../../packages/factoryos-render
 
-      - name: Verify FFmpeg
-        run: ffmpeg -version | head -n 1
+      - name: Verify renderer dependencies
+        shell: bash
+        run: |
+          echo "FACTORYOS_FFMPEG_PATH=$(command -v ffmpeg)" >> "$GITHUB_ENV"
+          python -c "import PIL; print('Pillow', PIL.__version__)"
+          ffmpeg -version | head -n 1
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
