@@ -9,7 +9,6 @@ import {
   Crown,
   Link2,
   Plus,
-  Save,
   Shield,
   Users,
 } from "lucide-react";
@@ -265,7 +264,7 @@ export const AgentWorkforcePanel: React.FC<AgentWorkforcePanelProps> = ({ accent
                       <input value={integration.integrationId} onChange={(e) => setIntegrationDrafts({ ...integrationDrafts, [agent.agentId]: { ...integration, integrationId: e.target.value } })} placeholder="Binding ID" className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]" />
                       <input value={integration.provider} onChange={(e) => setIntegrationDrafts({ ...integrationDrafts, [agent.agentId]: { ...integration, provider: e.target.value } })} placeholder="Provider" className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]" />
                       <input value={integration.connectionRef} onChange={(e) => setIntegrationDrafts({ ...integrationDrafts, [agent.agentId]: { ...integration, connectionRef: e.target.value } })} placeholder="Connection ref" className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]" />
-                      <input value={integration.scope} onChange={(e) => setIntegrationDrafts({ ...integrationDrafts, [agent.agentId]: { ...integrationDrafts, [agent.agentId]: { ...integration, scope: e.target.value } } } as any)} placeholder="Scope" className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]" />
+                      <input value={integration.scope} onChange={(e) => setIntegrationDrafts({ ...integrationDrafts, [agent.agentId]: { ...integration, scope: e.target.value } })} placeholder="Scope" className="rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2 py-1.5 text-[9px] text-[#111827] dark:text-[#F5F7FA]" />
                     </div>
                     <button type="button" onClick={() => void bindIntegration(agent)} className="mt-2 inline-flex items-center gap-1 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] px-2.5 py-1.5 text-[9px] font-mono font-bold text-[#667085]">
                       <Link2 className="w-3 h-3" /> Bind reference
