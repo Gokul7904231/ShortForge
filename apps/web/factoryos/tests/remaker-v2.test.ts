@@ -198,6 +198,20 @@ describe("ReMaker v2", () => {
     expect(receipt.termination).toBe("EXECUTION_FAILED");
   });
 
+  it("detects fencing loss through the execution boundary", async () => {
+    const port: ReMakerExecutionPort = {
+      async assertLease() {
+        return false;
+      },
+      async execute() {
+        throw new Error("should not execute");
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(request(), port);
+    expect(receipt.termination).toBe("FENCING_LOST");
+  });
+
   it("supports a pure frame-window target", () => {
     const plan = new ReMakerEngine().plan({
       ...request(),
