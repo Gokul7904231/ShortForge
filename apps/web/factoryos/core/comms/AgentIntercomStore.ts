@@ -203,12 +203,15 @@ export class AgentIntercomStore {
   async openSession(
     missionId: string,
     local: CommsPrincipal,
-    remote: CommsPrincipal,
-    capabilities: readonly CommsCapability[],
-    schemaVersions: readonly string[] = ["1.0.0"],
+    remoteHello: CommsPeerHello,
+    localCapabilities: readonly CommsCapability[],
+    localSchemaVersions: readonly string[] = ["1.0.0"],
     heartbeatIntervalMs = 15000,
     deadAfterMs = 45000,
   ): Promise<AgentIntercomSession> {
+    const remote = remoteHello.principal;
+    if (remoteHello.protocolVersion !== COMMS_PROTOCOL_VERSION) throw new Error("INTERCOM_PROTOCOL_VERSION_MISMATCH");
+    const negotiated = this.negotiateCapabilities(localCapabilities, localSchemaVersions, remoteHello);
     if (missionId.trim() === "") throw new Error("INTERCOM_MISSION_REQUIRED");
     if (local.principalId === remote.principalId) throw new Error("INTERCOM_SELF_SESSION_FORBIDDEN");
     await this.assertAgentAvailable(local);
@@ -220,7 +223,7 @@ export class AgentIntercomStore {
       protocolVersion: COMMS_PROTOCOL_VERSION,
       principal: local,
       sessionId,
-      capabilities: [...capabilities],
+      capabilities: negotiated.capabilities,
       supportedSchemaVersions: [...schemaVersions],
       sentAt: now,
     };
@@ -233,7 +236,7 @@ export class AgentIntercomStore {
       lastHeartbeatAt: now,
       heartbeatIntervalMs,
       deadAfterMs,
-      capabilities: [...capabilities],
+      capabilities: negotiated.capabilities,
       state: "READY" as const,
     };
     const saved = await this.repo.saveSession({ missionId, hello, state, lastSeenAt: now, version: 1 });
@@ -245,6 +248,32 @@ export class AgentIntercomStore {
       protocolVersion: COMMS_PROTOCOL_VERSION,
     }, sessionId);
     return saved;
+  }
+
+  private negotiateCapabilities(
+    localCapabilities: readonly CommsCapability[],
+    localSchemaVersions: readonly string[],
+    remoteHello: CommsPeerHello,
+  ): { capabilities: CommsCapability[]; schemaVersions: string[] } {
+    const remoteByName = new Map(remoteHello.capabilities.map((capability) => [capability.name, capability]));
+    const capabilities = localCapabilities
+      .filter((local) => local.enabled)
+      .map((local) => {
+        const remote = remoteByName.get(local.name);
+        if (!remote || !remote.enabled || remote.version !== local.version) return null;
+        const lanes = local.lanes.filter((lane) => remote.lanes.includes(lane));
+        if (lanes.length === 0) return null;
+        return {
+          ...local,
+          lanes,
+          maxPayloadBytes: Math.min(local.maxPayloadBytes ?? Number.MAX_SAFE_INTEGER, remote.maxPayloadBytes ?? Number.MAX_SAFE_INTEGER),
+          maxInflight: Math.min(local.maxInflight ?? Number.MAX_SAFE_INTEGER, remote.maxInflight ?? Number.MAX_SAFE_INTEGER),
+        };
+      })
+      .filter((capability): capability is CommsCapability => Boolean(capability));
+    const schemaVersions = localSchemaVersions.filter((version) => remoteHello.supportedSchemaVersions.includes(version));
+    if (capabilities.length === 0 || schemaVersions.length === 0) throw new Error("INTERCOM_CAPABILITY_NEGOTIATION_FAILED");
+    return { capabilities, schemaVersions };
   }
 
   async heartbeat(sessionId: string, principalId: string): Promise<AgentIntercomSession> {
@@ -601,6 +630,7 @@ export class AgentIntercomStore {
       allowedLanes: auth.allowedLanes,
       allowedKinds: kinds,
       allowBroadcast: Boolean(auth.allowBroadcast),
+      allowedTargetPrincipals: auth.allowedTargetPrincipals,
     };
   }
 
