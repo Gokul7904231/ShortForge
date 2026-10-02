@@ -37,7 +37,7 @@
 | **Guardian** | The Level 2 sovereign regulator governing pre-execution capability grants, safety policies, and lease authorizations. Never a floor. | `apps/web/factoryos/core/guardian/GuardianStateMachine.ts` |
 | **Slayer** | The Level 2 enforcement engine responsible for monotonic lease revocation, zombie worker eviction, and GPU lock reclamation. | `apps/web/factoryos/core/slayers/SlayerEngine.ts` |
 | **Healer** | The Level 2 recovery doctor managing circuit breakers, fallback providers, and bounded surgical repairs. | `apps/web/factoryos/core/healers/BoundedRepairEngine.ts` |
-| **ReMaker** | The Level 1 asset reconstruction engine that surgically re-renders desynced audio/subtitles without re-running the entire 8-floor pipeline. | `apps/web/factoryos/core/remaker/` |
+| **ReMaker** | Specialized surgical artifact reconstruction mechanism. It plans the smallest authorized repair, delegates physical execution to RenderFabric/Compute Fabric, preserves unchanged TimelineIR nodes, and requires F07 re-verification. | `apps/web/factoryos/core/remaker/` |
 | **Fencing Token** | A strictly monotonically increasing integer assigned to a capability lease to guarantee out-of-order writes and split-brain executions are rejected. | `apps/web/factoryos/core/compute/contracts/ComputeContracts.ts` |
 
 ---

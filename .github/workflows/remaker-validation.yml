@@ -1,0 +1,65 @@
+name: ReMaker Validation
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/remaker/**"
+      - "apps/web/factoryos/core/verification/youtube/remediation/**"
+      - "apps/web/factoryos/core/fabric/RenderFabric.ts"
+      - "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
+      - "apps/web/factoryos/core/render/LocalRenderAdapter.ts"
+      - "packages/factoryos-render/**"
+      - "apps/web/factoryos/tests/remaker-*.test.ts"
+      - ".okf/**"
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  remaker:
+    name: ReMaker contracts + renderer regression
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: FactoryOS typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+
+      - name: ReMaker contract tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/remaker-v2.test.ts factoryos/tests/remaker-handoff.test.ts factoryos/tests/youtube-remediation.test.ts
+
+      - name: Install FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Install local renderer
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -e packages/factoryos-render
+
+      - name: Python renderer compile check
+        run: python3 -m compileall -q packages/factoryos-render/src
+
+      - name: Physical FFmpeg proof regression
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/real-ffmpeg-proof.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1

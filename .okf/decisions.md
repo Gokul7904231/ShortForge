@@ -1560,3 +1560,23 @@ Implementation:
 - apps/web/factoryos/core/mcp/McpContracts.ts
 - apps/web/factoryos/core/mcp/StdioMcpAdapter.ts
 - apps/web/factoryos/core/mcp/SelectedMcpGateway.ts
+
+
+## ReMaker v2 — 2026-10-02
+
+**Classification:** extends existing repair architecture
+
+**Decision:** ReMaker is the specialized surgical artifact reconstruction mechanism. It must plan the smallest authorized repair and delegate physical media execution to RenderFabric / Compute Fabric.
+
+**Locked boundaries:**
+- Overseer remains factory command authority.
+- Guardian remains capability/lease authorization authority.
+- Healer remains bounded recovery coordinator.
+- Slayer remains emergency lease/worker enforcement.
+- ReMaker cannot self-authorize or publish.
+- F07 remains the independent final verification boundary.
+- Parent artifacts remain immutable.
+- ReMaker uses explicit TimelineIR targets, temporal repair windows, deterministic idempotency, preservation fingerprints, bounded retries and fencing checks.
+- Scene-local physical rebuild is the current production-safe granularity; frame-level codec differential splicing is experimental.
+
+**Promotion evidence:** dedicated ReMaker tests, repository TypeScript CI, F04/F05/F06 physical validation, F07 verification and security/permission checks.

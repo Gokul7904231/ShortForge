@@ -4,6 +4,9 @@
  */
 
 import { ProductionStage, RuleSeverity } from "../policy/YouTubePolicyIR";
+import type { ReMakerAction, ReMakerTargetScope } from "../../../remaker/ReMakerContracts";
+
+export type RemediationOwner = "REMAKER" | "UPSTREAM_FLOOR" | "OVERSEER" | "HUMAN_REVIEW";
 
 export interface RemediationCase {
   readonly caseId: string;
@@ -18,4 +21,10 @@ export interface RemediationCase {
   readonly preserve: readonly string[];
   readonly rerunRequired: readonly string[];
   readonly createdAt: string;
+  /** Explicitly separates surgical media repair from upstream semantic remediation. */
+  readonly remediationOwner?: RemediationOwner;
+  readonly remakerEligible?: boolean;
+  readonly recommendedReMakerAction?: ReMakerAction;
+  /** Required for execution; no implicit whole-project scope is allowed. */
+  readonly targetScope?: ReMakerTargetScope;
 }
