@@ -213,7 +213,7 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-API-Key": this.config.apiKey!,
+              "Authorization": `Bearer ${this.config.apiKey!}`,
             },
             body: JSON.stringify({
               model: this.config.model,
