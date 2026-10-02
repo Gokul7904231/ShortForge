@@ -92,6 +92,8 @@ export class MongoDBClient {
       await this.db.collection("decisions").createIndex({ decisionId: 1 }, { unique: true });
       await this.db.collection("slayer_reputations").createIndex({ agentId: 1 }, { unique: true });
       await this.db.collection("healer_reputations").createIndex({ healerId: 1 }, { unique: true });
+      await this.db.collection("agent_workforce").createIndex({ workspaceId: 1, agentId: 1 }, { unique: true });
+      await this.db.collection("agent_workforce").createIndex({ workspaceId: 1, updatedAt: -1 });
     } catch (e) {
       // Non-fatal if index creation throws in mock/restricted environments
     }
