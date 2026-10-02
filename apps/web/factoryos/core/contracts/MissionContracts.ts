@@ -117,6 +117,60 @@ export interface MissionCompletionResult {
   readonly definitionOfDoneResults?: { item: string; satisfied: boolean }[];
 }
 
+export type MissionTaskWorkState =
+  | "TODO"
+  | "READY"
+  | "RUNNING"
+  | "BLOCKED"
+  | "REVIEW"
+  | "DONE"
+  | "FAILED"
+  | "ARCHIVED";
+
+export type MissionTaskCircuitState = "CLOSED" | "OPEN";
+
+export interface MissionTaskWorkEvent {
+  readonly eventId: string;
+  readonly taskId: string;
+  readonly missionId: string;
+  readonly type:
+    | "CREATED"
+    | "READY"
+    | "STARTED"
+    | "HEARTBEAT"
+    | "BLOCKED"
+    | "UNBLOCKED"
+    | "REVIEW_REQUESTED"
+    | "CHANGES_REQUESTED"
+    | "COMPLETED"
+    | "FAILED"
+    | "RETRY_SCHEDULED"
+    | "RECLAIMED"
+    | "ARCHIVED";
+  readonly actorId: string;
+  readonly timestamp: string;
+  readonly summary?: string;
+  readonly metadata?: Record<string, unknown>;
+}
+
+export interface MissionTaskAttempt {
+  readonly attempt: number;
+  readonly startedAt: string;
+  readonly finishedAt?: string;
+  readonly workerId?: string;
+  readonly outcome?: "RUNNING" | "COMPLETED" | "FAILED" | "RECLAIMED";
+  readonly error?: string;
+}
+
+export interface MissionTaskReview {
+  readonly requestedAt: string;
+  readonly requestedBy: string;
+  readonly reviewerId?: string;
+  readonly summary?: string;
+  readonly changesRequested?: string;
+  readonly resolvedAt?: string;
+}
+
 export interface MissionTask {
   readonly taskId: string;
   readonly missionId: string;
@@ -135,6 +189,21 @@ export interface MissionTask {
   error?: string;
   startedAt?: string;
   completedAt?: string;
+
+  /** Wave 2 durable work lifecycle; legacy status remains for execution compatibility. */
+  workState?: MissionTaskWorkState;
+  dependencyTaskIds?: string[];
+  requiresReview?: boolean;
+  idempotencyKey?: string;
+  blockedReason?: string;
+  assignedAt?: string;
+  lastHeartbeatAt?: string;
+  failureStreak?: number;
+  circuitState?: MissionTaskCircuitState;
+  attempts?: MissionTaskAttempt[];
+  review?: MissionTaskReview;
+  workEvents?: MissionTaskWorkEvent[];
+  archivedAt?: string;
 }
 
 export interface Mission {
