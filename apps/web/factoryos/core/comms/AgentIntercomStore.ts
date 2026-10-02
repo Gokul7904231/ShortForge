@@ -642,7 +642,7 @@ export class AgentIntercomStore {
     return {
       meta: {
         messageId: `msg_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
-        messageKind: command ? "COMMAND" : "EVENT",
+        messageKind: command ? "COMMAND" : "INTERCOM_MESSAGE",
         protocolVersion: COMMS_PROTOCOL_VERSION,
         interaction: command ? "REQUEST_RESPONSE" : "ONE_WAY",
         lane: command ? "CONTROL" : "EVENT",
