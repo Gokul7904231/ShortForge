@@ -86,7 +86,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     }
 
     const studio = request.name;
-    const machine = request.gpuType || ({ ...process.env, ...(credentials || {}) }).LIGHTNING_MACHINE || "T4";
+    const machine = request.gpuType || ({ ...process.env, ...(credentials || {}) }).LIGHTNING_MACHINE || "CPU";
     const python = ({ ...process.env, ...(credentials || {}) }).LIGHTNING_PYTHON || "python3";
 
     const script = [
@@ -167,7 +167,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     const script = [
       "from lightning_sdk import Studio",
       "studio=Studio(" + JSON.stringify(runtime.resourceId) + ")",
-      "result=studio.run(" + JSON.stringify(command) + ")",
+      "result=studio.run_with_exit_code(" + JSON.stringify(command) + ")",
       "print('SHORTFORGE_LIGHTNING_RUN_RESULT')",
       "print(result)",
     ].join(";");
