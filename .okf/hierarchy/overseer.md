@@ -1,14 +1,15 @@
 # Hierarchy: The Overseer (`OverseerControlPlane.ts`)
 
-> **Tier**: Supreme Operational Authority (Level 0)  
+> **Tier**: Factory Supreme Control Plane (Level 1, beneath Human Authority)  
 > **Instance Count**: Exactly ONE per Factory Cluster  
 > **Source Location**: `apps/web/factoryos/core/overseer/OverseerControlPlane.ts` & `apps/web/factoryos/core/overseer/TaskDAGPlanner.ts`
+> **Operational Contract:** [`./overseer-operational-contract.md`](./overseer-operational-contract.md) — current capabilities, activation/stop rules, command/authorization boundaries, handoffs, and required target behavior.
 
 ---
 
 ## 1. Architectural Philosophy: The Sovereign Orchestration Authority
 
-The **Overseer** is the supreme operational control plane of FactoryOS. It is the sole authority responsible for accepting mission dispatches from the `AutonomousScheduler`, synthesizing the execution plan, coordinating floor specialists, managing cluster state, and guaranteeing end-to-end execution integrity.
+The **Overseer** is the supreme operational control plane of FactoryOS under Human Authority. It is the primary factory-wide authority responsible for accepting mission dispatches from the `AutonomousScheduler`, synthesizing the execution plan, coordinating floor specialists, managing cluster state, and guaranteeing end-to-end execution integrity.
 
 Crucially, the Overseer delegates specialized regulatory powers to peer sovereign authorities while retaining overall pipeline command:
 - **Overseer** $\longrightarrow$ Floor orchestration, task DAG scheduling, state lifecycle.
