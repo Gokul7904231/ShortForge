@@ -87,16 +87,31 @@ jobs:
         working-directory: tools/mcp/${{ matrix.provider }}
         run: npm run typecheck
 
-  live:
+  prepare_live:
     if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/notebook-live-mcp-20261002') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
+    runs-on: ubuntu-latest
+    outputs:
+      providers: ${{ steps.matrix.outputs.providers }}
+    steps:
+      - id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PROVIDER: ${{ inputs.provider }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            printf 'providers=["%s"]\n' "$INPUT_PROVIDER" >> "$GITHUB_OUTPUT"
+          else
+            echo 'providers=["KAGGLE","COLAB","LIGHTNING"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  live:
+    needs: prepare_live
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        provider:
-          - KAGGLE
-          - COLAB
-          - LIGHTNING
+        provider: ${{ fromJSON(needs.prepare_live.outputs.providers) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
