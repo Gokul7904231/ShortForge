@@ -18,9 +18,10 @@ import type {
   MissionRoomMessage,
   MissionRoomSnapshot,
 } from "@/factoryos/core/collaboration/MissionCollaborationContracts";
+import type { AgentDelegationRequest } from "@/factoryos/core/comms/AgentIntercomContracts";
 import type { MissionWorkBoardSnapshot } from "@/factoryos/core/work/MissionWorkManager";
 
-type PanelView = "THREAD" | "CANVAS" | "WORK";
+type PanelView = "THREAD" | "CANVAS" | "WORK" | "HANDOFFS";
 
 interface MissionRoomPanelProps {
   missionId: string | null;
@@ -61,6 +62,10 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   const [risks, setRisks] = useState<string[]>([]);
   const [newDecision, setNewDecision] = useState("");
   const [newRisk, setNewRisk] = useState("");
+  const [delegations, setDelegations] = useState<AgentDelegationRequest[]>([]);
+  const [handoffTarget, setHandoffTarget] = useState("");
+  const [handoffObjective, setHandoffObjective] = useState("");
+  const [handoffCapability, setHandoffCapability] = useState("");
   const [availableAgents, setAvailableAgents] = useState<Array<{
     agentId: string;
     name: string;
@@ -113,6 +118,16 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
           .then((workRes) => (workRes.ok ? workRes.json() : null))
           .then((workJson) => {
             if (workJson?.success) setWorkBoard(workJson.data);
+          })
+          .catch(() => {});
+      }
+      if (json.data?.room) {
+        fetch(`/api/overseer/missions/${missionId}/room/intercom`, { cache: "no-store" })
+          .then((intercomRes) => (intercomRes.ok ? intercomRes.json() : null))
+          .then((intercomJson) => {
+            if (intercomJson?.success) {
+              setDelegations(intercomJson.data?.delegations || []);
+            }
           })
           .catch(() => {});
       }
@@ -277,7 +292,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
                     onClick={() => setView(item)}
                     className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-colors ${view === item ? "bg-[#1769E8]/15 text-[#1769E8] border border-[#1769E8]/25" : "text-[#667085] dark:text-[#A8B2C1] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"}`}
                   >
-                    {item === "THREAD" ? "Conversation" : item === "CANVAS" ? "Canvas" : "Work"}
+                    {item === "THREAD" ? "Conversation" : item === "CANVAS" ? "Canvas" : item === "WORK" ? "Work" : "Handoffs"}
                   </button>
                 ))}
                 <button
@@ -510,6 +525,100 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
                 Send
               </button>
             </div>
+          </div>
+        </div>
+      ) : view === "HANDOFFS" ? (
+        <div className="p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-3">
+            <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3">
+              <div className="text-[10px] font-mono font-bold uppercase text-[#667085]">Delegate work</div>
+              <select
+                value={handoffTarget}
+                onChange={(event) => setHandoffTarget(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-2 text-[10px] text-[#111827] dark:text-[#F5F7FA]"
+              >
+                <option value="">Select room agent</option>
+                {agentParticipants
+                  .filter((participant) => participant.active)
+                  .map((participant) => (
+                    <option key={participant.participantId} value={participant.participantId}>
+                      {participant.displayName} · {participant.specialization || "Agent"}
+                    </option>
+                  ))}
+              </select>
+              <input
+                value={handoffCapability}
+                onChange={(event) => setHandoffCapability(event.target.value)}
+                placeholder="Required capability (optional)"
+                className="mt-2 w-full rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-2 text-[10px] text-[#111827] dark:text-[#F5F7FA]"
+              />
+              <textarea
+                value={handoffObjective}
+                onChange={(event) => setHandoffObjective(event.target.value)}
+                rows={5}
+                placeholder="What should this specialist take over?"
+                className="mt-2 w-full rounded-lg border border-black/[0.08] dark:border-white/[0.10] bg-white dark:bg-[#050A12] px-2.5 py-2 text-[10px] text-[#111827] dark:text-[#F5F7FA]"
+              />
+              <button
+                type="button"
+                disabled={!handoffTarget || !handoffObjective.trim()}
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/overseer/missions/${missionId}/room/intercom`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "delegate",
+                        targetPrincipalId: handoffTarget,
+                        targetKind: "WORKER",
+                        objective: handoffObjective,
+                        requiredCapability: handoffCapability || undefined,
+                      }),
+                    });
+                    const json = await res.json();
+                    if (!res.ok || !json.success) throw new Error(json.error || "Unable to create handoff.");
+                    setHandoffObjective("");
+                    setHandoffCapability("");
+                    await fetchSnapshot(false, false);
+                  } catch (err: any) {
+                    setError(err?.message || "Unable to create handoff.");
+                  }
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-mono font-bold text-white disabled:opacity-40"
+                style={{ backgroundColor: accentColor }}
+              >
+                <Workflow className="w-3 h-3" /> Create handoff
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {delegations.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] p-6 text-center">
+                  <Workflow className="mx-auto w-7 h-7 text-[#667085] mb-2" />
+                  <div className="text-xs font-semibold text-[#111827] dark:text-[#F5F7FA]">No handoffs yet</div>
+                  <div className="mt-1 text-[10px] text-[#667085]">Delegations are durable requests with explicit acceptance state.</div>
+                </div>
+              ) : delegations.slice().reverse().map((delegation) => (
+                <div key={delegation.delegationId} className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[10px] font-mono font-bold text-[#111827] dark:text-[#F5F7FA]">
+                      {delegation.source.principalId} → {delegation.target.principalId}
+                    </div>
+                    <span className="text-[9px] font-mono text-[#667085]">{delegation.state}</span>
+                  </div>
+                  <div className="mt-2 text-xs leading-relaxed text-[#111827] dark:text-[#F5F7FA]">{delegation.objective}</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-[8px] font-mono text-[#667085]">
+                    {delegation.taskId && <span className="rounded-full bg-black/[0.03] dark:bg-white/[0.04] px-1.5 py-1">task:{delegation.taskId}</span>}
+                    {delegation.requiredCapability && <span className="rounded-full bg-[#1769E8]/5 px-1.5 py-1 text-[#1769E8]">{delegation.requiredCapability}</span>}
+                    <span className="rounded-full bg-black/[0.03] dark:bg-white/[0.04] px-1.5 py-1">corr:{delegation.correlationId}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3 text-[9px] font-mono text-[#667085]">
+            Handoffs are communication state. Acceptance does not execute work; execution still requires the Mission Work / FGC / AEF path.
           </div>
         </div>
       ) : view === "CANVAS" ? (
