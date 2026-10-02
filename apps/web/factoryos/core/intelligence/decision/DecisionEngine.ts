@@ -9,6 +9,7 @@ import {
   DecisionBatchRequest,
   DecisionBatchResult,
   DecisionAnswer,
+  DecisionQuestion,
   IDecisionAdapter,
 } from "./DecisionContracts";
 import { DeterministicDecisionAdapter } from "./DeterministicDecisionAdapter";
@@ -104,7 +105,7 @@ export class DecisionEngine {
       try {
         const glideResult = await this.glideShadowAdapter.evaluateBatch(glideSubRequest);
         usedGlideFastPath = glideResult.status === "VALID";
-        const acceptedQuestions: DecisionBatchRequest["questions"] = [];
+        const acceptedQuestions: DecisionQuestion[] = [];
 
         for (const q of unresolvedQuestions) {
           const ans = glideResult.answersById[q.id];
