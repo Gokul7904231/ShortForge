@@ -14,10 +14,10 @@ import {
   Workflow,
 } from "lucide-react";
 import type {
-  MissionRoom,
   MissionRoomMessage,
   MissionRoomSnapshot,
 } from "@/factoryos/core/collaboration/MissionCollaborationContracts";
+import type { MissionWorkBoardSnapshot } from "@/factoryos/core/work/MissionWorkManager";
 
 type PanelView = "THREAD" | "CANVAS" | "WORK";
 
@@ -46,6 +46,7 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   accentColor = "#1769E8",
 }) => {
   const [snapshot, setSnapshot] = useState<MissionRoomSnapshot | null>(null);
+  const [workBoard, setWorkBoard] = useState<MissionWorkBoardSnapshot | null>(null);
   const [view, setView] = useState<PanelView>("THREAD");
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -106,6 +107,14 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.error || "Unable to load mission room.");
       setSnapshot(json.data);
+      if (missionId) {
+        fetch(`/api/overseer/missions/${missionId}/work`, { cache: "no-store" })
+          .then((workRes) => (workRes.ok ? workRes.json() : null))
+          .then((workJson) => {
+            if (workJson?.success) setWorkBoard(workJson.data);
+          })
+          .catch(() => {});
+      }
       const currentCanvas = json.data?.room?.canvas;
       if (currentCanvas) {
         setNotes(currentCanvas.workingNotes || "");
@@ -132,10 +141,10 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   }, [missionId]);
 
   useEffect(() => {
-    if (!room || !missionId || view !== "THREAD") return;
+    if (!room || !missionId) return;
     const interval = setInterval(() => {
       void fetchSnapshot(false);
-    }, 5000);
+    }, view === "THREAD" ? 5000 : 7000);
     return () => clearInterval(interval);
   }, [room?.roomId, missionId, view]);
 
@@ -573,38 +582,110 @@ export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
           </div>
         </div>
       ) : (
-        <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(snapshot?.tasks || []).length === 0 ? (
-              <div className="md:col-span-2 rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] p-6 text-center">
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            {(Object.entries(workBoard?.columns || {}) as Array<[string, any[]]>).map(([state, cards]) => (
+              <div key={state} className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] px-2 py-2">
+                <div className="text-[9px] font-mono font-bold uppercase text-[#667085]">{state}</div>
+                <div className="mt-1 text-lg font-bold text-[#111827] dark:text-[#F5F7FA]">{cards.length}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {(workBoard?.tasks || snapshot?.tasks || []).length === 0 ? (
+              <div className="rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] p-6 text-center">
                 <Workflow className="mx-auto w-7 h-7 text-[#667085] mb-2" />
-                <p className="text-xs text-[#667085] dark:text-[#A8B2C1]">No persisted task cards are attached to this mission yet.</p>
+                <p className="text-xs text-[#667085] dark:text-[#A8B2C1]">No durable work items are attached to this mission yet.</p>
               </div>
             ) : (
-              (snapshot?.tasks || []).map((task: any) => (
-                <div key={String(task.taskId)} className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3 bg-black/[0.015] dark:bg-white/[0.02]">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold text-[#111827] dark:text-[#F5F7FA] truncate">{String(task.name || task.taskId)}</span>
-                    <span className={`text-[9px] font-mono font-bold ${statusClass(String(task.status || "PENDING"))}`}>{String(task.status || "PENDING")}</span>
-                  </div>
-                  <div className="mt-2 grid grid-cols-2 gap-2 text-[9px] font-mono text-[#667085]">
-                    <span>Agent: {String(task.ownerAgent || "unassigned")}</span>
-                    <span>Capability: {String(task.capabilityRequired || "—")}</span>
-                    <span>Attempts: {String(task.retryCount ?? 0)} / {String(task.maxRetries ?? 0)}</span>
-                    <span>Output: {String(task.outputArtifactId || "pending")}</span>
-                  </div>
-                  {task.error && (
-                    <div className="mt-2 rounded-lg bg-[#FF5A67]/5 border border-[#FF5A67]/15 px-2 py-1.5 text-[9px] text-[#FF5A67]">
-                      {String(task.error)}
+              (workBoard?.tasks || snapshot?.tasks || []).map((task: any) => {
+                const state = String(task.resolvedWorkState || task.workState || task.status || "TODO");
+                const canReview = state === "RUNNING" && Boolean(task.requiresReview);
+                const canApprove = state === "REVIEW";
+                const canUnblock = state === "BLOCKED";
+                const canArchive = state === "DONE" || state === "FAILED";
+
+                const runAction = async (action: string, extra: Record<string, unknown> = {}) => {
+                  try {
+                    const res = await fetch(`/api/overseer/missions/${missionId}/work`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action, taskId: task.taskId, ...extra }),
+                    });
+                    const json = await res.json();
+                    if (!res.ok || !json.success) throw new Error(json.error || "Work action failed.");
+                    await fetchSnapshot(false);
+                  } catch (err: any) {
+                    setError(err?.message || "Work action failed.");
+                  }
+                };
+
+                return (
+                  <div key={String(task.taskId)} className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] p-3 bg-black/[0.015] dark:bg-white/[0.02]">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Workflow className="w-3.5 h-3.5 text-[#1769E8]" />
+                          <span className="text-xs font-semibold text-[#111827] dark:text-[#F5F7FA] truncate">{String(task.name || task.taskId)}</span>
+                          <span className={`text-[9px] font-mono font-bold ${statusClass(state)}`}>{state}</span>
+                        </div>
+                        <div className="mt-1 text-[9px] font-mono text-[#667085]">
+                          Agent: {String(task.ownerAgent || "unassigned")} · Lane: {String(task.workerLane || task.capabilityRequired || "—")}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {canReview && (
+                          <button type="button" onClick={() => void runAction("request_review", { summary: "Operator requested review from the mission board." })} className="px-2 py-1 rounded-lg bg-[#1769E8]/10 text-[#1769E8] text-[9px] font-mono font-bold">Request review</button>
+                        )}
+                        {canApprove && (
+                          <>
+                            <button type="button" onClick={() => void runAction("complete", { summary: "Review approved by operator." })} className="px-2 py-1 rounded-lg bg-[#19C37D]/10 text-[#137A4D] text-[9px] font-mono font-bold">Approve</button>
+                            <button type="button" onClick={() => void runAction("request_changes", { reason: "Changes requested by operator from the mission board." })} className="px-2 py-1 rounded-lg bg-[#F5B942]/10 text-[#8A6500] text-[9px] font-mono font-bold">Request changes</button>
+                          </>
+                        )}
+                        {canUnblock && (
+                          <button type="button" onClick={() => void runAction("unblock")} className="px-2 py-1 rounded-lg bg-[#1769E8]/10 text-[#1769E8] text-[9px] font-mono font-bold">Unblock</button>
+                        )}
+                        {canArchive && (
+                          <button type="button" onClick={() => void runAction("archive")} className="px-2 py-1 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] text-[#667085] text-[9px] font-mono font-bold">Archive</button>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {task.evidenceId && (
-                    <div className="mt-2 inline-flex items-center gap-1 text-[9px] font-mono text-[#19C37D]">
-                      <CheckCircle2 className="w-3 h-3" /> Evidence linked
+
+                    <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 text-[9px] font-mono text-[#667085]">
+                      <span>Attempts: {String(task.retryCount ?? 0)} / {String(task.maxRetries ?? 0)}</span>
+                      <span>Heartbeat: {task.lastHeartbeatAt ? new Date(task.lastHeartbeatAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                      <span>Circuit: {String(task.circuitState || "CLOSED")}</span>
+                      <span>Lease: {task.lease?.status || "NONE"}</span>
                     </div>
-                  )}
-                </div>
-              ))
+
+                    {(task.dependencies || []).length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {(task.dependencies || []).map((dependency: any) => (
+                          <span key={dependency.taskId} className={`rounded-full border px-2 py-1 text-[9px] font-mono ${dependency.satisfied ? "border-[#19C37D]/20 bg-[#19C37D]/5 text-[#137A4D]" : "border-[#F5B942]/20 bg-[#F5B942]/5 text-[#8A6500]"}`}>
+                            {dependency.satisfied ? "✓" : "○"} {dependency.taskId}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {(task.workEvents || []).length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
+                        <div className="text-[9px] font-mono uppercase text-[#667085]">Recent task activity</div>
+                        <div className="mt-1 space-y-0.5">
+                          {(task.workEvents || []).slice(-3).reverse().map((event: any) => (
+                            <div key={event.eventId} className="text-[9px] text-[#667085]">
+                              <span className="font-mono text-[#1769E8]">{event.type}</span> · {event.summary || "state updated"} · {new Date(event.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
