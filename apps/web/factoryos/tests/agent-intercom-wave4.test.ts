@@ -11,14 +11,14 @@ const messageCapabilities: CommsCapability[] = [
 ];
 
 const human: CommsPrincipal = { principalId: "alice", kind: "HUMAN" };
-const agent: CommsPrincipal = { principalId: "agent_research", kind: "WORKER" };
+const agent: CommsPrincipal = { principalId: "worker_research", kind: "WORKER" };
 const auth: AgentIntercomAuth = {
   principal: human,
   allowedMissionIds: ["mission_1"],
   allowedLanes: ["EVENT", "CONTROL"],
   allowedKinds: ["MESSAGE", "DELEGATION_REQUEST", "DELEGATION_RESPONSE"],
   allowedCapabilities: messageCapabilities,
-  allowedTargetPrincipals: ["agent_research", "bob"],
+  allowedTargetPrincipals: ["worker_research", "bob"],
   allowBroadcast: false,
 };
 
@@ -45,8 +45,8 @@ describe("Wave 4 Agent Intercom & Delegation", () => {
     expect(sent.envelope.meta.lane).toBe("EVENT");
     expect(sent.envelope.meta.messageKind).toBe("EVENT");
 
-    const delivered = await s.deliver(sent.intercomId, "agent_research");
-    const acked = await s.ack(delivered.intercomId, "agent_research");
+    const delivered = await s.deliver(sent.intercomId, "worker_research");
+    const acked = await s.ack(delivered.intercomId, "worker_research");
 
     expect(acked.deliveryState).toBe("ACKED");
 
@@ -84,7 +84,7 @@ describe("Wave 4 Agent Intercom & Delegation", () => {
     });
 
     expect(delegation.state).toBe("REQUESTED");
-    expect(delegation.target.principalId).toBe("agent_research");
+    expect(delegation.target.principalId).toBe("worker_research");
 
     const messages = await s.replay("mission_1");
     const request = messages.items.find((item) => item.envelope.payload.delegationId === delegation.delegationId);
@@ -168,7 +168,7 @@ describe("Wave 4 Agent Intercom & Delegation", () => {
 
     const changed = await s.degradeStaleSessions(Date.now() + 3000);
     expect(changed).toBe(1);
-    const sessions = (await s["repo"].listSessions("mission_1"));
+    const sessions = await s.listSessions("mission_1");
     expect(sessions[0].state.state).toBe("DEGRADED");
   });
 
@@ -182,8 +182,8 @@ describe("Wave 4 Agent Intercom & Delegation", () => {
       maxAttempts: 1,
     });
 
-    const delivered = await s.deliver(sent.intercomId, "agent_research");
-    const terminal = await s.nack(delivered.intercomId, "agent_research", true, "consumer unavailable");
+    const delivered = await s.deliver(sent.intercomId, "worker_research");
+    const terminal = await s.nack(delivered.intercomId, "worker_research", true, "consumer unavailable");
 
     expect(terminal.deliveryState).toBe("DEAD_LETTERED");
   });
