@@ -176,6 +176,12 @@ describe("GLiDE worker selection advisor", () => {
     expect(body.state.candidates).toHaveLength(3);
     expect(body.state.candidates[0].observedHistory.observedSuccessRate).toBeCloseTo(0.9, 5);
     expect(body.state.candidates[0].observedHistory.observedAvgTotalMs).toBe(1390);
+    expect(body.state.candidates[0].preflight).toEqual({
+      canRun: true,
+      isHealthy: true,
+      isFree: true,
+      canFinishByDeadline: true,
+    });
     expect(body.state.candidates.every((item: any) => item.eligible === true)).toBe(true);
     expect(body.state.candidates.map((item: any) => item.providerId)).toEqual([
       "daytona",
