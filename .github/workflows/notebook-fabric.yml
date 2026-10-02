@@ -15,6 +15,9 @@ on:
       - "tools/mcp/colab-notebook-mcp/**"
       - "tools/mcp/lightning-notebook-mcp/**"
       - "tools/mcp/notebook-mcp.example.json"
+  push:
+    branches:
+      - "feat/notebook-live-mcp-20261002"
   workflow_dispatch:
     inputs:
       provider:
@@ -85,8 +88,15 @@ jobs:
         run: npm run typecheck
 
   live:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE' }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/notebook-live-mcp-20261002') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        provider:
+          - KAGGLE
+          - COLAB
+          - LIGHTNING
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -98,13 +108,13 @@ jobs:
         working-directory: apps/web
         run: npm ci
       - name: Install Kaggle CLI
-        if: ${{ inputs.provider == 'KAGGLE' }}
+        if: ${{ matrix.provider == 'KAGGLE' }}
         run: python -m pip install --upgrade kaggle
       - name: Install Lightning SDK
-        if: ${{ inputs.provider == 'LIGHTNING' }}
+        if: ${{ matrix.provider == 'LIGHTNING' }}
         run: python -m pip install --upgrade lightning-sdk
       - name: Install ffmpeg
-        if: ${{ inputs.provider == 'KAGGLE' }}
+        if: ${{ matrix.provider == 'KAGGLE' }}
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install notebook MCP packages
         run: |
@@ -113,15 +123,37 @@ jobs:
           npm install --prefix tools/mcp/lightning-notebook-mcp --no-audit --no-fund
       - name: Export live controls
         env:
-          NOTEBOOK_PROVIDER: ${{ inputs.provider }}
+          NOTEBOOK_PROVIDER: ${{ matrix.provider }}
           NOTEBOOK_LIVE: "1"
-          COLAB_LIVE_PROVISION: ${{ inputs.colab_provision }}
-          LIGHTNING_LIVE_MACHINE: ${{ inputs.lightning_machine }}
+          COLAB_LIVE_PROVISION: ${{ github.event_name == 'push' && '1' || (inputs.colab_provision && '1' || '0') }}
+          LIGHTNING_LIVE_MACHINE: ${{ github.event_name == 'push' && 'CPU' || inputs.lightning_machine }}
         run: |
           echo "NOTEBOOK_PROVIDER=$NOTEBOOK_PROVIDER" >> "$GITHUB_ENV"
           echo "NOTEBOOK_LIVE=$NOTEBOOK_LIVE" >> "$GITHUB_ENV"
           echo "COLAB_LIVE_PROVISION=$COLAB_LIVE_PROVISION" >> "$GITHUB_ENV"
           echo "LIGHTNING_LIVE_MACHINE=$LIGHTNING_LIVE_MACHINE" >> "$GITHUB_ENV"
+      - name: Validate required provider secret names
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
+          LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+        run: |
+          set -euo pipefail
+          case "$NOTEBOOK_PROVIDER" in
+            KAGGLE)
+              test -n "$KAGGLE_USERNAME" || { echo "Missing KAGGLE_USERNAME"; exit 1; }
+              test -n "$KAGGLE_KEY" || { echo "Missing KAGGLE_KEY"; exit 1; }
+              ;;
+            COLAB)
+              test -n "$COLAB_ACCESS_TOKEN" || { echo "Missing COLAB_ACCESS_TOKEN"; exit 1; }
+              ;;
+            LIGHTNING)
+              test -n "$LIGHTNING_USER_ID" || { echo "Missing LIGHTNING_USER_ID"; exit 1; }
+              test -n "$LIGHTNING_API_KEY" || { echo "Missing LIGHTNING_API_KEY"; exit 1; }
+              ;;
+          esac
       - name: Provider live smoke
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
@@ -138,5 +170,5 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
-          NOTEBOOK_MCP_PROVIDER: ${{ inputs.provider }}
+          NOTEBOOK_MCP_PROVIDER: ${{ matrix.provider }}
         run: node apps/web/scripts/verify-notebook-mcps.mjs
