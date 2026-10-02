@@ -44,7 +44,7 @@
   "verificationResults": {
     "teamChangeGate": "PENDING",
     "factoryosTypecheck": "PENDING",
-    "liveWorkflowDryConfiguration": "PENDING",
+    "liveWorkflowActivationContract": "IMPLEMENTED",
     "liveProviderPhysicalRender": "PENDING_PROVIDER_CREDENTIALS",
     "distributedFailoverStress": "PENDING_PROVIDER_CREDENTIALS"
   },
