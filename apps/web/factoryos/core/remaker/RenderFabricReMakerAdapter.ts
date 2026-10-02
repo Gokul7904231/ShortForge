@@ -26,14 +26,27 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
   public async execute(plan: ReMakerPlan): Promise<ReMakerExecutionOutput> {
     const intent = await this.buildPatchedIntent(plan);
 
-    if (!intent.repairScope || intent.repairScope.repairId !== plan.repairId) {
+    if (intent.repairScope && intent.repairScope.repairId !== plan.repairId) {
       throw new Error(
-        "[RenderFabricReMakerAdapter] Patched RenderIntent is missing the matching ReMaker repair scope."
+        "[RenderFabricReMakerAdapter] Patched RenderIntent contains a different repair scope."
       );
     }
 
     const plannedIds = [...plan.renderSceneIds].sort();
-    const actualIds = [...intent.repairScope.forceSceneIds].sort();
+    const actualIds = [...plannedIds];
+
+    const scopedIntent: RenderIntent = {
+      ...intent,
+      repairScope: {
+        mode: "SURGICAL_SCENE",
+        repairId: plan.repairId,
+        forceSceneIds: Object.freeze([...plannedIds]),
+        affectedFrameRange: {
+          startFrame: plan.frameRange.startFrame,
+          endFrame: plan.frameRange.endFrame,
+        },
+      },
+    };
 
     if (JSON.stringify(plannedIds) !== JSON.stringify(actualIds)) {
       throw new Error(
@@ -41,7 +54,7 @@ export class RenderFabricReMakerAdapter implements ReMakerExecutionPort {
       );
     }
 
-    const result = await this.renderFabric.executeRender(intent);
+    const result = await this.renderFabric.executeRender(scopedIntent);
 
     if (!result.artifact || !result.loopReceipt.verified) {
       throw new Error(
