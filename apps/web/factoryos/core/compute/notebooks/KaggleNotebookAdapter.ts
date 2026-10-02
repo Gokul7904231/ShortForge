@@ -250,7 +250,8 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       }
 
       const started = Date.now();
-      let state = (await this.getRuntime(runtime.resourceId, credentials)).state;
+      let observedRuntime = await this.getRuntime(runtime.resourceId, credentials);
+      let state = observedRuntime.state;
 
       // Kaggle can briefly report no recognized worker state immediately after a
       // successful push while the kernel record propagates. Treat UNKNOWN as a
@@ -271,14 +272,17 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
             status: "TIMED_OUT",
             evidence: [
               "Kaggle kernel exceeded the ShortForge control timeout.",
+              "Last Kaggle status output: " +
+                String(observedRuntime.providerMetadata.statusOutput || "").slice(-1000),
             ],
             limitation:
-              "Kaggle enforces its own notebook session limits; ShortForge does not extend them.",
+              "Hosted Kaggle provisioning can remain queued for several minutes; increase NOTEBOOK_LIVE_TIMEOUT_MS when validating under capacity pressure.",
           };
         }
 
         await new Promise((resolve) => setTimeout(resolve, 5000));
-        state = (await this.getRuntime(runtime.resourceId, credentials)).state;
+        observedRuntime = await this.getRuntime(runtime.resourceId, credentials);
+        state = observedRuntime.state;
       }
 
       if (state !== "SUCCEEDED") {
