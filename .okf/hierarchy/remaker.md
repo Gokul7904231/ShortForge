@@ -3,7 +3,7 @@
 > **Tier**: Surgical Asset Reconstruction & Media Repair (Level 1)  
 > **Instance Count**: Exactly ONE Factory-Wide ReMaker Engine  
 > **Source Location**: `apps/web/factoryos/core/remaker/` & `apps/web/factoryos/core/timeline/TimelineIR.ts`  
-> **Runtime Status (2026-10-02)**: ReMaker v2 contracts and impact planning are implemented on this branch. Physical execution remains on the existing RenderFabric → Compute Fabric path.
+> **Runtime Status (2026-10-02)**: ReMaker v2 contracts, impact planning, Guardian capability admission, lease/fencing binding, and RenderFabric integration are implemented on this branch. Fresh CI admission is still required before mainline promotion. Physical execution remains on the existing RenderFabric → Compute Fabric path.
 
 ---
 
@@ -74,3 +74,24 @@ A surgical plan must name the affected TimelineIR nodes. Unchanged nodes are pre
 
 ReMaker stops on success, authorization expiry, fencing failure, stale/invalid parent, no progress, execution failure, or budget exhaustion.
 
+
+
+## 4. ReMaker v2 operational admission
+
+The executable admission chain is:
+
+`F07 remediation case -> ReMakerHandoff -> Guardian authorizeReMakerRepair -> CapabilityRegistry/CAP_REMAKER_REPAIR -> LeaseManager fencing -> ReMakerEngine -> RenderFabric -> physical artifact -> F07 re-verification`
+
+The Guardian grant is short-lived and lease-bound. The RenderFabric adapter requires an explicit LeaseManager; there is no implicit in-memory lease fallback for production wiring.
+
+## 5. Ascalon training boundary
+
+ReMaker is represented in the canonical Ascalon capability ontology and trajectory validator. Training examples are eligible only when the trajectory proves authorization, fencing, parent artifact lineage, preservation evidence, physical render evidence, and independent F07 verification. Synthetic curriculum data must remain explicitly marked simulation/synthetic.
+
+No ReMaker training example is authoritative merely because ReMaker reported success. The F07 evidence boundary remains mandatory.
+
+## 6. Promotion state
+
+Current state: **IMPLEMENTED / DOCUMENTED / TRAINING-CURRICULUM READY / PENDING CURRENT CI ADMISSION**.
+
+Mainline promotion is blocked until the dedicated ReMaker validation and required repository, governance, compute, security, F04/F05/F06/F07 gates are green.
