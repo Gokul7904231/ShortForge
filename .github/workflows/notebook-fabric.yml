@@ -1,5 +1,12 @@
 name: notebook-fabric
 
+# Live notebook verification is an external side-effecting workflow. Keep only
+# the newest probe active so repeated code pushes cannot consume concurrent
+# Kaggle notebook capacity or race their artifacts.
+concurrency:
+  group: notebook-fabric-live-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     paths:
@@ -102,7 +109,10 @@ jobs:
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             printf 'providers=["%s"]\n' "$INPUT_PROVIDER" >> "$GITHUB_OUTPUT"
           else
-            echo 'providers=["KAGGLE","COLAB","LIGHTNING"]' >> "$GITHUB_OUTPUT"
+            # Pushes on the dedicated verification branch are intentionally
+            # Kaggle-first. Colab/Lightning are run explicitly after Kaggle's
+            # physical-artifact and MCP proofs pass.
+            echo 'providers=["KAGGLE"]' >> "$GITHUB_OUTPUT"
           fi
 
   live:
