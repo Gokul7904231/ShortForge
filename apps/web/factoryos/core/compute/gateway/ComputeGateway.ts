@@ -16,6 +16,7 @@ import {
 } from "../contracts/ComputeContracts";
 import { ComputeRouter, RoutingDecision, type GlideRoutingMode } from "../router/ComputeRouter";
 import { GlideWorkerSelectionAdvisor } from "../router/GlideWorkerSelectionAdvisor";
+import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionAdapter";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
 import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
@@ -37,7 +38,7 @@ export class ComputeGateway {
     const glideWorkerSelectionAdvisor =
       glideMode !== "OFF" && process.env.FASTINO_GLIDE_ENABLED === "true"
         ? new GlideWorkerSelectionAdvisor({
-            adapter: new (require("../intelligence/decision/GlideDecisionAdapter").GlideDecisionAdapter)({
+            adapter: new GlideDecisionAdapter({
               timeoutMs: this.parseDecisionTimeoutMs(
                 process.env.FASTINO_GLIDE_WORKER_TIMEOUT_MS,
                 750,
