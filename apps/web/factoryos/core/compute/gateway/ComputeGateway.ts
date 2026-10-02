@@ -18,6 +18,10 @@ import { GlideWorkerSelectionAdvisor } from "../router/GlideWorkerSelectionAdvis
 import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionAdapter";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
 import { AmdComputeProvider } from "../providers/AmdComputeProvider";
+import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
+import { LightningComputeProvider } from "../providers/LightningComputeProvider";
+import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
+import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
 import { KaggleNotebookComputeProvider } from "../providers/KaggleNotebookComputeProvider";
 import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeProvider";
 import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../sandboxes";
@@ -74,6 +78,14 @@ export class ComputeGateway {
       }),
       "SANDBOX",
     );
+
+    // Legacy/control-plane providers remain discoverable for existing control
+    // surfaces, but because they are not bound into the ComputePool they cannot
+    // become render candidates.
+    this.router.registerProvider(new PersistentWorkerComputeProvider());
+    this.router.registerProvider(new LightningComputeProvider());
+    this.router.registerProvider(new GitHubActionsComputeProvider());
+    this.router.registerProvider(new KaggleComputeProvider());
   }
 
   public static getInstance(policy?: ComputePolicy): ComputeGateway {
