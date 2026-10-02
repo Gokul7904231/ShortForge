@@ -35,4 +35,4 @@ server.registerTool(
   async () => jsonResult(adapter.metadata),
 );
 
-void serveStdio(server);
+void serveStdio(() => server);
