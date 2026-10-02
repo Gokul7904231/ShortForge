@@ -140,7 +140,7 @@ export class MissionAutomationStore {
     this.work = options.workManager;
     this.workforce = options.workforce;
     this.repository = options.mongoDb ? new MongoRecipeRepository(options.mongoDb) : options.diskPath ? new DiskRecipeRepository(options.diskPath) : new InMemoryRecipeRepository();
-    if (this.eventBus) { this.unsubscribe = this.eventBus.subscribeWildcard(this.handleEvent as EventHandler); }
+    if (this.eventBus) { this.unsubscribe = this.eventBus.subscribeWildcard(this.handleEvent.bind(this) as EventHandler); }
   }
 
   dispose(): void { this.unsubscribe?.(); this.unsubscribe = undefined; }
