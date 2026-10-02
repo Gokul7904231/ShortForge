@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR79-Sandbox-Fabric-V1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/sandbox-fabric-v1-main-clean-20261002",
+  "objective": "Add a provider-neutral sandbox execution plane with a real PandaStack adapter while preserving strict separation from Notebook, F06 worker authority, and F07 truth.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/compute/sandbox-fabric.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added provider-neutral SandboxProviderAdapter and runtime contracts.",
+    "Added PandaStack Hosted REST adapter for validation, provisioning, readiness, exec, reconciliation, and termination.",
+    "Sanitized provider error bodies so secrets and raw payloads do not escape through application exceptions.",
+    "Marked sandbox providers as ineligible for F06 worker promotion.",
+    "Added blocking Sandbox Fabric contract tests and workflow."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/sandboxes",
+    "apps/web/factoryos/tests/sandbox-fabric.test.ts",
+    ".github/workflows/sandbox-fabric.yml",
+    ".okf/compute/sandbox-fabric.md"
+  ],
+  "notes": [
+    "PandaStack API operations follow documented v1 REST endpoints.",
+    "Provider-side idempotency is not assumed by the adapter.",
+    "Sandbox execution is not artifact acceptance; F07 remains authoritative.",
+    "No live provider credentials are committed."
+  ],
+  "verificationResults": {
+    "sandboxFabricTypecheck": "PENDING",
+    "sandboxFabricContractTests": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "affectedFloorValidation": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass blocking FactoryOS typecheck and Sandbox Fabric contract tests.",
+    "Pass Team Change Gate and affected-floor validation.",
+    "Merge only after all required blocking lanes are green."
+  ]
+}
