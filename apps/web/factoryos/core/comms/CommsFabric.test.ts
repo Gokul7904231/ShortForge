@@ -8,6 +8,7 @@ import {
 } from "./CommsFabric";
 
 const capabilities: CommsCapability[] = [
+  { name: "INTERCOM_MESSAGE", version: "1.0.0", enabled: true, lanes: ["EVENT"] },
   { name: "SITUATION_RECORD", version: "1.0.0", enabled: true, lanes: ["EVENT"] },
   { name: "COMMAND", version: "1.0.0", enabled: true, lanes: ["CONTROL"] },
   { name: "QUERY", version: "1.0.0", enabled: true, lanes: ["CONTROL"] },
