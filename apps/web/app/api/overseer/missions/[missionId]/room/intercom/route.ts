@@ -26,7 +26,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const cursor = url.searchParams.get("cursor") || undefined;
     const limit = Number(url.searchParams.get("limit") || 50);
     const page = await controller.agentIntercomStore.replay(missionId, cursor, limit);
-    return NextResponse.json({ success: true, data: page });
+    const delegations = await controller.agentIntercomStore.listDelegations(missionId);
+    return NextResponse.json({ success: true, data: { ...page, delegations } });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message || "Failed to load intercom." }, { status: statusFor(error) });
   }
@@ -91,12 +92,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: true, data: delegation }, { status: 201 });
     }
 
+    if (action === "respond_delegation") {
+      const delegation = await controller.agentIntercomStore.respondDelegation(
+        auth,
+        String(body.delegationId || ""),
+        body.decision === "ACCEPT" ? "ACCEPT" : "DECLINE",
+        String(body.responseText || ""),
+      );
+      return NextResponse.json({ success: true, data: delegation });
+    }
+
     if (action === "cancel_delegation") {
       const delegation = await controller.agentIntercomStore.cancelDelegation(auth, String(body.delegationId || ""));
       return NextResponse.json({ success: true, data: delegation });
     }
 
-    return NextResponse.json({ success: false, error: `Unknown intercom action: ${action}` }, { status: 400 });
+    return NextResponse({ success: false, error: `Unknown intercom action: ${action}` }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message || "Intercom operation failed." }, { status: statusFor(error) });
   }
