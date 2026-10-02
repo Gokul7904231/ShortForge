@@ -42,6 +42,7 @@ function request() {
     target: { kind: "VISUAL_ASSET" as const, sceneIds: ["scene_02"] },
     allowedActions: ["regenerate scene"],
     forbiddenActions: [],
+    requestedChangeDigest: "patch_scene_02_v1",
     parentArtifact: {
       artifactId: "art_old",
       sha256: "a".repeat(64),
@@ -73,6 +74,7 @@ describe("ReMaker v2", () => {
       2
     );
     expect(impact.directNodeIds).toEqual(["scene_02"]);
+    expect(impact.renderSceneIds).toEqual(["scene_02"]);
     expect(impact.preservedNodeIds).toContain("scene_01");
     expect(impact.frameRange.startFrame).toBe(148);
     expect(impact.frameRange.endFrame).toBe(299);
