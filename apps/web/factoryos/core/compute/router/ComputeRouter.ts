@@ -362,7 +362,8 @@ export class ComputeRouter {
       evaluatedAt: new Date().toISOString(),
       glideDecision: glideWorkerAdvice
         ? {
-            mode: this.glideRoutingMode,
+            mode:
+              this.glideRoutingMode === "CANARY" ? "CANARY" : "SHADOW",
             modelRef: glideWorkerAdvice.modelRef,
             decisionBatchId: glideWorkerAdvice.decisionBatchId,
             selectedProviderId: glideWorkerAdvice.selectedProviderId,
