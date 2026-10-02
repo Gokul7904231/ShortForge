@@ -122,7 +122,12 @@ class DiskIntercomRepository implements IntercomRepository {
     this.write("delegations", next.delegationId, next); return structuredClone(next);
   }
   async getSession(id: string) { return this.read<AgentIntercomSession>(this.file("sessions", id)); }
-  async listSessions(missionId: string) { return this.list<AgentIntercomSession>("sessions").filter((x) => x.state.sessionId.includes(missionId)); }
+  async listSessions(missionId: string): Promise<AgentIntercomSession[]> {
+    return this.list<AgentIntercomSession>("sessions").filter((x) => x.missionId === missionId);
+  }
+  async listSessionsAll(): Promise<AgentIntercomSession[]> {
+    return this.list<AgentIntercomSession>("sessions");
+  }
   async saveSession(session: AgentIntercomSession, expectedVersion?: number) {
     const current = await this.getSession(session.state.sessionId);
     if (expectedVersion !== undefined && current && current.version !== expectedVersion) throw new Error("INTERCOM_VERSION_CONFLICT");
@@ -630,7 +635,7 @@ export class AgentIntercomStore {
     return saved;
   }
 
-  private makeEnvelope(source: CommsPrincipal, input: Pick<AgentIntercomSendInput, "missionId" | "floorId" | "target" | "correlationId" | "causationId" | "delivery" | "priority" | "ttlMs">, payload: AgentIntercomPayload, expiresAt?: string): CommsEnvelope<AgentIntercomPayload> {
+  private makeEnvelope(source: CommsPrincipal, input: Pick<AgentIntercomSendInput, "missionId" | "floorId" | "target" | "correlationId" | "causationId" | "delivery" | "priority" | "ttlMs" | "taskId">, payload: AgentIntercomPayload, expiresAt?: string): CommsEnvelope<AgentIntercomPayload> {
     const serialized = JSON.stringify(payload);
     const digest = createHash("sha256").update(serialized).digest("hex");
     const command = payload.kind === "DELEGATION_REQUEST" || payload.kind === "DELEGATION_RESPONSE";
