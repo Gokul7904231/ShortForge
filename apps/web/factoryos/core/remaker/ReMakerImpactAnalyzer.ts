@@ -62,9 +62,9 @@ export class ReMakerImpactAnalyzer {
       endMs = Math.max(endMs, target.frameRangeMs.endMs);
     }
 
-    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || direct.size === 0) {
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
       throw new Error(
-        "[ReMakerImpactAnalyzer] Surgical repair requires an explicit target that resolves to at least one TimelineIR node."
+        "[ReMakerImpactAnalyzer] Surgical repair requires a resolvable temporal target."
       );
     }
 
@@ -83,6 +83,18 @@ export class ReMakerImpactAnalyzer {
         return clipEnd >= startFrame && clipStart <= endFrame;
       })
       .map((clip) => clip.clipId);
+
+    // A pure frame/region target has no logical node ID; the overlapping
+    // visual scenes become its changed render nodes.
+    if (direct.size === 0) {
+      for (const sceneId of renderSceneIds) direct.add(sceneId);
+    }
+
+    if (direct.size === 0) {
+      throw new Error(
+        "[ReMakerImpactAnalyzer] Surgical repair window does not intersect any renderable TimelineIR scene."
+      );
+    }
 
     const preserved: string[] = [];
     for (const clip of timeline.visualTracks) {
