@@ -132,6 +132,8 @@ describe("Wave 1 Mission Collaboration Fabric", () => {
 
   it("blocks a new room for a viewer", async () => {
     const store = new MissionCollaborationStore();
-    await expect(store.ensureRoom(mission(), viewer)).rejects.toThrow("access denied");
+    await expect(store.ensureRoom(mission(), viewer)).rejects.toThrow(
+      "Mission room creation requires EDITOR, ADMIN, or OWNER access.",
+    );
   });
 });
