@@ -122,6 +122,7 @@ export interface CommsAuthorizationContext {
   readonly allowedLanes: readonly CommsLane[];
   readonly allowedKinds: readonly CommsMessageKind[];
   readonly allowBroadcast: boolean;
+  readonly allowedTargetPrincipals?: readonly string[];
 }
 
 export interface CommsDeliveryReceipt {
@@ -206,15 +207,17 @@ export function admitComms(
 
   if (
     envelope.meta.scope.allowedPrincipals?.length &&
-    !envelope.meta.scope.allowedPrincipals.includes(auth.principal.principalId)
+    !envelope.meta.scope.allowedPrincipals.includes(envelope.meta.source.principalId)
   ) {
     return { admitted: false, reasonCode: "TARGET_SCOPE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
   }
 
-  if (envelope.meta.target !== "BROADCAST" && envelope.meta.target.principalId !== auth.principal.principalId) {
-    if (envelope.meta.target.principalId !== auth.principal.principalId) {
-      return { admitted: false, reasonCode: "TARGET_SCOPE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
-    }
+  if (
+    envelope.meta.target !== "BROADCAST" &&
+    auth.allowedTargetPrincipals &&
+    !auth.allowedTargetPrincipals.includes(envelope.meta.target.principalId)
+  ) {
+    return { admitted: false, reasonCode: "TARGET_SCOPE_DENIED", policyVersion: COMMS_PROTOCOL_VERSION };
   }
 
   if (!auth.allowedLanes.includes(envelope.meta.lane)) {
