@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR97-ReMaker-v2-Surgical-Repair",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/remaker-v2-clean-20261002",
+  "objective": "Complete ReMaker v2 as a bounded surgical repair mechanism with executable Guardian capability admission, durable lease/fencing enforcement, physical RenderFabric execution, independent F07 verification, and an evidence-gated Ascalon training boundary.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/remaker.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/decisions/remaker-v2-20261002.md",
+      ".okf/research/repo-research-ledger.md",
+      "docs/verification/ascalon/component-training-readiness-matrix.md",
+      "docs/verification/ascalon/remaker-v2-training-admission-20261002.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_AVAILABLE_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE_TO_INTERNAL_REPAIR_CONTROL_PLANE",
+    "notes": "Security claims remain pending the repository's own required automation gates; no external security result is represented as executed here."
+  },
+  "conflicts": [
+    {
+      "id": "CF-97-01",
+      "originalConflict": "ReMaker carried a documented CAP_REMAKER_REPAIR contract but the executable CapabilityRegistry did not yet expose a concrete Guardian issuance path, and the RenderFabric adapter could fall back to an implicit in-memory lease manager.",
+      "status": "RESOLVED",
+      "proposedResolution": "Register CAP_REMAKER_REPAIR as a production-gated capability, issue short-lived Guardian grants backed by LeaseManager fencing, wire GuardianKernel to durable disk lease persistence, and require an explicit LeaseManager in RenderFabricReMakerAdapter.",
+      "acceptedResolution": "Implemented on the ReMaker branch; fresh CI admission remains required.",
+      "decisionAuthority": "FLOOR_GUARDIAN + EXECUTABLE_CAPABILITY_REGISTRY",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts",
+        "apps/web/factoryos/core/guardian/GuardianReMakerCapabilityIssuer.ts",
+        "apps/web/factoryos/core/guardian/GuardianKernel.ts",
+        "apps/web/factoryos/core/remaker/RenderFabricReMakerAdapter.ts"
+      ]
+    },
+    {
+      "id": "CF-97-02",
+      "originalConflict": "The canonical RenderIntent contract uses an object frame range while the Python renderer previously only normalized list-shaped ranges.",
+      "status": "RESOLVED",
+      "proposedResolution": "Emit the canonical object form from RenderFabric and accept both canonical object and legacy two-element list forms at the Python boundary.",
+      "acceptedResolution": "Implemented and covered by the dedicated ReMaker validation workflow.",
+      "decisionAuthority": "REMAKER_RENDER_CONTRACT"
+    }
+  ],
+  "disposition": "BLOCKED",
+  "evidenceRefs": [
+    "apps/web/factoryos/core/remaker/ReMakerContracts.ts",
+    "apps/web/factoryos/core/remaker/ReMakerEngine.ts",
+    "apps/web/factoryos/core/remaker/ReMakerImpactAnalyzer.ts",
+    "apps/web/factoryos/core/remaker/ReMakerHandoff.ts",
+    "apps/web/factoryos/core/remaker/RenderFabricReMakerAdapter.ts",
+    "apps/web/factoryos/core/guardian/GuardianReMakerCapabilityIssuer.ts",
+    "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts",
+    "apps/web/factoryos/core/fabric/RenderFabric.ts",
+    "apps/web/factoryos/core/leases/LeaseManager.ts",
+    "packages/factoryos-render/src/factoryos_render/contracts/render_intent.py",
+    "apps/web/factoryos/tests/remaker-v2.test.ts",
+    "apps/web/factoryos/tests/guardian-remaker-capability.test.ts",
+    "apps/web/factoryos/tests/remaker-training-boundary.test.ts",
+    "training/ascalon/ontology/capabilities.json",
+    "training/ascalon/validators/AscalonTrajectoryValidator.ts",
+    "training/ascalon/generation/scenario_generator/ScenarioGenerator.ts",
+    "docs/verification/ascalon/remaker-v2-training-admission-20261002.md"
+  ],
+  "changes": [
+    "Fixed the surgical frame-range contract mismatch between TypeScript and the local renderer.",
+    "Bound ReMaker authorization to a concrete lease identity, holder and fencing token.",
+    "Added GuardianReMakerCapabilityIssuer and GuardianKernel authorization entry point.",
+    "Registered CAP_REMAKER_REPAIR as an executable, production-routable, training-eligible capability.",
+    "Required the RenderFabric ReMaker adapter to receive an explicit LeaseManager and revalidate the live lease before and after execution.",
+    "Added Guardian capability admission tests.",
+    "Added deterministic ReMaker training scenarios and evidence-gated Ascalon trajectory validation.",
+    "Added a dedicated ReMaker training admission record and readiness-matrix entry.",
+    "Reconciled ReMaker security and architecture documentation with the executable status."
+  ],
+  "verificationPlan": [
+    "Pass ReMaker Validation including FactoryOS typecheck, ReMaker contracts, Guardian capability admission, Ascalon training-boundary tests, Python compile checks and physical FFmpeg proof.",
+    "Pass repository CI and affected F04/F05/F06/F07 validation lanes.",
+    "Pass Floor Governance Cell, Compute Pool, Overseer and MCP gates that are required by the PR branch.",
+    "Refresh this Team report with final verification run identifiers and PASS disposition only after current blocking evidence is green.",
+    "Only after all required blocking gates pass promote ReMaker to current mainline and mark Ascalon ReMaker training admission complete.",
+    "Do not change model weights or dispatch a fine-tuning job as part of this code admission."
+  ],
+  "notes": [
+    "ReMaker remains a mechanism under the existing Healer/Guardian/Slayer hierarchy and is not a new authority tier.",
+    "Physical execution remains RenderFabric -> Compute Fabric; ReMaker never becomes a second renderer.",
+    "F07 remains the independent verification and release/truth boundary.",
+    "Frame-level codec differential re-encoding remains experimental and is not part of this production-safe path.",
+    "The current report is intentionally BLOCKED until fresh CI proves the implementation."
+  ],
+  "forgerStatus": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "IN_PROGRESS",
+    "Forge Evaluator": "PENDING_CURRENT_CI",
+    "Forge Release": "BLOCKED_PENDING_GATES"
+  },
+  "verificationResults": {
+    "reMakerValidation": {
+      "status": "PENDING_FRESH_RUN"
+    },
+    "repositoryCI": {
+      "status": "PENDING_FRESH_RUN"
+    },
+    "floorGovernance": {
+      "status": "PENDING_FRESH_RUN"
+    },
+    "compute": {
+      "status": "PENDING_FRESH_RUN"
+    },
+    "ascalonTrainingAdmission": {
+      "status": "PENDING_FRESH_RUN"
+    }
+  },
+  "trainingReadiness": {
+    "reMaker": "EVIDENCE_GATED_PENDING_CI",
+    "ascalon": "TRAINING_CURRICULUM_READY_PENDING_CURRENT_REMAKER_ADMISSION",
+    "modelWeights": "NOT_TRAINED"
+  }
+}
