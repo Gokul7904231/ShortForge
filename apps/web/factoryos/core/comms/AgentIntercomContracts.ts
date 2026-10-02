@@ -53,7 +53,7 @@ export interface AgentIntercomMessage {
   readonly receipt: CommsDeliveryReceipt;
 }
 
-export interface AgentDelegationRequest {
+export interface AgentIntercomDelegationRequest {
   readonly delegationId: string;
   readonly missionId: string;
   readonly floorId?: string;
@@ -122,7 +122,7 @@ export interface AgentIntercomSession {
 export interface AgentIntercomSnapshot {
   readonly missionId: string;
   readonly messages: AgentIntercomMessage[];
-  readonly delegations: AgentDelegationRequest[];
+  readonly delegations: AgentIntercomDelegationRequest[];
   readonly sessions: AgentIntercomSession[];
   readonly nextReplayCursor?: string;
 }
