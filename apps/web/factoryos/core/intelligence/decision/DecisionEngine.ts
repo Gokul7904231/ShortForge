@@ -104,7 +104,7 @@ export class DecisionEngine {
       try {
         const glideResult = await this.glideShadowAdapter.evaluateBatch(glideSubRequest);
         usedGlideFastPath = glideResult.status === "VALID";
-        const acceptedQuestions: typeof unresolvedQuestions = [];
+        const acceptedQuestions: DecisionBatchRequest["questions"] = [];
 
         for (const q of unresolvedQuestions) {
           const ans = glideResult.answersById[q.id];
