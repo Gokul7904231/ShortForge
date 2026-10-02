@@ -1,13 +1,28 @@
 import { createHash, randomUUID } from "node:crypto";
 import { LeaseManager } from "../leases/LeaseManager";
 import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
-import type { ReMakerAuthorization } from "../remaker/ReMakerContracts";
+import type {
+  ReMakerAction,
+  ReMakerAuthorization,
+  ReMakerTargetScope,
+} from "../remaker/ReMakerContracts";
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+  const record = value as Record<string, unknown>;
+  return "{" + Object.keys(record).sort().map((key) =>
+    JSON.stringify(key) + ":" + stableStringify(record[key])
+  ).join(",") + "}";
+}
 
 export interface ReMakerCapabilityGrantRequest {
   readonly floorId: string;
   readonly missionId: string;
   readonly caseId: string;
   readonly repairId: string;
+  readonly action: ReMakerAction;
+  readonly targetScope: ReMakerTargetScope;
   readonly requestedChangeDigest: string;
   readonly evidenceRefs: readonly string[];
   readonly holderId: string;
@@ -40,6 +55,10 @@ export class GuardianReMakerCapabilityIssuer {
     if (!input.missionId || !input.caseId || !input.repairId || !input.holderId) {
       throw new Error("[GuardianReMakerCapabilityIssuer] missionId, caseId, repairId and holderId are required.");
     }
+    const targetScopeDigest = createHash("sha256")
+      .update(stableStringify(input.targetScope))
+      .digest("hex");
+
     if (!/^[a-f0-9]{64}$/i.test(input.requestedChangeDigest)) {
       throw new Error("[GuardianReMakerCapabilityIssuer] requestedChangeDigest must be SHA-256.");
     }
@@ -88,6 +107,8 @@ export class GuardianReMakerCapabilityIssuer {
         missionId: input.missionId,
         caseId: input.caseId,
         requestedChangeDigest: input.requestedChangeDigest,
+        action: input.action,
+        targetScopeDigest,
         evidenceRefs: [...input.evidenceRefs],
       },
     });
@@ -124,6 +145,8 @@ export class GuardianReMakerCapabilityIssuer {
         caseId: input.caseId,
         repairId: input.repairId,
         requestedChangeDigest: input.requestedChangeDigest,
+        action: input.action,
+        targetScopeDigest,
         evidenceRefs: [...input.evidenceRefs],
         holderId: input.holderId,
         fencingToken: lease.fencingToken,
@@ -135,6 +158,8 @@ export class GuardianReMakerCapabilityIssuer {
       grantId: `${grantId}_${authorizationDigest.slice(0, 8)}`,
       leaseId: grantId,
       holderId: input.holderId,
+      action: input.action,
+      targetScopeDigest,
       fencingToken: lease.fencingToken,
       expiresAt: lease.leaseExpiresAt,
       authorizedBy: input.authorizedBy,
