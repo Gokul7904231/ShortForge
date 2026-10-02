@@ -27,6 +27,13 @@ export interface LocalRenderShotIntent {
   assets?: any[];
 }
 
+export interface LocalRenderScope {
+  mode: "SURGICAL_SCENE";
+  repair_id: string;
+  force_scene_ids: string[];
+  affected_frame_range?: { start_frame: number; end_frame: number };
+}
+
 export interface LocalRenderSceneIntent {
   scene_id: string;
   template_id: string;
@@ -55,6 +62,7 @@ export interface LocalRenderIntent {
     right: number;
   };
   metadata?: Record<string, any>;
+  repair_scope?: LocalRenderScope;
 }
 
 export interface RenderReceipt {
