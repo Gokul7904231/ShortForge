@@ -20,14 +20,12 @@ export async function GET(request: NextRequest) {
       name: item.config.name,
       role: "SLAYER",
       specialization: item.config.specialization,
-      reputation: item.getReputation(),
     }));
     const healers = controller.healerEngine.getAllHealers().map((item) => ({
       agentId: item.config.healerId,
       name: item.config.name,
       role: "HEALER",
       specialization: item.config.specialization,
-      reputation: item.getReputation(),
     }));
 
     return NextResponse.json({
