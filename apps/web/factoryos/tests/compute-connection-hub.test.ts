@@ -7,6 +7,7 @@ import {
   listAvailableProviders,
   validateSandboxConnection,
 } from "@/factoryos/core/compute/connections";
+import { sandboxRegistry } from "@/factoryos/core/compute/sandboxes";
 import type { AdminUser } from "@/lib/auth/types";
 
 process.env.CREDENTIAL_ENCRYPTION_KEY =
@@ -67,23 +68,37 @@ describe("compute connection hub", () => {
     ).rejects.toThrow("COMPUTE_PROVIDER_NOT_IMPLEMENTED:api_vast");
   });
 
-  it("exposes the implemented PandaStack sandbox only to admins", () => {
+  it("exposes only hosted sandbox providers to admins", () => {
     const basicProviders = listAvailableProviders(basicUser);
     const adminProviders = listAvailableProviders(adminUser);
-    expect(basicProviders.some((p) => p.providerId === "sandbox_pandastack_hosted")).toBe(false);
-    expect(adminProviders.some((p) => p.providerId === "sandbox_pandastack_hosted" && p.providerFamily === "SANDBOX" && p.implemented === true)).toBe(true);
+    expect(basicProviders.some((p) => p.providerFamily === "SANDBOX")).toBe(false);
+    const sandboxIds = adminProviders
+      .filter((p) => p.providerFamily === "SANDBOX")
+      .map((p) => p.providerId);
+    expect(sandboxIds).toContain("sandbox_daytona_hosted");
+    expect(sandboxIds).toContain("sandbox_modal_hosted");
+    expect(sandboxIds).not.toContain("sandbox_pandastack_hosted");
   });
 
-  it("verifies an admin PandaStack sandbox connection without exposing its secret", async () => {
+  it("validates a hosted Daytona connection without exposing its secret", async () => {
     const connection = await computeConnectionService.create(adminUser, {
-      providerId: "sandbox_pandastack_hosted",
-      credentials: { PANDASTACK_API_KEY: "pds_test_secret" },
+      providerId: "sandbox_daytona_hosted",
+      credentials: { DAYTONA_API_KEY: "dt_test_secret" },
     });
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "account-1" }), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
+    const adapter = sandboxRegistry.get("DAYTONA");
+    expect(adapter).toBeDefined();
+    vi.spyOn(adapter!, "validateCredentials").mockResolvedValue({
+      configured: true,
+      authenticated: true,
+      providerReachable: true,
+      requiredKeys: ["DAYTONA_API_KEY"],
+      missingKeys: [],
+      checkedAt: new Date().toISOString(),
+      evidence: ["mocked hosted validation"],
+    });
     const result = await validateSandboxConnection(adminUser.uid, connection.connectionId);
     expect(result.authenticated).toBe(true);
-    expect(result.providerType).toBe("PANDASTACK");
+    expect(result.providerType).toBe("DAYTONA");
     expect((await computeConnectionStore.getForUser(adminUser.uid, connection.connectionId))?.status).toBe("CONNECTED");
   });
 

@@ -210,8 +210,8 @@ export interface ComputePolicy {
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
   policyVersion: "1.0.0",
-  allowedProviders: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
-  preferredOrder: ["LOCAL", "PERSISTENT_WORKER", "AMD", "LIGHTNING", "KAGGLE", "GITHUB_ACTIONS"],
+  allowedProviders: ["LOCAL", "AMD", "KAGGLE", "DAYTONA", "MODAL"],
+  preferredOrder: ["LOCAL", "AMD", "DAYTONA", "MODAL", "KAGGLE"],
   maxRetries: 2,
   failoverAllowed: true,
   preferLocalForShortVideos: true,

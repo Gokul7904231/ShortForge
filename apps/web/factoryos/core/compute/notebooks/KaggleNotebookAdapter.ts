@@ -263,7 +263,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         }
 
         await new Promise((resolve) => setTimeout(resolve, 5000));
-        state = (await this.getRuntime(runtime.resourceId)).state;
+        state = (await this.getRuntime(runtime.resourceId, credentials)).state;
       }
 
       if (state !== "SUCCEEDED") {
@@ -350,7 +350,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       };
     } finally {
       if (runtime?.resourceId) {
-        await this.terminate(runtime).catch(() => undefined);
+        await this.terminate(runtime, credentials).catch(() => undefined);
       }
       const workDir = created?.runtime.providerMetadata.workDir;
       if (workDir) {

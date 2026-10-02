@@ -7,7 +7,8 @@ import {
 import { computeConnectionStore } from "./ComputeConnectionStore";
 
 const PROVIDER_TYPE_BY_ID: Record<string, SandboxProviderType> = {
-  sandbox_pandastack_hosted: "PANDASTACK",
+  sandbox_daytona_hosted: "DAYTONA",
+  sandbox_modal_hosted: "MODAL",
 };
 
 function adapterFor(providerId: string) {

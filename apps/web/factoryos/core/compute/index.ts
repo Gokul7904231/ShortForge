@@ -17,3 +17,6 @@ export * from "./api";
 export * from "./notebooks";
 export * from "./sandboxes";
 export * from "./connections";
+export * from "./providers/KaggleNotebookComputeProvider";
+export * from "./providers/HostedSandboxComputeProvider";
+export * from "./pool";

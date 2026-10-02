@@ -4,7 +4,7 @@
  * Sandboxes are an isolated execution plane. They are not notebook runtimes,
  * are not F06 workers, and do not become production workers implicitly.
  */
-export type SandboxProviderType = "PANDASTACK";
+export type SandboxProviderType = "DAYTONA" | "MODAL";
 
 export type SandboxRuntimeState =
   | "REQUESTED"
@@ -20,7 +20,7 @@ export type SandboxRuntimeState =
 export interface SandboxProviderMetadata {
   providerId: string;
   providerType: SandboxProviderType;
-  runtimeKind: "FIRECRACKER_MICROVM";
+  runtimeKind: "DAYTONA_SANDBOX" | "MODAL_SANDBOX";
   apiVersion: string;
   documentationUrl: string;
   capabilities: {
@@ -48,6 +48,7 @@ export interface SandboxCredentialValidation {
   checkedAt: string;
   evidence: string[];
   errorCode?: string;
+  errorMessage?: string;
 }
 
 export interface SandboxProvisionRequest {
@@ -74,10 +75,26 @@ export interface SandboxProvisionResult {
   evidence: string[];
 }
 
+export interface SandboxFileTransferRequest {
+  runtime: SandboxRuntime;
+  localPath: string;
+  remotePath: string;
+  timeoutMs?: number;
+}
+
+export interface SandboxFileDownloadRequest {
+  runtime: SandboxRuntime;
+  remotePath: string;
+  localPath: string;
+  timeoutMs?: number;
+}
+
 export interface SandboxExecutionRequest {
   runtime: SandboxRuntime;
   command: string;
   timeoutMs: number;
+  env?: Record<string, string>;
+  workdir?: string;
 }
 
 export interface SandboxExecutionResult {
@@ -106,6 +123,8 @@ export interface SandboxProviderAdapter {
   provision(request: SandboxProvisionRequest, credentials?: SandboxCredentialBundle): Promise<SandboxProvisionResult>;
   getRuntime(resourceId: string, credentials?: SandboxCredentialBundle): Promise<SandboxRuntime>;
   waitReady(resourceId: string, timeoutMs?: number, credentials?: SandboxCredentialBundle): Promise<SandboxRuntime>;
+  uploadFile?(request: SandboxFileTransferRequest, credentials?: SandboxCredentialBundle): Promise<void>;
+  downloadFile?(request: SandboxFileDownloadRequest, credentials?: SandboxCredentialBundle): Promise<void>;
   execute(request: SandboxExecutionRequest, credentials?: SandboxCredentialBundle): Promise<SandboxExecutionResult>;
   terminate(runtime: SandboxRuntime, credentials?: SandboxCredentialBundle): Promise<SandboxRuntime>;
   reconcile?(runtime: SandboxRuntime, credentials?: SandboxCredentialBundle): Promise<SandboxReconciliationResult>;

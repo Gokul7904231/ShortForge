@@ -1,0 +1,76 @@
+name: Compute Golden Mission
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/compute/**"
+      - "apps/web/factoryos/core/fabric/**"
+      - "apps/web/factoryos/core/controller/**"
+      - "testing/**"
+
+      - "apps/web/factoryos/tests/**"
+      - ".okf/compute/**"
+      - "testing/scenarios/golden/golden-short-001.ts"
+      - ".github/workflows/compute-golden-mission.yml"
+      - "Team/reports/pr-83.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/factoryos/core/compute/**"
+      - "apps/web/factoryos/core/fabric/**"
+      - "testing/**"
+      - "apps/web/factoryos/tests/**"
+      - ".github/workflows/compute-golden-mission.yml"
+
+jobs:
+  golden:
+    name: Golden mission through unified ComputePool
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      FASTINO_GLIDE_ENABLED: "false"
+      FASTINO_GLIDE_ROUTING_MODE: "OFF"
+      NODE_ENV: "test"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install canonical local renderer
+        run: python -m pip install -e ../../packages/factoryos-render
+
+      - name: Verify renderer dependencies
+        shell: bash
+        run: |
+          echo "FACTORYOS_FFMPEG_PATH=$(command -v ffmpeg)" >> "$GITHUB_ENV"
+          python -c "import PIL; print('Pillow', PIL.__version__)"
+          python -c "from factoryos_render.diagnostics.doctor import SystemDoctor; import json; print(json.dumps(SystemDoctor().run_diagnostics(), indent=2))"
+          ffmpeg -version | head -n 1
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+
+      - name: Run golden compute boundary mission
+        run: npx vitest run factoryos/tests/golden-compute-mission.test.ts --config vitest.config.ts --reporter=verbose

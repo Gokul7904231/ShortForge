@@ -20,6 +20,7 @@ import {
 import { IComputeProvider } from "../providers/ComputeProvider";
 import { RenderArtifactVerifier } from "../../fabric/verification/RenderArtifactVerifier";
 import { GlideWorkerSelectionAdvisor, type GlideWorkerSelectionAdvice } from "./GlideWorkerSelectionAdvisor";
+import type { ComputePool } from "../pool";
 
 export interface UtilityScoreBreakdown {
   queueWaitSeconds: number;
@@ -88,6 +89,7 @@ export class ComputeRouter {
   private readonly artifactVerifier = new RenderArtifactVerifier();
   private readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
   private readonly glideRoutingMode: GlideRoutingMode;
+  private workerPool?: ComputePool;
 
   constructor(
     policy: ComputePolicy = DEFAULT_COMPUTE_POLICY,
@@ -96,6 +98,10 @@ export class ComputeRouter {
     this.policy = policy;
     this.glideWorkerSelectionAdvisor = options.glideWorkerSelectionAdvisor;
     this.glideRoutingMode = options.glideRoutingMode ?? "OFF";
+  }
+
+  public bindWorkerPool(pool: ComputePool): void {
+    this.workerPool = pool;
   }
 
   public registerProvider(provider: IComputeProvider): void {
@@ -151,8 +157,23 @@ export class ComputeRouter {
   public async planProvider(job: ComputeJob, preferredProviderType?: ProviderType): Promise<RoutingDecision> {
     const candidates: ScheduledProviderCandidate[] = [];
     const rejectionReasons: Record<string, string> = {};
+    const poolPreflights = this.workerPool
+      ? new Map(
+          (await this.workerPool.getEligibleWorkers(job)).map((candidate) => [
+            candidate.worker.providerId,
+            candidate.preflight,
+          ]),
+        )
+      : undefined;
 
     for (const provider of this.providers.values()) {
+      // The unified pool is the authoritative worker eligibility boundary.
+      const poolPreflight = poolPreflights?.get(provider.id);
+      if (poolPreflights && !poolPreflight) {
+        rejectionReasons[provider.id] = "Worker pool preflight rejected provider.";
+        continue;
+      }
+
       // 0. Optional hard provider constraint. The Render Fabric uses this for explicit LOCAL requests
       // while AUTO remains fully capability/utility routed.
       if (preferredProviderType && provider.type !== preferredProviderType) {
@@ -166,23 +187,15 @@ export class ComputeRouter {
         continue;
       }
 
-      // 2. Health check
-      const health = await provider.getHealth();
+      // 2/3. Use the pool's just-computed health/capability snapshot. This keeps
+      // planning fast by avoiding a second round of provider probes.
+      const health = poolPreflight?.health || await provider.getHealth();
       if (health.state === "BLOCKED" || health.state === "DRAINING") {
         rejectionReasons[provider.id] = `Provider is ${health.state}: ${health.failureReason || "Unhealthy"}`;
         continue;
       }
 
-      // 3. Capability check
-      const capability = await provider.getCapability();
-
-      // Availability is a hard admission check, not a ranking hint. This prevents
-      // a provider at capacity from being selected and failing only after dispatch.
-      const available = await provider.isAvailable();
-      if (!available) {
-        rejectionReasons[provider.id] = "Provider is not currently available for dispatch.";
-        continue;
-      }
+      const capability = poolPreflight?.capability || await provider.getCapability();
 
       if (!capability.supportedWorkloads.includes(job.workloadType)) {
         rejectionReasons[provider.id] = `Provider does not support workload ${job.workloadType}`;
@@ -196,14 +209,33 @@ export class ComputeRouter {
 
       // 4. Utility Model Calculation (Section 9)
       // Total Estimated Duration = Queue Wait + Startup + Input Transfer + Environment Setup + Execution + Output Transfer + Verification
+      const telemetry = this.telemetry.get(provider.id);
       const queueWaitSeconds = health.activeJobs * 5.0;
-      const startupSeconds = capability.estimatedStartupSeconds;
-      const inputTransferSeconds = Math.max(0.1, (job.requirements.diskSpaceMb || 10) / (capability.transferBandwidthMbps / 8));
+      const observedStartupSeconds =
+        telemetry && telemetry.successfulExecutions > 0
+          ? telemetry.avgStartupMs / 1000
+          : capability.estimatedStartupSeconds;
+      const startupSeconds = Math.max(0.1, observedStartupSeconds);
+      const inputTransferSeconds = Math.max(
+        0.1,
+        (job.requirements.diskSpaceMb || 10) /
+          Math.max(1, capability.transferBandwidthMbps / 8),
+      );
       const environmentSetupSeconds = capability.executionModel === "LOCAL_PROCESS" ? 0 : 2.0;
 
-      // Base execution duration (scales by GPU acceleration if available)
+      // Use measured execution time once enough successful observations exist;
+      // otherwise fall back to the declared workload estimate.
       const baseExecutionSeconds = job.requirements.estimatedDurationSeconds || 5.0;
-      const executionSeconds = capability.gpuAvailable ? baseExecutionSeconds * 0.5 : baseExecutionSeconds;
+      const observedExecutionSeconds =
+        telemetry && telemetry.successfulExecutions > 0
+          ? telemetry.avgExecutionMs / 1000
+          : 0;
+      const executionSeconds =
+        observedExecutionSeconds > 0
+          ? observedExecutionSeconds
+          : capability.gpuAvailable
+            ? baseExecutionSeconds * 0.5
+            : baseExecutionSeconds;
       const outputTransferSeconds = Math.max(0.1, 5 / (capability.transferBandwidthMbps / 8));
       const verificationSeconds = 1.0;
 
@@ -220,6 +252,13 @@ export class ComputeRouter {
       let reliabilityPenalty = 1.0;
       if (health.state === "DEGRADED") reliabilityPenalty = 1.5;
       if (health.state === "FLAKY") reliabilityPenalty = 2.5;
+
+      const observedAttempts = telemetry?.totalAttempts || 0;
+      const observedFailures = telemetry?.failedExecutions || 0;
+      if (observedAttempts >= 3) {
+        const observedFailureRate = observedFailures / observedAttempts;
+        reliabilityPenalty *= 1 + Math.min(2, observedFailureRate * 3);
+      }
 
       // Policy preference bonus for preferred order
       const preferredIdx = this.policy.preferredOrder.indexOf(provider.type);
@@ -321,7 +360,8 @@ export class ComputeRouter {
       evaluatedAt: new Date().toISOString(),
       glideDecision: glideWorkerAdvice
         ? {
-            mode: this.glideRoutingMode,
+            mode:
+              this.glideRoutingMode === "CANARY" ? "CANARY" : "SHADOW",
             modelRef: glideWorkerAdvice.modelRef,
             decisionBatchId: glideWorkerAdvice.decisionBatchId,
             selectedProviderId: glideWorkerAdvice.selectedProviderId,
@@ -376,6 +416,23 @@ export class ComputeRouter {
       }
 
       try {
+        // Last-moment availability check: capacity/health may change between
+        // planning and dispatch. If it does, skip the worker and fail over.
+        if (!(await provider.isAvailable())) {
+          const reason = "WORKER_BECAME_UNAVAILABLE_BEFORE_DISPATCH";
+          if (tel) {
+            tel.failedExecutions++;
+            tel.failureLog.push({
+              timestamp: new Date().toISOString(),
+              jobId: job.jobId,
+              reason,
+            });
+          }
+          failovers.push(`Provider ${provider.id} unavailable before dispatch`);
+          onProgress?.(`Provider ${provider.id} became unavailable before dispatch. Failing over.`);
+          continue;
+        }
+
         const receipt = await provider.executeJob(job, onProgress);
         const renderCompletionWithoutArtifact =
           job.workloadType === "RENDER" &&

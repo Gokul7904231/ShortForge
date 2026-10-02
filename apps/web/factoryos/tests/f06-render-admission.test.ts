@@ -238,6 +238,71 @@ describe("F06 physical render admission", () => {
     expect(result.failureReason).toMatch(/SHA-256 mismatch|Byte-length mismatch/);
   });
 
+
+  it("fails over when the first provider times out", async () => {
+    const root = await makeRoot();
+    const validPath = path.join(root, "valid-timeout-failover.mp4");
+    await makeMp4(validPath);
+    const validDigest = await sha256(validPath);
+    const validSize = (await fs.stat(validPath)).size;
+
+    const router = new ComputeRouter({
+      policyVersion: "f06-test-timeout-1",
+      allowedProviders: ["LOCAL"],
+      preferredOrder: ["LOCAL"],
+      maxRetries: 1,
+      failoverAllowed: true,
+      preferLocalForShortVideos: false,
+      shortVideoThresholdSeconds: 60,
+      allowSimulatedInTest: false,
+    });
+
+    router.registerProvider(
+      provider("provider_timeout", 0.1, async () => ({
+        receiptId: "receipt_timeout",
+        executionId: "exec_timeout",
+        jobId: "job_f06_timeout",
+        factoryExecutionId: "factory_job_f06_timeout",
+        providerId: "provider_timeout",
+        providerType: "LOCAL",
+        executionModel: "LOCAL_PROCESS",
+        status: "FAILED",
+        exitCode: 124,
+        outputArtifacts: [],
+        metrics: { startupTimeMs: 1, executionTimeMs: 2, transferTimeMs: 0, totalTimeMs: 3 },
+        failureReason: "TIMED_OUT",
+      })),
+    );
+    router.registerProvider(
+      provider("provider_recovery", 0.5, async () => ({
+        receiptId: "receipt_recovery_" + validDigest.slice(0, 8),
+        executionId: "exec_recovery",
+        jobId: "job_f06_timeout",
+        factoryExecutionId: "factory_job_f06_timeout",
+        providerId: "provider_recovery",
+        providerType: "LOCAL",
+        executionModel: "LOCAL_PROCESS",
+        status: "COMPLETED",
+        exitCode: 0,
+        outputArtifacts: [{
+          artifactId: "artifact_recovery",
+          role: "output_mp4",
+          sha256: validDigest,
+          byteLength: validSize,
+          mimeType: "video/mp4",
+          uri: validPath,
+        }],
+        metrics: { startupTimeMs: 1, executionTimeMs: 1, transferTimeMs: 1, totalTimeMs: 3 },
+      })),
+    );
+
+    const result = await router.dispatchWithFailover(renderJob("job_f06_timeout"));
+    expect(result.receipt.status).toBe("COMPLETED");
+    expect(result.receipt.providerId).toBe("provider_recovery");
+    expect(result.receipt.artifactVerification?.status).toBe("PASS");
+    expect(result.failovers.join(" | ")).toContain("provider_timeout");
+  });
+
   it("fails over to a second provider when the first provider returns a corrupt completed artifact", async () => {
     const root = await makeRoot();
     const validPath = path.join(root, "valid-failover.mp4");
