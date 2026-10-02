@@ -94,6 +94,9 @@ export class MongoDBClient {
       await this.db.collection("healer_reputations").createIndex({ healerId: 1 }, { unique: true });
       await this.db.collection("agent_workforce").createIndex({ workspaceId: 1, agentId: 1 }, { unique: true });
       await this.db.collection("agent_workforce").createIndex({ workspaceId: 1, updatedAt: -1 });
+      await this.db.collection("agent_intercom_messages").createIndex({ "envelope.meta.scope.missionId": 1, createdAt: 1, intercomId: 1 });
+      await this.db.collection("agent_intercom_delegations").createIndex({ missionId: 1, createdAt: 1, delegationId: 1 });
+      await this.db.collection("agent_intercom_sessions").createIndex({ missionId: 1, lastSeenAt: -1 });
     } catch (e) {
       // Non-fatal if index creation throws in mock/restricted environments
     }
