@@ -115,6 +115,71 @@ describe("Wave 3 Agent Workforce", () => {
     ).rejects.toThrow("AGENT_EDIT_PERMISSION_REQUIRED");
   });
 
+  it("lets the creator co-own an agent but blocks ownership transfer by an editor", async () => {
+    const { store } = setup();
+
+    const agent = await store.create({
+      name: "Shared Agent",
+      role: "SPECIALIST",
+    }, "alice");
+
+    const shared = await store.grant(agent.agentId, {
+      principalId: "bob",
+      role: "OWNER",
+    }, "alice");
+
+    expect(shared.members).toEqual(expect.arrayContaining([
+      expect.objectContaining({ principalId: "bob", role: "OWNER", active: true }),
+    ]));
+
+    await expect(
+      store.grant(agent.agentId, { principalId: "carol", role: "OWNER" }, "bob"),
+    ).rejects.toThrow("Only the original creator may transfer agent ownership.");
+  });
+
+  it("blocks capability escalation and live integration binding for non-owners", async () => {
+    const { store } = setup();
+
+    const agent = await store.create({
+      name: "Secure Agent",
+      role: "SPECIALIST",
+    }, "alice");
+    await store.grant(agent.agentId, { principalId: "bob", role: "EDITOR" }, "alice");
+
+    await expect(
+      store.update(agent.agentId, {
+        allowedCapabilities: ["CAP_RENDER_DISPATCH"],
+      }, "bob"),
+    ).rejects.toThrow("AGENT_CAPABILITY_MANAGEMENT_REQUIRED");
+
+    await expect(
+      store.bindIntegration(agent.agentId, {
+        integrationId: "youtube",
+        provider: "youtube",
+        connectionRef: "vault:youtube/channel",
+        scope: "publish",
+      }, "bob"),
+    ).rejects.toThrow("AGENT_INTEGRATION_MANAGEMENT_REQUIRED");
+  });
+
+  it("rejects credential-shaped integration references", async () => {
+    const { store } = setup();
+
+    const agent = await store.create({
+      name: "Connection Guard",
+      role: "SPECIALIST",
+    }, "alice");
+
+    await expect(
+      store.bindIntegration(agent.agentId, {
+        integrationId: "provider",
+        provider: "test",
+        connectionRef: "sk-live-secret-value",
+        scope: "read",
+      }, "alice"),
+    ).rejects.toThrow("AGENT_INTEGRATION_SECRET_FORBIDDEN");
+  });
+
   it("preserves optimistic concurrency and prevents stale settings writes", async () => {
     const { store } = setup();
 
