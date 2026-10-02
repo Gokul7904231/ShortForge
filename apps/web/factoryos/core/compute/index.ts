@@ -15,3 +15,4 @@ export * from "./gateway/ComputeGateway";
 
 export * from "./api";
 export * from "./notebooks";
+export * from "./connections";

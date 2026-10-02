@@ -110,6 +110,7 @@ export const ROUTE_SECTIONS: RouteSection[] = [
     basePath: "/settings",
     routes: [
       { id: "user-settings", label: "Account Settings", href: "/settings", section: "Settings", surface: "creator", icon: "Settings", description: "Manage account and profile preferences", keywords: ["settings", "profile", "account"] },
+      { id: "compute-settings", label: "Compute Connections", href: "/settings/compute", section: "Settings", surface: "creator", icon: "Cpu", description: "Connect and manage remote compute", keywords: ["compute", "gpu", "notebook", "sandbox", "provider"] },
     ],
   },
   {
