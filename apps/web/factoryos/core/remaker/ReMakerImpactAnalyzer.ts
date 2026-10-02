@@ -2,6 +2,15 @@ import type { TimelineIR } from "../timeline/TimelineIR";
 import { createHash } from "node:crypto";
 import type { ReMakerFrameRange, ReMakerTargetScope } from "./ReMakerContracts";
 
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+  const record = value as Record<string, unknown>;
+  return "{" + Object.keys(record).sort().map((key) =>
+    JSON.stringify(key) + ":" + stableStringify(record[key])
+  ).join(",") + "}";
+}
+
 export interface ReMakerImpact {
   readonly directNodeIds: readonly string[];
   readonly renderSceneIds: readonly string[];
@@ -103,7 +112,7 @@ export class ReMakerImpactAnalyzer {
     const addPreserved = (id: string, node: unknown) => {
       preserved.push(id);
       preservedFingerprints[id] = createHash("sha256")
-        .update(JSON.stringify(node, Object.keys(node as object).sort()))
+        .update(stableStringify(node))
         .digest("hex");
     };
     for (const clip of timeline.visualTracks) {
