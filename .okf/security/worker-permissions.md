@@ -580,4 +580,4 @@ Rules:
 - ReMaker candidates require physical artifact evidence and F07 re-verification.
 - The execution mechanism may be called by the existing Healer recovery path; ReMaker does not replace Healer, Guardian, Slayer, or F07.
 
-Promotion status: the ReMaker engine and handoff contracts are implemented on the feature branch; executable capability-registry issuance remains a separate admission step and must not be inferred from this reservation.
+Promotion status: executable `CAP_REMAKER_REPAIR` metadata and Guardian issuance are now implemented on this feature branch. The issuer composes the CapabilityRegistry policy boundary with LeaseManager fencing. Physical execution remains in ReMakerEngine -> RenderFabric, and F07 re-verification remains mandatory. Production deployment must inject a durable lease repository; the RenderFabricReMakerAdapter intentionally requires an explicit LeaseManager and has no implicit in-memory production fallback.
