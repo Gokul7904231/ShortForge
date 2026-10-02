@@ -401,7 +401,9 @@ export class AutonomousFactoryController {
       this.caseManager,
       this.leaseManager,
       30000,
-      this.missionManager
+      this.missionManager,
+      {},
+      this.workManager,
     );
 
     this.pythonBridge = new PythonFloorBridge(this.worldState, this.eventBus, this.caseManager);
