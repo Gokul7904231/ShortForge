@@ -750,3 +750,55 @@ This separation is non-negotiable.
 - **Who outranks Overseer?** Human Authority.
 
 > **Overseer should be the best commander, not the biggest worker.**
+
+
+---
+
+## 22. Current ShortForge system capability map
+
+| System part | What it can do now | What it must not own |
+|---|---|---|
+| **Human Authority** | Ultimate approval, shutdown, exceptional override, production governance | Routine automated execution |
+| **Overseer** | Mission orchestration, DAG planning, dispatch, supervision, cognitive routing, recovery coordination | Capability minting, emergency kill authority, final verification |
+| **Guardian** | Capability/policy authorization, allow/deny gates, execution constraints | Factory strategy, ordinary content generation |
+| **Slayer** | Detect operational anomalies, revoke leases, evict/terminate failing workers, containment | Mission strategy, policy redefinition |
+| **Healer** | Bounded repair, retry, reconciliation, recovery, Last-Known-Good restoration | Unlimited retries, final success declaration |
+| **F00** | Research/evidence acquisition | Final strategy or production rendering |
+| **F01** | Strategy and audience/narrative direction | Capability issuance, physical rendering |
+| **F02** | Script and narrative structure | Physical media rendering |
+| **F03** | Visual asset planning/realization | F05 timeline authority, F07 release authority |
+| **F04** | Media synthesis, narration, provider execution | F03 planning truth, F05 composition authority |
+| **F05** | TimelineIR / composition / render manifest assembly | Final physical rendering authority |
+| **F06** | Render orchestration through RenderFabric/Compute Fabric | Final verification/release truth |
+| **F07** | Physical/media/compliance verification and findings | Self-approval of unverified results |
+| **Agent Runtime** | Sessions, budgets, timeouts, capability checks, checkpointing, tracing | Factory strategy or sovereign authority |
+| **Capability Registry** | Capability inventory, policy boundaries, execution admission | Mission planning |
+| **MissionManager** | Mission lifecycle, budgets, progress, completion evaluation | Capability authorization |
+| **Memory / Knowledge** | Context, durable memory, learning records, evidence-backed retrieval | Authority decisions by itself |
+| **Ascalon / SCL** | Deep cognition, proposals, diagnosis, planning, synthesis, learning support | Direct authority, capability grants, final verification |
+| **RenderFabric / Compute Fabric** | Physical media execution and compute routing | Mission policy or release verification |
+| **MCP integrations** | External tool/context access through bounded adapters | Becoming an authority layer |
+| **CAS / lineage / receipts** | Artifact identity, integrity, provenance, replay/evidence support | Deciding business or policy intent |
+
+### One-line system rule
+
+**Think with cognition. Command with Overseer. Authorize with Guardian. Enforce with Slayer. Recover with Healer. Execute with workers. Verify with F07. Keep Human above the whole system.**
+
+---
+
+## 23. Current priority order for completing Overseer
+
+The current Overseer should be hardened in this order:
+
+1. Inject the canonical LeaseManager into Overseer TaskDAGExecutor.
+2. Make every dispatched WorkerTaskContract carry explicit capability, grant, lease, fencing, budget, scope, schemas, and evidence requirements.
+3. Move floor-specific execution logic out of OverseerControlPlane into dedicated floor workers/runtime adapters.
+4. Replace keyword-driven command-to-DAG planning with semantic typed mission planning.
+5. Make Guardian authorization a mandatory runtime gate for every protected floor action.
+6. Make stop/pause/replan behavior explicit and uniform across mission, run, DAG and worker levels.
+7. Keep F07 physically independent from creator/executor logic.
+8. Feed only verified outcomes into Ascalon training.
+
+The goal is not to make Overseer larger.
+
+The goal is to make Overseer **clearer, more authoritative, more bounded, and more replaceable**.
