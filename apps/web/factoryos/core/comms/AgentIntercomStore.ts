@@ -393,7 +393,7 @@ export class AgentIntercomStore {
       requiredCapability: input.requiredCapability,
       context: input.context ? structuredClone(input.context) : undefined,
       correlationId,
-      causationId: input.idempotencyKey ? `idempotency:${input.idempotencyKey}` : input.causationId,
+      causationId: input.causationId,
       state: "REQUESTED",
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -421,12 +421,12 @@ export class AgentIntercomStore {
       priority: "HIGH",
       ttlMs: input.ttlMs,
     }, messagePayload, expiresAt);
-    const admitted = admitComms(envelope, this.toCommsAuthorization(auth), auth.allowedCapabilities);
-    if (!admitted.admitted) throw new Error(`DELEGATION_ADMISSION_DENIED:${admitted.reasonCode}`);
+    const admission = admitComms(envelope, this.toCommsAuthorization(auth), auth.allowedCapabilities);
+    if (!admission.admitted) throw new Error(`DELEGATION_ADMISSION_DENIED:${admission.reasonCode}`);
     const message: AgentIntercomMessage = {
       intercomId: `intercom_${randomUUID().replace(/-/g, "").slice(0, 14)}`,
       envelope,
-      deliveryState: "ADMITTED",
+      deliveryState: "CREATED",
       maxAttempts: 3,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -441,8 +441,8 @@ export class AgentIntercomStore {
         causationId: input.causationId,
       },
     };
-    const admitted = await this.transitionMessage(message, "admit");
-    const queued = await this.transitionMessage(admitted, "queue");
+    const admittedMessage = await this.transitionMessage(message, "admit");
+    const queued = await this.transitionMessage(admittedMessage, "queue");
     const dispatched = await this.transitionMessage(queued, "dispatch");
 
     await this.publish("AGENT_INTERCOM_DELIVERY", {
