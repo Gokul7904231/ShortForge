@@ -100,6 +100,7 @@ export interface ReMakerPlan {
   readonly changedNodeIds: readonly string[];
   readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
+  readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
   readonly parentArtifact: ReMakerParentArtifact;
   readonly idempotencyKey: string;
   readonly planDigest: string;
@@ -119,6 +120,7 @@ export interface ReMakerExecutionOutput {
   readonly candidateArtifact: ReMakerCandidateArtifact;
   readonly changedNodeIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
+  readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
   readonly rendererReceiptId?: string;
   readonly physicalValidation?: {
     readonly passed: boolean;
