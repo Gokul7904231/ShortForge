@@ -25,10 +25,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const url = new URL(request.url);
     const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 100)));
     const threadId = url.searchParams.get("threadId") || undefined;
-    const messages = await controller.collaborationStore.getThread(mission, actor, threadId || "", limit);
+    const snapshot = await controller.collaborationStore.getSnapshot(mission, actor, limit);
     const snapshotMessages = threadId
-      ? messages
-      : (await controller.collaborationStore.getSnapshot(mission, actor, limit)).messages;
+      ? snapshot.messages.filter((message) => message.threadId === threadId)
+      : snapshot.messages;
 
     return NextResponse.json({
       success: true,
