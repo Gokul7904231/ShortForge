@@ -214,9 +214,9 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       providerType: "KAGGLE",
       resourceId,
       runtimeKind: "KAGGLE_KERNEL",
-      state: this.parseStatus(result.stdout),
+      state: this.parseStatus(result.stdout + "\n" + result.stderr),
       updatedAt: new Date().toISOString(),
-      providerMetadata: { statusOutput: result.stdout },
+      providerMetadata: { statusOutput: result.stdout, statusError: result.stderr },
     };
   }
 
@@ -250,7 +250,17 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       const started = Date.now();
       let state = (await this.getRuntime(runtime.resourceId, credentials)).state;
 
-      while (state === "QUEUED" || state === "STARTING" || state === "RUNNING" || state === "READY") {
+      // Kaggle can briefly report no recognized worker state immediately after a
+      // successful push while the kernel record propagates. Treat UNKNOWN as a
+      // retryable control-plane state during the bounded execution window rather
+      // than converting that propagation race into a false failure.
+      while (
+        state === "QUEUED" ||
+        state === "STARTING" ||
+        state === "RUNNING" ||
+        state === "READY" ||
+        state === "UNKNOWN"
+      ) {
         if (Date.now() - started > request.timeoutMs) {
           return {
             providerType: "KAGGLE",
