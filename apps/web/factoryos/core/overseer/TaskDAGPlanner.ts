@@ -133,13 +133,55 @@ export class TaskDAGExecutor {
           node.startedAt = new Date().toISOString();
           node.attemptCount += 1;
           await this.repository.updateTaskNode(dag.dagId, node);
+
+          const workerId = node.assignedAgentId || "dag_worker";
+          let leaseAcquired = true;
+          let heartbeatTimer: NodeJS.Timeout | null = null;
+          const leaseTtlMs = 60000;
+
+          if (this.leaseManager) {
+            leaseAcquired = await this.leaseManager.acquire(
+              node.taskId,
+              workerId,
+              leaseTtlMs,
+              node.attemptCount,
+            );
+            if (!leaseAcquired) {
+              throw new Error(`TASK_LEASE_UNAVAILABLE: task ${node.taskId} could not acquire its execution lease.`);
+            }
+
+            heartbeatTimer = setInterval(() => {
+              this.leaseManager!
+                .heartbeat(node.taskId, workerId, leaseTtlMs)
+                .then(async (ok) => {
+                  if (this.eventBus) {
+                    await this.eventBus.publish("TASK_HEARTBEAT", {
+                      dagId: dag.dagId,
+                      goalId: dag.goalId,
+                      missionId: options?.missionId,
+                      taskId: node.taskId,
+                      workerId,
+                      heartbeatAccepted: ok,
+                      attempt: node.attemptCount,
+                    }, {
+                      source: "task_dag_executor",
+                      correlationId: dag.dagId,
+                      idempotencyKey: `dag:${dag.dagId}:task:${node.taskId}:heartbeat:${Date.now()}`,
+                    });
+                  }
+                })
+                .catch(() => {});
+            }, 20000);
+            (heartbeatTimer as any).unref?.();
+          }
+
           if (this.eventBus) {
             await this.eventBus.publish("TASK_STARTED", {
               dagId: dag.dagId,
               goalId: dag.goalId,
               missionId: options?.missionId,
               taskId: node.taskId,
-              assignedAgentId: node.assignedAgentId || "dag_worker",
+              assignedAgentId: workerId,
               attempt: node.attemptCount,
               status: node.status,
             }, {
@@ -147,10 +189,6 @@ export class TaskDAGExecutor {
               correlationId: dag.dagId,
               idempotencyKey: `dag:${dag.dagId}:task:${node.taskId}:started:${node.attemptCount}`,
             });
-          }
-
-          if (this.leaseManager) {
-            await this.leaseManager.acquire(node.taskId, node.assignedAgentId || "dag_worker", 60000, node.attemptCount);
           }
 
           // Collect outputs from upstream dependencies
@@ -241,8 +279,9 @@ export class TaskDAGExecutor {
               }
             }
           } finally {
-            if (this.leaseManager) {
-              await this.leaseManager.release(node.taskId, node.assignedAgentId || "dag_worker");
+            if (heartbeatTimer) clearInterval(heartbeatTimer);
+            if (this.leaseManager && leaseAcquired) {
+              await this.leaseManager.release(node.taskId, workerId);
             }
             await this.repository.updateTaskNode(dag.dagId, node);
           }
