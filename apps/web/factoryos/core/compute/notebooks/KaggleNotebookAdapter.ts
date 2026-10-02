@@ -443,6 +443,6 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       "    print('SHORTFORGE_NO_OUTPUT', OUTPUT, flush=True)",
       "",
       "print('SHORTFORGE_NOTEBOOK_COMPLETE', flush=True)",
-    ].join("\\n");
+    ].join("\n");
   }
 }
