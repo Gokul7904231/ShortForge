@@ -23,7 +23,7 @@ import {
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type {
   AgentDelegationCreateInput,
-  AgentDelegationRequest,
+  AgentIntercomDelegationRequest,
   AgentIntercomAuth,
   AgentIntercomDeliveryState,
   AgentIntercomMessage,
@@ -38,9 +38,9 @@ interface IntercomRepository {
   getMessage(id: string): Promise<AgentIntercomMessage | null>;
   listMessages(missionId: string): Promise<AgentIntercomMessage[]>;
   saveMessage(message: AgentIntercomMessage, expectedVersion?: number): Promise<AgentIntercomMessage>;
-  getDelegation(id: string): Promise<AgentDelegationRequest | null>;
-  listDelegations(missionId: string): Promise<AgentDelegationRequest[]>;
-  saveDelegation(delegation: AgentDelegationRequest, expectedVersion?: number): Promise<AgentDelegationRequest>;
+  getDelegation(id: string): Promise<AgentIntercomDelegationRequest | null>;
+  listDelegations(missionId: string): Promise<AgentIntercomDelegationRequest[]>;
+  saveDelegation(delegation: AgentIntercomDelegationRequest, expectedVersion?: number): Promise<AgentIntercomDelegationRequest>;
   getSession(id: string): Promise<AgentIntercomSession | null>;
   listSessions(missionId: string): Promise<AgentIntercomSession[]>;
   listSessionsAll(): Promise<AgentIntercomSession[]>;
@@ -49,7 +49,7 @@ interface IntercomRepository {
 
 class InMemoryIntercomRepository implements IntercomRepository {
   private readonly messages = new Map<string, AgentIntercomMessage>();
-  private readonly delegations = new Map<string, AgentDelegationRequest>();
+  private readonly delegations = new Map<string, AgentIntercomDelegationRequest>();
   private readonly sessions = new Map<string, AgentIntercomSession>();
 
   async getMessage(id: string) { return structuredClone(this.messages.get(id) || null); }
@@ -64,10 +64,12 @@ class InMemoryIntercomRepository implements IntercomRepository {
     return structuredClone(next);
   }
   async getDelegation(id: string) { return structuredClone(this.delegations.get(id) || null); }
-  async listDelegations(missionId: string) {
-    return [...this.delegations.values()].filter((x) => x.missionId === missionId).map(structuredClone);
+  async listDelegations(missionId: string): Promise<AgentIntercomDelegationRequest[]> {
+    return [...this.delegations.values()]
+      .filter((x) => x.missionId === missionId)
+      .map((x) => structuredClone(x));
   }
-  async saveDelegation(delegation: AgentDelegationRequest, expectedVersion?: number) {
+  async saveDelegation(delegation: AgentIntercomDelegationRequest, expectedVersion?: number) {
     const current = this.delegations.get(delegation.delegationId);
     if (expectedVersion !== undefined && current && current.version !== expectedVersion) throw new Error("INTERCOM_VERSION_CONFLICT");
     const next = { ...structuredClone(delegation), version: current ? current.version + 1 : delegation.version, updatedAt: new Date().toISOString() };
@@ -109,9 +111,9 @@ class DiskIntercomRepository implements IntercomRepository {
     const next = { ...structuredClone(message), version: current ? current.version + 1 : message.version, updatedAt: new Date().toISOString() };
     this.write("messages", next.intercomId, next); return structuredClone(next);
   }
-  async getDelegation(id: string) { return this.read<AgentDelegationRequest>(this.file("delegations", id)); }
-  async listDelegations(missionId: string) { return this.list<AgentDelegationRequest>("delegations").filter((x) => x.missionId === missionId); }
-  async saveDelegation(delegation: AgentDelegationRequest, expectedVersion?: number) {
+  async getDelegation(id: string) { return this.read<AgentIntercomDelegationRequest>(this.file("delegations", id)); }
+  async listDelegations(missionId: string) { return this.list<AgentIntercomDelegationRequest>("delegations").filter((x) => x.missionId === missionId); }
+  async saveDelegation(delegation: AgentIntercomDelegationRequest, expectedVersion?: number) {
     const current = await this.getDelegation(delegation.delegationId);
     if (expectedVersion !== undefined && current && current.version !== expectedVersion) throw new Error("INTERCOM_VERSION_CONFLICT");
     const next = { ...structuredClone(delegation), version: current ? current.version + 1 : delegation.version, updatedAt: new Date().toISOString() };
@@ -133,7 +135,7 @@ class DiskIntercomRepository implements IntercomRepository {
 
 class MongoIntercomRepository implements IntercomRepository {
   private readonly messages: Collection<AgentIntercomMessage & { _id?: unknown }>;
-  private readonly delegations: Collection<AgentDelegationRequest & { _id?: unknown }>;
+  private readonly delegations: Collection<AgentIntercomDelegationRequest & { _id?: unknown }>;
   private readonly sessions: Collection<AgentIntercomSession & { _id?: unknown }>;
   constructor(db: Db) {
     this.messages = db.collection("agent_intercom_messages");
@@ -148,9 +150,9 @@ class MongoIntercomRepository implements IntercomRepository {
     const next = { ...structuredClone(message), version: current ? current.version + 1 : message.version, updatedAt: new Date().toISOString() };
     await this.messages.replaceOne({ intercomId: next.intercomId }, next, { upsert: true }); return structuredClone(next);
   }
-  async getDelegation(id: string) { const d = await this.delegations.findOne({ delegationId: id }); if (!d) return null; const { _id, ...rest } = d; return rest as AgentDelegationRequest; }
-  async listDelegations(missionId: string) { const docs = await this.delegations.find({ missionId }).sort({ createdAt: 1, delegationId: 1 }).toArray(); return docs.map(({ _id, ...rest }) => rest as AgentDelegationRequest); }
-  async saveDelegation(delegation: AgentDelegationRequest, expectedVersion?: number) {
+  async getDelegation(id: string) { const d = await this.delegations.findOne({ delegationId: id }); if (!d) return null; const { _id, ...rest } = d; return rest as AgentIntercomDelegationRequest; }
+  async listDelegations(missionId: string) { const docs = await this.delegations.find({ missionId }).sort({ createdAt: 1, delegationId: 1 }).toArray(); return docs.map(({ _id, ...rest }) => rest as AgentIntercomDelegationRequest); }
+  async saveDelegation(delegation: AgentIntercomDelegationRequest, expectedVersion?: number) {
     const current = await this.getDelegation(delegation.delegationId);
     if (expectedVersion !== undefined && current && current.version !== expectedVersion) throw new Error("INTERCOM_VERSION_CONFLICT");
     const next = { ...structuredClone(delegation), version: current ? current.version + 1 : delegation.version, updatedAt: new Date().toISOString() };
@@ -256,21 +258,20 @@ export class AgentIntercomStore {
     remoteHello: CommsPeerHello,
   ): { capabilities: CommsCapability[]; schemaVersions: string[] } {
     const remoteByName = new Map(remoteHello.capabilities.map((capability) => [capability.name, capability]));
-    const capabilities = localCapabilities
-      .filter((local) => local.enabled)
-      .map((local) => {
-        const remote = remoteByName.get(local.name);
-        if (!remote || !remote.enabled || remote.version !== local.version) return null;
-        const lanes = local.lanes.filter((lane) => remote.lanes.includes(lane));
-        if (lanes.length === 0) return null;
-        return {
-          ...local,
-          lanes,
-          maxPayloadBytes: Math.min(local.maxPayloadBytes ?? Number.MAX_SAFE_INTEGER, remote.maxPayloadBytes ?? Number.MAX_SAFE_INTEGER),
-          maxInflight: Math.min(local.maxInflight ?? Number.MAX_SAFE_INTEGER, remote.maxInflight ?? Number.MAX_SAFE_INTEGER),
-        };
-      })
-      .filter((capability): capability is CommsCapability => Boolean(capability));
+    const capabilities: CommsCapability[] = [];
+    for (const local of localCapabilities) {
+      if (!local.enabled) continue;
+      const remote = remoteByName.get(local.name);
+      if (!remote || !remote.enabled || remote.version !== local.version) continue;
+      const lanes = local.lanes.filter((lane) => remote.lanes.includes(lane));
+      if (lanes.length === 0) continue;
+      capabilities.push({
+        ...local,
+        lanes,
+        maxPayloadBytes: Math.min(local.maxPayloadBytes ?? Number.MAX_SAFE_INTEGER, remote.maxPayloadBytes ?? Number.MAX_SAFE_INTEGER),
+        maxInflight: Math.min(local.maxInflight ?? Number.MAX_SAFE_INTEGER, remote.maxInflight ?? Number.MAX_SAFE_INTEGER),
+      });
+    }
     const schemaVersions = localSchemaVersions.filter((version) => remoteHello.supportedSchemaVersions.includes(version));
     if (capabilities.length === 0 || schemaVersions.length === 0) throw new Error("INTERCOM_CAPABILITY_NEGOTIATION_FAILED");
     return { capabilities, schemaVersions };
@@ -377,7 +378,7 @@ export class AgentIntercomStore {
     }
   }
 
-  async createDelegation(auth: AgentIntercomAuth, input: AgentDelegationCreateInput): Promise<AgentDelegationRequest> {
+  async createDelegation(auth: AgentIntercomAuth, input: AgentDelegationCreateInput): Promise<AgentIntercomDelegationRequest> {
     const objective = input.objective.trim();
     if (!objective) throw new Error("DELEGATION_OBJECTIVE_REQUIRED");
     if (objective.length > 4000) throw new Error("DELEGATION_OBJECTIVE_TOO_LARGE");
@@ -395,7 +396,7 @@ export class AgentIntercomStore {
     const expiresAt = input.ttlMs && input.ttlMs > 0 ? new Date(now.getTime() + Math.min(input.ttlMs, 7 * 24 * 60 * 60 * 1000)).toISOString() : undefined;
     const correlationId = input.correlationId || `delegation_${delegationId}`;
 
-    const delegation: AgentDelegationRequest = {
+    const delegation: AgentIntercomDelegationRequest = {
       delegationId,
       missionId: input.missionId,
       floorId: input.floorId,
@@ -416,7 +417,6 @@ export class AgentIntercomStore {
     const saved = await this.repo.saveDelegation(delegation);
     const messagePayload: AgentIntercomPayload = {
       kind: "DELEGATION_REQUEST",
-      text: objective,
       taskId: input.taskId,
       delegationId,
       objective,
@@ -480,7 +480,7 @@ export class AgentIntercomStore {
     delegationId: string,
     decision: "ACCEPT" | "DECLINE",
     responseText = "",
-  ): Promise<AgentDelegationRequest> {
+  ): Promise<AgentIntercomDelegationRequest> {
     const delegation = await this.repo.getDelegation(delegationId);
     if (!delegation) throw new Error("DELEGATION_NOT_FOUND");
     if (delegation.target.principalId !== auth.principal.principalId) throw new Error("DELEGATION_TARGET_UNAUTHORIZED");
@@ -490,7 +490,7 @@ export class AgentIntercomStore {
     }
     await this.assertAgentAvailable(auth.principal);
 
-    const nextState: AgentDelegationRequest["state"] = decision === "ACCEPT" ? "ACCEPTED" : "DECLINED";
+    const nextState: AgentIntercomDelegationRequest["state"] = decision === "ACCEPT" ? "ACCEPTED" : "DECLINED";
     const saved = await this.repo.saveDelegation({
       ...delegation,
       state: nextState,
@@ -521,7 +521,7 @@ export class AgentIntercomStore {
     return saved;
   }
 
-  async cancelDelegation(auth: AgentIntercomAuth, delegationId: string): Promise<AgentDelegationRequest> {
+  async cancelDelegation(auth: AgentIntercomAuth, delegationId: string): Promise<AgentIntercomDelegationRequest> {
     const delegation = await this.repo.getDelegation(delegationId);
     if (!delegation) throw new Error("DELEGATION_NOT_FOUND");
     if (delegation.source.principalId !== auth.principal.principalId) throw new Error("DELEGATION_SOURCE_UNAUTHORIZED");
@@ -535,7 +535,7 @@ export class AgentIntercomStore {
     return saved;
   }
 
-  async listDelegations(missionId: string): Promise<AgentDelegationRequest[]> {
+  async listDelegations(missionId: string): Promise<AgentIntercomDelegationRequest[]> {
     const items = await this.repo.listDelegations(missionId);
     return items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
@@ -694,7 +694,7 @@ export class AgentIntercomStore {
     return Buffer.from(`${message.createdAt}|${message.intercomId}`).toString("base64url");
   }
 
-  private async expireDelegation(delegation: AgentDelegationRequest): Promise<AgentDelegationRequest> {
+  private async expireDelegation(delegation: AgentIntercomDelegationRequest): Promise<AgentIntercomDelegationRequest> {
     return this.repo.saveDelegation({
       ...delegation,
       state: "EXPIRED",
