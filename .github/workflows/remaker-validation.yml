@@ -7,6 +7,7 @@ on:
       - "apps/web/factoryos/core/guardian/GuardianReMakerCapabilityIssuer.ts"
       - "apps/web/factoryos/core/cognitive/CapabilityRegistry.ts"
       - "apps/web/factoryos/core/contracts/CapabilityContracts.ts"
+      - "apps/web/factoryos/core/contracts/EventContracts.ts"
       - "apps/web/factoryos/core/verification/youtube/remediation/**"
       - "apps/web/factoryos/core/fabric/RenderFabric.ts"
       - "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
