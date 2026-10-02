@@ -1,6 +1,6 @@
 # Overseer Collaboration & Work Fabric — Wave 3
 
-**Status:** IMPLEMENTED ON FEATURE BRANCH
+**Status:** LANDED ON MAINLINE
 **Product layer:** Agent Workforce & Access Fabric
 
 ## Why Wave 3 exists
