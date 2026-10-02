@@ -10,6 +10,7 @@ export * from "./ComputeConnectionCatalog";
 export * from "./ComputeConnectionCrypto";
 export * from "./ComputeConnectionStore";
 export * from "./NotebookConnectionService";
+export * from "./SandboxConnectionService";
 
 export { ComputeConnectionService, computeConnectionService };
 
