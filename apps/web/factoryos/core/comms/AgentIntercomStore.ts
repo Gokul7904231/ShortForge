@@ -341,7 +341,7 @@ export class AgentIntercomStore {
     if (!decision.admitted) throw new Error(`INTERCOM_ADMISSION_DENIED:${decision.reasonCode}`);
     if (input.idempotencyKey) {
       const existing = (await this.repo.listMessages(input.missionId))
-        .find((message) => message.envelope.meta.causationId === `idempotency:${input.idempotencyKey}`);
+        .find((message) => message.receipt.causationId === `idempotency:${input.idempotencyKey}`);
       if (existing) return structuredClone(existing);
     }
 
