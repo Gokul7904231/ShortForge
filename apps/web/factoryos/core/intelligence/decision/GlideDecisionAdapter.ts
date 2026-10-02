@@ -508,6 +508,15 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
       ) as ChoiceAnswer<any>;
     }
 
+    const maxProbability = Math.max(...Object.values(typed));
+    if (typed[selected] + 0.02 < maxProbability) {
+      return this.invalidAnswer(
+        question,
+        "INVALID_ENUM",
+        "GLiDE declared a choice that is not the highest-probability option.",
+      ) as ChoiceAnswer<any>;
+    }
+
     const confidence = this.derivedChoiceConfidence(Object.values(typed));
     if (
       raw.confidence !== undefined &&
@@ -603,6 +612,20 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
       ) as ScoreAnswer;
     }
 
+    if (
+      raw.score !== undefined &&
+      (!Number.isInteger(raw.score) ||
+        Number(raw.score) < 0 ||
+        Number(raw.score) >= question.rubric.length ||
+        Number(raw.score) !== bestIndex)
+    ) {
+      return this.invalidAnswer(
+        question,
+        "INVALID_ENUM",
+        "GLiDE score index does not match the highest-probability rubric level.",
+      ) as ScoreAnswer;
+    }
+
     const rubric = question.rubric[bestIndex];
     const expectedLevel = raw.expected_level;
     const weightedScore =
@@ -611,6 +634,17 @@ export class GlideDecisionAdapter implements IDecisionAdapter {
         : Object.entries(mapped).reduce((sumValue, [index, probability]) => {
             return sumValue + Number(index) * probability;
           }, 0);
+
+    if (
+      weightedScore < 0 ||
+      weightedScore > Math.max(0, question.rubric.length - 1)
+    ) {
+      return this.invalidAnswer(
+        question,
+        "INVALID_PROBABILITY",
+        "GLiDE expected_level is outside the declared score range.",
+      ) as ScoreAnswer;
+    }
 
     const normalizedScore =
       question.rubric.length > 1 ? weightedScore / (question.rubric.length - 1) : 0;
