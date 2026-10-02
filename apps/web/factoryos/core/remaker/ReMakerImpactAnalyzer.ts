@@ -24,7 +24,7 @@ function toFrame(valueMs: number, fps: number): number {
   return Math.floor((valueMs / 1000) * fps);
 }
 
-function endFrame(valueMs: number, fps: number): number {
+function computeEndFrame(valueMs: number, fps: number): number {
   return Math.max(0, Math.ceil((valueMs / 1000) * fps) - 1);
 }
 
@@ -80,7 +80,7 @@ export class ReMakerImpactAnalyzer {
     }
 
     const rawStartFrame = toFrame(startMs, fps);
-    const rawEndFrame = endFrame(endMs, fps);
+    const rawEndFrame = computeEndFrame(endMs, fps);
     const startFrame = Math.max(0, rawStartFrame - haloFrames);
     const endFrame = Math.min(
       Math.max(0, Math.ceil((timeline.totalDurationMs / 1000) * fps) - 1),
@@ -90,7 +90,7 @@ export class ReMakerImpactAnalyzer {
     const renderSceneIds = timeline.visualTracks
       .filter((clip) => {
         const clipStart = toFrame(clip.timelineStartMs, fps);
-        const clipEnd = endFrame(clip.timelineStartMs + clip.durationMs, fps);
+        const clipEnd = computeEndFrame(clip.timelineStartMs + clip.durationMs, fps);
         return clipEnd >= startFrame && clipStart <= endFrame;
       })
       .map((clip) => clip.clipId);
