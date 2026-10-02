@@ -228,3 +228,26 @@ These mappings are research inputs only. No provider code, weights, workflows, o
 | Additional storyboard/director repositories | Shot, camera, reference and continuity patterns | Existing typed scene planning fields | PATTERN_EXTRACTION |
 
 No third-party runtime code or model/provider dependency was added.
+
+
+## ReMaker v2 research sweep — 2026-10-02
+
+| Source | Observed pattern | ShortForge application |
+|---|---|---|
+| Remotion renderer | Exact frame-range rendering and multiple local frame ranges; partial chunks can be combined | Store repair windows in frame space and keep execution delegated to RenderFabric |
+| OpenTimelineIO | Explicit logical time ranges and separation between source range and available media | Keep repair scope logical and independent from physical artifact instances |
+| ComfyUI | Partial execution based on changed/dependent graph regions plus caching | ReMaker should invalidate and recompute only the minimal TimelineIR dependency surface |
+| VideoRepair | Detect -> plan -> decompose -> localized refinement | ReMaker impact analysis becomes a first-class stage before any mutation |
+| Recent localized video-editing work | Evaluation should measure local edit fidelity and temporal coherence, not only whole-frame similarity | Add localized repair evidence as advisory signals before F07, without replacing F07 |
+| C2PA 2.x | Derived assets, ingredients and edit actions form a cryptographically linked provenance history | Record parent artifact, repair action and changed region in the repair receipt/provenance layer |
+| AgentTube pattern | Durable checkpoints, scene manifests, scene-level repair, content-addressed caching | Preserve the existing scene cache/checkpoint path and force rebuild only on named repair scenes |
+
+### Engineering decision
+
+ReMaker v2 uses a **repair-control-plane** model:
+- ReMaker computes the smallest authorized repair scope.
+- RenderFabric remains the sole physical render authority.
+- The renderer force-rebuilds explicitly targeted scenes and reuses unchanged scene artifacts.
+- Parent artifacts remain immutable.
+- F07 remains the independent truth boundary.
+- Frame-level differential re-encoding and motion-vector reuse remain experimental until physically proven on the production codec stack.
