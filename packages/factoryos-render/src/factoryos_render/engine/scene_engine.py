@@ -25,9 +25,17 @@ class SceneEngine:
         h.update(scene.template_id.encode())
         h.update(str(scene.duration_frames).encode())
         h.update(scene.narration_text.encode())
+        h.update(str(scene.is_locked).encode())
+        h.update(str(scene.audio_path or "").encode())
+        for caption in scene.captions:
+            h.update(str(caption).encode())
         for shot in scene.shots:
             h.update(shot.recipe_id.encode())
+            h.update(str(shot.start_frame).encode())
+            h.update(str(shot.end_frame).encode())
             h.update(str(sorted(shot.props.items())).encode())
+            h.update(str(sorted(shot.motion.items())).encode())
+            h.update(str(shot.assets).encode())
         return h.hexdigest()
 
     def render_scene(
