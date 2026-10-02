@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { TimelineIRValidator, type TimelineIR } from "../timeline/TimelineIR";
 import { ReMakerImpactAnalyzer } from "./ReMakerImpactAnalyzer";
+import {
+  InMemoryReMakerIdempotencyStore,
+  type ReMakerIdempotencyStore,
+} from "./ReMakerIdempotencyStore";
 import type {
   ReMakerExecutionOutput,
   ReMakerExecutionPort,
@@ -55,7 +59,10 @@ export interface ReMakerPlanInput extends ReMakerRequest {
 }
 
 export class ReMakerEngine {
-  private readonly completed = new Map<string, ReMakerReceipt>();
+  constructor(
+    private readonly idempotencyStore: ReMakerIdempotencyStore =
+      new InMemoryReMakerIdempotencyStore()
+  ) {}
 
   public plan(input: ReMakerPlanInput): ReMakerPlan {
     this.validateRequest(input);
@@ -105,7 +112,7 @@ export class ReMakerEngine {
     port: ReMakerExecutionPort
   ): Promise<ReMakerReceipt> {
     const plan = this.plan(input);
-    const prior = this.completed.get(plan.idempotencyKey);
+    const prior = await this.idempotencyStore.get(plan.idempotencyKey);
     if (prior) return prior;
 
     const startedAtMs = Date.now();
@@ -118,14 +125,14 @@ export class ReMakerEngine {
       attempts += 1;
 
       if (Date.now() > Date.parse(input.authorization.expiresAt)) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "AUTHORIZATION_EXPIRED",
           evidenceRefs: input.evidenceRefs,
         }));
       }
 
       if (port.assertLease && !(await port.assertLease(plan))) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "FENCING_LOST",
           evidenceRefs: input.evidenceRefs,
           error: "ReMaker lease/fencing validation failed before execution.",
@@ -133,7 +140,7 @@ export class ReMakerEngine {
       }
 
       if (Date.now() - startedAtMs >= plan.maxDurationMs) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "BUDGET_EXHAUSTED",
           evidenceRefs: input.evidenceRefs,
         }));
@@ -144,7 +151,7 @@ export class ReMakerEngine {
         output = await port.execute(plan);
       } catch (error) {
         if (attempts >= plan.maxAttempts) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             error: error instanceof Error ? error.message : String(error),
@@ -154,7 +161,7 @@ export class ReMakerEngine {
       }
 
       if (port.assertLease && !(await port.assertLease(plan))) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "FENCING_LOST",
           evidenceRefs: input.evidenceRefs,
           candidateArtifact: output.candidateArtifact,
@@ -168,7 +175,7 @@ export class ReMakerEngine {
       }
 
       if (Date.now() - startedAtMs >= plan.maxDurationMs) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "BUDGET_EXHAUSTED",
           evidenceRefs: input.evidenceRefs,
           candidateArtifact: output.candidateArtifact,
@@ -186,7 +193,7 @@ export class ReMakerEngine {
         output.candidateArtifact.sha256.toLowerCase() === plan.parentArtifact.sha256.toLowerCase()
       ) {
         if (attempts >= plan.maxAttempts) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             candidateArtifact: output.candidateArtifact,
@@ -206,7 +213,7 @@ export class ReMakerEngine {
           timeline: output.observedTimelineDigest || null,
         }));
         if (failedCandidateFingerprint === lastFailedCandidateFingerprint) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "NO_PROGRESS",
             evidenceRefs: input.evidenceRefs,
             candidateArtifact: output.candidateArtifact,
@@ -221,7 +228,7 @@ export class ReMakerEngine {
         lastFailedCandidateFingerprint = failedCandidateFingerprint;
 
         if (attempts >= plan.maxAttempts) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             candidateArtifact: output.candidateArtifact,
@@ -238,7 +245,7 @@ export class ReMakerEngine {
 
       const plannedChanged = new Set(plan.changedNodeIds);
       if (output.changedNodeIds.some((id) => !plannedChanged.has(id))) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "EXECUTION_FAILED",
           evidenceRefs: input.evidenceRefs,
           candidateArtifact: output.candidateArtifact,
@@ -253,7 +260,7 @@ export class ReMakerEngine {
 
       for (const required of plan.changedNodeIds) {
         if (!output.changedNodeIds.includes(required)) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             candidateArtifact: output.candidateArtifact,
@@ -269,7 +276,7 @@ export class ReMakerEngine {
 
       for (const preserved of plan.preservedNodeIds) {
         if (!output.preservedNodeIds.includes(preserved)) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             candidateArtifact: output.candidateArtifact,
@@ -283,7 +290,7 @@ export class ReMakerEngine {
         }
 
         if (output.preservedNodeFingerprints[preserved] !== plan.preservedNodeFingerprints[preserved]) {
-          return this.finish(this.receipt({
+          return await this.finish(this.receipt({
             plan, attempts, startedAt, termination: "EXECUTION_FAILED",
             evidenceRefs: input.evidenceRefs,
             candidateArtifact: output.candidateArtifact,
@@ -306,7 +313,7 @@ export class ReMakerEngine {
       }));
 
       if (progressFingerprint === lastProgressFingerprint) {
-        return this.finish(this.receipt({
+        return await this.finish(this.receipt({
           plan, attempts, startedAt, termination: "NO_PROGRESS",
           evidenceRefs: input.evidenceRefs,
           candidateArtifact: output.candidateArtifact,
@@ -320,7 +327,7 @@ export class ReMakerEngine {
 
       lastProgressFingerprint = progressFingerprint;
 
-      return this.finish(this.receipt({
+      return await this.finish(this.receipt({
         plan, attempts, startedAt, termination: "COMPLETED",
         evidenceRefs: input.evidenceRefs,
         candidateArtifact: output.candidateArtifact,
@@ -332,7 +339,7 @@ export class ReMakerEngine {
       }));
     }
 
-    return this.finish(this.receipt({
+    return await this.finish(this.receipt({
       plan, attempts, startedAt, termination: "BUDGET_EXHAUSTED",
       evidenceRefs: input.evidenceRefs,
     }));
@@ -484,9 +491,9 @@ export class ReMakerEngine {
     });
   }
 
-  private finish(receipt: ReMakerReceipt): ReMakerReceipt {
+  private async finish(receipt: ReMakerReceipt): Promise<ReMakerReceipt> {
     if (receipt.termination === "COMPLETED") {
-      this.completed.set(receipt.idempotencyKey, receipt);
+      await this.idempotencyStore.put(receipt.idempotencyKey, receipt);
     }
     return receipt;
   }
