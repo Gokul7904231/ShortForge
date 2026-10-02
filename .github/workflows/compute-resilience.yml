@@ -1,0 +1,38 @@
+name: Compute Resilience
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/compute/**"
+      - "apps/web/factoryos/tests/compute-resilience-chaos.test.ts"
+      - ".okf/decisions/compute-resilience-optimization-20261002.md"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/factoryos/core/compute/**"
+
+jobs:
+  resilience:
+    name: Compute chaos and optimization validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      FASTINO_GLIDE_ENABLED: "false"
+      FASTINO_GLIDE_ROUTING_MODE: "OFF"
+      COMPUTE_TELEMETRY_MIN_SAMPLES: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+      - name: Chaos matrix
+        run: npx vitest run factoryos/tests/compute-resilience-chaos.test.ts --config vitest.config.ts --reporter=verbose
