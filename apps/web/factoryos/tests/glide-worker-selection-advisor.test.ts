@@ -88,7 +88,7 @@ describe("GLiDE worker selection advisor", () => {
           reliableWorker: {
             type: "choice",
             choice: "daytona",
-            confidence: 0.6,
+            confidence: 0.5,
             probabilities: {
               daytona: 0.7,
               runpod: 0.1,
@@ -98,7 +98,7 @@ describe("GLiDE worker selection advisor", () => {
           freeWorker: {
             type: "choice",
             choice: "daytona",
-            confidence: 0.6,
+            confidence: 0.5,
             probabilities: {
               daytona: 0.7,
               runpod: 0.1,
