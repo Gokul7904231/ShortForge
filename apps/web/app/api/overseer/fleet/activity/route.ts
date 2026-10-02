@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFactoryOSController } from "@/lib/overseer/factoryos-runtime";
+import { resolveCollaborationActor } from "@/lib/overseer/collaboration-auth";
 
 export async function GET(request: NextRequest) {
   try {
+    await resolveCollaborationActor(request);
     const url = new URL(request.url);
     const controller = await getFactoryOSController();
     const topicParam = url.searchParams.get("topics");
