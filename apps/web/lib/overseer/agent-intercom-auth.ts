@@ -3,7 +3,7 @@ import type { CollaborationActor } from "@/factoryos/core/collaboration/MissionC
 import type { AutonomousFactoryController } from "@/factoryos/core/controller/AutonomousFactoryController";
 import type { CommsCapability, CommsPrincipal } from "@/factoryos/core/comms/CommsFabric";
 
-const CAPABILITIES: readonly CommsCapability[] = [
+export const MISSION_INTERCOM_CAPABILITIES: readonly CommsCapability[] = [
   { name: "SITUATION_RECORD", version: "1.0.0", enabled: true, lanes: ["EVENT"], maxPayloadBytes: 32768, maxInflight: 32 },
   { name: "COMMAND", version: "1.0.0", enabled: true, lanes: ["CONTROL"], maxPayloadBytes: 32768, maxInflight: 16 },
   { name: "REQUEST_RESPONSE", version: "1.0.0", enabled: true, lanes: ["CONTROL"], maxPayloadBytes: 32768, maxInflight: 16 },
@@ -34,7 +34,7 @@ export async function buildMissionIntercomAuth(
     allowedMissionIds: [missionId],
     allowedLanes: ["CONTROL", "EVENT"],
     allowedKinds: ["MESSAGE", "DELEGATION_REQUEST", "DELEGATION_RESPONSE"],
-    allowedCapabilities: CAPABILITIES,
+    allowedCapabilities: MISSION_INTERCOM_CAPABILITIES,
     allowedTargetPrincipals: allowedTargets,
     allowBroadcast: false,
   };
