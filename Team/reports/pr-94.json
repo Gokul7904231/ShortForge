@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR94-Notebook-Live-MCP-Verification",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/notebook-live-mcp-20261002",
+  "objective": "Finish the notebook compute lane with dedicated Kaggle, Colab, and Lightning MCP diagnostics plus provider-specific live verification and CI coverage.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Notebook runtimes are an execution and experimentation substrate, not implicit F06 worker authority.",
+      "MCPs are bounded integration surfaces and do not replace Overseer, Guardian, CAS, F07, or ReleaseAuthorization.",
+      "Provider completion is not physical artifact truth; F07 and CAS remain authoritative.",
+      "No self-hosted PandaStack sandbox is part of the hosted sandbox plane.",
+      "Secrets must remain environment-bound and must never be exposed as MCP arguments."
+    ]
+  },
+  "forensicFindings": [
+    "The existing notebook live workflow referenced a missing factoryos:verify:notebooks package script.",
+    "Colab long-running-operation polling used the beta URL prefix rather than the documented operations path.",
+    "Colab runtime creation did not always send an explicit NONE accelerator for CPU runtimes and runtime IDs were not normalized to the provider naming constraints.",
+    "Kaggle execute-to-provision did not pass the caller credential bundle.",
+    "Dedicated provider-specific notebook MCP servers were not present."
+  ],
+  "changes": [
+    "Added provider-specific live verification for Kaggle, Colab, and Lightning.",
+    "Added physical MP4 plus SHA-256 and byte-length proof for the Kaggle smoke.",
+    "Added optional Colab runtime create/delete control-plane smoke without inventing generic code execution.",
+    "Added CPU-first Lightning Studio live smoke with explicit run exit-code verification.",
+    "Added dedicated Kaggle, Colab, and Lightning MCP servers with connection-check and capability tools only.",
+    "Added a direct MCP JSON-RPC protocol verifier that discovers tools and executes each provider connection check.",
+    "Added notebook MCP package typecheck jobs to notebook-fabric CI.",
+    "Fixed provider adapter defects identified by CI and live-path inspection."
+  ],
+  "research": [
+    "Current provider adapter contracts and notebook-fabric .okf documentation.",
+    "Current official Kaggle, Colab, and Lightning provider API/SDK documentation used to align live lifecycle semantics."
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_MCP_DIAGNOSTIC_BOUNDARY_CHANGE",
+    "notes": "No provider secret values are committed. MCP tools read credentials from environment only and do not expose arbitrary command execution or worker authority."
+  },
+  "trainingReadiness": {
+    "notebookFabric": "LIVE_VERIFICATION_WIRED",
+    "ascalon": "UNCHANGED / PROPOSAL_LEARNING_BOUNDARY",
+    "authority": "F06 worker admission and F07 artifact truth unchanged"
+  },
+  "evidenceRefs": [
+    "apps/web/scripts/verify-notebooks.ts",
+    "apps/web/scripts/verify-notebook-mcps.mjs",
+    "apps/web/factoryos/core/compute/notebooks/KaggleNotebookAdapter.ts",
+    "apps/web/factoryos/core/compute/notebooks/ColabNotebookAdapter.ts",
+    "apps/web/factoryos/core/compute/notebooks/LightningNotebookAdapter.ts",
+    "tools/mcp/kaggle-notebook-mcp/",
+    "tools/mcp/colab-notebook-mcp/",
+    "tools/mcp/lightning-notebook-mcp/",
+    ".okf/compute/notebook-fabric.md",
+    ".okf/compute/notebook-mcp.md"
+  ],
+  "verificationPlan": [
+    "Run repository CI and notebook-fabric contract checks.",
+    "Run the dedicated MCP package typechecks.",
+    "Execute the provider and MCP live smoke with repository secrets for each provider.",
+    "Merge only after required blocking CI lanes are green."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "notebookFabricCI": "PENDING",
+    "mcpContractCI": "FIRST_ATTEMPT_CAUGHT_FIXES",
+    "teamChangeGate": "PENDING",
+    "liveKaggle": "PENDING_USER_SECRET_RUN",
+    "liveColab": "PENDING_USER_SECRET_RUN",
+    "liveLightning": "PENDING_USER_SECRET_RUN",
+    "liveNotebookMCP": "PENDING_USER_SECRET_RUN"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "The PASS disposition means the change is internally complete and governed; external provider live evidence is deliberately recorded as pending until a credentialed workflow run is executed.",
+    "No notebook MCP is promoted to F06 worker authority by this change."
+  ]
+}
