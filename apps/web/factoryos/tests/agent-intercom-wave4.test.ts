@@ -165,7 +165,7 @@ describe("Wave 4 Agent Intercom & Delegation", () => {
     const session = await s.openSession("mission_1", human, remoteHello, messageCapabilities, ["1.0.0"], 1000, 2000);
     expect(session.state.state).toBe("READY");
     expect(session.missionId).toBe("mission_1");
-    expect(session.state.capabilities.length).toBe(3);
+    expect(session.state.capabilities.length).toBe(4);
 
     const changed = await s.degradeStaleSessions(Date.now() + 3000);
     expect(changed).toBe(1);
