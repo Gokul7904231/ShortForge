@@ -7,7 +7,10 @@ on:
       - "apps/web/factoryos/core/fabric/**"
       - "apps/web/factoryos/core/controller/**"
       - "testing/**"
+
+      - "apps/web/factoryos/tests/**"
       - ".okf/compute/**"
+      - ".github/workflows/compute-golden-mission.yml"
       - "Team/reports/pr-83.json"
   push:
     branches:
@@ -16,6 +19,8 @@ on:
       - "apps/web/factoryos/core/compute/**"
       - "apps/web/factoryos/core/fabric/**"
       - "testing/**"
+      - "apps/web/factoryos/tests/**"
+      - ".github/workflows/compute-golden-mission.yml"
 
 jobs:
   golden:
