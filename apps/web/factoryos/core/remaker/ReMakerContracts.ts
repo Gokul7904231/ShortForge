@@ -80,6 +80,8 @@ export interface ReMakerRequest {
   readonly allowedActions: readonly string[];
   readonly forbiddenActions: readonly string[];
   readonly parentArtifact: ReMakerParentArtifact;
+  /** Digest of the requested patch/change set. Different patches must never share idempotency. */
+  readonly requestedChangeDigest: string;
   readonly authorization: ReMakerAuthorization;
   readonly budget: ReMakerBudget;
   readonly evidenceRefs: readonly string[];
@@ -96,6 +98,7 @@ export interface ReMakerPlan {
   readonly target: ReMakerTargetScope;
   readonly frameRange: ReMakerFrameRange;
   readonly changedNodeIds: readonly string[];
+  readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
   readonly parentArtifact: ReMakerParentArtifact;
   readonly idempotencyKey: string;
