@@ -43,6 +43,7 @@ interface IntercomRepository {
   saveDelegation(delegation: AgentDelegationRequest, expectedVersion?: number): Promise<AgentDelegationRequest>;
   getSession(id: string): Promise<AgentIntercomSession | null>;
   listSessions(missionId: string): Promise<AgentIntercomSession[]>;
+  listSessionsAll(): Promise<AgentIntercomSession[]>;
   saveSession(session: AgentIntercomSession, expectedVersion?: number): Promise<AgentIntercomSession>;
 }
 
@@ -160,6 +161,10 @@ class MongoIntercomRepository implements IntercomRepository {
     const docs = await this.sessions.find({ missionId }).sort({ lastSeenAt: -1 }).toArray();
     return docs.map(({ _id, ...rest }) => rest as AgentIntercomSession);
   }
+  async listSessionsAll() {
+    const docs = await this.sessions.find({}).sort({ lastSeenAt: -1 }).toArray();
+    return docs.map(({ _id, ...rest }) => rest as AgentIntercomSession);
+  }
   async saveSession(session: AgentIntercomSession, expectedVersion?: number) {
     const current = await this.getSession(session.state.sessionId);
     if (expectedVersion !== undefined && current && current.version !== expectedVersion) throw new Error("INTERCOM_VERSION_CONFLICT");
@@ -259,7 +264,7 @@ export class AgentIntercomStore {
 
   async degradeStaleSessions(nowMs = Date.now()): Promise<number> {
     let changed = 0;
-    const sessions = await (this.repo as any).listSessionsAll?.() || [];
+    const sessions = await this.repo.listSessionsAll();
     for (const session of sessions) {
       const last = Date.parse(session.state.lastHeartbeatAt);
       if (session.state.state === "READY" && nowMs - last > session.state.deadAfterMs) {
