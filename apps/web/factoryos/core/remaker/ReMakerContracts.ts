@@ -79,7 +79,6 @@ export interface ReMakerRequest {
   readonly allowedActions: readonly string[];
   readonly forbiddenActions: readonly string[];
   readonly parentArtifact: ReMakerParentArtifact;
-  /** Cryptographic digest of the requested patch/change set. */
   readonly requestedChangeDigest: string;
   readonly authorization: ReMakerAuthorization;
   readonly budget: ReMakerBudget;
@@ -93,16 +92,16 @@ export interface ReMakerPlan {
   readonly repairId: string;
   readonly caseId: string;
   readonly missionId: string;
+  readonly policyId: string;
   readonly action: ReMakerAction;
   readonly target: ReMakerTargetScope;
   readonly frameRange: ReMakerFrameRange;
-  /** Logical TimelineIR nodes that the patch is allowed to change. */
   readonly changedNodeIds: readonly string[];
-  /** Physical visual scenes that must actually be rebuilt to materialize the patch. */
   readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
   readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
   readonly parentArtifact: ReMakerParentArtifact;
+  readonly requestedChangeDigest: string;
   readonly idempotencyKey: string;
   readonly planDigest: string;
   readonly maxAttempts: number;
@@ -121,9 +120,10 @@ export interface ReMakerExecutionOutput {
   readonly candidateArtifact: ReMakerCandidateArtifact;
   readonly changedNodeIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
+  /** Fingerprints measured from the actual patched state, not copied from the plan. */
   readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
   readonly rendererReceiptId?: string;
-  /** Required: ReMaker accepts no candidate without physical render proof. */
+  readonly observedTimelineDigest?: string;
   readonly physicalValidation: {
     readonly passed: boolean;
     readonly decodeSmokePassed?: boolean;
@@ -133,6 +133,8 @@ export interface ReMakerExecutionOutput {
 
 export interface ReMakerExecutionPort {
   execute(plan: ReMakerPlan): Promise<ReMakerExecutionOutput>;
+  /** Optional runtime lease/fencing check owned by the execution boundary. */
+  assertLease?(plan: ReMakerPlan): Promise<boolean>;
 }
 
 export type ReMakerTermination =
@@ -148,15 +150,22 @@ export type ReMakerTermination =
 export interface ReMakerReceipt {
   readonly repairId: string;
   readonly caseId: string;
+  readonly missionId: string;
+  readonly policyId: string;
   readonly planId: string;
+  readonly planDigest: string;
+  readonly requestedChangeDigest: string;
   readonly idempotencyKey: string;
   readonly parentArtifactId: string;
   readonly parentArtifactSha256: string;
+  readonly parentRevision: number;
+  readonly candidateRevision: number;
   readonly candidateArtifact?: ReMakerCandidateArtifact;
   readonly changedNodeIds: readonly string[];
   readonly renderSceneIds: readonly string[];
   readonly preservedNodeIds: readonly string[];
   readonly preservedNodeFingerprints: Readonly<Record<string, string>>;
+  readonly observedTimelineDigest?: string;
   readonly attempts: number;
   readonly termination: ReMakerTermination;
   readonly startedAt: string;
