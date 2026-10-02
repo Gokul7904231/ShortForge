@@ -19,6 +19,7 @@ import {
 } from "../contracts/ComputeContracts";
 import { IComputeProvider } from "../providers/ComputeProvider";
 import { RenderArtifactVerifier } from "../../fabric/verification/RenderArtifactVerifier";
+import { GlideWorkerSelectionAdvisor, type GlideWorkerSelectionAdvice } from "./GlideWorkerSelectionAdvisor";
 
 export interface UtilityScoreBreakdown {
   queueWaitSeconds: number;
@@ -53,6 +54,8 @@ export interface RoutingDecision {
   evaluatedCandidates: ScheduledProviderCandidate[];
   rejectionReasons: Record<string, string>;
   admissionRecord: import("../contracts/ComputeContracts").RenderAdmissionRecord;
+  /** Advisory only. It never overrides the deterministic routing decision until promotion gates pass. */
+  glideWorkerAdvice?: GlideWorkerSelectionAdvice;
   routedAt: string;
 }
 
@@ -70,15 +73,24 @@ export interface ProviderPerformanceTelemetry {
   failureLog: Array<{ timestamp: string; jobId: string; reason: string }>;
 }
 
+export interface ComputeRouterOptions {
+  readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
+}
+
 export class ComputeRouter {
   private providers: Map<string, IComputeProvider> = new Map();
   private policy: ComputePolicy;
   private telemetry: Map<string, ProviderPerformanceTelemetry> = new Map();
   private receipts: ExecutionReceipt[] = [];
   private readonly artifactVerifier = new RenderArtifactVerifier();
+  private readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
 
-  constructor(policy: ComputePolicy = DEFAULT_COMPUTE_POLICY) {
+  constructor(
+    policy: ComputePolicy = DEFAULT_COMPUTE_POLICY,
+    options: ComputeRouterOptions = {},
+  ) {
     this.policy = policy;
+    this.glideWorkerSelectionAdvisor = options.glideWorkerSelectionAdvisor;
   }
 
   public registerProvider(provider: IComputeProvider): void {
@@ -257,6 +269,10 @@ export class ComputeRouter {
     candidates.sort((a, b) => a.utilityScore - b.utilityScore);
 
     const selected = candidates[0];
+    const glideWorkerAdvice = this.glideWorkerSelectionAdvisor
+      ? await this.glideWorkerSelectionAdvisor.advise(job, candidates)
+      : undefined;
+
     const admissionRecord = {
       admissionId: "admission_" + job.jobId + "_" + Date.now().toString(36),
       jobId: job.jobId,
@@ -280,6 +296,7 @@ export class ComputeRouter {
       evaluatedCandidates: candidates,
       rejectionReasons,
       admissionRecord,
+      glideWorkerAdvice,
       routedAt: new Date().toISOString(),
     };
   }
