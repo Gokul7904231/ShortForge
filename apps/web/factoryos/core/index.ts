@@ -13,6 +13,8 @@ export * from "./contracts/MissionContracts";
 export * from "./contracts/ArtifactContracts";
 export * from "./contracts/CreativeStateContracts";
 export * from "./contracts/AgentContracts";
+export * from "./agent/AgentWorkforceContracts";
+export * from "./agent/AgentWorkforceStore";
 export * from "./contracts/SkillContracts";
 export * from "./contracts/PolicyContracts";
 export * from "./contracts/EvidenceContracts";
