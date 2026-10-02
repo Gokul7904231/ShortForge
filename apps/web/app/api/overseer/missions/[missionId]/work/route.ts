@@ -20,6 +20,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const mission = await controller.missionManager.getMission(missionId);
     if (!mission) return NextResponse.json({ success: false, error: "Mission not found." }, { status: 404 });
 
+    const room = await controller.collaborationStore.getRoom(missionId);
+    if (room) {
+      if (!controller.collaborationStore.canReadRoom(room, actor)) {
+        return NextResponse.json({ success: false, error: "Mission work board access denied." }, { status: 403 });
+      }
+    } else if (actor.workspaceRole === "VIEWER") {
+      return NextResponse.json({ success: false, error: "Open membership is required to view a mission work board." }, { status: 403 });
+    }
+
     const board = await controller.workManager.board(missionId);
     return NextResponse.json({ success: true, data: board });
   } catch (error: any) {
