@@ -103,15 +103,18 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     }
 
     const username = ({ ...process.env, ...(credentials || {}) }).KAGGLE_USERNAME!;
+    // Kaggle requires a new kernel's title and slug to correspond. The previous
+    // implementation appended a timestamp only to the slug, which can yield a
+    // 409 Conflict on SaveKernel because the title no longer resolves to that slug.
+    const timestamp = Date.now();
+    const kernelTitle = request.name + "-" + timestamp;
     const slug =
       "shortforge-" +
-      request.name
+      kernelTitle
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
-        .slice(0, 50) +
-      "-" +
-      Date.now();
+        .slice(0, 70);
     const kernelId = username + "/" + slug;
     const workDir = await fs.mkdtemp(
       path.join(os.tmpdir(), "shortforge-kaggle-"),
@@ -120,7 +123,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
 
     const metadata = {
       id: kernelId,
-      title: request.name,
+      title: kernelTitle,
       code_file: "worker.py",
       language: "python",
       kernel_type: "script",
