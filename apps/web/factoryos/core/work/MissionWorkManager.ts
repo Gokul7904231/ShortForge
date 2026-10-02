@@ -366,6 +366,7 @@ export class MissionWorkManager {
     actorId = "worker",
     summary = "Work is ready for review.",
   ): Promise<MissionTask> {
+    await this.assertLeaseMutationOwnership(taskId, actorId);
     const now = new Date().toISOString();
     const result = await this.mutate(missionId, taskId, "REVIEW", actorId, (current) => {
       if (normalizedState(current) !== "RUNNING") {
@@ -423,6 +424,7 @@ export class MissionWorkManager {
     actorId = "worker",
     summary = "Task completed.",
   ): Promise<MissionTask> {
+    await this.assertLeaseMutationOwnership(taskId, actorId);
     const now = new Date().toISOString();
     const result = await this.mutate(missionId, taskId, "DONE", actorId, (current) => {
       const state = normalizedState(current);
@@ -466,6 +468,7 @@ export class MissionWorkManager {
     actorId: string,
     reason: string,
   ): Promise<MissionTask> {
+    await this.assertLeaseMutationOwnership(taskId, actorId);
     const now = new Date().toISOString();
     let exhausted = false;
 
@@ -522,6 +525,7 @@ export class MissionWorkManager {
   }
 
   async blockTask(missionId: string, taskId: string, actorId: string, reason: string): Promise<MissionTask> {
+    await this.assertLeaseMutationOwnership(taskId, actorId);
     const now = new Date().toISOString();
     return this.mutate(missionId, taskId, "BLOCKED", actorId, (current) => {
       if (TERMINAL.has(normalizedState(current))) {
@@ -688,6 +692,13 @@ export class MissionWorkManager {
       summary,
       metadata,
     };
+  }
+
+  private async assertLeaseMutationOwnership(taskId: string, actorId: string): Promise<void> {
+    const lease = await this.leases.getLease(taskId);
+    if (lease?.status === "ACTIVE" && lease.ownerAgentId !== actorId) {
+      throw new Error(`Task ${taskId} is actively leased by ${lease.ownerAgentId}; only the lease owner may mutate running work.`);
+    }
   }
 
   private async releaseLeaseIfOwned(taskId: string, ownerAgentId: string): Promise<void> {
