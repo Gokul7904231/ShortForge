@@ -79,6 +79,8 @@ export type GlideRoutingMode = "OFF" | "SHADOW" | "CANARY";
 export interface ComputeRouterOptions {
   readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
   readonly glideRoutingMode?: GlideRoutingMode;
+  /** Minimum successful observations before measured latency overrides declared estimates. */
+  readonly telemetryMinSamples?: number;
 }
 
 export class ComputeRouter {
@@ -89,6 +91,7 @@ export class ComputeRouter {
   private readonly artifactVerifier = new RenderArtifactVerifier();
   private readonly glideWorkerSelectionAdvisor?: GlideWorkerSelectionAdvisor;
   private readonly glideRoutingMode: GlideRoutingMode;
+  private readonly telemetryMinSamples: number;
   private workerPool?: ComputePool;
 
   constructor(
@@ -98,6 +101,10 @@ export class ComputeRouter {
     this.policy = policy;
     this.glideWorkerSelectionAdvisor = options.glideWorkerSelectionAdvisor;
     this.glideRoutingMode = options.glideRoutingMode ?? "OFF";
+    this.telemetryMinSamples = Math.max(
+      1,
+      Math.round(options.telemetryMinSamples ?? 3),
+    );
   }
 
   public bindWorkerPool(pool: ComputePool): void {
@@ -211,9 +218,12 @@ export class ComputeRouter {
       // Total Estimated Duration = Queue Wait + Startup + Input Transfer + Environment Setup + Execution + Output Transfer + Verification
       const telemetry = this.telemetry.get(provider.id);
       const queueWaitSeconds = health.activeJobs * 5.0;
+      const measuredEnough =
+        Boolean(telemetry) &&
+        telemetry!.successfulExecutions >= this.telemetryMinSamples;
       const observedStartupSeconds =
-        telemetry && telemetry.successfulExecutions > 0
-          ? telemetry.avgStartupMs / 1000
+        measuredEnough
+          ? telemetry!.avgStartupMs / 1000
           : capability.estimatedStartupSeconds;
       const startupSeconds = Math.max(0.1, observedStartupSeconds);
       const inputTransferSeconds = Math.max(
@@ -227,8 +237,8 @@ export class ComputeRouter {
       // otherwise fall back to the declared workload estimate.
       const baseExecutionSeconds = job.requirements.estimatedDurationSeconds || 5.0;
       const observedExecutionSeconds =
-        telemetry && telemetry.successfulExecutions > 0
-          ? telemetry.avgExecutionMs / 1000
+        measuredEnough
+          ? telemetry!.avgExecutionMs / 1000
           : 0;
       const executionSeconds =
         observedExecutionSeconds > 0
@@ -236,7 +246,12 @@ export class ComputeRouter {
           : capability.gpuAvailable
             ? baseExecutionSeconds * 0.5
             : baseExecutionSeconds;
-      const outputTransferSeconds = Math.max(0.1, 5 / (capability.transferBandwidthMbps / 8));
+      const observedTransferSeconds =
+        measuredEnough ? telemetry!.avgTransferMs / 1000 : 0;
+      const outputTransferSeconds =
+        observedTransferSeconds > 0
+          ? Math.max(0.1, observedTransferSeconds / 2)
+          : Math.max(0.1, 5 / (capability.transferBandwidthMbps / 8));
       const verificationSeconds = 1.0;
 
       const estimatedTotalSeconds =
