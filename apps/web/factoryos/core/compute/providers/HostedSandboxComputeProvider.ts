@@ -69,7 +69,7 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
     this.startupSeconds = options.startupSeconds || Number(process.env.SANDBOX_WORKER_STARTUP_SECONDS || 3);
     this.transferBandwidthMbps =
       options.transferBandwidthMbps ||
-      Number(process.env.SANDBOX_WORKER_TRANSFER_BPS || 1000);
+      Number(process.env.SANDBOX_WORKER_TRANSFER_MBPS || 1000);
     this.renderCommandEnv =
       options.renderCommandEnv ||
       "SHORTFORGE_SANDBOX_RENDER_COMMAND";
@@ -146,6 +146,7 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
       });
     }
 
+    const healthStartedAt = Date.now();
     try {
       const result = await this.adapter.validateCredentials(this.credentials);
       return this.cacheHealth({
@@ -155,7 +156,7 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
         failureReason: result.errorMessage,
         activeJobs: this.activeJobs,
         successRate: result.authenticated ? 1 : 0,
-        avgLatencyMs: Date.now() - this.lastHealthAt,
+        avgLatencyMs: Date.now() - healthStartedAt,
       });
     } catch (error: any) {
       return this.cacheHealth({
