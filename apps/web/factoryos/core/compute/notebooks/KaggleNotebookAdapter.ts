@@ -108,13 +108,15 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     // 409 Conflict on SaveKernel because the title no longer resolves to that slug.
     const timestamp = Date.now();
     const kernelTitle = request.name + "-" + timestamp;
-    const slug =
-      "shortforge-" +
-      kernelTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 70);
+    // Kaggle resolves the kernel by the slug derived from its title. Keep
+    // metadata.id aligned with that canonical slug; an extra prefix here can
+    // allow SaveKernel to succeed but make later status/output calls resolve
+    // a different (non-existent) kernel resource.
+    const slug = kernelTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 100);
     const kernelId = username + "/" + slug;
     const workDir = await fs.mkdtemp(
       path.join(os.tmpdir(), "shortforge-kaggle-"),
