@@ -9,16 +9,15 @@ import { TreasuryService } from "../core/treasury/TreasuryService";
 import { computeTreasuryExecutionScopeDigest } from "../core/treasury/TreasuryScope";
 import { TreasuryEconomicIntelligence } from "../core/treasury/TreasuryEconomicIntelligence";
 
-function makeTreasury() {
+function makeTreasury(now = new Date()) {
   const ledger = new InMemoryTreasuryLedger();
   const registry = new TreasuryPriceRegistry();
-  const kernel = new TreasuryKernel(ledger, registry);
+  const kernel = new TreasuryKernel(ledger, registry, undefined, () => new Date(now));
   const service = new TreasuryService(kernel);
   ledger.seedAccount(
-    createTreasuryAccount("factory", 10, 100, "OPEN", new Date(), 1_000_000),
+    createTreasuryAccount("factory", 10, 100, "OPEN", now, 1_000_000),
   );
   return { ledger, service };
-}
 
 function command(
   commandId: string,
@@ -74,8 +73,8 @@ function command(
 
 describe("Treasury Economic Intelligence", () => {
   it("derives unit economics from Treasury evidence and does not mutate state", async () => {
-    const { service } = makeTreasury();
     const now = new Date("2026-10-03T08:00:00.000Z");
+    const { service } = makeTreasury(now);
 
     const first = await service.reserve(command("cmd-econ-1", now, 1));
     await service.settle(first.reservation.reservationId, {
@@ -119,8 +118,8 @@ describe("Treasury Economic Intelligence", () => {
   });
 
   it("raises a breach signal from a real Treasury envelope overrun", async () => {
-    const { service } = makeTreasury();
     const now = new Date("2026-10-03T09:00:00.000Z");
+    const { service } = makeTreasury(now);
     const reserved = await service.reserve(command("cmd-breach", now, 0.05));
 
     await expect(
