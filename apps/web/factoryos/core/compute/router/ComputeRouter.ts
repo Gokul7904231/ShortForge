@@ -411,12 +411,26 @@ export class ComputeRouter {
   public async dispatchWithFailover(
     job: ComputeJob,
     onProgress?: (msg: string) => void,
-    preferredProviderType?: ProviderType
+    preferredProviderType?: ProviderType,
+    maxRetriesOverride?: number,
   ): Promise<{ receipt: ExecutionReceipt; failovers: string[] }> {
     const routingDecision = await this.planProvider(job, preferredProviderType);
     const failovers: string[] = [];
 
-    const candidatesToTry = routingDecision.evaluatedCandidates.map((c) => c.provider);
+    const candidates = routingDecision.evaluatedCandidates.map((c) => c.provider);
+    const maxRetries = Math.max(
+      0,
+      Math.floor(
+        maxRetriesOverride === undefined
+          ? this.policy.maxRetries
+          : maxRetriesOverride,
+      ),
+    );
+    const maxAttempts = Math.max(
+      1,
+      Math.min(candidates.length, maxRetries + 1),
+    );
+    const candidatesToTry = candidates.slice(0, maxAttempts);
 
     let lastError: Error | null = null;
 
