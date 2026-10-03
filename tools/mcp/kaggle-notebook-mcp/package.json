@@ -4,11 +4,14 @@
   "private": true,
   "description": "ShortForge-owned MCP for bounded Kaggle notebook connection diagnostics.",
   "type": "module",
-  "engines": {"node": ">=22"},
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
+    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts",
+    "test": "tsx ../shared/StreamableHttpMcpClient.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.1.0",
