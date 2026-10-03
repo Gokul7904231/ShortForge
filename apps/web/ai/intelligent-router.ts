@@ -426,20 +426,10 @@ class IntelligentRouterClass {
               provider: pluginId,
               model: candidate.modelId,
               capability: context.capability,
-              treasuryManaged: true,
+              treasuryManaged: "true",
               treasuryReservationId:
                 reservation.reservation.reservationId,
             });
-            MetricsDB.record(
-              "model_cost_usd",
-              "engine",
-              Math.max(0, measuredPricing.totalCostUsd),
-              {
-                provider: pluginId,
-                model: candidate.modelId,
-                capability: context.capability,
-              },
-            );
           } catch {}
 
           return result;
@@ -534,7 +524,7 @@ class IntelligentRouterClass {
               model: candidate.modelId,
               capability: context.capability,
               error: err?.message || String(err),
-              treasuryManaged: true,
+              treasuryManaged: "true",
             });
           } catch {}
         }
