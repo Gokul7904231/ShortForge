@@ -700,7 +700,7 @@ export async function POST(req: Request) {
       status: "failed",
       error: authorityError,
     });
-    return NextResponse.json({ error: authorityError, jobId }, { status: 409 });;
+    return NextResponse.json({ error: authorityError, jobId }, { status: 409 });
   } catch (err: any) {
     if (userId && jobId) {
       try {
