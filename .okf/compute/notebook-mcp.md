@@ -1,6 +1,6 @@
 # ShortForge Notebook MCP Diagnostics
 
-Status: implementation wave — 2026-10-02.
+Status: finalized — live Kaggle provider and MCP proof passed 2026-10-03.
 
 ## Dedicated MCPs
 
@@ -36,6 +36,10 @@ The live workflow .github/workflows/notebook-fabric.yml runs both proof layers.
 ### Kaggle
 
 A live run submits a real notebook kernel, executes a deterministic one-second MP4 FFmpeg probe, downloads the output, verifies SHA-256 and byte length locally, and deletes the kernel.
+
+### Kaggle verification record
+
+GitHub Actions notebook-fabric run #89 (`37099200857`) passed the real Kaggle physical-artifact probe and dedicated Kaggle MCP live smoke. The artifact proof was `PHYSICAL_ARTIFACT_VERIFIED`, with local SHA-256 and byte-length recomputation. Mainline closeout is merged in PR #99.
 
 ### Google Colab
 
