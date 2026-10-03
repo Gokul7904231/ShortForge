@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR135-GenerateVideoStartMissionSyntax",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/generate-video-startmission-syntax-20261003",
+  "objective": "Repair the current-main TypeScript syntax regression in generate-video while preserving the existing prepared economic command binding.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "FactoryOS remains the sole production execution authority.",
+      "Prepared economic commands remain explicitly bound to mission execution.",
+      "No execution authority or F07 truth boundary changes."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/economics/treasurer-operating-contract.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "INHERITED/UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Syntax-only normalization; no new credential surface."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Extracted the existing FactoryOS startMission parameters into a local missionParams object.",
+    "Invoked controller.startMission(missionParams, preparedEconomicCommand) explicitly, removing parser ambiguity.",
+    "Preserved all mission scope fields and prepared economic binding."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "typecheck": "PENDING",
+    "tests": "PENDING"
+  },
+  "disposition": "PASS"
+}
