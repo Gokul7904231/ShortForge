@@ -426,7 +426,7 @@ class IntelligentRouterClass {
               provider: pluginId,
               model: candidate.modelId,
               capability: context.capability,
-              treasuryManaged: true,
+              treasuryManaged: "true",
               treasuryReservationId:
                 reservation.reservation.reservationId,
             });
@@ -534,7 +534,7 @@ class IntelligentRouterClass {
               model: candidate.modelId,
               capability: context.capability,
               error: err?.message || String(err),
-              treasuryManaged: true,
+              treasuryManaged: "true",
             });
           } catch {}
         }
