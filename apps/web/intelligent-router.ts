@@ -89,7 +89,9 @@ class IntelligentRouterClass {
   ): Promise<any> {
     AIConfigManager.loadAll();
 
-    const treasuryManaged = this.treasuryRequired || Boolean(this.treasuryAdmission);
+    const treasuryManaged =
+      this.treasuryRequired ||
+      Boolean(this.treasuryAdmission && context.overseerCommandId);
     if (
       this.treasuryRequired &&
       (!this.treasuryAdmission ||
