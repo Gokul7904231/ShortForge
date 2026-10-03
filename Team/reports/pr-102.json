@@ -80,7 +80,8 @@
         "docs/treasury-wave2-compute-admission.md"
       ]
     }
-  ],
+    {
+
     {
       "id": "TRSY-RETRY-004",
       "originalConflict": "ComputeRouter automatic failover could cross provider boundaries without consuming a separately authorized retry envelope.",
