@@ -7,3 +7,6 @@ export * from "./TreasuryFactory";
 export * from "./TreasuryEconomicAdmission";
 export * from "./TreasuryScope";
 export * from "./TreasuryRuntime";
+
+export * from "./TreasuryEconomicIntelligence";
+export * from "./TreasuryEntitlementPolicy";
