@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
-import { getUserQuota } from "@/lib/quota/quota-service";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 
 export async function GET(req: Request) {
   try {
@@ -19,7 +20,9 @@ export async function GET(req: Request) {
       userId = "anonymous";
     }
 
-    const quota = await getUserQuota(userId, role);
+    const quota = await new TreasuryQuotaAdmission(
+      await getTreasuryRuntime(),
+    ).getGenerationQuota(userId, role);
 
     return NextResponse.json({
       plan: quota.tier,
