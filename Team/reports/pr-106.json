@@ -6,7 +6,7 @@
   "baseRef": "main",
   "headRef": "feat/treasury-economic-intelligence-wave4-20261003",
   "objective": "Retire remaining legacy economic authority paths and introduce read-only Treasury Economic Intelligence without creating a second economic authority or scheduler.",
-  "classification": "extends existing rule + compatibility retirement",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "sourceRefs": [
@@ -57,5 +57,78 @@
     "strix": "UNAVAILABLE_TRIAL_EXPIRED",
     "localCloneTests": "NOT_RUN_NETWORK_DNS_UNAVAILABLE"
   },
-  "disposition": "BLOCKED_PENDING_REMOTE_GATES"
+  "disposition": "BLOCKED",
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Treasury remains the deterministic economic authority; Economic Intelligence is read-only advisory context.",
+      "Legacy CostGovernor and MissionBudgetManager are no longer production economic admission authorities.",
+      "Legacy quota Firestore is bootstrap/projection only after Treasury entitlement initialization.",
+      "Production providerFactory execution requires Treasury context and the canonical IntelligentRouter.",
+      "Unknown paid pricing remains denied and additional model attempts require fresh Treasury reservations."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-W4-001",
+      "originalConflict": "Economic Intelligence could become a second economic authority if recommendations were allowed to mutate Treasury.",
+      "status": "RESOLVED",
+      "proposedResolution": "Expose a read-only Treasury ledger projection with no mutation capability and keep all admission decisions in the Constitutional Kernel.",
+      "acceptedResolution": "TreasuryEconomicIntelligence and TreasuryEconomicAdvice expose measurements/recommendations only; no Treasury service handle is exposed to cognition.",
+      "decisionAuthority": "Treasury economic authority invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryEconomicIntelligence.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEconomicAdvice.ts"
+      ]
+    },
+    {
+      "id": "TRSY-W4-002",
+      "originalConflict": "Legacy quota storage could remain a competing production admission authority during migration.",
+      "status": "RESOLVED",
+      "proposedResolution": "Use Treasury entitlement accounts for hot-path reads/admission; allow legacy Firestore only for one-time bootstrap and compatibility projection.",
+      "acceptedResolution": "TreasuryQuotaAdmission owns quota admission and current quota reads while Firestore receives projections.",
+      "decisionAuthority": "Treasury entitlement authority",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryQuotaAdmission.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEntitlementPolicy.ts"
+      ]
+    },
+    {
+      "id": "TRSY-W4-003",
+      "originalConflict": "Capability and mission components could continue authorizing spend independently through legacy governors.",
+      "status": "RESOLVED",
+      "proposedResolution": "Keep capability and mission lifecycle checks local, but move economic admission exclusively to Treasury.",
+      "acceptedResolution": "CapabilityFirstRouter no longer calls CostGovernor and MissionManager no longer delegates economic admission to MissionBudgetManager.",
+      "decisionAuthority": "Treasury economic admission invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/routing/CapabilityFirstRouter.ts",
+        "apps/web/factoryos/core/missions/MissionManager.ts"
+      ]
+    },
+    {
+      "id": "TRSY-W4-004",
+      "originalConflict": "Specialized legacy endpoints and scheduler paths could bypass the canonical Treasury-gated generation path.",
+      "status": "RESOLVED",
+      "proposedResolution": "Collapse compatibility generation routes into the canonical path and make scheduler admission-free.",
+      "acceptedResolution": "/api/generations delegates to /api/generate-video, scheduler triggers canonical generation, and specialized quiz/model endpoints use the Treasury-aware provider gateway.",
+      "decisionAuthority": "Treasury single-boundary migration rule",
+      "canonicalUpdates": [
+        "apps/web/app/api/generations/route.ts",
+        "apps/web/lib/scheduler/SchedulerService.ts",
+        "apps/web/app/api/quiz/geo/route.ts",
+        "apps/web/app/api/quiz/generate/route.ts"
+      ]
+    }
+  ],
+  "forgerPlan": "Forge Architect, Forge Builder, Forge Security and Forge Release reviewed the Wave 4 authority-retirement and advisory-intelligence contract.",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Release"
+  ]
 }
