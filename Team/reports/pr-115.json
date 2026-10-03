@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR115-Colab-Browser-MCP-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/colab-mcp-current-main-20261003",
+  "objective": "Integrate the unique Colab browser-session interoperability layer from PR #103 onto the current mainline without conflicting with the PR #107 Colab render adapter.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/mcp-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "The browser bridge is loopback-bound and validates approved Colab origins and per-session tokens."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "COLAB-MCP-MAIN-001",
+      "originalConflict": "PR #103 modified notebook-fabric workflow and Colab MCP documentation that were subsequently changed by PR #107.",
+      "status": "RESOLVED",
+      "proposedResolution": "Port the unique bridge files onto current main and reconcile only the shared workflow/documentation surfaces.",
+      "acceptedResolution": "Current-main branch contains the PR #107 render adapter; this PR layers only the browser interoperability capability.",
+      "decisionAuthority": "Colab MCP integration boundary"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added bounded Colab browser bridge, strict URL/origin/token validation, per-session loopback endpoints, lifecycle tools and regression tests.",
+    "Reconciled notebook-fabric workflow with the current Colab render gate.",
+    "Updated MCP governance documentation."
+  ],
+  "verificationPlan": [
+    "Pass Team Change Gate, package typecheck/test, repository CI, and affected floor/compute gates.",
+    "Merge only after all blocking checks pass."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "repositoryCI": "PENDING_CURRENT_RUN",
+    "colabBrowserBridge": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS"
+}
