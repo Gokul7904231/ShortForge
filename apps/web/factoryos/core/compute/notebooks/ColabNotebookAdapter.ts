@@ -754,12 +754,12 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     const base = connectionUrl.endsWith("/") ? connectionUrl : connectionUrl + "/";
     const relativePath =
       "files/" +
-      remotePath
-        .replace(/^\/+/, "")
+      this.jupyterRelativePath(remotePath)
         .split("/")
         .filter(Boolean)
         .map((segment) => encodeURIComponent(segment))
         .join("/");
+
     const fileUrl = new URL(relativePath, base);
     const response = await fetch(fileUrl, {
       headers: {
@@ -784,6 +784,16 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       Readable.fromWeb(response.body as any),
       (await import("node:fs")).createWriteStream(localPath),
     );
+  }
+
+  private jupyterRelativePath(remotePath: string): string {
+    const normalized = remotePath.replace(/^\/+/, "");
+    // Managed Colab runtimes normally expose /content as the Jupyter root.
+    // Accept both a root-relative path and the common absolute /content/<file>
+    // form used by render jobs, but never silently escape the Jupyter root.
+    if (normalized === "content") return "";
+    if (normalized.startsWith("content/")) return normalized.slice("content/".length);
+    return normalized;
   }
 
   private async hasMp4FtypHeader(filePath: string): Promise<boolean> {
