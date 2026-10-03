@@ -72,19 +72,6 @@ export class TreasuryEconomicAdmission {
     private readonly priceRegistry: TreasuryPriceRegistry = service.getPriceRegistry(),
   ) {}
 
-  registerModelCandidatePricing(candidate: TreasuryModelCandidate, now = new Date()): void {
-    this.priceRegistry.registerModelPricing({
-      providerId: candidate.providerId,
-      modelId: candidate.modelId,
-      inputUsdPer1MTokens: Math.max(0, candidate.inputUsdPer1MTokens),
-      outputUsdPer1MTokens: Math.max(0, candidate.outputUsdPer1MTokens),
-      pricingSource: candidate.pricingSource,
-      pricingVersion: candidate.pricingVersion,
-      confidence: candidate.pricingSource === "PROVIDER_API" ? "HIGH" : "MEDIUM",
-      now,
-    });
-  }
-
   assessModelCandidate(
     candidate: TreasuryModelCandidate,
     budget: TreasuryBudgetEnvelope,
