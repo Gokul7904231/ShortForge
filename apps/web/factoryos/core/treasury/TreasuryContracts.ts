@@ -34,6 +34,7 @@ export interface TreasuryResourceRequest {
   readonly requiresGpu?: boolean;
   readonly scarcityUnits?: number;
   readonly verificationRequired?: boolean;
+  readonly paidRoute?: boolean;
   readonly metadata?: Record<string, string | number | boolean>;
 }
 
