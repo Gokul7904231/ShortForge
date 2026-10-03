@@ -98,6 +98,14 @@ class IntelligentRouterClass {
     AIConfigManager.loadAll();
 
     const treasuryContext = context.treasuryContext;
+
+    if (treasuryContext && this.treasuryService !== treasuryContext.treasuryService) {
+      this.bindTreasury(
+        treasuryContext.treasuryService,
+        process.env.NODE_ENV === "production",
+      );
+    }
+
     const normalizedContext: RoutingTaskContext = treasuryContext
       ? {
           ...context,
@@ -109,7 +117,7 @@ class IntelligentRouterClass {
             context.overseerCommandId ??
             treasuryContext.overseerCommandId,
           accountId:
-            context.accountId ?? treasuryContext.accountId,
+            normalizedContext.accountId ?? treasuryContext.accountId,
           missionId:
             context.missionId ?? treasuryContext.missionId,
           runId:
@@ -164,12 +172,12 @@ class IntelligentRouterClass {
     const maxAttempts = Math.max(1, (normalizedContext.maxRetries ?? 0) + 1);
 
     const scopeFingerprint =
-      context.scopeFingerprint ??
+      normalizedContext.scopeFingerprint ??
       createHash("sha256")
         .update(
           JSON.stringify({
-            capability: context.capability,
-            subtask: context.subtask,
+            capability: normalizedContext.capability,
+            subtask: normalizedContext.subtask,
             prompt: params.prompt,
             system: params.system,
           }),
@@ -177,14 +185,15 @@ class IntelligentRouterClass {
         .digest("hex");
 
     const taskId =
-      context.taskId ??
+      normalizedContext.taskId ??
       "ai_" +
         createHash("sha256")
           .update(scopeFingerprint)
           .digest("hex")
           .slice(0, 16);
 
-    const missionId = context.missionId ?? context.runId ?? "ai-runtime";
+    const missionId =
+      normalizedContext.missionId ?? normalizedContext.runId ?? "ai-runtime";
     const accountId =
       context.accountId ??
       process.env.FACTORYOS_TREASURY_ACCOUNT_ID ??
@@ -257,7 +266,7 @@ class IntelligentRouterClass {
         const modelCandidate: TreasuryModelCandidate = {
           providerId: pluginId,
           modelId: candidate.modelId,
-          capability: String(context.capability),
+          capability: String(normalizedContext.capability),
           isPaid,
           inputTokens,
           outputTokens: outputTokenCeiling,
@@ -336,7 +345,7 @@ class IntelligentRouterClass {
               .slice(0, 24);
 
           const startedAt = Date.now();
-          const result = await plugin.execute(context.capability, {
+          const result = await plugin.execute(normalizedContext.capability, {
             ...params,
             model: candidate.modelId,
             __treasuryExecutionId: executionId,
@@ -408,7 +417,7 @@ class IntelligentRouterClass {
 
           this.updateDynamicBenchmarks(
             candidate.modelId,
-            context.capability,
+            normalizedContext.capability,
             duration,
           );
 
