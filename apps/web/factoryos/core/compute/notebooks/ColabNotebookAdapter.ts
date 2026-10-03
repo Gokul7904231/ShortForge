@@ -2,8 +2,6 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
-import { google } from "googleapis";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type {
@@ -455,26 +453,23 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
-    try {
-      const auth = new google.auth.GoogleAuth({
-        scopes: [COLAB_SCOPE],
-      });
-      const client = await auth.getClient();
-      const accessToken = await client.getAccessToken();
-      const token =
-        typeof accessToken === "string"
-          ? accessToken
-          : accessToken?.token;
-      if (!token) {
-        throw new Error("Google ADC returned no access token.");
-      }
-      return token;
-    } catch (error: any) {
+    const gcloud = process.env.COLAB_GCLOUD_BIN || "gcloud";
+    const result = await runProcess(
+      gcloud,
+      ["auth", "application-default", "print-access-token"],
+      { timeoutMs: 20_000 },
+    );
+
+    if (result.exitCode !== 0 || !result.stdout.trim()) {
       throw new Error(
-        "COLAB_ADC_UNAVAILABLE: Google Application Default Credentials could not provide a Colab-scoped access token. " +
-          (error?.message || String(error)).slice(0, 500),
+        "COLAB_GCLOUD_ADC_UNAVAILABLE: gcloud Application Default Credentials are unavailable. Authenticate with the Colab OAuth scope " +
+          COLAB_SCOPE +
+          ". " +
+          (result.stderr || result.stdout || "").trim().slice(0, 500),
       );
     }
+
+    return result.stdout.trim().split(/\s+/)[0];
   }
 
   private async apiFetch(
@@ -680,9 +675,27 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     timedOut: boolean;
     error?: string;
   }> {
-    const bridgeScript = fileURLToPath(
-      new URL("../../../scripts/colab-jupyter-exec.py", import.meta.url),
-    );
+    const candidates = [
+      process.env.COLAB_JUPYTER_BRIDGE_PATH,
+      path.resolve(process.cwd(), "scripts/colab-jupyter-exec.py"),
+      path.resolve(process.cwd(), "apps/web/scripts/colab-jupyter-exec.py"),
+    ].filter((value): value is string => Boolean(value));
+
+    let bridgeScript = candidates[0] || "";
+    for (const candidate of candidates) {
+      try {
+        await fs.access(candidate);
+        bridgeScript = candidate;
+        break;
+      } catch {
+        // Try the next known project-root location.
+      }
+    }
+    if (!bridgeScript) {
+      throw new Error(
+        "COLAB_JUPYTER_BRIDGE_NOT_FOUND: set COLAB_JUPYTER_BRIDGE_PATH or run from the ShortForge repository.",
+      );
+    }
     const codeB64 = Buffer.from(code, "utf8").toString("base64");
 
     const python =
