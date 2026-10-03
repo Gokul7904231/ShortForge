@@ -10,7 +10,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
+    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts",
+    "test": "tsx tests/browser-bridge.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.1.0",
