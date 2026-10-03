@@ -254,7 +254,7 @@ Audit it and output a valid JSON object with this exact format:
       system: mentorSystem,
       temperature: 0.5,
       maxTokens: 1024,
-    }); mentorCompletion.choices[0]?.message?.content;
+    });
     if (!mentorRaw) {
       throw new Error("Mentor node returned empty content");
     }
