@@ -184,7 +184,7 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
         listActiveReservations: async (accountId) =>
           [...reservations.values()]
             .filter((reservation) => reservation.status === "ACTIVE" && (!accountId || reservation.accountId === accountId))
-            .map(structuredClone),
+            .map((reservation) => structuredClone(reservation)),
         putReservation: async (reservation) => {
           reservations.set(reservation.reservationId, structuredClone(reservation));
         },
@@ -214,7 +214,7 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
       .filter((event) => !accountId || event.accountId === accountId)
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt) || b.eventId.localeCompare(a.eventId))
       .slice(0, limit)
-      .map(structuredClone);
+      .map((event) => structuredClone(event));
   }
 
   async listActiveReservations(accountId?: string): Promise<TreasuryReservation[]> {
