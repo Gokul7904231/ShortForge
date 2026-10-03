@@ -1,6 +1,6 @@
 # Treasurer Operating Contract
 
-**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVE 1  
+**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–3  
 **Date:** 2026-10-03
 
 ## Purpose
@@ -74,39 +74,55 @@ This provides a common economic envelope for LLM, API, compute, notebook, sandbo
 
 Treasurer does not select or mutate the actual provider worker.
 
-The integration target is:
+The canonical boundaries are:
 
 ```
 ComputeOffer
+  -> economic selection/advice
   -> Treasury economic admissibility
   -> ComputeRouter physical placement
   -> Provider
-
-Model/API inference follows the same separation:
-```
-Overseer
-  -> Model/Capability Router selection
-  -> Treasury economic admissibility
-  -> Provider execution
   -> measured usage
   -> Treasury settlement
 ```
 
-Wave 3 makes these runtime boundaries explicit through `TreasuryEconomicAdmission` and the Treasury-backed `ProviderApiRegistry.provisionWithTreasury` seam.
+For model/API inference:
+
+```
+Overseer command
+  -> Decision Fabric
+  -> Model/Capability Router selection
+  -> Treasury economic admissibility
+  -> Provider execution
+  -> measured token usage
+  -> Treasury settlement
 ```
 
-The same boundary applies to model routing.
+For user generation entitlement:
+
+```
+Overseer command
+  -> TreasuryQuotaAdmission
+  -> quota entitlement reservation
+  -> FactoryOS mission
+  -> F07 verification
+  -> Treasury quota settlement/release
+  -> Firestore compatibility projection
+```
+
+Wave 3 makes these three flows share one economic authority without making Treasurer a scheduler or physical placement engine.
 
 ## Existing-system reconciliation
 
-Current repository mechanisms remain:
-- user quota service;
-- MissionBudgetManager;
-- CostGovernor;
-- AgentEconomicsEngine;
-- ComputeRouter/provider telemetry.
+The following legacy mechanisms are retained only as compatibility/advisory layers:
 
-Wave 1 establishes Treasurer as the future owner without deleting these mechanisms prematurely.
+- user quota Firestore documents: projection/UI/history;
+- MissionBudgetManager: post-consumption mission policy/projection;
+- CostGovernor: non-authorizing production compatibility facade;
+- AgentEconomicsEngine: advisory tier/cost heuristics; authoritative cost comes from measured Treasury settlement;
+- ComputeRouter/provider telemetry: physical placement and measurements, not economic authorization.
+
+They may inform execution, but they must not become a second production spend authority.
 
 ## Operating modes
 
