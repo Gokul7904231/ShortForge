@@ -35,9 +35,6 @@ class RenderReceipt:
     warnings: List[str] = field(default_factory=list)
     validation: Optional[RenderValidationResult] = None
     scenes_rendered: List[str] = field(default_factory=list)
-    scenes_rebuilt: List[str] = field(default_factory=list)
-    repair_mode: Optional[str] = None
-    forced_scene_ids: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
