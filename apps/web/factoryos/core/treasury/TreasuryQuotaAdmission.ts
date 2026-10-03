@@ -114,6 +114,24 @@ function buildQuotaInfoFromAccount(
 export class TreasuryQuotaAdmission {
   constructor(private readonly treasury: TreasuryService) {}
 
+  async getGenerationQuota(
+    userId: string,
+    role: string,
+  ): Promise<UserQuotaInfo> {
+    const tier = resolveTreasuryEntitlementTier(role);
+    const accountId = quotaAccountId(userId, role);
+    let account = await this.treasury.getLedger().getAccount(accountId);
+
+    if (!account) {
+      const legacyQuota = await getUserQuota(userId, role);
+      account = await this.treasury.ensureAccount(
+        buildQuotaAccount(legacyQuota, accountId),
+      );
+    }
+
+    return buildQuotaInfoFromAccount(userId, tier, account);
+  }
+
   async reserveGenerationSlot(
     context: TreasuryQuotaAdmissionContext,
   ): Promise<TreasuryQuotaReservationResult> {
