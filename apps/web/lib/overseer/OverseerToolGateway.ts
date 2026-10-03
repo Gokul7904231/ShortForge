@@ -98,15 +98,11 @@ export class OverseerToolGateway {
         isUnlimited: quota.isUnlimited,
         isExceeded: quota.isExceeded,
       };
-    } catch {
-      return {
-        completed: 0,
-        limit: 5,
-        remaining: 5,
-        isUnlimited: user.role === "OWNER" || user.role === "ADMIN",
-        isExceeded: false,
-        status: "QUOTA_UNAVAILABLE",
-      };
+    } catch (error) {
+      throw new Error(
+        "[OverseerToolGateway] Treasury quota read unavailable: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     }
   }
 
