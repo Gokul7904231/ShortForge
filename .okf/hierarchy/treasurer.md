@@ -1,6 +1,6 @@
 # Treasurer — Economic Control-Plane Contract
 
-**Status:** AUTHORITATIVE TARGET + IMPLEMENTATION WAVE 1  
+**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–2  
 **Date:** 2026-10-03  
 **Canonical implementation:** `apps/web/factoryos/core/treasury/`
 
@@ -136,8 +136,8 @@ Future advisory layer. May use observed cost, latency, quality and verified outc
 
 Economic Intelligence can recommend. The Constitutional Kernel decides.
 
-## Migration rule
+## Wave 2 runtime integration
 
-Existing quota, MissionBudgetManager, CostGovernor and AgentEconomicsEngine remain compatibility mechanisms during migration. New Treasury code must become the single economic admission boundary before those legacy paths are declared authoritative.
+F06 rendering now participates in the Treasury lifecycle: RenderIntent carries the originating Overseer command identity; RenderFabric reserves before ComputeRouter dispatch; failed dispatch releases; F07 settlement uses an authentic signed release receipt. Existing quota, MissionBudgetManager, CostGovernor and AgentEconomicsEngine remain compatibility mechanisms during migration. New Treasury code must become the single economic admission boundary before those legacy paths are declared authoritative.
 
 Wave 1 intentionally does not rewrite generation routes or ComputeRouter in place; that migration will be staged behind explicit permits and regression gates.
