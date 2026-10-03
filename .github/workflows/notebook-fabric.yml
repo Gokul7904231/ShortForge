@@ -25,7 +25,6 @@ on:
   push:
     branches:
       - "feat/notebook-live-mcp-20261002"
-      - "feat/colab-mcp-interop-20261003"
   workflow_dispatch:
     inputs:
       provider:
