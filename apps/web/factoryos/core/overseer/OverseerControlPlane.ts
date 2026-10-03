@@ -36,6 +36,10 @@ import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
 import type { TreasuryService } from "../treasury/TreasuryService";
 import { TreasuryQuotaAdmission } from "../treasury/TreasuryQuotaAdmission";
+import type {
+  TreasuryEconomicIntelligence,
+  TreasuryEconomicIntelligenceSnapshot,
+} from "../treasury/TreasuryEconomicIntelligence";
 import { computeTreasuryExecutionScopeDigest } from "../treasury/TreasuryScope";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
@@ -108,6 +112,7 @@ export class OverseerControlPlane {
   public presenceEngine: OverseerPresenceEngine;
   public trajectoryCollector: ProductionTrajectoryCollector;
   public treasuryService?: TreasuryService;
+  public treasuryEconomicIntelligence?: TreasuryEconomicIntelligence;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -268,6 +273,25 @@ export class OverseerControlPlane {
         averageLatencyMs: 10,
       },
     });
+  }
+
+  bindTreasuryEconomicIntelligence(
+    intelligence: TreasuryEconomicIntelligence,
+  ): void {
+    this.treasuryEconomicIntelligence = intelligence;
+  }
+
+  async getTreasuryEconomicAdvice(
+    accountId?: string,
+    options?: { windowMs?: number; eventLimit?: number },
+  ): Promise<TreasuryEconomicIntelligenceSnapshot | null> {
+    if (!this.treasuryEconomicIntelligence) return null;
+    return this.treasuryEconomicIntelligence.analyze(
+      accountId ||
+        process.env.FACTORYOS_TREASURY_ACCOUNT_ID ||
+        "factoryos",
+      options,
+    );
   }
 
   startSupervisor(intervalMs: number = 3000): void {
