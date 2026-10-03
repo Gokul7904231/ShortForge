@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 
 import { scriptAgent } from "../../../agents/script-agent";
 import { autoRefinePipeline } from "../../../lib/auto-refine-pipeline";
@@ -6,6 +7,7 @@ import { LLMProvider } from "../../../ai/provider";
 
 
 import { verifySession, verifyWritePermission } from "../../../lib/auth/auth";
+import { prepareTreasuryModelContext } from "../../../lib/treasury-model-context";
 
 export async function POST(req: Request) {
   try {
@@ -25,16 +27,38 @@ export async function POST(req: Request) {
     if (!topic) return NextResponse.json({ error: "Missing topic" }, { status: 400 });
 
     const contentType = typeof body?.contentType === "string" ? body.contentType : undefined;
+
+    const treasuryModel = await prepareTreasuryModelContext({
+      command: "Generate Script: " + topic,
+      missionId: String(body?.missionId || "mis_script_" + user.uid),
+      taskId: "script-api-" + randomUUID(),
+      floorId: "floor02_scripting",
+      preferredProviderId: provider,
+      subtask: "script_generation",
+      maxRetries: 0,
+    });
     // Fast generation is always enabled (checkbox removed from UI)
     const faster = true;
 
     if (contentType === "QUIZ_SHORTS") {
-      const quiz = await scriptAgent({ topic, durationSeconds, style, trend, provider, contentType });
+      const quiz = await scriptAgent({
+        topic,
+        durationSeconds,
+        style,
+        trend,
+        provider,
+        contentType,
+        treasuryContext: treasuryModel.context,
+      });
       
       let hookScore = 8.5;
       if (!faster) {
         const { hookScoreAgent } = await import("../../../agents/hook-score-agent");
-        const hookScoreOut = await hookScoreAgent({ hook: quiz.hook, provider });
+        const hookScoreOut = await hookScoreAgent({
+          hook: quiz.hook,
+          provider,
+          treasuryContext: treasuryModel.context,
+        });
         hookScore = hookScoreOut.score;
       }
 
@@ -76,6 +100,7 @@ export async function POST(req: Request) {
       provider,
       maxAttempts: faster ? 0 : 3,
       faster,
+      treasuryContext: treasuryModel.context,
     });
 
     // Frontend contract: include these fields so UX can render immediately.
