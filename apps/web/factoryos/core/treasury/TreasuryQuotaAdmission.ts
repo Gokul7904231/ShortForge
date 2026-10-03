@@ -221,11 +221,19 @@ export class TreasuryQuotaAdmission {
       }),
     });
 
-    await projectQuotaReservation(
-      context.userId,
-      context.role,
-      context.jobId,
-    );
+    try {
+      await projectQuotaReservation(
+        context.userId,
+        context.role,
+        context.jobId,
+      );
+    } catch (error) {
+      // Compatibility projection must never become an economic authority.
+      console.warn(
+        "[TreasuryQuotaAdmission] Legacy quota projection failed after Treasury admission:",
+        error,
+      );
+    }
 
     return {
       quota: {
@@ -249,7 +257,14 @@ export class TreasuryQuotaAdmission {
     jobId: string,
   ): Promise<void> {
     await this.treasury.release(reservationId, "GENERATION_RELEASED");
-    await projectQuotaRelease(userId, role, jobId);
+    try {
+      await projectQuotaRelease(userId, role, jobId);
+    } catch (error) {
+      console.warn(
+        "[TreasuryQuotaAdmission] Legacy quota release projection failed:",
+        error,
+      );
+    }
   }
 
   async settleGenerationSlot(
@@ -269,7 +284,14 @@ export class TreasuryQuotaAdmission {
       verified: true,
       measuredAt: new Date().toISOString(),
     });
-    await projectQuotaSettlement(userId, role, jobId);
+    try {
+      await projectQuotaSettlement(userId, role, jobId);
+    } catch (error) {
+      console.warn(
+        "[TreasuryQuotaAdmission] Legacy quota settlement projection failed:",
+        error,
+      );
+    }
   }
 }
 
@@ -278,7 +300,7 @@ export async function projectQuotaReservation(
   role: string,
   jobId: string,
 ): Promise<void> {
-  const tier = resolveTier(role);
+  const tier = resolveTreasuryEntitlementTier(role);
   if (tier === "ADMIN" || tier === "OWNER") return;
   const { periodKey } = getCalendarMonthBounds();
   const docId = tier === "PRO" ? userId + "_" + periodKey : userId;
