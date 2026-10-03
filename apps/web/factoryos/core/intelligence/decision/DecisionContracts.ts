@@ -137,6 +137,10 @@ export interface DecisionBatchRequest {
   readonly taskId?: string;
   readonly missionId?: string;
   readonly contextFingerprint?: string;
+  readonly overseerCommandId?: string;
+  readonly accountId?: string;
+  readonly runId?: string;
+  readonly floorId?: string;
   readonly questions: readonly DecisionQuestion[];
   readonly sharedContext?: Record<string, unknown>;
   readonly policyVersion?: string;
