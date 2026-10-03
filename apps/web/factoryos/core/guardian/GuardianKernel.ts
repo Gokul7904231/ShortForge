@@ -25,14 +25,6 @@ import type { DurableEventBus } from "../events/DurableEventBus";
 import type { CaseManager } from "../cases/CaseManager";
 import type { FloorGovernanceCell } from "../governance/FloorGovernanceCell";
 import { GuardianGovernanceAdapter } from "../governance/GuardianGovernanceAdapter";
-import { CapabilityRegistry } from "../cognitive/CapabilityRegistry";
-import { LeaseManager } from "../leases/LeaseManager";
-import { PersistentDiskDatabase } from "../database/PersistentDiskDatabase";
-import {
-  GuardianReMakerCapabilityIssuer,
-  type ReMakerCapabilityGrantRequest,
-} from "./GuardianReMakerCapabilityIssuer";
-import type { ReMakerAuthorization } from "../remaker/ReMakerContracts";
 
 export class GuardianKernel {
   readonly floorId: string;
@@ -59,7 +51,6 @@ export class GuardianKernel {
   private caseManager?: CaseManager;
   private governanceCell?: FloorGovernanceCell;
   private governanceAdapter?: GuardianGovernanceAdapter;
-  private readonly remakerCapabilityIssuer: GuardianReMakerCapabilityIssuer;
 
   private auditIntervalMs: number;
   private heartbeatIntervalMs: number;
@@ -97,12 +88,6 @@ export class GuardianKernel {
     this.reportEngine = new GuardianReportEngine(this.floorId);
     this.decisionEngine = new GuardianDecisionEngine(this.floorId, this.policy, this.memory);
     this.localWorldModel = new GuardianLocalWorldModel(this.floorId);
-
-    const leaseDatabase = new PersistentDiskDatabase();
-    this.remakerCapabilityIssuer = new GuardianReMakerCapabilityIssuer(
-      CapabilityRegistry.getInstance(),
-      new LeaseManager(leaseDatabase.getRepos().leases),
-    );
 
     this.subscribeToEvents();
   }
@@ -376,88 +361,6 @@ export class GuardianKernel {
         );
         break;
       }
-    }
-  }
-
-  /**
-   * Guardian-controlled admission for localized ReMaker repairs.
-   *
-   * Guardian owns authorization; ReMaker only consumes the issued grant.
-   * A real lease/fencing token is acquired before the grant is returned.
-   */
-  async authorizeReMakerRepair(
-    input: Omit<ReMakerCapabilityGrantRequest, "floorId" | "authorizedBy">,
-  ): Promise<{
-    authorized: boolean;
-    authorization?: ReMakerAuthorization;
-    reason: string;
-  }> {
-    if (this.floorId !== "floor06_rendering") {
-      return {
-        authorized: false,
-        reason: "remaker_authorization_requires_floor06_guardian",
-      };
-    }
-
-    const floor = this.worldState.getState().floors[this.floorId];
-    if (!floor || floor.status === "ERROR") {
-      return {
-        authorized: false,
-        reason: "floor06_not_healthy_for_remaker_authorization",
-      };
-    }
-
-    try {
-      const authorization = await this.remakerCapabilityIssuer.issue({
-        ...input,
-        floorId: this.floorId,
-        authorizedBy: `guardian_${this.floorId}`,
-      });
-
-      this.governanceCell?.blackboard.append(
-        "EVIDENCE",
-        "FLOOR_GUARDIAN",
-        "VERIFIED",
-        {
-          event: "REMAKER_CAPABILITY_GRANTED",
-          missionId: input.missionId,
-          caseId: input.caseId,
-          repairId: input.repairId,
-          grantId: authorization.grantId,
-          leaseId: authorization.leaseId,
-          holderId: authorization.holderId,
-          fencingToken: authorization.fencingToken,
-          expiresAt: authorization.expiresAt,
-        },
-        input.evidenceRefs,
-      );
-
-      await this.eventBus.publish("REMAKER_CAPABILITY_GRANTED", {
-        floorId: this.floorId,
-        missionId: input.missionId,
-        caseId: input.caseId,
-        repairId: input.repairId,
-        capabilityId: authorization.capabilityId,
-        grantId: authorization.grantId,
-        leaseId: authorization.leaseId,
-        holderId: authorization.holderId,
-        fencingToken: authorization.fencingToken,
-        expiresAt: authorization.expiresAt,
-        evidenceRefs: [...input.evidenceRefs],
-        authorizedBy: authorization.authorizedBy,
-        timestamp: new Date().toISOString(),
-      });
-
-      return {
-        authorized: true,
-        authorization,
-        reason: "remaker_capability_granted",
-      };
-    } catch (error) {
-      return {
-        authorized: false,
-        reason: error instanceof Error ? error.message : String(error),
-      };
     }
   }
 
