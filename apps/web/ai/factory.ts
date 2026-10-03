@@ -5,6 +5,7 @@
  * Non-production callers may still use the historical direct-provider fallback
  * behavior until their routes are migrated.
  */
+import crypto from "node:crypto";
 import { AIProviderRegistry } from "./capability-registry";
 import { LLMProvider, LLMProviderAdapter, TreasuryModelExecutionContext } from "./provider";
 import { IntelligentRouter } from "./intelligent-router";
@@ -32,6 +33,19 @@ export function providerFactory(
           true,
         );
 
+        const callNonce = crypto.randomBytes(8).toString("hex");
+        const promptHash = crypto
+          .createHash("sha256")
+          .update(
+            JSON.stringify({
+              prompt: params.prompt,
+              system: params.system,
+              provider,
+            }),
+          )
+          .digest("hex")
+          .slice(0, 16);
+
         const result = await IntelligentRouter.routeExecute(
           {
             capability: "SCRIPT",
@@ -47,10 +61,19 @@ export function providerFactory(
             missionId: treasuryContext.missionId,
             runId: treasuryContext.runId,
             floorId: treasuryContext.floorId,
-            taskId: treasuryContext.taskId,
-            scopeFingerprint: treasuryContext.scopeFingerprint,
+            taskId:
+              treasuryContext.taskId +
+              ":call:" +
+              callNonce,
+            scopeFingerprint:
+              treasuryContext.scopeFingerprint +
+              ":" +
+              promptHash +
+              ":" +
+              callNonce,
             priority: treasuryContext.priority ?? "NORMAL",
-            preferredProviderId: treasuryContext.preferredProviderId ?? provider,
+            preferredProviderId:
+              treasuryContext.preferredProviderId ?? provider,
           },
           {
             ...params,
