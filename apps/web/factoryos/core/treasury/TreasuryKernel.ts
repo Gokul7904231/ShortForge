@@ -237,6 +237,7 @@ export class TreasuryKernel {
       const created: TreasuryReservation = {
         reservationId,
         commandId: command.commandId,
+        overseerCommandId: command.overseerCommandId,
         accountId: command.accountId,
         missionId: command.missionId,
         runId: command.runId,
@@ -298,6 +299,7 @@ export class TreasuryKernel {
         permitId: cryptoId("tpermit"),
         reservationId: reservation.reservationId,
         commandId: reservation.commandId,
+        overseerCommandId: reservation.overseerCommandId,
         accountId: reservation.accountId,
         missionId: reservation.missionId,
         runId: reservation.runId,
