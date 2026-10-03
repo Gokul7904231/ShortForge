@@ -141,6 +141,7 @@ export async function POST(req: Request) {
   let userId = "";
   let jobId = "";
   let missionId = "";
+  let userRole = "USER";
   let controller: AutonomousFactoryController | undefined;
   let preparedEconomicCommand:
     | {
@@ -151,6 +152,26 @@ export async function POST(req: Request) {
     | undefined;
   let treasuryQuotaAdmission: TreasuryQuotaAdmission | undefined;
   let treasuryQuotaReservation: TreasuryQuotaReservationResult | undefined;
+
+  const releaseGenerationAdmission = async () => {
+    if (
+      treasuryQuotaReservation?.reservation &&
+      treasuryQuotaAdmission
+    ) {
+      await treasuryQuotaAdmission.releaseGenerationSlot(
+        treasuryQuotaReservation.reservation.reservationId,
+        userId,
+        userRole,
+        jobId,
+      ).catch(() => {});
+      treasuryQuotaReservation = undefined;
+      return;
+    }
+
+    if (userId && jobId) {
+      await releaseGenerationSlot(userId, jobId).catch(() => {});
+    }
+  };
 
   const deviceContext = extractDeviceContext(req);
   try {
@@ -170,7 +191,7 @@ export async function POST(req: Request) {
     }
 
     userId = authenticatedUser.uid;
-    const userRole = (authenticatedUser.role || "USER").toUpperCase();
+    userRole = (authenticatedUser.role || "USER").toUpperCase();
     const tier = resolveTier(userRole);
 
     const body = await req.json();
@@ -188,26 +209,6 @@ export async function POST(req: Request) {
     const executionAuthority =
       (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
     const production = process.env.NODE_ENV === "production";
-
-    const releaseGenerationAdmission = async () => {
-      if (
-        treasuryQuotaReservation?.reservation &&
-        treasuryQuotaAdmission
-      ) {
-        await treasuryQuotaAdmission.releaseGenerationSlot(
-          treasuryQuotaReservation.reservation.reservationId,
-          userId,
-          userRole,
-          jobId,
-        ).catch(() => {});
-        treasuryQuotaReservation = undefined;
-        return;
-      }
-
-      if (userId && jobId) {
-        await releaseGenerationSlot(userId, jobId).catch(() => {});
-      }
-    };
 
     if (executionAuthority === "factoryos") {
       controller =
