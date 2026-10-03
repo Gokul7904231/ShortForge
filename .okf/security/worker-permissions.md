@@ -567,3 +567,17 @@ Selected MCP capability grants:
 - CAP_MCP_QDRANT_DERIVED_WRITE
 
 These remain explicit session/task capabilities. No worker receives them by default; F07 never delegates release authority to an MCP.
+
+### ReMaker repair capability — 2026-10-02
+
+CAP_REMAKER_REPAIR is a bounded control-plane capability for surgical artifact reconstruction.
+
+Rules:
+- It is not ambient worker authority.
+- It may only be exercised from a Guardian-issued grant with expiry and fencing token.
+- The grant does not authorize arbitrary filesystem mutation, provider access, publication, or policy changes.
+- ReMaker must remain within the explicit repair target and RenderFabric execution boundary.
+- ReMaker candidates require physical artifact evidence and F07 re-verification.
+- The execution mechanism may be called by the existing Healer recovery path; ReMaker does not replace Healer, Guardian, Slayer, or F07.
+
+Promotion status: executable `CAP_REMAKER_REPAIR` metadata and Guardian issuance are now implemented on this feature branch. The issuer composes the CapabilityRegistry policy boundary with LeaseManager fencing. Physical execution remains in ReMakerEngine -> RenderFabric, and F07 re-verification remains mandatory. Production deployment must inject a durable lease repository; the RenderFabricReMakerAdapter intentionally requires an explicit LeaseManager and has no implicit in-memory production fallback.

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR120-ReMaker-v2-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/remaker-v2-current-main-20261003",
+  "objective": "Integrate the unique ReMaker v2 surgical repair fabric from PR #97 onto current main while preserving later mainline Treasury and Colab changes.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/remaker.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "ReMaker is Guardian-authorized and lease/fenced; no ambient worker authority or new credential store is added."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "REMAKER-MAIN-001",
+      "originalConflict": "PR #97 was based on an older mainline and conflicted with later shared-file changes.",
+      "status": "RESOLVED",
+      "proposedResolution": "Port unique ReMaker files and apply the original bounded hunks onto current main shared files.",
+      "acceptedResolution": "Current mainline shared contracts remain authoritative while the ReMaker-specific changes are reintroduced as additive/targeted updates.",
+      "decisionAuthority": "ReMaker authority and F07 verification contract"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added ReMaker v2 contracts, impact analyzer, engine, handoff, idempotency store, and RenderFabric adapter.",
+    "Added Guardian ReMaker capability issuance with lease/fencing.",
+    "Added surgical render scope propagation and physical receipt fields.",
+    "Added ReMaker tests, YouTube remediation integration, Ascalon training-readiness documentation and validation workflow.",
+    "Reconciled affected shared files with current mainline rather than replacing newer changes."
+  ],
+  "verificationPlan": [
+    "Pass Team Change Gate and full repository CI.",
+    "Run ReMaker-specific validation plus F06/F07 and compute/fabric regressions.",
+    "Inspect any failing tests for true contract regressions before merge.",
+    "Merge only after all blocking gates are green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "repositoryCI": "PENDING_CURRENT_RUN",
+    "remakerValidation": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS"
+}

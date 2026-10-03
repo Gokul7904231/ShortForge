@@ -1910,3 +1910,25 @@ Forger Assembly
 evidence / report / authorized disposition
 
 Team agents cannot exercise production-floor authority merely because they participated in a change.
+
+## ReMaker v2 control path — 2026-10-02
+
+F07 finding
+   |
+Healer / Overseer bounded remediation decision
+   |
+Guardian-issued CAP_REMAKER_REPAIR grant
+   |
+ReMakerHandoff (explicit case + target)
+   |
+ReMakerImpactAnalyzer
+   |
+ReMakerEngine
+   |
+RenderFabric -> Compute Fabric -> physical artifact
+   |
+CAS / lineage / receipt
+   |
+F07 independent re-verification
+
+ReMaker is a specialized repair mechanism, not a new authority tier. Healer retains recovery coordination; Guardian retains capability authorization; Slayer retains emergency enforcement; F07 retains final verification.

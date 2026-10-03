@@ -27,6 +27,13 @@ export interface LocalRenderShotIntent {
   assets?: any[];
 }
 
+export interface LocalRenderScope {
+  mode: "SURGICAL_SCENE";
+  repair_id: string;
+  force_scene_ids: string[];
+  affected_frame_range?: { start_frame: number; end_frame: number };
+}
+
 export interface LocalRenderSceneIntent {
   scene_id: string;
   template_id: string;
@@ -55,6 +62,7 @@ export interface LocalRenderIntent {
     right: number;
   };
   metadata?: Record<string, any>;
+  repair_scope?: LocalRenderScope;
 }
 
 export interface RenderReceipt {
@@ -75,6 +83,9 @@ export interface RenderReceipt {
   cache_hits: number;
   cache_misses: number;
   scenes_rendered: string[];
+  scenes_rebuilt?: string[];
+  repair_mode?: string | null;
+  forced_scene_ids?: string[];
   validation: {
     is_valid: boolean;
     file_exists: boolean;
