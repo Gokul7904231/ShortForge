@@ -114,7 +114,7 @@ To prevent documentation drift and eliminate false claims, all architectural ass
 | **Locked Decisions** | [`./decisions.md`](./decisions.md) | Canonical root-level ledger for locked cognitive, performance, authority, worker, and Devourer decisions. |
 | **Cognitive Layer** | [`./cognitive/`](./cognitive/) | ShortForge Cognitive Layer, worker cognition contract, Devourer self-improvement program, and cross-layer improvement roadmap. |
 | **Memory & Knowledge** | [`./memory/`](./memory/) | MemoryOS, KnowledgeOS, domain-typed stores, and long-term memory promotion. |
-| **Economics / Treasury** | [`./hierarchy/treasurer.md`](./hierarchy/treasurer.md) · [`./economics/treasurer-operating-contract.md`](./economics/treasurer-operating-contract.md) | First-class economic control plane: reservations, settlement, scarcity accounting, freeze modes, and economic provenance. |
+| **Economics / Treasury** | [`./hierarchy/treasurer.md`](./hierarchy/treasurer.md) · [`./economics/treasurer-operating-contract.md`](./economics/treasurer-operating-contract.md) · [`../docs/treasury-wave4-economic-intelligence.md`](../docs/treasury-wave4-economic-intelligence.md) | First-class economic control plane plus read-only Economic Intelligence: unit economics, anomaly signals, forecasting, and advisory routing context. |
 | **Workflows & Schedule** | [`./workflows/`](./workflows/) | Schedule lifecycle, mission execution, bounded healing, and gate-verified publishing. |
 | **Artifacts & Lineage** | [`./artifacts/`](./artifacts/) | Content-addressed storage, TimelineIR (EDL), Structured Findings, and cryptographic receipts. |
 | **Security & Trust** | [`./security/`](./security/) | Untrusted web content boundaries, capability grants, secret scanning, and lease fencing. |
