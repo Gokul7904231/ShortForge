@@ -96,7 +96,7 @@ jobs:
         run: npm run typecheck
 
   prepare_live:
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/notebook-live-mcp-20261002') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
+    if: ${{ (github.event_name == 'push' && (github.ref == 'refs/heads/feat/notebook-live-mcp-20261002' || github.ref == 'refs/heads/feat/kaggle-show-artifact-20261003')) || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
     runs-on: ubuntu-latest
     outputs:
       providers: ${{ steps.matrix.outputs.providers }}
