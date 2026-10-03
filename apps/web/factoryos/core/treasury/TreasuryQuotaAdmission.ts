@@ -13,6 +13,7 @@ import {
   QuotaExceededError,
 } from "../../../lib/quota/quota-service";
 import { createTreasuryAccount } from "./TreasuryLedger";
+import { computeTreasuryExecutionScopeDigest } from "./TreasuryScope";
 import type { TreasuryEconomicPermit, TreasuryReservation } from "./TreasuryContracts";
 import type { TreasuryService } from "./TreasuryService";
 
@@ -134,13 +135,21 @@ export class TreasuryQuotaAdmission {
       priority: "NORMAL",
       expiresAt: context.expiresAt,
       idempotencyKey: "quota:" + context.userId + ":" + context.jobId,
-      scopeDigest:
-        "sha256:quota:" +
-        context.userId +
-        ":" +
-        context.missionId +
-        ":" +
-        context.jobId,
+      scopeDigest: computeTreasuryExecutionScopeDigest({
+        version: 1,
+        kind: "COMPUTE_OFFER",
+        missionId: context.missionId,
+        jobId: context.jobId,
+        floorId: "generation-admission",
+        overseerCommandId: context.overseerCommandId,
+        scopeFingerprint:
+          context.userId +
+          ":" +
+          context.role +
+          ":" +
+          context.jobId,
+        resourceId: accountId,
+      }),
     });
 
     await projectQuotaReservation(context.userId, context.role, context.jobId);
