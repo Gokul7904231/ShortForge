@@ -1,5 +1,7 @@
 name: notebook-fabric
 
+# Lightning live proof rerun after repository credential configuration.
+
 # Live notebook verification is an external side-effecting workflow. Keep only
 # the newest probe active so repeated code pushes cannot consume concurrent
 # Kaggle notebook capacity or race their artifacts.
