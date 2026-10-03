@@ -232,10 +232,10 @@ export class RenderFabric {
     }
 
     if (options.treasury) {
-      if (!renderIntent.overseerCommandId) {
+      if (!intent.overseerCommandId) {
         throw new Error("[RenderFabric] Treasury-gated render requires RenderIntent.overseerCommandId");
       }
-      if (renderIntent.overseerCommandId !== options.treasury.overseerCommandId) {
+      if (intent.overseerCommandId !== options.treasury.overseerCommandId) {
         throw new Error("[RenderFabric] Treasury command identity does not match RenderIntent.overseerCommandId");
       }
 
