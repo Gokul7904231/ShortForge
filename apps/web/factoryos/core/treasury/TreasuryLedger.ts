@@ -18,6 +18,7 @@ export interface TreasuryLedgerTransaction {
   putAccount(account: TreasuryAccount): Promise<void>;
   getReservation(reservationId: string): Promise<TreasuryReservation | null>;
   getReservationByCommandId(commandId: string): Promise<TreasuryReservation | null>;
+  getReservationByIdempotencyKey(accountId: string, idempotencyKey: string): Promise<TreasuryReservation | null>;
   listActiveReservations(accountId?: string): Promise<TreasuryReservation[]>;
   putReservation(reservation: TreasuryReservation): Promise<void>;
   appendEvent(event: TreasuryLedgerEvent): Promise<void>;
@@ -90,6 +91,10 @@ export class MongoTreasuryLedger implements TreasuryLedgerStore {
       },
       getReservationByCommandId: async (commandId) => {
         const doc = await this.reservations.findOne({ commandId }, { session });
+        return doc ? (stripId(doc) as TreasuryReservation) : null;
+      },
+      getReservationByIdempotencyKey: async (accountId, idempotencyKey) => {
+        const doc = await this.reservations.findOne({ accountId, idempotencyKey }, { session });
         return doc ? (stripId(doc) as TreasuryReservation) : null;
       },
       listActiveReservations: async (accountId) => {
@@ -179,6 +184,12 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
         },
         getReservationByCommandId: async (commandId) => {
           const reservation = [...reservations.values()].find((candidate) => candidate.commandId === commandId);
+          return reservation ? structuredClone(reservation) : null;
+        },
+        getReservationByIdempotencyKey: async (accountId, idempotencyKey) => {
+          const reservation = [...reservations.values()].find(
+            (candidate) => candidate.accountId === accountId && candidate.idempotencyKey === idempotencyKey,
+          );
           return reservation ? structuredClone(reservation) : null;
         },
         listActiveReservations: async (accountId) =>
