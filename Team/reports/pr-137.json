@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR137-Treasury-Economic-Intelligence-Clean-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/treasury-economic-intelligence-clean-20261003",
+  "objective": "Port the unique Treasury Economic Intelligence and compatibility-consumer retirement changes from the historical Treasury wave onto current main without carrying stale notebook, ReMaker, or provider-registry regressions.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Treasury is a subordinate economic control-plane authority under Overseer, not a sovereign command authority.",
+      "Economic intelligence is advisory and cannot mint capabilities, place workers, or certify F07.",
+      "Economic admission occurs before discretionary resource consumption.",
+      "F07 remains the independent physical artifact/evidence boundary.",
+      "Current-main ReMaker and provider contracts must not be regressed by an older Treasury branch.",
+      "Notebook provider work remains separate from Treasury intelligence."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/decisions/treasury-economic-intelligence-wave4-20261003.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "INHERITED/UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Only current-main-compatible Treasury wave4 changes were ported.",
+      "Historical notebook and ReMaker changes from the mixed integration branch were intentionally excluded.",
+      "No secret values are committed."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-RECON-001",
+      "originalConflict": "Historical Treasury integration branch carried stale changes to notebook, provider-registry, ReMaker, and render contracts alongside Treasury work.",
+      "status": "RESOLVED",
+      "proposedResolution": "Three-way-style selective patch application onto current main; restore current-main versions for unrelated stale surfaces and retain only Treasury wave4 semantic changes.",
+      "acceptedResolution": "Clean reconciliation branch created from current main and only selected Treasury wave4 patches were applied.",
+      "decisionAuthority": "Repository consolidation SDLC"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added Treasury Economic Intelligence, Advice, and Entitlement Policy capabilities.",
+    "Ported Treasury kernel/service/quota changes and economic-control contracts.",
+    "Ported quota/account/admin API consumer migration and Overseer advisory integration.",
+    "Ported related event, capability, routing, scheduler, render metadata, and Ascalon training updates where the Treasury wave requires them.",
+    "Excluded stale notebook, provider-registry, ReMaker, and historical report changes from the mixed integration branch."
+  ],
+  "verificationPlan": [
+    "Run current-main repository CI and Treasury-specific validation.",
+    "Run Team Change Gate.",
+    "Confirm no ReMaker/provider/notebook regression is introduced.",
+    "Merge only after required checks are green.",
+    "Re-run mainline validation after merge."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "treasuryWave4": "PENDING",
+    "remakerRegression": "PENDING",
+    "computeRegression": "PENDING"
+  },
+  "disposition": "PASS"
+}

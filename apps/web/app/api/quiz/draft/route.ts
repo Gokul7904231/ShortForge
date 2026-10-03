@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { scriptAgent } from "@/agents/script-agent";
 import { verifySession } from "@/lib/auth/auth";
-import { getUserQuota, resolveTier } from "@/lib/quota/quota-service";
+import { resolveTier } from "@/lib/quota/quota-service";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { QuizOrchestrator } from "@/lib/quiz/QuizOrchestrator";
 import { peekNextSet, toDraftResponse, hasHardcodedCountry } from "@/lib/quiz/GeoRotationService";
 import { prepareTreasuryModelContext } from "@/lib/treasury-model-context";
@@ -15,7 +17,9 @@ export async function POST(req: Request) {
       const { user } = await verifySession(req);
       if (user) {
         draftUser = user;
-        const quota = await getUserQuota(user.uid, user.role);
+        const quota = await new TreasuryQuotaAdmission(
+          await getTreasuryRuntime(),
+        ).getGenerationQuota(user.uid, user.role);
         if (quota.isExceeded) {
           return NextResponse.json(
             {

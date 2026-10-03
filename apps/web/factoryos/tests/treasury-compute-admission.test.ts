@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ComputeGateway } from "../core/compute/gateway/ComputeGateway";
 import { RenderFabric } from "../core/fabric/RenderFabric";
 import { InMemoryTreasuryLedger, TreasuryKernel, TreasuryService, createTreasuryAccount } from "../core";
@@ -49,16 +49,21 @@ function receipt(): ExecutionReceipt {
 
 describe("Treasury F06 compute admission", () => {
   let service: TreasuryService;
-  let submitJob: ReturnType<typeof vi.spyOn>;
+  let submitJob: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     const ledger = new InMemoryTreasuryLedger();
     ledger.seedAccount(createTreasuryAccount("factory", 5, 1000));
     const kernel = new TreasuryKernel(ledger, new TreasuryPriceRegistry());
     service = new TreasuryService(kernel);
-    submitJob = vi.spyOn(ComputeGateway, "getInstance").mockReturnValue({
-      submitJob: vi.fn(async () => ({ receipt: receipt(), failovers: [] })),
+    submitJob = vi.fn(async () => ({ receipt: receipt(), failovers: [] }));
+    vi.spyOn(ComputeGateway, "getInstance").mockReturnValue({
+      submitJob,
     } as any);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("reserves before physical compute and leaves settlement to F07", async () => {
@@ -86,8 +91,8 @@ describe("Treasury F06 compute admission", () => {
   });
 
   it("releases the Treasury reservation when physical dispatch fails", async () => {
-    const gateway = { submitJob: vi.fn(async () => { throw new Error("provider unavailable"); }) };
-    submitJob.mockReturnValue(gateway as any);
+    const gateway = vi.fn(async () => { throw new Error("provider unavailable"); });
+    submitJob.mockImplementation(gateway as any);
     const fabric = new RenderFabric();
 
     await expect(fabric.executeRender(intent("ovr-2"), {
@@ -104,13 +109,11 @@ describe("Treasury F06 compute admission", () => {
   });
 
   it("releases the Treasury reservation when a completed provider returns no artifact", async () => {
-    const gateway = {
-      submitJob: vi.fn(async () => ({
-        receipt: { ...receipt(), outputArtifacts: [] },
-        failovers: [],
-      })),
-    };
-    submitJob.mockReturnValue(gateway as any);
+    const gateway = vi.fn(async () => ({
+      receipt: { ...receipt(), outputArtifacts: [] },
+      failovers: [],
+    }));
+    submitJob.mockImplementation(gateway as any);
     const fabric = new RenderFabric();
 
     await expect(fabric.executeRender(intent("ovr-4"), {

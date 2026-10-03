@@ -1,7 +1,9 @@
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { db } from "../../../../lib/firebase-admin";
-import Groq from "groq-sdk";
-import { GoogleGenAI } from "@google/genai";
+import { verifySession } from "../../../../lib/auth/auth";
+import { prepareTreasuryModelContext } from "../../../../lib/treasury-model-context";
+import { providerFactory } from "../../../../ai/factory";
 
 export async function POST(req: Request) {
   try {
@@ -37,75 +39,45 @@ The output must match this exact JSON format:
 }
 `;
 
-    let rawJsonStr = null;
-    let generatedBy = "";
-
-    // 1. ATTEMPT 1: Claude 3.5 Sonnet (OpenRouter)
-    try {
-      console.log("[LLM] Attempt 1: Claude 3.5 Sonnet via OpenRouter...");
-      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "anthropic/claude-3.5-sonnet",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: prompt }
-          ]
-        })
-      });
-      if (!openRouterRes.ok) throw new Error(`OpenRouter HTTP ${openRouterRes.status}`);
-      const orData = await openRouterRes.json();
-      rawJsonStr = orData.choices[0].message.content;
-      generatedBy = "claude-3.5-sonnet";
-    } catch (e1) {
-      console.warn("[LLM] Claude 3.5 Sonnet failed:", e1);
-      
-      // 2. ATTEMPT 2: Gemini 1.5 Flash
-      try {
-        console.log("[LLM] Attempt 2: Gemini 1.5 Flash...");
-        const ai = new GoogleGenAI({ 
-          apiKey: process.env.GEMINI_API_KEY,
-          httpOptions: {
-            timeout: 120000, // 120 seconds (120,000 ms)
-          }
-        });
-        const response = await ai.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents: `${system}\n\n${prompt}`,
-          config: {
-            responseMimeType: "application/json",
-          }
-        });
-        rawJsonStr = response.text;
-        generatedBy = "gemini-1.5-flash";
-      } catch (e2) {
-        console.warn("[LLM] Gemini 1.5 Flash failed:", e2);
-        
-        // 3. ATTEMPT 3: Groq LLaMA 3.1
-        console.log("[LLM] Attempt 3: Groq LLaMA 3.1 8B Instant...");
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [
-                { role: "system", content: system },
-                { role: "user", content: prompt }
-            ],
-            model: "llama-3.1-8b-instant",
-            response_format: { type: "json_object" },
-        });
-        rawJsonStr = chatCompletion.choices[0].message.content;
-        generatedBy = "llama-3.1-8b-instant";
-      }
+    const authenticated = await verifySession(req).catch(() => null);
+    const currentUser = authenticated?.user;
+    if (process.env.NODE_ENV === "production" && !currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!rawJsonStr) {
-        throw new Error("All LLM generation attempts failed.");
-    }
+    const treasuryModel = await prepareTreasuryModelContext({
+      command: "Generate Quiz",
+      missionId:
+        "mis_quiz_generate_" +
+        (currentUser?.uid || countryCode.toLowerCase()),
+      taskId:
+        "quiz-generate-" +
+        countryCode.toLowerCase() +
+        "-" +
+        crypto
+          .createHash("sha256")
+          .update(prompt)
+          .digest("hex")
+          .slice(0, 16),
+      floorId: "floor02_scripting",
+      preferredProviderId: "openrouter",
+      subtask: "quiz_generation",
+      maxRetries: 2,
+    });
 
+    const modelAdapter = providerFactory("openrouter", {
+      apiKey: process.env.OPENROUTER_API_KEY,
+      treasuryContext: treasuryModel.context,
+    });
+
+    const rawJsonStr = await modelAdapter.generateText({
+      prompt,
+      system,
+      temperature: 0.7,
+      maxTokens: 1536,
+    });
+
+    const generatedBy = "TreasuryManagedModelRouter";
     // Try parsing
     let data: any = null;
     try {

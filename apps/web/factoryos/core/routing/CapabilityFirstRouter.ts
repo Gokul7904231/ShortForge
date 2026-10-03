@@ -4,7 +4,6 @@
  * Mental Model: Capability → Candidate Providers (scored by local preference, health, latency, context, cost).
  */
 
-import { CostGovernor } from "../governor/CostGovernor";
 import type { TreasuryService } from "../treasury/TreasuryService";
 import { TreasuryEconomicAdmission, type TreasuryAdmissionContext } from "../treasury/TreasuryEconomicAdmission";
 
@@ -241,46 +240,13 @@ export class CapabilityFirstRouter {
     });
 
     const tokens = req.estimatedTokens || 1000;
-    let selected: ProviderCandidate | null = null;
-    let fallbackChain: string[] = [];
-
-    for (const candidate of matching) {
-      const estimatedCost = (tokens / 1000) * candidate.costPer1kTokensUsd;
-      const evalResult = CostGovernor.evaluateInvocation(candidate.isPaid, estimatedCost);
-
-      if (evalResult.allowed) {
-        if (!selected) {
-          selected = candidate;
-        } else {
-          fallbackChain.push(`${candidate.providerId}:${candidate.modelId}`);
-        }
-      }
-    }
-
-    if (!selected) {
-      // If none was allowed due to CostGovernor policy, take the top candidate and let caller handle approval
-      const topCandidate = matching[0];
-      const estimatedCost = (tokens / 1000) * topCandidate.costPer1kTokensUsd;
-      return {
-        capability: req.capability,
-        selectedProviderId: topCandidate.providerId,
-        selectedModelId: topCandidate.modelId,
-        isLocal: topCandidate.isLocal,
-        isPaid: topCandidate.isPaid,
-        estimatedCostUsd: estimatedCost,
-        estimatedLatencyMs: topCandidate.baselineLatencyMs,
-        reason: `Paid provider required for "${req.capability}" (approval needed under FREE_FIRST).`,
-        fallbackChain: matching.slice(1).map((m) => `${m.providerId}:${m.modelId}`),
-        decisionTimestamp: new Date().toISOString(),
-      };
-    }
-
+    const selected = matching[0];
     const estimatedCost = (tokens / 1000) * selected.costPer1kTokensUsd;
     const reason = selected.isLocal
-      ? `Selected local inference (${selected.name}) for $0 zero-cost execution.`
+      ? `Selected local inference (${selected.name}) as routing advice.`
       : !selected.isPaid
-      ? `Selected free provider (${selected.name}) under FREE_FIRST policy.`
-      : `Selected provider (${selected.name}) within authorized budget.`;
+      ? `Selected free provider (${selected.name}) as routing advice.`
+      : `Selected provider (${selected.name}) as routing advice; Treasury admission is required before execution.`;
 
     return {
       capability: req.capability,
@@ -291,7 +257,7 @@ export class CapabilityFirstRouter {
       estimatedCostUsd: estimatedCost,
       estimatedLatencyMs: selected.baselineLatencyMs,
       reason,
-      fallbackChain,
+      fallbackChain: matching.slice(1).map((m) => `${m.providerId}:${m.modelId}`),
       decisionTimestamp: new Date().toISOString(),
     };
   }
