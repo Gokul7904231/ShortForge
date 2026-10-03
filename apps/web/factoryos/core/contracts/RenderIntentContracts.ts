@@ -76,6 +76,8 @@ export interface RenderIntent {
     readonly strictSyncToleranceMs?: number;
   };
   readonly createdAt: string;
+  /** Optional ReMaker scope. Full renders remain the default. */
+  readonly repairScope?: SurgicalRenderScope;
 }
 
 export type ArtifactLocation =
