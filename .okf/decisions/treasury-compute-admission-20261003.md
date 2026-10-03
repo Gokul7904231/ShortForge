@@ -60,3 +60,33 @@ economic permission = Treasurer;
 physical placement = ComputeRouter;
 execution = Worker;
 verification = F07.
+
+
+## Wave 3 — model/API, ComputeOffer and generation entitlement
+
+Wave 3 extends the same authority boundary beyond F06 rendering:
+
+```
+Overseer
+  -> Decision/Capability routing
+  -> Treasury admission
+  -> physical/provider execution
+  -> measured usage
+  -> verification where required
+  -> Treasury settlement
+```
+
+The concrete runtime seams are:
+- `IntelligentRouter.routeExecute()`: Treasury-gated model execution;
+- `ProviderApiRegistry.provisionWithTreasury()`: Treasury-gated ComputeOffer provisioning;
+- `TreasuryQuotaAdmission`: Treasury-gated generation entitlement;
+- `/api/generate-video`: prepares a real Overseer command before admission;
+- F07: settles or releases the generation entitlement and compute reservation after verified evidence.
+
+Legacy mechanisms are no longer economic authorities:
+- CostGovernor is non-authorizing in production;
+- MissionBudgetManager is post-consumption mission policy/projection;
+- AgentEconomicsEngine is advisory and records authoritative cost only from measured data;
+- Firestore quota documents are compatibility projections for existing UI/history.
+
+This is an authority migration, not a deletion wave. Legacy modules remain temporarily so older tests/tools and compatibility consumers do not break while their imports are retired in later cleanup waves.
