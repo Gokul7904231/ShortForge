@@ -60,7 +60,8 @@
   "verificationResults": {
     "teamChangeGate": "PENDING_CURRENT_RUN",
     "repositoryCI": "PENDING_CURRENT_RUN",
-    "overseerWave3to5": "PENDING_CURRENT_RUN"
+    "overseerWave3to5": "PENDING_CURRENT_RUN",
+    "reconciliationSweep": "RETRIGGERED_2026-10-03"
   },
   "disposition": "PASS",
   "notes": [
