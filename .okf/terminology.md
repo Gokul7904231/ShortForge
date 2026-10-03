@@ -34,6 +34,7 @@
 | Term | Canonical Definition | Source File / Contract |
 | :--- | :--- | :--- |
 | **Overseer** | The Level 1 Supreme Control Plane authority responsible for factory goal decomposition, mission state monitoring, and lifecycle dispatch. | `apps/web/factoryos/core/overseer/OverseerControlPlane.ts` |
+| **Treasurer** | The cross-cutting economic control-plane authority responsible for bounded resource admission, reservation, settlement, release, scarcity protection, and economic reconciliation. It accepts discretionary commands only from Overseer and never replaces Guardian or ComputeRouter. | `apps/web/factoryos/core/treasury/` |
 | **Guardian** | The Level 2 sovereign regulator governing pre-execution capability grants, safety policies, and lease authorizations. Never a floor. | `apps/web/factoryos/core/guardian/GuardianStateMachine.ts` |
 | **Slayer** | The Level 2 enforcement engine responsible for monotonic lease revocation, zombie worker eviction, and GPU lock reclamation. | `apps/web/factoryos/core/slayers/SlayerEngine.ts` |
 | **Healer** | The Level 2 recovery doctor managing circuit breakers, fallback providers, and bounded surgical repairs. | `apps/web/factoryos/core/healers/BoundedRepairEngine.ts` |

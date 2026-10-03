@@ -22,19 +22,24 @@ HUMAN AUTHORITY
 LEVEL 1
 OVERSEER — SUPREME CONTROL PLANE
   |
-  +------------ sovereign mission authority -----------+
-  |                                                   |
-  v                                                   v
-SHORTFORGE COGNITIVE LAYER                       LEVEL 2 REGULATORS
-(SCL)                                             Guardian
-  |                                               Slayer
-  +-- Fast Decision Core                          Healer
-  +-- ShortForge Cognitive Model
-  +-- Context Compiler
-  +-- Decision / Record synthesis
-  +-- Worker cognition
-  +-- Template cognition
-  +-- Research / architecture interpretation
+  +----------------------+-----------------------+
+  |                      |                       |
+  v                      v                       v
+SCL COGNITION       TREASURER ECONOMICS     LEVEL 2 REGULATORS
+  |                      |                 Guardian / Slayer / Healer
+  |                      |
+  |                      +-- economic admission
+  |                      +-- reservation / settlement
+  |                      +-- scarcity protection
+  |
+  +-- bounded cognition
+  |     +-- Fast Decision Core
+  |     +-- ShortForge Cognitive Model
+  |     +-- Context Compiler
+  |     +-- Decision / Record synthesis
+  |     +-- Worker cognition
+  |     +-- Template cognition
+  |     +-- Research / architecture interpretation
   |
   | bounded cognitive instructions
   v
@@ -76,6 +81,7 @@ The system has one sovereign command authority: the Overseer, beneath Human Auth
 
 The system has multiple independent boundaries:
 
+- Treasurer owns economic admission, reservation, settlement, release, scarcity protection, and reconciliation.
 - Guardian owns capability / policy authorization.
 - Slayer owns lease revocation / kill enforcement.
 - Healer owns bounded remediation.
@@ -118,6 +124,44 @@ Factory
 ~~~
 
 Implementation status: conceptual/external to FactoryOS runtime.
+
+---
+
+## Cross-cutting economic authority — Treasurer
+
+Treasurer is subordinate to Overseer and independent of floor execution.
+
+Owns:
+- economic admission;
+- bounded reservations;
+- measured settlement and release;
+- monetary and scarce-capacity accounting;
+- Treasury freeze / defensive protection;
+- economic telemetry and reconciliation.
+
+Does not own:
+- mission objectives;
+- capability authorization;
+- physical provider placement;
+- worker execution;
+- F07 verification.
+
+Canonical flow:
+
+~~~
+Overseer
+   |
+   v
+Treasurer
+   |
+   +-- economic permit
+   |
+   +--> Guardian capability gate
+   |
+   +--> ComputeRouter placement
+~~~
+
+Treasurer accepts discretionary economic commands only from Overseer. Its constitutional safety actions are deterministic and cannot be overridden by worker or model output.
 
 ---
 

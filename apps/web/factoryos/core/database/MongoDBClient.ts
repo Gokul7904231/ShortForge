@@ -66,6 +66,10 @@ export class MongoDBClient {
     return this.db;
   }
 
+  getClient(): MongoClient | null {
+    return this.client;
+  }
+
   connected(): boolean {
     return this.isConnected;
   }
@@ -104,6 +108,13 @@ export class MongoDBClient {
       await this.db.collection("fleet_activity").createIndex({ workspaceId: 1, timestamp: 1, activityId: 1 });
       await this.db.collection("fleet_activity").createIndex({ workspaceId: 1, missionId: 1, timestamp: 1 });
       await this.db.collection("fleet_activity").createIndex({ workspaceId: 1, agentId: 1, timestamp: 1 });
+      await this.db.collection("treasury_accounts").createIndex({ accountId: 1 }, { unique: true });
+      await this.db.collection("treasury_reservations").createIndex({ reservationId: 1 }, { unique: true });
+      await this.db.collection("treasury_reservations").createIndex({ commandId: 1 }, { unique: true });
+      await this.db.collection("treasury_reservations").createIndex({ accountId: 1, status: 1, expiresAt: 1 });
+      await this.db.collection("treasury_ledger_events").createIndex({ eventId: 1 }, { unique: true });
+      await this.db.collection("treasury_ledger_events").createIndex({ accountId: 1, occurredAt: -1, eventId: -1 });
+      await this.db.collection("treasury_ledger_events").createIndex({ commandId: 1, occurredAt: -1 });
     } catch (e) {
       // Non-fatal if index creation throws in mock/restricted environments
     }

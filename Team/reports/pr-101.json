@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR101-Treasurer-Control-Plane-Wave1",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/treasurer-control-plane-wave1-20261003",
+  "objective": "Establish Treasurer as the first-class economic control-plane seam while preserving Overseer supremacy, Guardian capability authority, ComputeRouter physical placement, worker execution boundaries, Slayer enforcement, Healer recovery, and F07 verification.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "One sovereign command authority: Overseer beneath Human Authority.",
+      "Control plane is decoupled from production execution.",
+      "Workers have no ambient authority.",
+      "Guardian retains capability/policy authorization.",
+      "F07/Auditor remains the independent evidence boundary.",
+      "Economic reservation must occur before discretionary resource consumption.",
+      "Released reservations are not settled spend."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/principles.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/rendering/compute-policy.md",
+      ".okf/hierarchy/overseer-operational-contract.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Treasury constitutional decisions are deterministic.",
+      "Mongo production persistence is fail-closed without a transaction-capable Mongo client.",
+      "Treasurer cannot mint capabilities, select physical workers, or certify verification."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-AUTH-001",
+      "originalConflict": "Introducing a named Treasurer could accidentally create a second sovereign command authority or a second physical scheduler.",
+      "status": "RESOLVED",
+      "proposedResolution": "Define Treasurer as a cross-cutting economic authority subordinate to Overseer; permit-only resource control; Guardian remains capability authority; ComputeRouter remains physical placement authority.",
+      "acceptedResolution": "Treasurer receives discretionary economic commands only from Overseer and may autonomously execute only deterministic constitutional safety actions.",
+      "decisionAuthority": "ShortForge architectural contract update",
+      "canonicalUpdates": [
+        ".okf/hierarchy-map.md",
+        ".okf/hierarchy/treasurer.md",
+        ".okf/economics/treasurer-operating-contract.md"
+      ]
+    },
+    {
+      "id": "TRSY-ARCH-002",
+      "originalConflict": "Existing quota, mission-budget, CostGovernor and AgentEconomics mechanisms could be duplicated rather than unified.",
+      "status": "RESOLVED",
+      "proposedResolution": "Keep existing mechanisms as compatibility paths during staged migration; make Treasury the economic admission seam before declaring those mechanisms non-authoritative.",
+      "acceptedResolution": "Wave 1 introduces the canonical Treasury kernel and persistence without a risky all-at-once runtime rewrite.",
+      "decisionAuthority": "ShortForge staged migration decision",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/",
+        "docs/treasury-wave1.md",
+        ".okf/audits/factoryos-current-state.md"
+      ]
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added Treasury contracts for commands, quotes, reservations, consumption, permits, accounts, policies and immutable ledger events.",
+    "Added deterministic Treasury Constitutional Kernel with fail-closed admission and settlement semantics.",
+    "Added MongoDB transactional ledger and in-memory test ledger.",
+    "Added versioned/time-bounded TreasuryPriceRegistry.",
+    "Added TreasuryService and Mongo-backed service factory.",
+    "Added unit tests for authority, idempotency, verification, release, overrun freeze, paid-route policy, defensive mode, expiry and concurrency.",
+    "Updated .okf hierarchy, terminology, index, compute policy and current-state audit.",
+    "Updated CLAUDE.md engineering guidance.",
+    "Aligned the existing ComfyUI MCP architecture document with its pre-existing CI contract by naming the TRANSFORM_VISUAL_ASSET semantic action."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PASS",
+    "treasuryUnitTests": "PASS",
+    "repositoryCI": "PASS",
+    "productionMongoTransactionProbe": "PENDING",
+    "note": "Production Mongo transaction probe remains deployment-specific; code requires a connected transaction-capable Mongo client and fails closed otherwise."
+  },
+  "disposition": "PASS"
+}

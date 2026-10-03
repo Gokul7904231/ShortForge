@@ -118,6 +118,7 @@ export * from "./creative/CreativeBibleManager";
 export * from "./artifacts/ArtifactManager";
 export * from "./recovery/RecoveryEngine";
 export * from "./governor/CostGovernor";
+export * from "./treasury";
 export * from "./routing/CapabilityFirstRouter";
 export * from "./routing/ProviderTester";
 export * from "./evaluation/SkillEvaluatorRunner";
