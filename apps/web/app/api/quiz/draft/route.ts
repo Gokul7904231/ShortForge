@@ -42,16 +42,24 @@ export async function POST(req: Request) {
     const style = String(body.style || body.difficulty || "medium").trim();
     const durationSeconds = Number(body.durationSeconds || 45);
 
-    const treasuryModel = await prepareTreasuryModelContext({
-      command: "Generate Quiz Draft",
-      missionId: "mis_quiz_draft_" + draftUser?.uid,
-      taskId: "quiz-draft-api-" + randomUUID(),
-      floorId: "floor02_scripting",
-      preferredProviderId:
-        typeof body.provider === "string" ? body.provider : undefined,
-      subtask: "quiz_generation",
-      maxRetries: 0,
-    });
+    let treasuryModel:
+      Awaited<ReturnType<typeof prepareTreasuryModelContext>> | undefined;
+
+    const ensureTreasuryModelContext = async () => {
+      if (!treasuryModel) {
+        treasuryModel = await prepareTreasuryModelContext({
+          command: "Generate Quiz Draft",
+          missionId: "mis_quiz_draft_" + (draftUser?.uid || "anonymous"),
+          taskId: "quiz-draft-api-" + randomUUID(),
+          floorId: "floor02_scripting",
+          preferredProviderId:
+            typeof body.provider === "string" ? body.provider : undefined,
+          subtask: "quiz_generation",
+          maxRetries: 0,
+        });
+      }
+      return treasuryModel;
+    };
 
     // ─── 1. GEO QUIZ GENERATION PATH (hardcoded 5-set rotation for BASIC) ───
     if (quizMode === "geo") {
@@ -120,7 +128,7 @@ export async function POST(req: Request) {
           renderProfile: "FAST_QUIZ",
           apiKey: resolvedApiKey,
           provider: resolvedProvider,
-          treasuryContext: treasuryModel.context,
+          treasuryContext: (await ensureTreasuryModelContext()).context,
         });
 
         if (!draft || !Array.isArray(draft.questions) || draft.questions.length === 0) {
@@ -206,7 +214,7 @@ export async function POST(req: Request) {
       contentType: "QUIZ_SHORTS",
       renderProfile: "FAST_QUIZ",
       topics: allocations,
-      treasuryContext: treasuryModel.context,
+      treasuryContext: (await ensureTreasuryModelContext()).context,
     });
 
     if (!draft || !Array.isArray(draft.questions) || draft.questions.length === 0) {
