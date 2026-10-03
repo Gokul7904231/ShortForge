@@ -199,6 +199,7 @@ export interface TreasuryEconomicPermit {
   readonly scopeDigest: string;
   readonly maxCostUsd: number;
   readonly maxCapacityUnits: number;
+  readonly maxTokenCapacityUnits: number;
   readonly maxRetries: number;
   readonly expiresAt: string;
   readonly issuedAt: string;
