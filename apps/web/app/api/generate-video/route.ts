@@ -127,12 +127,24 @@ function validateQuizContent(quiz: { hook?: string; questions?: any[] }) {
 }
 
 import { verifySession, verifyWritePermission } from "../../../lib/auth/auth";
-import { reserveGenerationSlot, releaseGenerationSlot, QuotaExceededError } from "../../../lib/quota/quota-service";
+import { QuotaExceededError } from "../../../lib/quota/quota-service";
 import { extractDeviceContext } from "../../../lib/fingerprint/server";
 
 export async function POST(req: Request) {
   let userId = "";
   let jobId = "";
+  let missionId = "";
+  let controller: AutonomousFactoryController | undefined;
+  let preparedEconomicCommand:
+    | {
+        runId: string;
+        overseerCommandId: string;
+        missionId: string;
+      }
+    | undefined;
+  let treasuryQuotaAdmission: TreasuryQuotaAdmission | undefined;
+  let treasuryQuotaReservation: TreasuryQuotaReservationResult | undefined;
+
   const deviceContext = extractDeviceContext(req);
   try {
     let authenticatedUser: any = null;
@@ -165,22 +177,107 @@ export async function POST(req: Request) {
 
     jobId = `job_${crypto.randomBytes(8).toString("hex")}`;
 
-    // 🔒 Concurrency-Safe Server-Authoritative 5-Video Hard Limit Reservation
-    try {
-      await reserveGenerationSlot(userId, userRole, jobId);
-    } catch (quotaErr: any) {
-      if (quotaErr instanceof QuotaExceededError || quotaErr.name === "QuotaExceededError") {
-        return NextResponse.json(
-          {
-            error: quotaErr.message,
-            quota: quotaErr.quotaInfo,
-            code: "QUOTA_EXCEEDED",
-          },
-          { status: 429 }
+    missionId = `mis_${jobId.replace(/^job_/, "")}`;
+    const executionAuthority =
+      (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
+
+    const releaseGenerationAdmission = async () => {
+      if (
+        treasuryQuotaReservation?.reservation &&
+        treasuryQuotaAdmission
+      ) {
+        await treasuryQuotaAdmission.releaseGenerationSlot(
+          treasuryQuotaReservation.reservation.reservationId,
+          userId,
+          userRole,
+          jobId,
+        ).catch(() => {});
+        treasuryQuotaReservation = undefined;
+        return;
+      }
+
+      if (userId && jobId) {
+        await releaseGenerationSlot(userId, jobId).catch(() => {});
+      }
+    };
+
+    if (executionAuthority === "factoryos") {
+      controller =
+        (global as any).__factoryOSController as
+          | AutonomousFactoryController
+          | undefined;
+
+      if (!controller) {
+        const production = process.env.NODE_ENV === "production";
+        const { AutonomousFactoryController } =
+          await import("../../../factoryos/core/controller/AutonomousFactoryController");
+        controller = new AutonomousFactoryController({
+          storageType: production ? "mongo" : "memory",
+          mongoUri:
+            process.env.FACTORYOS_MONGO_URI ||
+            process.env.MONGODB_URI ||
+            "mongodb://localhost:27017",
+          strictPersistence: production,
+        });
+        await controller.boot();
+        (global as any).__factoryOSController = controller;
+      }
+
+      if (!controller.overseer) {
+        throw new Error("[generate-video] Overseer control plane is unavailable");
+      }
+
+      preparedEconomicCommand =
+        controller.overseer.prepareEconomicCommand({
+          command: `Generate Video: ${parsed.data.topic}`,
+          missionId,
+          mode: "autonomous",
+        });
+
+      if (controller.treasuryService) {
+        treasuryQuotaAdmission = new TreasuryQuotaAdmission(
+          controller.treasuryService,
+        );
+        try {
+          treasuryQuotaReservation =
+            await treasuryQuotaAdmission.reserveGenerationSlot({
+              userId,
+              role: userRole,
+              jobId,
+              missionId,
+              runId: preparedEconomicCommand.runId,
+              overseerCommandId: preparedEconomicCommand.overseerCommandId,
+              expiresAt: new Date(
+                Date.now() + 15 * 60 * 1000,
+              ).toISOString(),
+            });
+        } catch (quotaErr: any) {
+          if (
+            quotaErr instanceof QuotaExceededError ||
+            quotaErr.name === "QuotaExceededError"
+          ) {
+            return NextResponse.json(
+              {
+                error: quotaErr.message,
+                quota: quotaErr.quotaInfo,
+                code: "QUOTA_EXCEEDED",
+              },
+              { status: 429 },
+            );
+          }
+          throw quotaErr;
+        }
+      } else if (production) {
+        throw new Error(
+          "[generate-video] Production generation requires Treasury quota admission",
         );
       }
-      throw quotaErr;
+    } else {
+      throw new Error(
+        `Unsupported execution authority "${executionAuthority}". Production generation must use FactoryOS.`,
+      );
     }
+
 
     // Resolve and compile the Content Engine configuration before content
     // generation. The compiled ProductionSpec becomes the mission snapshot.
