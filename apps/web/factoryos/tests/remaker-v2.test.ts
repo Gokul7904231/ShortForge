@@ -125,7 +125,7 @@ describe("ReMaker v2", () => {
       2
     );
     expect(impact.directNodeIds).toEqual(["scene_02"]);
-    expect(impact.renderSceneIds).toEqual(["scene_02"]);
+    expect(impact.renderSceneIds).toEqual(["scene_01", "scene_02"]);
     expect(impact.preservedNodeIds).toContain("scene_01");
     expect(impact.preservedNodeFingerprints.scene_01).toMatch(/^[a-f0-9]{64}$/);
     expect(impact.frameRange.startFrame).toBe(148);
@@ -248,7 +248,7 @@ describe("ReMaker v2", () => {
     };
 
     const receipt = await new ReMakerEngine().execute(request(), port);
-    expect(receipt.termination).toBe("EXECUTION_FAILED");
+    expect(receipt.termination).toBe("NO_PROGRESS");
   });
 
   it("rejects a candidate that reports an extra changed node", async () => {
@@ -289,13 +289,23 @@ describe("ReMaker v2", () => {
   });
 
   it("supports a pure frame-window target", () => {
+    const target = {
+      kind: "RENDER_REGION" as const,
+      frameRangeMs: { startMs: 5100, endMs: 5200 },
+    };
+    const targetScopeDigest = createHash("sha256")
+      .update(stableStringify(target))
+      .digest("hex");
+
     const plan = new ReMakerEngine().plan({
       ...request(),
       action: "RENDER_WINDOW",
       requestedChangeDigest: "1".repeat(64),
-      target: {
-        kind: "RENDER_REGION",
-        frameRangeMs: { startMs: 5100, endMs: 5200 },
+      target,
+      authorization: {
+        ...request().authorization,
+        action: "RENDER_WINDOW",
+        targetScopeDigest,
       },
       allowedActions: ["render affected scenes only"],
     });
