@@ -1,11 +1,15 @@
 import { IntelligentRouter } from "../../ai/intelligent-router";
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
 
 export class QuestionOptimizer {
   /**
    * Rewrites verbose quiz questions and options for punchy spoken delivery.
    * Prompts enforce strict limits on word count and creator-oriented style.
    */
-  static async optimize(questions: any[]): Promise<any[]> {
+  static async optimize(
+    questions: any[],
+    treasuryContext?: TreasuryModelExecutionContext,
+  ): Promise<any[]> {
     console.log(`[QuestionOptimizer] Compressing script questions for spoken delivery...`);
     const optimized: any[] = [];
 
@@ -13,7 +17,11 @@ export class QuestionOptimizer {
       const q = questions[i];
       try {
         const result = await IntelligentRouter.routeExecute(
-          { capability: "SCRIPT", subtask: "creativity" },
+          {
+            capability: "SCRIPT",
+            subtask: "creativity",
+            treasuryContext,
+          },
           {
             prompt: `You are the Content Compression Agent for ShortsFactory. Rewrite the following quiz question and option array to be extremely concise, punchy, and natural for spoken voiceover.
 Follow these strict creator rules:
