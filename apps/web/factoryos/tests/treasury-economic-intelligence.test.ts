@@ -18,6 +18,7 @@ function makeTreasury(now = new Date()) {
     createTreasuryAccount("factory", 10, 100, "OPEN", now, 1_000_000),
   );
   return { ledger, service };
+}
 
 function command(
   commandId: string,
