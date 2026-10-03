@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NotebookRegistry } from "../core/compute/notebooks/NotebookRegistry";
 import { NotebookOperationJournal } from "../core/compute/notebooks/NotebookOperationJournal";
 import { KaggleNotebookAdapter } from "../core/compute/notebooks/KaggleNotebookAdapter";
@@ -9,9 +9,12 @@ import { HuggingFaceZeroGPUAdapter } from "../core/compute/notebooks/HuggingFace
 import { NotebookRouter } from "../core/compute/notebooks/NotebookRouter";
 
 const originalEnv = { ...process.env };
+const originalFetch = globalThis.fetch;
 
 afterEach(() => {
   process.env = { ...originalEnv };
+  globalThis.fetch = originalFetch;
+  vi.restoreAllMocks();
 });
 
 describe("Notebook & Interactive Compute Fabric", () => {
@@ -50,15 +53,60 @@ describe("Notebook & Interactive Compute Fabric", () => {
     ]);
   });
 
-  it("does not misclassify Colab or ZeroGPU as production workers", () => {
+  it("keeps Colab render execution enabled while preserving the non-worker boundary", () => {
     const colab = new ColabNotebookAdapter();
     const zero = new HuggingFaceZeroGPUAdapter();
 
     expect(colab.metadata.capabilities.productionWorkerEligible).toBe(false);
-    expect(colab.metadata.capabilities.canExecuteCode).toBe(false);
+    expect(colab.metadata.capabilities.canExecuteCode).toBe(true);
+    expect(colab.metadata.capabilities.canReadOutputs).toBe(true);
+    expect(colab.metadata.capabilities.canReadLogs).toBe(true);
     expect(zero.metadata.runtimeKind).toBe("ZEROGPU_SPACE");
     expect(zero.metadata.capabilities.canProvision).toBe(false);
     expect(zero.metadata.capabilities.productionWorkerEligible).toBe(false);
+  });
+
+  it("validates Colab access and reports eligible GPU specs without exposing secrets", async () => {
+    const adapter = new ColabNotebookAdapter();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          runtimeSpecs: [
+            {
+              key: {
+                variant: "VARIANT_GPU",
+                accelerator: "T4",
+                shape: "SHAPE_STANDARD",
+              },
+              eligible: true,
+            },
+            {
+              key: {
+                variant: "VARIANT_GPU",
+                accelerator: "A100",
+                shape: "SHAPE_STANDARD",
+              },
+              eligible: false,
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const validation = await adapter.validateCredentials({
+      COLAB_ACCESS_TOKEN: "ephemeral-test-token",
+    });
+
+    expect(validation.authenticated).toBe(true);
+    expect(validation.providerReachable).toBe(true);
+    expect(validation.evidence.join(" ")).toContain("T4");
+    expect(validation.evidence.join(" ")).not.toContain("ephemeral-test-token");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "https://colaboratory.googleapis.com/v1beta/runtimespecs",
+    );
   });
 
   it("models Paperspace as a machine-backed notebook rather than a legacy notebook API", () => {
