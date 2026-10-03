@@ -8,7 +8,15 @@ import { EngineRegistry } from "@/lib/core/EngineRegistry";
 import { compileProductionSpec } from "@/factoryos/core/engines/ProductionSpecCompiler";
 import { EngineJobSnapshot } from "@/lib/core/EngineContracts";
 import { advancePointer, hasHardcodedCountry } from "@/lib/quiz/GeoRotationService";
-import { resolveTier } from "@/lib/quota/quota-service";
+import {
+  resolveTier,
+  releaseGenerationSlot,
+  QuotaExceededError,
+} from "@/lib/quota/quota-service";
+import {
+  TreasuryQuotaAdmission,
+  type TreasuryQuotaReservationResult,
+} from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import type { AutonomousFactoryController } from "@/factoryos/core/controller/AutonomousFactoryController";
 
 const SceneInputSchema = z.object({
@@ -127,7 +135,6 @@ function validateQuizContent(quiz: { hook?: string; questions?: any[] }) {
 }
 
 import { verifySession, verifyWritePermission } from "../../../lib/auth/auth";
-import { QuotaExceededError } from "../../../lib/quota/quota-service";
 import { extractDeviceContext } from "../../../lib/fingerprint/server";
 
 export async function POST(req: Request) {
@@ -180,6 +187,7 @@ export async function POST(req: Request) {
     missionId = `mis_${jobId.replace(/^job_/, "")}`;
     const executionAuthority =
       (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
+    const production = process.env.NODE_ENV === "production";
 
     const releaseGenerationAdmission = async () => {
       if (
@@ -208,7 +216,6 @@ export async function POST(req: Request) {
           | undefined;
 
       if (!controller) {
-        const production = process.env.NODE_ENV === "production";
         const { AutonomousFactoryController } =
           await import("../../../factoryos/core/controller/AutonomousFactoryController");
         controller = new AutonomousFactoryController({
