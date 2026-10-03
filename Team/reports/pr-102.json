@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR102-Treasurer-Compute-Admission-Wave2",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/treasury-compute-admission-wave2-main-20261003",
+  "objective": "Connect Treasurer to the canonical F06 render admission lifecycle while preserving Overseer command authority, Guardian capability authority, ComputeRouter physical placement, and F07 verification authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Overseer is the single sovereign command authority beneath Human Authority.",
+      "Treasurer owns economic admission but does not replace physical placement.",
+      "Workers do not own global economic resources.",
+      "Guardian remains the capability/policy gate.",
+      "F07 remains the independent verification boundary.",
+      "Reservation is not settlement.",
+      "Released reservations are not charged."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/hierarchy/overseer-operational-contract.md",
+      ".okf/rendering/compute-policy.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/decisions/treasury-compute-admission-20261003.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Treasury hard decisions remain deterministic.",
+      "F06 cannot use a Treasury-gated render without an Overseer command identity.",
+      "Production Treasury persistence remains fail-closed without a transaction-capable Mongo client.",
+      "F07 receipt identifiers are taken from F07ReleaseGuardian, not synthesized by Treasury or F06."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-F06-001",
+      "originalConflict": "Connecting Treasurer to F06 could allow F06 to become its own settlement authority or cause ComputeRouter to inherit economic scheduling responsibilities.",
+      "status": "RESOLVED",
+      "proposedResolution": "Reserve in RenderFabric before ComputeRouter dispatch; return the reservation identity; settle only in F07 after an authentic F07ReleaseGuardian receipt; keep provider placement in ComputeRouter.",
+      "acceptedResolution": "F06 admits expenditure economically but cannot settle production spend or choose the physical provider.",
+      "decisionAuthority": "ShortForge Treasurer compute-admission decision",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/fabric/RenderFabric.ts",
+        "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+        "docs/treasury-wave2-compute-admission.md"
+      ]
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Release"
+  ],
+  "changes": [
+    "Bound RenderIntent to overseerCommandId for Treasury-gated rendering.",
+    "Reserved an explicit Treasury economic envelope before F06 physical compute.",
+    "Released reservations on dispatch failure and F07 rejection.",
+    "Settled measured capacity only with an authentic signed F07ReleaseGuardian receipt.",
+    "Initialized a Mongo-backed Treasury service/account in the persistent controller.",
+    "Added focused render/Treasury admission tests and Wave 2 architecture records."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "treasuryComputeAdmissionTests": "PENDING",
+    "repositoryCI": "PENDING",
+    "f06F07Validation": "PENDING"
+  },
+  "disposition": "BLOCKED"
+}
