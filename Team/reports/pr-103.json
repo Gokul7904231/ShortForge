@@ -18,7 +18,7 @@
     "required": true,
     "status": "TRIAGED",
     "semgrep": "PENDING_CI",
-    "strix": "UNPROVEN",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
     "zap": "NOT_APPLICABLE",
     "notes": "Browser bridge is local-session scoped, token/origin checked, and does not expose credentials as tool arguments."
   },
