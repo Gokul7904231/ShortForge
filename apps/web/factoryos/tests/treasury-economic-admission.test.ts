@@ -155,7 +155,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
       },
     );
 
-    expect(reserved.permit.modelId).toBe("llama-test");
+    expect(reserved.permit.scopeDigest).toMatch(/^sha256:/);
     expect(reserved.permit.maxCostUsd).toBeCloseTo(0.0025, 8);
   });
 
