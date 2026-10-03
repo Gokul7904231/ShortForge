@@ -32,7 +32,9 @@
     "Routed specialized quiz/model endpoints through Treasury-managed providerFactory.",
     "Bound Economic Intelligence into Overseer Decision Fabric as advisory-only context.",
     "Added static authority-retirement regression tests.",
-    "Updated Treasurer .okf hierarchy, economic contract, decision record, and Wave 4 documentation."
+    "Updated Treasurer .okf hierarchy, economic contract, decision record, and Wave 4 documentation.",
+    "Made legacy Firestore quota projection failures non-authoritative: Treasury admission/release/settlement succeed independently and projection failures are logged for reconciliation.",
+    "Added dedicated .github/workflows/treasury-wave4-validation.yml with focused Treasury intelligence, authority-retirement, admission, and provider-retry regression coverage."
   ],
   "invariants": [
     "Treasurer remains the only production economic admission authority.",
@@ -45,19 +47,21 @@
     "Ascalon/GLiDE receives only a bounded projection and cannot authorize Treasury spend."
   ],
   "verificationResults": {
-    "repositoryCI": "PENDING",
-    "treasuryEconomicIntelligenceTests": "PENDING",
-    "treasuryAuthorityRetirementTests": "PENDING",
+    "repositoryCI": "PENDING_CURRENT_HEAD",
+    "treasuryEconomicIntelligenceTests": "PENDING_CURRENT_HEAD",
+    "treasuryAuthorityRetirementTests": "PENDING_CURRENT_HEAD",
     "computeOfferFabric": "PENDING",
     "overseerDecisionFabric": "PENDING",
     "floor02Floor03": "PENDING",
     "floor06": "PENDING",
     "floor07": "PENDING",
-    "teamChangeGate": "PENDING",
+    "teamChangeGate": "PENDING_CURRENT_HEAD",
     "strix": "UNAVAILABLE_TRIAL_EXPIRED",
-    "localCloneTests": "NOT_RUN_NETWORK_DNS_UNAVAILABLE"
+    "localCloneTests": "NOT_RUN_NETWORK_DNS_UNAVAILABLE",
+    "modelApiComputeValidation": "PENDING_CURRENT_HEAD",
+    "f06F07Validation": "PENDING_CURRENT_HEAD"
   },
-  "disposition": "BLOCKED",
+  "disposition": "BLOCKED_PENDING_CURRENT_HEAD_VALIDATION",
   "security": {
     "required": true,
     "status": "TRIAGED",
@@ -131,5 +135,9 @@
     "Forge Security",
     "Forge Release"
   ],
-  "baseSha": "23b9eaa7637df7b48f4ca80b4db193f11ef45626"
+  "baseSha": "23b9eaa7637df7b48f4ca80b4db193f11ef45626",
+  "latestHeadSha": "9f0cf002691d7c056f2f6e519e7852d415b3d363",
+  "notes": [
+    "Current head 9f0cf002691d7c056f2f6e519e7852d415b3d363 contains only the documented Wave 4 safety hardening after the earlier 6dc checkpoint; remote checks have been retriggered."
+  ]
 }
