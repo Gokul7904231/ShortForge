@@ -2,7 +2,7 @@
  * FactoryOS v1 — Overseer Supreme Control Plane & Autonomous Mission Runtime
  */
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { GoalDefinition, TaskNode } from "../contracts/OverseerThinkingContracts";
 import type { Case } from "../contracts/CaseContracts";
 import type { WorldState } from "../contracts/WorldStateContracts";
@@ -1413,8 +1413,43 @@ export class OverseerControlPlane {
           createdAt: new Date().toISOString(),
         };
 
+        const treasuryEnabled = Boolean(this.treasuryService);
+        const renderScopeDigest = createHash("sha256")
+          .update(JSON.stringify({
+            missionId,
+            runId,
+            overseerCommandId: run.overseerCommandId,
+            jobId: targetJobId,
+            intentId: renderIntent.intentId,
+            durationSeconds: renderIntent.durationSeconds,
+            hardwareAccel: renderIntent.constraints.hardwareAccel === true,
+          }))
+          .digest("hex");
+
+        const configuredMaxRenderUsd = Number(
+          process.env.FACTORYOS_MAX_RENDER_RESERVATION_USD || "0.10",
+        );
+        const maxRenderReservationUsd = Number.isFinite(configuredMaxRenderUsd)
+          ? Math.max(0, configuredMaxRenderUsd)
+          : 0.10;
+
         const renderRes = await renderFabric.executeRender(renderIntent, {
           localRenderIntent: (scope.localRenderIntent || sharedScope.localRenderIntent) as LocalRenderIntent | undefined,
+          treasury: treasuryEnabled
+            ? {
+                service: this.treasuryService!,
+                accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+                overseerCommandId: run.overseerCommandId,
+                budgetEnvelope: {
+                  maxCostUsd: maxRenderReservationUsd,
+                  maxCapacityUnits: Math.max(1, Math.ceil(renderIntent.durationSeconds)),
+                  maxDurationMs: Math.max(60_000, Math.ceil(renderIntent.durationSeconds * 5000)),
+                  maxRetries: 0,
+                },
+                scopeDigest: renderScopeDigest,
+                priority: "HIGH",
+              }
+            : undefined,
         });
 
         if (!renderRes.artifact || !renderRes.receipt) {
