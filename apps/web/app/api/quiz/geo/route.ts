@@ -190,10 +190,10 @@ Rules:
 
     // 1) Treasury-gated model invocation with constrained JSON output.
     const t0 = performance.now();
-    const treasuryModel = await ensureTreasuryModelContext();
+    const treasuryModelContext = await ensureTreasuryModelContext();
     const llm = providerFactory("groq", {
       apiKey,
-      treasuryContext: treasuryModel.context,
+      treasuryContext: treasuryModelContext.context,
     });
     const raw = await llm.generateText({
       prompt,
