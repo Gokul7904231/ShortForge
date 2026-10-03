@@ -41,6 +41,16 @@ export interface RenderAudioTrack {
   readonly fadeOutSeconds?: number;
 }
 
+export interface SurgicalRenderScope {
+  readonly mode: "SURGICAL_SCENE";
+  readonly repairId: string;
+  readonly forceSceneIds: readonly string[];
+  readonly affectedFrameRange?: {
+    readonly startFrame: number;
+    readonly endFrame: number;
+  };
+}
+
 export interface RenderIntent {
   readonly intentId: string;
   readonly jobId: string;
@@ -66,6 +76,8 @@ export interface RenderIntent {
     readonly strictSyncToleranceMs?: number;
   };
   readonly createdAt: string;
+  /** Optional ReMaker scope. Full renders remain the default. */
+  readonly repairScope?: SurgicalRenderScope;
 }
 
 export type ArtifactLocation =
