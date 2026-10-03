@@ -35,6 +35,7 @@ export interface RoutingTaskContext {
   taskId?: string;
   scopeFingerprint?: string;
   priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  preferredProviderId?: string;
 }
 
 export interface ScoredCandidate {
@@ -537,8 +538,24 @@ class IntelligentRouterClass {
       }
     }
 
-    // Sort descending by suitability score
-    return candidates.sort((a, b) => b.score - a.score);
+    // Sort descending by suitability. A legacy caller's preferred provider
+    // is only a ranking preference; Treasury still admits the resulting attempt.
+    const preferred =
+      context.preferredProviderId === "gemini"
+        ? "google"
+        : context.preferredProviderId;
+    return candidates.sort((a, b) => {
+      const aPreferred =
+        preferred && (a.provider.id === preferred || (preferred === "google" && a.provider.id === "google-ai"))
+          ? 1
+          : 0;
+      const bPreferred =
+        preferred && (b.provider.id === preferred || (preferred === "google" && b.provider.id === "google-ai"))
+          ? 1
+          : 0;
+      if (aPreferred !== bPreferred) return bPreferred - aPreferred;
+      return b.score - a.score;
+    });
   }
 
   private calculateSuitability(
