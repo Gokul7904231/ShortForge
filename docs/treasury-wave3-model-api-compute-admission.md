@@ -101,3 +101,15 @@ The Treasury service is persistent through transaction-capable MongoDB in produc
 5. Feed authoritative provider-reported prices and usage into the durable Treasury price/usage history.
 6. Add anomaly detection, forecasting and unit economics.
 7. Introduce Ascalon economic advice in shadow mode without Treasury authority.
+
+
+## Authority rule
+
+The migration is intentionally asymmetric:
+
+- selection systems may advise which capable model or compute offer to use;
+- Treasury decides whether that selected economic candidate may consume resources;
+- the candidate/router cannot register or overwrite paid model prices during an execution attempt;
+- legacy CostGovernor, MissionBudgetManager, AgentEconomicsEngine and user quota code may continue to provide compatibility or entitlement information only until their explicit migration waves are completed.
+
+This avoids a false “centralization” where several independent components can still authorize spend.
