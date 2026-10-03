@@ -262,11 +262,15 @@ export function createTreasuryAccount(
   capacityUnits: number,
   mode: TreasuryMode = "OPEN",
   now = new Date(),
+  tokenCapacityUnits = 1_000_000,
 ): TreasuryAccount {
   if (!accountId) throw new Error("Treasury accountId is required");
   if (!Number.isFinite(budgetUsd) || budgetUsd < 0) throw new Error("Treasury budgetUsd must be >= 0");
   if (!Number.isFinite(capacityUnits) || capacityUnits < 0) {
     throw new Error("Treasury capacityUnits must be >= 0");
+  }
+  if (!Number.isFinite(tokenCapacityUnits) || tokenCapacityUnits < 0) {
+    throw new Error("Treasury tokenCapacityUnits must be >= 0");
   }
   return {
     accountId,
@@ -279,6 +283,10 @@ export function createTreasuryAccount(
     availableCapacityUnits: capacityUnits,
     reservedCapacityUnits: 0,
     settledCapacityUnits: 0,
+    tokenCapacityUnits,
+    availableTokenCapacityUnits: tokenCapacityUnits,
+    reservedTokenCapacityUnits: 0,
+    settledTokenCapacityUnits: 0,
     mode,
     version: 1,
     updatedAt: now.toISOString(),
