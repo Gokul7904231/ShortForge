@@ -145,7 +145,9 @@ class AIRuntimeEngineClass {
     console.log(`[AIRuntime] [${traceId}:${spanId}] Starting execution for ${capability} (${version})`);
 
     let currentAttempt = 1;
-    const maxAttempts = (options.maxRetries ?? 3) + 1;
+    const maxAttempts = this.treasuryRequired
+      ? Math.max(1, (options.maxRetries ?? 0) + 1)
+      : (options.maxRetries ?? 3) + 1;
     let lastError: any = null;
 
     while (currentAttempt <= maxAttempts) {
