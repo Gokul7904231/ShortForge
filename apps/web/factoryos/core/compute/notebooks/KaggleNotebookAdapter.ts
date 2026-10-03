@@ -293,6 +293,10 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
             artifactProbe.artifactSha256 &&
             (artifactProbe.artifactByteLength || 0) >= 1024
           ) {
+            const persistedArtifactPath = await this.persistArtifact(
+              artifactProbe.artifactPath,
+              request.artifactDestinationPath,
+            );
             return {
               providerType: "KAGGLE",
               runtimeId: runtime.resourceId,
@@ -300,7 +304,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
               status: "SUCCEEDED",
               exitCode: 0,
               stdout: artifactProbe.stdout,
-              artifactPath: artifactProbe.artifactPath,
+              artifactPath: persistedArtifactPath,
               artifactSha256: artifactProbe.artifactSha256,
               artifactByteLength: artifactProbe.artifactByteLength,
               evidence: [
@@ -396,6 +400,10 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         };
       }
 
+      const persistedArtifactPath = await this.persistArtifact(
+        artifactProbe.artifactPath,
+        request.artifactDestinationPath,
+      );
       return {
         providerType: "KAGGLE",
         runtimeId: runtime.resourceId,
@@ -403,7 +411,7 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
         status: "SUCCEEDED",
         exitCode: 0,
         stdout: artifactProbe.stdout,
-        artifactPath: artifactProbe.artifactPath,
+        artifactPath: persistedArtifactPath,
         artifactSha256: artifactProbe.artifactSha256,
         artifactByteLength: artifactProbe.artifactByteLength,
         evidence: [
@@ -483,6 +491,26 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       artifactSha256: evidence.artifactSha256,
       artifactByteLength: evidence.artifactByteLength,
     };
+  }
+
+  private async persistArtifact(
+    artifactPath: string,
+    destinationPath?: string,
+  ): Promise<string> {
+    const destination = destinationPath?.trim();
+    if (!destination || destination === artifactPath) return artifactPath;
+
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await fs.copyFile(artifactPath, destination);
+
+    const evidence = await fileEvidence(destination);
+    if (evidence.artifactByteLength !== (await fs.stat(artifactPath)).size) {
+      throw new Error(
+        "KAGGLE_ARTIFACT_PERSIST_FAILED: destination byte length mismatch.",
+      );
+    }
+
+    return destination;
   }
 
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
