@@ -26,7 +26,8 @@ export interface TreasuryLedgerTransaction {
 
 export interface TreasuryLedgerStore {
   initialize(): Promise<void>;
-  atomic<T>(work: (tx: TreasuryLedgerTransaction) => Promise<T>): Promise<T>;
+  atomic<T>(work: (tx: TreasuryLedgerTransaction) => Promise<T>): Promise<TreasuryAccount | null> | Promise<T>;
+  ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount>;
   getAccount(accountId: string): Promise<TreasuryAccount | null>;
   listRecentEvents(accountId?: string, limit?: number): Promise<TreasuryLedgerEvent[]>;
   listActiveReservations(accountId?: string): Promise<TreasuryReservation[]>;
@@ -114,6 +115,15 @@ export class MongoTreasuryLedger implements TreasuryLedgerStore {
         await this.events.insertOne(structuredClone(event), { session });
       },
     };
+  }
+
+  async ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount> {
+    return this.atomic(async (tx) => {
+      const existing = await tx.getAccount(account.accountId);
+      if (existing) return existing;
+      await tx.putAccount(account);
+      return account;
+    });
   }
 
   async getAccount(accountId: string): Promise<TreasuryAccount | null> {
@@ -213,6 +223,15 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
       this.reservations.clear(); for (const [key, value] of reservations) this.reservations.set(key, value);
       this.events.clear(); for (const [key, value] of events) this.events.set(key, value);
       return result;
+    });
+  }
+
+  async ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount> {
+    return this.atomic(async (tx) => {
+      const existing = await tx.getAccount(account.accountId);
+      if (existing) return existing;
+      await tx.putAccount(account);
+      return account;
     });
   }
 
