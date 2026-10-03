@@ -36,7 +36,8 @@ Treasurer may autonomously perform only constitutional safety actions derived fr
 - reconcile measured consumption;
 - deny invalid/replayed/expired commands;
 - stop new discretionary reservations after a breach;
-- freeze its account on an envelope overrun.
+- freeze its account on an envelope overrun;
+- reject a command whose issuer identity does not exactly match its originating Overseer command.
 
 Those are not new sovereign commands. They are mandatory safety behavior.
 
