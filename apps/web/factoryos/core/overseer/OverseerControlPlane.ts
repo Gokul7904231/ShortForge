@@ -41,6 +41,7 @@ import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecy
 import type { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
+import { F07ReleaseGuardian } from "../verification/youtube/F07ReleaseGuardian";
 import { ResearchRuntime } from "../research/ResearchRuntime";
 import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
 import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
@@ -1615,6 +1616,67 @@ export class OverseerControlPlane {
           policyViolations: [],
         });
 
+        let f07VerificationReceiptId: string | undefined;
+        if (treasuryReservationId && this.treasuryService && verificationReport.verified) {
+          const releaseGuardian = F07ReleaseGuardian.getInstance();
+          const candidate = {
+            videoId: targetJobId,
+            title: String(scope.title || scope.topic || targetJobId),
+            description: String(scope.description || ""),
+            tags: Array.isArray(scope.tags) ? scope.tags : [],
+            contentEngine: String(scope.contentEngine || "Quiz"),
+            genome: scope.contentGenome || {
+              topic: String(scope.topic || "unknown"),
+              thesis: String(scope.thesis || "unknown"),
+              storyType: "curiosity-reveal",
+              hookType: "curiosity-gap",
+              narrativeStructure: "question-context-reveal-payoff",
+              durationSeconds: verificationReport.measurements.videoDuration,
+              narrationSpeedWpm: 160,
+              visualGrammar: "documentary-fast-cut",
+              captionGrammar: "kinetic-emphasis",
+              audioGrammar: "narration-plus-light-bed",
+              sourceSetHash: "unknown",
+              scriptHash: createHash("sha256").update(String(scope.script || "")).digest("hex"),
+              variationProfile: "unknown",
+              originalityProfile: "unknown",
+              contentGenomeVersion: 1,
+              generatedAt: new Date().toISOString(),
+            },
+            measurements: verificationReport.measurements,
+            assets: [],
+            scriptText: String(scope.script || sharedScope.script || ""),
+          };
+          const channel = scope.channelContext || {
+            channelId: process.env.FACTORYOS_CHANNEL_ID || "shortforge-channel",
+            yppStatus: "NOT_YET_ELIGIBLE",
+            isTwoStepVerificationEnabled: false,
+            hasAdvancedFeaturesAccess: false,
+            hasLinkedAdSense: false,
+            activeCommunityGuidelinesStrikes: 0,
+            subscriberCount: 0,
+            validWatchHoursLast365Days: 0,
+            shortsViewsLast90Days: 0,
+            recentGenomes: [],
+            coverage: "UNKNOWN",
+          };
+
+          const receipt = await releaseGuardian.verifyRelease({
+            video: candidate,
+            channel,
+            publicationIntentAt: new Date().toISOString(),
+            localMediaPath: videoUrl,
+            artifactSha256: artifact?.sha256,
+          });
+
+          if (!receipt.receiptId || !receipt.technicalForensics.artifactExists || !receipt.technicalForensics.sha256Valid) {
+            await this.treasuryService.release(treasuryReservationId, "F07_RELEASE_RECEIPT_INVALID");
+            throw new Error("[Overseer F07] Treasury settlement blocked: invalid F07 release receipt");
+          }
+
+          f07VerificationReceiptId = receipt.receiptId;
+        }
+
         const f07LoopReceipt: FloorClosedLoopReceipt = {
           floorId: "floor07_compliance",
           loopType: "VERIFICATION_REMEDIATION",
@@ -1659,7 +1721,7 @@ export class OverseerControlPlane {
           });
         }
 
-        if (verificationReport?.verified && treasuryReservationId && this.treasuryService) {
+        if (verificationReport?.verified && treasuryReservationId && this.treasuryService && f07VerificationReceiptId) {
           const renderReceipt = scope.renderReceipt || sharedScope.renderReceipt;
           const totalTimeMs = Number(renderReceipt?.metrics?.totalTimeMs || 0);
           const rawReceipt = renderReceipt?.rawReceipt || {};
@@ -1677,8 +1739,8 @@ export class OverseerControlPlane {
             actualTokens: Number.isFinite(Number(rawReceipt.actualTokens)) ? Number(rawReceipt.actualTokens) : undefined,
             actualDurationMs: totalTimeMs || undefined,
             executionEvidenceId: renderReceipt.receiptId,
-            verificationReceiptId: "f07:verification-engine:" + targetJobId,
-            verified: true,
+            verificationReceiptId: f07VerificationReceiptId,
+            verified: Boolean(f07VerificationReceiptId),
             measuredAt: new Date().toISOString(),
           });
         }
