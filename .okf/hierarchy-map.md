@@ -164,6 +164,15 @@ Treasurer
 
 Treasurer accepts discretionary economic commands only from Overseer. Its constitutional safety actions are deterministic and cannot be overridden by worker or model output.
 
+Economic Intelligence is a read-only projection beneath Treasurer:
+- reads Treasury ledger/account evidence;
+- computes unit economics, waste, capacity pressure, anomalies, and bounded forecasts;
+- emits advisory projections to Overseer / Ascalon / GLiDE;
+- cannot reserve, settle, release, freeze, unfreeze, mutate prices, or select physical workers.
+
+Canonical advisory chain:
+Treasury Kernel -> Economic Intelligence -> TreasuryEconomicAdvice -> Overseer/Ascalon/GLiDE.
+
 ---
 
 ## Level 1 — Overseer Supreme Control Plane
