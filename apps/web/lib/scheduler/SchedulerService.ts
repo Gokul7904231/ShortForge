@@ -2,7 +2,7 @@
  * SchedulerService — FactoryOS Canonical Recurring Scheduler
  * 
  * Handles timezone-aware cron/interval calculations, deterministic execution idempotency,
- * atomic schedule claiming, quota enforcement, and standard production job dispatching.
+ * atomic schedule claiming, trigger orchestration, and standard production job dispatching.
  */
 
 import crypto from "crypto";
