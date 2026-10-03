@@ -1,4 +1,11 @@
+import { createHash } from "node:crypto";
 import { AICapability, AIProviderRegistry, ModelMeta } from "./capability-registry";
+import type { TreasuryService } from "../factoryos/core/treasury/TreasuryService";
+import {
+  TreasuryEconomicAdmission,
+  type TreasuryAdmissionContext,
+  type TreasuryModelCandidate,
+} from "../factoryos/core/treasury/TreasuryEconomicAdmission";
 import { AIConfigManager, type ProviderConfig, type ModelConfig } from "./ai-config-manager";
 import { MetricsDB } from "../lib/queue-db";
 import { AIDoctor } from "../lib/core/AIDoctor";
@@ -16,9 +23,18 @@ export type AIProfile =
 export interface RoutingTaskContext {
   capability: AICapability;
   subtask?: "reasoning" | "speed" | "coding" | "json" | "creativity" | string;
-  maxCostLimit?: number; // Maximum acceptable cost per 1M tokens in USD
-  maxLatencyLimit?: number; // Maximum acceptable latency in ms
+  maxCostLimit?: number;
+  maxLatencyLimit?: number;
   requireLocal?: boolean;
+  maxRetries?: number;
+  overseerCommandId?: string;
+  accountId?: string;
+  missionId?: string;
+  runId?: string;
+  floorId?: string;
+  taskId?: string;
+  scopeFingerprint?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
 }
 
 export interface ScoredCandidate {
@@ -30,6 +46,9 @@ export interface ScoredCandidate {
 
 class IntelligentRouterClass {
   private activeProfile: AIProfile = "Balanced";
+  private treasuryService?: TreasuryService;
+  private treasuryAdmission?: TreasuryEconomicAdmission;
+  private treasuryRequired = false;
 
   setProfile(profile: AIProfile) {
     console.log(`[IntelligentRouter] Setting active profile to: ${profile}`);
@@ -38,6 +57,20 @@ class IntelligentRouterClass {
 
   getProfile(): AIProfile {
     return this.activeProfile;
+  }
+
+  bindTreasury(
+    service: TreasuryService,
+    required = process.env.NODE_ENV === "production",
+  ): void {
+    if (this.treasuryService && this.treasuryService !== service) {
+      throw new Error(
+        "[IntelligentRouter] Treasury service is already bound; refusing to replace economic authority",
+      );
+    }
+    this.treasuryService = service;
+    this.treasuryAdmission = new TreasuryEconomicAdmission(service);
+    this.treasuryRequired = this.treasuryRequired || required;
   }
 
   /**
