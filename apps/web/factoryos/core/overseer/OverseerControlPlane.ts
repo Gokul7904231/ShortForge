@@ -19,6 +19,7 @@ import type { MemoryEngine } from "../memory/MemoryEngine";
 
 export interface OverseerRun {
   readonly runId: string;
+  readonly overseerCommandId: string;
   readonly command: string;
   readonly mode: "reflex" | "deliberate" | "deep" | "autonomous";
   status: "accepted" | "running" | "completed" | "failed" | "paused";
@@ -237,6 +238,7 @@ export class OverseerControlPlane {
     const now = new Date().toISOString();
     this.runs.set(runId, {
       runId,
+      overseerCommandId: `ovr_${runId}`,
       command: mission.objective,
       mode: "autonomous",
       status: "running",
@@ -304,6 +306,7 @@ export class OverseerControlPlane {
 
     const runRecord: OverseerRun = {
       runId,
+      overseerCommandId: `ovr_${runId}`,
       command,
       mode,
       status: "accepted",
@@ -348,6 +351,7 @@ export class OverseerControlPlane {
 
     const runRecord: OverseerRun = {
       runId,
+      overseerCommandId: `ovr_${runId}`,
       command: mission.goal || "Autonomous Mission Execution",
       mode,
       status: "accepted",
@@ -1277,6 +1281,7 @@ export class OverseerControlPlane {
           },
           preferredCompiler: scope.preferredCompiler || "FFMPEG",
           constraints: { hardwareAccel: true },
+          overseerCommandId: run.overseerCommandId,
           createdAt: new Date().toISOString(),
         };
 
