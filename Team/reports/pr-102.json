@@ -53,6 +53,18 @@
         "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
         "docs/treasury-wave2-compute-admission.md"
       ]
+    },
+    {
+      "id": "TRSY-F06-002",
+      "originalConflict": "A provider can report COMPLETED without a physical output artifact; the economic hold must not remain indefinitely.",
+      "status": "RESOLVED",
+      "proposedResolution": "Release the Treasury reservation before propagating the artifactless completion failure.",
+      "acceptedResolution": "RenderFabric now releases the reservation on COMPLETED-without-artifact and fails the render.",
+      "decisionAuthority": "Treasurer F06 admission safety invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/fabric/RenderFabric.ts",
+        "apps/web/factoryos/tests/treasury-compute-admission.test.ts"
+      ]
     }
   ],
   "forgers": [
@@ -67,7 +79,8 @@
     "Released reservations on dispatch failure and F07 rejection.",
     "Settled measured capacity only with an authentic signed F07ReleaseGuardian receipt.",
     "Initialized a Mongo-backed Treasury service/account in the persistent controller.",
-    "Added focused render/Treasury admission tests and Wave 2 architecture records."
+    "Added focused render/Treasury admission tests and Wave 2 architecture records.",
+    "Closed an artifactless COMPLETED-receipt reservation leak in RenderFabric and added regression coverage."
   ],
   "verificationResults": {
     "teamChangeGate": "PENDING",
