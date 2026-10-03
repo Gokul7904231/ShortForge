@@ -26,6 +26,10 @@ export class TreasuryService {
     return this.kernel.quote(command);
   }
 
+  getPriceRegistry(): import("./TreasuryPriceRegistry").TreasuryPriceRegistry {
+    return this.kernel.getPriceRegistry();
+  }
+
   ensureAccount(account: import("./TreasuryContracts").TreasuryAccount): Promise<import("./TreasuryContracts").TreasuryAccount> {
     return this.kernel.ensureAccount(account);
   }
