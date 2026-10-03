@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR138-Lightning-Teamspace-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/lightning-teamspace-current-main-20261003",
+  "objective": "Reconcile Lightning Teamspace identity and live-provider lifecycle changes onto current main after the Kaggle proof wave landed.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Notebook providers are rendering backends, not automatic F06 workers.",
+      "Provider credentials stay environment-bound.",
+      "Studio lifecycle identity must include the explicit Teamspace.",
+      "F07 remains the independent physical artifact truth boundary."
+    ],
+    "sourceRefs": [
+      ".okf/compute/notebook-fabric.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "INHERITED/UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "LIGHTNING_TEAMSPACE is configuration, not a secret; API credentials remain GitHub secrets."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added LIGHTNING_TEAMSPACE to notebook configuration.",
+    "Required Teamspace in Lightning live workflow validation and passed it to provider/MCP smokes.",
+    "Bound Studio create/run/stop to explicit Teamspace identity.",
+    "Used Machine.from_str for explicit machine selection.",
+    "Made live Studio probe names unique.",
+    "Updated notebook MCP documentation."
+  ],
+  "verificationPlan": [
+    "Run repository CI and notebook-fabric contract tests.",
+    "Run Team Change Gate.",
+    "Do not claim Lightning physical MP4 proof until issue #136 is closed by actual artifact evidence."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "notebookFabricCI": "PENDING",
+    "lightningCodeExecutionHistorical": "PASS",
+    "lightningPhysicalArtifact": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "Tracked by consolidation issue #127 and physical-render follow-up issue #136."
+  ]
+}
