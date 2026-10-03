@@ -35,6 +35,7 @@ import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
 import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
 import type { TreasuryService } from "../treasury/TreasuryService";
+import { TreasuryQuotaAdmission } from "../treasury/TreasuryQuotaAdmission";
 import { computeTreasuryExecutionScopeDigest } from "../treasury/TreasuryScope";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
@@ -1649,6 +1650,14 @@ export class OverseerControlPlane {
           node.dependencyOutputs?.["task_f06_rendering"]?.jobId ||
           node.payload?.jobId ||
           `job_${randomUUID().substring(0, 8)}`;
+
+        const treasuryQuotaReservationId =
+          scope.treasuryQuotaReservationId ||
+          sharedScope.treasuryQuotaReservationId ||
+          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryQuotaReservationId;
+        const treasuryQuotaAdmission =
+          this.treasuryService ? new TreasuryQuotaAdmission(this.treasuryService) : undefined;
+
         const artifact =
           scope.artifact ||
           sharedScope.artifact ||
@@ -1726,7 +1735,22 @@ export class OverseerControlPlane {
           });
 
           if (!receipt.receiptId || !receipt.technicalForensics.artifactExists || !receipt.technicalForensics.sha256Valid) {
-            await this.treasuryService.release(treasuryReservationId, "F07_RELEASE_RECEIPT_INVALID");
+            await this.treasuryService.release(
+              treasuryReservationId,
+              "F07_RELEASE_RECEIPT_INVALID",
+            );
+            if (
+              treasuryQuotaReservationId &&
+              treasuryQuotaAdmission &&
+              scope.userId
+            ) {
+              await treasuryQuotaAdmission.releaseGenerationSlot(
+                treasuryQuotaReservationId,
+                String(scope.userId),
+                String(scope.tier || "BASIC"),
+                targetJobId,
+              );
+            }
             throw new Error("[Overseer F07] Treasury settlement blocked: invalid F07 release receipt");
           }
 
@@ -1764,6 +1788,18 @@ export class OverseerControlPlane {
               "F07_VERIFICATION_REJECTED",
             );
           }
+          if (
+            treasuryQuotaReservationId &&
+            treasuryQuotaAdmission &&
+            scope.userId
+          ) {
+            await treasuryQuotaAdmission.releaseGenerationSlot(
+              treasuryQuotaReservationId,
+              String(scope.userId),
+              String(scope.tier || "BASIC"),
+              targetJobId,
+            );
+          }
           await this.caseManager.createCase({
             title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
             description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
@@ -1799,6 +1835,22 @@ export class OverseerControlPlane {
             verified: Boolean(f07VerificationReceiptId),
             measuredAt: new Date().toISOString(),
           });
+
+          if (
+            treasuryQuotaReservationId &&
+            treasuryQuotaAdmission &&
+            scope.userId &&
+            f07VerificationReceiptId
+          ) {
+            await treasuryQuotaAdmission.settleGenerationSlot(
+              treasuryQuotaReservationId,
+              String(scope.userId),
+              String(scope.tier || "BASIC"),
+              targetJobId,
+              renderReceipt.receiptId,
+              f07VerificationReceiptId,
+            );
+          }
         }
 
         let deliveryArtifact: any;
