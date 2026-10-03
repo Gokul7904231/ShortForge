@@ -322,7 +322,11 @@ Return only the raw hook text, no quotation marks.`;
     const sceneSlug = context.workflow.scenePromptSlug ?? "scene:v1";
     const scenePrompt = PromptRegistry.render(sceneSlug, { script, sceneCount: 3 });
     const sceneResult = await IntelligentRouter.routeExecute(
-      { capability: "SCRIPT", subtask: "json" },
+      {
+        capability: "SCRIPT",
+        subtask: "json",
+        treasuryContext: context.treasuryModelContext,
+      },
       {
         prompt: scenePrompt,
         system: "Break the script into JSON visual scenes array.",
@@ -594,7 +598,8 @@ WorkflowStepRegistry.register("image", async (context) => {
   const visualPack = await VisualAssetManager.getVisualPack({
     topic: context.job.topic,
     questions: rawQuestions,
-    style: jobAny.style || "geography"
+    style: jobAny.style || "geography",
+    treasuryModelContext: context.treasuryModelContext,
   });
 
   // 3. Log scene visual verification metrics (Step 2 - Verify every scene)
