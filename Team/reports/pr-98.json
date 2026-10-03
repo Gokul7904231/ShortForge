@@ -19,7 +19,7 @@
     "required": true,
     "status": "TRIAGED",
     "semgrep": "NOT_RUN",
-    "strix": "UNPROVEN",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
     "zap": "NOT_APPLICABLE",
     "notes": "Documentation/training-contract change only; no runtime credential surface added."
   },
