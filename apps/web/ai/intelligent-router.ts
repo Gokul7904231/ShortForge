@@ -11,6 +11,7 @@ import {
   type TreasuryAdmissionContext,
   type TreasuryModelCandidate,
 } from "../factoryos/core/treasury/TreasuryEconomicAdmission";
+import type { TreasuryModelExecutionContext } from "./provider";
 import { AIConfigManager, type ProviderConfig, type ModelConfig } from "./ai-config-manager";
 import { MetricsDB } from "../lib/queue-db";
 import { AIDoctor } from "../lib/core/AIDoctor";
@@ -41,6 +42,7 @@ export interface RoutingTaskContext {
   scopeFingerprint?: string;
   priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   preferredProviderId?: string;
+  treasuryContext?: TreasuryModelExecutionContext;
 }
 
 export interface ScoredCandidate {
@@ -95,26 +97,58 @@ class IntelligentRouterClass {
   ): Promise<any> {
     AIConfigManager.loadAll();
 
+    const treasuryContext = context.treasuryContext;
+    const normalizedContext: RoutingTaskContext = treasuryContext
+      ? {
+          ...context,
+          maxCostLimit:
+            normalizedContext.maxCostLimit ?? treasuryContext.maxCostUsd,
+          maxRetries:
+            context.maxRetries ?? treasuryContext.maxRetries ?? 0,
+          overseerCommandId:
+            context.overseerCommandId ??
+            treasuryContext.overseerCommandId,
+          accountId:
+            context.accountId ?? treasuryContext.accountId,
+          missionId:
+            context.missionId ?? treasuryContext.missionId,
+          runId:
+            context.runId ?? treasuryContext.runId,
+          floorId:
+            context.floorId ?? treasuryContext.floorId,
+          taskId:
+            context.taskId ?? treasuryContext.taskId,
+          scopeFingerprint:
+            context.scopeFingerprint ??
+            treasuryContext.scopeFingerprint,
+          priority:
+            context.priority ?? treasuryContext.priority,
+          preferredProviderId:
+            context.preferredProviderId ??
+            treasuryContext.preferredProviderId,
+        }
+      : context;
+
     const treasuryManaged =
       process.env.NODE_ENV === "production" ||
       this.treasuryRequired ||
-      Boolean(this.treasuryAdmission && context.overseerCommandId);
+      Boolean(this.treasuryAdmission && normalizedContext.overseerCommandId);
 
     if (
       this.treasuryRequired &&
       (!this.treasuryAdmission ||
         !this.treasuryService ||
-        !context.overseerCommandId ||
-        !context.accountId ||
-        !context.missionId ||
-        !context.taskId)
+        !normalizedContext.overseerCommandId ||
+        !normalizedContext.accountId ||
+        !normalizedContext.missionId ||
+        !normalizedContext.taskId)
     ) {
       throw new Error(
         "[IntelligentRouter] Production model execution requires complete Overseer/Treasury admission context",
       );
     }
 
-    const candidates = this.getCandidatesSorted(context);
+    const candidates = this.getCandidatesSorted(normalizedContext);
     if (candidates.length === 0) {
       throw new Error(
         "[IntelligentRouter] No models found matching capability \"" +
@@ -127,7 +161,7 @@ class IntelligentRouterClass {
 
     const inputTokens = Math.max(0, Math.ceil(params.prompt.length / 4));
     const outputTokenCeiling = Math.max(1, params.maxTokens ?? 2048);
-    const maxAttempts = Math.max(1, (context.maxRetries ?? 0) + 1);
+    const maxAttempts = Math.max(1, (normalizedContext.maxRetries ?? 0) + 1);
 
     const scopeFingerprint =
       context.scopeFingerprint ??
@@ -172,14 +206,14 @@ class IntelligentRouterClass {
       maxRetries: 0,
     } as const;
 
-    const treasuryContext: TreasuryAdmissionContext = {
+    const treasuryAdmissionContext: TreasuryAdmissionContext = {
       accountId,
-      overseerCommandId: context.overseerCommandId ?? "",
+      overseerCommandId: normalizedContext.overseerCommandId ?? "",
       missionId,
-      runId: context.runId,
-      floorId: context.floorId ?? "inference",
+      runId: normalizedContext.runId,
+      floorId: normalizedContext.floorId ?? "inference",
       taskId,
-      priority: context.priority ?? "NORMAL",
+      priority: normalizedContext.priority ?? "NORMAL",
       expiresAt: new Date(
         Date.now() +
           Math.max(
@@ -258,7 +292,7 @@ class IntelligentRouterClass {
 
         attemptNumber += 1;
         const attemptContext: TreasuryAdmissionContext = {
-          ...treasuryContext,
+          ...treasuryAdmissionContext,
           attemptId:
             taskId +
             ":attempt:" +
