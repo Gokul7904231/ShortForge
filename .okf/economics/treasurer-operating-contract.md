@@ -81,6 +81,18 @@ ComputeOffer
   -> Treasury economic admissibility
   -> ComputeRouter physical placement
   -> Provider
+
+Model/API inference follows the same separation:
+```
+Overseer
+  -> Model/Capability Router selection
+  -> Treasury economic admissibility
+  -> Provider execution
+  -> measured usage
+  -> Treasury settlement
+```
+
+Wave 3 makes these runtime boundaries explicit through `TreasuryEconomicAdmission` and the Treasury-backed `ProviderApiRegistry.provisionWithTreasury` seam.
 ```
 
 The same boundary applies to model routing.
