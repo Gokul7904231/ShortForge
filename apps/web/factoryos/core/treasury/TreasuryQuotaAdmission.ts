@@ -51,7 +51,11 @@ function buildQuotaAccount(
     0,
     Math.min(limit, Math.floor(quota.completed)),
   );
-  const remaining = Math.max(0, limit - completed);
+  const reserved = Math.max(
+    0,
+    Math.min(limit - completed, Math.floor(quota.reserved)),
+  );
+  const remaining = Math.max(0, limit - completed - reserved);
 
   return {
     accountId,
@@ -62,7 +66,7 @@ function buildQuotaAccount(
     settledUsd: 0,
     capacityUnits: limit,
     availableCapacityUnits: remaining,
-    reservedCapacityUnits: 0,
+    reservedCapacityUnits: reserved,
     settledCapacityUnits: completed,
     tokenCapacityUnits: 0,
     availableTokenCapacityUnits: 0,
