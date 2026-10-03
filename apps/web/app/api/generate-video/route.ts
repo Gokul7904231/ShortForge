@@ -587,22 +587,20 @@ export async function POST(req: Request) {
     finalPayload.status = "processing";
     finalPayload.dispatchedAt = new Date().toISOString();
 
-    const executionAuthority = (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
-    const missionId = `mis_${jobId.replace(/^job_/, "")}`;
     finalPayload.missionId = missionId;
     finalPayload.executionAuthority = executionAuthority;
+    finalPayload.overseerCommandId =
+      preparedEconomicCommand?.overseerCommandId;
+    finalPayload.treasuryQuotaReservationId =
+      treasuryQuotaReservation?.reservation?.reservationId;
 
     // Initialize document in Firestore as single source of truth
     await saveJobManifest(jobId, finalPayload);
 
     if (executionAuthority === "factoryos") {
       // 🔒 Primary Authoritative FactoryOS Control Plane Execution Path
-      const { AutonomousFactoryController } = await import("../../../factoryos/core/controller/AutonomousFactoryController");
-      let controller = (global as any).__factoryOSController as AutonomousFactoryController | undefined;
       if (!controller) {
-        controller = new AutonomousFactoryController({ storageType: "memory" });
-        await controller.boot();
-        (global as any).__factoryOSController = controller;
+        throw new Error("[generate-video] FactoryOS controller was not initialized");
       }
 
       await controller.startMission({
@@ -630,8 +628,13 @@ export async function POST(req: Request) {
           script: finalPayload.script,
           scenes: finalPayload.scenes,
           engineSnapshot,
+          overseerCommandId:
+            preparedEconomicCommand?.overseerCommandId,
+          treasuryQuotaReservationId:
+            treasuryQuotaReservation?.reservation?.reservationId,
         },
-      });
+        preparedEconomicCommand,
+      );
 
       return NextResponse.json({
         jobId,
