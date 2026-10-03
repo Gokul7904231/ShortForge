@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR126-Treasury-Economic-Intelligence-Current-Main",
+  "pullRequest": 126,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "integrate/treasury-economic-intelligence-current-main-20261003",
+  "objective": "Integrate Treasury Economic Intelligence Wave 4 onto the latest mainline through a governed three-way reconciliation while preserving current-main provider/MCP, F06, F07, Overseer and Treasury authority boundaries.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/decisions/treasury-economic-intelligence-wave4-20261003.md",
+      ".okf/compute/notebook-fabric.md",
+      ".okf/security/worker-permissions.md"
+    ],
+    "rulesConsidered": [
+      "Treasury remains the sole production economic admission authority.",
+      "Economic Intelligence is read-only and advisory.",
+      "Overseer remains sovereign command authority.",
+      "ComputeRouter retains physical placement authority.",
+      "F07 retains independent artifact/release truth.",
+      "Current mainline rendering/provider work must not be regressed by stale branch content."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No credentials are added to source.",
+      "Economic Intelligence has no mutation methods and receives no capability/worker authority.",
+      "Provider/MCP changes from current main are preserved rather than replaced by stale Wave 4 snapshots."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-W4-CURRENT-MAIN-001",
+      "originalConflict": "Wave 4 was based on an older mainline and diverged across Treasury, Overseer, documentation and provider-adjacent paths.",
+      "status": "RESOLVED",
+      "proposedResolution": "Apply only the Wave 4 capability changes onto the current main tree, manually reconcile authority-sensitive files, and reject stale unrelated/provider regressions.",
+      "acceptedResolution": "Current main remains the baseline; Treasury ledger/resource provenance, read-only intelligence, entitlement retirement, operator visibility and advisory Overseer projection are layered in without replacing newer provider or F06/F07 contracts.",
+      "decisionAuthority": "ShortForge current-main integration contract",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryEconomicIntelligence.ts",
+        "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/core/treasury/TreasuryService.ts"
+      ]
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Integrated Treasury Economic Intelligence and bounded spend forecasting.",
+    "Added read-only ledger analytics and provider/model observed economics.",
+    "Added deterministic anomaly signals and advisory recommendations.",
+    "Preserved Treasury resource-request provenance on reservations and ledger events.",
+    "Exposed a read-only Treasury ledger seam through TreasuryService.",
+    "Bound Economic Intelligence into Overseer Decision Fabric as advisory-only context.",
+    "Added/retained Treasury-owned entitlement and compatibility retirement paths from Wave 4.",
+    "Added operator API/panel and dedicated Wave 4 validation workflow.",
+    "Removed stale/incomplete Wave 4 Economic Intelligence stub by restoring the complete implementation before validation."
+  ],
+  "verificationPlan": [
+    "Team Change Gate must pass against Team/reports/pr-126.json.",
+    "Repository CI and Treasury Wave 4 validation must pass.",
+    "Compute Pool/Resilience, Floor 02/03/04/05/06/07, governance and trajectory validations must remain green.",
+    "Final mainline audit must confirm no current-main provider/MCP/F06/F07 regression.",
+    "Merge only after required checks are green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "treasuryWave4Validation": "PENDING",
+    "currentMainRegression": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "PASS means the integration change is fully governed and prepared for validation; external CI remains the release gate.",
+    "No provider claim is promoted by this Treasury change.",
+    "If any CI exposes a stale compatibility consumer or regression, fix it on this integration branch before merge rather than bypassing the gate."
+  ]
+}
