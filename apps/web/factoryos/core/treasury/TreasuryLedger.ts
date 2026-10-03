@@ -221,7 +221,7 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
     return [...this.reservations.values()]
       .filter((reservation) => reservation.status === "ACTIVE" && (!accountId || reservation.accountId === accountId))
       .sort((a, b) => a.expiresAt.localeCompare(b.expiresAt))
-      .map(structuredClone);
+      .map((reservation) => structuredClone(reservation));
   }
 }
 
