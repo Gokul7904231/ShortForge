@@ -39,7 +39,9 @@
       "Production Treasury persistence remains fail-closed without a transaction-capable Mongo client.",
       "F07 receipt identifiers are taken from F07ReleaseGuardian, not synthesized by Treasury or F06.",
       "Production ComputeGateway is bound to the canonical Treasury service and validates the execution-scoped permit before physical dispatch.",
-      "Automatic provider failover is capped by the retry allowance carried in the Treasury permit."
+      "Automatic provider failover is capped by the retry allowance carried in the Treasury permit.",
+      "The compute boundary independently recomputes the canonical render scope digest before allowing production dispatch.",
+      "Treasury command validation requires issuerId to equal overseerCommandId."
     ]
   },
   "conflicts": [
@@ -113,7 +115,8 @@
     "Bound the production ComputeGateway to the Treasury service so render dispatch cannot bypass the economic authority.",
     "Extended economic permits with execution scope and retry allowance; ComputeGateway revalidates the permit before dispatch.",
     "Capped automatic compute failover attempts by the Treasury-authorized retry envelope.",
-    "Added regression coverage for permit propagation and scope replay rejection."
+    "Added regression coverage for permit propagation and scope replay rejection.",
+    "Added strict issuer identity validation and canonical render-scope digest verification."
   ],
   "verificationResults": {
     "teamChangeGate": "PENDING",
