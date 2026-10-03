@@ -1658,6 +1658,11 @@ export class OverseerControlPlane {
         const treasuryQuotaAdmission =
           this.treasuryService ? new TreasuryQuotaAdmission(this.treasuryService) : undefined;
 
+        const treasuryReservationId =
+          scope.treasuryReservationId ||
+          sharedScope.treasuryReservationId ||
+          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryReservationId;
+
         const artifact =
           scope.artifact ||
           sharedScope.artifact ||
@@ -1756,11 +1761,6 @@ export class OverseerControlPlane {
 
           f07VerificationReceiptId = receipt.receiptId;
         }
-
-        const treasuryReservationId =
-          scope.treasuryReservationId ||
-          sharedScope.treasuryReservationId ||
-          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryReservationId;
 
         const f07LoopReceipt: FloorClosedLoopReceipt = {
           floorId: "floor07_compliance",
