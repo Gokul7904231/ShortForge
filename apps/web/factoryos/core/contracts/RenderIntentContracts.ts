@@ -45,13 +45,18 @@ export interface SurgicalRenderScope {
   readonly mode: "SURGICAL_SCENE";
   readonly repairId: string;
   readonly forceSceneIds: readonly string[];
-  readonly affectedFrameRange?: { readonly startFrame: number; readonly endFrame: number };
+  readonly affectedFrameRange?: {
+    readonly startFrame: number;
+    readonly endFrame: number;
+  };
 }
 
 export interface RenderIntent {
   readonly intentId: string;
   readonly jobId: string;
   readonly missionId: string;
+  /** Originating Overseer command identity; required when an economic permit is used. */
+  readonly overseerCommandId?: string;
   readonly compositionType: "FACTS_SHORTS" | "QUIZ_SHORTS" | "MOTIVATIONAL" | "KINETIC_TEXT" | "DYNAMIC_CANVAS";
   readonly durationSeconds: number;
   readonly fps: number;

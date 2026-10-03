@@ -5,6 +5,7 @@ import { findSimilarTopic } from "../rag/topic-memory";
 import { metadataAgent } from "../agents/metadata-agent";
 import { regenerateSceneAgent } from "../agents/scene-agent";
 import { normalizeScenes } from "./scene-utils";
+import type { TreasuryModelExecutionContext } from "../ai/provider";
 
 export type AutoRefineInput = {
   topic: string;
@@ -15,6 +16,7 @@ export type AutoRefineInput = {
   provider?: any;
   maxAttempts?: number;
   faster?: boolean;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type AutoRefineOutput = {
@@ -42,12 +44,17 @@ async function scoreEverything(input: {
   script: string;
   scenes: Array<{ text: string; imagePrompt: string }>;
   provider?: any;
+  treasuryContext?: TreasuryModelExecutionContext;
 }) {
   const [hookScoreOut, sceneScoresOut, meta, thumb] = await Promise.all([
-    hookScoreAgent({ hook: input.hook, provider: input.provider }),
-    Promise.all(input.scenes.map((s) => sceneQualityAgent({ scene: s, provider: input.provider }))),
-    metadataAgent({ topic: input.topic, script: input.script, provider: input.provider }),
-    thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider }),
+    hookScoreAgent({
+      hook: input.hook,
+      provider: input.provider,
+      treasuryContext: input.treasuryContext,
+    }),
+    Promise.all(input.scenes.map((s) => sceneQualityAgent({ scene: s, provider: input.provider, treasuryContext: input.treasuryContext }))),
+    metadataAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext }),
+    thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext }),
   ]);
 
   const hookScore = hookScoreOut.score;
@@ -124,6 +131,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
     script,
     scenes: scenes.map((s) => ({ text: s.text, imagePrompt: s.imagePrompt })),
     provider: input.provider,
+    treasuryContext: input.treasuryContext,
   });
 
   // BEST AVAILABLE OUTPUT: keep the best-scoring refinement attempt,
@@ -188,6 +196,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
         previousImagePrompt,
         nextImagePrompt,
         provider: input.provider,
+        treasuryContext: input.treasuryContext,
       });
 
       scenes[openingIndex] = {
@@ -206,7 +215,11 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
       // Re-score per scene to pick worst.
       const perScene = await Promise.all(
         scenes.map(async (scene, idx) => {
-          const out = await sceneQualityAgent({ scene, provider: input.provider });
+          const out = await sceneQualityAgent({
+            scene,
+            provider: input.provider,
+            treasuryContext: input.treasuryContext,
+          });
           return { idx, score: out.score };
         })
       );
@@ -230,6 +243,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
           previousImagePrompt: previousScene?.imagePrompt,
           nextImagePrompt: nextScene?.imagePrompt,
           provider: input.provider,
+          treasuryContext: input.treasuryContext,
         });
 
         scenes[idx] = {
@@ -265,6 +279,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
         previousImagePrompt: previousScene?.imagePrompt,
         nextImagePrompt: nextScene?.imagePrompt,
         provider: input.provider,
+        treasuryContext: input.treasuryContext,
       });
 
       scenes[openingIndex] = {
@@ -283,6 +298,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
       script,
       scenes: scenes.map((s) => ({ text: s.text, imagePrompt: s.imagePrompt })),
       provider: input.provider,
+      treasuryContext: input.treasuryContext,
     });
 
     // REQUIRED DEBUG: log which metric fails after refinement + surface errors

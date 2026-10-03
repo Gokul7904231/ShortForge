@@ -1,6 +1,9 @@
 /**
- * FactoryOS Frontier v2 — Mission Budget Manager
- * Encapsulates calculation and breach detection for Mission budgets.
+ * FactoryOS Frontier v2 — Mission Budget Projection
+ *
+ * Treasury owns economic admission. This class remains a post-consumption
+ * compatibility/projection check for Mission lifecycle policy and must not
+ * authorize spend before an execution attempt.
  */
 
 import type { Mission } from "../contracts/MissionContracts";

@@ -19,6 +19,7 @@ import { DAGRunner } from "../../lib/scheduler/DAGRunner";
 import { CapabilityManager } from "../../lib/capabilities/CapabilityManager";
 import { IntelligentRouter, AIProfile } from "../../ai/intelligent-router";
 import { CheckpointDB } from "../../lib/core/CheckpointDB";
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
 
 // Ensure executors register
 import { WorkflowStepRegistry } from "./step-registry";
@@ -56,6 +57,7 @@ export interface ExecutionContext {
   capabilities: any;
   recommendation: Recommendation;
   abortSignal?: AbortSignal;
+  treasuryModelContext?: TreasuryModelExecutionContext;
   versions: {
     workflowVersion: string;
     engineVersion: string;
@@ -127,8 +129,107 @@ class WorkflowRuntimeClass {
     };
 
     let context: ExecutionContext | null = null;
+    let treasuryModelContext: TreasuryModelExecutionContext | undefined;
 
     try {
+      const existingTreasuryContext =
+        (job as any).treasuryModelContext ||
+        (job as any).options?.treasuryModelContext;
+
+      if (existingTreasuryContext) {
+        treasuryModelContext =
+          existingTreasuryContext as TreasuryModelExecutionContext;
+      } else {
+        const production = process.env.NODE_ENV === "production";
+        let controller =
+          (globalThis as any).__factoryOSController as
+            | import("../../factoryos/core/controller/AutonomousFactoryController").AutonomousFactoryController
+            | undefined;
+
+        if (!controller) {
+          const { AutonomousFactoryController } = await import(
+            "../../factoryos/core/controller/AutonomousFactoryController"
+          );
+          controller = new AutonomousFactoryController({
+            storageType: production ? "mongo" : "memory",
+            mongoUri:
+              process.env.FACTORYOS_MONGO_URI ||
+              process.env.MONGODB_URI ||
+              "mongodb://localhost:27017",
+            strictPersistence: production,
+            autoStartSwarm: false,
+          });
+          await controller.boot();
+          (globalThis as any).__factoryOSController = controller;
+        }
+
+        if (controller.treasuryService && controller.overseer) {
+          const missionId =
+            String(
+              (job as any).missionId ||
+                (job as any).options?.missionId ||
+                "mis_workflow_" + jobId,
+            );
+          const prepared =
+            (job as any).overseerCommandId
+              ? {
+                  runId:
+                    String(
+                      (job as any).runId || "run_workflow_" + jobId,
+                    ),
+                  overseerCommandId: String(
+                    (job as any).overseerCommandId,
+                  ),
+                }
+              : controller.overseer.prepareEconomicCommand({
+                  command:
+                    "Workflow model execution: " +
+                    String(job.engine) +
+                    " / " +
+                    String(job.topic),
+                  missionId,
+                  mode: "autonomous",
+                });
+
+          treasuryModelContext = {
+            treasuryService: controller.treasuryService,
+            accountId:
+              process.env.FACTORYOS_TREASURY_ACCOUNT_ID ||
+              "factoryos",
+            overseerCommandId: prepared.overseerCommandId,
+            missionId,
+            runId: prepared.runId,
+            floorId: "floor02_scripting",
+            taskId: jobId + ":workflow-model",
+            scopeFingerprint: crypto
+              .createHash("sha256")
+              .update(
+                JSON.stringify({
+                  jobId,
+                  missionId,
+                  engine: job.engine,
+                  topic: job.topic,
+                }),
+              )
+              .digest("hex"),
+            priority: "NORMAL",
+            maxRetries: 0,
+            maxCostUsd: Number(
+              process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ||
+                "0.10",
+            ),
+            preferredProviderId:
+              typeof (job as any).provider === "string"
+                ? (job as any).provider
+                : undefined,
+            subtask: "workflow_step",
+          };
+        } else if (production) {
+          throw new Error(
+            "[WorkflowRuntime] Production model execution requires Treasury",
+          );
+        }
+      }
       // 1. Get optimization recommendation from AI Factory OS Brain
       const recommendation = RecommendationEngine.recommend(job.engine);
       versions.promptVersion = recommendation.promptVersion;
@@ -144,6 +245,7 @@ class WorkflowRuntimeClass {
         capabilities: CapabilityManager,
         recommendation,
         abortSignal: signal,
+        treasuryModelContext,
         versions,
       };
 

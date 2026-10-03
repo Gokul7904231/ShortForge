@@ -4,3 +4,6 @@ export * from "./TreasuryLedger";
 export * from "./TreasuryKernel";
 export * from "./TreasuryService";
 export * from "./TreasuryFactory";
+export * from "./TreasuryEconomicAdmission";
+export * from "./TreasuryScope";
+export * from "./TreasuryRuntime";

@@ -27,12 +27,17 @@ import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeP
 import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../sandboxes";
 import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
+import type { TreasuryEconomicPermit } from "../../treasury/TreasuryContracts";
+import type { TreasuryService } from "../../treasury/TreasuryService";
+import { computeTreasuryExecutionScopeDigest } from "../../treasury/TreasuryScope";
 
 export class ComputeGateway {
   private static instance: ComputeGateway | null = null;
   private router: ComputeRouter;
   private cas: ContentAddressedStore;
   private pool: ComputePool;
+  private treasuryService?: TreasuryService;
+  private treasuryRequired = false;
 
   private constructor(policy: ComputePolicy = DEFAULT_COMPUTE_POLICY) {
     const glideMode = this.parseGlideMode(
@@ -126,6 +131,14 @@ export class ComputeGateway {
     this.router.registerProvider(provider);
   }
 
+  public bindTreasury(service: TreasuryService, required = process.env.NODE_ENV === "production"): void {
+    if (this.treasuryService && this.treasuryService !== service) {
+      throw new Error("[ComputeGateway] Treasury service is already bound; refusing to replace the economic authority");
+    }
+    this.treasuryService = service;
+    this.treasuryRequired = this.treasuryRequired || required;
+  }
+
   public getRouter(): ComputeRouter {
     return this.router;
   }
@@ -151,8 +164,58 @@ export class ComputeGateway {
   public async submitJob(
     job: ComputeJob,
     onProgress?: (msg: string) => void,
-    preferredProviderType?: ProviderType
+    preferredProviderType?: ProviderType,
+    economicPermit?: TreasuryEconomicPermit,
   ): Promise<{ receipt: ExecutionReceipt; failovers: string[] }> {
-    return this.router.dispatchWithFailover(job, onProgress, preferredProviderType);
+    const requiresTreasury = this.treasuryRequired || process.env.NODE_ENV === "production";
+
+    if (job.workloadType === "RENDER" && requiresTreasury) {
+      if (!this.treasuryService || !economicPermit) {
+        throw new Error(
+          "[ComputeGateway] Production render requires an active TreasuryEconomicPermit",
+        );
+      }
+      const renderIntent = (job.manifest as { renderIntent?: unknown }).renderIntent;
+      const expectedScopeDigest = computeTreasuryExecutionScopeDigest({
+        version: 1,
+        missionId: job.missionId || economicPermit.missionId,
+        jobId: job.jobId,
+        floorId: economicPermit.floorId || "floor06_rendering",
+        overseerCommandId: economicPermit.overseerCommandId,
+        renderIntent,
+      });
+
+      if (expectedScopeDigest !== economicPermit.scopeDigest) {
+        throw new Error(
+          "[ComputeGateway] Treasury permit does not match the actual render execution scope",
+        );
+      }
+
+      await this.treasuryService.validatePermit(economicPermit, {
+        jobId: job.jobId,
+        missionId: job.missionId || economicPermit.missionId,
+        scopeDigest: expectedScopeDigest,
+        accountId: economicPermit.accountId,
+      });
+    }
+
+    const guardedJob = economicPermit
+      ? {
+          ...job,
+          manifest: {
+            ...job.manifest,
+            treasuryPermitId: economicPermit.permitId,
+            treasuryReservationId: economicPermit.reservationId,
+            treasuryScopeDigest: economicPermit.scopeDigest,
+          },
+        }
+      : job;
+
+    return this.router.dispatchWithFailover(
+      guardedJob,
+      onProgress,
+      preferredProviderType,
+      economicPermit ? economicPermit.maxRetries : undefined,
+    );
   }
 }

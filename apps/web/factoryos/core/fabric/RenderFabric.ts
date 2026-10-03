@@ -22,12 +22,28 @@ import type {
 } from "../compute/contracts/ComputeContracts";
 import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
+import type {
+  TreasuryBudgetEnvelope,
+  TreasuryEconomicPermit,
+  TreasuryPriority,
+} from "../treasury/TreasuryContracts";
+import type { TreasuryService } from "../treasury/TreasuryService";
 
 export interface RenderCompilationResult {
   readonly success: boolean;
   readonly compilerUsed: "FFMPEG" | "HYPERFRAMES";
   readonly commandOrPayload: Record<string, unknown>;
   readonly estimatedRenderSeconds: number;
+}
+
+export interface RenderTreasuryContext {
+  readonly service: TreasuryService;
+  readonly accountId: string;
+  readonly overseerCommandId: string;
+  readonly budgetEnvelope: TreasuryBudgetEnvelope;
+  readonly scopeDigest: string;
+  readonly priority?: TreasuryPriority;
+  readonly idempotencyKey?: string;
 }
 
 export interface RenderExecutionResult {
@@ -41,6 +57,7 @@ export interface RenderExecutionResult {
   readonly receipt: ExecutionReceipt;
   readonly failovers: readonly string[];
   readonly loopReceipt: FloorClosedLoopReceipt;
+  readonly treasuryReservationId?: string;
   readonly message?: string;
 }
 
@@ -105,6 +122,7 @@ export interface RenderFabricExecutionOptions {
   readonly localRenderIntent?: LocalRenderIntent;
   readonly preferredProviderType?: ProviderType;
   readonly outputDir?: string;
+  readonly treasury?: RenderTreasuryContext;
 }
 
 export class RenderFabric {
@@ -204,13 +222,75 @@ export class RenderFabric {
     };
 
     const startedAt = Date.now();
-    const { receipt, failovers } = await this.computeGateway.submitJob(
-      computeJob,
-      (message) => console.debug(`[RenderFabric] ${message}`),
-      options.preferredProviderType
-    );
+    let treasuryReservationId: string | undefined;
+    let treasuryPermit: TreasuryEconomicPermit | undefined;
+
+    if (process.env.NODE_ENV === "production" && !options.treasury) {
+      throw new Error(
+        "[RenderFabric] Production F06 rendering requires Treasury economic admission",
+      );
+    }
+
+    if (options.treasury) {
+      if (!intent.overseerCommandId) {
+        throw new Error("[RenderFabric] Treasury-gated render requires RenderIntent.overseerCommandId");
+      }
+      if (intent.overseerCommandId !== options.treasury.overseerCommandId) {
+        throw new Error("[RenderFabric] Treasury command identity does not match RenderIntent.overseerCommandId");
+      }
+
+      const reservation = await options.treasury.service.reserve({
+        commandId: `treasury_render_${intent.jobId}`,
+        overseerCommandId: options.treasury.overseerCommandId,
+        issuer: { authority: "OVERSEER", issuerId: options.treasury.overseerCommandId },
+        accountId: options.treasury.accountId,
+        missionId: intent.missionId,
+        runId: options.treasury.overseerCommandId,
+        floorId: "floor06_rendering",
+        taskId: intent.jobId,
+        attemptId: intent.jobId,
+        purpose: "F06 physical render execution",
+        resourceRequest: [{
+          kind: "COMPUTE",
+          workloadType: "RENDER",
+          requiresGpu: intent.constraints.hardwareAccel === true,
+          scarcityUnits: options.treasury.budgetEnvelope.maxCapacityUnits ?? 0,
+          verificationRequired: true,
+        }],
+        budgetEnvelope: options.treasury.budgetEnvelope,
+        priority: options.treasury.priority ?? "HIGH",
+        expiresAt: new Date(
+          Date.now() + Math.max(60_000, options.treasury.budgetEnvelope.maxDurationMs ?? computeJob.timeoutMs),
+        ).toISOString(),
+        idempotencyKey: options.treasury.idempotencyKey ?? `render:${intent.missionId}:${intent.jobId}`,
+        scopeDigest: options.treasury.scopeDigest,
+      });
+      treasuryReservationId = reservation.reservation.reservationId;
+      treasuryPermit = reservation.permit;
+    }
+
+    let receipt: ExecutionReceipt;
+    let failovers: string[];
+    try {
+      const result = await this.computeGateway.submitJob(
+        computeJob,
+        (message) => console.debug(`[RenderFabric] ${message}`),
+        options.preferredProviderType,
+        treasuryPermit,
+      );
+      receipt = result.receipt;
+      failovers = result.failovers;
+    } catch (error) {
+      if (treasuryReservationId && options.treasury) {
+        await options.treasury.service.release(treasuryReservationId, "COMPUTE_DISPATCH_FAILED").catch(() => {});
+      }
+      throw error;
+    }
 
     if (receipt.status !== "COMPLETED") {
+      if (treasuryReservationId && options.treasury) {
+        await options.treasury.service.release(treasuryReservationId, "COMPUTE_EXECUTION_INCOMPLETE").catch(() => {});
+      }
       throw new Error(
         `[RenderFabric] ComputeRouter did not complete the render: ${receipt.failureReason || receipt.status}`
       );
@@ -218,6 +298,12 @@ export class RenderFabric {
 
     const artifactRef = receipt.outputArtifacts[0];
     if (!artifactRef?.sha256 || !artifactRef.uri) {
+      if (treasuryReservationId && options.treasury) {
+        await options.treasury.service.release(
+          treasuryReservationId,
+          "COMPLETED_WITHOUT_PHYSICAL_ARTIFACT",
+        ).catch(() => {});
+      }
       throw new Error(
         "[RenderFabric] Provider returned COMPLETED without a physical artifact receipt."
       );
@@ -261,6 +347,7 @@ export class RenderFabric {
       compilerUsed: compiler.id,
       receipt,
       failovers: Object.freeze([...failovers]),
+      treasuryReservationId,
       loopReceipt: {
         floorId: "floor06_rendering",
         loopType: "DETERMINISTIC_OPERATIONAL",
@@ -363,19 +450,6 @@ export class RenderFabric {
         captions: intent.tracks.captions,
         audioTrack: primaryAudio,
       },
-      repair_scope: intent.repairScope
-        ? {
-            mode: intent.repairScope.mode,
-            repair_id: intent.repairScope.repairId,
-            force_scene_ids: [...intent.repairScope.forceSceneIds],
-            affected_frame_range: intent.repairScope.affectedFrameRange
-              ? {
-                  start_frame: intent.repairScope.affectedFrameRange.startFrame,
-                  end_frame: intent.repairScope.affectedFrameRange.endFrame,
-                }
-              : undefined,
-          }
-        : undefined,
     };
   }
 }

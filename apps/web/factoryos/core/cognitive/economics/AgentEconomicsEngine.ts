@@ -1,6 +1,8 @@
 /**
  * FactoryOS Frontier v2 — Agent Economics & Adaptive Model Router
- * Optimizes computational cost, token efficiency, latency, and model allocation.
+ *
+ * Advisory only. Treasury owns authoritative pricing, reservations and settlement.
+ * This component may estimate for selection heuristics but must never authorize spend.
  */
 
 import type { ModelRouteDecision, ModelTier } from "../CognitiveContracts";
@@ -93,25 +95,24 @@ export class AgentEconomicsEngine {
     };
   }
 
-  recordExecution(tier: ModelTier, tokens: number, latencyMs: number): void {
+  recordExecution(
+    tier: ModelTier,
+    tokens: number,
+    latencyMs: number,
+    actualCostUsd?: number,
+  ): void {
     this.metrics.totalInvocations += 1;
     this.metrics.totalTokensConsumed += tokens;
 
-    let costPerK = 0.002;
     if (tier === "DETERMINISTIC") {
       this.metrics.deterministicBypassCount += 1;
-      costPerK = 0;
-    } else if (tier === "SMALL_FAST") {
-      costPerK = 0.001;
-    } else if (tier === "LARGE_REASONER") {
-      costPerK = 0.003;
-    } else if (tier === "RECURSIVE_RLM") {
-      costPerK = 0.004;
-    } else if (tier === "MULTI_AGENT_SWARM") {
-      costPerK = 0.005;
     }
 
-    const cost = (tokens / 1000) * costPerK;
+    // Authoritative cost comes from Treasury settlement. Keep the local metric
+    // at zero when no measured Treasury amount is supplied.
+    const cost = Number.isFinite(actualCostUsd)
+      ? Math.max(0, Number(actualCostUsd))
+      : 0;
     this.metrics.totalCostUsd += cost;
 
     this.metrics.averageLatencyMs =

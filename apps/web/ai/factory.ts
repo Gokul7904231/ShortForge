@@ -1,54 +1,166 @@
 /**
- * @deprecated Legacy factory bridge — superseded by the AIProviderRegistry plugin system.
- * Will be removed in Phase 3 cleanup.
+ * @deprecated Legacy compatibility bridge.
+ *
+ * Production model execution must flow through IntelligentRouter + Treasury.
+ * Non-production callers may still use the historical direct-provider fallback
+ * behavior until their routes are migrated.
  */
+import crypto from "node:crypto";
 import { AIProviderRegistry } from "./capability-registry";
-import { LLMProvider, LLMProviderAdapter } from "./provider";
+import { LLMProvider, LLMProviderAdapter, TreasuryModelExecutionContext } from "./provider";
+import { IntelligentRouter } from "./intelligent-router";
 import { getProviderWithFallback } from "./providers/factory_with_fallback";
 
-export function providerFactory(provider: LLMProvider, ctx: { apiKey?: string }): LLMProviderAdapter {
-  // Bridge old code to the new plugin registry
-  const plugin = getProviderWithFallback(provider as string);
-
+export function providerFactory(
+  provider: LLMProvider,
+  ctx: {
+    apiKey?: string;
+    treasuryContext?: TreasuryModelExecutionContext;
+  },
+): LLMProviderAdapter {
   return {
     async generateText(params) {
-      const mergedParams = { ...params, apiKey: ctx?.apiKey };
+      if (process.env.NODE_ENV === "production") {
+        const treasuryContext = ctx?.treasuryContext;
+        if (!treasuryContext) {
+          throw new Error(
+            "[providerFactory] Production model execution requires TreasuryModelExecutionContext; direct provider fallback is disabled",
+          );
+        }
+
+        IntelligentRouter.bindTreasury(
+          treasuryContext.treasuryService,
+          true,
+        );
+
+        const callNonce = crypto.randomBytes(8).toString("hex");
+        const promptHash = crypto
+          .createHash("sha256")
+          .update(
+            JSON.stringify({
+              prompt: params.prompt,
+              system: params.system,
+              provider,
+            }),
+          )
+          .digest("hex")
+          .slice(0, 16);
+
+        const result = await IntelligentRouter.routeExecute(
+          {
+            capability: "SCRIPT",
+            subtask: treasuryContext.subtask || "legacy_agent",
+            maxCostLimit:
+              treasuryContext.maxCostUsd ??
+              Number(
+                process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? "0.10",
+              ),
+            maxRetries: treasuryContext.maxRetries ?? 0,
+            overseerCommandId: treasuryContext.overseerCommandId,
+            accountId: treasuryContext.accountId,
+            missionId: treasuryContext.missionId,
+            runId: treasuryContext.runId,
+            floorId: treasuryContext.floorId,
+            taskId:
+              treasuryContext.taskId +
+              ":call:" +
+              callNonce,
+            scopeFingerprint:
+              treasuryContext.scopeFingerprint +
+              ":" +
+              promptHash +
+              ":" +
+              callNonce,
+            priority: treasuryContext.priority ?? "NORMAL",
+            preferredProviderId:
+              treasuryContext.preferredProviderId ?? provider,
+          },
+          {
+            ...params,
+            apiKey: ctx?.apiKey,
+          },
+        );
+
+        if (typeof result === "string") return result;
+        if (
+          result &&
+          typeof result === "object" &&
+          "text" in result
+        ) {
+          return result.text as string;
+        }
+        return String(result ?? "");
+      }
+
+      const normalizedProvider =
+        provider === "gemini" ? "google" : provider;
+      const plugin =
+        getProviderWithFallback(normalizedProvider as string);
 
       try {
-        if (!plugin) throw new Error(`No provider plugin found for: ${provider}`);
+        if (!plugin) {
+          throw new Error(
+            "No provider plugin found for: " + provider,
+          );
+        }
+
+        const mergedParams = {
+          ...params,
+          apiKey: ctx?.apiKey,
+        };
         const result = await plugin.execute("SCRIPT", mergedParams);
+
         if (typeof result === "string") return result;
-        if (result && typeof result === "object" && "text" in result) return result.text as string;
+        if (
+          result &&
+          typeof result === "object" &&
+          "text" in result
+        ) {
+          return result.text as string;
+        }
         return String(result ?? "");
       } catch (primaryErr: any) {
-        // If primary provider failed with credit/auth/quota error, try fallback providers
-        const errMsg = String(primaryErr?.message || "");
+        const errMsg = String(primaryErr?.message || "").toLowerCase();
         const isAuthOrCreditError =
           errMsg.includes("402") ||
-          errMsg.includes("Insufficient credits") ||
+          errMsg.includes("insufficient credits") ||
           errMsg.includes("401") ||
-          errMsg.includes("API key not valid") ||
-          errMsg.includes("API_KEY_INVALID") ||
+          errMsg.includes("api key not valid") ||
+          errMsg.includes("api_key_invalid") ||
           errMsg.includes("invalid_api_key") ||
           errMsg.includes("quota") ||
           errMsg.includes("billing");
 
-        if (isAuthOrCreditError) {
-          const fallbackCandidates = ["google", "groq", "pollinations"].filter((id) => id !== plugin?.id);
-          for (const fallbackId of fallbackCandidates) {
-            const fallbackPlugin = AIProviderRegistry.getPlugin(fallbackId);
-            if (!fallbackPlugin) continue;
-            try {
-              console.warn(`[providerFactory] Primary provider ${plugin?.id || provider} failed (${primaryErr.message}). Attempting fallback to ${fallbackId}...`);
-              const fbResult = await fallbackPlugin.execute("SCRIPT", mergedParams);
-              if (typeof fbResult === "string") return fbResult;
-              if (fbResult && typeof fbResult === "object" && "text" in fbResult) return fbResult.text as string;
-              return String(fbResult ?? "");
-            } catch (fbErr: any) {
-              console.warn(`[providerFactory] Fallback provider ${fallbackId} failed: ${fbErr?.message}`);
-            }
-          }
+        if (!isAuthOrCreditError) {
+          throw primaryErr;
         }
+
+        const fallbackCandidates = [
+          "google",
+          "groq",
+          "pollinations",
+        ].filter((id) => id !== plugin?.id);
+
+        for (const fallbackId of fallbackCandidates) {
+          const fallbackPlugin = AIProviderRegistry.getPlugin(fallbackId);
+          if (!fallbackPlugin) continue;
+          try {
+            const result = await fallbackPlugin.execute("SCRIPT", {
+              ...params,
+              apiKey: ctx?.apiKey,
+            });
+            if (typeof result === "string") return result;
+            if (
+              result &&
+              typeof result === "object" &&
+              "text" in result
+            ) {
+              return result.text as string;
+            }
+            return String(result ?? "");
+          } catch {}
+        }
+
         throw primaryErr;
       }
     },

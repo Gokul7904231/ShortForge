@@ -1,5 +1,5 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 import { defaultCharacterProfile } from "../lib/character-profile";
 import { HIGH_RETENTION_RULES } from "../prompts/retention-rules";
 import { RETENTION_SCENE_RULES } from "../prompts/retention-scene-rules";
@@ -7,6 +7,7 @@ import { RETENTION_SCENE_RULES } from "../prompts/retention-scene-rules";
 export type EnhanceAgentInput = {
   draft: string;
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export async function enhanceAgent(input: EnhanceAgentInput): Promise<string> {
@@ -14,7 +15,7 @@ export async function enhanceAgent(input: EnhanceAgentInput): Promise<string> {
     input.provider ??
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const system =
     "You are a YouTube Shorts retention editor. Output ONLY JSON that matches the provided schema. No markdown.";

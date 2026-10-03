@@ -1,7 +1,8 @@
 /**
- * FactoryOS Frontier v3 — Free-First Cost Governor
- * Strictly enforces free-first policies by default, controls runtime and evaluation spend,
- * and halts execution for human approval before invoking any paid provider unless explicitly authorized.
+ * FactoryOS Frontier v3 — Legacy Cost Governor Compatibility Facade
+ *
+ * Treasury is the only production economic authority. CostGovernor remains only
+ * as a compatibility/advisory surface for callers that have not migrated yet.
  */
 
 import { CostGovernorMode, CostGovernorPolicy } from "../contracts/PolicyContracts";
@@ -48,7 +49,18 @@ export class CostGovernor {
     requiresApproval: boolean;
     reason: string;
   } {
-    // 1. Free providers are always allowed
+    // Production execution is governed by Treasury. The legacy governor
+    // must never authorize spend on its own.
+    if (process.env.NODE_ENV === "production") {
+      return {
+        allowed: false,
+        requiresApproval: true,
+        reason:
+          "[CostGovernor] Production economic admission is Treasury-owned; caller must use TreasuryEconomicAdmission.",
+      };
+    }
+
+    // Non-production compatibility behavior.
     if (!isPaidProvider || estimatedCostUsd === 0) {
       return { allowed: true, requiresApproval: false, reason: "Zero-cost free/local provider approved." };
     }
@@ -86,7 +98,7 @@ export class CostGovernor {
   }
 
   /**
-   * Commits recorded spend to the governor
+   * Compatibility telemetry only. Production source of truth is Treasury settlement.
    */
   static recordSpend(costUsd: number, isEvaluation: boolean = false): void {
     if (costUsd <= 0) return;

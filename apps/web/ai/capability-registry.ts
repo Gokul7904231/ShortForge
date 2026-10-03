@@ -91,6 +91,8 @@ export interface AIProviderPlugin {
   health(): Promise<boolean>;
   priority(): number;
   execute(capability: AICapability, params: any, signal?: AbortSignal): Promise<any>;
+  /** Exact per-call usage for Treasury settlement when the provider adapter can expose it. */
+  getExecutionUsage?(executionId: string): { inputTokens: number; outputTokens: number } | undefined;
   status(): ProviderHealthMetrics;
   updateConfig?(config: { apiKey?: string; baseUrl?: string; options?: any }): void;
 }

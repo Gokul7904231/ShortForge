@@ -27,6 +27,8 @@ export abstract class BaseProviderPlugin implements AIProviderPlugin {
     if (config.baseUrl) this.baseUrl = config.baseUrl;
   }
 
+  private readonly executionUsage = new Map<string, { inputTokens: number; outputTokens: number }>();
+
   protected metrics: ProviderHealthMetrics = {
     state: "INITIALIZING",
     latency: 0,
@@ -133,7 +135,11 @@ export abstract class BaseProviderPlugin implements AIProviderPlugin {
     // 2. Rate Limit Guard
     this.checkRateLimitGuard();
 
-    const maxAttempts = 3;
+    const executionId =
+      typeof params.__treasuryExecutionId === "string"
+        ? params.__treasuryExecutionId
+        : undefined;
+    const maxAttempts = params.__treasuryManagedRetries ? 1 : 3;
     let attempt = 0;
 
     while (attempt < maxAttempts) {
@@ -151,7 +157,12 @@ export abstract class BaseProviderPlugin implements AIProviderPlugin {
             if (!this.chatAdapter) throw new Error("ChatAdapter not supported by this provider.");
             const chatRes = await this.chatAdapter.generateText(params, signal);
             result = chatRes.text;
-            this.recordTokensUsage(chatRes.usage.inputTokens, chatRes.usage.outputTokens, params.model);
+            this.recordTokensUsage(
+              chatRes.usage.inputTokens,
+              chatRes.usage.outputTokens,
+              params.model,
+              executionId,
+            );
             break;
 
           case "IMAGE":
@@ -168,14 +179,24 @@ export abstract class BaseProviderPlugin implements AIProviderPlugin {
             if (!this.embeddingAdapter) throw new Error("EmbeddingAdapter not supported by this provider.");
             const embedRes = await this.embeddingAdapter.generateEmbeddings(params.texts, signal);
             result = embedRes.embeddings;
-            this.recordTokensUsage(embedRes.usage.tokens, 0, params.model);
+            this.recordTokensUsage(
+              embedRes.usage.tokens,
+              0,
+              params.model,
+              executionId,
+            );
             break;
 
           case "VISION":
             if (!this.visionAdapter) throw new Error("VisionAdapter not supported by this provider.");
             const visionRes = await this.visionAdapter.analyzeImage(params, signal);
             result = visionRes.text;
-            this.recordTokensUsage(visionRes.usage.inputTokens, visionRes.usage.outputTokens, params.model);
+            this.recordTokensUsage(
+              visionRes.usage.inputTokens,
+              visionRes.usage.outputTokens,
+              params.model,
+              executionId,
+            );
             break;
 
           default:
@@ -257,14 +278,36 @@ export abstract class BaseProviderPlugin implements AIProviderPlugin {
     this.metrics.errorRate = this.metrics.errorRate * 0.9 + 1.0 * 0.1;
   }
 
-  private recordTokensUsage(input: number, output: number, modelId?: string) {
+  private recordTokensUsage(
+    input: number,
+    output: number,
+    modelId?: string,
+    executionId?: string,
+  ) {
     this.metrics.totalCost.tokensInput += input;
     this.metrics.totalCost.tokensOutput += output;
-    
-    // Estimate cost (pricing scales parsed in future ModelPlugins)
-    const costInputEst = (input / 1000000) * 0.15; // default avg $0.15/1M
-    const costOutputEst = (output / 1000000) * 0.60; // default avg $0.60/1M
+
+    // Treasury owns authoritative pricing. Provider-local metrics remain a
+    // compatibility telemetry view and intentionally do not gate execution.
+    const costInputEst = (input / 1000000) * 0.15;
+    const costOutputEst = (output / 1000000) * 0.60;
     this.metrics.totalCost.estimatedUSD += costInputEst + costOutputEst;
     this.metrics.totalCost.lastUpdated = Date.now();
+
+    if (executionId) {
+      this.executionUsage.set(executionId, {
+        inputTokens: Math.max(0, input),
+        outputTokens: Math.max(0, output),
+      });
+    }
+  }
+
+  getExecutionUsage(
+    executionId: string,
+  ): { inputTokens: number; outputTokens: number } | undefined {
+    const usage = this.executionUsage.get(executionId);
+    if (!usage) return undefined;
+    this.executionUsage.delete(executionId);
+    return { ...usage };
   }
 }

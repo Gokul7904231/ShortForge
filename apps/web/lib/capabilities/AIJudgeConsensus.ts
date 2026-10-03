@@ -1,4 +1,5 @@
 import { IntelligentRouter } from "../../ai/intelligent-router";
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
 
 export type ConsensusStrategy = "single" | "weighted" | "majority";
 
@@ -18,6 +19,7 @@ export const AIJudgeConsensus = {
     options?: {
       judges?: string[];
       weights?: number[]; // Match judges index
+      treasuryContext?: TreasuryModelExecutionContext;
     }
   ): Promise<JudgeScoreReport> {
     const defaultJudges = [
@@ -43,7 +45,12 @@ export const AIJudgeConsensus = {
     const tasks = judges.map(async (modelId) => {
       try {
         const result = await IntelligentRouter.routeExecute(
-          { capability: "SCRIPT", subtask: "json" },
+          {
+            capability: "SCRIPT",
+            subtask: "json",
+            treasuryContext: options?.treasuryContext,
+            preferredProviderId: modelId,
+          },
           {
             prompt: evaluationPrompt,
             model: modelId,

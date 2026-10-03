@@ -4,6 +4,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { db } from "@/lib/firebase-admin";
 import { finalizeGenerationSlot, releaseGenerationSlot } from "@/lib/quota/quota-service";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
 import { RemoteRenderStateMachine } from "@/factoryos/core/rendering/RemoteRenderStateMachine";
 import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 import { VerificationEngine } from "@/factoryos/core/verification/VerificationEngine";
@@ -87,6 +89,54 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = jobData.userId || "anonymous";
+    const treasuryQuotaReservationId =
+      (jobData as any).treasuryQuotaReservationId as string | undefined;
+
+    let treasuryQuotaAdmission: TreasuryQuotaAdmission | undefined;
+    if (treasuryQuotaReservationId) {
+      treasuryQuotaAdmission = new TreasuryQuotaAdmission(
+        await getTreasuryRuntime(),
+      );
+    }
+
+    const settleOrFinalizeQuota = async (
+      evidenceId: string,
+      verificationReceiptId: string,
+    ) => {
+      if (
+        treasuryQuotaReservationId &&
+        treasuryQuotaAdmission
+      ) {
+        await treasuryQuotaAdmission.settleGenerationSlot(
+          treasuryQuotaReservationId,
+          userId,
+          String((jobData as any).tier || "BASIC"),
+          jobId,
+          evidenceId,
+          verificationReceiptId,
+        );
+        return;
+      }
+
+      await finalizeGenerationSlot(userId, jobId);
+    };
+
+    const releaseOrRefundQuota = async () => {
+      if (
+        treasuryQuotaReservationId &&
+        treasuryQuotaAdmission
+      ) {
+        await treasuryQuotaAdmission.releaseGenerationSlot(
+          treasuryQuotaReservationId,
+          userId,
+          String((jobData as any).tier || "BASIC"),
+          jobId,
+        );
+        return;
+      }
+
+      await releaseGenerationSlot(userId, jobId);
+    };
 
     // 2. Remote Render State Machine — Attempt Monotonicity & Idempotency
     const stateMachine = RemoteRenderStateMachine.getInstance();
@@ -163,7 +213,7 @@ export async function POST(request: NextRequest) {
           status: "failed",
           error: errorMsg,
         } as any);
-        await releaseGenerationSlot(userId, jobId);
+        await releaseOrRefundQuota();
         return NextResponse.json(
           { success: false, status: "failed", error: errorMsg },
           { status: 422 }
@@ -185,7 +235,7 @@ export async function POST(request: NextRequest) {
           status: "failed",
           error: errorMsg,
         } as any);
-        await releaseGenerationSlot(userId, jobId);
+        await releaseOrRefundQuota();
         if (resolvedArtifact.isTempDownload && fs.existsSync(resolvedArtifact.localPath)) {
           try { fs.unlinkSync(resolvedArtifact.localPath); } catch {}
         }
@@ -202,7 +252,7 @@ export async function POST(request: NextRequest) {
           error: `F7 physical media verification failed: ${failureReasons}`,
           verificationReport: audit,
         } as any);
-        await releaseGenerationSlot(userId, jobId);
+        await releaseOrRefundQuota();
         if (resolvedArtifact.isTempDownload && fs.existsSync(resolvedArtifact.localPath)) {
           try { fs.unlinkSync(resolvedArtifact.localPath); } catch {}
         }
@@ -222,6 +272,18 @@ export async function POST(request: NextRequest) {
       const finalSizeMb = Number((resolvedArtifact.byteLength / (1024 * 1024)).toFixed(2));
       const finalDuration = audit.measurements.videoDuration || audit.measurements.audioDuration || 0;
       const finalSha256 = resolvedArtifact.verifiedSha256;
+
+      // Treasury-backed jobs must settle entitlement before the completion projection
+      // is written. Legacy jobs retain the historical Firestore finalize path below.
+      if (treasuryQuotaReservationId && treasuryQuotaAdmission) {
+        await settleOrFinalizeQuota(
+          `f07:artifact:${jobId}:${finalSha256}`,
+          String(
+            (jobData as any).treasuryF07VerificationReceiptId ||
+              `f07:callback:${jobId}`,
+          ),
+        );
+      }
 
       await saveJobManifest(jobId, {
         status: "completed",
@@ -253,8 +315,13 @@ export async function POST(request: NextRequest) {
         try { fs.unlinkSync(resolvedArtifact.localPath); } catch {}
       }
 
-      // 🔒 Finalize Quota Slot Consumption (Idempotent)
-      await finalizeGenerationSlot(userId, jobId);
+      // 🔒 Finalize legacy quota projection. Treasury-backed jobs already settled above.
+      if (!treasuryQuotaReservationId) {
+        await settleOrFinalizeQuota(
+          `f07:artifact:${jobId}:${finalSha256}`,
+          `f07:callback:${jobId}`,
+        );
+      }
 
       // 🔒 FactoryOS Mission & EventBus State Convergence
       const missionId = (jobData as any).missionId;
@@ -294,6 +361,9 @@ export async function POST(request: NextRequest) {
 
     if (status === "failed") {
       const now = new Date().toISOString();
+      // Treasury-backed jobs release the authoritative entitlement hold before failure is committed.
+      await releaseOrRefundQuota();
+
       await saveJobManifest(jobId, {
         status: "failed",
         deliveryState: deliveryState || "DELIVERY_FAILED",
@@ -303,8 +373,10 @@ export async function POST(request: NextRequest) {
         updatedAt: now,
       } as any);
 
-      // 🔒 Reconcile and Release Quota Slot
-      await releaseGenerationSlot(userId, jobId);
+      // Treasury-backed jobs already released above; legacy jobs use the compatibility projection.
+      if (!treasuryQuotaReservationId) {
+        await releaseGenerationSlot(userId, jobId);
+      }
 
       // 🔒 FactoryOS Mission Failure Convergence
       const missionId = (jobData as any).missionId;

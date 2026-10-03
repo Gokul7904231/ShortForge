@@ -1,9 +1,10 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 
 export type SceneQualityAgentInput = {
   scene: { text: string; imagePrompt: string } | string;
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type SceneQualityAgentOutput = {
@@ -17,7 +18,7 @@ export async function sceneQualityAgent(input: SceneQualityAgentInput): Promise<
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
 
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const system =
     "You are a cinematic AI director evaluating YouTube Shorts scene quality. Output ONLY valid JSON. No markdown.";

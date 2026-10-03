@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { LLMProvider } from "../../../ai/provider";
 import { regenerateSceneAgent } from "../../../agents/scene-agent";
 
 import { verifySession, verifyWritePermission } from "../../../lib/auth/auth";
+import { prepareTreasuryModelContext } from "../../../lib/treasury-model-context";
 
 export async function POST(req: Request) {
   try {
@@ -32,6 +34,16 @@ export async function POST(req: Request) {
     if (!currentScene) return NextResponse.json({ error: "Missing currentScene" }, { status: 400 });
     if (!currentImagePrompt) return NextResponse.json({ error: "Missing currentImagePrompt" }, { status: 400 });
 
+    const treasuryModel = await prepareTreasuryModelContext({
+      command: "Regenerate Scene: " + topic,
+      missionId: "mis_regen_scene_" + user.uid,
+      taskId: "scene-regeneration-api-" + randomUUID(),
+      floorId: "floor03_asset_realization",
+      preferredProviderId: provider,
+      subtask: "scene_regeneration",
+      maxRetries: 0,
+    });
+
     const result = await regenerateSceneAgent({
       sceneId,
       topic,
@@ -43,6 +55,7 @@ export async function POST(req: Request) {
       previousImagePrompt,
       nextImagePrompt,
       provider,
+      treasuryContext: treasuryModel.context,
     });
 
     return NextResponse.json(result);

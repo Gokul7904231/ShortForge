@@ -1,6 +1,6 @@
 # Treasurer — Economic Control-Plane Contract
 
-**Status:** AUTHORITATIVE TARGET + IMPLEMENTATION WAVE 1  
+**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–3  
 **Date:** 2026-10-03  
 **Canonical implementation:** `apps/web/factoryos/core/treasury/`
 
@@ -36,7 +36,8 @@ Treasurer may autonomously perform only constitutional safety actions derived fr
 - reconcile measured consumption;
 - deny invalid/replayed/expired commands;
 - stop new discretionary reservations after a breach;
-- freeze its account on an envelope overrun.
+- freeze its account on an envelope overrun;
+- reject a command whose issuer identity does not exactly match its originating Overseer command.
 
 Those are not new sovereign commands. They are mandatory safety behavior.
 
@@ -76,10 +77,12 @@ A retry is a new economic attempt and requires a new reservation.
 
 ## Economic currencies
 
-Treasurer tracks at least two dimensions:
+Treasurer tracks separate resource dimensions:
 
 1. monetary spend (USD);
-2. scarce capacity (capacity units / quota / concurrency / runtime).
+2. compute/scarcity capacity (compute seconds, concurrency, queue/provider scarcity);
+3. inference-token capacity;
+4. quota/entitlement capacity where applicable.
 
 Therefore:
 
@@ -136,8 +139,18 @@ Future advisory layer. May use observed cost, latency, quality and verified outc
 
 Economic Intelligence can recommend. The Constitutional Kernel decides.
 
-## Migration rule
+## Wave 3 runtime integration
 
-Existing quota, MissionBudgetManager, CostGovernor and AgentEconomicsEngine remain compatibility mechanisms during migration. New Treasury code must become the single economic admission boundary before those legacy paths are declared authoritative.
+The economic boundary now covers:
+- model/API inference through AIRuntime + IntelligentRouter;
+- API-backed ComputeOffer provisioning through ProviderApiRegistry;
+- user generation entitlement/quota through TreasuryQuotaAdmission;
+- F06 compute admission and F07 verification-aware settlement.
 
-Wave 1 intentionally does not rewrite generation routes or ComputeRouter in place; that migration will be staged behind explicit permits and regression gates.
+Legacy quota Firestore documents remain a compatibility projection for UI/history. MissionBudgetManager remains post-consumption mission policy; CostGovernor is non-authorizing in production; AgentEconomicsEngine is advisory and records authoritative cost only when measured Treasury cost is supplied.
+
+The architectural rule is now:
+
+`selection -> Treasury admission -> execution -> measurement -> verification -> Treasury settlement`
+
+No legacy economic mechanism may authorize production spend outside Treasury.

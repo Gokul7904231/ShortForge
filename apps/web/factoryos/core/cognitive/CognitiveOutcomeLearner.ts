@@ -18,6 +18,7 @@ export interface OutcomeFeedback {
   readonly trajectoryId?: string;
   readonly evidenceRefs?: readonly string[];
   readonly tokensConsumed?: number;
+  readonly actualCostUsd?: number;
   readonly modelTier?: Parameters<AgentEconomicsEngine["recordExecution"]>[0];
 }
 
@@ -78,6 +79,7 @@ export class CognitiveOutcomeLearner {
         feedback.modelTier || "LARGE_REASONER",
         feedback.tokensConsumed,
         feedback.durationMs,
+        feedback.actualCostUsd,
       );
     }
 

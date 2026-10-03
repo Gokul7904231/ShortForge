@@ -8,6 +8,7 @@ import {
   TokenEconomyEvent,
   TokenEconomyLedger,
 } from "./economy/TokenEconomy";
+import type { TreasuryService } from "../factoryos/core/treasury/TreasuryService";
 
 export interface RuntimeTrace {
   traceId: string;
@@ -35,9 +36,35 @@ export interface RuntimeOptions {
   deterministicValue?: unknown;
   cacheTtlMs?: number;
   maxRetries?: number;
+  overseerCommandId?: string;
+  accountId?: string;
+  missionId?: string;
+  runId?: string;
+  floorId?: string;
+  taskId?: string;
+  scopeFingerprint?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  treasuryContext?: import("./provider").TreasuryModelExecutionContext;
 }
 
 class AIRuntimeEngineClass {
+  private treasuryService?: TreasuryService;
+  private treasuryRequired = false;
+
+  bindTreasury(
+    service: TreasuryService,
+    required = process.env.NODE_ENV === "production",
+  ): void {
+    if (this.treasuryService && this.treasuryService !== service) {
+      throw new Error(
+        "[AIRuntime] Treasury service is already bound; refusing to replace economic authority",
+      );
+    }
+    this.treasuryService = service;
+    this.treasuryRequired = this.treasuryRequired || required;
+    IntelligentRouter.bindTreasury(service, required);
+  }
+
   // Feature Flags
   public flags = {
     enableLocalAI: true,
@@ -119,7 +146,21 @@ class AIRuntimeEngineClass {
     console.log(`[AIRuntime] [${traceId}:${spanId}] Starting execution for ${capability} (${version})`);
 
     let currentAttempt = 1;
-    const maxAttempts = (options.maxRetries ?? 3) + 1;
+    const treasuryManaged =
+      process.env.NODE_ENV === "production" ||
+      this.treasuryRequired ||
+      Boolean(options.treasuryContext);
+
+    if (options.treasuryContext && this.treasuryService !== options.treasuryContext.treasuryService) {
+      this.bindTreasury(
+        options.treasuryContext.treasuryService,
+        process.env.NODE_ENV === "production",
+      );
+    }
+
+    const maxAttempts = treasuryManaged
+      ? Math.max(1, (options.maxRetries ?? 0) + 1)
+      : (options.maxRetries ?? 3) + 1;
     let lastError: any = null;
 
     while (currentAttempt <= maxAttempts) {
@@ -157,6 +198,16 @@ class AIRuntimeEngineClass {
             subtask: options.subtask,
             maxCostLimit: options.maxCostLimit,
             requireLocal: options.requireLocal || !this.flags.enableLocalAI,
+            maxRetries: options.maxRetries,
+            overseerCommandId: options.overseerCommandId,
+            accountId: options.accountId,
+            missionId: options.missionId,
+            runId: options.runId,
+            floorId: options.floorId,
+            taskId: options.taskId,
+            scopeFingerprint: options.scopeFingerprint,
+            priority: options.priority,
+            treasuryContext: options.treasuryContext,
           },
           {
             ...params,

@@ -91,9 +91,9 @@ describe("FactoryOS Frontier v2 — Strategic Meta-Thinker & Agent Economics Sui
   });
 
   it("03: Tracks cumulative token usage, cost, and latency metrics", () => {
-    economics.recordExecution("DETERMINISTIC", 0, 5);
-    economics.recordExecution("SMALL_FAST", 500, 120);
-    economics.recordExecution("LARGE_REASONER", 2000, 800);
+    economics.recordExecution("DETERMINISTIC", 0, 5, 0);
+    economics.recordExecution("SMALL_FAST", 500, 120, 0.0005);
+    economics.recordExecution("LARGE_REASONER", 2000, 800, 0.006);
 
     const metrics = economics.getMetrics();
     expect(metrics.totalInvocations).toBe(3);

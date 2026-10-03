@@ -49,7 +49,10 @@ export class VisualPipeline {
     const tStart = Date.now();
 
     // Pass 1: Scene Intent Analysis (LLM extraction + local SQL cache)
-    await this.intentAnalyzer.run(context);
+    await this.intentAnalyzer.run(
+      context,
+      context.treasuryModelContext,
+    );
 
     // Pass 2: Asset Plan establishment
     await this.planner.run(context);

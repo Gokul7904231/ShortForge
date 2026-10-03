@@ -1,4 +1,17 @@
+import { createHash } from "node:crypto";
+import {
+  classifyProviderError,
+  ProviderAuthenticationError,
+  ProviderBadRequestError,
+} from "../lib/ai-provider/errors";
 import { AICapability, AIProviderRegistry, ModelMeta } from "./capability-registry";
+import type { TreasuryService } from "../factoryos/core/treasury/TreasuryService";
+import {
+  TreasuryEconomicAdmission,
+  type TreasuryAdmissionContext,
+  type TreasuryModelCandidate,
+} from "../factoryos/core/treasury/TreasuryEconomicAdmission";
+import type { TreasuryModelExecutionContext } from "./provider";
 import { AIConfigManager, type ProviderConfig, type ModelConfig } from "./ai-config-manager";
 import { MetricsDB } from "../lib/queue-db";
 import { AIDoctor } from "../lib/core/AIDoctor";
@@ -16,9 +29,20 @@ export type AIProfile =
 export interface RoutingTaskContext {
   capability: AICapability;
   subtask?: "reasoning" | "speed" | "coding" | "json" | "creativity" | string;
-  maxCostLimit?: number; // Maximum acceptable cost per 1M tokens in USD
-  maxLatencyLimit?: number; // Maximum acceptable latency in ms
+  maxCostLimit?: number;
+  maxLatencyLimit?: number;
   requireLocal?: boolean;
+  maxRetries?: number;
+  overseerCommandId?: string;
+  accountId?: string;
+  missionId?: string;
+  runId?: string;
+  floorId?: string;
+  taskId?: string;
+  scopeFingerprint?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  preferredProviderId?: string;
+  treasuryContext?: TreasuryModelExecutionContext;
 }
 
 export interface ScoredCandidate {
@@ -30,6 +54,9 @@ export interface ScoredCandidate {
 
 class IntelligentRouterClass {
   private activeProfile: AIProfile = "Balanced";
+  private treasuryService?: TreasuryService;
+  private treasuryAdmission?: TreasuryEconomicAdmission;
+  private treasuryRequired = false;
 
   setProfile(profile: AIProfile) {
     console.log(`[IntelligentRouter] Setting active profile to: ${profile}`);
@@ -40,147 +67,516 @@ class IntelligentRouterClass {
     return this.activeProfile;
   }
 
+  bindTreasury(
+    service: TreasuryService,
+    required = process.env.NODE_ENV === "production",
+  ): void {
+    if (this.treasuryService && this.treasuryService !== service) {
+      throw new Error(
+        "[IntelligentRouter] Treasury service is already bound; refusing to replace economic authority",
+      );
+    }
+    this.treasuryService = service;
+    this.treasuryAdmission = new TreasuryEconomicAdmission(service);
+    this.treasuryRequired = this.treasuryRequired || required;
+  }
+
   /**
    * Routes a capability task to the most suitable candidate model, executes it,
    * and handles failover retries automatically.
    */
   async routeExecute(
     context: RoutingTaskContext,
-    params: { prompt: string; system?: string; maxTokens?: number; temperature?: number; [key: string]: any }
+    params: {
+      prompt: string;
+      system?: string;
+      maxTokens?: number;
+      temperature?: number;
+      [key: string]: any;
+    },
   ): Promise<any> {
-    // Force refresh config files
     AIConfigManager.loadAll();
 
-    const candidates = this.getCandidatesSorted(context);
+    const treasuryContext = context.treasuryContext;
 
+    if (treasuryContext && this.treasuryService !== treasuryContext.treasuryService) {
+      this.bindTreasury(
+        treasuryContext.treasuryService,
+        process.env.NODE_ENV === "production",
+      );
+    }
+
+    const normalizedContext: RoutingTaskContext = treasuryContext
+      ? {
+          ...context,
+          maxCostLimit:
+            context.maxCostLimit ?? treasuryContext.maxCostUsd,
+          maxRetries:
+            context.maxRetries ?? treasuryContext.maxRetries ?? 0,
+          overseerCommandId:
+            context.overseerCommandId ??
+            treasuryContext.overseerCommandId,
+          accountId:
+            context.accountId ?? treasuryContext.accountId,
+          missionId:
+            context.missionId ?? treasuryContext.missionId,
+          runId:
+            context.runId ?? treasuryContext.runId,
+          floorId:
+            context.floorId ?? treasuryContext.floorId,
+          taskId:
+            context.taskId ?? treasuryContext.taskId,
+          scopeFingerprint:
+            context.scopeFingerprint ??
+            treasuryContext.scopeFingerprint,
+          priority:
+            context.priority ?? treasuryContext.priority,
+          preferredProviderId:
+            context.preferredProviderId ??
+            treasuryContext.preferredProviderId,
+        }
+      : context;
+
+    const treasuryManaged =
+      process.env.NODE_ENV === "production" ||
+      this.treasuryRequired ||
+      Boolean(this.treasuryAdmission && normalizedContext.overseerCommandId);
+
+    if (
+      this.treasuryRequired &&
+      (!this.treasuryAdmission ||
+        !this.treasuryService ||
+        !normalizedContext.overseerCommandId ||
+        !normalizedContext.accountId ||
+        !normalizedContext.missionId ||
+        !normalizedContext.taskId)
+    ) {
+      throw new Error(
+        "[IntelligentRouter] Production model execution requires complete Overseer/Treasury admission context",
+      );
+    }
+
+    const candidates = this.getCandidatesSorted(normalizedContext);
     if (candidates.length === 0) {
       throw new Error(
-        `[IntelligentRouter] No models found matching capability "${context.capability}" under profile "${this.activeProfile}"`
+        "[IntelligentRouter] No models found matching capability \"" +
+          context.capability +
+          "\" under profile \"" +
+          this.activeProfile +
+          "\"",
       );
     }
 
-    let lastError: any = null;
+    const inputTokens = Math.max(0, Math.ceil(params.prompt.length / 4));
+    const outputTokenCeiling = Math.max(1, params.maxTokens ?? 2048);
+    const maxAttempts = Math.max(1, (normalizedContext.maxRetries ?? 0) + 1);
 
-    // Iterate through scored Provider + Model candidate combinations
-    const skippedCandidates: typeof candidates = [];
+    const scopeFingerprint =
+      normalizedContext.scopeFingerprint ??
+      createHash("sha256")
+        .update(
+          JSON.stringify({
+            capability: normalizedContext.capability,
+            subtask: normalizedContext.subtask,
+            prompt: params.prompt,
+            system: params.system,
+          }),
+        )
+        .digest("hex");
+
+    const taskId =
+      normalizedContext.taskId ??
+      "ai_" +
+        createHash("sha256")
+          .update(scopeFingerprint)
+          .digest("hex")
+          .slice(0, 16);
+
+    const missionId =
+      normalizedContext.missionId ?? normalizedContext.runId ?? "ai-runtime";
+    const accountId =
+      normalizedContext.accountId ??
+      process.env.FACTORYOS_TREASURY_ACCOUNT_ID ??
+      "factoryos";
+
+    const maxCostUsd = Math.max(
+      0,
+      normalizedContext.maxCostLimit ??
+        Number(process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? "0.10"),
+    );
+    const treasuryBudget = {
+      maxCostUsd,
+      maxTokens: inputTokens + outputTokenCeiling,
+      maxDurationMs: Math.max(
+        60_000,
+        Number(process.env.AI_EXECUTION_TIMEOUT_MS ?? "30000"),
+      ),
+      maxCapacityUnits: 0,
+      maxRetries: 0,
+    } as const;
+
+    const treasuryAdmissionContext: TreasuryAdmissionContext = {
+      accountId,
+      overseerCommandId: normalizedContext.overseerCommandId ?? "",
+      missionId,
+      runId: normalizedContext.runId,
+      floorId: normalizedContext.floorId ?? "inference",
+      taskId,
+      priority: normalizedContext.priority ?? "NORMAL",
+      expiresAt: new Date(
+        Date.now() +
+          Math.max(
+            60_000,
+            Number(process.env.AI_EXECUTION_TIMEOUT_MS ?? "30000"),
+          ),
+      ).toISOString(),
+      maxRetries: 0,
+      scopeFingerprint,
+    };
+
+    let lastError: unknown = null;
+    let attemptNumber = 0;
 
     for (const candidate of candidates) {
-      const { modelId, provider } = candidate;
+      if (attemptNumber >= maxAttempts) break;
 
-      // Map "google-ai" config id to actual plugin "google"
-      const pluginId = provider.id === "google-ai" ? "google" : provider.id;
+      const pluginId =
+        candidate.provider.id === "google-ai"
+          ? "google"
+          : candidate.provider.id;
       const plugin = AIProviderRegistry.getPlugin(pluginId);
-      
-      if (!plugin) {
-        console.warn(`[IntelligentRouter] Provider plugin "${pluginId}" is registered in config but missing from memory registry. skipping...`);
-        continue;
-      }
+      if (!plugin) continue;
 
       const health = plugin.status();
-      if (health.errorRate > 0.85) {
-        console.warn(
-          `[IntelligentRouter] Skipping model ${modelId} on provider ${provider.id} due to high error rate: ${health.errorRate.toFixed(2)}`
+      if (health.errorRate > 0.85) continue;
+
+      const pricing = AIConfigManager.pricing[candidate.modelId];
+      const isLocal =
+        candidate.modelId.toLowerCase().includes("local") ||
+        candidate.modelId.toLowerCase().includes("ollama");
+      const isPaid = !(pricing?.free === true || isLocal);
+
+      if (treasuryManaged) {
+        if (!this.treasuryAdmission) {
+          throw new Error(
+            "[IntelligentRouter] Treasury admission is not bound",
+          );
+        }
+
+        const modelCandidate: TreasuryModelCandidate = {
+          providerId: pluginId,
+          modelId: candidate.modelId,
+          capability: String(normalizedContext.capability),
+          isPaid,
+          inputTokens,
+          outputTokens: outputTokenCeiling,
+          pricingSource: pricing
+            ? "AI_CONFIG_BOOTSTRAP"
+            : isPaid
+              ? "UNPRICED"
+              : "ZERO_COST_DECLARATION",
+          pricingVersion: pricing
+            ? "ai-config:" +
+              candidate.modelId +
+              ":" +
+              pricing.input +
+              ":" +
+              pricing.output +
+              ":" +
+              (pricing.free ? "free" : "paid")
+            : isPaid
+              ? "UNPRICED"
+              : "zero-cost",
+          inputUsdPer1MTokens: pricing?.input ?? 0,
+          outputUsdPer1MTokens: pricing?.output ?? 0,
+        };
+
+        const assessment = this.treasuryAdmission.assessModelCandidate(
+          modelCandidate,
+          treasuryBudget,
         );
-        skippedCandidates.push(candidate);
-        continue;
-      }
+        if (!assessment.admissible) {
+          continue;
+        }
 
-      console.log(
-        `[IntelligentRouter] Routing capability "${context.capability}" -> Model: "${modelId}" | Provider: "${provider.id}" (Score: ${candidate.score.toFixed(1)})`
-      );
-      const start = Date.now();
+        attemptNumber += 1;
+        const attemptContext: TreasuryAdmissionContext = {
+          ...treasuryAdmissionContext,
+          attemptId:
+            taskId +
+            ":attempt:" +
+            String(attemptNumber) +
+            ":" +
+            candidate.provider.id +
+            ":" +
+            candidate.modelId,
+        };
 
-      try {
-        const result = await plugin.execute(context.capability, {
-          ...params,
-          model: modelId,
-        });
+        let reservation:
+          | Awaited<
+              ReturnType<
+                TreasuryEconomicAdmission["reserveModelInvocation"]
+              >
+            >
+          | undefined;
+        let executionId: string | undefined;
 
-        // Update runtime analytics inside plugin
-        const duration = Date.now() - start;
-        health.latency = health.latency * 0.8 + duration * 0.2;
-        health.errorRate = health.errorRate * 0.9 + 0.0 * 0.1;
-        health.lastChecked = Date.now();
-
-        // Cost estimation tracking
-        const numTokens = (params.prompt.length + (result?.length || 0)) / 4;
-        const pricing = AIConfigManager.pricing[modelId] || { input: 0.15, output: 0.60 };
-        const costEst = (numTokens / 1000000) * (pricing.input + pricing.output);
-        health.totalCost.estimatedUSD += costEst;
-
-        // Record performance feedback back to benchmarks dynamically
-        this.updateDynamicBenchmarks(modelId, context.capability, duration);
-
-        // Record telemetry to SQLite metrics
         try {
-          MetricsDB.record("success", "engine", 1, {
-            provider: pluginId,
-            model: modelId,
-            capability: context.capability,
+          reservation =
+            await this.treasuryAdmission.reserveModelInvocation(
+              attemptContext,
+              modelCandidate,
+              treasuryBudget,
+            );
+
+          executionId =
+            "treasury-model-exec-" +
+            createHash("sha256")
+              .update(
+                scopeFingerprint +
+                  ":" +
+                  attemptNumber +
+                  ":" +
+                  pluginId +
+                  ":" +
+                  candidate.modelId,
+              )
+              .digest("hex")
+              .slice(0, 24);
+
+          const startedAt = Date.now();
+          const result = await plugin.execute(normalizedContext.capability, {
+            ...params,
+            model: candidate.modelId,
+            __treasuryExecutionId: executionId,
+            __treasuryManagedRetries: true,
           });
-          MetricsDB.record("render_duration_ms", "engine", duration, {
-            provider: pluginId,
-            model: modelId,
-            capability: context.capability,
-          });
-        } catch {}
+          const duration = Date.now() - startedAt;
 
-        return result;
-      } catch (err: any) {
-        console.warn(
-          `[IntelligentRouter] Execution failed on model ${modelId} via provider ${provider.id}: ${err.message}. Cascading fallback...`
-        );
-        lastError = err;
+          const usage = plugin.getExecutionUsage?.(executionId) ?? {
+            inputTokens,
+            outputTokens: Math.max(
+              0,
+              Math.ceil(
+                typeof result === "string"
+                  ? result.length / 4
+                  : JSON.stringify(result ?? "").length / 4,
+              ),
+            ),
+          };
 
-        health.errorRate = health.errorRate * 0.9 + 1.0 * 0.1;
-        health.retries += 1;
-        health.lastChecked = Date.now();
+          const measuredPricing = isPaid
+            ? this.treasuryService!
+                .getPriceRegistry()
+                .estimateModelInvocation(
+                  pluginId,
+                  candidate.modelId,
+                  usage.inputTokens,
+                  usage.outputTokens,
+                )
+            : {
+                priced: true,
+                totalCostUsd: 0,
+              };
 
-        // Trigger AI Doctor diagnostic daemon asynchronously on failure
-        AIDoctor.triggerFailureDiagnosis(provider.id, err.message);
+          if (!measuredPricing.priced) {
+            throw new Error(
+              "[IntelligentRouter] Treasury could not price measured model usage for settlement",
+            );
+          }
 
-        // Record failure telemetry to SQLite metrics
+          const actualTokens =
+            Math.max(0, usage.inputTokens) +
+            Math.max(0, usage.outputTokens);
+
+          await this.treasuryService!.settle(
+            reservation.reservation.reservationId,
+            {
+              reservationId: reservation.reservation.reservationId,
+              actualCostUsd: Math.max(
+                0,
+                measuredPricing.totalCostUsd,
+              ),
+              actualCapacityUnits: 0,
+              actualTokens,
+              actualDurationMs: duration,
+              executionEvidenceId: executionId,
+              verified: false,
+              measuredAt: new Date().toISOString(),
+            },
+          );
+
+          health.latency =
+            health.latency * 0.8 + duration * 0.2;
+          health.errorRate = health.errorRate * 0.9;
+          health.lastChecked = Date.now();
+          health.totalCost.estimatedUSD += Math.max(
+            0,
+            measuredPricing.totalCostUsd,
+          );
+
+          this.updateDynamicBenchmarks(
+            candidate.modelId,
+            normalizedContext.capability,
+            duration,
+          );
+
+          try {
+            MetricsDB.record("success", "engine", 1, {
+              provider: pluginId,
+              model: candidate.modelId,
+              capability: context.capability,
+              treasuryManaged: "true",
+              treasuryReservationId:
+                reservation.reservation.reservationId,
+            });
+            MetricsDB.record(
+              "model_cost_usd",
+              "engine",
+              Math.max(0, measuredPricing.totalCostUsd),
+              {
+                provider: pluginId,
+                model: candidate.modelId,
+                capability: context.capability,
+              },
+            );
+          } catch {}
+
+          return result;
+        } catch (err: any) {
+          lastError = err;
+
+          if (
+            reservation?.reservation?.reservationId &&
+            this.treasuryService
+          ) {
+            const usage = executionId
+              ? plugin.getExecutionUsage?.(executionId)
+              : undefined;
+
+            if (usage) {
+              const actualTokens =
+                Math.max(0, usage.inputTokens) +
+                Math.max(0, usage.outputTokens);
+
+              const measured = isPaid
+                ? this.treasuryService
+                    .getPriceRegistry()
+                    .estimateModelInvocation(
+                      pluginId,
+                      candidate.modelId,
+                      usage.inputTokens,
+                      usage.outputTokens,
+                    )
+                : {
+                    priced: true,
+                    totalCostUsd: 0,
+                  };
+
+              if (measured.priced) {
+                await this.treasuryService
+                  .settle(reservation.reservation.reservationId, {
+                    reservationId:
+                      reservation.reservation.reservationId,
+                    actualCostUsd: Math.max(
+                      0,
+                      measured.totalCostUsd,
+                    ),
+                    actualCapacityUnits: 0,
+                    actualTokens,
+                    actualDurationMs: undefined,
+                    executionEvidenceId:
+                      executionId ??
+                      "treasury-model-failure:" +
+                        taskId +
+                        ":" +
+                        attemptNumber,
+                    verified: false,
+                    measuredAt: new Date().toISOString(),
+                  })
+                  .catch(() => {});
+              }
+            } else {
+              // No physical usage measurement exists. A definitive auth/bad-request
+              // rejection is non-billable and can release safely. Network/server/
+              // timeout/unknown failures remain held for reconciliation because the
+              // provider may have accepted work before the caller lost the response.
+              const classified = classifyProviderError(
+                err,
+                pluginId,
+              );
+              if (
+                classified instanceof ProviderAuthenticationError ||
+                classified instanceof ProviderBadRequestError
+              ) {
+                await this.treasuryService
+                  .release(
+                    reservation.reservation.reservationId,
+                    "MODEL_REQUEST_REJECTED_BEFORE_ACCEPTANCE",
+                  )
+                  .catch(() => {});
+              }
+            }
+          }
+
+          health.errorRate = health.errorRate * 0.9 + 0.1;
+          health.retries += 1;
+          health.lastChecked = Date.now();
+
+          AIDoctor.triggerFailureDiagnosis(
+            candidate.provider.id,
+            err?.message || String(err),
+          );
+
+          try {
+            MetricsDB.record("failure", "engine", 1, {
+              provider: pluginId,
+              model: candidate.modelId,
+              capability: context.capability,
+              error: err?.message || String(err),
+              treasuryManaged: "true",
+            });
+          } catch {}
+        }
+      } else {
+        // Compatibility execution path remains for non-Treasury development callers.
         try {
-          MetricsDB.record("failure", "engine", 1, {
-            provider: pluginId,
-            model: modelId,
-            capability: context.capability,
-            error: err.message || String(err),
+          return await plugin.execute(context.capability, {
+            ...params,
+            model: candidate.modelId,
+            __treasuryManagedRetries: false,
           });
-        } catch {}
+        } catch (err: any) {
+          lastError = err;
+        }
+        attemptNumber += 1;
       }
     }
 
-    // Fallback: If all candidates were skipped due to errorRate, try them anyway
-    if (skippedCandidates.length > 0) {
-      console.warn(`[IntelligentRouter] All candidates skipped due to errorRate. Retrying skipped candidates: ${skippedCandidates.map(c => c.modelId).join(", ")}`);
-      for (const candidate of skippedCandidates) {
-        const { modelId, provider } = candidate;
-        const pluginId = provider.id === "google-ai" ? "google" : provider.id;
+    // Non-Treasury compatibility fallback for callers that have not supplied a command.
+    if (!treasuryManaged) {
+      for (const candidate of candidates) {
+        const pluginId =
+          candidate.provider.id === "google-ai"
+            ? "google"
+            : candidate.provider.id;
         const plugin = AIProviderRegistry.getPlugin(pluginId);
         if (!plugin) continue;
-        console.log(`[IntelligentRouter] Fallback routing capability "${context.capability}" -> Model: "${modelId}" | Provider: "${provider.id}"`);
-        const start = Date.now();
         try {
-          const result = await plugin.execute(context.capability, {
+          return await plugin.execute(context.capability, {
             ...params,
-            model: modelId,
+            model: candidate.modelId,
+            __treasuryManagedRetries: false,
           });
-          const duration = Date.now() - start;
-          const health = plugin.status();
-          health.latency = health.latency * 0.8 + duration * 0.2;
-          health.errorRate = 0.0; // Reset errorRate on success!
-          health.lastChecked = Date.now();
-          return result;
         } catch (err: any) {
-          console.warn(`[IntelligentRouter] Fallback execution failed on model ${modelId}: ${err.message}`);
           lastError = err;
         }
       }
     }
 
     throw new Error(
-      `[IntelligentRouter] All candidate models & fallback providers failed. Last error: ${lastError?.message || lastError}`
+      "[IntelligentRouter] All economically admissible candidate models failed. Last error: " +
+        (lastError instanceof Error ? lastError.message : String(lastError ?? "unknown")),
     );
   }
 
@@ -216,8 +612,24 @@ class IntelligentRouterClass {
       }
     }
 
-    // Sort descending by suitability score
-    return candidates.sort((a, b) => b.score - a.score);
+    // Sort descending by suitability. A legacy caller's preferred provider
+    // is only a ranking preference; Treasury still admits the resulting attempt.
+    const preferred =
+      context.preferredProviderId === "gemini"
+        ? "google"
+        : context.preferredProviderId;
+    return candidates.sort((a, b) => {
+      const aPreferred =
+        preferred && (a.provider.id === preferred || (preferred === "google" && a.provider.id === "google-ai"))
+          ? 1
+          : 0;
+      const bPreferred =
+        preferred && (b.provider.id === preferred || (preferred === "google" && b.provider.id === "google-ai"))
+          ? 1
+          : 0;
+      if (aPreferred !== bPreferred) return bPreferred - aPreferred;
+      return b.score - a.score;
+    });
   }
 
   private calculateSuitability(

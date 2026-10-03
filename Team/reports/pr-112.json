@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR112-Mainline-Sync-Into-Treasury-Wave3",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/treasurer-model-api-compute-admission-wave3-20261003",
+  "headRef": "main",
+  "objective": "Synchronize the Treasury Wave 3 development line with current main before promoting its unique changes through PR #105.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/economics/treasurer-operating-contract.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "This PR is an integration-only branch sync. It introduces no new runtime capability or secret surface."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-SYNC-001",
+      "originalConflict": "Treasury Wave 3 was based on a pre-current-main state and its historical validation failed on stale assumptions.",
+      "status": "RESOLVED",
+      "proposedResolution": "Merge current main into the Treasury Wave 3 branch before revalidating PR #105.",
+      "acceptedResolution": "Use a reverse sync PR so both current main and Treasury Wave 3 history are preserved before feature validation.",
+      "decisionAuthority": "Treasury staged integration contract"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Integrates current mainline into the Treasury Wave 3 development branch.",
+    "No feature authority is added by this synchronization."
+  ],
+  "verificationPlan": [
+    "Pass Team Change Gate and current-main integration checks.",
+    "Then re-run PR #105 against the synchronized branch."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "syncIntegrity": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "This is an intermediate integration PR. PR #105 remains the feature promotion PR."
+  ]
+}
