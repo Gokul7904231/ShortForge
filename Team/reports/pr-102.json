@@ -37,7 +37,9 @@
       "Treasury hard decisions remain deterministic.",
       "F06 cannot use a Treasury-gated render without an Overseer command identity.",
       "Production Treasury persistence remains fail-closed without a transaction-capable Mongo client.",
-      "F07 receipt identifiers are taken from F07ReleaseGuardian, not synthesized by Treasury or F06."
+      "F07 receipt identifiers are taken from F07ReleaseGuardian, not synthesized by Treasury or F06.",
+      "Production ComputeGateway is bound to the canonical Treasury service and validates the execution-scoped permit before physical dispatch.",
+      "Automatic provider failover is capped by the retry allowance carried in the Treasury permit."
     ]
   },
   "conflicts": [
@@ -79,6 +81,20 @@
       ]
     }
   ],
+    {
+      "id": "TRSY-RETRY-004",
+      "originalConflict": "ComputeRouter automatic failover could cross provider boundaries without consuming a separately authorized retry envelope.",
+      "status": "RESOLVED",
+      "proposedResolution": "Carry maxRetries in the Treasury economic permit and cap physical provider attempts at 1 + maxRetries.",
+      "acceptedResolution": "Treasury zero-retry renders are limited to one physical provider attempt; additional retries require a new Overseer/Treasury reservation.",
+      "decisionAuthority": "Treasury economic admission invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/router/ComputeRouter.ts"
+      ]
+    },
   "forgers": [
     "Forge Architect",
     "Forge Builder",
@@ -93,7 +109,11 @@
     "Initialized a Mongo-backed Treasury service/account in the persistent controller.",
     "Added focused render/Treasury admission tests and Wave 2 architecture records.",
     "Closed an artifactless COMPLETED-receipt reservation leak in RenderFabric and added regression coverage.",
-    "Changed production boot to fail closed when Treasury cannot be initialized with transaction-capable MongoDB."
+    "Changed production boot to fail closed when Treasury cannot be initialized with transaction-capable MongoDB.",
+    "Bound the production ComputeGateway to the Treasury service so render dispatch cannot bypass the economic authority.",
+    "Extended economic permits with execution scope and retry allowance; ComputeGateway revalidates the permit before dispatch.",
+    "Capped automatic compute failover attempts by the Treasury-authorized retry envelope.",
+    "Added regression coverage for permit propagation and scope replay rejection."
   ],
   "verificationResults": {
     "teamChangeGate": "PENDING",
