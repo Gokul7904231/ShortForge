@@ -1,5 +1,12 @@
 name: notebook-fabric
 
+# Live notebook verification is an external side-effecting workflow. Keep only
+# the newest probe active so repeated code pushes cannot consume concurrent
+# Kaggle notebook capacity or race their artifacts.
+concurrency:
+  group: notebook-fabric-live-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     paths:
@@ -102,7 +109,10 @@ jobs:
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             printf 'providers=["%s"]\n' "$INPUT_PROVIDER" >> "$GITHUB_OUTPUT"
           else
-            echo 'providers=["KAGGLE","COLAB","LIGHTNING"]' >> "$GITHUB_OUTPUT"
+            # Pushes on the dedicated verification branch are intentionally
+            # Kaggle-first. Colab/Lightning are run explicitly after Kaggle's
+            # physical-artifact and MCP proofs pass.
+            echo 'providers=["KAGGLE"]' >> "$GITHUB_OUTPUT"
           fi
 
   live:
@@ -151,6 +161,9 @@ jobs:
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          # Preserve timed-out Kaggle probes for post-failure forensic inspection.
+          # Successful physical-artifact proofs still trigger normal cleanup.
+          KAGGLE_KEEP_FAILED_RUNTIME: "1"
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
@@ -173,6 +186,9 @@ jobs:
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          # Keep failed/timeout probes available for forensic inspection. This
+          # must be on the provider step itself; step-local env does not persist.
+          KAGGLE_KEEP_FAILED_RUNTIME: "1"
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
