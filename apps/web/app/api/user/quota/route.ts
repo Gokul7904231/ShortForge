@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
-import { getUserQuota } from "@/lib/quota/quota-service";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 
 export async function GET(request: NextRequest) {
   try {
     const { user } = await verifySession(request);
-    const quota = await getUserQuota(user.uid, user.role);
+    const quota = await new TreasuryQuotaAdmission(
+      await getTreasuryRuntime(),
+    ).getGenerationQuota(user.uid, user.role);
 
     return NextResponse.json({
       success: true,
