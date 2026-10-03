@@ -112,7 +112,9 @@ export class TreasuryEconomicAdmission {
       };
     }
 
-    this.registerModelCandidatePricing(candidate, now);
+    // Paid pricing must already exist in Treasury's authoritative registry.
+    // Router-provided price values are descriptive metadata only and cannot mint
+    // or mutate Treasury prices.
     const pricing = this.priceRegistry.estimateModelInvocation(
       candidate.providerId,
       candidate.modelId,
