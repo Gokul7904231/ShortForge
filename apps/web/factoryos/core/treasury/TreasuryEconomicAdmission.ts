@@ -236,8 +236,7 @@ export class TreasuryEconomicAdmission {
           Math.max(admission.estimatedCostUsd, 0),
         ),
         maxTokens: budget.maxTokens ?? admission.estimatedTokens,
-        maxCapacityUnits:
-          budget.maxCapacityUnits ?? admission.estimatedTokens,
+        maxCapacityUnits: budget.maxCapacityUnits ?? 0,
         maxRetries: budget.maxRetries ?? context.maxRetries ?? 0,
       },
       priority: context.priority,
