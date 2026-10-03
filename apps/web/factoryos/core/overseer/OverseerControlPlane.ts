@@ -287,6 +287,60 @@ export class OverseerControlPlane {
   }
 
   /**
+   * Issues a real Overseer command identity for an economic admission scope.
+   * This does not execute work; the caller must explicitly activate the prepared command.
+   */
+  prepareEconomicCommand(input: {
+    command: string;
+    missionId: string;
+    mode?: "reflex" | "deliberate" | "deep" | "autonomous";
+  }): { runId: string; overseerCommandId: string; missionId: string } {
+    const runId =
+      "run_" + randomUUID().replace(/-/g, "").substring(0, 12);
+    const overseerCommandId = "ovr_" + runId;
+    const now = new Date().toISOString();
+
+    const runRecord: OverseerRun = {
+      runId,
+      overseerCommandId,
+      command: input.command,
+      mode: input.mode || "autonomous",
+      status: "accepted",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.runs.set(runId, { ...runRecord, missionId: input.missionId } as any);
+    return {
+      runId,
+      overseerCommandId,
+      missionId: input.missionId,
+    };
+  }
+
+  activatePreparedEconomicCommand(
+    runId: string,
+    missionId: string,
+  ): void {
+    const run = this.runs.get(runId);
+    if (!run || run.overseerCommandId !== "ovr_" + runId) {
+      throw new Error("[Overseer] Prepared economic command not found");
+    }
+    if ((run as any).missionId !== missionId) {
+      throw new Error("[Overseer] Prepared economic command mission binding mismatch");
+    }
+
+    setImmediate(() => {
+      this.executeRunAsync(run, missionId).catch((err) => {
+        run.status = "failed";
+        run.error = err instanceof Error ? err.message : String(err);
+        run.updatedAt = new Date().toISOString();
+        this.worldState.removeActiveRun(runId);
+      });
+    });
+  }
+
+  /**
    * Unified Overseer Command Ingestion (POST /api/overseer/command):
    * Non-blocking — returns immediately with run_id and status "accepted".
    */
