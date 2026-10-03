@@ -185,9 +185,22 @@ export interface TreasuryEconomicPermit {
   readonly reservationId: string;
   readonly commandId: string;
   readonly accountId: string;
+  readonly missionId: string;
+  readonly runId?: string;
+  readonly floorId?: string;
+  readonly taskId?: string;
+  readonly attemptId?: string;
+  readonly scopeDigest: string;
   readonly maxCostUsd: number;
   readonly maxCapacityUnits: number;
   readonly expiresAt: string;
   readonly issuedAt: string;
   readonly status: "ACTIVE";
+}
+
+export interface TreasuryPermitContext {
+  readonly jobId: string;
+  readonly missionId: string;
+  readonly scopeDigest: string;
+  readonly accountId: string;
 }
