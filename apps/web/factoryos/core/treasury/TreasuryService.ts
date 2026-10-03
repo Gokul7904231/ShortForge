@@ -26,6 +26,10 @@ export class TreasuryService {
     return this.kernel.quote(command);
   }
 
+  ensureAccount(account: import("./TreasuryContracts").TreasuryAccount): Promise<import("./TreasuryContracts").TreasuryAccount> {
+    return this.kernel.ensureAccount(account);
+  }
+
   reserve(command: TreasuryCommand): Promise<{ reservation: TreasuryReservation; permit: TreasuryEconomicPermit }> {
     return this.kernel.reserve(command);
   }
