@@ -707,8 +707,16 @@ export class TreasuryKernel {
         ...account,
         reservedUsd: account.reservedUsd - reservation.reservedCostUsd,
         availableUsd: account.availableUsd + reservation.reservedCostUsd,
-        reservedCapacityUnits: account.reservedCapacityUnits - reservation.reservedCapacityUnits,
-        availableCapacityUnits: account.availableCapacityUnits + reservation.reservedCapacityUnits,
+        reservedCapacityUnits:
+          account.reservedCapacityUnits - reservation.reservedCapacityUnits,
+        availableCapacityUnits:
+          account.availableCapacityUnits + reservation.reservedCapacityUnits,
+        reservedTokenCapacityUnits:
+          account.reservedTokenCapacityUnits -
+          (reservation.reservedTokenCapacityUnits ?? 0),
+        availableTokenCapacityUnits:
+          account.availableTokenCapacityUnits +
+          (reservation.reservedTokenCapacityUnits ?? 0),
         version: account.version + 1,
         updatedAt: now.toISOString(),
       };
@@ -799,7 +807,12 @@ export class TreasuryKernel {
     if (!account.accountId) throw new TreasuryDeniedError("Treasury accountId is required");
     assertNonNegativeFinite(account.budgetUsd, "budgetUsd");
     assertNonNegativeFinite(account.capacityUnits, "capacityUnits");
-    if (account.availableUsd > account.budgetUsd || account.availableCapacityUnits > account.capacityUnits) {
+    assertNonNegativeFinite(account.tokenCapacityUnits, "tokenCapacityUnits");
+    if (
+      account.availableUsd > account.budgetUsd ||
+      account.availableCapacityUnits > account.capacityUnits ||
+      account.availableTokenCapacityUnits > account.tokenCapacityUnits
+    ) {
       throw new TreasuryDeniedError("Treasury account available resources exceed configured budget/capacity");
     }
   }
