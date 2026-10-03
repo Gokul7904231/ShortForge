@@ -136,4 +136,43 @@ describe("Treasurer constitutional kernel", () => {
       budgetEnvelope: { maxCostUsd: 0, maxCapacityUnits: 101 },
     }))).rejects.toBeInstanceOf(TreasuryDeniedError);
   });
+
+  it("blocks paid routes when Treasury policy has paid spend disabled", async () => {
+    const { kernel } = makeTreasury();
+    await expect(kernel.reserve(command({
+      resourceRequest: [{ kind: "INFERENCE", paidRoute: true }],
+    }))).rejects.toBeInstanceOf(TreasuryDeniedError);
+  });
+
+  it("can enter defensive mode and allow only bounded normal spend", async () => {
+    const ledger = new InMemoryTreasuryLedger();
+    ledger.seedAccount(createTreasuryAccount("defensive", 5, 100, "DEFENSIVE"));
+    const kernel = new TreasuryKernel(ledger);
+
+    const allowed = await kernel.reserve(command({
+      accountId: "defensive",
+      budgetEnvelope: { maxCostUsd: 0.5, maxCapacityUnits: 5 },
+    }));
+    expect(allowed.reservation.status).toBe("ACTIVE");
+
+    await expect(kernel.reserve(command({
+      commandId: "cmd-high",
+      accountId: "defensive",
+      priority: "HIGH",
+      budgetEnvelope: { maxCostUsd: 2, maxCapacityUnits: 5 },
+    }))).rejects.toBeInstanceOf(TreasuryDeniedError);
+  });
+
+  it("keeps settlement and release usable after a Treasury freeze", async () => {
+    const { kernel } = makeTreasury();
+    const reserved = await kernel.reserve(command());
+    const freezeCommand = command({ commandId: "freeze-1", overseerCommandId: "ovr-freeze" });
+
+    await kernel.freeze(freezeCommand, "test freeze");
+    await expect(kernel.reserve(command({ commandId: "blocked-while-frozen" }))).rejects.toBeInstanceOf(TreasuryDeniedError);
+
+    await kernel.release(reserved.reservation.reservationId, "CANCELLED");
+    const report = await kernel.report("factory");
+    expect(report.account.availableUsd).toBe(5);
+  });
 });
