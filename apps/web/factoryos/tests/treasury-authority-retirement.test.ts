@@ -37,7 +37,7 @@ describe("Treasury Wave 4 authority retirement", () => {
       "Production economic admission is Treasury-owned",
     );
     expect(source).not.toContain(
-      "return { allowed: true, requiresApproval: false, reason: "Paid execution permitted under active budget policy." }",
+      'return { allowed: true, requiresApproval: false, reason: "Paid execution permitted under active budget policy." }',
     );
   });
 
@@ -45,7 +45,7 @@ describe("Treasury Wave 4 authority retirement", () => {
     const source = read("lib/overseer/OverseerToolGateway.ts");
 
     expect(source).toContain("Treasury quota read unavailable");
-    expect(source).not.toContain("status: "QUOTA_UNAVAILABLE"");
+    expect(source).not.toContain('status: "QUOTA_UNAVAILABLE"');
   });
 
   it("keeps Economic Intelligence read-only by construction", () => {
