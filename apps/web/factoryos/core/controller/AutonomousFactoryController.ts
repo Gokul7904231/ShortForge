@@ -23,6 +23,7 @@ import { ValidatorAgent } from "../validator/ValidatorAgent";
 import { OverseerControlPlane } from "../overseer/OverseerControlPlane";
 import { MemoryEngine } from "../memory/MemoryEngine";
 import { FactoryWatchdog } from "../watchdog/FactoryWatchdog";
+import { ComputeGateway } from "../compute/gateway/ComputeGateway";
 import { PythonFloorBridge } from "../bridge/PythonFloorBridge";
 import { OverseerAPIHandler } from "../overseer/api/OverseerAPIHandler";
 import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
@@ -180,6 +181,12 @@ export class AutonomousFactoryController {
       const capacityUnits = Math.max(1, Number(process.env.FACTORYOS_TREASURY_CAPACITY_UNITS || "3600"));
       await this.treasuryService.ensureAccount(
         createTreasuryAccount(accountId, budgetUsd, capacityUnits),
+      );
+      // Bind the canonical economic authority into the compute front door.
+      // Production renders must not be able to reach ComputeRouter without Treasury admission.
+      ComputeGateway.getInstance().bindTreasury(
+        this.treasuryService,
+        this.config.treasuryRequired ?? process.env.NODE_ENV === "production",
       );
     }
 
