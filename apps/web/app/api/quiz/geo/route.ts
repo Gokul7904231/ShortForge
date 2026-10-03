@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "../../../../lib/firebase-admin";
-import Groq from "groq-sdk";
 import { verifySession } from "../../../../lib/auth/auth";
-import { getUserQuota, QuotaExceededError } from "../../../../lib/quota/quota-service";
+import { prepareTreasuryModelContext } from "../../../../lib/treasury-model-context";
+import { providerFactory } from "../../../../ai/factory";
 
 const COUNTRY_MAP: Record<string, { name: string; voice: string }> = {
   US: { name: "United States", voice: "en-US-AriaNeural" },
@@ -59,29 +59,13 @@ const COUNTRY_MAP: Record<string, { name: string; voice: string }> = {
 
 export async function POST(req: Request) {
   try {
-    // 🔒 Quota Gate Check for Basic Users
-    try {
-      const { user } = await verifySession(req);
-      if (user) {
-        const quota = await getUserQuota(user.uid, user.role);
-        if (quota.isExceeded) {
-          return NextResponse.json(
-            {
-              error: `Generation quota exhausted. Basic user plan is limited to ${quota.limit} videos (You have used ${quota.totalUsed}/${quota.limit}).`,
-              code: "QUOTA_EXCEEDED",
-              quota,
-            },
-            { status: 429 }
-          );
-        }
-      }
-    } catch (quotaCheckErr: any) {
-      if (quotaCheckErr.name === "QuotaExceededError" || quotaCheckErr.status === 429) {
-        return NextResponse.json(
-          { error: quotaCheckErr.message, code: "QUOTA_EXCEEDED" },
-          { status: 429 }
-        );
-      }
+    const authenticated = await verifySession(req).catch(() => null);
+    const currentUser = authenticated?.user;
+    if (process.env.NODE_ENV === "production" && !currentUser) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const body = await req.json();
@@ -123,6 +107,30 @@ export async function POST(req: Request) {
       });
     }
 
+    let treasuryModel:
+      Awaited<ReturnType<typeof prepareTreasuryModelContext>> | undefined;
+
+    const ensureTreasuryModelContext = async () => {
+      if (!treasuryModel) {
+        treasuryModel = await prepareTreasuryModelContext({
+          command: "Generate Geo Quiz: " + countryMeta.name,
+          missionId:
+            "mis_geo_quiz_" +
+            (currentUser?.uid || countryCode.toLowerCase()),
+          taskId:
+            "geo-quiz-" +
+            slug +
+            "-v" +
+            String(version),
+          floorId: "floor02_scripting",
+          preferredProviderId: "groq",
+          subtask: "geo_quiz_generation",
+          maxRetries: 0,
+        });
+      }
+      return treasuryModel;
+    };
+
     // Phase 4: Cache Miss - standard LLM generation via Groq SDK Node.js client
     // Feature 4: Fetch dynamic prompt blueprint from Firestore (fallback to hardcoded)
     let blueprintSystem: string | null = null;
@@ -138,12 +146,7 @@ export async function POST(req: Request) {
     } catch (bpErr: any) {
       console.warn("[Blueprint] Firestore fetch failed, using hardcoded prompt:", bpErr.message);
     }
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing GROQ_API_KEY in environment variables");
-    }
-
-    const groq = new Groq({ apiKey });
+    const apiKey = process.env.GROQ_API_KEY || "";
 
     const system = blueprintSystem ?? `You are a viral YouTube Shorts script and quiz generator.
 You MUST output a single, flat JSON object containing:
@@ -185,25 +188,23 @@ Rules:
 - "visual_prompt" must be a descriptive prompt for generating the background graphic.
 `;
 
-    // 1) Groq LPU invocation with response_format constraint
+    // 1) Treasury-gated model invocation with constrained JSON output.
     const t0 = performance.now();
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: prompt }
-      ],
-      model: "llama-3.1-8b-instant", // Fast Groq model (llama3-8b-8192 was decommissioned)
-      response_format: { type: "json_object" }, // Constrained decoding
+    const treasuryModel = await ensureTreasuryModelContext();
+    const llm = providerFactory("groq", {
+      apiKey,
+      treasuryContext: treasuryModel.context,
+    });
+    const raw = await llm.generateText({
+      prompt,
+      system,
       temperature: 0.7,
-      max_tokens: 1024,
+      maxTokens: 1024,
     });
     const t1 = performance.now();
-    console.log(`[GROQ LPU PERF]: Generated JSON schema in ${(t1 - t0).toFixed(2)} ms`);
-
-    const raw = chatCompletion.choices[0]?.message?.content;
-    if (!raw) {
-      throw new Error("Groq returned empty chat completion content");
-    }
+    console.log(
+      `[Treasury Geo Quiz] Model execution completed in ${(t1 - t0).toFixed(2)} ms`,
+    );
 
     let data: any = null;
     try {
@@ -216,7 +217,7 @@ Rules:
     }
 
     if (!data || !Array.isArray(data.questions)) {
-      throw new Error("Failed to parse valid Groq JSON payload: " + raw);
+      throw new Error("Failed to parse valid Treasury-backed geo quiz payload");
     }
 
     // Phase 4.5: YouTubeMonetizationMentor Auditing Layer (Feature 5: hooks[] A/B Matrix)
@@ -244,18 +245,16 @@ Audit it and output a valid JSON object with this exact format:
   "visual_prompt": "..."
 }`;
 
-    const mentorCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: mentorSystem },
-        { role: "user", content: mentorPrompt }
-      ],
-      model: "llama-3.1-8b-instant",
-      response_format: { type: "json_object" }, // Constrained decoding
-      temperature: 0.5,
-      max_tokens: 1024,
+    const mentorLlM = providerFactory("groq", {
+      apiKey,
+      treasuryContext: (await ensureTreasuryModelContext()).context,
     });
-
-    const mentorRaw = mentorCompletion.choices[0]?.message?.content;
+    const mentorRaw = await mentorLlM.generateText({
+      prompt: mentorPrompt,
+      system: mentorSystem,
+      temperature: 0.5,
+      maxTokens: 1024,
+    }); mentorCompletion.choices[0]?.message?.content;
     if (!mentorRaw) {
       throw new Error("Mentor node returned empty content");
     }
