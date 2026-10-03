@@ -110,14 +110,14 @@ class IntelligentRouterClass {
       ? {
           ...context,
           maxCostLimit:
-            normalizedContext.maxCostLimit ?? treasuryContext.maxCostUsd,
+            context.maxCostLimit ?? treasuryContext.maxCostUsd,
           maxRetries:
             context.maxRetries ?? treasuryContext.maxRetries ?? 0,
           overseerCommandId:
             context.overseerCommandId ??
             treasuryContext.overseerCommandId,
           accountId:
-            normalizedContext.accountId ?? treasuryContext.accountId,
+            context.accountId ?? treasuryContext.accountId,
           missionId:
             context.missionId ?? treasuryContext.missionId,
           runId:
@@ -195,13 +195,13 @@ class IntelligentRouterClass {
     const missionId =
       normalizedContext.missionId ?? normalizedContext.runId ?? "ai-runtime";
     const accountId =
-      context.accountId ??
+      normalizedContext.accountId ??
       process.env.FACTORYOS_TREASURY_ACCOUNT_ID ??
       "factoryos";
 
     const maxCostUsd = Math.max(
       0,
-      context.maxCostLimit ??
+      normalizedContext.maxCostLimit ??
         Number(process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? "0.10"),
     );
     const treasuryBudget = {
