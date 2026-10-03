@@ -4,6 +4,8 @@ import {
   type NotebookProviderType,
 } from "../factoryos/core/compute/notebooks";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const LIVE_PROVIDERS: NotebookProviderType[] = ["KAGGLE", "COLAB", "LIGHTNING"];
 
@@ -50,8 +52,19 @@ async function runLive(provider: NotebookProviderType) {
     // turn normal hosted-capacity latency into a false failure.
     const timeoutMs = Number(process.env.NOTEBOOK_LIVE_TIMEOUT_MS || 1200000);
     const outputPath = "/kaggle/working/shortforge-live-notebook-probe.mp4";
+    const artifactDir = path.join(
+      process.env.GITHUB_WORKSPACE || process.cwd(),
+      "artifacts",
+      "kaggle-live",
+    );
+    await fs.mkdir(artifactDir, { recursive: true });
+    const persistedArtifact = path.join(
+      artifactDir,
+      "shortforge-live-notebook-probe.mp4",
+    );
     const result = await adapter.execute(
       {
+        artifactDestinationPath: persistedArtifact,
         command:
           "ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=320x180:d=1 -an -c:v libx264 -pix_fmt yuv420p " +
           outputPath,
@@ -66,6 +79,24 @@ async function runLive(provider: NotebookProviderType) {
       },
       credentials,
     );
+
+    if (
+      result.status === "SUCCEEDED" &&
+      result.verificationLevel === "PHYSICAL_ARTIFACT_VERIFIED" &&
+      result.artifactPath
+    ) {
+      const persistedStat = await fs.stat(result.artifactPath);
+      console.log(
+        JSON.stringify(
+          {
+            persistedArtifactPath: result.artifactPath,
+            persistedArtifactByteLength: persistedStat.size,
+          },
+          null,
+          2,
+        ),
+      );
+    }
 
     console.log(JSON.stringify({ provider, liveResult: result }, null, 2));
 
