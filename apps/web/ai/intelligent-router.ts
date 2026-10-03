@@ -1,4 +1,9 @@
 import { createHash } from "node:crypto";
+import {
+  classifyProviderError,
+  ProviderAuthenticationError,
+  ProviderBadRequestError,
+} from "../lib/ai-provider/errors";
 import { AICapability, AIProviderRegistry, ModelMeta } from "./capability-registry";
 import type { TreasuryService } from "../factoryos/core/treasury/TreasuryService";
 import {
@@ -397,52 +402,77 @@ class IntelligentRouterClass {
         } catch (err: any) {
           lastError = err;
 
-          if (reservation?.reservation?.reservationId && this.treasuryService) {
-            let actualCostUsd = reservation.admission.estimatedCostUsd;
-            let actualTokens = inputTokens + outputTokenCeiling;
+          if (
+            reservation?.reservation?.reservationId &&
+            this.treasuryService
+          ) {
+            const usage = executionId
+              ? plugin.getExecutionUsage?.(executionId)
+              : undefined;
 
-            if (executionId) {
-              const usage = plugin.getExecutionUsage?.(executionId);
-              if (usage) {
-                actualTokens =
-                  Math.max(0, usage.inputTokens) +
-                  Math.max(0, usage.outputTokens);
-                if (isPaid) {
-                  const measured = this.treasuryService
+            if (usage) {
+              const actualTokens =
+                Math.max(0, usage.inputTokens) +
+                Math.max(0, usage.outputTokens);
+
+              const measured = isPaid
+                ? this.treasuryService
                     .getPriceRegistry()
                     .estimateModelInvocation(
                       pluginId,
                       candidate.modelId,
                       usage.inputTokens,
                       usage.outputTokens,
-                    );
-                  if (measured.priced) {
-                    actualCostUsd = measured.totalCostUsd;
-                  }
-                } else {
-                  actualCostUsd = 0;
-                }
+                    )
+                : {
+                    priced: true,
+                    totalCostUsd: 0,
+                  };
+
+              if (measured.priced) {
+                await this.treasuryService
+                  .settle(reservation.reservation.reservationId, {
+                    reservationId:
+                      reservation.reservation.reservationId,
+                    actualCostUsd: Math.max(
+                      0,
+                      measured.totalCostUsd,
+                    ),
+                    actualCapacityUnits: 0,
+                    actualTokens,
+                    actualDurationMs: undefined,
+                    executionEvidenceId:
+                      executionId ??
+                      "treasury-model-failure:" +
+                        taskId +
+                        ":" +
+                        attemptNumber,
+                    verified: false,
+                    measuredAt: new Date().toISOString(),
+                  })
+                  .catch(() => {});
+              }
+            } else {
+              // No physical usage measurement exists. A definitive auth/bad-request
+              // rejection is non-billable and can release safely. Network/server/
+              // timeout/unknown failures remain held for reconciliation because the
+              // provider may have accepted work before the caller lost the response.
+              const classified = classifyProviderError(
+                err,
+                pluginId,
+              );
+              if (
+                classified instanceof ProviderAuthenticationError ||
+                classified instanceof ProviderBadRequestError
+              ) {
+                await this.treasuryService
+                  .release(
+                    reservation.reservation.reservationId,
+                    "MODEL_REQUEST_REJECTED_BEFORE_ACCEPTANCE",
+                  )
+                  .catch(() => {});
               }
             }
-
-            await this.treasuryService
-              .settle(reservation.reservation.reservationId, {
-                reservationId:
-                  reservation.reservation.reservationId,
-                actualCostUsd: Math.max(0, actualCostUsd),
-                actualCapacityUnits: 0,
-                actualTokens,
-                actualDurationMs: undefined,
-                executionEvidenceId:
-                  executionId ??
-                  "treasury-model-failure:" +
-                    taskId +
-                    ":" +
-                    attemptNumber,
-                verified: false,
-                measuredAt: new Date().toISOString(),
-              })
-              .catch(() => {});
           }
 
           health.errorRate = health.errorRate * 0.9 + 0.1;
