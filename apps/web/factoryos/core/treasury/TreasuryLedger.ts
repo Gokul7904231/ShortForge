@@ -38,6 +38,44 @@ function stripId<T extends { _id?: unknown }>(doc: T): Omit<T, "_id"> {
   return rest;
 }
 
+function hydrateTreasuryAccount(account: TreasuryAccount): TreasuryAccount {
+  const fallbackTokenCapacity = Math.max(
+    0,
+    Number(process.env.FACTORYOS_TREASURY_TOKEN_CAPACITY_UNITS || "1000000"),
+  );
+  const tokenCapacityUnits = Number.isFinite(account.tokenCapacityUnits)
+    ? Math.max(0, account.tokenCapacityUnits)
+    : fallbackTokenCapacity;
+  const reservedTokenCapacityUnits = Number.isFinite(
+    account.reservedTokenCapacityUnits,
+  )
+    ? Math.max(0, account.reservedTokenCapacityUnits)
+    : 0;
+  const settledTokenCapacityUnits = Number.isFinite(
+    account.settledTokenCapacityUnits,
+  )
+    ? Math.max(0, account.settledTokenCapacityUnits)
+    : 0;
+  const availableTokenCapacityUnits = Number.isFinite(
+    account.availableTokenCapacityUnits,
+  )
+    ? Math.max(0, account.availableTokenCapacityUnits)
+    : Math.max(
+        0,
+        tokenCapacityUnits -
+          reservedTokenCapacityUnits -
+          settledTokenCapacityUnits,
+      );
+
+  return {
+    ...account,
+    tokenCapacityUnits,
+    availableTokenCapacityUnits,
+    reservedTokenCapacityUnits,
+    settledTokenCapacityUnits,
+  };
+}
+
 export class MongoTreasuryLedger implements TreasuryLedgerStore {
   private readonly accounts: Collection<TreasuryAccount & { _id?: string }>;
   private readonly reservations: Collection<TreasuryReservation & { _id?: string }>;
@@ -82,7 +120,7 @@ export class MongoTreasuryLedger implements TreasuryLedgerStore {
     return {
       getAccount: async (accountId) => {
         const doc = await this.accounts.findOne({ accountId }, { session });
-        return doc ? (stripId(doc) as TreasuryAccount) : null;
+        return doc ? hydrateTreasuryAccount(stripId(doc) as TreasuryAccount) : null;
       },
       putAccount: async (account) => {
         await this.accounts.replaceOne({ accountId: account.accountId }, structuredClone(account), { upsert: true, session });
@@ -121,8 +159,9 @@ export class MongoTreasuryLedger implements TreasuryLedgerStore {
     return this.atomic(async (tx) => {
       const existing = await tx.getAccount(account.accountId);
       if (existing) return existing;
-      await tx.putAccount(account);
-      return account;
+      const hydrated = hydrateTreasuryAccount(account);
+      await tx.putAccount(hydrated);
+      return hydrated;
     });
   }
 
@@ -184,7 +223,7 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
       const tx: TreasuryLedgerTransaction = {
         getAccount: async (accountId) => {
           const account = accounts.get(accountId);
-          return account ? structuredClone(account) : null;
+          return account ? hydrateTreasuryAccount(structuredClone(account)) : null;
         },
         putAccount: async (account) => {
           accounts.set(account.accountId, structuredClone(account));
