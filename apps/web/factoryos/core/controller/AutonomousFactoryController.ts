@@ -180,9 +180,23 @@ export class AutonomousFactoryController {
       this.treasuryService = createMongoTreasuryService(this.mongoClient);
       const accountId = process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos";
       const budgetUsd = Math.max(0, Number(process.env.FACTORYOS_TREASURY_BUDGET_USD || "25"));
-      const capacityUnits = Math.max(1, Number(process.env.FACTORYOS_TREASURY_CAPACITY_UNITS || "3600"));
+      const capacityUnits = Math.max(
+        1,
+        Number(process.env.FACTORYOS_TREASURY_CAPACITY_UNITS || "3600"),
+      );
+      const tokenCapacityUnits = Math.max(
+        0,
+        Number(process.env.FACTORYOS_TREASURY_TOKEN_CAPACITY_UNITS || "1000000"),
+      );
       await this.treasuryService.ensureAccount(
-        createTreasuryAccount(accountId, budgetUsd, capacityUnits),
+        createTreasuryAccount(
+          accountId,
+          budgetUsd,
+          capacityUnits,
+          "OPEN",
+          new Date(),
+          tokenCapacityUnits,
+        ),
       );
       // Bind the canonical economic authority into the compute front door.
       // Production renders must not be able to reach ComputeRouter without Treasury admission.
