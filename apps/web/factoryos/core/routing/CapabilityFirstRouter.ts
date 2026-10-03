@@ -142,7 +142,7 @@ export class CapabilityFirstRouter {
             ? Number(process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? 0.10)
             : Number(process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? 0.10),
           maxTokens: tokens,
-          maxCapacityUnits: tokens,
+          maxCapacityUnits: 0,
           maxRetries: 0,
         },
       );
@@ -166,7 +166,7 @@ export class CapabilityFirstRouter {
         {
           maxCostUsd: Math.max(assessment.estimatedCostUsd, 0),
           maxTokens: tokens,
-          maxCapacityUnits: tokens,
+          maxCapacityUnits: 0,
           maxRetries: 0,
         },
       );
