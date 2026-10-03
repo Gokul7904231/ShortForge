@@ -66,3 +66,5 @@ Secrets are passed only through the environment. They are not committed and are 
 MCP success is a tool result, not production truth. Worker admission, leases/fencing, CAS authority, F07 acceptance, and ReleaseAuthorization remain outside these servers.
 
 > Live-proof note: Kaggle's physical-artifact smoke defaults to CPU for deterministic, low-queue verification; GPU execution remains selectable with `KAGGLE_LIVE_GPU=1`.
+
+<!-- lightning-live-proof-trigger-20261003 -->
