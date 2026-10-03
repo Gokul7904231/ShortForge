@@ -629,7 +629,7 @@ export class TreasuryKernel {
     if (!command.commandId || !command.overseerCommandId) {
       throw new TreasuryDeniedError("Treasury commandId and overseerCommandId are required");
     }
-    if (command.issuer.authority !== "OVERSEER") {
+    if (!command.issuer || command.issuer.authority !== "OVERSEER") {
       throw new TreasuryDeniedError("Treasurer accepts discretionary commands only from Overseer");
     }
     if (!command.issuer.issuerId) throw new TreasuryDeniedError("Overseer issuerId is required");
@@ -646,9 +646,16 @@ export class TreasuryKernel {
       throw new TreasuryDeniedError("Treasury command is expired");
     }
 
+    if (!Array.isArray(command.resourceRequest) || command.resourceRequest.length === 0) {
+      throw new TreasuryDeniedError("At least one Treasury resource request is required");
+    }
+
     const envelope: TreasuryBudgetEnvelope = command.budgetEnvelope;
     assertNonNegativeFinite(envelope.maxCostUsd, "maxCostUsd");
     assertNonNegativeFinite(envelope.maxCapacityUnits ?? 0, "maxCapacityUnits");
+    if (envelope.maxTokens !== undefined) assertNonNegativeFinite(envelope.maxTokens, "maxTokens");
+    if (envelope.maxDurationMs !== undefined) assertNonNegativeFinite(envelope.maxDurationMs, "maxDurationMs");
+    if (envelope.maxRetries !== undefined) assertNonNegativeFinite(envelope.maxRetries, "maxRetries");
 
     if (envelope.maxCostUsd > this.policy.maxSingleReservationUsd) {
       throw new TreasuryDeniedError(
