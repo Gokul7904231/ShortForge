@@ -13,7 +13,6 @@
 import type {
   TreasuryLedgerEvent,
   TreasuryReport,
-  TreasuryReservation,
 } from "./TreasuryContracts";
 import type { TreasuryService } from "./TreasuryService";
 
