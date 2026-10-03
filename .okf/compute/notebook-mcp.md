@@ -14,12 +14,17 @@ They are bounded connection/capability diagnostics. They do not replace the cano
 
 ## Tool surface
 
-Each server exposes only two tools:
+Each server exposes provider-specific connection/capability diagnostics. No tool accepts credentials as arguments.
 
-- provider_connection_check: performs the provider's real credential/reachability check using secrets already present in the server process environment.
-- provider_capabilities: returns canonical provider metadata.
+Kaggle additionally exposes:
+- `kaggle_official_mcp_check`: probes Kaggle's official remote MCP endpoint.
+- `kaggle_official_mcp_tools`: discovers the live remote MCP tool catalog without executing a tool.
 
-No tool accepts credentials as arguments. No tool accepts arbitrary remote commands.
+Lightning additionally exposes:
+- `lightning_litserve_mcp_check`: probes a configured LitServe Streamable HTTP MCP endpoint.
+- `lightning_litserve_mcp_tools`: discovers the configured LitServe MCP tool catalog without executing a tool.
+
+These native-MCP tools are diagnostics/interop surfaces, not F06 worker authority.
 
 ## Live proof
 
@@ -66,3 +71,24 @@ Secrets are passed only through the environment. They are not committed and are 
 MCP success is a tool result, not production truth. Worker admission, leases/fencing, CAS authority, F07 acceptance, and ReleaseAuthorization remain outside these servers.
 
 > Live-proof note: Kaggle's physical-artifact smoke defaults to CPU for deterministic, low-queue verification; GPU execution remains selectable with `KAGGLE_LIVE_GPU=1`.
+
+
+## Provider-native MCP research — 2026-10-03
+
+### Kaggle
+
+Kaggle now publishes an official remote MCP server at `https://www.kaggle.com/mcp`. Its current documentation supports OAuth 2.0 and bearer token authentication; token authentication uses a Kaggle token beginning with `KGAT`. The notebook tool surface includes session cancellation/creation, notebook metadata, session status, file listing, output listing/download, notebook saving, and notebook search. fileciteturn617file0L5-L8 fileciteturn617file0L80-L98 fileciteturn617file0L171-L217
+
+ShortForge now treats that official MCP endpoint as a provider-native interoperability surface rather than reimplementing Kaggle's entire remote MCP tool catalog. The dedicated MCP can probe the official endpoint and discover its tools, while the canonical Kaggle adapter remains responsible for the verified kernel lifecycle/physical-artifact path.
+
+### Lightning / LitServe
+
+Current LitServe source implements MCP as Streamable HTTP mounted at `/mcp/`, with a low-level MCP server and a stateless Streamable HTTP session manager. A LitServe `MCP` object converts a `LitAPI` endpoint into an MCP tool using its name, description, and input schema. citeturn779088search2turn779088search3
+
+LitServe's current documentation/repository positions MCP as a supported server capability alongside batching, streaming, multi-GPU serving, and deployment. citeturn779088search0
+
+ShortForge now adds a native LitServe MCP diagnostics path. It expects an explicit `LIGHTNING_LITSERVE_MCP_URL` and optionally a bearer token or `X-API-Key`. The probe normalizes `/mcp` to `/mcp/`, performs the MCP initialize/tools-list handshake, captures any session identifier, follows redirects, and never executes arbitrary remote tools.
+
+### Security/authority
+
+Provider-native MCP discovery is deliberately separated from provider control and F06 worker admission. Tool discovery does not imply execution permission, persistence, artifact truth, lease ownership, CAS authority, or F07 release authorization.
