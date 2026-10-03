@@ -64,7 +64,9 @@ WorkflowStepRegistry.register("critic", async (context) => {
 
   try {
     const { AIJudgeConsensus } = require("../../lib/capabilities/AIJudgeConsensus");
-    const result = await AIJudgeConsensus.evaluate(script, "majority");
+    const result = await AIJudgeConsensus.evaluate(script, "majority", {
+      treasuryContext: context.treasuryModelContext,
+    });
     scores.hookScore = result.hookScore;
     scores.sceneScore = result.sceneScore;
     scores.retentionScore = result.grammarScore;
@@ -163,7 +165,11 @@ WorkflowStepRegistry.register("scene", async (context) => {
     try {
       console.log(`[StepExecutor] Running quiz proofreading correction on ${questionsList.length} questions...`);
       const { quizCorrectorAgent } = await import("../../agents/quiz-corrector-agent");
-      const corrected = await quizCorrectorAgent({ topic: context.job.topic, questions: questionsList });
+      const corrected = await quizCorrectorAgent({
+        topic: context.job.topic,
+        questions: questionsList,
+        treasuryContext: context.treasuryModelContext,
+      });
       if (corrected.corrections.length > 0) {
         console.log(`[StepExecutor] Quiz corrections applied: ${corrected.corrections.join(" | ")}`);
       }
@@ -185,7 +191,11 @@ WorkflowStepRegistry.register("scene", async (context) => {
 Return only the raw hook text, no quotation marks.`;
       
       const hookResult = await IntelligentRouter.routeExecute(
-        { capability: "SCRIPT", subtask: "text" },
+        {
+          capability: "SCRIPT",
+          subtask: "text",
+          treasuryContext: context.treasuryModelContext,
+        },
         {
           prompt: hookPrompt,
           system: "You are a professional Creative Director. Return only the hook text.",
@@ -359,7 +369,10 @@ WorkflowStepRegistry.register("voice", async (context) => {
         };
       });
 
-      const optimizedQs = await QuestionOptimizer.optimize(rawQs);
+      const optimizedQs = await QuestionOptimizer.optimize(
+        rawQs,
+        context.treasuryModelContext,
+      );
       
       // Rebuild scripts with clean punctuation spacing
       scenes.forEach((scene: any) => {
