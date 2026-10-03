@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR107-Colab-API-Render-Adapter",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/colab-api-render-adapter-20261003",
+  "objective": "Prepare Google Colab as a bounded ShortForge rendering backend using the allowlisted Colab Runtime API and standard Jupyter interface, ending in physical MP4 verification while preserving F06 worker and F07 authority boundaries.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Notebook providers are rendering backends in this workstream.",
+      "F06 worker admission remains separate from provider execution.",
+      "F07 remains the independent physical-artifact evidence boundary.",
+      "Provider credentials and short-lived runtime proxy tokens must not be exposed through MCP arguments or persisted in runtime records.",
+      "No synthetic success is permitted when remote execution or artifact retrieval fails."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/compute/notebook-fabric.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No provider secret values are committed.",
+      "Colab runtime proxy tokens are retained only in process memory.",
+      "The Jupyter bridge is bounded to one kernel execution and runtime-owned artifact retrieval."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "COLAB-ARCH-001",
+      "originalConflict": "The existing Colab adapter was control-plane-only, while ShortForge's notebook providers are required to serve the rendering path.",
+      "status": "RESOLVED",
+      "proposedResolution": "Implement a bounded Jupyter execution and artifact-retrieval bridge behind ColabNotebookAdapter rather than using browser MCP as the production render path.",
+      "acceptedResolution": "Colab uses the allowlisted Runtime API for runtime lifecycle and the runtime's Jupyter interface for rendering; F06 admission and F07 artifact truth remain outside the adapter.",
+      "decisionAuthority": "ShortForge rendering backend architecture",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/compute/notebooks/ColabNotebookAdapter.ts",
+        "apps/web/scripts/colab-jupyter-exec.py",
+        ".okf/compute/notebook-fabric.md"
+      ]
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Upgraded ColabNotebookAdapter from control-only to bounded Jupyter-backed rendering execution.",
+    "Added Google ADC support alongside explicit ephemeral Colab access tokens.",
+    "Added eligible runtime-spec selection and managed runtime lifecycle.",
+    "Added Jupyter kernel WebSocket execution bridge with stdout/stderr and exit-code capture.",
+    "Added physical artifact retrieval, SHA-256, byte-length, and MP4 ftyp verification.",
+    "Added deterministic Colab physical-render workflow switch and bridge dependency checks.",
+    "Updated notebook render-fabric and MCP governance documentation.",
+    "Added Colab adapter contract tests."
+  ],
+  "verificationPlan": [
+    "Run repository CI, notebook-fabric contract tests, MCP contract tests, and Python bridge syntax validation.",
+    "After Colab API allowlist approval, enable colaboratory.googleapis.com on the submitted GCP project.",
+    "Run COLAB_LIVE_RENDER=1 against an eligible T4 runtime.",
+    "Require PHYSICAL_ARTIFACT_VERIFIED, non-empty artifact, SHA-256, byte length, and MP4 ftyp proof.",
+    "Retain Colab productionWorkerEligible=false until the independent F06 worker admission contract is satisfied."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "notebookFabricCI": "PENDING",
+    "mcpContractCI": "PENDING",
+    "colabApiAccess": "PENDING_GOOGLE_ALLOWLIST",
+    "colabPhysicalRender": "PENDING_GOOGLE_API_ACCESS"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "Implementation is prepared but external Colab provider evidence remains pending because the submitted project is not yet permitted to enable the Colab API.",
+    "No Colab live render is claimed by this PR.",
+    "Kaggle and Lightning are tracked separately: Kaggle physical-artifact proof is already complete; Lightning latest live proof is code-execution verified and still needs physical MP4 transfer proof."
+  ]
+}
