@@ -34,7 +34,7 @@ The dedicated MCP exposes bounded Colab connection/capability diagnostics. The a
 
 ### Lightning AI
 
-A live run authenticates the Lightning API, starts a Studio by default on CPU, executes a deterministic Python marker through the Lightning SDK, checks the exit code/output, and stops the Studio. The latest live run succeeded at CODE_EXECUTION_VERIFIED. Physical MP4 transfer into ShortForge CAS is still the remaining rendering-proof step.
+A live run authenticates the Lightning API, addresses the Studio through explicit LIGHTNING_TEAMSPACE configuration, starts a Studio by default on CPU, executes a deterministic Python marker through the Lightning SDK, checks the exit code/output, and stops the Studio. The latest live run succeeded at CODE_EXECUTION_VERIFIED. Physical MP4 transfer into ShortForge CAS is still the remaining rendering-proof step.
 
 ## Credentials
 
