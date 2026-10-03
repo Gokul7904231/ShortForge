@@ -29,6 +29,7 @@ import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 import type { TreasuryEconomicPermit } from "../../treasury/TreasuryContracts";
 import type { TreasuryService } from "../../treasury/TreasuryService";
+import { computeTreasuryExecutionScopeDigest } from "../../treasury/TreasuryScope";
 
 export class ComputeGateway {
   private static instance: ComputeGateway | null = null;
@@ -174,10 +175,26 @@ export class ComputeGateway {
           "[ComputeGateway] Production render requires an active TreasuryEconomicPermit",
         );
       }
+      const renderIntent = (job.manifest as { renderIntent?: unknown }).renderIntent;
+      const expectedScopeDigest = computeTreasuryExecutionScopeDigest({
+        version: 1,
+        missionId: job.missionId,
+        jobId: job.jobId,
+        floorId: economicPermit.floorId || "floor06_rendering",
+        overseerCommandId: economicPermit.overseerCommandId,
+        renderIntent,
+      });
+
+      if (expectedScopeDigest !== economicPermit.scopeDigest) {
+        throw new Error(
+          "[ComputeGateway] Treasury permit does not match the actual render execution scope",
+        );
+      }
+
       await this.treasuryService.validatePermit(economicPermit, {
         jobId: job.jobId,
         missionId: job.missionId,
-        scopeDigest: economicPermit.scopeDigest,
+        scopeDigest: expectedScopeDigest,
         accountId: economicPermit.accountId,
       });
     }
