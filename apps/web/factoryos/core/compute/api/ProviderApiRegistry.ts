@@ -17,6 +17,8 @@ import type {
 } from "./ProviderApiContracts";
 import { ProviderApiOperationJournal } from "./ProviderApiOperationJournal";
 import { ProviderApiError } from "./ProviderApiTransport";
+import type { TreasuryEconomicAdmission, TreasuryAdmissionContext } from "../../treasury/TreasuryEconomicAdmission";
+import type { TreasuryBudgetEnvelope, TreasuryEconomicPermit, TreasuryReservation } from "../../treasury/TreasuryContracts";
 
 export class ProviderApiRegistry {
   private readonly adapters = new Map<ApiProviderType, ProviderControlAdapter>();
@@ -268,6 +270,69 @@ export class ProviderApiRegistry {
         providerErrorMessage: error?.message || String(error),
         reconciliationRequired: false,
       });
+      throw error;
+    }
+  }
+
+  /**
+   * Economically gated provisioning seam.
+   *
+   * Offer selection remains outside this registry. Treasury admits the exact
+   * offer first; this registry then performs the physical provider mutation.
+   */
+  async provisionWithTreasury(
+    type: ApiProviderType,
+    request: ProvisionRequest,
+    offer: ComputeOffer,
+    admission: TreasuryEconomicAdmission,
+    context: TreasuryAdmissionContext,
+    budget: TreasuryBudgetEnvelope,
+    durationSeconds: number,
+  ): Promise<{
+    provision: ProvisionAccepted;
+    reservation: TreasuryReservation;
+    permit: TreasuryEconomicPermit;
+    estimatedCostUsd: number;
+  }> {
+    if (offer.providerType !== type) {
+      throw new Error(
+        "Treasury compute admission provider type does not match provisioning target",
+      );
+    }
+    if (offer.offerId !== request.offerId) {
+      throw new Error(
+        "Treasury compute admission offerId does not match provisioning request",
+      );
+    }
+
+    const admitted = await admission.reserveComputeOffer(
+      context,
+      offer,
+      durationSeconds,
+      budget,
+    );
+
+    try {
+      const provision = await this.provision({
+        ...request,
+        missionId: request.missionId ?? context.missionId,
+      });
+
+      return {
+        provision,
+        reservation: admitted.reservation,
+        permit: admitted.permit,
+        estimatedCostUsd: admitted.admission.estimate.totalCostUsd,
+      };
+    } catch (error) {
+      const ambiguous =
+        error instanceof ProviderApiError && error.ambiguous;
+      if (!ambiguous) {
+        await admission.releaseReservation(
+          admitted.reservation.reservationId,
+          "PROVISION_FAILED",
+        ).catch(() => {});
+      }
       throw error;
     }
   }
