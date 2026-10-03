@@ -40,6 +40,7 @@ import type {
   TreasuryEconomicIntelligence,
   TreasuryEconomicIntelligenceSnapshot,
 } from "../treasury/TreasuryEconomicIntelligence";
+import { projectTreasuryEconomicAdvice } from "../treasury/TreasuryEconomicAdvice";
 import { computeTreasuryExecutionScopeDigest } from "../treasury/TreasuryScope";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
@@ -469,7 +470,19 @@ export class OverseerControlPlane {
     const currentState = this.worldState.getState();
     const assessment = this.thinkingController.assessCommand(run.command, currentState);
 
-    // 0. Typed Decision Batch Evaluation (Decision Fabric)
+    // 0. Treasury Economic Intelligence is advisory context only.
+    const treasuryEconomicAdvice =
+      this.treasuryEconomicIntelligence && this.treasuryService
+        ? await this.treasuryEconomicIntelligence
+            .analyze(
+              process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+              { windowMs: 24 * 60 * 60 * 1000, eventLimit: 500 },
+            )
+            .then(projectTreasuryEconomicAdvice)
+            .catch(() => null)
+        : null;
+
+    // 1. Typed Decision Batch Evaluation (Decision Fabric)
     const decisionEngine = new DecisionEngine();
     const batchResult = await decisionEngine.evaluateBatch({
       batchId: `batch_${run.runId}`,
@@ -495,6 +508,7 @@ export class OverseerControlPlane {
       sharedContext: {
         command: run.command,
         activeCases: (currentState as any).activeCaseIds?.length || 0,
+        treasuryEconomicAdvice,
       },
     });
 
@@ -503,7 +517,7 @@ export class OverseerControlPlane {
         ? (batchResult.answersById["intent"] as any).selected
         : "EXECUTE_AUTONOMOUS_OPERATION";
 
-    // 1. Record Decision in Ledger
+    // 2. Record Decision in Ledger
     const decision = await this.decisionLedger.record({
       goalId: run.runId,
       stateSnapshot: currentState as unknown as Record<string, unknown>,
@@ -517,7 +531,7 @@ export class OverseerControlPlane {
       executionTimeMs: 50,
     });
 
-    // 2. Autonomous Task DAG Generation & Floor Dispatching
+    // 3. Autonomous Task DAG Generation & Floor Dispatching
     const nodes = this.generateTaskNodesForGoal(run.command);
     const dag = this.dagPlanner.createDAG(run.runId, nodes);
     let maxParallelTasks = 3;
