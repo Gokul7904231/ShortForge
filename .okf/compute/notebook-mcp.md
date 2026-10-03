@@ -1,6 +1,6 @@
 # ShortForge Notebook MCP Diagnostics
 
-Status: finalized — live Kaggle provider and MCP proof passed 2026-10-03.
+Status: Kaggle finalized; Lightning live verification in progress 2026-10-03.
 
 ## Dedicated MCPs
 
@@ -47,7 +47,7 @@ A live run verifies the Colab runtime-spec endpoint. Setting COLAB_LIVE_PROVISIO
 
 ### Lightning AI
 
-A live run starts a CPU Studio by default, executes a deterministic Python marker through the Lightning SDK, checks the returned exit code/output, and stops the Studio. A different machine can be supplied explicitly through the workflow input.
+A live run starts a CPU Studio by default, executes a deterministic Python marker through the Lightning SDK, checks the returned exit code/output, and stops the Studio. The Studio is addressed through an explicit LIGHTNING_TEAMSPACE configuration; GPU machine selection remains opt-in through the workflow input and must be capacity-verified before launch.
 
 ## Credentials
 
