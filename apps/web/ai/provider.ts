@@ -16,16 +16,12 @@ export type TreasuryModelExecutionContext = {
   readonly subtask?: string;
 };
 
-export type ProviderContext = {
-  apiKey?: string;
-  treasuryContext?: TreasuryModelExecutionContext;
-};
-
 export type LLMProvider = "gemini" | "groq" | "openrouter" | "huggingface";
 
 export type ProviderContext = {
   // Keep generic; concrete provider impls can interpret.
   apiKey?: string;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export interface LLMProviderAdapter {
