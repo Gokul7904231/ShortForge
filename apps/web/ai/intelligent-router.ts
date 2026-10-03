@@ -96,6 +96,7 @@ class IntelligentRouterClass {
     AIConfigManager.loadAll();
 
     const treasuryManaged =
+      process.env.NODE_ENV === "production" ||
       this.treasuryRequired ||
       Boolean(this.treasuryAdmission && context.overseerCommandId);
 
