@@ -103,6 +103,14 @@ The Treasury service is persistent through transaction-capable MongoDB in produc
 7. Introduce Ascalon economic advice in shadow mode without Treasury authority.
 
 
+## Multidimensional resource accounting
+
+Treasury keeps monetary USD, compute/scarcity capacity, and inference-token capacity as separate ledgers. Inference token reservations do not consume the compute capacity bucket. This prevents model activity from starving GPU/worker reservations and makes each economic permit reflect the actual resource class being authorized.
+
+Production configuration:
+- `FACTORYOS_TREASURY_CAPACITY_UNITS`: compute/scarcity capacity.
+- `FACTORYOS_TREASURY_TOKEN_CAPACITY_UNITS`: inference-token capacity.
+
 ## Authority rule
 
 The migration is intentionally asymmetric:
