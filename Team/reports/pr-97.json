@@ -125,5 +125,12 @@
     "reMaker": "EVIDENCE_GATED_PENDING_CI",
     "ascalon": "TRAINING_CURRICULUM_READY_PENDING_CURRENT_REMAKER_ADMISSION",
     "modelWeights": "NOT_TRAINED"
-  }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ]
 }
