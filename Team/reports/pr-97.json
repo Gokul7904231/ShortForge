@@ -119,7 +119,8 @@
     },
     "ascalonTrainingAdmission": {
       "status": "PENDING_FRESH_RUN"
-    }
+    },
+    "reconciliationSweep": "RETRIGGERED_2026-10-03"
   },
   "trainingReadiness": {
     "reMaker": "EVIDENCE_GATED_PENDING_CI",
