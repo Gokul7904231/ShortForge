@@ -1,6 +1,6 @@
 # Treasurer — Economic Control-Plane Contract
 
-**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–3  
+**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–4  
 **Date:** 2026-10-03  
 **Canonical implementation:** `apps/web/factoryos/core/treasury/`
 
@@ -130,16 +130,20 @@ Deterministic TypeScript. Owns:
 
 ### Economic Intelligence
 
-Future advisory layer. May use observed cost, latency, quality and verified outcomes to recommend:
+Wave 4 implements a read-only advisory layer over Treasury's durable ledger. It may use observed cost, latency, quality and verified outcomes to recommend:
 - model/provider changes;
 - cache reuse;
 - deterministic bypass;
 - retry avoidance;
-- resource right-sizing.
+- resource right-sizing;
+- reservation-envelope tuning;
+- capacity protection;
+- reconciliation priority;
+- bounded spend forecasts.
 
-Economic Intelligence can recommend. The Constitutional Kernel decides.
+Economic Intelligence has no reservation, settlement, release, freeze, unfreeze, or price-mutation capability. It can recommend. The Constitutional Kernel decides.
 
-## Wave 3 runtime integration
+## Wave 4 runtime integration
 
 The economic boundary now covers:
 - model/API inference through AIRuntime + IntelligentRouter;
@@ -147,7 +151,13 @@ The economic boundary now covers:
 - user generation entitlement/quota through TreasuryQuotaAdmission;
 - F06 compute admission and F07 verification-aware settlement.
 
-Legacy quota Firestore documents remain a compatibility projection for UI/history. MissionBudgetManager remains post-consumption mission policy; CostGovernor is non-authorizing in production; AgentEconomicsEngine is advisory and records authoritative cost only when measured Treasury cost is supplied.
+Wave 4 retires the hot-path economic authority of the legacy mechanisms:
+- legacy quota Firestore is bootstrap/projection only;
+- MissionManager no longer uses MissionBudgetManager for economic admission;
+- CapabilityFirstRouter no longer consults CostGovernor;
+- production providerFactory is Treasury-gated;
+- legacy generation endpoint is a thin facade to canonical generation;
+- scheduler triggers canonical generation and interprets Treasury admission outcomes.
 
 The architectural rule is now:
 
