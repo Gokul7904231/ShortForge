@@ -198,6 +198,7 @@ export class ComputeGateway {
       guardedJob,
       onProgress,
       preferredProviderType,
+      economicPermit ? economicPermit.maxRetries : undefined,
     );
   }
 }
