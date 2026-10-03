@@ -52,6 +52,11 @@ import { AgentEconomicsEngine } from "../cognitive/economics/AgentEconomicsEngin
 import { CognitiveOutcomeLearner } from "../cognitive/CognitiveOutcomeLearner";
 import { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 import {
+  createTreasuryAccount,
+  createMongoTreasuryService,
+  TreasuryService,
+} from "../treasury";
+import {
   DiskSlayerPrimeStateStore,
   InMemorySlayerPrimeStateStore,
   MongoSlayerPrimeStateStore,
@@ -114,6 +119,7 @@ export class AutonomousFactoryController {
   public memoryFabric?: MemoryFabricBridge;
   public intelligenceGateway?: IntelligenceGateway;
   public slayerPrimeStateStore!: SlayerPrimeStateStore;
+  public treasuryService?: TreasuryService;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -163,6 +169,16 @@ export class AutonomousFactoryController {
       }
     } else {
       repos = DatabaseFactory.createRepositories(null);
+    }
+
+    if (this.mongoClient?.connected() && this.mongoClient.getDb()) {
+      this.treasuryService = createMongoTreasuryService(this.mongoClient);
+      const accountId = process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos";
+      const budgetUsd = Math.max(0, Number(process.env.FACTORYOS_TREASURY_BUDGET_USD || "25"));
+      const capacityUnits = Math.max(1, Number(process.env.FACTORYOS_TREASURY_CAPACITY_UNITS || "3600"));
+      await this.treasuryService.ensureAccount(
+        createTreasuryAccount(accountId, budgetUsd, capacityUnits),
+      );
     }
 
     // Prime state follows the controller persistence tier.
@@ -425,6 +441,7 @@ export class AutonomousFactoryController {
       this.intelligenceGateway?.memoryLifecycle,
       this.intelligenceGateway,
       trajectoryLearningBridge,
+      this.treasuryService,
     );
 
     // 8. Watchdog & Bridges
