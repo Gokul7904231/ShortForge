@@ -307,6 +307,7 @@ export class TreasuryKernel {
         scopeDigest: reservation.scopeDigest,
         maxCostUsd: reservation.reservedCostUsd,
         maxCapacityUnits: reservation.reservedCapacityUnits,
+        maxRetries: reservation.maxRetries ?? 0,
         expiresAt: reservation.expiresAt,
         issuedAt: now.toISOString(),
         status: "ACTIVE",
@@ -447,7 +448,8 @@ export class TreasuryKernel {
         throw new TreasuryDeniedError("Treasury permit expiry does not match the reservation");
       }
       if (permit.maxCostUsd !== reservation.reservedCostUsd ||
-          permit.maxCapacityUnits !== reservation.reservedCapacityUnits) {
+          permit.maxCapacityUnits !== reservation.reservedCapacityUnits ||
+          permit.maxRetries !== (reservation.maxRetries ?? 0)) {
         throw new TreasuryDeniedError("Treasury permit envelope does not match the reservation");
       }
     });
