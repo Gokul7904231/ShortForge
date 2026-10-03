@@ -57,6 +57,7 @@ export class MongoTreasuryLedger implements TreasuryLedgerStore {
     await this.accounts.createIndex({ accountId: 1 }, { unique: true });
     await this.reservations.createIndex({ reservationId: 1 }, { unique: true });
     await this.reservations.createIndex({ commandId: 1 }, { unique: true });
+    await this.reservations.createIndex({ accountId: 1, idempotencyKey: 1 }, { unique: true });
     await this.reservations.createIndex({ accountId: 1, status: 1, expiresAt: 1 });
     await this.events.createIndex({ eventId: 1 }, { unique: true });
     await this.events.createIndex({ accountId: 1, occurredAt: -1, eventId: -1 });
