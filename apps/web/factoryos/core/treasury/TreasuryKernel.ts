@@ -1,8 +1,8 @@
 /**
  * ShortForge / FactoryOS — Treasurer Constitutional Kernel
  *
- * This is deliberately deterministic. No model is involved in deciding whether
- * a Treasury reservation is valid, bounded, idempotent, or allowed to settle.
+ * Deterministic economic admission boundary. No model decides whether spend,
+ * reservation, settlement, freeze, or release is constitutionally valid.
  */
 
 import {
@@ -19,7 +19,7 @@ import {
   type TreasuryReport,
 } from "./TreasuryContracts";
 import { TreasuryPriceRegistry } from "./TreasuryPriceRegistry";
-import type { TreasuryLedgerStore, TreasuryLedgerTransaction } from "./TreasuryLedger";
+import type { TreasuryLedgerStore } from "./TreasuryLedger";
 
 export class TreasuryDeniedError extends Error {
   readonly code = "TREASURY_DENIED";
@@ -29,29 +29,27 @@ export class TreasuryDeniedError extends Error {
   }
 }
 
-function uuid(prefix: string): string {
-  return `${prefix}_${cryptoRandomId()}`;
-}
-
-function cryptoRandomId(): string {
+function cryptoId(prefix: string): string {
   const bytes = new Uint8Array(12);
   const cryptoApi = globalThis.crypto;
-  if (cryptoApi?.getRandomValues) {
-    cryptoApi.getRandomValues(bytes);
-    return [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
+  if (!cryptoApi?.getRandomValues) {
+    throw new Error("Treasury requires a cryptographically secure random source");
   }
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  cryptoApi.getRandomValues(bytes);
+  return `${prefix}_${[...bytes].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function assertPositiveFinite(value: number, name: string): void {
-  if (!Number.isFinite(value) || value < 0) throw new TreasuryDeniedError(`${name} must be finite and >= 0`);
+function assertNonNegativeFinite(value: number, name: string): void {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new TreasuryDeniedError(`${name} must be finite and >= 0`);
+  }
 }
 
 function priorityRank(priority: TreasuryPriority): number {
   return { LOW: 0, NORMAL: 1, HIGH: 2, CRITICAL: 3 }[priority];
 }
 
-function createEvent(
+function event(
   eventType: TreasuryLedgerEvent["eventType"],
   accountId: string,
   payload: Record<string, unknown>,
@@ -59,7 +57,7 @@ function createEvent(
   now = new Date(),
 ): TreasuryLedgerEvent {
   return {
-    eventId: uuid("tevt"),
+    eventId: cryptoId("tevt"),
     eventType,
     eventVersion: 1,
     accountId,
@@ -86,7 +84,7 @@ export class TreasuryKernel {
     return structuredClone(this.policy);
   }
 
-  async quote(command: TreasuryCommand) {
+  async quote(command: TreasuryCommand): Promise<import("./TreasuryContracts").TreasuryQuote> {
     this.validateCommand(command);
     const quote = this.priceRegistry.quote(
       command.commandId,
@@ -96,32 +94,44 @@ export class TreasuryKernel {
       command.budgetEnvelope.maxCapacityUnits ?? 0,
       this.now(),
     );
+
     await this.ledger.atomic(async (tx) => {
-      await tx.appendEvent(
-        createEvent(
-          "TREASURY_COMMAND_ACCEPTED",
-          command.accountId,
-          { issuer: command.issuer, purpose: command.purpose, scopeDigest: command.scopeDigest },
-          {
-            commandId: command.commandId,
-            missionId: command.missionId,
-            runId: command.runId,
-            floorId: command.floorId,
-            taskId: command.taskId,
-          },
-          this.now(),
-        ),
-      );
-      await tx.appendEvent(
-        createEvent(
-          "RESOURCE_QUOTED",
-          command.accountId,
-          { quoteId: quote.quoteId, pricingVersion: quote.pricingVersion, assumptions: quote.assumptions },
-          { commandId: command.commandId, missionId: command.missionId, amountUsd: quote.upperBoundCostUsd, capacityUnits: quote.upperBoundCapacityUnits },
-          this.now(),
-        ),
-      );
+      await tx.appendEvent(event(
+        "TREASURY_COMMAND_ACCEPTED",
+        command.accountId,
+        {
+          issuer: command.issuer,
+          purpose: command.purpose,
+          scopeDigest: command.scopeDigest,
+        },
+        {
+          commandId: command.commandId,
+          missionId: command.missionId,
+          runId: command.runId,
+          floorId: command.floorId,
+          taskId: command.taskId,
+        },
+        this.now(),
+      ));
+      await tx.appendEvent(event(
+        "RESOURCE_QUOTED",
+        command.accountId,
+        {
+          quoteId: quote.quoteId,
+          pricingVersion: quote.pricingVersion,
+          pricingConfidence: quote.pricingConfidence,
+          assumptions: quote.assumptions,
+        },
+        {
+          commandId: command.commandId,
+          missionId: command.missionId,
+          amountUsd: quote.upperBoundCostUsd,
+          capacityUnits: quote.upperBoundCapacityUnits,
+        },
+        this.now(),
+      ));
     });
+
     return quote;
   }
 
@@ -133,40 +143,77 @@ export class TreasuryKernel {
       Math.max(new Date(command.expiresAt).getTime() - now.getTime(), 1),
       this.policy.maxReservationTtlMs,
     );
-    const reservationId = uuid("tres");
+    const reservationId = cryptoId("tres");
 
+    let denial: string | null = null;
     const reservation = await this.ledger.atomic(async (tx) => {
       const existing = await tx.getReservationByCommandId(command.commandId);
       if (existing) return existing;
 
       const account = await tx.getAccount(command.accountId);
-      if (!account) throw new TreasuryDeniedError(`Treasury account not found: ${command.accountId}`);
+      if (!account) {
+        denial = `Treasury account not found: ${command.accountId}`;
+        return null;
+      }
 
-      this.assertAdmissible(account, command.budgetEnvelope, command.priority);
+      try {
+        this.assertAdmissible(account, command.budgetEnvelope, command.priority, command.resourceRequest);
+      } catch (error) {
+        denial = error instanceof Error ? error.message : "Treasury admission denied";
+        await tx.appendEvent(event(
+          "SPEND_DENIED",
+          account.accountId,
+          { reason: denial },
+          {
+            commandId: command.commandId,
+            missionId: command.missionId,
+            amountUsd: command.budgetEnvelope.maxCostUsd,
+            capacityUnits: command.budgetEnvelope.maxCapacityUnits ?? 0,
+          },
+          now,
+        ));
+        return null;
+      }
+
       const reserveUsd = command.budgetEnvelope.maxCostUsd;
       const reserveCapacity = command.budgetEnvelope.maxCapacityUnits ?? 0;
 
       if (account.availableUsd < reserveUsd) {
-        await tx.appendEvent(createEvent(
+        denial = `Insufficient Treasury USD: available=${account.availableUsd}, requested=${reserveUsd}`;
+        await tx.appendEvent(event(
           "SPEND_DENIED",
           account.accountId,
           { reason: "INSUFFICIENT_USD", availableUsd: account.availableUsd, requestedUsd: reserveUsd },
-          { commandId: command.commandId, missionId: command.missionId, amountUsd: reserveUsd, capacityUnits: reserveCapacity },
+          {
+            commandId: command.commandId,
+            missionId: command.missionId,
+            amountUsd: reserveUsd,
+            capacityUnits: reserveCapacity,
+          },
           now,
         ));
-        throw new TreasuryDeniedError(`Insufficient Treasury USD: available=${account.availableUsd}, requested=${reserveUsd}`);
+        return null;
       }
+
       if (account.availableCapacityUnits < reserveCapacity) {
-        await tx.appendEvent(createEvent(
+        denial = `Insufficient Treasury capacity: available=${account.availableCapacityUnits}, requested=${reserveCapacity}`;
+        await tx.appendEvent(event(
           "SPEND_DENIED",
           account.accountId,
-          { reason: "INSUFFICIENT_CAPACITY", availableCapacityUnits: account.availableCapacityUnits, requestedCapacityUnits: reserveCapacity },
-          { commandId: command.commandId, missionId: command.missionId, amountUsd: reserveUsd, capacityUnits: reserveCapacity },
+          {
+            reason: "INSUFFICIENT_CAPACITY",
+            availableCapacityUnits: account.availableCapacityUnits,
+            requestedCapacityUnits: reserveCapacity,
+          },
+          {
+            commandId: command.commandId,
+            missionId: command.missionId,
+            amountUsd: reserveUsd,
+            capacityUnits: reserveCapacity,
+          },
           now,
         ));
-        throw new TreasuryDeniedError(
-          `Insufficient Treasury capacity: available=${account.availableCapacityUnits}, requested=${reserveCapacity}`,
-        );
+        return null;
       }
 
       const created: TreasuryReservation = {
@@ -190,7 +237,7 @@ export class TreasuryKernel {
         updatedAt: now.toISOString(),
       };
 
-      const nextAccount: TreasuryAccount = {
+      await tx.putAccount({
         ...account,
         availableUsd: account.availableUsd - reserveUsd,
         reservedUsd: account.reservedUsd + reserveUsd,
@@ -198,11 +245,10 @@ export class TreasuryKernel {
         reservedCapacityUnits: account.reservedCapacityUnits + reserveCapacity,
         version: account.version + 1,
         updatedAt: now.toISOString(),
-      };
-
-      await tx.putAccount(nextAccount);
+      });
       await tx.putReservation(created);
-      await tx.appendEvent(createEvent(
+
+      await tx.appendEvent(event(
         "RESOURCE_RESERVED",
         account.accountId,
         { quoteId: quote.quoteId, expiresAt: created.expiresAt },
@@ -218,13 +264,18 @@ export class TreasuryKernel {
         },
         now,
       ));
+
       return created;
     });
+
+    if (!reservation) {
+      throw new TreasuryDeniedError(denial ?? "Treasury reservation denied");
+    }
 
     return {
       reservation,
       permit: {
-        permitId: uuid("tpermit"),
+        permitId: cryptoId("tpermit"),
         reservationId: reservation.reservationId,
         commandId: reservation.commandId,
         accountId: reservation.accountId,
@@ -237,13 +288,110 @@ export class TreasuryKernel {
     };
   }
 
+  async extend(
+    reservationId: string,
+    command: TreasuryCommand,
+  ): Promise<TreasuryReservation> {
+    this.validateCommand(command);
+    const now = this.now();
+    let denial: string | null = null;
+
+    const updated = await this.ledger.atomic(async (tx) => {
+      const reservation = await tx.getReservation(reservationId);
+      if (!reservation) {
+        denial = `Treasury reservation not found: ${reservationId}`;
+        return null;
+      }
+      if (reservation.status !== "ACTIVE") {
+        denial = `Cannot extend reservation in state ${reservation.status}`;
+        return null;
+      }
+
+      const account = await tx.getAccount(reservation.accountId);
+      if (!account) {
+        denial = `Treasury account not found: ${reservation.accountId}`;
+        return null;
+      }
+
+      const additionalUsd = command.budgetEnvelope.maxCostUsd;
+      const additionalCapacity = command.budgetEnvelope.maxCapacityUnits ?? 0;
+      try {
+        this.assertAdmissible(account, command.budgetEnvelope, command.priority, command.resourceRequest);
+      } catch (error) {
+        denial = error instanceof Error ? error.message : "Treasury extension denied";
+        await tx.appendEvent(event(
+          "SPEND_DENIED",
+          account.accountId,
+          { reason: denial, reservationId },
+          { commandId: command.commandId, reservationId, missionId: reservation.missionId, amountUsd: additionalUsd, capacityUnits: additionalCapacity },
+          now,
+        ));
+        return null;
+      }
+
+      if (account.availableUsd < additionalUsd || account.availableCapacityUnits < additionalCapacity) {
+        denial = "Insufficient Treasury resources for reservation extension";
+        await tx.appendEvent(event(
+          "SPEND_DENIED",
+          account.accountId,
+          {
+            reason: "INSUFFICIENT_EXTENSION_RESOURCES",
+            availableUsd: account.availableUsd,
+            requestedUsd: additionalUsd,
+            availableCapacityUnits: account.availableCapacityUnits,
+            requestedCapacityUnits: additionalCapacity,
+          },
+          { commandId: command.commandId, reservationId, missionId: reservation.missionId, amountUsd: additionalUsd, capacityUnits: additionalCapacity },
+          now,
+        ));
+        return null;
+      }
+
+      const newExpiresAt = new Date(Math.min(
+        new Date(reservation.expiresAt).getTime() + Math.max(new Date(command.expiresAt).getTime() - now.getTime(), 0),
+        now.getTime() + this.policy.maxReservationTtlMs,
+      )).toISOString();
+
+      const next: TreasuryReservation = {
+        ...reservation,
+        reservedCostUsd: reservation.reservedCostUsd + additionalUsd,
+        reservedCapacityUnits: reservation.reservedCapacityUnits + additionalCapacity,
+        expiresAt: newExpiresAt,
+        updatedAt: now.toISOString(),
+      };
+
+      await tx.putAccount({
+        ...account,
+        availableUsd: account.availableUsd - additionalUsd,
+        reservedUsd: account.reservedUsd + additionalUsd,
+        availableCapacityUnits: account.availableCapacityUnits - additionalCapacity,
+        reservedCapacityUnits: account.reservedCapacityUnits + additionalCapacity,
+        version: account.version + 1,
+        updatedAt: now.toISOString(),
+      });
+      await tx.putReservation(next);
+      await tx.appendEvent(event(
+        "RESERVATION_EXTENDED",
+        account.accountId,
+        { addedUsd: additionalUsd, addedCapacityUnits: additionalCapacity, newExpiresAt },
+        { commandId: command.commandId, reservationId, missionId: reservation.missionId, amountUsd: additionalUsd, capacityUnits: additionalCapacity },
+        now,
+      ));
+      return next;
+    });
+
+    if (!updated) throw new TreasuryDeniedError(denial ?? "Treasury extension denied");
+    return updated;
+  }
+
   async settle(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
     const now = this.now();
-    assertPositiveFinite(consumption.actualCostUsd, "actualCostUsd");
-    assertPositiveFinite(consumption.actualCapacityUnits, "actualCapacityUnits");
+    assertNonNegativeFinite(consumption.actualCostUsd, "actualCostUsd");
+    assertNonNegativeFinite(consumption.actualCapacityUnits, "actualCapacityUnits");
     if (!consumption.executionEvidenceId) throw new TreasuryDeniedError("executionEvidenceId is required");
 
-    return this.ledger.atomic(async (tx) => {
+    let breach: string | null = null;
+    const result = await this.ledger.atomic(async (tx) => {
       const reservation = await tx.getReservation(reservationId);
       if (!reservation) throw new TreasuryDeniedError(`Treasury reservation not found: ${reservationId}`);
       if (reservation.status === "SETTLED") return reservation;
@@ -261,23 +409,40 @@ export class TreasuryKernel {
             version: account.version + 1,
             updatedAt: now.toISOString(),
           });
-          await tx.appendEvent(createEvent(
+          await tx.appendEvent(event(
             "TREASURY_FROZEN",
             account.accountId,
-            { reason: "ACTUAL_CONSUMPTION_EXCEEDED_RESERVATION", reservationId, actualCostUsd: consumption.actualCostUsd, reservedCostUsd: reservation.reservedCostUsd },
+            {
+              reason: "ACTUAL_CONSUMPTION_EXCEEDED_RESERVATION",
+              reservationId,
+            },
             { reservationId, commandId: reservation.commandId, missionId: reservation.missionId },
             now,
           ));
         }
-        await tx.putReservation({ ...reservation, status: "BREACHED", updatedAt: now.toISOString() });
-        await tx.appendEvent(createEvent(
+        const next = { ...reservation, status: "BREACHED" as const, updatedAt: now.toISOString() };
+        await tx.putReservation(next);
+        await tx.appendEvent(event(
           "BUDGET_BREACH",
           reservation.accountId,
-          { actualCostUsd: consumption.actualCostUsd, reservedCostUsd: reservation.reservedCostUsd, executionEvidenceId: consumption.executionEvidenceId },
-          { reservationId, commandId: reservation.commandId, missionId: reservation.missionId, amountUsd: consumption.actualCostUsd, capacityUnits: consumption.actualCapacityUnits },
+          {
+            actualCostUsd: consumption.actualCostUsd,
+            reservedCostUsd: reservation.reservedCostUsd,
+            actualCapacityUnits: consumption.actualCapacityUnits,
+            reservedCapacityUnits: reservation.reservedCapacityUnits,
+            executionEvidenceId: consumption.executionEvidenceId,
+          },
+          {
+            reservationId,
+            commandId: reservation.commandId,
+            missionId: reservation.missionId,
+            amountUsd: consumption.actualCostUsd,
+            capacityUnits: consumption.actualCapacityUnits,
+          },
           now,
         ));
-        throw new TreasuryDeniedError("Actual consumption exceeded reserved Treasury envelope; Treasury frozen");
+        breach = "Actual consumption exceeded reserved Treasury envelope; Treasury frozen";
+        return next;
       }
 
       if (reservation.verificationRequired && (!consumption.verified || !consumption.verificationReceiptId)) {
@@ -300,30 +465,59 @@ export class TreasuryKernel {
         version: account.version + 1,
         updatedAt: now.toISOString(),
       };
-      const nextReservation = {
+      const nextReservation: TreasuryReservation = {
         ...reservation,
-        status: "SETTLED" as const,
+        status: "SETTLED",
         updatedAt: now.toISOString(),
       };
 
       await tx.putAccount(nextAccount);
       await tx.putReservation(nextReservation);
-      await tx.appendEvent(createEvent(
+      await tx.appendEvent(event(
         "RESOURCE_CONSUMED",
         reservation.accountId,
-        { actualTokens: consumption.actualTokens, actualDurationMs: consumption.actualDurationMs, executionEvidenceId: consumption.executionEvidenceId, verified: consumption.verified },
-        { reservationId, commandId: reservation.commandId, missionId: reservation.missionId, amountUsd: consumption.actualCostUsd, capacityUnits: consumption.actualCapacityUnits },
+        {
+          actualTokens: consumption.actualTokens,
+          actualDurationMs: consumption.actualDurationMs,
+          executionEvidenceId: consumption.executionEvidenceId,
+          verified: consumption.verified,
+        },
+        {
+          reservationId,
+          commandId: reservation.commandId,
+          missionId: reservation.missionId,
+          amountUsd: consumption.actualCostUsd,
+          capacityUnits: consumption.actualCapacityUnits,
+        },
         now,
       ));
-      await tx.appendEvent(createEvent(
+      await tx.appendEvent(event(
         "SPEND_RECONCILED",
         reservation.accountId,
-        { reservedUsd: reservation.reservedCostUsd, actualCostUsd: consumption.actualCostUsd, releasedUsd: releaseUsd, verificationReceiptId: consumption.verificationReceiptId },
-        { reservationId, commandId: reservation.commandId, missionId: reservation.missionId, amountUsd: consumption.actualCostUsd, capacityUnits: consumption.actualCapacityUnits },
+        {
+          reservedUsd: reservation.reservedCostUsd,
+          actualCostUsd: consumption.actualCostUsd,
+          releasedUsd: releaseUsd,
+          verificationReceiptId: consumption.verificationReceiptId,
+        },
+        {
+          reservationId,
+          commandId: reservation.commandId,
+          missionId: reservation.missionId,
+          amountUsd: consumption.actualCostUsd,
+          capacityUnits: consumption.actualCapacityUnits,
+        },
         now,
       ));
       return nextReservation;
     });
+
+    if (breach) throw new TreasuryDeniedError(breach);
+    return result;
+  }
+
+  async reconcile(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
+    return this.settle(reservationId, consumption);
   }
 
   async release(reservationId: string, reason = "RELEASED"): Promise<TreasuryReservation> {
@@ -348,19 +542,25 @@ export class TreasuryKernel {
         version: account.version + 1,
         updatedAt: now.toISOString(),
       };
-      const nextReservation = {
+      const nextReservation: TreasuryReservation = {
         ...reservation,
-        status: reason === "EXPIRED" ? "EXPIRED" as const : "RELEASED" as const,
+        status: reason === "EXPIRED" ? "EXPIRED" : "RELEASED",
         updatedAt: now.toISOString(),
       };
 
       await tx.putAccount(nextAccount);
       await tx.putReservation(nextReservation);
-      await tx.appendEvent(createEvent(
+      await tx.appendEvent(event(
         reason === "EXPIRED" ? "RESERVATION_EXPIRED" : "RESERVATION_RELEASED",
         reservation.accountId,
         { reason },
-        { reservationId, commandId: reservation.commandId, missionId: reservation.missionId, amountUsd: reservation.reservedCostUsd, capacityUnits: reservation.reservedCapacityUnits },
+        {
+          reservationId,
+          commandId: reservation.commandId,
+          missionId: reservation.missionId,
+          amountUsd: reservation.reservedCostUsd,
+          capacityUnits: reservation.reservedCapacityUnits,
+        },
         now,
       ));
       return nextReservation;
@@ -402,14 +602,19 @@ export class TreasuryKernel {
     };
   }
 
-  private async setMode(accountId: string, mode: "OPEN" | "FROZEN", command: TreasuryCommand, reason: string): Promise<TreasuryAccount> {
+  private async setMode(
+    accountId: string,
+    mode: "OPEN" | "FROZEN",
+    command: TreasuryCommand,
+    reason: string,
+  ): Promise<TreasuryAccount> {
     const now = this.now();
     return this.ledger.atomic(async (tx) => {
       const account = await tx.getAccount(accountId);
       if (!account) throw new TreasuryDeniedError(`Treasury account not found: ${accountId}`);
       const next = { ...account, mode, version: account.version + 1, updatedAt: now.toISOString() };
       await tx.putAccount(next);
-      await tx.appendEvent(createEvent(
+      await tx.appendEvent(event(
         mode === "FROZEN" ? "TREASURY_FROZEN" : "TREASURY_UNFROZEN",
         accountId,
         { reason, overseerCommandId: command.overseerCommandId },
@@ -434,6 +639,7 @@ export class TreasuryKernel {
     if (!command.idempotencyKey || !command.scopeDigest) {
       throw new TreasuryDeniedError("Treasury idempotencyKey and scopeDigest are required");
     }
+
     const expiresAtMs = new Date(command.expiresAt).getTime();
     const nowMs = this.now().getTime();
     if (!Number.isFinite(expiresAtMs) || expiresAtMs <= nowMs) {
@@ -441,20 +647,33 @@ export class TreasuryKernel {
     }
 
     const envelope: TreasuryBudgetEnvelope = command.budgetEnvelope;
-    assertPositiveFinite(envelope.maxCostUsd, "maxCostUsd");
-    assertPositiveFinite(envelope.maxCapacityUnits ?? 0, "maxCapacityUnits");
+    assertNonNegativeFinite(envelope.maxCostUsd, "maxCostUsd");
+    assertNonNegativeFinite(envelope.maxCapacityUnits ?? 0, "maxCapacityUnits");
+
     if (envelope.maxCostUsd > this.policy.maxSingleReservationUsd) {
-      throw new TreasuryDeniedError(`Reservation exceeds Treasury single-reservation ceiling of $${this.policy.maxSingleReservationUsd}`);
+      throw new TreasuryDeniedError(
+        `Reservation exceeds Treasury single-reservation ceiling of $${this.policy.maxSingleReservationUsd}`,
+      );
     }
     if ((envelope.maxCapacityUnits ?? 0) > this.policy.maxSingleCapacityUnits) {
       throw new TreasuryDeniedError("Reservation exceeds Treasury capacity ceiling");
     }
   }
 
-  private assertAdmissible(account: TreasuryAccount, envelope: TreasuryBudgetEnvelope, priority: TreasuryPriority): void {
+  private assertAdmissible(
+    account: TreasuryAccount,
+    envelope: TreasuryBudgetEnvelope,
+    priority: TreasuryPriority,
+    requests: TreasuryCommand["resourceRequest"],
+  ): void {
     if (account.mode === "FROZEN" || this.policy.mode === "FROZEN") {
       throw new TreasuryDeniedError("Treasury is FROZEN: no new discretionary reservations");
     }
+
+    if (requests.some((request) => request.paidRoute === true) && !this.policy.allowPaidRoutes) {
+      throw new TreasuryDeniedError("Paid route is disabled by Treasury policy");
+    }
+
     if (account.mode === "DEFENSIVE" || this.policy.mode === "DEFENSIVE") {
       if (priorityRank(priority) > priorityRank(this.policy.defensiveMaxPriority)) {
         throw new TreasuryDeniedError("Treasury DEFENSIVE mode blocks high-priority discretionary spend");
