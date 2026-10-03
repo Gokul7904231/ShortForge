@@ -1,4 +1,5 @@
 /**
+  // Wave 4 Treasury Economic Intelligence is advisory-only and bound once the Treasury service is available.
  * FactoryOS v1 — Autonomous Factory Controller
  * The master autonomous control loop and orchestrator for FactoryOS.
  */
