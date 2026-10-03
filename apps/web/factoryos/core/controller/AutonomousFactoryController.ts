@@ -607,12 +607,40 @@ export class AutonomousFactoryController {
     }, 5000);
   }
 
-  async startMission(params: any) {
+  async startMission(
+    params: any,
+    preparedEconomicCommand?: {
+      runId: string;
+      overseerCommandId: string;
+      missionId: string;
+    },
+  ) {
     const mission = await this.missionManager.createMission(params);
-    const started = await this.missionManager.startMission(mission.missionId);
+    const started = await this.missionManager.startMission(
+      mission.missionId,
+      preparedEconomicCommand?.runId,
+    );
+
     if (this.overseer) {
-      await this.overseer.dispatchMission(started);
+      if (preparedEconomicCommand) {
+        if (
+          preparedEconomicCommand.missionId !== mission.missionId ||
+          preparedEconomicCommand.overseerCommandId !==
+            "ovr_" + preparedEconomicCommand.runId
+        ) {
+          throw new Error(
+            "Prepared Overseer economic command does not match mission execution binding",
+          );
+        }
+        this.overseer.activatePreparedEconomicCommand(
+          preparedEconomicCommand.runId,
+          mission.missionId,
+        );
+      } else {
+        await this.overseer.dispatchMission(started);
+      }
     }
+
     return started;
   }
 
