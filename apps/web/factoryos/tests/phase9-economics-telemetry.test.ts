@@ -8,12 +8,12 @@ describe("FactoryOS Frontier v2 — Phase 9: Cognitive Economics Telemetry Suite
     // Deterministic bypass (Tier 0)
     const route0 = economics.routeTask("Routine single-worker restart", { isDeterministicRuleAvailable: true });
     expect(route0.selectedTier).toBe("DETERMINISTIC");
-    economics.recordExecution("DETERMINISTIC", 0, 5);
+    economics.recordExecution("DETERMINISTIC", 0, 5, 0);
 
     // Large Reasoner (Tier 2)
     const route2 = economics.routeTask("Critical multi-floor state desync", { severity: "HIGH" });
     expect(route2.selectedTier).toBe("LARGE_REASONER");
-    economics.recordExecution("LARGE_REASONER", 1500, 450);
+    economics.recordExecution("LARGE_REASONER", 1500, 450, 0.0045);
 
     const metrics = economics.getMetrics();
     expect(metrics.totalInvocations).toBe(2);
