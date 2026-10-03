@@ -22,6 +22,9 @@ on:
       - "tools/mcp/colab-notebook-mcp/**"
       - "tools/mcp/lightning-notebook-mcp/**"
       - "tools/mcp/notebook-mcp.example.json"
+  push:
+    branches:
+      - "feat/lightning-live-mcp-20261003"
   workflow_dispatch:
     inputs:
       provider:
@@ -92,7 +95,7 @@ jobs:
         run: npm run typecheck
 
   prepare_live:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE' }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/lightning-live-mcp-20261003') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
     runs-on: ubuntu-latest
     outputs:
       providers: ${{ steps.matrix.outputs.providers }}
