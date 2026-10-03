@@ -35,8 +35,9 @@ Overseer command
 - Paid routes remain blocked by default by Treasury policy.
 - In production, Treasury is required; if transaction-capable MongoDB Treasury cannot be initialized, FactoryOS refuses to boot rather than silently running without economic governance.
 - Production ComputeGateway is bound to the canonical Treasury service.
-- Economic permits are validated again at the compute boundary against reservation, mission, job scope, account, expiry, and envelope.
+- Economic permits are validated again at the compute boundary against reservation, mission, job scope, account, expiry, envelope, and the independently recomputed render scope digest.
 - Permit retry allowance caps automatic provider failover attempts; additional retries require a new economic reservation.
+- Treasury commands require exact issuer identity equality with the originating Overseer command.
 
 ## Configuration
 
