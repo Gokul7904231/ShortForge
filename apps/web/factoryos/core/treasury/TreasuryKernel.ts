@@ -158,18 +158,40 @@ export class TreasuryKernel {
     const reservation = await this.ledger.atomic(async (tx) => {
       const existing = await tx.getReservationByCommandId(command.commandId);
       if (existing) {
-        if (existing.idempotencyKey !== command.idempotencyKey || existing.scopeDigest !== command.scopeDigest) {
-          throw new TreasuryDeniedError("Command replay has conflicting idempotency key or scope digest");
+        if (
+          existing.idempotencyKey !== command.idempotencyKey ||
+          existing.scopeDigest !== command.scopeDigest
+        ) {
+          throw new TreasuryDeniedError(
+            "Command replay has conflicting idempotency key or scope digest",
+          );
         }
-        return existing;
+        if (existing.status === "ACTIVE") {
+          return existing;
+        }
+        throw new TreasuryDeniedError(
+          "Treasury command idempotency key is already finalized: " +
+            existing.status,
+        );
       }
 
-      const sameIdempotency = await tx.getReservationByIdempotencyKey(command.accountId, command.idempotencyKey);
+      const sameIdempotency = await tx.getReservationByIdempotencyKey(
+        command.accountId,
+        command.idempotencyKey,
+      );
       if (sameIdempotency) {
         if (sameIdempotency.scopeDigest !== command.scopeDigest) {
-          throw new TreasuryDeniedError("Idempotency key is already bound to a different Treasury scope");
+          throw new TreasuryDeniedError(
+            "Idempotency key is already bound to a different Treasury scope",
+          );
         }
-        return sameIdempotency;
+        if (sameIdempotency.status === "ACTIVE") {
+          return sameIdempotency;
+        }
+        throw new TreasuryDeniedError(
+          "Treasury idempotency key is already finalized: " +
+            sameIdempotency.status,
+        );
       }
 
       const account = await tx.getAccount(command.accountId);
