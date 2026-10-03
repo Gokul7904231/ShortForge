@@ -37,7 +37,10 @@
     "Added Treasury-backed ProviderApiRegistry.provisionWithTreasury.",
     "Added strict normal-failure release and ambiguous-provision preservation semantics.",
     "Added Treasury-backed CapabilityFirstRouter asynchronous admission while blocking legacy synchronous production routing.",
-    "Documented Wave 3 migration boundaries and future removal of legacy economic authorities."
+    "Separated inference-token capacity from compute/scarcity capacity in Treasury accounts and reservations.",
+    "Added independent token-capacity settlement/release accounting and token-capacity configuration.",
+    "Made Treasury price selection deterministic by preferring the newest active pricing version.",
+    "Documented the multidimensional Treasury resource ledger and single economic-authority rule."
   ],
   "invariants": [
     "Unknown paid model pricing is denied rather than guessed.",
@@ -46,7 +49,10 @@
     "Each additional model/provider attempt requires a fresh Treasury reservation.",
     "Ambiguous provider provisioning keeps its hold until reconciliation.",
     "Treasury does not select the physical worker.",
-    "Legacy economic components are compatibility/advisory layers only during staged migration."
+    "Legacy economic components are compatibility/advisory layers only during staged migration.",
+    "Inference token reservations do not consume the compute/scarcity capacity ledger.",
+    "New model attempts cannot reuse a settled or released idempotency key; each attempt has its own economic identity.",
+    "Only trusted bootstrap/configuration code seeds paid model pricing into Treasury; execution routers cannot mutate prices."
   ],
   "verificationResults": {
     "treasuryEconomicAdmissionTests": "PENDING",
@@ -54,7 +60,8 @@
     "repositoryCI": "PENDING",
     "computeOfferFabricValidation": "PENDING",
     "decisionFabricValidation": "PENDING",
-    "teamChangeGate": "PENDING"
+    "teamChangeGate": "PENDING",
+    "latestHead": "154675838562ac33663479c899b38a921e4ef871"
   },
   "disposition": "BLOCKED",
   "security": {
