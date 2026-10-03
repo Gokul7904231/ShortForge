@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR111-Overseer-Waves3-5-Mainline-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/overseer-wave3-agent-workforce-20261002",
+  "objective": "Promote the composed Overseer Wave 3, Wave 4, and Wave 5 integration stack from its maintained branch onto current mainline.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/security/mcp-permissions.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave3.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave4.md",
+      ".okf/intelligence/overseer-collaboration-fabric-wave5.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No new raw credential store or worker authority is introduced by this reconciliation; runtime security gates remain authoritative."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "OVS-MAIN-001",
+      "originalConflict": "Wave 3, 4, and 5 were developed as a stacked branch sequence rather than directly on current main.",
+      "status": "RESOLVED",
+      "proposedResolution": "Use the maintained Wave 3 integration branch, which contains the previously merged Wave 4 and Wave 5 merges, as the single convergence source.",
+      "acceptedResolution": "Promote the composed branch once current-main CI is green; do not remerge Wave 4 and Wave 5 source branches separately.",
+      "decisionAuthority": "Overseer collaboration integration contract"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Wave 3 agent workforce and access fabric.",
+    "Wave 4 agent intercom and governed delegation.",
+    "Wave 5 mission automation recipes and durable fleet activity projection.",
+    "Corresponding authenticated APIs, UI surfaces, tests, and governance documentation."
+  ],
+  "verificationPlan": [
+    "Pass current-main repository CI and all affected Overseer/FGC/Compute/Floor validation gates.",
+    "Pass Team Change Gate.",
+    "Review for authority duplication and verify Mission Work remains canonical work state, FGC/AEF remain execution boundaries, and F07 remains production truth.",
+    "Merge only after the composed stack is green on current main."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "repositoryCI": "PENDING_CURRENT_RUN",
+    "overseerWave3to5": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "This is a current-main reconciliation of an already-composed stacked branch; Wave 4 and Wave 5 are not reintroduced as independent parallel merges."
+  ]
+}
