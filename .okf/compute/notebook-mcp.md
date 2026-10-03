@@ -66,3 +66,13 @@ Secrets are passed only through the environment. They are not committed and are 
 MCP success is a tool result, not production truth. Worker admission, leases/fencing, CAS authority, F07 acceptance, and ReleaseAuthorization remain outside these servers.
 
 > Live-proof note: Kaggle's physical-artifact smoke defaults to CPU for deterministic, low-queue verification; GPU execution remains selectable with `KAGGLE_LIVE_GPU=1`.
+
+
+## Google Colab MCP research — 2026-10-03
+
+The official Google project `googlecolab/colab-mcp` is a local-agent/browser bridge, not the Colab Runtime API. It creates a localhost WebSocket server, accepts connections only from Colab origins, authenticates with a short-lived proxy token/port, and proxies the browser-side MCP session. The upstream project currently expects MCP clients that support `notifications/tools/list_changed`. citeturn212114search0turn212114search4
+
+Current upstream/community discussions document several operational limitations: connecting an existing notebook requires a manual token/port handoff, browser clients can fail to discover newly injected tools, and the upstream design is single-session. Community forks address existing-notebook targeting, pre-registered tools, runtime switching, stale-tab handling, and multi-session management, but these are not upstream guarantees. citeturn932265search2turn932265search1turn212114search10
+
+ShortForge therefore adds a bounded browser-session orchestration layer without copying upstream implementation code. It supports strict notebook URL validation, optional Google account selection, per-session loopback ports/tokens, stale-tab-resistant URL nonces, origin/token enforcement, eager static tool registration, explicit disconnect/close, and signal-driven cleanup. The current layer intentionally stops short of claiming downstream notebook cell-editing authority until that proxy is separately verified.
+
