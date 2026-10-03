@@ -98,6 +98,7 @@ export interface TreasuryReservation {
   readonly maxTokens?: number;
   readonly maxDurationMs?: number;
   readonly maxRetries?: number;
+  readonly reservedTokenCapacityUnits?: number;
   readonly verificationRequired: boolean;
   readonly idempotencyKey: string;
   readonly scopeDigest: string;
@@ -117,6 +118,10 @@ export interface TreasuryAccount {
   readonly availableCapacityUnits: number;
   readonly reservedCapacityUnits: number;
   readonly settledCapacityUnits: number;
+  readonly tokenCapacityUnits: number;
+  readonly availableTokenCapacityUnits: number;
+  readonly reservedTokenCapacityUnits: number;
+  readonly settledTokenCapacityUnits: number;
   readonly mode: TreasuryMode;
   readonly version: number;
   readonly updatedAt: string;
