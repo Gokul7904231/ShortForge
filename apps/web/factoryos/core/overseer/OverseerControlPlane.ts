@@ -1757,6 +1757,11 @@ export class OverseerControlPlane {
           f07VerificationReceiptId = receipt.receiptId;
         }
 
+        const treasuryReservationId =
+          scope.treasuryReservationId ||
+          sharedScope.treasuryReservationId ||
+          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryReservationId;
+
         const f07LoopReceipt: FloorClosedLoopReceipt = {
           floorId: "floor07_compliance",
           loopType: "VERIFICATION_REMEDIATION",
@@ -1775,11 +1780,6 @@ export class OverseerControlPlane {
             ? undefined
             : verificationReport.failures.join("; "),
         };
-
-        const treasuryReservationId =
-          scope.treasuryReservationId ||
-          sharedScope.treasuryReservationId ||
-          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryReservationId;
 
         if (!verificationReport.verified) {
           if (treasuryReservationId && this.treasuryService) {
