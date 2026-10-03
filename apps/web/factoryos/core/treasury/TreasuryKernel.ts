@@ -199,6 +199,19 @@ export class TreasuryKernel {
 
       const reserveUsd = command.budgetEnvelope.maxCostUsd;
       const reserveCapacity = command.budgetEnvelope.maxCapacityUnits ?? 0;
+      const reserveTokenCapacity = command.resourceRequest
+        .filter((request) => request.kind === "INFERENCE")
+        .reduce(
+          (sum, request) =>
+            sum + Math.max(
+              0,
+              request.scarcityUnits ?? 0,
+              request.unit === "TOKENS"
+                ? request.quantity ?? 0
+                : 0,
+            ),
+          0,
+        );
 
       if (account.availableUsd < reserveUsd) {
         denial = `Insufficient Treasury USD: available=${account.availableUsd}, requested=${reserveUsd}`;
@@ -211,6 +224,30 @@ export class TreasuryKernel {
             missionId: command.missionId,
             amountUsd: reserveUsd,
             capacityUnits: reserveCapacity,
+          },
+          now,
+        ));
+        return null;
+      }
+
+      if (
+        account.availableTokenCapacityUnits < reserveTokenCapacity
+      ) {
+        denial =
+          `Insufficient Treasury token capacity: available=${account.availableTokenCapacityUnits}, requested=${reserveTokenCapacity}`;
+        await tx.appendEvent(event(
+          "SPEND_DENIED",
+          account.accountId,
+          {
+            reason: "INSUFFICIENT_TOKEN_CAPACITY",
+            availableTokenCapacityUnits: account.availableTokenCapacityUnits,
+            requestedTokenCapacityUnits: reserveTokenCapacity,
+          },
+          {
+            commandId: command.commandId,
+            missionId: command.missionId,
+            amountUsd: reserveUsd,
+            capacityUnits: reserveTokenCapacity,
           },
           now,
         ));
@@ -251,6 +288,7 @@ export class TreasuryKernel {
         status: "ACTIVE",
         reservedCostUsd: reserveUsd,
         reservedCapacityUnits: reserveCapacity,
+        reservedTokenCapacityUnits: reserveTokenCapacity,
         maxTokens: command.budgetEnvelope.maxTokens,
         maxDurationMs: command.budgetEnvelope.maxDurationMs,
         maxRetries: command.budgetEnvelope.maxRetries,
@@ -268,6 +306,10 @@ export class TreasuryKernel {
         reservedUsd: account.reservedUsd + reserveUsd,
         availableCapacityUnits: account.availableCapacityUnits - reserveCapacity,
         reservedCapacityUnits: account.reservedCapacityUnits + reserveCapacity,
+        availableTokenCapacityUnits:
+          account.availableTokenCapacityUnits - reserveTokenCapacity,
+        reservedTokenCapacityUnits:
+          account.reservedTokenCapacityUnits + reserveTokenCapacity,
         version: account.version + 1,
         updatedAt: now.toISOString(),
       });
