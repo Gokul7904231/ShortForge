@@ -95,6 +95,29 @@ describe("Treasury F06 compute admission", () => {
     expect(report.account.settledUsd).toBe(0);
   });
 
+  it("releases the Treasury reservation when a completed provider returns no artifact", async () => {
+    const gateway = {
+      submitJob: vi.fn(async () => ({
+        receipt: { ...receipt(), outputArtifacts: [] },
+        failovers: [],
+      })),
+    };
+    submitJob.mockReturnValue(gateway as any);
+    const fabric = new RenderFabric();
+
+    await expect(fabric.executeRender(intent("ovr-4"), {
+      treasury: {
+        service, accountId: "factory", overseerCommandId: "ovr-4",
+        budgetEnvelope: { maxCostUsd: 0.10, maxCapacityUnits: 60, maxDurationMs: 60000 },
+        scopeDigest: "sha256:scope-4",
+      },
+    })).rejects.toThrow("without a physical artifact receipt.");
+
+    const report = await service.report("factory");
+    expect(report.activeReservations).toBe(0);
+    expect(report.account.settledUsd).toBe(0);
+  });
+
   it("rejects Treasury-gated renders whose RenderIntent is not command-bound", async () => {
     const fabric = new RenderFabric();
     await expect(fabric.executeRender(intent(), {
