@@ -5,6 +5,7 @@ import { findSimilarTopic } from "../rag/topic-memory";
 import { metadataAgent } from "../agents/metadata-agent";
 import { regenerateSceneAgent } from "../agents/scene-agent";
 import { normalizeScenes } from "./scene-utils";
+import type { TreasuryModelExecutionContext } from "../ai/provider";
 
 export type AutoRefineInput = {
   topic: string;
@@ -15,6 +16,7 @@ export type AutoRefineInput = {
   provider?: any;
   maxAttempts?: number;
   faster?: boolean;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type AutoRefineOutput = {
@@ -42,12 +44,14 @@ async function scoreEverything(input: {
   script: string;
   scenes: Array<{ text: string; imagePrompt: string }>;
   provider?: any;
+  treasuryContext?: TreasuryModelExecutionContext;
 }) {
   const [hookScoreOut, sceneScoresOut, meta, thumb] = await Promise.all([
-    hookScoreAgent({ hook: input.hook, provider: input.provider }),
-    Promise.all(input.scenes.map((s) => sceneQualityAgent({ scene: s, provider: input.provider }))),
-    metadataAgent({ topic: input.topic, script: input.script, provider: input.provider }),
-    thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider }),
+    hookScoreAgent({ hook: input.hook, provider: input.provider,
+          treasuryContext: input.treasuryContext, treasuryContext: input.treasuryContext }),
+    Promise.all(input.scenes.map((s) => sceneQualityAgent({ scene: s, provider: input.provider, treasuryContext: input.treasuryContext }))),
+    metadataAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext }),
+    thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext }),
   ]);
 
   const hookScore = hookScoreOut.score;
