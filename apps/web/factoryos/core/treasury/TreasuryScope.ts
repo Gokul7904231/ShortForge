@@ -42,3 +42,8 @@ export function computeTreasuryExecutionScopeDigest(
       .digest("hex")
   );
 }
+
+
+/** @deprecated Compatibility alias; use computeTreasuryExecutionScopeDigest. */
+export const computeTreasuryEconomicScopeDigest =
+  computeTreasuryExecutionScopeDigest;
