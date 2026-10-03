@@ -377,7 +377,7 @@ export class OverseerCognitivePipeline {
           );
 
           return {
-            sourceUsed: "QuotaService",
+            sourceUsed: "TreasuryQuotaAdmission",
             evidence: {
               tier: quota.isUnlimited ? "ADMIN_UNLIMITED" : "CREATOR_BASIC",
               rendersRemainingToday: quota.remaining,
