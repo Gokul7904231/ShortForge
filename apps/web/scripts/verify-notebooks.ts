@@ -4,6 +4,8 @@ import {
   type NotebookProviderType,
 } from "../factoryos/core/compute/notebooks";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const LIVE_PROVIDERS: NotebookProviderType[] = ["KAGGLE", "COLAB", "LIGHTNING"];
 
@@ -66,6 +68,25 @@ async function runLive(provider: NotebookProviderType) {
       },
       credentials,
     );
+
+    if (
+      result.status === "SUCCEEDED" &&
+      result.verificationLevel === "PHYSICAL_ARTIFACT_VERIFIED" &&
+      result.artifactPath
+    ) {
+      const artifactDir = path.join(
+        process.env.GITHUB_WORKSPACE || process.cwd(),
+        "artifacts",
+        "kaggle-live",
+      );
+      await fs.mkdir(artifactDir, { recursive: true });
+      const persistedArtifact = path.join(
+        artifactDir,
+        "shortforge-live-notebook-probe.mp4",
+      );
+      await fs.copyFile(result.artifactPath, persistedArtifact);
+      console.log(JSON.stringify({ persistedArtifactPath: persistedArtifact }, null, 2));
+    }
 
     console.log(JSON.stringify({ provider, liveResult: result }, null, 2));
 
