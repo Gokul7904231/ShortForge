@@ -7,7 +7,6 @@
 
 import crypto from "crypto";
 import { db } from "../firebase-admin";
-import { getUserQuota, reserveGenerationSlot } from "../quota/quota-service";
 
 export interface ScheduleDefinition {
   id?: string;
@@ -175,29 +174,7 @@ export class SchedulerService {
 
     console.log(`[SchedulerService] Executing Schedule ${schedule.scheduleId} (Execution: ${executionId})...`);
 
-    // 1. Quota Check for Owner
-    try {
-      const quota = await getUserQuota(schedule.ownerId, schedule.userRole || "PRO");
-      if (quota.isExceeded || quota.remaining <= 0) {
-        console.warn(`[SchedulerService] Quota exceeded for owner ${schedule.ownerId}. Pausing schedule ${schedule.scheduleId}.`);
-        
-        await schedRef.update({
-          status: "PAUSED_QUOTA",
-          pauseReason: "Monthly quota exhausted. Schedule will resume next billing cycle.",
-          updatedAt: new Date().toISOString(),
-        });
-
-        await execDocRef.update({
-          status: "PAUSED_QUOTA",
-          finishedAt: new Date().toISOString(),
-          error: "User quota exhausted.",
-        });
-        return;
-      }
-    } catch (err: any) {
-      console.error(`[SchedulerService] Quota evaluation error:`, err.message);
-    }
-
+    // Treasury owns quota/admission. The scheduler is only a trigger.
     // 2. Dispatch Standard Video Generation Job
     try {
       const jobPayload = {
@@ -232,7 +209,28 @@ export class SchedulerService {
       const resData = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(resData.error || "Failed to enqueue generation job.");
+        if (res.status === 429) {
+          await schedRef.update({
+            status: "PAUSED_QUOTA",
+            pauseReason:
+              resData.error ||
+              resData.message ||
+              "Treasury generation entitlement exhausted.",
+            updatedAt: new Date().toISOString(),
+          });
+          await execDocRef.update({
+            status: "PAUSED_QUOTA",
+            finishedAt: new Date().toISOString(),
+            error:
+              resData.error ||
+              resData.message ||
+              "Treasury generation entitlement exhausted.",
+          });
+          return;
+        }
+        throw new Error(
+          resData.error || "Failed to enqueue generation job.",
+        );
       }
 
       const jobId = resData.jobId || resData.id || resData.videoId;
