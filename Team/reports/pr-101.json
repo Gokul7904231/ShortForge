@@ -80,7 +80,8 @@
     "Added TreasuryService and Mongo-backed service factory.",
     "Added unit tests for authority, idempotency, verification, release, overrun freeze, paid-route policy, defensive mode, expiry and concurrency.",
     "Updated .okf hierarchy, terminology, index, compute policy and current-state audit.",
-    "Updated CLAUDE.md engineering guidance."
+    "Updated CLAUDE.md engineering guidance.",
+    "Aligned the existing ComfyUI MCP architecture document with its pre-existing CI contract by naming the TRANSFORM_VISUAL_ASSET semantic action."
   ],
   "verificationResults": {
     "teamChangeGate": "PENDING",
