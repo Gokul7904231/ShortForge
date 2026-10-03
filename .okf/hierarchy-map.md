@@ -22,24 +22,24 @@ HUMAN AUTHORITY
 LEVEL 1
 OVERSEER — SUPREME CONTROL PLANE
   |
-  +-----------------+--------------------+
-  |                 |                    |
-  v                 v                    v
-SCL COGNITION   TREASURER ECONOMICS   LEVEL 2 REGULATORS
-  |                                      Guardian
-  |                                      Slayer
-  |                                      Healer
+  +----------------------+-----------------------+
+  |                      |                       |
+  v                      v                       v
+SCL COGNITION       TREASURER ECONOMICS     LEVEL 2 REGULATORS
+  |                      |                 Guardian / Slayer / Healer
+  |                      |
+  |                      +-- economic admission
+  |                      +-- reservation / settlement
+  |                      +-- scarcity protection
   |
   +-- bounded cognition
-(SCL)                                             Guardian
-  |                                               Slayer
-  +-- Fast Decision Core                          Healer
-  +-- ShortForge Cognitive Model
-  +-- Context Compiler
-  +-- Decision / Record synthesis
-  +-- Worker cognition
-  +-- Template cognition
-  +-- Research / architecture interpretation
+  |     +-- Fast Decision Core
+  |     +-- ShortForge Cognitive Model
+  |     +-- Context Compiler
+  |     +-- Decision / Record synthesis
+  |     +-- Worker cognition
+  |     +-- Template cognition
+  |     +-- Research / architecture interpretation
   |
   | bounded cognitive instructions
   v
