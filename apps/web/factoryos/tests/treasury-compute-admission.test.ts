@@ -141,6 +141,36 @@ describe("Treasury F06 compute admission", () => {
   });
 });
 
+describe("Treasury command authority", () => {
+  it("rejects an issuer identity that does not match the Overseer command", async () => {
+    const ledger = new InMemoryTreasuryLedger();
+    ledger.seedAccount(createTreasuryAccount("factory", 5, 1000));
+    const kernel = new TreasuryKernel(ledger, new TreasuryPriceRegistry());
+    const service = new TreasuryService(kernel);
+
+    await expect(service.quote({
+      commandId: "cmd-authority-1",
+      overseerCommandId: "ovr-authority-1",
+      issuer: { authority: "OVERSEER", issuerId: "different-issuer" },
+      accountId: "factory",
+      missionId: "mission-authority-1",
+      taskId: "job-authority-1",
+      purpose: "F06 render",
+      resourceRequest: [{
+        kind: "COMPUTE",
+        workloadType: "RENDER",
+        requiresGpu: true,
+        verificationRequired: true,
+      }],
+      budgetEnvelope: { maxCostUsd: 0.1, maxCapacityUnits: 10, maxRetries: 0 },
+      priority: "HIGH",
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      idempotencyKey: "authority-idem-1",
+      scopeDigest: "sha256:authority-scope",
+    })).rejects.toThrow("issuer identity must match the originating Overseer command");
+  });
+});
+
 describe("Treasury permit scope", () => {
   it("rejects a permit replayed against another job scope", async () => {
     const ledger = new InMemoryTreasuryLedger();
