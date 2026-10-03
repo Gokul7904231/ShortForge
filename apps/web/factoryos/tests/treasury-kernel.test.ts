@@ -56,6 +56,16 @@ describe("Treasurer constitutional kernel", () => {
     await expect(kernel.reserve(bad)).rejects.toBeInstanceOf(TreasuryDeniedError);
   });
 
+  it("rejects a reused idempotency key with a different scope", async () => {
+    const { kernel } = makeTreasury();
+    await kernel.reserve(command());
+    await expect(kernel.reserve(command({
+      commandId: "cmd-2",
+      overseerCommandId: "ovr-2",
+      scopeDigest: "sha256:different",
+    }))).rejects.toBeInstanceOf(TreasuryDeniedError);
+  });
+
   it("is idempotent for the same command", async () => {
     const { kernel } = makeTreasury();
     const first = await kernel.reserve(command());
