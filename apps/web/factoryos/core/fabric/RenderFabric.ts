@@ -285,6 +285,12 @@ export class RenderFabric {
 
     const artifactRef = receipt.outputArtifacts[0];
     if (!artifactRef?.sha256 || !artifactRef.uri) {
+      if (treasuryReservationId && options.treasury) {
+        await options.treasury.service.release(
+          treasuryReservationId,
+          "COMPLETED_WITHOUT_PHYSICAL_ARTIFACT",
+        ).catch(() => {});
+      }
       throw new Error(
         "[RenderFabric] Provider returned COMPLETED without a physical artifact receipt."
       );
