@@ -24,6 +24,7 @@ import { OverseerControlPlane } from "../overseer/OverseerControlPlane";
 import { MemoryEngine } from "../memory/MemoryEngine";
 import { FactoryWatchdog } from "../watchdog/FactoryWatchdog";
 import { AIRuntime } from "../../../ai/runtime";
+import { AIConfigManager } from "../../../ai/ai-config-manager";
 import { ComputeGateway } from "../compute/gateway/ComputeGateway";
 import { PythonFloorBridge } from "../bridge/PythonFloorBridge";
 import { OverseerAPIHandler } from "../overseer/api/OverseerAPIHandler";
@@ -192,6 +193,40 @@ export class AutonomousFactoryController {
         treasuryRequired,
       );
       AIRuntime.bindTreasury(this.treasuryService, treasuryRequired);
+
+      // Seed Treasury's authoritative model price registry from the trusted
+      // application configuration. Routers may consume these prices but cannot
+      // register/overwrite them during an execution attempt.
+      AIConfigManager.loadAll();
+      const treasuryPricing = this.treasuryService.getPriceRegistry();
+      for (const model of AIConfigManager.models) {
+        const pricing = AIConfigManager.pricing[model.id];
+        if (!pricing) continue;
+        for (const configuredProviderId of model.providers) {
+          const providerId =
+            configuredProviderId === "google-ai"
+              ? "google"
+              : configuredProviderId;
+          treasuryPricing.registerModelPricing({
+            providerId,
+            modelId: model.id,
+            inputUsdPer1MTokens: Math.max(0, pricing.input),
+            outputUsdPer1MTokens: Math.max(0, pricing.output),
+            pricingSource: "AI_CONFIG_BOOTSTRAP",
+            pricingVersion:
+              "ai-config:" +
+              model.id +
+              ":" +
+              pricing.input +
+              ":" +
+              pricing.output +
+              ":" +
+              (pricing.free ? "free" : "paid"),
+            confidence: pricing.free ? "MEDIUM" : "MEDIUM",
+            ttlMs: 24 * 60 * 60 * 1000,
+          });
+        }
+      }
     }
 
     if (this.config.treasuryRequired && !this.treasuryService) {
