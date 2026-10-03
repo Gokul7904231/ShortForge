@@ -127,7 +127,7 @@
     }
   ],
   "forgerPlan": "Forge Architect, Forge Builder, Forge Security and Forge Release reviewed the migration contract and its staged compatibility boundary.",
-  "foragers": [
+  "forgers": [
     "Forge Architect",
     "Forge Builder",
     "Forge Security",
