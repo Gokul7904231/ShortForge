@@ -1,7 +1,7 @@
 # Treasurer Wave 3 — Model/API + ComputeOffer Admission
 
 Date: 2026-10-03
-Status: IMPLEMENTED ON WAVE BRANCH; VALIDATION PENDING
+Status: IMPLEMENTED ON WAVE BRANCH; REMOTE VALIDATION PENDING
 
 ## Objective
 
@@ -92,15 +92,16 @@ Production AI runtime and F06 rendering fail closed when required Treasury conte
 
 The Treasury service is persistent through transaction-capable MongoDB in production. In-memory Treasury remains test infrastructure.
 
-## Next migration after Wave 3
+## Remaining migration after Wave 3
 
-1. Replace legacy user quota spend with Treasury entitlement/allocation accounts.
-2. Move MissionBudgetManager checks into Treasury mission envelopes.
-3. Replace CostGovernor gate logic with Treasury-backed compatibility facade, then remove it.
-4. Convert AgentEconomicsEngine into Treasury Economic Intelligence/advisory scoring.
-5. Feed authoritative provider-reported prices and usage into the durable Treasury price/usage history.
-6. Add anomaly detection, forecasting and unit economics.
-7. Introduce Ascalon economic advice in shadow mode without Treasury authority.
+1. Retire direct legacy quota writes/read-authority after UI projections are fully Treasury-derived.
+2. Retire direct MissionBudgetManager consumers after all mission policy checks read Treasury mission envelopes.
+3. Remove CostGovernor imports from compatibility callers.
+4. Move AgentEconomicsEngine from heuristic cost hints toward Treasury Economic Intelligence inputs.
+5. Add durable provider/API price observations and measured usage reconciliation where providers expose them.
+6. Add anomaly detection, forecasting, reservation utilization and unit-economics reporting.
+7. Introduce Ascalon economic advice in shadow mode; never grant it Treasury authority.
+8. Add migration proof tests that reject any new production caller which invokes a legacy economic authority directly.
 
 
 ## Multidimensional resource accounting
