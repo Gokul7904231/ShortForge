@@ -310,6 +310,7 @@ export class TreasuryKernel {
         status: "ACTIVE",
         reservedCostUsd: reserveUsd,
         reservedCapacityUnits: reserveCapacity,
+        resourceRequest: structuredClone(command.resourceRequest),
         reservedTokenCapacityUnits: reserveTokenCapacity,
         maxTokens: command.budgetEnvelope.maxTokens,
         maxDurationMs: command.budgetEnvelope.maxDurationMs,
@@ -340,7 +341,11 @@ export class TreasuryKernel {
       await tx.appendEvent(event(
         "RESOURCE_RESERVED",
         account.accountId,
-        { quoteId: quote.quoteId, expiresAt: created.expiresAt },
+        {
+          quoteId: quote.quoteId,
+          expiresAt: created.expiresAt,
+          resourceRequest: created.resourceRequest,
+        },
         {
           commandId: command.commandId,
           reservationId: created.reservationId,
@@ -671,6 +676,8 @@ export class TreasuryKernel {
         {
           actualTokens: consumption.actualTokens,
           actualDurationMs: consumption.actualDurationMs,
+          resourceRequest: reservation.resourceRequest,
+        },
           executionEvidenceId: consumption.executionEvidenceId,
           verified: consumption.verified,
         },
@@ -689,6 +696,7 @@ export class TreasuryKernel {
         {
           reservedUsd: reservation.reservedCostUsd,
           actualCostUsd: consumption.actualCostUsd,
+          resourceRequest: reservation.resourceRequest,
           releasedUsd: releaseUsd,
           verificationReceiptId: consumption.verificationReceiptId,
         },
