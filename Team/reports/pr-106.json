@@ -3,7 +3,7 @@
   "changeId": "ShortForge-PR106-Treasury-Economic-Intelligence-Wave4",
   "pullRequest": 106,
   "repository": "Gokul7904231/ShortForge",
-  "baseRef": "main",
+  "baseRef": "feat/treasurer-model-api-compute-admission-wave3-20261003",
   "headRef": "feat/treasury-economic-intelligence-wave4-20261003",
   "objective": "Retire remaining legacy economic authority paths and introduce read-only Treasury Economic Intelligence without creating a second economic authority or scheduler.",
   "classification": "extends existing rule",
@@ -130,5 +130,6 @@
     "Forge Builder",
     "Forge Security",
     "Forge Release"
-  ]
+  ],
+  "baseSha": "23b9eaa7637df7b48f4ca80b4db193f11ef45626"
 }
