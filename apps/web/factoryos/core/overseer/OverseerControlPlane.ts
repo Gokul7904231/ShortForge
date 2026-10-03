@@ -1753,6 +1753,11 @@ export class OverseerControlPlane {
             },
             measurements: verificationReport.measurements,
             assets: [],
+            scenes: Array.isArray(scope.scenes)
+              ? scope.scenes
+              : Array.isArray(sharedScope.scenes)
+                ? sharedScope.scenes
+                : [],
             scriptText: String(scope.script || sharedScope.script || ""),
           };
           const channel = scope.channelContext || {
