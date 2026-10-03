@@ -105,7 +105,7 @@ The pipeline DAG is strictly defined in `apps/web/factoryos/core/hierarchy/Floor
 | **Agent Runtime** | Execution Harness | **IMPLEMENTED** | `apps/web/factoryos/core/agent/AgentRuntime.ts` | Session checkpointing, budget bounds, capability gates, and TraceContext. |
 | **Observability** | Distributed Tracing | **IMPLEMENTED** | `apps/web/factoryos/core/observability/TraceContext.ts` | Mission $\rightarrow$ Run $\rightarrow$ Agent $\rightarrow$ Skill $\rightarrow$ Tool $\rightarrow$ Artifact trace tree. |
 | **KnowledgeOS** | Typed Memory Stores | **IMPLEMENTED** | `apps/web/factoryos/core/knowledge/KnowledgeOS.ts` | Domain-isolated typed stores (Source, Claim, Evidence, Topic, Channel). |
-| **Model Routing** | Capability Router | **IMPLEMENTED** | `apps/web/factoryos/core/routing/CapabilityFirstRouter.ts` | Capability matching, circuit breakers, cost governance, and local preference. |
+| **Model Routing** | Capability Router + Treasury economic admission | **IMPLEMENTED / MIGRATING** | `apps/web/factoryos/core/routing/CapabilityFirstRouter.ts` + `apps/web/ai/intelligent-router.ts` | Capability/quality/latency selection remains in routers; Treasury is the production economic admission and reservation boundary. |
 | **Media Pipeline** | TimelineIR (EDL) | **IMPLEMENTED** | `apps/web/factoryos/core/timeline/TimelineIR.ts` | Word-level timestamp synchronization and canvas validation (1080x1920). |
 | **Voice Synthesis** | Voice Fabric | **IMPLEMENTED** | `apps/web/factoryos/core/voice/VoiceFabric.ts` | Multi-engine synthesis (Gemini, ElevenLabs, Edge), forensic WAV verification. |
 | **Compute Fabric** | Compute Router & CAS | **IMPLEMENTED** | `apps/web/factoryos/core/compute/router/ComputeRouter.ts` | Utility-based provider scoring, ephemeral compute management, worker fencing. |
@@ -260,7 +260,7 @@ The API-provider phase is a control-plane boundary and is intentionally separate
 
 Canonical API-provider flow:
 
-`ComputeRouter placement intent → ProviderApiRegistry → normalized ComputeOffer → ProviderControlAdapter → provider API → ProviderApiOperationJournal → reconciliation → provisioned resource`
+`ComputeRouter placement intent → ProviderApiRegistry → normalized ComputeOffer → Treasury economic admission → ProviderControlAdapter → provider API → ProviderApiOperationJournal → reconciliation → provisioned resource`
 
 The API fabric now has explicit adapters for:
 - Vast.ai REST v0;
