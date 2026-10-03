@@ -18,7 +18,7 @@
     "required": true,
     "status": "TRIAGED",
     "semgrep": "PENDING_CI",
-    "strix": "UNPROVEN",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
     "zap": "NOT_APPLICABLE",
     "notes": "Provider-native probes use environment-bound optional credentials, sanitize evidence, and never accept secrets as MCP arguments."
   },
