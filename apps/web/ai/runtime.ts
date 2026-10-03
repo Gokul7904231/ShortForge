@@ -44,6 +44,7 @@ export interface RuntimeOptions {
   taskId?: string;
   scopeFingerprint?: string;
   priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  treasuryContext?: import("./provider").TreasuryModelExecutionContext;
 }
 
 class AIRuntimeEngineClass {
@@ -145,7 +146,19 @@ class AIRuntimeEngineClass {
     console.log(`[AIRuntime] [${traceId}:${spanId}] Starting execution for ${capability} (${version})`);
 
     let currentAttempt = 1;
-    const maxAttempts = this.treasuryRequired
+    const treasuryManaged =
+      process.env.NODE_ENV === "production" ||
+      this.treasuryRequired ||
+      Boolean(options.treasuryContext);
+
+    if (options.treasuryContext && this.treasuryService !== options.treasuryContext.treasuryService) {
+      this.bindTreasury(
+        options.treasuryContext.treasuryService,
+        process.env.NODE_ENV === "production",
+      );
+    }
+
+    const maxAttempts = treasuryManaged
       ? Math.max(1, (options.maxRetries ?? 0) + 1)
       : (options.maxRetries ?? 3) + 1;
     let lastError: any = null;
@@ -194,6 +207,7 @@ class AIRuntimeEngineClass {
             taskId: options.taskId,
             scopeFingerprint: options.scopeFingerprint,
             priority: options.priority,
+            treasuryContext: options.treasuryContext,
           },
           {
             ...params,
