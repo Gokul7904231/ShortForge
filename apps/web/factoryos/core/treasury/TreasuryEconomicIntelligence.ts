@@ -86,6 +86,11 @@ export interface TreasuryEconomicIntelligenceSnapshot {
   readonly unitMetrics: TreasuryEconomicUnitMetrics;
   readonly priorWindow: TreasuryEconomicUnitMetrics;
   readonly spendDeltaPct: number;
+  readonly forecast: {
+    readonly projected7dSpendUsd: number;
+    readonly projected30dSpendUsd: number;
+    readonly confidence: "LOW" | "MEDIUM" | "HIGH";
+  };
   readonly activeReservedUsd: number;
   readonly activeReservedCapacityUnits: number;
   readonly providers: readonly TreasuryEconomicProviderMetric[];
@@ -267,12 +272,12 @@ export class TreasuryEconomicIntelligence {
       });
     }
 
-    if (
-      current.activeCapacityUtilization(
-        report.account.availableCapacityUnits +
-          report.account.reservedCapacityUnits,
-      ) >= 0.8
-    ) {
+    const capacityUtilization =
+      report.account.capacityUnits > 0
+        ? currentReservationsCapacity / report.account.capacityUnits
+        : 0;
+
+    if (capacityUtilization >= 0.8) {
       signals.push({
         code: "CAPACITY_PRESSURE",
         severity: "WARNING",
@@ -280,6 +285,7 @@ export class TreasuryEconomicIntelligence {
           "Scarce compute capacity is highly utilized; economic intelligence recommends protecting capacity from discretionary work.",
         evidence: {
           reservedCapacityUnits: currentReservationsCapacity,
+          capacityUtilization,
           totalCapacityUnits: report.account.capacityUnits,
         },
       });
@@ -429,6 +435,18 @@ export class TreasuryEconomicIntelligence {
       unitMetrics: current.metrics,
       priorWindow: prior.metrics,
       spendDeltaPct: spendDelta,
+      forecast: {
+        projected7dSpendUsd:
+          current.metrics.spendPerHourUsd * 24 * 7,
+        projected30dSpendUsd:
+          current.metrics.spendPerHourUsd * 24 * 30,
+        confidence:
+          current.metrics.successfulExecutions >= 25
+            ? "HIGH"
+            : current.metrics.successfulExecutions >= 5
+              ? "MEDIUM"
+              : "LOW",
+      },
       activeReservedUsd: currentReservationsUsd,
       activeReservedCapacityUnits: currentReservationsCapacity,
       providers,
