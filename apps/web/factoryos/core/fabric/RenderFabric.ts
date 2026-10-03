@@ -22,7 +22,11 @@ import type {
 } from "../compute/contracts/ComputeContracts";
 import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
-import type { TreasuryBudgetEnvelope, TreasuryPriority } from "../treasury/TreasuryContracts";
+import type {
+  TreasuryBudgetEnvelope,
+  TreasuryEconomicPermit,
+  TreasuryPriority,
+} from "../treasury/TreasuryContracts";
 import type { TreasuryService } from "../treasury/TreasuryService";
 
 export interface RenderCompilationResult {
@@ -219,6 +223,13 @@ export class RenderFabric {
 
     const startedAt = Date.now();
     let treasuryReservationId: string | undefined;
+    let treasuryPermit: TreasuryEconomicPermit | undefined;
+
+    if (process.env.NODE_ENV === "production" && !options.treasury) {
+      throw new Error(
+        "[RenderFabric] Production F06 rendering requires Treasury economic admission",
+      );
+    }
 
     if (options.treasury) {
       if (!renderIntent.overseerCommandId) {
@@ -255,6 +266,7 @@ export class RenderFabric {
         scopeDigest: options.treasury.scopeDigest,
       });
       treasuryReservationId = reservation.reservation.reservationId;
+      treasuryPermit = reservation.permit;
     }
 
     let receipt: ExecutionReceipt;
@@ -263,7 +275,8 @@ export class RenderFabric {
       const result = await this.computeGateway.submitJob(
         computeJob,
         (message) => console.debug(`[RenderFabric] ${message}`),
-        options.preferredProviderType
+        options.preferredProviderType,
+        treasuryPermit,
       );
       receipt = result.receipt;
       failovers = result.failovers;
