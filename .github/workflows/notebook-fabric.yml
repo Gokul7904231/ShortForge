@@ -190,6 +190,7 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
         run: |
           set -euo pipefail
           case "$NOTEBOOK_PROVIDER" in
@@ -203,6 +204,7 @@ jobs:
             LIGHTNING)
               test -n "$LIGHTNING_USER_ID" || { echo "Missing LIGHTNING_USER_ID"; exit 1; }
               test -n "$LIGHTNING_API_KEY" || { echo "Missing LIGHTNING_API_KEY"; exit 1; }
+              test -n "$LIGHTNING_TEAMSPACE" || { echo "Missing repository variable LIGHTNING_TEAMSPACE"; exit 1; }
               ;;
           esac
       - name: Provider live smoke
@@ -215,6 +217,7 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
         working-directory: apps/web
         run: npm run factoryos:verify:notebooks
       - name: MCP live smoke
@@ -224,5 +227,6 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
           NOTEBOOK_MCP_PROVIDER: ${{ matrix.provider }}
         run: node apps/web/scripts/verify-notebook-mcps.mjs
