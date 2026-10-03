@@ -30,6 +30,10 @@ export class TreasuryService {
     return this.kernel.getPriceRegistry();
   }
 
+  getLedger(): import("./TreasuryLedger").TreasuryLedgerStore {
+    return this.kernel.getLedger();
+  }
+
   ensureAccount(account: import("./TreasuryContracts").TreasuryAccount): Promise<import("./TreasuryContracts").TreasuryAccount> {
     return this.kernel.ensureAccount(account);
   }
