@@ -1,11 +1,12 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 import { HIGH_RETENTION_RULES } from "../prompts/retention-rules";
 
 export type ThumbnailAgentInput = {
   topic: string;
   script: string;
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type ThumbnailAgentOutput = {
@@ -21,7 +22,7 @@ export async function thumbnailAgent(
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
 
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const system =
     "You are a YouTube thumbnail designer optimizing for Shorts CTR and retention. Output ONLY valid JSON. No markdown.";
