@@ -1,35 +1,35 @@
-# ShortForge Notebook Render Fabric
+# ShortForge Notebook & Interactive Compute Fabric
 
-Status: implementation wave — 2026-10-03.
+Status: implementation wave — 2026-10-01.
 
 ## Boundary
 
-Notebook providers in ShortForge are rendering backends. They may use provider-native notebook/runtime infrastructure, but every successful render must terminate in a physical artifact that can be independently verified by F07.
+Notebook runtimes are an execution and experimentation substrate, not an implicit F06 worker fleet.
 
 ~~~text
 Notebook Registry
       |
       v
-provider runtime
+provider notebook/runtime
       |
       v
-render execution
+optional future worker bootstrap
       |
       v
-physical artifact
+F06 worker admission
       |
       v
-CAS -> F07
+physical artifact -> CAS -> F07
 ~~~
 
-A notebook provider is never considered production-render eligible merely because a runtime can be created or code can be executed.
+A notebook provider is never considered production-render eligible merely because a runtime can be created.
 
 ## Canonical provider matrix
 
 | Provider | Runtime kind | GPU | Provision | Code execution | Persistence | Production worker |
 |---|---|---:|---:|---:|---:|---:|
 | Kaggle | Kaggle Kernel | yes | yes | yes | no | no |
-| Colab | Colab Runtime | yes | yes* | yes | no | no |
+| Colab | Colab Runtime | yes | yes* | no | no | no |
 | Paperspace | Machine-backed notebook | yes | yes | no | yes | no |
 | Lightning | Studio | yes | yes | yes | yes | no |
 | HF ZeroGPU | Gradio Space function | yes | no | yes | no | no |
@@ -44,36 +44,27 @@ NotebookRouter applies capability constraints before selection. Under the strict
 
 - No-card classification is evidence-based. The model distinguishes NO_CARD_STATED from NO_CARD_NOT_ESTABLISHED.
 - Free is not the same thing as persistent or production-capable.
-- Colab is a rendering backend only; it is not automatically admitted as an F06 production worker.
+- Colab free managed runtimes are not used as hidden distributed workers.
 - ZeroGPU is not modeled as a notebook VM; it is shared GPU function execution inside a Hugging Face Space.
 - Paperspace uses the current v1 machine control API, not the retired legacy notebook API.
-- Physical-artifact verification recomputes SHA-256 and byte length outside the provider before F07 acceptance.
+- Kaggle physical artifact verification recomputes SHA-256 and byte length locally after output download.
 - The notebook plane does not own F07 release truth.
 
 ## Kaggle
 
-The adapter uses the official Kaggle kernels push/status/output/delete lifecycle. The latest live proof verified real hosted execution, physical MP4 retrieval, and local SHA-256/byte-length verification. Kaggle remains productionWorkerEligible=false by design.
+The adapter uses the official Kaggle kernels push/status/output/delete lifecycle. The repository also retains the real Python controller under services/compute/kaggle-controller/. The TypeScript adapter mirrors that controller's physical-output verification semantics.
 
 ## Colab
 
-The adapter uses the allowlisted Colab Runtime API plus the managed runtime's standard Jupyter interface. Google documents the managed runtime as a Jupyter server and returns short-lived connection metadata containing a URL, proxy token, and expiry; the adapter keeps that runtime proxy credential in process memory only.
+The adapter exposes beta runtime control: validate, create, poll the long-running operation, read runtime connection metadata, and terminate. It deliberately does not invent a generic remote code execution API.
 
-The render path is bounded and artifact-first:
+## Paperspace
 
-1. authenticate using an explicit Colab access token or Google Application Default Credentials;
-2. query runtimespecs and select an eligible runtime spec, such as T4;
-3. create the managed runtime and poll the long-running operation;
-4. obtain fresh runtime connection metadata;
-5. execute the bounded render command through the Jupyter kernel WebSocket;
-6. retrieve the physical output from the Jupyter file endpoint;
-7. recompute SHA-256 and byte length locally, and validate the MP4 container signature;
-8. terminate the runtime created by the operation.
-
-No synthetic execution success is emitted when Jupyter execution or artifact retrieval fails. Colab remains productionWorkerEligible=false until the separate F06 worker-admission contract is independently satisfied.
+Paperspace is modeled as a machine-backed notebook. The current API provides machine lifecycle and startup-script controls. The adapter does not invent portable command/log/file readback behavior.
 
 ## Lightning
 
-The adapter invokes the installed lightning-sdk package and supports the documented Studio start/run/stop lifecycle. The latest live CI proof verified authenticated Studio lifecycle and deterministic code execution. Physical MP4 transfer into ShortForge CAS is still a separate bridge, so the Lightning rendering lane is not yet physically closed.
+The adapter invokes the installed lightning-sdk package and supports the documented Studio start/run/stop lifecycle. Artifact transfer into ShortForge CAS is a separate bridge.
 
 ## Hugging Face ZeroGPU
 

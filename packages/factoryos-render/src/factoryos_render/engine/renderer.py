@@ -173,8 +173,6 @@ class Renderer:
         rendered_scene_paths: List[str] = []
         cache_hits = 0
         cache_misses = 0
-        rebuilt_scene_ids: List[str] = []
-        forced_scene_ids = set(intent.repair_scope.force_scene_ids) if intent.repair_scope else set()
 
         # Step 1: Render individual scenes
         for i, scene in enumerate(comp.scenes):
@@ -183,11 +181,8 @@ class Renderer:
 
             scene_h = scene_engine.calculate_scene_hash(scene)
 
-            # ReMaker forced targets deliberately bypass prior checkpoints and cache.
-            force_rebuild = scene.scene_id in forced_scene_ids
-
             # Check if already completed in checkpoint
-            if not force_rebuild and scene.scene_id in state.completed_scenes and scene.scene_id in state.scene_artifacts:
+            if scene.scene_id in state.completed_scenes and scene.scene_id in state.scene_artifacts:
                 cached_path = state.scene_artifacts[scene.scene_id]
                 if os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
                     rendered_scene_paths.append(cached_path)
@@ -195,7 +190,7 @@ class Renderer:
                     continue
 
             # Check content-addressed cache
-            cached_scene = None if force_rebuild else self.cache.get_scene_artifact(scene_h)
+            cached_scene = self.cache.get_scene_artifact(scene_h)
             if cached_scene:
                 rendered_scene_paths.append(cached_scene)
                 state.completed_scenes.append(scene.scene_id)
@@ -219,11 +214,9 @@ class Renderer:
 
             # Store in cache
             cached_dest = self.cache.store_scene_artifact(scene_h, scene_tmp_path)
-            rebuilt_scene_ids.append(scene.scene_id)
             rendered_scene_paths.append(cached_dest)
 
-            if scene.scene_id not in state.completed_scenes:
-                state.completed_scenes.append(scene.scene_id)
+            state.completed_scenes.append(scene.scene_id)
             state.scene_artifacts[scene.scene_id] = cached_dest
             self.checkpoints.save(state)
 
@@ -302,10 +295,7 @@ class Renderer:
                 cache_hits=cache_hits,
                 cache_misses=cache_misses,
                 validation=validation,
-                scenes_rendered=[s.scene_id for s in comp.scenes],
-                scenes_rebuilt=rebuilt_scene_ids,
-                repair_mode=intent.repair_scope.mode if intent.repair_scope else None,
-                forced_scene_ids=sorted(forced_scene_ids),
+                scenes_rendered=[s.scene_id for s in comp.scenes]
             )
 
             return receipt

@@ -178,7 +178,7 @@ export class ComputeGateway {
       const renderIntent = (job.manifest as { renderIntent?: unknown }).renderIntent;
       const expectedScopeDigest = computeTreasuryExecutionScopeDigest({
         version: 1,
-        missionId: job.missionId || economicPermit.missionId,
+        missionId: job.missionId,
         jobId: job.jobId,
         floorId: economicPermit.floorId || "floor06_rendering",
         overseerCommandId: economicPermit.overseerCommandId,
@@ -193,7 +193,7 @@ export class ComputeGateway {
 
       await this.treasuryService.validatePermit(economicPermit, {
         jobId: job.jobId,
-        missionId: job.missionId || economicPermit.missionId,
+        missionId: job.missionId,
         scopeDigest: expectedScopeDigest,
         accountId: economicPermit.accountId,
       });

@@ -4,14 +4,11 @@
   "private": true,
   "description": "ShortForge-owned MCP for bounded Lightning AI Studio connection diagnostics.",
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
+  "engines": {"node": ">=22"},
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts",
-    "test": "tsx ../shared/StreamableHttpMcpClient.test.ts"
+    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.1.0",

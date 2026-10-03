@@ -277,8 +277,7 @@ export type MetricType =
   | "retry_count"
   | "failure"
   | "success"
-  | "queue_depth"
-  | "model_cost_usd";
+  | "queue_depth";
 
 export const MetricsDB = {
   record(

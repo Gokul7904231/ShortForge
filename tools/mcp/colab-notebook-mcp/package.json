@@ -2,26 +2,21 @@
   "name": "@shortforge/colab-notebook-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "ShortForge-owned Google Colab MCP with bounded runtime diagnostics and a secure local browser-session bridge.",
+  "description": "ShortForge-owned MCP for bounded Google Colab runtime connection diagnostics.",
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
+  "engines": {"node": ">=22"},
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts",
-    "test": "tsx tests/browser-bridge.test.ts"
+    "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.1.0",
-    "zod": "^4.4.3",
-    "ws": "^8.18.3"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.0.0",
     "tsx": "^4.20.5",
-    "typescript": "^6.0.3",
-    "@types/ws": "^8.18.1"
+    "typescript": "^6.0.3"
   }
 }

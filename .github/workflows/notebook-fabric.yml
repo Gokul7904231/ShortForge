@@ -22,8 +22,6 @@ on:
       - "tools/mcp/colab-notebook-mcp/**"
       - "tools/mcp/lightning-notebook-mcp/**"
       - "tools/mcp/notebook-mcp.example.json"
-      - "apps/web/scripts/colab-jupyter-exec.py"
-      - "apps/web/scripts/colab-jupyter-requirements.txt"
   push:
     branches:
       - "feat/notebook-live-mcp-20261002"
@@ -46,11 +44,6 @@ on:
         type: boolean
       colab_provision:
         description: "For COLAB, create/delete one runtime during the smoke"
-        required: true
-        default: false
-        type: boolean
-      colab_render:
-        description: "For COLAB, run a real T4 MP4 render and verify the physical artifact"
         required: true
         default: false
         type: boolean
@@ -100,14 +93,6 @@ jobs:
       - name: Typecheck MCP package
         working-directory: tools/mcp/${{ matrix.provider }}
         run: npm run typecheck
-      - name: Colab browser bridge tests
-        if: ${{ matrix.provider == 'colab-notebook-mcp' }}
-        working-directory: tools/mcp/colab-notebook-mcp
-        run: npm test
-      - name: Streamable HTTP MCP regression test
-        if: ${{ matrix.provider != 'colab-notebook-mcp' }}
-        working-directory: tools/mcp/${{ matrix.provider }}
-        run: npm test
 
   prepare_live:
     if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/notebook-live-mcp-20261002') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
@@ -150,12 +135,6 @@ jobs:
       - name: Install Kaggle CLI
         if: ${{ matrix.provider == 'KAGGLE' }}
         run: python -m pip install --upgrade kaggle
-      - name: Install Colab Jupyter bridge dependency
-        if: ${{ matrix.provider == 'COLAB' }}
-        run: python -m pip install --upgrade -r apps/web/scripts/colab-jupyter-requirements.txt
-      - name: Validate Colab bridge syntax
-        if: ${{ matrix.provider == 'COLAB' }}
-        run: python -m py_compile apps/web/scripts/colab-jupyter-exec.py
       - name: Install Lightning SDK
         if: ${{ matrix.provider == 'LIGHTNING' }}
         run: python -m pip install --upgrade lightning-sdk
@@ -171,14 +150,12 @@ jobs:
         env:
           NOTEBOOK_PROVIDER: ${{ matrix.provider }}
           NOTEBOOK_LIVE: "1"
-          COLAB_LIVE_PROVISION: ${{ github.event_name == 'push' && '0' || (inputs.colab_provision && '1' || '0') }}
-          COLAB_LIVE_RENDER: ${{ github.event_name == 'push' && '0' || (inputs.colab_render && '1' || '0') }}
+          COLAB_LIVE_PROVISION: ${{ github.event_name == 'push' && '1' || (inputs.colab_provision && '1' || '0') }}
           LIGHTNING_LIVE_MACHINE: ${{ github.event_name == 'push' && 'CPU' || inputs.lightning_machine }}
         run: |
           echo "NOTEBOOK_PROVIDER=$NOTEBOOK_PROVIDER" >> "$GITHUB_ENV"
           echo "NOTEBOOK_LIVE=$NOTEBOOK_LIVE" >> "$GITHUB_ENV"
           echo "COLAB_LIVE_PROVISION=$COLAB_LIVE_PROVISION" >> "$GITHUB_ENV"
-          echo "COLAB_LIVE_RENDER=$COLAB_LIVE_RENDER" >> "$GITHUB_ENV"
           echo "LIGHTNING_LIVE_MACHINE=$LIGHTNING_LIVE_MACHINE" >> "$GITHUB_ENV"
       - name: Validate required provider secret names
         env:

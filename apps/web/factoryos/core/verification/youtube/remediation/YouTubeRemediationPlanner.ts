@@ -21,14 +21,10 @@ export class YouTubeRemediationPlanner {
 
     let repairObjective = finding.suggestedRemediation || "Repair affected production stage according to policy.";
     let allowedActions: string[] = [];
-    let remediationOwner: "REMAKER" | "UPSTREAM_FLOOR" | "OVERSEER" | "HUMAN_REVIEW" = "OVERSEER";
-    let remakerEligible = false;
-    let recommendedReMakerAction: import("../../../remaker/ReMakerContracts").ReMakerAction | undefined;
 
     switch (finding.gateId) {
       case "G03_INAUTHENTIC_CONTENT":
         repairObjective = "Change substantive narrative experience and restructure hook.";
-        remediationOwner = "UPSTREAM_FLOOR";
         allowedActions = [
           "rewrite hook",
           "change narrative structure",
@@ -40,7 +36,6 @@ export class YouTubeRemediationPlanner {
 
       case "G04_REUSED_CONTENT":
         repairObjective = "Add original editorial commentary and transformative analysis.";
-        remediationOwner = "UPSTREAM_FLOOR";
         allowedActions = [
           "synthesize original commentary",
           "add critical perspective",
@@ -51,11 +46,7 @@ export class YouTubeRemediationPlanner {
 
       case "G05_COMMERCIAL_RIGHTS":
         repairObjective = "Replace un-cleared or expired assets with verified commercial licenses.";
-        remediationOwner = "REMAKER";
-        remakerEligible = true;
-        recommendedReMakerAction = "REPLACE_ASSET";
         allowedActions = [
-          "replace asset",
           "substitute asset with approved commercial stock",
           "generate original synthetic image/broll",
           "replace claimed audio bed with CC0 or YouTube Audio Library track",
@@ -64,11 +55,7 @@ export class YouTubeRemediationPlanner {
 
       case "G06_ADVERTISER_SUITABILITY":
         repairObjective = "Reframe sensitive topic with educational objectivity and replace graphic visuals.";
-        remediationOwner = "REMAKER";
-        remakerEligible = true;
-        recommendedReMakerAction = "REPLACE_ASSET";
         allowedActions = [
-          "replace asset",
           "soften graphic wording",
           "emphasize educational/documentary framing",
           "replace sensitive thumbnail or focal b-roll scene",
@@ -77,7 +64,6 @@ export class YouTubeRemediationPlanner {
 
       case "G08_SPAM_DECEPTION":
       case "G10_METADATA_PACKAGING":
-        remediationOwner = "OVERSEER";
         repairObjective = "Align packaging metadata directly with verified video narrative.";
         allowedActions = [
           "rewrite title to describe genuine content",
@@ -87,12 +73,8 @@ export class YouTubeRemediationPlanner {
         break;
 
       case "G12_SHORTS_ELIGIBILITY":
-        remediationOwner = "REMAKER";
-        remakerEligible = true;
-        recommendedReMakerAction = "RENDER_WINDOW";
         repairObjective = "Adjust video duration or geometry to satisfy YouTube Shorts format rules.";
         allowedActions = [
-          "render affected scenes only",
           "trim timeline to <= 180s (or <= 60s if claimed audio bed)",
           "adjust canvas crop to 9:16 (1080x1920)",
           "replace claimed music track",
@@ -100,7 +82,6 @@ export class YouTubeRemediationPlanner {
         break;
 
       case "G13_CHANNEL_REPETITION":
-        remediationOwner = "UPSTREAM_FLOOR";
         repairObjective = "Vary narrative archetype and hook family to eliminate channel fatigue.";
         allowedActions = [
           "select unrepresented hook family",
@@ -110,7 +91,6 @@ export class YouTubeRemediationPlanner {
         break;
 
       default:
-        remediationOwner = "HUMAN_REVIEW";
         allowedActions = ["regenerate affected stage", "verify policy compliance"];
         break;
     }
@@ -149,9 +129,6 @@ export class YouTubeRemediationPlanner {
       preserve: Object.freeze(["verified facts", "approved sources", "brand identity"]),
       rerunRequired: Object.freeze(Array.from(rerunStages)),
       createdAt: new Date().toISOString(),
-      remediationOwner,
-      remakerEligible,
-      recommendedReMakerAction,
     };
   }
 }

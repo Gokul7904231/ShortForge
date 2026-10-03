@@ -6,12 +6,18 @@
  */
 import { db } from "../../../lib/firebase-admin";
 import {
-  getCalendarMonthBounds,
   getUserQuota,
   resolveTier,
+  getCalendarMonthBounds,
   type UserQuotaInfo,
   QuotaExceededError,
 } from "../../../lib/quota/quota-service";
+import {
+  entitlementAccountId,
+  entitlementLimit,
+  entitlementPeriod,
+  resolveTreasuryEntitlementTier,
+} from "./TreasuryEntitlementPolicy";
 import { createTreasuryAccount } from "./TreasuryLedger";
 import { computeTreasuryExecutionScopeDigest } from "./TreasuryScope";
 import type { TreasuryEconomicPermit, TreasuryReservation } from "./TreasuryContracts";
@@ -34,12 +40,11 @@ export interface TreasuryQuotaReservationResult {
   readonly unlimited: boolean;
 }
 
-function quotaAccountId(quota: UserQuotaInfo): string {
-  const periodKey =
-    quota.periodType === "CALENDAR_MONTH"
-      ? getCalendarMonthBounds().periodKey
-      : "lifetime";
-  return "quota:" + quota.userId + ":" + periodKey;
+function quotaAccountId(userId: string, tier: string): string {
+  return entitlementAccountId(
+    userId,
+    resolveTreasuryEntitlementTier(tier),
+  );
 }
 
 function buildQuotaAccount(
@@ -78,35 +83,92 @@ function buildQuotaAccount(
   };
 }
 
+function buildQuotaInfoFromAccount(
+  userId: string,
+  tierName: string,
+  account: ReturnType<typeof createTreasuryAccount>,
+): UserQuotaInfo {
+  const tier = resolveTreasuryEntitlementTier(tierName);
+  const period = entitlementPeriod(tier);
+  const limit = entitlementLimit(tier);
+  const completed = Math.max(0, account.settledCapacityUnits);
+  const reserved = Math.max(0, account.reservedCapacityUnits);
+  const unlimited = !Number.isFinite(limit);
+
+  return {
+    userId,
+    tier,
+    periodType: period.periodType,
+    periodStart: period.start,
+    periodEnd: period.end,
+    limit,
+    completed,
+    reserved,
+    totalUsed: completed + reserved,
+    remaining: unlimited
+      ? Infinity
+      : Math.max(0, limit - completed - reserved),
+    isUnlimited: unlimited,
+    isExceeded: !unlimited && completed + reserved >= limit,
+  };
+}
+
 export class TreasuryQuotaAdmission {
   constructor(private readonly treasury: TreasuryService) {}
+
+  async getGenerationQuota(
+    userId: string,
+    role: string,
+  ): Promise<UserQuotaInfo> {
+    const tier = resolveTreasuryEntitlementTier(role);
+    const accountId = quotaAccountId(userId, role);
+    let account = await this.treasury.getLedger().getAccount(accountId);
+
+    if (!account) {
+      const legacyQuota = await getUserQuota(userId, role);
+      account = await this.treasury.ensureAccount(
+        buildQuotaAccount(legacyQuota, accountId),
+      );
+    }
+
+    return buildQuotaInfoFromAccount(userId, tier, account);
+  }
 
   async reserveGenerationSlot(
     context: TreasuryQuotaAdmissionContext,
   ): Promise<TreasuryQuotaReservationResult> {
-    const tier = resolveTier(context.role);
-    const quota = await getUserQuota(context.userId, context.role);
+    const tier = resolveTreasuryEntitlementTier(context.role);
+    const unlimited = tier === "ADMIN" || tier === "OWNER";
+    const accountId = quotaAccountId(context.userId, context.role);
+    let account = await this.treasury.getLedger().getAccount(accountId);
 
-    if (tier === "ADMIN" || tier === "OWNER" || quota.isUnlimited) {
-      return {
-        quota,
-        unlimited: true,
-      };
+    if (!account) {
+      // One-time migration bootstrap only: read the legacy projection, seed
+      // Treasury, then all future admission uses Treasury state.
+      const legacyQuota = await getUserQuota(context.userId, context.role);
+      const bootstrap = buildQuotaAccount(legacyQuota, accountId);
+      account = await this.treasury.ensureAccount(bootstrap);
     }
 
-    if (quota.isExceeded || quota.remaining <= 0) {
+    const quota = buildQuotaInfoFromAccount(
+      context.userId,
+      context.role,
+      account,
+    );
+
+    if (unlimited) {
+      return { quota, unlimited: true };
+    }
+
+    if (
+      quota.isExceeded ||
+      quota.remaining <= 0 ||
+      account.availableCapacityUnits < 1
+    ) {
       throw new QuotaExceededError(
-        quota.isExceeded
-          ? "Treasury quota exhausted for user " + context.userId
-          : "Treasury quota has no remaining generation capacity",
+        "Treasury quota exhausted for user " + context.userId,
         quota,
       );
-    }
-
-    const accountId = quotaAccountId(quota);
-    const existing = await this.treasury.getAccount(accountId);
-    if (!existing) {
-      await this.treasury.ensureAccount(buildQuotaAccount(quota, accountId));
     }
 
     const response = await this.treasury.reserve({
@@ -123,14 +185,16 @@ export class TreasuryQuotaAdmission {
       taskId: context.jobId,
       attemptId: context.jobId,
       purpose: "User generation entitlement reservation",
-      resourceRequest: [{
-        kind: "QUOTA",
-        quantity: 1,
-        unit: "GENERATION_SLOT",
-        scarcityUnits: 1,
-        verificationRequired: true,
-        paidRoute: false,
-      }],
+      resourceRequest: [
+        {
+          kind: "QUOTA",
+          quantity: 1,
+          unit: "GENERATION_SLOT",
+          scarcityUnits: 1,
+          verificationRequired: true,
+          paidRoute: false,
+        },
+      ],
       budgetEnvelope: {
         maxCostUsd: 0,
         maxCapacityUnits: 1,
@@ -138,7 +202,8 @@ export class TreasuryQuotaAdmission {
       },
       priority: "NORMAL",
       expiresAt: context.expiresAt,
-      idempotencyKey: "quota:" + context.userId + ":" + context.jobId,
+      idempotencyKey:
+        "quota:" + context.userId + ":" + context.jobId,
       scopeDigest: computeTreasuryExecutionScopeDigest({
         version: 1,
         kind: "QUOTA",
@@ -156,13 +221,28 @@ export class TreasuryQuotaAdmission {
       }),
     });
 
-    await projectQuotaReservation(context.userId, context.role, context.jobId);
+    try {
+      await projectQuotaReservation(
+        context.userId,
+        context.role,
+        context.jobId,
+      );
+    } catch (error) {
+      // Compatibility projection must never become an economic authority.
+      console.warn(
+        "[TreasuryQuotaAdmission] Legacy quota projection failed after Treasury admission:",
+        error,
+      );
+    }
+
     return {
       quota: {
         ...quota,
         reserved: quota.reserved + 1,
         totalUsed: quota.totalUsed + 1,
-        remaining: Math.max(0, quota.remaining - 1),
+        remaining: Number.isFinite(quota.remaining)
+          ? Math.max(0, quota.remaining - 1)
+          : Infinity,
       },
       reservation: response.reservation,
       permit: response.permit,
@@ -177,7 +257,14 @@ export class TreasuryQuotaAdmission {
     jobId: string,
   ): Promise<void> {
     await this.treasury.release(reservationId, "GENERATION_RELEASED");
-    await projectQuotaRelease(userId, role, jobId);
+    try {
+      await projectQuotaRelease(userId, role, jobId);
+    } catch (error) {
+      console.warn(
+        "[TreasuryQuotaAdmission] Legacy quota release projection failed:",
+        error,
+      );
+    }
   }
 
   async settleGenerationSlot(
@@ -197,7 +284,14 @@ export class TreasuryQuotaAdmission {
       verified: true,
       measuredAt: new Date().toISOString(),
     });
-    await projectQuotaSettlement(userId, role, jobId);
+    try {
+      await projectQuotaSettlement(userId, role, jobId);
+    } catch (error) {
+      console.warn(
+        "[TreasuryQuotaAdmission] Legacy quota settlement projection failed:",
+        error,
+      );
+    }
   }
 }
 
@@ -206,7 +300,7 @@ export async function projectQuotaReservation(
   role: string,
   jobId: string,
 ): Promise<void> {
-  const tier = resolveTier(role);
+  const tier = resolveTreasuryEntitlementTier(role);
   if (tier === "ADMIN" || tier === "OWNER") return;
   const { periodKey } = getCalendarMonthBounds();
   const docId = tier === "PRO" ? userId + "_" + periodKey : userId;

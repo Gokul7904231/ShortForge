@@ -5,8 +5,6 @@ Manages isolated per-scene rendering, fast-path static optimizations, and scene-
 
 import os
 import hashlib
-import json
-from dataclasses import asdict
 from typing import Optional, Callable
 from .frame_engine import FrameEngine
 from ..contracts.composition import CompositionScene
@@ -22,13 +20,15 @@ class SceneEngine:
 
     def calculate_scene_hash(self, scene: CompositionScene) -> str:
         """Deterministic content-addressed hash of scene definition."""
-        payload = json.dumps(
-            asdict(scene),
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        h = hashlib.sha256()
+        h.update(scene.scene_id.encode())
+        h.update(scene.template_id.encode())
+        h.update(str(scene.duration_frames).encode())
+        h.update(scene.narration_text.encode())
+        for shot in scene.shots:
+            h.update(shot.recipe_id.encode())
+            h.update(str(sorted(shot.props.items())).encode())
+        return h.hexdigest()
 
     def render_scene(
         self,

@@ -86,46 +86,6 @@ describe("YouTube ReMaker Remediation & Evidence Invalidation — Targeted Repai
     expect(remCase.preserve).toContain("verified facts");
     expect(remCase.rerunRequired).toContain("variation");
     expect(remCase.rerunRequired).toContain("f07");
-    expect(remCase.remakerEligible).toBe(false);
-    expect(remCase.remediationOwner).toBe("UPSTREAM_FLOOR");
-  });
-
-  it("routes localized media findings to ReMaker and semantic changes upstream", () => {
-    const rightsFinding: GateEvaluationFinding = {
-      gateId: "G05_COMMERCIAL_RIGHTS",
-      ruleId: "YT.RIGHTS.COMMERCIAL_CLEARANCE",
-      status: "REPAIR_REQUIRED",
-      severity: "REPAIRABLE",
-      observedSignal: { unapprovedAsset: true },
-      explanation: "Asset rights evidence is incomplete.",
-      evidence: ["asset_42 has no verified license"],
-      affectedStages: ["F03", "F04"],
-      evaluationType: "DETERMINISTIC",
-      confidence: 1,
-    };
-
-    const rightsCase = YouTubeRemediationPlanner.planRemediation(rightsFinding);
-    expect(rightsCase.remakerEligible).toBe(true);
-    expect(rightsCase.remediationOwner).toBe("REMAKER");
-    expect(rightsCase.recommendedReMakerAction).toBe("REPLACE_ASSET");
-    expect(rightsCase.allowedActions).toContain("replace asset");
-
-    const metadataFinding: GateEvaluationFinding = {
-      gateId: "G10_METADATA_PACKAGING",
-      ruleId: "YT.METADATA.PACKAGING_INTEGRITY",
-      status: "REPAIR_REQUIRED",
-      severity: "REPAIRABLE",
-      observedSignal: { tagStuffing: true },
-      explanation: "Metadata is not aligned with the content.",
-      evidence: ["tag count exceeds policy threshold"],
-      affectedStages: ["F07"],
-      evaluationType: "DETERMINISTIC",
-      confidence: 1,
-    };
-
-    const metadataCase = YouTubeRemediationPlanner.planRemediation(metadataFinding);
-    expect(metadataCase.remakerEligible).toBe(false);
-    expect(metadataCase.remediationOwner).toBe("OVERSEER");
   });
 
   it("2. Targeted Stage Routing — maps smallest affected surface without resetting whole factory", () => {

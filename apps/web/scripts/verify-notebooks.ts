@@ -83,9 +83,7 @@ async function runLive(provider: NotebookProviderType) {
 
   if (provider === "COLAB") {
     const doProvision = process.env.COLAB_LIVE_PROVISION === "1";
-    const doRender = process.env.COLAB_LIVE_RENDER === "1";
-
-    if (!doProvision && !doRender) {
+    if (!doProvision) {
       console.log(
         JSON.stringify(
           {
@@ -93,9 +91,9 @@ async function runLive(provider: NotebookProviderType) {
             verificationLevel: "CONTROL_PLANE_VERIFIED",
             status: "SUCCEEDED",
             evidence: [
-              "Colab runtimespecs endpoint accepted the authenticated request.",
-              "Set COLAB_LIVE_PROVISION=1 to explicitly create/delete one runtime.",
-              "Set COLAB_LIVE_RENDER=1 to run the physical MP4 rendering probe.",
+              "Colab runtimespecs endpoint accepted the credential.",
+              "Set COLAB_LIVE_PROVISION=1 to explicitly create and delete a runtime.",
+              "Code execution remains unavailable in the Colab adapter by design.",
             ],
           },
           null,
@@ -105,52 +103,12 @@ async function runLive(provider: NotebookProviderType) {
       return;
     }
 
-    const timeoutMs = Number(
-      process.env.NOTEBOOK_LIVE_TIMEOUT_MS || 900000,
-    );
-    const outputPath = "/content/shortforge-live-colab-render.mp4";
-    const gpuType = process.env.COLAB_LIVE_GPU || "T4";
-
-    if (doRender) {
-      const result = await adapter.execute(
-        {
-          command:
-            "ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=320x180:d=1 -an -c:v libx264 -pix_fmt yuv420p " +
-            outputPath,
-          timeoutMs,
-          outputPath,
-          provision: {
-            idempotencyKey: "shortforge-live-colab-render-" + Date.now(),
-            name: "shortforge-live-colab-render",
-            gpuType,
-            timeoutMs,
-          },
-        },
-        credentials,
-      );
-
-      console.log(JSON.stringify({ provider, liveResult: result }, null, 2));
-
-      if (
-        result.status !== "SUCCEEDED" ||
-        result.verificationLevel !== "PHYSICAL_ARTIFACT_VERIFIED" ||
-        !result.artifactSha256 ||
-        !result.artifactByteLength ||
-        result.artifactByteLength < 1024
-      ) {
-        throw new Error(
-          "Colab live physical-artifact render probe did not pass.",
-        );
-      }
-      return;
-    }
-
     const result = await adapter.provision(
       {
         idempotencyKey: randomUUID(),
         name: "shortforge-live-colab-probe",
-        timeoutMs,
-        gpuType,
+        timeoutMs: Number(process.env.NOTEBOOK_LIVE_TIMEOUT_MS || 120000),
+        gpuType: process.env.COLAB_LIVE_GPU || undefined,
       },
       credentials,
     );
@@ -166,7 +124,7 @@ async function runLive(provider: NotebookProviderType) {
               resourceId: result.runtime.resourceId,
               state: result.runtime.state,
               notebookUrl: result.runtime.notebookUrl,
-              gpuType: result.runtime.gpuType,
+              endpointUri: result.runtime.endpointUri,
             },
             evidence: result.evidence,
           },

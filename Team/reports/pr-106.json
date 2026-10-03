@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR106-Treasury-Economic-Intelligence-Wave4",
+  "pullRequest": 106,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/treasurer-model-api-compute-admission-wave3-20261003",
+  "headRef": "feat/treasury-economic-intelligence-wave4-20261003",
+  "objective": "Retire remaining legacy economic authority paths and introduce read-only Treasury Economic Intelligence without creating a second economic authority or scheduler.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/decisions/treasury-economic-intelligence-wave4-20261003.md",
+      "docs/treasury-wave4-economic-intelligence.md"
+    ]
+  },
+  "changes": [
+    "Added read-only TreasuryEconomicIntelligence over the durable Treasury ledger.",
+    "Added bounded spend forecasts and active reservation-capacity pressure signals.",
+    "Added TreasuryEconomicAdvice shadow projection without Treasury mutation capability.",
+    "Exposed read-only admin Treasury economics API and operator panel.",
+    "Retired CostGovernor from CapabilityFirstRouter production authority path.",
+    "Removed MissionBudgetManager from MissionManager economic enforcement; duration/parallelism remain mission lifecycle constraints.",
+    "Made TreasuryQuotaAdmission authoritative after one-time legacy quota bootstrap; Firestore remains projection.",
+    "Moved user/admin/Overseer quota reads to Treasury.",
+    "Collapsed /api/generations into the canonical /api/generate-video compatibility facade.",
+    "Removed scheduler-owned quota admission and delegated generation to canonical Treasury-gated flow.",
+    "Routed specialized quiz/model endpoints through Treasury-managed providerFactory.",
+    "Bound Economic Intelligence into Overseer Decision Fabric as advisory-only context.",
+    "Added static authority-retirement regression tests.",
+    "Updated Treasurer .okf hierarchy, economic contract, decision record, and Wave 4 documentation.",
+    "Made legacy Firestore quota projection failures non-authoritative: Treasury admission/release/settlement succeed independently and projection failures are logged for reconciliation.",
+    "Added dedicated .github/workflows/treasury-wave4-validation.yml with focused Treasury intelligence, authority-retirement, admission, and provider-retry regression coverage."
+  ],
+  "invariants": [
+    "Treasurer remains the only production economic admission authority.",
+    "Economic Intelligence is read-only and cannot mutate Treasury.",
+    "Recommendations never equal authorization.",
+    "Unknown paid pricing remains denied.",
+    "Each additional model/provider attempt requires a fresh Treasury reservation.",
+    "Legacy Firestore quota is bootstrap/projection only.",
+    "Free monetary cost does not imply unlimited scarce capacity.",
+    "Ascalon/GLiDE receives only a bounded projection and cannot authorize Treasury spend."
+  ],
+  "verificationResults": {
+    "repositoryCI": "PENDING_CURRENT_HEAD",
+    "treasuryEconomicIntelligenceTests": "PENDING_CURRENT_HEAD",
+    "treasuryAuthorityRetirementTests": "PENDING_CURRENT_HEAD",
+    "computeOfferFabric": "PENDING",
+    "overseerDecisionFabric": "PENDING",
+    "floor02Floor03": "PENDING",
+    "floor06": "PENDING",
+    "floor07": "PENDING",
+    "teamChangeGate": "PENDING_CURRENT_HEAD",
+    "strix": "UNAVAILABLE_TRIAL_EXPIRED",
+    "localCloneTests": "NOT_RUN_NETWORK_DNS_UNAVAILABLE",
+    "modelApiComputeValidation": "PENDING_CURRENT_HEAD",
+    "f06F07Validation": "PENDING_CURRENT_HEAD"
+  },
+  "disposition": "BLOCKED",
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Treasury remains the deterministic economic authority; Economic Intelligence is read-only advisory context.",
+      "Legacy CostGovernor and MissionBudgetManager are no longer production economic admission authorities.",
+      "Legacy quota Firestore is bootstrap/projection only after Treasury entitlement initialization.",
+      "Production providerFactory execution requires Treasury context and the canonical IntelligentRouter.",
+      "Unknown paid pricing remains denied and additional model attempts require fresh Treasury reservations."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-W4-001",
+      "originalConflict": "Economic Intelligence could become a second economic authority if recommendations were allowed to mutate Treasury.",
+      "status": "RESOLVED",
+      "proposedResolution": "Expose a read-only Treasury ledger projection with no mutation capability and keep all admission decisions in the Constitutional Kernel.",
+      "acceptedResolution": "TreasuryEconomicIntelligence and TreasuryEconomicAdvice expose measurements/recommendations only; no Treasury service handle is exposed to cognition.",
+      "decisionAuthority": "Treasury economic authority invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryEconomicIntelligence.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEconomicAdvice.ts"
+      ]
+    },
+    {
+      "id": "TRSY-W4-002",
+      "originalConflict": "Legacy quota storage could remain a competing production admission authority during migration.",
+      "status": "RESOLVED",
+      "proposedResolution": "Use Treasury entitlement accounts for hot-path reads/admission; allow legacy Firestore only for one-time bootstrap and compatibility projection.",
+      "acceptedResolution": "TreasuryQuotaAdmission owns quota admission and current quota reads while Firestore receives projections.",
+      "decisionAuthority": "Treasury entitlement authority",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryQuotaAdmission.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEntitlementPolicy.ts"
+      ]
+    },
+    {
+      "id": "TRSY-W4-003",
+      "originalConflict": "Capability and mission components could continue authorizing spend independently through legacy governors.",
+      "status": "RESOLVED",
+      "proposedResolution": "Keep capability and mission lifecycle checks local, but move economic admission exclusively to Treasury.",
+      "acceptedResolution": "CapabilityFirstRouter no longer calls CostGovernor and MissionManager no longer delegates economic admission to MissionBudgetManager.",
+      "decisionAuthority": "Treasury economic admission invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/routing/CapabilityFirstRouter.ts",
+        "apps/web/factoryos/core/missions/MissionManager.ts"
+      ]
+    },
+    {
+      "id": "TRSY-W4-004",
+      "originalConflict": "Specialized legacy endpoints and scheduler paths could bypass the canonical Treasury-gated generation path.",
+      "status": "RESOLVED",
+      "proposedResolution": "Collapse compatibility generation routes into the canonical path and make scheduler admission-free.",
+      "acceptedResolution": "/api/generations delegates to /api/generate-video, scheduler triggers canonical generation, and specialized quiz/model endpoints use the Treasury-aware provider gateway.",
+      "decisionAuthority": "Treasury single-boundary migration rule",
+      "canonicalUpdates": [
+        "apps/web/app/api/generations/route.ts",
+        "apps/web/lib/scheduler/SchedulerService.ts",
+        "apps/web/app/api/quiz/geo/route.ts",
+        "apps/web/app/api/quiz/generate/route.ts"
+      ]
+    }
+  ],
+  "forgerPlan": "Forge Architect, Forge Builder, Forge Security and Forge Release reviewed the Wave 4 authority-retirement and advisory-intelligence contract.",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Release"
+  ],
+  "baseSha": "23b9eaa7637df7b48f4ca80b4db193f11ef45626",
+  "latestHeadSha": "32eff6f3cfd8543dd9386c1e5ecaa49361808bc9",
+  "notes": [
+    "Current head is 32eff6f3cfd8543dd9386c1e5ecaa49361808bc9.",
+    "Disposition is BLOCKED while current-head remote validation is pending.",
+    "The report intentionally uses BLOCKED because the Team validator only accepts PASS, BLOCKED, REJECTED, or ESCALATED."
+  ]
+}

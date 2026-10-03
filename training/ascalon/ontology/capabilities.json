@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "name": "AscalonSystemCapabilities",
-  "version": "1.6.0",
+  "version": "1.5.0",
   "description": "Authoritative machine-readable registry of executable capabilities in ShortForge",
   "capabilities": [
     {
@@ -192,42 +192,6 @@
       "requiresGuardianGate": true,
       "timeoutMs": 30000,
       "trainingEligible": true
-    },
-    {
-      "capabilityId": "CAP_REMAKER_REPAIR",
-      "version": "2.0.0",
-      "name": "Guardian-Authorized ReMaker Surgical Repair",
-      "floorId": "floor06_rendering",
-      "riskClass": "HIGH",
-      "allowedRoles": [
-        "FLOOR_GUARDIAN"
-      ],
-      "requiresGuardianGate": true,
-      "timeoutMs": 300000,
-      "trainingEligible": true,
-      "executionAuthority": "REMAKER_ENGINE",
-      "authorizationBoundary": "GUARDIAN_CAPABILITY_ISSUER",
-      "leaseBoundary": "LEASE_MANAGER_MONOTONIC_FENCING",
-      "verificationBoundary": "F07_INDEPENDENT_PHYSICAL_REVERIFICATION",
-      "repairActions": [
-        "REALIGN_SUBTITLE",
-        "REPLACE_ASSET",
-        "REGENERATE_AUDIO_SEGMENT",
-        "SHIFT_TIMING",
-        "REBUILD_SCENE",
-        "RENDER_WINDOW"
-      ],
-      "trainingEvidence": [
-        "f07_remediation_case",
-        "explicit_target_scope",
-        "parent_artifact_sha256",
-        "timeline_digest_match",
-        "guardian_grant",
-        "lease_fencing_token",
-        "preservation_fingerprints",
-        "physical_render_receipt",
-        "f07_reverification"
-      ]
     },
     {
       "capabilityId": "blender.mcp",

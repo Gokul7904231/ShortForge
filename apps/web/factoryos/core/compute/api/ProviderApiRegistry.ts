@@ -313,7 +313,7 @@ export class ProviderApiRegistry {
     );
 
     try {
-      const provision = await this.provision(type, {
+      const provision = await this.provision({
         ...request,
         missionId: request.missionId ?? context.missionId,
       });
