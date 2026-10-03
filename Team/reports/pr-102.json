@@ -94,7 +94,8 @@
         "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
         "apps/web/factoryos/core/compute/router/ComputeRouter.ts"
       ]
-    },
+    }
+  ],
   "forgers": [
     "Forge Architect",
     "Forge Builder",
