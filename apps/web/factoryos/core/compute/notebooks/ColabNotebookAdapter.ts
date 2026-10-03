@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { google } from "googleapis";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type {
@@ -453,23 +455,26 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
-    const gcloud = process.env.COLAB_GCLOUD_BIN || "gcloud";
-    const result = await runProcess(
-      gcloud,
-      ["auth", "application-default", "print-access-token"],
-      { timeoutMs: 20_000 },
-    );
-
-    if (result.exitCode !== 0 || !result.stdout.trim()) {
+    try {
+      const auth = new google.auth.GoogleAuth({
+        scopes: [COLAB_SCOPE],
+      });
+      const client = await auth.getClient();
+      const accessToken = await client.getAccessToken();
+      const token =
+        typeof accessToken === "string"
+          ? accessToken
+          : accessToken?.token;
+      if (!token) {
+        throw new Error("Google ADC returned no access token.");
+      }
+      return token;
+    } catch (error: any) {
       throw new Error(
-        "COLAB_GCLOUD_ADC_UNAVAILABLE: gcloud Application Default Credentials are unavailable. Authenticate with the Colab OAuth scope " +
-          COLAB_SCOPE +
-          ". " +
-          (result.stderr || result.stdout || "").trim().slice(0, 500),
+        "COLAB_ADC_UNAVAILABLE: Google Application Default Credentials could not provide a Colab-scoped access token. " +
+          (error?.message || String(error)).slice(0, 500),
       );
     }
-
-    return result.stdout.trim().split(/\s+/)[0];
   }
 
   private async apiFetch(
@@ -675,8 +680,8 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
     timedOut: boolean;
     error?: string;
   }> {
-    const bridgeScript = path.resolve(
-      new URL("../../../scripts/colab-jupyter-exec.py", import.meta.url).pathname,
+    const bridgeScript = fileURLToPath(
+      new URL("../../../scripts/colab-jupyter-exec.py", import.meta.url),
     );
     const codeB64 = Buffer.from(code, "utf8").toString("base64");
 
