@@ -33,6 +33,7 @@ import { StrategicMetaThinker } from "../cognitive/meta/StrategicMetaThinker";
 import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
 import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
+import type { TreasuryService } from "../treasury/TreasuryService";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
 import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
@@ -102,6 +103,7 @@ export class OverseerControlPlane {
   public metaThinker: StrategicMetaThinker;
   public presenceEngine: OverseerPresenceEngine;
   public trajectoryCollector: ProductionTrajectoryCollector;
+  public treasuryService?: TreasuryService;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -122,7 +124,8 @@ export class OverseerControlPlane {
     taskDAGRepo?: ITaskDAGRepository,
     memoryLifecycle?: MemoryLifecycleService,
     intelligenceGateway?: IntelligenceGateway,
-    trajectoryLearningBridge?: TrajectoryLearningBridge
+    trajectoryLearningBridge?: TrajectoryLearningBridge,
+    treasuryService?: TreasuryService
   ) {
     this.caseManager = caseManager;
     this.slayerEngine = slayerEngine;
@@ -134,6 +137,7 @@ export class OverseerControlPlane {
     this.cognitivePlane = cognitivePlane || new CognitivePlaneEngine();
     this.cognitiveRuntime = new CognitiveRuntime(this.cognitivePlane, memoryLifecycle);
     this.missionManager = missionManager;
+    this.treasuryService = treasuryService;
 
     this.thinkingController = new OverseerThinkingController(intelligenceGateway);
     this.decisionLedger = new DecisionLedger(decisionRepo);
