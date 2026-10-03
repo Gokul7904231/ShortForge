@@ -85,17 +85,25 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
-    const studio = request.name;
-    const machine = request.gpuType || ({ ...process.env, ...(credentials || {}) }).LIGHTNING_MACHINE || "CPU";
-    const python = ({ ...process.env, ...(credentials || {}) }).LIGHTNING_PYTHON || "python3";
+    const env = { ...process.env, ...(credentials || {}) };
+    const studioName = request.name;
+    const teamspace = env.LIGHTNING_TEAMSPACE;
+    if (!teamspace) {
+      throw new Error(
+        "LIGHTNING_TEAMSPACE_REQUIRED: set LIGHTNING_TEAMSPACE to owner/teamspace for CI-managed Studios.",
+      );
+    }
+    const machine = request.gpuType || env.LIGHTNING_MACHINE || "CPU";
+    const python = env.LIGHTNING_PYTHON || "python3";
 
     const script = [
       "from lightning_sdk import Studio, Machine",
-      "studio=Studio(" + JSON.stringify(studio) + ")",
+      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=True)",
       "machine_name=" + JSON.stringify(machine),
-      "machine=getattr(Machine, machine_name, Machine.T4)",
+      "machine=Machine.from_str(machine_name)",
       "studio.start(machine)",
       "print('SHORTFORGE_LIGHTNING_STUDIO_READY:' + studio.name)",
+      "print('SHORTFORGE_LIGHTNING_TEAMSPACE:' + studio.teamspace.name)",
     ].join(";");
 
     const result = await runProcess(
@@ -114,13 +122,13 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       runtime: {
         providerId: this.metadata.providerId,
         providerType: "LIGHTNING",
-        resourceId: studio,
+        resourceId: studioName,
         runtimeKind: "LIGHTNING_STUDIO",
         state: "READY",
         updatedAt: new Date().toISOString(),
         gpuType: machine,
-        gpuCount: 1,
-        providerMetadata: { stdout: result.stdout, machine, studio },
+        gpuCount: machine.includes("_X_") ? Number(machine.split("_X_")[1] || 1) : 1,
+        providerMetadata: { stdout: result.stdout, machine, studio: studioName, teamspace },
       },
       reconciliationRequired: false,
       evidence: ["Lightning Studio started through lightning-sdk."],
@@ -159,17 +167,32 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       };
     }
 
-    const python = ({ ...process.env, ...(credentials || {}) }).LIGHTNING_PYTHON || "python3";
+    const env = { ...process.env, ...(credentials || {}) };
+    const teamspace = env.LIGHTNING_TEAMSPACE;
+    if (!teamspace) {
+      return {
+        providerType: "LIGHTNING",
+        runtimeId: runtime.resourceId,
+        verificationLevel: "UNAVAILABLE",
+        status: "UNAVAILABLE",
+        evidence: [
+          "LIGHTNING_TEAMSPACE is required to address a Studio outside an interactive Studio context.",
+        ],
+      };
+    }
+    const python = env.LIGHTNING_PYTHON || "python3";
     const command = Array.isArray(request.command)
       ? request.command.join(" ")
       : request.command;
 
     const script = [
       "from lightning_sdk import Studio",
-      "studio=Studio(" + JSON.stringify(runtime.resourceId) + ")",
+      "studio=Studio(" + JSON.stringify(runtime.resourceId) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=False)",
       "result=studio.run_with_exit_code(" + JSON.stringify(command) + ")",
+      "out, code = result if isinstance(result, tuple) else (result, 0)",
       "print('SHORTFORGE_LIGHTNING_RUN_RESULT')",
-      "print(result)",
+      "print(out)",
+      "raise SystemExit(code)",
     ].join(";");
 
     const result = await runProcess(
@@ -208,13 +231,24 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
   }
 
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
-    const python = process.env.LIGHTNING_PYTHON || "python3";
+    const env = { ...process.env, ...(credentials || {}) };
+    const teamspace = env.LIGHTNING_TEAMSPACE;
+    if (!teamspace) {
+      return {
+        ...runtime,
+        state: "UNKNOWN",
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    const python = env.LIGHTNING_PYTHON || "python3";
     const script =
       "from lightning_sdk import Studio; Studio(" +
       JSON.stringify(runtime.resourceId) +
-      ").stop(); print('SHORTFORGE_LIGHTNING_STUDIO_STOPPED')";
+      ", teamspace=" +
+      JSON.stringify(teamspace) +
+      ", create_ok=False).stop(); print('SHORTFORGE_LIGHTNING_STUDIO_STOPPED')";
 
-    await runProcess(python, ["-c", script], { timeoutMs: 60_000, env: { ...process.env, ...(credentials || {}) } }).catch(
+    await runProcess(python, ["-c", script], { timeoutMs: 60_000, env }).catch(
       () => undefined,
     );
 
