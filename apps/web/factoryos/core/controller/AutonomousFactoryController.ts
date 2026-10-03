@@ -59,6 +59,7 @@ import {
   createMongoTreasuryService,
   TreasuryService,
 } from "../treasury";
+import { TreasuryEconomicIntelligence } from "../treasury/TreasuryEconomicIntelligence";
 import {
   DiskSlayerPrimeStateStore,
   InMemorySlayerPrimeStateStore,
@@ -124,6 +125,7 @@ export class AutonomousFactoryController {
   public intelligenceGateway?: IntelligenceGateway;
   public slayerPrimeStateStore!: SlayerPrimeStateStore;
   public treasuryService?: TreasuryService;
+  public treasuryEconomicIntelligence?: TreasuryEconomicIntelligence;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -207,6 +209,8 @@ export class AutonomousFactoryController {
         treasuryRequired,
       );
       AIRuntime.bindTreasury(this.treasuryService, treasuryRequired);
+      this.treasuryEconomicIntelligence =
+        new TreasuryEconomicIntelligence(this.treasuryService);
 
       // Seed Treasury's authoritative model price registry from the trusted
       // application configuration. Routers may consume these prices but cannot
@@ -511,6 +515,12 @@ export class AutonomousFactoryController {
       trajectoryLearningBridge,
       this.treasuryService,
     );
+
+    if (this.treasuryEconomicIntelligence) {
+      this.overseer.bindTreasuryEconomicIntelligence(
+        this.treasuryEconomicIntelligence,
+      );
+    }
 
     // 8. Watchdog & Bridges
     this.watchdog = new FactoryWatchdog(
