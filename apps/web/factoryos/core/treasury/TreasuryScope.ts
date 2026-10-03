@@ -42,3 +42,7 @@ export function computeTreasuryExecutionScopeDigest(
       .digest("hex")
   );
 }
+
+// Backward-compatible alias used by the economic-admission wave while the canonical
+// scope terminology remains TreasuryExecutionScope.
+export const computeTreasuryEconomicScopeDigest = computeTreasuryExecutionScopeDigest;
