@@ -392,9 +392,9 @@ class IntelligentRouterClass {
           try {
             await this.treasuryService.settle(reservationId, {
               reservationId,
-              actualCostUsd: Math.min(
-                admission?.reservation.reservedCostUsd ?? failureCost,
-                Math.max(0, failureCost),
+              actualCostUsd: Math.max(
+                0,
+                failureCost,
               ),
               actualCapacityUnits: fallbackInput + fallbackOutput,
               actualTokens: fallbackInput + fallbackOutput,
