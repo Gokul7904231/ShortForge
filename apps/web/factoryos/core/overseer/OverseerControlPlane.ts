@@ -1308,6 +1308,14 @@ export class OverseerControlPlane {
           scope.voiceArtifact?.durationSeconds ||
           scope.engineSnapshot?.effectiveConfig?.durationSeconds ||
           5;
+        const overseerCommandId = String(
+          scope.overseerCommandId || sharedScope.overseerCommandId || "",
+        );
+        if (this.treasuryService && !overseerCommandId) {
+          throw new Error(
+            "[Overseer Floor05] Treasury-gated timeline requires Overseer command identity",
+          );
+        }
         const renderIntent: RenderIntent = {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
           jobId: targetJobId,
