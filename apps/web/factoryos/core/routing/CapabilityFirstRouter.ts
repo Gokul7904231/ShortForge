@@ -5,6 +5,8 @@
  */
 
 import { CostGovernor } from "../governor/CostGovernor";
+import type { TreasuryService } from "../treasury/TreasuryService";
+import { TreasuryEconomicAdmission, type TreasuryAdmissionContext } from "../treasury/TreasuryEconomicAdmission";
 
 export type ProviderCircuitState = "ONLINE" | "DEGRADED" | "OPEN" | "HALF_OPEN" | "RATE_LIMITED";
 
@@ -78,11 +80,129 @@ export class CapabilityFirstRouter {
   }
 
   /**
+   * Treasury-backed asynchronous routing seam.
+   *
+   * CapabilityFirstRouter still ranks candidates, but Treasury owns the final
+   * economic admission and reservation. The legacy synchronous method remains
+   * compatibility-only and must not be used for production spend.
+   */
+  static async routeCapabilityWithTreasury(
+    req: CapabilityRoutingRequest,
+    context: TreasuryAdmissionContext,
+    treasury: TreasuryService,
+  ): Promise<{
+    decision: RoutingDecision;
+    reservationId: string;
+    permitId: string;
+  }> {
+    const matching = Array.from(this.candidates.values()).filter((c) => {
+      if (!c.supportedCapabilities.includes(req.capability)) return false;
+      if (c.circuitState === "OPEN" || c.circuitState === "RATE_LIMITED") return false;
+      if (req.minContextTokens && c.maxContextTokens < req.minContextTokens) return false;
+      if (req.maxLatencyMs && c.baselineLatencyMs > req.maxLatencyMs) return false;
+      return true;
+    });
+
+    if (matching.length === 0) {
+      throw new Error(
+        `[CapabilityRouter] No healthy provider available for capability: "${req.capability}"`,
+      );
+    }
+
+    matching.sort((a, b) => {
+      if (a.isLocal && !b.isLocal) return -1;
+      if (!a.isLocal && b.isLocal) return 1;
+      if (!a.isPaid && b.isPaid) return -1;
+      if (a.isPaid && !b.isPaid) return 1;
+      if (a.costPer1kTokensUsd !== b.costPer1kTokensUsd) {
+        return a.costPer1kTokensUsd - b.costPer1kTokensUsd;
+      }
+      return a.baselineLatencyMs - b.baselineLatencyMs;
+    });
+
+    const tokens = Math.max(1, req.estimatedTokens ?? 1000);
+    const admission = new TreasuryEconomicAdmission(treasury);
+
+    for (const candidate of matching) {
+      const assessment = admission.assessModelCandidate(
+        {
+          providerId: candidate.providerId,
+          modelId: candidate.modelId,
+          capability: req.capability,
+          isPaid: candidate.isPaid,
+          inputTokens: Math.ceil(tokens * 0.25),
+          outputTokens: Math.ceil(tokens * 0.75),
+          pricingSource: candidate.isPaid ? "CAPABILITY_ROUTER" : "ZERO_COST_DECLARATION",
+          pricingVersion: "capability-router:v1",
+          inputUsdPer1MTokens: Math.max(0, candidate.costPer1kTokensUsd * 1000),
+          outputUsdPer1MTokens: Math.max(0, candidate.costPer1kTokensUsd * 1000),
+        },
+        {
+          maxCostUsd: context.maxRetries !== undefined
+            ? Number(process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? 0.10)
+            : Number(process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD ?? 0.10),
+          maxTokens: tokens,
+          maxCapacityUnits: tokens,
+          maxRetries: 0,
+        },
+      );
+
+      if (!assessment.admissible) continue;
+
+      const reserved = await admission.reserveModelInvocation(
+        context,
+        {
+          providerId: candidate.providerId,
+          modelId: candidate.modelId,
+          capability: req.capability,
+          isPaid: candidate.isPaid,
+          inputTokens: Math.ceil(tokens * 0.25),
+          outputTokens: Math.ceil(tokens * 0.75),
+          pricingSource: candidate.isPaid ? "CAPABILITY_ROUTER" : "ZERO_COST_DECLARATION",
+          pricingVersion: "capability-router:v1",
+          inputUsdPer1MTokens: Math.max(0, candidate.costPer1kTokensUsd * 1000),
+          outputUsdPer1MTokens: Math.max(0, candidate.costPer1kTokensUsd * 1000),
+        },
+        {
+          maxCostUsd: Math.max(assessment.estimatedCostUsd, 0),
+          maxTokens: tokens,
+          maxCapacityUnits: tokens,
+          maxRetries: 0,
+        },
+      );
+
+      return {
+        decision: {
+          capability: req.capability,
+          selectedProviderId: candidate.providerId,
+          selectedModelId: candidate.modelId,
+          isLocal: candidate.isLocal,
+          isPaid: candidate.isPaid,
+          estimatedCostUsd: assessment.estimatedCostUsd,
+          estimatedLatencyMs: candidate.baselineLatencyMs,
+          reason: "Capability-qualified candidate admitted by Treasury.",
+          fallbackChain: matching
+            .filter((item) => item !== candidate)
+            .map((item) => item.providerId + ":" + item.modelId),
+          decisionTimestamp: new Date().toISOString(),
+        },
+        reservationId: reserved.reservation.reservationId,
+        permitId: reserved.permit.permitId,
+      };
+    }
+
+    throw new Error(
+      "[CapabilityRouter] No capability-qualified candidate was economically admissible in Treasury",
+    );
+  }
+
+  /**
    * Capability-First Selection:
    * 1. Match candidates supporting capability
    * 2. Filter out open circuits / unhealthy providers
-   * 3. Score hierarchy: Local ($0) > Free Cloud ($0) > Paid (if CostGovernor allows)
-   * 4. Return RoutingDecision with explanation and fallback chain
+   * 3. Score hierarchy: Local/free/cost/latency is selection advice only.
+   * 4. Production economic admission is delegated to routeCapabilityWithTreasury.
+   * 5. Return RoutingDecision with explanation and fallback chain
    */
   static routeCapability(req: CapabilityRoutingRequest): RoutingDecision {
     const matching = Array.from(this.candidates.values()).filter((c) => {
