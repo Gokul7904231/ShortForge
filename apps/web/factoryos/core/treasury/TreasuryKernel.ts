@@ -391,6 +391,17 @@ export class TreasuryKernel {
 
       const additionalUsd = command.budgetEnvelope.maxCostUsd;
       const additionalCapacity = command.budgetEnvelope.maxCapacityUnits ?? 0;
+      const additionalTokenCapacity = command.resourceRequest
+        .filter((request) => request.kind === "INFERENCE")
+        .reduce(
+          (sum, request) =>
+            sum + Math.max(
+              0,
+              request.scarcityUnits ?? 0,
+              request.unit === "TOKENS" ? request.quantity ?? 0 : 0,
+            ),
+          0,
+        );
       try {
         this.assertAdmissible(account, command.budgetEnvelope, command.priority, command.resourceRequest);
       } catch (error) {
@@ -405,7 +416,11 @@ export class TreasuryKernel {
         return null;
       }
 
-      if (account.availableUsd < additionalUsd || account.availableCapacityUnits < additionalCapacity) {
+      if (
+        account.availableUsd < additionalUsd ||
+        account.availableCapacityUnits < additionalCapacity ||
+        account.availableTokenCapacityUnits < additionalTokenCapacity
+      ) {
         denial = "Insufficient Treasury resources for reservation extension";
         await tx.appendEvent(event(
           "SPEND_DENIED",
@@ -416,6 +431,8 @@ export class TreasuryKernel {
             requestedUsd: additionalUsd,
             availableCapacityUnits: account.availableCapacityUnits,
             requestedCapacityUnits: additionalCapacity,
+            availableTokenCapacityUnits: account.availableTokenCapacityUnits,
+            requestedTokenCapacityUnits: additionalTokenCapacity,
           },
           { commandId: command.commandId, reservationId, missionId: reservation.missionId, amountUsd: additionalUsd, capacityUnits: additionalCapacity },
           now,
@@ -432,6 +449,9 @@ export class TreasuryKernel {
         ...reservation,
         reservedCostUsd: reservation.reservedCostUsd + additionalUsd,
         reservedCapacityUnits: reservation.reservedCapacityUnits + additionalCapacity,
+        reservedTokenCapacityUnits:
+          (reservation.reservedTokenCapacityUnits ?? 0) +
+          additionalTokenCapacity,
         expiresAt: newExpiresAt,
         updatedAt: now.toISOString(),
       };
@@ -442,6 +462,10 @@ export class TreasuryKernel {
         reservedUsd: account.reservedUsd + additionalUsd,
         availableCapacityUnits: account.availableCapacityUnits - additionalCapacity,
         reservedCapacityUnits: account.reservedCapacityUnits + additionalCapacity,
+        availableTokenCapacityUnits:
+          account.availableTokenCapacityUnits - additionalTokenCapacity,
+        reservedTokenCapacityUnits:
+          account.reservedTokenCapacityUnits + additionalTokenCapacity,
         version: account.version + 1,
         updatedAt: now.toISOString(),
       });
