@@ -189,6 +189,7 @@ export interface TreasuryReport {
 
 export interface TreasuryEconomicPermit {
   readonly permitId: string;
+  readonly overseerCommandId: string;
   readonly reservationId: string;
   readonly commandId: string;
   readonly overseerCommandId: string;
