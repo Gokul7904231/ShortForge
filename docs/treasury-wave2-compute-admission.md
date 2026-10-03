@@ -34,6 +34,9 @@ Overseer command
 - Unknown monetary cost is not invented; non-paid routes may settle at measured zero unless a provider receipt supplies actualCostUsd.
 - Paid routes remain blocked by default by Treasury policy.
 - In production, Treasury is required; if transaction-capable MongoDB Treasury cannot be initialized, FactoryOS refuses to boot rather than silently running without economic governance.
+- Production ComputeGateway is bound to the canonical Treasury service.
+- Economic permits are validated again at the compute boundary against reservation, mission, job scope, account, expiry, and envelope.
+- Permit retry allowance caps automatic provider failover attempts; additional retries require a new economic reservation.
 
 ## Configuration
 
@@ -43,6 +46,10 @@ FACTORYOS_TREASURY_CAPACITY_UNITS defaults to 3600.
 FACTORYOS_MAX_RENDER_RESERVATION_USD defaults to 0.10 per render reservation.
 
 The budget values are economic envelopes, not physical placement instructions.
+
+## Hardening rule
+
+A provider failover is still physical routing, but it consumes the same bounded economic attempt envelope. When the permit grants zero retries, the router is limited to one provider attempt. This prevents an internal routing loop from spending beyond the Overseer-approved Treasury envelope.
 
 ## Deliberate limitation
 
