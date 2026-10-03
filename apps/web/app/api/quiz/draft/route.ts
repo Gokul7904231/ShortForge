@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { scriptAgent } from "@/agents/script-agent";
 import { verifySession } from "@/lib/auth/auth";
 import { getUserQuota, resolveTier } from "@/lib/quota/quota-service";
 import { QuizOrchestrator } from "@/lib/quiz/QuizOrchestrator";
 import { peekNextSet, toDraftResponse, hasHardcodedCountry } from "@/lib/quiz/GeoRotationService";
+import { prepareTreasuryModelContext } from "@/lib/treasury-model-context";
 
 export async function POST(req: Request) {
   let draftUser: any = null;
@@ -39,6 +41,17 @@ export async function POST(req: Request) {
     const quizMode = String(body.quizMode || body.engineMode || (body.countryCode ? "geo" : "custom")).trim();
     const style = String(body.style || body.difficulty || "medium").trim();
     const durationSeconds = Number(body.durationSeconds || 45);
+
+    const treasuryModel = await prepareTreasuryModelContext({
+      command: "Generate Quiz Draft",
+      missionId: "mis_quiz_draft_" + draftUser?.uid,
+      taskId: "quiz-draft-api-" + randomUUID(),
+      floorId: "floor02_scripting",
+      preferredProviderId:
+        typeof body.provider === "string" ? body.provider : undefined,
+      subtask: "quiz_generation",
+      maxRetries: 0,
+    });
 
     // ─── 1. GEO QUIZ GENERATION PATH (hardcoded 5-set rotation for BASIC) ───
     if (quizMode === "geo") {
@@ -107,6 +120,7 @@ export async function POST(req: Request) {
           renderProfile: "FAST_QUIZ",
           apiKey: resolvedApiKey,
           provider: resolvedProvider,
+          treasuryContext: treasuryModel.context,
         });
 
         if (!draft || !Array.isArray(draft.questions) || draft.questions.length === 0) {
@@ -192,6 +206,7 @@ export async function POST(req: Request) {
       contentType: "QUIZ_SHORTS",
       renderProfile: "FAST_QUIZ",
       topics: allocations,
+      treasuryContext: treasuryModel.context,
     });
 
     if (!draft || !Array.isArray(draft.questions) || draft.questions.length === 0) {
