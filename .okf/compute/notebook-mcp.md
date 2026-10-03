@@ -59,3 +59,15 @@ MCP success is a tool result, not production truth. Worker admission, leases/fen
 The dedicated Colab MCP provides a bounded local browser-session bridge. It validates Colab notebook URLs, binds a per-session loopback WebSocket server, authenticates the browser connection with a short-lived session token, tracks connection state, and supports explicit disconnect/close. The bridge is an interoperability surface only; it does not expose arbitrary cell execution and does not receive F06 worker authority.
 
 The current Colab rendering path remains owned by `ColabNotebookAdapter`, which uses the managed runtime's Jupyter interface for bounded render execution and physical artifact retrieval.
+
+## Provider-native MCP interoperability
+
+### Kaggle
+
+Kaggle's current official remote MCP endpoint is `https://www.kaggle.com/mcp`. ShortForge only probes the initialize/tools-list handshake and discovers the remote catalog; it does not proxy arbitrary remote tool execution. The optional credential is `KAGGLE_MCP_TOKEN`.
+
+### Lightning / LitServe
+
+ShortForge can probe an explicitly configured LitServe Streamable HTTP MCP endpoint through `LIGHTNING_LITSERVE_MCP_URL`, with optional bearer/API-key authentication. Discovery is diagnostic only.
+
+These provider-native MCP surfaces remain separate from notebook runtime control, F06 worker admission, CAS authority, and F07 release truth.
