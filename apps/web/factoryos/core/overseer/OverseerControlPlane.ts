@@ -1442,8 +1442,11 @@ export class OverseerControlPlane {
                 overseerCommandId: run.overseerCommandId,
                 budgetEnvelope: {
                   maxCostUsd: maxRenderReservationUsd,
-                  maxCapacityUnits: Math.max(1, Math.ceil(renderIntent.durationSeconds)),
                   maxDurationMs: Math.max(60_000, Math.ceil(renderIntent.durationSeconds * 5000)),
+                  maxCapacityUnits: Math.max(
+                    1,
+                    Math.ceil(Math.max(60_000, renderIntent.durationSeconds * 5000) / 1000),
+                  ),
                   maxRetries: 0,
                 },
                 scopeDigest: renderScopeDigest,
@@ -1463,6 +1466,8 @@ export class OverseerControlPlane {
         sharedScope.artifact = artifact;
         scope.renderReceipt = renderRes.receipt;
         sharedScope.renderReceipt = renderRes.receipt;
+        scope.treasuryReservationId = renderRes.treasuryReservationId;
+        sharedScope.treasuryReservationId = renderRes.treasuryReservationId;
         const finalVideoUrl = (artifact.location as any).path;
         scope.videoUrl = finalVideoUrl;
         sharedScope.videoUrl = finalVideoUrl;
@@ -1538,6 +1543,7 @@ export class OverseerControlPlane {
           consumedArtifactIds: sharedScope.voiceArtifact?.sha256 ? [sharedScope.voiceArtifact.sha256] : [],
           producedArtifacts: scope.artifact ? [{ kind: "MP4_VIDEO", path: finalVideoUrl, sha256: scope.artifact.sha256 }] : [],
           producedArtifactIds: scope.artifact?.sha256 ? [scope.artifact.sha256] : [],
+          treasuryReservationId: renderRes.treasuryReservationId,
           loopReceipt: renderRes.loopReceipt,
         });
         return {
@@ -1546,6 +1552,7 @@ export class OverseerControlPlane {
           jobId: targetJobId,
           artifact: scope.artifact,
           videoUrl: finalVideoUrl,
+          treasuryReservationId: renderRes.treasuryReservationId,
           output: renderOutputMessage,
           executionTimeMs,
         };
@@ -1627,7 +1634,18 @@ export class OverseerControlPlane {
             : verificationReport.failures.join("; "),
         };
 
+        const treasuryReservationId =
+          scope.treasuryReservationId ||
+          sharedScope.treasuryReservationId ||
+          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryReservationId;
+
         if (!verificationReport.verified) {
+          if (treasuryReservationId && this.treasuryService) {
+            await this.treasuryService.release(
+              treasuryReservationId,
+              "F07_VERIFICATION_REJECTED",
+            );
+          }
           await this.caseManager.createCase({
             title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
             description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
@@ -1638,6 +1656,30 @@ export class OverseerControlPlane {
             jobId: targetJobId,
             symptoms: verificationReport.failures,
             observedState: verificationReport.measurements as any,
+          });
+        }
+
+        if (verificationReport?.verified && treasuryReservationId && this.treasuryService) {
+          const renderReceipt = scope.renderReceipt || sharedScope.renderReceipt;
+          const totalTimeMs = Number(renderReceipt?.metrics?.totalTimeMs || 0);
+          const rawReceipt = renderReceipt?.rawReceipt || {};
+          const measuredCost = Number(rawReceipt.actualCostUsd);
+          const actualCostUsd = Number.isFinite(measuredCost) && measuredCost >= 0 ? measuredCost : 0;
+          const actualCapacityUnits = Math.max(
+            1,
+            Math.ceil(totalTimeMs > 0 ? totalTimeMs / 1000 : (scope.renderIntent?.durationSeconds || 1)),
+          );
+
+          await this.treasuryService.settle(treasuryReservationId, {
+            reservationId: treasuryReservationId,
+            actualCostUsd,
+            actualCapacityUnits,
+            actualTokens: Number.isFinite(Number(rawReceipt.actualTokens)) ? Number(rawReceipt.actualTokens) : undefined,
+            actualDurationMs: totalTimeMs || undefined,
+            executionEvidenceId: renderReceipt.receiptId,
+            verificationReceiptId: "f07:verification-engine:" + targetJobId,
+            verified: true,
+            measuredAt: new Date().toISOString(),
           });
         }
 
