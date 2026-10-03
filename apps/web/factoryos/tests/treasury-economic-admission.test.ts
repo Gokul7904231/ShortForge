@@ -169,6 +169,61 @@ describe("Treasury model/API and ComputeOffer admission", () => {
     expect(reserved.permit.maxCostUsd).toBeCloseTo(0.0025, 8);
   });
 
+  it("rejects reuse of a terminal model-attempt idempotency key", async () => {
+    const treasury = makeTreasury();
+    const admission = new TreasuryEconomicAdmission(treasury);
+    treasury.getPriceRegistry().registerModelPricing({
+      providerId: "groq",
+      modelId: "llama-terminal",
+      inputUsdPer1MTokens: 1,
+      outputUsdPer1MTokens: 1,
+      pricingSource: "TEST_FIXTURE",
+      pricingVersion: "terminal-v1",
+      confidence: "HIGH",
+      ttlMs: 60_000,
+    });
+
+    const candidate = {
+      providerId: "groq",
+      modelId: "llama-terminal",
+      capability: "SCRIPT",
+      isPaid: true,
+      inputTokens: 1000,
+      outputTokens: 1000,
+      pricingSource: "TEST_FIXTURE",
+      pricingVersion: "terminal-v1",
+      inputUsdPer1MTokens: 1,
+      outputUsdPer1MTokens: 1,
+    };
+    const fixedAttemptContext = {
+      ...context("task-terminal-idempotency"),
+      attemptId: "task-terminal-idempotency:attempt:1",
+    };
+    const reserved = await admission.reserveModelInvocation(
+      fixedAttemptContext,
+      candidate,
+      { maxCostUsd: 0.01, maxTokens: 5000, maxCapacityUnits: 0 },
+    );
+
+    await treasury.settle(reserved.reservation.reservationId, {
+      reservationId: reserved.reservation.reservationId,
+      actualCostUsd: 0.002,
+      actualCapacityUnits: 0,
+      actualTokens: 2000,
+      executionEvidenceId: "evidence-terminal",
+      verified: false,
+      measuredAt: new Date().toISOString(),
+    });
+
+    await expect(
+      admission.reserveModelInvocation(
+        fixedAttemptContext,
+        candidate,
+        { maxCostUsd: 0.01, maxTokens: 5000, maxCapacityUnits: 0 },
+      ),
+    ).rejects.toThrow(/already finalized|finalized/);
+  });
+
   it("treats a zero-priced compute offer as scarce capacity rather than unlimited", () => {
     const treasury = makeTreasury();
     const admission = new TreasuryEconomicAdmission(treasury);
