@@ -35,6 +35,7 @@ import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
 import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
 import type { TreasuryService } from "../treasury/TreasuryService";
+import { computeTreasuryExecutionScopeDigest } from "../treasury/TreasuryScope";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
 import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
@@ -1415,17 +1416,14 @@ export class OverseerControlPlane {
         };
 
         const treasuryEnabled = Boolean(this.treasuryService);
-        const renderScopeDigest = createHash("sha256")
-          .update(JSON.stringify({
-            missionId,
-            runId,
-            overseerCommandId: run.overseerCommandId,
-            jobId: targetJobId,
-            intentId: renderIntent.intentId,
-            durationSeconds: renderIntent.durationSeconds,
-            hardwareAccel: renderIntent.constraints.hardwareAccel === true,
-          }))
-          .digest("hex");
+        const renderScopeDigest = computeTreasuryExecutionScopeDigest({
+          version: 1,
+          missionId: renderIntent.missionId,
+          jobId: renderIntent.jobId,
+          floorId: "floor06_rendering",
+          overseerCommandId: run.overseerCommandId,
+          renderIntent,
+        });
 
         const configuredMaxRenderUsd = Number(
           process.env.FACTORYOS_MAX_RENDER_RESERVATION_USD || "0.10",
