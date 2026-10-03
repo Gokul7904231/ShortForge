@@ -639,7 +639,7 @@ export async function POST(req: Request) {
         throw new Error("[generate-video] FactoryOS controller was not initialized");
       }
 
-      await controller.startMission({
+      const missionParams = {
         missionId,
         goal: `Generate Video: ${parsed.data.topic}`,
         objective: `Execute 6-Floor DAG for Job ${jobId}`,
@@ -668,9 +668,9 @@ export async function POST(req: Request) {
           treasuryQuotaReservationId:
             treasuryQuotaReservation?.reservation?.reservationId,
         },
-      },
-      preparedEconomicCommand,
-      );
+      };
+
+      await controller.startMission(missionParams, preparedEconomicCommand);
 
       return NextResponse.json({
         jobId,
@@ -680,7 +680,6 @@ export async function POST(req: Request) {
         authority: "factoryos",
       });
     }
-
     // FactoryOS is the sole production execution authority.
     // Legacy external render-plane dispatch is intentionally removed.
     const authorityError =
