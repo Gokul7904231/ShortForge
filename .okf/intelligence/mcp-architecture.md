@@ -31,6 +31,8 @@ The production MCP set is intentionally small:
 | Blender MCP | 3D asset/scene/render operations | EXISTING | Governed visual execution |
 | Playwright MCP | F00/F01 browser research and inspection | SELECTED / IMPLEMENTED | Scoped research sensor |
 | ComfyUI MCP | F04-F06 programmable visual transformation and optional generation | SELECTED / IMPLEMENTED | Recipe-bound visual transformation provider |
+
+Canonical semantic action: `TRANSFORM_VISUAL_ASSET`. It is recipe-bound and remains behind the selected MCP capability gateway; it does not grant ambient filesystem, spending, worker, or release authority.
 | Qdrant MCP | Derived Memory Fabric ANN retrieval | SELECTED / IMPLEMENTED | Projection/index only |
 
 FFmpeg MCP, Filesystem MCP, Obsidian MCP, Remotion MCP and Docker MCP Gateway are deliberately not selected in this wave because their useful responsibilities are already covered by canonical ShortForge subsystems or broader infrastructure boundaries.
