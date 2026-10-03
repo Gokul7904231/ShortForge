@@ -10,3 +10,4 @@ export * from "./TreasuryRuntime";
 
 export * from "./TreasuryEconomicIntelligence";
 export * from "./TreasuryEntitlementPolicy";
+export * from "./TreasuryEconomicAdvice";
