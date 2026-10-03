@@ -184,7 +184,7 @@ async function runLive(provider: NotebookProviderType) {
   const runtime = await adapter.provision(
     {
       idempotencyKey: "shortforge-live-lightning-" + Date.now(),
-      name: "shortforge-live-lightning-probe",
+      name: "shortforge-live-lightning-probe-" + Date.now(),
       timeoutMs,
       gpuType: process.env.LIGHTNING_LIVE_MACHINE || process.env.LIGHTNING_MACHINE || "CPU",
     },
