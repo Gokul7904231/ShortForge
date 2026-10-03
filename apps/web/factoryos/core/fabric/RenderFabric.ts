@@ -221,7 +221,10 @@ export class RenderFabric {
     let treasuryReservationId: string | undefined;
 
     if (options.treasury) {
-      if (renderIntent.overseerCommandId && renderIntent.overseerCommandId !== options.treasury.overseerCommandId) {
+      if (!renderIntent.overseerCommandId) {
+        throw new Error("[RenderFabric] Treasury-gated render requires RenderIntent.overseerCommandId");
+      }
+      if (renderIntent.overseerCommandId !== options.treasury.overseerCommandId) {
         throw new Error("[RenderFabric] Treasury command identity does not match RenderIntent.overseerCommandId");
       }
 
