@@ -287,7 +287,7 @@ export async function POST(req: Request) {
     const engineDef = await EngineRegistry.getEngine(engineId);
 
     if (!engineDef) {
-      await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+      await releaseGenerationAdmission();
       return NextResponse.json(
         { error: `Unknown Content Engine "${engineId}".`, code: "ENGINE_NOT_FOUND" },
         { status: 422 }
@@ -345,7 +345,7 @@ export async function POST(req: Request) {
         userConfig: submittedConfig,
       }).spec;
     } catch (specError: any) {
-      await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+      await releaseGenerationAdmission();
       return NextResponse.json(
         {
           error: specError?.message ?? "Invalid engine configuration",
@@ -397,7 +397,7 @@ export async function POST(req: Request) {
         questions: quizQuestions,
       });
       if (!validate.approved) {
-        await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+        await releaseGenerationAdmission();
         return NextResponse.json(
           { error: "Content rejected", details: validate, code: (validate as any).code ?? "VALIDATION_FAILED" },
           { status: 422 }
@@ -639,7 +639,7 @@ export async function POST(req: Request) {
     // Legacy external render-plane dispatch is intentionally removed.
     const authorityError =
       `Unsupported execution authority "${executionAuthority}". Production generation must use FactoryOS.`;
-    await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+    await releaseGenerationAdmission();
     await saveJobManifest(jobId, {
       ...finalPayload,
       status: "failed",
@@ -649,7 +649,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     if (userId && jobId) {
       try {
-        await releaseGenerationSlot(userId, jobId);
+        await releaseGenerationAdmission();
       } catch {}
     }
     return NextResponse.json(
