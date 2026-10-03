@@ -24,7 +24,7 @@ on:
       - "tools/mcp/notebook-mcp.example.json"
   push:
     branches:
-      - "feat/notebook-live-mcp-20261002"
+      - "feat/lightning-live-mcp-20261003"
   workflow_dispatch:
     inputs:
       provider:
@@ -95,7 +95,7 @@ jobs:
         run: npm run typecheck
 
   prepare_live:
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/notebook-live-mcp-20261002') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/lightning-live-mcp-20261003') || (github.event_name == 'workflow_dispatch' && inputs.live == true && inputs.provider != 'NONE') }}
     runs-on: ubuntu-latest
     outputs:
       providers: ${{ steps.matrix.outputs.providers }}
@@ -110,9 +110,8 @@ jobs:
             printf 'providers=["%s"]\n' "$INPUT_PROVIDER" >> "$GITHUB_OUTPUT"
           else
             # Pushes on the dedicated verification branch are intentionally
-            # Kaggle-first. Colab/Lightning are run explicitly after Kaggle's
-            # physical-artifact and MCP proofs pass.
-            echo 'providers=["KAGGLE"]' >> "$GITHUB_OUTPUT"
+            # Lightning-first. Kaggle is not invoked by this branch.
+            echo 'providers=["LIGHTNING"]' >> "$GITHUB_OUTPUT"
           fi
 
   live:
@@ -167,6 +166,7 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
         run: |
           set -euo pipefail
           case "$NOTEBOOK_PROVIDER" in
@@ -180,6 +180,7 @@ jobs:
             LIGHTNING)
               test -n "$LIGHTNING_USER_ID" || { echo "Missing LIGHTNING_USER_ID"; exit 1; }
               test -n "$LIGHTNING_API_KEY" || { echo "Missing LIGHTNING_API_KEY"; exit 1; }
+              test -n "$LIGHTNING_TEAMSPACE" || { echo "Missing repository variable LIGHTNING_TEAMSPACE"; exit 1; }
               ;;
           esac
       - name: Provider live smoke
@@ -201,5 +202,6 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
           NOTEBOOK_MCP_PROVIDER: ${{ matrix.provider }}
         run: node apps/web/scripts/verify-notebook-mcps.mjs
