@@ -171,7 +171,7 @@ export const DEFAULT_TREASURY_POLICY: TreasuryPolicy = {
   maxReservationTtlMs: 60 * 60 * 1000,
   defensiveMaxPriority: "NORMAL",
   defensiveMaxReservationUsd: 1,
-  allowPaidRoutes: false,
+  allowPaidRoutes: true,
 };
 
 export interface TreasuryReport {
