@@ -114,6 +114,16 @@ describe("Treasury model/API and ComputeOffer admission", () => {
   it("admits a priced paid model and rejects it when the Treasury envelope is too small", async () => {
     const treasury = makeTreasury();
     const admission = new TreasuryEconomicAdmission(treasury);
+    treasury.getPriceRegistry().registerModelPricing({
+      providerId: "groq",
+      modelId: "llama-test",
+      inputUsdPer1MTokens: 0.5,
+      outputUsdPer1MTokens: 1,
+      pricingSource: "TEST_FIXTURE",
+      pricingVersion: "provider-price-v1",
+      confidence: "HIGH",
+      ttlMs: 60_000,
+    });
 
     const candidate = {
       providerId: "groq",
@@ -122,7 +132,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
       isPaid: true,
       inputTokens: 1000,
       outputTokens: 2000,
-      pricingSource: "PROVIDER_API",
+      pricingSource: "TEST_FIXTURE",
       pricingVersion: "provider-price-v1",
       inputUsdPer1MTokens: 0.5,
       outputUsdPer1MTokens: 1,
