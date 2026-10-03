@@ -137,7 +137,7 @@ export class TreasuryQuotaAdmission {
       idempotencyKey: "quota:" + context.userId + ":" + context.jobId,
       scopeDigest: computeTreasuryExecutionScopeDigest({
         version: 1,
-        kind: "COMPUTE_OFFER",
+        kind: "QUOTA",
         missionId: context.missionId,
         jobId: context.jobId,
         floorId: "generation-admission",
