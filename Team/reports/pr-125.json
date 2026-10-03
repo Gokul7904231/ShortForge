@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR125-Treasury-Wave3-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "integrate/treasury-wave3-current-main-20261003",
+  "objective": "Integrate the Treasury Wave 3 economic admission stack onto the current mainline without regressing current-main work, while preserving Overseer supremacy, ComputeRouter placement, Guardian capability authority, worker boundaries, and F07 evidence authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Treasury is subordinate to Overseer and is not a physical scheduler.",
+      "Economic admission precedes discretionary production consumption.",
+      "ComputeRouter remains physical placement authority.",
+      "F07 remains the independent artifact truth boundary.",
+      "Compatibility mechanisms do not become a second production economic authority.",
+      "Current main changes must not be overwritten by an older branch snapshot."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/compute/notebook-fabric.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No provider credentials are introduced.",
+      "The merge construction uses existing repository trees and does not introduce new ambient worker authority.",
+      "Security state is not declared green until the current reconciliation's CI completes."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-MAIN-RECON-001",
+      "originalConflict": "Current main and the Treasury Wave 3 branch both modified RenderIntentContracts.ts and RenderFabric.ts after their merge base.",
+      "status": "RESOLVED",
+      "proposedResolution": "Use the Treasury head versions for those two files because they contain the complete Treasury Wave 1→3 contract evolution, while current-main-only provider-native MCP changes remain preserved in all other current-main tree paths.",
+      "acceptedResolution": "Three-way tree reconciliation took current main as the base tree, applied Treasury-only changes, and resolved the two overlapping Treasury contract/fabric files with the complete Treasury head versions.",
+      "decisionAuthority": "ShortForge Treasury/F06 integration contract",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/contracts/RenderIntentContracts.ts",
+        "apps/web/factoryos/core/fabric/RenderFabric.ts"
+      ]
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Integrated Treasury Wave 3 model/API economic admission.",
+    "Integrated ComputeOffer economic reservation/admission.",
+    "Integrated generation-entitlement Treasury gating.",
+    "Integrated Treasury Wave 3 documentation, contracts and tests.",
+    "Constructed a current-main-compatible merge commit using a three-way tree reconciliation.",
+    "Preserved current-main provider-native MCP changes from PR #123."
+  ],
+  "verificationPlan": [
+    "Require Team Change Gate.",
+    "Require repository CI and current floor/governance/compute validations.",
+    "Require Treasury-specific tests included by the source branch to pass.",
+    "Merge only after required checks are green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "computeAndFloorGates": "PENDING"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "This PR is an integration vehicle; production acceptance remains controlled by the required repository gates.",
+    "The source Treasury Wave 4 branch will be evaluated after Wave 3 is integrated; it is not merged independently before its parent economic boundary is established."
+  ]
+}
