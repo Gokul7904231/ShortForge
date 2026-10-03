@@ -56,5 +56,81 @@
     "decisionFabricValidation": "PENDING",
     "teamChangeGate": "PENDING"
   },
-  "disposition": "BLOCKED"
+  "disposition": "BLOCKED",
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Treasury remains the deterministic economic authority; routers do not grant spend.",
+      "Paid model pricing is read from the Treasury price registry and unknown paid pricing is denied.",
+      "ComputeOffer provisioning is economically reserved before provider mutation.",
+      "Provider-internal retries are disabled under Treasury-managed execution.",
+      "Ambiguous provisioning retains the economic reservation until reconciliation.",
+      "Production AI/F06 execution is fail-closed when required Treasury context is absent."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-MODEL-001",
+      "originalConflict": "Model/API routers could independently decide whether a paid invocation was economically acceptable.",
+      "status": "RESOLVED",
+      "proposedResolution": "Keep model capability/quality/latency selection in the router but move paid economic admission, pricing and reservation into Treasury.",
+      "acceptedResolution": "IntelligentRouter and the Treasury-backed CapabilityFirstRouter path require Treasury economic admission before managed provider execution.",
+      "decisionAuthority": "Treasury economic admission invariant",
+      "canonicalUpdates": [
+        "apps/web/ai/intelligent-router.ts",
+        "apps/web/ai/runtime.ts",
+        "apps/web/factoryos/core/routing/CapabilityFirstRouter.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEconomicAdmission.ts"
+      ]
+    },
+    {
+      "id": "TRSY-COMPUTE-OFFER-002",
+      "originalConflict": "ComputeOffer provisioning could mutate a provider resource before economic authorization.",
+      "status": "RESOLVED",
+      "proposedResolution": "Reserve the exact normalized offer economically before invoking provider provisioning.",
+      "acceptedResolution": "ProviderApiRegistry.provisionWithTreasury performs Treasury admission/reservation before provider mutation and releases on normal failure.",
+      "decisionAuthority": "Treasury economic admission invariant",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/compute/api/ProviderApiRegistry.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEconomicAdmission.ts"
+      ]
+    },
+    {
+      "id": "TRSY-PRICE-003",
+      "originalConflict": "Router-provided model prices could be treated as authoritative and permit stale or manipulated economics.",
+      "status": "RESOLVED",
+      "proposedResolution": "Only Treasury's price registry is authoritative for paid model pricing; trusted application configuration seeds it during controller boot.",
+      "acceptedResolution": "Paid model admission denies when Treasury has no active price, and router-supplied price metadata cannot mutate Treasury pricing during execution.",
+      "decisionAuthority": "Treasury pricing authority",
+      "canonicalUpdates": [
+        "apps/web/factoryos/core/treasury/TreasuryPriceRegistry.ts",
+        "apps/web/factoryos/core/treasury/TreasuryEconomicAdmission.ts",
+        "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      ]
+    },
+    {
+      "id": "TRSY-RETRY-004",
+      "originalConflict": "Provider-internal retries could spend beyond the approved Treasury attempt envelope.",
+      "status": "RESOLVED",
+      "proposedResolution": "Disable provider-internal retries under Treasury-managed execution and require a fresh reservation for another attempt.",
+      "acceptedResolution": "BaseProviderPlugin performs one managed provider attempt; additional attempts are controlled by the outer Treasury-aware routing loop.",
+      "decisionAuthority": "Treasury economic attempt invariant",
+      "canonicalUpdates": [
+        "apps/web/ai/providers/base-provider.ts",
+        "apps/web/ai/intelligent-router.ts",
+        "apps/web/ai/runtime.ts"
+      ]
+    }
+  ],
+  "forgerPlan": "Forge Architect, Forge Builder, Forge Security and Forge Release reviewed the migration contract and its staged compatibility boundary.",
+  "foragers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Release"
+  ]
 }
