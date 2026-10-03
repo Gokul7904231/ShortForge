@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR104-Provider-Native-MCP-Interop",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/provider-mcp-native-interop-20261003",
+  "objective": "Add bounded interoperability diagnostics for provider-native Kaggle MCP and Lightning/LitServe MCP endpoints without moving production authority from ShortForge adapters, F06, or F07.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/mcp-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Provider-native probes use environment-bound optional credentials, sanitize evidence, and never accept secrets as MCP arguments."
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added shared Streamable HTTP MCP client with handshake/session/error handling.",
+    "Added Kaggle official MCP discovery diagnostics.",
+    "Added Lightning/LitServe MCP discovery diagnostics.",
+    "Added regression tests and workflow coverage.",
+    "Kept remote native MCP diagnostics non-authoritative and non-worker."
+  ],
+  "verificationPlan": [
+    "Pass shared MCP regression and all provider MCP contract tests.",
+    "Verify no secret values appear in evidence.",
+    "Merge only after current-main validation is green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "mcpContract": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS"
+}
