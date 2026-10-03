@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { UserRepository } from "@/lib/auth/user-repository";
-import { getUserQuota } from "@/lib/quota/quota-service";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { db } from "@/lib/firebase-admin";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,9 @@ export async function GET(
     // 1. Quota Ledger
     let quota = null;
     try {
-      quota = await getUserQuota(user.id, user.role);
+      quota = await new TreasuryQuotaAdmission(
+        await getTreasuryRuntime(),
+      ).getGenerationQuota(user.id, user.role);
     } catch {}
 
     // 2. Drive Connection Status (redacted tokens)
