@@ -7,6 +7,7 @@ const providers = {
     dir: "kaggle-notebook-mcp",
     checkTool: "kaggle_connection_check",
     capabilityTool: "kaggle_capabilities",
+    nativeCheckTool: "kaggle_official_mcp_check",
   },
   COLAB: {
     dir: "colab-notebook-mcp",
@@ -17,6 +18,7 @@ const providers = {
     dir: "lightning-notebook-mcp",
     checkTool: "lightning_connection_check",
     capabilityTool: "lightning_capabilities",
+    nativeCheckTool: "lightning_litserve_mcp_check",
   },
 };
 
@@ -153,6 +155,9 @@ async function main() {
     if (!names.includes(spec.capabilityTool)) {
       fail("capability tool missing from tools/list");
     }
+    if (spec.nativeCheckTool && !names.includes(spec.nativeCheckTool)) {
+      fail("provider-native MCP check tool missing from tools/list");
+    }
 
     const capabilityResult = await rpc(child, 3, "tools/call", {
       name: spec.capabilityTool,
@@ -190,6 +195,23 @@ async function main() {
       );
     }
 
+    let nativeMcp = undefined;
+    if (spec.nativeCheckTool) {
+      const nativeResult = await rpc(child, 5, "tools/call", {
+        name: spec.nativeCheckTool,
+        arguments: {},
+      });
+      const nativeText = (nativeResult.content || [])
+        .filter((part) => part && part.type === "text")
+        .map((part) => part.text)
+        .filter(Boolean)[0];
+      try {
+        nativeMcp = nativeText ? JSON.parse(nativeText) : undefined;
+      } catch {
+        nativeMcp = { raw: nativeText };
+      }
+    }
+
     console.log(
       JSON.stringify(
         {
@@ -199,6 +221,7 @@ async function main() {
           discoveredTools: names,
           authenticated: true,
           evidence: validation.evidence || [],
+          nativeMcp,
         },
         null,
         2,
