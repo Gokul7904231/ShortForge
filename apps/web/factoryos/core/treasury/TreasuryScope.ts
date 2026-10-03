@@ -14,9 +14,10 @@ export interface TreasuryExecutionScope {
   readonly floorId: string;
   readonly overseerCommandId: string;
   readonly renderIntent?: unknown;
-  readonly kind?: "RENDER" | "INFERENCE" | "COMPUTE_OFFER";
+  readonly kind?: "RENDER" | "INFERENCE" | "COMPUTE_OFFER" | "QUOTA";
   readonly scopeFingerprint?: string;
   readonly resourceId?: string;
+  readonly accountId?: string;
 }
 
 function canonicalize(value: unknown): unknown {
