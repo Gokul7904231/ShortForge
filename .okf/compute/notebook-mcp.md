@@ -53,3 +53,9 @@ For local Colab development, the adapter can also use Google Application Default
 MCP success is a tool result, not production truth. Worker admission, leases/fencing, CAS authority, F07 acceptance, and ReleaseAuthorization remain outside these servers.
 
 > Live-proof note: Kaggle's physical-artifact smoke defaults to CPU for deterministic, low-queue verification; GPU execution remains selectable with KAGGLE_LIVE_GPU=1.
+
+## Colab browser interoperability
+
+The dedicated Colab MCP provides a bounded local browser-session bridge. It validates Colab notebook URLs, binds a per-session loopback WebSocket server, authenticates the browser connection with a short-lived session token, tracks connection state, and supports explicit disconnect/close. The bridge is an interoperability surface only; it does not expose arbitrary cell execution and does not receive F06 worker authority.
+
+The current Colab rendering path remains owned by `ColabNotebookAdapter`, which uses the managed runtime's Jupyter interface for bounded render execution and physical artifact retrieval.

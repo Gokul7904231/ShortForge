@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR119-Ascalon-Overseer-Finetune-Readiness-Current-Main",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/ascalon-readiness-current-main-20261003",
+  "objective": "Integrate the unique Overseer/Ascalon fine-tuning readiness artifacts from PR #98 onto the current mainline.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy/overseer-operational-contract.md",
+      ".okf/intelligence/ascalon-model.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Documentation and training-readiness artifacts only; no credentials, model weights, or runtime authority added."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "ASCALON-MAIN-001",
+      "originalConflict": "PR #98 changed .okf/index.md while current main had later architecture updates.",
+      "status": "RESOLVED",
+      "proposedResolution": "Port only the fine-tuning contract link while preserving current main index content.",
+      "acceptedResolution": "Current main documentation remains intact; the readiness artifacts are added as new governed entries.",
+      "decisionAuthority": "Ascalon training-readiness contract"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added Overseer fine-tuning contract and behavior specification.",
+    "Added dataset, curriculum, evaluation matrix, and readiness documents.",
+    "Registered the contract in the current .okf index."
+  ],
+  "verificationPlan": [
+    "Pass Team Change Gate, repository CI, and affected floor validations.",
+    "Confirm the change remains documentation/readiness only with no model-weight or runtime-authority mutation.",
+    "Merge only after current-main gates are green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "repositoryCI": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS"
+}
