@@ -98,6 +98,8 @@ export interface TreasuryReservation {
   readonly maxDurationMs?: number;
   readonly maxRetries?: number;
   readonly verificationRequired: boolean;
+  readonly idempotencyKey: string;
+  readonly scopeDigest: string;
   readonly createdAt: string;
   readonly expiresAt: string;
   readonly updatedAt: string;
