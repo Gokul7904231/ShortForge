@@ -45,7 +45,6 @@ export const KNOWN_CAPABILITIES = [
   "cap_youtube_publish",
   "cap_slayer_revoke_lease",
   "cap_healer_retry_task",
-  "CAP_REMAKER_REPAIR",
   "blender.mcp",
   "mcp.playwright.research",
   "mcp.playwright.interact",
@@ -240,49 +239,6 @@ export class AscalonTrajectoryValidator {
         severity: "BLOCKING",
         message: "Mutating Blender success lacks an independent verification evidence reference.",
       });
-    }
-
-    // 5c. ReMaker learning-safety integrity
-    if (toolCall === "CAP_REMAKER_REPAIR") {
-      const remaker = trajectory.execution?.remaker;
-      const authorization = trajectory.authorization;
-      const outcome = trajectory.outcome;
-
-      const missing: string[] = [];
-      if (authorization?.capabilityId !== "CAP_REMAKER_REPAIR") missing.push("capabilityId");
-      if (authorization?.authorized !== true || authorization?.guardianDecision !== "GRANTED") {
-        missing.push("guardian_authorization");
-      }
-      if (!Number.isInteger(authorization?.fencingToken) || authorization.fencingToken < 0) {
-        missing.push("fencingToken");
-      }
-      if (!/^[a-f0-9]{64}$/i.test(String(remaker?.parentArtifactSha256 || ""))) {
-        missing.push("parentArtifactSha256");
-      }
-      if (typeof remaker?.timelineDigest !== "string" || remaker.timelineDigest.length === 0) {
-        missing.push("timelineDigest");
-      }
-      if (!Array.isArray(remaker?.preservedNodeIds)) {
-        missing.push("preservedNodeIds");
-      }
-      if (
-        !remaker?.preservedNodeFingerprints ||
-        typeof remaker.preservedNodeFingerprints !== "object" ||
-        Array.isArray(remaker.preservedNodeFingerprints)
-      ) {
-        missing.push("preservedNodeFingerprints");
-      }
-      if (outcome?.status !== "SUCCESS" || outcome?.verified !== true || !outcome?.verificationEvidenceId) {
-        missing.push("f07VerificationEvidence");
-      }
-
-      if (missing.length > 0) {
-        issues.push({
-          code: "REMAKER_EVIDENCE_INCOMPLETE",
-          severity: "BLOCKING",
-          message: "ReMaker trajectory is missing required authorization, lineage, preservation or F07 evidence: " + missing.join(", "),
-        });
-      }
     }
 
     // 6. Guardian Authorization Integrity
