@@ -205,6 +205,11 @@ export class CapabilityFirstRouter {
    * 5. Return RoutingDecision with explanation and fallback chain
    */
   static routeCapability(req: CapabilityRoutingRequest): RoutingDecision {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[CapabilityRouter] Production routing requires routeCapabilityWithTreasury; synchronous legacy routing cannot authorize spend",
+      );
+    }
     const matching = Array.from(this.candidates.values()).filter((c) => {
       if (!c.supportedCapabilities.includes(req.capability)) return false;
       if (c.circuitState === "OPEN" || c.circuitState === "RATE_LIMITED") return false;
