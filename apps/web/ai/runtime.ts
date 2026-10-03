@@ -8,6 +8,7 @@ import {
   TokenEconomyEvent,
   TokenEconomyLedger,
 } from "./economy/TokenEconomy";
+import type { TreasuryService } from "../factoryos/core/treasury/TreasuryService";
 
 export interface RuntimeTrace {
   traceId: string;
@@ -35,9 +36,34 @@ export interface RuntimeOptions {
   deterministicValue?: unknown;
   cacheTtlMs?: number;
   maxRetries?: number;
+  overseerCommandId?: string;
+  accountId?: string;
+  missionId?: string;
+  runId?: string;
+  floorId?: string;
+  taskId?: string;
+  scopeFingerprint?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
 }
 
 class AIRuntimeEngineClass {
+  private treasuryService?: TreasuryService;
+  private treasuryRequired = false;
+
+  bindTreasury(
+    service: TreasuryService,
+    required = process.env.NODE_ENV === "production",
+  ): void {
+    if (this.treasuryService && this.treasuryService !== service) {
+      throw new Error(
+        "[AIRuntime] Treasury service is already bound; refusing to replace economic authority",
+      );
+    }
+    this.treasuryService = service;
+    this.treasuryRequired = this.treasuryRequired || required;
+    IntelligentRouter.bindTreasury(service, required);
+  }
+
   // Feature Flags
   public flags = {
     enableLocalAI: true,
@@ -157,6 +183,15 @@ class AIRuntimeEngineClass {
             subtask: options.subtask,
             maxCostLimit: options.maxCostLimit,
             requireLocal: options.requireLocal || !this.flags.enableLocalAI,
+            maxRetries: options.maxRetries,
+            overseerCommandId: options.overseerCommandId,
+            accountId: options.accountId,
+            missionId: options.missionId,
+            runId: options.runId,
+            floorId: options.floorId,
+            taskId: options.taskId,
+            scopeFingerprint: options.scopeFingerprint,
+            priority: options.priority,
           },
           {
             ...params,
