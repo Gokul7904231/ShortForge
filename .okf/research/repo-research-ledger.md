@@ -228,3 +228,77 @@ These mappings are research inputs only. No provider code, weights, workflows, o
 | Additional storyboard/director repositories | Shot, camera, reference and continuity patterns | Existing typed scene planning fields | PATTERN_EXTRACTION |
 
 No third-party runtime code or model/provider dependency was added.
+
+
+## ReMaker v2 research sweep — 2026-10-02
+
+| Source | Observed pattern | ShortForge application |
+|---|---|---|
+| Remotion renderer | Exact frame-range rendering and multiple local frame ranges; partial chunks can be combined | Store repair windows in frame space and keep execution delegated to RenderFabric |
+| OpenTimelineIO | Explicit logical time ranges and separation between source range and available media | Keep repair scope logical and independent from physical artifact instances |
+| ComfyUI | Partial execution based on changed/dependent graph regions plus caching | ReMaker should invalidate and recompute only the minimal TimelineIR dependency surface |
+| VideoRepair | Detect -> plan -> decompose -> localized refinement | ReMaker impact analysis becomes a first-class stage before any mutation |
+| Recent localized video-editing work | Evaluation should measure local edit fidelity and temporal coherence, not only whole-frame similarity | Add localized repair evidence as advisory signals before F07, without replacing F07 |
+| C2PA 2.x | Derived assets, ingredients and edit actions form a cryptographically linked provenance history | Record parent artifact, repair action and changed region in the repair receipt/provenance layer |
+| AgentTube pattern | Durable checkpoints, scene manifests, scene-level repair, content-addressed caching | Preserve the existing scene cache/checkpoint path and force rebuild only on named repair scenes |
+
+### Engineering decision
+
+ReMaker v2 uses a **repair-control-plane** model:
+- ReMaker computes the smallest authorized repair scope.
+- RenderFabric remains the sole physical render authority.
+- The renderer force-rebuilds explicitly targeted scenes and reuses unchanged scene artifacts.
+- Parent artifacts remain immutable.
+- F07 remains the independent truth boundary.
+- Frame-level differential re-encoding and motion-vector reuse remain experimental until physically proven on the production codec stack.
+
+## ReMaker v2 external research evidence — 2026-10-02
+
+### 1. VideoRepair / ACL 2026 Findings
+Source: daeunni/VideoRepair; ACL 2026 Findings.
+Observed pattern: fine-grained misalignment detection -> refinement planning -> region-preserving localized refinement.
+Design application: ReMaker keeps correctness preservation explicit; F07 findings identify defects, ReMaker scopes the patch, and unchanged TimelineIR nodes receive preservation fingerprints. The current physical executor remains scene-local rather than claiming pixel-region inpainting.
+Evidence: https://aclanthology.org/2026.findings-acl.1817/ and https://github.com/daeunni/VideoRepair
+
+### 2. Temporal-structure preservation
+Source: "Beyond Consistency: Preserving Temporal Structure in Zero-Shot Video Editing" (2026).
+Observed pattern: semantic clip partitioning and anchor-based temporal structure preservation can reduce temporal drift during localized edits.
+Design application: ReMaker expresses repair windows in frame space and adds a small temporal halo. Future frame-level generative repair may add anchor-aware temporal continuity, but it is not enabled in the production renderer yet.
+Evidence: https://arxiv.org/abs/2606.08780
+
+### 3. ComfyUI changed-node caching
+Source: ComfyUI execution/cache implementation.
+Observed pattern: node fingerprints / IS_CHANGED determine whether cached node outputs can be reused; changed/dependent nodes are re-executed while stable nodes remain cached.
+Design application: ReMaker force-rebuilds only named repair scenes and the FactoryOS renderer uses canonical scene hashes for cache identity. 
+Evidence: https://github.com/Comfy-Org/ComfyUI/blob/master/execution.py
+
+### 4. OpenTimelineIO range semantics
+Source: OpenTimelineIO time-range tutorials.
+Observed pattern: logical source ranges, available media ranges, visible ranges, and parent-track ranges are distinct concepts.
+Design application: ReMaker separates logical repair target from physical render scene set and expresses its temporal impact in frames.
+Evidence: https://github.com/AcademySoftwareFoundation/OpenTimelineIO/blob/main/docs/tutorials/time-ranges.md
+
+### 5. Remotion frame-range rendering
+Source: Remotion renderer.
+Observed pattern: renderMedia supports explicit frame ranges and tracks exact frames rendered.
+Design application: ReMaker plans exact frame windows now; production execution currently materializes them by rebuilding the overlapping scene set through RenderFabric.
+Evidence: https://github.com/remotion-dev/remotion/blob/main/packages/renderer/src/render-media.ts
+
+### 6. C2PA 2.4 provenance
+Source: C2PA Specification 2.4 (April 2026).
+Observed pattern: edited assets preserve provenance through parent/ingredient relationships and explicit edit actions.
+Design application: ReMaker receipts carry parent artifact identity, parent revision, requested-change digest, repair plan digest and renderer receipt. Full C2PA signing is downstream work, not implied by these internal fields.
+Evidence: https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html
+
+### 7. AgenticVBench
+Source: AgenticVBench (2026), 100 real-world post-production agent tasks.
+Observed pattern: programmatic verifiers should be combined with expert/rubric evaluation; harness design materially affects agent behavior and failure modes.
+Design application: ReMaker remains bounded/deterministic and passes candidates to independent F07 verification; ReMaker is not allowed to turn an internal score into release authority.
+Evidence: https://arxiv.org/abs/2605.27705 and https://github.com/PhiloLabs/agentic-vbench
+
+### 8. Rhythm / temporal alignment research
+Source: BEAT (2026) and related temporal alignment work.
+Observed pattern: timing quality can benefit from explicit cross-modal temporal alignment rather than post-hoc guessing.
+Design application: ReMaker treats temporal changes as first-class repair actions and can carry frame windows/temporal evidence; rhythm-aware repair policy is future work.
+Evidence: https://arxiv.org/abs/2605.27067
+
