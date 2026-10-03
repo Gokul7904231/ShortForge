@@ -36,8 +36,14 @@ describe("Treasury Wave 4 authority retirement", () => {
     expect(source).toContain(
       "Production economic admission is Treasury-owned",
     );
-    expect(source).not.toContain(
-      'return { allowed: true, requiresApproval: false, reason: "Paid execution permitted under active budget policy." }',
+    expect(source).toContain(
+      'if (process.env.NODE_ENV === "production")',
+    );
+    expect(source).toContain(
+      "allowed: false",
+    );
+    expect(source).toContain(
+      "requiresApproval: true",
     );
   });
 
