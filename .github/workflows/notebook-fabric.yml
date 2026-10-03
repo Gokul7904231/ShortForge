@@ -25,6 +25,7 @@ on:
   push:
     branches:
       - "feat/notebook-live-mcp-20261002"
+      - "feat/kaggle-show-artifact-20261003"
   workflow_dispatch:
     inputs:
       provider:
