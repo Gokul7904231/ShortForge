@@ -69,6 +69,7 @@ export interface FactoryOSConfig {
   readonly mongoUri?: string;
   readonly dbName?: string;
   readonly strictPersistence?: boolean;
+  readonly treasuryRequired?: boolean;
   readonly patrolIntervalMs?: number;
   readonly supervisorIntervalMs?: number;
   readonly watchdogIntervalMs?: number;
@@ -128,6 +129,7 @@ export class AutonomousFactoryController {
       supervisorIntervalMs: 3000,
       watchdogIntervalMs: 4000,
       autoStartSwarm: true,
+      treasuryRequired: process.env.NODE_ENV === "production",
       memoryFabricEnabled:
         process.env.MEMORY_FABRIC_ENABLED === "true" ||
         (process.env.MEMORY_FABRIC_ENABLED !== "false" &&
@@ -178,6 +180,12 @@ export class AutonomousFactoryController {
       const capacityUnits = Math.max(1, Number(process.env.FACTORYOS_TREASURY_CAPACITY_UNITS || "3600"));
       await this.treasuryService.ensureAccount(
         createTreasuryAccount(accountId, budgetUsd, capacityUnits),
+      );
+    }
+
+    if (this.config.treasuryRequired && !this.treasuryService) {
+      throw new Error(
+        "Treasury is required but no transaction-capable MongoDB Treasury is available; refusing to boot production execution without economic governance.",
       );
     }
 
