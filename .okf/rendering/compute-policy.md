@@ -38,7 +38,25 @@ FactoryOS implements a **Deterministic Quota & Compute Governance Policy**:
 
 ---
 
-## 2. CURRENT vs TARGET Architecture Status
+## 2. Treasury Authority — Wave 1
+
+Treasurer is now the canonical economic control-plane design and implementation seam at `apps/web/factoryos/core/treasury/`. The existing quota service remains operational during migration, but new Treasury code is the authoritative boundary for the next integration wave.
+
+The division of authority is:
+
+```
+Overseer -> Treasury economic admission -> Guardian capability gate -> ComputeRouter placement -> Worker
+                                                           |
+                                                           v
+                                                          F07
+                                                           |
+                                                           v
+                                                   Treasury settlement
+```
+
+The Treasury kernel is deterministic and fail-closed. Its Mongo-backed implementation requires an atomic Mongo client session; there is no production fallback to in-memory accounting.
+
+## 3. CURRENT vs TARGET Architecture Status
 
 | Architectural Dimension | CURRENT Implementation | TARGET Implementation |
 |:------------------------|:-----------------------|:----------------------|
@@ -48,7 +66,7 @@ FactoryOS implements a **Deterministic Quota & Compute Governance Policy**:
 
 ---
 
-## 3. Governance Invariants
+## 4. Governance Invariants
 
 - **Zero Quota Leakage**: Under no circumstance may a failed render job consume user credit without delivering a verified, downloadable artifact.
 - **Fail-Closed Reservation**: If the quota service is temporarily unavailable or unreachable, new generation missions are rejected with an explicit service unavailable error.
