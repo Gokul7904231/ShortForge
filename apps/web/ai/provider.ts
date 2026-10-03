@@ -1,7 +1,5 @@
 import type { TreasuryService } from "../factoryos/core/treasury/TreasuryService";
 
-export type LLMProvider = "gemini" | "groq" | "openrouter" | "huggingface";
-
 export type TreasuryModelExecutionContext = {
   readonly treasuryService: TreasuryService;
   readonly accountId: string;
@@ -14,13 +12,20 @@ export type TreasuryModelExecutionContext = {
   readonly priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   readonly maxRetries?: number;
   readonly maxCostUsd?: number;
-  readonly preferredProviderId?: LLMProvider | string;
+  readonly preferredProviderId?: string;
   readonly subtask?: string;
 };
 
 export type ProviderContext = {
   apiKey?: string;
   treasuryContext?: TreasuryModelExecutionContext;
+};
+
+export type LLMProvider = "gemini" | "groq" | "openrouter" | "huggingface";
+
+export type ProviderContext = {
+  // Keep generic; concrete provider impls can interpret.
+  apiKey?: string;
 };
 
 export interface LLMProviderAdapter {
@@ -31,3 +36,4 @@ export interface LLMProviderAdapter {
     temperature?: number;
   }): Promise<string>;
 }
+
