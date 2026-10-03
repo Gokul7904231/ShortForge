@@ -72,6 +72,14 @@ describe("Treasury F06 compute admission", () => {
     });
 
     expect(submitJob).toHaveBeenCalledTimes(1);
+    expect(submitJob.mock.calls[0]?.[3]).toMatchObject({
+      reservationId: expect.any(String),
+      commandId: expect.any(String),
+      missionId: "mission-treasury-test",
+      scopeDigest: "sha256:scope-1",
+      maxRetries: 0,
+    });
+
     const report = await service.report("factory");
     expect(report.activeReservations).toBe(1);
     expect(report.account.settledUsd).toBe(0);
@@ -130,5 +138,51 @@ describe("Treasury F06 compute admission", () => {
 
     const report = await service.report("factory");
     expect(report.activeReservations).toBe(0);
+  });
+});
+
+describe("Treasury permit scope", () => {
+  it("rejects a permit replayed against another job scope", async () => {
+    const ledger = new InMemoryTreasuryLedger();
+    ledger.seedAccount(createTreasuryAccount("factory", 5, 1000));
+    const kernel = new TreasuryKernel(ledger, new TreasuryPriceRegistry());
+    const service = new TreasuryService(kernel);
+
+    const { reservation, permit } = await service.reserve({
+      commandId: "cmd-scope-1",
+      overseerCommandId: "ovr-scope-1",
+      issuer: { authority: "OVERSEER", issuerId: "ovr-scope-1" },
+      accountId: "factory",
+      missionId: "mission-scope-1",
+      runId: "run-scope-1",
+      floorId: "floor06_rendering",
+      taskId: "job-scope-1",
+      attemptId: "attempt-scope-1",
+      purpose: "F06 render",
+      resourceRequest: [{
+        kind: "COMPUTE",
+        workloadType: "RENDER",
+        requiresGpu: true,
+        scarcityUnits: 10,
+        verificationRequired: true,
+      }],
+      budgetEnvelope: {
+        maxCostUsd: 0.1,
+        maxCapacityUnits: 10,
+        maxDurationMs: 60000,
+        maxRetries: 0,
+      },
+      priority: "HIGH",
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+      idempotencyKey: "scope-idem-1",
+      scopeDigest: "sha256:scope-one",
+    });
+
+    await expect(service.validatePermit(permit, {
+      jobId: "different-job",
+      missionId: reservation.missionId,
+      scopeDigest: reservation.scopeDigest,
+      accountId: reservation.accountId,
+    })).rejects.toThrow("not bound to this execution scope");
   });
 });
