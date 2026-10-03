@@ -451,7 +451,7 @@ export class OverseerControlPlane {
       batchId: `batch_${run.runId}`,
       taskId: run.runId,
       missionId,
-      overseerCommandId: run.overseerCommandId,
+      overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
       accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
       runId: run.runId,
       floorId: "overseer",
@@ -1342,7 +1342,7 @@ export class OverseerControlPlane {
           },
           preferredCompiler: scope.preferredCompiler || "FFMPEG",
           constraints: { hardwareAccel: true },
-          overseerCommandId: run.overseerCommandId,
+          overseerCommandId,
           createdAt: new Date().toISOString(),
         };
 
@@ -1447,6 +1447,10 @@ export class OverseerControlPlane {
         });
 
         const renderFabric = new RenderFabric();
+        const overseerCommandId = String(scope.overseerCommandId || sharedScope.overseerCommandId || "");
+        if (this.treasuryService && !overseerCommandId) {
+          throw new Error("[Overseer Floor06] Treasury-gated render requires Overseer command identity");
+        }
         const renderIntent: RenderIntent = scope.renderIntent || {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
           jobId: targetJobId,
@@ -1480,7 +1484,7 @@ export class OverseerControlPlane {
           missionId: renderIntent.missionId,
           jobId: renderIntent.jobId,
           floorId: "floor06_rendering",
-          overseerCommandId: run.overseerCommandId,
+          overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
           renderIntent,
         });
 
@@ -1497,7 +1501,7 @@ export class OverseerControlPlane {
             ? {
                 service: this.treasuryService!,
                 accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
-                overseerCommandId: run.overseerCommandId,
+                overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
                 budgetEnvelope: {
                   maxCostUsd: maxRenderReservationUsd,
                   maxDurationMs: Math.max(60_000, Math.ceil(renderIntent.durationSeconds * 5000)),
@@ -1715,6 +1719,7 @@ export class OverseerControlPlane {
             },
             measurements: verificationReport.measurements,
             assets: [],
+            scenes: Array.isArray(scope.scenes) ? scope.scenes : [],
             scriptText: String(scope.script || sharedScope.script || ""),
           };
           const channel = scope.channelContext || {
