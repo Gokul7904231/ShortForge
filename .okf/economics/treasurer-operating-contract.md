@@ -1,6 +1,6 @@
 # Treasurer Operating Contract
 
-**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–3  
+**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–4  
 **Date:** 2026-10-03
 
 ## Purpose
@@ -130,12 +130,32 @@ They may inform execution, but they must not become a second production spend au
 - DEFENSIVE: restrict large/high-priority discretionary spend.
 - FROZEN: deny new discretionary reservations while still allowing settlement, release, expiry and reconciliation.
 
-## Ascalon boundary
+## Economic Intelligence boundary
 
-Ascalon may eventually act as Economic Intelligence:
-- forecast;
-- anomaly classification;
-- cost/quality recommendation;
-- route advice.
+Wave 4 introduces a two-stage advisory boundary:
 
-Ascalon never receives Treasury vault authority and never bypasses the Constitutional Kernel.
+```
+Treasury ledger
+  -> Economic Intelligence
+  -> bounded TreasuryEconomicAdvice projection
+  -> Overseer / Ascalon / GLiDE
+```
+
+Economic Intelligence may calculate:
+- rolling spend and spend-rate;
+- reservation utilization and waste;
+- verified-execution unit economics;
+- provider/model observed cost per token;
+- capacity pressure;
+- anomaly signals;
+- bounded 7-day / 30-day spend projections.
+
+It cannot:
+- reserve;
+- settle;
+- release;
+- freeze/unfreeze;
+- mutate prices;
+- choose a physical worker.
+
+Ascalon/GLiDE receives only the projection and remains advisory/shadow-only.
