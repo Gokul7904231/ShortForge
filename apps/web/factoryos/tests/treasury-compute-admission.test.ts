@@ -71,9 +71,10 @@ describe("Treasury F06 compute admission", () => {
       },
     });
 
-    expect((submitJob.mock.results[0]?.value as Promise<unknown>) || submitJob).toBeDefined();
-    const report = await (service as any).kernel?.report?.("factory").catch?.(() => null);
-    expect(report).toBeNull();
+    expect(submitJob).toHaveBeenCalledTimes(1);
+    const report = await service.report("factory");
+    expect(report.activeReservations).toBe(1);
+    expect(report.account.settledUsd).toBe(0);
   });
 
   it("releases the Treasury reservation when physical dispatch fails", async () => {
@@ -88,6 +89,10 @@ describe("Treasury F06 compute admission", () => {
         scopeDigest: "sha256:scope-2",
       },
     })).rejects.toThrow("provider unavailable");
+
+    const report = await service.report("factory");
+    expect(report.activeReservations).toBe(0);
+    expect(report.account.settledUsd).toBe(0);
   });
 
   it("rejects Treasury-gated renders whose RenderIntent is not command-bound", async () => {
@@ -99,5 +104,8 @@ describe("Treasury F06 compute admission", () => {
         scopeDigest: "sha256:scope-3",
       },
     })).rejects.toThrow("requires RenderIntent.overseerCommandId");
+
+    const report = await service.report("factory");
+    expect(report.activeReservations).toBe(0);
   });
 });
