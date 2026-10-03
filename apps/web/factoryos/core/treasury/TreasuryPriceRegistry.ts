@@ -73,6 +73,11 @@ export class TreasuryPriceRegistry {
         const end = new Date(price.expiresAt).getTime();
         return start <= at && at < end;
       })
+      .sort(
+        (a, b) =>
+          new Date(b.effectiveFrom).getTime() -
+          new Date(a.effectiveFrom).getTime(),
+      )
       .map((price) => structuredClone(price));
   }
 
