@@ -208,8 +208,11 @@ export interface VisualTransformPlan {
   }>;
 }
 
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
+
 export interface VisualContext {
   jobId: string;
+  treasuryModelContext?: TreasuryModelExecutionContext;
   sceneIndex: number;
   sceneText: string;
   topic: string;
