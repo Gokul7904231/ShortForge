@@ -85,6 +85,7 @@ export interface TreasuryQuote {
 export interface TreasuryReservation {
   readonly reservationId: string;
   readonly commandId: string;
+  readonly overseerCommandId: string;
   readonly accountId: string;
   readonly missionId: string;
   readonly runId?: string;
@@ -97,6 +98,7 @@ export interface TreasuryReservation {
   readonly maxTokens?: number;
   readonly maxDurationMs?: number;
   readonly maxRetries?: number;
+  readonly reservedTokenCapacityUnits?: number;
   readonly verificationRequired: boolean;
   readonly idempotencyKey: string;
   readonly scopeDigest: string;
@@ -116,6 +118,10 @@ export interface TreasuryAccount {
   readonly availableCapacityUnits: number;
   readonly reservedCapacityUnits: number;
   readonly settledCapacityUnits: number;
+  readonly tokenCapacityUnits: number;
+  readonly availableTokenCapacityUnits: number;
+  readonly reservedTokenCapacityUnits: number;
+  readonly settledTokenCapacityUnits: number;
   readonly mode: TreasuryMode;
   readonly version: number;
   readonly updatedAt: string;
@@ -170,7 +176,7 @@ export const DEFAULT_TREASURY_POLICY: TreasuryPolicy = {
   maxReservationTtlMs: 60 * 60 * 1000,
   defensiveMaxPriority: "NORMAL",
   defensiveMaxReservationUsd: 1,
-  allowPaidRoutes: false,
+  allowPaidRoutes: true,
 };
 
 export interface TreasuryReport {
@@ -184,10 +190,26 @@ export interface TreasuryEconomicPermit {
   readonly permitId: string;
   readonly reservationId: string;
   readonly commandId: string;
+  readonly overseerCommandId: string;
   readonly accountId: string;
+  readonly missionId: string;
+  readonly runId?: string;
+  readonly floorId?: string;
+  readonly taskId?: string;
+  readonly attemptId?: string;
+  readonly scopeDigest: string;
   readonly maxCostUsd: number;
   readonly maxCapacityUnits: number;
+  readonly maxTokenCapacityUnits: number;
+  readonly maxRetries: number;
   readonly expiresAt: string;
   readonly issuedAt: string;
   readonly status: "ACTIVE";
+}
+
+export interface TreasuryPermitContext {
+  readonly jobId: string;
+  readonly missionId: string;
+  readonly scopeDigest: string;
+  readonly accountId: string;
 }

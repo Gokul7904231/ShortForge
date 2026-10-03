@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { IntelligentRouter } from "../../ai/intelligent-router";
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
 
 export interface MediaPipelineOptions {
   prompt: string;
@@ -11,6 +12,7 @@ export interface MediaPipelineOptions {
   negativePrompt?: string;
   imageSize?: string;
   version?: string;
+  treasuryContext?: TreasuryModelExecutionContext;
 }
 
 class MediaPipelineClass {
@@ -61,7 +63,11 @@ class MediaPipelineClass {
 
     // 2. Request generation from universal router
     const result = await IntelligentRouter.routeExecute(
-      { capability: "IMAGE" },
+      {
+        capability: "IMAGE",
+        treasuryContext: options.treasuryContext,
+        preferredProviderId: options.model,
+      },
       {
         prompt: options.prompt,
         width,

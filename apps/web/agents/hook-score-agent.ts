@@ -1,10 +1,11 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 import { RETENTION_METRICS } from "../prompts/retention-metrics";
 
 export type HookScoreAgentInput = {
   hook: string;
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type HookScoreAgentOutput = {
@@ -20,7 +21,7 @@ export async function hookScoreAgent(
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
 
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const system =
     "You are a YouTube Shorts retention coach. Output ONLY valid JSON. No markdown.";

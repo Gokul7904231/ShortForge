@@ -23,6 +23,9 @@ import { ValidatorAgent } from "../validator/ValidatorAgent";
 import { OverseerControlPlane } from "../overseer/OverseerControlPlane";
 import { MemoryEngine } from "../memory/MemoryEngine";
 import { FactoryWatchdog } from "../watchdog/FactoryWatchdog";
+import { AIRuntime } from "../../../ai/runtime";
+import { AIConfigManager } from "../../../ai/ai-config-manager";
+import { ComputeGateway } from "../compute/gateway/ComputeGateway";
 import { PythonFloorBridge } from "../bridge/PythonFloorBridge";
 import { OverseerAPIHandler } from "../overseer/api/OverseerAPIHandler";
 import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
@@ -52,6 +55,11 @@ import { AgentEconomicsEngine } from "../cognitive/economics/AgentEconomicsEngin
 import { CognitiveOutcomeLearner } from "../cognitive/CognitiveOutcomeLearner";
 import { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 import {
+  createTreasuryAccount,
+  createMongoTreasuryService,
+  TreasuryService,
+} from "../treasury";
+import {
   DiskSlayerPrimeStateStore,
   InMemorySlayerPrimeStateStore,
   MongoSlayerPrimeStateStore,
@@ -64,6 +72,7 @@ export interface FactoryOSConfig {
   readonly mongoUri?: string;
   readonly dbName?: string;
   readonly strictPersistence?: boolean;
+  readonly treasuryRequired?: boolean;
   readonly patrolIntervalMs?: number;
   readonly supervisorIntervalMs?: number;
   readonly watchdogIntervalMs?: number;
@@ -114,6 +123,7 @@ export class AutonomousFactoryController {
   public memoryFabric?: MemoryFabricBridge;
   public intelligenceGateway?: IntelligenceGateway;
   public slayerPrimeStateStore!: SlayerPrimeStateStore;
+  public treasuryService?: TreasuryService;
 
   constructor(config: FactoryOSConfig = {}) {
     this.config = {
@@ -122,6 +132,7 @@ export class AutonomousFactoryController {
       supervisorIntervalMs: 3000,
       watchdogIntervalMs: 4000,
       autoStartSwarm: true,
+      treasuryRequired: process.env.NODE_ENV === "production",
       memoryFabricEnabled:
         process.env.MEMORY_FABRIC_ENABLED === "true" ||
         (process.env.MEMORY_FABRIC_ENABLED !== "false" &&
@@ -163,6 +174,79 @@ export class AutonomousFactoryController {
       }
     } else {
       repos = DatabaseFactory.createRepositories(null);
+    }
+
+    if (this.mongoClient?.connected() && this.mongoClient.getDb()) {
+      this.treasuryService = createMongoTreasuryService(this.mongoClient);
+      const accountId = process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos";
+      const budgetUsd = Math.max(0, Number(process.env.FACTORYOS_TREASURY_BUDGET_USD || "25"));
+      const capacityUnits = Math.max(
+        1,
+        Number(process.env.FACTORYOS_TREASURY_CAPACITY_UNITS || "3600"),
+      );
+      const tokenCapacityUnits = Math.max(
+        0,
+        Number(process.env.FACTORYOS_TREASURY_TOKEN_CAPACITY_UNITS || "1000000"),
+      );
+      await this.treasuryService.ensureAccount(
+        createTreasuryAccount(
+          accountId,
+          budgetUsd,
+          capacityUnits,
+          "OPEN",
+          new Date(),
+          tokenCapacityUnits,
+        ),
+      );
+      // Bind the canonical economic authority into the compute front door.
+      // Production renders must not be able to reach ComputeRouter without Treasury admission.
+      const treasuryRequired =
+        this.config.treasuryRequired ?? process.env.NODE_ENV === "production";
+      ComputeGateway.getInstance().bindTreasury(
+        this.treasuryService,
+        treasuryRequired,
+      );
+      AIRuntime.bindTreasury(this.treasuryService, treasuryRequired);
+
+      // Seed Treasury's authoritative model price registry from the trusted
+      // application configuration. Routers may consume these prices but cannot
+      // register/overwrite them during an execution attempt.
+      AIConfigManager.loadAll();
+      const treasuryPricing = this.treasuryService.getPriceRegistry();
+      for (const model of AIConfigManager.models) {
+        const pricing = AIConfigManager.pricing[model.id];
+        if (!pricing) continue;
+        for (const configuredProviderId of model.providers) {
+          const providerId =
+            configuredProviderId === "google-ai"
+              ? "google"
+              : configuredProviderId;
+          treasuryPricing.registerModelPricing({
+            providerId,
+            modelId: model.id,
+            inputUsdPer1MTokens: Math.max(0, pricing.input),
+            outputUsdPer1MTokens: Math.max(0, pricing.output),
+            pricingSource: "AI_CONFIG_BOOTSTRAP",
+            pricingVersion:
+              "ai-config:" +
+              model.id +
+              ":" +
+              pricing.input +
+              ":" +
+              pricing.output +
+              ":" +
+              (pricing.free ? "free" : "paid"),
+            confidence: pricing.free ? "MEDIUM" : "MEDIUM",
+            ttlMs: 24 * 60 * 60 * 1000,
+          });
+        }
+      }
+    }
+
+    if (this.config.treasuryRequired && !this.treasuryService) {
+      throw new Error(
+        "Treasury is required but no transaction-capable MongoDB Treasury is available; refusing to boot production execution without economic governance.",
+      );
     }
 
     // Prime state follows the controller persistence tier.
@@ -425,6 +509,7 @@ export class AutonomousFactoryController {
       this.intelligenceGateway?.memoryLifecycle,
       this.intelligenceGateway,
       trajectoryLearningBridge,
+      this.treasuryService,
     );
 
     // 8. Watchdog & Bridges
@@ -522,12 +607,40 @@ export class AutonomousFactoryController {
     }, 5000);
   }
 
-  async startMission(params: any) {
+  async startMission(
+    params: any,
+    preparedEconomicCommand?: {
+      runId: string;
+      overseerCommandId: string;
+      missionId: string;
+    },
+  ) {
     const mission = await this.missionManager.createMission(params);
-    const started = await this.missionManager.startMission(mission.missionId);
+    const started = await this.missionManager.startMission(
+      mission.missionId,
+      preparedEconomicCommand?.runId,
+    );
+
     if (this.overseer) {
-      await this.overseer.dispatchMission(started);
+      if (preparedEconomicCommand) {
+        if (
+          preparedEconomicCommand.missionId !== mission.missionId ||
+          preparedEconomicCommand.overseerCommandId !==
+            "ovr_" + preparedEconomicCommand.runId
+        ) {
+          throw new Error(
+            "Prepared Overseer economic command does not match mission execution binding",
+          );
+        }
+        this.overseer.activatePreparedEconomicCommand(
+          preparedEconomicCommand.runId,
+          mission.missionId,
+        );
+      } else {
+        await this.overseer.dispatchMission(started);
+      }
     }
+
     return started;
   }
 

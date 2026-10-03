@@ -2,7 +2,7 @@
  * FactoryOS v1 — Overseer Supreme Control Plane & Autonomous Mission Runtime
  */
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { GoalDefinition, TaskNode } from "../contracts/OverseerThinkingContracts";
 import type { Case } from "../contracts/CaseContracts";
 import type { WorldState } from "../contracts/WorldStateContracts";
@@ -19,6 +19,7 @@ import type { MemoryEngine } from "../memory/MemoryEngine";
 
 export interface OverseerRun {
   readonly runId: string;
+  readonly overseerCommandId: string;
   readonly command: string;
   readonly mode: "reflex" | "deliberate" | "deep" | "autonomous";
   status: "accepted" | "running" | "completed" | "failed" | "paused";
@@ -33,12 +34,16 @@ import { StrategicMetaThinker } from "../cognitive/meta/StrategicMetaThinker";
 import { CognitivePlaneEngine } from "../cognitive/CognitivePlaneEngine";
 import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
+import type { TreasuryService } from "../treasury/TreasuryService";
+import { TreasuryQuotaAdmission } from "../treasury/TreasuryQuotaAdmission";
+import { computeTreasuryExecutionScopeDigest } from "../treasury/TreasuryScope";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
 import type { MemoryLifecycleService } from "../intelligence/memory/MemoryLifecycleService";
 import type { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 import { OverseerPresenceEngine } from "./presence/OverseerPresenceEngine";
 import { VerificationEngine } from "../verification/VerificationEngine";
+import { F07ReleaseGuardian } from "../verification/youtube/F07ReleaseGuardian";
 import { ResearchRuntime } from "../research/ResearchRuntime";
 import { ProductionTrajectoryCollector } from "../observability/ProductionTrajectoryCollector";
 import type { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
@@ -102,6 +107,7 @@ export class OverseerControlPlane {
   public metaThinker: StrategicMetaThinker;
   public presenceEngine: OverseerPresenceEngine;
   public trajectoryCollector: ProductionTrajectoryCollector;
+  public treasuryService?: TreasuryService;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -122,7 +128,8 @@ export class OverseerControlPlane {
     taskDAGRepo?: ITaskDAGRepository,
     memoryLifecycle?: MemoryLifecycleService,
     intelligenceGateway?: IntelligenceGateway,
-    trajectoryLearningBridge?: TrajectoryLearningBridge
+    trajectoryLearningBridge?: TrajectoryLearningBridge,
+    treasuryService?: TreasuryService
   ) {
     this.caseManager = caseManager;
     this.slayerEngine = slayerEngine;
@@ -134,6 +141,7 @@ export class OverseerControlPlane {
     this.cognitivePlane = cognitivePlane || new CognitivePlaneEngine();
     this.cognitiveRuntime = new CognitiveRuntime(this.cognitivePlane, memoryLifecycle);
     this.missionManager = missionManager;
+    this.treasuryService = treasuryService;
 
     this.thinkingController = new OverseerThinkingController(intelligenceGateway);
     this.decisionLedger = new DecisionLedger(decisionRepo);
@@ -233,6 +241,7 @@ export class OverseerControlPlane {
     const now = new Date().toISOString();
     this.runs.set(runId, {
       runId,
+      overseerCommandId: `ovr_${runId}`,
       command: mission.objective,
       mode: "autonomous",
       status: "running",
@@ -279,6 +288,60 @@ export class OverseerControlPlane {
   }
 
   /**
+   * Issues a real Overseer command identity for an economic admission scope.
+   * This does not execute work; the caller must explicitly activate the prepared command.
+   */
+  prepareEconomicCommand(input: {
+    command: string;
+    missionId: string;
+    mode?: "reflex" | "deliberate" | "deep" | "autonomous";
+  }): { runId: string; overseerCommandId: string; missionId: string } {
+    const runId =
+      "run_" + randomUUID().replace(/-/g, "").substring(0, 12);
+    const overseerCommandId = "ovr_" + runId;
+    const now = new Date().toISOString();
+
+    const runRecord: OverseerRun = {
+      runId,
+      overseerCommandId,
+      command: input.command,
+      mode: input.mode || "autonomous",
+      status: "accepted",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.runs.set(runId, { ...runRecord, missionId: input.missionId } as any);
+    return {
+      runId,
+      overseerCommandId,
+      missionId: input.missionId,
+    };
+  }
+
+  activatePreparedEconomicCommand(
+    runId: string,
+    missionId: string,
+  ): void {
+    const run = this.runs.get(runId);
+    if (!run || run.overseerCommandId !== "ovr_" + runId) {
+      throw new Error("[Overseer] Prepared economic command not found");
+    }
+    if ((run as any).missionId !== missionId) {
+      throw new Error("[Overseer] Prepared economic command mission binding mismatch");
+    }
+
+    setImmediate(() => {
+      this.executeRunAsync(run, missionId).catch((err) => {
+        run.status = "failed";
+        run.error = err instanceof Error ? err.message : String(err);
+        run.updatedAt = new Date().toISOString();
+        this.worldState.removeActiveRun(runId);
+      });
+    });
+  }
+
+  /**
    * Unified Overseer Command Ingestion (POST /api/overseer/command):
    * Non-blocking — returns immediately with run_id and status "accepted".
    */
@@ -300,6 +363,7 @@ export class OverseerControlPlane {
 
     const runRecord: OverseerRun = {
       runId,
+      overseerCommandId: `ovr_${runId}`,
       command,
       mode,
       status: "accepted",
@@ -344,6 +408,7 @@ export class OverseerControlPlane {
 
     const runRecord: OverseerRun = {
       runId,
+      overseerCommandId: `ovr_${runId}`,
       command: mission.goal || "Autonomous Mission Execution",
       mode,
       status: "accepted",
@@ -386,6 +451,10 @@ export class OverseerControlPlane {
       batchId: `batch_${run.runId}`,
       taskId: run.runId,
       missionId,
+      overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
+      accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+      runId: run.runId,
+      floorId: "overseer",
       questions: [
         {
           id: "intent",
@@ -1239,6 +1308,14 @@ export class OverseerControlPlane {
           scope.voiceArtifact?.durationSeconds ||
           scope.engineSnapshot?.effectiveConfig?.durationSeconds ||
           5;
+        const overseerCommandId = String(
+          scope.overseerCommandId || sharedScope.overseerCommandId || "",
+        );
+        if (this.treasuryService && !overseerCommandId) {
+          throw new Error(
+            "[Overseer Floor05] Treasury-gated timeline requires Overseer command identity",
+          );
+        }
         const renderIntent: RenderIntent = {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
           jobId: targetJobId,
@@ -1273,6 +1350,7 @@ export class OverseerControlPlane {
           },
           preferredCompiler: scope.preferredCompiler || "FFMPEG",
           constraints: { hardwareAccel: true },
+          overseerCommandId,
           createdAt: new Date().toISOString(),
         };
 
@@ -1377,6 +1455,10 @@ export class OverseerControlPlane {
         });
 
         const renderFabric = new RenderFabric();
+        const overseerCommandId = String(scope.overseerCommandId || sharedScope.overseerCommandId || "");
+        if (this.treasuryService && !overseerCommandId) {
+          throw new Error("[Overseer Floor06] Treasury-gated render requires Overseer command identity");
+        }
         const renderIntent: RenderIntent = scope.renderIntent || {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
           jobId: targetJobId,
@@ -1404,8 +1486,43 @@ export class OverseerControlPlane {
           createdAt: new Date().toISOString(),
         };
 
+        const treasuryEnabled = Boolean(this.treasuryService);
+        const renderScopeDigest = computeTreasuryExecutionScopeDigest({
+          version: 1,
+          missionId: renderIntent.missionId,
+          jobId: renderIntent.jobId,
+          floorId: "floor06_rendering",
+          overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
+          renderIntent,
+        });
+
+        const configuredMaxRenderUsd = Number(
+          process.env.FACTORYOS_MAX_RENDER_RESERVATION_USD || "0.10",
+        );
+        const maxRenderReservationUsd = Number.isFinite(configuredMaxRenderUsd)
+          ? Math.max(0, configuredMaxRenderUsd)
+          : 0.10;
+
         const renderRes = await renderFabric.executeRender(renderIntent, {
           localRenderIntent: (scope.localRenderIntent || sharedScope.localRenderIntent) as LocalRenderIntent | undefined,
+          treasury: treasuryEnabled
+            ? {
+                service: this.treasuryService!,
+                accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+                overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
+                budgetEnvelope: {
+                  maxCostUsd: maxRenderReservationUsd,
+                  maxDurationMs: Math.max(60_000, Math.ceil(renderIntent.durationSeconds * 5000)),
+                  maxCapacityUnits: Math.max(
+                    1,
+                    Math.ceil(Math.max(60_000, renderIntent.durationSeconds * 5000) / 1000),
+                  ),
+                  maxRetries: 0,
+                },
+                scopeDigest: renderScopeDigest,
+                priority: "HIGH",
+              }
+            : undefined,
         });
 
         if (!renderRes.artifact || !renderRes.receipt) {
@@ -1419,6 +1536,8 @@ export class OverseerControlPlane {
         sharedScope.artifact = artifact;
         scope.renderReceipt = renderRes.receipt;
         sharedScope.renderReceipt = renderRes.receipt;
+        scope.treasuryReservationId = renderRes.treasuryReservationId;
+        sharedScope.treasuryReservationId = renderRes.treasuryReservationId;
         const finalVideoUrl = (artifact.location as any).path;
         scope.videoUrl = finalVideoUrl;
         sharedScope.videoUrl = finalVideoUrl;
@@ -1494,6 +1613,7 @@ export class OverseerControlPlane {
           consumedArtifactIds: sharedScope.voiceArtifact?.sha256 ? [sharedScope.voiceArtifact.sha256] : [],
           producedArtifacts: scope.artifact ? [{ kind: "MP4_VIDEO", path: finalVideoUrl, sha256: scope.artifact.sha256 }] : [],
           producedArtifactIds: scope.artifact?.sha256 ? [scope.artifact.sha256] : [],
+          treasuryReservationId: renderRes.treasuryReservationId,
           loopReceipt: renderRes.loopReceipt,
         });
         return {
@@ -1502,6 +1622,7 @@ export class OverseerControlPlane {
           jobId: targetJobId,
           artifact: scope.artifact,
           videoUrl: finalVideoUrl,
+          treasuryReservationId: renderRes.treasuryReservationId,
           output: renderOutputMessage,
           executionTimeMs,
         };
@@ -1541,6 +1662,19 @@ export class OverseerControlPlane {
           node.dependencyOutputs?.["task_f06_rendering"]?.jobId ||
           node.payload?.jobId ||
           `job_${randomUUID().substring(0, 8)}`;
+
+        const treasuryQuotaReservationId =
+          scope.treasuryQuotaReservationId ||
+          sharedScope.treasuryQuotaReservationId ||
+          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryQuotaReservationId;
+        const treasuryQuotaAdmission =
+          this.treasuryService ? new TreasuryQuotaAdmission(this.treasuryService) : undefined;
+
+        const treasuryReservationId =
+          scope.treasuryReservationId ||
+          sharedScope.treasuryReservationId ||
+          node.dependencyOutputs?.["task_f06_rendering"]?.treasuryReservationId;
+
         const artifact =
           scope.artifact ||
           sharedScope.artifact ||
@@ -1564,6 +1698,83 @@ export class OverseerControlPlane {
           policyViolations: [],
         });
 
+        let f07VerificationReceiptId: string | undefined;
+        if (treasuryReservationId && this.treasuryService && verificationReport.verified) {
+          const releaseGuardian = F07ReleaseGuardian.getInstance();
+          const candidate = {
+            videoId: targetJobId,
+            title: String(scope.title || scope.topic || targetJobId),
+            description: String(scope.description || ""),
+            tags: Array.isArray(scope.tags) ? scope.tags : [],
+            contentEngine: String(scope.contentEngine || "Quiz"),
+            genome: scope.contentGenome || {
+              topic: String(scope.topic || "unknown"),
+              thesis: String(scope.thesis || "unknown"),
+              storyType: "curiosity-reveal",
+              hookType: "curiosity-gap",
+              narrativeStructure: "question-context-reveal-payoff",
+              durationSeconds: verificationReport.measurements.videoDuration,
+              narrationSpeedWpm: 160,
+              visualGrammar: "documentary-fast-cut",
+              captionGrammar: "kinetic-emphasis",
+              audioGrammar: "narration-plus-light-bed",
+              sourceSetHash: "unknown",
+              scriptHash: createHash("sha256").update(String(scope.script || "")).digest("hex"),
+              variationProfile: "unknown",
+              originalityProfile: "unknown",
+              contentGenomeVersion: 1,
+              generatedAt: new Date().toISOString(),
+            },
+            measurements: verificationReport.measurements,
+            assets: [],
+            scenes: Array.isArray(scope.scenes) ? scope.scenes : [],
+            scriptText: String(scope.script || sharedScope.script || ""),
+          };
+          const channel = scope.channelContext || {
+            channelId: process.env.FACTORYOS_CHANNEL_ID || "shortforge-channel",
+            yppStatus: "NOT_YET_ELIGIBLE",
+            isTwoStepVerificationEnabled: false,
+            hasAdvancedFeaturesAccess: false,
+            hasLinkedAdSense: false,
+            activeCommunityGuidelinesStrikes: 0,
+            subscriberCount: 0,
+            validWatchHoursLast365Days: 0,
+            shortsViewsLast90Days: 0,
+            recentGenomes: [],
+            coverage: "UNKNOWN",
+          };
+
+          const receipt = await releaseGuardian.verifyRelease({
+            video: candidate,
+            channel,
+            publicationIntentAt: new Date().toISOString(),
+            localMediaPath: videoUrl,
+            artifactSha256: artifact?.sha256,
+          });
+
+          if (!receipt.receiptId || !receipt.technicalForensics.artifactExists || !receipt.technicalForensics.sha256Valid) {
+            await this.treasuryService.release(
+              treasuryReservationId,
+              "F07_RELEASE_RECEIPT_INVALID",
+            );
+            if (
+              treasuryQuotaReservationId &&
+              treasuryQuotaAdmission &&
+              scope.userId
+            ) {
+              await treasuryQuotaAdmission.releaseGenerationSlot(
+                treasuryQuotaReservationId,
+                String(scope.userId),
+                String(scope.tier || "BASIC"),
+                targetJobId,
+              );
+            }
+            throw new Error("[Overseer F07] Treasury settlement blocked: invalid F07 release receipt");
+          }
+
+          f07VerificationReceiptId = receipt.receiptId;
+        }
+
         const f07LoopReceipt: FloorClosedLoopReceipt = {
           floorId: "floor07_compliance",
           loopType: "VERIFICATION_REMEDIATION",
@@ -1584,6 +1795,24 @@ export class OverseerControlPlane {
         };
 
         if (!verificationReport.verified) {
+          if (treasuryReservationId && this.treasuryService) {
+            await this.treasuryService.release(
+              treasuryReservationId,
+              "F07_VERIFICATION_REJECTED",
+            );
+          }
+          if (
+            treasuryQuotaReservationId &&
+            treasuryQuotaAdmission &&
+            scope.userId
+          ) {
+            await treasuryQuotaAdmission.releaseGenerationSlot(
+              treasuryQuotaReservationId,
+              String(scope.userId),
+              String(scope.tier || "BASIC"),
+              targetJobId,
+            );
+          }
           await this.caseManager.createCase({
             title: `Forensic Verification Rejection on Floor 07: ${targetJobId}`,
             description: `Media probe rejected artifact: ${verificationReport.failures.join("; ")}`,
@@ -1595,6 +1824,46 @@ export class OverseerControlPlane {
             symptoms: verificationReport.failures,
             observedState: verificationReport.measurements as any,
           });
+        }
+
+        if (verificationReport?.verified && treasuryReservationId && this.treasuryService && f07VerificationReceiptId) {
+          const renderReceipt = scope.renderReceipt || sharedScope.renderReceipt;
+          const totalTimeMs = Number(renderReceipt?.metrics?.totalTimeMs || 0);
+          const rawReceipt = renderReceipt?.rawReceipt || {};
+          const measuredCost = Number(rawReceipt.actualCostUsd);
+          const actualCostUsd = Number.isFinite(measuredCost) && measuredCost >= 0 ? measuredCost : 0;
+          const actualCapacityUnits = Math.max(
+            1,
+            Math.ceil(totalTimeMs > 0 ? totalTimeMs / 1000 : (scope.renderIntent?.durationSeconds || 1)),
+          );
+
+          await this.treasuryService.settle(treasuryReservationId, {
+            reservationId: treasuryReservationId,
+            actualCostUsd,
+            actualCapacityUnits,
+            actualTokens: Number.isFinite(Number(rawReceipt.actualTokens)) ? Number(rawReceipt.actualTokens) : undefined,
+            actualDurationMs: totalTimeMs || undefined,
+            executionEvidenceId: renderReceipt.receiptId,
+            verificationReceiptId: f07VerificationReceiptId,
+            verified: Boolean(f07VerificationReceiptId),
+            measuredAt: new Date().toISOString(),
+          });
+
+          if (
+            treasuryQuotaReservationId &&
+            treasuryQuotaAdmission &&
+            scope.userId &&
+            f07VerificationReceiptId
+          ) {
+            await treasuryQuotaAdmission.settleGenerationSlot(
+              treasuryQuotaReservationId,
+              String(scope.userId),
+              String(scope.tier || "BASIC"),
+              targetJobId,
+              renderReceipt.receiptId,
+              f07VerificationReceiptId,
+            );
+          }
         }
 
         let deliveryArtifact: any;
@@ -1640,6 +1909,7 @@ export class OverseerControlPlane {
           runId,
           jobId: targetJobId,
           output: verificationReport,
+          verificationReceiptId: f07VerificationReceiptId,
           loopReceipt: f07LoopReceipt,
           deliveryArtifact,
           startedAt,
@@ -1654,6 +1924,7 @@ export class OverseerControlPlane {
           floor: "floor07_compliance",
           jobId: targetJobId,
           output: verificationReport,
+          verificationReceiptId: f07VerificationReceiptId,
           deliveryArtifact,
           videoUrl,
           executionTimeMs,

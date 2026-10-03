@@ -1,10 +1,11 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 
 export type MetadataAgentInput = {
   topic: string;
   script: string;
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type MetadataAgentOutput = {
@@ -25,7 +26,7 @@ export async function metadataAgent(input: MetadataAgentInput): Promise<Metadata
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
 
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const system =
     "You are a YouTube Shorts SEO expert. Output ONLY valid JSON. No markdown.";

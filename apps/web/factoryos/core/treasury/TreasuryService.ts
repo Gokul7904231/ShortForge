@@ -26,6 +26,18 @@ export class TreasuryService {
     return this.kernel.quote(command);
   }
 
+  getPriceRegistry(): import("./TreasuryPriceRegistry").TreasuryPriceRegistry {
+    return this.kernel.getPriceRegistry();
+  }
+
+  ensureAccount(account: import("./TreasuryContracts").TreasuryAccount): Promise<import("./TreasuryContracts").TreasuryAccount> {
+    return this.kernel.ensureAccount(account);
+  }
+
+  getAccount(accountId: string): Promise<import("./TreasuryContracts").TreasuryAccount | null> {
+    return this.kernel.getAccount(accountId);
+  }
+
   reserve(command: TreasuryCommand): Promise<{ reservation: TreasuryReservation; permit: TreasuryEconomicPermit }> {
     return this.kernel.reserve(command);
   }
@@ -36,6 +48,13 @@ export class TreasuryService {
 
   settle(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
     return this.kernel.settle(reservationId, consumption);
+  }
+
+  validatePermit(
+    permit: TreasuryEconomicPermit,
+    context: import("./TreasuryContracts").TreasuryPermitContext,
+  ): Promise<void> {
+    return this.kernel.validatePermit(permit, context);
   }
 
   reconcile(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {

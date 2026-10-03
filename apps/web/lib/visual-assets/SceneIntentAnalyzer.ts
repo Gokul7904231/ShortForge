@@ -4,6 +4,7 @@ import fs from "fs";
 import crypto from "crypto";
 import { IntelligentRouter } from "../../ai/intelligent-router";
 import { SceneIntent, VisualContext } from "./VisualIntelligenceTypes";
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
 
 export class SceneIntentAnalyzer {
   private db: SafeDatabase;
@@ -28,7 +29,10 @@ export class SceneIntentAnalyzer {
     return crypto.createHash("sha256").update(text.trim()).digest("hex");
   }
 
-  async run(context: VisualContext): Promise<void> {
+  async run(
+    context: VisualContext,
+    treasuryContext?: TreasuryModelExecutionContext,
+  ): Promise<void> {
     const t0 = Date.now();
     const text = context.sceneText;
     const textHash = this.getHash(text);
@@ -67,7 +71,11 @@ Schema:
     try {
       const llmResult = await IntelligentRouter.routeExecute(
         { capability: "SCRIPT" },
-        { prompt: `Scene narration/text: "${text}"`, system: systemPrompt }
+        {
+          prompt: `Scene narration/text: "${text}"`,
+          system: systemPrompt,
+          treasuryContext,
+        }
       );
 
       let cleanJson = String(llmResult).trim();

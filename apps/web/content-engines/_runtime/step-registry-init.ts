@@ -64,7 +64,9 @@ WorkflowStepRegistry.register("critic", async (context) => {
 
   try {
     const { AIJudgeConsensus } = require("../../lib/capabilities/AIJudgeConsensus");
-    const result = await AIJudgeConsensus.evaluate(script, "majority");
+    const result = await AIJudgeConsensus.evaluate(script, "majority", {
+      treasuryContext: context.treasuryModelContext,
+    });
     scores.hookScore = result.hookScore;
     scores.sceneScore = result.sceneScore;
     scores.retentionScore = result.grammarScore;
@@ -163,7 +165,11 @@ WorkflowStepRegistry.register("scene", async (context) => {
     try {
       console.log(`[StepExecutor] Running quiz proofreading correction on ${questionsList.length} questions...`);
       const { quizCorrectorAgent } = await import("../../agents/quiz-corrector-agent");
-      const corrected = await quizCorrectorAgent({ topic: context.job.topic, questions: questionsList });
+      const corrected = await quizCorrectorAgent({
+        topic: context.job.topic,
+        questions: questionsList,
+        treasuryContext: context.treasuryModelContext,
+      });
       if (corrected.corrections.length > 0) {
         console.log(`[StepExecutor] Quiz corrections applied: ${corrected.corrections.join(" | ")}`);
       }
@@ -185,7 +191,11 @@ WorkflowStepRegistry.register("scene", async (context) => {
 Return only the raw hook text, no quotation marks.`;
       
       const hookResult = await IntelligentRouter.routeExecute(
-        { capability: "SCRIPT", subtask: "text" },
+        {
+          capability: "SCRIPT",
+          subtask: "text",
+          treasuryContext: context.treasuryModelContext,
+        },
         {
           prompt: hookPrompt,
           system: "You are a professional Creative Director. Return only the hook text.",
@@ -312,7 +322,11 @@ Return only the raw hook text, no quotation marks.`;
     const sceneSlug = context.workflow.scenePromptSlug ?? "scene:v1";
     const scenePrompt = PromptRegistry.render(sceneSlug, { script, sceneCount: 3 });
     const sceneResult = await IntelligentRouter.routeExecute(
-      { capability: "SCRIPT", subtask: "json" },
+      {
+        capability: "SCRIPT",
+        subtask: "json",
+        treasuryContext: context.treasuryModelContext,
+      },
       {
         prompt: scenePrompt,
         system: "Break the script into JSON visual scenes array.",
@@ -359,7 +373,10 @@ WorkflowStepRegistry.register("voice", async (context) => {
         };
       });
 
-      const optimizedQs = await QuestionOptimizer.optimize(rawQs);
+      const optimizedQs = await QuestionOptimizer.optimize(
+        rawQs,
+        context.treasuryModelContext,
+      );
       
       // Rebuild scripts with clean punctuation spacing
       scenes.forEach((scene: any) => {
@@ -581,7 +598,8 @@ WorkflowStepRegistry.register("image", async (context) => {
   const visualPack = await VisualAssetManager.getVisualPack({
     topic: context.job.topic,
     questions: rawQuestions,
-    style: jobAny.style || "geography"
+    style: jobAny.style || "geography",
+    treasuryModelContext: context.treasuryModelContext,
   });
 
   // 3. Log scene visual verification metrics (Step 2 - Verify every scene)

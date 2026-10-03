@@ -16,6 +16,7 @@ import { VisualPackBuilder } from "./VisualPackBuilder";
 import { db } from "../firebase-admin";
 import { VisualPipeline } from "./VisualPipeline";
 import { VisualContext, PipelineHistory } from "./VisualIntelligenceTypes";
+import type { TreasuryModelExecutionContext } from "../../ai/provider";
 
 export interface CacheEntry {
   key: string;
@@ -148,6 +149,7 @@ class VisualAssetManagerClass {
     topic: string;
     questions: any[];
     style?: string;
+    treasuryModelContext?: TreasuryModelExecutionContext;
   }): Promise<Array<{ path: string; metadata: AssetMetadata }>> {
     const startTime = Date.now();
     this.metrics.totalRequests++;
@@ -187,6 +189,7 @@ class VisualAssetManagerClass {
         sceneText: `Topic query landmarks culture travel nature cities food for ${params.topic}`,
         topic: params.topic,
         role: "read",
+        treasuryModelContext: params.treasuryModelContext,
         candidates: [],
         history: sharedHistory,
         metrics: {},
@@ -226,6 +229,7 @@ class VisualAssetManagerClass {
             sceneText: queryText,
             topic: params.topic,
             role: spec.role,
+            treasuryModelContext: params.treasuryModelContext,
             candidates: [...topicPoolCandidates],
             history: sharedHistory,
             metrics: {},
@@ -282,6 +286,7 @@ class VisualAssetManagerClass {
             sceneText: spec.text,
             topic: params.topic,
             role: spec.role,
+            treasuryModelContext: params.treasuryModelContext,
             candidates: [],
             history: sharedHistory,
             metrics: {},

@@ -3,6 +3,7 @@ import { sceneQualityAgent } from "../agents/scene-quality-agent";
 import { metadataAgent } from "../agents/metadata-agent";
 import { thumbnailAgent } from "../agents/thumbnail-agent";
 import { findSimilarTopic } from "../rag/topic-memory";
+import type { TreasuryModelExecutionContext } from "../ai/provider";
 
 export type ContentPipelineInput = {
   topic: string;
@@ -11,6 +12,7 @@ export type ContentPipelineInput = {
   scenes: Array<{ text: string; imagePrompt: string }>;
   hashtags?: string[];
   provider?: any;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type ValidateContentResult = {
@@ -46,14 +48,14 @@ export async function validateContent(input: ContentPipelineInput): Promise<Vali
   const warnings: string[] = [];
 
   // Hook score
-  const hookScoreOut = await hookScoreAgent({ hook: input.hook, provider: input.provider });
+  const hookScoreOut = await hookScoreAgent({ hook: input.hook, provider: input.provider, treasuryContext: input.treasuryContext });
   const hookScore = hookScoreOut.score;
   if (hookScore < 7) errors.push(`Hook score ${hookScore} < 7`);
 
   // Scene quality: average over scenes (reject if average < 7)
   const sceneScores: number[] = [];
   for (const s of input.scenes ?? []) {
-    const out = await sceneQualityAgent({ scene: s, provider: input.provider });
+    const out = await sceneQualityAgent({ scene: s, provider: input.provider, treasuryContext: input.treasuryContext });
     sceneScores.push(out.score);
   }
   const sceneQualityScore = sceneScores.length
@@ -63,8 +65,8 @@ export async function validateContent(input: ContentPipelineInput): Promise<Vali
   if (sceneQualityScore < 7) errors.push(`Scene quality score ${sceneQualityScore} < 7`);
 
   // Metadata + thumbnail
-  const meta = await metadataAgent({ topic: input.topic, script: input.script, provider: input.provider });
-  const thumb = await thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider });
+  const meta = await metadataAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext });
+  const thumb = await thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext });
 
   if (!meta.hashtags?.length) errors.push("Empty hashtags");
   if (meta.hashtags.length < 5) errors.push("Hashtags must be 5–10 items");

@@ -8,8 +8,17 @@ import { EngineRegistry } from "@/lib/core/EngineRegistry";
 import { compileProductionSpec } from "@/factoryos/core/engines/ProductionSpecCompiler";
 import { EngineJobSnapshot } from "@/lib/core/EngineContracts";
 import { advancePointer, hasHardcodedCountry } from "@/lib/quiz/GeoRotationService";
-import { resolveTier } from "@/lib/quota/quota-service";
+import {
+  resolveTier,
+  releaseGenerationSlot,
+  QuotaExceededError,
+} from "@/lib/quota/quota-service";
+import {
+  TreasuryQuotaAdmission,
+  type TreasuryQuotaReservationResult,
+} from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import type { AutonomousFactoryController } from "@/factoryos/core/controller/AutonomousFactoryController";
+import type { TreasuryModelExecutionContext } from "@/ai/provider";
 
 const SceneInputSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
@@ -127,12 +136,44 @@ function validateQuizContent(quiz: { hook?: string; questions?: any[] }) {
 }
 
 import { verifySession, verifyWritePermission } from "../../../lib/auth/auth";
-import { reserveGenerationSlot, releaseGenerationSlot, QuotaExceededError } from "../../../lib/quota/quota-service";
 import { extractDeviceContext } from "../../../lib/fingerprint/server";
 
 export async function POST(req: Request) {
   let userId = "";
   let jobId = "";
+  let missionId = "";
+  let userRole = "USER";
+  let controller: AutonomousFactoryController | undefined;
+  let preparedEconomicCommand:
+    | {
+        runId: string;
+        overseerCommandId: string;
+        missionId: string;
+      }
+    | undefined;
+  let treasuryQuotaAdmission: TreasuryQuotaAdmission | undefined;
+  let treasuryQuotaReservation: TreasuryQuotaReservationResult | undefined;
+
+  const releaseGenerationAdmission = async () => {
+    if (
+      treasuryQuotaReservation?.reservation &&
+      treasuryQuotaAdmission
+    ) {
+      await treasuryQuotaAdmission.releaseGenerationSlot(
+        treasuryQuotaReservation.reservation.reservationId,
+        userId,
+        userRole,
+        jobId,
+      ).catch(() => {});
+      treasuryQuotaReservation = undefined;
+      return;
+    }
+
+    if (userId && jobId) {
+      await releaseGenerationSlot(userId, jobId).catch(() => {});
+    }
+  };
+
   const deviceContext = extractDeviceContext(req);
   try {
     let authenticatedUser: any = null;
@@ -151,7 +192,7 @@ export async function POST(req: Request) {
     }
 
     userId = authenticatedUser.uid;
-    const userRole = (authenticatedUser.role || "USER").toUpperCase();
+    userRole = (authenticatedUser.role || "USER").toUpperCase();
     const tier = resolveTier(userRole);
 
     const body = await req.json();
@@ -165,21 +206,125 @@ export async function POST(req: Request) {
 
     jobId = `job_${crypto.randomBytes(8).toString("hex")}`;
 
-    // 🔒 Concurrency-Safe Server-Authoritative 5-Video Hard Limit Reservation
-    try {
-      await reserveGenerationSlot(userId, userRole, jobId);
-    } catch (quotaErr: any) {
-      if (quotaErr instanceof QuotaExceededError || quotaErr.name === "QuotaExceededError") {
-        return NextResponse.json(
-          {
-            error: quotaErr.message,
-            quota: quotaErr.quotaInfo,
-            code: "QUOTA_EXCEEDED",
-          },
-          { status: 429 }
+    missionId = `mis_${jobId.replace(/^job_/, "")}`;
+    const executionAuthority =
+      (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
+    const production = process.env.NODE_ENV === "production";
+
+    if (executionAuthority === "factoryos") {
+      controller =
+        (global as any).__factoryOSController as
+          | AutonomousFactoryController
+          | undefined;
+
+      if (!controller) {
+        const { AutonomousFactoryController } =
+          await import("../../../factoryos/core/controller/AutonomousFactoryController");
+        controller = new AutonomousFactoryController({
+          storageType: production ? "mongo" : "memory",
+          mongoUri:
+            process.env.FACTORYOS_MONGO_URI ||
+            process.env.MONGODB_URI ||
+            "mongodb://localhost:27017",
+          strictPersistence: production,
+        });
+        await controller.boot();
+        (global as any).__factoryOSController = controller;
+      }
+
+      if (!controller.overseer) {
+        throw new Error("[generate-video] Overseer control plane is unavailable");
+      }
+
+      preparedEconomicCommand =
+        controller.overseer.prepareEconomicCommand({
+          command: `Generate Video: ${parsed.data.topic}`,
+          missionId,
+          mode: "autonomous",
+        });
+
+      if (controller.treasuryService) {
+        treasuryQuotaAdmission = new TreasuryQuotaAdmission(
+          controller.treasuryService,
+        );
+        try {
+          treasuryQuotaReservation =
+            await treasuryQuotaAdmission.reserveGenerationSlot({
+              userId,
+              role: userRole,
+              jobId,
+              missionId,
+              runId: preparedEconomicCommand.runId,
+              overseerCommandId: preparedEconomicCommand.overseerCommandId,
+              expiresAt: new Date(
+                Date.now() + 15 * 60 * 1000,
+              ).toISOString(),
+            });
+        } catch (quotaErr: any) {
+          if (
+            quotaErr instanceof QuotaExceededError ||
+            quotaErr.name === "QuotaExceededError"
+          ) {
+            return NextResponse.json(
+              {
+                error: quotaErr.message,
+                quota: quotaErr.quotaInfo,
+                code: "QUOTA_EXCEEDED",
+              },
+              { status: 429 },
+            );
+          }
+          throw quotaErr;
+        }
+      } else if (production) {
+        throw new Error(
+          "[generate-video] Production generation requires Treasury quota admission",
         );
       }
-      throw quotaErr;
+    } else {
+      throw new Error(
+        `Unsupported execution authority "${executionAuthority}". Production generation must use FactoryOS.`,
+      );
+    }
+
+    const treasuryModelContext: TreasuryModelExecutionContext | undefined =
+      controller?.treasuryService && preparedEconomicCommand
+        ? {
+            treasuryService: controller.treasuryService,
+            accountId:
+              process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+            overseerCommandId:
+              preparedEconomicCommand.overseerCommandId,
+            missionId,
+            runId: preparedEconomicCommand.runId,
+            floorId: "floor02_scripting",
+            taskId: jobId + ":model",
+            scopeFingerprint: crypto
+              .createHash("sha256")
+              .update(
+                JSON.stringify({
+                  jobId,
+                  missionId,
+                  topic: parsed.data.topic,
+                  contentType: parsed.data.contentType || "MOTIVATIONAL",
+                }),
+              )
+              .digest("hex"),
+            priority: "NORMAL",
+            maxRetries: 0,
+            maxCostUsd: Number(
+              process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD || "0.10",
+            ),
+            preferredProviderId:
+              parsed.data.provider || parsed.data.providerOverride,
+            subtask: "content_generation",
+          }
+        : undefined;
+
+    if (production && !treasuryModelContext) {
+      throw new Error(
+        "[generate-video] Production model work requires a Treasury model execution context",
+      );
     }
 
     // Resolve and compile the Content Engine configuration before content
@@ -190,7 +335,7 @@ export async function POST(req: Request) {
     const engineDef = await EngineRegistry.getEngine(engineId);
 
     if (!engineDef) {
-      await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+      await releaseGenerationAdmission();
       return NextResponse.json(
         { error: `Unknown Content Engine "${engineId}".`, code: "ENGINE_NOT_FOUND" },
         { status: 422 }
@@ -248,7 +393,7 @@ export async function POST(req: Request) {
         userConfig: submittedConfig,
       }).spec;
     } catch (specError: any) {
-      await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+      await releaseGenerationAdmission();
       return NextResponse.json(
         {
           error: specError?.message ?? "Invalid engine configuration",
@@ -287,6 +432,7 @@ export async function POST(req: Request) {
           durationSeconds,
           style: parsed.data.style,
           contentType: "QUIZ_SHORTS",
+          treasuryContext: treasuryModelContext,
         });
         quizHook = draft?.hook ?? "";
         quizQuestions = draft?.questions ?? [];
@@ -300,7 +446,7 @@ export async function POST(req: Request) {
         questions: quizQuestions,
       });
       if (!validate.approved) {
-        await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+        await releaseGenerationAdmission();
         return NextResponse.json(
           { error: "Content rejected", details: validate, code: (validate as any).code ?? "VALIDATION_FAILED" },
           { status: 422 }
@@ -348,6 +494,7 @@ export async function POST(req: Request) {
           topic: parsed.data.topic,
           durationSeconds,
           style: parsed.data.style,
+          treasuryContext: treasuryModelContext,
         });
         scenes = draft?.scenes?.map((s: any) => ({
           contactText: s.contactText,
@@ -367,6 +514,7 @@ export async function POST(req: Request) {
         hook: hookFromScenes,
         scenes: scenes.map((s: any) => ({ text: s.text ?? s.contactText ?? "", imagePrompt: s.imagePrompt ?? "" })),
         hashtags: [],
+        treasuryContext: treasuryModelContext,
       }).catch((e) => ({
         approved: false,
         score: 0,
@@ -390,6 +538,7 @@ export async function POST(req: Request) {
             imagePrompt: s.imagePrompt ?? "",
           })),
           provider: undefined,
+          treasuryContext: treasuryModelContext,
         });
 
         if (!refined.approved) {
@@ -483,22 +632,20 @@ export async function POST(req: Request) {
     finalPayload.status = "processing";
     finalPayload.dispatchedAt = new Date().toISOString();
 
-    const executionAuthority = (process.env.EXECUTION_AUTHORITY || "factoryos").toLowerCase();
-    const missionId = `mis_${jobId.replace(/^job_/, "")}`;
     finalPayload.missionId = missionId;
     finalPayload.executionAuthority = executionAuthority;
+    finalPayload.overseerCommandId =
+      preparedEconomicCommand?.overseerCommandId;
+    finalPayload.treasuryQuotaReservationId =
+      treasuryQuotaReservation?.reservation?.reservationId;
 
     // Initialize document in Firestore as single source of truth
     await saveJobManifest(jobId, finalPayload);
 
     if (executionAuthority === "factoryos") {
       // 🔒 Primary Authoritative FactoryOS Control Plane Execution Path
-      const { AutonomousFactoryController } = await import("../../../factoryos/core/controller/AutonomousFactoryController");
-      let controller = (global as any).__factoryOSController as AutonomousFactoryController | undefined;
       if (!controller) {
-        controller = new AutonomousFactoryController({ storageType: "memory" });
-        await controller.boot();
-        (global as any).__factoryOSController = controller;
+        throw new Error("[generate-video] FactoryOS controller was not initialized");
       }
 
       await controller.startMission({
@@ -526,8 +673,13 @@ export async function POST(req: Request) {
           script: finalPayload.script,
           scenes: finalPayload.scenes,
           engineSnapshot,
+          overseerCommandId:
+            preparedEconomicCommand?.overseerCommandId,
+          treasuryQuotaReservationId:
+            treasuryQuotaReservation?.reservation?.reservationId,
         },
-      });
+        preparedEconomicCommand,
+      );
 
       return NextResponse.json({
         jobId,
@@ -542,17 +694,17 @@ export async function POST(req: Request) {
     // Legacy external render-plane dispatch is intentionally removed.
     const authorityError =
       `Unsupported execution authority "${executionAuthority}". Production generation must use FactoryOS.`;
-    await releaseGenerationSlot(userId, userRole, jobId).catch(() => {});
+    await releaseGenerationAdmission();
     await saveJobManifest(jobId, {
       ...finalPayload,
       status: "failed",
       error: authorityError,
     });
-    return NextResponse.json({ error: authorityError, jobId }, { status: 409 });;
+    return NextResponse.json({ error: authorityError, jobId }, { status: 409 });
   } catch (err: any) {
     if (userId && jobId) {
       try {
-        await releaseGenerationSlot(userId, jobId);
+        await releaseGenerationAdmission();
       } catch {}
     }
     return NextResponse.json(

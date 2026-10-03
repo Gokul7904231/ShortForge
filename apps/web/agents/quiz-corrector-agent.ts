@@ -1,5 +1,5 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 
 export type QuizQuestion = {
   difficulty?: "easy" | "medium" | "hard";
@@ -14,6 +14,7 @@ export type QuizCorrectorAgentInput = {
   topic: string;
   questions: QuizQuestion[];
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export type QuizCorrectorAgentOutput = {
@@ -48,7 +49,7 @@ export async function quizCorrectorAgent(
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
 
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const system =
     "You are a meticulous proofreading editor for trivia quiz content. Output ONLY valid JSON. No markdown. No code blocks.";
