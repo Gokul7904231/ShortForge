@@ -148,7 +148,20 @@ export class TreasuryKernel {
     let denial: string | null = null;
     const reservation = await this.ledger.atomic(async (tx) => {
       const existing = await tx.getReservationByCommandId(command.commandId);
-      if (existing) return existing;
+      if (existing) {
+        if (existing.idempotencyKey !== command.idempotencyKey || existing.scopeDigest !== command.scopeDigest) {
+          throw new TreasuryDeniedError("Command replay has conflicting idempotency key or scope digest");
+        }
+        return existing;
+      }
+
+      const sameIdempotency = await tx.getReservationByIdempotencyKey(command.accountId, command.idempotencyKey);
+      if (sameIdempotency) {
+        if (sameIdempotency.scopeDigest !== command.scopeDigest) {
+          throw new TreasuryDeniedError("Idempotency key is already bound to a different Treasury scope");
+        }
+        return sameIdempotency;
+      }
 
       const account = await tx.getAccount(command.accountId);
       if (!account) {
@@ -232,6 +245,8 @@ export class TreasuryKernel {
         maxDurationMs: command.budgetEnvelope.maxDurationMs,
         maxRetries: command.budgetEnvelope.maxRetries,
         verificationRequired: command.resourceRequest.some((request) => request.verificationRequired === true),
+        idempotencyKey: command.idempotencyKey,
+        scopeDigest: command.scopeDigest,
         createdAt: now.toISOString(),
         expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
         updatedAt: now.toISOString(),
@@ -389,6 +404,9 @@ export class TreasuryKernel {
     assertNonNegativeFinite(consumption.actualCostUsd, "actualCostUsd");
     assertNonNegativeFinite(consumption.actualCapacityUnits, "actualCapacityUnits");
     if (!consumption.executionEvidenceId) throw new TreasuryDeniedError("executionEvidenceId is required");
+    if (consumption.reservationId !== reservationId) {
+      throw new TreasuryDeniedError("Consumption reservationId does not match the target reservation");
+    }
 
     let breach: string | null = null;
     const result = await this.ledger.atomic(async (tx) => {
