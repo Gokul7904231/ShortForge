@@ -153,6 +153,13 @@ export class TreasuryEconomicAdmission {
     };
   }
 
+  async releaseReservation(
+    reservationId: string,
+    reason: string,
+  ): Promise<TreasuryReservation> {
+    return this.service.release(reservationId, reason);
+  }
+
   async reserveModelInvocation(
     context: TreasuryAdmissionContext,
     candidate: TreasuryModelCandidate,
