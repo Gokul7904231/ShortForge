@@ -98,6 +98,10 @@ export interface TreasuryEconomicIntelligenceSnapshot {
   readonly recommendations: readonly TreasuryEconomicRecommendation[];
 }
 
+type MutableTreasuryEconomicUnitMetrics = {
+  -readonly [K in keyof TreasuryEconomicUnitMetrics]: TreasuryEconomicUnitMetrics[K];
+};
+
 type ReservationAccumulator = {
   reservedUsd: number;
   consumedUsd: number;
@@ -226,7 +230,7 @@ export class TreasuryEconomicIntelligence {
     const signals: TreasuryEconomicSignal[] = [];
     const recommendations: TreasuryEconomicRecommendation[] = [];
 
-    const breachCount = current.breachedReservations;
+    const breachCount = current.metrics.breachedReservations;
     if (breachCount > 0 || report.account.mode === "FROZEN") {
       signals.push({
         code: "TREASURY_BREACH_OR_FROZEN",
@@ -248,15 +252,15 @@ export class TreasuryEconomicIntelligence {
       });
     }
 
-    if (current.releaseRatio >= 0.35 && current.reservedCostUsd >= 0.01) {
+    if (current.metrics.releaseRatio >= 0.35 && current.metrics.reservedCostUsd >= 0.01) {
       signals.push({
         code: "HIGH_RESERVATION_WASTE",
         severity: "WARNING",
         message:
           "A large fraction of reserved monetary capacity has recently been released instead of consumed.",
         evidence: {
-          releaseRatio: current.releaseRatio,
-          reservedCostUsd: current.reservedCostUsd,
+          releaseRatio: current.metrics.releaseRatio,
+          reservedCostUsd: current.metrics.reservedCostUsd,
         },
       });
       recommendations.push({
@@ -265,8 +269,8 @@ export class TreasuryEconomicIntelligence {
         rationale:
           "Tighten default reservation envelopes for workloads that consistently consume less than their holds.",
         evidence: {
-          releaseRatio: current.releaseRatio,
-          reservedCostUsd: current.reservedCostUsd,
+          releaseRatio: current.metrics.releaseRatio,
+          reservedCostUsd: current.metrics.reservedCostUsd,
         },
         actionBoundary: "OVERSEER",
       });
@@ -302,30 +306,30 @@ export class TreasuryEconomicIntelligence {
       });
     }
 
-    if (current.deniedCommands > 0) {
+    if (current.metrics.deniedCommands > 0) {
       signals.push({
         code: "TREASURY_DENIALS_PRESENT",
         severity: "WARNING",
         message:
           "Recent commands were denied by Treasury; this is a control signal, not an error to bypass.",
-        evidence: { deniedCommands: current.deniedCommands },
+        evidence: { deniedCommands: current.metrics.deniedCommands },
       });
     }
 
-    if (current.settledCostUsd > 0 && current.actualTokens === 0) {
+    if (current.metrics.settledCostUsd > 0 && current.metrics.actualTokens === 0) {
       signals.push({
         code: "MISSING_TOKEN_MEASUREMENT",
         severity: "WARNING",
         message:
           "Settled spend exists without token measurements; unit economics are incomplete for those executions.",
-        evidence: { settledCostUsd: current.settledCostUsd },
+        evidence: { settledCostUsd: current.metrics.settledCostUsd },
       });
       recommendations.push({
         kind: "REVIEW_PRICE_DATA",
         priority: "MEDIUM",
         rationale:
           "Improve provider usage measurement before using token-normalized economics for routing advice.",
-        evidence: { settledCostUsd: current.settledCostUsd },
+        evidence: { settledCostUsd: current.metrics.settledCostUsd },
         actionBoundary: "ADVISORY_ONLY",
       });
     }
@@ -346,10 +350,10 @@ export class TreasuryEconomicIntelligence {
     }
 
     const spendDelta = pctChange(
-      current.settledCostUsd,
-      prior.settledCostUsd,
+      current.metrics.settledCostUsd,
+      prior.metrics.settledCostUsd,
     );
-    if (Math.abs(spendDelta) >= 50 && current.settledCostUsd >= 0.01) {
+    if (Math.abs(spendDelta) >= 50 && current.metrics.settledCostUsd >= 0.01) {
       signals.push({
         code: "SPEND_REGIME_CHANGE",
         severity: "INFO",
@@ -357,15 +361,15 @@ export class TreasuryEconomicIntelligence {
           "Current-window settled spend changed materially relative to the immediately preceding window.",
         evidence: {
           spendDeltaPct: spendDelta,
-          currentSettledCostUsd: current.settledCostUsd,
-          priorSettledCostUsd: prior.settledCostUsd,
+          currentSettledCostUsd: current.metrics.settledCostUsd,
+          priorSettledCostUsd: prior.metrics.settledCostUsd,
         },
       });
     }
 
     if (
-      current.reservationUtilization < 0.5 &&
-      current.reservedCostUsd >= 0.01
+      current.metrics.reservationUtilization < 0.5 &&
+      current.metrics.reservedCostUsd >= 0.01
     ) {
       recommendations.push({
         kind: "REDUCE_WASTE",
@@ -373,8 +377,8 @@ export class TreasuryEconomicIntelligence {
         rationale:
           "Recent reservations are consuming less than half of held monetary value.",
         evidence: {
-          reservationUtilization: current.reservationUtilization,
-          reservedCostUsd: current.reservedCostUsd,
+          reservationUtilization: current.metrics.reservationUtilization,
+          reservedCostUsd: current.metrics.reservedCostUsd,
         },
         actionBoundary: "OVERSEER",
       });
@@ -462,7 +466,7 @@ export class TreasuryEconomicIntelligence {
     metrics: TreasuryEconomicUnitMetrics;
     activeCapacityUtilization: (totalCapacity: number) => number;
   } {
-    const metrics = emptyUnitMetrics();
+    const metrics: MutableTreasuryEconomicUnitMetrics = { ...emptyUnitMetrics() };
     const byReservation = new Map<string, ReservationAccumulator>();
 
     for (const event of events) {
@@ -594,7 +598,9 @@ export class TreasuryEconomicIntelligence {
     return {
       metrics,
       activeCapacityUtilization: (totalCapacity: number) =>
-        totalCapacity > 0 ? currentCapacity(metrics, totalCapacity) : 0,
+        totalCapacity > 0
+          ? currentCapacity(metrics, totalCapacity)
+          : 0,
     };
   }
 
