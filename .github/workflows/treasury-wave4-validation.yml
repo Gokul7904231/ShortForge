@@ -66,7 +66,7 @@ jobs:
         run: npx vitest run factoryos/tests/treasury-economic-admission.test.ts factoryos/tests/treasury-compute-admission.test.ts
 
       - name: Treasury provider retry regression
-        run: npx vitest run ../tests/treasury-provider-retry.test.ts
+        run: npx vitest run tests/treasury-provider-retry.test.ts
 
       - name: Static Treasury authority scan
         working-directory: .
