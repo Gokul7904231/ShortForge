@@ -23,6 +23,7 @@ import { ValidatorAgent } from "../validator/ValidatorAgent";
 import { OverseerControlPlane } from "../overseer/OverseerControlPlane";
 import { MemoryEngine } from "../memory/MemoryEngine";
 import { FactoryWatchdog } from "../watchdog/FactoryWatchdog";
+import { AIRuntime } from "../../../ai/runtime";
 import { ComputeGateway } from "../compute/gateway/ComputeGateway";
 import { PythonFloorBridge } from "../bridge/PythonFloorBridge";
 import { OverseerAPIHandler } from "../overseer/api/OverseerAPIHandler";
@@ -184,10 +185,13 @@ export class AutonomousFactoryController {
       );
       // Bind the canonical economic authority into the compute front door.
       // Production renders must not be able to reach ComputeRouter without Treasury admission.
+      const treasuryRequired =
+        this.config.treasuryRequired ?? process.env.NODE_ENV === "production";
       ComputeGateway.getInstance().bindTreasury(
         this.treasuryService,
-        this.config.treasuryRequired ?? process.env.NODE_ENV === "production",
+        treasuryRequired,
       );
+      AIRuntime.bindTreasury(this.treasuryService, treasuryRequired);
     }
 
     if (this.config.treasuryRequired && !this.treasuryService) {
