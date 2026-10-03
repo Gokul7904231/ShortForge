@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { db } from "../../../../lib/firebase-admin";
 import { verifySession } from "../../../../lib/auth/auth";
