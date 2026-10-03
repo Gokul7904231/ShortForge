@@ -136,9 +136,10 @@
     "Forge Release"
   ],
   "baseSha": "23b9eaa7637df7b48f4ca80b4db193f11ef45626",
-  "latestHeadSha": "__CURRENT_HEAD_PENDING__",
+  "latestHeadSha": "32eff6f3cfd8543dd9386c1e5ecaa49361808bc9",
   "notes": [
+    "Current head is 32eff6f3cfd8543dd9386c1e5ecaa49361808bc9.",
     "Disposition is BLOCKED while current-head remote validation is pending.",
-    "The Team Change Gate validator accepts only PASS, BLOCKED, REJECTED, or ESCALATED."
+    "The report intentionally uses BLOCKED because the Team validator only accepts PASS, BLOCKED, REJECTED, or ESCALATED."
   ]
 }
