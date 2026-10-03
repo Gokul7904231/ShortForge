@@ -548,8 +548,15 @@ export class TreasuryKernel {
         throw new TreasuryDeniedError(`Cannot settle reservation in state ${reservation.status}`);
       }
 
+      const reservedTokenCapacity = reservation.reservedTokenCapacityUnits ?? 0;
+      const actualTokenCapacity =
+        reservedTokenCapacity > 0
+          ? Math.max(0, consumption.actualTokens ?? 0)
+          : 0;
+
       if (consumption.actualCostUsd > reservation.reservedCostUsd ||
-          consumption.actualCapacityUnits > reservation.reservedCapacityUnits) {
+          consumption.actualCapacityUnits > reservation.reservedCapacityUnits ||
+          actualTokenCapacity > reservedTokenCapacity) {
         const account = await tx.getAccount(reservation.accountId);
         if (account) {
           await tx.putAccount({
@@ -579,6 +586,8 @@ export class TreasuryKernel {
             reservedCostUsd: reservation.reservedCostUsd,
             actualCapacityUnits: consumption.actualCapacityUnits,
             reservedCapacityUnits: reservation.reservedCapacityUnits,
+            actualTokenCapacityUnits: actualTokenCapacity,
+            reservedTokenCapacityUnits: reservedTokenCapacity,
             executionEvidenceId: consumption.executionEvidenceId,
           },
           {
@@ -602,15 +611,27 @@ export class TreasuryKernel {
       if (!account) throw new TreasuryDeniedError(`Treasury account not found: ${reservation.accountId}`);
 
       const releaseUsd = reservation.reservedCostUsd - consumption.actualCostUsd;
-      const releaseCapacity = reservation.reservedCapacityUnits - consumption.actualCapacityUnits;
+      const releaseCapacity =
+        reservation.reservedCapacityUnits - consumption.actualCapacityUnits;
+      const releaseTokenCapacity =
+        reservedTokenCapacity - actualTokenCapacity;
       const nextAccount: TreasuryAccount = {
         ...account,
         reservedUsd: account.reservedUsd - reservation.reservedCostUsd,
         settledUsd: account.settledUsd + consumption.actualCostUsd,
         availableUsd: account.availableUsd + releaseUsd,
-        reservedCapacityUnits: account.reservedCapacityUnits - reservation.reservedCapacityUnits,
-        settledCapacityUnits: account.settledCapacityUnits + consumption.actualCapacityUnits,
-        availableCapacityUnits: account.availableCapacityUnits + releaseCapacity,
+        reservedCapacityUnits:
+          account.reservedCapacityUnits - reservation.reservedCapacityUnits,
+        settledCapacityUnits:
+          account.settledCapacityUnits + consumption.actualCapacityUnits,
+        availableCapacityUnits:
+          account.availableCapacityUnits + releaseCapacity,
+        reservedTokenCapacityUnits:
+          account.reservedTokenCapacityUnits - reservedTokenCapacity,
+        settledTokenCapacityUnits:
+          account.settledTokenCapacityUnits + actualTokenCapacity,
+        availableTokenCapacityUnits:
+          account.availableTokenCapacityUnits + releaseTokenCapacity,
         version: account.version + 1,
         updatedAt: now.toISOString(),
       };
