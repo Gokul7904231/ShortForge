@@ -85,6 +85,7 @@ export interface TreasuryQuote {
 export interface TreasuryReservation {
   readonly reservationId: string;
   readonly commandId: string;
+  readonly overseerCommandId: string;
   readonly accountId: string;
   readonly missionId: string;
   readonly runId?: string;
