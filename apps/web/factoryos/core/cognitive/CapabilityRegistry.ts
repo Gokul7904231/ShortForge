@@ -851,6 +851,130 @@ export class CapabilityRegistry {
 
     this.register(
       {
+        id: "CAP_REMAKER_REPAIR",
+        name: "Guardian-Authorized ReMaker Surgical Repair",
+        version: "2.0.0",
+        type: "HEALER",
+        targetAnomalies: [
+          "REMAKER_REPAIR_REQUIRED",
+          "F07_LOCALIZED_MEDIA_DEFECT",
+          "F07_SUBTITLE_MISALIGNMENT",
+          "F07_AUDIO_TIMING_DEFECT",
+          "F07_ASSET_DEFECT",
+        ],
+        riskLevel: "HIGH",
+        maxRetries: 2,
+        timeoutMs: 300000,
+        requiresGuardianGate: true,
+        implementationStatus: "IMPLEMENTED",
+        isProductionRoutable: true,
+        executionClass: "PRODUCTION",
+        provider: "factoryos-remaker",
+        runtime: "node",
+        health: "HEALTHY",
+        trainingEligibility: "ELIGIBLE",
+        licenseMetadata: {
+          spdx: "Clean-Room",
+          copyleft: false,
+          commercialPermitted: true,
+        },
+        provenance: {
+          adoptionMode: "CLEAN_ROOM_REIMPLEMENTATION",
+          documentedAt: "2026-10-02",
+        },
+        policy: {
+          allowedRoles: ["FLOOR_GUARDIAN"],
+          allowedFloors: ["floor06_rendering"],
+          environments: ["development", "staging", "production", "test"],
+          networkAccess: "NONE",
+          dataAccess: "READ_WRITE",
+          secretRequirements: [],
+          securityClass: "RESTRICTED",
+          commercialUsageAllowed: true,
+          auditPolicy: "NON_REPUDIATION",
+        },
+        inputSchema: {
+          required: [
+            "repairId",
+            "missionId",
+            "caseId",
+            "requestedChangeDigest",
+            "action",
+            "targetScopeDigest",
+            "evidenceRefs",
+          ],
+        },
+        outputSchema: {
+          required: ["admitted", "capabilityId", "requestDigest"],
+        },
+      },
+      async (req) => {
+        const start = Date.now();
+        const input = req.inputData as Record<string, unknown>;
+        const repairId = typeof input.repairId === "string" ? input.repairId : "";
+        const missionId = typeof input.missionId === "string" ? input.missionId : "";
+        const caseId = typeof input.caseId === "string" ? input.caseId : "";
+        const changeDigest =
+          typeof input.requestedChangeDigest === "string"
+            ? input.requestedChangeDigest
+            : "";
+        const evidenceRefs = Array.isArray(input.evidenceRefs)
+          ? input.evidenceRefs.filter((v): v is string => typeof v === "string")
+          : [];
+        const action = typeof input.action === "string" ? input.action : "";
+        const targetScopeDigest =
+          typeof input.targetScopeDigest === "string"
+            ? input.targetScopeDigest
+            : "";
+
+        if (
+          !repairId ||
+          !missionId ||
+          !caseId ||
+          !action ||
+          !/^[a-f0-9]{64}$/i.test(changeDigest) ||
+          !/^[a-f0-9]{64}$/i.test(targetScopeDigest) ||
+          evidenceRefs.length === 0
+        ) {
+          return {
+            requestExecutionId: req.requestExecutionId,
+            capabilityId: "CAP_REMAKER_REPAIR",
+            status: "REJECTED",
+            findings: ["Guardian ReMaker admission requires complete repair identity and evidence."],
+            error: "Malformed ReMaker capability admission request.",
+            durationMs: Date.now() - start,
+          };
+        }
+
+        const requestDigest = createHash("sha256")
+          .update(JSON.stringify({
+            repairId,
+            missionId,
+            caseId,
+            requestedChangeDigest: changeDigest,
+            action,
+            targetScopeDigest,
+            evidenceRefs,
+          }))
+          .digest("hex");
+
+        return {
+          requestExecutionId: req.requestExecutionId,
+          capabilityId: "CAP_REMAKER_REPAIR",
+          status: "SUCCESS",
+          findings: ["ReMaker capability admission validated; physical repair remains delegated to ReMakerEngine/RenderFabric."],
+          outputData: {
+            admitted: true,
+            capabilityId: "CAP_REMAKER_REPAIR",
+            requestDigest,
+          },
+          durationMs: Date.now() - start,
+        };
+      }
+    );
+
+    this.register(
+      {
         id: "render.ffmpeg",
         name: "FFmpeg Deterministic Video Compiler",
         version: "1.0.0",
