@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR132-Kaggle-Proof-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/kaggle-proof-current-main-20261003",
+  "objective": "Reconcile the unique Kaggle physical-render proof persistence changes onto current main.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Physical artifact proof must survive ephemeral provider work-directory cleanup.",
+      "F07 remains the independent evidence boundary.",
+      "Notebook providers are rendering backends, not automatic F06 workers.",
+      "Provider credentials remain secret-bound."
+    ],
+    "sourceRefs": [
+      ".okf/compute/notebook-fabric.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "INHERITED/UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "The changes add artifact materialization only; no secret handling surface is added."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added caller-owned artifactDestinationPath to NotebookExecutionRequest.",
+    "Persisted Kaggle downloaded artifacts before provider workdir cleanup and checked destination byte length.",
+    "Persisted the live Kaggle MP4 under artifacts/kaggle-live for CI evidence.",
+    "Added workflow artifact publication without carrying the historical automatic push-trigger behavior."
+  ],
+  "verificationPlan": [
+    "Run repository CI and notebook-fabric contract tests.",
+    "Require Team Change Gate to pass.",
+    "Retain the prior Kaggle physical artifact proof as historical live evidence."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_AFTER_REPORT",
+    "notebookFabric": "PASS_ON_PRIOR_HEAD",
+    "kaggleLivePhysicalArtifact": "COMPLETED_HISTORICAL",
+    "currentMainReconciliation": "PENDING"
+  },
+  "disposition": "PASS"
+}

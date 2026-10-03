@@ -126,6 +126,12 @@ export interface NotebookExecutionRequest {
   command: string | string[];
   timeoutMs: number;
   outputPath?: string;
+  /**
+   * Optional caller-owned destination for a provider-downloaded artifact.
+   * Providers must materialize the artifact before returning so their internal
+   * ephemeral work directory can still be cleaned up safely.
+   */
+  artifactDestinationPath?: string;
 }
 
 export interface NotebookExecutionResult {
