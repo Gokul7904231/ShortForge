@@ -32,6 +32,7 @@ export interface TreasuryAdmissionContext {
   readonly runId?: string;
   readonly floorId?: string;
   readonly taskId: string;
+  readonly attemptId?: string;
   readonly priority: TreasuryPriority;
   readonly expiresAt: string;
   readonly maxRetries?: number;
@@ -178,13 +179,14 @@ export class TreasuryEconomicAdmission {
     }
 
     const attemptId =
+      context.attemptId ||
       context.taskId +
-      ":inference:" +
-      candidate.providerId +
-      ":" +
-      candidate.modelId +
-      ":" +
-      Date.now();
+        ":inference:" +
+        candidate.providerId +
+        ":" +
+        candidate.modelId +
+        ":" +
+        Date.now();
 
     const scopeDigest = computeTreasuryEconomicScopeDigest({
       version: 1,
@@ -257,9 +259,7 @@ export class TreasuryEconomicAdmission {
         ":" +
         context.taskId +
         ":" +
-        candidate.providerId +
-        ":" +
-        candidate.modelId +
+        attemptId +
         ":" +
         context.scopeFingerprint,
       scopeDigest,
@@ -409,7 +409,9 @@ export class TreasuryEconomicAdmission {
       runId: context.runId,
       floorId: context.floorId || "floor06_rendering",
       taskId: context.taskId,
-      attemptId: context.taskId + ":compute:" + offer.offerId,
+      attemptId:
+        context.attemptId ||
+        context.taskId + ":compute:" + offer.offerId + ":" + Date.now(),
       purpose:
         "Provision compute offer " +
         offer.offerId +
@@ -435,6 +437,8 @@ export class TreasuryEconomicAdmission {
         context.missionId +
         ":" +
         context.taskId +
+        ":" +
+        context.attemptId +
         ":" +
         offer.offerId +
         ":" +
