@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR98-Ascalon-Overseer-Finetune-Preparation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "docs/ascalon-overseer-finetune-prep-20261002",
+  "objective": "Establish the governed Overseer/Ascalon fine-tuning contract, behavior contract, dataset specification, curriculum, evaluation matrix, and readiness record without changing model weights or runtime authority.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/cognitive/devourer.md",
+      ".okf/hierarchy/overseer-operational-contract.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Documentation/training-contract change only; no runtime credential surface added."
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added Overseer fine-tuning contract.",
+    "Added Ascalon/Overseer behavior contract, curriculum, dataset specification, evaluation matrix, and readiness documentation.",
+    "Preserved Overseer supremacy and existing production authority boundaries.",
+    "No model weights or training jobs changed."
+  ],
+  "verificationPlan": [
+    "Pass repository CI and documentation/contract validation.",
+    "Verify all training documents remain design/readiness artifacts rather than claims of trained model behavior.",
+    "Merge only after current-main validation is green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "repositoryCI": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "This is training-readiness documentation, not a model-weight change."
+  ]
+}
