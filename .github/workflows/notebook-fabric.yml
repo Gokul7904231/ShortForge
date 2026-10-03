@@ -201,5 +201,9 @@ jobs:
           COLAB_ACCESS_TOKEN: ${{ secrets.COLAB_ACCESS_TOKEN }}
           LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+          KAGGLE_MCP_TOKEN: ${{ secrets.KAGGLE_MCP_TOKEN }}
+          LIGHTNING_LITSERVE_MCP_URL: ${{ vars.LIGHTNING_LITSERVE_MCP_URL }}
+          LIGHTNING_LITSERVE_MCP_TOKEN: ${{ secrets.LIGHTNING_LITSERVE_MCP_TOKEN }}
+          LIGHTNING_LITSERVE_API_KEY: ${{ secrets.LIGHTNING_LITSERVE_API_KEY }}
           NOTEBOOK_MCP_PROVIDER: ${{ matrix.provider }}
         run: node apps/web/scripts/verify-notebook-mcps.mjs
