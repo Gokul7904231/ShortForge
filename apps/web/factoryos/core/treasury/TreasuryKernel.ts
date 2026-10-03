@@ -88,6 +88,10 @@ export class TreasuryKernel {
     return this.priceRegistry;
   }
 
+  getLedger(): TreasuryLedgerStore {
+    return this.ledger;
+  }
+
   async ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount> {
     this.validateAccount(account);
     return this.ledger.ensureAccount(account);
