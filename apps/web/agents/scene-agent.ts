@@ -1,5 +1,5 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 import { defaultCharacterProfile } from "../lib/character-profile";
 import { HIGH_RETENTION_RULES } from "../prompts/retention-rules";
 import { RETENTION_SCENE_RULES } from "../prompts/retention-scene-rules";
@@ -36,6 +36,7 @@ export type RegenerateSceneInput = {
   nextImagePrompt?: string;
 
   provider?: LLMProvider;
+  treasuryContext?: TreasuryModelExecutionContext;
 };
 
 export async function regenerateSceneAgent(input: RegenerateSceneInput): Promise<{
@@ -55,7 +56,7 @@ export async function regenerateSceneAgent(input: RegenerateSceneInput): Promise
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
 
-  const llm = providerFactory(provider, { apiKey: undefined });
+  const llm = providerFactory(provider, { apiKey: undefined, treasuryContext: input.treasuryContext });
 
   const character = defaultCharacterProfile;
 
