@@ -451,7 +451,7 @@ export class OverseerControlPlane {
       batchId: `batch_${run.runId}`,
       taskId: run.runId,
       missionId,
-      overseerCommandId: String(scope.overseerCommandId || sharedScope.overseerCommandId || ""),
+      overseerCommandId: run.overseerCommandId,
       accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
       runId: run.runId,
       floorId: "overseer",
