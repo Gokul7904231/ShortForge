@@ -1,0 +1,316 @@
+import { createHash } from "node:crypto";
+import { describe, expect, it } from "vitest";
+import { ReMakerEngine } from "../core/remaker/ReMakerEngine";
+import { ReMakerImpactAnalyzer } from "../core/remaker/ReMakerImpactAnalyzer";
+import type {
+  ReMakerExecutionPort,
+  ReMakerPlan,
+} from "../core/remaker/ReMakerContracts";
+import type { TimelineIR } from "../core/timeline/TimelineIR";
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+  const record = value as Record<string, unknown>;
+  return "{" + Object.keys(record).sort().map((key) =>
+    JSON.stringify(key) + ":" + stableStringify(record[key])
+  ).join(",") + "}";
+}
+
+function timeline(): TimelineIR {
+  return {
+    timelineId: "tl_01",
+    schemaVersion: "1.0.0",
+    missionId: "m_01",
+    compositionType: "FACTS_SHORTS",
+    canvas: { width: 1080, height: 1920, fps: 30, aspectRatio: "9:16" },
+    totalDurationMs: 10000,
+    visualTracks: [
+      {
+        clipId: "scene_01",
+        assetId: "a1",
+        assetType: "IMAGE",
+        src: "cas://a1",
+        timelineStartMs: 0,
+        durationMs: 5000,
+        zIndex: 1,
+      },
+      {
+        clipId: "scene_02",
+        assetId: "a2",
+        assetType: "IMAGE",
+        src: "cas://a2",
+        timelineStartMs: 5000,
+        durationMs: 5000,
+        zIndex: 1,
+      },
+    ],
+    audioTracks: [
+      {
+        audioId: "voice_01",
+        trackType: "VOICE",
+        src: "cas://v1",
+        timelineStartMs: 0,
+        durationMs: 10000,
+        volume: 1,
+        verifiedDurationMs: 10000,
+      },
+    ],
+    subtitleTracks: [
+      {
+        subtitleId: "cap_01",
+        text: "hello",
+        startMs: 1000,
+        endMs: 2000,
+        style: {
+          fontFamily: "Inter",
+          fontSize: 64,
+          primaryColor: "#fff",
+          animation: "NONE",
+        },
+      },
+    ],
+    provenanceDigest: "timeline_digest_01",
+  };
+}
+
+function request() {
+  const target = { kind: "VISUAL_ASSET" as const, sceneIds: ["scene_02"] };
+  const targetScopeDigest = createHash("sha256")
+    .update(stableStringify(target))
+    .digest("hex");
+
+  return {
+    repairId: "repair_01",
+    caseId: "case_01",
+    missionId: "m_01",
+    policyId: "YT.TEST",
+    action: "REBUILD_SCENE" as const,
+    target: { kind: "VISUAL_ASSET" as const, sceneIds: ["scene_02"] },
+    allowedActions: ["regenerate scene"],
+    forbiddenActions: [],
+    requestedChangeDigest: "d".repeat(64),
+    parentArtifact: {
+      artifactId: "art_old",
+      sha256: "a".repeat(64),
+      byteLength: 1000,
+      casRef: "cas://old",
+      timelineDigest: "timeline_digest_01",
+      revision: 1,
+    },
+    authorization: {
+      capabilityId: "CAP_REMAKER_REPAIR" as const,
+      grantId: "grant_01",
+      leaseId: "lease_01",
+      holderId: "remaker:repair_01",
+      action: "REBUILD_SCENE",
+      targetScopeDigest,
+      fencingToken: 4,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      authorizedBy: "guardian_floor06_rendering",
+    },
+    budget: { maxAttempts: 2, maxDurationMs: 10_000 },
+    evidenceRefs: ["ev_01"],
+    reason: "Replace defective scene asset.",
+    createdAt: new Date().toISOString(),
+    timeline: timeline(),
+  };
+}
+
+describe("ReMaker v2", () => {
+  it("computes a narrow frame window and preserves unrelated nodes", () => {
+    const impact = ReMakerImpactAnalyzer.analyze(
+      timeline(),
+      { kind: "VISUAL_ASSET", sceneIds: ["scene_02"] },
+      2
+    );
+    expect(impact.directNodeIds).toEqual(["scene_02"]);
+    expect(impact.renderSceneIds).toEqual(["scene_01", "scene_02"]);
+    expect(impact.preservedNodeIds).toContain("scene_01");
+    expect(impact.preservedNodeFingerprints.scene_01).toMatch(/^[a-f0-9]{64}$/);
+    expect(impact.frameRange.startFrame).toBe(148);
+    expect(impact.frameRange.endFrame).toBe(299);
+  });
+
+  it("rejects a repair action not authorized by the case", () => {
+    expect(() =>
+      new ReMakerEngine().plan({
+        ...request(),
+        allowedActions: ["font-only change"],
+      })
+    ).toThrow(/allowed action set/);
+  });
+
+  it("is idempotent for the same repair parent and target", async () => {
+    let calls = 0;
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        calls += 1;
+        return {
+          candidateArtifact: {
+            artifactId: "art_new",
+            sha256: "b".repeat(64),
+            byteLength: 2000,
+            uri: "cas://new",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          rendererReceiptId: "render_01",
+          observedTimelineDigest: "timeline_digest_01",
+          physicalValidation: { passed: true, decodeSmokePassed: true },
+        };
+      },
+    };
+
+    const engine = new ReMakerEngine();
+    const first = await engine.execute(request(), port);
+    const second = await engine.execute(request(), port);
+
+    expect(first.termination).toBe("COMPLETED");
+    expect(second.idempotencyKey).toBe(first.idempotencyKey);
+    expect(calls).toBe(1);
+    expect(first.candidateRevision).toBe(2);
+    expect(first.f07Required).toBe(true);
+  });
+
+  it("deduplicates completed repairs across engine instances when they share a store", async () => {
+    const { InMemoryReMakerIdempotencyStore } = await import("../core/remaker/ReMakerIdempotencyStore");
+    const store = new InMemoryReMakerIdempotencyStore();
+    let calls = 0;
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        calls += 1;
+        return {
+          candidateArtifact: {
+            artifactId: "art_shared",
+            sha256: "9".repeat(64),
+            byteLength: 2000,
+            uri: "cas://shared",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          physicalValidation: { passed: true },
+        };
+      },
+    };
+
+    const first = await new ReMakerEngine(store).execute(request(), port);
+    const second = await new ReMakerEngine(store).execute(request(), port);
+
+    expect(first.idempotencyKey).toBe(second.idempotencyKey);
+    expect(calls).toBe(1);
+  });
+
+  it("fails closed when the execution port violates preservation", async () => {
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        return {
+          candidateArtifact: {
+            artifactId: "art_new",
+            sha256: "c".repeat(64),
+            byteLength: 2000,
+            uri: "cas://new",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds],
+          preservedNodeIds: [],
+          preservedNodeFingerprints: {},
+          physicalValidation: { passed: true },
+        };
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(request(), port);
+    expect(receipt.termination).toBe("EXECUTION_FAILED");
+  });
+
+  it("rejects a candidate that fails physical validation", async () => {
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        return {
+          candidateArtifact: {
+            artifactId: "art_bad",
+            sha256: "e".repeat(64),
+            byteLength: 2000,
+            uri: "cas://bad",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          physicalValidation: { passed: false, decodeSmokePassed: false },
+        };
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(request(), port);
+    expect(receipt.termination).toBe("NO_PROGRESS");
+  });
+
+  it("rejects a candidate that reports an extra changed node", async () => {
+    const port: ReMakerExecutionPort = {
+      async execute(plan: ReMakerPlan) {
+        return {
+          candidateArtifact: {
+            artifactId: "art_extra",
+            sha256: "f".repeat(64),
+            byteLength: 2000,
+            uri: "cas://extra",
+            mimeType: "video/mp4",
+          },
+          changedNodeIds: [...plan.changedNodeIds, "scene_01"],
+          preservedNodeIds: [...plan.preservedNodeIds],
+          preservedNodeFingerprints: { ...plan.preservedNodeFingerprints },
+          physicalValidation: { passed: true },
+        };
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(request(), port);
+    expect(receipt.termination).toBe("EXECUTION_FAILED");
+  });
+
+  it("detects fencing loss through the execution boundary", async () => {
+    const port: ReMakerExecutionPort = {
+      async assertLease() {
+        return false;
+      },
+      async execute() {
+        throw new Error("should not execute");
+      },
+    };
+
+    const receipt = await new ReMakerEngine().execute(request(), port);
+    expect(receipt.termination).toBe("FENCING_LOST");
+  });
+
+  it("supports a pure frame-window target", () => {
+    const target = {
+      kind: "RENDER_REGION" as const,
+      frameRangeMs: { startMs: 5100, endMs: 5200 },
+    };
+    const targetScopeDigest = createHash("sha256")
+      .update(stableStringify(target))
+      .digest("hex");
+
+    const plan = new ReMakerEngine().plan({
+      ...request(),
+      action: "RENDER_WINDOW",
+      requestedChangeDigest: "1".repeat(64),
+      target,
+      authorization: {
+        ...request().authorization,
+        action: "RENDER_WINDOW",
+        targetScopeDigest,
+      },
+      allowedActions: ["render affected scenes only"],
+    });
+
+    expect(plan.renderSceneIds).toEqual(["scene_02"]);
+    expect(plan.changedNodeIds).toContain("scene_02");
+  });
+});
