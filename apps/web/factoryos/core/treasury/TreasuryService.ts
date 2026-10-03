@@ -30,8 +30,16 @@ export class TreasuryService {
     return this.kernel.reserve(command);
   }
 
+  extend(reservationId: string, command: TreasuryCommand): Promise<TreasuryReservation> {
+    return this.kernel.extend(reservationId, command);
+  }
+
   settle(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
     return this.kernel.settle(reservationId, consumption);
+  }
+
+  reconcile(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
+    return this.kernel.reconcile(reservationId, consumption);
   }
 
   release(reservationId: string, reason?: string): Promise<TreasuryReservation> {
