@@ -95,6 +95,7 @@ export interface TreasuryReservation {
   readonly status: TreasuryReservationStatus;
   readonly reservedCostUsd: number;
   readonly reservedCapacityUnits: number;
+  readonly resourceRequest: readonly TreasuryResourceRequest[];
   readonly maxTokens?: number;
   readonly maxDurationMs?: number;
   readonly maxRetries?: number;
