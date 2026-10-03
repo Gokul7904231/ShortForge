@@ -82,6 +82,7 @@ The system has one sovereign command authority: the Overseer, beneath Human Auth
 The system has multiple independent boundaries:
 
 - Treasurer owns economic admission, reservation, settlement, release, scarcity protection, and reconciliation.
+- Economic Intelligence is a read-only advisory projection over Treasury evidence; it cannot mutate Treasury or replace an authority.
 - Guardian owns capability / policy authorization.
 - Slayer owns lease revocation / kill enforcement.
 - Healer owns bounded remediation.
