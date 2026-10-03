@@ -84,6 +84,11 @@ export class TreasuryKernel {
     return structuredClone(this.policy);
   }
 
+  async ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount> {
+    this.validateAccount(account);
+    return this.ledger.ensureAccount(account);
+  }
+
   async quote(command: TreasuryCommand): Promise<import("./TreasuryContracts").TreasuryQuote> {
     this.validateCommand(command);
     const quote = this.priceRegistry.quote(
@@ -641,6 +646,15 @@ export class TreasuryKernel {
       ));
       return next;
     });
+  }
+
+  private validateAccount(account: TreasuryAccount): void {
+    if (!account.accountId) throw new TreasuryDeniedError("Treasury accountId is required");
+    assertNonNegativeFinite(account.budgetUsd, "budgetUsd");
+    assertNonNegativeFinite(account.capacityUnits, "capacityUnits");
+    if (account.availableUsd > account.budgetUsd || account.availableCapacityUnits > account.capacityUnits) {
+      throw new TreasuryDeniedError("Treasury account available resources exceed configured budget/capacity");
+    }
   }
 
   private validateCommand(command: TreasuryCommand): void {
