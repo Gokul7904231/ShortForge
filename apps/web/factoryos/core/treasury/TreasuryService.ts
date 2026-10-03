@@ -42,6 +42,13 @@ export class TreasuryService {
     return this.kernel.settle(reservationId, consumption);
   }
 
+  validatePermit(
+    permit: TreasuryEconomicPermit,
+    context: import("./TreasuryContracts").TreasuryPermitContext,
+  ): Promise<void> {
+    return this.kernel.validatePermit(permit, context);
+  }
+
   reconcile(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
     return this.kernel.reconcile(reservationId, consumption);
   }
