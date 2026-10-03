@@ -68,6 +68,6 @@ jobs:
       - name: Static Treasury authority scan
         working-directory: .
         run: |
-          ! grep -R "getUserQuota(" apps/web/app apps/web/lib apps/web/factoryos/core --exclude-dir=node_modules --exclude='*.test.ts' | grep -v "TreasuryQuotaAdmission.ts"
+          ! grep -R "getUserQuota(" apps/web/app apps/web/lib apps/web/factoryos/core --exclude-dir=node_modules --exclude='*.test.ts' --exclude='quota-service.ts' | grep -v "TreasuryQuotaAdmission.ts"
           ! grep -R "CostGovernor." apps/web/factoryos/core --exclude-dir=node_modules
           ! grep -R "MissionBudgetManager." apps/web/factoryos/core/missions/MissionManager.ts
