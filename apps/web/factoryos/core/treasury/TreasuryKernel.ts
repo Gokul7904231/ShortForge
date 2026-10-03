@@ -431,6 +431,7 @@ export class TreasuryKernel {
       }
       if (permit.reservationId !== reservation.reservationId ||
           permit.commandId !== reservation.commandId ||
+          permit.overseerCommandId !== reservation.overseerCommandId ||
           permit.accountId !== reservation.accountId ||
           permit.missionId !== reservation.missionId ||
           permit.scopeDigest !== reservation.scopeDigest) {
