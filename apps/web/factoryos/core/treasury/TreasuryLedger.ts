@@ -167,7 +167,9 @@ export class MongoTreasuryLedger implements TreasuryLedgerStore {
 
   async getAccount(accountId: string): Promise<TreasuryAccount | null> {
     const doc = await this.accounts.findOne({ accountId });
-    return doc ? (stripId(doc) as TreasuryAccount) : null;
+    return doc
+      ? hydrateTreasuryAccount(stripId(doc) as TreasuryAccount)
+      : null;
   }
 
   async listRecentEvents(accountId?: string, limit = 50): Promise<TreasuryLedgerEvent[]> {
@@ -269,14 +271,15 @@ export class InMemoryTreasuryLedger implements TreasuryLedgerStore {
     return this.atomic(async (tx) => {
       const existing = await tx.getAccount(account.accountId);
       if (existing) return existing;
-      await tx.putAccount(account);
-      return account;
+      const hydrated = hydrateTreasuryAccount(account);
+      await tx.putAccount(hydrated);
+      return hydrated;
     });
   }
 
   async getAccount(accountId: string): Promise<TreasuryAccount | null> {
     const account = this.accounts.get(accountId);
-    return account ? structuredClone(account) : null;
+    return account ? hydrateTreasuryAccount(structuredClone(account)) : null;
   }
 
   async listRecentEvents(accountId?: string, limit = 50): Promise<TreasuryLedgerEvent[]> {
