@@ -1,5 +1,5 @@
 import { providerFactory } from "../ai/factory";
-import { LLMProvider } from "../ai/provider";
+import { LLMProvider, TreasuryModelExecutionContext } from "../ai/provider";
 import { createSceneId } from "../lib/scene-utils";
 import { HIGH_RETENTION_RULES } from "../prompts/retention-rules";
 import { RETENTION_SCENE_RULES } from "../prompts/retention-scene-rules";
@@ -14,6 +14,7 @@ export type ScriptAgentInput = {
   contentType?: string;
   renderProfile?: string;
   topics?: Array<{ topicId: string; name: string; questionBudget: number }>;
+  treasuryContext?: TreasuryModelExecutionContext;
   repairContext?: {
     failedClaims?: any[];
     sourceEvidence?: string[];
@@ -92,7 +93,7 @@ export async function scriptAgent(
     input.provider ??
     (process.env.DEFAULT_LLM_PROVIDER as LLMProvider | undefined) ??
     "gemini";
-  const llm = providerFactory(provider, { apiKey: input.apiKey });
+  const llm = providerFactory(provider, { apiKey: input.apiKey, treasuryContext: input.treasuryContext });
 
   if (input.contentType === "QUIZ_SHORTS") {
     // Resolve expected question count based on mode
