@@ -47,8 +47,11 @@ async function scoreEverything(input: {
   treasuryContext?: TreasuryModelExecutionContext;
 }) {
   const [hookScoreOut, sceneScoresOut, meta, thumb] = await Promise.all([
-    hookScoreAgent({ hook: input.hook, provider: input.provider,
-          treasuryContext: input.treasuryContext, treasuryContext: input.treasuryContext }),
+    hookScoreAgent({
+      hook: input.hook,
+      provider: input.provider,
+      treasuryContext: input.treasuryContext,
+    }),
     Promise.all(input.scenes.map((s) => sceneQualityAgent({ scene: s, provider: input.provider, treasuryContext: input.treasuryContext }))),
     metadataAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext }),
     thumbnailAgent({ topic: input.topic, script: input.script, provider: input.provider, treasuryContext: input.treasuryContext }),
@@ -128,6 +131,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
     script,
     scenes: scenes.map((s) => ({ text: s.text, imagePrompt: s.imagePrompt })),
     provider: input.provider,
+    treasuryContext: input.treasuryContext,
   });
 
   // BEST AVAILABLE OUTPUT: keep the best-scoring refinement attempt,
@@ -192,6 +196,7 @@ export async function autoRefinePipeline(input: AutoRefineInput): Promise<AutoRe
         previousImagePrompt,
         nextImagePrompt,
         provider: input.provider,
+        treasuryContext: input.treasuryContext,
       });
 
       scenes[openingIndex] = {
