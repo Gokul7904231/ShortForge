@@ -299,6 +299,12 @@ export class TreasuryKernel {
         reservationId: reservation.reservationId,
         commandId: reservation.commandId,
         accountId: reservation.accountId,
+        missionId: reservation.missionId,
+        runId: reservation.runId,
+        floorId: reservation.floorId,
+        taskId: reservation.taskId,
+        attemptId: reservation.attemptId,
+        scopeDigest: reservation.scopeDigest,
         maxCostUsd: reservation.reservedCostUsd,
         maxCapacityUnits: reservation.reservedCapacityUnits,
         expiresAt: reservation.expiresAt,
@@ -402,6 +408,49 @@ export class TreasuryKernel {
 
     if (!updated) throw new TreasuryDeniedError(denial ?? "Treasury extension denied");
     return updated;
+  }
+
+  async validatePermit(
+    permit: TreasuryEconomicPermit,
+    context: import("./TreasuryContracts").TreasuryPermitContext,
+  ): Promise<void> {
+    const now = this.now();
+    await this.ledger.atomic(async (tx) => {
+      const reservation = await tx.getReservation(permit.reservationId);
+      if (!reservation) {
+        throw new TreasuryDeniedError(`Treasury reservation not found: ${permit.reservationId}`);
+      }
+      if (reservation.status !== "ACTIVE") {
+        throw new TreasuryDeniedError(`Treasury permit is not active; reservation is ${reservation.status}`);
+      }
+      if (permit.status !== "ACTIVE") {
+        throw new TreasuryDeniedError("Treasury permit is not active");
+      }
+      if (permit.reservationId !== reservation.reservationId ||
+          permit.commandId !== reservation.commandId ||
+          permit.accountId !== reservation.accountId ||
+          permit.missionId !== reservation.missionId ||
+          permit.scopeDigest !== reservation.scopeDigest) {
+        throw new TreasuryDeniedError("Treasury permit provenance does not match the reservation");
+      }
+      if (permit.scopeDigest !== context.scopeDigest ||
+          permit.accountId !== context.accountId ||
+          permit.missionId !== context.missionId ||
+          (reservation.taskId && reservation.taskId !== context.jobId)) {
+        throw new TreasuryDeniedError("Treasury permit is not bound to this execution scope");
+      }
+      const expiresAt = new Date(reservation.expiresAt).getTime();
+      if (!Number.isFinite(expiresAt) || expiresAt <= now.getTime()) {
+        throw new TreasuryDeniedError("Treasury permit has expired");
+      }
+      if (new Date(permit.expiresAt).getTime() !== expiresAt) {
+        throw new TreasuryDeniedError("Treasury permit expiry does not match the reservation");
+      }
+      if (permit.maxCostUsd !== reservation.reservedCostUsd ||
+          permit.maxCapacityUnits !== reservation.reservedCapacityUnits) {
+        throw new TreasuryDeniedError("Treasury permit envelope does not match the reservation");
+      }
+    });
   }
 
   async settle(reservationId: string, consumption: TreasuryConsumption): Promise<TreasuryReservation> {
