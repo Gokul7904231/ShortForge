@@ -19,29 +19,6 @@ async function waitFor<T>(
   throw new Error("Timed out waiting for browser bridge state.");
 }
 
-async function connectWith(
-  url: URL,
-  origin: string,
-  authorization?: string,
-): Promise<WebSocket> {
-  const socketUrl = new URL(url.origin + url.pathname);
-  socketUrl.protocol = "ws:";
-  socketUrl.hostname = "127.0.0.1";
-  socketUrl.port = url.port;
-  socketUrl.searchParams.set("access_token", url.hash);
-
-  return await new Promise<WebSocket>((resolve, reject) => {
-    const ws = new WebSocket(
-      socketUrl,
-      authorization
-        ? { headers: { Origin: origin, Authorization: authorization }, protocol: "mcp" }
-        : { headers: { Origin: origin }, protocol: "mcp" },
-    );
-    ws.once("open", () => resolve(ws));
-    ws.once("error", reject);
-  });
-}
-
 async function main() {
   assert.equal(
     validateNotebookUrl(
@@ -87,10 +64,8 @@ async function main() {
 
     const unauthorized = new WebSocket(
       `ws://127.0.0.1:${session.port}?access_token=wrong-token`,
-      {
-        headers: { Origin: "https://example.com" },
-        protocol: "mcp",
-      },
+      "mcp",
+      { headers: { Origin: "https://example.com" } },
     );
     await new Promise<void>((resolve) => {
       unauthorized.once("close", () => resolve());
@@ -100,10 +75,8 @@ async function main() {
 
     const authorized = new WebSocket(
       `ws://127.0.0.1:${session.port}?access_token=${encodeURIComponent(token)}`,
-      {
-        headers: { Origin: "https://colab.google.com" },
-        protocol: "mcp",
-      },
+      "mcp",
+      { headers: { Origin: "https://colab.google.com" } },
     );
     await new Promise<void>((resolve, reject) => {
       authorized.once("open", () => resolve());
