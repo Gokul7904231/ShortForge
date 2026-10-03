@@ -72,6 +72,7 @@ describe("Treasury F06 compute admission", () => {
     });
 
     expect(submitJob).toHaveBeenCalledTimes(1);
+    console.log("TREASURY_DEBUG_COMPUTE_GATEWAY_ARGS", JSON.stringify(submitJob.mock.calls[0]));
     expect(submitJob.mock.calls[0]?.[3]).toMatchObject({
       reservationId: expect.any(String),
       commandId: expect.any(String),
