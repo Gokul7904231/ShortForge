@@ -10,6 +10,7 @@ import {
   getUserQuota,
   resolveTier,
   type UserQuotaInfo,
+  QuotaExceededError,
 } from "../../../lib/quota/quota-service";
 import { createTreasuryAccount } from "./TreasuryLedger";
 import type { TreasuryEconomicPermit, TreasuryReservation } from "./TreasuryContracts";
@@ -89,9 +90,12 @@ export class TreasuryQuotaAdmission {
     }
 
     if (quota.isExceeded || quota.remaining <= 0) {
-      throw new Error(quota.isExceeded
-        ? "Treasury quota exhausted for user " + context.userId
-        : "Treasury quota has no remaining generation capacity");
+      throw new QuotaExceededError(
+        quota.isExceeded
+          ? "Treasury quota exhausted for user " + context.userId
+          : "Treasury quota has no remaining generation capacity",
+        quota,
+      );
     }
 
     const accountId = quotaAccountId(quota);
