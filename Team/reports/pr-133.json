@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR133-Lightning-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/lightning-live-current-main-20261003",
+  "objective": "Reconcile the unique Lightning Teamspace and live-provider configuration changes onto current main without carrying the historical auto-push workflow trigger.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Notebook providers are rendering backends, not automatic F06 worker authority.",
+      "Provider credentials stay environment-bound.",
+      "Provider lifecycle identity must be explicit and reproducible.",
+      "F07 remains the independent physical artifact truth boundary."
+    ],
+    "sourceRefs": [
+      ".okf/compute/notebook-fabric.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/worker-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "INHERITED/UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No secret values are committed; Teamspace is a repository variable, API credentials remain GitHub secrets."
+    ]
+  },
+  "conflicts": [],
+  "disposition": "PASS",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added LIGHTNING_TEAMSPACE to notebook configuration.",
+    "Required Teamspace in the Lightning live workflow and passed it to provider/MCP smoke processes.",
+    "Bound Lightning Studio creation, execution, and termination to explicit Teamspace identity.",
+    "Used Machine.from_str for explicit machine selection and retained unique live Studio probe names.",
+    "Updated notebook MCP documentation.",
+    "Intentionally did not carry the historical automatic push trigger from the old Lightning branch."
+  ],
+  "verificationPlan": [
+    "Run notebook contract tests and Lightning MCP contract tests.",
+    "Run current-main CI/gates.",
+    "No physical Lightning MP4 claim is made by this reconciliation; that remains a separate render/artifact proof."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "notebookFabricCI": "PENDING",
+    "lightningPhysicalArtifact": "PENDING"
+  },
+  "notes": [
+    "Latest earlier live Lightning evidence proved authenticated Studio lifecycle and code execution. This reconciliation only brings the missing Teamspace configuration and lifecycle correctness onto current main.",
+    "Tracked by repository consolidation issue #127."
+  ]
+}
