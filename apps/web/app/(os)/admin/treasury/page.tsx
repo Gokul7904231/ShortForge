@@ -5,7 +5,7 @@ import { BrainCircuit, AlertTriangle, CheckCircle2, Coins, Gauge, ShieldAlert } 
 type Snapshot = {
   generatedAt: string; windowStart: string; windowEnd: string;
   unitMetrics: { settledCostUsd: number; actualTokens: number; reservationUtilization: number; releaseRatio: number; successfulExecutions: number; verifiedExecutions: number; deniedCommands: number; breachedReservations: number; costPer1kTokensUsd?: number; };
-  spendDeltaPct: number; activeReservedUsd: number; activeReservedCapacityUnits: number;
+  spendDeltaPct: number; forecast: { projected7dSpendUsd: number; projected30dSpendUsd: number; confidence: "LOW" | "MEDIUM" | "HIGH"; }; activeReservedUsd: number; activeReservedCapacityUnits: number;
   signals: Array<{ code: string; severity: "INFO" | "WARNING" | "CRITICAL"; message: string }>;
   recommendations: Array<{ kind: string; priority: "LOW" | "MEDIUM" | "HIGH"; rationale: string; actionBoundary: string }>;
   providers: Array<{ providerId: string; modelId?: string; invocations: number; settledCostUsd: number; costPer1kTokensUsd?: number; }>;
@@ -54,6 +54,18 @@ export default function TreasuryEconomicsPage() {
           </div>
         ))}
       </div>
+
+      <section className="rounded-xl border border-zinc-800 bg-zinc-950/70">
+        <div className="border-b border-zinc-800 px-5 py-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Spend outlook</div>
+          <div className="mt-1 text-[11px] text-zinc-600">Baseline extrapolation from measured Treasury spend rate; not a guarantee.</div>
+        </div>
+        <div className="grid gap-4 p-5 md:grid-cols-3">
+          <div><div className="text-[10px] uppercase tracking-[0.12em] text-zinc-500">7-day projection</div><div className="mt-2 text-lg font-semibold text-zinc-100">{money(s.forecast.projected7dSpendUsd)}</div></div>
+          <div><div className="text-[10px] uppercase tracking-[0.12em] text-zinc-500">30-day projection</div><div className="mt-2 text-lg font-semibold text-zinc-100">{money(s.forecast.projected30dSpendUsd)}</div></div>
+          <div><div className="text-[10px] uppercase tracking-[0.12em] text-zinc-500">Confidence</div><div className="mt-2 text-lg font-semibold text-zinc-100">{s.forecast.confidence}</div></div>
+        </div>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="rounded-xl border border-zinc-800 bg-zinc-950/70">
