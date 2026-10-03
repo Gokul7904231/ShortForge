@@ -718,6 +718,11 @@ export class TreasuryKernel {
       throw new TreasuryDeniedError("Treasurer accepts discretionary commands only from Overseer");
     }
     if (!command.issuer.issuerId) throw new TreasuryDeniedError("Overseer issuerId is required");
+    if (command.issuer.issuerId !== command.overseerCommandId) {
+      throw new TreasuryDeniedError(
+        "Treasury issuer identity must match the originating Overseer command",
+      );
+    }
     if (!command.accountId || !command.missionId || !command.purpose) {
       throw new TreasuryDeniedError("Treasury command accountId, missionId and purpose are required");
     }
