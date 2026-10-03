@@ -1,6 +1,9 @@
 name: Treasury Wave 4 Validation
 
 on:
+  push:
+    branches:
+      - feat/treasury-economic-intelligence-wave4-20261003
   pull_request:
     paths:
       - "apps/web/factoryos/core/treasury/**"
