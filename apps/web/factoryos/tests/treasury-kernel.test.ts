@@ -163,6 +163,27 @@ describe("Treasurer constitutional kernel", () => {
     }))).rejects.toBeInstanceOf(TreasuryDeniedError);
   });
 
+  it("rejects expired commands before they can mutate Treasury state", async () => {
+    const { kernel } = makeTreasury();
+    const expired = command({ expiresAt: new Date(Date.now() - 1).toISOString() });
+    await expect(kernel.reserve(expired)).rejects.toBeInstanceOf(TreasuryDeniedError);
+  });
+
+  it("concurrently admits only the resources that exist", async () => {
+    const { kernel } = makeTreasury();
+    const results = await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        kernel.reserve(command({
+          commandId: `concurrent-${index}`,
+          overseerCommandId: `ovr-${index}`,
+          idempotencyKey: `idem-${index}`,
+        })).then(() => true).catch(() => false),
+      ),
+    );
+
+    expect(results.filter(Boolean)).toHaveLength(5);
+  });
+
   it("keeps settlement and release usable after a Treasury freeze", async () => {
     const { kernel } = makeTreasury();
     const reserved = await kernel.reserve(command());
