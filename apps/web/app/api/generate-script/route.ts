@@ -84,7 +84,14 @@ export async function POST(req: Request) {
     }
 
     // 1) Generate a draft (scenes + hook derived from opening scene)
-    const draft = await scriptAgent({ topic, durationSeconds, style, trend, provider });
+    const draft = await scriptAgent({
+      topic,
+      durationSeconds,
+      style,
+      trend,
+      provider,
+      treasuryContext: treasuryModel.context,
+    });
 
     // Hook-first special logic (Scene 1 is treated as the hook source).
     // autoRefinePipeline expects `hook` and `scenes`.
