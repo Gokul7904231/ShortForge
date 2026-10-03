@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR123-Provider-Native-MCP-Current-Main-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "reconcile/provider-mcp-native-current-main-20261003",
+  "objective": "Integrate the provider-native Kaggle and Lightning/LitServe MCP interoperability layer from PR #104 onto current main without granting remote MCP or F06 worker authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/mcp-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Native MCP probes use environment-bound optional credentials and never execute arbitrary remote tools."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "PROVIDER-MCP-MAIN-001",
+      "originalConflict": "PR #104 modified shared notebook workflow and MCP documentation after current main had changed those files for Colab rendering/browser interoperability.",
+      "status": "RESOLVED",
+      "proposedResolution": "Port only unique provider-native MCP code and reconcile shared workflow/documentation with current main.",
+      "acceptedResolution": "Current main's Colab render/browser controls remain intact; provider-native MCP adds diagnostics only.",
+      "decisionAuthority": "Provider-native MCP integration boundary"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added shared Streamable HTTP MCP client and regression test.",
+    "Added Kaggle official MCP probe/discovery tools.",
+    "Added Lightning/LitServe MCP probe/discovery tools.",
+    "Added provider-native MCP regression tests to notebook workflow.",
+    "Reconciled notebook MCP documentation and env configuration."
+  ],
+  "verificationPlan": [
+    "Pass Team Change Gate, MCP package typechecks/tests, notebook-fabric contract, repository CI and compute/floor validations.",
+    "Merge only after current-main validation is green or all remaining external security dependencies are explicitly tracked."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "mcpContract": "PENDING_CURRENT_RUN",
+    "repositoryCI": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS"
+}
