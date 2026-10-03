@@ -26,7 +26,7 @@ export interface TreasuryLedgerTransaction {
 
 export interface TreasuryLedgerStore {
   initialize(): Promise<void>;
-  atomic<T>(work: (tx: TreasuryLedgerTransaction) => Promise<T>): Promise<TreasuryAccount | null> | Promise<T>;
+  atomic<T>(work: (tx: TreasuryLedgerTransaction) => Promise<T>): Promise<T>;
   ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount>;
   getAccount(accountId: string): Promise<TreasuryAccount | null>;
   listRecentEvents(accountId?: string, limit?: number): Promise<TreasuryLedgerEvent[]>;
