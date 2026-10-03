@@ -810,7 +810,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
   }
 
   private shellQuote(value: string): string {
-    return "'" + value.replaceAll("'", "'\"'"\"'") + "'";
+    return "'" + value.replaceAll("'", "'\"'\"'") + "'";
   }
 
   private parseJson(text: string): any {
