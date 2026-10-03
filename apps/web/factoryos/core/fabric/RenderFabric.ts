@@ -10,7 +10,6 @@
  */
 
 import * as path from "node:path";
-import { createHash } from "node:crypto";
 import type {
   RenderIntent,
   RenderArtifact,
