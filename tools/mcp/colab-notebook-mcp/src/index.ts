@@ -59,7 +59,7 @@ server.registerTool(
       "Create a bounded local bridge for a Colab browser session. Optionally target an existing Colab notebook URL or select a Google account with authuser. Browser opening is disabled by default.",
     inputSchema: z.object({
       notebook_url: z.string().url().optional(),
-      authuser: z.string().regex(/^\\d+$/).optional(),
+      authuser: z.string().regex(/^\d+$/).optional(),
       open_browser: z.boolean().optional().default(false),
     }),
   },
