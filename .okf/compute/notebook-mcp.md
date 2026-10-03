@@ -1,10 +1,10 @@
 # ShortForge Notebook MCP Diagnostics
 
-Status: finalized — live Kaggle provider and MCP proof passed 2026-10-03.
+Status: provider-specific MCPs remain bounded integration/diagnostic surfaces; physical rendering truth belongs to the canonical adapters and F07.
 
 ## Dedicated MCPs
 
-Three provider-specific notebook MCP servers are now repository-owned:
+Three provider-specific notebook render-provider MCP servers are repository-owned:
 
 - shortforge-kaggle-notebook
 - shortforge-colab-notebook
@@ -14,24 +14,11 @@ They are bounded connection/capability diagnostics. They do not replace the cano
 
 ## Tool surface
 
-Each server exposes only two tools:
-
-- provider_connection_check: performs the provider's real credential/reachability check using secrets already present in the server process environment.
-- provider_capabilities: returns canonical provider metadata.
-
-No tool accepts credentials as arguments. No tool accepts arbitrary remote commands.
+Each server exposes provider connection/capability tools. No tool accepts credentials as arguments. No MCP tool exposes arbitrary remote command execution.
 
 ## Live proof
 
-Provider smoke from apps/web:
-
-NOTEBOOK_LIVE=1 NOTEBOOK_PROVIDER=KAGGLE npm run factoryos:verify:notebooks
-
-MCP protocol plus provider smoke from repository root:
-
-NOTEBOOK_MCP_PROVIDER=KAGGLE node apps/web/scripts/verify-notebook-mcps.mjs
-
-The live workflow .github/workflows/notebook-fabric.yml runs both proof layers.
+The provider verification workflow owns side-effecting render tests. The MCP layer proves protocol/tool connectivity and provider authentication; it does not become the source of F07 artifact truth.
 
 ### Kaggle
 
@@ -39,19 +26,19 @@ A live run submits a real notebook kernel, executes a deterministic one-second M
 
 ### Kaggle verification record
 
-GitHub Actions notebook-fabric run #89 (`37099200857`) passed the real Kaggle physical-artifact probe and dedicated Kaggle MCP live smoke. The artifact proof was `PHYSICAL_ARTIFACT_VERIFIED`, with local SHA-256 and byte-length recomputation. Mainline closeout is merged in PR #99.
+GitHub Actions notebook-fabric run #89 (37099200857) passed the real Kaggle physical-artifact probe and dedicated Kaggle MCP live smoke. The artifact proof was PHYSICAL_ARTIFACT_VERIFIED with local SHA-256 and byte-length recomputation. Mainline closeout is merged in PR #99.
 
 ### Google Colab
 
-A live run verifies the Colab runtime-spec endpoint. Setting COLAB_LIVE_PROVISION=1 additionally creates and deletes one runtime. Generic code execution remains unsupported by the adapter, so the proof level is control-plane rather than worker execution.
+The dedicated MCP exposes bounded Colab connection/capability diagnostics. The actual rendering path is now implemented in ColabNotebookAdapter using the allowlisted Colab Runtime API plus the managed runtime's standard Jupyter interface. Once Google grants API access to the submitted project, the live proof will create an eligible T4 runtime, execute a bounded FFmpeg render, retrieve the physical MP4, verify SHA-256/byte length and the MP4 ftyp signature, then terminate the runtime.
 
 ### Lightning AI
 
-A live run starts a CPU Studio by default, executes a deterministic Python marker through the Lightning SDK, checks the returned exit code/output, and stops the Studio. A different machine can be supplied explicitly through the workflow input.
+A live run authenticates the Lightning API, starts a Studio by default on CPU, executes a deterministic Python marker through the Lightning SDK, checks the exit code/output, and stops the Studio. The latest live run succeeded at CODE_EXECUTION_VERIFIED. Physical MP4 transfer into ShortForge CAS is still the remaining rendering-proof step.
 
 ## Credentials
 
-GitHub Actions uses these repository secrets:
+GitHub Actions currently uses repository secrets for provider-specific live checks:
 
 KAGGLE_USERNAME
 KAGGLE_KEY
@@ -59,10 +46,10 @@ COLAB_ACCESS_TOKEN
 LIGHTNING_USER_ID
 LIGHTNING_API_KEY
 
-Secrets are passed only through the environment. They are not committed and are not accepted as MCP tool arguments.
+For local Colab development, the adapter can also use Google Application Default Credentials (ADC) through googleapis; runtime proxy tokens returned by Colab are short-lived and are kept in process memory only.
 
 ## Authority
 
 MCP success is a tool result, not production truth. Worker admission, leases/fencing, CAS authority, F07 acceptance, and ReleaseAuthorization remain outside these servers.
 
-> Live-proof note: Kaggle's physical-artifact smoke defaults to CPU for deterministic, low-queue verification; GPU execution remains selectable with `KAGGLE_LIVE_GPU=1`.
+> Live-proof note: Kaggle's physical-artifact smoke defaults to CPU for deterministic, low-queue verification; GPU execution remains selectable with KAGGLE_LIVE_GPU=1.
