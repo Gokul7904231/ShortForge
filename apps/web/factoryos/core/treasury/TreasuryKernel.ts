@@ -93,6 +93,10 @@ export class TreasuryKernel {
     return this.ledger.ensureAccount(account);
   }
 
+  async getAccount(accountId: string): Promise<TreasuryAccount | null> {
+    return this.ledger.getAccount(accountId);
+  }
+
   async quote(command: TreasuryCommand): Promise<import("./TreasuryContracts").TreasuryQuote> {
     this.validateCommand(command);
     const quote = this.priceRegistry.quote(
