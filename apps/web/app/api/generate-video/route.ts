@@ -668,7 +668,8 @@ export async function POST(req: Request) {
           treasuryQuotaReservationId:
             treasuryQuotaReservation?.reservation?.reservationId,
         },
-        preparedEconomicCommand,
+      },
+      preparedEconomicCommand,
       );
 
       return NextResponse.json({
