@@ -40,3 +40,23 @@ Rejected because hard economic invariants must remain deterministic.
 Treasurer now has a real runtime control point for F06 renders. It can deny new discretionary resource consumption, bound reservation size, and reconcile measured use without choosing the provider itself.
 
 Legacy economic paths remain during staged migration.
+
+## Wave 2 hardening — economic permit reaches dispatch
+
+The Treasury permit is now execution-scoped rather than a loose pre-dispatch hint.
+
+Before a production F06 render reaches the physical ComputeRouter boundary:
+- RenderFabric must have Treasury admission;
+- ComputeGateway must have a bound Treasury service;
+- the permit must still be ACTIVE and unexpired;
+- permit provenance must match reservation and execution scope;
+- the permit envelope must match the reservation;
+- permitted retry allowance limits the number of physical provider attempts.
+
+Therefore automatic provider failover cannot silently exceed the economic retry envelope. A retry beyond the authorized allowance must be initiated as a new Overseer/Treasury economic attempt.
+
+This keeps the separation:
+economic permission = Treasurer;
+physical placement = ComputeRouter;
+execution = Worker;
+verification = F07.
