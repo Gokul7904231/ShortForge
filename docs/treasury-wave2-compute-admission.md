@@ -33,6 +33,7 @@ Overseer command
 - Actual measured duration becomes scarce-capacity consumption.
 - Unknown monetary cost is not invented; non-paid routes may settle at measured zero unless a provider receipt supplies actualCostUsd.
 - Paid routes remain blocked by default by Treasury policy.
+- In production, Treasury is required; if transaction-capable MongoDB Treasury cannot be initialized, FactoryOS refuses to boot rather than silently running without economic governance.
 
 ## Configuration
 
