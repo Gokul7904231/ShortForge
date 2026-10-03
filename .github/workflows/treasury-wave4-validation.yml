@@ -26,7 +26,7 @@ on:
       - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
       - ".okf/**"
       - "docs/treasury-wave4-economic-intelligence.md"
-      - "Team/reports/pr-106.json"
+      - "Team/reports/pr-137.json"
       - "package-lock.json"
       - "apps/web/package-lock.json"
   workflow_dispatch:
