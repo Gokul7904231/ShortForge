@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR103-Colab-MCP-Browser-Session-Interop",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/colab-mcp-interop-20261003",
+  "objective": "Add a bounded Google Colab browser-session interoperability surface for the dedicated Colab MCP without granting arbitrary command or F06 worker authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/compute/notebook-mcp.md",
+      ".okf/security/mcp-permissions.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Browser bridge is local-session scoped, token/origin checked, and does not expose credentials as tool arguments."
+  },
+  "conflicts": [
+    {
+      "id": "COLAB-MCP-001",
+      "originalConflict": "The earlier Colab MCP was diagnostic-only while real browser-session interoperability was needed.",
+      "status": "RESOLVED",
+      "proposedResolution": "Add a bounded localhost browser-session bridge while keeping provider execution authority in the canonical adapter and F07 truth outside MCP.",
+      "acceptedResolution": "Browser-session connection lifecycle is isolated in ColabBrowserBridgeManager; no arbitrary command execution is exposed."
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added bounded Colab browser-session connection manager.",
+    "Added origin/token validation and lifecycle tools.",
+    "Added dedicated interoperability tests and package dependency.",
+    "Preserved non-authoritative MCP boundary."
+  ],
+  "verificationPlan": [
+    "Pass MCP package typecheck and repository CI.",
+    "Verify bridge accepts only approved Colab origins/URLs and rejects unauthorized sessions.",
+    "Merge only after current-main validation is green."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_CURRENT_RUN",
+    "mcpContract": "PENDING_CURRENT_RUN"
+  },
+  "disposition": "PASS"
+}
