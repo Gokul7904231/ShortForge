@@ -84,6 +84,10 @@ export class TreasuryKernel {
     return structuredClone(this.policy);
   }
 
+  getPriceRegistry(): TreasuryPriceRegistry {
+    return this.priceRegistry;
+  }
+
   async ensureAccount(account: TreasuryAccount): Promise<TreasuryAccount> {
     this.validateAccount(account);
     return this.ledger.ensureAccount(account);
