@@ -126,7 +126,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       runtime: {
         providerId: this.metadata.providerId,
         providerType: "LIGHTNING",
-        resourceId: studio,
+        resourceId: studioName,
         runtimeKind: "LIGHTNING_STUDIO",
         state: "READY",
         updatedAt: new Date().toISOString(),
