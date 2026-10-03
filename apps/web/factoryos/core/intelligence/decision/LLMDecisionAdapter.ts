@@ -46,6 +46,14 @@ export class LLMDecisionAdapter implements IDecisionAdapter {
         {
           contextHash: request.contextFingerprint,
           subtask: "decision_batch",
+          overseerCommandId: request.overseerCommandId,
+          accountId: request.accountId,
+          missionId: request.missionId,
+          runId: request.runId,
+          floorId: request.floorId,
+          taskId: request.taskId || request.batchId,
+          scopeFingerprint: request.contextFingerprint,
+          maxRetries: 0,
         }
       );
 
