@@ -488,7 +488,7 @@ export class OverseerControlPlane {
       batchId: `batch_${run.runId}`,
       taskId: run.runId,
       missionId,
-      overseerCommandId: run.overseerCommandId,
+      overseerCommandId: sharedScope.overseerCommandId || node.payload?.overseerCommandId || "",
       accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
       runId: run.runId,
       floorId: "overseer",
@@ -1380,7 +1380,7 @@ export class OverseerControlPlane {
           },
           preferredCompiler: scope.preferredCompiler || "FFMPEG",
           constraints: { hardwareAccel: true },
-          overseerCommandId: run.overseerCommandId,
+          overseerCommandId: sharedScope.overseerCommandId || node.payload?.overseerCommandId || "",
           createdAt: new Date().toISOString(),
         };
 
@@ -1518,7 +1518,7 @@ export class OverseerControlPlane {
           missionId: renderIntent.missionId,
           jobId: renderIntent.jobId,
           floorId: "floor06_rendering",
-          overseerCommandId: run.overseerCommandId,
+          overseerCommandId: sharedScope.overseerCommandId || node.payload?.overseerCommandId || "",
           renderIntent,
         });
 
@@ -1535,7 +1535,7 @@ export class OverseerControlPlane {
             ? {
                 service: this.treasuryService!,
                 accountId: process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
-                overseerCommandId: run.overseerCommandId,
+                overseerCommandId: sharedScope.overseerCommandId || node.payload?.overseerCommandId || "",
                 budgetEnvelope: {
                   maxCostUsd: maxRenderReservationUsd,
                   maxDurationMs: Math.max(60_000, Math.ceil(renderIntent.durationSeconds * 5000)),
