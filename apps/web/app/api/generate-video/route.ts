@@ -18,6 +18,7 @@ import {
   type TreasuryQuotaReservationResult,
 } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import type { AutonomousFactoryController } from "@/factoryos/core/controller/AutonomousFactoryController";
+import type { TreasuryModelExecutionContext } from "@/ai/provider";
 
 const SceneInputSchema = z.object({
   id: z.union([z.number(), z.string()]).optional(),
@@ -286,6 +287,45 @@ export async function POST(req: Request) {
       );
     }
 
+    const treasuryModelContext: TreasuryModelExecutionContext | undefined =
+      controller?.treasuryService && preparedEconomicCommand
+        ? {
+            treasuryService: controller.treasuryService,
+            accountId:
+              process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+            overseerCommandId:
+              preparedEconomicCommand.overseerCommandId,
+            missionId,
+            runId: preparedEconomicCommand.runId,
+            floorId: "floor02_scripting",
+            taskId: jobId + ":model",
+            scopeFingerprint: crypto
+              .createHash("sha256")
+              .update(
+                JSON.stringify({
+                  jobId,
+                  missionId,
+                  topic: parsed.data.topic,
+                  contentType: parsed.data.contentType || "MOTIVATIONAL",
+                }),
+              )
+              .digest("hex"),
+            priority: "NORMAL",
+            maxRetries: 0,
+            maxCostUsd: Number(
+              process.env.FACTORYOS_MAX_INFERENCE_RESERVATION_USD || "0.10",
+            ),
+            preferredProviderId:
+              parsed.data.provider || parsed.data.providerOverride,
+            subtask: "content_generation",
+          }
+        : undefined;
+
+    if (production && !treasuryModelContext) {
+      throw new Error(
+        "[generate-video] Production model work requires a Treasury model execution context",
+      );
+    }
 
     // Resolve and compile the Content Engine configuration before content
     // generation. The compiled ProductionSpec becomes the mission snapshot.
@@ -392,6 +432,7 @@ export async function POST(req: Request) {
           durationSeconds,
           style: parsed.data.style,
           contentType: "QUIZ_SHORTS",
+          treasuryContext: treasuryModelContext,
         });
         quizHook = draft?.hook ?? "";
         quizQuestions = draft?.questions ?? [];
@@ -453,6 +494,7 @@ export async function POST(req: Request) {
           topic: parsed.data.topic,
           durationSeconds,
           style: parsed.data.style,
+          treasuryContext: treasuryModelContext,
         });
         scenes = draft?.scenes?.map((s: any) => ({
           contactText: s.contactText,
@@ -472,6 +514,7 @@ export async function POST(req: Request) {
         hook: hookFromScenes,
         scenes: scenes.map((s: any) => ({ text: s.text ?? s.contactText ?? "", imagePrompt: s.imagePrompt ?? "" })),
         hashtags: [],
+        treasuryContext: treasuryModelContext,
       }).catch((e) => ({
         approved: false,
         score: 0,
@@ -495,6 +538,7 @@ export async function POST(req: Request) {
             imagePrompt: s.imagePrompt ?? "",
           })),
           provider: undefined,
+          treasuryContext: treasuryModelContext,
         });
 
         if (!refined.approved) {
