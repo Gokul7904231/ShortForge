@@ -57,7 +57,22 @@ describe("compute connection hub", () => {
     const provider = getComputeProviderDefinition("notebook_kaggle");
     expect(provider?.connectionExperience).toBe("OAUTH");
     expect(provider?.oauth?.startPath).toBe("/api/compute/connections/oauth/kaggle");
+    expect(provider?.oauth?.permissions).toEqual([
+      "Read your Kaggle notebooks",
+      "Create and update ShortForge notebooks",
+      "Execute ShortForge notebooks",
+      "Remove temporary ShortForge notebooks after rendering",
+    ]);
     expect(provider?.credentialProfiles?.some((profile) => profile.id === "kaggle-api-token")).toBe(true);
+  });
+
+  it("keeps Lightning truthful and gives users explicit guided onboarding", () => {
+    const provider = getComputeProviderDefinition("notebook_lightning");
+    expect(provider?.connectionExperience).toBe("GUIDED_MANUAL");
+    expect(provider?.oauth).toBeUndefined();
+    expect(provider?.onboarding?.steps.length).toBeGreaterThanOrEqual(3);
+    expect(provider?.onboarding?.steps.join(" ").toLowerCase()).toContain("api key");
+    expect(provider?.onboarding?.steps.join(" ").toLowerCase()).toContain("teamspace");
   });
 
   it("resolves a Kaggle API token to the account identity server-side", async () => {
