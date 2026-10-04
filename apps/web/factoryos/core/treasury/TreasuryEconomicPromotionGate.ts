@@ -169,10 +169,38 @@ export class TreasuryEconomicPromotionGate {
     );
 
     const reasons: string[] = [];
+    const shadowGeneratedAt = new Date(
+      request.shadowEvaluation.generatedAt,
+    );
 
-    if (!recommendation || !baseline) {
+    if (
+      !Number.isFinite(shadowGeneratedAt.getTime()) ||
+      postStart.getTime() <= shadowGeneratedAt.getTime()
+    ) {
       reasons.push(
-        "No prior shadow recommendation with an identified baseline route is available.",
+        "The post-outcome window does not begin strictly after the shadow recommendation timestamp.",
+      );
+      reasons.push(
+        "Promotion remains blocked until later outcomes can be isolated from the shadow observation window.",
+      );
+      return this.ineligible(
+        request,
+        now,
+        postStart,
+        recommendation,
+        reasons,
+        undefined,
+      );
+    }
+
+    if (
+      !recommendation ||
+      !baseline ||
+      !baseline.eligible ||
+      recommendation.confidence !== "HIGH"
+    ) {
+      reasons.push(
+        "No high-confidence eligible shadow recommendation with an eligible baseline route is available.",
       );
       const decision: TreasuryEconomicPromotionDecision = {
         status: "INSUFFICIENT_EVIDENCE",
