@@ -55,12 +55,11 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
     credentials?: NotebookCredentialBundle,
   ): Record<string, string> {
     return {
-      ...Object.fromEntries(
-        Object.entries(process.env).filter(
-          ([, value]) => typeof value === "string",
-        ),
-      ),
-      ...(credentials || {}),
+      HF_ZEROGPU_SPACE:
+        credentials?.HF_ZEROGPU_SPACE || process.env.HF_ZEROGPU_SPACE || "",
+      HF_ZEROGPU_API_NAME:
+        credentials?.HF_ZEROGPU_API_NAME || process.env.HF_ZEROGPU_API_NAME || "",
+      HF_TOKEN: credentials?.HF_TOKEN || process.env.HF_TOKEN || "",
     };
   }
 
@@ -134,25 +133,44 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
         },
       );
 
+      let endpointAvailable = false;
+      if (response.ok) {
+        try {
+          const openapi = (await response.json()) as {
+            paths?: Record<string, unknown>;
+          };
+          const normalizedApiName = apiName.startsWith("/") ? apiName : "/" + apiName;
+          endpointAvailable = Boolean(openapi.paths?.[normalizedApiName]);
+        } catch {
+          endpointAvailable = false;
+        }
+      }
+
+      const authenticated = response.ok && endpointAvailable;
+
       return {
         configured: true,
-        authenticated: response.ok,
-        providerReachable: true,
+        authenticated,
+        providerReachable: response.ok,
         requiredKeys,
         missingKeys: [],
         checkedAt: new Date().toISOString(),
         evidence: [
-          response.ok
-            ? "Authenticated Gradio Space OpenAPI endpoint is reachable for /" +
+          authenticated
+            ? "Authenticated Gradio Space OpenAPI endpoint and configured /" +
               apiName.replace(/^\//, "") +
-              "."
-            : "Gradio Space OpenAPI endpoint returned HTTP " +
-              response.status +
-              ".",
+              " route are reachable."
+            : response.ok
+              ? "Gradio Space OpenAPI endpoint is reachable but the configured /" +
+                apiName.replace(/^\//, "") +
+                " route was not found."
+              : "Gradio Space OpenAPI endpoint returned HTTP " +
+                response.status +
+                ".",
         ],
-        errorMessage: response.ok
+        errorMessage: authenticated
           ? undefined
-          : "Unable to validate the configured private Gradio Space endpoint.",
+          : "Unable to validate the configured private Gradio Space endpoint and API route.",
       };
     } catch (error: any) {
       return {
@@ -484,6 +502,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
         createWriteStream(absoluteDestination),
       );
     } catch (error: any) {
+      await fs.rm(absoluteDestination, { force: true }).catch(() => undefined);
       if (error?.name === "AbortError") {
         throw new Error("HF_ZEROGPU_ARTIFACT_DOWNLOAD_TIMEOUT");
       }
