@@ -162,9 +162,7 @@ export default function ComputeConnectionsPage() {
 
   async function connectManually() {
     if (!selected) return;
-    const profile = advancedMode
-      ? (selected.credentialProfiles?.find((item) => item.advanced) || preferredProfile(selected))
-      : preferredProfile(selected);
+    const profile = preferredProfile(selected);
     const missing = profile.requiredKeys.filter((key) => !values[key]);
     if (missing.length) {
       setError("Please complete: " + profile.inputs.filter((input) => missing.includes(input.key)).map((input) => input.label).join(", "));
@@ -252,11 +250,7 @@ export default function ComputeConnectionsPage() {
     }
   }
 
-  const selectedProfile = selected
-    ? advancedMode
-      ? (selected.credentialProfiles?.find((item) => item.advanced) || preferredProfile(selected))
-      : preferredProfile(selected)
-    : null;
+  const selectedProfile = selected ? preferredProfile(selected) : null;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8">
