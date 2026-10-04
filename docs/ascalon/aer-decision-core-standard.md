@@ -1,6 +1,6 @@
 # AER Decision Core Standard
 
-**Status:** Architecture and implementation scaffold  
+**Status:** IMPLEMENTED TRAINING/EVALUATION FOUNDATION  
 **Production status:** NOT ENABLED
 
 ## 1. Purpose
@@ -224,7 +224,7 @@ A higher benchmark score alone does not authorize deployment if authority, secur
 
 ## 13. Current implementation state
 
-The repository already contains:
+The repository now contains the AER Decision Core training/evaluation foundation and a non-authoritative shadow boundary:
 
 - typed DecisionContracts;
 - deterministic decision adapter;
@@ -233,12 +233,34 @@ The repository already contains:
 - batch DecisionEngine;
 - AER epistemic runtime;
 - cognitive routing;
-- Ascalon epistemic handoff.
+- Ascalon epistemic handoff;
+- explicit AER-Core training record contract;
+- verified-gold export boundary;
+- leakage-safe dataset preparation;
+- reproducible candidate-scoring trainer;
+- validation-only calibration;
+- held-out prediction generation;
+- AER-Bench metric/reporting layer;
+- AER-Core shadow coordinator and telemetry ledger.
 
-This change adds the **AER Decision Core model boundary** without enabling it as production authority.
+AER-Core is still NOT enabled as an authoritative decision path.
 
-Next milestone: implement a real checkpoint/provider, then build AER-Bench and calibration/evaluation pipelines.
+The remaining work is evidence production: collect a real verified corpus, train a checkpoint, fit calibration, run held-out AER-Bench, execute shadow replay beside JEV/GLiDE, and pass governance/promotion gates.
 
 ## 14. Non-negotiable principle
 
 > AER Runtime coordinates epistemic state. AER Decision Core makes fast bounded typed decisions. Ascalon performs deep cognition. FactoryOS governance decides what can actually execute.
+
+
+## 15. Training-readiness statement
+
+ShortForge is **ready to begin AER-Core training at the infrastructure level**. This means the contracts, validation, dataset partitioning, model/training entrypoints, calibration, benchmarking, and shadow-evaluation interfaces exist.
+
+It does **not** mean that a sufficiently large verified corpus exists, that a checkpoint has been trained, or that the model has passed promotion criteria.
+
+Canonical status:
+
+`TRAINING INFRASTRUCTURE = READY`
+`VERIFIED CORPUS = REQUIRED`
+`CHECKPOINT = NOT PROMOTED`
+`AER-CORE AUTHORITY = DISABLED`
