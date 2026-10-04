@@ -333,13 +333,12 @@ export class TreasuryEconomicIntelligence {
       10_000,
       Math.max(100, options.eventLimit ?? 2_500),
     );
-    const events = await this.treasury
-      .getLedger()
-      .listRecentEvents(accountId, eventLimit);
+    const events = await this.treasury.listRecentEvents(
+      accountId,
+      eventLimit,
+    );
     const activeReservations =
-      await this.treasury
-        .getLedger()
-        .listActiveReservations(accountId);
+      await this.treasury.listActiveReservations(accountId);
     const account = await this.treasury.getAccount(accountId);
     if (!account) {
       throw new Error("Treasury account not found: " + accountId);
@@ -432,7 +431,7 @@ export class TreasuryEconomicIntelligence {
           "Treasury has a recent economic breach or is frozen; discretionary consumption requires investigation before optimization.",
         evidence: {
           breachCount,
-          treasuryFrozen: report.account.mode === "FROZEN",
+          treasuryFrozen: account.mode === "FROZEN",
         },
       });
       recommendations.push({
@@ -440,7 +439,7 @@ export class TreasuryEconomicIntelligence {
         priority: "HIGH",
         rationale:
           "Resolve the breached economic envelope before pursuing cost optimization.",
-        evidence: { breachCount, treasuryFrozen: report.account.mode === "FROZEN" },
+        evidence: { breachCount, treasuryFrozen: account.mode === "FROZEN" },
         actionBoundary: "TREASURER_KERNEL",
       });
     }
@@ -471,7 +470,7 @@ export class TreasuryEconomicIntelligence {
 
     const capacityUtilization =
       account.capacityUnits > 0
-        ? currentReservationsCapacity / report.account.capacityUnits
+        ? currentReservationsCapacity / account.capacityUnits
         : 0;
 
     if (capacityUtilization >= 0.8) {
@@ -483,7 +482,7 @@ export class TreasuryEconomicIntelligence {
         evidence: {
           reservedCapacityUnits: currentReservationsCapacity,
           capacityUtilization,
-          totalCapacityUnits: report.account.capacityUnits,
+          totalCapacityUnits: account.capacityUnits,
         },
       });
       recommendations.push({
@@ -493,7 +492,7 @@ export class TreasuryEconomicIntelligence {
           "Prefer reuse, deterministic work, or currently-running capacity before admitting additional scarce resources.",
         evidence: {
           reservedCapacityUnits: currentReservationsCapacity,
-          totalCapacityUnits: report.account.capacityUnits,
+          totalCapacityUnits: account.capacityUnits,
         },
         actionBoundary: "OVERSEER",
       });
