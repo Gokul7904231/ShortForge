@@ -14,6 +14,11 @@ export type ComputeConnectionAuthMethod =
   | "TOKEN"
   | "CREDENTIAL_BUNDLE";
 
+export type ComputeConnectionExperience =
+  | "OAUTH"
+  | "GUIDED_MANUAL"
+  | "MANUAL";
+
 export type ComputeConnectionStatus =
   | "CONNECTED"
   | "UNVERIFIED"
@@ -24,6 +29,30 @@ export type ComputeConnectionStatus =
 
 export interface ComputeConnectionSecretBundle {
   readonly [key: string]: string;
+}
+
+export interface ComputeCredentialInputDefinition {
+  key: string;
+  label: string;
+  secret: boolean;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+}
+
+export interface ComputeCredentialProfile {
+  id: string;
+  label: string;
+  authMethod: ComputeConnectionAuthMethod;
+  requiredKeys: string[];
+  optionalKeys?: string[];
+  inputs: ComputeCredentialInputDefinition[];
+  advanced?: boolean;
+}
+
+export interface ComputeProviderOAuthDefinition {
+  startPath: string;
+  scopes: string[];
 }
 
 export interface ComputeConnection {
@@ -53,8 +82,12 @@ export interface ComputeProviderDefinition {
   providerFamily: ComputeProviderFamily;
   displayName: string;
   authMethod: ComputeConnectionAuthMethod;
+  connectionExperience: ComputeConnectionExperience;
   credentialKeys: string[];
   configurableKeys: string[];
+  credentialProfiles?: ComputeCredentialProfile[];
+  oauth?: ComputeProviderOAuthDefinition;
+  setupUrl?: string;
   roles: Array<"BASIC" | "ADMIN">;
   implemented: boolean;
   description: string;
@@ -64,6 +97,14 @@ export interface ConnectionCreateInput {
   providerId: string;
   providerFamily?: ComputeProviderFamily;
   authMethod?: ComputeConnectionAuthMethod;
+  displayName?: string;
+  credentials: ComputeConnectionSecretBundle;
+  metadata?: Record<string, string>;
+  externalAccountId?: string;
+}
+
+export interface OAuthConnectionCreateInput {
+  providerId: string;
   displayName?: string;
   credentials: ComputeConnectionSecretBundle;
   metadata?: Record<string, string>;
