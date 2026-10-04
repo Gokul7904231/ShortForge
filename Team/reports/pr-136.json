@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR136-Lightning-Physical-MP4-Proof",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/lightning-physical-mp4-proof-20261004",
+  "objective": "Close issue #136 by proving the physical Lightning MP4 artifact path from provider execution through external retrieval, local integrity verification, CAS binding, and F07 physical verification.",
+  "classification": "extends existing rule",
+  "linkedIssue": 136,
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "invariants": [
+    "Lightning remains a rendering backend, not an F06 production worker.",
+    "Provider completion is not physical artifact truth.",
+    "CAS owns immutable artifact identity.",
+    "F07 remains the independent physical artifact truth boundary.",
+    "Provider credentials remain environment-bound and are never written to the repository."
+  ],
+  "acceptance": {
+    "realLightningStudio": "PENDING_LIVE_CI",
+    "deterministicFfmpegMp4": "PENDING_LIVE_CI",
+    "providerNativeArtifactDownload": "IMPLEMENTED_STUDIO_DOWNLOAD_FILE",
+    "externalSha256AndByteLength": "IMPLEMENTED",
+    "independentMediaProbe": "IMPLEMENTED",
+    "casBindingAndIntegrity": "IMPLEMENTED",
+    "f07PhysicalVerification": "IMPLEMENTED",
+    "liveWorkflowEvidence": "PENDING_LIVE_CI"
+  },
+  "disposition": "BLOCKED_PENDING_LIVE_PROOF"
+}
