@@ -34,6 +34,21 @@ export interface TreasuryEconomicAdvice {
     readonly breachCount: number;
     readonly deniedCommands: number;
   };
+  readonly forecast: {
+    readonly projected7dSpendUsd: number;
+    readonly projected30dSpendUsd: number;
+    readonly confidence: "LOW" | "MEDIUM" | "HIGH";
+  };
+  readonly anomalyBaseline: {
+    readonly zScore: number;
+    readonly severity: "INFO" | "WARNING" | "CRITICAL";
+    readonly confidence: "LOW" | "MEDIUM" | "HIGH";
+  };
+  readonly rightSizing: readonly {
+    readonly workloadType: string;
+    readonly recommendedReservationMultiplier: number;
+    readonly confidence: "LOW" | "MEDIUM" | "HIGH";
+  }[];
   readonly routeHints: readonly {
     readonly providerId: string;
     readonly modelId?: string;
@@ -85,6 +100,20 @@ export function projectTreasuryEconomicAdvice(
       breachCount: snapshot.unitMetrics.breachedReservations,
       deniedCommands: snapshot.unitMetrics.deniedCommands,
     },
+    forecast: snapshot.forecast,
+    anomalyBaseline: {
+      zScore: snapshot.anomalyBaseline.zScore,
+      severity: snapshot.anomalyBaseline.severity,
+      confidence: snapshot.anomalyBaseline.confidence,
+    },
+    rightSizing: snapshot.reservationRightSizing
+      .slice(0, 8)
+      .map((insight) => ({
+        workloadType: insight.workloadType,
+        recommendedReservationMultiplier:
+          insight.recommendedReservationMultiplier,
+        confidence: insight.confidence,
+      })),
     routeHints: snapshot.providers
       .slice()
       .sort(
