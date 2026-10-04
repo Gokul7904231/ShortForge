@@ -10,7 +10,7 @@ import torch
 from torch.nn import functional as F
 from transformers import get_linear_schedule_with_warmup
 
-from .dataset import deterministic_split, read_jsonl, training_dict
+from .dataset import read_jsonl, training_dict
 from .model import (
     AERCoreModel,
     answer_candidates,
@@ -32,6 +32,8 @@ def train(args: argparse.Namespace) -> None:
 
     records = validate_records(read_jsonl(args.dataset))
     train_records = records
+    if not train_records:
+        raise RuntimeError("training dataset contains no eligible records")
 
     tokenizer = load_tokenizer(args.base_model)
     if tokenizer.pad_token is None:
