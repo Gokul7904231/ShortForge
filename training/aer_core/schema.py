@@ -17,6 +17,8 @@ class TrainingRecord:
     example_id: str
     dataset_version: str
     source_batch_id: str
+    mission_id: str | None
+    trajectory_id: str | None
     input: Mapping[str, Any]
     gold_answers: Sequence[Mapping[str, Any]]
     evidence_refs: Sequence[str]
@@ -57,6 +59,12 @@ def validate_record(raw: Mapping[str, Any]) -> TrainingRecord:
     fallback_applied = bool(raw.get("fallbackApplied", False))
     training_eligible = bool(_required(raw, "trainingEligible"))
     provenance = raw.get("provenance", {})
+    mission_id = raw.get("missionId")
+    trajectory_id = raw.get("trajectoryId")
+    if mission_id is not None and not isinstance(mission_id, str):
+        raise ValidationError("missionId must be a string when present")
+    if trajectory_id is not None and not isinstance(trajectory_id, str):
+        raise ValidationError("trajectoryId must be a string when present")
 
     if not example_id or not dataset_version or not source_batch_id:
         raise ValidationError("exampleId, datasetVersion, sourceBatchId must be non-empty")
@@ -114,6 +122,8 @@ def validate_record(raw: Mapping[str, Any]) -> TrainingRecord:
         example_id=example_id,
         dataset_version=dataset_version,
         source_batch_id=source_batch_id,
+        mission_id=mission_id,
+        trajectory_id=trajectory_id,
         input=input_obj,
         gold_answers=gold_answers,
         evidence_refs=evidence_refs,
