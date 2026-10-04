@@ -1,0 +1,76 @@
+name: Live HF ZeroGPU Render Proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      space:
+        description: "Private Hugging Face Space (<owner>/<space>)"
+        required: true
+        default: gokul-labs/shortforge-zerogpu-render
+        type: string
+      api_name:
+        description: "Gradio API endpoint"
+        required: true
+        default: /render
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  hf-zerogpu:
+    name: HF ZeroGPU physical + CAS + F07 proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_ZEROGPU_SPACE: ${{ inputs.space }}
+      HF_ZEROGPU_API_NAME: ${{ inputs.api_name }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_ZEROGPU_LIVE_TIMEOUT_MS: "180000"
+      HF_ZEROGPU_PROOF_DIR: /tmp/shortforge/hf-zerogpu-live
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install verifier-host FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Require HF ZeroGPU secret
+        run: |
+          test -n "$HF_TOKEN"
+          echo "HF ZeroGPU token is configured for this workflow."
+
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+
+      - name: Notebook fabric contract tests
+        run: npx vitest run factoryos/tests/notebook-fabric.test.ts --config vitest.config.ts --reporter=verbose
+
+      - name: Live HF ZeroGPU physical proof
+        run: npm run factoryos:verify:hf-zerogpu
+
+      - name: Upload HF ZeroGPU F07 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hf-zerogpu-f07-evidence
+          path: |
+            /tmp/shortforge/hf-zerogpu-live/hf-zerogpu-f07-evidence.json
+            /tmp/shortforge/hf-zerogpu-live/shortforge_gpu_proof.mp4
+          if-no-files-found: warn
