@@ -57,8 +57,14 @@ export class ComputeConnectionStore {
 
   async upsertOAuth(userId: string, input: ConnectionCreateInput): Promise<PublicComputeConnection> {
     if (!input.externalAccountId) throw new Error("COMPUTE_OAUTH_EXTERNAL_ACCOUNT_MISSING");
-    const snapshot = await collection().where("userId", "==", userId).where("providerId", "==", input.providerId).where("externalAccountId", "==", input.externalAccountId).limit(1).get();
-    const previous = snapshot.empty ? undefined : (snapshot.docs[0].data() as StoredComputeConnection);
+    const snapshot = await collection().where("userId", "==", userId).get();
+    const previous = snapshot.docs
+      .map((doc: any) => doc.data() as StoredComputeConnection)
+      .find(
+        (record) =>
+          record.providerId === input.providerId &&
+          record.externalAccountId === input.externalAccountId,
+      );
     const record = buildStoredRecord(previous, userId, input);
     await collection().doc(record.connectionId).set(record);
     return toPublic(record);
