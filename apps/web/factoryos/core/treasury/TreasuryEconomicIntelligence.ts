@@ -11,10 +11,33 @@
  */
 
 import type {
+  TreasuryAccount,
   TreasuryLedgerEvent,
-  TreasuryReport,
+  TreasuryReservation,
 } from "./TreasuryContracts";
 import type { TreasuryService } from "./TreasuryService";
+
+export interface TreasuryEconomicReadSource {
+  getAccount(accountId: string): Promise<TreasuryAccount | null>;
+  listRecentEvents(
+    accountId?: string,
+    limit?: number,
+  ): Promise<TreasuryLedgerEvent[]>;
+  listActiveReservations(
+    accountId?: string,
+  ): Promise<TreasuryReservation[]>;
+}
+
+export function createTreasuryEconomicReadSource(
+  treasury: TreasuryService,
+): TreasuryEconomicReadSource {
+  const ledger = treasury.getLedger();
+  return {
+    getAccount: ledger.getAccount.bind(ledger),
+    listRecentEvents: ledger.listRecentEvents.bind(ledger),
+    listActiveReservations: ledger.listActiveReservations.bind(ledger),
+  };
+}
 
 export type TreasuryEconomicSignalSeverity =
   | "INFO"
@@ -288,7 +311,7 @@ function emptyUnitMetrics(): TreasuryEconomicUnitMetrics {
 }
 
 export class TreasuryEconomicIntelligence {
-  constructor(private readonly treasury: TreasuryService) {}
+  constructor(private readonly treasury: TreasuryEconomicReadSource) {}
 
   async analyze(
     accountId: string,
@@ -314,10 +337,10 @@ export class TreasuryEconomicIntelligence {
       await this.treasury
         .getLedger()
         .listActiveReservations(accountId);
-    const report: TreasuryReport = await this.treasury.report(
-      accountId,
-      Math.min(250, eventLimit),
-    );
+    const account = await this.treasury.getAccount(accountId);
+    if (!account) {
+      throw new Error("Treasury account not found: " + accountId);
+    }
 
     const windowEndMs = now.getTime();
     const currentStartMs = windowEndMs - windowMs;
@@ -398,7 +421,7 @@ export class TreasuryEconomicIntelligence {
     }
 
     const breachCount = current.metrics.breachedReservations;
-    if (breachCount > 0 || report.account.mode === "FROZEN") {
+    if (breachCount > 0 || account.mode === "FROZEN") {
       signals.push({
         code: "TREASURY_BREACH_OR_FROZEN",
         severity: "CRITICAL",
@@ -444,7 +467,7 @@ export class TreasuryEconomicIntelligence {
     }
 
     const capacityUtilization =
-      report.account.capacityUnits > 0
+      account.capacityUnits > 0
         ? currentReservationsCapacity / report.account.capacityUnits
         : 0;
 
