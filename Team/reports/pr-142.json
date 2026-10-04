@@ -83,7 +83,11 @@
     "Added reservation right-sizing metrics and bounded spend forecasts.",
     "Added verification receipt persistence to RESOURCE_CONSUMED evidence.",
     "Added read-only TreasuryEconomicAdvice projection for Overseer/Ascalon/GLiDE.",
-    "Added dedicated Wave-5 validation workflow and operator documentation."
+    "Added dedicated Wave-5 validation workflow and operator documentation.",
+    "Made TreasuryEconomicIntelligence structurally read-only through a narrow TreasuryEconomicReadSource interface.",
+    "Decoupled CognitiveOutcomeLearner from AgentEconomicsEngine and removed the concrete engine from the production controller graph.",
+    "Added verified render/short economics, historical anomaly baselines, provider observation confidence, reservation right-sizing and bounded forecasts.",
+    "Persisted verificationReceiptId in RESOURCE_CONSUMED settlement evidence."
   ],
   "verificationPlan": [
     "Treasury Wave 5 typecheck.",
@@ -102,7 +106,8 @@
     "repositoryCI": "PENDING",
     "currentMainCompute": "PENDING",
     "remakerRegression": "PENDING",
-    "overseerRegression": "PENDING"
+    "overseerRegression": "PENDING",
+    "compatibilityScan": "PENDING"
   },
   "disposition": "BLOCKED"
 }
