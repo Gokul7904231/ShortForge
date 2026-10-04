@@ -104,7 +104,6 @@ export * from "./controller/AutonomousFactoryController";
 
 export * from "./missions/MissionManager";
 export * from "./missions/MissionStateMachine";
-export * from "./missions/MissionBudgetManager";
 export * from "./missions/MissionCompletionEvaluator";
 export * from "./missions/MissionConcurrencyController";
 export * from "./missions/MissionEventPublisher";
@@ -117,7 +116,6 @@ export * from "./verification/VerificationEngine";
 export * from "./creative/CreativeBibleManager";
 export * from "./artifacts/ArtifactManager";
 export * from "./recovery/RecoveryEngine";
-export * from "./governor/CostGovernor";
 export * from "./treasury";
 export * from "./routing/CapabilityFirstRouter";
 export * from "./routing/ProviderTester";
