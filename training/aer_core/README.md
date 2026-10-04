@@ -19,7 +19,7 @@ Each JSONL row must satisfy aer-core-dataset-v1:
 - evidenceRefs and/or outcomeRefs are present.
 - synthetic and fallbackApplied are false.
 - trainingEligible is true.
-- provenance includes a stable mission/trajectory grouping key.
+- missionId/trajectoryId (or an explicit provenance grouping key) is present so related examples cannot cross splits.
 
 No secret-bearing or unredacted operational context may enter the dataset.
 
@@ -76,7 +76,7 @@ python -m training.aer_core.run_bench \
   --report training/aer_core/runs/aer-core-v1/aer-bench.json
 ~~~
 
-Latency is measured around the predictor call. The benchmark never synthesizes latency or confidence.
+Latency is measured around the predictor call. The benchmark validates prediction coverage, mode alignment, confidence, and measured latency; it never synthesizes them.
 
 ## Promotion gates
 
