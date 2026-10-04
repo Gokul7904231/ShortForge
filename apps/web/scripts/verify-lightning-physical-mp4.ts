@@ -66,22 +66,11 @@ async function main() {
     fail("LIGHTNING_TEAMSPACE must be <org>/<teamspace> for physical artifact tooling.");
   }
 
-  const localFfmpegCheck = await runProcess("python", ["-c", "import os,sys; p=sys.argv[1]; print(p); print(os.path.getsize(p)); raise SystemExit(0 if os.path.isfile(p) and os.access(p, os.X_OK) else 1)", localFfmpeg], { timeoutMs: 30_000 });
-  if (localFfmpegCheck.exitCode !== 0) {
-    fail("Host FFmpeg binary is missing or not executable: " + (localFfmpegCheck.stderr || localFfmpegCheck.stdout));
-  }
-
-  const remoteFfmpegUri = "lit://" + org + "/" + teamspaceName + "/studios/" + studioName + "/shortforge-tools/ffmpeg";
-  const ffmpegUpload = await runProcess("lightning", ["cp", localFfmpeg, remoteFfmpegUri], { timeoutMs: 180_000, env: { ...process.env, ...creds } });
-  if (ffmpegUpload.exitCode !== 0) {
-    fail("Could not upload the self-contained FFmpeg binary into Lightning Studio: " + (ffmpegUpload.stderr || ffmpegUpload.stdout));
-  }
-
   const renderCommand = [
     "set -eux",
     "test -f " + remoteFfmpeg,
     "chmod +x " + remoteFfmpeg,
-    remoteFfmpeg + " -version",
+    "echo SHORTFORGE_REMOTE_FFMPEG=$(" + remoteFfmpeg + " -version 2>&1 | head -n 1)",
     "rm -f " + remoteAbsolute,
     remoteFfmpeg + " -hide_banner -loglevel error -y",
     "-f lavfi -i color=c=black:s=1080x1920:r=30:d=2",
@@ -106,6 +95,18 @@ async function main() {
     },
     creds,
   );
+
+  const ffmpegUpload = await runProcess(
+    "lightning",
+    ["cp", localFfmpeg, remoteFfmpegUri],
+    { timeoutMs: 180_000, env: { ...process.env, ...creds } },
+  );
+  if (ffmpegUpload.exitCode !== 0) {
+    fail(
+      "Could not upload the self-contained FFmpeg binary into Lightning Studio: " +
+        (ffmpegUpload.stderr || ffmpegUpload.stdout || "lightning cp failed"),
+    );
+  }
 
   let execution;
   try {
@@ -241,8 +242,9 @@ async function main() {
     evidence: [
       "Authenticated Lightning Studio lifecycle completed.",
       "Self-contained FFmpeg binary uploaded from the verifier host into the Lightning Studio filesystem.",
+
       "Deterministic FFmpeg MP4 rendered in Lightning Studio.",
-      "Artifact downloaded from Lightning through the lit:// path using lightning cp."
+      "Artifact downloaded from Lightning through the lit:// path using lightning cp.",
       "SHA-256 and byte length recomputed outside Lightning.",
       "Independent FFmpeg/ffprobe media probe passed.",
       "Artifact stored in ShortForge ContentAddressedStore.",
