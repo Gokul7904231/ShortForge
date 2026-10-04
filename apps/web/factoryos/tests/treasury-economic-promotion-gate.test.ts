@@ -96,7 +96,7 @@ describe("Treasury Economic Promotion Gate", () => {
         candidateProviderId: "candidate",
         candidateModelId: "candidate-model",
         windowMs: 24 * 60 * 60 * 1000,
-        now: new Date("2026-10-04T01:00:00.000Z"),
+        now: new Date("2026-10-04T03:00:00.000Z"),
       });
 
     const evidence = new TreasuryEconomicPromotionGate().evaluate(
@@ -144,7 +144,7 @@ describe("Treasury Economic Promotion Gate", () => {
         candidateProviderId: "candidate",
         candidateModelId: "candidate-model",
         windowMs: 24 * 60 * 60 * 1000,
-        now: new Date("2026-10-04T01:00:00.000Z"),
+        now: new Date("2026-10-04T03:00:00.000Z"),
       });
 
     const evidence = new TreasuryEconomicPromotionGate().evaluate(
@@ -186,7 +186,7 @@ describe("Treasury Economic Promotion Gate", () => {
         candidateProviderId: "candidate",
         candidateModelId: "candidate-model",
         windowMs: 24 * 60 * 60 * 1000,
-        now: new Date("2026-10-04T01:00:00.000Z"),
+        now: new Date("2026-10-04T03:00:00.000Z"),
       });
 
     const evidence = new TreasuryEconomicPromotionGate().evaluate(
