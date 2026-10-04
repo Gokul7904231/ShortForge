@@ -260,7 +260,10 @@ function dailySpendBaseline(
       : 0;
   const stdDev = Math.sqrt(variance);
 
-  const windowDays = Math.max(1, (windowEndMs - currentStartMs) / dayMs);
+  const windowDays = Math.max(
+    1 / 24,
+    (windowEndMs - currentStartMs) / dayMs,
+  );
   const currentSpend = events
     .filter((event) => {
       if (event.eventType !== "RESOURCE_CONSUMED") return false;
