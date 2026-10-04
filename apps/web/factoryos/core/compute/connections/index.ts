@@ -9,6 +9,7 @@ export * from "./ComputeConnectionContracts";
 export * from "./ComputeConnectionCatalog";
 export * from "./ComputeConnectionCrypto";
 export * from "./ComputeConnectionStore";
+export * from "./KaggleOAuthService";
 export * from "./NotebookConnectionService";
 export * from "./SandboxConnectionService";
 

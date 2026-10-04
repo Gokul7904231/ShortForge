@@ -6,6 +6,8 @@ import {
   getComputeProviderDefinition,
   listAvailableProviders,
   validateSandboxConnection,
+  createKaggleOAuthState,
+  verifyKaggleOAuthState,
 } from "@/factoryos/core/compute/connections";
 import { sandboxRegistry } from "@/factoryos/core/compute/sandboxes";
 import type { AdminUser } from "@/lib/auth/types";
@@ -33,8 +35,10 @@ const adminUser: AdminUser = {
 
 describe("compute connection hub", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     const store = (globalThis as any).__mock_firestore;
     if (store?.computeConnections) store.computeConnections.clear();
+    process.env.OAUTH_STATE_SECRET = "test-oauth-state-secret";
   });
 
   it("exposes only notebook providers to basic users", () => {
@@ -47,6 +51,91 @@ describe("compute connection hub", () => {
       "notebook_lightning",
       "notebook_paperspace",
     ]);
+  });
+
+  it("marks Kaggle as OAuth-first with a token fallback", () => {
+    const provider = getComputeProviderDefinition("notebook_kaggle");
+    expect(provider?.connectionExperience).toBe("OAUTH");
+    expect(provider?.oauth?.startPath).toBe("/api/compute/connections/oauth/kaggle");
+    expect(provider?.credentialProfiles?.some((profile) => profile.id === "kaggle-api-token")).toBe(true);
+  });
+
+  it("resolves a Kaggle API token to the account identity server-side", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          active: true,
+          username: "gokul",
+          user_id: 12345,
+          scope: "kernels.get:* kernels.execute:*",
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        }),
+      }),
+    );
+
+    const connection = await computeConnectionService.create(basicUser, {
+      providerId: "notebook_kaggle",
+      credentials: { KAGGLE_API_TOKEN: "KGAT_test_modern_token" },
+    });
+
+    expect(connection.authMethod).toBe("TOKEN");
+    expect(connection.externalAccountId).toBe("12345");
+    expect((connection as any).encryptedSecrets).toBeUndefined();
+
+    const secrets = await computeConnectionStore.getSecretsForUser(
+      basicUser.uid,
+      connection.connectionId,
+    );
+    expect(secrets).toMatchObject({
+      KAGGLE_API_TOKEN: "KGAT_test_modern_token",
+      KAGGLE_USERNAME: "gokul",
+      KAGGLE_USER_ID: "12345",
+    });
+    expect(secrets?.KAGGLE_KEY).toBeUndefined();
+  });
+
+  it("binds Kaggle OAuth state to the signed user and browser nonce", () => {
+    const { state, cookieValue } = createKaggleOAuthState("basic-user", "pkce-verifier");
+    expect(verifyKaggleOAuthState(state, cookieValue, "basic-user")).toBe("pkce-verifier");
+    expect(() =>
+      verifyKaggleOAuthState(state, cookieValue, "different-user"),
+    ).toThrow("COMPUTE_KAGGLE_OAUTH_STATE_INVALID");
+  });
+
+  it("upserts repeated Kaggle OAuth connections for the same external account", async () => {
+    const first = await computeConnectionService.createOAuth(basicUser, {
+      providerId: "notebook_kaggle",
+      displayName: "Kaggle — gokul",
+      externalAccountId: "12345",
+      credentials: {
+        KAGGLE_API_TOKEN: "KGAT_first",
+        KAGGLE_REFRESH_TOKEN: "KGRT_first",
+        KAGGLE_USERNAME: "gokul",
+        KAGGLE_USER_ID: "12345",
+      },
+      metadata: { authSource: "kaggle-oauth" },
+    });
+    const second = await computeConnectionService.createOAuth(basicUser, {
+      providerId: "notebook_kaggle",
+      displayName: "Kaggle — gokul",
+      externalAccountId: "12345",
+      credentials: {
+        KAGGLE_API_TOKEN: "KGAT_second",
+        KAGGLE_REFRESH_TOKEN: "KGRT_second",
+        KAGGLE_USERNAME: "gokul",
+        KAGGLE_USER_ID: "12345",
+      },
+      metadata: { authSource: "kaggle-oauth" },
+    });
+
+    expect(second.connectionId).toBe(first.connectionId);
+    expect(await computeConnectionStore.getSecretsForUser(basicUser.uid, second.connectionId)).toMatchObject({
+      KAGGLE_API_TOKEN: "KGAT_second",
+      KAGGLE_REFRESH_TOKEN: "KGRT_second",
+    });
   });
 
   it("does not let a basic user attach an admin-only provider", async () => {
