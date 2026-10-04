@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR148-Provider-Connection-UX",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/compute-provider-connect-ux-20261004",
+  "objective": "Make user-owned compute connection simple for normal users by adding provider-aware OAuth/guided connection flows without changing ComputeRouter, worker, CAS, or F07 authority.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Provider authentication is separate from provider execution authority.",
+      "Raw provider secrets remain server-side and never enter journals, telemetry, MCP payloads, or F06 worker authority.",
+      "Provider completion is not physical artifact truth.",
+      "CAS owns immutable artifact identity and F07 remains the independent physical truth boundary.",
+      "No self-hosted PandaStack connection is introduced."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/compute/connection-hub.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Kaggle OAuth state is signed and bound to the authenticated user plus a short-lived HttpOnly cookie.",
+      "Kaggle refresh/access tokens are stored through the existing encrypted connection store.",
+      "Kaggle organization OAuth credentials are deployment secrets and are never returned to users.",
+      "No raw credential value is exposed in the public connection record."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added provider connection experience metadata and friendly credential input definitions.",
+    "Added Kaggle OAuth authorization, callback, token exchange, token introspection, and server-side refresh support.",
+    "Added modern Kaggle API-token fallback while retaining legacy username/key compatibility.",
+    "Added Lightning guided programmatic connection UX with User ID, API key, and Teamspace; explicitly no invented OAuth.",
+    "Added user-safe connected provider cards and removed environment-variable names from the normal UI.",
+    "Added OAuth connection upsert and encrypted secret rotation support."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionContracts.ts",
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    "apps/web/factoryos/core/compute/connections/KaggleOAuthService.ts",
+    "apps/web/factoryos/app/api/compute/connections/oauth/kaggle/route.ts",
+    "apps/web/app/api/compute/connections/oauth/kaggle/callback/route.ts",
+    "apps/web/app/(os)/settings/compute/page.tsx",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts",
+    ".okf/compute/connection-hub.md"
+  ],
+  "verificationResults": {
+    "teamChangeGate": "BLOCKED_PENDING_CI",
+    "factoryosTypecheck": "PENDING",
+    "computeConnectionHubTests": "PENDING",
+    "repositoryCI": "PENDING",
+    "oauthLiveKaggle": "PENDING_EXTERNAL_CLIENT_REGISTRATION",
+    "lightningTruthfulnessReview": "PASS_NO_FAKE_OAUTH"
+  },
+  "verificationPlan": [
+    "Pass Compute Connection Hub contract tests and FactoryOS typecheck.",
+    "Pass repository CI and Team Change Gate.",
+    "Configure a registered Kaggle OAuth client in the deployment and exercise the real hosted callback before calling one-click Kaggle LIVE.",
+    "Keep Lightning on guided programmatic auth until an official third-party authorization surface exists."
+  ],
+  "disposition": "BLOCKED"
+}
