@@ -182,8 +182,8 @@ describe("live hosted sandbox compute proof", () => {
       expect(receipt.technicalForensics.measurements.videoDuration).toBeLessThanOrEqual(180);
       expect(receipt.youtubePolicy.publishAllowed).toBe(true);
       expect(["READY", "READY_WITH_EXTERNAL_REVIEW"]).toContain(receipt.youtubePolicy.overallOutcome);
-      expect(receipt.evidenceRefs?.some((ref) => ref.kind === "PHYSICAL")).toBe(true);
-      expect(receipt.evidenceRefs?.some((ref) => ref.kind === "CAS")).toBe(true);
+      expect(receipt.evidenceRefs?.some((ref) => ref.evidenceType === "PHYSICAL_MEASUREMENT")).toBe(true);
+      expect(receipt.evidenceRefs?.some((ref) => ref.evidenceType === "CAS_ARTIFACT")).toBe(true);
 
       const signatureVerification = VerificationReceiptVerifier.verify(receipt);
       expect(signatureVerification.valid).toBe(true);
