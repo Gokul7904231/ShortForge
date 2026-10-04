@@ -127,7 +127,7 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
 
     try {
       const response = await fetch(
-        "https://" + host + "/gradio_api/openapi.json",
+        "https://" + host + "/gradio_api/info",
         {
           headers: this.authHeaders(token),
         },
@@ -136,11 +136,15 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
       let endpointAvailable = false;
       if (response.ok) {
         try {
-          const openapi = (await response.json()) as {
-            paths?: Record<string, unknown>;
+          const info = (await response.json()) as {
+            named_endpoints?: Record<string, unknown>;
           };
-          const normalizedApiName = apiName.startsWith("/") ? apiName : "/" + apiName;
-          endpointAvailable = Boolean(openapi.paths?.[normalizedApiName]);
+          const normalizedApiName = apiName.startsWith("/")
+            ? apiName
+            : "/" + apiName;
+          endpointAvailable = Boolean(
+            info.named_endpoints?.[normalizedApiName],
+          );
         } catch {
           endpointAvailable = false;
         }
@@ -157,14 +161,14 @@ export class HuggingFaceZeroGPUAdapter implements NotebookProviderAdapter {
         checkedAt: new Date().toISOString(),
         evidence: [
           authenticated
-            ? "Authenticated Gradio Space OpenAPI endpoint and configured /" +
-              apiName.replace(/^\//, "") +
+            ? "Authenticated Gradio Space info endpoint and configured " +
+              apiName +
               " route are reachable."
             : response.ok
-              ? "Gradio Space OpenAPI endpoint is reachable but the configured /" +
-                apiName.replace(/^\//, "") +
+              ? "Gradio Space info endpoint is reachable but the configured " +
+                apiName +
                 " route was not found."
-              : "Gradio Space OpenAPI endpoint returned HTTP " +
+              : "Gradio Space info endpoint returned HTTP " +
                 response.status +
                 ".",
         ],
