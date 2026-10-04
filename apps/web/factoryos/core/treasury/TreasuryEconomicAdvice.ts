@@ -53,6 +53,7 @@ export interface TreasuryEconomicAdvice {
     readonly providerId: string;
     readonly modelId?: string;
     readonly costPer1kTokensUsd?: number;
+    readonly observedPriceConfidence: "LOW" | "MEDIUM" | "HIGH";
   }[];
   readonly recommendations: readonly {
     readonly kind: string;
@@ -126,6 +127,7 @@ export function projectTreasuryEconomicAdvice(
         providerId: provider.providerId,
         modelId: provider.modelId,
         costPer1kTokensUsd: provider.costPer1kTokensUsd,
+        observedPriceConfidence: provider.observedPriceConfidence,
       })),
     recommendations: snapshot.recommendations.slice(0, 8).map(
       (recommendation) => ({
