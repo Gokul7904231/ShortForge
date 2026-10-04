@@ -378,7 +378,7 @@ export async function POST(request: NextRequest) {
 
       // Treasury-backed jobs already released above; legacy jobs use the compatibility projection.
       if (!treasuryQuotaReservationId) {
-        await releaseGenerationSlot(userId, jobId);
+        await releaseLegacyGenerationSlot(userId, jobId);
       }
 
       // 🔒 FactoryOS Mission Failure Convergence
