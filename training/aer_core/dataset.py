@@ -36,7 +36,9 @@ def canonical_fingerprint(value: Any) -> str:
 def split_group_key(record: TrainingRecord) -> str:
     provenance = record.provenance
     return str(
-        provenance.get("trajectoryId")
+        record.trajectory_id
+        or record.mission_id
+        or provenance.get("trajectoryId")
         or provenance.get("missionId")
         or record.source_batch_id
     )
@@ -108,6 +110,8 @@ def training_dict(record: TrainingRecord) -> Dict[str, Any]:
         "exampleId": value["example_id"],
         "datasetVersion": value["dataset_version"],
         "sourceBatchId": value["source_batch_id"],
+        "missionId": value["mission_id"],
+        "trajectoryId": value["trajectory_id"],
         "input": value["input"],
         "goldAnswers": value["gold_answers"],
         "evidenceRefs": list(value["evidence_refs"]),
