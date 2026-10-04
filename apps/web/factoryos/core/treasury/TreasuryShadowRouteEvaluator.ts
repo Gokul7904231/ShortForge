@@ -67,9 +67,10 @@ function toCandidate(
   const qualityEligible =
     observation.verificationSuccessRate >= requiredQuality;
   const latencyEligible =
-    request.maxLatencyMs === undefined ||
-    observation.p90LatencyMs === undefined ||
-    observation.p90LatencyMs <= request.maxLatencyMs;
+    request.maxLatencyMs === undefined
+      ? true
+      : observation.p90LatencyMs !== undefined &&
+        observation.p90LatencyMs <= request.maxLatencyMs;
 
   return {
     providerId: observation.providerId,
@@ -184,10 +185,11 @@ export class TreasuryShadowRouteEvaluator {
     );
 
     const recommendation =
-      baseline &&
-      bestAlternative &&
+      baseline?.eligible &&
+      bestAlternative?.eligible &&
       bestAlternative.confidence !== "LOW" &&
-      (costSavings === undefined || costSavings >= 10)
+      costSavings !== undefined &&
+      costSavings >= 10
         ? {
             providerId: bestAlternative.providerId,
             modelId: bestAlternative.modelId,
