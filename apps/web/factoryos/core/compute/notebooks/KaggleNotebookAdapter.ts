@@ -50,10 +50,14 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
 
   async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
     const env = { ...process.env, ...(credentials || {}) };
-    const requiredKeys = ["KAGGLE_USERNAME", "KAGGLE_KEY"];
+    const hasModernToken = Boolean(env.KAGGLE_API_TOKEN);
+    const hasLegacyKeys = Boolean(env.KAGGLE_USERNAME && env.KAGGLE_KEY);
+    const requiredKeys = hasModernToken
+      ? ["KAGGLE_API_TOKEN"]
+      : ["KAGGLE_USERNAME", "KAGGLE_KEY"];
     const missingKeys = requiredKeys.filter((key) => !env[key]);
 
-    if (missingKeys.length) {
+    if (!hasModernToken && !hasLegacyKeys) {
       return {
         configured: false,
         authenticated: false,
@@ -102,7 +106,12 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       );
     }
 
-    const username = ({ ...process.env, ...(credentials || {}) }).KAGGLE_USERNAME!;
+    const username = ({ ...process.env, ...(credentials || {}) }).KAGGLE_USERNAME;
+    if (!username) {
+      throw new Error(
+        "KAGGLE_USERNAME_REQUIRED: token connections must be resolved to a Kaggle username before execution.",
+      );
+    }
     // Kaggle requires a new kernel's title and slug to correspond. The previous
     // implementation appended a timestamp only to the slug, which can yield a
     // 409 Conflict on SaveKernel because the title no longer resolves to that slug.
