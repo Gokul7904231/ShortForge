@@ -273,7 +273,6 @@ export async function POST(req: Request) {
         }
         throw quotaErr;
       }
-    }
 
     const treasuryModelContext: TreasuryModelExecutionContext | undefined =
       controller?.treasuryService && preparedEconomicCommand
