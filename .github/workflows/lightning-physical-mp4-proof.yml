@@ -1,0 +1,60 @@
+name: Lightning Physical MP4 Render Proof
+
+on:
+  push:
+    branches:
+      - feat/lightning-physical-mp4-proof-20261004
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/compute/notebooks/LightningNotebookAdapter.ts"
+      - "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts"
+      - "apps/web/factoryos/core/compute/notebooks/NotebookUtils.ts"
+      - "apps/web/factoryos/core/compute/cas/**"
+      - "apps/web/factoryos/core/verification/**"
+      - "apps/web/scripts/verify-lightning-physical-mp4.ts"
+      - "Team/reports/pr-*.json"
+  workflow_dispatch:
+
+jobs:
+  lightning-physical-proof:
+    name: Lightning Physical MP4 → CAS → F07
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
+      LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+      LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
+      LIGHTNING_LIVE_MACHINE: ${{ vars.LIGHTNING_LIVE_MACHINE || vars.LIGHTNING_MACHINE || 'CPU' }}
+      LIGHTNING_PYTHON: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install web dependencies
+        run: npm ci
+      - name: Install Lightning SDK
+        run: python -m pip install --upgrade lightning-sdk
+      - name: Install FFmpeg / FFprobe on verifier host
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Execute end-to-end Lightning physical proof
+        run: npx tsx scripts/verify-lightning-physical-mp4.ts
+      - name: Upload Lightning physical proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shortforge-lightning-physical-proof
+          path: apps/web/data/lightning_live_proof/
+          if-no-files-found: warn
