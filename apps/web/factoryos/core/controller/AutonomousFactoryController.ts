@@ -59,7 +59,10 @@ import {
   createMongoTreasuryService,
   TreasuryService,
 } from "../treasury";
-import { TreasuryEconomicIntelligence } from "../treasury/TreasuryEconomicIntelligence";
+import {
+  TreasuryEconomicIntelligence,
+  createTreasuryEconomicReadSource,
+} from "../treasury/TreasuryEconomicIntelligence";
 import {
   DiskSlayerPrimeStateStore,
   InMemorySlayerPrimeStateStore,
@@ -210,7 +213,9 @@ export class AutonomousFactoryController {
       );
       AIRuntime.bindTreasury(this.treasuryService, treasuryRequired);
       this.treasuryEconomicIntelligence =
-        new TreasuryEconomicIntelligence(this.treasuryService);
+        new TreasuryEconomicIntelligence(
+          createTreasuryEconomicReadSource(this.treasuryService),
+        );
 
       // Seed Treasury's authoritative model price registry from the trusted
       // application configuration. Routers may consume these prices but cannot
