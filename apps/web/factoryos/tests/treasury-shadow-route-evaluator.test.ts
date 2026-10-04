@@ -222,7 +222,69 @@ describe("Treasury shadow route evaluation", () => {
       { windowMs: 60 * 60 * 1000, now },
     );
 
-    expect(evaluation.baseline).toBeUndefined();
+    expect(evaluation.baseline?.providerId).toBe("cheap");
+    expect(evaluation.baseline?.eligible).toBe(false);
     expect(evaluation.recommendation).toBeUndefined();
   });
 });
+
+
+  it("does not recommend a route with missing cost evidence", async () => {
+    const source = {
+      listRecentEvents: async () => [
+        {
+          eventType: "RESOURCE_CONSUMED",
+          occurredAt: "2026-10-04T00:00:00.000Z",
+          amountUsd: 0.1,
+          capacityUnits: 0,
+          payload: {
+            verificationReceiptId: "f07-a",
+            verified: true,
+            actualTokens: 1_000,
+            actualDurationMs: 100,
+            resourceRequest: [{
+              providerId: "baseline",
+              modelId: "baseline-model",
+              workloadType: "SCRIPT",
+              metadata: { capability: "SCRIPT" },
+            }],
+          },
+          accountId: "factory",
+        } as any,
+        {
+          eventType: "RESOURCE_CONSUMED",
+          occurredAt: "2026-10-04T00:00:00.000Z",
+          amountUsd: 0,
+          capacityUnits: 0,
+          payload: {
+            verificationReceiptId: "f07-b",
+            verified: true,
+            actualTokens: 0,
+            actualDurationMs: 100,
+            resourceRequest: [{
+              providerId: "unknown-cost",
+              modelId: "unknown-model",
+              workloadType: "SCRIPT",
+              metadata: { capability: "SCRIPT" },
+            }],
+          },
+          accountId: "factory",
+        } as any,
+      ],
+      listActiveReservations: async () => [],
+      getAccount: async () => null,
+    };
+
+    const evaluation = await new TreasuryShadowRouteEvaluator(
+      new TreasuryEconomicCalibration(source),
+    ).evaluate({
+      accountId: "factory",
+      workloadType: "SCRIPT",
+      capability: "SCRIPT",
+      baselineProviderId: "baseline",
+      baselineModelId: "baseline-model",
+      minSamples: 1,
+    });
+
+    expect(evaluation.recommendation).toBeUndefined();
+  });
