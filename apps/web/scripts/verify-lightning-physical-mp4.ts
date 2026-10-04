@@ -49,6 +49,7 @@ async function main() {
   const studioName = "shortforge-" + runId;
   const remoteArtifact = "shortforge-lightning-physical-proof.mp4";
   const localArtifact = path.join(proofDir, runId + ".mp4");
+  const remoteAbsolute = "$HOME/" + remoteArtifact;
 
   const renderCommand = [
     "python -m pip install -q imageio-ffmpeg",
@@ -58,7 +59,9 @@ async function main() {
     "-f lavfi -i sine=frequency=1000:sample_rate=48000:d=2",
     "-c:v libx264 -pix_fmt yuv420p -preset veryfast",
     "-c:a aac -b:a 128k -movflags +faststart",
-    remoteArtifact,
+    remoteAbsolute,
+    "&& test -s " + remoteAbsolute,
+    "&& ls -lh " + remoteAbsolute,
   ].join(" ");
 
   const provisioned = await adapter.provision(
