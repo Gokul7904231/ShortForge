@@ -10,6 +10,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createDefaultNotebookRegistry } from "../factoryos/core/compute/notebooks";
+import type { CandidateVideoContext, ChannelContext } from "../factoryos/core/verification/youtube/policy/YouTubePolicyEvaluator";
 import type { NotebookCredentialBundle } from "../factoryos/core/compute/notebooks";
 import { ContentAddressedStore } from "../factoryos/core/compute/cas/ContentAddressedStore";
 import { VerificationEngine } from "../factoryos/core/verification/VerificationEngine";
@@ -180,7 +181,7 @@ async function main(): Promise<void> {
     }
 
     const publicationIntentAt = new Date().toISOString();
-    const video = {
+    const video: CandidateVideoContext = {
       videoId: "live_hf_zerogpu_" + Date.now().toString(36),
       title: "ShortForge HF ZeroGPU Render Verification",
       description:
@@ -233,7 +234,7 @@ async function main(): Promise<void> {
       verifiedFactualClaimsCount: 0,
     };
 
-    const channel = {
+    const channel: ChannelContext = {
       channelId: "shortforge-hf-zerogpu-proof-channel",
       isTwoStepVerificationEnabled: true,
       hasAdvancedFeaturesAccess: true,
