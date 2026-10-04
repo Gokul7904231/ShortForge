@@ -44,7 +44,11 @@ def train(args: argparse.Namespace) -> None:
             raise RuntimeError("tokenizer requires pad_token or eos_token")
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AERCoreModel(args.base_model)
+    device = torch.device(
+        args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    )
+
+    model = AERCoreModel(args.base_model).to(device)
     model.encoder.config.pad_token_id = tokenizer.pad_token_id
 
     optimizer = torch.optim.AdamW(
@@ -65,7 +69,6 @@ def train(args: argparse.Namespace) -> None:
     for epoch in range(args.epochs):
         total_loss = 0.0
 
-        # One forward pass covers all candidates from all questions in a record.
         for record in partitions["train"]:
             raw = training_dict(record)
             texts: List[str] = []
@@ -91,6 +94,10 @@ def train(args: argparse.Namespace) -> None:
                 max_length=args.max_length,
                 return_tensors="pt",
             )
+            encoded = {
+                key: value.to(device)
+                for key, value in encoded.items()
+            }
 
             optimizer.zero_grad(set_to_none=True)
             logits_groups = model(
@@ -102,7 +109,11 @@ def train(args: argparse.Namespace) -> None:
             losses = [
                 F.cross_entropy(
                     logits.unsqueeze(0),
-                    torch.tensor([target], dtype=torch.long),
+                    torch.tensor(
+                        [target],
+                        dtype=torch.long,
+                        device=device,
+                    ),
                 )
                 for logits, target in zip(logits_groups, targets)
             ]
@@ -111,7 +122,7 @@ def train(args: argparse.Namespace) -> None:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             scheduler.step()
-            total_loss += float(loss.detach())
+            total_loss += float(loss.detach().cpu())
 
         epoch_report = {
             "epoch": epoch + 1,
@@ -122,7 +133,10 @@ def train(args: argparse.Namespace) -> None:
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    model.encoder.save_pretrained(output_dir, safe_serialization=True)
+    model.encoder.save_pretrained(
+        output_dir,
+        safe_serialization=True,
+    )
     tokenizer.save_pretrained(output_dir)
     torch.save(
         model.scorer.state_dict(),
@@ -132,6 +146,7 @@ def train(args: argparse.Namespace) -> None:
     manifest = {
         "schemaVersion": "aer-core-checkpoint-v1",
         "baseModel": args.base_model,
+        "device": str(device),
         "seed": args.seed,
         "epochs": args.epochs,
         "learningRate": args.learning_rate,
@@ -164,6 +179,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--max-length", type=int, default=512)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--device", default=None)
     return parser.parse_args()
 
 
