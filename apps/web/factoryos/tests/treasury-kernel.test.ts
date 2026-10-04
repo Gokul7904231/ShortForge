@@ -11,24 +11,32 @@ import {
 
 function command(overrides: Partial<TreasuryCommand> = {}): TreasuryCommand {
   const expiresAt = new Date(Date.now() + 60_000).toISOString();
+  const overseerCommandId =
+    overrides.overseerCommandId || "ovr-1";
+
   return {
-    commandId: "cmd-1",
-    overseerCommandId: "ovr-1",
-    issuer: { authority: "OVERSEER", issuerId: "overseer-test" },
-    accountId: "factory",
-    missionId: "mission-1",
-    purpose: "Test compute reservation",
-    resourceRequest: [{ kind: "COMPUTE", scarcityUnits: 10 }],
-    budgetEnvelope: {
-      maxCostUsd: 1,
-      maxCapacityUnits: 10,
-      maxDurationMs: 30_000,
-    },
-    priority: "NORMAL",
-    expiresAt,
-    idempotencyKey: "idem-1",
-    scopeDigest: "sha256:test",
-    ...overrides,
+    commandId: overrides.commandId || "cmd-1",
+    overseerCommandId,
+    issuer:
+      overrides.issuer || {
+        authority: "OVERSEER",
+        issuerId: overseerCommandId,
+      },
+    accountId: overrides.accountId || "factory",
+    missionId: overrides.missionId || "mission-1",
+    purpose: overrides.purpose || "Test compute reservation",
+    resourceRequest:
+      overrides.resourceRequest || [{ kind: "COMPUTE", scarcityUnits: 10 }],
+    budgetEnvelope:
+      overrides.budgetEnvelope || {
+        maxCostUsd: 1,
+        maxCapacityUnits: 10,
+        maxDurationMs: 30_000,
+      },
+    priority: overrides.priority || "NORMAL",
+    expiresAt: overrides.expiresAt || expiresAt,
+    idempotencyKey: overrides.idempotencyKey || "idem-1",
+    scopeDigest: overrides.scopeDigest || "sha256:test",
   };
 }
 
