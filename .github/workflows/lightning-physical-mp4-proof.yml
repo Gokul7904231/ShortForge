@@ -27,6 +27,7 @@ jobs:
       LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
       LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
       LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
+      LIGHTNING_EXISTING_STUDIO: ${{ vars.LIGHTNING_EXISTING_STUDIO || 'shortforge-live-lightning-probe-1791007995786' }}
       LIGHTNING_LIVE_MACHINE: ${{ vars.LIGHTNING_LIVE_MACHINE || vars.LIGHTNING_MACHINE || 'CPU' }}
       LIGHTNING_PYTHON: python
     steps:
