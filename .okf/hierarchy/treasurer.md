@@ -1,6 +1,6 @@
 # Treasurer — Economic Control-Plane Contract
 
-**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–6  
+**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–7  
 **Date:** 2026-10-03  
 **Canonical implementation:** `apps/web/factoryos/core/treasury/`
 
@@ -201,3 +201,24 @@ They may not:
 - promote recommendations into live routing automatically.
 
 The only live economic authority remains the Treasury Constitutional Kernel.
+
+
+## Wave 7 — verified promotion evidence
+
+TreasuryShadowOutcomeAttribution and TreasuryEconomicPromotionGate extend Economic Intelligence from shadow recommendation into governed promotion evidence.
+
+They may:
+- compare explicit baseline and candidate cohorts using verification-backed Treasury settlement evidence;
+- calculate realized cost savings, latency delta, and verification delta;
+- classify evidence as INSUFFICIENT_EVIDENCE, REJECTED, or READY_FOR_REVIEW.
+
+They may not:
+- change live routing policy;
+- execute providers;
+- reserve or mutate Treasury;
+- mutate prices;
+- bypass F07;
+- grant Ascalon authority.
+
+READY_FOR_REVIEW means only that evidence is sufficient to enter the existing human/Overseer policy workflow. It is never a Treasury permit or automatic promotion.
+
