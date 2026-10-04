@@ -1,0 +1,72 @@
+{
+  "schemaVersion":"1.0",
+  "changeId":"ShortForge-PR157-Daytona-Live-Proof-Unique-Sandbox-Name",
+  "repository":"Gokul7904231/ShortForge",
+  "baseRef":"main",
+  "headRef":"fix/daytona-sandbox-unique-name-20261004",
+  "objective":"Make repeated Daytona physical proof runs idempotency-safe by assigning a unique sandbox name per proof run.",
+  "classification":"extends existing rule",
+  "okf":{
+    "sweepStatus":"COMPLETE",
+    "rulesConsidered":[
+      "Provider completion is not artifact truth.",
+      "F07 independently verifies the CAS-bound physical artifact.",
+      "Physical proof runs must be repeatable without name collisions.",
+      "No F06 worker authority is granted."
+    ]
+  },
+  "forensicFindings":[
+    "A real Daytona qualification attempt failed with HTTP 409 because the harness reused the fixed sandbox name shortforge-live-sandbox-smoke.",
+    "The provider credential and provisioning path were otherwise reached successfully."
+  ],
+  "changes":[
+    "Generate proofName from the current proof timestamp.",
+    "Use the generated proofName as both idempotencyKey and shortforge_name metadata.",
+    "Leave the F07 physical/CAS verification path unchanged."
+  ],
+  "research":[
+    "Observed Daytona live proof logs from run #5.",
+    "Existing DaytonaSandboxAdapter provision contract.",
+    "Existing live-hosted-sandbox.test.ts lifecycle."
+  ],
+  "security":{
+    "required":true,
+    "status":"TRIAGED",
+    "semgrep":"NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix":"UNAVAILABLE",
+    "zap":"NOT_APPLICABLE_TO_TEST_HARNESS_CHANGE",
+    "notes":"No credentials or secret values are committed."
+  },
+  "trainingReadiness":{
+    "sandboxFabric":"UNCHANGED",
+    "ascalon":"UNCHANGED / PROPOSAL_LEARNING_BOUNDARY",
+    "authority":"F06 and F07 boundaries unchanged"
+  },
+  "evidenceRefs":[
+    "apps/web/factoryos/tests/live-hosted-sandbox.test.ts",
+    "apps/web/factoryos/core/compute/sandboxes/DaytonaSandboxAdapter.ts"
+  ],
+  "verificationPlan":[
+    "Run Team Change Gate and blocking CI.",
+    "Squash-merge with the live-daytona-f07-proof marker.",
+    "Require a non-colliding Daytona sandbox, real MP4, CAS verification, F07 receipt, and uploaded proof evidence."
+  ],
+  "forgers":{
+    "Forge Architect":"COMPLETE",
+    "Forge Builder":"COMPLETE",
+    "Forge Sentinel":"COMPLETE",
+    "Forge Evaluator":"PENDING_CI",
+    "Forge Release":"PENDING_MERGE_AND_LIVE_PROOF"
+  },
+  "conflicts":[],
+  "verificationResults":{
+    "uniqueSandboxName":"WIRED",
+    "teamChangeGate":"PENDING",
+    "repositoryCI":"PENDING",
+    "liveDaytonaF07":"PENDING"
+  },
+  "disposition":"PASS",
+  "notes":[
+    "The PASS disposition means the repository change is internally governed; provider evidence remains pending until the corrected live proof executes."
+  ]
+}
