@@ -1,0 +1,75 @@
+{
+  "schemaVersion":"1.0",
+  "changeId":"ShortForge-PR156-Live-Daytona-F07-Test-Ordering",
+  "repository":"Gokul7904231/ShortForge",
+  "baseRef":"main",
+  "headRef":"fix/live-daytona-f07-test-order-20261004",
+  "objective":"Correct the live Daytona F07 qualification test ordering so the CAS reference exists before direct physical verification.",
+  "classification":"extends existing rule",
+  "okf":{
+    "sweepStatus":"COMPLETE",
+    "rulesConsidered":[
+      "F07 remains the independent physical artifact truth authority.",
+      "Provider completion is not artifact acceptance; CAS and F07 remain authoritative.",
+      "Live provider proof must not be allowed to report success when the F07 test was skipped or malformed.",
+      "No F06 production worker authority is granted."
+    ]
+  },
+  "forensicFindings":[
+    "PR155 added direct F07 physical verification but referenced artifactCasRef before declaration in the live test.",
+    "The malformed ordering prevented a valid next qualification run and had to be corrected before accepting any F07 proof."
+  ],
+  "changes":[
+    "Declare artifactCasRef before F07PhysicalArtifactVerifier.verify().",
+    "Retain the direct CAS-bound physical verification assertions.",
+    "Retain the full F07ReleaseGuardian receipt and signature assertions."
+  ],
+  "research":[
+    "Existing F07PhysicalArtifactVerifier contract.",
+    "Existing F07ReleaseGuardian and VerificationReceipt contracts.",
+    "Existing live hosted sandbox qualification workflow."
+  ],
+  "security":{
+    "required":true,
+    "status":"TRIAGED",
+    "semgrep":"NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix":"UNAVAILABLE",
+    "zap":"NOT_APPLICABLE_TO_TEST_ONLY_ORDERING_FIX",
+    "notes":"No secrets or provider credentials are committed."
+  },
+  "trainingReadiness":{
+    "sandboxFabric":"UNCHANGED",
+    "ascalon":"UNCHANGED / PROPOSAL_LEARNING_BOUNDARY",
+    "authority":"F06 and F07 authority boundaries unchanged"
+  },
+  "evidenceRefs":[
+    "apps/web/factoryos/tests/live-hosted-sandbox.test.ts",
+    "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+    "apps/web/factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts"
+  ],
+  "verificationPlan":[
+    "Run Team Change Gate and blocking CI.",
+    "Squash-merge only after required checks are green.",
+    "Use the one-shot [live-daytona-f07-proof] merge commit to trigger the corrected live Daytona proof.",
+    "Require a non-skipped test, uploaded F07 evidence, and successful signed receipt verification."
+  ],
+  "forgers":{
+    "Forge Architect":"COMPLETE",
+    "Forge Builder":"COMPLETE",
+    "Forge Sentinel":"COMPLETE",
+    "Forge Evaluator":"PENDING_CI",
+    "Forge Release":"PENDING_MERGE_AND_LIVE_PROOF"
+  },
+  "conflicts":[],
+  "verificationResults":{
+    "orderingFix":"WIRED",
+    "teamChangeGate":"PENDING",
+    "repositoryCI":"PENDING",
+    "liveDaytonaF07":"PENDING_USER_CREDENTIALED_RUN"
+  },
+  "disposition":"PASS",
+  "notes":[
+    "The PASS disposition means the repository change is internally governed; live provider evidence is still pending.",
+    "No production worker promotion occurs in this change."
+  ]
+}
