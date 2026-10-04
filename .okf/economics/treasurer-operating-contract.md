@@ -1,6 +1,6 @@
 # Treasurer Operating Contract
 
-**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–4  
+**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–5  
 **Date:** 2026-10-03
 
 ## Purpose
@@ -159,3 +159,15 @@ It cannot:
 - choose a physical worker.
 
 Ascalon/GLiDE receives only the projection and remains advisory/shadow-only.
+
+## Wave 5 retirement boundary
+
+Production authority migration is complete for the current target surface.
+
+Compatibility components may still exist for historical tests or bootstrap/projection:
+- `CostGovernor.ts`: compatibility only; never authorizes production spend.
+- `MissionBudgetManager.ts`: compatibility only; MissionManager does not delegate economic admission to it.
+- `AgentEconomicsEngine.ts`: compatibility/advisory only; no production controller instantiation.
+- `quota-service.ts`: bootstrap/projection dependency only; TreasuryQuotaAdmission is authoritative on the hot path.
+
+Economic Intelligence is the Wave-5 capability and is strictly read-only. It uses measured Treasury evidence for historical baselines, anomaly signals, provider/model observed economics, verified output economics, and reservation right-sizing.
