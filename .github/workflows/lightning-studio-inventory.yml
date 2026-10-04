@@ -27,3 +27,5 @@ jobs:
         run: python -m pip install --upgrade lightning-sdk
       - name: List Teamspace Studios
         run: npx tsx scripts/list-lightning-studios.ts
+      - name: Inspect existing Studio status
+        run: npx tsx scripts/inspect-lightning-studio-status.ts
