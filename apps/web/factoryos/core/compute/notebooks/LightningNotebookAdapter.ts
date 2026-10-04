@@ -101,7 +101,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
     const script = [
       "from lightning_sdk import Studio, Machine",
-      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=" + JSON.stringify(!Boolean(existingStudio)) + ")",
+      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=" + (existingStudio ? "False" : "True") + ")",
       "machine_name=" + JSON.stringify(machine),
       "machine=None if machine_name == 'CPU' else Machine.from_str(machine_name)",
       "studio.start() if machine is None else studio.start(machine)",
