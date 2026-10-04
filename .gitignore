@@ -158,3 +158,10 @@ training/aer_core/data/*.jsonl
 training/aer_core/data/normalized/
 training/aer_core/runs/
 training/aer_core/checkpoints/
+
+
+# Ascalon generated training datasets
+training/ascalon/data/golden/*.json
+training/ascalon/data/golden/*.jsonl
+training/ascalon/data/normalized/*.jsonl
+training/ascalon/data/curriculum/*.jsonl
