@@ -4,7 +4,7 @@
  */
 
 import type { IndexedExperienceMemory, ExperienceMemoryEntry } from "./memory/IndexedExperienceMemory";
-import type { AgentEconomicsEngine } from "./economics/AgentEconomicsEngine";
+import type { ModelTier } from "./CognitiveContracts";
 
 export interface OutcomeFeedback {
   readonly incidentId: string;
@@ -19,15 +19,27 @@ export interface OutcomeFeedback {
   readonly evidenceRefs?: readonly string[];
   readonly tokensConsumed?: number;
   readonly actualCostUsd?: number;
-  readonly modelTier?: Parameters<AgentEconomicsEngine["recordExecution"]>[0];
+  readonly modelTier?: ModelTier;
+}
+
+export interface EconomicTelemetrySink {
+  recordExecution(
+    tier: ModelTier,
+    tokens: number,
+    latencyMs: number,
+    actualCostUsd?: number,
+  ): void;
 }
 
 export class CognitiveOutcomeLearner {
   private experienceMemory: IndexedExperienceMemory;
-  private economics: AgentEconomicsEngine;
+  private economics?: EconomicTelemetrySink;
   private recentPredictionErrors: number[] = [];
 
-  constructor(experienceMemory: IndexedExperienceMemory, economics: AgentEconomicsEngine) {
+  constructor(
+    experienceMemory: IndexedExperienceMemory,
+    economics?: EconomicTelemetrySink,
+  ) {
     this.experienceMemory = experienceMemory;
     this.economics = economics;
   }
@@ -74,7 +86,11 @@ export class CognitiveOutcomeLearner {
 
     // Record economics only when production telemetry actually reports token use.
     // Never synthesize model usage as a learning/economics signal.
-    if (feedback.tokensConsumed !== undefined && feedback.tokensConsumed >= 0) {
+    if (
+      this.economics &&
+      feedback.tokensConsumed !== undefined &&
+      feedback.tokensConsumed >= 0
+    ) {
       this.economics.recordExecution(
         feedback.modelTier || "LARGE_REASONER",
         feedback.tokensConsumed,

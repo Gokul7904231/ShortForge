@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
 import { isEffectiveAdmin } from "@/lib/auth/roles";
 import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
-import { TreasuryEconomicIntelligence } from "@/factoryos/core/treasury/TreasuryEconomicIntelligence";
+import {
+  TreasuryEconomicIntelligence,
+  createTreasuryEconomicReadSource,
+} from "@/factoryos/core/treasury/TreasuryEconomicIntelligence";
 
 export const runtime = "nodejs";
 
@@ -28,7 +31,9 @@ export async function GET(req: Request) {
       "factoryos";
 
     const treasury = await getTreasuryRuntime();
-    const intelligence = new TreasuryEconomicIntelligence(treasury);
+    const intelligence = new TreasuryEconomicIntelligence(
+      createTreasuryEconomicReadSource(treasury),
+    );
     const snapshot = await intelligence.analyze(accountId, {
       windowMs: hours * 60 * 60 * 1000,
     });

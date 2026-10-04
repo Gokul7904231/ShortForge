@@ -1,7 +1,7 @@
 /**
  * FactoryOS Frontier v2 — Cognitive Plane Master Engine
  * Unifies RLM context orchestration, active context management, evidence graphs,
- * contradiction resolution, strategic meta-thinking, agent economics, and predictive prevention.
+ * contradiction resolution, strategic meta-thinking, economic intelligence, and predictive prevention.
  */
 
 import { ContextOrchestrator } from "./rlm/RecursiveInvestigator";
@@ -10,7 +10,6 @@ import { IndexedExperienceMemory } from "./memory/IndexedExperienceMemory";
 import { EvidenceGraphEngine } from "./graph/EvidenceGraphEngine";
 import { ContradictionResolver } from "./conflict/ContradictionResolver";
 import { StrategicMetaThinker } from "./meta/StrategicMetaThinker";
-import { AgentEconomicsEngine } from "./economics/AgentEconomicsEngine";
 import { PredictiveFactoryEngine } from "./predictive/PredictiveFactoryEngine";
 import { CapabilityRouter } from "./routing/CapabilityRouter";
 import { SimulationDecisionEngine } from "./simulation/SimulationDecisionEngine";
@@ -26,7 +25,6 @@ export class CognitivePlaneEngine {
   public evidenceGraph: EvidenceGraphEngine;
   public contradictionResolver: ContradictionResolver;
   public metaThinker: StrategicMetaThinker;
-  public economics: AgentEconomicsEngine;
   public predictiveEngine: PredictiveFactoryEngine;
   public router: CapabilityRouter;
   public simulationEngine: SimulationDecisionEngine;
@@ -41,7 +39,6 @@ export class CognitivePlaneEngine {
     this.evidenceGraph = new EvidenceGraphEngine();
     this.contradictionResolver = new ContradictionResolver(this.evidenceGraph);
     this.metaThinker = new StrategicMetaThinker();
-    this.economics = new AgentEconomicsEngine();
     this.predictiveEngine = new PredictiveFactoryEngine();
     this.router = new CapabilityRouter();
     this.simulationEngine = new SimulationDecisionEngine();

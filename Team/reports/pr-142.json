@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR142-Treasury-Economic-Intelligence-Wave5",
+  "pullRequest": 142,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/treasury-economic-intelligence-wave5-20261004",
+  "objective": "Retire remaining production consumers of legacy economic mechanisms and mature Treasury Economic Intelligence without introducing a second economic authority.",
+  "classification": "extends existing rule",
+  "linkedIssue": 141,
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Treasurer remains the sole production economic admission and settlement authority.",
+      "Economic Intelligence is read-only and advisory.",
+      "Legacy economic modules cannot authorize production spend.",
+      "Workers, routers, Ascalon and intelligence do not receive Treasury mutation authority.",
+      "F07 remains an independent verification boundary.",
+      "Existing current-main compute, notebook, ReMaker and provider contracts must not regress."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/decisions/treasury-economic-intelligence-wave5-20261004.md",
+      "docs/treasury-wave4-economic-intelligence.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Wave 5 adds a static production authority scan.",
+      "Economic Intelligence exposes no Treasury write handle.",
+      "Legacy provider fallback remains only behind non-production compatibility behavior.",
+      "No secret values are committed."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-W5-001",
+      "originalConflict": "AgentEconomicsEngine remained instantiated in the verified-trajectory production controller path after Treasury became authoritative.",
+      "status": "RESOLVED",
+      "proposedResolution": "Decouple CognitiveOutcomeLearner from the concrete economic engine and keep only a generic telemetry-sink seam.",
+      "acceptedResolution": "AutonomousFactoryController no longer instantiates AgentEconomicsEngine; historical tests may use the generic sink for compatibility.",
+      "decisionAuthority": "Treasury authority retirement contract"
+    },
+    {
+      "id": "TRSY-W5-002",
+      "originalConflict": "Economic Intelligence could accidentally become a second economic authority if it received Treasury mutation APIs.",
+      "status": "RESOLVED",
+      "proposedResolution": "Create read-only analytics and a separate bounded projection type with no Treasury service handle.",
+      "acceptedResolution": "TreasuryEconomicIntelligence is read-only; TreasuryEconomicAdvice is SHADOW_ONLY and canAuthorizeSpend=false.",
+      "decisionAuthority": "Treasury operating contract"
+    },
+    {
+      "id": "TRSY-W5-003",
+      "originalConflict": "Legacy quota data remained a second admission source during migration.",
+      "status": "RESOLVED",
+      "proposedResolution": "Use legacy quota only for first-time Treasury entitlement bootstrap and compatibility projection.",
+      "acceptedResolution": "TreasuryQuotaAdmission reads/mutates Treasury after bootstrap; Firestore cannot override Treasury state.",
+      "decisionAuthority": "Treasury entitlement boundary"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Removed production CostGovernor use from capability routing.",
+    "Removed MissionBudgetManager economic admission from MissionManager.",
+    "Removed AgentEconomicsEngine from AutonomousFactoryController production graph.",
+    "Added machine-enforced production compatibility retirement scan.",
+    "Added historical spend baseline and anomaly intelligence.",
+    "Added observed provider/model economics confidence.",
+    "Added verified render and verified short unit economics using Treasury settlement evidence.",
+    "Added reservation right-sizing metrics and bounded spend forecasts.",
+    "Added verification receipt persistence to RESOURCE_CONSUMED evidence.",
+    "Added read-only TreasuryEconomicAdvice projection for Overseer/Ascalon/GLiDE.",
+    "Added dedicated Wave-5 validation workflow and operator documentation.",
+    "Made TreasuryEconomicIntelligence structurally read-only through a narrow TreasuryEconomicReadSource interface.",
+    "Decoupled CognitiveOutcomeLearner from AgentEconomicsEngine and removed the concrete engine from the production controller graph.",
+    "Added verified render/short economics, historical anomaly baselines, provider observation confidence, reservation right-sizing and bounded forecasts.",
+    "Persisted verificationReceiptId in RESOURCE_CONSUMED settlement evidence."
+  ],
+  "verificationPlan": [
+    "Treasury Wave 5 typecheck.",
+    "Treasury Economic Intelligence focused tests.",
+    "Treasury authority and compatibility retirement tests.",
+    "Treasury admission/provider retry regressions.",
+    "Static production authority scan.",
+    "Current-main ComputePool, ReMaker, Overseer, F06/F07 and repository CI regressions.",
+    "Post-merge mainline verification."
+  ],
+  "verificationResults": {
+    "treasuryWave5": "PENDING",
+    "treasuryEconomicIntelligenceTests": "PENDING",
+    "authorityRetirementTests": "PENDING",
+    "admissionRegressionTests": "PENDING",
+    "repositoryCI": "PENDING",
+    "currentMainCompute": "PENDING",
+    "remakerRegression": "PENDING",
+    "overseerRegression": "PENDING",
+    "compatibilityScan": "PENDING"
+  },
+  "disposition": "BLOCKED"
+}

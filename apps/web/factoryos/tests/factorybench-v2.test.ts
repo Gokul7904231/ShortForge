@@ -246,7 +246,9 @@ describe("FactoryOS Frontier v2 — FactoryBench 2.0 Evaluation Suite (15 Scenar
   });
 
   it("Scenario 12: Cascading Failure -> Adaptive Model Routing switches to Multi-Agent Swarm", () => {
-    const economics = controller.cognitivePlane.economics;
+    // Legacy economics remains a test-only compatibility benchmark; it is
+    // not instantiated by the production CognitivePlaneEngine.
+    const economics = new AgentEconomicsEngine();
     const route = economics.routeTask("Cascading multi-floor deadlock across all pipelines", {
       severity: "CRITICAL",
       isMultiAgentRequired: true,

@@ -7,7 +7,10 @@ import { TreasuryKernel } from "../core/treasury/TreasuryKernel";
 import { TreasuryPriceRegistry } from "../core/treasury/TreasuryPriceRegistry";
 import { TreasuryService } from "../core/treasury/TreasuryService";
 import { computeTreasuryExecutionScopeDigest } from "../core/treasury/TreasuryScope";
-import { TreasuryEconomicIntelligence } from "../core/treasury/TreasuryEconomicIntelligence";
+import {
+  TreasuryEconomicIntelligence,
+  createTreasuryEconomicReadSource,
+} from "../core/treasury/TreasuryEconomicIntelligence";
 
 function makeTreasury(now = new Date()) {
   const ledger = new InMemoryTreasuryLedger();
@@ -100,7 +103,7 @@ describe("Treasury Economic Intelligence", () => {
     });
 
     const before = await service.getLedger().getAccount("factory");
-    const snapshot = await new TreasuryEconomicIntelligence(service).analyze("factory", {
+    const snapshot = await new TreasuryEconomicIntelligence(createTreasuryEconomicReadSource(service)).analyze("factory", {
       windowMs: 60 * 60 * 1000,
       now: new Date("2026-10-03T08:30:00.000Z"),
     });
@@ -116,6 +119,94 @@ describe("Treasury Economic Intelligence", () => {
       ),
     ).toBe(true);
     expect(after).toEqual(before);
+  });
+
+  it("surfaces verified render/short economics and right-sizing advice from settlement evidence", async () => {
+    const now = new Date("2026-10-03T12:00:00.000Z");
+    const { service } = makeTreasury(now);
+
+    for (let i = 0; i < 5; i += 1) {
+      const commandId = "cmd-render-" + i;
+      const expiresAt = new Date(now.getTime() + 60_000).toISOString();
+      const reserved = await service.reserve({
+        commandId,
+        overseerCommandId: commandId,
+        issuer: { authority: "OVERSEER", issuerId: commandId },
+        accountId: "factory",
+        missionId: "mission-render",
+        runId: "run-render",
+        floorId: "floor06_rendering",
+        taskId: commandId,
+        attemptId: commandId,
+        purpose: "verified render economics",
+        resourceRequest: [{
+          kind: "COMPUTE",
+          workloadType: "RENDER",
+          unit: "SECONDS",
+          quantity: 10,
+          scarcityUnits: 10,
+          verificationRequired: true,
+          paidRoute: false,
+        }],
+        budgetEnvelope: {
+          maxCostUsd: 1,
+          maxCapacityUnits: 10,
+          maxRetries: 0,
+        },
+        priority: "NORMAL",
+        expiresAt,
+        idempotencyKey: commandId,
+        scopeDigest: computeTreasuryExecutionScopeDigest({
+          version: 1,
+          missionId: "mission-render",
+          jobId: commandId,
+          floorId: "floor06_rendering",
+          overseerCommandId: commandId,
+          kind: "RENDER",
+          resourceId: "render-test",
+        }),
+      });
+
+      await service.settle(reserved.reservation.reservationId, {
+        reservationId: reserved.reservation.reservationId,
+        actualCostUsd: 0.2,
+        actualCapacityUnits: 2,
+        actualTokens: 0,
+        executionEvidenceId: "exec-render-" + i,
+        verificationReceiptId: "f07-receipt-" + i,
+        verified: true,
+        measuredAt: new Date(now.getTime() + 1_000 + i).toISOString(),
+      });
+    }
+
+    const snapshot = await new TreasuryEconomicIntelligence(
+      createTreasuryEconomicReadSource(service),
+    ).analyze(
+      "factory",
+      {
+        windowMs: 60 * 60 * 1000,
+        now: new Date("2026-10-03T12:30:00.000Z"),
+      },
+    );
+
+    expect(snapshot.unitMetrics.costPerVerifiedRenderUsd).toBeCloseTo(0.2, 8);
+    expect(snapshot.unitMetrics.costPerVerifiedShortUsd).toBeCloseTo(0.2, 8);
+
+    const rightSizing = snapshot.reservationRightSizing.find(
+      (item) => item.workloadType === "RENDER",
+    );
+    expect(rightSizing).toBeDefined();
+    expect(rightSizing?.samples).toBe(5);
+    expect(rightSizing?.recommendedReservationMultiplier).toBeLessThan(1);
+
+    expect(
+      snapshot.recommendations.some(
+        (item) =>
+          item.kind === "REDUCE_RESERVATION_SIZE" &&
+          item.evidence.workloadType === "RENDER",
+      ),
+    ).toBe(true);
+    expect(snapshot.forecast.projected7dSpendUsd).toBeGreaterThan(0);
   });
 
   it("raises a breach signal from a real Treasury envelope overrun", async () => {
@@ -135,7 +226,9 @@ describe("Treasury Economic Intelligence", () => {
       }),
     ).rejects.toThrow(/Treasury frozen/);
 
-    const snapshot = await new TreasuryEconomicIntelligence(service).analyze("factory", {
+    const snapshot = await new TreasuryEconomicIntelligence(
+      createTreasuryEconomicReadSource(service),
+    ).analyze("factory", {
       windowMs: 60 * 60 * 1000,
       now: new Date("2026-10-03T09:30:00.000Z"),
     });

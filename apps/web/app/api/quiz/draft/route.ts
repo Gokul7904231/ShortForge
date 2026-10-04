@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { scriptAgent } from "@/agents/script-agent";
 import { verifySession } from "@/lib/auth/auth";
-import { resolveTier } from "@/lib/quota/quota-service";
+import { resolveTreasuryEntitlementTier } from "@/factoryos/core/treasury/TreasuryEntitlementPolicy";
 import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
 import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { QuizOrchestrator } from "@/lib/quiz/QuizOrchestrator";
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
       const topic = `${countryName} Geography & Culture Quiz`;
       const byokKey = String(body.byokKey || body.byokApiKey || body.apiKey || "").trim();
       const useByok = Boolean(body.useByok || body.byokMode === "byok" || byokKey.length > 10);
-      const tier = draftUser ? resolveTier(draftUser.role || "USER") : "BASIC";
+      const tier = draftUser ? resolveTreasuryEntitlementTier(draftUser.role || "USER") : "BASIC";
 
       let resolvedApiKey = byokKey.length > 10 ? byokKey : undefined;
       let resolvedProvider: any = undefined;

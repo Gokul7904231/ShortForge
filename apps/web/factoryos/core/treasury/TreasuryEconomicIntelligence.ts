@@ -11,10 +11,33 @@
  */
 
 import type {
+  TreasuryAccount,
   TreasuryLedgerEvent,
-  TreasuryReport,
+  TreasuryReservation,
 } from "./TreasuryContracts";
 import type { TreasuryService } from "./TreasuryService";
+
+export interface TreasuryEconomicReadSource {
+  getAccount(accountId: string): Promise<TreasuryAccount | null>;
+  listRecentEvents(
+    accountId?: string,
+    limit?: number,
+  ): Promise<TreasuryLedgerEvent[]>;
+  listActiveReservations(
+    accountId?: string,
+  ): Promise<TreasuryReservation[]>;
+}
+
+export function createTreasuryEconomicReadSource(
+  treasury: TreasuryService,
+): TreasuryEconomicReadSource {
+  const ledger = treasury.getLedger();
+  return {
+    getAccount: ledger.getAccount.bind(ledger),
+    listRecentEvents: ledger.listRecentEvents.bind(ledger),
+    listActiveReservations: ledger.listActiveReservations.bind(ledger),
+  };
+}
 
 export type TreasuryEconomicSignalSeverity =
   | "INFO"
@@ -39,6 +62,7 @@ export interface TreasuryEconomicProviderMetric {
   readonly actualTokens: number;
   readonly costPer1kTokensUsd?: number;
   readonly verifiedExecutions: number;
+  readonly observedPriceConfidence: "LOW" | "MEDIUM" | "HIGH";
 }
 
 export interface TreasuryEconomicUnitMetrics {
@@ -57,6 +81,8 @@ export interface TreasuryEconomicUnitMetrics {
   readonly costPer1kTokensUsd?: number;
   readonly costPerSuccessfulExecutionUsd?: number;
   readonly costPerVerifiedExecutionUsd?: number;
+  readonly costPerVerifiedRenderUsd?: number;
+  readonly costPerVerifiedShortUsd?: number;
   readonly spendPerHourUsd: number;
 };
 
@@ -78,6 +104,25 @@ export interface TreasuryEconomicRecommendation {
     | "OVERSEER";
 }
 
+export interface TreasuryEconomicAnomalyBaseline {
+  readonly sampleWindows: number;
+  readonly meanSpendPerDayUsd: number;
+  readonly stdDevSpendPerDayUsd: number;
+  readonly latestSpendPerDayUsd: number;
+  readonly zScore: number;
+  readonly severity: TreasuryEconomicSignalSeverity;
+  readonly confidence: "LOW" | "MEDIUM" | "HIGH";
+}
+
+export interface TreasuryEconomicRightSizingMetric {
+  readonly workloadType: string;
+  readonly samples: number;
+  readonly medianUtilization: number;
+  readonly p90Utilization: number;
+  readonly recommendedReservationMultiplier: number;
+  readonly confidence: "LOW" | "MEDIUM" | "HIGH";
+}
+
 export interface TreasuryEconomicIntelligenceSnapshot {
   readonly accountId: string;
   readonly generatedAt: string;
@@ -86,6 +131,8 @@ export interface TreasuryEconomicIntelligenceSnapshot {
   readonly unitMetrics: TreasuryEconomicUnitMetrics;
   readonly priorWindow: TreasuryEconomicUnitMetrics;
   readonly spendDeltaPct: number;
+  readonly anomalyBaseline: TreasuryEconomicAnomalyBaseline;
+  readonly reservationRightSizing: readonly TreasuryEconomicRightSizingMetric[];
   readonly forecast: {
     readonly projected7dSpendUsd: number;
     readonly projected30dSpendUsd: number;
@@ -110,6 +157,7 @@ type ReservationAccumulator = {
   actualTokens: number;
   consumed: number;
   verified: number;
+  workloadType?: string;
 };
 
 function numeric(
@@ -151,6 +199,102 @@ function resourceIdentity(
   };
 }
 
+function percentile(values: number[], quantile: number): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const position = (sorted.length - 1) * Math.min(1, Math.max(0, quantile));
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  if (lower === upper) return sorted[lower];
+  const weight = position - lower;
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+
+function eventWorkloadType(event: TreasuryLedgerEvent): string {
+  const requests = Array.isArray(event.payload.resourceRequest)
+    ? (event.payload.resourceRequest as Array<Record<string, unknown>>)
+    : [];
+  const request = requests[0];
+  const workload =
+    typeof request?.workloadType === "string"
+      ? request.workloadType
+      : typeof request?.metadata === "object" &&
+          request.metadata !== null &&
+          typeof (request.metadata as Record<string, unknown>).workloadType ===
+            "string"
+        ? String(
+            (request.metadata as Record<string, unknown>).workloadType,
+          )
+        : undefined;
+  return workload || event.floorId || "UNKNOWN";
+}
+
+function dailySpendBaseline(
+  events: TreasuryLedgerEvent[],
+  currentStartMs: number,
+  windowEndMs: number,
+): TreasuryEconomicAnomalyBaseline {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const historyStartMs = currentStartMs - dayMs * 7;
+  const buckets = new Map<string, number>();
+
+  for (const event of events) {
+    if (event.eventType !== "RESOURCE_CONSUMED") continue;
+    const ts = new Date(event.occurredAt).getTime();
+    if (!Number.isFinite(ts) || ts < historyStartMs || ts >= currentStartMs) {
+      continue;
+    }
+    const day = new Date(ts).toISOString().slice(0, 10);
+    buckets.set(day, (buckets.get(day) ?? 0) + Math.max(0, numeric(event.amountUsd)));
+  }
+
+  const samples = Array.from(buckets.values());
+  const mean =
+    samples.length > 0
+      ? samples.reduce((sum, value) => sum + value, 0) / samples.length
+      : 0;
+  const variance =
+    samples.length > 1
+      ? samples.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) /
+        samples.length
+      : 0;
+  const stdDev = Math.sqrt(variance);
+
+  const windowDays = Math.max(
+    1 / 24,
+    (windowEndMs - currentStartMs) / dayMs,
+  );
+  const currentSpend = events
+    .filter((event) => {
+      if (event.eventType !== "RESOURCE_CONSUMED") return false;
+      const ts = new Date(event.occurredAt).getTime();
+      return ts >= currentStartMs && ts <= windowEndMs;
+    })
+    .reduce((sum, event) => sum + Math.max(0, numeric(event.amountUsd)), 0);
+  const latestDailySpend = currentSpend / windowDays;
+  const zScore =
+    stdDev > 0 ? (latestDailySpend - mean) / stdDev : latestDailySpend > mean ? 3 : 0;
+
+  const severity =
+    Math.abs(zScore) >= 3
+      ? "CRITICAL"
+      : Math.abs(zScore) >= 2
+        ? "WARNING"
+        : "INFO";
+  const confidence =
+    samples.length >= 7 ? "HIGH" : samples.length >= 4 ? "MEDIUM" : "LOW";
+
+  return {
+    sampleWindows: samples.length,
+    meanSpendPerDayUsd: mean,
+    stdDevSpendPerDayUsd: stdDev,
+    latestSpendPerDayUsd: latestDailySpend,
+    zScore,
+    severity,
+    confidence,
+  };
+}
+
 function emptyUnitMetrics(): TreasuryEconomicUnitMetrics {
   return {
     settledCostUsd: 0,
@@ -170,7 +314,7 @@ function emptyUnitMetrics(): TreasuryEconomicUnitMetrics {
 }
 
 export class TreasuryEconomicIntelligence {
-  constructor(private readonly treasury: TreasuryService) {}
+  constructor(private readonly treasury: TreasuryEconomicReadSource) {}
 
   async analyze(
     accountId: string,
@@ -189,17 +333,16 @@ export class TreasuryEconomicIntelligence {
       10_000,
       Math.max(100, options.eventLimit ?? 2_500),
     );
-    const events = await this.treasury
-      .getLedger()
-      .listRecentEvents(accountId, eventLimit);
-    const activeReservations =
-      await this.treasury
-        .getLedger()
-        .listActiveReservations(accountId);
-    const report: TreasuryReport = await this.treasury.report(
+    const events = await this.treasury.listRecentEvents(
       accountId,
-      Math.min(250, eventLimit),
+      eventLimit,
     );
+    const activeReservations =
+      await this.treasury.listActiveReservations(accountId);
+    const account = await this.treasury.getAccount(accountId);
+    if (!account) {
+      throw new Error("Treasury account not found: " + accountId);
+    }
 
     const windowEndMs = now.getTime();
     const currentStartMs = windowEndMs - windowMs;
@@ -216,6 +359,13 @@ export class TreasuryEconomicIntelligence {
 
     const current = this.aggregate(currentEvents, windowMs);
     const prior = this.aggregate(priorEvents, windowMs);
+    const anomalyBaseline = dailySpendBaseline(
+      events,
+      currentStartMs,
+      windowEndMs,
+    );
+    const reservationRightSizing =
+      this.rightSizingInsights(currentEvents);
 
     const currentReservationsUsd = activeReservations.reduce(
       (sum, reservation) => sum + Math.max(0, reservation.reservedCostUsd),
@@ -230,8 +380,50 @@ export class TreasuryEconomicIntelligence {
     const signals: TreasuryEconomicSignal[] = [];
     const recommendations: TreasuryEconomicRecommendation[] = [];
 
+    if (
+      anomalyBaseline.confidence !== "LOW" &&
+      Math.abs(anomalyBaseline.zScore) >= 2
+    ) {
+      signals.push({
+        code: "SPEND_BASELINE_ANOMALY",
+        severity: anomalyBaseline.severity,
+        message:
+          "Measured daily spend is materially different from the recent Treasury spend baseline.",
+        evidence: {
+          zScore: anomalyBaseline.zScore,
+          latestSpendPerDayUsd: anomalyBaseline.latestSpendPerDayUsd,
+          meanSpendPerDayUsd: anomalyBaseline.meanSpendPerDayUsd,
+          sampleWindows: anomalyBaseline.sampleWindows,
+        },
+      });
+    }
+
+    for (const insight of reservationRightSizing) {
+      if (
+        insight.samples >= 5 &&
+        insight.medianUtilization < 0.6 &&
+        insight.p90Utilization < 0.85
+      ) {
+        recommendations.push({
+          kind: "REDUCE_RESERVATION_SIZE",
+          priority: insight.confidence === "HIGH" ? "MEDIUM" : "LOW",
+          rationale:
+            "Measured Treasury utilization suggests the reservation envelope for this workload type is consistently oversized.",
+          evidence: {
+            workloadType: insight.workloadType,
+            samples: insight.samples,
+            medianUtilization: insight.medianUtilization,
+            p90Utilization: insight.p90Utilization,
+            recommendedReservationMultiplier:
+              insight.recommendedReservationMultiplier,
+          },
+          actionBoundary: "OVERSEER",
+        });
+      }
+    }
+
     const breachCount = current.metrics.breachedReservations;
-    if (breachCount > 0 || report.account.mode === "FROZEN") {
+    if (breachCount > 0 || account.mode === "FROZEN") {
       signals.push({
         code: "TREASURY_BREACH_OR_FROZEN",
         severity: "CRITICAL",
@@ -239,7 +431,7 @@ export class TreasuryEconomicIntelligence {
           "Treasury has a recent economic breach or is frozen; discretionary consumption requires investigation before optimization.",
         evidence: {
           breachCount,
-          treasuryFrozen: report.account.mode === "FROZEN",
+          treasuryFrozen: account.mode === "FROZEN",
         },
       });
       recommendations.push({
@@ -247,7 +439,7 @@ export class TreasuryEconomicIntelligence {
         priority: "HIGH",
         rationale:
           "Resolve the breached economic envelope before pursuing cost optimization.",
-        evidence: { breachCount, treasuryFrozen: report.account.mode === "FROZEN" },
+        evidence: { breachCount, treasuryFrozen: account.mode === "FROZEN" },
         actionBoundary: "TREASURER_KERNEL",
       });
     }
@@ -277,8 +469,8 @@ export class TreasuryEconomicIntelligence {
     }
 
     const capacityUtilization =
-      report.account.capacityUnits > 0
-        ? currentReservationsCapacity / report.account.capacityUnits
+      account.capacityUnits > 0
+        ? currentReservationsCapacity / account.capacityUnits
         : 0;
 
     if (capacityUtilization >= 0.8) {
@@ -290,7 +482,7 @@ export class TreasuryEconomicIntelligence {
         evidence: {
           reservedCapacityUnits: currentReservationsCapacity,
           capacityUtilization,
-          totalCapacityUnits: report.account.capacityUnits,
+          totalCapacityUnits: account.capacityUnits,
         },
       });
       recommendations.push({
@@ -300,7 +492,7 @@ export class TreasuryEconomicIntelligence {
           "Prefer reuse, deterministic work, or currently-running capacity before admitting additional scarce resources.",
         evidence: {
           reservedCapacityUnits: currentReservationsCapacity,
-          totalCapacityUnits: report.account.capacityUnits,
+          totalCapacityUnits: account.capacityUnits,
         },
         actionBoundary: "OVERSEER",
       });
@@ -439,6 +631,8 @@ export class TreasuryEconomicIntelligence {
       unitMetrics: current.metrics,
       priorWindow: prior.metrics,
       spendDeltaPct: spendDelta,
+      anomalyBaseline,
+      reservationRightSizing,
       forecast: {
         projected7dSpendUsd:
           current.metrics.spendPerHourUsd * 24 * 7,
@@ -467,6 +661,10 @@ export class TreasuryEconomicIntelligence {
     activeCapacityUtilization: (totalCapacity: number) => number;
   } {
     const metrics: MutableTreasuryEconomicUnitMetrics = { ...emptyUnitMetrics() };
+    let verifiedRenderCostUsd = 0;
+    let verifiedRenderCount = 0;
+    let verifiedShortCostUsd = 0;
+    let verifiedShortCount = 0;
     const byReservation = new Map<string, ReservationAccumulator>();
 
     for (const event of events) {
@@ -495,6 +693,20 @@ export class TreasuryEconomicIntelligence {
         const amount = Math.max(0, numeric(event.amountUsd));
         const capacity = Math.max(0, numeric(event.capacityUnits));
         const tokens = Math.max(0, numeric(event.payload.actualTokens));
+        const verified = event.payload.verified === true;
+        const workloadType = eventWorkloadType(event).toUpperCase();
+        const verificationReceiptId =
+          typeof event.payload.verificationReceiptId === "string"
+            ? String(event.payload.verificationReceiptId)
+            : undefined;
+        if (verified && workloadType === "RENDER") {
+          verifiedRenderCostUsd += amount;
+          verifiedRenderCount += 1;
+          if (verificationReceiptId) {
+            verifiedShortCostUsd += amount;
+            verifiedShortCount += 1;
+          }
+        }
         metrics.settledCostUsd += amount;
         metrics.consumedCapacityUnits += capacity;
         metrics.actualTokens += tokens;
@@ -592,6 +804,14 @@ export class TreasuryEconomicIntelligence {
       metrics.verifiedExecutions > 0
         ? metrics.settledCostUsd / metrics.verifiedExecutions
         : undefined;
+    metrics.costPerVerifiedRenderUsd =
+      verifiedRenderCount > 0
+        ? verifiedRenderCostUsd / verifiedRenderCount
+        : undefined;
+    metrics.costPerVerifiedShortUsd =
+      verifiedShortCount > 0
+        ? verifiedShortCostUsd / verifiedShortCount
+        : undefined;
     metrics.spendPerHourUsd =
       (metrics.settledCostUsd / Math.max(windowMs, 1)) * 3_600_000;
 
@@ -602,6 +822,84 @@ export class TreasuryEconomicIntelligence {
           ? currentCapacity(metrics, totalCapacity)
           : 0,
     };
+  }
+
+  private rightSizingInsights(
+    events: TreasuryLedgerEvent[],
+  ): TreasuryEconomicRightSizingMetric[] {
+    const grouped = new Map<string, number[]>();
+    const reservations = new Map<
+      string,
+      {
+        reservedUsd: number;
+        consumedUsd: number;
+        workloadType: string;
+        terminal: boolean;
+      }
+    >();
+
+    for (const event of events) {
+      const reservationId = event.reservationId;
+      if (!reservationId) continue;
+
+      const existing =
+        reservations.get(reservationId) ??
+        {
+          reservedUsd: 0,
+          consumedUsd: 0,
+          workloadType: eventWorkloadType(event),
+          terminal: false,
+        };
+
+      if (event.eventType === "RESOURCE_RESERVED") {
+        existing.reservedUsd += Math.max(0, numeric(event.amountUsd));
+        existing.workloadType =
+          eventWorkloadType(event) || existing.workloadType;
+      } else if (event.eventType === "RESOURCE_CONSUMED") {
+        existing.consumedUsd += Math.max(0, numeric(event.amountUsd));
+        existing.workloadType =
+          eventWorkloadType(event) || existing.workloadType;
+        existing.terminal = true;
+      } else if (
+        event.eventType === "RESERVATION_RELEASED" ||
+        event.eventType === "RESERVATION_EXPIRED"
+      ) {
+        existing.terminal = true;
+      }
+
+      reservations.set(reservationId, existing);
+    }
+
+    for (const existing of reservations.values()) {
+      if (!existing.terminal || existing.reservedUsd <= 0) continue;
+
+      const utilization = Math.min(
+        1,
+        Math.max(0, existing.consumedUsd / existing.reservedUsd),
+      );
+      const values = grouped.get(existing.workloadType) ?? [];
+      values.push(utilization);
+      grouped.set(existing.workloadType, values);
+    }
+
+    return Array.from(grouped.entries()).map(
+      ([workloadType, values]) => ({
+        workloadType,
+        samples: values.length,
+        medianUtilization: percentile(values, 0.5),
+        p90Utilization: percentile(values, 0.9),
+        recommendedReservationMultiplier: Math.min(
+          1,
+          Math.max(0.25, percentile(values, 0.9) * 1.15),
+        ),
+        confidence:
+          values.length >= 20
+            ? "HIGH"
+            : values.length >= 5
+              ? "MEDIUM"
+              : "LOW",
+      }),
+    );
   }
 
   private providerMetrics(
@@ -625,6 +923,7 @@ export class TreasuryEconomicIntelligence {
         settledCostUsd: 0,
         actualTokens: 0,
         verifiedExecutions: 0,
+        observedPriceConfidence: "LOW",
       };
 
       const actualTokens = Math.max(
@@ -646,11 +945,23 @@ export class TreasuryEconomicIntelligence {
         verifiedExecutions:
           existing.verifiedExecutions +
           (event.payload.verified === true ? 1 : 0),
+        observedPriceConfidence:
+          existing.invocations + 1 >= 10
+            ? "HIGH"
+            : existing.invocations + 1 >= 3
+              ? "MEDIUM"
+              : "LOW",
       });
     }
 
     return Array.from(buckets.values()).map((metric) => ({
       ...metric,
+      observedPriceConfidence:
+        metric.invocations >= 10
+          ? "HIGH"
+          : metric.invocations >= 3
+            ? "MEDIUM"
+            : "LOW",
       costPer1kTokensUsd:
         metric.actualTokens > 0
           ? (metric.settledCostUsd / metric.actualTokens) * 1000

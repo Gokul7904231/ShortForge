@@ -1,0 +1,70 @@
+name: Treasury Wave 5 Validation
+
+on:
+  push:
+    branches:
+      - feat/treasury-economic-intelligence-wave5-20261004
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/treasury/**"
+      - "apps/web/factoryos/core/routing/CapabilityFirstRouter.ts"
+      - "apps/web/factoryos/core/missions/MissionManager.ts"
+      - "apps/web/factoryos/core/missions/MissionBudgetManager.ts"
+      - "apps/web/factoryos/core/governor/CostGovernor.ts"
+      - "apps/web/factoryos/core/cognitive/economics/AgentEconomicsEngine.ts"
+      - "apps/web/ai/**"
+      - "apps/web/app/api/user/quota/**"
+      - "apps/web/app/api/account/generation-quota/**"
+      - "apps/web/app/api/admin/treasury/**"
+      - "apps/web/app/api/generations/**"
+      - "apps/web/app/api/quiz/**"
+      - "apps/web/lib/overseer/OverseerToolGateway.ts"
+      - "apps/web/lib/scheduler/SchedulerService.ts"
+      - ".okf/**"
+      - "docs/treasury-wave5-economic-intelligence.md"
+      - "Team/reports/pr-142.json"
+  workflow_dispatch:
+
+jobs:
+  treasury-wave5:
+    name: Treasury Wave 5 — Retirement + Intelligence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Treasury intelligence tests
+        run: npx vitest run factoryos/tests/treasury-economic-intelligence.test.ts
+
+      - name: Treasury authority retirement tests
+        run: npx vitest run factoryos/tests/treasury-authority-retirement.test.ts factoryos/tests/treasury-compatibility-retirement.test.ts
+
+      - name: Treasury admission regressions
+        run: npx vitest run factoryos/tests/treasury-economic-admission.test.ts factoryos/tests/treasury-compute-admission.test.ts tests/treasury-provider-retry.test.ts
+
+      - name: Static production authority scan
+        working-directory: .
+        run: |
+          ! grep -R "from .*quota-service" apps/web/app apps/web/lib apps/web/factoryos/core --exclude-dir=node_modules --exclude='*.test.ts' --exclude='quota-service.ts' --exclude='TreasuryQuotaAdmission.ts' --exclude='TreasuryQuotaCompatibility.ts'
+          ! grep -R "CostGovernor\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='CostGovernor.ts' --exclude='index.ts'
+          ! grep -R "MissionBudgetManager\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='MissionBudgetManager.ts' --exclude='index.ts'
+          ! grep -R "getProviderWithFallback(" apps/web/app apps/web/lib apps/web/agents --exclude-dir=node_modules --exclude='factory.ts'
+          ! grep -R "AgentEconomicsEngine" apps/web/app apps/web/lib apps/web/factoryos/core apps/web/ai apps/web/agents --exclude-dir=node_modules --exclude='*.test.ts' --exclude='AgentEconomicsEngine.ts'
+          ! grep -R "AgentEconomicsEngine" apps/web/app apps/web/lib apps/web/factoryos/core apps/web/ai apps/web/agents --exclude-dir=node_modules --exclude='*.test.ts' --exclude='AgentEconomicsEngine.ts' --exclude='index.ts'

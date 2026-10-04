@@ -28,7 +28,7 @@ export class CognitiveRuntime {
     this.triageEngine = new CognitiveTriageEngine();
     this.fallbackPolicy = new CognitiveFallbackPolicy();
     this.memoryLifecycle = memoryLifecycle;
-    this.outcomeLearner = new CognitiveOutcomeLearner(plane.experienceMemory, plane.economics);
+    this.outcomeLearner = new CognitiveOutcomeLearner(plane.experienceMemory);
   }
 
   /**

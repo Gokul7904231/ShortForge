@@ -1,130 +1,151 @@
-# Treasurer Wave 4 — Economic Intelligence & Compatibility Retirement
+# Treasurer Wave 5 — Economic Intelligence Maturity & Compatibility Retirement
 
-Date: 2026-10-03
+Date: 2026-10-04
 Status: IMPLEMENTED ON WAVE BRANCH; REMOTE VALIDATION PENDING
+Issue: #141
 
 ## Objective
 
-Complete the transition from fragmented economic mechanisms to one production economic authority:
+Complete the next safe step after Wave 4:
+- remove live production consumers of legacy economic authorities;
+- mature Treasury Economic Intelligence from basic reporting into evidence-backed economic learning;
+- keep Treasury Constitutional Kernel as the only economic authority.
 
-- Treasury Constitutional Kernel = authoritative admission/accounting.
-- Economic Intelligence = read-only measurement, anomaly detection, forecasting, and advisory recommendations.
-- Legacy economic components = compatibility/projection only.
-
-No new scheduler or economic authority is introduced.
-
-## Canonical runtime
+## Wave 5 architecture
 
 ```
-Overseer
-  -> selection / decision
-  -> Treasury admission
-  -> physical/provider execution
-  -> measurement
-  -> verification where required
-  -> Treasury settlement/release
-  -> Treasury Economic Intelligence
-  -> bounded advisory projection
-  -> Overseer / Ascalon / GLiDE
+Treasury Ledger
+    |
+    v
+Economic Intelligence
+    |
+    +--> historical baseline / anomaly signals
+    +--> observed provider-model economics
+    +--> verified render / verified short unit economics
+    +--> reservation right-sizing insights
+    +--> bounded spend forecast
+    |
+    v
+TreasuryEconomicAdvice (projection only)
+    |
+    v
+Overseer / Ascalon / GLiDE
+    |
+    v
+recommendation only
+    |
+    v
+Treasury Kernel
+    |
+    v
+actual admission / reservation / settlement
 ```
 
-## Economic Intelligence
-
-Implementation:
-- `TreasuryEconomicIntelligence`: read-only analytics over the existing Treasury ledger.
-- `TreasuryEconomicAdvice`: typed projection with no Treasury service handle.
-- `/api/admin/treasury/economics`: authenticated read-only operator endpoint.
-- `/admin/treasury`: operator visibility surface.
-
-Measured outputs include:
-- settled spend;
-- cost per 1k measured tokens;
-- cost per successful execution;
-- cost per verified execution;
-- reservation utilization;
-- release/waste ratio;
-- active reserved spend/capacity;
-- provider/model observed economics;
-- breach/denial/measurement signals;
-- bounded 7-day and 30-day spend forecasts.
-
-The forecast is intentionally a baseline extrapolation from measured spend rate. It is not a probabilistic guarantee.
+Economic Intelligence has no mutation path.
 
 ## Compatibility retirement
 
-### Quota
-
-TreasuryQuotaAdmission owns the hot path.
-
-Legacy Firestore quota:
-- may bootstrap missing Treasury entitlement accounts;
-- receives compatibility projections;
-- is no longer the production admission authority.
-
-Quota reads in user/admin/Overseer surfaces are Treasury-backed.
-
-### Mission budget
-
-MissionManager retains lifecycle constraints such as duration and parallelism.
-
-Cost/token economic admission is Treasury-owned.
-
 ### CostGovernor
 
-CapabilityFirstRouter no longer uses CostGovernor.
+No longer used by the capability router and no longer present in the production controller graph.
 
-CostGovernor remains only for legacy tests/compatibility until its callers are fully retired.
+The class remains temporarily for historical compatibility tests until the repository's older test/evaluation consumers are retired.
 
-Production CostGovernor cannot authorize spend.
+### MissionBudgetManager
+
+No longer used by MissionManager for economic admission.
+
+MissionManager retains only lifecycle constraints such as duration and parallelism.
 
 ### AgentEconomicsEngine
 
-AgentEconomicsEngine remains advisory.
+No longer instantiated by AutonomousFactoryController.
 
-Authoritative execution cost must come from measured Treasury settlement. Hard-coded price estimates cannot authorize work.
+CognitiveOutcomeLearner now accepts a generic telemetry sink rather than depending on AgentEconomicsEngine. Historical AgentEconomicsEngine tests can remain until their final cleanup wave.
 
-### Generation compatibility
+### User quota
 
-`/api/generations` is now a compatibility alias of `/api/generate-video`.
+TreasuryQuotaAdmission owns the hot path and read model.
 
-The scheduler triggers canonical generation and no longer performs independent quota admission.
+Legacy Firestore quota can only:
+- bootstrap a missing Treasury entitlement account;
+- receive a compatibility projection.
 
-### Model execution
+It cannot override Treasury state.
 
-Production legacy providerFactory calls are routed through IntelligentRouter + Treasury and receive a unique economic attempt identity.
+### Generation / scheduler
 
-Direct provider fallback remains only for non-production compatibility.
+Legacy generation URL is a compatibility alias to canonical generation.
 
-### Ascalon / GLiDE
+Scheduler is trigger-only and interprets Treasury's quota denial response.
 
-Economic Intelligence may feed a bounded shadow projection to cognition.
+## Economic Intelligence maturity
 
-The projection:
-- contains no Treasury service handle;
-- is marked SHADOW_ONLY;
-- cannot authorize spend;
-- cannot mutate Treasury state.
+### Historical baseline
 
-## Safety rules
+Measured daily spend is compared with a recent rolling baseline. The baseline exposes:
+- sample count;
+- mean daily spend;
+- standard deviation;
+- latest normalized daily spend;
+- z-score;
+- severity;
+- confidence.
 
-1. Intelligence never mutates Treasury.
-2. Recommendation never equals authorization.
-3. Unknown paid pricing remains denied.
-4. Each additional model/provider attempt requires a fresh reservation.
-5. Ambiguous provider outcomes remain held until reconciliation.
-6. Free monetary cost does not imply unlimited scarce capacity.
-7. Legacy projections cannot override Treasury.
-8. Forecasting cannot open an economic reservation.
-9. Ascalon/GLiDE cannot bypass Treasury or change its constitutional rules.
+No forecast is treated as a guarantee.
 
-## Remaining migration
+### Observed provider economics
 
-The next cleanup after this wave is to remove obsolete compatibility callers and add stronger learned economics:
-- provider price observations from authoritative receipts;
-- anomaly baselines with historical windows;
-- reservation right-sizing feedback loops;
-- verified-short and verified-render unit economics;
-- shadow routing experiments driven by Economic Intelligence;
-- Ascalon economic reasoning only after sufficient verified trajectories exist.
+Treasury settlement evidence produces provider/model observed cost per 1k measured tokens. Confidence rises with the number of measured invocations.
 
-These are advisory/learning improvements, not new economic authorities.
+Unknown or unmeasured economics are not treated as a valid optimization signal.
+
+### Verified unit economics
+
+Treasury now distinguishes:
+- cost per verified execution;
+- cost per verified render;
+- cost per verified short when a verification receipt exists.
+
+A verified metric requires actual Treasury settlement evidence.
+
+### Reservation right-sizing
+
+Economic Intelligence groups completed monetary reservations by workload type and estimates:
+- sample count;
+- median utilization;
+- P90 utilization;
+- recommended reservation multiplier;
+- confidence.
+
+The recommendation is advisory and cannot modify a reservation automatically.
+
+## Shadow learning boundary
+
+Ascalon / GLiDE may consume TreasuryEconomicAdvice.
+
+The projection explicitly carries:
+- authorityClass = SHADOW_ONLY;
+- canAuthorizeSpend = false.
+
+It contains no Treasury service object.
+
+## Acceptance gates
+
+1. Treasury Wave 5 focused tests pass.
+2. Authority-retirement tests pass.
+3. Treasury admission and provider-retry regressions pass.
+4. Static production authority scan finds no legacy consumer.
+5. Current-main ComputePool/ReMaker/Overseer/F06/F07 gates remain green.
+6. Any unavailable security tooling remains explicitly unproven rather than being replaced with synthetic evidence.
+
+## Next wave after Wave 5
+
+Only after sufficient verified data exists:
+- learned route-quality/cost calibration;
+- stronger anomaly baselines;
+- reservation envelope feedback experiments in shadow mode;
+- verified-short economic attribution across complete missions;
+- controlled Ascalon economic reasoning experiments.
+
+These remain advisory until explicitly promoted through existing authority boundaries.

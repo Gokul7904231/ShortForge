@@ -686,6 +686,7 @@ export class TreasuryKernel {
           actualDurationMs: consumption.actualDurationMs,
           resourceRequest: reservation.resourceRequest,
           executionEvidenceId: consumption.executionEvidenceId,
+          verificationReceiptId: consumption.verificationReceiptId,
           verified: consumption.verified,
         },
         {

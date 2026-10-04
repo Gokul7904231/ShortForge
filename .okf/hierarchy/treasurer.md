@@ -1,6 +1,6 @@
 # Treasurer — Economic Control-Plane Contract
 
-**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–4  
+**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–5  
 **Date:** 2026-10-03  
 **Canonical implementation:** `apps/web/factoryos/core/treasury/`
 
@@ -143,7 +143,7 @@ Wave 4 implements a read-only advisory layer over Treasury's durable ledger. It 
 
 Economic Intelligence has no reservation, settlement, release, freeze, unfreeze, or price-mutation capability. It can recommend. The Constitutional Kernel decides.
 
-## Wave 4 runtime integration
+## Wave 5 runtime integration
 
 The economic boundary now covers:
 - model/API inference through AIRuntime + IntelligentRouter;
@@ -151,7 +151,7 @@ The economic boundary now covers:
 - user generation entitlement/quota through TreasuryQuotaAdmission;
 - F06 compute admission and F07 verification-aware settlement.
 
-Wave 4 retires the hot-path economic authority of the legacy mechanisms:
+Wave 4 retired the hot-path economic authority of the legacy mechanisms:
 - legacy quota Firestore is bootstrap/projection only;
 - MissionManager no longer uses MissionBudgetManager for economic admission;
 - CapabilityFirstRouter no longer consults CostGovernor;
@@ -164,3 +164,23 @@ The architectural rule is now:
 `selection -> Treasury admission -> execution -> measurement -> verification -> Treasury settlement`
 
 No legacy economic mechanism may authorize production spend outside Treasury.
+
+## Wave 5 — intelligence maturity and consumer retirement
+
+Wave 5 removes the remaining production dependency on legacy economic models:
+
+- AutonomousFactoryController no longer instantiates AgentEconomicsEngine.
+- CognitiveOutcomeLearner depends only on generic telemetry, not an economic authority implementation.
+- CapabilityFirstRouter remains selection-only.
+- MissionManager remains lifecycle-only for duration/parallelism; economic admission is Treasury-owned.
+- Legacy quota service is only a migration bootstrap/projection dependency inside TreasuryQuotaAdmission.
+- Economic Intelligence gains historical anomaly baselines, observed price confidence, verified render/short economics, and reservation right-sizing.
+- TreasuryEconomicAdvice remains a projection with no Treasury write capability.
+
+The rule remains:
+
+`intelligence -> recommendation -> existing authority boundary`
+
+Never:
+
+`intelligence -> authority mutation`

@@ -54,6 +54,16 @@ describe("Treasury Wave 4 authority retirement", () => {
     expect(source).not.toContain('status: "QUOTA_UNAVAILABLE"');
   });
 
+  it("removes AgentEconomicsEngine from the production controller graph", () => {
+    const source = read(
+      "factoryos/core/controller/AutonomousFactoryController.ts",
+    );
+
+    expect(source).not.toContain('import { AgentEconomicsEngine }');
+    expect(source).not.toContain("new AgentEconomicsEngine(");
+    expect(source).toContain("TreasuryEconomicIntelligence");
+  });
+
   it("keeps Economic Intelligence read-only by construction", () => {
     const source = read(
       "factoryos/core/treasury/TreasuryEconomicIntelligence.ts",
