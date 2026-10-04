@@ -349,6 +349,42 @@ describe("Project Ascalon: Trajectory Validation & Exporter Tests", () => {
     }
   });
 
+  it("21. excludes synthetic curriculum from production-golden export", () => {
+    const synthetic = {
+      ...golden[0],
+      trajectoryId: "traj_synthetic_curriculum",
+      environment: {
+        ...golden[0].environment,
+        environmentType: "SIMULATION",
+      },
+      provenance: {
+        ...golden[0].provenance,
+        labelSource: "SIMULATION",
+        trainingEligible: true,
+        simulation: true,
+        synthetic: true,
+      },
+    };
+
+    const result = AscalonTrajectoryExporter.exportDataset([
+      golden[0],
+      synthetic,
+    ]);
+
+    expect(result.train).not.toContain(synthetic);
+    expect(result.validation).not.toContain(synthetic);
+    expect(result.test).not.toContain(synthetic);
+    expect(
+      result.rejected.some(
+        (entry) =>
+          entry.trajectory.trajectoryId === "traj_synthetic_curriculum" &&
+          entry.reasons.some((reason) =>
+            reason.includes("SYNTHETIC_CURRICULUM"),
+          ),
+      ),
+    ).toBe(true);
+  });
+
   it("20. verifies dataset export splits without cross-family leakage", () => {
     const result = AscalonTrajectoryExporter.exportDataset(golden);
     expect(result.splitManifest.totalExported).toBe(golden.length);
