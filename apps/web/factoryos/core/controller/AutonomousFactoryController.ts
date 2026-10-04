@@ -52,7 +52,6 @@ import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
 import { IntelligenceGateway } from "../intelligence/IntelligenceGateway";
 import { IndexedExperienceMemory } from "../cognitive/memory/IndexedExperienceMemory";
-import { AgentEconomicsEngine } from "../cognitive/economics/AgentEconomicsEngine";
 import { CognitiveOutcomeLearner } from "../cognitive/CognitiveOutcomeLearner";
 import { TrajectoryLearningBridge } from "../cognitive/TrajectoryLearningBridge";
 import {
@@ -357,8 +356,8 @@ export class AutonomousFactoryController {
     // Verified production-trajectory learning bridge. It consumes only
     // independently verified outcomes and cannot grant runtime authority.
     const trajectoryExperienceMemory = new IndexedExperienceMemory(repos.memories);
-    const trajectoryEconomics = new AgentEconomicsEngine();
-    const trajectoryOutcomeLearner = new CognitiveOutcomeLearner(trajectoryExperienceMemory, trajectoryEconomics);
+    const trajectoryOutcomeLearner =
+      new CognitiveOutcomeLearner(trajectoryExperienceMemory);
     const trajectoryLearningBridge = new TrajectoryLearningBridge(trajectoryOutcomeLearner);
 
     // 7. Swarms, Guardians & Overseer
