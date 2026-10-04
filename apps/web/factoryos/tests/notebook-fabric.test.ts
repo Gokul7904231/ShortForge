@@ -60,7 +60,7 @@ describe("Notebook & Interactive Compute Fabric", () => {
   it("validates HF ZeroGPU with the supplied private-space token", async () => {
     const adapter = new HuggingFaceZeroGPUAdapter();
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ paths: ["/render"] }), {
+      new Response(JSON.stringify({ paths: { "/render": {} } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       }),
