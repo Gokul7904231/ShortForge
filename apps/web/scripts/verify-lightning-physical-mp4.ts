@@ -46,8 +46,11 @@ async function main() {
     Date.now() +
     "-" +
     randomUUID().slice(0, 8);
-  const studioName = "shortforge-" + runId;
-  const remoteArtifact = "shortforge-lightning-physical-proof.mp4";
+  const studioName =
+    process.env.LIGHTNING_EXISTING_STUDIO?.trim() ||
+    "shortforge-" + runId;
+  const remoteArtifact =
+    "shortforge-lightning-physical-proof-" + runId + ".mp4";
   const localArtifact = path.join(proofDir, runId + ".mp4");
   const remoteAbsolute = "$HOME/" + remoteArtifact;
 
