@@ -102,8 +102,8 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       "from lightning_sdk import Studio, Machine",
       "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=True)",
       "machine_name=" + JSON.stringify(machine),
-      "machine=Machine.from_str(machine_name)",
-      "studio.start(machine)",
+      "machine=None if machine_name == 'CPU' else Machine.from_str(machine_name)",
+      "studio.start() if machine is None else studio.start(machine)",
       "print('SHORTFORGE_LIGHTNING_STUDIO_READY:' + studio.name)",
       "print('SHORTFORGE_LIGHTNING_TEAMSPACE:' + studio.teamspace.name)",
     ].join(";");
