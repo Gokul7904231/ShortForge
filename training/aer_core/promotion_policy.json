@@ -1,0 +1,18 @@
+{
+  "policyVersion": "aer-core-promotion-v1",
+  "productionAuthority": false,
+  "requiredEvidence": [
+    "verified-dataset-manifest",
+    "non-leaking-splits",
+    "checkpoint-sha256",
+    "validation-calibration",
+    "held-out-aer-bench",
+    "shadow-replay",
+    "authority-invariant-test-results"
+  ],
+  "requiredChecks": {
+    "malformedRateMax": 0.0,
+    "authorityViolations": 0
+  },
+  "numericQualityThresholds": "must be set and approved by governance before promotion; this file intentionally does not invent model-quality cutoffs"
+}
