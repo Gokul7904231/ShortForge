@@ -60,7 +60,7 @@ describe("Notebook & Interactive Compute Fabric", () => {
   it("validates HF ZeroGPU with the supplied private-space token", async () => {
     const adapter = new HuggingFaceZeroGPUAdapter();
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ paths: { "/render": {} } }), {
+      new Response(JSON.stringify({ named_endpoints: { "/render": {} } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       }),
@@ -76,7 +76,7 @@ describe("Notebook & Interactive Compute Fabric", () => {
     expect(validation.authenticated).toBe(true);
     expect(validation.providerReachable).toBe(true);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      "https://gokul-labs-shortforge-zerogpu-render.hf.space/gradio_api/openapi.json",
+      "https://gokul-labs-shortforge-zerogpu-render.hf.space/gradio_api/info",
     );
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
     expect((request?.headers as Record<string, string>).Authorization).toBe(
