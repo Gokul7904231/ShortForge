@@ -244,8 +244,6 @@ async function main(): Promise<void> {
       validWatchHoursLast365Days: 80000,
       shortsViewsLast90Days: 25000000,
       activeCommunityGuidelinesStrikes: 0,
-      countryRegion: "US",
-      isChannelThemeConsistent: true,
     };
 
     const guardian = new F07ReleaseGuardian(
