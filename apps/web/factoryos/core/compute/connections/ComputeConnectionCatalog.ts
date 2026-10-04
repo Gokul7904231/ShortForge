@@ -88,6 +88,12 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
         "kernels.execute:*",
         "kernels.delete:*",
       ],
+      permissions: [
+        "Read your Kaggle notebooks",
+        "Create and update ShortForge notebooks",
+        "Execute ShortForge notebooks",
+        "Remove temporary ShortForge notebooks after rendering",
+      ],
     },
     setupUrl: "https://www.kaggle.com/settings/api",
     roles: ["BASIC", "ADMIN"],
@@ -154,6 +160,16 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     setupUrl: "https://lightning.ai/docs/overview/getting-started",
     roles: ["BASIC", "ADMIN"],
     implemented: true,
+    onboarding: {
+      summary:
+        "Lightning does not currently provide the delegated web authorization flow ShortForge needs for a one-click connection. This is a one-time guided setup.",
+      steps: [
+        "Open Lightning's programmatic access settings and create an API key.",
+        "Copy the Lightning User ID shown with your programmatic credentials.",
+        "Choose the Teamspace where ShortForge may create or reuse a Studio.",
+        "Paste those details here once; ShortForge stores the secret encrypted and verifies the connection.",
+      ],
+    },
     description: "Lightning Studio execution. ShortForge uses the official programmatic access path; no fake OAuth flow.",
   },
   {
