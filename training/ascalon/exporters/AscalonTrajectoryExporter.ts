@@ -41,9 +41,9 @@ export class AscalonTrajectoryExporter {
         traj.provenance?.simulation === true;
 
       if (
-        isSynthetic ||
-        !report.valid ||
-        traj.provenance?.trainingEligible !== true
+        report.valid &&
+        !isSynthetic &&
+        traj.provenance?.trainingEligible === true
       ) {
         validTrajectories.push(traj);
       } else {
@@ -53,6 +53,11 @@ export class AscalonTrajectoryExporter {
         if (isSynthetic) {
           reasons.push(
             "[SYNTHETIC_CURRICULUM] Synthetic/simulation data belongs in the curriculum path, not production-golden training export.",
+          );
+        }
+        if (traj.provenance?.trainingEligible !== true) {
+          reasons.push(
+            "[TRAINING_INELIGIBLE] Trajectory is not explicitly marked trainingEligible.",
           );
         }
         rejected.push({
@@ -65,7 +70,9 @@ export class AscalonTrajectoryExporter {
     // 2. Group by mission/episode family
     const familyMap = new Map<string, any[]>();
     for (const traj of validTrajectories) {
-      const familyKey = traj.episode?.missionId || traj.episode?.caseId || traj.trajectoryId;
+      const familyKey = String(
+        traj.episode?.missionId || traj.episode?.caseId || traj.trajectoryId,
+      );
       if (!familyMap.has(familyKey)) {
         familyMap.set(familyKey, []);
       }
