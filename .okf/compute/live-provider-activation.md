@@ -54,3 +54,17 @@ Verified chain:
 This evidence qualifies the Daytona physical + CAS + F07 boundary. It does not promote Daytona into F06 production-worker eligibility.
 
 The one-shot [live-daytona-f07-proof] push trigger used solely to obtain this real proof is removed after qualification.
+
+## Verified HF ZeroGPU Operator Proof — 2026-10-04
+
+The private Hugging Face Space `gokul-labs/shortforge-zerogpu-render` has a physical operator proof independent of ShortForge.
+
+Verified outside the repository:
+- ZeroGPU allocated `NVIDIA RTX PRO 6000 Blackwell Server Edition MIG 2g.48gb`.
+- Gradio `/render` accepted the authenticated request.
+- The hosted function generated a 1080x1920 MP4.
+- The authenticated file route returned HTTP 200.
+- Downloaded artifact length: 277495 bytes.
+- Independent SHA-256: `788664813bde46040ab1c15d3f83d745074575707061ab88c8d38deffae6b34d`.
+
+Repository-side qualification is intentionally separate. Issue #160 tracks the remaining ShortForge adapter -> physical artifact -> CAS -> F07 proof. The provider remains outside F06 production-worker eligibility until that live repository proof passes.
