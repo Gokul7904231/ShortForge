@@ -93,3 +93,17 @@ Future notebook-to-worker promotion must independently satisfy:
 8. F07 acceptance.
 
 No notebook adapter may self-promote to worker status.
+
+
+## HF ZeroGPU live qualification gate
+
+The HF ZeroGPU adapter now follows the real private Space contract:
+1. validate the authenticated Space OpenAPI route;
+2. submit the documented zero-input Gradio function call;
+3. consume the completed SSE event;
+4. resolve the returned FileData artifact;
+5. download the artifact with the authenticated Space file header;
+6. recompute SHA-256 and byte length in ShortForge;
+7. hand the physical artifact to the independent CAS/F07 verification path.
+
+Operator proof on 2026-10-04 established the hosted GPU and authenticated artifact retrieval path. Repository qualification remains pending the live CI proof in PR #161. HF ZeroGPU remains `productionWorkerEligible=false`.
