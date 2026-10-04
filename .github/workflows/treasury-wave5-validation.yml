@@ -66,3 +66,4 @@ jobs:
           ! grep -R "CostGovernor\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='CostGovernor.ts'
           ! grep -R "MissionBudgetManager\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='MissionBudgetManager.ts'
           ! grep -R "getProviderWithFallback(" apps/web/app apps/web/lib apps/web/agents --exclude-dir=node_modules --exclude='factory.ts'
+          ! grep -R "AgentEconomicsEngine" apps/web/app apps/web/lib apps/web/factoryos/core apps/web/ai apps/web/agents --exclude-dir=node_modules --exclude='*.test.ts' --exclude='AgentEconomicsEngine.ts'
