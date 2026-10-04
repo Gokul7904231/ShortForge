@@ -5,6 +5,7 @@ import {
 } from "../core/intelligence/decision/AERDecisionCoreContract";
 import { assertTrainingRecordEligible } from "../core/intelligence/decision/AERDecisionTrainingContract";
 import { AERCoreShadowCoordinator } from "../core/intelligence/decision/AERCoreShadowCoordinator";
+import { validateAERCoreBatch } from "../core/intelligence/decision/AERDecisionValidator";
 
 describe("AER Decision Core training boundary", () => {
   it("keeps AER-Core non-authoritative", () => {
@@ -126,4 +127,27 @@ describe("AER Decision Core training boundary", () => {
     expect(record.highConfidenceDisagreements).toBe(1);
     expect(primary.answersById.q1.selected).toBe("a");
   });
+  it("rejects invalid model distributions without inventing a fallback", () => {
+    const errors = validateAERCoreBatch(
+      [
+        {
+          id: "q1",
+          type: "CHOICE",
+          question: "Which worker?",
+          options: ["a", "b"],
+        },
+      ],
+      [
+        {
+          questionId: "q1",
+          type: "CHOICE",
+          selected: "a",
+          probabilities: { a: 1.4, b: -0.4 },
+          confidence: 0.9,
+        },
+      ],
+    );
+    expect(errors).toContain("q1:INVALID_DISTRIBUTION");
+  });
+
 });
