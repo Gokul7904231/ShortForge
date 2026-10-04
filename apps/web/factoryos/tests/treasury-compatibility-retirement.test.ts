@@ -18,6 +18,14 @@ const excluded = new Set([
   "factoryos/core/missions/MissionBudgetManager.ts",
 ]);
 
+const compatibilityBoundaries = new Set([
+  "app/api/rendering/callback/route.ts",
+  "app/api/jobs/[id]/route.ts",
+  "factoryos/core/index.ts",
+  "factoryos/core/treasury/TreasuryQuotaAdmission.ts",
+  "factoryos/core/treasury/TreasuryQuotaCompatibility.ts",
+]);
+
 function walk(dir: string, out: string[] = []): string[] {
   if (!fs.existsSync(dir)) return out;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -64,5 +72,28 @@ describe("Treasury Wave 5 compatibility retirement", () => {
     }
 
     expect(violations).toEqual([]);
+  });
+
+  it("isolates legacy quota-service imports to documented compatibility boundaries", () => {
+    const violations: string[] = [];
+    for (const rootDir of productionRoots) {
+      const absolute = path.join(root, rootDir);
+      for (const file of walk(absolute)) {
+        const rel = relative(file);
+        const source = fs.readFileSync(file, "utf8");
+        if (
+          (source.includes("quota-service") ||
+            /from\s+["'][^"']*CostGovernor["']/.test(source) ||
+            /from\s+["'][^"']*MissionBudgetManager["']/.test(source)) &&
+          !excluded.has(rel) &&
+          !compatibilityBoundaries.has(rel)
+        ) {
+          violations.push(rel);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
   });
 });

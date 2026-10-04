@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { readJobManifest, saveJobManifest } from "@/lib/jobs-history";
-import { releaseGenerationSlot } from "@/lib/quota/quota-service";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { releaseLegacyGenerationSlot } from "@/factoryos/core/treasury/TreasuryQuotaCompatibility";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -117,8 +119,22 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Release / refund quota reservation
-    await releaseGenerationSlot(targetUid, id);
+    // Treasury-backed jobs release the authoritative entitlement hold.
+    const treasuryReservationId = (job as any)?.treasuryQuotaReservationId as string | undefined;
+    if (treasuryReservationId) {
+      const treasuryQuotaAdmission = new TreasuryQuotaAdmission(
+        await getTreasuryRuntime(),
+      );
+      await treasuryQuotaAdmission.releaseGenerationSlot(
+        treasuryReservationId,
+        targetUid,
+        String((job as any)?.tier || "BASIC"),
+        id,
+      );
+    } else {
+      // Historical jobs may still require a projection-only compatibility release.
+      await releaseLegacyGenerationSlot(targetUid, id);
+    }
 
     return NextResponse.json({
       success: true,

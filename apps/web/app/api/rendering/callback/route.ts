@@ -3,7 +3,10 @@ import crypto from "crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { db } from "@/lib/firebase-admin";
-import { finalizeGenerationSlot, releaseGenerationSlot } from "@/lib/quota/quota-service";
+import {
+  finalizeLegacyGenerationSlot,
+  releaseLegacyGenerationSlot,
+} from "@/factoryos/core/treasury/TreasuryQuotaCompatibility";
 import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
 import { RemoteRenderStateMachine } from "@/factoryos/core/rendering/RemoteRenderStateMachine";
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      await finalizeGenerationSlot(userId, jobId);
+      await finalizeLegacyGenerationSlot(userId, jobId);
     };
 
     const releaseOrRefundQuota = async () => {
@@ -135,7 +138,7 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      await releaseGenerationSlot(userId, jobId);
+      await releaseLegacyGenerationSlot(userId, jobId);
     };
 
     // 2. Remote Render State Machine — Attempt Monotonicity & Idempotency

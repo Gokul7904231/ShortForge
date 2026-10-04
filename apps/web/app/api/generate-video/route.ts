@@ -8,11 +8,7 @@ import { EngineRegistry } from "@/lib/core/EngineRegistry";
 import { compileProductionSpec } from "@/factoryos/core/engines/ProductionSpecCompiler";
 import { EngineJobSnapshot } from "@/lib/core/EngineContracts";
 import { advancePointer, hasHardcodedCountry } from "@/lib/quiz/GeoRotationService";
-import {
-  resolveTier,
-  releaseGenerationSlot,
-  QuotaExceededError,
-} from "@/lib/quota/quota-service";
+import { resolveTreasuryEntitlementTier } from "@/factoryos/core/treasury/TreasuryEntitlementPolicy";
 import {
   TreasuryQuotaAdmission,
   type TreasuryQuotaReservationResult,
@@ -162,7 +158,9 @@ export async function POST(req: Request) {
       return;
     }
     if (userId && jobId) {
-      await releaseGenerationSlot(userId, jobId).catch(() => {});
+      throw new Error(
+        "Treasury quota reservation is required before generation admission can be released.",
+      );
     }
   };
 
@@ -185,7 +183,7 @@ export async function POST(req: Request) {
 
     userId = authenticatedUser.uid;
     userRole = (authenticatedUser.role || "USER").toUpperCase();
-    const tier = resolveTier(userRole);
+    const tier = resolveTreasuryEntitlementTier(userRole);
 
     const body = await req.json();
     const parsed = GenerateVideoRequestSchema.safeParse(body);
@@ -240,10 +238,15 @@ export async function POST(req: Request) {
         mode: "autonomous",
       });
 
-    if (controller.treasuryService) {
-      treasuryQuotaAdmission = new TreasuryQuotaAdmission(
-        controller.treasuryService,
+    if (!controller.treasuryService) {
+      throw new Error(
+        "TreasuryService is unavailable; production generation requires the Treasury economic admission path.",
       );
+    }
+
+    treasuryQuotaAdmission = new TreasuryQuotaAdmission(
+      controller.treasuryService,
+    );
       try {
         treasuryQuotaReservation =
           await treasuryQuotaAdmission.reserveGenerationSlot({
@@ -259,8 +262,7 @@ export async function POST(req: Request) {
           });
       } catch (quotaErr: any) {
         if (
-          quotaErr instanceof QuotaExceededError ||
-          quotaErr.name === "QuotaExceededError"
+          quotaErr?.name === "QuotaExceededError"
         ) {
           return NextResponse.json(
             {
