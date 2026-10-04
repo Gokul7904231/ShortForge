@@ -321,35 +321,47 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       "/" +
       normalizedRemotePath;
 
-    const listing = await runProcess(
-      "lightning",
-      ["ls", studioUri],
-      { timeoutMs: 30_000, env },
-    );
+    let lastListing = "lightning ls did not run";
+    let lastCopy = "lightning cp did not run";
 
-    const result = await runProcess(
-      "lightning",
-      ["cp", studioUri, absoluteDestination],
-      { timeoutMs: 120_000, env },
-    );
-
-    if (result.exitCode !== 0) {
-      throw new Error(
-        "LIGHTNING_ARTIFACT_DOWNLOAD_FAILED: " +
-          (result.stderr || result.stdout || "lightning cp failed") +
-          "\nRemote artifact probe: " +
-          (listing.stdout || listing.stderr || "lightning ls returned no output"),
+    for (let attempt = 1; attempt <= 12; attempt += 1) {
+      const listing = await runProcess(
+        "lightning",
+        ["ls", studioUri],
+        { timeoutMs: 30_000, env },
       );
+      lastListing = listing.stdout || listing.stderr || "lightning ls returned no output";
+
+      if (listing.exitCode === 0) {
+        const result = await runProcess(
+          "lightning",
+          ["cp", studioUri, absoluteDestination],
+          { timeoutMs: 120_000, env },
+        );
+        lastCopy = result.stderr || result.stdout || "lightning cp returned no output";
+
+        if (result.exitCode === 0) {
+          const evidence = await fileEvidence(absoluteDestination);
+          if (evidence.artifactByteLength > 0) {
+            return evidence;
+          }
+          lastCopy = "lightning cp completed but local artifact was empty";
+        }
+      }
+
+      if (attempt < 12) {
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+      }
     }
 
-    const evidence = await fileEvidence(absoluteDestination);
-    if (evidence.artifactByteLength <= 0) {
-      throw new Error(
-        "LIGHTNING_ARTIFACT_DOWNLOAD_EMPTY: downloaded artifact is zero bytes.",
-      );
-    }
-
-    return evidence;
+    throw new Error(
+      "LIGHTNING_ARTIFACT_DOWNLOAD_FAILED after 12 visibility/transfer attempts. " +
+        "This protects against Lightning Drive/Studio filesystem eventual-consistency races.\n" +
+        "Remote artifact probe: " +
+        lastListing +
+        "\nLast transfer result: " +
+        lastCopy,
+    );
   }
 
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
