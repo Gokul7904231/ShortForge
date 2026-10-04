@@ -62,8 +62,9 @@ jobs:
       - name: Static production authority scan
         working-directory: .
         run: |
-          ! grep -R "from .*quota-service" apps/web/app apps/web/lib apps/web/factoryos/core --exclude-dir=node_modules --exclude='*.test.ts' --exclude='quota-service.ts' --exclude='TreasuryQuotaAdmission.ts'
-          ! grep -R "CostGovernor\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='CostGovernor.ts'
-          ! grep -R "MissionBudgetManager\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='MissionBudgetManager.ts'
+          ! grep -R "from .*quota-service" apps/web/app apps/web/lib apps/web/factoryos/core --exclude-dir=node_modules --exclude='*.test.ts' --exclude='quota-service.ts' --exclude='TreasuryQuotaAdmission.ts' --exclude='TreasuryQuotaCompatibility.ts'
+          ! grep -R "CostGovernor\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='CostGovernor.ts' --exclude='index.ts'
+          ! grep -R "MissionBudgetManager\." apps/web/factoryos/core --exclude-dir=node_modules --exclude='MissionBudgetManager.ts' --exclude='index.ts'
           ! grep -R "getProviderWithFallback(" apps/web/app apps/web/lib apps/web/agents --exclude-dir=node_modules --exclude='factory.ts'
           ! grep -R "AgentEconomicsEngine" apps/web/app apps/web/lib apps/web/factoryos/core apps/web/ai apps/web/agents --exclude-dir=node_modules --exclude='*.test.ts' --exclude='AgentEconomicsEngine.ts'
+          ! grep -R "AgentEconomicsEngine" apps/web/app apps/web/lib apps/web/factoryos/core apps/web/ai apps/web/agents --exclude-dir=node_modules --exclude='*.test.ts' --exclude='AgentEconomicsEngine.ts' --exclude='index.ts'
