@@ -55,7 +55,7 @@ async function main() {
   const remoteAbsolute = "$HOME/" + remoteArtifact;
 
   const renderCommand = [
-    "command -v ffmpeg",
+    "command -v ffmpeg >/dev/null 2>&1 &&",
     "ffmpeg -hide_banner -loglevel error -y",
     "-f lavfi -i color=c=black:s=1080x1920:r=30:d=2",
     "-f lavfi -i sine=frequency=1000:sample_rate=48000:d=2",
@@ -213,7 +213,7 @@ async function main() {
     evidence: [
       "Authenticated Lightning Studio lifecycle completed.",
       "Deterministic FFmpeg MP4 rendered in Lightning Studio.",
-      "Artifact downloaded from Lightning through Studio.download_file().",
+      "Artifact downloaded from Lightning through the lit:// path using lightning cp.",
       "SHA-256 and byte length recomputed outside Lightning.",
       "Independent FFmpeg/ffprobe media probe passed.",
       "Artifact stored in ShortForge ContentAddressedStore.",
