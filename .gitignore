@@ -151,3 +151,10 @@ controller-output/
 services/pipeline/floor01_strategy/data/*.json
 services/pipeline/floor01_strategy/data/*.lock
 services/pipeline/floor01_strategy/used_artifact/
+
+
+# AER-Core training outputs and local corpora
+training/aer_core/data/*.jsonl
+training/aer_core/data/normalized/
+training/aer_core/runs/
+training/aer_core/checkpoints/
