@@ -226,7 +226,9 @@ describe("Treasury Economic Intelligence", () => {
       }),
     ).rejects.toThrow(/Treasury frozen/);
 
-    const snapshot = await new TreasuryEconomicIntelligence(service).analyze("factory", {
+    const snapshot = await new TreasuryEconomicIntelligence(
+      createTreasuryEconomicReadSource(service),
+    ).analyze("factory", {
       windowMs: 60 * 60 * 1000,
       now: new Date("2026-10-03T09:30:00.000Z"),
     });
