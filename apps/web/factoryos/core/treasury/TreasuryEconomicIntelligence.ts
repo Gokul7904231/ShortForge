@@ -832,6 +832,31 @@ export class TreasuryEconomicIntelligence {
       string,
       { reservedUsd: number; consumedUsd: number; workloadType: string }
     >();
+    const terminalReservations = new Set<string>();
+
+    const recordUtilization = (
+      reservationId: string,
+    ): void => {
+      if (terminalReservations.has(reservationId)) return;
+      const existing = reservations.get(reservationId);
+      if (!existing) return;
+
+      const utilization =
+        existing.reservedUsd > 0
+          ? Math.min(
+              1,
+              Math.max(
+                0,
+                existing.consumedUsd / existing.reservedUsd,
+              ),
+            )
+          : 0;
+
+      const values = grouped.get(existing.workloadType) ?? [];
+      values.push(utilization);
+      grouped.set(existing.workloadType, values);
+      terminalReservations.add(reservationId);
+    };
 
     for (const event of events) {
       const reservationId = event.reservationId;
@@ -843,68 +868,48 @@ export class TreasuryEconomicIntelligence {
           consumedUsd: 0,
           workloadType: eventWorkloadType(event),
         });
-      } else if (event.eventType === "RESOURCE_CONSUMED") {
-        const existing = reservations.get(reservationId) ?? {
-          reservedUsd: 0,
-          consumedUsd: 0,
-          workloadType: eventWorkloadType(event),
-        };
-        existing.consumedUsd += Math.max(0, numeric(event.amountUsd));
+        continue;
+      }
+
+      if (event.eventType === "RESOURCE_CONSUMED") {
+        const existing = reservations.get(reservationId);
+        if (!existing) continue;
+
+        existing.consumedUsd += Math.max(
+          0,
+          numeric(event.amountUsd),
+        );
         reservations.set(reservationId, existing);
-      } else if (
+        recordUtilization(reservationId);
+        continue;
+      }
+
+      if (
         event.eventType === "RESERVATION_RELEASED" ||
         event.eventType === "RESERVATION_EXPIRED"
       ) {
-        const existing = reservations.get(reservationId);
-        if (existing) {
-          const utilization =
-            existing.reservedUsd > 0
-              ? Math.min(1, Math.max(0, existing.consumedUsd / existing.reservedUsd))
-              : 0;
-          const list = grouped.get(existing.workloadType) ?? [];
-          list.push(utilization);
-          grouped.set(existing.workloadType, list);
-        }
+        recordUtilization(reservationId);
       }
     }
 
-    for (const [reservationId, existing] of reservations) {
-      const hasTerminalEvent = events.some(
-        (event) =>
-          event.reservationId === reservationId &&
-          (event.eventType === "RESERVATION_RELEASED" ||
-            event.eventType === "RESERVATION_EXPIRED" ||
-            event.eventType === "RESOURCE_CONSUMED"),
-      );
-      if (!hasTerminalEvent) continue;
-      const utilization =
-        existing.reservedUsd > 0
-          ? Math.min(1, Math.max(0, existing.consumedUsd / existing.reservedUsd))
-          : 0;
-      if (!grouped.has(existing.workloadType)) {
-        grouped.set(existing.workloadType, []);
-      }
-      if (!grouped.get(existing.workloadType)!.includes(utilization)) {
-        grouped.get(existing.workloadType)!.push(utilization);
-      }
-    }
-
-    return Array.from(grouped.entries()).map(([workloadType, values]) => ({
-      workloadType,
-      samples: values.length,
-      medianUtilization: percentile(values, 0.5),
-      p90Utilization: percentile(values, 0.9),
-      recommendedReservationMultiplier: Math.min(
-        1,
-        Math.max(0.25, percentile(values, 0.9) * 1.15),
-      ),
-      confidence:
-        values.length >= 20
-          ? "HIGH"
-          : values.length >= 5
-            ? "MEDIUM"
-            : "LOW",
-    }));
+    return Array.from(grouped.entries()).map(
+      ([workloadType, values]) => ({
+        workloadType,
+        samples: values.length,
+        medianUtilization: percentile(values, 0.5),
+        p90Utilization: percentile(values, 0.9),
+        recommendedReservationMultiplier: Math.min(
+          1,
+          Math.max(0.25, percentile(values, 0.9) * 1.15),
+        ),
+        confidence:
+          values.length >= 20
+            ? "HIGH"
+            : values.length >= 5
+              ? "MEDIUM"
+              : "LOW",
+      }),
+    );
   }
 
   private providerMetrics(
