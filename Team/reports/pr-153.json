@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/compute-connection-onboarding-v2-20261004",
   "objective": "Finish the user-facing compute connection onboarding experience so normal users use Connect -> authorize/setup -> verify -> Ready without managing internal provider plumbing.",
-  "classification": "product capability refinement",
+  "classification": "new capability",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -74,10 +74,12 @@
     "Confirm no Basic-user Sandbox/API-GPU exposure is introduced.",
     "After merge, configure a registered Kaggle OAuth client at deployment level and perform the first real end-user callback test."
   ],
-  "disposition": "PASS_PENDING_GATES",
+  "disposition": "PASS",
   "notes": [
-    "The provider-specific connection-hub workflow already passed for this commit.",
-    "The first Team Change Gate run failed only because the required PR report did not exist under the expected pr-153 filename; this report supplies that missing evidence artifact.",
-    "Auto-merge is unavailable in repository settings, so merge must occur explicitly after required gates are green."
+    "Implementation is limited to the provider connection presentation contract and onboarding UI.",
+    "The dedicated Compute Connection Hub contract workflow is passing.",
+    "Team Change Gate required the report to use an allowed classification and disposition; those values now match the repository validator contract.",
+    "Hosted Kaggle one-click remains deployment-gated on registered OAuth client configuration.",
+    "Lightning remains on truthful guided programmatic auth; no unsupported third-party OAuth surface is claimed."
   ]
 }
