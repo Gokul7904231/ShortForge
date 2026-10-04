@@ -1,14 +1,14 @@
 {
-  "schemaVersion":"1.0",
-  "changeId":"ShortForge-PR161-HF-ZeroGPU-Physical-F07",
-  "repository":"Gokul7904231/ShortForge",
-  "baseRef":"main",
-  "headRef":"feat/hf-zerogpu-live-f07-proof-20261004",
-  "objective":"Close the HF ZeroGPU repository-side control and artifact-truth boundary using the operator-verified private Space, authenticated Gradio FileData retrieval, CAS integrity, and F07 verification.",
-  "classification":"new capability",
-  "okf":{
-    "sweepStatus":"COMPLETE",
-    "rulesConsidered":[
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR161-HF-ZeroGPU-Physical-F07",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/hf-zerogpu-live-f07-proof-20261004",
+  "objective": "Close the HF ZeroGPU repository-side control and artifact-truth boundary using the operator-verified private Space, authenticated Gradio FileData retrieval, CAS integrity, and F07 verification.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
       "HF ZeroGPU is shared hosted-function execution, not a generic VM.",
       "Provider completion is not physical artifact acceptance.",
       "F07 remains the independent physical artifact truth boundary.",
@@ -17,27 +17,27 @@
       "Provider credentials remain secret-controlled and are not written into evidence."
     ]
   },
-  "security":{
-    "required":true,
-    "status":"TRIAGED",
-    "semgrep":"NOT_RUN_IN_AGENT_ENVIRONMENT",
-    "strix":"UNAVAILABLE",
-    "zap":"NOT_APPLICABLE",
-    "notes":[
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
       "HF token is consumed only through workflow secrets/runtime credential bundles and is not committed.",
       "The adapter uses a dedicated authenticated header for the proven private Gradio file route.",
       "The Space artifact serving boundary is restricted by an explicit allowed output directory."
     ]
   },
-  "conflicts":[],
-  "forgers":[
+  "conflicts": [],
+  "forgers": [
     "Forge Architect",
     "Forge Builder",
     "Forge Sentinel",
     "Forge Evaluator",
     "Forge Release"
   ],
-  "changes":[
+  "changes": [
     "Hardened HuggingFaceZeroGPUAdapter for the real zero-input /render contract.",
     "Added authenticated FileData resolution and x-hf-authorization artifact download.",
     "Added physical artifact digest and byte-length recomputation.",
@@ -46,7 +46,7 @@
     "Added focused notebook-fabric contract coverage.",
     "Preserved productionWorkerEligible=false."
   ],
-  "evidenceRefs":[
+  "evidenceRefs": [
     "apps/web/factoryos/core/compute/notebooks/HuggingFaceZeroGPUAdapter.ts",
     "apps/web/factoryos/tests/notebook-fabric.test.ts",
     "apps/web/scripts/verify-hf-zerogpu-physical-mp4.ts",
@@ -55,30 +55,34 @@
     "Issue #160",
     "Operator proof artifact SHA-256 788664813bde46040ab1c15d3f83d745074575707061ab88c8d38deffae6b34d"
   ],
-  "verificationResults":{
-    "spaceGpuProof":"PASS_OPERATOR_RUN",
-    "privateRenderApi":"PASS_OPERATOR_RUN",
-    "authenticatedArtifactDownload":"PASS_OPERATOR_RUN",
-    "artifactSha256":"PASS_OPERATOR_RUN",
-    "artifactByteLength":"PASS_OPERATOR_RUN",
-    "adapterUnitContract":"PENDING_CI",
-    "teamChangeGate":"PENDING_RERUN",
-    "repositoryCI":"PENDING",
-    "liveShortForgePhysicalProof":"PENDING_HF_TOKEN_SECRET",
-    "casIntegrity":"PENDING_LIVE_WORKFLOW",
-    "f07Physical":"PENDING_LIVE_WORKFLOW",
-    "f07ReceiptSignature":"PENDING_LIVE_WORKFLOW"
+  "verificationResults": {
+    "spaceGpuProof": "PASS_OPERATOR_RUN",
+    "privateRenderApi": "PASS_OPERATOR_RUN",
+    "authenticatedArtifactDownload": "PASS_OPERATOR_RUN",
+    "artifactSha256": "PASS_OPERATOR_RUN",
+    "artifactByteLength": "PASS_OPERATOR_RUN",
+    "adapterUnitContract": "PASS_CI_RUN_180",
+    "teamChangeGate": "PASS_RUN_1667",
+    "repositoryCI": "PASS_RUN_2182",
+    "liveShortForgePhysicalProof": "PASS_RUN_7_37215052417",
+    "independentMediaProbe": "PASS_1080x1920_H264_AAC_DECODE",
+    "casIntegrity": "PASS",
+    "f07Physical": "PASS",
+    "f07ReceiptSignature": "PASS",
+    "evidenceArtifactUploaded": "PASS_ARTIFACT_11308620102",
+    "productionWorkerEligible": "FALSE"
   },
-  "verificationPlan":[
-    "Pass Team Change Gate and blocking repository/floor validation.",
-    "Add a repository HF_TOKEN secret with read access to the private Space.",
-    "Run Live HF ZeroGPU Render Proof once.",
-    "Require adapter physical artifact, independent media probe, CAS integrity, F07 physical verification, and signed receipt before qualifying the provider.",
-    "Update .okf evidence only from the successful live workflow and preserve F06 worker eligibility as false."
+  "verificationPlan": [
+    "Keep HF ZeroGPU live proof manual-only after qualification.",
+    "Preserve independent CAS and F07 physical verification for future render changes.",
+    "Keep HF ZeroGPU outside F06 production-worker eligibility."
   ],
-  "disposition":"PASS",
-  "notes":[
-    "The external operator proof establishes a real RTX PRO 6000 Blackwell ZeroGPU execution and an independently hashed downloaded MP4.",
-    "The repository live proof remains gated on repository secret configuration and must not be declared complete before the workflow passes."
+  "disposition": "PASS",
+  "notes": [
+    "ShortForge repository-side HF ZeroGPU physical + CAS + F07 qualification passed on GitHub Actions run 37215052417.",
+    "Artifact SHA-256 788664813bde46040ab1c15d3f83d745074575707061ab88c8d38deffae6b34d and byte length 277495 were recomputed by ShortForge.",
+    "F07 signed receipt verification passed.",
+    "The live workflow has been restored to manual-only execution after qualification to protect ZeroGPU quota.",
+    "No production worker authority is granted."
   ]
 }
