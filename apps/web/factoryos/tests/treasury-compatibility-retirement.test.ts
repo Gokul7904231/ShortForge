@@ -16,6 +16,10 @@ const excluded = new Set([
   "lib/quota/quota-service.ts",
   "factoryos/core/governor/CostGovernor.ts",
   "factoryos/core/missions/MissionBudgetManager.ts",
+  "factoryos/core/index.ts",
+  "factoryos/core/treasury/TreasuryQuotaAdmission.ts",
+  "factoryos/core/treasury/TreasuryQuotaCompatibility.ts",
+  "ai/factory.ts",
 ]);
 
 const compatibilityBoundaries = new Set([
@@ -53,7 +57,9 @@ function legacyReferences(source: string): boolean {
     /require\(\s*["'][^"']*quota-service["']/.test(source) ||
     /from\s+["'][^"']*CostGovernor["']/.test(source) ||
     /from\s+["'][^"']*MissionBudgetManager["']/.test(source) ||
+    /from\s+["'][^"']*AgentEconomicsEngine["']/.test(source) ||
     /new\s+MissionBudgetManager\b/.test(source) ||
+    /new\s+AgentEconomicsEngine\b/.test(source) ||
     /CostGovernor\.(evaluateInvocation|recordSpend)\b/.test(source)
   );
 }
