@@ -1,0 +1,46 @@
+name: Treasury Wave 7 Validation
+
+on:
+  push:
+    branches:
+      - feat/treasury-promotion-evidence-wave7-20261004
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/treasury/**"
+      - "apps/web/factoryos/tests/treasury-economic-promotion-gate.test.ts"
+      - "apps/web/ai/**"
+      - ".okf/**"
+      - "docs/treasury-wave7-promotion-evidence.md"
+      - "Team/reports/pr-*.json"
+  workflow_dispatch:
+
+jobs:
+  treasury-wave7:
+    name: Treasury Wave 7 — Promotion Evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Promotion evidence tests
+        run: npx vitest run factoryos/tests/treasury-economic-promotion-gate.test.ts
+      - name: Treasury Wave 6 regression
+        run: npx vitest run factoryos/tests/treasury-shadow-route-evaluator.test.ts factoryos/tests/treasury-economic-intelligence.test.ts
+      - name: Authority regression
+        run: npx vitest run factoryos/tests/treasury-authority-retirement.test.ts factoryos/tests/treasury-compatibility-retirement.test.ts
+      - name: Static mutation boundary scan
+        working-directory: .
+        run: |
+          ! grep -R "treasuryService.*\.\(reserve\|settle\|release\|freeze\|unfreeze\)" apps/web/factoryos/core/treasury/TreasuryEconomicPromotionGate.ts apps/web/factoryos/core/treasury/TreasuryShadowOutcomeAttribution.ts
+          ! grep -R "provider.*\.execute" apps/web/factoryos/core/treasury/TreasuryEconomicPromotionGate.ts apps/web/factoryos/core/treasury/TreasuryShadowOutcomeAttribution.ts
