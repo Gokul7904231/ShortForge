@@ -49,13 +49,14 @@ describeLiveProof("live hosted sandbox compute proof", () => {
     let runtime: any;
 
     try {
+      const proofName = "shortforge-live-" + Date.now().toString(36);
       const provision = await adapter.provision({
-        idempotencyKey: "live-sandbox-smoke-" + Date.now().toString(36),
+        idempotencyKey: proofName,
         template:
           process.env.SHORTFORGE_LIVE_SANDBOX_IMAGE ||
           (provider === "DAYTONA" ? process.env.DAYTONA_SANDBOX_IMAGE : process.env.MODAL_SANDBOX_IMAGE),
         ttlSeconds: 900,
-        metadata: { shortforge_name: "shortforge-live-sandbox-smoke" },
+        metadata: { shortforge_name: proofName },
       });
 
       runtime = provision.runtime;
