@@ -6,6 +6,7 @@ import type { NotebookCredentialBundle } from "../factoryos/core/compute/noteboo
 import { ContentAddressedStore } from "../factoryos/core/compute/cas/ContentAddressedStore";
 import { F07PhysicalArtifactVerifier } from "../factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier";
 import { VerificationEngine } from "../factoryos/core/verification/VerificationEngine";
+import { runProcess } from "../factoryos/core/compute/notebooks/NotebookUtils";
 
 function fail(message: string): never {
   throw new Error("LIGHTNING_PHYSICAL_PROOF_FAILED: " + message);
@@ -53,18 +54,45 @@ async function main() {
     "shortforge-lightning-physical-proof-" + runId + ".mp4";
   const localArtifact = path.join(proofDir, runId + ".mp4");
   const remoteAbsolute = "$HOME/" + remoteArtifact;
+  const remoteFfmpeg = "$HOME/shortforge-tools/ffmpeg";
+
+  const localFfmpeg = process.env.LIGHTNING_FFMPEG_LOCAL_PATH?.trim();
+  if (!localFfmpeg) {
+    fail("LIGHTNING_FFMPEG_LOCAL_PATH is required; the proof must use an explicit render binary inside Lightning.");
+  }
+
+  const [org, teamspaceName] = (process.env.LIGHTNING_TEAMSPACE || "").split("/", 2);
+  if (!org || !teamspaceName) {
+    fail("LIGHTNING_TEAMSPACE must be <org>/<teamspace> for physical artifact tooling.");
+  }
+
+  const localFfmpegCheck = await runProcess("python", ["-c", "import os,sys; p=sys.argv[1]; print(p); print(os.path.getsize(p)); raise SystemExit(0 if os.path.isfile(p) and os.access(p, os.X_OK) else 1)", localFfmpeg], { timeoutMs: 30_000 });
+  if (localFfmpegCheck.exitCode !== 0) {
+    fail("Host FFmpeg binary is missing or not executable: " + (localFfmpegCheck.stderr || localFfmpegCheck.stdout));
+  }
+
+  const remoteFfmpegUri = "lit://" + org + "/" + teamspaceName + "/studios/" + studioName + "/shortforge-tools/ffmpeg";
+  const ffmpegUpload = await runProcess("lightning", ["cp", localFfmpeg, remoteFfmpegUri], { timeoutMs: 180_000, env: { ...process.env, ...creds } });
+  if (ffmpegUpload.exitCode !== 0) {
+    fail("Could not upload the self-contained FFmpeg binary into Lightning Studio: " + (ffmpegUpload.stderr || ffmpegUpload.stdout));
+  }
 
   const renderCommand = [
-    "command -v ffmpeg >/dev/null 2>&1 &&",
-    "ffmpeg -hide_banner -loglevel error -y",
+    "set -eux",
+    "test -f " + remoteFfmpeg,
+    "chmod +x " + remoteFfmpeg,
+    remoteFfmpeg + " -version",
+    "rm -f " + remoteAbsolute,
+    remoteFfmpeg + " -hide_banner -loglevel error -y",
     "-f lavfi -i color=c=black:s=1080x1920:r=30:d=2",
     "-f lavfi -i sine=frequency=1000:sample_rate=48000:d=2",
     "-c:v libx264 -pix_fmt yuv420p -preset veryfast",
     "-c:a aac -b:a 128k -movflags +faststart",
     remoteAbsolute,
-    "&& test -s " + remoteAbsolute,
-    "&& ls -lh " + remoteAbsolute,
-  ].join(" ");
+    "test -s " + remoteAbsolute,
+    "ls -lh " + remoteAbsolute,
+    remoteFfmpeg + " -v error -i " + remoteAbsolute + " -f null -",
+  ].join(" && ");
 
   const provisioned = await adapter.provision(
     {
@@ -212,8 +240,9 @@ async function main() {
     },
     evidence: [
       "Authenticated Lightning Studio lifecycle completed.",
+      "Self-contained FFmpeg binary uploaded from the verifier host into the Lightning Studio filesystem.",
       "Deterministic FFmpeg MP4 rendered in Lightning Studio.",
-      "Artifact downloaded from Lightning through the lit:// path using lightning cp.",
+      "Artifact downloaded from Lightning through the lit:// path using lightning cp."
       "SHA-256 and byte length recomputed outside Lightning.",
       "Independent FFmpeg/ffprobe media probe passed.",
       "Artifact stored in ShortForge ContentAddressedStore.",
