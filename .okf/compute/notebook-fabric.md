@@ -98,7 +98,7 @@ No notebook adapter may self-promote to worker status.
 ## HF ZeroGPU live qualification gate
 
 The HF ZeroGPU adapter now follows the real private Space contract:
-1. validate the authenticated Space OpenAPI route;
+1. validate the authenticated Gradio Space info endpoint and configured named route;
 2. submit the documented zero-input Gradio function call;
 3. consume the completed SSE event;
 4. resolve the returned FileData artifact;
@@ -106,4 +106,17 @@ The HF ZeroGPU adapter now follows the real private Space contract:
 6. recompute SHA-256 and byte length in ShortForge;
 7. hand the physical artifact to the independent CAS/F07 verification path.
 
-Operator proof on 2026-10-04 established the hosted GPU and authenticated artifact retrieval path. Repository qualification remains pending the live CI proof in PR #161. HF ZeroGPU remains `productionWorkerEligible=false`.
+Operator proof on 2026-10-04 established the hosted GPU and authenticated artifact retrieval path. Repository qualification completed on GitHub Actions run 37215052417 with independent media probe, CAS integrity, F07 physical verification, and signed receipt verification. HF ZeroGPU remains `productionWorkerEligible=false`.
+
+
+### HF ZeroGPU qualification result — 2026-10-04
+
+The repository-side live proof is **REAL-SMOKE-VERIFIED**. ShortForge itself authenticated the private Space, invoked the real zero-input `/render` endpoint, downloaded the resulting MP4, recomputed its digest/byte length, independently probed the media, stored the bytes in CAS, and passed the F07 physical + signed receipt boundary.
+
+GitHub Actions run: `37215052417`  
+Artifact: `hf-zerogpu-f07-evidence` / ID `11308620102`  
+SHA-256: `788664813bde46040ab1c15d3f83d745074575707061ab88c8d38deffae6b34d`  
+Byte length: `277495`  
+F07 receipt: `rcpt_live_hf_zerogpu_muu0d83o_2026-10-04T160122706Z`
+
+The live proof workflow is manual-only after qualification to prevent ordinary PR synchronization from consuming ZeroGPU quota. No F06 worker promotion is granted.
