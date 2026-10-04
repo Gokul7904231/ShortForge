@@ -1909,3 +1909,31 @@ Canonical implementation boundary:
 - `docs/ascalon/training/aer-decision-core-training.md`
 
 The adapter is present as a contract scaffold only. A real checkpoint/provider and calibration evidence are required before any production activation.
+
+
+---
+
+## AER Decision Core training readiness — 2026-10-04
+
+**Status:** TRAINING-READY INFRASTRUCTURE / CHECKPOINT NOT TRAINED / AUTHORITY DISABLED
+
+The AER Decision Core training and evaluation foundation is implemented under `training/aer_core/`.
+
+Implemented controls:
+- verified-gold training record contract;
+- rejection of synthetic/fallback/model-prediction training truth;
+- exact question-to-gold coverage checks;
+- deterministic group-isolated dataset splitting;
+- reproducible trainer with seed and device selection;
+- validation-only temperature calibration;
+- held-out AER-Bench metrics;
+- measured p50/p95 latency;
+- AER-Core shadow comparison beside primary/JEV/GLiDE;
+- explicit non-authoritative AER-Core adapter boundary;
+- local training data/checkpoints excluded from source control.
+
+Training readiness means the software pipeline can accept a compliant corpus and produce the artifacts required for evaluation. It does not claim that such a corpus or trained checkpoint currently exists.
+
+Promotion remains blocked until:
+
+`verified corpus -> training -> calibration -> held-out AER-Bench -> shadow replay -> authority/security verification -> restricted canary -> governance promotion`
