@@ -1,0 +1,29 @@
+name: Lightning Studio Inventory
+
+on:
+  push:
+    branches:
+      - feat/lightning-physical-mp4-proof-20261004
+  workflow_dispatch:
+
+jobs:
+  inventory:
+    name: Lightning Studio inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      LIGHTNING_USER_ID: ${{ secrets.LIGHTNING_USER_ID }}
+      LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_API_KEY }}
+      LIGHTNING_TEAMSPACE: ${{ vars.LIGHTNING_TEAMSPACE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Lightning SDK
+        run: python -m pip install --upgrade lightning-sdk
+      - name: List Teamspace Studios
+        run: npx tsx scripts/list-lightning-studios.ts
