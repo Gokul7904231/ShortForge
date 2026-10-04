@@ -1,0 +1,22 @@
+{
+  "schemaVersion":"1.0",
+  "changeId":"ShortForge-PR159-Daytona-F07-Proof-Closure",
+  "repository":"Gokul7904231/ShortForge",
+  "baseRef":"main",
+  "headRef":"chore/close-daytona-f07-proof-trigger-20261004",
+  "objective":"Record the completed Daytona physical + CAS + F07 qualification and remove the temporary one-shot proof trigger.",
+  "classification":"extends existing rule",
+  "okf":{"sweepStatus":"COMPLETE","rulesConsidered":["F07 remains independent physical artifact truth authority.","Provider completion is not artifact acceptance.","Live Daytona proof evidence must be durable and non-secret.","Temporary qualification triggers must not remain enabled after the proof.","No F06 production worker authority is granted."]},
+  "forensicFindings":["GitHub Actions run 37205564715 completed the real Daytona physical render and F07 proof successfully.","F07 evidence artifact 11304537911 was uploaded successfully.","The temporary [live-daytona-f07-proof] push trigger is no longer needed after qualification."],
+  "changes":["Record Daytona proof evidence in .okf/compute/live-provider-activation.md.","Remove the temporary push trigger and guarded job condition from live-hosted-sandbox.yml.","Restore manual workflow_dispatch as the sole permanent trigger."],
+  "research":["Run 37205564715 logs and artifact metadata.","F07ReleaseGuardian and F07PhysicalArtifactVerifier implementation.","Existing live-provider activation governance."],
+  "security":{"required":true,"status":"TRIAGED","semgrep":"NOT_RUN_IN_AGENT_ENVIRONMENT","strix":"UNAVAILABLE","zap":"NOT_APPLICABLE_TO_DOC_AND_TRIGGER_CLEANUP","notes":"No secrets or credentials are changed or committed."},
+  "trainingReadiness":{"sandboxFabric":"DAYTONA_PHYSICAL_F07_PROVEN","ascalon":"UNCHANGED / PROPOSAL_LEARNING_BOUNDARY","authority":"F06 production worker eligibility remains false."},
+  "evidenceRefs":[".okf/compute/live-provider-activation.md",".github/workflows/live-hosted-sandbox.yml","apps/web/factoryos/tests/live-hosted-sandbox.test.ts","GitHub Actions run 37205564715","GitHub Actions artifact 11304537911"],
+  "verificationPlan":["Run Team Change Gate and blocking CI.","Merge cleanup only after required checks pass.","Confirm the permanent workflow has workflow_dispatch only.","Keep Modal qualification as a separate pending provider proof."],
+  "forgers":{"Forge Architect":"COMPLETE","Forge Builder":"COMPLETE","Forge Sentinel":"COMPLETE","Forge Evaluator":"PENDING_CI","Forge Release":"PENDING_MERGE"},
+  "conflicts":[],
+  "verificationResults":{"daytonaPhysical":"PASS","casIntegrity":"PASS","f07Physical":"PASS","f07ReceiptSignature":"PASS","evidenceArtifactUploaded":"PASS","temporaryTriggerCleanup":"WIRED","teamChangeGate":"PENDING","repositoryCI":"PENDING","modalPhysical":"PENDING"},
+  "disposition":"PASS",
+  "notes":["Daytona physical + CAS + F07 qualification is complete based on real workflow run 37205564715.","This does not promote Daytona into F06 production-worker eligibility.","Modal remains unqualified and is a separate next provider proof."]
+}
