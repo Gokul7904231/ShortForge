@@ -254,10 +254,12 @@ export class F07ReleaseGuardian {
       }
     }
 
+    const resolvedArtifactCasRef = physicalVerification?.casRef ?? params.artifactCasRef;
+
     return VerificationReceiptBuilder.build({
       artifactId: video.videoId,
       artifactSha256,
-      artifactCasRef: physicalVerification?.casRef,
+      artifactCasRef: resolvedArtifactCasRef,
       policyVersion: snapshot.policyVersion,
       policySnapshotHash: snapshot.snapshotHashSha256,
       policyRetrievedAt: snapshot.retrievedAt,
