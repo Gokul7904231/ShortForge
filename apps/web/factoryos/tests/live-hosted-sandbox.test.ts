@@ -15,6 +15,7 @@ import {
   YouTubePolicyStore,
   VerificationReceiptVerifier,
 } from "../core/verification/youtube";
+import { F07PhysicalArtifactVerifier } from "../core/verification/youtube/physical/F07PhysicalArtifactVerifier";
 import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore";
 import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../core/compute/sandboxes";
 
@@ -100,6 +101,19 @@ describeLiveProof("live hosted sandbox compute proof", () => {
        * measurements. The deliberately incorrect declared dimensions/duration
        * below prove that F07 must resolve and probe the physical CAS bytes.
        */
+      const physicalEvidence = await F07PhysicalArtifactVerifier.verify({
+        artifactSha256: artifact.sha256,
+        artifactCasRef: artifactCasRef,
+      });
+
+      expect(physicalEvidence.source).toBe("CAS");
+      expect(physicalEvidence.casBound).toBe(true);
+      expect(physicalEvidence.casRef).toBe(artifactCasRef);
+      expect(physicalEvidence.actualSha256).toBe(artifact.sha256);
+      expect(physicalEvidence.byteLength).toBe(artifact.byteLength);
+      expect(physicalEvidence.measurements.fileExists).toBe(true);
+      expect(physicalEvidence.measurements.decodeSmokePassed).toBe(true);
+
       const publicationIntentAt = new Date().toISOString();
       const videoId = "live_" + provider.toLowerCase() + "_" + Date.now().toString(36);
       const video = {
