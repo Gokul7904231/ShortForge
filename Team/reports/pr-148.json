@@ -61,10 +61,15 @@
     ".okf/compute/connection-hub.md"
   ],
   "verificationResults": {
-    "teamChangeGate": "BLOCKED_PENDING_CI",
-    "factoryosTypecheck": "PENDING",
-    "computeConnectionHubTests": "PENDING",
-    "repositoryCI": "PENDING",
+    "teamChangeGate": "PASS_RUN_1595",
+    "factoryosTypecheck": "PASS",
+    "computeConnectionHubTests": "PASS_RUN_110",
+    "repositoryCI": "PASS_RUN_2097",
+    "notebookFabric": "PASS_RUN_167",
+    "computePool": "PASS_RUN_527",
+    "computeGoldenMission": "PASS_RUN_520",
+    "computeResilience": "PASS_RUN_216",
+    "lightningPhysicalProofRegression": "PASS_RUN_61",
     "oauthLiveKaggle": "PENDING_EXTERNAL_CLIENT_REGISTRATION",
     "lightningTruthfulnessReview": "PASS_NO_FAKE_OAUTH"
   },
@@ -74,5 +79,10 @@
     "Configure a registered Kaggle OAuth client in the deployment and exercise the real hosted callback before calling one-click Kaggle LIVE.",
     "Keep Lightning on guided programmatic auth until an official third-party authorization surface exists."
   ],
-  "disposition": "BLOCKED"
+  "disposition": "PASS",
+  "notes": [
+    "Implementation and blocking CI lanes are green.",
+    "Hosted Kaggle one-click connection is code-complete but remains deployment-gated until Kaggle registers the ShortForge OAuth client and redirect URI.",
+    "Lightning remains on truthful guided programmatic auth; no unsupported third-party OAuth surface is claimed."
+  ]
 }
