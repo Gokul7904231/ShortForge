@@ -7,7 +7,10 @@ import { TreasuryKernel } from "../core/treasury/TreasuryKernel";
 import { TreasuryPriceRegistry } from "../core/treasury/TreasuryPriceRegistry";
 import { TreasuryService } from "../core/treasury/TreasuryService";
 import { computeTreasuryExecutionScopeDigest } from "../core/treasury/TreasuryScope";
-import { TreasuryEconomicIntelligence } from "../core/treasury/TreasuryEconomicIntelligence";
+import {
+  TreasuryEconomicIntelligence,
+  createTreasuryEconomicReadSource,
+} from "../core/treasury/TreasuryEconomicIntelligence";
 
 function makeTreasury(now = new Date()) {
   const ledger = new InMemoryTreasuryLedger();
@@ -100,7 +103,7 @@ describe("Treasury Economic Intelligence", () => {
     });
 
     const before = await service.getLedger().getAccount("factory");
-    const snapshot = await new TreasuryEconomicIntelligence(service).analyze("factory", {
+    const snapshot = await new TreasuryEconomicIntelligence(createTreasuryEconomicReadSource(service)).analyze("factory", {
       windowMs: 60 * 60 * 1000,
       now: new Date("2026-10-03T08:30:00.000Z"),
     });
