@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR155-Daytona-F07-Physical-Proof",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/daytona-f07-physical-proof-20261004",
+  "objective": "Close the F07 evidence gap in the hosted sandbox physical proof by binding the real CAS artifact to F07ReleaseGuardian and emitting durable non-secret verification evidence.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "F07 remains independent physical artifact truth authority.",
+      "Provider completion is not artifact acceptance; CAS and F07 remain authoritative.",
+      "F06 worker authority is not granted by a provider connection or physical proof.",
+      "Sandbox/API-GPU surfaces remain outside Basic-user worker authority.",
+      "No self-hosted PandaStack behavior is introduced."
+    ]
+  },
+  "forensicFindings": [
+    "The live hosted sandbox test proved provider execution and CAS integrity but did not invoke F07ReleaseGuardian.",
+    "The previous smoke render used 320x568, which did not satisfy the repository's canonical 1080x1920 F07 9:16 receipt geometry contract.",
+    "The live proof did not persist a non-secret F07 evidence record as a workflow artifact."
+  ],
+  "changes": [
+    "Feed the real CAS artifact SHA-256 and cas:// reference into F07ReleaseGuardian.verifyRelease().",
+    "Make the live proof supply deliberately incorrect declared measurements so F07 must resolve and probe physical CAS bytes independently.",
+    "Assert F07 physical measurements, 9:16 geometry, codecs, duration, decode smoke, CAS binding, publish readiness, and signed receipt verification.",
+    "Persist the signed F07 verification receipt into CAS.",
+    "Emit a non-secret JSON evidence record and upload it from GitHub Actions.",
+    "Change the physical smoke render to 1080x1920 so it satisfies the existing F07 format contract."
+  ],
+  "research": [
+    "Existing F07ReleaseGuardian and F07PhysicalArtifactVerifier implementation.",
+    "Existing VerificationReceipt and ContentAddressedStore contracts.",
+    "Existing live hosted sandbox workflow and Issue #154 acceptance sequence."
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_TEST_AND_EVIDENCE-BOUNDARY_CHANGE",
+    "notes": "No provider secret values are committed. The live workflow continues to read credentials only from GitHub Actions secrets. Uploaded evidence contains artifact identities, measurements, receipt metadata, and signature verification state only."
+  },
+  "trainingReadiness": {
+    "sandboxFabric": "F07_EVIDENCE_BOUNDARY_WIRED",
+    "ascalon": "UNCHANGED / PROPOSAL_LEARNING_BOUNDARY",
+    "authority": "F06 worker admission unchanged; F07 remains independent artifact truth authority"
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/tests/live-hosted-sandbox.test.ts",
+    ".github/workflows/live-hosted-sandbox.yml",
+    "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+    "apps/web/factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts",
+    "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+    "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+    ".okf/compute/live-provider-activation.md"
+  ],
+  "verificationPlan": [
+    "Run repository CI and required Team Change Gate checks.",
+    "After merge, manually run Live Hosted Sandbox Render Proof with DAYTONA and the FFmpeg image.",
+    "Require provider completion, physical MP4 download, independent CAS verification, F07 READY/READY_WITH_EXTERNAL_REVIEW, valid signed receipt, and sandbox cleanup.",
+    "Review the uploaded live-sandbox-f07-evidence artifact before declaring the Daytona F07 gate physically proven."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_MERGE_AND_LIVE_PROOF"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "f07Integration": "WIRED",
+    "f07PhysicalCasBinding": "WIRED",
+    "signedReceiptVerification": "WIRED",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "liveDaytonaF07": "PENDING_USER_TRIGGERED_RUN"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "The PASS disposition means the repository change is internally complete and governed; external Daytona F07 physical evidence remains pending until a credentialed workflow run is executed.",
+    "The change does not promote Daytona into the F06 production worker pool."
+  ]
+}
