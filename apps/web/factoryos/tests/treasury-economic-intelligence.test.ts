@@ -179,7 +179,9 @@ describe("Treasury Economic Intelligence", () => {
       });
     }
 
-    const snapshot = await new TreasuryEconomicIntelligence(service).analyze(
+    const snapshot = await new TreasuryEconomicIntelligence(
+      createTreasuryEconomicReadSource(service),
+    ).analyze(
       "factory",
       {
         windowMs: 60 * 60 * 1000,
