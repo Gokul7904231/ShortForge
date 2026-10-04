@@ -16,7 +16,8 @@ import { FactoryStateService } from "../state/FactoryStateService";
 import { TrendResearchService } from "../research/TrendResearchService";
 import { KnowledgeDocumentService } from "../rag/KnowledgeDocumentService";
 import { MissionStateService } from "../missions/MissionStateService";
-import { getUserQuota } from "@/lib/quota/quota-service";
+import { getTreasuryRuntime } from "../treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "../treasury/TreasuryQuotaAdmission";
 
 export interface PipelineExecutionResult {
   intent: CognitiveIntent;
@@ -356,10 +357,15 @@ export class OverseerCognitivePipeline {
 
       case "QUOTA": {
         try {
-          const quota = await getUserQuota(context.userId || "anonymous", context.userRole || "VIEWER");
+          const quota = await new TreasuryQuotaAdmission(
+            await getTreasuryRuntime(),
+          ).getGenerationQuota(
+            context.userId || "anonymous",
+            context.userRole || "VIEWER",
+          );
           const ev = EvidenceFactory.create(
             "QUOTA",
-            "QuotaService:Firestore",
+"TreasuryQuotaAdmission",
             "SUCCESS",
             quota,
             {
@@ -371,7 +377,7 @@ export class OverseerCognitivePipeline {
           );
 
           return {
-            sourceUsed: "QuotaService",
+            sourceUsed: "TreasuryQuotaAdmission",
             evidence: {
               tier: quota.isUnlimited ? "ADMIN_UNLIMITED" : "CREATOR_BASIC",
               rendersRemainingToday: quota.remaining,

@@ -196,6 +196,7 @@ export const ROUTE_SECTIONS: RouteSection[] = [
     routes: [
       { id: "admin-users",         label: "User Directory",      href: "/admin/users",            section: "Administration", surface: "factory", icon: "UserCheck",  description: "Manage registered users, roles, and RBAC",      keywords: ["users", "admin", "roles", "rbac"], minRole: "ADMIN" },
       { id: "admin-system",        label: "System Overview",     href: "/admin",                  section: "Administration", surface: "factory", icon: "Activity",   description: "System administration and host telemetry",      keywords: ["system", "admin", "telemetry"], minRole: "ADMIN" },
+      { id: "admin-treasury-economics", label: "Treasury Economics", href: "/admin/treasury", section: "Administration", surface: "factory", icon: "Coins", description: "Measured spend, reservation efficiency, capacity pressure, and advisory economics", keywords: ["treasury", "economics", "cost", "spend", "budget"], minRole: "ADMIN" },
       { id: "admin-drive-sync",    label: "Drive Sync Queue",    href: "/publishing/drive",       section: "Administration", surface: "factory", icon: "ArrowUpFromLine", description: "Google Drive upload queue and sync state",  keywords: ["drive", "upload", "sync"], minRole: "ADMIN" },
       { id: "admin-media-drive",   label: "Drive Storage",       href: "/media/drive",            section: "Administration", surface: "factory", icon: "Cloud",      description: "Google Drive storage quota and credentials",     keywords: ["drive", "google", "storage"], minRole: "ADMIN" },
       { id: "admin-cloudinary",    label: "Cloudinary CDN",      href: "/media/cloudinary",       section: "Administration", surface: "factory", icon: "HardDrive",  description: "Cloudinary CDN bandwidth and quota",            keywords: ["cloudinary", "cdn", "images"], minRole: "ADMIN" },
@@ -252,6 +253,7 @@ export const FACTORYOS_INTERNAL_EXACT_ROUTES = new Set<string>([
   "/settings/api",
   "/admin",
   "/admin/users",
+  "/admin/treasury",
   "/overseer",
   "/media/drive",
   "/media/cloudinary",

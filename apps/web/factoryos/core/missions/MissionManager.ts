@@ -18,7 +18,6 @@ import { InMemoryMissionRepository } from "../database/InMemoryDatabase";
 import type { DurableEventBus } from "../events/DurableEventBus";
 import type { WorldStateEngine } from "../worldstate/WorldStateEngine";
 import { MissionStateMachine } from "./MissionStateMachine";
-import { MissionBudgetManager } from "./MissionBudgetManager";
 import { MissionCompletionEvaluator, type MissionEvaluationContext } from "./MissionCompletionEvaluator";
 import { MissionConcurrencyController } from "./MissionConcurrencyController";
 import { MissionEventPublisher } from "./MissionEventPublisher";
@@ -259,10 +258,26 @@ export class MissionManager {
         m.budget.durationMs += usage.durationMs;
       }
 
-      const budgetCheck = MissionBudgetManager.evaluateBudget(m, usage, currentActiveParallelTasks);
-      if (budgetCheck.exceeded) {
+      // Economic admission (tokens/cost) is authoritative in Treasury.
+      // MissionManager retains only non-economic lifecycle constraints here.
+      const elapsedMs = Math.max(
+        m.budget.durationMs,
+        Date.now() - new Date(m.createdAt).getTime(),
+      );
+      const durationExceeded =
+        Boolean(m.budget.maxDurationMs) &&
+        elapsedMs > Number(m.budget.maxDurationMs);
+      const parallelExceeded =
+        Boolean(m.budget.maxParallelTasks) &&
+        currentActiveParallelTasks > Number(m.budget.maxParallelTasks);
+
+      if (durationExceeded || parallelExceeded) {
         budgetExceeded = true;
-        breachReason = budgetCheck.reason;
+        breachReason = durationExceeded
+          ? `Mission duration constraint exceeded (${Math.round(
+              elapsedMs / 1000,
+            )}s/${Math.round(Number(m.budget.maxDurationMs) / 1000)}s)`
+          : `Mission parallelism constraint exceeded (${currentActiveParallelTasks}/${m.budget.maxParallelTasks})`;
 
         m.updatedAt = new Date().toISOString();
         m.eventHistory.push({
@@ -751,13 +766,21 @@ export class MissionManager {
     const breaches: { missionId: string; breachReason: string }[] = [];
 
     for (const m of active) {
-      const check = MissionBudgetManager.evaluateBudget(m);
-      if (check.exceeded && check.reason) {
-        breaches.push({ missionId: m.missionId, breachReason: check.reason });
+      const elapsedMs = Math.max(
+        m.budget.durationMs,
+        Date.now() - new Date(m.createdAt).getTime(),
+      );
+      const durationExceeded =
+        Boolean(m.budget.maxDurationMs) &&
+        elapsedMs > Number(m.budget.maxDurationMs);
+
+      if (durationExceeded) {
+        const reason = `Mission duration constraint exceeded (${Math.round(
+          elapsedMs / 1000,
+        )}s/${Math.round(Number(m.budget.maxDurationMs) / 1000)}s)`;
+        breaches.push({ missionId: m.missionId, breachReason: reason });
         if (m.failurePolicy === "FAIL_FAST") {
-          await this.failMission(m.missionId, check.reason).catch(() => {});
-        } else {
-          await this.recordBudgetConsumption(m.missionId, {}).catch(() => {});
+          await this.failMission(m.missionId, reason).catch(() => {});
         }
       }
     }

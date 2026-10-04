@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { UserRepository } from "@/lib/auth/user-repository";
-import { getUserQuota } from "@/lib/quota/quota-service";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { db } from "@/lib/firebase-admin";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,9 @@ export async function GET(request: NextRequest) {
         let lastVideoCreatedAt = null;
 
         try {
-          quota = await getUserQuota(u.id, u.role);
+          quota = await new TreasuryQuotaAdmission(
+            await getTreasuryRuntime(),
+          ).getGenerationQuota(u.id, u.role);
         } catch {}
 
         try {

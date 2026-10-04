@@ -1,0 +1,76 @@
+name: Treasury Wave 4 Validation
+
+on:
+  push:
+    branches:
+      - feat/treasury-economic-intelligence-wave4-20261003
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/treasury/**"
+      - "apps/web/factoryos/core/routing/CapabilityFirstRouter.ts"
+      - "apps/web/factoryos/core/missions/MissionManager.ts"
+      - "apps/web/factoryos/core/missions/MissionBudgetManager.ts"
+      - "apps/web/ai/factory.ts"
+      - "apps/web/ai/intelligent-router.ts"
+      - "apps/web/app/api/generate-video/route.ts"
+      - "apps/web/app/api/generations/route.ts"
+      - "apps/web/app/api/quiz/**"
+      - "apps/web/app/api/user/quota/route.ts"
+      - "apps/web/app/api/account/generation-quota/route.ts"
+      - "apps/web/app/api/admin/users/**"
+      - "apps/web/lib/overseer/OverseerToolGateway.ts"
+      - "apps/web/lib/scheduler/SchedulerService.ts"
+      - "apps/web/lib/treasury-model-context.ts"
+      - "apps/web/lib/core/RouteRegistry.ts"
+      - "apps/web/factoryos/core/cognition/OverseerCognitivePipeline.ts"
+      - "apps/web/factoryos/core/controller/AutonomousFactoryController.ts"
+      - ".okf/**"
+      - "docs/treasury-wave4-economic-intelligence.md"
+      - "Team/reports/pr-137.json"
+      - "package-lock.json"
+      - "apps/web/package-lock.json"
+  workflow_dispatch:
+
+jobs:
+  treasury-wave4:
+    name: Treasury Kernel + Economic Intelligence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Treasury economic intelligence tests
+        run: npx vitest run factoryos/tests/treasury-economic-intelligence.test.ts
+
+      - name: Treasury authority retirement tests
+        run: npx vitest run factoryos/tests/treasury-authority-retirement.test.ts
+
+      - name: Treasury admission regression tests
+        run: npx vitest run factoryos/tests/treasury-economic-admission.test.ts factoryos/tests/treasury-compute-admission.test.ts
+
+      - name: Treasury provider retry regression
+        run: npx vitest run tests/treasury-provider-retry.test.ts
+
+      - name: Static Treasury authority scan
+        working-directory: .
+        run: |
+          ! grep -R "getUserQuota(" apps/web/app apps/web/lib apps/web/factoryos/core --exclude-dir=node_modules --exclude='*.test.ts' --exclude='quota-service.ts' | grep -v "TreasuryQuotaAdmission.ts"
+          ! grep -R "CostGovernor." apps/web/factoryos/core --exclude-dir=node_modules
+          ! grep -R "MissionBudgetManager." apps/web/factoryos/core/missions/MissionManager.ts

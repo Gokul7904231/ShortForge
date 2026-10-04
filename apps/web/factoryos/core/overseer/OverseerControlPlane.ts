@@ -36,6 +36,11 @@ import { CognitiveRuntime } from "../cognitive/CognitiveRuntime";
 import type { MissionManager } from "../missions/MissionManager";
 import type { TreasuryService } from "../treasury/TreasuryService";
 import { TreasuryQuotaAdmission } from "../treasury/TreasuryQuotaAdmission";
+import type {
+  TreasuryEconomicIntelligence,
+  TreasuryEconomicIntelligenceSnapshot,
+} from "../treasury/TreasuryEconomicIntelligence";
+import { projectTreasuryEconomicAdvice } from "../treasury/TreasuryEconomicAdvice";
 import { computeTreasuryExecutionScopeDigest } from "../treasury/TreasuryScope";
 
 import type { IDecisionRepository, ITaskDAGRepository } from "../database/DatabaseContracts";
@@ -108,6 +113,7 @@ export class OverseerControlPlane {
   public presenceEngine: OverseerPresenceEngine;
   public trajectoryCollector: ProductionTrajectoryCollector;
   public treasuryService?: TreasuryService;
+  public treasuryEconomicIntelligence?: TreasuryEconomicIntelligence;
 
   private runs: Map<string, OverseerRun> = new Map();
   private supervisorInterval: NodeJS.Timeout | null = null;
@@ -268,6 +274,25 @@ export class OverseerControlPlane {
         averageLatencyMs: 10,
       },
     });
+  }
+
+  bindTreasuryEconomicIntelligence(
+    intelligence: TreasuryEconomicIntelligence,
+  ): void {
+    this.treasuryEconomicIntelligence = intelligence;
+  }
+
+  async getTreasuryEconomicAdvice(
+    accountId?: string,
+    options?: { windowMs?: number; eventLimit?: number },
+  ): Promise<TreasuryEconomicIntelligenceSnapshot | null> {
+    if (!this.treasuryEconomicIntelligence) return null;
+    return this.treasuryEconomicIntelligence.analyze(
+      accountId ||
+        process.env.FACTORYOS_TREASURY_ACCOUNT_ID ||
+        "factoryos",
+      options,
+    );
   }
 
   startSupervisor(intervalMs: number = 3000): void {
@@ -445,6 +470,18 @@ export class OverseerControlPlane {
     const currentState = this.worldState.getState();
     const assessment = this.thinkingController.assessCommand(run.command, currentState);
 
+    // Treasury Economic Intelligence is advisory context only.
+    const treasuryEconomicAdvice =
+      this.treasuryEconomicIntelligence && this.treasuryService
+        ? await this.treasuryEconomicIntelligence
+            .analyze(
+              process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos",
+              { windowMs: 24 * 60 * 60 * 1000, eventLimit: 500 },
+            )
+            .then(projectTreasuryEconomicAdvice)
+            .catch(() => null)
+        : null;
+
     // 0. Typed Decision Batch Evaluation (Decision Fabric)
     const decisionEngine = new DecisionEngine();
     const batchResult = await decisionEngine.evaluateBatch({
@@ -471,6 +508,7 @@ export class OverseerControlPlane {
       sharedContext: {
         command: run.command,
         activeCases: (currentState as any).activeCaseIds?.length || 0,
+        treasuryEconomicAdvice,
       },
     });
 
@@ -1727,7 +1765,11 @@ export class OverseerControlPlane {
             },
             measurements: verificationReport.measurements,
             assets: [],
-            scenes: Array.isArray(scope.scenes) ? scope.scenes : [],
+            scenes: Array.isArray(scope.scenes)
+              ? scope.scenes
+              : Array.isArray(sharedScope.scenes)
+                ? sharedScope.scenes
+                : [],
             scriptText: String(scope.script || sharedScope.script || ""),
           };
           const channel = scope.channelContext || {

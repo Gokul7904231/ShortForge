@@ -14,7 +14,8 @@ import { db } from "../firebase-admin";
 import { AdminUser, UserRole } from "../auth/types";
 import { isRoleAtLeast } from "../auth/roles";
 import { ForbiddenError } from "../auth/errors";
-import { getUserQuota } from "../quota/quota-service";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { FactoryStateService } from "@/factoryos/core/state/FactoryStateService";
 import { ApiConfigManager } from "../api-config/api-config-manager";
 
@@ -87,7 +88,9 @@ export class OverseerToolGateway {
    */
   static async getMyQuota(user: AdminUser) {
     try {
-      const quota = await getUserQuota(user.uid, user.role);
+      const quota = await new TreasuryQuotaAdmission(
+        await getTreasuryRuntime(),
+      ).getGenerationQuota(user.uid, user.role);
       return {
         completed: quota.completed,
         limit: quota.limit,
@@ -95,15 +98,11 @@ export class OverseerToolGateway {
         isUnlimited: quota.isUnlimited,
         isExceeded: quota.isExceeded,
       };
-    } catch {
-      return {
-        completed: 0,
-        limit: 5,
-        remaining: 5,
-        isUnlimited: user.role === "OWNER" || user.role === "ADMIN",
-        isExceeded: false,
-        status: "QUOTA_UNAVAILABLE",
-      };
+    } catch (error) {
+      throw new Error(
+        "[OverseerToolGateway] Treasury quota read unavailable: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     }
   }
 
