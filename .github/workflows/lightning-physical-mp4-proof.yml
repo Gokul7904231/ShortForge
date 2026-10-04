@@ -50,7 +50,7 @@ jobs:
         run: python -m pip install --upgrade lightning-sdk imageio-ffmpeg
       - name: Prepare self-contained FFmpeg for Lightning
         run: |
-          FFMPEG_BIN="$(python -c \"import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())\")"
+          FFMPEG_BIN="$(python -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')"
           test -x "$FFMPEG_BIN"
           ls -lh "$FFMPEG_BIN"
           echo "LIGHTNING_FFMPEG_LOCAL_PATH=$FFMPEG_BIN" >> "$GITHUB_ENV"
