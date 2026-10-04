@@ -273,10 +273,6 @@ export async function POST(req: Request) {
         }
         throw quotaErr;
       }
-    } else if (production) {
-      throw new Error(
-        "[generate-video] Production generation requires Treasury quota admission",
-      );
     }
 
     const treasuryModelContext: TreasuryModelExecutionContext | undefined =
