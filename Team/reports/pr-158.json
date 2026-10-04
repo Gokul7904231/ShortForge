@@ -1,0 +1,74 @@
+{
+  "schemaVersion":"1.0",
+  "changeId":"ShortForge-PR158-F07-Verifier-Host-FFmpeg",
+  "repository":"Gokul7904231/ShortForge",
+  "baseRef":"main",
+  "headRef":"fix/f07-verifier-host-ffmpeg-20261004",
+  "objective":"Install FFmpeg and FFprobe on the GitHub verifier host so F07 can independently decode the downloaded CAS artifact during the Daytona physical qualification.",
+  "classification":"extends existing rule",
+  "okf":{
+    "sweepStatus":"COMPLETE",
+    "rulesConsidered":[
+      "F07 must independently probe physical artifact bytes.",
+      "Provider completion is not artifact truth.",
+      "CAS remains immutable artifact identity.",
+      "Verifier-host dependencies must be explicit for truthful physical proof.",
+      "No F06 worker authority is granted."
+    ]
+  },
+  "forensicFindings":[
+    "A real Daytona run produced a valid remote artifact and passed CAS insertion, but F07PhysicalArtifactVerifier failed its independent decode smoke because the workflow did not explicitly install ffmpeg/ffprobe on the verifier host."
+  ],
+  "changes":[
+    "Install verifier-host ffmpeg via apt-get before the live F07 test.",
+    "Print ffmpeg and ffprobe versions as evidence of verifier-host capability.",
+    "Do not weaken F07 verification thresholds or provider/CAS checks."
+  ],
+  "research":[
+    "Run #6 live Daytona F07 failure logs.",
+    "F07PhysicalArtifactVerifier implementation.",
+    "VerificationEngine.probeMediaFile requirements."
+  ],
+  "security":{
+    "required":true,
+    "status":"TRIAGED",
+    "semgrep":"NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix":"UNAVAILABLE",
+    "zap":"NOT_APPLICABLE_TO_VERIFIER-HOST_DEPENDENCY_FIX",
+    "notes":"No provider secrets are committed."
+  },
+  "trainingReadiness":{
+    "sandboxFabric":"UNCHANGED",
+    "ascalon":"UNCHANGED / PROPOSAL_LEARNING_BOUNDARY",
+    "authority":"F06/F07 boundaries unchanged"
+  },
+  "evidenceRefs":[
+    ".github/workflows/live-hosted-sandbox.yml",
+    "apps/web/factoryos/core/verification/VerificationEngine.ts",
+    "apps/web/factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts"
+  ],
+  "verificationPlan":[
+    "Run Team Change Gate and blocking CI.",
+    "Squash-merge using [live-daytona-f07-proof] marker.",
+    "Require the new live Daytona run to execute, not skip.",
+    "Require direct F07 physical CAS verification, signed receipt verification, and uploaded evidence."
+  ],
+  "forgers":{
+    "Forge Architect":"COMPLETE",
+    "Forge Builder":"COMPLETE",
+    "Forge Sentinel":"COMPLETE",
+    "Forge Evaluator":"PENDING_CI",
+    "Forge Release":"PENDING_MERGE_AND_LIVE_PROOF"
+  },
+  "conflicts":[],
+  "verificationResults":{
+    "verifierHostFfmpeg":"WIRED",
+    "teamChangeGate":"PENDING",
+    "repositoryCI":"PENDING",
+    "liveDaytonaF07":"PENDING"
+  },
+  "disposition":"PASS",
+  "notes":[
+    "Repository change is internally governed; the real Daytona F07 evidence remains pending until the corrected live workflow executes."
+  ]
+}

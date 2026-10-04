@@ -64,6 +64,13 @@ jobs:
         run: npm ci
       - name: Install optional hosted sandbox SDKs
         run: npm install --no-save @daytona/sdk modal
+      - name: Install verifier-host FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
       - name: FactoryOS strict typecheck
         run: npm run factoryos:typecheck
       - name: Run live hosted sandbox proof
