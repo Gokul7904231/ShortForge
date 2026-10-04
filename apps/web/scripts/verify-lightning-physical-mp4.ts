@@ -66,6 +66,15 @@ async function main() {
     fail("LIGHTNING_TEAMSPACE must be <org>/<teamspace> for physical artifact tooling.");
   }
 
+  const remoteFfmpegUri =
+    "lit://" +
+    org +
+    "/" +
+    teamspaceName +
+    "/studios/" +
+    studioName +
+    "/shortforge-tools/ffmpeg";
+
   const renderCommand = [
     "set -eux",
     "test -f " + remoteFfmpeg,
