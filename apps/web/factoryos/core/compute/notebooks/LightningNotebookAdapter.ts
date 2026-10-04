@@ -101,13 +101,24 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
     const script = [
       "from lightning_sdk import Studio, Machine",
+      "import time",
       "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=" + (existingStudio ? "False" : "True") + ")",
       "machine_name=" + JSON.stringify(machine),
       "machine=None if machine_name == 'CPU' else Machine.from_str(machine_name)",
-      "studio.start() if machine is None else studio.start(machine)",
+      "state=str(studio.status).lower()",
+      "need_start=('stopped' in state) or ('none' in state)",
+      "studio.start() if need_start and machine is None else (studio.start(machine) if need_start else None)",
+      "deadline=time.time() + max(60, " + Math.floor(120000/1000) + ")",
+      "while True:",
+      "    state=str(studio.status).lower()",
+      "    if 'running' in state: break",
+      "    if any(x in state for x in ('failed','error','terminated')): raise RuntimeError('Studio entered terminal state: ' + state)",
+      "    if time.time() >= deadline: raise RuntimeError('Timed out waiting for Studio to become Running; current status=' + state)",
+      "    time.sleep(5)",
       "print('SHORTFORGE_LIGHTNING_STUDIO_READY:' + studio.name)",
       "print('SHORTFORGE_LIGHTNING_TEAMSPACE:' + studio.teamspace.name)",
-    ].join(";");
+      "print('SHORTFORGE_LIGHTNING_STATUS:' + str(studio.status))",
+    ].join("\n");
 
     const result = await runProcess(
       python,
