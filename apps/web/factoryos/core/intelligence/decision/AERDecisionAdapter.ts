@@ -1,8 +1,8 @@
 /**
  * ShortForge / FactoryOS — AER Decision Core Adapter
  *
- * Provider-injected boundary for the future trained AER Decision Core.
- * This adapter never invents model outputs, probabilities or confidence.
+ * Provider-injected boundary for the trained AER Decision Core.
+ * This adapter remains advisory; production authority is impossible here.
  */
 
 import {
@@ -30,13 +30,24 @@ export class AERDecisionAdapter implements IDecisionAdapter {
 
   public constructor(config: AERDecisionAdapterConfig) {
     this.provider = config.provider;
-    this.implementationVersion = config.implementationVersion ?? "0.1.0-contract";
+    this.implementationVersion =
+      config.implementationVersion ?? "0.2.0-adapter";
   }
 
   public async evaluateBatch(
     request: DecisionBatchRequest,
   ): Promise<DecisionBatchResult> {
     assertDynamicQuestionContract(request.questions);
+
+    const unsupportedQuestion = request.questions.find(
+      (question) => !this.provider.supportedModes.includes(question.type),
+    );
+    if (unsupportedQuestion) {
+      throw new Error(
+        "AER-Core provider does not support decision mode: " +
+          unsupportedQuestion.type,
+      );
+    }
 
     const startedAt = Date.now();
     const output = await this.provider.evaluate({
@@ -45,15 +56,22 @@ export class AERDecisionAdapter implements IDecisionAdapter {
     });
 
     const answersById: Record<string, DecisionAnswer> = {};
+    let duplicate = false;
     for (const answer of output.answers) {
+      if (answersById[answer.questionId]) duplicate = true;
       answersById[answer.questionId] = answer;
     }
 
     const expectedIds = new Set(request.questions.map((question) => question.id));
-    const missing = request.questions.some((question) => !answersById[question.id]);
-    const foreign = output.answers.some((answer) => !expectedIds.has(answer.questionId));
+    const missing = request.questions.some(
+      (question) => !answersById[question.id],
+    );
+    const foreign = output.answers.some(
+      (answer) => !expectedIds.has(answer.questionId),
+    );
+    const batchMismatch = output.batchId !== request.batchId;
 
-    if (missing || foreign) {
+    if (missing || foreign || duplicate || batchMismatch) {
       return {
         batchId: request.batchId,
         evaluatedAt: new Date().toISOString(),
@@ -66,7 +84,7 @@ export class AERDecisionAdapter implements IDecisionAdapter {
         status: "UNRESOLVED",
         adapterMetadata: {
           adapterType: this.adapterName,
-          implementationVersion: this.implementationVersion,
+          implementationVersion: output.modelVersion || this.implementationVersion,
           isProductionAuthority: false,
           isTrainingEligible: false,
           authorityClass: "MODEL_ADVISORY",
@@ -78,7 +96,9 @@ export class AERDecisionAdapter implements IDecisionAdapter {
     }
 
     const confidences = output.answers.map((answer) => answer.confidence);
-    const minConfidence = confidences.length ? Math.min(...confidences) : 0;
+    const minConfidence = confidences.length
+      ? Math.min(...confidences)
+      : 0;
 
     return {
       batchId: request.batchId,
@@ -92,10 +112,13 @@ export class AERDecisionAdapter implements IDecisionAdapter {
       status: "VALID",
       adapterMetadata: {
         adapterType: this.adapterName,
-        implementationVersion: this.implementationVersion,
+        implementationVersion:
+          output.modelVersion || this.implementationVersion,
         isProductionAuthority:
-          output.productionAuthority && AER_DECISION_CORE_AUTHORITY.productionAuthority,
-        isTrainingEligible: output.trainingEligible,
+          output.productionAuthority &&
+          AER_DECISION_CORE_AUTHORITY.productionAuthority,
+        // Runtime model predictions are never themselves golden training data.
+        isTrainingEligible: false,
         authorityClass: "MODEL_ADVISORY",
         modelRef: output.modelRef,
         probabilitySemantics: output.probabilitySemantics,
