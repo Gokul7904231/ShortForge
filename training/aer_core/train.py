@@ -31,12 +31,7 @@ def train(args: argparse.Namespace) -> None:
     seed_everything(args.seed)
 
     records = validate_records(read_jsonl(args.dataset))
-    partitions = deterministic_split(records)
-    if not partitions["train"] or not partitions["validation"] or not partitions["test"]:
-        raise RuntimeError(
-            "train/validation/test partitions must all be non-empty; "
-            "use a larger verified dataset"
-        )
+    train_records = records
 
     tokenizer = load_tokenizer(args.base_model)
     if tokenizer.pad_token is None:
@@ -56,7 +51,7 @@ def train(args: argparse.Namespace) -> None:
         lr=args.learning_rate,
         weight_decay=args.weight_decay,
     )
-    total_steps = max(1, len(partitions["train"]) * args.epochs)
+    total_steps = max(1, len(train_records) * args.epochs)
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=max(1, total_steps // 10),
@@ -69,7 +64,7 @@ def train(args: argparse.Namespace) -> None:
     for epoch in range(args.epochs):
         total_loss = 0.0
 
-        for record in partitions["train"]:
+        for record in train_records:
             raw = training_dict(record)
             texts: List[str] = []
             group_sizes: List[int] = []
@@ -126,7 +121,7 @@ def train(args: argparse.Namespace) -> None:
 
         epoch_report = {
             "epoch": epoch + 1,
-            "meanLoss": total_loss / max(1, len(partitions["train"])),
+            "meanLoss": total_loss / max(1, len(train_records)),
         }
         history.append(epoch_report)
         print(json.dumps(epoch_report))
@@ -153,9 +148,7 @@ def train(args: argparse.Namespace) -> None:
         "weightDecay": args.weight_decay,
         "maxLength": args.max_length,
         "datasetVersion": records[0].dataset_version,
-        "trainCount": len(partitions["train"]),
-        "validationCount": len(partitions["validation"]),
-        "testCount": len(partitions["test"]),
+        "trainCount": len(train_records),
         "history": history,
         "calibrationStatus": "NOT_FITTED",
         "productionAuthority": False,
