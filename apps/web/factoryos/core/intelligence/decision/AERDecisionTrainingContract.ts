@@ -1,9 +1,5 @@
 /**
  * ShortForge / FactoryOS — AER Decision Core training-record contract.
- *
- * Training truth is deliberately separate from model predictions. A record is
- * eligible only after its input is sanitized and its gold answer is bound to
- * verifiable evidence/outcomes or an approved human/authoritative label source.
  */
 
 import type { DecisionAnswer, DecisionQuestion } from "./DecisionContracts";
@@ -75,5 +71,20 @@ export function assertTrainingRecordEligible(
   }
   if (record.goldAnswers.length === 0) {
     throw new Error("AER training record requires at least one gold answer");
+  }
+
+  const questionIds = record.input.questions.map((question) => question.id);
+  const answerIds = record.goldAnswers.map((answer) => answer.questionId);
+  if (new Set(questionIds).size !== questionIds.length) {
+    throw new Error("AER training input contains duplicate question ids");
+  }
+  if (new Set(answerIds).size !== answerIds.length) {
+    throw new Error("AER training gold answers contain duplicate question ids");
+  }
+  if (
+    questionIds.length !== answerIds.length ||
+    questionIds.some((id) => !answerIds.includes(id))
+  ) {
+    throw new Error("AER training gold answers must exactly cover input questions");
   }
 }
