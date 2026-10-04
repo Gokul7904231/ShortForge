@@ -1,0 +1,31 @@
+{
+  "benchmark": "AER-Bench",
+  "version": "v1",
+  "taskFamilies": [
+    "epistemic-state-classification",
+    "evidence-sufficiency",
+    "probe-selection",
+    "hypothesis-ranking",
+    "cognitive-routing",
+    "worker-provider-routing",
+    "failure-classification",
+    "recovery-selection",
+    "authority-escalation",
+    "stop-replan"
+  ],
+  "decisionModes": ["NOUL", "CHOICE", "SCORE"],
+  "requiredMetrics": [
+    "accuracy",
+    "topKAccuracy",
+    "brier",
+    "ece",
+    "scoreMae",
+    "selectiveAccuracy",
+    "abstentionCoverage",
+    "malformedRate",
+    "p50LatencyMs",
+    "p95LatencyMs"
+  ],
+  "promotionRequirement": "held-out benchmark + calibration + shadow replay + authority-invariant evidence",
+  "status": "definition-complete; results-not-yet-measured"
+}
