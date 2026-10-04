@@ -15,6 +15,10 @@ on:
       - "Team/reports/pr-*.json"
   workflow_dispatch:
 
+concurrency:
+  group: shortforge-lightning-physical-proof
+  cancel-in-progress: true
+
 jobs:
   lightning-physical-proof:
     name: Lightning Physical MP4 → CAS → F07
