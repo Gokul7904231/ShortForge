@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { NotebookRegistry } from "../core/compute/notebooks/NotebookRegistry";
 import { NotebookOperationJournal } from "../core/compute/notebooks/NotebookOperationJournal";
 import { KaggleNotebookAdapter } from "../core/compute/notebooks/KaggleNotebookAdapter";
@@ -52,6 +55,123 @@ describe("Notebook & Interactive Compute Fabric", () => {
       "KAGGLE_KEY",
     ]);
   });
+
+
+  it("validates HF ZeroGPU with the supplied private-space token", async () => {
+    const adapter = new HuggingFaceZeroGPUAdapter();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ named_endpoints: { "/render": {} } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const validation = await adapter.validateCredentials({
+      HF_ZEROGPU_SPACE: "gokul-labs/shortforge-zerogpu-render",
+      HF_ZEROGPU_API_NAME: "/render",
+      HF_TOKEN: "secret-test-token",
+    });
+
+    expect(validation.authenticated).toBe(true);
+    expect(validation.providerReachable).toBe(true);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "https://gokul-labs-shortforge-zerogpu-render.hf.space/gradio_api/info",
+    );
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect((request?.headers as Record<string, string>).Authorization).toBe(
+      "Bearer secret-test-token",
+    );
+  });
+
+  it("submits the real zero-input /render contract and downloads FileData with x-hf-authorization", async () => {
+    const adapter = new HuggingFaceZeroGPUAdapter();
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "shortforge-hf-zerogpu-test-"),
+    );
+    const destination = path.join(tempDir, "proof.mp4");
+
+    const mp4Bytes = Buffer.from(
+      "000000186674797069736f6d000000006d70343100000000",
+      "hex",
+    );
+
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+
+        if (url.endsWith("/gradio_api/call/render")) {
+          return new Response(JSON.stringify({ event_id: "event-123" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        if (url.endsWith("/gradio_api/call/render/event-123")) {
+          const sse = [
+            "event: generating",
+            'data: ["running"]',
+            "",
+            "event: complete",
+            'data: [{"path":"/tmp/gradio/proof.mp4","url":"https://gokul-labs-shortforge-zerogpu-render.hf.space/gradio_api/file=/tmp/gradio/proof.mp4","orig_name":"proof.mp4","meta":{"_type":"gradio.FileData"}}]',
+            "",
+          ].join("\n");
+          return new Response(sse, {
+            status: 200,
+            headers: { "content-type": "text/event-stream" },
+          });
+        }
+
+        if (url.includes("/gradio_api/file=")) {
+          expect(init?.headers).toMatchObject({
+            Accept: "video/mp4,application/octet-stream",
+            "x-hf-authorization": "Bearer secret-test-token",
+          });
+          return new Response(mp4Bytes, {
+            status: 200,
+            headers: {
+              "content-type": "video/mp4",
+              "content-length": String(mp4Bytes.length),
+            },
+          });
+        }
+
+        throw new Error("Unexpected fetch URL in HF ZeroGPU test: " + url);
+      });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const result = await adapter.execute(
+      {
+        command: "render",
+        timeoutMs: 30_000,
+        artifactDestinationPath: destination,
+      },
+      {
+        HF_ZEROGPU_SPACE: "gokul-labs/shortforge-zerogpu-render",
+        HF_ZEROGPU_API_NAME: "/render",
+        HF_TOKEN: "secret-test-token",
+      },
+    );
+
+    expect(result.status).toBe("SUCCEEDED");
+    expect(result.verificationLevel).toBe("PHYSICAL_ARTIFACT_VERIFIED");
+    expect(result.artifactPath).toBe(destination);
+    expect(result.artifactByteLength).toBe(mp4Bytes.length);
+    expect(result.artifactSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(await fs.readFile(destination)).toEqual(mp4Bytes);
+
+    const submitCall = fetchMock.mock.calls.find(
+      (call) => String(call[0]).endsWith("/gradio_api/call/render"),
+    );
+    expect(submitCall).toBeTruthy();
+    expect(JSON.parse(String((submitCall?.[1] as RequestInit).body))).toEqual({
+      data: [],
+    });
+
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
 
   it("keeps Colab render execution enabled while preserving the non-worker boundary", () => {
     const colab = new ColabNotebookAdapter();
