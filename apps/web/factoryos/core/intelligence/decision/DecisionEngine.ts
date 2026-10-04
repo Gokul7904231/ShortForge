@@ -68,6 +68,11 @@ export class DecisionEngine {
     this.llmAdapter = new LLMDecisionAdapter();
     this.clmShadowAdapter = new CLMDecisionAdapter();
     this.glideShadowAdapter = new GlideDecisionAdapter(config.glide ?? {});
+    if (config.enableShadowAerCore && !config.aerCoreProvider) {
+      throw new Error(
+        "AER-Core shadow mode requires an injected provider.",
+      );
+    }
     this.aerCoreShadowAdapter = config.aerCoreProvider
       ? new AERDecisionAdapter({ provider: config.aerCoreProvider })
       : undefined;
