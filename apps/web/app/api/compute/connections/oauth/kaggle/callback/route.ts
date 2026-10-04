@@ -5,7 +5,10 @@ import {
   verifyKaggleOAuthState,
   isKaggleOAuthConfigured,
 } from "@/factoryos/core/compute/connections/KaggleOAuthService";
-import { computeConnectionService } from "@/factoryos/core/compute/connections";
+import {
+  computeConnectionService,
+  computeConnectionStore,
+} from "@/factoryos/core/compute/connections";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
       ? Date.now() + tokens.expires_in * 1000
       : undefined;
 
-    await computeConnectionService.createOAuth(user, {
+    const connection = await computeConnectionService.createOAuth(user, {
       providerId: "notebook_kaggle",
       displayName: `Kaggle — ${tokens.username}`,
       externalAccountId: String(tokens.user_id),
@@ -76,6 +79,15 @@ export async function GET(req: NextRequest) {
         kaggleScopes: tokens.scope || "",
         authSource: "kaggle-oauth",
       },
+    });
+
+    await computeConnectionStore.updateValidation(user.uid, connection.connectionId, {
+      status: "CONNECTED",
+      lastValidatedAt: new Date().toISOString(),
+      lastValidationEvidence: [
+        "Kaggle OAuth authorization code exchange succeeded.",
+        "Kaggle returned an authenticated account identity.",
+      ],
     });
 
     const response = NextResponse.redirect(
