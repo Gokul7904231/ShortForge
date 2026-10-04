@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import type {
   NotebookCredentialValidation,
   NotebookExecutionRequest,
@@ -9,7 +11,7 @@ import type {
   NotebookRuntime,
   NotebookCredentialBundle,
 } from "./NotebookContracts";
-import { runProcess } from "./NotebookUtils";
+import { fileEvidence, runProcess } from "./NotebookUtils";
 
 export class LightningNotebookAdapter implements NotebookProviderAdapter {
   readonly metadata: NotebookProviderMetadata = {
@@ -216,6 +218,32 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       };
     }
 
+    if (request.outputPath && request.artifactDestinationPath) {
+      const downloaded = await this.downloadArtifact(
+        runtime,
+        request.outputPath,
+        request.artifactDestinationPath,
+        credentials,
+      );
+      return {
+        providerType: "LIGHTNING",
+        runtimeId: runtime.resourceId,
+        verificationLevel: "PHYSICAL_ARTIFACT_VERIFIED",
+        status: "SUCCEEDED",
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        artifactPath: downloaded.artifactPath,
+        artifactSha256: downloaded.artifactSha256,
+        artifactByteLength: downloaded.artifactByteLength,
+        evidence: [
+          "Lightning Studio code execution completed through lightning-sdk.",
+          "Physical artifact downloaded from the Studio through the Lightning SDK.",
+          "ShortForge recomputed SHA-256 and byte length outside Lightning.",
+        ],
+      };
+    }
+
     return {
       providerType: "LIGHTNING",
       runtimeId: runtime.resourceId,
@@ -225,11 +253,43 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       stdout: result.stdout,
       stderr: result.stderr,
       evidence: ["Lightning Studio code execution completed through lightning-sdk."],
-      limitation:
-        "Artifact transfer into the ShortForge CAS is not yet part of this notebook adapter.",
     };
   }
 
+  private async downloadArtifact(
+    runtime: NotebookRuntime,
+    remotePath: string,
+    destinationPath: string,
+    credentials?: NotebookCredentialBundle,
+  ): Promise<{ artifactPath: string; artifactSha256: string; artifactByteLength: number }> {
+    const env = { ...process.env, ...(credentials || {}) };
+    const teamspace = env.LIGHTNING_TEAMSPACE;
+    if (!teamspace) {
+      throw new Error("LIGHTNING_TEAMSPACE_REQUIRED: physical artifact download requires explicit Teamspace.");
+    }
+    const normalizedRemotePath = remotePath.replace(/^\.\//, "").replace(/^\/+/, "").trim();
+    if (!normalizedRemotePath || normalizedRemotePath.includes("..")) {
+      throw new Error("LIGHTNING_ARTIFACT_PATH_INVALID: outputPath must be a relative Studio-home path.");
+    }
+    const absoluteDestination = path.resolve(destinationPath);
+    await fs.mkdir(path.dirname(absoluteDestination), { recursive: true });
+    const python = env.LIGHTNING_PYTHON || "python3";
+    const script = [
+      "from lightning_sdk import Studio",
+      "studio=Studio(" + JSON.stringify(runtime.resourceId) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=False)",
+      "studio.download_file(" + JSON.stringify(normalizedRemotePath) + ", file_path=" + JSON.stringify(absoluteDestination) + ")",
+      "print('SHORTFORGE_LIGHTNING_ARTIFACT_DOWNLOADED:' + " + JSON.stringify(absoluteDestination) + ")",
+    ].join(";");
+    const result = await runProcess(python, ["-c", script], { timeoutMs: 120_000, env });
+    if (result.exitCode !== 0) {
+      throw new Error("LIGHTNING_ARTIFACT_DOWNLOAD_FAILED: " + (result.stderr || result.stdout));
+    }
+    const evidence = await fileEvidence(absoluteDestination);
+    if (evidence.artifactByteLength <= 0) {
+      throw new Error("LIGHTNING_ARTIFACT_DOWNLOAD_EMPTY: downloaded artifact is zero bytes.");
+    }
+    return evidence;
+  }
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const env = { ...process.env, ...(credentials || {}) };
     const teamspace = env.LIGHTNING_TEAMSPACE;
