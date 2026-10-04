@@ -636,6 +636,10 @@ export class TreasuryEconomicIntelligence {
     activeCapacityUtilization: (totalCapacity: number) => number;
   } {
     const metrics: MutableTreasuryEconomicUnitMetrics = { ...emptyUnitMetrics() };
+    let verifiedRenderCostUsd = 0;
+    let verifiedRenderCount = 0;
+    let verifiedShortCostUsd = 0;
+    let verifiedShortCount = 0;
     const byReservation = new Map<string, ReservationAccumulator>();
 
     for (const event of events) {
@@ -664,6 +668,20 @@ export class TreasuryEconomicIntelligence {
         const amount = Math.max(0, numeric(event.amountUsd));
         const capacity = Math.max(0, numeric(event.capacityUnits));
         const tokens = Math.max(0, numeric(event.payload.actualTokens));
+        const verified = event.payload.verified === true;
+        const workloadType = eventWorkloadType(event).toUpperCase();
+        const verificationReceiptId =
+          typeof event.payload.verificationReceiptId === "string"
+            ? String(event.payload.verificationReceiptId)
+            : undefined;
+        if (verified && workloadType === "RENDER") {
+          verifiedRenderCostUsd += amount;
+          verifiedRenderCount += 1;
+          if (verificationReceiptId) {
+            verifiedShortCostUsd += amount;
+            verifiedShortCount += 1;
+          }
+        }
         metrics.settledCostUsd += amount;
         metrics.consumedCapacityUnits += capacity;
         metrics.actualTokens += tokens;
@@ -760,6 +778,14 @@ export class TreasuryEconomicIntelligence {
     metrics.costPerVerifiedExecutionUsd =
       metrics.verifiedExecutions > 0
         ? metrics.settledCostUsd / metrics.verifiedExecutions
+        : undefined;
+    metrics.costPerVerifiedRenderUsd =
+      verifiedRenderCount > 0
+        ? verifiedRenderCostUsd / verifiedRenderCount
+        : undefined;
+    metrics.costPerVerifiedShortUsd =
+      verifiedShortCount > 0
+        ? verifiedShortCostUsd / verifiedShortCount
         : undefined;
     metrics.spendPerHourUsd =
       (metrics.settledCostUsd / Math.max(windowMs, 1)) * 3_600_000;
