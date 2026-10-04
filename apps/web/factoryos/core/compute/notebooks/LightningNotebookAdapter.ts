@@ -201,13 +201,22 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
     const script = [
       "from lightning_sdk import Studio",
+      "import time",
       "studio=Studio(" + JSON.stringify(runtime.resourceId) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=False)",
-      "result=studio.run_with_exit_code(" + JSON.stringify(command) + ")",
-      "out, code = result if isinstance(result, tuple) else (result, 0)",
+      "attempts=0",
+      "out=''",
+      "code=1",
+      "while attempts < 8:",
+      "    attempts += 1",
+      "    result=studio.run_with_exit_code(" + JSON.stringify(command) + ")",
+      "    out, code = result if isinstance(result, tuple) else (result, 0)",
+      "    text=str(out)",
+      "    if code == 0 or 'still setting things up' not in text.lower(): break",
+      "    time.sleep(30)",
       "print('SHORTFORGE_LIGHTNING_RUN_RESULT')",
       "print(out)",
       "raise SystemExit(code)",
-    ].join(";");
+    ].join("\n");
 
     const result = await runProcess(
       python,
