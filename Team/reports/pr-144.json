@@ -91,14 +91,15 @@
     "Post-merge mainline verification."
   ],
   "verificationResults": {
-    "treasuryWave6": "RETRY_AFTER_FIX",
-    "shadowRouteTests": "FIXED_TEST_FIXTURE_PENDING_RETRY",
+    "treasuryWave6": "QUEUED_RUN_18",
+    "shadowRouteTests": "HARDENED",
     "intelligenceTests": "PENDING",
     "authorityRetirementTests": "PENDING",
-    "repositoryCI": "PENDING",
+    "repositoryCI": "QUEUED_RUN_2062",
     "currentMainRegression": "PENDING",
     "postMergeMainline": "NOT_STARTED",
-    "teamChangeGate": "PASS_PENDING_REFRESH"
+    "teamChangeGate": "QUEUED_RUN_1562",
+    "latestHead": "cf15eb62876476b671ea16f2ad1d2ad9eecea8f1"
   },
   "disposition": "BLOCKED",
   "lastKnownFailure": "Historical Wave 6 run failed because the test fixture marked verificationRequired=true while intentionally settling an unverified event; fixture corrected in commit 52f4290ea4a5dce6f001ba6ab11dfbfcab099086. Current report disposition restored to canonical BLOCKED enum pending fresh gates."
