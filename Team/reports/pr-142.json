@@ -6,7 +6,7 @@
   "baseRef": "main",
   "headRef": "feat/treasury-economic-intelligence-wave5-20261004",
   "objective": "Retire remaining production consumers of legacy economic mechanisms and mature Treasury Economic Intelligence without introducing a second economic authority.",
-  "classification": "architecture + compatibility retirement",
+  "classification": "extends existing rule",
   "linkedIssue": 141,
   "okf": {
     "sweepStatus": "COMPLETE",
@@ -104,5 +104,5 @@
     "remakerRegression": "PENDING",
     "overseerRegression": "PENDING"
   },
-  "disposition": "BLOCKED_PENDING_GATES"
+  "disposition": "BLOCKED"
 }
