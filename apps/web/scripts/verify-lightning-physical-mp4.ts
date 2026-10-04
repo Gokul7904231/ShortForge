@@ -55,9 +55,8 @@ async function main() {
   const remoteAbsolute = "$HOME/" + remoteArtifact;
 
   const renderCommand = [
-    "python -m pip install -q imageio-ffmpeg",
-    "FFMPEG=$(python -c \"import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())\")",
-    '$FFMPEG -hide_banner -loglevel error -y',
+    "command -v ffmpeg",
+    "ffmpeg -hide_banner -loglevel error -y",
     "-f lavfi -i color=c=black:s=1080x1920:r=30:d=2",
     "-f lavfi -i sine=frequency=1000:sample_rate=48000:d=2",
     "-c:v libx264 -pix_fmt yuv420p -preset veryfast",
