@@ -34,3 +34,23 @@ manual workflow -> provider credentials -> real RenderFabric -> ComputePool -> C
 - GLiDE is advisory only.
 - F07 and CAS remain physical truth gates.
 - Provider completion without a verified physical artifact is not production success.
+
+## Verified Daytona Physical + F07 Evidence — 2026-10-04
+
+Daytona physical qualification is REAL-SMOKE-VERIFIED on GitHub Actions run 37205564715 (main, commit f6fd2b9cfd96d1dafbeb57858ff048174448d412).
+
+Verified chain:
+- Daytona credential authentication passed.
+- Hosted sandbox provisioned with a unique proof-run name.
+- Real FFmpeg render executed at 1080x1920.
+- Physical MP4 downloaded to the verifier host.
+- CAS SHA-256 and byte-length integrity checks passed.
+- F07PhysicalArtifactVerifier independently resolved and decoded the CAS-bound bytes.
+- F07ReleaseGuardian.verifyRelease() completed successfully.
+- F07 signed receipt verification passed.
+- F07 proof JSON was uploaded as GitHub artifact live-hosted-sandbox-f07-evidence (artifact ID 11304537911).
+- Sandbox termination is executed in the test cleanup path.
+
+This evidence qualifies the Daytona physical + CAS + F07 boundary. It does not promote Daytona into F06 production-worker eligibility.
+
+The one-shot [live-daytona-f07-proof] push trigger used solely to obtain this real proof is removed after qualification.
