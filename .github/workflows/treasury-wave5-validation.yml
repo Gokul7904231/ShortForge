@@ -22,7 +22,7 @@ on:
       - "apps/web/lib/scheduler/SchedulerService.ts"
       - ".okf/**"
       - "docs/treasury-wave5-economic-intelligence.md"
-      - "Team/reports/pr-141.json"
+      - "Team/reports/pr-142.json"
   workflow_dispatch:
 
 jobs:
