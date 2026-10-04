@@ -9,6 +9,7 @@ import {
   type NotebookProviderType,
   type NotebookCredentialValidation,
 } from "@/factoryos/core/compute/notebooks";
+import { refreshKaggleAccessToken } from "./KaggleOAuthService";
 import { computeConnectionStore } from "./ComputeConnectionStore";
 
 const adapters = new NotebookRegistry();
@@ -62,7 +63,48 @@ export async function getNotebookCredentials(
   if (!connection) throw new Error("COMPUTE_CONNECTION_NOT_FOUND");
   const providerType = PROVIDER_TYPE_BY_ID[connection.providerId];
   if (!providerType) throw new Error("NOTEBOOK_PROVIDER_NOT_IMPLEMENTED:" + connection.providerId);
-  const credentials = await computeConnectionStore.getSecretsForUser(userId, connectionId);
+  let credentials = await computeConnectionStore.getSecretsForUser(userId, connectionId);
   if (!credentials) throw new Error("COMPUTE_CONNECTION_SECRETS_NOT_FOUND");
+
+  if (providerType === "KAGGLE" && credentials.KAGGLE_REFRESH_TOKEN) {
+    const expiresAt = Number(credentials.KAGGLE_TOKEN_EXPIRES_AT || "0");
+    const refreshWindowMs = 5 * 60 * 1000;
+    if (expiresAt > 0 && expiresAt - Date.now() <= refreshWindowMs) {
+      try {
+        const refreshed = await refreshKaggleAccessToken(credentials.KAGGLE_REFRESH_TOKEN);
+        if (refreshed.access_token) {
+          credentials = {
+            ...credentials,
+            KAGGLE_API_TOKEN: refreshed.access_token,
+            ...(refreshed.expires_in
+              ? {
+                  KAGGLE_TOKEN_EXPIRES_AT: String(
+                    Date.now() + refreshed.expires_in * 1000,
+                  ),
+                }
+              : {}),
+            ...(refreshed.refresh_token
+              ? { KAGGLE_REFRESH_TOKEN: refreshed.refresh_token }
+              : {}),
+          };
+          await computeConnectionStore.updateSecretsForUser(
+            userId,
+            connectionId,
+            credentials,
+          );
+        }
+      } catch (error) {
+        if (expiresAt > Date.now()) {
+          // Keep the current token for the remainder of its valid window.
+        } else {
+          throw new Error(
+            "COMPUTE_KAGGLE_TOKEN_REFRESH_FAILED:" +
+              (error instanceof Error ? error.message : "refresh failed"),
+          );
+        }
+      }
+    }
+  }
+
   return { providerType, credentials };
 }
