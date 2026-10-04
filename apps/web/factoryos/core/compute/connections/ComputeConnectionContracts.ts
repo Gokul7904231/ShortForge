@@ -53,6 +53,13 @@ export interface ComputeCredentialProfile {
 export interface ComputeProviderOAuthDefinition {
   startPath: string;
   scopes: string[];
+  /** Human-readable permissions shown to normal users instead of raw scope IDs. */
+  permissions?: string[];
+}
+
+export interface ComputeProviderOnboardingDefinition {
+  summary?: string;
+  steps: string[];
 }
 
 export interface ComputeConnection {
@@ -87,6 +94,7 @@ export interface ComputeProviderDefinition {
   configurableKeys: string[];
   credentialProfiles?: ComputeCredentialProfile[];
   oauth?: ComputeProviderOAuthDefinition;
+  onboarding?: ComputeProviderOnboardingDefinition;
   setupUrl?: string;
   roles: Array<"BASIC" | "ADMIN">;
   implemented: boolean;
