@@ -44,7 +44,8 @@ type Provider = {
   credentialKeys: string[];
   configurableKeys: string[];
   credentialProfiles?: CredentialProfile[];
-  oauth?: { startPath: string; scopes: string[] };
+  oauth?: { startPath: string; scopes: string[]; permissions?: string[] };
+  onboarding?: { summary?: string; steps: string[] };
   setupUrl?: string;
   roles: string[];
   implemented: boolean;
@@ -468,7 +469,15 @@ export default function ComputeConnectionsPage() {
                     No provider password or raw API key is entered into ShortForge.
                   </p>
                   <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-500">
-                    Requested access: {selected.oauth?.scopes.join(", ")}
+                    <div className="mb-2 font-medium text-slate-300">ShortForge will be able to</div>
+                    <div className="space-y-1">
+                      {(selected.oauth?.permissions?.length
+                        ? selected.oauth.permissions
+                        : selected.oauth?.scopes || []
+                      ).map((permission) => (
+                        <div key={permission}>• {permission}</div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -492,8 +501,23 @@ export default function ComputeConnectionsPage() {
               <div className="space-y-4">
                 {selected.connectionExperience === "GUIDED_MANUAL" && (
                   <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-sm leading-6 text-slate-400">
-                    ShortForge needs a small amount of provider setup because this provider does not expose a suitable delegated web authorization flow here.
-                    Enter it once; the values are encrypted on the server and never shown again.
+                    <div className="font-medium text-slate-200">
+                      {selected.onboarding?.summary ||
+                        "ShortForge needs a small amount of provider setup because this provider does not expose a suitable delegated web authorization flow here."}
+                    </div>
+                    {selected.onboarding?.steps?.length ? (
+                      <ol className="mt-3 space-y-2">
+                        {selected.onboarding.steps.map((step, index) => (
+                          <li key={step} className="flex gap-2">
+                            <span className="shrink-0 text-slate-600">{index + 1}.</span>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : null}
+                    <p className="mt-3 text-xs text-slate-600">
+                      Enter it once; the values are encrypted on the server and never shown again. You do not need to edit .env files or install a provider CLI.
+                    </p>
                   </div>
                 )}
 
@@ -511,15 +535,10 @@ export default function ComputeConnectionsPage() {
                   </div>
                 )}
 
-                <div>
-                  <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-500">
-                    Connection name
-                  </label>
-                  <input
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-slate-600"
-                  />
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <p className="text-xs leading-5 text-slate-500">
+                    ShortForge will name this connection automatically. You do not need to manage an internal provider name.
+                  </p>
                 </div>
 
                 {selectedProfile?.inputs.map((input) => (

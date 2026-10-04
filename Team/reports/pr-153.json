@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR153-Provider-Connection-Onboarding",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/compute-connection-onboarding-v2-20261004",
+  "objective": "Finish the user-facing compute connection onboarding experience so normal users use Connect -> authorize/setup -> verify -> Ready without managing internal provider plumbing.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Provider authentication is separate from provider execution authority.",
+      "Raw provider secrets remain server-side and never enter journals, telemetry, MCP payloads, or F06 worker authority.",
+      "OAuth is used only where the provider exposes a real delegated authorization flow.",
+      "Provider completion is not physical artifact truth; F07 remains the independent artifact truth boundary.",
+      "No self-hosted PandaStack connection is introduced."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/compute/connection-hub.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "PR #153 does not change secret storage or authentication primitives; it only changes provider onboarding presentation.",
+      "Kaggle OAuth permission identifiers are translated into human-readable UI copy without exposing token values.",
+      "Lightning remains guided-manual and does not claim unsupported delegated OAuth."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added human-readable Kaggle OAuth permission descriptions.",
+    "Added provider-specific Lightning onboarding guidance.",
+    "Removed the unnecessary user-facing connection-name entry.",
+    "Added contract coverage for the new onboarding metadata and Lightning truthfulness.",
+    "Preserved existing OAuth, encrypted-secret, connection-validation, ComputeRouter, F06, and F07 boundaries."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionContracts.ts",
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    "apps/web/app/(os)/settings/compute/page.tsx",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts",
+    ".okf/compute/connection-hub.md"
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING_RERUN",
+    "computeConnectionHubTests": "PASS_RUN_114",
+    "computeGoldenMission": "PASS_RUN_553",
+    "repositoryCI": "PENDING",
+    "factoryosTypecheck": "PENDING",
+    "computePool": "PENDING",
+    "computeResilience": "PENDING",
+    "trueEightFloorTrajectory": "PENDING",
+    "floor06PreTrainingValidation": "PENDING",
+    "kaggleOauthLive": "PENDING_EXTERNAL_CLIENT_REGISTRATION",
+    "lightningTruthfulnessReview": "PASS_NO_FAKE_OAUTH"
+  },
+  "verificationPlan": [
+    "Pass the dedicated Compute Connection Hub contract workflow.",
+    "Pass Team Change Gate and repository/floor validation.",
+    "Confirm no Basic-user Sandbox/API-GPU exposure is introduced.",
+    "After merge, configure a registered Kaggle OAuth client at deployment level and perform the first real end-user callback test."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "Implementation is limited to the provider connection presentation contract and onboarding UI.",
+    "The dedicated Compute Connection Hub contract workflow is passing.",
+    "Team Change Gate required the report to use an allowed classification and disposition; those values now match the repository validator contract.",
+    "Hosted Kaggle one-click remains deployment-gated on registered OAuth client configuration.",
+    "Lightning remains on truthful guided programmatic auth; no unsupported third-party OAuth surface is claimed."
+  ]
+}
