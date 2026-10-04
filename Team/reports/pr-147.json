@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR147-Lightning-Physical-MP4-Proof",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/lightning-physical-mp4-proof-20261004",
+  "objective": "Close issue #136 by proving the physical Lightning MP4 artifact path from provider execution through external retrieval, local integrity verification, CAS binding, and F07 physical verification.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Lightning remains a rendering backend and is not promoted to F06 production-worker authority by this change.",
+      "Provider completion is not physical artifact truth.",
+      "CAS owns immutable artifact identity.",
+      "F07 remains the independent physical artifact truth boundary.",
+      "Provider credentials remain environment-bound and never enter repository artifacts."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy-map.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No new secrets are committed; Lightning credentials remain CI secret/variable bound.",
+      "Live physical proof is fail-closed on artifact, CAS, and F07 invariants."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Canonical LightningNotebookAdapter now provisions/reuses an explicit Teamspace Studio and waits for Running state.",
+    "Physical proof uploads a self-contained FFmpeg binary into the ready Studio and executes a deterministic 1080x1920, 2-second H.264/AAC MP4 render.",
+    "Artifact retrieval uses the documented Lightning lit:// Studio filesystem and lightning cp path.",
+    "Verifier recomputes SHA-256 and byte length outside Lightning, independently probes the MP4, binds it into CAS, verifies CAS integrity, and runs F07PhysicalArtifactVerifier.",
+    "Lightning remains productionWorkerEligible=false."
+  ],
+  "acceptance": {
+    "realLightningStudio": "PASS",
+    "deterministicFfmpegMp4": "PASS",
+    "providerNativeArtifactDownload": "PASS_LIGHTNING_CP",
+    "externalSha256AndByteLength": "PASS",
+    "independentMediaProbe": "PASS",
+    "casBindingAndIntegrity": "PASS",
+    "f07PhysicalVerification": "PASS",
+    "liveWorkflowEvidence": "PASS"
+  },
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "typecheck": "PASS",
+    "lightningPhysicalWorkflow": "PASS_RUN_55",
+    "githubWorkflowRunId": 37188935300,
+    "artifactSha256": "367b5f1bd6f79d69777aad127ca1a40b532a919983bdc7d129cf1047b9b19c5c",
+    "artifactByteLength": 39741,
+    "media": "1080x1920 H.264 + AAC, 2 seconds, decode smoke passed",
+    "cas": "PASS",
+    "f07": "PASS"
+  },
+  "disposition": "PASS"
+}

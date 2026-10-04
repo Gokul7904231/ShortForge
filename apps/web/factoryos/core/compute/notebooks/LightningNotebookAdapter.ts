@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import type {
   NotebookCredentialValidation,
   NotebookExecutionRequest,
@@ -9,7 +11,7 @@ import type {
   NotebookRuntime,
   NotebookCredentialBundle,
 } from "./NotebookContracts";
-import { runProcess } from "./NotebookUtils";
+import { fileEvidence, runProcess } from "./NotebookUtils";
 
 export class LightningNotebookAdapter implements NotebookProviderAdapter {
   readonly metadata: NotebookProviderMetadata = {
@@ -86,7 +88,8 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     }
 
     const env = { ...process.env, ...(credentials || {}) };
-    const studioName = request.name;
+    const existingStudio = env.LIGHTNING_EXISTING_STUDIO?.trim();
+    const studioName = existingStudio || request.name;
     const teamspace = env.LIGHTNING_TEAMSPACE;
     if (!teamspace) {
       throw new Error(
@@ -98,13 +101,24 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
     const script = [
       "from lightning_sdk import Studio, Machine",
-      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=True)",
+      "import time",
+      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=" + (existingStudio ? "False" : "True") + ")",
       "machine_name=" + JSON.stringify(machine),
-      "machine=Machine.from_str(machine_name)",
-      "studio.start(machine)",
+      "machine=None if machine_name == 'CPU' else Machine.from_str(machine_name)",
+      "state=str(studio.status).lower()",
+      "need_start=('stopped' in state) or ('none' in state)",
+      "studio.start() if need_start and machine is None else (studio.start(machine) if need_start else None)",
+      "deadline=time.time() + max(60, " + Math.floor(120000/1000) + ")",
+      "while True:",
+      "    state=str(studio.status).lower()",
+      "    if 'running' in state: break",
+      "    if any(x in state for x in ('failed','error','terminated')): raise RuntimeError('Studio entered terminal state: ' + state)",
+      "    if time.time() >= deadline: raise RuntimeError('Timed out waiting for Studio to become Running; current status=' + state)",
+      "    time.sleep(5)",
       "print('SHORTFORGE_LIGHTNING_STUDIO_READY:' + studio.name)",
       "print('SHORTFORGE_LIGHTNING_TEAMSPACE:' + studio.teamspace.name)",
-    ].join(";");
+      "print('SHORTFORGE_LIGHTNING_STATUS:' + str(studio.status))",
+    ].join("\n");
 
     const result = await runProcess(
       python,
@@ -187,13 +201,22 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
     const script = [
       "from lightning_sdk import Studio",
+      "import time",
       "studio=Studio(" + JSON.stringify(runtime.resourceId) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=False)",
-      "result=studio.run_with_exit_code(" + JSON.stringify(command) + ")",
-      "out, code = result if isinstance(result, tuple) else (result, 0)",
+      "attempts=0",
+      "out=''",
+      "code=1",
+      "while attempts < 8:",
+      "    attempts += 1",
+      "    result=studio.run_with_exit_code(" + JSON.stringify(command) + ")",
+      "    out, code = result if isinstance(result, tuple) else (result, 0)",
+      "    text=str(out)",
+      "    if code == 0 or 'still setting things up' not in text.lower(): break",
+      "    time.sleep(30)",
       "print('SHORTFORGE_LIGHTNING_RUN_RESULT')",
       "print(out)",
       "raise SystemExit(code)",
-    ].join(";");
+    ].join("\n");
 
     const result = await runProcess(
       python,
@@ -216,6 +239,32 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       };
     }
 
+    if (request.outputPath && request.artifactDestinationPath) {
+      const downloaded = await this.downloadArtifact(
+        runtime,
+        request.outputPath,
+        request.artifactDestinationPath,
+        credentials,
+      );
+      return {
+        providerType: "LIGHTNING",
+        runtimeId: runtime.resourceId,
+        verificationLevel: "PHYSICAL_ARTIFACT_VERIFIED",
+        status: "SUCCEEDED",
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        artifactPath: downloaded.artifactPath,
+        artifactSha256: downloaded.artifactSha256,
+        artifactByteLength: downloaded.artifactByteLength,
+        evidence: [
+          "Lightning Studio code execution completed through lightning-sdk.",
+          "Physical artifact downloaded from the Studio through the Lightning SDK.",
+          "ShortForge recomputed SHA-256 and byte length outside Lightning.",
+        ],
+      };
+    }
+
     return {
       providerType: "LIGHTNING",
       runtimeId: runtime.resourceId,
@@ -225,9 +274,94 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       stdout: result.stdout,
       stderr: result.stderr,
       evidence: ["Lightning Studio code execution completed through lightning-sdk."],
-      limitation:
-        "Artifact transfer into the ShortForge CAS is not yet part of this notebook adapter.",
     };
+  }
+
+  private async downloadArtifact(
+    runtime: NotebookRuntime,
+    remotePath: string,
+    destinationPath: string,
+    credentials?: NotebookCredentialBundle,
+  ): Promise<{ artifactPath: string; artifactSha256: string; artifactByteLength: number }> {
+    const env = { ...process.env, ...(credentials || {}) };
+    const teamspace = env.LIGHTNING_TEAMSPACE;
+    if (!teamspace) {
+      throw new Error(
+        "LIGHTNING_TEAMSPACE_REQUIRED: physical artifact download requires explicit Teamspace.",
+      );
+    }
+
+    const [org, teamspaceName] = teamspace.split("/", 2);
+    if (!org || !teamspaceName) {
+      throw new Error(
+        "LIGHTNING_TEAMSPACE_INVALID: expected <org>/<teamspace>.",
+      );
+    }
+
+    const normalizedRemotePath = remotePath
+      .replace(/^\.\//, "")
+      .replace(/^\/+/, "")
+      .trim();
+    if (!normalizedRemotePath || normalizedRemotePath.includes("..")) {
+      throw new Error(
+        "LIGHTNING_ARTIFACT_PATH_INVALID: outputPath must be a relative Studio-home path.",
+      );
+    }
+
+    const absoluteDestination = path.resolve(destinationPath);
+    await fs.mkdir(path.dirname(absoluteDestination), { recursive: true });
+
+    const studioUri =
+      "lit://" +
+      org +
+      "/" +
+      teamspaceName +
+      "/studios/" +
+      runtime.resourceId +
+      "/" +
+      normalizedRemotePath;
+
+    let lastListing = "lightning ls did not run";
+    let lastCopy = "lightning cp did not run";
+
+    for (let attempt = 1; attempt <= 12; attempt += 1) {
+      const listing = await runProcess(
+        "lightning",
+        ["ls", studioUri],
+        { timeoutMs: 30_000, env },
+      );
+      lastListing = listing.stdout || listing.stderr || "lightning ls returned no output";
+
+      if (listing.exitCode === 0) {
+        const result = await runProcess(
+          "lightning",
+          ["cp", studioUri, absoluteDestination],
+          { timeoutMs: 120_000, env },
+        );
+        lastCopy = result.stderr || result.stdout || "lightning cp returned no output";
+
+        if (result.exitCode === 0) {
+          const evidence = await fileEvidence(absoluteDestination);
+          if (evidence.artifactByteLength > 0) {
+            return evidence;
+          }
+          lastCopy = "lightning cp completed but local artifact was empty";
+        }
+      }
+
+      if (attempt < 12) {
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+      }
+    }
+
+    throw new Error(
+      "LIGHTNING_ARTIFACT_DOWNLOAD_FAILED after 12 visibility/transfer attempts. " +
+        "This protects against Lightning Drive/Studio filesystem eventual-consistency races.\n" +
+        "Remote artifact probe: " +
+        lastListing +
+        "\nLast transfer result: " +
+        lastCopy,
+    );
   }
 
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
