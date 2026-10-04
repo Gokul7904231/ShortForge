@@ -101,9 +101,11 @@ describeLiveProof("live hosted sandbox compute proof", () => {
        * measurements. The deliberately incorrect declared dimensions/duration
        * below prove that F07 must resolve and probe the physical CAS bytes.
        */
+      const artifactCasRef = `cas://${artifact.sha256}`;
+
       const physicalEvidence = await F07PhysicalArtifactVerifier.verify({
         artifactSha256: artifact.sha256,
-        artifactCasRef: artifactCasRef,
+        artifactCasRef,
       });
 
       expect(physicalEvidence.source).toBe("CAS");
@@ -182,7 +184,6 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       };
 
       const guardian = new F07ReleaseGuardian(YouTubePolicyStore.getInstance());
-      const artifactCasRef = `cas://${artifact.sha256}`;
       const receipt = await guardian.verifyRelease({
         video,
         channel,
