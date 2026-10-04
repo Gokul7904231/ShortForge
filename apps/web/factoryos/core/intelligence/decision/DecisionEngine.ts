@@ -1,46 +1,66 @@
 /**
  * ShortForge / FactoryOS — Decision Engine
  *
- * Coordinates deterministic, GLiDE fast-decision, LLM, and shadow decision adapters.
- * Enforces Ponytail economy (deterministic first), shadow learning, and durable ledgering.
+ * Coordinates the authoritative bounded decision path while running optional
+ * JEV, GLiDE, CLM, and AER-Core observers in non-blocking shadow mode.
+ *
+ * AER-Core is NOT part of the authoritative decision path in this version.
  */
 
 import {
-  DecisionBatchRequest,
-  DecisionBatchResult,
-  DecisionAnswer,
-  DecisionQuestion,
-  IDecisionAdapter,
+  type DecisionBatchRequest,
+  type DecisionBatchResult,
+  type DecisionAnswer,
+  type DecisionQuestion,
 } from "./DecisionContracts";
 import { DeterministicDecisionAdapter } from "./DeterministicDecisionAdapter";
-import { TypeSafeJevAdapter } from "./TypeSafeJevAdapter";
+import { TypeSafeJevAdapter, type ShadowDiffRecord } from "./TypeSafeJevAdapter";
 import { LLMDecisionAdapter } from "./LLMDecisionAdapter";
 import { CLMDecisionAdapter } from "./CLMDecisionAdapter";
-import { GlideDecisionAdapter, type GlideDecisionAdapterConfig } from "./GlideDecisionAdapter";
-import { ShadowDiffRecord } from "./TypeSafeJevAdapter";
+import {
+  GlideDecisionAdapter,
+  type GlideDecisionAdapterConfig,
+} from "./GlideDecisionAdapter";
+import { AERDecisionAdapter } from "./AERDecisionAdapter";
+import type { AERDecisionCoreProvider } from "./AERDecisionCoreContract";
+import { AERCoreShadowCoordinator, type AERCoreShadowRecord } from "./AERCoreShadowCoordinator";
+import { AERCoreShadowLedger } from "./AERCoreShadowLedger";
 import { DecisionLedger } from "./DecisionLedger";
 
 export interface DecisionEngineConfig {
   enableShadowJev?: boolean;
-  /** Opt-in only: CLM remains shadow-only and never changes the primary path. */
   enableShadowClm?: boolean;
-  /** Optional Fast Decision tier: deterministic -> GLiDE -> deeper LLM/Ascalon when uncertain. */
   enableGlideFastPath?: boolean;
-  /** Optional pure shadow comparison; never affects the primary decision. */
   enableShadowGlide?: boolean;
+  /** AER-Core can only be attached as a shadow observer in this release. */
+  enableShadowAerCore?: boolean;
+  aerCoreProvider?: AERDecisionCoreProvider;
   glide?: Partial<GlideDecisionAdapterConfig>;
   enableDeterministicFirst?: boolean;
-  escalationThreshold?: number; // Default 0.70
+  escalationThreshold?: number;
 }
 
 export class DecisionEngine {
-  private deterministicAdapter: DeterministicDecisionAdapter;
-  private jevShadowAdapter: TypeSafeJevAdapter;
-  private llmAdapter: LLMDecisionAdapter;
-  private clmShadowAdapter: CLMDecisionAdapter;
-  private glideShadowAdapter: GlideDecisionAdapter;
-  private ledger: DecisionLedger;
-  private config: Required<DecisionEngineConfig>;
+  private readonly deterministicAdapter: DeterministicDecisionAdapter;
+  private readonly jevShadowAdapter: TypeSafeJevAdapter;
+  private readonly llmAdapter: LLMDecisionAdapter;
+  private readonly clmShadowAdapter: CLMDecisionAdapter;
+  private readonly glideShadowAdapter: GlideDecisionAdapter;
+  private readonly aerCoreShadowAdapter?: AERDecisionAdapter;
+  private readonly aerCoreShadowCoordinator = new AERCoreShadowCoordinator();
+  private readonly aerCoreShadowLedger = new AERCoreShadowLedger();
+  private readonly ledger: DecisionLedger;
+  private readonly config: {
+    enableShadowJev: boolean;
+    enableShadowClm: boolean;
+    enableGlideFastPath: boolean;
+    enableShadowGlide: boolean;
+    enableShadowAerCore: boolean;
+    aerCoreProvider?: AERDecisionCoreProvider;
+    glide: Partial<GlideDecisionAdapterConfig>;
+    enableDeterministicFirst: boolean;
+    escalationThreshold: number;
+  };
 
   constructor(config: DecisionEngineConfig = {}) {
     this.deterministicAdapter = new DeterministicDecisionAdapter();
@@ -48,6 +68,9 @@ export class DecisionEngine {
     this.llmAdapter = new LLMDecisionAdapter();
     this.clmShadowAdapter = new CLMDecisionAdapter();
     this.glideShadowAdapter = new GlideDecisionAdapter(config.glide ?? {});
+    this.aerCoreShadowAdapter = config.aerCoreProvider
+      ? new AERDecisionAdapter({ provider: config.aerCoreProvider })
+      : undefined;
     this.ledger = DecisionLedger.getInstance();
 
     this.config = {
@@ -55,6 +78,8 @@ export class DecisionEngine {
       enableShadowClm: config.enableShadowClm ?? false,
       enableGlideFastPath: config.enableGlideFastPath ?? false,
       enableShadowGlide: config.enableShadowGlide ?? false,
+      enableShadowAerCore: config.enableShadowAerCore ?? false,
+      aerCoreProvider: config.aerCoreProvider,
       glide: config.glide ?? {},
       enableDeterministicFirst: config.enableDeterministicFirst ?? true,
       escalationThreshold: config.escalationThreshold ?? 0.7,
@@ -67,14 +92,12 @@ export class DecisionEngine {
     let adapterUsed: "DETERMINISTIC" | "GLIDE" | "LLM" | "HYBRID" = "DETERMINISTIC";
     let usedGlideFastPath = false;
 
-    // 1. Deterministic Evaluation First (Ponytail Economy: 0 tokens)
     let unresolvedQuestions = request.questions;
 
     if (this.config.enableDeterministicFirst) {
       const detResult = await this.deterministicAdapter.evaluateBatch(request);
-
       const resolvedAnswers: DecisionAnswer[] = [];
-      const stillUnresolved = [];
+      const stillUnresolved: DecisionQuestion[] = [];
 
       for (const q of request.questions) {
         const ans = detResult.answersById[q.id];
@@ -87,15 +110,10 @@ export class DecisionEngine {
       }
 
       unresolvedQuestions = stillUnresolved;
-
-      if (unresolvedQuestions.length === 0) {
-        adapterUsed = "DETERMINISTIC";
-      } else if (resolvedAnswers.length > 0) {
-        adapterUsed = "HYBRID";
-      }
+      if (unresolvedQuestions.length === 0) adapterUsed = "DETERMINISTIC";
+      else if (resolvedAnswers.length > 0) adapterUsed = "HYBRID";
     }
 
-    // 2. GLiDE Fast Decision tier for unresolved questions.
     if (unresolvedQuestions.length > 0 && this.config.enableGlideFastPath) {
       const glideSubRequest: DecisionBatchRequest = {
         ...request,
@@ -117,47 +135,38 @@ export class DecisionEngine {
         }
 
         unresolvedQuestions = acceptedQuestions;
-
         if (unresolvedQuestions.length === 0) {
           adapterUsed = adapterUsed === "HYBRID" ? "HYBRID" : "GLIDE";
         } else if (adapterUsed !== "HYBRID" && Object.keys(finalAnswersById).length > 0) {
           adapterUsed = "HYBRID";
         }
       } catch (err) {
-        // GLiDE is a speed optimization. Never let its outage break the deeper fallback.
         console.warn("[DecisionEngine] GLiDE fast path failed; escalating:", err);
       }
     }
 
-    // 3. LLM Evaluation for remaining unresolved questions
     if (unresolvedQuestions.length > 0) {
       const llmSubRequest: DecisionBatchRequest = {
         ...request,
         questions: unresolvedQuestions,
       };
-
       const llmResult = await this.llmAdapter.evaluateBatch(llmSubRequest);
       for (const q of unresolvedQuestions) {
         const ans = llmResult.answersById[q.id];
-        if (ans) {
-          finalAnswersById[q.id] = ans;
-        }
+        if (ans) finalAnswersById[q.id] = ans;
       }
-
-      if (adapterUsed !== "HYBRID") {
-        adapterUsed = "LLM";
-      }
+      if (adapterUsed !== "HYBRID") adapterUsed = "LLM";
     }
 
     const assembledAnswers: DecisionAnswer[] = request.questions.map(
-      (q) => finalAnswersById[q.id]
+      (q) => finalAnswersById[q.id],
     );
-
     const confidences = assembledAnswers.map((a) => a?.confidence ?? 0.0);
     const minConfidence = confidences.length > 0 ? Math.min(...confidences) : 0.0;
     const shouldEscalate = minConfidence < this.config.escalationThreshold;
-
-    const hasUnresolved = assembledAnswers.some((a) => a?.status === "INVALID" || a?.status === "UNRESOLVED");
+    const hasUnresolved = assembledAnswers.some(
+      (a) => a?.status === "INVALID" || a?.status === "UNRESOLVED",
+    );
 
     const finalResult: DecisionBatchResult = {
       batchId: request.batchId,
@@ -171,58 +180,22 @@ export class DecisionEngine {
       status: hasUnresolved ? "UNRESOLVED" : "VALID",
       adapterMetadata: {
         adapterType: adapterUsed,
-        implementationVersion: "2.0.0",
+        implementationVersion: "2.1.0",
         isProductionAuthority: true,
-        // GLiDE fast-path outputs are not training-eligible until tied to verified outcomes.
-        isTrainingEligible: !hasUnresolved && !usedGlideFastPath,
+        // Training eligibility is established by verified training capture,
+        // not by the runtime adapter result.
+        isTrainingEligible: false,
       },
     };
 
-    // 4. Shadow Jev Evaluation in parallel (Safe learning loop)
-    let shadowDiffs: any[] | undefined;
-    if (this.config.enableShadowJev) {
-      try {
-        const jevResult = await this.jevShadowAdapter.evaluateBatch(request);
-        const comp = this.jevShadowAdapter.recordShadowComparison(
-          request.batchId,
-          finalResult,
-          jevResult
-        );
-        shadowDiffs = comp.diffs;
-      } catch (err) {
-        // Shadow mode must never fail production execution
-        console.warn("[DecisionEngine] Shadow Jev evaluation failed non-fatally:", err);
-      }
-    }
-
-    // 5. Optional CLM shadow comparison. Disabled by default and never authoritative.
-    if (this.config.enableShadowClm) {
-      try {
-        const clmResult = await this.clmShadowAdapter.evaluateBatch(request);
-        const clmDiffs = this.buildShadowDiffs(finalResult, clmResult);
-        shadowDiffs = [...(shadowDiffs ?? []), ...clmDiffs];
-      } catch (err) {
-        console.warn("[DecisionEngine] CLM shadow evaluation failed non-fatally:", err);
-      }
-    }
-
-    // 6. Optional GLiDE shadow comparison. GLiDE must never affect the primary result here.
-    if (this.config.enableShadowGlide) {
-      try {
-        const glideResult = await this.glideShadowAdapter.evaluateBatch(request);
-        const glideDiffs = this.buildShadowDiffs(finalResult, glideResult);
-        shadowDiffs = [...(shadowDiffs ?? []), ...glideDiffs];
-      } catch (err) {
-        console.warn("[DecisionEngine] GLiDE shadow evaluation failed non-fatally:", err);
-      }
-    }
-
-    // 7. Record to Durable Decision Ledger
+    // Authoritative result is recorded before shadow execution.
     this.ledger.recordTransaction(finalResult, {
       taskId: request.taskId,
       missionId: request.missionId,
-      shadowDiffs,
     });
+
+    // Shadow observers are intentionally non-blocking for the primary path.
+    void this.runShadowEvaluations(request, finalResult);
 
     return finalResult;
   }
@@ -243,7 +216,111 @@ export class DecisionEngine {
     return this.glideShadowAdapter;
   }
 
-  private buildShadowDiffs(primary: DecisionBatchResult, shadow: DecisionBatchResult): ShadowDiffRecord[] {
+  public getAerCoreShadowLedger(): AERCoreShadowLedger {
+    return this.aerCoreShadowLedger;
+  }
+
+  public getAerCoreShadowRecords(): readonly AERCoreShadowRecord[] {
+    return this.aerCoreShadowLedger.getRecords();
+  }
+
+  private async runShadowEvaluations(
+    request: DecisionBatchRequest,
+    finalResult: DecisionBatchResult,
+  ): Promise<void> {
+    const jevPromise = this.config.enableShadowJev
+      ? this.jevShadowAdapter.evaluateBatch(request)
+      : Promise.resolve(null);
+    const clmPromise = this.config.enableShadowClm
+      ? this.clmShadowAdapter.evaluateBatch(request)
+      : Promise.resolve(null);
+    const glidePromise = this.config.enableShadowGlide
+      ? this.glideShadowAdapter.evaluateBatch(request)
+      : Promise.resolve(null);
+    const aerPromise =
+      this.config.enableShadowAerCore && this.aerCoreShadowAdapter
+        ? this.aerCoreShadowAdapter.evaluateBatch(request)
+        : Promise.resolve(null);
+
+    const [jevSettled, clmSettled, glideSettled, aerSettled] =
+      await Promise.allSettled([
+        jevPromise,
+        clmPromise,
+        glidePromise,
+        aerPromise,
+      ]);
+
+    const shadowDiffs: ShadowDiffRecord[] = [];
+
+    if (jevSettled.status === "fulfilled" && jevSettled.value) {
+      try {
+        const comparison = this.jevShadowAdapter.recordShadowComparison(
+          request.batchId,
+          finalResult,
+          jevSettled.value,
+        );
+        shadowDiffs.push(...comparison.diffs);
+      } catch (err) {
+        console.warn("[DecisionEngine] JEV comparison failed non-fatally:", err);
+      }
+    } else if (jevSettled.status === "rejected") {
+      console.warn("[DecisionEngine] JEV shadow failed non-fatally:", jevSettled.reason);
+    }
+
+    if (clmSettled.status === "fulfilled" && clmSettled.value) {
+      try {
+        shadowDiffs.push(...this.buildShadowDiffs(finalResult, clmSettled.value));
+      } catch (err) {
+        console.warn("[DecisionEngine] CLM comparison failed non-fatally:", err);
+      }
+    } else if (clmSettled.status === "rejected") {
+      console.warn("[DecisionEngine] CLM shadow failed non-fatally:", clmSettled.reason);
+    }
+
+    if (glideSettled.status === "fulfilled" && glideSettled.value) {
+      try {
+        shadowDiffs.push(...this.buildShadowDiffs(finalResult, glideSettled.value));
+      } catch (err) {
+        console.warn("[DecisionEngine] GLiDE comparison failed non-fatally:", err);
+      }
+    } else if (glideSettled.status === "rejected") {
+      console.warn("[DecisionEngine] GLiDE shadow failed non-fatally:", glideSettled.reason);
+    }
+
+    if (shadowDiffs.length > 0) {
+      this.ledger.recordShadowDiffs(shadowDiffs);
+    }
+
+    if (aerSettled.status === "fulfilled" && aerSettled.value) {
+      const aerResult = aerSettled.value;
+      const available = [
+        { name: "PRIMARY" as const, result: finalResult },
+        ...(jevSettled.status === "fulfilled" && jevSettled.value
+          ? [{ name: "JEV_SHADOW" as const, result: jevSettled.value }]
+          : []),
+        ...(glideSettled.status === "fulfilled" && glideSettled.value
+          ? [{ name: "GLIDE_SHADOW" as const, result: glideSettled.value }]
+          : []),
+      ];
+
+      for (const baseline of available) {
+        this.aerCoreShadowLedger.record(
+          this.aerCoreShadowCoordinator.compare(
+            baseline.result,
+            aerResult,
+            [baseline.name],
+          ),
+        );
+      }
+    } else if (aerSettled.status === "rejected") {
+      console.warn("[DecisionEngine] AER-Core shadow failed non-fatally:", aerSettled.reason);
+    }
+  }
+
+  private buildShadowDiffs(
+    primary: DecisionBatchResult,
+    shadow: DecisionBatchResult,
+  ): ShadowDiffRecord[] {
     const diffs: ShadowDiffRecord[] = [];
 
     for (const questionId of Object.keys(primary.answersById)) {
@@ -257,10 +334,16 @@ export class DecisionEngine {
       if (primaryAnswer.type === "NOUL" && shadowAnswer.type === "NOUL") {
         primarySelected = primaryAnswer.value;
         shadowSelected = shadowAnswer.value;
-      } else if (primaryAnswer.type === "CHOICE" && shadowAnswer.type === "CHOICE") {
+      } else if (
+        primaryAnswer.type === "CHOICE" &&
+        shadowAnswer.type === "CHOICE"
+      ) {
         primarySelected = primaryAnswer.selected;
         shadowSelected = shadowAnswer.selected;
-      } else if (primaryAnswer.type === "SCORE" && shadowAnswer.type === "SCORE") {
+      } else if (
+        primaryAnswer.type === "SCORE" &&
+        shadowAnswer.type === "SCORE"
+      ) {
         primarySelected = primaryAnswer.selectedLevel;
         shadowSelected = shadowAnswer.selectedLevel;
       } else {
