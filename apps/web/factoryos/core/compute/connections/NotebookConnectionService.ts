@@ -72,7 +72,10 @@ export async function getNotebookCredentials(
     if (expiresAt > 0 && expiresAt - Date.now() <= refreshWindowMs) {
       try {
         const refreshed = await refreshKaggleAccessToken(credentials.KAGGLE_REFRESH_TOKEN);
-        if (refreshed.access_token) {
+        if (!refreshed.access_token) {
+          throw new Error("KAGGLE_TOKEN_REFRESH_RESPONSE_INCOMPLETE");
+        }
+        {
           credentials = {
             ...credentials,
             KAGGLE_API_TOKEN: refreshed.access_token,
