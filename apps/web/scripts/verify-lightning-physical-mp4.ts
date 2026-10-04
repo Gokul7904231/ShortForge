@@ -81,16 +81,17 @@ async function main() {
     "chmod +x " + remoteFfmpeg,
     "echo SHORTFORGE_REMOTE_FFMPEG=$(" + remoteFfmpeg + " -version 2>&1 | head -n 1)",
     "rm -f " + remoteAbsolute,
-    remoteFfmpeg + " -hide_banner -loglevel error -y",
-    "-f lavfi -i color=c=black:s=1080x1920:r=30:d=2",
-    "-f lavfi -i sine=frequency=1000:sample_rate=48000:d=2",
-    "-c:v libx264 -pix_fmt yuv420p -preset veryfast",
-    "-c:a aac -b:a 128k -movflags +faststart",
-    remoteAbsolute,
+    remoteFfmpeg +
+      " -hide_banner -loglevel error -y" +
+      " -f lavfi -i color=c=black:s=1080x1920:r=30:d=2" +
+      " -f lavfi -i sine=frequency=1000:sample_rate=48000:d=2" +
+      " -c:v libx264 -pix_fmt yuv420p -preset veryfast" +
+      " -c:a aac -b:a 128k -movflags +faststart " +
+      remoteAbsolute,
     "test -s " + remoteAbsolute,
     "ls -lh " + remoteAbsolute,
     remoteFfmpeg + " -v error -i " + remoteAbsolute + " -f null -",
-  ].join(" && ");
+  ].join("; ");
 
   const provisioned = await adapter.provision(
     {
