@@ -6,6 +6,8 @@ import { isRoleAtLeast } from "../auth/roles";
 import { OverseerAutomationStore } from "./automations/automation-store";
 import { ApiConfigManager } from "../api-config/api-config-manager";
 import { FactoryStateService } from "@/factoryos/core/state/FactoryStateService";
+import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
+import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
 
 const TOOLS_CATALOG: OverseerTool[] = [
   // --- USER READ TOOLS ---
@@ -32,8 +34,11 @@ const TOOLS_CATALOG: OverseerTool[] = [
     riskLevel: "READ",
     confirmationRequired: false,
     handler: async (_, ctx) => {
-      const { getUserQuota } = await import("../quota/quota-service");
-      const quota = await getUserQuota(ctx.user.uid, ctx.user.role);
+      const treasury = await getTreasuryRuntime();
+      const quota = await new TreasuryQuotaAdmission(treasury).getGenerationQuota(
+        ctx.user.uid,
+        ctx.user.role,
+      );
       return {
         limit: quota.limit,
         completed: quota.completed,
