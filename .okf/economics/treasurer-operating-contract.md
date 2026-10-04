@@ -1,6 +1,6 @@
 # Treasurer Operating Contract
 
-**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–5  
+**Status:** CANONICAL ECONOMIC CONTROL-PLANE CONTRACT / WAVES 1–6  
 **Date:** 2026-10-03
 
 ## Purpose
@@ -171,3 +171,9 @@ Compatibility components may still exist for historical tests or bootstrap/proje
 - `quota-service.ts`: bootstrap/projection dependency only; TreasuryQuotaAdmission is authoritative on the hot path.
 
 Economic Intelligence is the Wave-5 capability and is strictly read-only. It uses measured Treasury evidence for historical baselines, anomaly signals, provider/model observed economics, verified output economics, and reservation right-sizing.
+
+## Wave 6 — shadow calibration boundary
+
+Treasury settlement evidence -> Verified Economic Calibration -> Shadow Route Evaluator -> Overseer / Ascalon / GLiDE recommendation -> Treasury Kernel admission.
+
+Calibration does not inherit Treasury mutation authority. Quality, capability, and latency gates remain independent of economic scoring. A shadow recommendation is never itself an economic permit.

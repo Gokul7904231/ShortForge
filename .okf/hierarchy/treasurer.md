@@ -1,6 +1,6 @@
 # Treasurer — Economic Control-Plane Contract
 
-**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–5  
+**Status:** AUTHORITATIVE + IMPLEMENTATION WAVES 1–6  
 **Date:** 2026-10-03  
 **Canonical implementation:** `apps/web/factoryos/core/treasury/`
 
@@ -184,3 +184,20 @@ The rule remains:
 Never:
 
 `intelligence -> authority mutation`
+
+## Wave 6 — verified economic calibration
+
+Treasury Economic Calibration and Treasury Shadow Route Evaluation are read-only intelligence services beneath Treasury.
+
+They may:
+- learn cost/latency/verification characteristics from verification-backed Treasury settlement evidence;
+- compare observed qualified routes counterfactually;
+- recommend a lower-cost qualified route in shadow mode.
+
+They may not:
+- execute providers;
+- reserve or mutate Treasury;
+- override capability/quality/latency constraints;
+- promote recommendations into live routing automatically.
+
+The only live economic authority remains the Treasury Constitutional Kernel.
