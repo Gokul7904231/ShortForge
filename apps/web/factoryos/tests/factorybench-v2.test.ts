@@ -6,7 +6,6 @@ import { ActiveContextManager } from "../core/cognitive/context/ActiveContextMan
 import { EvidenceGraphEngine } from "../core/cognitive/graph/EvidenceGraphEngine";
 import { ContradictionResolver } from "../core/cognitive/conflict/ContradictionResolver";
 import { StrategicMetaThinker } from "../core/cognitive/meta/StrategicMetaThinker";
-import { AgentEconomicsEngine } from "../core/cognitive/economics/AgentEconomicsEngine";
 import { PredictiveFactoryEngine } from "../core/cognitive/predictive/PredictiveFactoryEngine";
 
 describe("FactoryOS Frontier v2 — FactoryBench 2.0 Evaluation Suite (15 Scenarios)", () => {
@@ -245,17 +244,43 @@ describe("FactoryOS Frontier v2 — FactoryBench 2.0 Evaluation Suite (15 Scenar
     expect(contradictions.length).toBe(1);
   });
 
-  it("Scenario 12: Cascading Failure -> Adaptive Model Routing switches to Multi-Agent Swarm", () => {
-    // Legacy economics remains a test-only compatibility benchmark; it is
-    // not instantiated by the production CognitivePlaneEngine.
-    const economics = new AgentEconomicsEngine();
-    const route = economics.routeTask("Cascading multi-floor deadlock across all pipelines", {
-      severity: "CRITICAL",
-      isMultiAgentRequired: true,
-    });
+  it("Scenario 12: Cascading Failure -> Meta-cognition triggers governed replan", () => {
+    const evalResult = controller.cognitivePlane.metaThinker.evaluateStrategy(
+      {
+        caseId: "case_bench_12",
+        title: "Cascading multi-floor deadlock",
+        description: "Cross-floor failure requires coordinated replan.",
+        floorId: "floor03_asset_realization",
+        category: "FLOOR_EXECUTION_ERROR",
+        severity: "CRITICAL",
+        priority: 1,
+        status: "INVESTIGATING",
+        detectorId: "benchmark",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        symptoms: ["deadlock"],
+        observedState: {},
+        evidence: [],
+        hypotheses: [],
+        linkedCaseIds: [],
+        assignedHealerIds: ["healer_diagnostic"],
+        healerCountAllocated: 1,
+        timeline: [],
+      } as any,
+      controller.worldState.getState(),
+      {
+        currentPlanSteps: ["Diagnose", "Coordinate", "Repair"],
+        completedSteps: ["Diagnose"],
+        evidenceCount: 12,
+        iterationCount: 5,
+        elapsedTimeMs: 30_000,
+        activeAgents: ["healer_diagnostic", "guardian_01"],
+        isRepetitiveTelemetry: true,
+      },
+    );
 
-    expect(route.selectedTier).toBe("MULTI_AGENT_SWARM");
-    expect(route.estimatedTokens).toBeGreaterThan(5000);
+    expect(evalResult.shouldReplan).toBe(true);
+    expect(evalResult.recommendedAdjustments.length).toBeGreaterThan(0);
   });
 
   it("Scenario 13: Restart During Reasoning -> Indexed Experience Memory retrieves persistent record", async () => {
