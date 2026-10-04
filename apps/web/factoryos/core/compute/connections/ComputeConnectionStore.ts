@@ -91,15 +91,20 @@ export class ComputeConnectionStore {
     if (!doc.exists) return null;
     const record = doc.data() as StoredComputeConnection;
     if (record.userId !== userId) return null;
-    const updated = buildStoredRecord(record, userId, {
-      providerId: record.providerId,
-      providerFamily: record.providerFamily,
-      authMethod: record.authMethod,
-      displayName: record.displayName,
-      credentials: secrets,
-      metadata: record.metadata,
-      externalAccountId: record.externalAccountId,
-    }, record.status);
+    if (!secrets || Object.keys(secrets).length === 0) {
+      throw new Error("COMPUTE_CONNECTION_SECRETS_EMPTY");
+    }
+    const updated: StoredComputeConnection = {
+      ...record,
+      maskedSecrets: Object.fromEntries(
+        Object.entries(secrets).map(([key, value]) => [
+          key,
+          maskConnectionSecret(value),
+        ]),
+      ),
+      encryptedSecrets: encryptConnectionSecrets(secrets),
+      updatedAt: new Date().toISOString(),
+    };
     await collection().doc(connectionId).set(updated);
     return toPublic(updated);
   }
