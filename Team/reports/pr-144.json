@@ -97,8 +97,9 @@
     "authorityRetirementTests": "PENDING",
     "repositoryCI": "PENDING",
     "currentMainRegression": "PENDING",
-    "postMergeMainline": "NOT_STARTED"
+    "postMergeMainline": "NOT_STARTED",
+    "teamChangeGate": "PASS_PENDING_REFRESH"
   },
-  "disposition": "BLOCKED_PENDING_RETRY",
-  "lastKnownFailure": "Wave-6 run 2 failed only because the test fixture declared verificationRequired=true while intentionally settling an unverified event; fixture corrected in commit 52f4290ea4a5dce6f001ba6ab11dfbfcab099086."
+  "disposition": "BLOCKED",
+  "lastKnownFailure": "Historical Wave 6 run failed because the test fixture marked verificationRequired=true while intentionally settling an unverified event; fixture corrected in commit 52f4290ea4a5dce6f001ba6ab11dfbfcab099086. Current report disposition restored to canonical BLOCKED enum pending fresh gates."
 }
