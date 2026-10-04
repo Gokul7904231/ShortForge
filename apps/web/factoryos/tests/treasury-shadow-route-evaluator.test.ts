@@ -39,6 +39,7 @@ function command(
   providerId: string,
   modelId: string,
   now: Date,
+  verificationRequired = false,
 ) {
   return {
     commandId: id,
@@ -59,7 +60,7 @@ function command(
         workloadType: "SCRIPT",
         unit: "INVOCATION",
         quantity: 1,
-        verificationRequired: true,
+        verificationRequired,
         paidRoute: false,
         metadata: { capability: "SCRIPT" },
       },
