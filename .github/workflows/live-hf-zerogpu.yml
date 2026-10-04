@@ -1,9 +1,6 @@
 name: Live HF ZeroGPU Render Proof
 
 on:
-  pull_request:
-    types: [synchronize, reopened]
-    branches: [main]
   workflow_dispatch:
     inputs:
       space:
@@ -22,11 +19,6 @@ permissions:
 
 jobs:
   hf-zerogpu:
-    if: >-
-      ${{ github.event_name == 'workflow_dispatch' ||
-          (github.event_name == 'pull_request' &&
-           github.event.pull_request.number == 161 &&
-           github.event.pull_request.head.repo.full_name == github.repository) }}
     name: HF ZeroGPU physical + CAS + F07 proof
     runs-on: ubuntu-latest
     timeout-minutes: 15
