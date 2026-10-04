@@ -101,5 +101,4 @@ describe("Treasury Wave 5 compatibility retirement", () => {
 
     expect(violations).toEqual([]);
   });
-  });
 });
