@@ -3,18 +3,18 @@ name: Live Hosted Sandbox Render Proof
 on:
   workflow_dispatch:
     inputs:
-      provider:
+      provider: 
         description: "Hosted sandbox provider"
         required: true
         default: DAYTONA
         type: choice
         options:
           - DAYTONA
-          - MODAL
+          
       image:
         description: "Sandbox image containing ffmpeg"
         required: true
-        default: python:3.12
+        default: ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404
         type: string
 
 permissions:
