@@ -124,6 +124,15 @@ def main() -> None:
     report["predictionFile"] = args.predictions
     report["benchmarkVersion"] = "aer-bench-v1"
     report["predictionCount"] = len(predictions)
+    wall_clock_ms = sum(
+        float(row["latencyMs"]) for row in predictions
+    )
+    report["measuredPredictionLatencySumMs"] = wall_clock_ms
+    report["measuredThroughputQuestionsPerSecond"] = (
+        len(predictions) / (wall_clock_ms / 1000.0)
+        if wall_clock_ms > 0
+        else 0.0
+    )
 
     destination = Path(args.report)
     destination.parent.mkdir(parents=True, exist_ok=True)
