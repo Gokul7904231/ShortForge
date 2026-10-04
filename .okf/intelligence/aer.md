@@ -1867,3 +1867,45 @@ bounded advisory routing
 This integration is advisory only. Memory does not gain authority by entering AER, and AER does not gain execution authority by consuming memory.
 
 The runtime still requires fresh shadow/replay evidence before AER policy promotion. In particular, the repository does not currently claim that mental-model refresh is autonomously scheduled: `MemoryMentalModelManager` provides dirty/refresh planning, but production scheduling and AER economic admission for refresh remain a future hardening requirement.
+
+
+## AER Decision Core — Canonical Model Boundary
+
+AER Runtime and AER Decision Core are separate components.
+
+~~~text
+AER Runtime
+  |
+  +--> epistemic state / evidence / uncertainty / probes / budgets
+  |
+  +--> deterministic decisions
+  |
+  +--> AER Decision Core
+  |       |
+  |       +--> CHOICE
+  |       +--> SCORE
+  |       +--> NOUL
+  |       +--> probability / confidence / calibration
+  |
+  +--> Ascalon deep cognition
+~~~
+
+The **AER Decision Core** is the ShortForge-native fast typed-decision model. It is trained separately from Ascalon and is intended for high-frequency bounded decisions such as provider/worker selection, evidence sufficiency, probe selection, retry/failover, cognitive-mode routing, hypothesis ranking, and escalation.
+
+The **Ascalon model** is trained separately for deep cognition and generation. It receives AER's provenance-backed epistemic context when deeper cognition is justified. Ascalon does not need to invoke AER-Core for every decision and may disagree with an AER-Core recommendation; such disagreement remains measurable and provenance-preserving.
+
+### Authority invariant
+
+AER Decision Core is advisory only. It cannot grant capabilities, authorize execution, mint leases, change fencing, publish, certify F07, replace Guardian, or redefine policy.
+
+### Model contract invariant
+
+The Decision Core must use the canonical typed DecisionContracts and runtime-supplied questions/options/rubrics. It must not silently convert malformed model output into a synthetic valid decision.
+
+Canonical implementation boundary:
+- `apps/web/factoryos/core/intelligence/decision/AERDecisionCoreContract.ts`
+- `apps/web/factoryos/core/intelligence/decision/AERDecisionAdapter.ts`
+- `docs/ascalon/aer-decision-core-standard.md`
+- `docs/ascalon/training/aer-decision-core-training.md`
+
+The adapter is present as a contract scaffold only. A real checkpoint/provider and calibration evidence are required before any production activation.
