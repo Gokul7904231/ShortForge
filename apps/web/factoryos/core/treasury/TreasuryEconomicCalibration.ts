@@ -118,6 +118,8 @@ export class TreasuryEconomicCalibration {
       windowMs?: number;
       eventLimit?: number;
       now?: Date;
+      notBefore?: Date;
+      notAfter?: Date;
     } = {},
   ): Promise<TreasuryRouteCalibrationSnapshot> {
     const now = options.now ?? new Date();
@@ -130,7 +132,17 @@ export class TreasuryEconomicCalibration {
       Math.min(10_000, Math.max(100, options.eventLimit ?? 5_000)),
     );
     const startMs = now.getTime() - windowMs;
-    const endMs = now.getTime();
+    const endMs = Math.min(
+      now.getTime(),
+      options.notAfter?.getTime() ?? now.getTime(),
+    );
+    const configuredNotBefore = options.notBefore?.getTime();
+    const startMs = Math.max(
+      now.getTime() - windowMs,
+      Number.isFinite(configuredNotBefore)
+        ? Number(configuredNotBefore)
+        : Number.NEGATIVE_INFINITY,
+    );
     const buckets = new Map<string, ObservationAccumulator>();
 
     for (const event of events) {
