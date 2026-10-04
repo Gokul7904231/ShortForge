@@ -157,11 +157,9 @@ export async function POST(req: Request) {
       treasuryQuotaReservation = undefined;
       return;
     }
-    if (userId && jobId) {
-      throw new Error(
-        "Treasury quota reservation is required before generation admission can be released.",
-      );
-    }
+    // No Treasury reservation exists to release. This can occur before
+    // admission is established; do not re-enter the legacy quota authority.
+    return;
   };
 
   const deviceContext = extractDeviceContext(req);
