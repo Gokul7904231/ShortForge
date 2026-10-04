@@ -24,7 +24,8 @@
     "abstentionCoverage",
     "malformedRate",
     "p50LatencyMs",
-    "p95LatencyMs"
+    "p95LatencyMs",
+    "measuredThroughputQuestionsPerSecond"
   ],
   "promotionRequirement": "held-out benchmark + calibration + shadow replay + authority-invariant evidence",
   "status": "definition-complete; results-not-yet-measured"
