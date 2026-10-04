@@ -827,39 +827,42 @@ export class TreasuryEconomicIntelligence {
   private rightSizingInsights(
     events: TreasuryLedgerEvent[],
   ): TreasuryEconomicRightSizingMetric[] {
-    type ReservationObservation = {
-      reservedUsd: number;
-      consumedUsd: number;
-      workloadType: string;
-      terminal: boolean;
-    };
+    const grouped = new Map<string, number[]>();
+    const reservations = new Map<
+      string,
+      {
+        reservedUsd: number;
+        consumedUsd: number;
+        workloadType: string;
+        terminal: boolean;
+      }
+    >();
 
-    const reservations = new Map<string, ReservationObservation>();
-
-    for (const ledgerEvent of events) {
-      const reservationId = ledgerEvent.reservationId;
+    for (const event of events) {
+      const reservationId = event.reservationId;
       if (!reservationId) continue;
 
-      const existing = reservations.get(reservationId) ?? {
-        reservedUsd: 0,
-        consumedUsd: 0,
-        workloadType: eventWorkloadType(ledgerEvent),
-        terminal: false,
-      };
+      const existing =
+        reservations.get(reservationId) ??
+        {
+          reservedUsd: 0,
+          consumedUsd: 0,
+          workloadType: eventWorkloadType(event),
+          terminal: false,
+        };
 
-      if (ledgerEvent.eventType === "RESOURCE_RESERVED") {
-        existing.reservedUsd = Math.max(
-          existing.reservedUsd,
-          Math.max(0, numeric(ledgerEvent.amountUsd)),
-        );
-        existing.workloadType = eventWorkloadType(ledgerEvent);
-      } else if (ledgerEvent.eventType === "RESOURCE_CONSUMED") {
-        existing.consumedUsd += Math.max(0, numeric(ledgerEvent.amountUsd));
-        existing.workloadType = existing.workloadType || eventWorkloadType(ledgerEvent);
+      if (event.eventType === "RESOURCE_RESERVED") {
+        existing.reservedUsd += Math.max(0, numeric(event.amountUsd));
+        existing.workloadType =
+          eventWorkloadType(event) || existing.workloadType;
+      } else if (event.eventType === "RESOURCE_CONSUMED") {
+        existing.consumedUsd += Math.max(0, numeric(event.amountUsd));
+        existing.workloadType =
+          eventWorkloadType(event) || existing.workloadType;
         existing.terminal = true;
       } else if (
-        ledgerEvent.eventType === "RESERVATION_RELEASED" ||
-        ledgerEvent.eventType === "RESERVATION_EXPIRED"
+        event.eventType === "RESERVATION_RELEASED" ||
+        event.eventType === "RESERVATION_EXPIRED"
       ) {
         existing.terminal = true;
       }
@@ -867,19 +870,16 @@ export class TreasuryEconomicIntelligence {
       reservations.set(reservationId, existing);
     }
 
-    const grouped = new Map<string, number[]>();
-    for (const observation of reservations.values()) {
-      if (!observation.terminal) continue;
-      const utilization =
-        observation.reservedUsd > 0
-          ? Math.min(
-              1,
-              Math.max(0, observation.consumedUsd / observation.reservedUsd),
-            )
-          : 0;
-      const values = grouped.get(observation.workloadType) ?? [];
+    for (const existing of reservations.values()) {
+      if (!existing.terminal || existing.reservedUsd <= 0) continue;
+
+      const utilization = Math.min(
+        1,
+        Math.max(0, existing.consumedUsd / existing.reservedUsd),
+      );
+      const values = grouped.get(existing.workloadType) ?? [];
       values.push(utilization);
-      grouped.set(observation.workloadType, values);
+      grouped.set(existing.workloadType, values);
     }
 
     return Array.from(grouped.entries()).map(
