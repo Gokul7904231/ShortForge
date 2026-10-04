@@ -67,6 +67,32 @@ def validate_record(raw: Mapping[str, Any]) -> TrainingRecord:
         raise ValidationError("input.questions must be a non-empty list")
     if not isinstance(gold_answers, list) or not gold_answers:
         raise ValidationError("goldAnswers must be a non-empty list")
+    if len({str(q.get("id")) for q in questions}) != len(questions):
+        raise ValidationError("input.questions contains duplicate ids")
+    if len({str(a.get("questionId")) for a in gold_answers}) != len(gold_answers):
+        raise ValidationError("goldAnswers contains duplicate question ids")
+
+    question_ids = {str(q.get("id")) for q in questions}
+    answer_ids = {str(a.get("questionId")) for a in gold_answers}
+    if question_ids != answer_ids:
+        raise ValidationError("goldAnswers must exactly cover input.questions")
+
+    for question in questions:
+        mode = question.get("type")
+        if mode not in {"NOUL", "CHOICE", "SCORE"}:
+            raise ValidationError("unsupported decision type: " + str(mode))
+        if not str(question.get("id", "")).strip():
+            raise ValidationError("question id must be non-empty")
+        if mode == "CHOICE":
+            options = question.get("options")
+            if not isinstance(options, list) or len(options) < 2 or len(set(options)) != len(options):
+                raise ValidationError("CHOICE requires unique options")
+        if mode == "SCORE":
+            rubric = question.get("rubric")
+            levels = [item.get("level") for item in rubric] if isinstance(rubric, list) else []
+            if len(levels) < 2 or len(set(levels)) != len(levels):
+                raise ValidationError("SCORE requires unique rubric levels")
+
     if not all(isinstance(x, str) and x for x in evidence_refs):
         raise ValidationError("evidenceRefs must contain non-empty strings")
     if not all(isinstance(x, str) and x for x in outcome_refs):
