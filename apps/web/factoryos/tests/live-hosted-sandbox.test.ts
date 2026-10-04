@@ -18,7 +18,14 @@ import {
 import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore";
 import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../core/compute/sandboxes";
 
-describe("live hosted sandbox compute proof", () => {
+const LIVE_PROOF_CONFIGURED = Boolean(
+  process.env.SHORTFORGE_LIVE_SANDBOX_PROVIDER &&
+  process.env.SHORTFORGE_LIVE_SANDBOX_RENDER_COMMAND
+);
+
+const describeLiveProof = LIVE_PROOF_CONFIGURED ? describe : describe.skip;
+
+describeLiveProof("live hosted sandbox compute proof", () => {
   it("provisions, executes a physical render, verifies CAS independently, and closes the F07 evidence boundary", async () => {
     const provider = String(process.env.SHORTFORGE_LIVE_SANDBOX_PROVIDER || "").toUpperCase();
     const command = process.env.SHORTFORGE_LIVE_SANDBOX_RENDER_COMMAND;
