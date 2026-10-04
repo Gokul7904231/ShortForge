@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR144-Treasury-Economic-Calibration-Wave6",
+  "pullRequest": 144,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/treasury-economic-calibration-wave6-20261004",
+  "objective": "Turn verification-backed Treasury settlement evidence into read-only economic calibration and shadow route evaluation without creating another economic authority.",
+  "classification": "extends existing rule",
+  "linkedIssue": 143,
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Treasury Constitutional Kernel remains the sole production economic authority.",
+      "Economic Intelligence is read-only and advisory.",
+      "Shadow route evaluation cannot execute, reserve, settle, release, freeze, or mutate pricing.",
+      "Quality, capability and latency constraints remain separate from economic scoring.",
+      "Unverified or low-confidence observations cannot drive promotion advice.",
+      "F07 remains the independent verification boundary."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/decisions/treasury-economic-calibration-wave6-20261004.md",
+      "docs/treasury-wave6-economic-calibration.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Calibration accepts only verification-backed Treasury settlement evidence.",
+      "Shadow evaluation receives a read-only TreasuryEconomicReadSource, never Treasury mutation APIs.",
+      "No provider execution or route override occurs in the evaluator.",
+      "No secret values are committed."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "TRSY-W6-001",
+      "originalConflict": "Economic Intelligence could influence live routing directly and become an implicit economic authority.",
+      "status": "RESOLVED",
+      "proposedResolution": "Keep calibration and counterfactual route evaluation in a separate read-only package with explicit shadow output.",
+      "acceptedResolution": "TreasuryEconomicCalibration and TreasuryShadowRouteEvaluator emit recommendations only; live admission remains Treasury Kernel.",
+      "decisionAuthority": "Treasury operating contract"
+    },
+    {
+      "id": "TRSY-W6-002",
+      "originalConflict": "Cheap routes with insufficient quality or latency evidence could be promoted incorrectly.",
+      "status": "RESOLVED",
+      "proposedResolution": "Apply capability/workload, confidence, verification-success and latency gates before economic comparison.",
+      "acceptedResolution": "Only candidates meeting configured evidence/quality/latency thresholds can become recommendations.",
+      "decisionAuthority": "Shadow calibration decision record"
+    },
+    {
+      "id": "TRSY-W6-003",
+      "originalConflict": "Unverified settlement telemetry could contaminate learned economics.",
+      "status": "RESOLVED",
+      "proposedResolution": "Use only RESOURCE_CONSUMED events carrying verificationReceiptId for route calibration.",
+      "acceptedResolution": "Unverified events remain telemetry but are excluded from calibration.",
+      "decisionAuthority": "Evidence rule"
+    }
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added TreasuryEconomicCalibration read model over verification-backed settlement evidence.",
+    "Added provider/model observed cost, latency, verification-success rate and confidence.",
+    "Added TreasuryShadowRouteEvaluator for counterfactual candidate-vs-baseline comparisons.",
+    "Separated quality/capability/latency gating from economic scoring.",
+    "Added read-only admin shadow-route endpoint.",
+    "Added focused shadow-route regression tests.",
+    "Added dedicated Treasury Wave 6 validation workflow.",
+    "Added Wave 6 .okf decision and operating-contract updates."
+  ],
+  "verificationPlan": [
+    "Treasury Wave 6 dedicated validation workflow.",
+    "Treasury shadow route focused tests.",
+    "Treasury economic intelligence and authority-retirement regressions.",
+    "Static typecheck.",
+    "Repository CI and current-main ComputePool/F06/F07/Overseer/ReMaker regression matrix.",
+    "Post-merge mainline verification."
+  ],
+  "verificationResults": {
+    "treasuryWave6": "PENDING",
+    "shadowRouteTests": "PENDING",
+    "intelligenceTests": "PENDING",
+    "authorityRetirementTests": "PENDING",
+    "repositoryCI": "PENDING",
+    "currentMainRegression": "PENDING",
+    "postMergeMainline": "NOT_STARTED"
+  },
+  "disposition": "BLOCKED"
+}
