@@ -88,7 +88,8 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     }
 
     const env = { ...process.env, ...(credentials || {}) };
-    const studioName = request.name;
+    const existingStudio = env.LIGHTNING_EXISTING_STUDIO?.trim();
+    const studioName = existingStudio || request.name;
     const teamspace = env.LIGHTNING_TEAMSPACE;
     if (!teamspace) {
       throw new Error(
@@ -100,7 +101,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
     const script = [
       "from lightning_sdk import Studio, Machine",
-      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=True)",
+      "studio=Studio(" + JSON.stringify(studioName) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=" + JSON.stringify(!Boolean(existingStudio)) + ")",
       "machine_name=" + JSON.stringify(machine),
       "machine=None if machine_name == 'CPU' else Machine.from_str(machine_name)",
       "studio.start() if machine is None else studio.start(machine)",
