@@ -16,6 +16,7 @@ import {
   assertDynamicQuestionContract,
   type AERDecisionCoreProvider,
 } from "./AERDecisionCoreContract";
+import { validateAERCoreBatch } from "./AERDecisionValidator";
 
 export interface AERDecisionAdapterConfig {
   readonly provider: AERDecisionCoreProvider;
@@ -70,8 +71,18 @@ export class AERDecisionAdapter implements IDecisionAdapter {
       (answer) => !expectedIds.has(answer.questionId),
     );
     const batchMismatch = output.batchId !== request.batchId;
+    const validationErrors = validateAERCoreBatch(
+      request.questions,
+      output.answers,
+    );
 
-    if (missing || foreign || duplicate || batchMismatch) {
+    if (
+      missing ||
+      foreign ||
+      duplicate ||
+      batchMismatch ||
+      validationErrors.length > 0
+    ) {
       return {
         batchId: request.batchId,
         evaluatedAt: new Date().toISOString(),
