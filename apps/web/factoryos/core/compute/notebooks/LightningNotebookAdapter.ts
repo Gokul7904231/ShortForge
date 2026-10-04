@@ -265,31 +265,72 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     const env = { ...process.env, ...(credentials || {}) };
     const teamspace = env.LIGHTNING_TEAMSPACE;
     if (!teamspace) {
-      throw new Error("LIGHTNING_TEAMSPACE_REQUIRED: physical artifact download requires explicit Teamspace.");
+      throw new Error(
+        "LIGHTNING_TEAMSPACE_REQUIRED: physical artifact download requires explicit Teamspace.",
+      );
     }
-    const normalizedRemotePath = remotePath.replace(/^\.\//, "").replace(/^\/+/, "").trim();
+
+    const [org, teamspaceName] = teamspace.split("/", 2);
+    if (!org || !teamspaceName) {
+      throw new Error(
+        "LIGHTNING_TEAMSPACE_INVALID: expected <org>/<teamspace>.",
+      );
+    }
+
+    const normalizedRemotePath = remotePath
+      .replace(/^\.\//, "")
+      .replace(/^\/+/, "")
+      .trim();
     if (!normalizedRemotePath || normalizedRemotePath.includes("..")) {
-      throw new Error("LIGHTNING_ARTIFACT_PATH_INVALID: outputPath must be a relative Studio-home path.");
+      throw new Error(
+        "LIGHTNING_ARTIFACT_PATH_INVALID: outputPath must be a relative Studio-home path.",
+      );
     }
+
     const absoluteDestination = path.resolve(destinationPath);
     await fs.mkdir(path.dirname(absoluteDestination), { recursive: true });
-    const python = env.LIGHTNING_PYTHON || "python3";
-    const script = [
-      "from lightning_sdk import Studio",
-      "studio=Studio(" + JSON.stringify(runtime.resourceId) + ", teamspace=" + JSON.stringify(teamspace) + ", create_ok=False)",
-      "studio.download_file(" + JSON.stringify(normalizedRemotePath) + ", file_path=" + JSON.stringify(absoluteDestination) + ")",
-      "print('SHORTFORGE_LIGHTNING_ARTIFACT_DOWNLOADED:' + " + JSON.stringify(absoluteDestination) + ")",
-    ].join(";");
-    const result = await runProcess(python, ["-c", script], { timeoutMs: 120_000, env });
+
+    const studioUri =
+      "lit://" +
+      org +
+      "/" +
+      teamspaceName +
+      "/studios/" +
+      runtime.resourceId +
+      "/" +
+      normalizedRemotePath;
+
+    const listing = await runProcess(
+      "lightning",
+      ["ls", studioUri],
+      { timeoutMs: 30_000, env },
+    );
+
+    const result = await runProcess(
+      "lightning",
+      ["cp", studioUri, absoluteDestination],
+      { timeoutMs: 120_000, env },
+    );
+
     if (result.exitCode !== 0) {
-      throw new Error("LIGHTNING_ARTIFACT_DOWNLOAD_FAILED: " + (result.stderr || result.stdout));
+      throw new Error(
+        "LIGHTNING_ARTIFACT_DOWNLOAD_FAILED: " +
+          (result.stderr || result.stdout || "lightning cp failed") +
+          "\nRemote artifact probe: " +
+          (listing.stdout || listing.stderr || "lightning ls returned no output"),
+      );
     }
+
     const evidence = await fileEvidence(absoluteDestination);
     if (evidence.artifactByteLength <= 0) {
-      throw new Error("LIGHTNING_ARTIFACT_DOWNLOAD_EMPTY: downloaded artifact is zero bytes.");
+      throw new Error(
+        "LIGHTNING_ARTIFACT_DOWNLOAD_EMPTY: downloaded artifact is zero bytes.",
+      );
     }
+
     return evidence;
   }
+
   async terminate(runtime: NotebookRuntime, credentials?: NotebookCredentialBundle): Promise<NotebookRuntime> {
     const env = { ...process.env, ...(credentials || {}) };
     const teamspace = env.LIGHTNING_TEAMSPACE;
