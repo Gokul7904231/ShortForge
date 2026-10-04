@@ -205,15 +205,67 @@ describe("Project Ascalon: Heuristic Shadow & Provenance Tests", () => {
       {
         batchId: "batch_verified",
         evaluatedAt: new Date().toISOString(),
-        answers: [],
-        answersById: {},
+        answers: [
+          {
+            questionId: "q1",
+            type: "NOUL",
+            value: true,
+            probabilityTrue: 1,
+            confidence: 1,
+            status: "VALID",
+          },
+        ],
+        answersById: {
+          q1: {
+            questionId: "q1",
+            type: "NOUL",
+            value: true,
+            probabilityTrue: 1,
+            confidence: 1,
+            status: "VALID",
+          },
+        },
         adapterUsed: "DETERMINISTIC",
         totalLatencyMs: 10,
         minConfidence: 1.0,
         shouldEscalate: false,
         status: "VALID",
       },
-      { verificationResult: "VERIFIED" }
+      {
+        verificationResult: "VERIFIED",
+        trainingEligible: true,
+        trainingCapture: {
+          input: {
+            questions: [
+              {
+                id: "q1",
+                type: "NOUL",
+                question: "Is the verified outcome true?",
+              },
+            ],
+            sanitizedContext: { state: "VERIFIED" },
+          },
+          goldAnswers: [
+            {
+              questionId: "q1",
+              type: "NOUL",
+              value: true,
+              probabilityTrue: 1,
+              confidence: 1,
+              status: "VALID",
+            },
+          ],
+          evidenceRefs: ["evidence-q1"],
+          outcomeRefs: ["outcome-q1"],
+          policyRefs: ["policy-v1"],
+          verificationStatus: "VERIFIED",
+          labelSource: "VERIFIED_OUTCOME",
+          humanReviewed: true,
+          synthetic: false,
+          fallbackApplied: false,
+          provenance: { trajectoryId: "trajectory-q1" },
+        },
+      },
     );
 
     ledger.recordTransaction(
