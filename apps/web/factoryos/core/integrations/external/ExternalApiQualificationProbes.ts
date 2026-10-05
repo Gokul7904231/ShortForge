@@ -357,6 +357,85 @@ async function executeProfile(profile: ExternalApiQualificationProfile): Promise
     };
   }
 
+  if (id === "ibm_tts" || id === "audexum") {
+    const endpoint = id === "ibm_tts"
+      ? currentBase(id).replace(/\\/+$/, "") + "/v1/synthesize"
+      : currentBase(id).replace(/\\/+$/, "") + "/synthesize";
+    const url = new URL(endpoint);
+    const body = id === "ibm_tts"
+      ? JSON.stringify({ text: "ShortForge qualification test.", voice: process.env.IBM_TTS_VOICE_ID || "en-US_AllisonV3Voice" })
+      : JSON.stringify({ text: "ShortForge qualification test.", voice: process.env.AUDEXUM_VOICE_ID || undefined, lang: process.env.AUDEXUM_LANGUAGE || "en", format: "wav" });
+    const result = await requestBinary(id, url, {
+      method: "POST",
+      headers: {
+        ...(id === "ibm_tts"
+          ? { "Content-Type": "application/json", Accept: "audio/wav, audio/mpeg, application/json", Authorization: "Basic " + Buffer.from("apikey:" + (secret || "")).toString("base64") }
+          : { "Content-Type": "application/json", Accept: "audio/wav, application/json", Authorization: "Bearer " + (secret || "") }),
+      },
+      body,
+    });
+    const physical = result.observation.status >= 200 && result.observation.status < 300
+      ? await physicalAudioEvidence(result.bytes, result.observation.contentType)
+      : { byteLength: result.bytes.byteLength, sha256: createHash("sha256").update(result.bytes).digest("hex"), ffprobeVerified: false };
+    return {
+      normalized: {
+        responseBytes: result.bytes.byteLength,
+        physical,
+      },
+      observation: result.observation,
+      capabilityVerified: result.observation.status >= 200 &&
+        result.bytes.byteLength > 0 &&
+        Boolean(physical.ffprobeVerified),
+    };
+  }
+
+  if (id === "perspective") {
+    const url = new URL(currentBase(id) + "/comments:analyze");
+    url.searchParams.set("key", secret || "");
+    const result = await requestJson(id, url, {
+      method: "POST",
+      headers: requestHeadersFor(id, secret),
+      body: JSON.stringify({
+        comment: { text: "ShortForge qualification test." },
+        requestedAttributes: { TOXICITY: {} },
+      }),
+    });
+    return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: result.observation.status >= 200 && result.observation.status < 300 && capabilityPasses(id, result.data) };
+  }
+
+  if (id === "google_safe_browsing") {
+    const url = new URL(currentBase(id) + "/threatMatches:find");
+    url.searchParams.set("key", secret || "");
+    const result = await requestJson(id, url, {
+      method: "POST",
+      headers: requestHeadersFor(id, secret),
+      body: JSON.stringify({
+        client: { clientId: "shortforge", clientVersion: "1.0" },
+        threatInfo: {
+          threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+          platformTypes: ["ANY_PLATFORM"],
+          threatEntryTypes: ["URL"],
+          threatEntries: [{ url: "https://example.com" }],
+        },
+      }),
+    });
+    return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: result.observation.status >= 200 && result.observation.status < 300 && capabilityPasses(id, result.data) };
+  }
+
+  if (id === "urlscan") {
+    const url = new URL(currentBase(id) + "/api/v1/scan");
+    const result = await requestJson(id, url, {
+      method: "POST",
+      headers: requestHeadersFor(id, secret),
+      body: JSON.stringify({
+        url: "https://example.com",
+        visibility: "private",
+        tags: ["shortforge-qualification"],
+      }),
+    });
+    return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: result.observation.status >= 200 && result.observation.status < 300 && capabilityPasses(id, result.data) };
+  }
+
   if (id === "ocr_space") {
     const url = new URL(currentBase(id) + "/parse/image");
     const form = new URLSearchParams();
@@ -476,6 +555,14 @@ async function executeProfile(profile: ExternalApiQualificationProfile): Promise
       break;
     default:
       break;
+  }
+
+  if (id === "semantic_scholar") {
+    const result = await requestJson(id, url, {
+      method: "GET",
+      headers: { "x-api-key": secret || "", Accept: "application/json" },
+    });
+    return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: capabilityPasses(id, result.data) };
   }
 
   if (id === "vidwords") {
