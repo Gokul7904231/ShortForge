@@ -44,22 +44,32 @@ class Renderer:
         total_duration = 0.0
 
         for s in intent.scenes:
-            audio_path = s.audio_track.audio_path if s.audio_track else None
-            # Authoritative audio-first timing
-            dur_sec = float(s.duration_seconds) if (s.duration_seconds and s.duration_seconds >= 0.5) else AudioSync.synchronize_scene_duration(s.duration_seconds, audio_path, self.ffmpeg.ffmpeg_path)
+            audio_tracks_source = list(s.audio_tracks)
+            if not audio_tracks_source and s.audio_track:
+                audio_tracks_source = [s.audio_track]
+            audio_path = audio_tracks_source[0].audio_path if audio_tracks_source else None
+            # Authoritative audio-first timing.
+            dur_sec = float(s.duration_seconds) if (s.duration_seconds and s.duration_seconds >= 0.5) else AudioSync.synchronize_scene_duration(
+                s.duration_seconds,
+                audio_path,
+                self.ffmpeg.ffmpeg_path,
+            )
             dur_frames = clock.duration_to_frames(dur_sec)
 
             start_f = current_frame
             end_f = current_frame + dur_frames - 1
 
             shots_ir: List[CompositionShot] = []
-            shot_start = 0
-            # Distribute shots evenly across scene frames if multiple
             if s.shots:
-                shot_dur = dur_frames // len(s.shots)
-                for i, sh in enumerate(s.shots):
-                    sh_start = shot_start
-                    sh_end = (shot_start + shot_dur - 1) if i < len(s.shots) - 1 else dur_frames - 1
+                for sh in s.shots:
+                    start_seconds = max(0.0, float(sh.start_seconds))
+                    end_seconds = max(start_seconds + 0.001, start_seconds + float(sh.duration_seconds))
+                    sh_start = min(dur_frames - 1, clock.time_to_frame(start_seconds))
+                    sh_end = min(dur_frames - 1, max(sh_start, clock.time_to_frame(end_seconds) - 1))
+                    props = dict(sh.props or {})
+                    props.setdefault("sourceInSeconds", sh.source_in_seconds)
+                    props.setdefault("sourceDurationSeconds", sh.source_duration_seconds)
+                    props.setdefault("playbackRate", sh.playback_rate)
                     shots_ir.append(
                         CompositionShot(
                             shot_id=sh.id,
@@ -67,12 +77,11 @@ class Renderer:
                             start_frame=sh_start,
                             end_frame=sh_end,
                             duration_frames=sh_end - sh_start + 1,
-                            props=sh.props,
+                            props=props,
                             motion=sh.motion,
-                            assets=sh.assets
+                            assets=sh.assets,
                         )
                     )
-                    shot_start = sh_end + 1
             else:
                 shots_ir.append(
                     CompositionShot(
@@ -83,7 +92,7 @@ class Renderer:
                         duration_frames=dur_frames,
                         props={"caption": s.narration_text},
                         motion={},
-                        assets=[]
+                        assets=[],
                     )
                 )
 
@@ -98,8 +107,11 @@ class Renderer:
                     shots=shots_ir,
                     narration_text=s.narration_text,
                     audio_path=audio_path,
+                    audio_start_seconds=audio_tracks_source[0].start_seconds if audio_tracks_source else 0.0,
+                    audio_tracks=[a.__dict__ if hasattr(a, "__dict__") else a for a in audio_tracks_source],
                     captions=[c.__dict__ if hasattr(c, "__dict__") else c for c in s.captions],
-                    is_locked=s.is_locked
+                    background=s.background or intent.background or {},
+                    is_locked=s.is_locked,
                 )
             )
 
