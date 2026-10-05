@@ -89,3 +89,16 @@ Perspective API is integrated through its current AnalyzeComment HTTP endpoint. 
 Speak AI is integrated through its documented API-key -> access-token authentication flow plus media status and timestamped transcript reads. The adapter keeps the access token/refresh token in process memory only and does not represent Speak AI as a TTS authority.
 
 Both providers remain subject to live credential/network verification before any `QUALIFIED` state is recorded.
+
+
+## LIVE qualification boundary
+
+The implemented-adapter state above does not imply provider qualification.
+
+Live qualification is governed by:
+- `.okf/integrations/external-api-qualification.md`;
+- Issue #184;
+- the manual `.github/workflows/external-api-qualification.yml`;
+- sanitized provider-specific evidence.
+
+No provider is considered `QUALIFIED` from deterministic tests or HTTP success alone.
