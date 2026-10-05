@@ -205,6 +205,8 @@ def apply_effects(
             gray = ImageOps.grayscale(result)
             sepia = ImageOps.colorize(gray, black="#2d1f16", white="#d9b37c").convert("RGBA")
             result = Image.blend(result, sepia, amount)
+        elif kind:
+            raise ValueError(f"EDITOR_RENDER_UNSUPPORTED_EFFECT:{kind}")
 
     return result
 
@@ -261,6 +263,8 @@ def apply_masks(
     result = image.convert("RGBA")
     for mask in masks:
         kind = str(mask.get("kind", "RECTANGLE")).upper()
+        if kind not in {"RECTANGLE", "ELLIPSE", "STAR", "HEART", "DIAMOND", "SPLIT", "CINEMATIC_BARS"}:
+            raise ValueError(f"EDITOR_RENDER_UNSUPPORTED_MASK:{kind}")
         animations = mask.get("animations") or []
         animated = evaluate_animation_tracks(
             animations,
@@ -378,6 +382,14 @@ def transition_mix(
             canvas.alpha_composite(out_img, (0, int(in_img.height * p)))
             canvas.alpha_composite(in_img, (0, int(-in_img.height * (1.0 - p))))
         return canvas
+
+    supported_transitions = {
+        "FADE", "DISSOLVE", "CROSSFADE",
+        "SLIDE_LEFT", "SLIDE_RIGHT", "SLIDE_UP", "SLIDE_DOWN",
+        "WIPE_LEFT", "WIPE_RIGHT", "WIPE_UP", "WIPE_DOWN",
+    }
+    if mode not in supported_transitions:
+        raise ValueError(f"EDITOR_RENDER_UNSUPPORTED_TRANSITION:{mode}")
 
     if mode in {"WIPE_LEFT", "WIPE_RIGHT", "WIPE_UP", "WIPE_DOWN"}:
         reveal = Image.new("L", out_img.size, 0)
