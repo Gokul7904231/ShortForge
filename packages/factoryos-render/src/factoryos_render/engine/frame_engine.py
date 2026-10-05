@@ -154,10 +154,7 @@ class FrameEngine:
         )
 
         if not active:
-            # Render the first shot as a deterministic hold frame if a gap exists.
-            active = [min(scene.shots, key=lambda shot: (shot.start_frame, shot.shot_id))] if scene.shots else []
-
-        if not active:
+            # Real timeline gaps expose only the declared canvas background and captions.
             empty = self.compositor.render_frame(
                 scene_props={
                     "scene_id": scene.scene_id,
