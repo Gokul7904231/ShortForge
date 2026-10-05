@@ -37,6 +37,10 @@ The legacy `TimelineIR` remains supported during migration and exposes `upgradeT
 
 `splitClip()`, `trimClip()`, `moveClip()`, `rippleDelete()`, `retimeClip()`
 
+Temporal edits move or rescale nested animation/effect/mask state with their parent clip. Retime preserves the represented source span and makes `playbackRate` explicit.
+
+Ripple deletion requires an explicit `LOCAL_TRACK`, `LINKED_TRACKS` or `WHOLE_COMPOSITION` scope. Audio and captions are never silently shifted outside the requested synchronization boundary; unsupported crossing edits fail closed.
+
 These transformations are intentionally independent of any renderer or UI so agents, ReMaker and future editors can operate on the same semantic object.
 
 ## 4. OpenCut mapping
@@ -70,8 +74,8 @@ Before adapter serialization:
 3. clip/audio/caption ranges must stay within composition duration;
 4. keyframes must be strictly ordered;
 5. caption word cues must remain inside their parent cue;
-6. voice audio must exist;
-7. waveform metadata must be structurally valid.
+8. voice audio must exist;
+9. waveform metadata must be structurally valid.
 
 Invalid compositions fail closed.
 
@@ -79,7 +83,7 @@ Invalid compositions fail closed.
 
 Renderer capabilities are separate from renderer authority.
 
-`RendererCapabilityContract` describes what an engine or adapter can represent.
+`RendererCapabilityContract` describes representational capability and physically proven runtime modes independently. A runtime mode must be listed in `executionModes` only when its corresponding capability is proven; roadmap surfaces belong in `integrationTargets`.
 
 `RendererAdmission` describes whether ShortForge may route production work to it.
 
