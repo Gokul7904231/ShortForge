@@ -25,7 +25,10 @@
       "Optional HF_TOKEN is read from Kaggle Secrets inside the notebook runner.",
       "Renderer request metadata is allowlisted to prevent arbitrary environment/secret injection.",
       "Live Wan model execution is manual-only and quota-aware."
-    ]
+    ],
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
   },
   "conflicts": [],
   "changes": [
@@ -70,9 +73,16 @@
     "Do not record 14B as qualified until a physical Kaggle run succeeds.",
     "Use the existing downstream CAS/F07 render path for provider qualification."
   ],
-  "disposition": "PASS_PENDING_CI",
+  "disposition": "PASS",
   "notes": [
     "This PR upgrades the renderer foundation; it does not claim live Wan feasibility.",
     "The deterministic PROOF profile is intentionally the first live target to minimize GPU quota usage."
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
   ]
 }
