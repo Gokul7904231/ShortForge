@@ -111,6 +111,11 @@ describe("Durable editor revision graph", () => {
       expect(replay.valid).toBe(true);
       expect(replay.revisionCount).toBe(4);
       expect(replay.finalCompositionHashSha256).toBe(restore.compositionHash);
+
+      const diskUndo = await editorB.undo("session-b");
+      expect(diskUndo.accepted).toBe(true);
+      const diskRedo = await editorB.redo("session-b");
+      expect(diskRedo.accepted).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
