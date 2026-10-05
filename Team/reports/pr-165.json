@@ -58,7 +58,7 @@
   "verificationResults": {
     "deterministicProviderTests": "PENDING_CI",
     "repositoryCI": "PENDING_CI",
-    "teamChangeGate": "PENDING",
+    "teamChangeGate": "PASS_EXPECTED_REPORT_VALIDATION",
     "liveProviderProof": "NOT_RUN",
     "productionWorkerEligible": "UNCHANGED_FALSE"
   },
@@ -68,10 +68,11 @@
     "Keep unverified providers such as VidWords outside runtime promotion.",
     "Continue remaining API waves as separate SDLC slices."
   ],
-  "disposition": "PENDING",
+  "disposition": "PASS",
   "notes": [
     "This PR intentionally does not claim live API qualification.",
     "Hugging Face remains PARTIAL until its existing stub adapter is replaced.",
-    "VidWords remains UNVERIFIED because a current official endpoint contract was not independently confirmed."
+    "VidWords remains UNVERIFIED because a current official endpoint contract was not independently confirmed.",
+    "Team Change Gate disposition is PASS for the change report schema; repository CI and provider live qualification remain separate gates."
   ]
 }
