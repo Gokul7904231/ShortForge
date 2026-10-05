@@ -1,0 +1,49 @@
+okf_version: 2
+manifest_schema: shortforge://okf/manifest/v1
+corpus_root: .okf/
+rule_index: .okf/rules/index.json
+truth_domains:
+  - normative_policy
+  - canonical_contract
+  - current_implementation
+  - verification_evidence
+  - historical_record
+lifecycle_states:
+  - DRAFT
+  - ACTIVE
+  - EXPERIMENTAL
+  - DEPRECATED
+  - SUPERSEDED
+enforcement_modes:
+  - TRACE_ONLY
+  - CI
+  - RUNTIME
+  - GITHUB
+  - EVIDENCE
+  - HUMAN_APPROVAL
+enforcement:
+  github_rulesets: REQUIRED
+  ci_gate: REQUIRED
+  runtime_guards: REQUIRED_FOR_RUNTIME_RULES
+  production_helper: REQUIRED_WHERE_APPLICABLE
+provenance:
+  sweep_attestation: REQUIRED
+  release_attestation: REQUIRED
+  signing: PLANNED
+exception_policy:
+  directory: .okf/exceptions/
+  required_fields:
+    - exceptionId
+    - ruleRefs
+    - scope
+    - approver
+    - startsAt
+    - expiresAt
+    - compensatingControls
+    - closureEvidence
+    - status
+
+rule_coverage:
+  status: PILOT
+  active_machine_rules: 6
+  migration_target: 100_percent_critical_high

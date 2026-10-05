@@ -52,3 +52,12 @@ For pull requests, the required report is:
 Team/reports/pr-<number>.json
 
 Missing, malformed, contradictory or incomplete reports fail the Team gate.
+
+## Machine OKF binding — v1
+
+Before Step 3 is considered complete, the OKF sweep compiler must produce a machine-readable sweep envelope for the PR head. The envelope is evidence of corpus inventory, rule applicability, source references, and provenance; it does not by itself prove domain behavior.
+
+Required CI path:
+OKF lint -> OKF sweep compiler -> Team report validation -> domain/security/verification checks -> merge disposition.
+
+For pull requests the required report remains Team/reports/pr-<number>.json. The report must remain consistent with the machine sweep and may not convert UNPROVEN or BLOCKED evidence into PASS.

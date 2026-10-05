@@ -1,0 +1,151 @@
+{
+  "schema": "shortforge://okf/rules/index/v1",
+  "rules": [
+    {
+      "ruleId": "OKF.PROCESS.FULL_SWEEP",
+      "class": "PROCESS",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Every non-trivial decision begins with a complete current .okf sweep.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": "tools/okf/sweep.py"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/decision-protocol.md"
+      ]
+    },
+    {
+      "ruleId": "OKF.GOVERNANCE.TEAM_GATE",
+      "class": "GOVERNANCE",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Every non-trivial repository change must pass the Team Change Gate.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": "Team/workflow/change-gate.md"
+        }
+      ],
+      "sourceRefs": [
+        "Team/workflow/change-gate.md"
+      ]
+    },
+    {
+      "ruleId": "OKF.AUTH.MODEL_NON_SOVEREIGN",
+      "class": "AUTHORITY",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Model output may propose or advise but may not become sovereign production authority.",
+      "appliesTo": {
+        "paths": [
+          "apps/web/factoryos/core/**",
+          "Team/**",
+          ".okf/intelligence/**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "RUNTIME",
+          "ref": "Guardian"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md",
+        ".okf/intelligence/aer.md"
+      ]
+    },
+    {
+      "ruleId": "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+      "class": "EVIDENCE",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "UNPROVEN and BLOCKED evidence must never be represented as PASS.",
+      "appliesTo": {
+        "paths": [
+          "Team/**",
+          "production-helper/**",
+          ".okf/**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": "tools/okf/validate_report.py"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/production-helper.md",
+        "Team/workflow/change-gate.md"
+      ]
+    },
+    {
+      "ruleId": "OKF.SECURITY.LEAST_PRIVILEGE",
+      "class": "SECURITY",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Production workers operate only within explicitly granted capabilities.",
+      "appliesTo": {
+        "paths": [
+          "apps/web/factoryos/core/agent/**",
+          "apps/web/factoryos/core/security/**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "RUNTIME",
+          "ref": "CapabilityRegistry / Guardian"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/security/worker-permissions.md"
+      ]
+    },
+    {
+      "ruleId": "OKF.RELEASE.F07_VERIFIED",
+      "class": "RELEASE",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Production artifacts are releasable only after the F07 verification and release authorization chain.",
+      "appliesTo": {
+        "paths": [
+          "apps/web/factoryos/core/verification/**",
+          ".github/workflows/**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "RUNTIME",
+          "ref": "F07 / ReleaseAuthorization"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/architecture.md",
+        ".okf/floor-governance-cell.md"
+      ]
+    }
+  ],
+  "coverage": {
+    "status": "PILOT",
+    "activeMachineRules": 6,
+    "target": "100% CRITICAL/HIGH"
+  }
+}

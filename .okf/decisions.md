@@ -1580,3 +1580,45 @@ Implementation:
 - Scene-local physical rebuild is the current production-safe granularity; frame-level codec differential splicing is experimental.
 
 **Promotion evidence:** dedicated ReMaker tests, repository TypeScript CI, F04/F05/F06 physical validation, F07 verification and security/permission checks.
+
+## OKF Governance Control Plane v1 — 2026-10-05
+
+Classification: new capability
+
+Decision: Evolve .okf from a documentation-centered governance corpus into a machine-verifiable governance control plane while preserving the existing human-readable corpus and authority hierarchy.
+
+Canonical control loop:
+.okf normative policy -> machine rule identity/applicability -> OKF sweep compiler -> TeamChangeIR/evidence requirements -> domain validators/security/GitHub controls -> attested disposition (PASS | BLOCKED | REJECTED | ESCALATED).
+
+Locked boundaries:
+- .okf remains the normative governance layer; it is not runtime execution authority.
+- Executable implementation remains the source of current behavior.
+- Contracts define machine interfaces; tests and runtime proofs are evidence of conformance.
+- A linked enforcement point is not proof that enforcement currently passes.
+- Ascalon, AER, Devourer, Forgers, research tools, and external frameworks cannot silently modify or outrank .okf law.
+- UNPROVEN and BLOCKED evidence never become PASS.
+- Exceptions must be explicit, scoped, time-bounded, approved, compensated, and closed with evidence.
+- GitHub rulesets, CODEOWNERS, CI, Guardian, F07, SLSA, and in-toto-style provenance are enforcement/evidence mechanisms, not new sovereign authorities.
+
+First-wave implementation on feat/okf-control-plane-v1:
+- .okf/manifest.yaml
+- .okf/rules/index.json
+- .okf/schemas/okf-rule.schema.json
+- .okf/schemas/okf-sweep.schema.json
+- .okf/schemas/exception-record.schema.json
+- .okf/exceptions/README.md
+- .okf/verification/rule-to-test-matrix.md
+- tools/okf deterministic lint, sweep compilation, and Team report validation
+- .github/CODEOWNERS
+- .github/workflows/okf-governance.yml
+
+Current limitation: GitHub branch/ruleset protection is not claimed as configured by this change. The CI check is implemented; repository settings require explicit owner-side enforcement before they can be treated as a hard merge block.
+
+Validation required:
+- OKF linter passes.
+- Sweep compiler emits a valid hashed envelope.
+- Team report validator rejects OPEN conflicts and UNPROVEN/BLOCKED to PASS.
+- Relevant domain tests, security checks, runtime evidence, and release checks remain mandatory.
+- Production promotion requires actual GitHub ruleset/status protection and provenance evidence.
+
+Rollback/rejection: If the machine manifest diverges from canonical textual rules, treat the manifest as invalid and revert the control-plane wave. Existing .okf and source-of-truth hierarchy remain intact.

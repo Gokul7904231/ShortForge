@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://okf/sweep/v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "okfSweep",
+    "corpusSha256",
+    "changedPaths",
+    "relevantRules",
+    "relevantMappings",
+    "implementationRefs",
+    "testRefs",
+    "contradictions",
+    "exceptionId",
+    "compiledAt",
+    "compiledBy",
+    "envelopeSha256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "okfSweep": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "INCIDENT_FOLLOWUP"
+      ]
+    },
+    "corpusSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "changedPaths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "relevantRules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^OKF\\."
+      }
+    },
+    "relevantMappings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "implementationRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "testRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "statement"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "ESCALATED",
+              "REJECTED"
+            ]
+          },
+          "statement": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "exceptionId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "compiledAt": {
+      "type": "string"
+    },
+    "compiledBy": {
+      "type": "string"
+    },
+    "envelopeSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

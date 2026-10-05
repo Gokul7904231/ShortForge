@@ -361,3 +361,14 @@ A Team workflow cannot replace the complete .okf sweep.
 
 If a change contradicts an absolute .okf rule, the conflict must be preserved and escalated. Forgers must propose a bounded resolution; they cannot silently rewrite the rule.
 
+
+## 21. Machine sweep binding
+
+The complete-corpus rule remains unchanged. The control-plane implementation now compiles the reviewed corpus into a machine sweep envelope using tools/okf/sweep.py.
+
+Required sequence for architecture-impacting changes:
+complete .okf sweep -> machine inventory/hash -> applicability compilation -> TeamChangeIR -> required evidence -> authorized disposition.
+
+The machine sweep proves inventory and rule applicability. It does not claim that implementation, security, runtime, or physical verification has passed.
+
+Machine evidence is stored as a CI artifact and referenced by the Team Change Report when available. UNPROVEN remains distinct from PASS.
