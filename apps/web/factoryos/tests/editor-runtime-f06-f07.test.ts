@@ -15,7 +15,7 @@ import { VerificationReceiptVerifier } from "../core/verification/youtube/Verifi
 import type { CompositionIR } from "../core/timeline/CompositionIR";
 import { millisecondsToMediaTime } from "../core/timeline/CompositionIR";
 
-function makeComposition(sourcePath: string): CompositionIR {
+function makeComposition(sourcePath: string, imagePath: string): CompositionIR {
   const duration = millisecondsToMediaTime(2_000);
   return {
     compositionId: "editor-runtime-proof",
@@ -25,18 +25,77 @@ function makeComposition(sourcePath: string): CompositionIR {
       height: 1920,
       frameRate: { numerator: 30, denominator: 1 },
       duration,
+      background: {
+        kind: "GRADIENT",
+        value: { start: "#0b1020", end: "#3b1d72", direction: "VERTICAL" },
+      },
     },
     tracks: [{
       id: "video",
       kind: "VIDEO",
       zIndex: 0,
       clips: [{
-        id: "clip",
-        kind: "VIDEO",
-        src: sourcePath,
+        id: "clip-a",
+        kind: "IMAGE",
+        src: imagePath,
         start: 0,
-        duration,
+        duration: millisecondsToMediaTime(1_000),
         zIndex: 0,
+        transform: { scaleX: 0.82, scaleY: 0.82, opacity: 0.96, x: -40, y: 0, rotationDeg: 0 },
+        animations: [{
+          property: "x",
+          keyframes: [
+            { time: 0, value: -120, interpolation: "BEZIER", outHandle: { x: 0.25, y: 0 } },
+            { time: millisecondsToMediaTime(1_000), value: 120, interpolation: "BEZIER", inHandle: { x: 0.75, y: 1 } },
+          ],
+        }],
+        effects: [{
+          effectId: "brightness-1",
+          kind: "BRIGHTNESS",
+          scope: "CLIP",
+          params: { amount: 1.18 },
+          enabled: true,
+        }],
+        masks: [{
+          maskId: "ellipse-1",
+          kind: "ELLIPSE",
+          x: 100,
+          y: 280,
+          width: 880,
+          height: 920,
+          rotationDeg: 0,
+          feather: 12,
+        }],
+      }, {
+        id: "clip-b",
+        kind: "IMAGE",
+        src: imagePath,
+        start: millisecondsToMediaTime(1_000),
+        duration: millisecondsToMediaTime(1_000),
+        zIndex: 0,
+        transform: { scaleX: 0.9, scaleY: 0.9, opacity: 1, x: 25, y: 0, rotationDeg: 0 },
+        effects: [{
+          effectId: "gray-1",
+          kind: "GRAYSCALE",
+          scope: "CLIP",
+          params: { amount: 0.35 },
+          enabled: true,
+        }],
+        masks: [{
+          maskId: "diamond-1",
+          kind: "DIAMOND",
+          x: 120,
+          y: 360,
+          width: 840,
+          height: 820,
+          rotationDeg: 0,
+          feather: 8,
+        }],
+        transitionIn: {
+          transitionId: "fade-1",
+          kind: "FADE",
+          duration: millisecondsToMediaTime(500),
+        },
       }],
     }],
     audio: [{
@@ -46,6 +105,11 @@ function makeComposition(sourcePath: string): CompositionIR {
       start: 0,
       duration,
       volume: 1,
+      sourceIn: 0,
+      sourceDuration: millisecondsToMediaTime(1_600),
+      playbackRate: 0.8,
+      fadeIn: millisecondsToMediaTime(100),
+      fadeOut: millisecondsToMediaTime(150),
     }],
     captions: [{
       id: "caption",
@@ -63,6 +127,19 @@ function makeComposition(sourcePath: string): CompositionIR {
       missionId: "editor-runtime-proof-mission",
     },
   };
+}
+
+function exportCompositionAssertions(composition: CompositionIR): boolean {
+  const clips = composition.tracks.flatMap((track) => track.clips);
+  const audio = composition.audio[0];
+  return Boolean(
+    clips[0]?.animations?.length &&
+    clips[0]?.effects?.length &&
+    clips[0]?.masks?.length &&
+    clips[1]?.transitionIn &&
+    audio?.playbackRate === 0.8 &&
+    composition.canvas.background?.kind === "GRADIENT",
+  );
 }
 
 const releaseContext: EditorF07ReleaseContext = {
@@ -138,9 +215,10 @@ const releaseContext: EditorF07ReleaseContext = {
   },
 };
 
-function makePhysicalSource(tempDir: string): string {
+function makePhysicalSource(tempDir: string): { videoPath: string; imagePath: string } {
   const ffmpeg = process.env.FACTORYOS_FFMPEG_PATH || "ffmpeg";
   const source = path.join(tempDir, "source.mp4");
+  const imagePath = path.join(tempDir, "source.png");
   execFileSync(ffmpeg, [
     "-hide_banner",
     "-loglevel",
@@ -156,7 +234,14 @@ function makePhysicalSource(tempDir: string): string {
     "-y",
     source,
   ]);
-  return source;
+  execFileSync(ffmpeg, [
+    "-hide_banner",
+    "-loglevel", "error",
+    "-i", source,
+    "-frames:v", "1",
+    "-y", imagePath,
+  ]);
+  return { videoPath: source, imagePath };
 }
 
 describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
@@ -177,13 +262,15 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     fs.mkdirSync(journalDir, { recursive: true });
     fs.mkdirSync(casDir, { recursive: true });
 
-    const sourcePath = makePhysicalSource(tempDir);
+    const sources = makePhysicalSource(tempDir);
+    const sourcePath = sources.videoPath;
+    const imagePath = sources.imagePath;
     const cas = ContentAddressedStore.resetInstanceForTesting(casDir);
     const store = new DiskEditorRevisionStore(journalDir);
     const editor = new DurableEditor(store);
     const runtime = new EditorRuntime(editor, undefined, cas, F07ReleaseGuardian.getInstance());
 
-    const composition = makeComposition(sourcePath);
+    const composition = makeComposition(sourcePath, imagePath);
 
     await runtime.open({
       sessionId: "editor-runtime-proof-session",
@@ -240,8 +327,14 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
 
     const preview = await runtime.preview("editor-runtime-proof-session");
     expect(preview.wasmExecution).toBe("NOT_PROVEN");
+    expect(preview.physicalExecution).toBe("PREVIEW_PHYSICAL");
     expect(preview.compositionHashSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(preview.previewArtifactSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(fs.existsSync(preview.previewArtifactPath)).toBe(true);
     expect(preview.renderIntent.sourceCompositionHashSha256).toBe(preview.compositionHashSha256);
+
+    const lowered = exportCompositionAssertions(composition);
+    expect(lowered).toBe(true);
 
     const validation = await runtime.handleMcp({
       tool: "editor.validate",
@@ -316,5 +409,6 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     expect(VerificationReceiptVerifier.verify(exportResult.f07Receipt).valid).toBe(true);
     expect(exportResult.f07ReceiptCasUri).toBeTruthy();
     fs.rmSync(approvedRenderDir, { recursive: true, force: true });
+    fs.rmSync(preview.previewArtifactPath, { force: true });
   });
 });
