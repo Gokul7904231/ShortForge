@@ -475,6 +475,31 @@ export class DurableEditor implements ShortForgeEditorAPI, DurableEditorHistoryA
         }
       }
 
+      if (!row.operationId || !row.revisionId || row.compositionId !== compositionId) {
+        return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_REPLAY_IDENTITY_INVALID:${row.revisionId}`, checkedRevisionIds: checked };
+      }
+      if (!byId.has(row.history.cursorRevisionId)) {
+        return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_REPLAY_CURSOR_MISSING:${row.revisionId}`, checkedRevisionIds: checked };
+      }
+      if (new Set(row.history.redoStackRevisionIds).size !== row.history.redoStackRevisionIds.length) {
+        return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_REPLAY_REDO_STACK_DUPLICATE:${row.revisionId}`, checkedRevisionIds: checked };
+      }
+      for (const redoRevisionId of row.history.redoStackRevisionIds) {
+        if (!byId.has(redoRevisionId)) {
+          return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_REPLAY_REDO_TARGET_MISSING:${row.revisionId}`, checkedRevisionIds: checked };
+        }
+      }
+      if (row.kind === "COMMAND") {
+        const expectedDigest = sha256(canonicalizeComposition({
+          actor: row.actor,
+          expectedRevision: row.revision - 1,
+          command: row.command,
+        }));
+        if (!row.commandDigestSha256 || row.commandDigestSha256 !== expectedDigest) {
+          return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_REPLAY_COMMAND_DIGEST_MISMATCH:${row.revisionId}`, checkedRevisionIds: checked };
+        }
+      }
+
       const actualHash = compositionHash(current.composition);
       if (actualHash !== row.compositionHashSha256) {
         return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_REPLAY_HASH_MISMATCH:${row.revisionId}`, checkedRevisionIds: checked };
