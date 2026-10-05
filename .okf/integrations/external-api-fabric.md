@@ -26,7 +26,7 @@ MCP is an access/tool surface only.
 | Video research | Arcmira, TranscriptYT, TubeToTranscript, YouTube | IMPLEMENTED registry/adapter wave target |
 | Video research | VidWords | IMPLEMENTED runtime adapter; live qualification separate |
 | LLM | Gemini, Groq, OpenRouter | EXISTING IMPLEMENTATIONS |
-| LLM | Hugging Face | PARTIAL — legacy provider adapter is still a stub and must be replaced |
+| LLM | Hugging Face | IMPLEMENTED — Inference Providers chat adapter; live qualification separate |
 | Audio | IBM TTS | CATALOGUED — service URL is instance/region specific |
 | Audio | Audexum | IMPLEMENTED registry target |
 | Video/audio analysis | Speak AI | CATALOGUED — endpoint workflow verification required |
@@ -76,3 +76,7 @@ Visual providers must preserve source, license, photographer/author and attribut
 ## Operational caveats
 
 Nominatim public-service usage is strictly rate-limited and must be cached, identified, and swappable. Open-Meteo terms vary by use case. Provider quotas and pricing are runtime facts and must not be hard-coded as permanent truth.
+
+## Hugging Face Inference Providers
+
+The current implementation uses Hugging Face's official OpenAI-compatible Inference Providers chat-completions endpoint. Model IDs may use `:fastest`, `:cheapest`, `:preferred`, or an explicit provider suffix. Hugging Face remains one provider behind ShortForge's existing IntelligentRouter and Treasury boundary; it does not become a second router or economic authority.

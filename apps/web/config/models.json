@@ -101,6 +101,18 @@
       "providers": [
         "zai"
       ]
+    },
+    {
+      "id": "openai/gpt-oss-120b:fastest",
+      "type": "text",
+      "capabilities": [
+        "script",
+        "reasoning",
+        "json"
+      ],
+      "providers": [
+        "huggingface"
+      ]
     }
   ]
 }

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR172-HuggingFace-Inference-Providers",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/huggingface-inference-provider-20261005",
+  "objective": "Replace the Hugging Face LLM stub with a governed OpenAI-compatible Inference Providers adapter behind the existing AIProviderRegistry, IntelligentRouter and Treasury boundary.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Provider adapters are replaceable resources.",
+      "IntelligentRouter remains the capability routing authority.",
+      "Treasury remains the economic admission authority.",
+      "MCP/access surfaces do not become authorities.",
+      "No external LLM provider gains F06, CAS or F07 authority.",
+      "Provider usage must expose exact token data when available for Treasury settlement.",
+      "Credentials remain server-side."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "HF credentials are read from HF_API_KEY/HF_TOKEN/HUGGINGFACE_API_KEY and are not written to repository artifacts.",
+      "The adapter uses the fixed Hugging Face router endpoint by default; custom base URL remains configuration-controlled.",
+      "Provider error text is bounded before being surfaced."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Replaced the Hugging Face stub implementation with a real chat-completions provider plugin.",
+    "Registered Hugging Face in the existing AIProviderRegistry.",
+    "Preserved provider selection policies in model IDs such as :fastest/:cheapest/:preferred and explicit provider suffixes.",
+    "Added token usage extraction for Treasury execution settlement.",
+    "Added dynamic /v1/models discovery and VLM capability detection.",
+    "Added config/model/capability entries with the provider disabled by default until intentionally configured.",
+    "Added deterministic auth/request/response/error/model-discovery tests.",
+    "Reconciled external API registry and .okf state."
+  ],
+  "evidenceRefs": [
+    "apps/web/ai/providers/huggingface.ts",
+    "apps/web/ai/providers/huggingface.test.ts",
+    "apps/web/ai/providers/factory_with_fallback.ts",
+    "apps/web/ai/ai-config-manager.ts",
+    "apps/web/config/providers.json",
+    "apps/web/config/models.json",
+    "apps/web/config/capabilities.json",
+    ".okf/integrations/external-api-fabric.md",
+    "Issue #172"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED_FALSE"
+  },
+  "verificationPlan": [
+    "Require CI and Team Change Gate to pass before merge.",
+    "Run a live HF Inference Providers smoke only with an explicitly configured token and a deliberately selected model.",
+    "Record provider/model/usage evidence separately from repository CI."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "IMPLEMENTED means repository adapter + deterministic contract coverage; it is not a live qualification claim.",
+    "Hugging Face's current OpenAI-compatible endpoint is chat-completion-only; non-chat tasks remain outside this adapter.",
+    "The provider is disabled in static routing config by default so installing the adapter does not silently change model economics."
+  ]
+}

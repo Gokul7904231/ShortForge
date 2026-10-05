@@ -167,6 +167,8 @@ class AIConfigManagerClass {
         return process.env.POLLINATIONS_API_KEY || "";
       case "zai":
         return process.env.ZAI_API_KEY || "";
+      case "huggingface":
+        return process.env.HF_API_KEY || process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || "";
       default:
         return "";
     }

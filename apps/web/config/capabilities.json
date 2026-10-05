@@ -4,7 +4,8 @@
     "glm-4.7-flash",
     "glm-4.5",
     "llama-3.3-70b-instruct",
-    "meta-llama/llama-3.1-8b-instruct"
+    "meta-llama/llama-3.1-8b-instruct",
+    "openai/gpt-oss-120b:fastest"
   ],
   "critic": [
     "llama-3.3-70b-versatile",
@@ -37,12 +38,14 @@
     "glm-4.7-flash",
     "gemini-2.5-flash",
     "llama-3.3-70b-versatile",
-    "qwen3-coder"
+    "qwen3-coder",
+    "openai/gpt-oss-120b:fastest"
   ],
   "json": [
     "meta-llama/llama-3.1-8b-instruct",
     "glm-4.7-flash",
     "gemini-2.5-flash",
-    "llama-3.3-70b-instruct"
+    "llama-3.3-70b-instruct",
+    "openai/gpt-oss-120b:fastest"
   ]
 }

@@ -231,10 +231,10 @@ const PROVIDERS: readonly ExternalApiProviderDefinition[] = [
     baseUrl: "https://router.huggingface.co/v1",
     auth: "BEARER",
     credentialEnv: "HF_API_KEY",
-    lifecycle: "PARTIAL",
+    lifecycle: "IMPLEMENTED",
     costTier: "FREE_TIER",
     docsUrl: "https://huggingface.co/docs/inference-providers/",
-    notes: "Current provider boundary is catalogued; the legacy ShortForge Hugging Face plugin is still a stub and must be replaced before production inference.",
+    notes: "OpenAI-compatible chat-completions adapter is implemented; pricing and availability remain runtime/account facts and live qualification is separate.",
   },
   {
     id: "ibm_tts",
