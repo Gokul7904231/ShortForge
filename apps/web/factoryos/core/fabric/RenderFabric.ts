@@ -146,6 +146,17 @@ export class RenderFabric {
     outputPath: string,
     timestampSeconds = 0,
   ): Promise<RenderPreviewResult> {
+    if (intent.sourceCompositionCanonicalJson && intent.sourceCompositionHashSha256) {
+      const sourceHash = createHash("sha256")
+        .update(intent.sourceCompositionCanonicalJson, "utf8")
+        .digest("hex");
+      if (sourceHash !== intent.sourceCompositionHashSha256) {
+        throw new Error("[RenderFabric] Preview source composition hash mismatch");
+      }
+      if (!intent.sourceCompositionId || intent.sourceCompositionSchemaVersion !== "2.0.0") {
+        throw new Error("[RenderFabric] Invalid preview CompositionIR provenance metadata");
+      }
+    }
     const localIntent = this.normalizeLocalRenderIntent(intent, undefined);
     const preview = await LocalRenderAdapter.getInstance().preview(
       localIntent,
