@@ -4,13 +4,13 @@ import React, { useMemo, useState } from "react";
 import type {
   AnimationTrack,
   CompositionClip,
-  CompositionIR,
   EditorCommand,
   EditorCommandEnvelope,
   EditorActor,
   EditorDocument,
   MediaTime,
 } from "@/factoryos/core/editor/EditorContracts";
+import type { AnimationTrack as CompositionAnimationTrack } from "@/factoryos/core/timeline/CompositionIR";
 
 export interface ShortForgeEditorStudioProps {
   document: EditorDocument;
@@ -155,7 +155,7 @@ export function ShortForgeEditorStudio({
     });
   }
 
-  function addKeyframe(property: AnimationTrack["property"]) {
+  function addKeyframe(property: CompositionAnimationTrack["property"]) {
     if (!selected) return;
     const trackId = composition.tracks.find((track) =>
       track.clips.some((clip) => clip.id === selected.id),
@@ -174,13 +174,15 @@ export function ShortForgeEditorStudio({
                 ? selected.transform?.y ?? 0
                 : selected.transform?.rotationDeg ?? 0;
     const existing = selected.animations?.find((track) => track.property === property);
+    const nextTime = mediaTimeFromSeconds(playheadSeconds);
+    const nextKeyframe = {
+      time: nextTime,
+      value: base,
+      interpolation: "LINEAR" as const,
+    };
     const keyframes = [
-      ...(existing?.keyframes ?? []),
-      {
-        time: mediaTimeFromSeconds(playheadSeconds),
-        value: base,
-        interpolation: "LINEAR" as const,
-      },
+      ...(existing?.keyframes ?? []).filter((frame) => frame.time !== nextTime),
+      nextKeyframe,
     ].sort((a, b) => a.time - b.time);
 
     const animations = [
@@ -243,6 +245,19 @@ export function ShortForgeEditorStudio({
         rotationDeg: 0,
         feather: 8,
       },
+    });
+  }
+
+  function setBackground(kind: "SOLID" | "GRADIENT" | "BLUR") {
+    if (readOnly) return;
+    void emit({
+      type: "SET_CANVAS_BACKGROUND",
+      background:
+        kind === "SOLID"
+          ? { kind, value: "#0f172a" }
+          : kind === "GRADIENT"
+            ? { kind, value: { start: "#0b1020", end: "#3b1d72", direction: "VERTICAL" } }
+            : { kind, value: "#111827" },
     });
   }
 
@@ -432,6 +447,25 @@ export function ShortForgeEditorStudio({
                     </div>
                     <div className="mt-2 text-[10px] text-zinc-500">
                       {selected.effects?.length ?? 0} effect nodes
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 text-[10px] uppercase tracking-wider text-zinc-500">
+                      Canvas background
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["SOLID", "GRADIENT", "BLUR"] as const).map((kind) => (
+                        <button
+                          key={kind}
+                          type="button"
+                          className="rounded-md border border-zinc-800 px-2 py-1.5 text-[10px] hover:bg-zinc-900 disabled:opacity-50"
+                          disabled={readOnly}
+                          onClick={() => setBackground(kind)}
+                        >
+                          {kind}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
