@@ -43,9 +43,16 @@ export interface CandidateAsset {
   width: number;
   height: number;
   tags: string[];
-  source: "wikimedia" | "openverse" | "ai_fallback" | "pexels" | "pixabay" | "internal" | "cdn_fallback";
+  source: "wikimedia" | "openverse" | "ai_fallback" | "pexels" | "pixabay" | "pexafy" | "internal" | "cdn_fallback";
   usageCount: number;
   lastUsed?: string | null;
+  /** Provider-specific downstream usage constraints preserved with the candidate. */
+  usagePolicy?: {
+    attributionRequired: boolean;
+    attributionText?: string;
+    providerPolicy?: string;
+    materialization: "DOWNLOAD_TO_CAS" | "PREVIEW_ONLY";
+  };
   dominantColors?: string[];
   // Behavioral retrieval metrics
   retentionRate?: number;

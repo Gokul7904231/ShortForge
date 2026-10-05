@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR169-Governed-Visual-Acquisition",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/visual-acquisition-adapters-20261005",
+  "objective": "Implement governed Pexels, Pixabay and Pexafy candidate-asset acquisition behind the existing visual provider framework.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Visual providers are candidate acquisition resources, not truth authorities.",
+      "Provider output does not grant F06 worker authority.",
+      "CAS and F07 remain independent artifact truth boundaries.",
+      "Provider credentials remain server-side.",
+      "License, attribution and materialization constraints must survive normalization."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No provider credentials are committed.",
+      "API keys are read only from server-side environment variables.",
+      "No arbitrary user-controlled provider base URL was introduced."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Implemented Pexels image search normalization.",
+    "Implemented Pixabay image search normalization with download-to-server usage policy.",
+    "Implemented Pexafy semantic image search normalization.",
+    "Extended CandidateAsset with Pexafy source and usagePolicy metadata.",
+    "Added deterministic provider-shaped tests and malformed/credential fail-closed coverage.",
+    "Added .okf provider attribution and materialization rules."
+  ],
+  "evidenceRefs": [
+    "apps/web/lib/visual-assets/ProviderFramework.ts",
+    "apps/web/lib/visual-assets/VisualIntelligenceTypes.ts",
+    "apps/web/lib/visual-assets/ProviderFramework.external.test.ts",
+    ".okf/integrations/visual-acquisition.md",
+    "Issue #168",
+    "PR #169"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED_FALSE"
+  },
+  "verificationPlan": [
+    "Require repository CI and Team Change Gate before merge.",
+    "Run live Pexels/Pixabay/Pexafy proofs only with configured credentials.",
+    "Do not mark QUALIFIED based on HTTP 200 or mocked tests."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "Implementation status is separate from provider qualification.",
+    "Pexels API key issuance is currently paused according to current provider documentation; no live qualification depends on obtaining a new key.",
+    "Pixabay materialization policy is explicitly represented so the downstream asset store can enforce download-to-server behavior."
+  ]
+}
