@@ -181,6 +181,95 @@ describe("ShortForge editor contract", () => {
     expect(reused.error).toBe("EDITOR_COMMAND_ID_REUSE");
   });
 
+  it("executes Studio transform, keyframe, background, and transition commands through the canonical command engine", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    await editor.open({
+      sessionId: "studio-session",
+      compositionId: base.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "studio-user" },
+    }, base);
+
+    const commands: EditorCommandEnvelope[] = [
+      {
+        commandId: "studio-transform",
+        sessionId: "studio-session",
+        expectedRevision: 0,
+        actor: { kind: "HUMAN", id: "studio-user" },
+        command: {
+          type: "SET_CLIP_TRANSFORM",
+          trackId: "video",
+          clipId: "clip",
+          transform: { x: 120, y: -80, scaleX: 1.15, scaleY: 1.15, rotationDeg: 8, opacity: 0.9 },
+        },
+      },
+      {
+        commandId: "studio-keyframes",
+        sessionId: "studio-session",
+        expectedRevision: 1,
+        actor: { kind: "HUMAN", id: "studio-user" },
+        command: {
+          type: "SET_CLIP_ANIMATIONS",
+          trackId: "video",
+          clipId: "clip",
+          animations: [{
+            property: "x",
+            keyframes: [
+              { time: 0, value: -200 },
+              { time: millisecondsToMediaTime(2_000), value: 200 },
+            ],
+          }],
+        },
+      },
+      {
+        commandId: "studio-background",
+        sessionId: "studio-session",
+        expectedRevision: 2,
+        actor: { kind: "HUMAN", id: "studio-user" },
+        command: {
+          type: "SET_CANVAS_BACKGROUND",
+          background: {
+            kind: "GRADIENT",
+            value: { start: "#101828", end: "#5b21b6", direction: "VERTICAL" },
+          },
+        },
+      },
+      {
+        commandId: "studio-transition",
+        sessionId: "studio-session",
+        expectedRevision: 3,
+        actor: { kind: "HUMAN", id: "studio-user" },
+        command: {
+          type: "SET_TRANSITION",
+          trackId: "video",
+          clipId: "clip",
+          edge: "IN",
+          transition: {
+            transitionId: "studio-transition-node",
+            kind: "FADE",
+            duration: millisecondsToMediaTime(500),
+          },
+        },
+      },
+    ];
+
+    for (const command of commands) {
+      const receipt = await editor.apply(command);
+      expect(receipt.accepted, JSON.stringify(receipt)).toBe(true);
+    }
+
+    const document = await editor.getDocument("studio-session");
+    const clip = document.composition.tracks[0].clips[0];
+    expect(clip.transform?.x).toBe(120);
+    expect(clip.transform?.opacity).toBe(0.9);
+    expect(clip.animations?.[0]?.keyframes).toHaveLength(2);
+    expect(document.composition.canvas.background?.kind).toBe("GRADIENT");
+    expect(clip.transitionIn?.kind).toBe("FADE");
+    expect(document.revision).toBe(4);
+  });
+
   it("rejects a session/composition identity mismatch", async () => {
     const editor = new InMemoryEditor();
     await expect(editor.open({
