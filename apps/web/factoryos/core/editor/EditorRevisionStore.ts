@@ -40,6 +40,23 @@ function validateRevisionInput(input: AppendEditorRevisionInput): void {
   }
 }
 
+function assertCheckpointValid(checkpoint: EditorCheckpoint): void {
+  const report = validateCompositionIR(checkpoint.composition);
+  if (!report.valid) {
+    throw new Error(`EDITOR_CHECKPOINT_INVALID_COMPOSITION: ${report.errors.join("; ")}`);
+  }
+  if (!checkpoint.checkpointId || !checkpoint.compositionId || !checkpoint.revisionId) {
+    throw new Error("EDITOR_CHECKPOINT_INVALID_IDENTITY");
+  }
+  if (!Number.isInteger(checkpoint.revision) || checkpoint.revision < 0) {
+    throw new Error("EDITOR_CHECKPOINT_INVALID_REVISION");
+  }
+  const expectedHash = sha256(canonicalizeComposition(checkpoint.composition));
+  if (expectedHash !== checkpoint.compositionHashSha256) {
+    throw new Error("EDITOR_CHECKPOINT_HASH_MISMATCH");
+  }
+}
+
 function toOperation(node: EditorRevisionNode): EditorOperationRecord {
   return {
     operationId: node.operationId,
@@ -169,6 +186,7 @@ export class InMemoryEditorRevisionStore implements EditorRevisionStore {
   }
 
   async saveCheckpoint(checkpoint: EditorCheckpoint): Promise<void> {
+    assertCheckpointValid(checkpoint);
     const key = `${checkpoint.compositionId}:${checkpoint.checkpointId}`;
     if (this.checkpoints.has(key)) throw new Error("EDITOR_CHECKPOINT_ALREADY_EXISTS");
     this.checkpoints.set(key, clone(checkpoint));
@@ -505,6 +523,7 @@ export class MongoEditorRevisionStore implements EditorRevisionStore {
   }
 
   async saveCheckpoint(checkpoint: EditorCheckpoint): Promise<void> {
+    assertCheckpointValid(checkpoint);
     await this.ensureIndexes();
     try {
       await this.checkpoints.insertOne(clone(checkpoint));
