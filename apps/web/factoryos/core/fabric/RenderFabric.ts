@@ -21,7 +21,7 @@ import type {
   ExecutionReceipt,
   ProviderType,
 } from "../compute/contracts/ComputeContracts";
-import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
+import { LocalRenderAdapter, type LocalRenderIntent, type PreviewReceipt } from "../render/LocalRenderAdapter";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 import type {
   TreasuryBudgetEnvelope,
@@ -45,6 +45,11 @@ export interface RenderTreasuryContext {
   readonly scopeDigest: string;
   readonly priority?: TreasuryPriority;
   readonly idempotencyKey?: string;
+}
+
+export interface RenderPreviewResult {
+  readonly preview: PreviewReceipt;
+  readonly renderIntent: RenderIntent;
 }
 
 export interface RenderExecutionResult {
@@ -134,6 +139,20 @@ export class RenderFabric {
     this.compilers.set("FFMPEG", new FFmpegRenderCompiler());
     this.compilers.set("HYPERFRAMES", new HyperFramesRenderCompiler());
     this.computeGateway = ComputeGateway.getInstance();
+  }
+
+  public async executePreview(
+    intent: RenderIntent,
+    outputPath: string,
+    timestampSeconds = 0,
+  ): Promise<RenderPreviewResult> {
+    const localIntent = this.normalizeLocalRenderIntent(intent, undefined);
+    const preview = await LocalRenderAdapter.getInstance().preview(
+      localIntent,
+      outputPath,
+      timestampSeconds,
+    );
+    return { preview, renderIntent: intent };
   }
 
   public getCompiler(id: string): IRenderCompiler | undefined {
