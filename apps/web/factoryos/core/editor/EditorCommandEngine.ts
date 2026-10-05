@@ -96,6 +96,27 @@ export function applyEditorCommand(composition: CompositionIR, command: EditorCo
       });
     case "RETIME_CLIP":
       return retimeClip(composition, command.trackId, command.clipId, command.duration);
+    case "SET_CLIP_TRANSFORM":
+      return updateClip(composition, command.trackId, command.clipId, (clip) => ({
+        ...clip,
+        transform: {
+          ...(clip.transform ?? {}),
+          ...command.transform,
+        },
+      }));
+    case "SET_CLIP_ANIMATIONS":
+      return updateClip(composition, command.trackId, command.clipId, (clip) => ({
+        ...clip,
+        animations: [...command.animations],
+      }));
+    case "SET_CANVAS_BACKGROUND":
+      return {
+        ...composition,
+        canvas: {
+          ...composition.canvas,
+          background: command.background,
+        },
+      };
     case "ADD_EFFECT":
       return updateClip(composition, command.trackId, command.clipId, (clip) => ({
         ...clip,
