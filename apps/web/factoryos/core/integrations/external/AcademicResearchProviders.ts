@@ -138,7 +138,7 @@ export class OpenAlexProvider implements ReachProvider {
                 requestId,
               );
             })
-            .filter((item): item is EvidenceSource => Boolean(item))
+            .filter((item: EvidenceSource | null): item is EvidenceSource => Boolean(item))
         : [];
 
       return {
@@ -255,7 +255,7 @@ export class ArxivProvider implements ReachProvider {
             requestId,
           );
         })
-        .filter((item): item is EvidenceSource => Boolean(item));
+        .filter((item: EvidenceSource | null): item is EvidenceSource => Boolean(item));
 
       return {
         provider: this.id,
@@ -355,7 +355,7 @@ export class SemanticScholarProvider implements ReachProvider {
                 requestId,
               );
             })
-            .filter((item): item is EvidenceSource => Boolean(item))
+            .filter((item: EvidenceSource | null): item is EvidenceSource => Boolean(item))
         : [];
 
       return {
@@ -477,7 +477,7 @@ export class CrossrefProvider implements ReachProvider {
                 requestId,
               );
             })
-            .filter((item): item is EvidenceSource => Boolean(item))
+            .filter((item: EvidenceSource | null): item is EvidenceSource => Boolean(item))
         : [];
 
       return {
