@@ -22,17 +22,17 @@ MCP is an access/tool surface only.
 |---|---|---|
 | Academic research | OpenAlex, arXiv, Semantic Scholar, Crossref, Unpaywall | IMPLEMENTED adapters |
 | Premium research MCP | Perplexity remote MCP | IMPLEMENTED adapter; metered |
-| Visual acquisition | Pexels, Pixabay, Pexafy | IMPLEMENTED registry/adapter wave target |
-| Video research | Arcmira, TranscriptYT, TubeToTranscript, YouTube | IMPLEMENTED registry/adapter wave target |
+| Visual acquisition | Pexels, Pixabay, Pexafy | IMPLEMENTED adapters; live qualification separate |
+| Video research | Arcmira, TranscriptYT, TubeToTranscript, YouTube | IMPLEMENTED adapters; live qualification separate |
 | Video research | VidWords | IMPLEMENTED runtime adapter; live qualification separate |
 | LLM | Gemini, Groq, OpenRouter | EXISTING IMPLEMENTATIONS |
 | LLM | Hugging Face | IMPLEMENTED — Inference Providers chat adapter; live qualification separate |
-| Audio | IBM TTS | CATALOGUED — service URL is instance/region specific |
-| Audio | Audexum | IMPLEMENTED registry target |
-| Video/audio analysis | Speak AI | CATALOGUED — endpoint workflow verification required |
-| Audio assets | Freesound | IMPLEMENTED registry target |
-| Document/safety | OCR.Space, Safe Browsing, URLScan | IMPLEMENTED registry target |
-| Safety | Perspective API | CATALOGUED pending endpoint verification |
+| Audio | IBM TTS | IMPLEMENTED — instance/region service URL remains configurable |
+| Audio | Audexum | IMPLEMENTED adapter |
+| Video/audio analysis | Speak AI | IMPLEMENTED media status/transcript adapter |
+| Audio assets | Freesound | IMPLEMENTED adapter |
+| Document/safety | OCR.Space, Safe Browsing, URLScan | IMPLEMENTED adapters |
+| Safety | Perspective API | IMPLEMENTED AnalyzeComment adapter |
 | Context | Open-Meteo, Nominatim | IMPLEMENTED registry target |
 
 ## SDLC
@@ -80,3 +80,12 @@ Nominatim public-service usage is strictly rate-limited and must be cached, iden
 ## Hugging Face Inference Providers
 
 The current implementation uses Hugging Face's official OpenAI-compatible Inference Providers chat-completions endpoint. Model IDs may use `:fastest`, `:cheapest`, `:preferred`, or an explicit provider suffix. Hugging Face remains one provider behind ShortForge's existing IntelligentRouter and Treasury boundary; it does not become a second router or economic authority.
+
+
+## Final cataloged-provider wave
+
+Perspective API is integrated through its current AnalyzeComment HTTP endpoint. Returned attribute scores are advisory safety signals; ShortForge policy owns thresholds and decisions.
+
+Speak AI is integrated through its documented API-key -> access-token authentication flow plus media status and timestamped transcript reads. The adapter keeps the access token/refresh token in process memory only and does not represent Speak AI as a TTS authority.
+
+Both providers remain subject to live credential/network verification before any `QUALIFIED` state is recorded.
