@@ -3,6 +3,7 @@ import type {
   EffectNode,
   MaskNode,
   MediaTime,
+  RippleScope,
   TransitionNode,
 } from "../timeline/CompositionIR";
 
@@ -36,6 +37,10 @@ export type EditorCommand =
       readonly trackId: string;
       readonly start: MediaTime;
       readonly end: MediaTime;
+      readonly scope?: RippleScope;
+      readonly linkedTrackIds?: readonly string[];
+      readonly includeAudio?: boolean;
+      readonly includeCaptions?: boolean;
     }
   | {
       readonly type: "RETIME_CLIP";
@@ -78,6 +83,7 @@ export interface EditorReceipt {
   readonly revision: number;
   readonly compositionHash: string;
   readonly changedClipIds: readonly string[];
+  readonly commandDigestSha256?: string;
   readonly error?: string;
 }
 
