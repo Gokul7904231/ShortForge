@@ -55,6 +55,7 @@ export class OpenAlexProvider implements ReachProvider {
     input: ReachProviderRequest,
   ): Promise<ReachProviderResponse> {
     const requestId = "openalex_" + randomUUID().slice(0, 8);
+    const started = Date.now();
     const url = new URL("https://api.openalex.org/works");
     url.searchParams.set("search", input.renderedQuery);
     url.searchParams.set(
@@ -162,6 +163,7 @@ export class ArxivProvider implements ReachProvider {
     input: ReachProviderRequest,
   ): Promise<ReachProviderResponse> {
     const requestId = "arxiv_" + randomUUID().slice(0, 8);
+    const started = Date.now();
     const url = new URL("https://export.arxiv.org/api/query");
     url.searchParams.set(
       "search_query",
@@ -278,6 +280,7 @@ export class SemanticScholarProvider implements ReachProvider {
     input: ReachProviderRequest,
   ): Promise<ReachProviderResponse> {
     const requestId = "s2_" + randomUUID().slice(0, 8);
+    const started = Date.now();
     const url = new URL(
       "https://api.semanticscholar.org/graph/v1/paper/search",
     );
@@ -379,6 +382,7 @@ export class CrossrefProvider implements ReachProvider {
     input: ReachProviderRequest,
   ): Promise<ReachProviderResponse> {
     const requestId = "crossref_" + randomUUID().slice(0, 8);
+    const started = Date.now();
     const url = new URL("https://api.crossref.org/works");
     url.searchParams.set("query.bibliographic", input.renderedQuery);
     url.searchParams.set(
@@ -518,6 +522,7 @@ export class UnpaywallProvider implements ReachProvider {
     }
 
     const requestId = "unpaywall_" + randomUUID().slice(0, 8);
+    const started = Date.now();
     const url =
       "https://api.unpaywall.org/v2/" +
       encodeURIComponent(doi) +
