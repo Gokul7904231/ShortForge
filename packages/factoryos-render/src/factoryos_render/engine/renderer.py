@@ -30,6 +30,7 @@ class Renderer:
         self.cache_dir = os.path.abspath(cache_dir)
         self.checkpoints = CheckpointStore(os.path.join(self.cache_dir, "checkpoints"))
         self.cache = ContentAddressedCache(os.path.join(self.cache_dir, "content"))
+        self.clock = FrameClock(30)
 
     def compile_composition(self, intent: RenderIntent) -> CompositionIR:
         """
@@ -143,6 +144,50 @@ class Renderer:
             render_mode=intent.render_mode,
             composition_hash=comp_hash
         )
+
+    def preview(
+        self,
+        intent: RenderIntent,
+        output_path: str,
+        timestamp_seconds: float = 0.0,
+    ) -> Dict[str, Any]:
+        """Render one deterministic preview frame using the same feature-lowering engine."""
+        comp = self.compile_composition(intent)
+        if not comp.scenes:
+            raise RuntimeError("Preview requires at least one scene.")
+
+        target = max(0.0, min(float(timestamp_seconds), max(0.0, comp.total_duration_seconds - 1.0 / max(1, comp.fps))))
+        target_frame = self.clock.time_to_frame(target) if hasattr(self, "clock") else int(round(target * comp.fps))
+
+        scene = comp.scenes[-1]
+        relative_frame = scene.duration_frames - 1
+        for candidate in comp.scenes:
+            if candidate.start_frame <= target_frame <= candidate.end_frame:
+                scene = candidate
+                relative_frame = target_frame - candidate.start_frame
+                break
+
+        from PIL import Image
+        frame_engine = FrameEngine(comp.width, comp.height, comp.fps)
+        raw = frame_engine.render_scene_frame(
+            scene,
+            relative_frame,
+            intent.safe_area.top,
+            intent.safe_area.bottom,
+        )
+        image = Image.frombytes("RGBA", (comp.width, comp.height), raw)
+        destination = os.path.abspath(output_path)
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        image.save(destination, format="PNG")
+        output_sha256 = hashlib.sha256(Path(destination).read_bytes()).hexdigest()
+        return {
+            "output_path": destination,
+            "output_sha256": output_sha256,
+            "width": comp.width,
+            "height": comp.height,
+            "fps": comp.fps,
+            "timestamp_seconds": target,
+        }
 
     def render(
         self,
