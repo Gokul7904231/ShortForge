@@ -15,6 +15,9 @@
 export const MEDIA_TIMEBASE = 120_000 as const;
 export type MediaTime = number;
 
+/** Explicit synchronization scope for ripple editing; editors never infer linkage. */
+export type RippleScope = "LOCAL_TRACK" | "LINKED_TRACKS" | "WHOLE_COMPOSITION";
+
 export interface FrameRate {
   readonly numerator: number;
   readonly denominator: number;
@@ -178,7 +181,10 @@ export interface CompositionClip {
   readonly start: MediaTime;
   readonly duration: MediaTime;
   readonly sourceIn?: MediaTime;
+  /** Source span consumed by this clip at playbackRate; defaults to duration at 1x. */
   readonly sourceDuration?: MediaTime;
+  /** Timeline-to-source speed multiplier; 1 is real time. */
+  readonly playbackRate?: number;
   readonly zIndex: number;
   readonly transform?: Partial<Transform2D>;
   readonly animations?: readonly AnimationTrack[];
@@ -212,6 +218,9 @@ export interface CompositionAudioClip {
   readonly start: MediaTime;
   readonly duration: MediaTime;
   readonly volume: number;
+  readonly sourceIn?: MediaTime;
+  readonly sourceDuration?: MediaTime;
+  readonly playbackRate?: number;
   readonly fadeIn?: MediaTime;
   readonly fadeOut?: MediaTime;
   readonly verifiedDuration?: MediaTime;
@@ -303,6 +312,14 @@ export function validateCompositionIR(
 ): CompositionValidationReport {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const seenTrackIds = new Set<string>();
+  const seenClipIds = new Set<string>();
+  const seenAudioIds = new Set<string>();
+  const seenCaptionIds = new Set<string>();
+
+  if (!composition.compositionId) {
+    errors.push("Composition must contain a compositionId.");
+  }
 
   if (composition.schemaVersion !== "2.0.0") {
     errors.push("CompositionIR schemaVersion must be 2.0.0.");
@@ -328,9 +345,20 @@ export function validateCompositionIR(
   for (const track of composition.tracks) {
     if (!track.id) {
       errors.push("Every composition track requires an id.");
+    } else if (seenTrackIds.has(track.id)) {
+      errors.push(`Duplicate composition track id: ${track.id}.`);
+    } else {
+      seenTrackIds.add(track.id);
     }
 
     for (const clip of track.clips) {
+      if (!clip.id) {
+        errors.push("Every composition clip requires an id.");
+      } else if (seenClipIds.has(clip.id)) {
+        errors.push(`Duplicate composition clip id: ${clip.id}.`);
+      } else {
+        seenClipIds.add(clip.id);
+      }
       if (!Number.isInteger(clip.start) || clip.start < 0) {
         errors.push(`Clip ${clip.id} has an invalid start time.`);
       }
@@ -373,8 +401,23 @@ export function validateCompositionIR(
     if (audio.volume < 0 || audio.volume > 1) {
       errors.push(`Audio ${audio.id} volume must be within 0..1.`);
     }
-    if (audio.start < 0 || audio.duration <= 0) {
+    if (audio.start < 0 || audio.duration <= 0 || !Number.isInteger(audio.start) || !Number.isInteger(audio.duration)) {
       errors.push(`Audio ${audio.id} has invalid timing.`);
+    }
+    if (audio.sourceIn !== undefined && (!Number.isInteger(audio.sourceIn) || audio.sourceIn < 0)) {
+      errors.push(`Audio ${audio.id} has invalid sourceIn.`);
+    }
+    if (audio.sourceDuration !== undefined && (!Number.isInteger(audio.sourceDuration) || audio.sourceDuration <= 0)) {
+      errors.push(`Audio ${audio.id} has invalid sourceDuration.`);
+    }
+    if (audio.playbackRate !== undefined && (!Number.isFinite(audio.playbackRate) || audio.playbackRate <= 0)) {
+      errors.push(`Audio ${audio.id} playbackRate must be a finite positive number.`);
+    }
+    if (audio.fadeIn !== undefined && (audio.fadeIn < 0 || audio.fadeIn > audio.duration)) {
+      errors.push(`Audio ${audio.id} fadeIn must be within clip duration.`);
+    }
+    if (audio.fadeOut !== undefined && (audio.fadeOut < 0 || audio.fadeOut > audio.duration)) {
+      errors.push(`Audio ${audio.id} fadeOut must be within clip duration.`);
     }
     if (audio.start + audio.duration > composition.canvas.duration) {
       errors.push(`Audio ${audio.id} exceeds composition duration.`);
@@ -391,6 +434,13 @@ export function validateCompositionIR(
   }
 
   for (const caption of composition.captions) {
+    if (!caption.id) {
+      errors.push("Every caption requires an id.");
+    } else if (seenCaptionIds.has(caption.id)) {
+      errors.push(`Duplicate caption id: ${caption.id}.`);
+    } else {
+      seenCaptionIds.add(caption.id);
+    }
     if (caption.start < 0 || caption.end <= caption.start) {
       errors.push(`Caption ${caption.id} has invalid timing.`);
     }
@@ -400,8 +450,11 @@ export function validateCompositionIR(
 
     let previous = -1;
     for (const cue of caption.words ?? []) {
-      if (cue.start < caption.start || cue.end > caption.end || cue.end <= cue.start) {
-        errors.push(`Caption ${caption.id} contains an out-of-bounds word cue.`);
+      if (cue.start < caption.start || cue.end > caption.end || cue.end <= cue.start || !Number.isInteger(cue.start) || !Number.isInteger(cue.end)) {
+        errors.push(`Caption ${caption.id} contains an invalid word cue.`);
+      }
+      if (cue.confidence !== undefined && (cue.confidence < 0 || cue.confidence > 1 || !Number.isFinite(cue.confidence))) {
+        errors.push(`Caption ${caption.id} word confidence must be within 0..1.`);
       }
       if (cue.start <= previous) {
         errors.push(`Caption ${caption.id} word cues must be strictly increasing.`);
