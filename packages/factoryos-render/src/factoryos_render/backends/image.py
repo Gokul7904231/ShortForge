@@ -269,9 +269,22 @@ class NativeFrameCompositor:
         else:
             # General narrative card / IMAGE_WITH_CAPTION / FULL_BLEED_IMAGE
             # Check if a physical image asset is provided
+            asset_frame = shot_props.get("asset_frame")
             img_path = shot_props.get("image_path") or shot_props.get("imageRef") or shot_props.get("path")
             has_rendered_image = False
-            if img_path:
+            if isinstance(asset_frame, Image.Image):
+                try:
+                    from PIL import ImageOps
+                    card_top = center_y - 240
+                    card_bottom = center_y + 240
+                    fitted = ImageOps.fit(asset_frame.convert("RGBA"), (content_width, card_bottom - card_top), Image.Resampling.LANCZOS)
+                    img.paste(fitted, (left_margin, card_top), fitted)
+                    draw.rectangle([left_margin, card_top, right_margin, card_bottom], outline=(255, 255, 255, 120), width=3)
+                    has_rendered_image = True
+                except Exception:
+                    pass
+
+            if not has_rendered_image and img_path:
                 clean_path = img_path.replace("file://", "")
                 import os
                 if os.path.exists(clean_path):
@@ -280,10 +293,7 @@ class NativeFrameCompositor:
                         src_raw = Image.open(clean_path).convert("RGBA")
                         card_top = center_y - 240
                         card_bottom = center_y + 240
-                        card_w = content_width
-                        card_h = card_bottom - card_top
-                        fitted = ImageOps.fit(src_raw, (card_w, card_h), Image.Resampling.LANCZOS)
-                        # Paste fitted image with border
+                        fitted = ImageOps.fit(src_raw, (content_width, card_bottom - card_top), Image.Resampling.LANCZOS)
                         img.paste(fitted, (left_margin, card_top), fitted)
                         draw.rectangle([left_margin, card_top, right_margin, card_bottom], outline=(255, 255, 255, 120), width=3)
                         has_rendered_image = True
