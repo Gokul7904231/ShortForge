@@ -33,6 +33,22 @@ class JsonAdapter:
                 self._send_success(request_id, {"diagnostics": diag})
                 return
 
+            if command == "preview":
+                intent_data = req.get("renderIntent")
+                if not intent_data:
+                    self._send_error("MISSING_INTENT", "Missing renderIntent in preview payload", request_id)
+                    return
+                intent = RenderIntent.from_dict(intent_data)
+                output_path = str(req.get("outputPath", "preview.png"))
+                timestamp_seconds = float(req.get("timestampSeconds", 0.0))
+                preview = self.renderer.preview(
+                    intent=intent,
+                    output_path=output_path,
+                    timestamp_seconds=timestamp_seconds,
+                )
+                self._send_success(request_id, {"preview": preview})
+                return
+
             if command == "render":
                 intent_data = req.get("renderIntent")
                 if not intent_data:
