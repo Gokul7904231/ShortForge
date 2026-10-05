@@ -32,7 +32,8 @@ export const OPEN_CUT_RENDERER_CAPABILITY: RendererCapabilityContract = {
   rendererId: "opencut",
   version: "bridge-v1",
   status: "EXPERIMENTAL",
-  executionModes: ["EDITOR", "WASM_PREVIEW", "HEADLESS", "MCP"],
+  // No OpenCut runtime mode is physically proven by this adapter yet.
+  executionModes: [],
   capabilities: {
     timeline: true,
     keyframes: true,
