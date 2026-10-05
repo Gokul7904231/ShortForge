@@ -308,7 +308,11 @@ export function validateCompositionIR(
     errors.push("CompositionIR schemaVersion must be 2.0.0.");
   }
 
-  assertValidFrameRate(composition.canvas.frameRate);
+  try {
+    assertValidFrameRate(composition.canvas.frameRate);
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : "Invalid frame rate.");
+  }
 
   if (composition.canvas.width <= 0 || composition.canvas.height <= 0) {
     errors.push("Composition canvas dimensions must be positive.");
@@ -442,5 +446,9 @@ export function canonicalizeComposition(value: unknown): string {
     return input;
   };
 
-  return JSON.stringify(normalize(value));
+  const serialized = JSON.stringify(normalize(value));
+  if (serialized === undefined) {
+    throw new Error("Composition cannot be canonicalized to JSON.");
+  }
+  return serialized;
 }
