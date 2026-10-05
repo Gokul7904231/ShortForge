@@ -76,6 +76,15 @@ export interface LocalRenderIntent {
   repair_scope?: LocalRenderScope;
 }
 
+export interface PreviewReceipt {
+  output_path: string;
+  output_sha256: string;
+  width: number;
+  height: number;
+  fps: number;
+  timestamp_seconds: number;
+}
+
 export interface RenderReceipt {
   run_id: string;
   renderer_version: string;
@@ -169,6 +178,22 @@ export class LocalRenderAdapter {
   /**
    * Render video from RenderIntent
    */
+  public async preview(
+    intent: LocalRenderIntent,
+    outputPath: string,
+    timestampSeconds = 0,
+  ): Promise<PreviewReceipt> {
+    const response = await this.executeCommand<{ preview: PreviewReceipt }>("preview", {
+      renderIntent: intent,
+      outputPath,
+      timestampSeconds,
+    });
+    if (!response || !response.preview) {
+      throw new Error("Local renderer failed to produce a deterministic preview.");
+    }
+    return response.preview;
+  }
+
   public async render(
     intent: LocalRenderIntent,
     runId?: string,
