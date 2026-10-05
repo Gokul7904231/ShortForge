@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionId = requireString(body.sessionId, "sessionId");
+    await runtime.resume({
+      sessionId,
+      compositionId: requireString(body.compositionId || request.nextUrl.searchParams.get("compositionId"), "compositionId"),
+      revision: Number.isInteger(Number(body.expectedRevision)) ? Number(body.expectedRevision) : 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: user.uid },
+    });
 
     switch (operation) {
       case "apply": {
