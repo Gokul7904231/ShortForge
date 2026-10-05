@@ -789,3 +789,7 @@ See:
 The target is not a model that can do everything.
 
 The target is a model that is **deeply specialized in ShortForge, evidence-grounded, schema-disciplined, authority-bounded, recoverable, measurable, and replaceable**.
+
+## V3 PolicyContext binding — 2026-10-05
+
+Future fine-tuned Ascalon inference receives compact applicable OKF policy through the existing epistemic handoff. PolicyContext is evidence/constraint context only. It cannot issue capabilities, bypass Guardian, certify F07, rewrite .okf, or convert UNPROVEN evidence into PASS.
