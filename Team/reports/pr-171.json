@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR171-Video-Research-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/video-research-fabric-20261005",
+  "objective": "Implement a provider-neutral video research fabric for timestamped transcript acquisition and video metadata/search.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Video research remains candidate evidence acquisition.",
+      "YouTube Data API is metadata/search-only for arbitrary public videos.",
+      "MCP is an access surface and never an authority.",
+      "Provider credentials remain server-side.",
+      "No provider grants F06, CAS or F07 authority."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No credentials are committed.",
+      "All provider keys are loaded from server-side environment variables.",
+      "No arbitrary provider URL is accepted by the new provider adapters."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added typed video transcript and search contracts.",
+    "Implemented Arcmira transcript/search adapter.",
+    "Implemented TranscriptYT transcript adapter.",
+    "Implemented VidWords batch transcript adapter.",
+    "Implemented TubeToTranscript transcript adapter.",
+    "Implemented YouTube Data API metadata/search adapter.",
+    "Added deterministic fallback router and provider tests.",
+    "Updated provider registry and .okf/video documentation.",
+    "Promoted VidWords from UNVERIFIED to IMPLEMENTED based on current public API documentation."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/integrations/external/VideoResearchContracts.ts",
+    "apps/web/factoryos/core/integrations/external/VideoResearchProviders.ts",
+    "apps/web/factoryos/core/integrations/external/VideoResearchRouter.ts",
+    "apps/web/factoryos/tests/video-research-fabric.test.ts",
+    ".okf/integrations/video-research.md",
+    ".okf/integrations/external-api-fabric.md",
+    "Issue #170",
+    "PR #171"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED_FALSE"
+  },
+  "verificationPlan": [
+    "Require CI and Team Change Gate before merge.",
+    "Run live provider proofs only with explicitly configured credentials.",
+    "Keep YouTube publishing permissions and transcript research permissions separate."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "No live provider qualification is claimed by this PR.",
+    "YouTube Data API metadata/search is intentionally separated from arbitrary-video transcript extraction.",
+    "Transcript providers return normalized timestamped speech for downstream F00 research processing."
+  ]
+}
