@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "fix/crossref-live-qualification-20261005",
   "objective": "Fix the Crossref live qualification probe to use the documented versioned REST endpoint after Cohort 1 returned HTTP 404.",
-  "classification": "bug fix",
+  "classification": "extends existing rule",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
@@ -73,5 +73,13 @@
   "notes": [
     "The previous Crossref 404 is recorded as CONFIGURED-BUT-NOT-QUALIFIED, not QUALIFIED.",
     "No provider disposition in #184 is changed by this fix PR."
+  ],
+  "evidenceRefs": [
+    "Issue #200",
+    "Cohort 1 Crossref live run 37293084735",
+    "Crossref artifact 11336579891",
+    "Crossref official REST API documentation",
+    "apps/web/factoryos/core/integrations/external/ExternalApiQualificationProbes.ts",
+    "apps/web/factoryos/tests/external-api-qualification.test.ts"
   ]
 }
