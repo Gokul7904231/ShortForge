@@ -71,6 +71,7 @@ export interface LocalRenderSceneIntent {
     }[];
     style?: string;
   }[];
+  background?: Record<string, unknown>;
 }
 
 export interface LocalRenderIntent {
