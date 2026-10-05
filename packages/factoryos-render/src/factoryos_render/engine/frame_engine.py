@@ -4,6 +4,10 @@ Evaluates frame N with canonical clock t = N / fps and renders the exact RGBA st
 """
 
 from typing import Dict, Any, Optional, Tuple, List
+import io
+import os
+import subprocess
+from PIL import Image
 from ..timing.frame_clock import FrameClock
 from ..backends.image import NativeFrameCompositor
 from ..contracts.composition import CompositionScene, CompositionShot
@@ -27,6 +31,49 @@ class FrameEngine:
             list(props.get("masks") or props.get("editorMasks") or []),
         )
 
+    def _load_video_frame(self, source_path: str, source_time_seconds: float) -> Image.Image:
+        ffmpeg_path = os.environ.get("FACTORYOS_FFMPEG_PATH", "ffmpeg")
+        target = max(0.0, float(source_time_seconds))
+        try:
+            result = subprocess.run(
+                [
+                    ffmpeg_path,
+                    "-hide_banner",
+                    "-loglevel", "error",
+                    "-ss", f"{target:.6f}",
+                    "-i", source_path,
+                    "-frames:v", "1",
+                    "-f", "image2pipe",
+                    "-vcodec", "png",
+                    "pipe:1",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=30,
+            )
+            with Image.open(io.BytesIO(result.stdout)) as frame:
+                return frame.convert("RGBA")
+        except (OSError, subprocess.SubprocessError, ValueError) as error:
+            detail = error.stderr.decode("utf-8", errors="ignore") if isinstance(error, subprocess.CalledProcessError) else str(error)
+            raise RuntimeError(f"EDITOR_RENDER_VIDEO_DECODE_FAILED:{source_path}:{target}:{detail}") from error
+
+    def _asset_frame(
+        self,
+        shot: CompositionShot,
+        shot_time: float,
+    ) -> Optional[Image.Image]:
+        props = shot.props or {}
+        asset_type = str(props.get("assetType", "")).upper()
+        source = props.get("source") or props.get("video_path")
+        if asset_type != "VIDEO" or not source or not os.path.exists(str(source)):
+            return None
+
+        source_in = float(props.get("sourceInSeconds") or 0.0)
+        playback_rate = max(0.01, float(props.get("playbackRate") or 1.0))
+        source_time = source_in + max(0.0, shot_time) * playback_rate
+        return self._load_video_frame(str(source), source_time)
+
     def _render_shot(
         self,
         scene: CompositionScene,
@@ -48,6 +95,9 @@ class FrameEngine:
 
         props = dict(shot.props or {})
         props.setdefault("zIndex", props.get("z_index", 0))
+        asset_frame = self._asset_frame(shot, shot_time)
+        if asset_frame is not None:
+            props["asset_frame"] = asset_frame
 
         img = self.compositor.render_frame(
             scene_props={
