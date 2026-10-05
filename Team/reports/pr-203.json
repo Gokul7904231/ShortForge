@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR203-Editor-Runtime-F06-F07-Proof",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/editor-runtime-f06-f07-20261005",
+  "objective": "Operationalize the ShortForge-owned editor runtime surfaces and prove Editor -> CompositionIR -> RenderIntent -> F06 RenderFabric/ComputePool -> CAS -> F07ReleaseGuardian without creating a second authority.",
+  "classification": "extends existing capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "CompositionIR remains semantic truth.",
+      "Editor runtime cannot select compute providers or become economic, governance, rendering or release authority.",
+      "Production rendering remains behind OKF, RenderFabric, ComputeRouter, CAS and F07.",
+      "OpenCut, WASM and isolated-plugin capabilities remain unproven unless physically verified."
+    ],
+    "sourceRefs": [
+      ".okf/artifacts/editor-revision-history.md",
+      ".okf/artifacts/editor-runtime-f06-f07.md",
+      ".okf/rendering/opencut-adapter.md",
+      ".okf/index.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added executable EditorRuntime facade for open/apply/validate/preview/export and durable history controls.",
+    "Added MCP dispatch for inspect/apply/validate/preview/export with structured runtime evidence.",
+    "Added deterministic command-only plugin runtime with capability and permission checks.",
+    "Added deterministic editor command scripting.",
+    "Added CompositionIR-to-RenderIntent compilation with canonical source composition provenance.",
+    "Added F06 RenderFabric provenance verification and preserved primary audio in the local renderer handoff.",
+    "Added physical render output CAS binding before F07.",
+    "Added F07ReleaseGuardian verification against a cas:// artifact and cryptographic receipt verification.",
+    "Added physical integration test spanning editor, MCP, plugin, RenderFabric, CAS and F07."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "editorPhysicalF06F07Proof": "PENDING",
+    "note": "PR must remain blocked until fresh repository validation proves the physical editor-to-F06-to-CAS-to-F07 path."
+  },
+  "evidenceRefs": [
+    ".okf/artifacts/editor-runtime-f06-f07.md",
+    "apps/web/factoryos/core/editor/EditorRuntime.ts",
+    "apps/web/factoryos/core/editor/EditorPluginRuntime.ts",
+    "apps/web/factoryos/core/contracts/RenderIntentContracts.ts",
+    "apps/web/factoryos/core/fabric/RenderFabric.ts",
+    "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+    "apps/web/factoryos/core/verification/youtube/physical/F07PhysicalArtifactVerifier.ts",
+    "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+    "apps/web/factoryos/tests/editor-runtime-f06-f07.test.ts",
+    "Team/reports/pr-203.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design and review context only; no runtime authority"
+  }
+}
