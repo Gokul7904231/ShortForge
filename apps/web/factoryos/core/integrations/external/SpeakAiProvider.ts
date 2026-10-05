@@ -285,7 +285,7 @@ export class SpeakAiProvider {
           : undefined,
       segments,
       text: segments.map((segment) => segment.text).join(" ").trim(),
-      requestId:
+      providerRequestId:
         typeof payload?.requestId === "string"
           ? payload.requestId
           : "speak_transcript_" + randomUUID().slice(0, 10),
