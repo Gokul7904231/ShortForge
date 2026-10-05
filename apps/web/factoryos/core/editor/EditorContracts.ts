@@ -1,82 +1,3 @@
-import type {
-  CompositionIR,
-  EffectNode,
-  MaskNode,
-  MediaTime,
-  RippleScope,
-  TransitionNode,
-} from "../timeline/CompositionIR";
-
-export type EditorActor =
-  | { readonly kind: "HUMAN"; readonly id: string }
-  | { readonly kind: "AGENT"; readonly id: string }
-  | { readonly kind: "SYSTEM"; readonly id: string };
-
-export type EditorCommand =
-  | {
-      readonly type: "SPLIT_CLIP";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly splitTime: MediaTime;
-    }
-  | {
-      readonly type: "TRIM_CLIP";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly start: MediaTime;
-      readonly end: MediaTime;
-    }
-  | {
-      readonly type: "MOVE_CLIP";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly start: MediaTime;
-    }
-  | {
-      readonly type: "RIPPLE_DELETE";
-      readonly trackId: string;
-      readonly start: MediaTime;
-      readonly end: MediaTime;
-      readonly scope?: RippleScope;
-      readonly linkedTrackIds?: readonly string[];
-      readonly includeAudio?: boolean;
-      readonly includeCaptions?: boolean;
-    }
-  | {
-      readonly type: "RETIME_CLIP";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly duration: MediaTime;
-    }
-  | {
-      readonly type: "ADD_EFFECT";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly effect: EffectNode;
-    }
-  | {
-      readonly type: "ADD_MASK";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly mask: MaskNode;
-    }
-  | {
-      readonly type: "SET_TRANSITION";
-      readonly trackId: string;
-      readonly clipId: string;
-      readonly edge: "IN" | "OUT";
-      readonly transition: TransitionNode | undefined;
-    };
-
-export interface EditorCommandEnvelope {
-  readonly commandId: string;
-  readonly sessionId: string;
-  readonly actor: EditorActor;
-  readonly expectedRevision: number;
-  readonly command: EditorCommand;
-  readonly traceId?: string;
-}
-
 export interface EditorReceipt {
   readonly commandId: string;
   readonly accepted: boolean;
@@ -159,6 +80,7 @@ export interface EditorMcpReceipt {
   readonly commandId?: string;
   readonly revision?: number;
   readonly compositionHash?: string;
+  readonly data?: Readonly<Record<string, unknown>>;
   readonly error?: string;
 }
 
