@@ -41,6 +41,9 @@ export interface QualificationHttpObservation {
   readonly contentType?: string;
   readonly contentLengthBytes?: number;
   readonly retryAfterSeconds?: number;
+  readonly rateLimitLimit?: number;
+  readonly rateLimitRemaining?: number;
+  readonly rateLimitResetEpochSeconds?: number;
   readonly requestId?: string;
 }
 
