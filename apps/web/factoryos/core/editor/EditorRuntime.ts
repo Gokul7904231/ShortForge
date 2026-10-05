@@ -115,8 +115,19 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
     throw new Error(`EDITOR_RENDER_SOURCE_REQUIRED:${clip.id}`);
   }
 
-  if (!["VIDEO", "IMAGE", "MOTION_CANVAS"].includes(clip.kind)) {
-    throw new Error(`EDITOR_RENDER_CLIP_KIND_UNSUPPORTED:${clip.kind}`);
+  let renderType: RenderTrackAsset["type"];
+  switch (clip.kind) {
+    case "VIDEO":
+      renderType = "VIDEO";
+      break;
+    case "IMAGE":
+      renderType = "IMAGE";
+      break;
+    case "MOTION_CANVAS":
+      renderType = "HTML_CANVAS";
+      break;
+    default:
+      throw new Error(`EDITOR_RENDER_CLIP_KIND_UNSUPPORTED:${clip.kind}`);
   }
 
   const scaleX = clip.transform?.scaleX;
@@ -128,7 +139,7 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
 
   return {
     id: clip.id,
-    type: clip.kind === "MOTION_CANVAS" ? "HTML_CANVAS" : clip.kind,
+    type: renderType,
     src: clip.src,
     startSeconds: ticksToSeconds(clip.start),
     durationSeconds: ticksToSeconds(clip.duration),
