@@ -265,7 +265,7 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     expect(exportResult.f07Receipt.technicalForensics.artifactExists).toBe(true);
     expect(exportResult.f07Receipt.technicalForensics.sha256Valid).toBe(true);
     expect(exportResult.f07Receipt.technicalForensics.decodeSmokePassed).toBe(true);
-    expect(exportResult.f07Receipt.evidenceRefs?.some((ref) => ref.kind === "CAS_ARTIFACT")).toBe(true);
+    expect(exportResult.f07Receipt.evidenceRefs?.some((ref) => ref.evidenceType === "CAS_ARTIFACT")).toBe(true);
     expect(exportResult.f07ReceiptVerified).toBe(true);
     expect(VerificationReceiptVerifier.verify(exportResult.f07Receipt).valid).toBe(true);
     expect(exportResult.f07ReceiptCasUri).toBeTruthy();
