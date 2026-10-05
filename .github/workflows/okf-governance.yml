@@ -1,0 +1,53 @@
+name: OKF Governance Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  governance:
+    name: OKF / lint-sweep-report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2a3c
+        with:
+          python-version: '3.12'
+      - name: Install compiler dependency
+        run: python -m pip install PyYAML
+      - name: Compile OKF sweep
+        env:
+          OKF_BASE_REF: ${{ github.event.pull_request.base.sha }}
+          OKF_HEAD_REF: ${{ github.sha }}
+        run: |
+          if [ -z "$OKF_BASE_REF" ]; then OKF_BASE_REF="${{ github.event.before }}"; fi
+          python -m tools.okf.lint
+          python -m tools.okf.sweep --base "$OKF_BASE_REF" --head "$OKF_HEAD_REF" --output okf-sweep.json
+      - name: Require and validate Team report on pull requests
+        if: github.event_name == 'pull_request'
+        run: |
+          REPORT="Team/reports/pr-${{ github.event.pull_request.number }}.json"
+          test -f "$REPORT" || { echo "Missing required Team Change Report: $REPORT"; exit 1; }
+          python -m tools.okf.validate_report "$REPORT"
+      - name: Validate root governance files
+        run: |
+          test -f .okf/manifest.yaml
+          test -f .okf/rules/index.json
+          test -f .okf/schemas/okf-rule.schema.json
+          test -f .okf/schemas/okf-sweep.schema.json
+          test -f .okf/schemas/exception-record.schema.json
+      - name: Upload sweep evidence
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+          name: okf-sweep-attestation
+          path: okf-sweep.json
+          if-no-files-found: error
