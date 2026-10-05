@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://okf/rule/v1",
+  "type": "object",
+  "required": [
+    "ruleId",
+    "class",
+    "status",
+    "severity",
+    "owner",
+    "normativeText",
+    "appliesTo",
+    "enforcement",
+    "sourceRefs"
+  ],
+  "properties": {
+    "ruleId": {
+      "type": "string",
+      "pattern": "^OKF\\.[A-Z0-9_.-]+$"
+    },
+    "class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "EXPERIMENTAL",
+        "DEPRECATED",
+        "SUPERSEDED"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "INFO",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "normativeText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "appliesTo": {
+      "type": "object",
+      "required": [
+        "paths"
+      ],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "enforcement": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "ref"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "CI",
+              "RUNTIME",
+              "GITHUB",
+              "TRACE",
+              "EVIDENCE",
+              "HUMAN_APPROVAL"
+            ]
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sourceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "effectiveFrom": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
