@@ -21,7 +21,7 @@ const UNPAYWALL_DOI = "10.1038/nature12373";
 const PROFILES: readonly ExternalApiQualificationProfile[] = [
   { providerId: "openalex", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /works with one bounded search result", notes: "Public metadata discovery; no secret required." },
   { providerId: "arxiv", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /api/query with one result", notes: "Public Atom research discovery." },
-  { providerId: "semantic_scholar", probeKind: "JSON_GET", credentialEnvs: ["SEMANTIC_SCHOLAR_API_KEY"], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /paper/search", notes: "API key is optional on some public traffic; configured credentials are server-side." },
+  { providerId: "semantic_scholar", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /paper/search", notes: "API key is optional on some public traffic; configured credentials are server-side." },
   { providerId: "crossref", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /works with polite mailto when configured", notes: "Public metadata; CROSSREF_MAILTO is recommended." },
   { providerId: "unpaywall", probeKind: "JSON_GET", credentialEnvs: ["UNPAYWALL_EMAIL"], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /v2/{doi}?email=", notes: "DOI-scoped lookup; no broad search probe." },
   { providerId: "perplexity_mcp", probeKind: "MCP", credentialEnvs: ["PERPLEXITY_API_KEY"], metered: true, destructive: false, defaultEnabled: false, capability: "WEB_RESEARCH + MCP_TOOLS", endpointDescription: "MCP initialize + tools/list", notes: "Metered remote MCP; tool surface only." },
@@ -43,7 +43,7 @@ const PROFILES: readonly ExternalApiQualificationProfile[] = [
 
   { providerId: "ibm_tts", probeKind: "BINARY_POST", credentialEnvs: ["IBM_TTS_API_KEY", "IBM_TTS_URL"], metered: true, destructive: false, defaultEnabled: false, capability: "TTS", endpointDescription: "POST {instance}/v1/synthesize", notes: "Instance/region URL is mandatory; returned bytes are physically hashed and ffprobe-checked." },
   { providerId: "audexum", probeKind: "BINARY_POST", credentialEnvs: ["AUDEXUM_API_KEY"], metered: true, destructive: false, defaultEnabled: false, capability: "TTS", endpointDescription: "POST /api/synthesize", notes: "Metered audio synthesis; explicit opt-in required." },
-  { providerId: "speak_ai", probeKind: "JSON_POST", credentialEnvs: ["SPEAK_AI_API_KEY"], metered: false, destructive: false, defaultEnabled: false, capability: "VIDEO_RESEARCH", endpointDescription: "POST /v1/auth/accessToken then GET media", notes: "API-key/access-token flow; analysis/transcript only, not TTS." },
+  { providerId: "speak_ai", probeKind: "JSON_POST", credentialEnvs: ["SPEAK_AI_API_KEY"], metered: true, destructive: false, defaultEnabled: false, capability: "VIDEO_RESEARCH", endpointDescription: "POST /v1/auth/accessToken then GET media", notes: "API-key/access-token flow; analysis/transcript only, not TTS." },
   { providerId: "freesound", probeKind: "JSON_GET", credentialEnvs: ["FREESOUND_API_KEY"], metered: false, destructive: false, defaultEnabled: false, capability: "AUDIO_ASSET_SEARCH", endpointDescription: "GET /apiv2/search/text", notes: "Token-authenticated sound search." },
 
   { providerId: "ocr_space", probeKind: "JSON_POST", credentialEnvs: ["OCR_SPACE_API_KEY"], metered: false, destructive: false, defaultEnabled: false, capability: "DOCUMENT_OCR", endpointDescription: "POST /parse/image using a public test image URL", notes: "No secrets in provider payload; small representative OCR." },
@@ -154,6 +154,26 @@ function requestHeadersFor(
   if (providerId === "urlscan") return { "Content-Type": "application/json", Accept: "application/json", "api-key": secret || "" };
   if (providerId === "speak_ai") return { "Content-Type": "application/json", Accept: "application/json", "x-speakai-key": secret || "" };
   return { "Content-Type": "application/json", ...authHeaders(providerId, secret) };
+}
+
+async function readText(response: Response): Promise<{ text: string; observation: QualificationHttpObservation }> {
+  const started = Date.now();
+  const text = await response.text();
+  const retryAfter = Number(response.headers.get("retry-after") || "");
+  return {
+    text,
+    observation: {
+      status: response.status,
+      durationMs: Date.now() - started,
+      contentType: response.headers.get("content-type") || undefined,
+      contentLengthBytes: new TextEncoder().encode(text).byteLength,
+      retryAfterSeconds: Number.isFinite(retryAfter) ? retryAfter : undefined,
+      rateLimitLimit: Number(response.headers.get("x-ratelimit-limit") || "") || undefined,
+      rateLimitRemaining: Number(response.headers.get("x-ratelimit-remaining") || "") || undefined,
+      rateLimitResetEpochSeconds: Number(response.headers.get("x-ratelimit-reset") || "") || undefined,
+      requestId: response.headers.get("x-request-id") || undefined,
+    },
+  };
 }
 
 async function readJson(response: Response): Promise<unknown> {
@@ -727,6 +747,32 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
       break;
     default:
       break;
+  }
+
+  if (id === "arxiv") {
+    const result = await requestJson(id, url, {
+      method: "GET",
+      headers: { Accept: "application/atom+xml, application/xml, text/xml" },
+    });
+    const rawText = typeof (result.data as any)?.rawText === "string" ? (result.data as any).rawText : "";
+    if (!rawText.includes("<entry")) {
+      // The generic JSON reader truncates XML, so use a direct text request for the actual capability decision.
+      const response = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { Accept: "application/atom+xml, application/xml, text/xml" } });
+      const textResult = await readText(response);
+      return {
+        normalized: {
+          mediaType: textResult.observation.contentType,
+          entryPresent: textResult.text.includes("<entry"),
+        },
+        observation: textResult.observation,
+        capabilityVerified: response.ok && textResult.text.includes("<entry"),
+      };
+    }
+    return {
+      normalized: { entryPresent: true },
+      observation: result.observation,
+      capabilityVerified: result.observation.status >= 200 && result.observation.status < 300,
+    };
   }
 
   if (id === "semantic_scholar") {
