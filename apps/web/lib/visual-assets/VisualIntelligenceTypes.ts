@@ -32,6 +32,10 @@ export interface CandidateAsset {
   sha256: string;
   dhash: string;
   license: string;
+  /** Provider-declared license/policy reference; not a legal determination by ShortForge. */
+  licenseUrl?: string;
+  /** Provider usage policy / API terms used during acquisition. */
+  usagePolicyUrl?: string;
   author: string;
   sourceUrl: string;
   originalUrl?: string;

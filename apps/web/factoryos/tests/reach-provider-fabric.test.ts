@@ -131,6 +131,34 @@ describe("Reach Provider Fabric", () => {
     expect(calls[1]?.url).toBe("https://scraper.example/v2/scrape");
   });
 
+
+
+  it("keeps external research providers disabled by default", () => {
+    vi.stubEnv("REACH_EXTERNAL_PROVIDERS", "");
+    vi.stubEnv("PERPLEXITY_REACH_ENABLED", "false");
+    const router = new ReachProviderRouter();
+    const providers = router.healthSnapshot().map((entry) => entry.provider);
+    expect(providers).not.toContain("OPENALEX");
+    expect(providers).not.toContain("PERPLEXITY_MCP");
+  });
+
+  it("enables only explicitly selected external research providers", () => {
+    vi.stubEnv(
+      "REACH_EXTERNAL_PROVIDERS",
+      "OPENALEX,PERPLEXITY_MCP",
+    );
+    vi.stubEnv("PERPLEXITY_REACH_ENABLED", "false");
+    let router = new ReachProviderRouter();
+    let providers = router.healthSnapshot().map((entry) => entry.provider);
+    expect(providers).toContain("OPENALEX");
+    expect(providers).not.toContain("PERPLEXITY_MCP");
+
+    vi.stubEnv("PERPLEXITY_REACH_ENABLED", "true");
+    router = new ReachProviderRouter();
+    providers = router.healthSnapshot().map((entry) => entry.provider);
+    expect(providers).toContain("PERPLEXITY_MCP");
+  });
+
   it("uses SearXNG first for normal research", async () => {
     const calls: string[] = [];
     const router = new ReachProviderRouter({

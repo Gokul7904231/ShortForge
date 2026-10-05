@@ -25,6 +25,13 @@ import {
   DecodoWebScrapingProvider,
   SearXNGProvider,
 } from "./ReachProviders";
+import {
+  OpenAlexProvider,
+  ArxivProvider,
+  SemanticScholarProvider,
+  CrossrefProvider,
+} from "../integrations/external/AcademicResearchProviders";
+import { PerplexityReachProvider } from "../integrations/external/PerplexityReachProvider";
 
 interface ProviderHealth {
   consecutiveFailures: number;
@@ -197,6 +204,30 @@ function budgetForProvider(
   }
 }
 
+function externalResearchProviders(): ReachProvider[] {
+  const enabled = new Set(
+    (process.env.REACH_EXTERNAL_PROVIDERS ?? "")
+      .split(",")
+      .map((id) => id.trim().toUpperCase())
+      .filter(Boolean),
+  );
+
+  const providers: ReachProvider[] = [];
+  if (enabled.has("OPENALEX")) providers.push(new OpenAlexProvider());
+  if (enabled.has("ARXIV")) providers.push(new ArxivProvider());
+  if (enabled.has("SEMANTIC_SCHOLAR")) providers.push(new SemanticScholarProvider());
+  if (enabled.has("CROSSREF")) providers.push(new CrossrefProvider());
+
+  if (
+    enabled.has("PERPLEXITY_MCP") &&
+    process.env.PERPLEXITY_REACH_ENABLED === "true"
+  ) {
+    providers.push(new PerplexityReachProvider());
+  }
+
+  return providers;
+}
+
 export class ReachProviderRouter {
   private readonly providers: readonly ReachProvider[];
   private readonly cache: ReachResearchCache;
@@ -208,11 +239,14 @@ export class ReachProviderRouter {
   private readonly health = new Map<ReachProviderId, ProviderHealth>();
 
   constructor(options: ReachRouterOptions = {}) {
-    this.providers = options.providers ?? [
-      new SearXNGProvider(),
-      new DecodoFastSearchProvider(),
-      new DecodoWebScrapingProvider(),
-    ];
+    this.providers =
+      options.providers ??
+      [
+        new SearXNGProvider(),
+        new DecodoFastSearchProvider(),
+        ...externalResearchProviders(),
+        new DecodoWebScrapingProvider(),
+      ];
 
     this.cache = options.cache ?? new ReachResearchCache();
     this.budgetGovernor =

@@ -1,4 +1,9 @@
 import { CandidateAsset, VisualContext } from "./VisualIntelligenceTypes";
+import {
+  PexafyProvider,
+  PexelsProvider,
+  PixabayProvider,
+} from "./StockVisualProviders";
 
 export interface MediaProvider {
   id: string;
@@ -129,19 +134,6 @@ export class OpenverseProvider implements MediaProvider {
   }
 }
 
-// Future expansion stub adapters
-export class PixabayProvider implements MediaProvider {
-  id = "pixabay";
-  async search(): Promise<CandidateAsset[]> { return []; }
-  async health(): Promise<boolean> { return true; }
-}
-
-export class PexelsProvider implements MediaProvider {
-  id = "pexels";
-  async search(): Promise<CandidateAsset[]> { return []; }
-  async health(): Promise<boolean> { return true; }
-}
-
 export class InternalLibraryProvider implements MediaProvider {
   id = "internal";
   async search(): Promise<CandidateAsset[]> { return []; }
@@ -162,6 +154,7 @@ export class ProviderFramework {
     this.providers.set("openverse", new OpenverseProvider());
     this.providers.set("pixabay", new PixabayProvider());
     this.providers.set("pexels", new PexelsProvider());
+    this.providers.set("pexafy", new PexafyProvider());
     this.providers.set("internal", new InternalLibraryProvider());
     this.providers.set("ai_fallback", new AIGenProvider());
   }

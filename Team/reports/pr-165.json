@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR165-External-API-MCP-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/external-api-mcp-fabric-wave1-20261005",
+  "objective": "Establish the provider-neutral external API/MCP fabric and first academic Reach provider wave without changing authority boundaries.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "External APIs are replaceable resources, not authorities.",
+      "MCP is a tool/access surface only.",
+      "F00 retains research verification authority.",
+      "No provider grants F06 worker authority.",
+      "CAS and F07 remain independent artifact truth boundaries.",
+      "Secrets remain server-side and out of evidence."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No credentials were committed.",
+      "HTTP adapters use bounded request timeouts and bounded response reads.",
+      "External provider endpoints are fixed to documented hosts in this wave."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added typed External API contracts and provider registry.",
+    "Added OpenAlex, arXiv, Semantic Scholar, Crossref and DOI-scoped Unpaywall Reach adapters.",
+    "Added Perplexity remote Streamable HTTP MCP client and Reach adapter.",
+    "Integrated academic/Perplexity providers into ReachProviderRouter.",
+    "Added deterministic mocked normalization tests.",
+    "Documented SDLC, security, attribution and truth-boundary rules."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/integrations/external/ExternalApiContracts.ts",
+    "apps/web/factoryos/core/integrations/external/ExternalApiRegistry.ts",
+    "apps/web/factoryos/core/integrations/external/AcademicResearchProviders.ts",
+    "apps/web/factoryos/core/integrations/external/PerplexityMcpClient.ts",
+    "apps/web/factoryos/core/integrations/external/PerplexityReachProvider.ts",
+    "apps/web/factoryos/tests/external-api-fabric.test.ts",
+    ".okf/integrations/external-api-fabric.md",
+    "Issue #164"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PASS_EXPECTED_REPORT_VALIDATION",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED_FALSE"
+  },
+  "verificationPlan": [
+    "Require CI and Team Change Gate to pass before merge.",
+    "Run provider-specific live proofs only with explicit configured credentials.",
+    "Keep unverified providers such as VidWords outside runtime promotion.",
+    "Continue remaining API waves as separate SDLC slices."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This PR intentionally does not claim live API qualification.",
+    "Hugging Face remains PARTIAL until its existing stub adapter is replaced.",
+    "VidWords remains UNVERIFIED because a current official endpoint contract was not independently confirmed.",
+    "Team Change Gate disposition is PASS for the change report schema; repository CI and provider live qualification remain separate gates."
+  ]
+}
