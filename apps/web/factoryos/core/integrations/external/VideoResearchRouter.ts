@@ -1,7 +1,6 @@
 import {
-  type VideoResearchProvider,
   VideoResearchError,
-  type VideoResearchProvider as Provider,
+  type VideoResearchProvider,
   type VideoTranscript,
   type VideoTranscriptOptions,
   type VideoSearchResult,
@@ -21,7 +20,7 @@ export interface VideoResearchRouterOptions {
 }
 
 export class VideoResearchRouter {
-  private readonly providers: readonly Provider[];
+  private readonly providers: readonly VideoResearchProvider[];
   private readonly transcriptOrder: readonly string[];
   private readonly searchOrder: readonly string[];
 
@@ -47,7 +46,7 @@ export class VideoResearchRouter {
         .filter(Boolean);
   }
 
-  private find(id: string): Provider | undefined {
+  private find(id: string): VideoResearchProvider | undefined {
     return this.providers.find((provider) => provider.id === id);
   }
 
@@ -128,16 +127,18 @@ export class VideoResearchRouter {
     return collected.slice(0, count);
   }
 
-  healthSnapshot(): readonly {
+  async healthSnapshot(): Promise<readonly {
     provider: string;
     capabilities: readonly string[];
     configured: boolean;
-  }[] {
-    return this.providers.map((provider) => ({
-      provider: provider.id,
-      capabilities: provider.capabilities,
-      configured: provider.health.length === 0,
-    }));
+  }[]> {
+    return Promise.all(
+      this.providers.map(async (provider) => ({
+        provider: provider.id,
+        capabilities: provider.capabilities,
+        configured: await provider.health().catch(() => false),
+      })),
+    );
   }
 }
 
