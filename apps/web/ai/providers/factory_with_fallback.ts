@@ -11,8 +11,9 @@ import { groqProvider } from "./groq";
 import { openRouterProvider } from "./openrouter";
 import { pollinationsProvider } from "./pollinations/index";
 import { zaiProvider } from "./zai";
+import { huggingFaceProvider } from "./huggingface";
 
-export { googleProvider, groqProvider, openRouterProvider, pollinationsProvider, zaiProvider };
+export { googleProvider, groqProvider, openRouterProvider, pollinationsProvider, zaiProvider, huggingFaceProvider };
 
 export function getProviderWithFallback(providerId: string) {
   const norm = (providerId || "").toLowerCase();
