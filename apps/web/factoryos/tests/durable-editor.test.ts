@@ -8,7 +8,7 @@ import { DiskEditorRevisionStore, InMemoryEditorRevisionStore } from "../core/ed
 import type { EditorCommandEnvelope } from "../core/editor/EditorContracts";
 
 function composition(): CompositionIR {
-  const duration = millisecondsToMediaTime(10_000);
+  const duration = millisecondsToMediaTime(12_000);
   return {
     compositionId: "durable-editor-comp",
     schemaVersion: "2.0.0",
