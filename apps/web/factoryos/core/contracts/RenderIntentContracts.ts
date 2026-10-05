@@ -76,6 +76,14 @@ export interface RenderIntent {
     readonly strictSyncToleranceMs?: number;
   };
   readonly createdAt: string;
+  /**
+   * Optional canonical editor provenance. Renderers must preserve this identity
+   * through the compute manifest and may not replace it with a provider-defined model.
+   */
+  readonly sourceCompositionId?: string;
+  readonly sourceCompositionHashSha256?: string;
+  readonly sourceCompositionSchemaVersion?: "2.0.0";
+  readonly sourceCompositionCanonicalJson?: string;
   /** Optional ReMaker scope. Full renders remain the default. */
   readonly repairScope?: SurgicalRenderScope;
 }
@@ -125,4 +133,3 @@ export type RemoteRenderState =
   | "RETRYABLE"
   | "STALE"
   | "CANCELLED";
-
