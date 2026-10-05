@@ -2,7 +2,17 @@ import type { EngineResearchContract } from "../../../lib/core/EngineConfigurati
 import type { EvidenceSource } from "../contracts/ResearchPassportContracts";
 
 export type ReachResearchMode = "NORMAL" | "PRECISION" | "DEEP" | "CORROBORATION";
-export type ReachProviderId = "SEARXNG" | "DECODO_FAST_SEARCH" | "DECODO_WEB_SCRAPE" | string;
+export type ReachProviderId =
+  | "SEARXNG"
+  | "DECODO_FAST_SEARCH"
+  | "DECODO_WEB_SCRAPE"
+  | "OPENALEX"
+  | "ARXIV"
+  | "SEMANTIC_SCHOLAR"
+  | "CROSSREF"
+  | "UNPAYWALL"
+  | "PERPLEXITY_MCP"
+  | string;
 export type ReachProviderCapability = "SEARCH" | "WEB_RETRIEVE";
 
 export interface ReachFetchRequest {

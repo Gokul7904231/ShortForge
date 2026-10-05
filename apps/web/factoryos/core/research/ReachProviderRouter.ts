@@ -25,6 +25,13 @@ import {
   DecodoWebScrapingProvider,
   SearXNGProvider,
 } from "./ReachProviders";
+import {
+  OpenAlexProvider,
+  ArxivProvider,
+  SemanticScholarProvider,
+  CrossrefProvider,
+} from "../integrations/external/AcademicResearchProviders";
+import { PerplexityReachProvider } from "../integrations/external/PerplexityReachProvider";
 
 interface ProviderHealth {
   consecutiveFailures: number;
@@ -211,6 +218,11 @@ export class ReachProviderRouter {
     this.providers = options.providers ?? [
       new SearXNGProvider(),
       new DecodoFastSearchProvider(),
+      new OpenAlexProvider(),
+      new ArxivProvider(),
+      new SemanticScholarProvider(),
+      new CrossrefProvider(),
+      new PerplexityReachProvider(),
       new DecodoWebScrapingProvider(),
     ];
 
