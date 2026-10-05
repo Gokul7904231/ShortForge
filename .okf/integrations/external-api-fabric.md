@@ -24,7 +24,7 @@ MCP is an access/tool surface only.
 | Premium research MCP | Perplexity remote MCP | IMPLEMENTED adapter; metered |
 | Visual acquisition | Pexels, Pixabay, Pexafy | IMPLEMENTED registry/adapter wave target |
 | Video research | Arcmira, TranscriptYT, TubeToTranscript, YouTube | IMPLEMENTED registry/adapter wave target |
-| Video research | VidWords | UNVERIFIED — no current official endpoint contract confirmed |
+| Video research | VidWords | IMPLEMENTED runtime adapter; live qualification separate |
 | LLM | Gemini, Groq, OpenRouter | EXISTING IMPLEMENTATIONS |
 | LLM | Hugging Face | PARTIAL — legacy provider adapter is still a stub and must be replaced |
 | Audio | IBM TTS | CATALOGUED — service URL is instance/region specific |
