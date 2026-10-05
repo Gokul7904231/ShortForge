@@ -76,3 +76,12 @@ Visual providers must preserve source, license, photographer/author and attribut
 ## Operational caveats
 
 Nominatim public-service usage is strictly rate-limited and must be cached, identified, and swappable. Open-Meteo terms vary by use case. Provider quotas and pricing are runtime facts and must not be hard-coded as permanent truth.
+
+
+## Visual acquisition controls
+
+Pexels requires an authenticated API key and the API documentation asks applications to show a prominent Pexels link and credit photographers when possible; ShortForge stores provider/source/photographer metadata rather than treating this as blanket legal authorization. The current Pexels public API page reports new key issuance as paused, so a live proof may require an existing key. citeturn852481search0turn852481search2
+
+Pixabay API access is authenticated and the current API documentation specifies a default rate limit of 100 requests per 60 seconds, 24-hour response caching, no systematic mass downloads, and downloading images to the server instead of permanent hotlinking. The adapter therefore remains an acquisition/search boundary; materialization/download policy must be enforced by the downstream asset store. citeturn630387view0
+
+Pexafy currently documents a semantic image-search endpoint that returns source, license_type, photographer and attribution metadata; ShortForge preserves those fields through CandidateAsset. citeturn952122search0
