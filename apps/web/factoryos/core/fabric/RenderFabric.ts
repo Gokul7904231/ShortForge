@@ -1,372 +1,3 @@
-/**
- * FactoryOS Floor 06 — Canonical Render Fabric
- *
- * Single production rendering entry point:
- *   RenderIntent -> compiler planning -> ComputeGateway -> ComputeRouter -> provider -> artifact receipt
- *
- * Compiler selection lives here.
- * Physical execution/provider selection lives in the distributed Compute Fabric.
- * Worker lifecycle, leases, fencing, reconciliation, and CAS remain in core/fabric + core/compute.
- */
-
-import * as path from "node:path";
-import type {
-  RenderIntent,
-  RenderArtifact,
-} from "../contracts/RenderIntentContracts";
-import { ComputeGateway } from "../compute/gateway/ComputeGateway";
-import type {
-  ComputeJob,
-  ExecutionReceipt,
-  ProviderType,
-} from "../compute/contracts/ComputeContracts";
-import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
-import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
-import type {
-  TreasuryBudgetEnvelope,
-  TreasuryEconomicPermit,
-  TreasuryPriority,
-} from "../treasury/TreasuryContracts";
-import type { TreasuryService } from "../treasury/TreasuryService";
-
-export interface RenderCompilationResult {
-  readonly success: boolean;
-  readonly compilerUsed: "FFMPEG" | "HYPERFRAMES";
-  readonly commandOrPayload: Record<string, unknown>;
-  readonly estimatedRenderSeconds: number;
-}
-
-export interface RenderTreasuryContext {
-  readonly service: TreasuryService;
-  readonly accountId: string;
-  readonly overseerCommandId: string;
-  readonly budgetEnvelope: TreasuryBudgetEnvelope;
-  readonly scopeDigest: string;
-  readonly priority?: TreasuryPriority;
-  readonly idempotencyKey?: string;
-}
-
-export interface RenderExecutionResult {
-  readonly success: boolean;
-  readonly jobId: string;
-  readonly artifact?: RenderArtifact;
-  readonly videoUrl?: string;
-  readonly renderDurationSeconds: number;
-  readonly providerUsed: "DISTRIBUTED";
-  readonly compilerUsed: "FFMPEG" | "HYPERFRAMES";
-  readonly receipt: ExecutionReceipt;
-  readonly failovers: readonly string[];
-  readonly loopReceipt: FloorClosedLoopReceipt;
-  readonly treasuryReservationId?: string;
-  readonly message?: string;
-}
-
-export interface IRenderCompiler {
-  readonly id: "FFMPEG" | "HYPERFRAMES";
-  readonly status: "PRODUCTION_READY" | "PROTOTYPE";
-  readonly executionClass: "PRODUCTION" | "UNVERIFIED";
-  readonly isProductionRoutable: boolean;
-  compile(intent: RenderIntent): Promise<RenderCompilationResult>;
-}
-
-export class FFmpegRenderCompiler implements IRenderCompiler {
-  readonly id = "FFMPEG" as const;
-  readonly status = "PRODUCTION_READY" as const;
-  readonly executionClass = "PRODUCTION" as const;
-  readonly isProductionRoutable = true;
-
-  async compile(intent: RenderIntent): Promise<RenderCompilationResult> {
-    return {
-      success: true,
-      compilerUsed: "FFMPEG",
-      commandOrPayload: {
-        duration: intent.durationSeconds,
-        fps: intent.fps,
-        resolution: intent.resolution,
-        audioTracks: intent.tracks.audioTracks.length,
-        visualAssets: intent.tracks.visualAssets.length,
-      },
-      estimatedRenderSeconds: Math.max(2, Math.round(intent.durationSeconds * 0.3)),
-    };
-  }
-}
-
-export class HyperFramesRenderCompiler implements IRenderCompiler {
-  readonly id = "HYPERFRAMES" as const;
-  readonly status = "PROTOTYPE" as const;
-  readonly executionClass = "UNVERIFIED" as const;
-  readonly isProductionRoutable = false;
-
-  async compile(intent: RenderIntent): Promise<RenderCompilationResult> {
-    return {
-      success: true,
-      compilerUsed: "HYPERFRAMES",
-      commandOrPayload: {
-        viewBox: `0 0 ${intent.resolution.width} ${intent.resolution.height}`,
-        cues: intent.tracks.captions.map((cue) => ({
-          text: cue.text,
-          startMs: cue.startMs,
-          endMs: cue.endMs,
-          animation: cue.style?.animation || "POP",
-        })),
-        timelineDuration: intent.durationSeconds,
-        prototypeNotice:
-          "HyperFrames is prototype-only and cannot be physically executed through the production Render Fabric.",
-      },
-      estimatedRenderSeconds: Math.max(2, Math.round(intent.durationSeconds * 0.3)),
-    };
-  }
-}
-
-export interface RenderFabricExecutionOptions {
-  readonly localRenderIntent?: LocalRenderIntent;
-  readonly preferredProviderType?: ProviderType;
-  readonly outputDir?: string;
-  readonly treasury?: RenderTreasuryContext;
-}
-
-export class RenderFabric {
-  private readonly compilers = new Map<string, IRenderCompiler>();
-  private readonly computeGateway: ComputeGateway;
-
-  constructor() {
-    this.compilers.set("FFMPEG", new FFmpegRenderCompiler());
-    this.compilers.set("HYPERFRAMES", new HyperFramesRenderCompiler());
-    this.computeGateway = ComputeGateway.getInstance();
-  }
-
-  public getCompiler(id: string): IRenderCompiler | undefined {
-    return this.compilers.get(id);
-  }
-
-  public getComputeRouter() {
-    return this.computeGateway.getRouter();
-  }
-
-  public planCompiler(
-    intent: RenderIntent,
-    allowPrototypes = false
-  ): IRenderCompiler {
-    if (
-      intent.preferredCompiler === "HYPERFRAMES" ||
-      intent.compositionType === "KINETIC_TEXT"
-    ) {
-      if (!allowPrototypes) {
-        return this.compilers.get("FFMPEG")!;
-      }
-      return this.compilers.get("HYPERFRAMES")!;
-    }
-
-    return this.compilers.get("FFMPEG")!;
-  }
-
-  /**
-   * The only F06 physical-render entry point.
-   *
-   * RenderFabric never directly spawns FFmpeg or calls a provider endpoint.
-   * It creates a ComputeJob and delegates to ComputeRouter.
-   */
-  public async executeRender(
-    intent: RenderIntent,
-    options: RenderFabricExecutionOptions = {}
-  ): Promise<RenderExecutionResult> {
-    const compiler = this.planCompiler(intent);
-
-    if (!compiler.isProductionRoutable) {
-      throw new Error(
-        `[RenderFabric] Compiler ${compiler.id} is not production-routable.`
-      );
-    }
-
-    const compilation = await compiler.compile(intent);
-    if (!compilation.success) {
-      throw new Error(
-        `[RenderFabric] Compiler ${compiler.id} failed to produce a render plan.`
-      );
-    }
-
-    const localRenderIntent =
-      options.localRenderIntent ||
-      this.normalizeLocalRenderIntent(
-        intent,
-        options.outputDir
-          ? path.join(options.outputDir, `${intent.jobId}.mp4`)
-          : undefined
-      );
-
-    const computeJob: ComputeJob = {
-      jobId: intent.jobId,
-      factoryExecutionId: `factory_render_${intent.intentId}`,
-      missionId: intent.missionId,
-      workloadType: "RENDER",
-      manifest: {
-        renderIntent: intent,
-        localRenderIntent,
-        compilerPlan: compilation.commandOrPayload,
-      },
-      inputArtifacts: {
-        bundleId: `bundle_${intent.intentId}`,
-        artifacts: [],
-        createdTimestamp: Date.now(),
-      },
-      requirements: {
-        workloadType: "RENDER",
-        gpuRequired: intent.constraints.hardwareAccel === true,
-        estimatedDurationSeconds: intent.durationSeconds,
-        networkAccessRequired: false,
-        diskSpaceMb: 1024,
-      },
-      priority: "HIGH",
-      timeoutMs: Math.max(60000, Math.ceil(intent.durationSeconds * 5000)),
-      createdAt: intent.createdAt,
-    };
-
-    const startedAt = Date.now();
-    let treasuryReservationId: string | undefined;
-    let treasuryPermit: TreasuryEconomicPermit | undefined;
-
-    if (process.env.NODE_ENV === "production" && !options.treasury) {
-      throw new Error(
-        "[RenderFabric] Production F06 rendering requires Treasury economic admission",
-      );
-    }
-
-    if (options.treasury) {
-      if (!intent.overseerCommandId) {
-        throw new Error("[RenderFabric] Treasury-gated render requires RenderIntent.overseerCommandId");
-      }
-      if (intent.overseerCommandId !== options.treasury.overseerCommandId) {
-        throw new Error("[RenderFabric] Treasury command identity does not match RenderIntent.overseerCommandId");
-      }
-
-      const reservation = await options.treasury.service.reserve({
-        commandId: `treasury_render_${intent.jobId}`,
-        overseerCommandId: options.treasury.overseerCommandId,
-        issuer: { authority: "OVERSEER", issuerId: options.treasury.overseerCommandId },
-        accountId: options.treasury.accountId,
-        missionId: intent.missionId,
-        runId: options.treasury.overseerCommandId,
-        floorId: "floor06_rendering",
-        taskId: intent.jobId,
-        attemptId: intent.jobId,
-        purpose: "F06 physical render execution",
-        resourceRequest: [{
-          kind: "COMPUTE",
-          workloadType: "RENDER",
-          requiresGpu: intent.constraints.hardwareAccel === true,
-          scarcityUnits: options.treasury.budgetEnvelope.maxCapacityUnits ?? 0,
-          verificationRequired: true,
-        }],
-        budgetEnvelope: options.treasury.budgetEnvelope,
-        priority: options.treasury.priority ?? "HIGH",
-        expiresAt: new Date(
-          Date.now() + Math.max(60_000, options.treasury.budgetEnvelope.maxDurationMs ?? computeJob.timeoutMs),
-        ).toISOString(),
-        idempotencyKey: options.treasury.idempotencyKey ?? `render:${intent.missionId}:${intent.jobId}`,
-        scopeDigest: options.treasury.scopeDigest,
-      });
-      treasuryReservationId = reservation.reservation.reservationId;
-      treasuryPermit = reservation.permit;
-    }
-
-    let receipt: ExecutionReceipt;
-    let failovers: string[];
-    try {
-      const result = await this.computeGateway.submitJob(
-        computeJob,
-        (message) => console.debug(`[RenderFabric] ${message}`),
-        options.preferredProviderType,
-        treasuryPermit,
-      );
-      receipt = result.receipt;
-      failovers = result.failovers;
-    } catch (error) {
-      if (treasuryReservationId && options.treasury) {
-        await options.treasury.service.release(treasuryReservationId, "COMPUTE_DISPATCH_FAILED").catch(() => {});
-      }
-      throw error;
-    }
-
-    if (receipt.status !== "COMPLETED") {
-      if (treasuryReservationId && options.treasury) {
-        await options.treasury.service.release(treasuryReservationId, "COMPUTE_EXECUTION_INCOMPLETE").catch(() => {});
-      }
-      throw new Error(
-        `[RenderFabric] ComputeRouter did not complete the render: ${receipt.failureReason || receipt.status}`
-      );
-    }
-
-    const artifactRef = receipt.outputArtifacts[0];
-    if (!artifactRef?.sha256 || !artifactRef.uri) {
-      if (treasuryReservationId && options.treasury) {
-        await options.treasury.service.release(
-          treasuryReservationId,
-          "COMPLETED_WITHOUT_PHYSICAL_ARTIFACT",
-        ).catch(() => {});
-      }
-      throw new Error(
-        "[RenderFabric] Provider returned COMPLETED without a physical artifact receipt."
-      );
-    }
-
-    const raw = receipt.rawReceipt || {};
-    const validation = raw.validation || {};
-
-    const artifact: RenderArtifact = {
-      artifactId: artifactRef.artifactId,
-      jobId: intent.jobId,
-      missionId: intent.missionId,
-      location: { kind: "LOCAL", path: artifactRef.uri },
-      sha256: artifactRef.sha256,
-      mimeType: artifactRef.mimeType === "video/webm" ? "video/webm" : "video/mp4",
-      byteLength: artifactRef.byteLength,
-      duration: Number(
-        validation.duration_seconds || raw.duration_seconds || intent.durationSeconds
-      ),
-      width: Number(validation.width || raw.width || intent.resolution.width),
-      height: Number(validation.height || raw.height || intent.resolution.height),
-      fps: Number(validation.fps || raw.fps || intent.fps),
-      videoCodec: String(validation.codec || raw.video_codec || "h264"),
-      audioCodec: raw.audio_codec ? String(raw.audio_codec) : "aac",
-      producedAt: new Date().toISOString(),
-      compiler: compiler.id,
-      compilerVersion: String(raw.renderer_version || "distributed"),
-      provider: "DISTRIBUTED",
-      executionClass: "PRODUCTION",
-    };
-
-    return {
-      success: true,
-      jobId: intent.jobId,
-      artifact,
-      videoUrl: artifactRef.uri,
-      renderDurationSeconds: receipt.metrics.totalTimeMs
-        ? receipt.metrics.totalTimeMs / 1000
-        : (Date.now() - startedAt) / 1000,
-      providerUsed: "DISTRIBUTED",
-      compilerUsed: compiler.id,
-      receipt,
-      failovers: Object.freeze([...failovers]),
-      treasuryReservationId,
-      loopReceipt: {
-        floorId: "floor06_rendering",
-        loopType: "DETERMINISTIC_OPERATIONAL",
-        loopId: "f06-render-" + intent.jobId + "-" + Date.now().toString(36),
-        termination: "COMPLETED",
-        iterations: failovers.length + 1,
-        startedAt: new Date(startedAt).toISOString(),
-        completedAt: new Date().toISOString(),
-        verified: receipt.status === "COMPLETED" && Boolean(artifactRef.sha256),
-        evidenceRefs: [
-          artifactRef.sha256,
-          receipt.receiptId,
-          ...(receipt.admissionRecord?.admissionId ? [receipt.admissionRecord.admissionId] : []),
-        ],
-        proofSource: "PHYSICAL_VERIFIER",
-      },
-      message: `ComputeRouter routed ${intent.jobId} through ${receipt.providerId} and returned verified artifact ${artifactRef.sha256}.`,
-    };
-  }
 
   private normalizeLocalRenderIntent(
     intent: RenderIntent,
@@ -376,6 +7,10 @@ export class RenderFabric {
       .map((cue) => cue.text.trim())
       .filter(Boolean)
       .join(" ");
+
+    const primaryAudio =
+      intent.tracks.audioTracks.find((track) => track.type === "VOICE") ??
+      intent.tracks.audioTracks[0];
 
     const scenes =
       intent.tracks.visualAssets.length > 0
@@ -397,6 +32,17 @@ export class RenderFabric {
                 captionText ||
                 intent.compositionType,
               duration_seconds: asset.durationSeconds,
+              ...(primaryAudio
+                ? {
+                    audio_track: {
+                      track_id: primaryAudio.id,
+                      audio_path: primaryAudio.src,
+                      start_seconds: primaryAudio.startSeconds,
+                      duration_seconds: primaryAudio.durationSeconds,
+                      volume: primaryAudio.volume,
+                    },
+                  }
+                : {}),
               shots: [
                 {
                   id: `shot_${asset.id}`,
@@ -418,11 +64,21 @@ export class RenderFabric {
               template_id: "facts.rapid-facts.v1",
               narration_text: captionText || intent.compositionType,
               duration_seconds: intent.durationSeconds,
+              ...(primaryAudio
+                ? {
+                    audio_track: {
+                      track_id: primaryAudio.id,
+                      audio_path: primaryAudio.src,
+                      start_seconds: primaryAudio.startSeconds,
+                      duration_seconds: primaryAudio.durationSeconds,
+                      volume: primaryAudio.volume,
+                    },
+                  }
+                : {}),
               shots: [],
             },
           ];
 
-    const primaryAudio = intent.tracks.audioTracks[0];
 
     return {
       project_id: intent.missionId || intent.intentId,
@@ -449,6 +105,14 @@ export class RenderFabric {
         compositionType: intent.compositionType,
         captions: intent.tracks.captions,
         audioTrack: primaryAudio,
+        sourceComposition: intent.sourceCompositionCanonicalJson
+          ? {
+              compositionId: intent.sourceCompositionId,
+              schemaVersion: intent.sourceCompositionSchemaVersion,
+              hashSha256: intent.sourceCompositionHashSha256,
+              canonicalJson: intent.sourceCompositionCanonicalJson,
+            }
+          : undefined,
       },
     };
   }
