@@ -47,6 +47,19 @@ export interface LocalRenderSceneIntent {
     duration_seconds?: number;
     volume?: number;
   };
+  audio_tracks?: readonly {
+    track_id: string;
+    audio_path: string;
+    start_seconds?: number;
+    duration_seconds?: number;
+    volume?: number;
+    is_narration?: boolean;
+    source_in_seconds?: number;
+    source_duration_seconds?: number;
+    playback_rate?: number;
+    fade_in_seconds?: number;
+    fade_out_seconds?: number;
+  }[];
   captions?: readonly {
     text: string;
     start_seconds: number;
