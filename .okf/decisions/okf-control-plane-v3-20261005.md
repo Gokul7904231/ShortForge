@@ -32,13 +32,21 @@ Complete the V3 architectural boundary by adding cryptographic governance attest
 
 V3 does not modify this hierarchy.
 
+## Current enforcement evidence
+
+Owner-side GitHub repository protection has now been configured and is active:
+- `OKF Main Protection` targets `refs/heads/main` and requires pull requests, one approval, Code Owner review, up-to-date branches, and the `OKF Governance Gate` status check; force updates and deletion are blocked.
+- `OKF Release Tag Protection` targets `refs/tags/v*` and blocks tag updates and deletions.
+- Both rulesets have an empty bypass list.
+
+The cryptographic signing configuration has also been supplied through repository-managed Actions secrets/variables. The next gate is to exercise the signed-attestation path in CI and retain the resulting evidence artifact.
+
 ## Promotion gates
 
 Production promotion remains blocked until:
-- durable repository-managed signing keys are configured and trusted;
-- signed attestation verification is exercised in CI;
+- signed attestation verification is exercised in CI and the resulting evidence is retained;
 - release provenance is bound to the actual release authorization chain;
-- GitHub repository ruleset enforcement is proven;
+- GitHub repository ruleset enforcement is proven with an actual protected-branch/tag behavior test;
 - V2 CI is passing with current evidence.
 
 ## Non-goals
