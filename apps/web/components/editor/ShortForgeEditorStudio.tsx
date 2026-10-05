@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import type {
-  AnimationTrack,
   CompositionClip,
   EditorCommand,
   EditorCommandEnvelope,
