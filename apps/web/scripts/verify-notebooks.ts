@@ -130,8 +130,10 @@ async function runLive(provider: NotebookProviderType) {
               ? "NvidiaTeslaT4"
               : undefined,
           timeoutMs,
-          templateDirectory: useWanTemplate ? templateDirectory : undefined,
-          metadata: provisionMetadata,
+          metadata: {
+            ...provisionMetadata,
+            templateDirectory: useWanTemplate ? templateDirectory : undefined,
+          },
         },
       },
       credentials,
