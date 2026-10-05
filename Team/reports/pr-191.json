@@ -19,19 +19,29 @@
       "bindingMode": "CI_COMPILED_ARTIFACT",
       "sweepStatus": "COMPLETE",
       "relevantRules": [
-        "OKF.PROCESS.FULL_SWEEP",
-        "OKF.GOVERNANCE.TEAM_GATE",
         "OKF.AUTH.MODEL_NON_SOVEREIGN",
         "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
-        "OKF.SECURITY.LEAST_PRIVILEGE",
-        "OKF.RELEASE.F07_VERIFIED"
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
       ]
     },
     "machineRuleCoverage": {
       "status": "ENFORCED_PILOT",
-      "activeRules": 6,
+      "activeRules": 16,
       "requiredCoverage": "100% CRITICAL/HIGH",
-      "coveredCriticalHigh": 6
+      "coveredCriticalHigh": 16
     }
   },
   "classification": "extends existing rule",
