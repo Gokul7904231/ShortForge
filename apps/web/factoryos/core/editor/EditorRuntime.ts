@@ -6,6 +6,7 @@ import type {
   CompositionClip,
   CompositionAudioClip,
   CompositionCaption,
+  AnimationTrack,
 } from "../timeline/CompositionIR";
 import {
   canonicalizeComposition,
@@ -114,7 +115,7 @@ function compositionKind(composition: CompositionIR): RenderIntent["compositionT
   return "DYNAMIC_CANVAS";
 }
 
-function lowerAnimationTracks(animations: readonly NonNullable<CompositionClip["animations"]>[number][] | undefined): RenderAnimationTrack[] {
+function lowerAnimationTracks(animations: readonly AnimationTrack[] | undefined): RenderAnimationTrack[] {
   return (animations ?? []).map((track) => ({
     property: track.property,
     keyframes: track.keyframes.map((frame) => ({
