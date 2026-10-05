@@ -73,6 +73,14 @@ class TestFeatureLowering(unittest.TestCase):
         self.assertEqual(gradient.size, (120, 160))
         self.assertNotEqual(solid.tobytes(), gradient.tobytes())
 
+    def test_unsupported_features_fail_closed(self):
+        with self.assertRaises(ValueError):
+            apply_effects(self.base, [{"kind": "UNKNOWN", "params": {}}], 0.0)
+        with self.assertRaises(ValueError):
+            apply_masks(self.base, [{"kind": "UNKNOWN"}], 0.0)
+        with self.assertRaises(ValueError):
+            transition_mix(self.base, self.base, "UNKNOWN", 0.5)
+
     def test_transition_blends_distinct_frames(self):
         outgoing = Image.new("RGBA", (120, 160), (255, 0, 0, 255))
         incoming = Image.new("RGBA", (120, 160), (0, 0, 255, 255))
