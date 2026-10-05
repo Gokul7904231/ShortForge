@@ -53,6 +53,13 @@ def check_source_drift(rules):
             continue
         if actual != expected:
             errors.append(f'source drift: {ref} expected {expected} actual {actual}')
+    for r in rules:
+        if r.get('status') in ACTIVE:
+            for item in r.get('enforcement', []):
+                ref=str(item.get('ref',''))
+                if item.get('type') == 'CI' and (ref.startswith('.') or '/' in ref or ref.endswith(('.py','.mjs','.ts','.yml','.yaml'))):
+                    if not (ROOT/ref).exists():
+                        errors.append(f"{r.get('ruleId')}: enforcement ref missing {ref}")
     return errors
 
 def parse_dt(value, field, rid, errors):
