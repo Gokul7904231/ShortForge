@@ -167,7 +167,13 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
   it("executes editor, MCP, plugin, headless export and cryptographic F07 verification", async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shortforge-editor-proof-"));
     const journalDir = path.join(tempDir, "journal");
-    const casDir = path.join(tempDir, "cas");
+    const approvedStorageRoot = path.join(process.cwd(), "data");
+    const casDir = path.join(
+      approvedStorageRoot,
+      "cas",
+      "editor-runtime-proof",
+      path.basename(tempDir),
+    );
     fs.mkdirSync(journalDir, { recursive: true });
     fs.mkdirSync(casDir, { recursive: true });
 
