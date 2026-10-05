@@ -36,8 +36,8 @@ function makeComposition(sourcePath: string, imagePath: string): CompositionIR {
       zIndex: 0,
       clips: [{
         id: "clip-a",
-        kind: "IMAGE",
-        src: imagePath,
+        kind: "VIDEO",
+        src: sourcePath,
         start: 0,
         duration: millisecondsToMediaTime(1_000),
         zIndex: 0,
@@ -340,6 +340,7 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     const loweredClip = preview.renderIntent.tracks.visualAssets[0];
     expect(loweredClip?.effects?.some((effect) => effect.kind === "BRIGHTNESS")).toBe(true);
     expect(loweredClip?.masks?.some((mask) => mask.kind === "ELLIPSE")).toBe(true);
+    expect(loweredClip?.type).toBe("VIDEO");
     expect(loweredClip?.animations?.some((animation) => animation.property === "x")).toBe(true);
     expect(preview.renderIntent.tracks.visualAssets[1]?.transitionIn?.kind).toBe("FADE");
     expect(preview.renderIntent.tracks.audioTracks[0]?.playbackRate).toBe(0.8);
