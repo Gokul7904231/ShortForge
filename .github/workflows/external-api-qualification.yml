@@ -1,0 +1,144 @@
+name: External API Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Registry provider id (for example openalex, perplexity_mcp, gemini)"
+        required: false
+        default: ""
+        type: string
+      live:
+        description: "Execute a real external provider request"
+        required: true
+        default: false
+        type: boolean
+      allow_metered:
+        description: "Explicitly authorize metered provider calls"
+        required: true
+        default: false
+        type: boolean
+      allow_destructive:
+        description: "Explicitly authorize destructive provider calls such as URLScan"
+        required: true
+        default: false
+        type: boolean
+      materialize:
+        description: "For visual providers, download one representative asset"
+        required: false
+        default: false
+        type: boolean
+      llm_probe:
+        description: "For LLM providers, execute a minimal real inference request"
+        required: false
+        default: false
+        type: boolean
+      perplexity_search:
+        description: "For Perplexity, execute one explicit metered search-tool call"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-api-qualification
+  cancel-in-progress: false
+
+jobs:
+  qualification:
+    name: External API provider qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SHORTFORGE_EXTERNAL_API_PROVIDER: ${{ inputs.provider }}
+      SHORTFORGE_EXTERNAL_API_LIVE: ${{ inputs.live && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_ALLOW_METERED: ${{ inputs.allow_metered && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_MATERIALIZE: ${{ inputs.materialize && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_LLM_PROBE: ${{ inputs.llm_probe && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_PERPLEXITY_SEARCH: ${{ inputs.perplexity_search && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive && '1' || '0' }}
+
+      OPENALEX_EMAIL: ${{ secrets.OPENALEX_EMAIL }}
+      SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
+      CROSSREF_MAILTO: ${{ secrets.CROSSREF_MAILTO }}
+      UNPAYWALL_EMAIL: ${{ secrets.UNPAYWALL_EMAIL }}
+      PERPLEXITY_MCP_URL: ${{ secrets.PERPLEXITY_MCP_URL }}
+      PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PEXAFY_API_KEY: ${{ secrets.PEXAFY_API_KEY }}
+
+      ARCMIRA_API_KEY: ${{ secrets.ARCMIRA_API_KEY }}
+      TRANSCRIPT_YT_API_KEY: ${{ secrets.TRANSCRIPT_YT_API_KEY }}
+      VIDWORDS_API_KEY: ${{ secrets.VIDWORDS_API_KEY }}
+      TUBETOTRANSCRIPT_API_KEY: ${{ secrets.TUBETOTRANSCRIPT_API_KEY }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_MODEL: ${{ secrets.GROQ_MODEL }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_API_KEY: ${{ secrets.HF_API_KEY }}
+      HF_MODEL: ${{ secrets.HF_MODEL }}
+      HF_INFERENCE_BASE_URL: ${{ secrets.HF_INFERENCE_BASE_URL }}
+
+      IBM_TTS_API_KEY: ${{ secrets.IBM_TTS_API_KEY }}
+      IBM_TTS_URL: ${{ secrets.IBM_TTS_URL }}
+      IBM_TTS_VOICE_ID: ${{ secrets.IBM_TTS_VOICE_ID }}
+      AUDEXUM_API_KEY: ${{ secrets.AUDEXUM_API_KEY }}
+      AUDEXUM_BASE_URL: ${{ secrets.AUDEXUM_BASE_URL }}
+      AUDEXUM_VOICE_ID: ${{ secrets.AUDEXUM_VOICE_ID }}
+      AUDEXUM_LANGUAGE: ${{ secrets.AUDEXUM_LANGUAGE }}
+      SPEAK_AI_API_KEY: ${{ secrets.SPEAK_AI_API_KEY }}
+      SPEAK_AI_BASE_URL: ${{ secrets.SPEAK_AI_BASE_URL }}
+      FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+      FREESOUND_BASE_URL: ${{ secrets.FREESOUND_BASE_URL }}
+
+      OCR_SPACE_API_KEY: ${{ secrets.OCR_SPACE_API_KEY }}
+      PERSPECTIVE_API_KEY: ${{ secrets.PERSPECTIVE_API_KEY }}
+      SAFE_BROWSING_API_KEY: ${{ secrets.SAFE_BROWSING_API_KEY }}
+      SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED: ${{ vars.SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED }}
+      URLSCAN_API_KEY: ${{ secrets.URLSCAN_API_KEY }}
+
+      OPEN_METEO_BASE_URL: ${{ secrets.OPEN_METEO_BASE_URL }}
+      NOMINATIM_BASE_URL: ${{ secrets.NOMINATIM_BASE_URL }}
+      NOMINATIM_USER_AGENT: ${{ vars.NOMINATIM_USER_AGENT }}
+      NOMINATIM_REFERER: ${{ secrets.NOMINATIM_REFERER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: FactoryOS strict typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+
+      - name: Run external API qualification
+        working-directory: apps/web
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run factoryos:verify:external-apis 2>&1 | tee external-api-qualification.jsonl
+
+      - name: Upload qualification evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-api-qualification-evidence
+          path: apps/web/external-api-qualification.jsonl
+          if-no-files-found: warn
+          retention-days: 14

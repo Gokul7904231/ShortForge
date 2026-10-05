@@ -1,0 +1,68 @@
+name: External API Public Live Qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/web/factoryos/core/integrations/external/**"
+      - "apps/web/scripts/verify-external-api-qualification.ts"
+      - ".github/workflows/external-api-public-live.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-api-public-live
+  cancel-in-progress: false
+
+jobs:
+  public-provider:
+    strategy:
+      fail-fast: false
+      matrix:
+        provider:
+          - openalex
+          - arxiv
+          - crossref
+          - open_meteo
+    name: "Live ${{ matrix.provider }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SHORTFORGE_EXTERNAL_API_PROVIDER: ${{ matrix.provider }}
+      SHORTFORGE_EXTERNAL_API_LIVE: "1"
+      SHORTFORGE_EXTERNAL_API_ALLOW_METERED: "0"
+      SHORTFORGE_EXTERNAL_API_MATERIALIZE: "0"
+      SHORTFORGE_EXTERNAL_API_LLM_PROBE: "0"
+      SHORTFORGE_EXTERNAL_API_PERPLEXITY_SEARCH: "0"
+      UNPAYWALL_EMAIL: ""
+      NOMINATIM_USER_AGENT: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Live provider qualification
+        working-directory: apps/web
+        run: |
+          set -o pipefail
+          npm run factoryos:verify:external-apis 2>&1 | tee "external-api-${{ matrix.provider }}.jsonl"
+
+      - name: Upload provider evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-api-${{ matrix.provider }}-evidence
+          path: apps/web/external-api-${{ matrix.provider }}.jsonl
+          if-no-files-found: error
+          retention-days: 30

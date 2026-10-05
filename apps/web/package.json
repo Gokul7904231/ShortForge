@@ -27,7 +27,8 @@
     "factoryos:verify:api": "npx vite-node scripts/verify-api-providers.ts",
     "factoryos:verify:notebooks": "npx vite-node scripts/verify-notebooks.ts",
     "factoryos:verify:notebook-mcps": "node scripts/verify-notebook-mcps.mjs",
-    "factoryos:verify:hf-zerogpu": "npx vite-node scripts/verify-hf-zerogpu-physical-mp4.ts"
+    "factoryos:verify:hf-zerogpu": "npx vite-node scripts/verify-hf-zerogpu-physical-mp4.ts",
+    "factoryos:verify:external-apis": "npx vite-node scripts/verify-external-api-qualification.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.14",

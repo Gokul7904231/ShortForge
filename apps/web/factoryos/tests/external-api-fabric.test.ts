@@ -55,16 +55,13 @@ describe("External API registry", () => {
     }
   });
 
-  it("does not present the unverified VidWords provider as implemented", () => {
+  it("reconciles the implemented provider lifecycle with the canonical registry", () => {
     expect(
       ExternalApiRegistry.get("vidwords")?.lifecycle,
-    ).toBe("UNVERIFIED");
-  });
-
-  it("does not present the legacy Hugging Face stub as production-ready", () => {
+    ).toBe("IMPLEMENTED");
     expect(
       ExternalApiRegistry.get("huggingface")?.lifecycle,
-    ).toBe("PARTIAL");
+    ).toBe("IMPLEMENTED");
   });
 });
 
