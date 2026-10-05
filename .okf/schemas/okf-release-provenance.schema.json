@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://okf/release-provenance/v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "provenanceType",
+    "repository",
+    "commitSha",
+    "generatedAt",
+    "governance",
+    "verification",
+    "authority",
+    "productionReleaseEligible"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "provenanceType": {
+      "const": "SHORTFORGE_OKF_RELEASE"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "governance": {
+      "type": "object",
+      "required": [
+        "corpusSha256",
+        "sweepEnvelopeSha256",
+        "relevantRuleIds",
+        "sweepStatus"
+      ],
+      "properties": {
+        "corpusSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sweepEnvelopeSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "relevantRuleIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^OKF\\."
+          }
+        },
+        "sweepStatus": {
+          "enum": [
+            "COMPLETE",
+            "PARTIAL",
+            "INCIDENT_FOLLOWUP"
+          ]
+        },
+        "driftStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "criticalHighRules": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "coveredCriticalHigh": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "verification": {
+      "type": "object",
+      "required": [
+        "okfSweepArtifactSha256"
+      ],
+      "properties": {
+        "okfSweepArtifactSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "driftArtifactSha256": {
+          "type": [
+            "string",
+            "null",
+            "object"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "authority": {
+      "const": "EVIDENCE_ONLY"
+    },
+    "productionReleaseEligible": {
+      "const": false
+    }
+  },
+  "additionalProperties": false
+}
