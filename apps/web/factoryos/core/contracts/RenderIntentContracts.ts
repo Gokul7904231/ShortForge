@@ -58,6 +58,8 @@ export interface RenderTrackAsset {
   readonly playbackRate?: number;
   readonly transform?: {
     readonly scale?: number;
+    readonly scaleX?: number;
+    readonly scaleY?: number;
     readonly opacity?: number;
     readonly x?: number;
     readonly y?: number;
