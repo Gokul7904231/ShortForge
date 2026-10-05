@@ -20,6 +20,7 @@ import {
 } from "../factoryos/core/integrations/external/ExternalApiRegistry";
 import {
   canRunLive,
+  qualificationEvidenceIsSufficient,
   type ExternalApiQualificationProfile,
   type QualificationResult,
 } from "../factoryos/core/integrations/external/ExternalApiQualificationContracts";
@@ -213,11 +214,33 @@ async function mainLive(): Promise<void> {
   const startedAt = now();
   try {
     const execution = await executeProfile(profile);
+    const providerEvidence = [
+      "LIVE_NETWORK_REQUEST",
+      execution.capabilityVerified ? "CAPABILITY_OUTPUT" : undefined,
+      execution.capabilityVerified ? "NORMALIZED_PROVIDER_RESULT" : undefined,
+      profile.probeKind === "MCP" && execution.capabilityVerified
+        ? "MCP_TOOL_EXECUTION"
+        : undefined,
+      profile.capability.includes("VISUAL_ASSET_SEARCH") && execution.capabilityVerified
+        ? "VISUAL_MATERIALIZATION"
+        : undefined,
+      profile.capability === "TTS" && execution.capabilityVerified
+        ? "PHYSICAL_AUDIO"
+        : undefined,
+    ].filter(Boolean);
+
     const success =
       Boolean(execution.observation) &&
       execution.observation.status >= 200 &&
       execution.observation.status < 300 &&
-      execution.capabilityVerified;
+      execution.capabilityVerified &&
+      qualificationEvidenceIsSufficient(
+        profile,
+        {
+          capabilityVerified: execution.capabilityVerified,
+          evidence: providerEvidence,
+        },
+      );
 
     const result = baseResult(
       profile,
@@ -234,13 +257,7 @@ async function mainLive(): Promise<void> {
         errorCode: success ? undefined : "CAPABILITY_PROOF_FAILED",
         errorMessage: success ? undefined : "Provider request completed, but the representative capability proof did not pass.",
         evidence: success
-          ? [
-              "LIVE_NETWORK_REQUEST",
-              "PROVIDER_CAPABILITY_VERIFIED",
-              profile.providerId === "perplexity_mcp"
-                ? "MCP_INITIALIZE_AND_TOOLS_LIST"
-                : "NORMALIZED_PROVIDER_RESULT",
-            ]
+          ? providerEvidence
           : ["LIVE_NETWORK_REQUEST", "PROVIDER_CAPABILITY_NOT_VERIFIED"],
       },
     );
