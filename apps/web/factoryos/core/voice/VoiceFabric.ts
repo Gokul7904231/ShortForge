@@ -497,7 +497,7 @@ export class IBMWatsonTTSVoiceEngine implements IVoiceEngine {
     }
 
     const started = Date.now();
-    const endpoint = new URL(c.url.replace(/\\/+$/, "") + "/v1/synthesize");
+    const endpoint = new URL(c.url.replace(/\/+$/, "") + "/v1/synthesize");
     endpoint.searchParams.set(
       "voice",
       process.env.IBM_TTS_VOICE_ID?.trim() || "en-US_AllisonV3Voice",
@@ -605,7 +605,7 @@ export class AudexumTTSVoiceEngine implements IVoiceEngine {
     const baseUrl =
       process.env.AUDEXUM_BASE_URL?.trim() || "https://audexum.com/api";
     const response = await fetch(
-      baseUrl.replace(/\\/+$/, "") + "/synthesize",
+      baseUrl.replace(/\/+$/, "") + "/synthesize",
       {
         method: "POST",
         headers: {
