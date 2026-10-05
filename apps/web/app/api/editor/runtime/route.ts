@@ -15,10 +15,12 @@ export async function GET(request: NextRequest) {
     const compositionId = requireString(request.nextUrl.searchParams.get("compositionId"), "compositionId");
     const sessionId = requireString(request.nextUrl.searchParams.get("sessionId"), "sessionId");
     const runtime = await getEditorRuntime();
-    const document = await runtime.getDocument(sessionId).catch(async () => {
-      const head = await runtime.replay(compositionId);
-      if (!head.valid) throw new Error("EDITOR_COMPOSITION_NOT_FOUND");
-      throw new Error("EDITOR_SESSION_NOT_FOUND");
+    const document = await runtime.resume({
+      sessionId,
+      compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: user.uid },
     });
 
     return NextResponse.json({
