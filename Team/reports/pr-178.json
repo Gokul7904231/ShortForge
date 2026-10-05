@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR178-Safety-Document-API-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/safety-document-api-fabric-20261005",
+  "objective": "Implement governed OCR.Space, Google Safe Browsing and urlscan.io adapters while keeping Perspective catalogued until its endpoint contract is verified.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "External providers are advisory resources, never F00/Guardian/Treasury/ComputeRouter/F06/CAS/F07 authorities.",
+      "Safe Browsing is explicitly gated to its documented non-commercial boundary.",
+      "urlscan private visibility is the default for privacy safety.",
+      "Provider bodies are normalized and bounded rather than mirrored into durable evidence.",
+      "Perspective API remains unverified and is not implemented by guesswork."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No provider secrets are committed.",
+      "Only http/https URLs are accepted and embedded URL credentials are rejected.",
+      "urlscan submission defaults to private visibility."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added typed OCR/threat/urlscan contracts.",
+    "Added OCR.Space URL/base64 OCR adapter.",
+    "Added Safe Browsing threatMatches.find adapter with non-commercial guard.",
+    "Added urlscan asynchronous submit/result/poll adapter with private default.",
+    "Added deterministic provider tests and .okf documentation."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/integrations/external/SafetyDocumentContracts.ts",
+    "apps/web/factoryos/core/integrations/external/SafetyDocumentProviders.ts",
+    "apps/web/factoryos/tests/safety-document-providers.test.ts",
+    ".okf/integrations/safety-document-fabric.md",
+    "Issue #176"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED"
+  },
+  "verificationPlan": [
+    "Require CI + Team Change Gate before merge.",
+    "Keep live network qualification separate.",
+    "Do not implement Perspective until current official endpoint/authentication contract is verified."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "No live qualification is claimed in this PR.",
+    "Safe Browsing integration is not represented as commercial-use suitable.",
+    "urlscan privacy settings are explicit."
+  ]
+}
