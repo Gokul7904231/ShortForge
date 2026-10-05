@@ -669,7 +669,6 @@ export function ShortForgeEditorStudio({
                   </div>
                 </div>
               )}
-              </div>
             </div>
           </section>
         </main>
