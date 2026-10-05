@@ -130,15 +130,27 @@ export class DurableEditor implements ShortForgeEditorAPI, DurableEditorHistoryA
     const existing = await this.store.findCommand(session.compositionId, input.commandId);
 
     if (existing) {
-      if (existing.commandDigestSha256 !== commandDigest(input)) {
-        return receipt(input.commandId, false, existing.revision, existing.composition, undefined, "EDITOR_COMMAND_ID_REUSE", commandDigest(input));
+      const digest = commandDigest(input);
+      if (existing.commandDigestSha256 !== digest) {
+        return receipt(
+          input.commandId,
+          false,
+          existing.revision,
+          existing.composition,
+          undefined,
+          "EDITOR_COMMAND_ID_REUSE",
+          digest,
+        );
       }
+      const parent = existing.parentRevisionId
+        ? await this.store.getRevision(existing.parentRevisionId)
+        : undefined;
       return receipt(
         existing.commandId,
         true,
         existing.revision,
         existing.composition,
-        undefined,
+        parent?.composition,
         undefined,
         existing.commandDigestSha256,
       );
@@ -437,10 +449,20 @@ export class DurableEditor implements ShortForgeEditorAPI, DurableEditorHistoryA
           if (!row.command) {
             return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_OPERATION_MISSING_COMMAND:${row.revisionId}`, checkedRevisionIds: checked };
           }
-          current = {
-            ...row,
-            composition: applyEditorCommand(current.composition, row.command),
-          };
+          try {
+            current = {
+              ...row,
+              composition: applyEditorCommand(current.composition, row.command),
+            };
+          } catch (error) {
+            return {
+              valid: false,
+              compositionId,
+              revisionCount: rows.length,
+              error: `EDITOR_REPLAY_COMMAND_FAILED:${row.revisionId}:${String(error)}`,
+              checkedRevisionIds: checked,
+            };
+          }
         } else {
           if (!row.restoreFromRevisionId) {
             return { valid: false, compositionId, revisionCount: rows.length, error: `EDITOR_CONTROL_OPERATION_MISSING_TARGET:${row.revisionId}`, checkedRevisionIds: checked };
