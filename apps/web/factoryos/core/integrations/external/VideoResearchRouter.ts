@@ -14,7 +14,7 @@ import {
 } from "./VideoResearchProviders";
 
 export interface VideoResearchRouterOptions {
-  readonly providers?: readonly Provider[];
+  readonly providers?: readonly VideoResearchProvider[];
   readonly transcriptOrder?: readonly string[];
   readonly searchOrder?: readonly string[];
 }
