@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR198-Durable-Editor-Revision-Graph",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/editor-durable-revision-graph-20261005",
+  "objective": "Promote the ShortForge editor from an in-memory command engine to a durable revision graph with append-only operation history, checkpoint/restore, deterministic replay, undo/redo and restart-safe idempotency.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "CompositionIR remains ShortForge semantic truth.",
+      "Editor history must not become rendering, economic or governance authority.",
+      "Production rendering remains behind OKF, RenderFabric, ComputeRouter, CAS and F07.",
+      "Durable history must be immutable, replayable and cryptographically attributable."
+    ],
+    "sourceRefs": [
+      ".okf/artifacts/editor-revision-history.md",
+      ".okf/artifacts/timeline-ir.md",
+      ".okf/index.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added immutable ROOT/COMMAND/UNDO/REDO/RESTORE revision nodes.",
+    "Added append-only disk journal with fsync durability.",
+    "Added MongoDB revision journal with unique revision, command and identity indexes.",
+    "Persisted command digests so command IDs remain idempotent after restart.",
+    "Added checkpoint creation and immutable restore revisions.",
+    "Added deterministic replay with CompositionIR validation and SHA-256 verification.",
+    "Added undo/redo as immutable navigation revisions with durable redo state.",
+    "Kept renderer, Treasurer, OKF, RenderFabric, ComputeRouter and F07 outside editor authority."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "note": "Merge remains blocked until all required GitHub Actions validation lanes complete successfully."
+  },
+  "evidenceRefs": [
+    ".okf/artifacts/editor-revision-history.md",
+    "apps/web/factoryos/core/editor/EditorRevisionContracts.ts",
+    "apps/web/factoryos/core/editor/EditorRevisionStore.ts",
+    "apps/web/factoryos/core/editor/DurableEditor.ts",
+    "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+    "apps/web/factoryos/tests/durable-editor.test.ts",
+    "Team/reports/pr-198.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority"
+  }
+}
