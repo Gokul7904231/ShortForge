@@ -2,14 +2,16 @@
 
 import React, { useMemo, useState } from "react";
 import type {
-  CompositionClip,
   EditorCommand,
   EditorCommandEnvelope,
   EditorActor,
   EditorDocument,
-  MediaTime,
 } from "@/factoryos/core/editor/EditorContracts";
-import type { AnimationTrack as CompositionAnimationTrack } from "@/factoryos/core/timeline/CompositionIR";
+import type {
+  AnimationTrack as CompositionAnimationTrack,
+  CompositionClip,
+  MediaTime,
+} from "@/factoryos/core/timeline/CompositionIR";
 
 export interface ShortForgeEditorStudioProps {
   document: EditorDocument;
@@ -53,7 +55,7 @@ function clipColor(clip: CompositionClip): string {
   return "bg-zinc-600/75";
 }
 
-function latestValue(track: AnimationTrack | undefined, fallback: number): number {
+function latestValue(track: CompositionAnimationTrack | undefined, fallback: number): number {
   return track?.keyframes?.length
     ? track.keyframes[track.keyframes.length - 1]!.value
     : fallback;
