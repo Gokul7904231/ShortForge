@@ -3,6 +3,8 @@ name: External API Public Live Qualification
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - "apps/web/factoryos/core/integrations/external/**"
       - "apps/web/scripts/verify-external-api-qualification.ts"
