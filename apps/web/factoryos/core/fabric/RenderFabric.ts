@@ -416,6 +416,21 @@ export class RenderFabric {
                 captionText ||
                 intent.compositionType,
               duration_seconds: asset.durationSeconds,
+              captions: overlappingCues.map((cue) => ({
+                text: cue.text,
+                start_seconds: Math.max(
+                  0,
+                  cue.startMs / 1000 - asset.startSeconds,
+                ),
+                duration_seconds: Math.min(
+                  asset.durationSeconds,
+                  Math.max(
+                    0.001,
+                    cue.endMs / 1000 - Math.max(cue.startMs / 1000, asset.startSeconds),
+                  ),
+                ),
+                style: cue.style?.animation || "NONE",
+              })),
               ...(primaryAudio
                 ? {
                     audio_track: {
