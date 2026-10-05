@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR201-Crossref-Qualification-Fix",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/crossref-live-qualification-20261005",
+  "objective": "Fix the Crossref live qualification probe to use the documented versioned REST endpoint after Cohort 1 returned HTTP 404.",
+  "classification": "bug fix",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "IMPLEMENTED and QUALIFIED remain separate lifecycle states.",
+      "The qualification harness may only record QUALIFIED from real provider evidence.",
+      "Provider credentials remain runtime-injected only.",
+      "The fix must not expand provider authority into F00, Treasury, ComputeRouter, F06, CAS, F07, or Overseer."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_QUALIFICATION_PROBE",
+    "notes": [
+      "No credential handling was added.",
+      "The fix only changes the Crossref REST path from /works to /v1/works.",
+      "The regression test uses a local fetch stub and does not contact Crossref."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "changes": [
+    "Changed the Crossref qualification probe from https://api.crossref.org/works to https://api.crossref.org/v1/works.",
+    "Updated the deterministic qualification test to require the versioned Crossref REST endpoint and a representative message.items response.",
+    "Kept #184 unchanged until a fresh live Crossref run produces evidence."
+  ],
+  "failureEvidence": {
+    "sourceIssue": 197,
+    "provider": "crossref",
+    "observedStatus": 404,
+    "runId": "gha_37293084735",
+    "observedDisposition": "CONFIGURED-BUT-NOT-QUALIFIED",
+    "evidence": [
+      "LIVE_NETWORK_REQUEST",
+      "PROVIDER_CAPABILITY_NOT_VERIFIED"
+    ],
+    "artifactId": "11336579891",
+    "artifactSha256": "ad7a01a81c2ee3d668fb66f5f7896f763c872217f5610a9b027d1062167a7a25"
+  },
+  "externalVerification": {
+    "source": "Crossref official REST API documentation",
+    "endpoint": "https://api.crossref.org/v1/works",
+    "rationale": "Crossref documents /v1/works as the versioned REST endpoint and recommends specifying the API version."
+  },
+  "verificationResults": {
+    "rootCauseConfirmed": "PASS",
+    "versionedEndpointRegressionTest": "ADDED",
+    "liveCrossrefRerun": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass Team Change Gate, OKF Governance, API Provider Fabric Verification, and repository CI.",
+    "Merge PR #201 to main only after required validation succeeds.",
+    "Rerun Crossref live qualification from main.",
+    "Use only the new Crossref live evidence to update #184."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "The previous Crossref 404 is recorded as CONFIGURED-BUT-NOT-QUALIFIED, not QUALIFIED.",
+    "No provider disposition in #184 is changed by this fix PR."
+  ]
+}
