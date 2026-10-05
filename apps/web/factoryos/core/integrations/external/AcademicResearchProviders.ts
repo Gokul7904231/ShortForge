@@ -466,7 +466,7 @@ export class CrossrefProvider implements ReachProvider {
                 [
                   authors ? "Authors: " + authors : "",
                   Array.isArray(item?.["container-title"])
-                    ? item.container-title[0]
+                    ? item?.["container-title"]?.[0]
                     : "",
                   item?.published?.["date-parts"]?.[0]?.[0]
                     ? "Year: " +
