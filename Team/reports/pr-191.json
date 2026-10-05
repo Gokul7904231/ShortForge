@@ -76,17 +76,23 @@
     ".github/workflows/okf-governance.yml",
     "Team/workflow/change-gate.md"
   ],
-  "disposition": "PASS",
+  "disposition": "BLOCKED",
   "verificationPlan": [
-    "OKF Governance Gate must pass lint, sweep, V2 drift/coverage tests, Team report linkage, and exception checks.",
-    "No active CRITICAL/HIGH rule may lack verificationRefs.",
-    "Any source-digest drift must fail CI.",
-    "Any OPEN or expired APPROVED exception must fail CI.",
-    "Owner-side GitHub ruleset enforcement remains tracked in Issue #188 and is not claimed as configured by this report."
+    "Run OKF Governance Gate and record the resulting workflow evidence.",
+    "Confirm V2 unit tests, drift detection, rule coverage and Team report sweep linkage pass.",
+    "Keep repository ruleset/branch protection owner-side enforcement tracked by Issue #188.",
+    "Do not merge this PR while required CI evidence is pending."
   ],
   "model": {
     "authority": "ADVISORY_ONLY",
     "canModifyOkf": false,
     "canPromote": false
+  },
+  "verificationResults": {
+    "okfGovernanceGate": "PENDING_CI",
+    "v2DriftCoverage": "IMPLEMENTED__CI_PENDING",
+    "teamReportMachineLinkage": "IMPLEMENTED__CI_PENDING",
+    "exceptionExpiry": "IMPLEMENTED__CI_PENDING",
+    "githubRepositoryProtection": "UNPROVEN__ISSUE_188"
   }
 }
