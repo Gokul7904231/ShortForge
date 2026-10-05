@@ -1867,3 +1867,16 @@ bounded advisory routing
 This integration is advisory only. Memory does not gain authority by entering AER, and AER does not gain execution authority by consuming memory.
 
 The runtime still requires fresh shadow/replay evidence before AER policy promotion. In particular, the repository does not currently claim that mental-model refresh is autonomously scheduled: `MemoryMentalModelManager` provides dirty/refresh planning, but production scheduling and AER economic admission for refresh remain a future hardening requirement.
+
+## OKF Control Plane Binding — 2026-10-05
+
+AER is a consumer of compiled governance context, not a governance authority.
+
+Canonical path:
+OKF normative rules -> applicability compiler -> PolicyContext / TeamChangeIR -> AER Fast Decision Core or Ascalon -> proposal -> existing Guardian / execution / F07 gates.
+
+AER and Ascalon may receive compact applicable policy context and rule IDs, but inclusion of a rule in model context does not authorize the model to execute, modify policy, promote code, or declare verification success.
+
+Where an OKF rule is unavailable, contradictory, expired, or UNPROVEN, AER must surface the condition and follow the existing fail-closed/escalation policy rather than synthesize certainty.
+
+Machine governance status is carried as evidence metadata. AER cannot turn an OKF sweep attestation into a production authorization decision.
