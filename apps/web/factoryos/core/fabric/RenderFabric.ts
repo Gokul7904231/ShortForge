@@ -526,5 +526,4 @@ export class RenderFabric {
       },
     };
   }
-  }
 }
