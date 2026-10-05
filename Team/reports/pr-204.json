@@ -1,0 +1,38 @@
+{
+  "pullRequest": 204,
+  "changeType": "new capability",
+  "status": "IMPLEMENTED_PENDING_GATES",
+  "objective": "Lower canonical CompositionIR editor features into deterministic physical F06 execution and prove the editor-to-F07 path.",
+  "authority": "SHORTFORGE_OKF",
+  "evidenceRefs": [
+    "apps/web/factoryos/core/editor/EditorRuntime.ts",
+    "apps/web/factoryos/core/contracts/RenderIntentContracts.ts",
+    "apps/web/factoryos/core/fabric/RenderFabric.ts",
+    "packages/factoryos-render/src/factoryos_render/engine/feature_lowering.py",
+    "packages/factoryos-render/src/factoryos_render/engine/frame_engine.py",
+    "packages/factoryos-render/src/factoryos_render/backends/ffmpeg.py",
+    "apps/web/factoryos/tests/editor-runtime-f06-f07.test.ts"
+  ],
+  "capabilities": [
+    "effects execution",
+    "mask execution",
+    "keyframe evaluation",
+    "transition execution",
+    "audio source timing/playback-rate/fades",
+    "explicit canvas backgrounds",
+    "deterministic physical preview"
+  ],
+  "proofBoundary": {
+    "productionExport": "RenderFabric -> ComputeRouter -> physical artifact -> CAS -> F07",
+    "preview": "RenderFabric normalization -> canonical factoryos-render FrameEngine; preview is non-publication and does not mint production compute/economic authority",
+    "openCutRuntime": "UNPROVEN",
+    "wasmRuntime": "UNPROVEN",
+    "rustCompositor": "UNPROVEN",
+    "isolatedPlugins": "UNPROVEN"
+  },
+  "notes": [
+    "No provider selection was added to the editor.",
+    "No Treasury authority was added to the editor.",
+    "F07 remains the release authority."
+  ]
+}
