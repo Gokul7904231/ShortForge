@@ -133,8 +133,8 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     const outputDir = path.join(workDir, "output");
 
     const templateDirectory =
-      typeof request.templateDirectory === "string"
-        ? request.templateDirectory.trim()
+      typeof request.metadata?.templateDirectory === "string"
+        ? String(request.metadata.templateDirectory).trim()
         : "";
 
     let metadata: Record<string, unknown> = {};
