@@ -71,7 +71,7 @@ export function getExternalApiQualificationProfile(
   return PROFILES.find((profile) => profile.providerId === providerId);
 }
 
-function configured(profile: ExternalApiQualificationProfile): {
+export function configured(profile: ExternalApiQualificationProfile): {
   readonly configured: boolean;
   readonly missing: readonly string[];
 } {
@@ -225,6 +225,35 @@ async function requestBinary(
   };
 }
 
+async function materializeVisual(urlValue: string): Promise<Record<string, unknown>> {
+  const started = Date.now();
+  const response = await fetch(urlValue, {
+    headers: { Accept: "image/avif,image/webp,image/jpeg,image/png,*/*" },
+    signal: AbortSignal.timeout(20_000),
+  });
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  return {
+    status: response.status,
+    durationMs: Date.now() - started,
+    contentType: response.headers.get("content-type") || undefined,
+    byteLength: bytes.byteLength,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    nonEmpty: response.ok && bytes.byteLength > 0,
+  };
+}
+
+function visualAssetUrl(providerId: string, data: any): string | undefined {
+  if (providerId === "pexels") return data?.photos?.[0]?.src?.original;
+  if (providerId === "pixabay") return data?.hits?.[0]?.largeImageURL || data?.hits?.[0]?.webformatURL;
+  if (providerId === "pexafy") {
+    return data?.data?.[0]?.urls?.full ||
+      data?.data?.[0]?.urls?.large ||
+      data?.data?.[0]?.urls?.regular ||
+      data?.data?.[0]?.urls?.small;
+  }
+  return undefined;
+}
+
 async function physicalAudioEvidence(bytes: Uint8Array, contentType?: string): Promise<Record<string, unknown>> {
   const digest = createHash("sha256").update(bytes).digest("hex");
   let durationSeconds: number | undefined;
@@ -297,7 +326,7 @@ function capabilityPasses(providerId: string, data: unknown): boolean {
   return true;
 }
 
-async function executeProfile(profile: ExternalApiQualificationProfile): Promise<{
+export async function executeProfile(profile: ExternalApiQualificationProfile): Promise<{
   readonly normalized: Record<string, unknown>;
   readonly observation?: QualificationHttpObservation;
   readonly capabilityVerified: boolean;
@@ -574,13 +603,37 @@ async function executeProfile(profile: ExternalApiQualificationProfile): Promise
     return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: capabilityPasses(id, result.data) };
   }
 
+  const result = await requestJson(id, url, {
+    method: "GET",
+    headers: id === "semantic_scholar"
+      ? { "x-api-key": secret || "", Accept: "application/json" }
+      : requestHeadersFor(id, secret),
+  });
+
+  if (id === "pexels" || id === "pixabay" || id === "pexafy") {
+    const assetUrl = visualAssetUrl(id, result.data);
+    const shouldMaterialize = process.env.SHORTFORGE_EXTERNAL_API_MATERIALIZE === "1";
+    const materialization = shouldMaterialize && assetUrl
+      ? await materializeVisual(assetUrl)
+      : { required: true, executed: false };
+    return {
+      normalized: {
+        search: shapeOf(result.data),
+        materialization,
+      },
+      observation: result.observation,
+      capabilityVerified: result.observation.status >= 200 &&
+        result.observation.status < 300 &&
+        Boolean((result.data as any) && assetUrl) &&
+        (shouldMaterialize ? Boolean((materialization as any).nonEmpty) : false),
+    };
+  }
+
   if (id === "gemini" || id === "pixabay" || id === "youtube_data_api") {
-    const result = await requestJson(id, url, {
-      method: "GET",
-      headers: requestHeadersFor(id, secret),
-    });
     return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: capabilityPasses(id, result.data) };
   }
+
+  return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: capabilityPasses(id, result.data) };
 
   const result = await requestJson(id, url, {
     method: "GET",
