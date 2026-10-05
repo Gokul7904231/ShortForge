@@ -36,6 +36,12 @@ Headless       -> ROADMAP
 Scripting      -> ROADMAP
 ```
 
+## Runtime proof rule
+
+The adapter intentionally publishes **zero** proven OpenCut execution modes. Editor, WASM preview, headless and MCP remain roadmap targets until each surface is physically verified.
+
+`executionModes = []`
+
 ## Fail-closed rule
 
 `OpenCutAdapter.admission().productionEligible === false`
