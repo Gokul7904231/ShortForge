@@ -1,9 +1,11 @@
 import type {
   CompositionIR,
+  AnimationTrack,
   EffectNode,
   MaskNode,
   MediaTime,
   RippleScope,
+  Transform2D,
   TransitionNode,
 } from "../timeline/CompositionIR";
 
@@ -47,6 +49,22 @@ export type EditorCommand =
       readonly trackId: string;
       readonly clipId: string;
       readonly duration: MediaTime;
+    }
+  | {
+      readonly type: "SET_CLIP_TRANSFORM";
+      readonly trackId: string;
+      readonly clipId: string;
+      readonly transform: Partial<Transform2D>;
+    }
+  | {
+      readonly type: "SET_CLIP_ANIMATIONS";
+      readonly trackId: string;
+      readonly clipId: string;
+      readonly animations: readonly AnimationTrack[];
+    }
+  | {
+      readonly type: "SET_CANVAS_BACKGROUND";
+      readonly background: CompositionIR["canvas"]["background"] | undefined;
     }
   | {
       readonly type: "ADD_EFFECT";
