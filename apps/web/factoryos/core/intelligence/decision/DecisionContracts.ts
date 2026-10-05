@@ -171,7 +171,8 @@ export interface DecisionBatchResult {
     | "HEURISTIC_SHADOW"
     | "CLM_SHADOW"
     | "GLIDE_SHADOW"
-    | "HYBRID";
+    | "HYBRID"
+    | "AER_CORE";
   readonly totalLatencyMs: number;
   readonly minConfidence: number;
   readonly shouldEscalate: boolean; // True if minConfidence < threshold (e.g. 0.70)

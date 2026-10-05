@@ -1,0 +1,83 @@
+name: AER-Core Training Foundation Release
+
+on:
+  push:
+    branches:
+      - feat/aer-decision-core-architecture
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish training-foundation release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = "v0.1.0-aer-training-foundation";
+            const name = "AER-Core Training Foundation v0.1.0";
+            const body = `## ShortForge — AER-Core Training Foundation
+
+This is an engineering-foundation prerelease for the AER-Core training/evaluation wave.
+
+### Included
+
+- AER-Core typed decision contract and non-authoritative adapter
+- Strict decision-output validation
+- Verified-gold training contract and export boundary
+- Mission/trajectory-isolated dataset preparation
+- Reproducible AER-Core trainer
+- Validation-only calibration
+- Held-out AER-Bench evaluator and measured latency/throughput
+- AER-Core shadow coordination beside the primary/JEV/GLiDE paths
+- HTTP serving seam for a future trained checkpoint
+- Training-boundary CI and source-control exclusion for local datasets/checkpoints
+- Ascalon production-golden isolation from synthetic curriculum data
+
+### Current gate
+
+- AER-Core training infrastructure: READY
+- AER-Bench definition/evaluator: READY
+- AER-Core shadow integration: READY — provider required
+- AER-Core production authority: DISABLED
+- Verified AER-Core corpus: REQUIRED / NOT YET POPULATED
+- AER-Core checkpoint: NOT TRAINED / NOT PROMOTED
+- Current branch CI evidence: NOT CONFIRMED
+
+### Important
+
+This prerelease does **not** represent a production-trained or production-authoritative AER-Core model.
+
+Promotion remains:
+
+`verified runtime outcomes -> corpus admission -> AER-Core training -> calibration -> AER-Bench -> JEV/GLiDE shadow replay -> restricted canary -> governance approval -> promotion`
+
+The release is intentionally marked as a GitHub prerelease until those gates are satisfied.`;
+
+            const { owner, repo } = context.repo;
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner,
+              repo,
+              per_page: 100
+            });
+
+            if (releases.some(r => r.tag_name === tag)) {
+              core.info(`Release ${tag} already exists; nothing to do.`);
+              return;
+            }
+
+            await github.rest.repos.createRelease({
+              owner,
+              repo,
+              tag_name: tag,
+              target_commitish: context.sha,
+              name,
+              body,
+              draft: false,
+              prerelease: true,
+              generate_release_notes: false
+            });
+
+            core.info(`Published ${tag} at ${context.sha}`);

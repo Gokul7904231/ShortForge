@@ -2,11 +2,11 @@
 
 ## 1. Executive Summary
 
-This matrix provides the exhaustive audit and verification status of all eighteen (18) core subsystems and modules comprising the ShortForge / FactoryOS cognitive and execution infrastructure. Each component has been inspected, remediated against data contamination vulnerabilities, validated for type safety, and integrated into the Ascalon training safety harness.
+This matrix provides the exhaustive audit and verification status of all twenty (20) core subsystems and modules comprising the ShortForge / FactoryOS cognitive and execution infrastructure. Each component has been inspected, remediated against data contamination vulnerabilities, validated for type safety, and integrated into the Ascalon training safety harness.
 
 ---
 
-## 2. 18-Component Verification Matrix
+## 2. 20-Component Verification Matrix
 
 | # | Subsystem / Component | Path | Pre-Ascalon Vulnerability / Anomaly | Remediation Applied | Training Eligibility | Readiness Status |
 | :---: | :--- | :--- | :--- | :--- | :---: | :---: |
@@ -28,10 +28,11 @@ This matrix provides the exhaustive audit and verification status of all eightee
 | **16** | **Trajectory Validator** | `training/ascalon/validators/AscalonTrajectoryValidator.ts` | No automated secret scanning or Claim <= Evidence validation gates. | Enforces 9-pattern secret detection, schema completeness, and anti-hallucination rules. | **ELIGIBLE** | **READY** |
 | **17** | **Trajectory Exporter** | `training/ascalon/exporters/AscalonTrajectoryExporter.ts` | Row-level random splitting risked cross-family evaluation data leakage. | Partitioned by `missionFamily` (~70/15/15) to guarantee zero leakage between train/val/test. | **ELIGIBLE** | **READY** |
 | **18** | **Ascalon Replay Engine** | `training/ascalon/generation/trajectory_generator/AscalonReplayEngine.ts` | Trajectories were non-replayable due to unseeded non-determinism. | Verifies step-by-step state reconstruction and cryptographic digest equivalence upon replay. | **ELIGIBLE** | **READY** |
+| **20** | **AER Decision Core** | `apps/web/factoryos/core/intelligence/decision/AERDecisionCoreContract.ts` + `AERDecisionAdapter.ts` | No dedicated learned typed-decision boundary or training/evaluation gate. | Added dynamic NOUL/CHOICE/SCORE contract, strict output validation, verified-gold capture/export, leakage-safe dataset pipeline, calibration, AER-Bench, and non-authoritative JEV/GLiDE shadow comparison. | **CONDITIONAL** (verified checkpoint only) | **READY — INFRASTRUCTURE; NOT TRAINED** |
 | **19** | **ReMaker Surgical Repair Fabric** | `apps/web/factoryos/core/remaker/` + `GuardianReMakerCapabilityIssuer.ts` | Repair authority and physical scope could be represented without a concrete executable capability/lease boundary. | Added Guardian-issued `CAP_REMAKER_REPAIR`, monotonic lease/fencing binding, explicit target planning, preservation fingerprints, physical RenderFabric proof, and F07 re-verification requirement. | **ELIGIBLE** (evidence-gated) | **PENDING CURRENT CI ADMISSION** |
 
 ---
 
 ## 3. Certification
 
-All eighteen (18) components have been audited, remediated, verified via the Ascalon test suite, and certified as **TRAINING_READY**.
+The matrix now covers twenty (20) training-relevant subsystems. Historical components retain their prior verification evidence; the new AER Decision Core row is an infrastructure-readiness assessment and does not claim a trained checkpoint.
