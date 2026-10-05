@@ -57,7 +57,7 @@ describe("Google Safe Browsing provider", () => {
     vi.stubEnv("SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED", "true");
     vi.stubEnv("SAFE_BROWSING_API_KEY", "test-key");
     const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
-      expect(String(url)).toContain("threatMatches%3Afind");
+      expect(String(url)).toContain("threatMatches:find");
       expect(String(url)).toContain("key=test-key");
       expect(init?.method).toBe("POST");
       return new Response(
