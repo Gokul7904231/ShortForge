@@ -224,7 +224,7 @@ function makePhysicalSource(tempDir: string): { videoPath: string; imagePath: st
     "-loglevel",
     "error",
     "-f", "lavfi",
-    "-i", "color=c=black:s=1080x1920:r=30:d=2",
+    "-i", "testsrc2=s=1080x1920:r=30:d=2",
     "-f", "lavfi",
     "-i", "sine=frequency=440:sample_rate=48000:duration=2",
     "-c:v", "libx264",
@@ -325,13 +325,25 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     expect(pluginReceipt.accepted).toBe(true);
     expect(pluginReceipt.revision).toBe(1);
 
-    const preview = await runtime.preview("editor-runtime-proof-session");
+    const preview = await runtime.preview("editor-runtime-proof-session", 0);
+    const previewRepeat = await runtime.preview("editor-runtime-proof-session", 0);
+    const animatedPreview = await runtime.preview("editor-runtime-proof-session", 0.75);
     expect(preview.wasmExecution).toBe("NOT_PROVEN");
     expect(preview.physicalExecution).toBe("PREVIEW_PHYSICAL");
     expect(preview.compositionHashSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(preview.previewArtifactSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(preview.previewArtifactSha256).toBe(previewRepeat.previewArtifactSha256);
+    expect(animatedPreview.previewArtifactSha256).not.toBe(preview.previewArtifactSha256);
     expect(fs.existsSync(preview.previewArtifactPath)).toBe(true);
+    expect(fs.existsSync(animatedPreview.previewArtifactPath)).toBe(true);
     expect(preview.renderIntent.sourceCompositionHashSha256).toBe(preview.compositionHashSha256);
+    const loweredClip = preview.renderIntent.tracks.visualAssets[0];
+    expect(loweredClip?.effects?.some((effect) => effect.kind === "BRIGHTNESS")).toBe(true);
+    expect(loweredClip?.masks?.some((mask) => mask.kind === "ELLIPSE")).toBe(true);
+    expect(loweredClip?.animations?.some((animation) => animation.property === "x")).toBe(true);
+    expect(preview.renderIntent.tracks.visualAssets[1]?.transitionIn?.kind).toBe("FADE");
+    expect(preview.renderIntent.tracks.audioTracks[0]?.playbackRate).toBe(0.8);
+    expect(preview.renderIntent.background?.kind).toBe("GRADIENT");
 
     const lowered = exportCompositionAssertions(composition);
     expect(lowered).toBe(true);
@@ -410,5 +422,6 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     expect(exportResult.f07ReceiptCasUri).toBeTruthy();
     fs.rmSync(approvedRenderDir, { recursive: true, force: true });
     fs.rmSync(preview.previewArtifactPath, { force: true });
+    fs.rmSync(animatedPreview.previewArtifactPath, { force: true });
   });
 });
