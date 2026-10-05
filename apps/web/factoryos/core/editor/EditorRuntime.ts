@@ -375,6 +375,10 @@ export class EditorRuntime implements ShortForgeEditorAPI {
     return this.editor.open(session, composition);
   }
 
+  async resume(session: EditorSession): Promise<EditorDocument> {
+    return this.editor.resume(session);
+  }
+
   async apply(input: EditorCommandEnvelope): Promise<EditorReceipt> {
     return this.editor.apply(input);
   }
