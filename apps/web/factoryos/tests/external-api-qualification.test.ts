@@ -6,6 +6,7 @@ import {
 } from "../core/integrations/external/ExternalApiQualificationContracts";
 import {
   configured,
+  executeProfile,
   externalApiQualificationProfiles,
 } from "../core/integrations/external/ExternalApiQualificationProbes";
 
@@ -56,6 +57,30 @@ describe("External API qualification matrix", () => {
         "https://example.test/search?key=abc123&token=secret&query=x",
       ),
     ).toContain("token=%5BREDACTED%5D");
+  });
+
+  it("uses the versioned Crossref REST endpoint for live qualification", async () => {
+    const profile = externalApiQualificationProfiles().find(
+      (item) => item.providerId === "crossref",
+    )!;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      expect(url).toContain("https://api.crossref.org/v1/works");
+      expect(url).toContain("rows=1");
+      return new Response(JSON.stringify({
+        message: {
+          items: [{ DOI: "10.1234/example", title: ["Machine learning"] }],
+        },
+      }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await executeProfile(profile);
+    expect(result.capabilityVerified).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("treats Hugging Face token aliases as equivalent configuration", () => {
