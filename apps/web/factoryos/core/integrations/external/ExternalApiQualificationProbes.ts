@@ -750,28 +750,21 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
   }
 
   if (id === "arxiv") {
-    const result = await requestJson(id, url, {
-      method: "GET",
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(20_000),
       headers: { Accept: "application/atom+xml, application/xml, text/xml" },
     });
-    const rawText = typeof (result.data as any)?.rawText === "string" ? (result.data as any).rawText : "";
-    if (!rawText.includes("<entry")) {
-      // The generic JSON reader truncates XML, so use a direct text request for the actual capability decision.
-      const response = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { Accept: "application/atom+xml, application/xml, text/xml" } });
-      const textResult = await readText(response);
-      return {
-        normalized: {
-          mediaType: textResult.observation.contentType,
-          entryPresent: textResult.text.includes("<entry"),
-        },
-        observation: textResult.observation,
-        capabilityVerified: response.ok && textResult.text.includes("<entry"),
-      };
-    }
+    const textResult = await readText(response);
+    const entryPresent = textResult.text.includes("<entry");
     return {
-      normalized: { entryPresent: true },
-      observation: result.observation,
-      capabilityVerified: result.observation.status >= 200 && result.observation.status < 300,
+      normalized: {
+        mediaType: textResult.observation.contentType,
+        entryPresent,
+      },
+      observation: textResult.observation,
+      capabilityVerified:
+        response.ok &&
+        entryPresent,
     };
   }
 
