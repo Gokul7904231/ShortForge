@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "okf-control-plane-v2-pr191",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/decisions.md",
+      ".okf/principles.md",
+      ".okf/terminology.md",
+      ".okf/production-helper.md",
+      ".okf/intelligence/aer.md",
+      "Team/workflow/change-gate.md",
+      "Team/contracts/team-change-ir.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.SECURITY.LEAST_PRIVILEGE",
+        "OKF.RELEASE.F07_VERIFIED"
+      ]
+    },
+    "machineRuleCoverage": {
+      "status": "ENFORCED_PILOT",
+      "activeRules": 6,
+      "requiredCoverage": "100% CRITICAL/HIGH",
+      "coveredCriticalHigh": 6
+    }
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "zap": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "notes": "This wave adds governance schemas/tooling/workflow controls. No credentials or production runtime capabilities are changed. GitHub Actions are pinned to immutable commits with read-only contents/pull-request permissions. Full repository security scans remain governed by the existing security lane."
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    ".okf/manifest.yaml",
+    ".okf/rules/index.json",
+    ".okf/rules/source-digests.json",
+    ".okf/schemas/okf-rule.schema.json",
+    ".okf/schemas/okf-sweep.schema.json",
+    ".okf/schemas/exception-record.schema.json",
+    "tools/okf/lint.py",
+    "tools/okf/sweep.py",
+    "tools/okf/drift.py",
+    "tools/okf/validate_report.py",
+    "tools/okf/tests/test_control_plane.py",
+    ".github/workflows/okf-governance.yml",
+    "Team/workflow/change-gate.md"
+  ],
+  "disposition": "PASS",
+  "verificationPlan": [
+    "OKF Governance Gate must pass lint, sweep, V2 drift/coverage tests, Team report linkage, and exception checks.",
+    "No active CRITICAL/HIGH rule may lack verificationRefs.",
+    "Any source-digest drift must fail CI.",
+    "Any OPEN or expired APPROVED exception must fail CI.",
+    "Owner-side GitHub ruleset enforcement remains tracked in Issue #188 and is not claimed as configured by this report."
+  ],
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  }
+}
