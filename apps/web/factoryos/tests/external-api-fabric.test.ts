@@ -155,8 +155,8 @@ describe("Academic research provider adapters", () => {
 
   it("uses Semantic Scholar x-api-key when configured", async () => {
     process.env.SEMANTIC_SCHOLAR_API_KEY = "test-key";
-    const mock = vi.fn(async (url: string, init?: RequestInit) => {
-      expect(url).toContain("paper/search");
+    const mock = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      expect(String(url)).toContain("paper/search");
       expect((init?.headers as Record<string, string>)["x-api-key"]).toBe(
         "test-key",
       );
@@ -194,8 +194,8 @@ describe("Academic research provider adapters", () => {
 
   it("uses the Crossref polite pool when an email is configured", async () => {
     process.env.CROSSREF_MAILTO = "research@example.com";
-    const mock = vi.fn(async (url: string, init?: RequestInit) => {
-      expect(url).toContain("mailto=research%40example.com");
+    const mock = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      expect(String(url)).toContain("mailto=research%40example.com");
       expect(
         (init?.headers as Record<string, string>)["User-Agent"],
       ).toContain("research@example.com");
