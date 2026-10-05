@@ -1,0 +1,14 @@
+{
+  "id": "shortforge-wan-dual-t4-placeholder",
+  "title": "ShortForge Wan Dual T4 Renderer",
+  "code_file": "worker.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
