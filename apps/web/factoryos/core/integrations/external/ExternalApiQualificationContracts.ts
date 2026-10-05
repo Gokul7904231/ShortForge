@@ -74,10 +74,12 @@ export function canRunLive(
   options: {
     readonly live: boolean;
     readonly allowMetered: boolean;
+    readonly allowDestructive: boolean;
   },
 ): boolean {
   if (!options.live) return false;
-  if (isMeteredOrDestructive(profile) && !options.allowMetered) return false;
+  if (profile.metered && !options.allowMetered) return false;
+  if (profile.destructive && !options.allowDestructive) return false;
   return true;
 }
 
