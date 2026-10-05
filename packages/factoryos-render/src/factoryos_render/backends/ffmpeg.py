@@ -115,7 +115,8 @@ class FFmpegBackend:
         crf: int = 20,
         preset: str = "fast",
         audio_path: Optional[str] = None,
-        duration_seconds: Optional[float] = None
+        duration_seconds: Optional[float] = None,
+        audio_start_seconds: float = 0.0
     ) -> subprocess.Popen:
         """
         Spawns ffmpeg process that accepts raw RGBA frames over stdin.
@@ -134,6 +135,8 @@ class FFmpegBackend:
         ]
 
         if audio_path and os.path.exists(audio_path):
+            if audio_start_seconds > 0:
+                cmd.extend(["-ss", f"{audio_start_seconds:.3f}"])
             cmd.extend(["-i", audio_path])
         else:
             cmd.extend(["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"])
@@ -163,6 +166,7 @@ class FFmpegBackend:
         duration_seconds: float,
         fps: int = 30,
         audio_path: Optional[str] = None,
+        audio_start_seconds: float = 0.0,
         crf: int = 20,
         preset: str = "fast"
     ) -> None:
@@ -179,6 +183,8 @@ class FFmpegBackend:
         ]
 
         if audio_path and os.path.exists(audio_path):
+            if audio_start_seconds > 0:
+                cmd.extend(["-ss", f"{audio_start_seconds:.3f}"])
             cmd.extend(["-i", audio_path])
         else:
             cmd.extend(["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"])
