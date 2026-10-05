@@ -1,6 +1,12 @@
-import { canonicalizeComposition, validateCompositionIR, type CompositionIR } from "../timeline/CompositionIR";
+import { createHash } from "node:crypto";
+import {
+  canonicalizeComposition,
+  validateCompositionIR,
+  type CompositionIR,
+} from "../timeline/CompositionIR";
 import { moveClip, retimeClip, rippleDelete, splitClip, trimClip } from "../timeline/TimelineTransforms";
 import type {
+  EditorActor,
   EditorCommand,
   EditorCommandEnvelope,
   EditorDocument,
@@ -9,26 +15,68 @@ import type {
   ShortForgeEditorAPI,
 } from "./EditorContracts";
 
-function hashDocument(composition: CompositionIR): string {
-  // Composition canonicalization is intentionally deterministic. The editor
-  // exposes the canonical payload string here; cryptographic hashing remains
-  // the responsibility of the upstream receipt/CAS layer.
-  return canonicalizeComposition(composition);
+function sha256(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-function changedClipIds(command: EditorCommand): string[] {
-  switch (command.type) {
-    case "SPLIT_CLIP":
-    case "MOVE_CLIP":
-    case "TRIM_CLIP":
-    case "RETIME_CLIP":
-    case "ADD_EFFECT":
-    case "ADD_MASK":
-    case "SET_TRANSITION":
-      return [command.clipId];
-    case "RIPPLE_DELETE":
-      return [];
+function hashDocument(composition: CompositionIR): string {
+  return sha256(canonicalizeComposition(composition));
+}
+
+function actorEqual(a: EditorActor, b: EditorActor): boolean {
+  return a.kind === b.kind && a.id === b.id;
+}
+
+function commandDigest(input: EditorCommandEnvelope): string {
+  return sha256(
+    canonicalizeComposition({
+      actor: input.actor,
+      expectedRevision: input.expectedRevision,
+      command: input.command,
+    }),
+  );
+}
+
+function changedClipIds(before: CompositionIR, after: CompositionIR): string[] {
+  const beforeMap = new Map<string, string>();
+  const afterMap = new Map<string, string>();
+
+  for (const track of before.tracks) {
+    for (const clip of track.clips) {
+      beforeMap.set(clip.id, canonicalizeComposition(clip));
+    }
   }
+
+  for (const track of after.tracks) {
+    for (const clip of track.clips) {
+      afterMap.set(clip.id, canonicalizeComposition(clip));
+    }
+  }
+
+  return [...new Set([...beforeMap.keys(), ...afterMap.keys()])]
+    .filter((id) => beforeMap.get(id) !== afterMap.get(id));
+}
+
+function updateClip(
+  composition: CompositionIR,
+  trackId: string,
+  clipId: string,
+  updater: (clip: CompositionIR["tracks"][number]["clips"][number]) => CompositionIR["tracks"][number]["clips"][number],
+): CompositionIR {
+  let found = false;
+  const tracks = composition.tracks.map((track) => {
+    if (track.id !== trackId) return track;
+    return {
+      ...track,
+      clips: track.clips.map((clip) => {
+        if (clip.id !== clipId) return clip;
+        found = true;
+        return updater(clip);
+      }),
+    };
+  });
+  if (!found) throw new Error(`Unknown clip: ${clipId}`);
+  return { ...composition, tracks };
 }
 
 function applyCommand(composition: CompositionIR, command: EditorCommand): CompositionIR {
@@ -40,65 +88,30 @@ function applyCommand(composition: CompositionIR, command: EditorCommand): Compo
     case "MOVE_CLIP":
       return moveClip(composition, command.trackId, command.clipId, command.start);
     case "RIPPLE_DELETE":
-      return rippleDelete(composition, command.trackId, command.start, command.end);
+      return rippleDelete(composition, command.trackId, command.start, command.end, {
+        scope: command.scope,
+        linkedTrackIds: command.linkedTrackIds,
+        includeAudio: command.includeAudio,
+        includeCaptions: command.includeCaptions,
+      });
     case "RETIME_CLIP":
       return retimeClip(composition, command.trackId, command.clipId, command.duration);
     case "ADD_EFFECT":
-      return {
-        ...composition,
-        tracks: composition.tracks.map((track) =>
-          track.id !== command.trackId
-            ? track
-            : {
-                ...track,
-                clips: track.clips.map((clip) =>
-                  clip.id !== command.clipId
-                    ? clip
-                    : {
-                        ...clip,
-                        effects: [...(clip.effects ?? []), command.effect],
-                      },
-                ),
-              },
-        ),
-      };
+      return updateClip(composition, command.trackId, command.clipId, (clip) => ({
+        ...clip,
+        effects: [...(clip.effects ?? []), command.effect],
+      }));
     case "ADD_MASK":
-      return {
-        ...composition,
-        tracks: composition.tracks.map((track) =>
-          track.id !== command.trackId
-            ? track
-            : {
-                ...track,
-                clips: track.clips.map((clip) =>
-                  clip.id !== command.clipId
-                    ? clip
-                    : {
-                        ...clip,
-                        masks: [...(clip.masks ?? []), command.mask],
-                      },
-                ),
-              },
-        ),
-      };
+      return updateClip(composition, command.trackId, command.clipId, (clip) => ({
+        ...clip,
+        masks: [...(clip.masks ?? []), command.mask],
+      }));
     case "SET_TRANSITION":
-      return {
-        ...composition,
-        tracks: composition.tracks.map((track) =>
-          track.id !== command.trackId
-            ? track
-            : {
-                ...track,
-                clips: track.clips.map((clip) =>
-                  clip.id !== command.clipId
-                    ? clip
-                    : command.edge === "IN"
-                      ? { ...clip, transitionIn: command.transition }
-                      : { ...clip, transitionOut: command.transition },
-                ),
-              },
-        ),
-      };
+      return updateClip(composition, command.trackId, command.clipId, (clip) =>
+        command.edge === "IN"
+          ? { ...clip, transitionIn: command.transition }
+          : { ...clip, transitionOut: command.transition },
+      );
   }
 }
 
@@ -107,12 +120,29 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
     string,
     { session: EditorSession; composition: CompositionIR }
   >();
+  private readonly acceptedCommands = new Map<
+    string,
+    { digest: string; receipt: EditorReceipt }
+  >();
 
   async open(session: EditorSession, composition: CompositionIR): Promise<EditorDocument> {
     const validation = validateCompositionIR(composition);
     if (!validation.valid) {
       throw new Error(`Editor rejected invalid composition: ${validation.errors.join("; ")}`);
     }
+    if (session.compositionId !== composition.compositionId) {
+      throw new Error("EDITOR_COMPOSITION_ID_MISMATCH");
+    }
+    if (!Number.isInteger(session.revision) || session.revision < 0) {
+      throw new Error("EDITOR_INVALID_SESSION_REVISION");
+    }
+
+    for (const key of this.acceptedCommands.keys()) {
+      if (key.startsWith(`${session.sessionId}:`)) {
+        this.acceptedCommands.delete(key);
+      }
+    }
+
     this.sessions.set(session.sessionId, { session, composition });
     return this.getDocument(session.sessionId);
   }
@@ -126,18 +156,63 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
         revision: -1,
         compositionHash: "",
         changedClipIds: [],
+        commandDigestSha256: commandDigest(input),
         error: "EDITOR_SESSION_NOT_FOUND",
       };
     }
 
-    if (state.session.mode === "READ_ONLY") {
+    const digest = commandDigest(input);
+    const cacheKey = `${input.sessionId}:${input.commandId}`;
+    const previous = this.acceptedCommands.get(cacheKey);
+
+    if (previous) {
+      if (previous.digest !== digest) {
+        return {
+          commandId: input.commandId,
+          accepted: false,
+          revision: state.session.revision,
+          compositionHash: hashDocument(state.composition),
+          changedClipIds: [],
+          commandDigestSha256: digest,
+          error: "EDITOR_COMMAND_ID_REUSE",
+        };
+      }
+      return previous.receipt;
+    }
+
+    if (!actorEqual(input.actor, state.session.actor)) {
       return {
         commandId: input.commandId,
         accepted: false,
         revision: state.session.revision,
         compositionHash: hashDocument(state.composition),
         changedClipIds: [],
+        commandDigestSha256: digest,
+        error: "EDITOR_ACTOR_MISMATCH",
+      };
+    }
+
+    if (state.session.mode !== "EDIT") {
+      return {
+        commandId: input.commandId,
+        accepted: false,
+        revision: state.session.revision,
+        compositionHash: hashDocument(state.composition),
+        changedClipIds: [],
+        commandDigestSha256: digest,
         error: "EDITOR_READ_ONLY",
+      };
+    }
+
+    if (!Number.isInteger(input.expectedRevision) || input.expectedRevision < 0) {
+      return {
+        commandId: input.commandId,
+        accepted: false,
+        revision: state.session.revision,
+        compositionHash: hashDocument(state.composition),
+        changedClipIds: [],
+        commandDigestSha256: digest,
+        error: "EDITOR_INVALID_EXPECTED_REVISION",
       };
     }
 
@@ -148,20 +223,24 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
         revision: state.session.revision,
         compositionHash: hashDocument(state.composition),
         changedClipIds: [],
+        commandDigestSha256: digest,
         error: "EDITOR_REVISION_CONFLICT",
       };
     }
 
     try {
-      const next = applyCommand(state.composition, input.command);
+      const before = state.composition;
+      const next = applyCommand(before, input.command);
       const validation = validateCompositionIR(next);
+
       if (!validation.valid) {
         return {
           commandId: input.commandId,
           accepted: false,
           revision: state.session.revision,
-          compositionHash: hashDocument(state.composition),
+          compositionHash: hashDocument(before),
           changedClipIds: [],
+          commandDigestSha256: digest,
           error: `EDITOR_VALIDATION_FAILED: ${validation.errors.join("; ")}`,
         };
       }
@@ -170,13 +249,17 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
       state.composition = next;
       state.session = { ...state.session, revision };
 
-      return {
+      const receipt: EditorReceipt = {
         commandId: input.commandId,
         accepted: true,
         revision,
         compositionHash: hashDocument(next),
-        changedClipIds: changedClipIds(input.command),
+        changedClipIds: changedClipIds(before, next),
+        commandDigestSha256: digest,
       };
+
+      this.acceptedCommands.set(cacheKey, { digest, receipt });
+      return receipt;
     } catch (error) {
       return {
         commandId: input.commandId,
@@ -184,6 +267,7 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
         revision: state.session.revision,
         compositionHash: hashDocument(state.composition),
         changedClipIds: [],
+        commandDigestSha256: digest,
         error: error instanceof Error ? error.message : "EDITOR_COMMAND_FAILED",
       };
     }
@@ -192,6 +276,7 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
   async getDocument(sessionId: string): Promise<EditorDocument> {
     const state = this.sessions.get(sessionId);
     if (!state) throw new Error("EDITOR_SESSION_NOT_FOUND");
+
     return {
       composition: state.composition,
       revision: state.session.revision,
