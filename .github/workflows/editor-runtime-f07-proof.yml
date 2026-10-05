@@ -1,0 +1,57 @@
+name: Editor Runtime F06 F07 Physical Proof
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/factoryos/core/editor/**"
+      - "apps/web/factoryos/core/fabric/RenderFabric.ts"
+      - "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
+      - "apps/web/factoryos/core/verification/youtube/**"
+      - "apps/web/factoryos/tests/editor-runtime-f06-f07.test.ts"
+      - "packages/factoryos-render/**"
+      - ".github/workflows/editor-runtime-f07-proof.yml"
+  workflow_dispatch:
+
+jobs:
+  physical-proof:
+    name: Editor -> F06 -> CAS -> F07 physical proof
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      NODE_ENV: test
+      FACTORYOS_FFMPEG_PATH: ffmpeg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install FFmpeg
+        working-directory: .
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Install canonical local renderer
+        working-directory: .
+        run: python -m pip install -e packages/factoryos-render
+
+      - name: Typecheck FactoryOS
+        run: npm run factoryos:typecheck
+
+      - name: Run physical editor -> F06 -> CAS -> F07 proof
+        run: npm exec vitest run --config vitest.config.ts factoryos/tests/editor-runtime-f06-f07.test.ts

@@ -47,6 +47,31 @@ export interface LocalRenderSceneIntent {
     duration_seconds?: number;
     volume?: number;
   };
+  audio_tracks?: readonly {
+    track_id: string;
+    audio_path: string;
+    start_seconds?: number;
+    duration_seconds?: number;
+    volume?: number;
+    is_narration?: boolean;
+    source_in_seconds?: number;
+    source_duration_seconds?: number;
+    playback_rate?: number;
+    fade_in_seconds?: number;
+    fade_out_seconds?: number;
+  }[];
+  captions?: readonly {
+    text: string;
+    start_seconds: number;
+    duration_seconds: number;
+    words?: readonly {
+      word: string;
+      start: number;
+      end: number;
+    }[];
+    style?: string;
+  }[];
+  background?: Record<string, unknown>;
 }
 
 export interface LocalRenderIntent {
@@ -63,6 +88,15 @@ export interface LocalRenderIntent {
   };
   metadata?: Record<string, any>;
   repair_scope?: LocalRenderScope;
+}
+
+export interface PreviewReceipt {
+  output_path: string;
+  output_sha256: string;
+  width: number;
+  height: number;
+  fps: number;
+  timestamp_seconds: number;
 }
 
 export interface RenderReceipt {
@@ -158,6 +192,22 @@ export class LocalRenderAdapter {
   /**
    * Render video from RenderIntent
    */
+  public async preview(
+    intent: LocalRenderIntent,
+    outputPath: string,
+    timestampSeconds = 0,
+  ): Promise<PreviewReceipt> {
+    const response = await this.executeCommand<{ preview: PreviewReceipt }>("preview", {
+      renderIntent: intent,
+      outputPath,
+      timestampSeconds,
+    });
+    if (!response || !response.preview) {
+      throw new Error("Local renderer failed to produce a deterministic preview.");
+    }
+    return response.preview;
+  }
+
   public async render(
     intent: LocalRenderIntent,
     runId?: string,

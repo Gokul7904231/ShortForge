@@ -1,9 +1,11 @@
 import type {
   CompositionIR,
+  AnimationTrack,
   EffectNode,
   MaskNode,
   MediaTime,
   RippleScope,
+  Transform2D,
   TransitionNode,
 } from "../timeline/CompositionIR";
 
@@ -47,6 +49,22 @@ export type EditorCommand =
       readonly trackId: string;
       readonly clipId: string;
       readonly duration: MediaTime;
+    }
+  | {
+      readonly type: "SET_CLIP_TRANSFORM";
+      readonly trackId: string;
+      readonly clipId: string;
+      readonly transform: Partial<Transform2D>;
+    }
+  | {
+      readonly type: "SET_CLIP_ANIMATIONS";
+      readonly trackId: string;
+      readonly clipId: string;
+      readonly animations: readonly AnimationTrack[];
+    }
+  | {
+      readonly type: "SET_CANVAS_BACKGROUND";
+      readonly background: CompositionIR["canvas"]["background"] | undefined;
     }
   | {
       readonly type: "ADD_EFFECT";
@@ -144,7 +162,15 @@ export type EditorMcpToolName =
   | "editor.apply"
   | "editor.validate"
   | "editor.preview"
-  | "editor.export";
+  | "editor.export"
+  | "editor.undo"
+  | "editor.redo"
+  | "editor.checkpoint"
+  | "editor.restore"
+  | "editor.replay"
+  | "editor.history"
+  | "editor.operations"
+  | "editor.checkpoints";
 
 export interface EditorMcpRequest {
   readonly tool: EditorMcpToolName;
@@ -159,6 +185,7 @@ export interface EditorMcpReceipt {
   readonly commandId?: string;
   readonly revision?: number;
   readonly compositionHash?: string;
+  readonly data?: Readonly<Record<string, unknown>>;
   readonly error?: string;
 }
 

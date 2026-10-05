@@ -9,6 +9,8 @@ import sys
 import time
 import uuid
 import hashlib
+import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List
 
@@ -21,6 +23,7 @@ from ..timing.frame_clock import FrameClock
 from ..timing.audio_sync import AudioSync
 from ..backends.ffmpeg import FFmpegBackend
 from .scene_engine import SceneEngine
+from .frame_engine import FrameEngine
 from ..persistence.checkpoint_store import CheckpointStore
 from ..assets.cache import ContentAddressedCache
 
@@ -44,22 +47,32 @@ class Renderer:
         total_duration = 0.0
 
         for s in intent.scenes:
-            audio_path = s.audio_track.audio_path if s.audio_track else None
-            # Authoritative audio-first timing
-            dur_sec = float(s.duration_seconds) if (s.duration_seconds and s.duration_seconds >= 0.5) else AudioSync.synchronize_scene_duration(s.duration_seconds, audio_path, self.ffmpeg.ffmpeg_path)
+            audio_tracks_source = list(s.audio_tracks)
+            if not audio_tracks_source and s.audio_track:
+                audio_tracks_source = [s.audio_track]
+            audio_path = audio_tracks_source[0].audio_path if audio_tracks_source else None
+            # Authoritative audio-first timing.
+            dur_sec = float(s.duration_seconds) if (s.duration_seconds and s.duration_seconds >= 0.5) else AudioSync.synchronize_scene_duration(
+                s.duration_seconds,
+                audio_path,
+                self.ffmpeg.ffmpeg_path,
+            )
             dur_frames = clock.duration_to_frames(dur_sec)
 
             start_f = current_frame
             end_f = current_frame + dur_frames - 1
 
             shots_ir: List[CompositionShot] = []
-            shot_start = 0
-            # Distribute shots evenly across scene frames if multiple
             if s.shots:
-                shot_dur = dur_frames // len(s.shots)
-                for i, sh in enumerate(s.shots):
-                    sh_start = shot_start
-                    sh_end = (shot_start + shot_dur - 1) if i < len(s.shots) - 1 else dur_frames - 1
+                for sh in s.shots:
+                    start_seconds = max(0.0, float(sh.start_seconds))
+                    end_seconds = max(start_seconds + 0.001, start_seconds + float(sh.duration_seconds))
+                    sh_start = min(dur_frames - 1, clock.time_to_frame(start_seconds))
+                    sh_end = min(dur_frames - 1, max(sh_start, clock.time_to_frame(end_seconds) - 1))
+                    props = dict(sh.props or {})
+                    props.setdefault("sourceInSeconds", sh.source_in_seconds)
+                    props.setdefault("sourceDurationSeconds", sh.source_duration_seconds)
+                    props.setdefault("playbackRate", sh.playback_rate)
                     shots_ir.append(
                         CompositionShot(
                             shot_id=sh.id,
@@ -67,12 +80,11 @@ class Renderer:
                             start_frame=sh_start,
                             end_frame=sh_end,
                             duration_frames=sh_end - sh_start + 1,
-                            props=sh.props,
+                            props=props,
                             motion=sh.motion,
-                            assets=sh.assets
+                            assets=sh.assets,
                         )
                     )
-                    shot_start = sh_end + 1
             else:
                 shots_ir.append(
                     CompositionShot(
@@ -83,7 +95,7 @@ class Renderer:
                         duration_frames=dur_frames,
                         props={"caption": s.narration_text},
                         motion={},
-                        assets=[]
+                        assets=[],
                     )
                 )
 
@@ -98,25 +110,37 @@ class Renderer:
                     shots=shots_ir,
                     narration_text=s.narration_text,
                     audio_path=audio_path,
+                    audio_start_seconds=audio_tracks_source[0].start_seconds if audio_tracks_source else 0.0,
+                    audio_tracks=[a.__dict__ if hasattr(a, "__dict__") else a for a in audio_tracks_source],
                     captions=[c.__dict__ if hasattr(c, "__dict__") else c for c in s.captions],
-                    is_locked=s.is_locked
+                    background=s.background or intent.background or {},
+                    is_locked=s.is_locked,
                 )
             )
 
             current_frame += dur_frames
             total_duration += dur_sec
 
-        # Deterministic composition hash
-        h = hashlib.sha256()
-        h.update(str(intent.output.width).encode())
-        h.update(str(intent.output.height).encode())
-        h.update(str(fps).encode())
-        h.update(str(current_frame).encode())
-        for sc in scenes_ir:
-            h.update(sc.scene_id.encode())
-            h.update(str(sc.duration_frames).encode())
-            h.update(sc.narration_text.encode())
-        comp_hash = h.hexdigest()
+        # Deterministic composition hash must bind every lowered feature,
+        # otherwise cache identity could collide across different edits.
+        composition_payload = {
+            "width": intent.output.width,
+            "height": intent.output.height,
+            "fps": fps,
+            "total_frames": current_frame,
+            "total_duration_seconds": total_duration,
+            "background": intent.background,
+            "scenes": [asdict(scene) for scene in scenes_ir],
+        }
+        comp_hash = hashlib.sha256(
+            json.dumps(
+                composition_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                default=str,
+            ).encode("utf-8"),
+        ).hexdigest()
 
         return CompositionIR(
             composition_id=f"comp_{comp_hash[:12]}",
@@ -132,6 +156,50 @@ class Renderer:
             composition_hash=comp_hash
         )
 
+    def preview(
+        self,
+        intent: RenderIntent,
+        output_path: str,
+        timestamp_seconds: float = 0.0,
+    ) -> Dict[str, Any]:
+        """Render one deterministic preview frame using the same feature-lowering engine."""
+        comp = self.compile_composition(intent)
+        if not comp.scenes:
+            raise RuntimeError("Preview requires at least one scene.")
+
+        target = max(0.0, min(float(timestamp_seconds), max(0.0, comp.total_duration_seconds - 1.0 / max(1, comp.fps))))
+        target_frame = int(round(target * comp.fps))
+
+        scene = comp.scenes[-1]
+        relative_frame = scene.duration_frames - 1
+        for candidate in comp.scenes:
+            if candidate.start_frame <= target_frame <= candidate.end_frame:
+                scene = candidate
+                relative_frame = target_frame - candidate.start_frame
+                break
+
+        from PIL import Image
+        frame_engine = FrameEngine(comp.width, comp.height, comp.fps)
+        raw = frame_engine.render_scene_frame(
+            scene,
+            relative_frame,
+            intent.safe_area.top,
+            intent.safe_area.bottom,
+        )
+        image = Image.frombytes("RGBA", (comp.width, comp.height), raw)
+        destination = os.path.abspath(output_path)
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        image.save(destination, format="PNG")
+        output_sha256 = hashlib.sha256(Path(destination).read_bytes()).hexdigest()
+        return {
+            "output_path": destination,
+            "output_sha256": output_sha256,
+            "width": comp.width,
+            "height": comp.height,
+            "fps": comp.fps,
+            "timestamp_seconds": target,
+        }
+
     def render(
         self,
         intent: RenderIntent,
@@ -146,8 +214,10 @@ class Renderer:
         if not run_id:
             run_id = f"run_{uuid.uuid4().hex[:12]}"
 
-        # Intent hash
-        intent_h = hashlib.sha256(str(intent.project_id).encode()).hexdigest()
+        # Intent hash binds the complete serialized render request.
+        intent_h = hashlib.sha256(
+            json.dumps(asdict(intent), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str).encode("utf-8")
+        ).hexdigest()
         comp = self.compile_composition(intent)
 
         # Initialize or load checkpoint

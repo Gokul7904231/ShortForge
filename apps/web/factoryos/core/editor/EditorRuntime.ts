@@ -1,0 +1,799 @@
+import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type {
+  CompositionIR,
+  CompositionClip,
+  CompositionAudioClip,
+  CompositionCaption,
+  AnimationTrack,
+} from "../timeline/CompositionIR";
+import {
+  canonicalizeComposition,
+  mediaTimeToMilliseconds,
+  validateCompositionIR,
+} from "../timeline/CompositionIR";
+import { RenderFabric } from "../fabric/RenderFabric";
+import type {
+  RenderIntent,
+  RenderTrackAsset,
+  RenderAudioTrack,
+  RenderCaptionCue,
+  RenderAnimationTrack,
+} from "../contracts/RenderIntentContracts";
+import type { RenderTreasuryContext } from "../fabric/RenderFabric";
+import { ContentAddressedStore } from "../compute/cas/ContentAddressedStore";
+import {
+  F07ReleaseGuardian,
+  type ReleaseGuardianParams,
+} from "../verification/youtube/F07ReleaseGuardian";
+import {
+  VerificationReceiptVerifier,
+  type VerificationReceipt,
+} from "../verification/youtube/VerificationReceipt";
+import { DurableEditor } from "./DurableEditor";
+import { EditorPluginRuntime, type ApplyPluginCommandInput, type EditorPluginDefinition } from "./EditorPluginRuntime";
+import type {
+  EditorCommandEnvelope,
+  EditorDocument,
+  EditorMcpReceipt,
+  EditorMcpRequest,
+  EditorReceipt,
+  EditorSession,
+  HeadlessCompositionJob,
+  ShortForgeEditorAPI,
+} from "./EditorContracts";
+import type {
+  EditorCheckpoint,
+} from "./EditorRevisionContracts";
+
+export interface EditorPreviewPlan {
+  readonly previewId: string;
+  readonly compositionId: string;
+  readonly compositionRevision: number;
+  readonly compositionHashSha256: string;
+  readonly renderIntent: RenderIntent;
+  readonly physicalExecution: "PREVIEW_PHYSICAL";
+  readonly wasmExecution: "NOT_PROVEN";
+  readonly timestampSeconds: number;
+  readonly previewArtifactPath: string;
+  readonly previewArtifactSha256: string;
+}
+
+export interface EditorF07ReleaseContext {
+  readonly guardianParams: Omit<ReleaseGuardianParams, "localMediaPath" | "artifactSha256" | "artifactCasRef">;
+}
+
+export interface EditorExportRequest {
+  readonly sessionId: string;
+  readonly requestedOutput: HeadlessCompositionJob["requestedOutput"];
+  readonly f07: EditorF07ReleaseContext;
+  /** Optional pre-authorized Treasury context supplied by Overseer/Treasurer; never created by the editor. */
+  readonly treasury?: RenderTreasuryContext;
+  readonly outputDir?: string;
+}
+
+export interface EditorExportResult {
+  readonly jobId: string;
+  readonly compositionRevision: number;
+  readonly compositionHashSha256: string;
+  readonly renderIntent: RenderIntent;
+  readonly renderArtifact: NonNullable<Awaited<ReturnType<RenderFabric["executeRender"]>>["artifact"]>;
+  readonly casArtifact: Awaited<ReturnType<ContentAddressedStore["putFile"]>>;
+  readonly f07Receipt: VerificationReceipt;
+  readonly f07ReceiptVerified: boolean;
+  readonly f07ReceiptCasUri: string;
+}
+
+export interface EditorRuntimeScript {
+  readonly scriptId: string;
+  readonly sessionId: string;
+  readonly commands: readonly EditorCommandEnvelope[];
+}
+
+export interface EditorRuntimeScriptResult {
+  readonly scriptId: string;
+  readonly receipts: readonly EditorReceipt[];
+  readonly finalDocument: EditorDocument;
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function ticksToSeconds(ticks: number): number {
+  return mediaTimeToMilliseconds(ticks) / 1000;
+}
+
+function compositionKind(composition: CompositionIR): RenderIntent["compositionType"] {
+  const hasText = composition.tracks.some((track) =>
+    track.clips.some((clip) => clip.kind === "TEXT"),
+  );
+  if (hasText || composition.captions.some((caption) => caption.style.animation === "KINETIC_WORD")) {
+    return "KINETIC_TEXT";
+  }
+  return "DYNAMIC_CANVAS";
+}
+
+function lowerAnimationTracks(animations: readonly AnimationTrack[] | undefined): RenderAnimationTrack[] {
+  return (animations ?? []).map((track) => ({
+    property: track.property,
+    keyframes: track.keyframes.map((frame) => ({
+      timeSeconds: ticksToSeconds(frame.time),
+      value: frame.value,
+      interpolation: frame.interpolation,
+      inHandle: frame.inHandle,
+      outHandle: frame.outHandle,
+    })),
+  }));
+}
+
+function lowerEffects(clip: CompositionClip) {
+  return (clip.effects ?? []).map((effect) => ({
+    effectId: effect.effectId,
+    kind: effect.kind,
+    scope: effect.scope,
+    params: effect.params,
+    enabled: effect.enabled,
+    animations: lowerAnimationTracks(effect.animations),
+  }));
+}
+
+function lowerMasks(clip: CompositionClip) {
+  return (clip.masks ?? []).map((mask) => ({
+    maskId: mask.maskId,
+    kind: mask.kind,
+    x: mask.x,
+    y: mask.y,
+    width: mask.width,
+    height: mask.height,
+    rotationDeg: mask.rotationDeg,
+    feather: mask.feather,
+    stroke: mask.stroke,
+    inverted: mask.inverted,
+    animations: lowerAnimationTracks(mask.animations),
+  }));
+}
+
+function lowerTransition(transition: CompositionClip["transitionIn"] | CompositionClip["transitionOut"]) {
+  return transition
+    ? {
+        transitionId: transition.transitionId,
+        kind: transition.kind,
+        durationSeconds: ticksToSeconds(transition.duration),
+        params: transition.params,
+      }
+    : undefined;
+}
+
+function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
+  if (!clip.src) {
+    throw new Error(`EDITOR_RENDER_SOURCE_REQUIRED:${clip.id}`);
+  }
+
+  let renderType: RenderTrackAsset["type"];
+  switch (clip.kind) {
+    case "VIDEO":
+      renderType = "VIDEO";
+      break;
+    case "IMAGE":
+      renderType = "IMAGE";
+      break;
+    case "MOTION_CANVAS":
+      renderType = "HTML_CANVAS";
+      break;
+    default:
+      throw new Error(`EDITOR_RENDER_CLIP_KIND_UNSUPPORTED:${clip.kind}`);
+  }
+
+  const scaleX = clip.transform?.scaleX;
+  const scaleY = clip.transform?.scaleY;
+  const scale =
+    scaleX !== undefined && scaleY !== undefined
+      ? (scaleX + scaleY) / 2
+      : scaleX ?? scaleY;
+
+  const animations = lowerAnimationTracks(clip.animations);
+  const effects = lowerEffects(clip);
+  const masks = lowerMasks(clip);
+  const transitionIn = lowerTransition(clip.transitionIn);
+  const transitionOut = lowerTransition(clip.transitionOut);
+
+  return {
+    id: clip.id,
+    type: renderType,
+    src: clip.src,
+    startSeconds: ticksToSeconds(clip.start),
+    durationSeconds: ticksToSeconds(clip.duration),
+    zIndex: clip.zIndex,
+    sourceInSeconds: clip.sourceIn !== undefined ? ticksToSeconds(clip.sourceIn) : undefined,
+    sourceDurationSeconds: clip.sourceDuration !== undefined ? ticksToSeconds(clip.sourceDuration) : undefined,
+    playbackRate: clip.playbackRate,
+    transform:
+      scale !== undefined ||
+      clip.transform?.opacity !== undefined ||
+      clip.transform?.x !== undefined ||
+      clip.transform?.y !== undefined ||
+      clip.transform?.rotationDeg !== undefined
+        ? {
+            ...(scale !== undefined ? { scale } : {}),
+            ...(scaleX !== undefined ? { scaleX } : {}),
+            ...(scaleY !== undefined ? { scaleY } : {}),
+            ...(clip.transform?.opacity !== undefined ? { opacity: clip.transform.opacity } : {}),
+            ...(clip.transform?.x !== undefined ? { x: clip.transform.x } : {}),
+            ...(clip.transform?.y !== undefined ? { y: clip.transform.y } : {}),
+            ...(clip.transform?.rotationDeg !== undefined ? { rotationDeg: clip.transform.rotationDeg } : {}),
+          }
+        : undefined,
+    animations: animations.length > 0 ? animations : undefined,
+    effects: effects.length > 0 ? effects : undefined,
+    masks: masks.length > 0 ? masks : undefined,
+    transitionIn,
+    transitionOut,
+  };
+}
+
+function audioToRenderTrack(audio: CompositionAudioClip): RenderAudioTrack {
+  if (!audio.src) throw new Error(`EDITOR_RENDER_AUDIO_SOURCE_REQUIRED:${audio.id}`);
+  return {
+    id: audio.id,
+    type:
+      audio.kind === "VOICE"
+        ? "VOICE"
+        : audio.kind === "MUSIC"
+          ? "BGM"
+          : "SFX",
+    src: audio.src,
+    volume: audio.volume,
+    startSeconds: ticksToSeconds(audio.start),
+    durationSeconds: ticksToSeconds(audio.duration),
+    fadeInSeconds: audio.fadeIn !== undefined ? ticksToSeconds(audio.fadeIn) : undefined,
+    fadeOutSeconds: audio.fadeOut !== undefined ? ticksToSeconds(audio.fadeOut) : undefined,
+    sourceInSeconds: audio.sourceIn !== undefined ? ticksToSeconds(audio.sourceIn) : undefined,
+    sourceDurationSeconds: audio.sourceDuration !== undefined ? ticksToSeconds(audio.sourceDuration) : undefined,
+    playbackRate: audio.playbackRate,
+  };
+}
+
+function captionToRenderCue(caption: CompositionCaption): RenderCaptionCue {
+  const animation =
+    caption.style.animation === "KINETIC_WORD"
+      ? "POP"
+      : caption.style.animation === "POP_IN"
+        ? "POP"
+        : caption.style.animation === "FADE"
+          ? "FADE"
+          : "NONE";
+  return {
+    text: caption.text,
+    startMs: mediaTimeToMilliseconds(caption.start),
+    endMs: mediaTimeToMilliseconds(caption.end),
+    style: {
+      fontSize: caption.style.fontSize,
+      fontColor: caption.style.primaryColor,
+      highlightColor: caption.style.highlightColor,
+      animation,
+    },
+  };
+}
+
+export function compileCompositionToRenderIntent(
+  composition: CompositionIR,
+  revision: number,
+  requestedOutput: HeadlessCompositionJob["requestedOutput"],
+): RenderIntent {
+  const report = validateCompositionIR(composition);
+  if (!report.valid) {
+    throw new Error(`EDITOR_RENDER_INVALID_COMPOSITION:${report.errors.join("; ")}`);
+  }
+  if (requestedOutput.format !== "MP4") {
+    throw new Error("EDITOR_HEADLESS_FORMAT_UNSUPPORTED: only MP4 is currently routed through canonical F06");
+  }
+  if (
+    requestedOutput.width !== composition.canvas.width ||
+    requestedOutput.height !== composition.canvas.height
+  ) {
+    throw new Error("EDITOR_HEADLESS_OUTPUT_MISMATCH");
+  }
+
+  const compositionHashSha256 = sha256(canonicalizeComposition(composition));
+  const stableJobSeed = sha256(
+    canonicalizeComposition({
+      compositionId: composition.compositionId,
+      revision,
+      compositionHashSha256,
+      missionId: composition.metadata.missionId,
+    }),
+  );
+  const jobId = `editor_render_${stableJobSeed.slice(0, 24)}`;
+  const intentId = `editor_intent_${stableJobSeed.slice(24, 48)}`;
+
+  const visualAssets = composition.tracks
+    .flatMap((track) => track.clips.map((clip) => clipToRenderAsset(clip)));
+
+  const audioTracks = composition.audio.map(audioToRenderTrack);
+  const captions = composition.captions.map(captionToRenderCue);
+
+  if (audioTracks.length === 0 || !audioTracks.some((track) => track.type === "VOICE")) {
+    throw new Error("EDITOR_RENDER_VOICE_REQUIRED");
+  }
+
+  return {
+    intentId,
+    jobId,
+    missionId: composition.metadata.missionId,
+    compositionType: compositionKind(composition),
+    durationSeconds: ticksToSeconds(composition.canvas.duration),
+    fps: composition.canvas.frameRate.numerator / composition.canvas.frameRate.denominator,
+    resolution: {
+      width: requestedOutput.width,
+      height: requestedOutput.height,
+    },
+    tracks: {
+      visualAssets,
+      audioTracks,
+      captions,
+    },
+    background: composition.canvas.background
+      ? {
+          kind: composition.canvas.background.kind,
+          value: composition.canvas.background.value,
+        }
+      : undefined,
+    preferredCompiler: "FFMPEG",
+    constraints: {
+      hardwareAccel: false,
+      strictSyncToleranceMs: 40,
+    },
+    createdAt: new Date().toISOString(),
+    sourceCompositionId: composition.compositionId,
+    sourceCompositionHashSha256: compositionHashSha256,
+    sourceCompositionSchemaVersion: composition.schemaVersion,
+    sourceCompositionCanonicalJson: canonicalizeComposition(composition),
+  };
+}
+
+export class EditorRuntime implements ShortForgeEditorAPI {
+  readonly plugins: EditorPluginRuntime;
+  private readonly renderFabric: RenderFabric;
+  private readonly cas: ContentAddressedStore;
+  private readonly f07: F07ReleaseGuardian;
+
+  constructor(
+    private readonly editor: DurableEditor,
+    renderFabric = new RenderFabric(),
+    cas = ContentAddressedStore.getInstance(),
+    f07 = F07ReleaseGuardian.getInstance(),
+  ) {
+    this.renderFabric = renderFabric;
+    this.cas = cas;
+    this.f07 = f07;
+    this.plugins = new EditorPluginRuntime(editor);
+  }
+
+  async open(session: EditorSession, composition: CompositionIR): Promise<EditorDocument> {
+    return this.editor.open(session, composition);
+  }
+
+  async resume(session: EditorSession): Promise<EditorDocument> {
+    return this.editor.resume(session);
+  }
+
+  async apply(input: EditorCommandEnvelope): Promise<EditorReceipt> {
+    return this.editor.apply(input);
+  }
+
+  async getDocument(sessionId: string): Promise<EditorDocument> {
+    return this.editor.getDocument(sessionId);
+  }
+
+  async validate(sessionId: string): Promise<{ valid: boolean; errors: readonly string[]; warnings: readonly string[] }> {
+    const document = await this.editor.getDocument(sessionId);
+    const report = validateCompositionIR(document.composition);
+    return {
+      valid: report.valid,
+      errors: report.errors,
+      warnings: report.warnings,
+    };
+  }
+
+  async preview(sessionId: string, timestampSeconds = 0): Promise<EditorPreviewPlan> {
+    const document = await this.editor.getDocument(sessionId);
+    const renderIntent = compileCompositionToRenderIntent(
+      document.composition,
+      document.revision,
+      {
+        width: document.composition.canvas.width,
+        height: document.composition.canvas.height,
+        fps: document.composition.canvas.frameRate.numerator / document.composition.canvas.frameRate.denominator,
+        format: "MP4",
+      },
+    );
+    const normalizedTimestamp = Math.max(
+      0,
+      Math.min(
+        timestampSeconds,
+        Math.max(0, renderIntent.durationSeconds - 1 / Math.max(1, renderIntent.fps)),
+      ),
+    );
+    const previewId = `preview_${sha256(
+      `${renderIntent.sourceCompositionHashSha256}:${normalizedTimestamp.toFixed(6)}`,
+    ).slice(0, 24)}`;
+    const previewDir = path.join(process.cwd(), "data", "previews", "editor-runtime");
+    const previewArtifactPath = path.join(previewDir, `${previewId}.png`);
+    const previewResult = await this.renderFabric.executePreview(
+      renderIntent,
+      previewArtifactPath,
+      normalizedTimestamp,
+    );
+    return Object.freeze({
+      previewId,
+      compositionId: document.composition.compositionId,
+      compositionRevision: document.revision,
+      compositionHashSha256: document.compositionHash,
+      renderIntent,
+      physicalExecution: "PREVIEW_PHYSICAL",
+      wasmExecution: "NOT_PROVEN",
+      timestampSeconds: previewResult.preview.timestamp_seconds,
+      previewArtifactPath: previewResult.preview.output_path,
+      previewArtifactSha256: previewResult.preview.output_sha256,
+    });
+  }
+
+  async export(request: EditorExportRequest): Promise<EditorExportResult> {
+    const document = await this.editor.getDocument(request.sessionId);
+    const renderIntent = compileCompositionToRenderIntent(
+      document.composition,
+      document.revision,
+      request.requestedOutput,
+    );
+
+    const renderResult = await this.renderFabric.executeRender(renderIntent, {
+      outputDir: request.outputDir,
+      treasury: request.treasury,
+    });
+    const renderArtifact = renderResult.artifact;
+    if (!renderArtifact) throw new Error("EDITOR_RENDER_MISSING_ARTIFACT");
+
+    const location = renderArtifact.location;
+    if (location.kind !== "LOCAL") {
+      throw new Error("EDITOR_RENDER_ARTIFACT_NOT_LOCALLY_RESOLVABLE");
+    }
+    if (!fs.existsSync(location.path)) {
+      throw new Error("EDITOR_RENDER_OUTPUT_NOT_FOUND");
+    }
+
+    const casArtifact = await this.cas.putFile(
+      location.path,
+      "editor_render_output",
+      renderArtifact.mimeType,
+      {
+        jobId: renderResult.jobId,
+        compositionId: document.composition.compositionId,
+        compositionRevision: document.revision,
+        compositionHashSha256: document.compositionHash,
+        sourceCompositionHashSha256: renderIntent.sourceCompositionHashSha256,
+      },
+    );
+
+    const casRef = `cas://${casArtifact.sha256}`;
+    const receipt = await this.f07.verifyRelease({
+      ...request.f07.guardianParams,
+      artifactSha256: casArtifact.sha256,
+      artifactCasRef: casRef,
+    });
+
+    const f07ReceiptVerified = VerificationReceiptVerifier.verify(receipt).valid;
+    if (!f07ReceiptVerified) {
+      throw new Error("EDITOR_F07_RECEIPT_CRYPTOGRAPHIC_VERIFICATION_FAILED");
+    }
+
+    const f07ReceiptCasUri = await VerificationReceiptVerifier.persistToCas(receipt);
+
+    return {
+      jobId: renderResult.jobId,
+      compositionRevision: document.revision,
+      compositionHashSha256: document.compositionHash,
+      renderIntent,
+      renderArtifact,
+      casArtifact,
+      f07Receipt: receipt,
+      f07ReceiptVerified,
+      f07ReceiptCasUri,
+    };
+  }
+
+  async runScript(script: EditorRuntimeScript): Promise<EditorRuntimeScriptResult> {
+    if (!script.scriptId) throw new Error("EDITOR_SCRIPT_ID_REQUIRED");
+    const receipts: EditorReceipt[] = [];
+    for (const command of script.commands) {
+      if (command.sessionId !== script.sessionId) {
+        throw new Error("EDITOR_SCRIPT_SESSION_MISMATCH");
+      }
+      receipts.push(await this.editor.apply(command));
+      if (!receipts[receipts.length - 1]?.accepted) break;
+    }
+    return {
+      scriptId: script.scriptId,
+      receipts: Object.freeze(receipts),
+      finalDocument: await this.editor.getDocument(script.sessionId),
+    };
+  }
+
+  async undo(sessionId: string): Promise<EditorReceipt> {
+    return this.editor.undo(sessionId);
+  }
+
+  async redo(sessionId: string): Promise<EditorReceipt> {
+    return this.editor.redo(sessionId);
+  }
+
+  async checkpoint(sessionId: string, reason?: string): Promise<EditorCheckpoint> {
+    return this.editor.checkpoint(sessionId, reason);
+  }
+
+  async restore(sessionId: string, checkpointId: string): Promise<EditorReceipt> {
+    return this.editor.restore(sessionId, checkpointId);
+  }
+
+  async replay(compositionId: string) {
+    return this.editor.replay(compositionId);
+  }
+
+  async listHistory(sessionId: string) {
+    return this.editor.listHistory(sessionId);
+  }
+
+  async listOperations(sessionId: string) {
+    return this.editor.listOperations(sessionId);
+  }
+
+  async listCheckpoints(sessionId: string) {
+    return this.editor.listCheckpoints(sessionId);
+  }
+
+  registerPlugin(plugin: EditorPluginDefinition) {
+    return this.plugins.register(plugin);
+  }
+
+  async applyPlugin(input: ApplyPluginCommandInput): Promise<EditorReceipt> {
+    return this.plugins.apply(input);
+  }
+
+  async handleMcp(request: EditorMcpRequest): Promise<EditorMcpReceipt> {
+    try {
+      switch (request.tool) {
+        case "editor.inspect": {
+          const document = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: document.revision,
+            compositionHash: document.compositionHash,
+            data: {
+              compositionId: document.composition.compositionId,
+              schemaVersion: document.composition.schemaVersion,
+            },
+          };
+        }
+        case "editor.apply": {
+          const envelope = request.arguments as unknown as EditorCommandEnvelope;
+          if (envelope.sessionId !== request.sessionId) {
+            return {
+              accepted: false,
+              tool: request.tool,
+              error: "EDITOR_MCP_SESSION_MISMATCH",
+            };
+          }
+          const receipt = await this.apply(envelope);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.validate": {
+          const validation = await this.validate(request.sessionId);
+          return {
+            accepted: validation.valid,
+            tool: request.tool,
+            revision: (await this.getDocument(request.sessionId)).revision,
+            compositionHash: (await this.getDocument(request.sessionId)).compositionHash,
+            error: validation.valid ? undefined : validation.errors.join("; "),
+          };
+        }
+        case "editor.preview": {
+          const timestampSeconds =
+            typeof request.arguments.timestampSeconds === "number"
+              ? request.arguments.timestampSeconds
+              : 0;
+          const preview = await this.preview(request.sessionId, timestampSeconds);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: preview.compositionRevision,
+            compositionHash: preview.compositionHashSha256,
+            data: {
+              previewId: preview.previewId,
+              physicalExecution: preview.physicalExecution,
+              wasmExecution: preview.wasmExecution,
+              renderIntentId: preview.renderIntent.intentId,
+              jobId: preview.renderIntent.jobId,
+              timestampSeconds: preview.timestampSeconds,
+              previewArtifactPath: preview.previewArtifactPath,
+              previewArtifactSha256: preview.previewArtifactSha256,
+            },
+          };
+        }
+        case "editor.export": {
+          const input = request.arguments as unknown as EditorExportRequest;
+          if (input.sessionId !== request.sessionId) {
+            return {
+              accepted: false,
+              tool: request.tool,
+              error: "EDITOR_MCP_SESSION_MISMATCH",
+            };
+          }
+          const result = await this.export(input);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: result.compositionRevision,
+            compositionHash: result.compositionHashSha256,
+            data: {
+              jobId: result.jobId,
+              renderArtifactSha256: result.renderArtifact.sha256,
+              casArtifactSha256: result.casArtifact.sha256,
+              f07ReceiptId: result.f07Receipt.receiptId,
+              f07ReceiptVerified: result.f07ReceiptVerified,
+              f07ReceiptCasUri: result.f07ReceiptCasUri,
+              publishAllowed: result.f07Receipt.youtubePolicy.publishAllowed,
+              publishBlockReason: result.f07Receipt.youtubePolicy.publishBlockReason,
+            },
+          };
+        }
+        case "editor.undo": {
+          const receipt = await this.undo(request.sessionId);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.redo": {
+          const receipt = await this.redo(request.sessionId);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.checkpoint": {
+          const checkpoint = await this.checkpoint(
+            request.sessionId,
+            typeof request.arguments.reason === "string"
+              ? request.arguments.reason
+              : undefined,
+          );
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: checkpoint.revision,
+            compositionHash: checkpoint.compositionHashSha256,
+            data: {
+              checkpointId: checkpoint.checkpointId,
+              revisionId: checkpoint.revisionId,
+            },
+          };
+        }
+        case "editor.restore": {
+          const checkpointId =
+            typeof request.arguments.checkpointId === "string"
+              ? request.arguments.checkpointId
+              : "";
+          if (!checkpointId) {
+            return {
+              accepted: false,
+              tool: request.tool,
+              error: "EDITOR_CHECKPOINT_ID_REQUIRED",
+            };
+          }
+          const receipt = await this.restore(request.sessionId, checkpointId);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.replay": {
+          const report = await this.replay(
+            typeof request.arguments.compositionId === "string"
+              ? request.arguments.compositionId
+              : "",
+          );
+          return {
+            accepted: report.valid,
+            tool: request.tool,
+            compositionHash: report.finalCompositionHashSha256,
+            data: {
+              compositionId: report.compositionId,
+              revisionCount: report.revisionCount,
+              replayedThroughRevisionId: report.replayedThroughRevisionId,
+              checkedRevisionCount: report.checkedRevisionIds.length,
+              error: report.error,
+            },
+          };
+        }
+        case "editor.history": {
+          const history = await this.listHistory(request.sessionId);
+          const head = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: head.revision,
+            compositionHash: head.compositionHash,
+            data: {
+              revisions: history,
+            },
+          };
+        }
+        case "editor.operations": {
+          const operations = await this.listOperations(request.sessionId);
+          const head = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: head.revision,
+            compositionHash: head.compositionHash,
+            data: {
+              operations,
+            },
+          };
+        }
+        case "editor.checkpoints": {
+          const checkpoints = await this.listCheckpoints(request.sessionId);
+          const head = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: head.revision,
+            compositionHash: head.compositionHash,
+            data: {
+              checkpoints,
+            },
+          };
+        }
+      }
+    } catch (error) {
+      return {
+        accepted: false,
+        tool: request.tool,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  static isHeadlessJob(input: unknown): input is HeadlessCompositionJob {
+    if (!input || typeof input !== "object") return false;
+    const candidate = input as Partial<HeadlessCompositionJob>;
+    return Boolean(
+      candidate.jobId &&
+      candidate.compositionId &&
+      candidate.composition &&
+      candidate.requestedOutput &&
+      candidate.requireF07 === true,
+    );
+  }
+}

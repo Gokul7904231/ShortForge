@@ -10,6 +10,7 @@
  */
 
 import * as path from "node:path";
+import { createHash } from "node:crypto";
 import type {
   RenderIntent,
   RenderArtifact,
@@ -20,7 +21,7 @@ import type {
   ExecutionReceipt,
   ProviderType,
 } from "../compute/contracts/ComputeContracts";
-import type { LocalRenderIntent } from "../render/LocalRenderAdapter";
+import { LocalRenderAdapter, type LocalRenderIntent, type PreviewReceipt } from "../render/LocalRenderAdapter";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 import type {
   TreasuryBudgetEnvelope,
@@ -44,6 +45,11 @@ export interface RenderTreasuryContext {
   readonly scopeDigest: string;
   readonly priority?: TreasuryPriority;
   readonly idempotencyKey?: string;
+}
+
+export interface RenderPreviewResult {
+  readonly preview: PreviewReceipt;
+  readonly renderIntent: RenderIntent;
 }
 
 export interface RenderExecutionResult {
@@ -135,6 +141,31 @@ export class RenderFabric {
     this.computeGateway = ComputeGateway.getInstance();
   }
 
+  public async executePreview(
+    intent: RenderIntent,
+    outputPath: string,
+    timestampSeconds = 0,
+  ): Promise<RenderPreviewResult> {
+    if (intent.sourceCompositionCanonicalJson && intent.sourceCompositionHashSha256) {
+      const sourceHash = createHash("sha256")
+        .update(intent.sourceCompositionCanonicalJson, "utf8")
+        .digest("hex");
+      if (sourceHash !== intent.sourceCompositionHashSha256) {
+        throw new Error("[RenderFabric] Preview source composition hash mismatch");
+      }
+      if (!intent.sourceCompositionId || intent.sourceCompositionSchemaVersion !== "2.0.0") {
+        throw new Error("[RenderFabric] Invalid preview CompositionIR provenance metadata");
+      }
+    }
+    const localIntent = this.normalizeLocalRenderIntent(intent, undefined);
+    const preview = await LocalRenderAdapter.getInstance().preview(
+      localIntent,
+      outputPath,
+      timestampSeconds,
+    );
+    return { preview, renderIntent: intent };
+  }
+
   public getCompiler(id: string): IRenderCompiler | undefined {
     return this.compilers.get(id);
   }
@@ -170,6 +201,20 @@ export class RenderFabric {
     intent: RenderIntent,
     options: RenderFabricExecutionOptions = {}
   ): Promise<RenderExecutionResult> {
+    if (intent.sourceCompositionCanonicalJson && intent.sourceCompositionHashSha256) {
+      const sourceHash = createHash("sha256")
+        .update(intent.sourceCompositionCanonicalJson, "utf8")
+        .digest("hex");
+      if (sourceHash !== intent.sourceCompositionHashSha256) {
+        throw new Error(
+          "[RenderFabric] RenderIntent source composition hash does not match canonical composition payload",
+        );
+      }
+      if (!intent.sourceCompositionId || intent.sourceCompositionSchemaVersion !== "2.0.0") {
+        throw new Error("[RenderFabric] Invalid source CompositionIR provenance metadata");
+      }
+    }
+
     const compiler = this.planCompiler(intent);
 
     if (!compiler.isProductionRoutable) {
@@ -377,52 +422,78 @@ export class RenderFabric {
       .filter(Boolean)
       .join(" ");
 
-    const scenes =
-      intent.tracks.visualAssets.length > 0
-        ? intent.tracks.visualAssets.map((asset) => {
-            const overlappingCues = intent.tracks.captions.filter(
-              (cue) =>
-                cue.startMs < (asset.startSeconds + asset.durationSeconds) * 1000 &&
-                cue.endMs > asset.startSeconds * 1000
-            );
+    const primaryAudio =
+      intent.tracks.audioTracks.find((track) => track.type === "VOICE") ??
+      intent.tracks.audioTracks[0];
 
-            return {
-              scene_id: asset.id,
-              template_id: `render.${asset.type.toLowerCase()}.v1`,
-              narration_text:
-                overlappingCues
-                  .map((cue) => cue.text.trim())
-                  .filter(Boolean)
-                  .join(" ") ||
-                captionText ||
-                intent.compositionType,
-              duration_seconds: asset.durationSeconds,
-              shots: [
-                {
-                  id: `shot_${asset.id}`,
-                  recipe_id: "RENDER_ASSET",
-                  start_seconds: 0,
-                  duration_seconds: asset.durationSeconds,
-                  props: {
-                    source: asset.src,
-                    assetType: asset.type,
-                    transform: asset.transform,
-                  },
-                },
-              ],
-            };
-          })
-        : [
-            {
-              scene_id: "scene_01",
-              template_id: "facts.rapid-facts.v1",
-              narration_text: captionText || intent.compositionType,
-              duration_seconds: intent.durationSeconds,
-              shots: [],
-            },
-          ];
+    const audioTracks = intent.tracks.audioTracks.map((track) => ({
+      track_id: track.id,
+      audio_path: track.src,
+      start_seconds: track.startSeconds,
+      duration_seconds: track.durationSeconds,
+      volume: track.volume,
+      is_narration: track.type === "VOICE",
+      source_in_seconds: track.sourceInSeconds ?? 0,
+      source_duration_seconds: track.sourceDurationSeconds,
+      playback_rate: track.playbackRate ?? 1,
+      fade_in_seconds: track.fadeInSeconds ?? 0,
+      fade_out_seconds: track.fadeOutSeconds ?? 0,
+    }));
 
-    const primaryAudio = intent.tracks.audioTracks[0];
+    const shots = intent.tracks.visualAssets.map((asset) => ({
+      id: `shot_${asset.id}`,
+      recipe_id: asset.type === "IMAGE" ? "RENDER_ASSET" : "RENDER_ASSET",
+      start_seconds: asset.startSeconds,
+      duration_seconds: asset.durationSeconds,
+      source_in_seconds: asset.sourceInSeconds,
+      source_duration_seconds: asset.sourceDurationSeconds,
+      playback_rate: asset.playbackRate ?? 1,
+      props: {
+        source: asset.src,
+        image_path: asset.src,
+        assetType: asset.type,
+        zIndex: asset.zIndex,
+        transform: asset.transform,
+        animations: asset.animations,
+        effects: asset.effects,
+        masks: asset.masks,
+        transitionIn: asset.transitionIn,
+        transitionOut: asset.transitionOut,
+      },
+      motion: asset.animations?.length ? { animated: true } : {},
+      assets: [],
+    }));
+
+    const scenes: LocalRenderIntent["scenes"] = [{
+      scene_id: `scene_${intent.intentId}`,
+      template_id: `render.${intent.compositionType.toLowerCase()}.v2`,
+      narration_text: captionText || intent.compositionType,
+      duration_seconds: intent.durationSeconds,
+      captions: intent.tracks.captions.map((cue) => ({
+        text: cue.text,
+        start_seconds: cue.startMs / 1000,
+        duration_seconds: Math.max(0.001, (cue.endMs - cue.startMs) / 1000),
+        words: [],
+        style: cue.style?.animation || "NONE",
+      })),
+      audio_track: primaryAudio
+        ? {
+            track_id: primaryAudio.id,
+            audio_path: primaryAudio.src,
+            start_seconds: primaryAudio.startSeconds,
+            duration_seconds: primaryAudio.durationSeconds,
+            volume: primaryAudio.volume,
+          }
+        : undefined,
+      audio_tracks: audioTracks,
+      background: intent.background
+        ? {
+            kind: intent.background.kind,
+            value: intent.background.value,
+          }
+        : undefined,
+      shots,
+    }];
 
     return {
       project_id: intent.missionId || intent.intentId,
@@ -448,7 +519,15 @@ export class RenderFabric {
         intentId: intent.intentId,
         compositionType: intent.compositionType,
         captions: intent.tracks.captions,
-        audioTrack: primaryAudio,
+        audioTracks,
+        sourceComposition: intent.sourceCompositionCanonicalJson
+          ? {
+              compositionId: intent.sourceCompositionId,
+              schemaVersion: intent.sourceCompositionSchemaVersion,
+              hashSha256: intent.sourceCompositionHashSha256,
+              canonicalJson: intent.sourceCompositionCanonicalJson,
+            }
+          : undefined,
       },
     };
   }

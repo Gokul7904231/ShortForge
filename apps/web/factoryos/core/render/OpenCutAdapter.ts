@@ -34,6 +34,7 @@ export const OPEN_CUT_RENDERER_CAPABILITY: RendererCapabilityContract = {
   status: "EXPERIMENTAL",
   // No OpenCut runtime mode is physically proven by this adapter yet.
   executionModes: [],
+  integrationTargets: ["EDITOR", "WASM_PREVIEW", "HEADLESS", "MCP"],
   capabilities: {
     timeline: true,
     keyframes: true,

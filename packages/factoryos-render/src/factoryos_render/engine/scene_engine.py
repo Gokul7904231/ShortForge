@@ -47,7 +47,13 @@ class SceneEngine:
         # Rule 55 Fast-Path Optimization: If scene has no complex per-frame motion, loop single frame
         is_static = True
         for shot in scene.shots:
-            if shot.motion and (shot.motion.get("animated") is True or shot.motion.get("type") == "DYNAMIC"):
+            if (
+                shot.motion
+                and (shot.motion.get("animated") is True or shot.motion.get("type") == "DYNAMIC")
+            ) or any(
+                key in (shot.props or {})
+                for key in ("animations", "editorAnimations", "effects", "editorEffects", "masks", "editorMasks", "transitionIn", "transitionOut")
+            ):
                 is_static = False
                 break
 
@@ -71,7 +77,9 @@ class SceneEngine:
                     output_temp_path=output_mp4_path,
                     duration_seconds=scene.duration_seconds,
                     fps=self.fps,
-                    audio_path=scene.audio_path
+                    audio_path=scene.audio_path,
+                    audio_start_seconds=scene.audio_start_seconds,
+                    audio_tracks=scene.audio_tracks,
                 )
                 if progress_callback:
                     progress_callback(scene.duration_frames, scene.duration_frames)
@@ -90,7 +98,9 @@ class SceneEngine:
             height=self.height,
             fps=self.fps,
             audio_path=scene.audio_path,
-            duration_seconds=scene.duration_seconds
+            duration_seconds=scene.duration_seconds,
+            audio_start_seconds=scene.audio_start_seconds,
+            audio_tracks=scene.audio_tracks,
         )
 
         try:

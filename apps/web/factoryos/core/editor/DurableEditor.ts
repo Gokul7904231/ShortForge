@@ -111,6 +111,20 @@ export class DurableEditor implements ShortForgeEditorAPI, DurableEditorHistoryA
     };
   }
 
+  async resume(session: EditorSession): Promise<EditorDocument> {
+    const head = await this.store.getHead(session.compositionId);
+    if (!head) throw new Error("EDITOR_COMPOSITION_NOT_FOUND");
+    this.sessions.set(session.sessionId, {
+      ...session,
+      revision: head.revision,
+    });
+    return {
+      composition: head.composition,
+      revision: head.revision,
+      compositionHash: head.compositionHashSha256,
+    };
+  }
+
   private async getSession(sessionId: string): Promise<EditorSession> {
     const session = this.sessions.get(sessionId);
     if (!session) throw new Error("EDITOR_SESSION_NOT_FOUND");

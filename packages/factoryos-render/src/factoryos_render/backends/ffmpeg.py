@@ -106,6 +106,120 @@ class FFmpegBackend:
             preset,
         ]
 
+    def _atempo_chain(self, playback_rate: float) -> List[str]:
+        rate = min(100.0, max(0.01, float(playback_rate or 1.0)))
+        filters: List[str] = []
+        # FFmpeg atempo accepts 0.5..2.0 per filter; chain for extreme rates.
+        while rate > 2.0:
+            filters.append("atempo=2.0")
+            rate /= 2.0
+        while rate < 0.5:
+            filters.append("atempo=0.5")
+            rate /= 0.5
+        if abs(rate - 1.0) > 1e-6:
+            filters.append(f"atempo={rate:.8f}")
+        return filters
+
+    def _append_audio_inputs(
+        self,
+        cmd: List[str],
+        *,
+        audio_tracks: Optional[List[Dict[str, Any]]],
+        legacy_audio_path: Optional[str],
+        legacy_audio_start_seconds: float,
+        duration_seconds: float,
+    ) -> None:
+        tracks = list(audio_tracks or [])
+        if not tracks and legacy_audio_path:
+            tracks = [{
+                "audio_path": legacy_audio_path,
+                "start_seconds": legacy_audio_start_seconds,
+                "duration_seconds": duration_seconds,
+                "volume": 1.0,
+                "source_in_seconds": 0.0,
+                "source_duration_seconds": None,
+                "playback_rate": 1.0,
+                "fade_in_seconds": 0.0,
+                "fade_out_seconds": 0.0,
+            }]
+
+        valid_tracks = [
+            track for track in tracks
+            if track.get("audio_path") and os.path.exists(str(track.get("audio_path")))
+        ]
+        if not valid_tracks:
+            cmd.extend([
+                "-f", "lavfi",
+                "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+                "-map", "0:v:0",
+                "-map", "1:a:0",
+            ])
+            return
+
+        filters: List[str] = []
+        labels: List[str] = []
+        for offset, track in enumerate(valid_tracks, start=1):
+            source_in = max(0.0, float(track.get("source_in_seconds") or 0.0))
+            if source_in > 0:
+                cmd.extend(["-ss", f"{source_in:.6f}"])
+            cmd.extend(["-i", str(track["audio_path"])])
+
+            timeline_duration = max(
+                0.001,
+                min(
+                    duration_seconds,
+                    float(track.get("duration_seconds") or duration_seconds),
+                ),
+            )
+            playback_rate = max(0.01, float(track.get("playback_rate") or 1.0))
+            source_duration = track.get("source_duration_seconds")
+            if source_duration is None:
+                source_duration = timeline_duration * playback_rate
+            source_duration = max(0.001, float(source_duration))
+
+            label = f"a{offset - 1}"
+            labels.append(f"[{label}]")
+            chain = [
+                f"[{offset}:a]atrim=duration={source_duration:.6f}",
+                "asetpts=PTS-STARTPTS",
+                *self._atempo_chain(playback_rate),
+            ]
+            volume = min(8.0, max(0.0, float(track.get("volume") or 0.0)))
+            if abs(volume - 1.0) > 1e-6:
+                chain.append(f"volume={volume:.6f}")
+
+            fade_in = max(0.0, float(track.get("fade_in_seconds") or 0.0))
+            fade_out = max(0.0, float(track.get("fade_out_seconds") or 0.0))
+            if fade_in > 0:
+                chain.append(f"afade=t=in:st=0:d={min(fade_in, timeline_duration):.6f}")
+            if fade_out > 0:
+                fade_start = max(0.0, timeline_duration - fade_out)
+                chain.append(
+                    f"afade=t=out:st={fade_start:.6f}:d={min(fade_out, timeline_duration):.6f}"
+                )
+
+            start_seconds = max(0.0, float(track.get("start_seconds") or 0.0))
+            if start_seconds > 0:
+                chain.append(f"adelay={int(round(start_seconds * 1000))}:all=1")
+            filters.append(",".join(chain) + f"[{label}]")
+
+        if len(labels) == 1:
+            filter_graph = ";".join(filters)
+            cmd.extend([
+                "-filter_complex", filter_graph,
+                "-map", "0:v:0",
+                "-map", labels[0],
+            ])
+        else:
+            mix_inputs = "".join(labels)
+            filter_graph = ";".join(filters)
+            filter_graph += f";{mix_inputs}amix=inputs={len(labels)}:duration=longest:dropout_transition=0[aout]"
+            cmd.extend([
+                "-filter_complex", filter_graph,
+                "-map", "0:v:0",
+                "-map", "[aout]",
+            ])
+
     def open_pipe_encoder(
         self,
         output_temp_path: str,
@@ -115,12 +229,15 @@ class FFmpegBackend:
         crf: int = 20,
         preset: str = "fast",
         audio_path: Optional[str] = None,
-        duration_seconds: Optional[float] = None
+        duration_seconds: Optional[float] = None,
+        audio_start_seconds: float = 0.0,
+        audio_tracks: Optional[List[Dict[str, Any]]] = None,
     ) -> subprocess.Popen:
         """
         Spawns ffmpeg process that accepts raw RGBA frames over stdin.
-        Writes to output_temp_path.
+        Audio source spans, playback rate, fades and timeline offsets are lowered here.
         """
+        duration = float(duration_seconds or 0.0)
         cmd = [
             self.ffmpeg_path,
             "-y",
@@ -130,31 +247,28 @@ class FFmpegBackend:
             "-s", f"{width}x{height}",
             "-pix_fmt", "rgba",
             "-r", str(fps),
-            "-i", "-",  # stdin
+            "-i", "-",
         ]
-
-        if audio_path and os.path.exists(audio_path):
-            cmd.extend(["-i", audio_path])
-        else:
-            cmd.extend(["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"])
-
+        self._append_audio_inputs(
+            cmd,
+            audio_tracks=audio_tracks,
+            legacy_audio_path=audio_path,
+            legacy_audio_start_seconds=audio_start_seconds,
+            duration_seconds=duration,
+        )
         cmd.extend(self._video_encode_args(preset=preset, crf=crf) + [
             "-c:a", "aac",
             "-b:a", "192k",
         ])
-
-        if duration_seconds:
-            cmd.extend(["-t", f"{duration_seconds:.3f}"])
-
+        if duration > 0:
+            cmd.extend(["-t", f"{duration:.6f}"])
         cmd.append(output_temp_path)
-
-        proc = subprocess.Popen(
+        return subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
-        return proc
 
     def encode_static_scene(
         self,
@@ -163,13 +277,15 @@ class FFmpegBackend:
         duration_seconds: float,
         fps: int = 30,
         audio_path: Optional[str] = None,
+        audio_start_seconds: float = 0.0,
+        audio_tracks: Optional[List[Dict[str, Any]]] = None,
         crf: int = 20,
         preset: str = "fast"
     ) -> None:
         """
-        Fast-path static scene encoder. Loops a single rendered frame image for duration_seconds.
-        Avoids generating redundant identical frames.
+        Fast-path static scene encoder. Audio uses the same timing lowering as dynamic renders.
         """
+        duration = float(duration_seconds)
         cmd = [
             self.ffmpeg_path,
             "-y",
@@ -177,20 +293,20 @@ class FFmpegBackend:
             "-loop", "1",
             "-i", frame_png_path,
         ]
-
-        if audio_path and os.path.exists(audio_path):
-            cmd.extend(["-i", audio_path])
-        else:
-            cmd.extend(["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"])
-
+        self._append_audio_inputs(
+            cmd,
+            audio_tracks=audio_tracks,
+            legacy_audio_path=audio_path,
+            legacy_audio_start_seconds=audio_start_seconds,
+            duration_seconds=duration,
+        )
         cmd.extend(self._video_encode_args(preset=preset, crf=crf) + [
             "-r", str(fps),
             "-c:a", "aac",
             "-b:a", "192k",
-            "-t", f"{duration_seconds:.3f}",
-            output_temp_path
+            "-t", f"{duration:.6f}",
+            output_temp_path,
         ])
-
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if res.returncode != 0:
             raise RuntimeError(f"FFmpeg static scene encode failed: {res.stderr}")

@@ -28,6 +28,9 @@ class ShotIntent:
     props: Dict[str, Any] = field(default_factory=dict)
     motion: Dict[str, Any] = field(default_factory=dict)
     assets: List[Dict[str, Any]] = field(default_factory=list)
+    source_in_seconds: Optional[float] = None
+    source_duration_seconds: Optional[float] = None
+    playback_rate: float = 1.0
 
 @dataclass
 class CaptionWord:
@@ -51,6 +54,11 @@ class AudioTrack:
     duration_seconds: Optional[float] = None
     volume: float = 1.0
     is_narration: bool = True
+    source_in_seconds: float = 0.0
+    source_duration_seconds: Optional[float] = None
+    playback_rate: float = 1.0
+    fade_in_seconds: float = 0.0
+    fade_out_seconds: float = 0.0
 
 @dataclass
 class SceneIntent:
@@ -62,6 +70,8 @@ class SceneIntent:
     captions: List[CaptionSegment] = field(default_factory=list)
     duration_seconds: float = 3.0
     is_locked: bool = False
+    audio_tracks: List[AudioTrack] = field(default_factory=list)
+    background: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class SurgicalRenderScope:
@@ -82,6 +92,7 @@ class RenderIntent:
     render_mode: str = "LOCAL_NATIVE"  # LOCAL_NATIVE | LOCAL_BROWSER | LOCAL_HYBRID
     metadata: Dict[str, Any] = field(default_factory=dict)
     repair_scope: Optional[SurgicalRenderScope] = None
+    background: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'RenderIntent':
@@ -116,6 +127,11 @@ class RenderIntent:
                     duration_seconds=at.get("duration_seconds"),
                     volume=at.get("volume", 1.0),
                     is_narration=at.get("is_narration", True),
+                    source_in_seconds=float(at.get("source_in_seconds", 0.0)),
+                    source_duration_seconds=at.get("source_duration_seconds"),
+                    playback_rate=float(at.get("playback_rate", 1.0)),
+                    fade_in_seconds=float(at.get("fade_in_seconds", 0.0)),
+                    fade_out_seconds=float(at.get("fade_out_seconds", 0.0)),
                 )
 
             shots: List[ShotIntent] = []
@@ -129,6 +145,27 @@ class RenderIntent:
                         props=sh.get("props", {}),
                         motion=sh.get("motion", {}),
                         assets=sh.get("assets", []),
+                        source_in_seconds=sh.get("source_in_seconds"),
+                        source_duration_seconds=sh.get("source_duration_seconds"),
+                        playback_rate=float(sh.get("playback_rate", 1.0)),
+                    )
+                )
+
+            audio_tracks: List[AudioTrack] = []
+            for at in s.get("audio_tracks", []):
+                audio_tracks.append(
+                    AudioTrack(
+                        track_id=at.get("track_id", f"audio_{len(audio_tracks)+1}"),
+                        audio_path=at.get("audio_path", ""),
+                        start_seconds=float(at.get("start_seconds", 0.0)),
+                        duration_seconds=at.get("duration_seconds"),
+                        volume=float(at.get("volume", 1.0)),
+                        is_narration=bool(at.get("is_narration", False)),
+                        source_in_seconds=float(at.get("source_in_seconds", 0.0)),
+                        source_duration_seconds=at.get("source_duration_seconds"),
+                        playback_rate=float(at.get("playback_rate", 1.0)),
+                        fade_in_seconds=float(at.get("fade_in_seconds", 0.0)),
+                        fade_out_seconds=float(at.get("fade_out_seconds", 0.0)),
                     )
                 )
 
@@ -154,9 +191,11 @@ class RenderIntent:
                     template_id=s.get("template_id", "default"),
                     narration_text=s.get("narration_text", ""),
                     audio_track=audio,
+                    audio_tracks=audio_tracks,
                     shots=shots,
                     captions=captions,
                     duration_seconds=s.get("duration_seconds", 3.0),
+                    background=s.get("background", {}),
                     is_locked=s.get("is_locked", False),
                 )
             )
@@ -204,6 +243,7 @@ class RenderIntent:
             scenes=scenes,
             output=output,
             safe_area=safe_area,
+            background=data.get("background", {}),
             background_music=bgm,
             render_mode=data.get("render_mode", "LOCAL_NATIVE"),
             metadata=data.get("metadata", {}),

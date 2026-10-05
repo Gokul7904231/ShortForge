@@ -26,6 +26,8 @@ class CompositionScene:
     audio_start_seconds: float = 0.0
     captions: List[Dict[str, Any]] = field(default_factory=list)
     is_locked: bool = False
+    audio_tracks: List[Dict[str, Any]] = field(default_factory=list)
+    background: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class CompositionIR:
