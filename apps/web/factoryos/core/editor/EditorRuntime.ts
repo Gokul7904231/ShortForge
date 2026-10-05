@@ -19,6 +19,7 @@ import type {
   RenderAudioTrack,
   RenderCaptionCue,
 } from "../contracts/RenderIntentContracts";
+import type { RenderTreasuryContext } from "../fabric/RenderFabric";
 import { ContentAddressedStore } from "../compute/cas/ContentAddressedStore";
 import {
   F07ReleaseGuardian,
@@ -62,6 +63,8 @@ export interface EditorExportRequest {
   readonly sessionId: string;
   readonly requestedOutput: HeadlessCompositionJob["requestedOutput"];
   readonly f07: EditorF07ReleaseContext;
+  /** Optional pre-authorized Treasury context supplied by Overseer/Treasurer; never created by the editor. */
+  readonly treasury?: RenderTreasuryContext;
   readonly outputDir?: string;
 }
 
@@ -329,6 +332,7 @@ export class EditorRuntime implements ShortForgeEditorAPI {
 
     const renderResult = await this.renderFabric.executeRender(renderIntent, {
       outputDir: request.outputDir,
+      treasury: request.treasury,
     });
     const renderArtifact = renderResult.artifact;
     if (!renderArtifact) throw new Error("EDITOR_RENDER_MISSING_ARTIFACT");
