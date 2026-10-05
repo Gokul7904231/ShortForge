@@ -66,12 +66,12 @@ class SceneIntent:
     template_id: str
     narration_text: str
     audio_track: Optional[AudioTrack] = None
-    audio_tracks: List[AudioTrack] = field(default_factory=list)
     shots: List[ShotIntent] = field(default_factory=list)
     captions: List[CaptionSegment] = field(default_factory=list)
     duration_seconds: float = 3.0
-    background: Dict[str, Any] = field(default_factory=dict)
     is_locked: bool = False
+    audio_tracks: List[AudioTrack] = field(default_factory=list)
+    background: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class SurgicalRenderScope:
@@ -88,11 +88,11 @@ class RenderIntent:
     scenes: List[SceneIntent]
     output: OutputSettings = field(default_factory=OutputSettings)
     safe_area: SafeArea = field(default_factory=SafeArea)
-    background: Dict[str, Any] = field(default_factory=dict)
     background_music: Optional[AudioTrack] = None
     render_mode: str = "LOCAL_NATIVE"  # LOCAL_NATIVE | LOCAL_BROWSER | LOCAL_HYBRID
     metadata: Dict[str, Any] = field(default_factory=dict)
     repair_scope: Optional[SurgicalRenderScope] = None
+    background: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'RenderIntent':
