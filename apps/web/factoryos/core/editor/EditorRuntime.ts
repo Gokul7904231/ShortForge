@@ -460,6 +460,13 @@ export class EditorRuntime implements ShortForgeEditorAPI {
         }
         case "editor.apply": {
           const envelope = request.arguments as unknown as EditorCommandEnvelope;
+          if (envelope.sessionId !== request.sessionId) {
+            return {
+              accepted: false,
+              tool: request.tool,
+              error: "EDITOR_MCP_SESSION_MISMATCH",
+            };
+          }
           const receipt = await this.apply(envelope);
           return {
             accepted: receipt.accepted,
@@ -498,9 +505,16 @@ export class EditorRuntime implements ShortForgeEditorAPI {
         }
         case "editor.export": {
           const input = request.arguments as unknown as EditorExportRequest;
+          if (input.sessionId !== request.sessionId) {
+            return {
+              accepted: false,
+              tool: request.tool,
+              error: "EDITOR_MCP_SESSION_MISMATCH",
+            };
+          }
           const result = await this.export(input);
           return {
-            accepted: result.f07Receipt.youtubePolicy.publishAllowed,
+            accepted: true,
             tool: request.tool,
             revision: result.compositionRevision,
             compositionHash: result.compositionHashSha256,
@@ -511,10 +525,129 @@ export class EditorRuntime implements ShortForgeEditorAPI {
               f07ReceiptId: result.f07Receipt.receiptId,
               f07ReceiptVerified: result.f07ReceiptVerified,
               f07ReceiptCasUri: result.f07ReceiptCasUri,
+              publishAllowed: result.f07Receipt.youtubePolicy.publishAllowed,
+              publishBlockReason: result.f07Receipt.youtubePolicy.publishBlockReason,
             },
-            error: result.f07Receipt.youtubePolicy.publishAllowed
-              ? undefined
-              : result.f07Receipt.youtubePolicy.publishBlockReason,
+          };
+        }
+        case "editor.undo": {
+          const receipt = await this.undo(request.sessionId);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.redo": {
+          const receipt = await this.redo(request.sessionId);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.checkpoint": {
+          const checkpoint = await this.checkpoint(
+            request.sessionId,
+            typeof request.arguments.reason === "string"
+              ? request.arguments.reason
+              : undefined,
+          );
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: checkpoint.revision,
+            compositionHash: checkpoint.compositionHashSha256,
+            data: {
+              checkpointId: checkpoint.checkpointId,
+              revisionId: checkpoint.revisionId,
+            },
+          };
+        }
+        case "editor.restore": {
+          const checkpointId =
+            typeof request.arguments.checkpointId === "string"
+              ? request.arguments.checkpointId
+              : "";
+          if (!checkpointId) {
+            return {
+              accepted: false,
+              tool: request.tool,
+              error: "EDITOR_CHECKPOINT_ID_REQUIRED",
+            };
+          }
+          const receipt = await this.restore(request.sessionId, checkpointId);
+          return {
+            accepted: receipt.accepted,
+            tool: request.tool,
+            commandId: receipt.commandId,
+            revision: receipt.revision,
+            compositionHash: receipt.compositionHash,
+            error: receipt.error,
+          };
+        }
+        case "editor.replay": {
+          const report = await this.replay(
+            typeof request.arguments.compositionId === "string"
+              ? request.arguments.compositionId
+              : "",
+          );
+          return {
+            accepted: report.valid,
+            tool: request.tool,
+            compositionHash: report.finalCompositionHashSha256,
+            data: {
+              compositionId: report.compositionId,
+              revisionCount: report.revisionCount,
+              replayedThroughRevisionId: report.replayedThroughRevisionId,
+              checkedRevisionCount: report.checkedRevisionIds.length,
+              error: report.error,
+            },
+          };
+        }
+        case "editor.history": {
+          const history = await this.listHistory(request.sessionId);
+          const head = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: head.revision,
+            compositionHash: head.compositionHash,
+            data: {
+              revisions: history,
+            },
+          };
+        }
+        case "editor.operations": {
+          const operations = await this.listOperations(request.sessionId);
+          const head = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: head.revision,
+            compositionHash: head.compositionHash,
+            data: {
+              operations,
+            },
+          };
+        }
+        case "editor.checkpoints": {
+          const checkpoints = await this.listCheckpoints(request.sessionId);
+          const head = await this.getDocument(request.sessionId);
+          return {
+            accepted: true,
+            tool: request.tool,
+            revision: head.revision,
+            compositionHash: head.compositionHash,
+            data: {
+              checkpoints,
+            },
           };
         }
       }
