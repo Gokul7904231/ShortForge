@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR181-Final-Cataloged-Providers",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/final-cataloged-provider-wave-20261005",
+  "objective": "Finish the remaining catalogued external provider integrations with verified current endpoint contracts for Perspective and Speak AI.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "External APIs are replaceable resources, never authorities.",
+      "Perspective scores remain advisory safety signals; policy owns thresholds.",
+      "Speak AI remains an analysis/transcript provider, not a TTS authority.",
+      "Credentials and access/refresh tokens stay outside durable artifacts.",
+      "No F00/F07/Treasury/ComputeRouter/F06/CAS/Overseer authority changes."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Perspective and Speak AI credentials are server-side only.",
+      "Speak AI access and refresh tokens are retained only in process memory.",
+      "No external URL fetch surface was introduced beyond fixed provider endpoints."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added Perspective AnalyzeComment adapter and score normalization.",
+    "Added Speak AI API-key/access-token authentication and in-memory refresh flow.",
+    "Added Speak AI media status and timestamped transcript reads.",
+    "Added deterministic tests and explicit registry/configuration state.",
+    "Updated .okf integration ledger."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/integrations/external/PerspectiveProvider.ts",
+    "apps/web/factoryos/core/integrations/external/SpeakAiProvider.ts",
+    "apps/web/factoryos/tests/final-cataloged-provider-wave.test.ts",
+    "apps/web/factoryos/core/integrations/external/ExternalApiRegistry.ts",
+    ".okf/integrations/external-api-fabric.md",
+    "Issue #180"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED_FALSE"
+  },
+  "verificationPlan": [
+    "Require CI and Team Change Gate to pass before merge.",
+    "Keep live Perspective/Speak AI qualification separate and credential-gated.",
+    "Do not promote either provider to any F06/CAS/F07 authority."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "Current official documentation was checked before implementing the endpoint contracts.",
+    "No live qualification is claimed by this implementation PR."
+  ]
+}
