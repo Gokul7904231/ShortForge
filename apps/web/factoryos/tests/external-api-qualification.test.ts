@@ -59,14 +59,19 @@ describe("External API qualification matrix", () => {
     ).toContain("token=%5BREDACTED%5D");
   });
 
-  it("uses the versioned Crossref REST endpoint for live qualification", async () => {
+  it("uses the versioned Crossref REST endpoint with a minimal representative request", async () => {
     const profile = externalApiQualificationProfiles().find(
       (item) => item.providerId === "crossref",
     )!;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    vi.stubEnv("CROSSREF_MAILTO", "qualification@example.com");
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       expect(url).toContain("https://api.crossref.org/v1/works");
       expect(url).toContain("rows=1");
+      expect(url).toContain("select=DOI%2Ctitle");
+      expect(url).not.toContain("query.bibliographic");
+      const headers = new Headers(init?.headers);
+      expect(headers.get("user-agent")).toContain("mailto:qualification@example.com");
       return new Response(JSON.stringify({
         message: {
           items: [{ DOI: "10.1234/example", title: ["Machine learning"] }],
@@ -80,7 +85,30 @@ describe("External API qualification matrix", () => {
 
     const result = await executeProfile(profile);
     expect(result.capabilityVerified).toBe(true);
+    expect(result.normalized.responseShape).toMatchObject({
+      kind: "object",
+      keys: ["message"],
+    });
+    expect(result.normalized.responseBodyPreview).toContain('"DOI"');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves Crossref non-2xx response diagnostics for live qualification", async () => {
+    const profile = externalApiQualificationProfiles().find(
+      (item) => item.providerId === "crossref",
+    )!;
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ status: "error", message: "diagnostic route failure" }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await executeProfile(profile);
+    expect(result.capabilityVerified).toBe(false);
+    expect(result.normalized.requestUrl).toContain("https://api.crossref.org/v1/works");
+    expect(result.normalized.responseBodyPreview).toContain("diagnostic route failure");
   });
 
   it("treats Hugging Face token aliases as equivalent configuration", () => {
@@ -90,7 +118,6 @@ describe("External API qualification matrix", () => {
     vi.stubEnv("HF_TOKEN", "hf_example_token");
     expect(configured(profile).configured).toBe(true);
   });
-});
 
   it("requires a separate destructive authorization for URLScan", () => {
     const profile = externalApiQualificationProfiles().find(
