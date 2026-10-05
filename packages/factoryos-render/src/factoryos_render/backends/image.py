@@ -74,7 +74,16 @@ class NativeFrameCompositor:
                     return fallback
                 first = parse_color(value.get("start"), (15, 23, 42))
                 last = parse_color(value.get("end"), (30, 41, 59))
-                img = self.create_gradient_background(first, last)
+                direction = str(value.get("direction", "VERTICAL")).upper()
+                if direction == "HORIZONTAL":
+                    img = Image.new("RGBA", (self.width, self.height))
+                    gradient_draw = ImageDraw.Draw(img)
+                    for x in range(self.width):
+                        ratio = x / float(max(1, self.width - 1))
+                        rgb = tuple(int(first[i] * (1.0 - ratio) + last[i] * ratio) for i in range(3))
+                        gradient_draw.line([(x, 0), (x, self.height)], fill=rgb + (255,))
+                else:
+                    img = self.create_gradient_background(first, last)
             elif kind == "BLUR":
                 base = Image.new("RGBA", (self.width, self.height), (15, 23, 42, 255))
                 img = base.filter(ImageFilter.GaussianBlur(radius=float(background.get("radius", 18))))
