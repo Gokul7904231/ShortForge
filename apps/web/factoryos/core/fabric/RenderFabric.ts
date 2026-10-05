@@ -463,6 +463,12 @@ export class RenderFabric {
               template_id: "facts.rapid-facts.v1",
               narration_text: captionText || intent.compositionType,
               duration_seconds: intent.durationSeconds,
+              captions: intent.tracks.captions.map((cue) => ({
+                text: cue.text,
+                start_seconds: cue.startMs / 1000,
+                duration_seconds: Math.max(0.001, (cue.endMs - cue.startMs) / 1000),
+                style: cue.style?.animation || "NONE",
+              })),
               ...(primaryAudio
                 ? {
                     audio_track: {
