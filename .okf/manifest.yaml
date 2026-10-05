@@ -42,3 +42,8 @@ exception_policy:
     - compensatingControls
     - closureEvidence
     - status
+
+rule_coverage:
+  status: PILOT
+  active_machine_rules: 6
+  migration_target: 100_percent_critical_high
