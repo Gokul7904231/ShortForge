@@ -127,6 +127,12 @@ export interface NotebookExecutionRequest {
   timeoutMs: number;
   outputPath?: string;
   /**
+   * Optional local template directory for providers whose native notebook
+   * lifecycle executes a repository-owned entrypoint. The provider copies the
+   * template into its ephemeral submission bundle before pushing it.
+   */
+  templateDirectory?: string;
+  /**
    * Optional caller-owned destination for a provider-downloaded artifact.
    * Providers must materialize the artifact before returning so their internal
    * ephemeral work directory can still be cleaned up safely.
