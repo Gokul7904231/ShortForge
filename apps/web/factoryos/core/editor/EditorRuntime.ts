@@ -217,6 +217,8 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
       clip.transform?.rotationDeg !== undefined
         ? {
             ...(scale !== undefined ? { scale } : {}),
+            ...(scaleX !== undefined ? { scaleX } : {}),
+            ...(scaleY !== undefined ? { scaleY } : {}),
             ...(clip.transform?.opacity !== undefined ? { opacity: clip.transform.opacity } : {}),
             ...(clip.transform?.x !== undefined ? { x: clip.transform.x } : {}),
             ...(clip.transform?.y !== undefined ? { y: clip.transform.y } : {}),
