@@ -57,6 +57,8 @@ jobs:
       SHORTFORGE_EXTERNAL_API_ALLOW_METERED: ${{ inputs.allow_metered && '1' || '0' }}
       SHORTFORGE_EXTERNAL_API_MATERIALIZE: ${{ inputs.materialize && '1' || '0' }}
       SHORTFORGE_EXTERNAL_API_LLM_PROBE: ${{ inputs.llm_probe && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_PERPLEXITY_SEARCH: ${{ inputs.perplexity_search && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_ALLOW_DESTRUCTIVE: ${{ inputs.allow_destructive && '1' || '0' }}
 
       OPENALEX_EMAIL: ${{ secrets.OPENALEX_EMAIL }}
       SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
