@@ -260,7 +260,7 @@ export function ShortForgeEditorStudio({
     });
   }
 
-  function setTransition(kind: string) {
+  function setTransition(kind: string, edge: "IN" | "OUT" = "IN") {
     if (!selected) return;
     const trackId = composition.tracks.find((track) =>
       track.clips.some((clip) => clip.id === selected.id),
@@ -270,7 +270,7 @@ export function ShortForgeEditorStudio({
       type: "SET_TRANSITION",
       trackId,
       clipId: selected.id,
-      edge: "IN",
+      edge,
       transition: {
         transitionId: `transition-${nextCommandId()}`,
         kind,
@@ -496,9 +496,17 @@ export function ShortForgeEditorStudio({
                         type="button"
                         className="rounded-md border border-zinc-800 px-2 py-1.5 text-[10px] hover:bg-zinc-900 disabled:opacity-50"
                         disabled={readOnly}
-                        onClick={() => setTransition("SLIDE_LEFT")}
+                        onClick={() => setTransition("SLIDE_LEFT", "IN")}
                       >
                         SLIDE IN
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-md border border-zinc-800 px-2 py-1.5 text-[10px] hover:bg-zinc-900 disabled:opacity-50"
+                        disabled={readOnly}
+                        onClick={() => setTransition("FADE", "OUT")}
+                      >
+                        FADE OUT
                       </button>
                     </div>
                     <div className="mt-2 text-[10px] text-zinc-500">
@@ -566,6 +574,7 @@ export function ShortForgeEditorStudio({
 
               <div className="space-y-2">
                 {composition.tracks.map((track) => (
+
                   <div key={track.id} className="grid grid-cols-[112px_minmax(0,1fr)] gap-3">
                     <div className="flex items-center rounded-md border border-zinc-800 bg-zinc-900 px-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
                       {track.kind.replace("AUDIO_", "AUDIO ")}
@@ -607,6 +616,59 @@ export function ShortForgeEditorStudio({
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {composition.audio.map((audio) => (
+                <div key={audio.id} className="grid grid-cols-[112px_minmax(0,1fr)] gap-3">
+                  <div className="flex items-center rounded-md border border-zinc-800 bg-zinc-900 px-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                    AUDIO {audio.kind}
+                  </div>
+                  <div
+                    className="relative h-10 rounded-md border border-zinc-900 bg-zinc-900/30"
+                    style={{ width: timelineWidth }}
+                  >
+                    <div
+                      className="absolute top-1 h-8 rounded-md border border-emerald-400/20 bg-emerald-500/20 px-2 py-1"
+                      style={{
+                        left: secondsFromMediaTime(audio.start) * pxPerSecond,
+                        width: Math.max(24, secondsFromMediaTime(audio.duration) * pxPerSecond),
+                      }}
+                    >
+                      <div className="truncate text-[9px] font-medium text-emerald-200">
+                        {audio.id} · {audio.playbackRate ?? 1}×
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {composition.captions.length > 0 && (
+                <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-3">
+                  <div className="flex items-center rounded-md border border-zinc-800 bg-zinc-900 px-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                    CAPTIONS
+                  </div>
+                  <div
+                    className="relative h-10 rounded-md border border-zinc-900 bg-zinc-900/30"
+                    style={{ width: timelineWidth }}
+                  >
+                    {composition.captions.map((caption) => (
+                      <div
+                        key={caption.id}
+                        className="absolute top-1 h-8 overflow-hidden rounded-md border border-amber-400/20 bg-amber-500/20 px-2 py-1 text-[9px] text-amber-100"
+                        style={{
+                          left: secondsFromMediaTime(caption.start) * pxPerSecond,
+                          width: Math.max(
+                            24,
+                            secondsFromMediaTime(caption.end - caption.start) * pxPerSecond,
+                          ),
+                        }}
+                      >
+                        {caption.text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               </div>
             </div>
           </section>
