@@ -396,94 +396,69 @@ export class RenderFabric {
       intent.tracks.audioTracks.find((track) => track.type === "VOICE") ??
       intent.tracks.audioTracks[0];
 
-    const scenes =
-      intent.tracks.visualAssets.length > 0
-        ? intent.tracks.visualAssets.map((asset) => {
-            const overlappingCues = intent.tracks.captions.filter(
-              (cue) =>
-                cue.startMs < (asset.startSeconds + asset.durationSeconds) * 1000 &&
-                cue.endMs > asset.startSeconds * 1000
-            );
+    const audioTracks = intent.tracks.audioTracks.map((track) => ({
+      track_id: track.id,
+      audio_path: track.src,
+      start_seconds: track.startSeconds,
+      duration_seconds: track.durationSeconds,
+      volume: track.volume,
+      is_narration: track.type === "VOICE",
+      source_in_seconds: track.sourceInSeconds ?? 0,
+      source_duration_seconds: track.sourceDurationSeconds,
+      playback_rate: track.playbackRate ?? 1,
+      fade_in_seconds: track.fadeInSeconds ?? 0,
+      fade_out_seconds: track.fadeOutSeconds ?? 0,
+    }));
 
-            return {
-              scene_id: asset.id,
-              template_id: `render.${asset.type.toLowerCase()}.v1`,
-              narration_text:
-                overlappingCues
-                  .map((cue) => cue.text.trim())
-                  .filter(Boolean)
-                  .join(" ") ||
-                captionText ||
-                intent.compositionType,
-              duration_seconds: asset.durationSeconds,
-              captions: overlappingCues.map((cue) => ({
-                text: cue.text,
-                start_seconds: Math.max(
-                  0,
-                  cue.startMs / 1000 - asset.startSeconds,
-                ),
-                duration_seconds: Math.min(
-                  asset.durationSeconds,
-                  Math.max(
-                    0.001,
-                    cue.endMs / 1000 - Math.max(cue.startMs / 1000, asset.startSeconds),
-                  ),
-                ),
-                style: cue.style?.animation || "NONE",
-              })),
-              ...(primaryAudio
-                ? {
-                    audio_track: {
-                      track_id: primaryAudio.id,
-                      audio_path: primaryAudio.src,
-                      start_seconds: primaryAudio.startSeconds,
-                      duration_seconds: primaryAudio.durationSeconds,
-                      volume: primaryAudio.volume,
-                    },
-                  }
-                : {}),
-              shots: [
-                {
-                  id: `shot_${asset.id}`,
-                  recipe_id: "RENDER_ASSET",
-                  start_seconds: 0,
-                  duration_seconds: asset.durationSeconds,
-                  props: {
-                    source: asset.src,
-                    assetType: asset.type,
-                    transform: asset.transform,
-                  },
-                },
-              ],
-            };
-          })
-        : [
-            {
-              scene_id: "scene_01",
-              template_id: "facts.rapid-facts.v1",
-              narration_text: captionText || intent.compositionType,
-              duration_seconds: intent.durationSeconds,
-              captions: intent.tracks.captions.map((cue) => ({
-                text: cue.text,
-                start_seconds: cue.startMs / 1000,
-                duration_seconds: Math.max(0.001, (cue.endMs - cue.startMs) / 1000),
-                style: cue.style?.animation || "NONE",
-              })),
-              ...(primaryAudio
-                ? {
-                    audio_track: {
-                      track_id: primaryAudio.id,
-                      audio_path: primaryAudio.src,
-                      start_seconds: primaryAudio.startSeconds,
-                      duration_seconds: primaryAudio.durationSeconds,
-                      volume: primaryAudio.volume,
-                    },
-                  }
-                : {}),
-              shots: [],
-            },
-          ];
+    const shots = intent.tracks.visualAssets.map((asset) => ({
+      id: `shot_${asset.id}`,
+      recipe_id: asset.type === "IMAGE" ? "RENDER_ASSET" : "RENDER_ASSET",
+      start_seconds: asset.startSeconds,
+      duration_seconds: asset.durationSeconds,
+      source_in_seconds: asset.sourceInSeconds,
+      source_duration_seconds: asset.sourceDurationSeconds,
+      playback_rate: asset.playbackRate ?? 1,
+      props: {
+        source: asset.src,
+        image_path: asset.src,
+        assetType: asset.type,
+        zIndex: asset.zIndex,
+        transform: asset.transform,
+        animations: asset.animations,
+        effects: asset.effects,
+        masks: asset.masks,
+        transitionIn: asset.transitionIn,
+        transitionOut: asset.transitionOut,
+      },
+      motion: asset.animations?.length ? { animated: true } : {},
+      assets: [],
+    }));
 
+    const scenes: LocalRenderIntent["scenes"] = [{
+      scene_id: `scene_${intent.intentId}`,
+      template_id: `render.${intent.compositionType.toLowerCase()}.v2`,
+      narration_text: captionText || intent.compositionType,
+      duration_seconds: intent.durationSeconds,
+      captions: intent.tracks.captions.map((cue) => ({
+        text: cue.text,
+        start_seconds: cue.startMs / 1000,
+        duration_seconds: Math.max(0.001, (cue.endMs - cue.startMs) / 1000),
+        words: [],
+        style: cue.style?.animation || "NONE",
+      })),
+      audio_track: primaryAudio
+        ? {
+            track_id: primaryAudio.id,
+            audio_path: primaryAudio.src,
+            start_seconds: primaryAudio.startSeconds,
+            duration_seconds: primaryAudio.durationSeconds,
+            volume: primaryAudio.volume,
+          }
+        : undefined,
+      audio_tracks: audioTracks,
+      background: intent.background ?? {},
+      shots,
+    }];
 
     return {
       project_id: intent.missionId || intent.intentId,
@@ -509,7 +484,7 @@ export class RenderFabric {
         intentId: intent.intentId,
         compositionType: intent.compositionType,
         captions: intent.tracks.captions,
-        audioTrack: primaryAudio,
+        audioTracks,
         sourceComposition: intent.sourceCompositionCanonicalJson
           ? {
               compositionId: intent.sourceCompositionId,
@@ -520,5 +495,6 @@ export class RenderFabric {
           : undefined,
       },
     };
+  }
   }
 }
