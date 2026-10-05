@@ -19,3 +19,5 @@
 | **OKF Governance Control Plane** | ./manifest.yaml · ./rules/index.json · ./verification/rule-to-test-matrix.md | Machine-readable governance identity, rule applicability, deterministic sweep attestation, exception schema, and CI evidence. Markdown remains the human-readable policy projection. |
 
 | **OKF Control Plane v2** | [`./decisions/okf-control-plane-v2-20261005.md`](./decisions/okf-control-plane-v2-20261005.md) | Enforcement and drift wave: policy-to-test bindings, source drift detection, CRITICAL/HIGH coverage gates, Team report sweep linkage, and exception expiry enforcement. |
+
+| **OKF Control Plane V3** | [`./decisions/okf-control-plane-v3-20261005.md`](./decisions/okf-control-plane-v3-20261005.md) | Cryptographic attestation primitive, release provenance envelope, bounded AER/Ascalon PolicyContext, and read-only governance observability. Promotion remains gated by signing, repository enforcement, and V2 evidence. |
