@@ -244,6 +244,43 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     });
     expect(validation.accepted).toBe(true);
 
+    const checkpoint = await runtime.handleMcp({
+      tool: "editor.checkpoint",
+      sessionId: "editor-runtime-proof-session",
+      arguments: { reason: "runtime-proof" },
+    });
+    expect(checkpoint.accepted).toBe(true);
+    expect(checkpoint.data?.checkpointId).toBeTruthy();
+
+    const undo = await runtime.handleMcp({
+      tool: "editor.undo",
+      sessionId: "editor-runtime-proof-session",
+      arguments: {},
+    });
+    expect(undo.accepted).toBe(true);
+
+    const redo = await runtime.handleMcp({
+      tool: "editor.redo",
+      sessionId: "editor-runtime-proof-session",
+      arguments: {},
+    });
+    expect(redo.accepted).toBe(true);
+
+    const replay = await runtime.handleMcp({
+      tool: "editor.replay",
+      sessionId: "editor-runtime-proof-session",
+      arguments: { compositionId: composition.compositionId },
+    });
+    expect(replay.accepted).toBe(true);
+    expect(replay.data?.checkedRevisionCount).toBeGreaterThan(0);
+
+    const history = await runtime.handleMcp({
+      tool: "editor.history",
+      sessionId: "editor-runtime-proof-session",
+      arguments: {},
+    });
+    expect(history.accepted).toBe(true);
+
     const exportResult = await runtime.export({
       sessionId: "editor-runtime-proof-session",
       requestedOutput: {
