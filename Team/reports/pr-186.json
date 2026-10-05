@@ -41,6 +41,9 @@
     "Added visual materialization and audio physical verification evidence.",
     "Added explicit metered LLM inference gate; model discovery alone cannot qualify inference.",
     "Updated Perplexity qualification so tools/list is not sufficient; an explicit metered perplexity_search probe is required for final capability proof.",
+    "Corrected IBM Watson TTS probe voice parameter placement and hardened arXiv XML capability validation.",
+    "Separated metered authorization from destructive authorization and gated URLScan independently.",
+    "Added the canonical 28-provider qualification matrix and automated low-risk public live cohort workflow.",
     "Added manual GitHub Actions qualification workflow and evidence artifact.",
     "Reconciled stale VidWords/Hugging Face lifecycle assertions in external API tests.",
     "Added canonical .okf qualification policy."
@@ -57,6 +60,10 @@
   "verificationResults": {
     "qualificationProfileCoverage": "PASS",
     "perplexitySearchCapabilityGuard": "PASS",
+    "meteredVsDestructiveAuthorization": "PASS",
+    "arxivXmlProbe": "PASS",
+    "ibmTtsRequestShape": "PASS",
+    "publicLiveCohortWorkflow": "IMPLEMENTED",
     "safeModeDesign": "PASS",
     "meteredAuthorizationGate": "PASS",
     "visualMaterializationGate": "PASS",
