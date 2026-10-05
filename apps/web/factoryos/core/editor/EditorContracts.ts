@@ -65,7 +65,15 @@ export type EditorMcpToolName =
   | "editor.apply"
   | "editor.validate"
   | "editor.preview"
-  | "editor.export";
+  | "editor.export"
+  | "editor.undo"
+  | "editor.redo"
+  | "editor.checkpoint"
+  | "editor.restore"
+  | "editor.replay"
+  | "editor.history"
+  | "editor.operations"
+  | "editor.checkpoints";
 
 export interface EditorMcpRequest {
   readonly tool: EditorMcpToolName;
