@@ -15,6 +15,8 @@ def main() -> int:
     machine=okf.get('machineSweep')
     if not isinstance(machine,dict): errors.append('missing okf.machineSweep linkage')
     else:
+        if machine.get('artifact') != Path(args.sweep).name: errors.append('Team report machine sweep artifact mismatch')
+        if machine.get('bindingMode') != 'CI_COMPILED_ARTIFACT': errors.append('Team report machine sweep bindingMode is invalid')
         if machine.get('corpusSha256') and machine.get('corpusSha256') != sweep.get('corpusSha256'): errors.append('Team report corpusSha256 does not match compiled sweep')
         if sorted(machine.get('relevantRules',[])) != sorted(sweep.get('relevantRules',[])): errors.append('Team report relevantRules does not match compiled sweep')
         if machine.get('sweepStatus') != sweep.get('okfSweep'): errors.append('Team report machine sweep status mismatch')
