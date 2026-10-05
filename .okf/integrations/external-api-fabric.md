@@ -33,7 +33,7 @@ MCP is an access/tool surface only.
 | Audio assets | Freesound | IMPLEMENTED adapter |
 | Document/safety | OCR.Space, Safe Browsing, URLScan | IMPLEMENTED adapters |
 | Safety | Perspective API | IMPLEMENTED AnalyzeComment adapter |
-| Context | Open-Meteo, Nominatim | IMPLEMENTED registry target |
+| Context | Open-Meteo, Nominatim | IMPLEMENTED adapters; live qualification separate |
 
 ## SDLC
 
