@@ -419,7 +419,7 @@ export class EditorRuntime implements ShortForgeEditorAPI {
     const previewId = `preview_${sha256(
       `${renderIntent.sourceCompositionHashSha256}:${normalizedTimestamp.toFixed(6)}`,
     ).slice(0, 24)}`;
-    const previewDir = path.join(process.cwd(), "apps", "web", "data", "previews", "editor-runtime");
+    const previewDir = path.join(process.cwd(), "data", "previews", "editor-runtime");
     const previewArtifactPath = path.join(previewDir, `${previewId}.png`);
     const previewResult = await this.renderFabric.executePreview(
       renderIntent,
