@@ -342,19 +342,77 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
     const context = { requestId: "qual_" + randomUUID().slice(0, 12), purpose: "external-api-qualification" };
     const initialized = await client.initialize(context);
     const tools = await client.listTools(context);
+    const searchToolPresent = tools.some((tool) => tool.name === "perplexity_search");
+    if (!searchToolPresent) {
+      return {
+        normalized: {
+          protocol: "MCP",
+          initialized: Boolean(initialized.data),
+          toolCount: tools.length,
+          toolNames: tools.slice(0, 20).map((tool) => tool.name),
+          searchToolPresent: false,
+          searchProbe: "UNAVAILABLE",
+        },
+        observation: {
+          status: initialized.status,
+          durationMs: initialized.durationMs,
+        },
+        capabilityVerified: false,
+      };
+    }
+
+    if (process.env.SHORTFORGE_EXTERNAL_API_PERPLEXITY_SEARCH !== "1") {
+      return {
+        normalized: {
+          protocol: "MCP",
+          initialized: Boolean(initialized.data),
+          toolCount: tools.length,
+          toolNames: tools.slice(0, 20).map((tool) => tool.name),
+          searchToolPresent: true,
+          searchProbe: "EXPLICIT_SEARCH_PROBE_REQUIRED",
+        },
+        observation: {
+          status: initialized.status,
+          durationMs: initialized.durationMs,
+        },
+        capabilityVerified: false,
+      };
+    }
+
+    const search = await client.callTool(
+      "perplexity_search",
+      { query: "ShortForge external API qualification MCP search" },
+      context,
+    );
+    const hasToolError = Boolean(search.data?.isError);
+    const searchText = (search.data?.content ?? [])
+      .map((item) => item.text ?? "")
+      .filter(Boolean)
+      .join("\n");
+
     return {
       normalized: {
         protocol: "MCP",
         initialized: Boolean(initialized.data),
         toolCount: tools.length,
         toolNames: tools.slice(0, 20).map((tool) => tool.name),
-        searchToolPresent: tools.some((tool) => tool.name === "perplexity_search"),
+        searchToolPresent: true,
+        searchProbe: {
+          executed: true,
+          providerError: hasToolError,
+          outputPresent: Boolean(searchText.trim()),
+          outputHashPrefix: searchText
+            ? createHash("sha256").update(searchText, "utf8").digest("hex").slice(0, 16)
+            : undefined,
+        },
       },
       observation: {
-        status: initialized.status,
-        durationMs: initialized.durationMs,
+        status: search.status,
+        durationMs: search.durationMs,
+        requestId: search.requestId,
       },
-      capabilityVerified: tools.some((tool) => tool.name === "perplexity_search"),
+      capabilityVerified:
+        !hasToolError && Boolean(searchText.trim()),
     };
   }
 
