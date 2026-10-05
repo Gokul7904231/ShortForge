@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR205-Editor-Feature-Lowering-F06-Physical-Proof",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/editor-feature-lowering-f06-20261005",
+  "objective": "Lower canonical CompositionIR editor features into deterministic physical F06 execution, provide deterministic physical preview, and connect a command-driven Studio surface without creating a second authority.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "CompositionIR remains semantic truth.",
+      "Editor runtime cannot select compute providers or become economic, governance, rendering or release authority.",
+      "Production rendering remains behind OKF, RenderFabric, ComputeRouter, CAS and F07.",
+      "OpenCut, WASM, Rust compositor and isolated-plugin runtime capabilities remain unproven unless separately physically verified.",
+      "Unsupported render feature operations fail closed."
+    ],
+    "sourceRefs": [
+      ".okf/artifacts/editor-feature-lowering-f06.md",
+      ".okf/artifacts/editor-runtime-f06-f07.md",
+      ".okf/rendering/opencut-adapter.md",
+      ".okf/index.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Release"
+  ],
+  "changes": [
+    "Lowered CompositionIR transforms, animations/keyframes, effects, masks and transitions into RenderIntent.",
+    "Added deterministic F06 frame-time feature lowering and fail-closed handling for unsupported features.",
+    "Added physical video-frame decoding with source-in and playback-rate semantics.",
+    "Added FFmpeg audio source trimming, playback-rate, volume, fades, timeline offsets and multi-track mixing.",
+    "Added explicit solid, gradient and blur canvas background execution.",
+    "Added deterministic physical preview PNG generation through the canonical RenderFabric handoff.",
+    "Bound full lowered render graphs into deterministic composition/intent identity.",
+    "Added authenticated durable Studio runtime API with session rehydration.",
+    "Added command-driven Studio timeline, snapping, inspector, keyframe/effect/mask/transition/background controls, audio/caption lanes and preview controls.",
+    "Added physical and unit acceptance coverage for the lowered feature graph."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "editorPhysicalF06F07Proof": "PENDING",
+    "featureLoweringUnitTests": "PENDING",
+    "deterministicPreviewProof": "PENDING",
+    "note": "Fresh validation is required on PR205 before merge."
+  },
+  "evidenceRefs": [
+    ".okf/artifacts/editor-feature-lowering-f06.md",
+    "apps/web/factoryos/core/editor/EditorRuntime.ts",
+    "apps/web/factoryos/core/editor/EditorContracts.ts",
+    "apps/web/factoryos/core/fabric/RenderFabric.ts",
+    "apps/web/factoryos/core/render/LocalRenderAdapter.ts",
+    "apps/web/factoryos/core/contracts/RenderIntentContracts.ts",
+    "packages/factoryos-render/src/factoryos_render/engine/feature_lowering.py",
+    "packages/factoryos-render/src/factoryos_render/engine/frame_engine.py",
+    "packages/factoryos-render/src/factoryos_render/engine/renderer.py",
+    "packages/factoryos-render/src/factoryos_render/backends/image.py",
+    "packages/factoryos-render/src/factoryos_render/backends/ffmpeg.py",
+    "apps/web/factoryos/tests/editor-runtime-f06-f07.test.ts",
+    "packages/factoryos-render/tests/test_feature_lowering.py",
+    "apps/web/components/editor/ShortForgeEditorStudio.tsx",
+    "apps/web/app/(os)/factory/editor/page.tsx",
+    "apps/web/app/api/editor/runtime/route.ts",
+    "apps/web/app/api/editor/preview/[previewId]/route.ts",
+    "apps/web/lib/editor-runtime-server.ts",
+    "Team/reports/pr-205.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority"
+  }
+}
