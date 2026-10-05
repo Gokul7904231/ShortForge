@@ -40,6 +40,7 @@
     "Added zero-network safe configuration mode and explicit live/metered/destructive guards.",
     "Added visual materialization and audio physical verification evidence.",
     "Added explicit metered LLM inference gate; model discovery alone cannot qualify inference.",
+    "Updated Perplexity qualification so tools/list is not sufficient; an explicit metered perplexity_search probe is required for final capability proof.",
     "Added manual GitHub Actions qualification workflow and evidence artifact.",
     "Reconciled stale VidWords/Hugging Face lifecycle assertions in external API tests.",
     "Added canonical .okf qualification policy."
@@ -55,6 +56,7 @@
   ],
   "verificationResults": {
     "qualificationProfileCoverage": "PASS",
+    "perplexitySearchCapabilityGuard": "PASS",
     "safeModeDesign": "PASS",
     "meteredAuthorizationGate": "PASS",
     "visualMaterializationGate": "PASS",
