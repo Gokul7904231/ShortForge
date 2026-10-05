@@ -774,10 +774,4 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
   }
 
   return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: capabilityPasses(id, result.data) };
-
-  const result = await requestJson(id, url, {
-    method: "GET",
-    headers: requestHeadersFor(id, secret),
-  });
-  return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: capabilityPasses(id, result.data) };
 }
