@@ -197,7 +197,10 @@ async function requestJson(
       durationMs: Date.now() - started,
       contentType: response.headers.get("content-type") || undefined,
       retryAfterSeconds: Number.isFinite(retryAfter) ? retryAfter : undefined,
-      requestId: response.headers.get("x-request-id") || response.headers.get("x-request-id"),
+      rateLimitLimit: Number(response.headers.get("x-ratelimit-limit") || "") || undefined,
+      rateLimitRemaining: Number(response.headers.get("x-ratelimit-remaining") || "") || undefined,
+      rateLimitResetEpochSeconds: Number(response.headers.get("x-ratelimit-reset") || "") || undefined,
+      requestId: response.headers.get("x-request-id") || undefined,
     },
   };
 }
@@ -313,7 +316,7 @@ function capabilityPasses(providerId: string, data: unknown): boolean {
   if (providerId === "perspective") return Boolean((data as any)?.attributeScores || (data as any)?.requestedAttributes);
   if (providerId === "google_safe_browsing") return data !== null;
   if (providerId === "urlscan") return Boolean((data as any)?.uuid);
-  if (providerId === "gemini" || providerId === "groq" || providerId === "openrouter" || providerId === "huggingface") return Array.isArray((data as any)?.data);
+  if (providerId === "gemini" || providerId === "groq" || providerId === "openrouter" || providerId === "huggingface") return false;
   if (providerId === "freesound") return Boolean((data as any)?.results?.length);
   if (providerId === "pexels") return Boolean((data as any)?.photos?.length);
   if (providerId === "pixabay") return Boolean((data as any)?.hits?.length);
@@ -463,6 +466,91 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
       }),
     });
     return { normalized: shapeOf(result.data), observation: result.observation, capabilityVerified: result.observation.status >= 200 && result.observation.status < 300 && capabilityPasses(id, result.data) };
+  }
+
+  if (id === "gemini" || id === "groq" || id === "openrouter" || id === "huggingface") {
+    const models = await requestJson(id, new URL(
+      id === "gemini"
+        ? currentBase(id) + "/models"
+        : currentBase(id) + "/models",
+    ), {
+      method: "GET",
+      headers: requestHeadersFor(id, secret),
+    });
+
+    if (process.env.SHORTFORGE_EXTERNAL_API_LLM_PROBE !== "1") {
+      return {
+        normalized: {
+          models: shapeOf(models.data),
+          inference: "EXPLICIT_LIVE_INFERENCE_REQUIRED",
+        },
+        observation: models.observation,
+        capabilityVerified: false,
+      };
+    }
+
+    if (!(models.observation.status >= 200 && models.observation.status < 300)) {
+      return {
+        normalized: { models: shapeOf(models.data) },
+        observation: models.observation,
+        capabilityVerified: false,
+      };
+    }
+
+    const model =
+      id === "gemini"
+        ? (process.env.GEMINI_MODEL && process.env.GEMINI_MODEL !== "auto"
+            ? process.env.GEMINI_MODEL
+            : "gemini-3.8-flash")
+        : id === "groq"
+          ? (process.env.GROQ_MODEL || "llama-3.3-70b-versatile")
+          : id === "openrouter"
+            ? (process.env.OPENROUTER_MODEL || "openai/gpt-oss-120b")
+            : (process.env.HF_MODEL || "openai/gpt-oss-120b:fastest");
+
+    const inferenceUrl = id === "gemini"
+      ? new URL(currentBase(id) + "/models/" + encodeURIComponent(model) + ":generateContent")
+      : new URL(currentBase(id) + "/chat/completions");
+
+    if (id === "gemini") {
+      inferenceUrl.searchParams.set("key", secret || "");
+    }
+
+    const inference = await requestJson(id, inferenceUrl, {
+      method: "POST",
+      headers: requestHeadersFor(id, secret),
+      body: JSON.stringify(
+        id === "gemini"
+          ? { contents: [{ parts: [{ text: "Reply with READY." }] }] }
+          : {
+              model,
+              messages: [{ role: "user", content: "Reply with READY." }],
+              max_tokens: 4,
+              temperature: 0,
+            },
+      ),
+    });
+
+    const output = id === "gemini"
+      ? String((inference.data as any)?.candidates?.[0]?.content?.parts?.[0]?.text || "")
+      : String((inference.data as any)?.choices?.[0]?.message?.content || "");
+
+    return {
+      normalized: {
+        model,
+        models: shapeOf(models.data),
+        inferenceStatus: inference.observation.status,
+        outputPresent: Boolean(output.trim()),
+        outputHashPrefix: output
+          ? createHash("sha256").update(output, "utf8").digest("hex").slice(0, 16)
+          : undefined,
+      },
+      observation: inference.observation,
+      capabilityVerified:
+        inference.observation.status >= 200 &&
+        inference.observation.status < 300 &&
+        Boolean(output.trim()),
+    };
   }
 
   if (id === "ocr_space") {
