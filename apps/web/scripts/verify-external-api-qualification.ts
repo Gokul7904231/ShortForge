@@ -145,6 +145,7 @@ async function mainLive(): Promise<void> {
   const state = configured(profile);
   const live = process.env.SHORTFORGE_EXTERNAL_API_LIVE === "1";
   const allowMetered = process.env.SHORTFORGE_EXTERNAL_API_ALLOW_METERED === "1";
+  const allowDestructive = process.env.SHORTFORGE_EXTERNAL_API_ALLOW_DESTRUCTIVE === "1";
 
   if (!state.configured) {
     printResult(baseResult(
@@ -164,10 +165,12 @@ async function mainLive(): Promise<void> {
     return;
   }
 
-  if (!canRunLive(profile, { live, allowMetered })) {
-    const reason = profile.metered
+  if (!canRunLive(profile, { live, allowMetered, allowDestructive })) {
+    const reason = profile.metered && !allowMetered
       ? "Metered provider requires SHORTFORGE_EXTERNAL_API_ALLOW_METERED=1."
-      : "Destructive provider requires explicit live authorization.";
+      : profile.destructive && !allowDestructive
+        ? "Destructive provider requires SHORTFORGE_EXTERNAL_API_ALLOW_DESTRUCTIVE=1."
+        : "Explicit live authorization is required.";
     printResult(baseResult(
       profile,
       "guard_" + randomUUID().slice(0, 12),
