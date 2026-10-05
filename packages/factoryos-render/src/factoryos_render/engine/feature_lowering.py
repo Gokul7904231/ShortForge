@@ -357,57 +357,40 @@ def transition_mix(
 ) -> Image.Image:
     p = _clamp(progress, 0.0, 1.0)
     mode = kind.upper()
+    out_img = outgoing.convert("RGBA")
+    in_img = incoming.convert("RGBA")
+
     if mode in {"FADE", "DISSOLVE", "CROSSFADE"}:
-        return Image.blend(outgoing.convert("RGBA"), incoming.convert("RGBA"), p)
+        return Image.blend(out_img, in_img, p)
 
     if mode in {"SLIDE_LEFT", "SLIDE_RIGHT", "SLIDE_UP", "SLIDE_DOWN"}:
-        out_img = outgoing.convert("RGBA")
-        in_img = incoming.convert("RGBA")
-        dx = dy = 0
+        canvas = Image.new("RGBA", in_img.size, (0, 0, 0, 0))
         if mode == "SLIDE_LEFT":
-            dx = int(-incoming.width * p)
+            canvas.alpha_composite(out_img, (int(-in_img.width * p), 0))
+            canvas.alpha_composite(in_img, (int(in_img.width * (1.0 - p)), 0))
         elif mode == "SLIDE_RIGHT":
-            dx = int(incoming.width * p)
+            canvas.alpha_composite(out_img, (int(in_img.width * p), 0))
+            canvas.alpha_composite(in_img, (int(-in_img.width * (1.0 - p)), 0))
         elif mode == "SLIDE_UP":
-            dy = int(-incoming.height * p)
+            canvas.alpha_composite(out_img, (0, int(-in_img.height * p)))
+            canvas.alpha_composite(in_img, (0, int(in_img.height * (1.0 - p))))
         else:
-            dy = int(incoming.height * p)
-        canvas = Image.new("RGBA", incoming.size, (0, 0, 0, 0))
-        canvas.alpha_composite(out_img, (0, 0))
-        canvas.alpha_composite(in_img, (dx + (incoming.width if mode == "SLIDE_LEFT" else -incoming.width if mode == "SLIDE_RIGHT" else 0), dy + (incoming.height if mode == "SLIDE_UP" else -incoming.height if mode == "SLIDE_DOWN" else 0)))
-        # Move the outgoing frame away from center to complete the slide.
-        if mode == "SLIDE_LEFT":
-            canvas = Image.new("RGBA", incoming.size, (0, 0, 0, 0))
-            canvas.alpha_composite(out_img, (int(-incoming.width * p), 0))
-            canvas.alpha_composite(in_img, (int(incoming.width * (1.0 - p)), 0))
-        elif mode == "SLIDE_RIGHT":
-            canvas = Image.new("RGBA", incoming.size, (0, 0, 0, 0))
-            canvas.alpha_composite(out_img, (int(incoming.width * p), 0))
-            canvas.alpha_composite(in_img, (int(-incoming.width * (1.0 - p)), 0))
-        elif mode == "SLIDE_UP":
-            canvas = Image.new("RGBA", incoming.size, (0, 0, 0, 0))
-            canvas.alpha_composite(out_img, (0, int(-incoming.height * p)))
-            canvas.alpha_composite(in_img, (0, int(incoming.height * (1.0 - p))))
-        elif mode == "SLIDE_DOWN":
-            canvas = Image.new("RGBA", incoming.size, (0, 0, 0, 0))
-            canvas.alpha_composite(out_img, (0, int(incoming.height * p)))
-            canvas.alpha_composite(in_img, (0, int(-incoming.height * (1.0 - p))))
+            canvas.alpha_composite(out_img, (0, int(in_img.height * p)))
+            canvas.alpha_composite(in_img, (0, int(-in_img.height * (1.0 - p))))
         return canvas
 
     if mode in {"WIPE_LEFT", "WIPE_RIGHT", "WIPE_UP", "WIPE_DOWN"}:
-        result = outgoing.copy().convert("RGBA")
-        reveal = Image.new("L", result.size, 0)
+        reveal = Image.new("L", out_img.size, 0)
         draw = ImageDraw.Draw(reveal)
         if mode == "WIPE_LEFT":
-            draw.rectangle([0, 0, int(result.width * p), result.height], fill=255)
+            draw.rectangle([0, 0, int(out_img.width * p), out_img.height], fill=255)
         elif mode == "WIPE_RIGHT":
-            draw.rectangle([int(result.width * (1 - p)), 0, result.width, result.height], fill=255)
+            draw.rectangle([int(out_img.width * (1.0 - p)), 0, out_img.width, out_img.height], fill=255)
         elif mode == "WIPE_UP":
-            draw.rectangle([0, int(result.height * (1 - p)), result.width, result.height], fill=255)
+            draw.rectangle([0, int(out_img.height * (1.0 - p)), out_img.width, out_img.height], fill=255)
         else:
-            draw.rectangle([0, 0, result.width, int(result.height * p)], fill=255)
-        incoming_rgba = incoming.convert("RGBA")
-        result.alpha_composite(Image.composite(incoming_rgba, Image.new("RGBA", result.size, (0, 0, 0, 0)), reveal))
-        return result
+            draw.rectangle([0, 0, out_img.width, int(out_img.height * p)], fill=255)
+        return Image.composite(in_img, out_img, reveal)
 
-    return Image.blend(outgoing.convert("RGBA"), incoming.convert("RGBA"), p)
+    return Image.blend(out_img, in_img, p)
+
