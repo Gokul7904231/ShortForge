@@ -96,7 +96,7 @@ def check_exceptions() -> list[str]:
 def main() -> int:
     p=argparse.ArgumentParser(); p.add_argument('--json-out',default=''); args=p.parse_args()
     rules=load_rules(); errors=validate_rules(rules)+check_rule_coverage(rules)+check_source_drift(rules)+check_exceptions()
-    result={'schemaVersion':'1.0','status':'PASS' if not errors else 'BLOCKED','errors':errors,'activeRules':sum(r.get('status')=='ACTIVE' for r in rules),'criticalHighRules':sum(r.get('status')=='ACTIVE' and r.get('severity') in SEVERITIES for r in rules),'coveredCriticalHigh':sum(r.get('status')=='ACTIVE' and r.get('severity') in SEVERITIES and r.get('verificationRefs') for r in rules)}
+    result={'schemaVersion':'1.0','status':'PASS' if not errors else 'BLOCKED','errors':errors,'activeRules':sum(r.get('status')=='ACTIVE' for r in rules),'criticalHighRules':sum(r.get('status')=='ACTIVE' and r.get('severity') in SEVERITIES for r in rules),'coveredCriticalHigh':sum(1 for r in rules if r.get('status')=='ACTIVE' and r.get('severity') in SEVERITIES and r.get('verificationRefs'))}
     rendered=json.dumps(result,indent=2,sort_keys=True)+'\n'
     if args.json_out: Path(args.json_out).write_text(rendered,encoding='utf-8')
     print(rendered,end='')
