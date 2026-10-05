@@ -184,6 +184,10 @@ def apply_effects(
 
         if kind in {"BRIGHTNESS", "BRIGHTNESS_ADJUST"}:
             result = ImageEnhance.Brightness(result).enhance(max(0.0, _numeric(params.get("amount"), 1.0)))
+        elif kind in {"OPACITY", "ALPHA"}:
+            opacity = _clamp(_numeric(params.get("opacity", params.get("amount")), 1.0), 0.0, 1.0)
+            alpha = result.getchannel("A").point(lambda a: int(a * opacity))
+            result.putalpha(alpha)
         elif kind in {"CONTRAST", "CONTRAST_ADJUST"}:
             result = ImageEnhance.Contrast(result).enhance(max(0.0, _numeric(params.get("amount"), 1.0)))
         elif kind in {"SATURATION", "SATURATE"}:
