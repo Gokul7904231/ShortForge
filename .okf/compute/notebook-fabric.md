@@ -120,3 +120,19 @@ Byte length: `277495`
 F07 receipt: `rcpt_live_hf_zerogpu_muu0d83o_2026-10-04T160122706Z`
 
 The live proof workflow is manual-only after qualification to prevent ordinary PR synchronization from consuming ZeroGPU quota. No F06 worker promotion is granted.
+
+
+## Kaggle + Wan Dual-T4 renderer — reference integration
+
+ShortForge now contains a repository-owned Kaggle renderer template at `tools/kaggle/shortforge-wan-dual-t4/`. It is derived from engineering patterns observed in current public Kaggle/Wan examples, not from a community notebook dependency.
+
+The renderer has three explicit profiles:
+- `PROOF`: deterministic GPU-backed MP4 generation with no model download.
+- `WAN_T2V_1_3B`: lower-risk model-backed Wan 2.1 text-to-video smoke.
+- `WAN_DUAL_T4_14B`: explicit two-T4 experiment for `Wan-AI/Wan2.1-T2V-14B-Diffusers`.
+
+The public Wan Dual-T4 reference uses runtime hardware detection and selects a 14B path only when two T4 GPUs are present. Current Hugging Face Diffusers documentation supports `device_map="balanced"` to distribute pipeline components across multiple GPUs, which ShortForge uses for the dual-T4 model-backed path. This does not constitute a live feasibility claim; the 14B path must pass an explicit Kaggle run before qualification.
+
+The first live proof should use `PROOF` to validate the ShortForge-owned kernel packaging and T4 x2 hardware contract. Model-backed runs are manual-only and quota-aware.
+
+All successful Kaggle renders remain subject to the existing physical-artifact gate: download -> SHA-256/byte length -> independent media probe -> CAS -> F07. Kaggle remains `productionWorkerEligible=false`.
