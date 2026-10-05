@@ -48,6 +48,9 @@ jobs:
           python -m tools.okf.lint
           python -m tools.okf.sweep --base "$OKF_BASE_REF" --head "$OKF_HEAD_REF" --output okf-sweep.json
           python -m tools.okf.drift --json-out okf-drift.json
+      - name: Validate Team report against compiled sweep
+        if: github.event_name == 'pull_request'
+        run: python -m tools.okf.validate_report Team/reports/pr-${{ github.event.pull_request.number }}.json --sweep okf-sweep.json
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
