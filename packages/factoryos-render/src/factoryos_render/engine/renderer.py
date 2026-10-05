@@ -21,6 +21,7 @@ from ..timing.frame_clock import FrameClock
 from ..timing.audio_sync import AudioSync
 from ..backends.ffmpeg import FFmpegBackend
 from .scene_engine import SceneEngine
+from .frame_engine import FrameEngine
 from ..persistence.checkpoint_store import CheckpointStore
 from ..assets.cache import ContentAddressedCache
 
@@ -30,7 +31,6 @@ class Renderer:
         self.cache_dir = os.path.abspath(cache_dir)
         self.checkpoints = CheckpointStore(os.path.join(self.cache_dir, "checkpoints"))
         self.cache = ContentAddressedCache(os.path.join(self.cache_dir, "content"))
-        self.clock = FrameClock(30)
 
     def compile_composition(self, intent: RenderIntent) -> CompositionIR:
         """
@@ -157,7 +157,7 @@ class Renderer:
             raise RuntimeError("Preview requires at least one scene.")
 
         target = max(0.0, min(float(timestamp_seconds), max(0.0, comp.total_duration_seconds - 1.0 / max(1, comp.fps))))
-        target_frame = self.clock.time_to_frame(target) if hasattr(self, "clock") else int(round(target * comp.fps))
+        target_frame = int(round(target * comp.fps))
 
         scene = comp.scenes[-1]
         relative_frame = scene.duration_frames - 1
