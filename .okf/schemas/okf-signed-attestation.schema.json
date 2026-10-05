@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://okf/signed-attestation/v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "attestationType",
+    "repository",
+    "commitSha",
+    "branch",
+    "corpusSha256",
+    "envelopeSha256",
+    "relevantRuleIds",
+    "generatedAt",
+    "generatorVersion",
+    "signature",
+    "authority"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "attestationType": {
+      "const": "OKF_SWEEP"
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "corpusSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "envelopeSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "relevantRuleIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^OKF\\."
+      }
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "generatorVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authority": {
+      "const": "EVIDENCE_ONLY"
+    },
+    "signature": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "keyId",
+        "keyVersion",
+        "signatureHex",
+        "payloadSha256"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "keyId": {
+          "type": "string"
+        },
+        "keyVersion": {
+          "type": "integer"
+        },
+        "signatureHex": {
+          "type": "string",
+          "pattern": "^[a-f0-9]+$"
+        },
+        "payloadSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
