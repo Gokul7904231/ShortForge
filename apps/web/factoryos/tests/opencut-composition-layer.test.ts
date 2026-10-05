@@ -10,12 +10,14 @@ import {
 import {
   moveClip,
   rippleDelete,
+  retimeClip,
   splitClip,
 } from "../core/timeline/TimelineTransforms";
+import { OpenCutAdapter } from "../core/render/OpenCutAdapter";
 import {
-  OpenCutAdapter,
-} from "../core/render/OpenCutAdapter";
-import { isCapabilitySupported } from "../core/render/RendererCapabilityContracts";
+  isCapabilitySupported,
+  validateRendererCapabilityContract,
+} from "../core/render/RendererCapabilityContracts";
 
 function fixture(): CompositionIR {
   const duration = millisecondsToMediaTime(10_000);
@@ -119,6 +121,53 @@ function fixture(): CompositionIR {
   };
 }
 
+function rippleFixture(): CompositionIR {
+  const base = fixture();
+  return {
+    ...base,
+    audio: [
+      {
+        ...base.audio[0],
+        id: "voice-before",
+        start: 0,
+        duration: millisecondsToMediaTime(2_000),
+        waveform: undefined,
+      },
+      {
+        ...base.audio[0],
+        id: "voice-after",
+        start: millisecondsToMediaTime(3_000),
+        duration: millisecondsToMediaTime(7_000),
+        waveform: undefined,
+      },
+    ],
+    captions: [
+      {
+        ...base.captions[0],
+        id: "cap-after",
+        start: millisecondsToMediaTime(3_000),
+        end: millisecondsToMediaTime(4_000),
+        words: [{
+          word: "after",
+          start: millisecondsToMediaTime(3_100),
+          end: millisecondsToMediaTime(3_800),
+        }],
+      },
+    ],
+    tracks: [{
+      ...base.tracks[0],
+      clips: [{
+        ...base.tracks[0].clips[0],
+        duration: millisecondsToMediaTime(2_000),
+      }, {
+        ...base.tracks[0].clips[1],
+        start: millisecondsToMediaTime(3_000),
+        duration: millisecondsToMediaTime(7_000),
+      }],
+    }],
+  };
+}
+
 describe("OpenCut-informed CompositionIR v2", () => {
   it("uses integer ticks and exact rational frame rates", () => {
     expect(MEDIA_TIMEBASE).toBe(120_000);
@@ -126,13 +175,21 @@ describe("OpenCut-informed CompositionIR v2", () => {
     expect(FRAME_RATE_2997).toEqual({ numerator: 30000, denominator: 1001 });
   });
 
-  it("validates rich composition semantics", () => {
+  it("validates rich composition semantics and rejects duplicate identities", () => {
     const report = validateCompositionIR(fixture());
     expect(report.valid).toBe(true);
     expect(report.errors).toHaveLength(0);
+
+    const duplicate = {
+      ...fixture(),
+      tracks: [fixture().tracks[0], fixture().tracks[0]],
+    };
+    const invalid = validateCompositionIR(duplicate);
+    expect(invalid.valid).toBe(false);
+    expect(invalid.errors.some((error) => error.includes("Duplicate composition track id"))).toBe(true);
   });
 
-  it("provides deterministic canonical serialization", () => {
+  it("provides deterministic serialization and a stable cryptographic payload", () => {
     const a = canonicalizeComposition(fixture());
     const b = canonicalizeComposition({
       ...fixture(),
@@ -142,37 +199,128 @@ describe("OpenCut-informed CompositionIR v2", () => {
     expect(a).not.toContain("function");
   });
 
-  it("supports split, move and ripple editing as pure operations", () => {
+  it("moves nested animation state with the clip", () => {
     const original = fixture();
-    const split = splitClip(
-      original,
+    const animated: CompositionIR = {
+      ...original,
+      tracks: [{
+        ...original.tracks[0],
+        clips: [{
+          ...original.tracks[0].clips[0],
+          animations: [{
+            property: "x",
+            keyframes: [
+              { time: millisecondsToMediaTime(1_000), value: 0 },
+              { time: millisecondsToMediaTime(2_000), value: 10 },
+            ],
+          }],
+        }, original.tracks[0].clips[1]],
+      }],
+    };
+
+    const moved = moveClip(
+      animated,
       "video-main",
-      "clip-b",
-      millisecondsToMediaTime(7_000),
-    );
-    expect(split.tracks[0].clips.map((clip) => clip.id)).toEqual([
       "clip-a",
-      "clip-b:a",
-      "clip-b:b",
-    ]);
-
-    const moved = moveClip(split, "video-main", "clip-b:b", millisecondsToMediaTime(8_000));
-    expect(moved.tracks[0].clips[2].start).toBe(millisecondsToMediaTime(8_000));
-
-    const splitForRipple = splitClip(
-      original,
-      "video-main",
-      "clip-b",
-      millisecondsToMediaTime(8_000),
+      millisecondsToMediaTime(1_000),
     );
-    const rippled = rippleDelete(
-      splitForRipple,
+
+    expect(moved.tracks[0].clips[0].animations?.[0].keyframes.map((frame) => frame.time)).toEqual([
+      millisecondsToMediaTime(2_000),
+      millisecondsToMediaTime(3_000),
+    ]);
+  });
+
+  it("partitions keyframe state and source timing on split", () => {
+    const animated = fixture();
+    const source = {
+      ...animated.tracks[0].clips[1],
+      animations: [{
+        property: "opacity" as const,
+        keyframes: [
+          { time: millisecondsToMediaTime(5_000), value: 1 },
+          { time: millisecondsToMediaTime(7_000), value: 0.5 },
+          { time: millisecondsToMediaTime(9_000), value: 0 },
+        ],
+      }],
+    };
+
+    const split = splitClip({
+      ...animated,
+      tracks: [{ ...animated.tracks[0], clips: [animated.tracks[0].clips[0], source] }],
+    }, "video-main", "clip-b", millisecondsToMediaTime(7_000));
+
+    expect(split.tracks[0].clips[1].id).toBe("clip-b:a");
+    expect(split.tracks[0].clips[2].id).toBe("clip-b:b");
+    expect(split.tracks[0].clips[1].animations?.[0].keyframes.map((frame) => frame.time)).toEqual([
+      millisecondsToMediaTime(5_000),
+      millisecondsToMediaTime(7_000),
+    ]);
+    expect(split.tracks[0].clips[2].animations?.[0].keyframes.map((frame) => frame.time)).toEqual([
+      millisecondsToMediaTime(7_000),
+      millisecondsToMediaTime(9_000),
+    ]);
+  });
+
+  it("retimes the clip without lying about source span", () => {
+    const original = fixture();
+    const withSource = {
+      ...original,
+      tracks: [{
+        ...original.tracks[0],
+        clips: [{
+          ...original.tracks[0].clips[0],
+          animations: [{
+            property: "scaleX" as const,
+            keyframes: [
+              { time: millisecondsToMediaTime(1_000), value: 1 },
+              { time: millisecondsToMediaTime(2_000), value: 2 },
+            ],
+          }],
+          sourceDuration: millisecondsToMediaTime(4_000),
+        }, original.tracks[0].clips[1]],
+      }],
+    };
+
+    const retimed = retimeClip(
+      withSource,
+      "video-main",
+      "clip-a",
+      millisecondsToMediaTime(2_000),
+    );
+    const clip = retimed.tracks[0].clips[0];
+
+    expect(clip.playbackRate).toBe(2);
+    expect(clip.sourceDuration).toBe(millisecondsToMediaTime(4_000));
+    expect(clip.animations?.[0].keyframes.map((frame) => frame.time)).toEqual([
+      millisecondsToMediaTime(500),
+      millisecondsToMediaTime(1_000),
+    ]);
+  });
+
+  it("supports scoped ripple editing and preserves synchronized auxiliary tracks", () => {
+    const local = rippleDelete(
+      fixture(),
       "video-main",
       millisecondsToMediaTime(8_000),
       millisecondsToMediaTime(9_000),
+      { scope: "LOCAL_TRACK" },
     );
-    const rippleClip = rippled.tracks[0].clips.find((clip) => clip.id === "clip-b:b");
-    expect(rippleClip?.start).toBe(millisecondsToMediaTime(7_000));
+    expect(local.canvas.duration).toBe(millisecondsToMediaTime(10_000));
+
+    const whole = rippleDelete(
+      rippleFixture(),
+      "video-main",
+      millisecondsToMediaTime(2_000),
+      millisecondsToMediaTime(3_000),
+      { scope: "WHOLE_COMPOSITION" },
+    );
+
+    expect(whole.canvas.duration).toBe(millisecondsToMediaTime(9_000));
+    expect(whole.audio.find((audio) => audio.id === "voice-after")?.start)
+      .toBe(millisecondsToMediaTime(2_000));
+    expect(whole.captions[0].start).toBe(millisecondsToMediaTime(2_000));
+    expect(whole.captions[0].words?.[0].start).toBe(millisecondsToMediaTime(2_100));
   });
 
   it("keeps OpenCut behind an explicit experimental admission boundary", () => {
@@ -186,6 +334,7 @@ describe("OpenCut-informed CompositionIR v2", () => {
       "HEADLESS",
       "MCP",
     ]);
+    expect(validateRendererCapabilityContract(OpenCutAdapter.capability())).toEqual([]);
     expect(OpenCutAdapter.capability().mcpServer).toBe(false);
     expect(OpenCutAdapter.capability().headlessExecution).toBe(false);
 
