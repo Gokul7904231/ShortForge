@@ -4,17 +4,11 @@ import { promisify } from "node:util";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  ExternalApiRegistry,
-} from "./ExternalApiRegistry";
 import type {
   ExternalApiQualificationProfile,
   QualificationHttpObservation,
-  QualificationResult,
 } from "./ExternalApiQualificationContracts";
 import {
-  canRunLive,
-  isMeteredOrDestructive,
 } from "./ExternalApiQualificationContracts";
 import { PerplexityMcpClient } from "./PerplexityMcpClient";
 
