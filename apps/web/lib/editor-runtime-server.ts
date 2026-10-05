@@ -32,7 +32,7 @@ export async function getEditorRuntime(): Promise<EditorRuntime> {
       }
     }
 
-    const diskPath = path.join(process.cwd(), "apps", "web", "data", "editor-runtime");
+    const diskPath = path.join(process.cwd(), "data", "editor-runtime");
     return new EditorRuntime(new DurableEditor(new DiskEditorRevisionStore(diskPath)));
   })();
 
