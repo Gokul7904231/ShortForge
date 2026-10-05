@@ -662,7 +662,7 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
       url.searchParams.set("fields", "title,url,year");
       break;
     case "crossref":
-      url.pathname += "/works";
+      url.pathname += "/v1/works";
       url.searchParams.set("query.bibliographic", "machine learning");
       url.searchParams.set("rows", "1");
       url.searchParams.set("select", "DOI,title,URL");
