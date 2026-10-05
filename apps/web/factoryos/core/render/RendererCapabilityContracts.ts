@@ -6,6 +6,7 @@ export type RendererExecutionMode =
   | "DISTRIBUTED";
 
 export interface RendererCapabilitySet {
+  /** Modeled representational capability; runtime proof is expressed separately by executionModes. */
   readonly timeline: boolean;
   readonly keyframes: boolean;
   readonly effects: boolean;
@@ -46,7 +47,7 @@ export const NATIVE_RENDERER_CAPABILITY: RendererCapabilityContract = {
   rendererId: "factoryos-native",
   version: "current",
   status: "CANONICAL",
-  executionModes: ["EDITOR", "WASM_PREVIEW", "HEADLESS", "DISTRIBUTED"],
+  executionModes: ["HEADLESS", "DISTRIBUTED"],
   capabilities: {
     timeline: true,
     keyframes: true,
@@ -71,4 +72,35 @@ export function isCapabilitySupported(
   capability: keyof RendererCapabilitySet,
 ): boolean {
   return contract.capabilities[capability];
+}
+
+
+export function validateRendererCapabilityContract(
+  contract: RendererCapabilityContract,
+): string[] {
+  const errors: string[] = [];
+  const requirements: Array<[RendererExecutionMode, boolean]> = [
+    ["EDITOR", contract.capabilities.editorApi],
+    ["WASM_PREVIEW", contract.capabilities.wasmPreview],
+    ["HEADLESS", contract.capabilities.headlessExecution],
+    ["MCP", contract.capabilities.mcpServer],
+  ];
+
+  for (const [mode, supported] of requirements) {
+    if (contract.executionModes.includes(mode) && !supported) {
+      errors.push(`Renderer ${contract.rendererId} advertises ${mode} without matching runtime capability proof.`);
+    }
+  }
+
+  for (const mode of contract.executionModes) {
+    if (contract.integrationTargets?.includes(mode)) {
+      errors.push(`Renderer ${contract.rendererId} lists ${mode} as both proven and roadmap-only.`);
+    }
+  }
+
+  if (contract.authorityBoundary !== "SHORTFORGE_ONLY") {
+    errors.push(`Renderer ${contract.rendererId} must remain under ShortForge authority.`);
+  }
+
+  return errors;
 }
