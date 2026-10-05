@@ -110,7 +110,7 @@ export class OpenAlexProvider implements ReachProvider {
                 ? work.authorships
                     .slice(0, 4)
                     .map((a: any) => a?.author?.display_name)
-                    .filter(Boolean)
+                    .filter((source): source is EvidenceSource => Boolean(source))
                     .join(", ")
                 : "";
 
@@ -127,7 +127,7 @@ export class OpenAlexProvider implements ReachProvider {
                   ? "Abstract available."
                   : "",
               ]
-                .filter(Boolean)
+                .filter((source): source is EvidenceSource => Boolean(source))
                 .join(" | ");
 
               return source(
@@ -138,7 +138,7 @@ export class OpenAlexProvider implements ReachProvider {
                 requestId,
               );
             })
-            .filter(Boolean)
+            .filter((source): source is EvidenceSource => Boolean(source))
         : [];
 
       return {
@@ -146,7 +146,7 @@ export class OpenAlexProvider implements ReachProvider {
         capability: "SEARCH",
         sources,
         requestId,
-        durationMs: 0,
+        durationMs: Date.now() - started,
       };
     } catch (error) {
       return fail(this.id, error);
@@ -250,19 +250,19 @@ export class ArxivProvider implements ReachProvider {
                 ? summary.replace(/\s+/g, " ").slice(0, 450)
                 : "",
             ]
-              .filter(Boolean)
+              .filter((source): source is EvidenceSource => Boolean(source))
               .join(" | "),
             requestId,
           );
         })
-        .filter(Boolean);
+        .filter((source): source is EvidenceSource => Boolean(source));
 
       return {
         provider: this.id,
         capability: "SEARCH",
         sources,
         requestId,
-        durationMs: 0,
+        durationMs: Date.now() - started,
       };
     } catch (error) {
       return fail(this.id, error);
@@ -337,7 +337,7 @@ export class SemanticScholarProvider implements ReachProvider {
                 ? paper.authors
                     .slice(0, 4)
                     .map((a: any) => a?.name)
-                    .filter(Boolean)
+                    .filter((source): source is EvidenceSource => Boolean(source))
                     .join(", ")
                 : "";
 
@@ -350,12 +350,12 @@ export class SemanticScholarProvider implements ReachProvider {
                   authors ? "Authors: " + authors : "",
                   paper?.abstract || "",
                 ]
-                  .filter(Boolean)
+                  .filter((source): source is EvidenceSource => Boolean(source))
                   .join(" | "),
                 requestId,
               );
             })
-            .filter(Boolean)
+            .filter((source): source is EvidenceSource => Boolean(source))
         : [];
 
       return {
@@ -363,7 +363,7 @@ export class SemanticScholarProvider implements ReachProvider {
         capability: "SEARCH",
         sources,
         requestId,
-        durationMs: 0,
+        durationMs: Date.now() - started,
       };
     } catch (error) {
       return fail(this.id, error);
@@ -446,10 +446,10 @@ export class CrossrefProvider implements ReachProvider {
                     .slice(0, 4)
                     .map((a: any) =>
                       [a?.given, a?.family]
-                        .filter(Boolean)
+                        .filter((source): source is EvidenceSource => Boolean(source))
                         .join(" "),
                     )
-                    .filter(Boolean)
+                    .filter((source): source is EvidenceSource => Boolean(source))
                     .join(", ")
                 : "";
 
@@ -461,7 +461,7 @@ export class CrossrefProvider implements ReachProvider {
                   : "Crossref work",
                 [
                   authors ? "Authors: " + authors : "",
-                  Array.isArray(item?.container-title)
+                  Array.isArray(item?.["container-title"])
                     ? item.container-title[0]
                     : "",
                   item?.published?.["date-parts"]?.[0]?.[0]
@@ -472,12 +472,12 @@ export class CrossrefProvider implements ReachProvider {
                     ? item.abstract
                     : "",
                 ]
-                  .filter(Boolean)
+                  .filter((source): source is EvidenceSource => Boolean(source))
                   .join(" | "),
                 requestId,
               );
             })
-            .filter(Boolean)
+            .filter((source): source is EvidenceSource => Boolean(source))
         : [];
 
       return {
@@ -485,7 +485,7 @@ export class CrossrefProvider implements ReachProvider {
         capability: "SEARCH",
         sources,
         requestId,
-        durationMs: 0,
+        durationMs: Date.now() - started,
       };
     } catch (error) {
       return fail(this.id, error);
@@ -560,7 +560,7 @@ export class UnpaywallProvider implements ReachProvider {
           ? "Open-access full text candidate available."
           : "No OA full-text location returned.",
       ]
-        .filter(Boolean)
+        .filter((source): source is EvidenceSource => Boolean(source))
         .join(" ");
 
       const sources = landing
@@ -580,7 +580,7 @@ export class UnpaywallProvider implements ReachProvider {
         capability: "SEARCH",
         sources,
         requestId,
-        durationMs: 0,
+        durationMs: Date.now() - started,
       };
     } catch (error) {
       return fail(this.id, error);
