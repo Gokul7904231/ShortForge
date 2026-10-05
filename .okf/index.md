@@ -15,3 +15,5 @@
 | **Research & External** | [`./research/`](./research/) | Clean-room mappings for `video-use`, `WeKnora`, `Octop`, `orca`, `VoiceStudio`, and Reach. |
 | **F06 Azure Retirement Audit** | [./audits/f06-azure-retirement.md](./audits/f06-azure-retirement.md) | Current pre-merge audit: Azure removed from active architecture; F06 RenderFabric + ComputeRouter is canonical. |
 | **Historical Audits** | [`./audits/`](./audits/) | Archived forensic baselines, bypass analyses, and red-team findings (Historical Reference). |
+
+| **OKF Governance Control Plane** | ./manifest.yaml · ./rules/index.json · ./verification/rule-to-test-matrix.md | Machine-readable governance identity, rule applicability, deterministic sweep attestation, exception schema, and CI evidence. Markdown remains the human-readable policy projection. |
