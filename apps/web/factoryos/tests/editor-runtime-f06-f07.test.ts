@@ -257,14 +257,14 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
       sessionId: "editor-runtime-proof-session",
       arguments: {},
     });
-    expect(undo.accepted).toBe(true);
+    expect(undo.accepted, JSON.stringify(undo)).toBe(true);
 
     const redo = await runtime.handleMcp({
       tool: "editor.redo",
       sessionId: "editor-runtime-proof-session",
       arguments: {},
     });
-    expect(redo.accepted).toBe(true);
+    expect(redo.accepted, JSON.stringify(redo)).toBe(true);
 
     const replay = await runtime.handleMcp({
       tool: "editor.replay",
