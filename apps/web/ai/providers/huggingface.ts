@@ -55,13 +55,20 @@ function responseText(value: unknown): string {
 
 function parseUsage(data: any, prompt: string, text: string) {
   const usage = data?.usage;
+  const inputValue = Number(
+    usage?.prompt_tokens ?? usage?.input_tokens,
+  );
+  const outputValue = Number(
+    usage?.completion_tokens ?? usage?.output_tokens,
+  );
+
   return {
-    inputTokens:
-      Number(usage?.prompt_tokens ?? usage?.input_tokens) ||
-      Math.ceil(prompt.length / 4),
-    outputTokens:
-      Number(usage?.completion_tokens ?? usage?.output_tokens) ||
-      Math.ceil(text.length / 4),
+    inputTokens: Number.isFinite(inputValue)
+      ? Math.max(0, inputValue)
+      : Math.ceil(prompt.length / 4),
+    outputTokens: Number.isFinite(outputValue)
+      ? Math.max(0, outputValue)
+      : Math.ceil(text.length / 4),
   };
 }
 
