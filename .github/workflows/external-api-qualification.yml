@@ -52,62 +52,62 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      SHORTFORGE_EXTERNAL_API_PROVIDER: ${{{ inputs.provider }}
-      SHORTFORGE_EXTERNAL_API_LIVE: ${{{ inputs.live && '1' || '0' }}
-      SHORTFORGE_EXTERNAL_API_ALLOW_METERED: ${{{ inputs.allow_metered && '1' || '0' }}
-      SHORTFORGE_EXTERNAL_API_MATERIALIZE: ${{{ inputs.materialize && '1' || '0' }}
-      SHORTFORGE_EXTERNAL_API_LLM_PROBE: ${{{ inputs.llm_probe && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_PROVIDER: ${{ inputs.provider }}
+      SHORTFORGE_EXTERNAL_API_LIVE: ${{ inputs.live && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_ALLOW_METERED: ${{ inputs.allow_metered && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_MATERIALIZE: ${{ inputs.materialize && '1' || '0' }}
+      SHORTFORGE_EXTERNAL_API_LLM_PROBE: ${{ inputs.llm_probe && '1' || '0' }}
 
-      OPENALEX_EMAIL: ${{{ secrets.OPENALEX_EMAIL }}
-      SEMANTIC_SCHOLAR_API_KEY: ${{{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
-      CROSSREF_MAILTO: ${{{ secrets.CROSSREF_MAILTO }}
-      UNPAYWALL_EMAIL: ${{{ secrets.UNPAYWALL_EMAIL }}
-      PERPLEXITY_MCP_URL: ${{{ secrets.PERPLEXITY_MCP_URL }}
-      PERPLEXITY_API_KEY: ${{{ secrets.PERPLEXITY_API_KEY }}
+      OPENALEX_EMAIL: ${{ secrets.OPENALEX_EMAIL }}
+      SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
+      CROSSREF_MAILTO: ${{ secrets.CROSSREF_MAILTO }}
+      UNPAYWALL_EMAIL: ${{ secrets.UNPAYWALL_EMAIL }}
+      PERPLEXITY_MCP_URL: ${{ secrets.PERPLEXITY_MCP_URL }}
+      PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
 
-      PEXELS_API_KEY: ${{{ secrets.PEXELS_API_KEY }}
-      PIXABAY_API_KEY: ${{{ secrets.PIXABAY_API_KEY }}
-      PEXAFY_API_KEY: ${{{ secrets.PEXAFY_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PEXAFY_API_KEY: ${{ secrets.PEXAFY_API_KEY }}
 
-      ARCMIRA_API_KEY: ${{{ secrets.ARCMIRA_API_KEY }}
-      TRANSCRIPT_YT_API_KEY: ${{{ secrets.TRANSCRIPT_YT_API_KEY }}
-      VIDWORDS_API_KEY: ${{{ secrets.VIDWORDS_API_KEY }}
-      TUBETOTRANSCRIPT_API_KEY: ${{{ secrets.TUBETOTRANSCRIPT_API_KEY }}
-      YOUTUBE_API_KEY: ${{{ secrets.YOUTUBE_API_KEY }}
+      ARCMIRA_API_KEY: ${{ secrets.ARCMIRA_API_KEY }}
+      TRANSCRIPT_YT_API_KEY: ${{ secrets.TRANSCRIPT_YT_API_KEY }}
+      VIDWORDS_API_KEY: ${{ secrets.VIDWORDS_API_KEY }}
+      TUBETOTRANSCRIPT_API_KEY: ${{ secrets.TUBETOTRANSCRIPT_API_KEY }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
 
-      GEMINI_API_KEY: ${{{ secrets.GEMINI_API_KEY }}
-      GEMINI_MODEL: ${{{ secrets.GEMINI_MODEL }}
-      GROQ_API_KEY: ${{{ secrets.GROQ_API_KEY }}
-      GROQ_MODEL: ${{{ secrets.GROQ_MODEL }}
-      OPENROUTER_API_KEY: ${{{ secrets.OPENROUTER_API_KEY }}
-      OPENROUTER_MODEL: ${{{ secrets.OPENROUTER_MODEL }}
-      HF_TOKEN: ${{{ secrets.HF_TOKEN }}
-      HF_API_KEY: ${{{ secrets.HF_API_KEY }}
-      HF_MODEL: ${{{ secrets.HF_MODEL }}
-      HF_INFERENCE_BASE_URL: ${{{ secrets.HF_INFERENCE_BASE_URL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_MODEL: ${{ secrets.GROQ_MODEL }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_API_KEY: ${{ secrets.HF_API_KEY }}
+      HF_MODEL: ${{ secrets.HF_MODEL }}
+      HF_INFERENCE_BASE_URL: ${{ secrets.HF_INFERENCE_BASE_URL }}
 
-      IBM_TTS_API_KEY: ${{{ secrets.IBM_TTS_API_KEY }}
-      IBM_TTS_URL: ${{{ secrets.IBM_TTS_URL }}
-      IBM_TTS_VOICE_ID: ${{{ secrets.IBM_TTS_VOICE_ID }}
-      AUDEXUM_API_KEY: ${{{ secrets.AUDEXUM_API_KEY }}
-      AUDEXUM_BASE_URL: ${{{ secrets.AUDEXUM_BASE_URL }}
-      AUDEXUM_VOICE_ID: ${{{ secrets.AUDEXUM_VOICE_ID }}
-      AUDEXUM_LANGUAGE: ${{{ secrets.AUDEXUM_LANGUAGE }}
-      SPEAK_AI_API_KEY: ${{{ secrets.SPEAK_AI_API_KEY }}
-      SPEAK_AI_BASE_URL: ${{{ secrets.SPEAK_AI_BASE_URL }}
-      FREESOUND_API_KEY: ${{{ secrets.FREESOUND_API_KEY }}
-      FREESOUND_BASE_URL: ${{{ secrets.FREESOUND_BASE_URL }}
+      IBM_TTS_API_KEY: ${{ secrets.IBM_TTS_API_KEY }}
+      IBM_TTS_URL: ${{ secrets.IBM_TTS_URL }}
+      IBM_TTS_VOICE_ID: ${{ secrets.IBM_TTS_VOICE_ID }}
+      AUDEXUM_API_KEY: ${{ secrets.AUDEXUM_API_KEY }}
+      AUDEXUM_BASE_URL: ${{ secrets.AUDEXUM_BASE_URL }}
+      AUDEXUM_VOICE_ID: ${{ secrets.AUDEXUM_VOICE_ID }}
+      AUDEXUM_LANGUAGE: ${{ secrets.AUDEXUM_LANGUAGE }}
+      SPEAK_AI_API_KEY: ${{ secrets.SPEAK_AI_API_KEY }}
+      SPEAK_AI_BASE_URL: ${{ secrets.SPEAK_AI_BASE_URL }}
+      FREESOUND_API_KEY: ${{ secrets.FREESOUND_API_KEY }}
+      FREESOUND_BASE_URL: ${{ secrets.FREESOUND_BASE_URL }}
 
-      OCR_SPACE_API_KEY: ${{{ secrets.OCR_SPACE_API_KEY }}
-      PERSPECTIVE_API_KEY: ${{{ secrets.PERSPECTIVE_API_KEY }}
-      SAFE_BROWSING_API_KEY: ${{{ secrets.SAFE_BROWSING_API_KEY }}
-      SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED: ${{{ vars.SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED }}
-      URLSCAN_API_KEY: ${{{ secrets.URLSCAN_API_KEY }}
+      OCR_SPACE_API_KEY: ${{ secrets.OCR_SPACE_API_KEY }}
+      PERSPECTIVE_API_KEY: ${{ secrets.PERSPECTIVE_API_KEY }}
+      SAFE_BROWSING_API_KEY: ${{ secrets.SAFE_BROWSING_API_KEY }}
+      SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED: ${{ vars.SAFE_BROWSING_NONCOMMERCIAL_CONFIRMED }}
+      URLSCAN_API_KEY: ${{ secrets.URLSCAN_API_KEY }}
 
-      OPEN_METEO_BASE_URL: ${{{ secrets.OPEN_METEO_BASE_URL }}
-      NOMINATIM_BASE_URL: ${{{ secrets.NOMINATIM_BASE_URL }}
-      NOMINATIM_USER_AGENT: ${{{ vars.NOMINATIM_USER_AGENT }}
-      NOMINATIM_REFERER: ${{{ secrets.NOMINATIM_REFERER }}
+      OPEN_METEO_BASE_URL: ${{ secrets.OPEN_METEO_BASE_URL }}
+      NOMINATIM_BASE_URL: ${{ secrets.NOMINATIM_BASE_URL }}
+      NOMINATIM_USER_AGENT: ${{ vars.NOMINATIM_USER_AGENT }}
+      NOMINATIM_REFERER: ${{ secrets.NOMINATIM_REFERER }}
     steps:
       - uses: actions/checkout@v4
 
@@ -133,7 +133,7 @@ jobs:
           npm run factoryos:verify:external-apis 2>&1 | tee external-api-qualification.jsonl
 
       - name: Upload qualification evidence
-        if: ${{{ always() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: external-api-qualification-evidence
