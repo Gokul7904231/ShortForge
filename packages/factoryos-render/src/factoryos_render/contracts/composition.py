@@ -24,7 +24,9 @@ class CompositionScene:
     narration_text: str
     audio_path: Optional[str] = None
     audio_start_seconds: float = 0.0
+    audio_tracks: List[Dict[str, Any]] = field(default_factory=list)
     captions: List[Dict[str, Any]] = field(default_factory=list)
+    background: Dict[str, Any] = field(default_factory=dict)
     is_locked: bool = False
 
 @dataclass
