@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "feat/editor-runtime-f06-f07-20261005",
   "objective": "Operationalize the ShortForge-owned editor runtime surfaces and prove Editor -> CompositionIR -> RenderIntent -> F06 RenderFabric/ComputePool -> CAS -> F07ReleaseGuardian without creating a second authority.",
-  "classification": "extends existing capability",
+  "classification": "new capability",
   "okf": {
     "sweepStatus": "COMPLETE",
     "rulesConsidered": [
