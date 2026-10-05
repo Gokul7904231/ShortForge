@@ -25,7 +25,10 @@ export interface RendererCapabilityContract {
   readonly rendererId: string;
   readonly version: string;
   readonly status: "CANONICAL" | "EXPERIMENTAL" | "UNVERIFIED" | "RETIRED";
+  /** Runtime modes physically proven for this renderer contract. */
   readonly executionModes: readonly RendererExecutionMode[];
+  /** Future integration surfaces that are not yet runtime-proven. */
+  readonly integrationTargets?: readonly RendererExecutionMode[];
   readonly capabilities: RendererCapabilitySet;
   readonly authorityBoundary: "SHORTFORGE_ONLY";
   readonly requiresOkfAdmission: boolean;
