@@ -264,6 +264,7 @@ export interface EpistemicState {
 }
 
 export interface EpistemicContext extends EpistemicState {
+  readonly okfPolicyContext?: OKFPolicyContext;
   readonly contextFingerprint: string;
   readonly serializedTokenEstimate: number;
   readonly tokenEstimateMethod: "CHARACTER_HEURISTIC" | "EXTERNAL_TOKENIZER";
