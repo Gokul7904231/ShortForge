@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR183-External-Registry-Reconciliation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "chore/reconcile-external-api-registry-20261005",
+  "objective": "Reconcile canonical external provider lifecycle/documentation with already merged provider adapter waves.",
+  "classification": "already exists",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Registry lifecycle must reflect actual merged adapter state.",
+      "LIVE/QUALIFIED remains distinct from IMPLEMENTED.",
+      "No runtime authority or provider control boundary changes."
+    ]
+  },
+  "security": {
+    "required": false,
+    "status": "NOT_APPLICABLE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Documentation/registry-only reconciliation; no new network or credential behavior."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "changes": [
+    "Promoted Pexels, Pixabay and Pexafy lifecycle from CATALOGUED to IMPLEMENTED.",
+    "Reconciled Open-Meteo/Nominatim wording from registry target to implemented adapters.",
+    "Preserved separate live qualification state."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/integrations/external/ExternalApiRegistry.ts",
+    ".okf/integrations/external-api-fabric.md",
+    "PR #169",
+    "PR #179",
+    "Issue #182"
+  ],
+  "verificationResults": {
+    "documentationReconciliation": "PASS",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "liveProviderProof": "UNCHANGED",
+    "runtimeBehaviorChanged": "FALSE"
+  },
+  "verificationPlan": [
+    "Require Team Change Gate and repository CI before merge."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This change does not claim LIVE or QUALIFIED status for any provider."
+  ]
+}
