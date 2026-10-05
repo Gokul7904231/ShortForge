@@ -47,6 +47,17 @@ export interface LocalRenderSceneIntent {
     duration_seconds?: number;
     volume?: number;
   };
+  captions?: readonly {
+    text: string;
+    start_seconds: number;
+    duration_seconds: number;
+    words?: readonly {
+      word: string;
+      start: number;
+      end: number;
+    }[];
+    style?: string;
+  }[];
 }
 
 export interface LocalRenderIntent {
