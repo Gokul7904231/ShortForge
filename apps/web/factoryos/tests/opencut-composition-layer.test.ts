@@ -159,13 +159,20 @@ describe("OpenCut-informed CompositionIR v2", () => {
     const moved = moveClip(split, "video-main", "clip-b:b", millisecondsToMediaTime(8_000));
     expect(moved.tracks[0].clips[2].start).toBe(millisecondsToMediaTime(8_000));
 
-    const rippled = rippleDelete(
+    const splitForRipple = splitClip(
       original,
       "video-main",
-      millisecondsToMediaTime(4_000),
-      millisecondsToMediaTime(5_000),
+      "clip-b",
+      millisecondsToMediaTime(8_000),
     );
-    expect(rippled.tracks[0].clips[1].start).toBe(millisecondsToMediaTime(3_000));
+    const rippled = rippleDelete(
+      splitForRipple,
+      "video-main",
+      millisecondsToMediaTime(8_000),
+      millisecondsToMediaTime(9_000),
+    );
+    const rippleClip = rippled.tracks[0].clips.find((clip) => clip.id === "clip-b:b");
+    expect(rippleClip?.start).toBe(millisecondsToMediaTime(7_000));
   });
 
   it("keeps OpenCut behind an explicit experimental admission boundary", () => {
