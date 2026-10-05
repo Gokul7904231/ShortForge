@@ -486,7 +486,12 @@ export class RenderFabric {
           }
         : undefined,
       audio_tracks: audioTracks,
-      background: intent.background ?? {},
+      background: intent.background
+        ? {
+            kind: intent.background.kind,
+            value: intent.background.value,
+          }
+        : undefined,
       shots,
     }];
 
