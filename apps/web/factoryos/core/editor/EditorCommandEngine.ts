@@ -37,7 +37,7 @@ function commandDigest(input: EditorCommandEnvelope): string {
   );
 }
 
-function changedClipIds(before: CompositionIR, after: CompositionIR): string[] {
+export function changedClipIds(before: CompositionIR, after: CompositionIR): string[] {
   const beforeMap = new Map<string, string>();
   const afterMap = new Map<string, string>();
 
@@ -79,7 +79,7 @@ function updateClip(
   return { ...composition, tracks };
 }
 
-function applyCommand(composition: CompositionIR, command: EditorCommand): CompositionIR {
+export function applyEditorCommand(composition: CompositionIR, command: EditorCommand): CompositionIR {
   switch (command.type) {
     case "SPLIT_CLIP":
       return splitClip(composition, command.trackId, command.clipId, command.splitTime);
@@ -230,7 +230,7 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
 
     try {
       const before = state.composition;
-      const next = applyCommand(before, input.command);
+      const next = applyEditorCommand(before, input.command);
       const validation = validateCompositionIR(next);
 
       if (!validation.valid) {
