@@ -54,3 +54,10 @@ control_plane_v2:
   critical_high_rule_coverage: REQUIRED
   team_report_machine_linkage: REQUIRED
   exception_expiration_enforcement: REQUIRED
+
+control_plane_v3:
+  cryptographic_attestations: IMPLEMENTED_KEY_REQUIRED
+  release_provenance: IMPLEMENTED_EVIDENCE_ONLY
+  aer_ascalon_policy_context: IMPLEMENTED_ADVISORY_ONLY
+  governance_dashboard: IMPLEMENTED_OBSERVABILITY_ONLY
+  production_promotion: BLOCKED_UNTIL_SIGNING_AND_REPOSITORY_ENFORCEMENT
