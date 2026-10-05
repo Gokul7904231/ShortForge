@@ -28,7 +28,17 @@
       "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
       "OKF.SECURITY.LEAST_PRIVILEGE",
       "OKF.RELEASE.F07_VERIFIED"
-    ]
+    ],
+    "machineSweep": {
+      "required": true,
+      "artifactPath": "okf-sweep.json",
+      "status": "CI_REQUIRED"
+    },
+    "machineRuleCoverage": {
+      "status": "PILOT",
+      "activeRules": 6,
+      "target": "100% CRITICAL/HIGH"
+    }
   },
   "classification": "new capability",
   "forgers": [
