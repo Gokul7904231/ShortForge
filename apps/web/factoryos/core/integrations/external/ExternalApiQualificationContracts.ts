@@ -99,3 +99,33 @@ export function redactSecretBearingUrl(input: string): string {
     return "[UNPARSEABLE_URL]";
   }
 }
+
+export type QualificationEvidenceKind =
+  | "NETWORK_REQUEST"
+  | "CAPABILITY_OUTPUT"
+  | "NORMALIZED_RESULT"
+  | "VISUAL_MATERIALIZATION"
+  | "PHYSICAL_AUDIO"
+  | "MCP_TOOL_EXECUTION";
+
+export interface QualificationLedgerEntry {
+  readonly providerId: string;
+  readonly disposition: QualificationDisposition | "PENDING";
+  readonly evidenceKinds: readonly QualificationEvidenceKind[];
+  readonly runId?: string;
+  readonly lastQualifiedAt?: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export function qualificationEvidenceIsSufficient(
+  profile: ExternalApiQualificationProfile,
+  result: Pick<QualificationResult, "capabilityVerified" | "evidence">
+): boolean {
+  if (!result.capabilityVerified) return false;
+  const evidence = new Set(result.evidence);
+  if (!evidence.has("LIVE_NETWORK_REQUEST")) return false;
+  if (profile.probeKind === "MCP" && !evidence.has("MCP_TOOL_EXECUTION")) return false;
+  if (profile.capability.includes("VISUAL_ASSET_SEARCH") && !evidence.has("VISUAL_MATERIALIZATION")) return false;
+  if (profile.capability === "TTS" && !evidence.has("PHYSICAL_AUDIO")) return false;
+  return true;
+}
