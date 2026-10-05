@@ -1,4 +1,4 @@
-import { createPrivateKey, createPublicKey, sign, verify, KeyObject } from "node:crypto";
+import { createHash, createPrivateKey, createPublicKey, sign, verify, type KeyObject } from "node:crypto";
 
 export interface OKFAttestationKeySource {
   readonly keyId: string;
@@ -17,9 +17,9 @@ export interface OKFSignature {
 
 function canonicalize(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
-  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
+  if (Array.isArray(value)) return "[" + value.map(canonicalize).join(",") + "]";
   const obj = value as Record<string, unknown>;
-  return `{${Object.keys(obj).sort().map((key) => `${JSON.stringify(key)}:${canonicalize(obj[key])}`).join(",")}}`;
+  return "{" + Object.keys(obj).sort().map((key) => JSON.stringify(key) + ":" + canonicalize(obj[key])).join(",") + "}";
 }
 
 export class OKFAttestationSigner {
@@ -30,27 +30,27 @@ export class OKFAttestationSigner {
 
   public constructor(source: OKFAttestationKeySource) {
     if (!source.privateKeyPem || !source.publicKeyPem) throw new Error("[OKF] attestation key material is required");
-    this.privateKey=createPrivateKey(source.privateKeyPem);
-    this.publicKey=createPublicKey(source.publicKeyPem);
-    this.keyId=source.keyId;
-    this.keyVersion=source.keyVersion;
+    if (!source.keyId.trim()) throw new Error("[OKF] attestation keyId is required");
+    this.privateKey = createPrivateKey(source.privateKeyPem);
+    this.publicKey = createPublicKey(source.publicKeyPem);
+    this.keyId = source.keyId;
+    this.keyVersion = source.keyVersion;
   }
 
   public sign(payload: unknown): OKFSignature {
-    const canonical=canonicalize(payload);
-    const digestSha256=Buffer.from(awaitSha256(canonical));
-    const signature=sign(null,Buffer.from(canonical,"utf8"),this.privateKey);
-    return {algorithm:"Ed25519",keyId:this.keyId,keyVersion:this.keyVersion,signatureHex:signature.toString("hex"),payloadSha256:digestSha256.toString("utf8")};
+    const canonical = canonicalize(payload);
+    const payloadSha256 = createHash("sha256").update(canonical, "utf8").digest("hex");
+    const signatureHex = sign(null, Buffer.from(canonical, "utf8"), this.privateKey).toString("hex");
+    return { algorithm: "Ed25519", keyId: this.keyId, keyVersion: this.keyVersion, signatureHex, payloadSha256 };
   }
 
   public verify(payload: unknown, signatureHex: string): boolean {
-    const canonical=canonicalize(payload);
-    return verify(null,Buffer.from(canonical,"utf8"),this.publicKey,Buffer.from(signatureHex,"hex"));
+    try {
+      const canonical = canonicalize(payload);
+      return verify(null, Buffer.from(canonical, "utf8"), this.publicKey, Buffer.from(signatureHex, "hex"));
+    } catch { return false; }
   }
 
   public static canonicalize(value: unknown): string { return canonicalize(value); }
-}
-
-function awaitSha256(value: string): string {
-  return require("node:crypto").createHash("sha256").update(value,"utf8").digest("hex");
+  public static digest(payload: unknown): string { return createHash("sha256").update(canonicalize(payload), "utf8").digest("hex"); }
 }
