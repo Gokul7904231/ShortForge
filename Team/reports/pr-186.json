@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR186-External-Api-Qualification",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/external-api-live-qualification-20261005",
+  "objective": "Build the governed qualification-control layer for the 28 implemented external API providers without conflating IMPLEMENTED with QUALIFIED.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "IMPLEMENTED and QUALIFIED are separate lifecycle states.",
+      "External providers remain replaceable resources, not truth or execution authorities.",
+      "Metered and destructive provider calls require explicit human authorization.",
+      "Provider secrets must not enter evidence, logs, prompts or repository content."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_MANUAL_GATED_PROVIDER_HARNESS",
+    "notes": [
+      "Runtime provider credentials are environment-injected only.",
+      "Evidence is normalized and sanitized; raw provider bodies are excluded.",
+      "Secret-bearing query parameters are redacted before evidence exposure.",
+      "No provider authority boundaries were expanded."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added ExternalApiQualificationContracts.ts.",
+    "Added qualification profiles and provider-specific probe paths for all 28 registry providers.",
+    "Added zero-network safe configuration mode and explicit live/metered/destructive guards.",
+    "Added visual materialization and audio physical verification evidence.",
+    "Added explicit metered LLM inference gate; model discovery alone cannot qualify inference.",
+    "Added manual GitHub Actions qualification workflow and evidence artifact.",
+    "Reconciled stale VidWords/Hugging Face lifecycle assertions in external API tests.",
+    "Added canonical .okf qualification policy."
+  ],
+  "evidenceRefs": [
+    "Issue #184",
+    "Issue #185",
+    ".okf/integrations/external-api-qualification.md",
+    "apps/web/factoryos/core/integrations/external/ExternalApiQualificationContracts.ts",
+    "apps/web/factoryos/core/integrations/external/ExternalApiQualificationProbes.ts",
+    "apps/web/scripts/verify-external-api-qualification.ts",
+    ".github/workflows/external-api-qualification.yml"
+  ],
+  "verificationResults": {
+    "qualificationProfileCoverage": "PASS",
+    "safeModeDesign": "PASS",
+    "meteredAuthorizationGate": "PASS",
+    "visualMaterializationGate": "PASS",
+    "audioPhysicalVerification": "PASS",
+    "llmInferenceGate": "PASS",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "liveProviderProof": "SEPARATE_MANUAL_GATE"
+  },
+  "verificationPlan": [
+    "Require Team Change Gate and repository CI before merge.",
+    "After merge, execute single-provider live qualification runs using explicit credentials and authorization.",
+    "Update the #184 provider disposition ledger only from actual run evidence."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This PR does not claim any provider is QUALIFIED.",
+    "Issue #184 remains open until every provider has an explicit evidence-backed disposition."
+  ]
+}
