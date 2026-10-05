@@ -281,6 +281,9 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     });
     expect(history.accepted).toBe(true);
 
+    const approvedRenderDir = path.join(process.cwd(), "data", "renders", "editor-runtime-proof");
+    fs.mkdirSync(approvedRenderDir, { recursive: true });
+
     const exportResult = await runtime.export({
       sessionId: "editor-runtime-proof-session",
       requestedOutput: {
@@ -289,7 +292,7 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
         fps: 30,
         format: "MP4",
       },
-      outputDir: path.join(tempDir, "renders"),
+      outputDir: approvedRenderDir,
       f07: releaseContext,
     });
 
@@ -306,5 +309,6 @@ describe("Editor runtime -> F06 RenderFabric -> CAS -> F07 proof", () => {
     expect(exportResult.f07ReceiptVerified).toBe(true);
     expect(VerificationReceiptVerifier.verify(exportResult.f07Receipt).valid).toBe(true);
     expect(exportResult.f07ReceiptCasUri).toBeTruthy();
+    fs.rmSync(approvedRenderDir, { recursive: true, force: true });
   });
 });
