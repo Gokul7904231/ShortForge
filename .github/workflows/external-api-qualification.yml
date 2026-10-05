@@ -14,7 +14,12 @@ on:
         default: false
         type: boolean
       allow_metered:
-        description: "Explicitly authorize metered/destructive provider calls"
+        description: "Explicitly authorize metered provider calls"
+        required: true
+        default: false
+        type: boolean
+      allow_destructive:
+        description: "Explicitly authorize destructive provider calls such as URLScan"
         required: true
         default: false
         type: boolean
