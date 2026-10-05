@@ -25,11 +25,11 @@ jobs:
           - arxiv
           - crossref
           - open_meteo
-    name: "Live ${{{ matrix.provider }}"
+    name: "Live ${{ matrix.provider }}"
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SHORTFORGE_EXTERNAL_API_PROVIDER: ${{{ matrix.provider }}
+      SHORTFORGE_EXTERNAL_API_PROVIDER: ${{ matrix.provider }}
       SHORTFORGE_EXTERNAL_API_LIVE: "1"
       SHORTFORGE_EXTERNAL_API_ALLOW_METERED: "0"
       SHORTFORGE_EXTERNAL_API_MATERIALIZE: "0"
@@ -54,13 +54,13 @@ jobs:
         working-directory: apps/web
         run: |
           set -o pipefail
-          npm run factoryos:verify:external-apis 2>&1 | tee "external-api-${{{ matrix.provider }}.jsonl"
+          npm run factoryos:verify:external-apis 2>&1 | tee "external-api-${{ matrix.provider }}.jsonl"
 
       - name: Upload provider evidence
-        if: ${{{ always() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: external-api-${{{ matrix.provider }}-evidence
-          path: apps/web/external-api-${{{ matrix.provider }}.jsonl
+          name: external-api-${{ matrix.provider }}-evidence
+          path: apps/web/external-api-${{ matrix.provider }}.jsonl
           if-no-files-found: error
           retention-days: 30
