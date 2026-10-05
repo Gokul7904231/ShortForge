@@ -3,6 +3,49 @@
  * Compiler-agnostic intermediate representation produced by Floor 05 Timeline Composition.
  */
 
+export interface RenderAnimationKeyframe {
+  readonly timeSeconds: number;
+  readonly value: number;
+  readonly interpolation?: "LINEAR" | "HOLD" | "BEZIER";
+  readonly inHandle?: { readonly x: number; readonly y: number };
+  readonly outHandle?: { readonly x: number; readonly y: number };
+}
+
+export interface RenderAnimationTrack {
+  readonly property: "x" | "y" | "scaleX" | "scaleY" | "rotationDeg" | "opacity";
+  readonly keyframes: readonly RenderAnimationKeyframe[];
+}
+
+export interface RenderEffectOperation {
+  readonly effectId: string;
+  readonly kind: string;
+  readonly scope: "CLIP" | "TRACK" | "SCENE" | "TIMELINE";
+  readonly params: Readonly<Record<string, unknown>>;
+  readonly enabled?: boolean;
+  readonly animations?: readonly RenderAnimationTrack[];
+}
+
+export interface RenderMaskOperation {
+  readonly maskId: string;
+  readonly kind: "RECTANGLE" | "ELLIPSE" | "STAR" | "HEART" | "DIAMOND" | "SPLIT" | "CINEMATIC_BARS";
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly rotationDeg: number;
+  readonly feather: number;
+  readonly stroke?: number;
+  readonly inverted?: boolean;
+  readonly animations?: readonly RenderAnimationTrack[];
+}
+
+export interface RenderTransitionOperation {
+  readonly transitionId: string;
+  readonly kind: string;
+  readonly durationSeconds: number;
+  readonly params?: Readonly<Record<string, unknown>>;
+}
+
 export interface RenderTrackAsset {
   readonly id: string;
   readonly type: "IMAGE" | "VIDEO" | "AUDIO" | "HTML_CANVAS" | "SHAPE";
@@ -10,12 +53,21 @@ export interface RenderTrackAsset {
   readonly startSeconds: number;
   readonly durationSeconds: number;
   readonly zIndex: number;
+  readonly sourceInSeconds?: number;
+  readonly sourceDurationSeconds?: number;
+  readonly playbackRate?: number;
   readonly transform?: {
     readonly scale?: number;
     readonly opacity?: number;
     readonly x?: number;
     readonly y?: number;
+    readonly rotationDeg?: number;
   };
+  readonly animations?: readonly RenderAnimationTrack[];
+  readonly effects?: readonly RenderEffectOperation[];
+  readonly masks?: readonly RenderMaskOperation[];
+  readonly transitionIn?: RenderTransitionOperation;
+  readonly transitionOut?: RenderTransitionOperation;
 }
 
 export interface RenderCaptionCue {
@@ -39,6 +91,14 @@ export interface RenderAudioTrack {
   readonly durationSeconds: number;
   readonly fadeInSeconds?: number;
   readonly fadeOutSeconds?: number;
+  readonly sourceInSeconds?: number;
+  readonly sourceDurationSeconds?: number;
+  readonly playbackRate?: number;
+}
+
+export interface RenderBackground {
+  readonly kind: "SOLID" | "GRADIENT" | "BLUR";
+  readonly value: string | Readonly<Record<string, unknown>>;
 }
 
 export interface SurgicalRenderScope {
@@ -69,6 +129,7 @@ export interface RenderIntent {
     readonly audioTracks: RenderAudioTrack[];
     readonly captions: RenderCaptionCue[];
   };
+  readonly background?: RenderBackground;
   readonly preferredCompiler: "FFMPEG" | "HYPERFRAMES" | "AI_VIDEO" | "AUTO";
   readonly constraints: {
     readonly maxBitrateKbps?: number;
