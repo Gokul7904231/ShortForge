@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR179-Context-Enrichment-API-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-enrichment-api-fabric-20261005",
+  "objective": "Implement governed Open-Meteo and Nominatim contextual enrichment without creating a second research, policy or authority boundary.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Context providers are advisory enrichment resources only.",
+      "Nominatim public service is policy-constrained to <=1 request/sec with identifying User-Agent/optional Referer and caching.",
+      "Nominatim remains swappable and is not a distributed/bulk geocoding substrate.",
+      "No F00/Guardian/Treasury/ComputeRouter/F06/CAS/F07 authority is granted."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No provider credentials are committed.",
+      "Nominatim rejects unsupported URL-like credentials only through HTTP policy; no secrets are required.",
+      "Caching and rate limiting reduce accidental public-service abuse."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added typed weather and geocoding contracts.",
+    "Added Open-Meteo /v1/forecast adapter with coordinate and query-variable validation.",
+    "Added Nominatim /search and /reverse adapter with application User-Agent, optional Referer, process serialization and caching.",
+    "Added deterministic normalization and policy tests.",
+    "Updated external API registry, environment/documentation and .okf ledger."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/integrations/external/ContextProviderContracts.ts",
+    "apps/web/factoryos/core/integrations/external/ContextProviders.ts",
+    "apps/web/factoryos/tests/context-providers.test.ts",
+    ".okf/integrations/context-enrichment-fabric.md",
+    "Issue #177"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED"
+  },
+  "verificationPlan": [
+    "Require CI + Team Change Gate before merge.",
+    "Keep live proof separate and obey provider policies.",
+    "Use a separately provisioned geocoding provider for distributed or regular high-volume workloads."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "Nominatim public-server limits are treated as a hard integration policy, not a suggestion.",
+    "Open-Meteo is implemented as enrichment, not research truth."
+  ]
+}
