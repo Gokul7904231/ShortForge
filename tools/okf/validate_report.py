@@ -18,12 +18,14 @@ def main() -> int:
         if machine.get('artifact') != Path(args.sweep).name: errors.append('Team report machine sweep artifact mismatch')
         if machine.get('bindingMode') != 'CI_COMPILED_ARTIFACT': errors.append('Team report machine sweep bindingMode is invalid')
         if machine.get('corpusSha256') and machine.get('corpusSha256') != sweep.get('corpusSha256'): errors.append('Team report corpusSha256 does not match compiled sweep')
-        if sorted(machine.get('relevantRules',[])) != sorted(sweep.get('relevantRules',[])): errors.append('Team report relevantRules does not match compiled sweep')
+        if not isinstance(machine.get('relevantRules'), list): errors.append('Team report relevantRules must be an array')
+        elif sorted(machine.get('relevantRules',[])) != sorted(sweep.get('relevantRules',[])): errors.append('Team report relevantRules does not match compiled sweep')
         if machine.get('sweepStatus') != sweep.get('okfSweep'): errors.append('Team report machine sweep status mismatch')
     for conflict in report.get('conflicts',[]):
         if conflict.get('status')=='OPEN': errors.append(f"open conflict: {conflict.get('id')}")
     security=report.get('security',{})
-    if security.get('status') in {'BLOCKED','UNPROVEN'} and report.get('disposition')=='PASS': errors.append('UNPROVEN/BLOCKED security evidence cannot produce PASS')
+    failing_security=[k for k in ('semgrep','strix','zap') if security.get(k) in {'FAIL','UNPROVEN','BLOCKED'}]
+    if (security.get('status') in {'BLOCKED','UNPROVEN'} or failing_security) and report.get('disposition')=='PASS': errors.append('UNPROVEN/BLOCKED security evidence cannot produce PASS')
     if report.get('disposition')=='PASS' and not report.get('evidenceRefs'): errors.append('PASS requires evidenceRefs')
     if not report.get('changeId'): errors.append('missing changeId')
     if errors:
