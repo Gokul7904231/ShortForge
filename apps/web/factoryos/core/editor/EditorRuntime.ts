@@ -18,6 +18,7 @@ import type {
   RenderTrackAsset,
   RenderAudioTrack,
   RenderCaptionCue,
+  RenderAnimationTrack,
 } from "../contracts/RenderIntentContracts";
 import type { RenderTreasuryContext } from "../fabric/RenderFabric";
 import { ContentAddressedStore } from "../compute/cas/ContentAddressedStore";
@@ -51,8 +52,11 @@ export interface EditorPreviewPlan {
   readonly compositionRevision: number;
   readonly compositionHashSha256: string;
   readonly renderIntent: RenderIntent;
-  readonly physicalExecution: "NOT_EXECUTED";
+  readonly physicalExecution: "PREVIEW_PHYSICAL";
   readonly wasmExecution: "NOT_PROVEN";
+  readonly timestampSeconds: number;
+  readonly previewArtifactPath: string;
+  readonly previewArtifactSha256: string;
 }
 
 export interface EditorF07ReleaseContext {
@@ -110,6 +114,57 @@ function compositionKind(composition: CompositionIR): RenderIntent["compositionT
   return "DYNAMIC_CANVAS";
 }
 
+function lowerAnimationTracks(animations: readonly NonNullable<CompositionClip["animations"]>[number][] | undefined): RenderAnimationTrack[] {
+  return (animations ?? []).map((track) => ({
+    property: track.property,
+    keyframes: track.keyframes.map((frame) => ({
+      timeSeconds: ticksToSeconds(frame.time),
+      value: frame.value,
+      interpolation: frame.interpolation,
+      inHandle: frame.inHandle,
+      outHandle: frame.outHandle,
+    })),
+  }));
+}
+
+function lowerEffects(clip: CompositionClip) {
+  return (clip.effects ?? []).map((effect) => ({
+    effectId: effect.effectId,
+    kind: effect.kind,
+    scope: effect.scope,
+    params: effect.params,
+    enabled: effect.enabled,
+    animations: lowerAnimationTracks(effect.animations),
+  }));
+}
+
+function lowerMasks(clip: CompositionClip) {
+  return (clip.masks ?? []).map((mask) => ({
+    maskId: mask.maskId,
+    kind: mask.kind,
+    x: mask.x,
+    y: mask.y,
+    width: mask.width,
+    height: mask.height,
+    rotationDeg: mask.rotationDeg,
+    feather: mask.feather,
+    stroke: mask.stroke,
+    inverted: mask.inverted,
+    animations: lowerAnimationTracks(mask.animations),
+  }));
+}
+
+function lowerTransition(transition: CompositionClip["transitionIn"] | CompositionClip["transitionOut"]) {
+  return transition
+    ? {
+        transitionId: transition.transitionId,
+        kind: transition.kind,
+        durationSeconds: ticksToSeconds(transition.duration),
+        params: transition.params,
+      }
+    : undefined;
+}
+
 function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
   if (!clip.src) {
     throw new Error(`EDITOR_RENDER_SOURCE_REQUIRED:${clip.id}`);
@@ -137,6 +192,12 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
       ? (scaleX + scaleY) / 2
       : scaleX ?? scaleY;
 
+  const animations = lowerAnimationTracks(clip.animations);
+  const effects = lowerEffects(clip);
+  const masks = lowerMasks(clip);
+  const transitionIn = lowerTransition(clip.transitionIn);
+  const transitionOut = lowerTransition(clip.transitionOut);
+
   return {
     id: clip.id,
     type: renderType,
@@ -144,18 +205,28 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
     startSeconds: ticksToSeconds(clip.start),
     durationSeconds: ticksToSeconds(clip.duration),
     zIndex: clip.zIndex,
+    sourceInSeconds: clip.sourceIn !== undefined ? ticksToSeconds(clip.sourceIn) : undefined,
+    sourceDurationSeconds: clip.sourceDuration !== undefined ? ticksToSeconds(clip.sourceDuration) : undefined,
+    playbackRate: clip.playbackRate,
     transform:
       scale !== undefined ||
       clip.transform?.opacity !== undefined ||
       clip.transform?.x !== undefined ||
-      clip.transform?.y !== undefined
+      clip.transform?.y !== undefined ||
+      clip.transform?.rotationDeg !== undefined
         ? {
             ...(scale !== undefined ? { scale } : {}),
             ...(clip.transform?.opacity !== undefined ? { opacity: clip.transform.opacity } : {}),
             ...(clip.transform?.x !== undefined ? { x: clip.transform.x } : {}),
             ...(clip.transform?.y !== undefined ? { y: clip.transform.y } : {}),
+            ...(clip.transform?.rotationDeg !== undefined ? { rotationDeg: clip.transform.rotationDeg } : {}),
           }
         : undefined,
+    animations: animations.length > 0 ? animations : undefined,
+    effects: effects.length > 0 ? effects : undefined,
+    masks: masks.length > 0 ? masks : undefined,
+    transitionIn,
+    transitionOut,
   };
 }
 
@@ -175,6 +246,9 @@ function audioToRenderTrack(audio: CompositionAudioClip): RenderAudioTrack {
     durationSeconds: ticksToSeconds(audio.duration),
     fadeInSeconds: audio.fadeIn !== undefined ? ticksToSeconds(audio.fadeIn) : undefined,
     fadeOutSeconds: audio.fadeOut !== undefined ? ticksToSeconds(audio.fadeOut) : undefined,
+    sourceInSeconds: audio.sourceIn !== undefined ? ticksToSeconds(audio.sourceIn) : undefined,
+    sourceDurationSeconds: audio.sourceDuration !== undefined ? ticksToSeconds(audio.sourceDuration) : undefined,
+    playbackRate: audio.playbackRate,
   };
 }
 
@@ -257,6 +331,12 @@ export function compileCompositionToRenderIntent(
       audioTracks,
       captions,
     },
+    background: composition.canvas.background
+      ? {
+          kind: composition.canvas.background.kind,
+          value: composition.canvas.background.value,
+        }
+      : undefined,
     preferredCompiler: "FFMPEG",
     constraints: {
       hardwareAccel: false,
