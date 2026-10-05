@@ -179,6 +179,13 @@ describe("OpenCut-informed CompositionIR v2", () => {
     expect(OpenCutAdapter.admission().productionEligible).toBe(false);
     expect(OpenCutAdapter.capability().status).toBe("EXPERIMENTAL");
     expect(isCapabilitySupported(OpenCutAdapter.capability(), "keyframes")).toBe(true);
+    expect(OpenCutAdapter.capability().executionModes).toEqual([]);
+    expect(OpenCutAdapter.capability().integrationTargets).toEqual([
+      "EDITOR",
+      "WASM_PREVIEW",
+      "HEADLESS",
+      "MCP",
+    ]);
     expect(OpenCutAdapter.capability().mcpServer).toBe(false);
     expect(OpenCutAdapter.capability().headlessExecution).toBe(false);
 
