@@ -307,7 +307,35 @@ export class DiskEditorRevisionStore implements EditorRevisionStore {
   private listCompositionIds(): string[] {
     const root = path.join(this.baseDir, "editor-revisions");
     if (!fs.existsSync(root)) return [];
-    return fs.readdirSync(root).filter((name) => fs.statSync(path.join(root, name)).isDirectory());
+
+    const compositionIds = new Set<string>();
+    for (const name of fs.readdirSync(root)) {
+      const dir = path.join(root, name);
+      if (!fs.statSync(dir).isDirectory()) continue;
+
+      const journal = path.join(dir, "journal.jsonl");
+      if (!fs.existsSync(journal)) continue;
+
+      const firstLine = fs
+        .readFileSync(journal, "utf8")
+        .split("\n")
+        .find((line) => line.trim().length > 0);
+      if (!firstLine) continue;
+
+      try {
+        const envelope = JSON.parse(firstLine) as DiskJournalEnvelope;
+        if (envelope.type !== "REVISION" || !envelope.revision.compositionId) {
+          throw new Error("EDITOR_JOURNAL_INVALID_ROOT");
+        }
+        compositionIds.add(envelope.revision.compositionId);
+      } catch (error) {
+        throw new Error(
+          `EDITOR_JOURNAL_CORRUPT: cannot recover composition identity from ${journal}: ${String(error)}`,
+        );
+      }
+    }
+
+    return [...compositionIds];
   }
 
   async getRevisionByNumber(compositionId: string, revision: number): Promise<EditorRevisionNode | null> {
