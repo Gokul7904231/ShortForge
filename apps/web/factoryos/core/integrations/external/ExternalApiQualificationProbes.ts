@@ -447,8 +447,11 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
       : currentBase(id).replace(/\/+$/, "") + "/synthesize";
     const url = new URL(endpoint);
     const body = id === "ibm_tts"
-      ? JSON.stringify({ text: "ShortForge qualification test.", voice: process.env.IBM_TTS_VOICE_ID || "en-US_AllisonV3Voice" })
+      ? JSON.stringify({ text: "ShortForge qualification test." })
       : JSON.stringify({ text: "ShortForge qualification test.", voice: process.env.AUDEXUM_VOICE_ID || undefined, lang: process.env.AUDEXUM_LANGUAGE || "en", format: "wav" });
+    if (id === "ibm_tts") {
+      url.searchParams.set("voice", process.env.IBM_TTS_VOICE_ID || "en-US_AllisonV3Voice");
+    }
     const result = await requestBinary(id, url, {
       method: "POST",
       headers: {
