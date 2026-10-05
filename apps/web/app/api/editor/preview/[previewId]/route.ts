@@ -32,12 +32,14 @@ export async function GET(
   }
 
   const body = fs.readFileSync(file);
+
+  const headers = new Headers();
+  headers.set("Content-Type", "image/png");
+  headers.set("Cache-Control", "private, max-age=60");
+  headers.set("X-ShortForge-Preview", "deterministic-physical");
+
   return new Response(body, {
     status: 200,
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "private, max-age=60",
-      "X-ShortForge-Preview: deterministic-physical",
-    },
+    headers,
   });
 }
