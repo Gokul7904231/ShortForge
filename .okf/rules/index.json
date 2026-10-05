@@ -142,5 +142,10 @@
         ".okf/floor-governance-cell.md"
       ]
     }
-  ]
+  ],
+  "coverage": {
+    "status": "PILOT",
+    "activeMachineRules": 6,
+    "target": "100% CRITICAL/HIGH"
+  }
 }
