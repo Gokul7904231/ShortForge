@@ -119,17 +119,26 @@ class Renderer:
             current_frame += dur_frames
             total_duration += dur_sec
 
-        # Deterministic composition hash
-        h = hashlib.sha256()
-        h.update(str(intent.output.width).encode())
-        h.update(str(intent.output.height).encode())
-        h.update(str(fps).encode())
-        h.update(str(current_frame).encode())
-        for sc in scenes_ir:
-            h.update(sc.scene_id.encode())
-            h.update(str(sc.duration_frames).encode())
-            h.update(sc.narration_text.encode())
-        comp_hash = h.hexdigest()
+        # Deterministic composition hash must bind every lowered feature,
+        # otherwise cache identity could collide across different edits.
+        composition_payload = {
+            "width": intent.output.width,
+            "height": intent.output.height,
+            "fps": fps,
+            "total_frames": current_frame,
+            "total_duration_seconds": total_duration,
+            "background": intent.background,
+            "scenes": [asdict(scene) for scene in scenes_ir],
+        }
+        comp_hash = hashlib.sha256(
+            json.dumps(
+                composition_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                default=str,
+            ).encode("utf-8"),
+        ).hexdigest()
 
         return CompositionIR(
             composition_id=f"comp_{comp_hash[:12]}",
@@ -203,8 +212,10 @@ class Renderer:
         if not run_id:
             run_id = f"run_{uuid.uuid4().hex[:12]}"
 
-        # Intent hash
-        intent_h = hashlib.sha256(str(intent.project_id).encode()).hexdigest()
+        # Intent hash binds the complete serialized render request.
+        intent_h = hashlib.sha256(
+            json.dumps(asdict(intent), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str).encode("utf-8")
+        ).hexdigest()
         comp = self.compile_composition(intent)
 
         # Initialize or load checkpoint
