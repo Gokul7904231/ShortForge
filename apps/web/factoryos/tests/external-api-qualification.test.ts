@@ -31,8 +31,8 @@ describe("External API qualification matrix", () => {
     const profile = externalApiQualificationProfiles().find(
       (item) => item.providerId === "perplexity_mcp",
     )!;
-    expect(canRunLive(profile, { live: true, allowMetered: false })).toBe(false);
-    expect(canRunLive(profile, { live: true, allowMetered: true })).toBe(true);
+    expect(canRunLive(profile, { live: true, allowMetered: false, allowDestructive: false })).toBe(false);
+    expect(canRunLive(profile, { live: true, allowMetered: true, allowDestructive: false })).toBe(true);
   });
 
   it("requires the Safe Browsing non-commercial acknowledgement", () => {
@@ -66,3 +66,23 @@ describe("External API qualification matrix", () => {
     expect(configured(profile).configured).toBe(true);
   });
 });
+
+  it("requires a separate destructive authorization for URLScan", () => {
+    const profile = externalApiQualificationProfiles().find(
+      (item) => item.providerId === "urlscan",
+    )!;
+    expect(
+      canRunLive(profile, {
+        live: true,
+        allowMetered: false,
+        allowDestructive: false,
+      }),
+    ).toBe(false);
+    expect(
+      canRunLive(profile, {
+        live: true,
+        allowMetered: false,
+        allowDestructive: true,
+      }),
+    ).toBe(true);
+  });
