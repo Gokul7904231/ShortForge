@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR192-OpenCut-Informed-Composition-Editor-Hardening",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/opencut-composition-layer-20261005",
+  "objective": "Harden the OpenCut-informed CompositionIR/editor substrate while preserving ShortForge authority, deterministic temporal semantics, and fail-closed renderer admission.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "CompositionIR remains ShortForge semantic truth.",
+      "OpenCut remains an optional adapter and cannot become a production authority.",
+      "Production renders remain behind OKF, RenderFabric, ComputeRouter, CAS and F07.",
+      "Renderer runtime modes require physical proof before admission."
+    ],
+    "sourceRefs": [
+      ".okf/artifacts/timeline-ir.md",
+      ".okf/rendering/opencut-adapter.md",
+      ".okf/index.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Release"
+  ],
+  "changes": [
+    "Made renderer executionModes truthful and mechanically validated.",
+    "Added explicit LOCAL_TRACK/LINKED_TRACKS/WHOLE_COMPOSITION ripple scope.",
+    "Moved nested animation/effect/mask timelines with move, trim, split and retime operations.",
+    "Added playbackRate-aware source timing semantics.",
+    "Replaced the editor payload string masquerading as a hash with SHA-256 receipts and command digests.",
+    "Added actor identity enforcement and in-memory command idempotency.",
+    "Fixed editor contract test syntax and expanded semantic regression coverage.",
+    "Refreshed canonical OKF documentation for the new invariants."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "note": "Merge remains blocked until the latest required GitHub Actions validation reaches a clean required-check state."
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/timeline/CompositionIR.ts",
+    "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+    "apps/web/factoryos/core/editor/EditorContracts.ts",
+    "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+    "apps/web/factoryos/core/render/RendererCapabilityContracts.ts",
+    "apps/web/factoryos/core/render/OpenCutAdapter.ts",
+    "apps/web/factoryos/tests/opencut-composition-layer.test.ts",
+    "apps/web/factoryos/tests/editor-contracts.test.ts",
+    "Team/reports/pr-192.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design and review context only; no runtime authority"
+  }
+}

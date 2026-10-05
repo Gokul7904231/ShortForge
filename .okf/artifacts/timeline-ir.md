@@ -1,140 +1,124 @@
-# Artifacts: Timeline Intermediate Representation (TimelineIR)
+# Artifacts: Timeline / Composition Intermediate Representation
 
-> **Status**: OPERATIONAL / CANONICAL  
-> **Source Location**: `apps/web/factoryos/core/timeline/TimelineIR.ts` & `apps/web/factoryos/core/timeline/`
+> Status: OPERATIONAL / CANONICAL
+> Source: `apps/web/factoryos/core/timeline/TimelineIR.ts`, `CompositionIR.ts`
+> OpenCut boundary: `apps/web/factoryos/core/render/OpenCutAdapter.ts`
 
----
+## 1. Authority
 
-## 1. Architectural Philosophy: The Engine-Neutral Composition Model
+**CompositionIR is the renderer-neutral semantic media graph.**
 
-In automated video assembly, tying narrative composition directly to a specific rendering engine (such as Remotion React components or raw FFmpeg filtergraph command strings) creates severe architectural fragility:
-1. Video rendering engines evolve rapidly and have vastly different performance profiles.
-2. Direct engine coupling prevents static validation of composition errors (e.g., overlapping audio speech tracks or out-of-bounds text captions).
-3. Agents cannot easily reason about complex imperative code as opposed to structured declarative schema.
+The production authority remains:
 
-FactoryOS solves this via **TimelineIR (Timeline Intermediate Representation)**—a strongly typed, engine-neutral Edit Decision List (EDL) designed specifically for vertical short-form video.
+`F05 CompositionIR → OKF admission → F06 RenderFabric → ComputeRouter → CAS → F07`
 
-Floor 05 compiles upstream assets (Floor 03 visuals and Floor 04 speech) into a declarative `TimelineIR` document. Render compilers (Floor 06) translate this neutral IR into whatever target execution format is required (Remotion AST, FFmpeg filtergraph, or HTML5 canvas frames).
+OpenCut is an optional editor/compositor adapter. It cannot grant production eligibility, select providers, bypass Treasury, write F07 state, or become the source of semantic truth.
+
+## 2. CompositionIR v2
+
+CompositionIR v2 adds:
+
+- integer-tick `MediaTime` at 120,000 ticks/second;
+- rational `FrameRate` values for exact frame relationships;
+- typed clips and tracks;
+- per-property keyframes with LINEAR/HOLD/BEZIER interpolation;
+- scoped effects (clip/track/scene/timeline);
+- reusable masks;
+- transitions;
+- verified audio metadata and waveform information;
+- word-level caption cues;
+- deterministic canonical serialization.
+
+The legacy `TimelineIR` remains supported during migration and exposes `upgradeTimelineIR()` plus `compositionV2`.
+
+## 3. Editing transformations
+
+`TimelineTransforms.ts` provides pure, deterministic operations:
+
+`splitClip()`, `trimClip()`, `moveClip()`, `rippleDelete()`, `retimeClip()`
+
+Temporal edits move or rescale nested animation/effect/mask state with their parent clip. Retime preserves the represented source span and makes `playbackRate` explicit.
+
+Ripple deletion requires an explicit `LOCAL_TRACK`, `LINKED_TRACKS` or `WHOLE_COMPOSITION` scope. Audio and captions are never silently shifted outside the requested synchronization boundary; unsupported crossing edits fail closed.
+
+These transformations are intentionally independent of any renderer or UI so agents, ReMaker and future editors can operate on the same semantic object.
+
+## 4. OpenCut mapping
+
+The adapter maps ShortForge CompositionIR into a versioned compatibility document.
+
+| Capability | Adapter state |
+| --- | --- |
+| Timeline | direct IR mapping |
+| Keyframes | direct IR mapping |
+| Effects | direct IR mapping |
+| Masks | direct IR mapping |
+| Captions | direct IR mapping |
+| Audio waveform | metadata mapping |
+| Ripple editing | ShortForge deterministic transform |
+| Rust compositor | optional future backend |
+| WebAssembly | optional future preview target |
+| Editor API | roadmap only |
+| Plugin runtime | roadmap only |
+| MCP server | roadmap only |
+| Headless OpenCut execution | roadmap only |
+| Scripting surface | roadmap only |
+| Desktop GPUI | not adopted |
+
+## 5. Validation contract
+
+Before adapter serialization:
+
+1. schema version must be `2.0.0`;
+2. MediaTime values must be non-negative integers;
+3. clip/audio/caption ranges must stay within composition duration;
+4. keyframes must be strictly ordered;
+5. caption word cues must remain inside their parent cue;
+8. voice audio must exist;
+9. waveform metadata must be structurally valid.
+
+Invalid compositions fail closed.
+
+## 6. Renderer capability and admission
+
+Renderer capabilities are separate from renderer authority.
+
+`RendererCapabilityContract` describes representational capability and physically proven runtime modes independently. A runtime mode must be listed in `executionModes` only when its corresponding capability is proven; roadmap surfaces belong in `integrationTargets`.
+
+`RendererAdmission` describes whether ShortForge may route production work to it.
+
+The current OpenCut admission is:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                   Floor 05 Composition                 │
-│         (Synthesizes Multi-Track Composition)          │
-└───────────────────────────┬────────────────────────────┘
-                            │ Emits Canonical Schema
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                      TimelineIR                        │
-│  ├── Canvas: 1080x1920 @ 30fps, durationMs             │
-│  ├── Tracks: Video, Speech Audio, Music, Captions      │
-│  └── Clips: In/Out points, Transforms, Keyframes       │
-└───────────────────────────┬────────────────────────────┘
-                            │ Validates Schema & Layout
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                   Target Render Compilers              │
-│  ├── Remotion React Compiler (Web / Node Render)       │
-│  ├── Native FFmpeg Filtergraph Compiler (Headless GPU) │
-│  └── Client-Side Preview Renderer (HTML5 Canvas)       │
-└────────────────────────────────────────────────────────┘
+admissionClass     = EXPERIMENTAL
+productionEligible = false
+authority          = SHORTFORGE_OKF
 ```
 
----
+A future promotion requires live proof, capability verification, deterministic conformance, OKF admission and an end-to-end F06/F07 artifact proof.
 
-## 2. CURRENT vs TARGET Architecture Status
+## 7. Architecture
 
-| Architectural Dimension | CURRENT Implementation | TARGET Implementation |
-|:------------------------|:-----------------------|:----------------------|
-| **Timeline Schema** | Strongly typed `TimelineIR` interface in `TimelineIR.ts` | OpenTimelineIO (OTIO) standard serialization alignment |
-| **Canvas Constraints** | Strict vertical $1080 \times 1920$ resolution validation | Dynamic responsive canvas (9:16 vertical, 1:1 square, 16:9 horizontal) |
-| **Track Support** | Video, Audio, Overlay, Subtitle/Caption tracks | Multi-layer 3D transform tracks with camera projection |
-| **Audio-Visual Sync** | Millisecond-precision start/end bounds matching audio durations | Sub-frame sample-accurate audio phase alignment |
-| **Compilation Targets** | Remotion composition compiler and deterministic mock compiler | Native C++ GPU rendering engine bypassing Node.js runtime entirely |
-
----
-
-## 3. TimelineIR Schema Specification
-
-Defined in `TimelineIR.ts`:
-
-```typescript
-export interface TimelineCanvas {
-  readonly width: number;  // 1080
-  readonly height: number; // 1920
-  readonly fps: number;    // 30
-  readonly durationMs: number;
-}
-
-export type TrackType = 'VIDEO' | 'AUDIO_VOICE' | 'AUDIO_MUSIC' | 'AUDIO_SFX' | 'CAPTIONS' | 'OVERLAY';
-
-export interface TimelineClip {
-  readonly id: string;
-  readonly assetId: string;
-  readonly startMs: number;
-  readonly durationMs: number;
-  readonly sourceInMs: number;
-  readonly sourceDurationMs: number;
-  readonly volume?: number;
-  readonly transform?: {
-    readonly scale?: number;
-    readonly positionX?: number;
-    readonly positionY?: number;
-    readonly opacity?: number;
-  };
-}
-
-export interface TimelineTrack {
-  readonly id: string;
-  readonly type: TrackType;
-  readonly zIndex: number;
-  readonly clips: readonly TimelineClip[];
-}
-
-export interface TimelineIR {
-  readonly id: string;
-  readonly canvas: TimelineCanvas;
-  readonly tracks: readonly TimelineTrack[];
-  readonly metadata: {
-    readonly scriptId: string;
-    readonly totalSpeechDurationMs: number;
-    readonly traceContext: TraceContext;
-  };
-}
 ```
-
----
-
-## 4. Canvas & Layout Invariants
-
-Every `TimelineIR` document is validated against strict constraints before being accepted by Floor 06:
-1. **Vertical Aspect Ratio**: Resolution must be exactly $1080 \times 1920$ (9:16 aspect ratio).
-2. **Track Bounds Check**: No clip may start before $0\text{ms}$ or extend beyond `canvas.durationMs`.
-3. **No Audio Collisions**: Clips on the `AUDIO_VOICE` track must not overlap in time (ensuring dialogue clarity).
-4. **Caption Alignment**: Words on the `CAPTIONS` track must align with speech syllable timestamps from Floor 04 within a $\pm 50\text{ms}$ window.
-
-
-## 5. Engineering-stack mapping
-
-TimelineIR is the canonical semantic media graph.
-
-Selected execution mapping:
-
-~~~
-TimelineIR
-   |
-Remotion compiler
-   +-- React / Canvas / WebGL
-   |
-RenderFabric
-   +-- local
-   +-- remote
-   +-- FFmpeg fallback
-   |
-physical artifact
-   |
-F07
-~~~
-
-AgentTube-derived scene lifecycle mechanisms complement TimelineIR through durable scene manifests, checkpoints, audio-first timing, CAS reuse, and selective repair.
+                    F05
+                     |
+              CompositionIR v2
+                     |
+             +-------+-------+
+             |               |
+       ShortForge UI    OpenCutAdapter
+             |               |
+             +-------+-------+
+                     |
+              Render Contract
+                     |
+               RenderFabric
+                     |
+               ComputeRouter
+                     |
+                    CAS
+                     |
+                    F07
+```
 
 The renderer never becomes the source of semantic truth.

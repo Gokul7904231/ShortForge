@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR199-Durable-Editor-Current-Main-Consolidation",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "integrate/editor-durable-current-main-20261005",
+  "objective": "Consolidate the OpenCut-informed CompositionIR/editor wave onto current main and add durable revision graph, operation journal, checkpoint/restore, deterministic replay, immutable undo/redo and restart-safe idempotency.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "CompositionIR remains semantic truth.",
+      "Editor history is not rendering, economic, governance, or release authority.",
+      "OpenCut remains optional and experimentally admitted only.",
+      "Production rendering remains behind OKF, RenderFabric, ComputeRouter, CAS and F07."
+    ],
+    "sourceRefs": [
+      ".okf/artifacts/editor-revision-history.md",
+      ".okf/artifacts/timeline-ir.md",
+      ".okf/rendering/opencut-adapter.md",
+      ".okf/index.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Release"
+  ],
+  "changes": [
+    "Consolidated OpenCut-informed CompositionIR/editor delta directly onto current main.",
+    "Added durable Disk and Mongo revision stores.",
+    "Added immutable ROOT/COMMAND/UNDO/REDO/RESTORE revision graph.",
+    "Added append-only operation journal and cryptographic command/composition digests.",
+    "Added restart-safe command idempotency and actor identity enforcement.",
+    "Added immutable checkpoints and restore revisions.",
+    "Added deterministic replay with per-revision validation and hash verification.",
+    "Added durable undo/redo state and divergent-history invalidation."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "note": "Fresh required GitHub Actions evidence is required before merge."
+  },
+  "evidenceRefs": [
+    ".okf/artifacts/editor-revision-history.md",
+    "apps/web/factoryos/core/editor/DurableEditor.ts",
+    "apps/web/factoryos/core/editor/EditorRevisionContracts.ts",
+    "apps/web/factoryos/core/editor/EditorRevisionStore.ts",
+    "apps/web/factoryos/tests/durable-editor.test.ts",
+    "Team/reports/pr-199.json"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority"
+  }
+}
