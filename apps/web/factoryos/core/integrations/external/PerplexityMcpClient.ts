@@ -78,6 +78,7 @@ function parseMcpResponse(text: string): Record<string, unknown> {
 export class PerplexityMcpClient {
   private readonly endpoint: string;
   private readonly apiKey: string;
+  private sessionId?: string;
 
   constructor(
     endpoint = process.env.PERPLEXITY_MCP_URL ||
@@ -104,6 +105,7 @@ export class PerplexityMcpClient {
       Authorization: "Bearer " + this.apiKey,
       Accept: "application/json, text/event-stream",
       "Content-Type": "application/json",
+      ...(this.sessionId ? { "Mcp-Session-Id": this.sessionId } : {}),
     };
   }
 
@@ -126,6 +128,9 @@ export class PerplexityMcpClient {
       }),
       signal: AbortSignal.timeout(30_000),
     });
+
+    const responseSessionId = response.headers.get("Mcp-Session-Id");
+    if (responseSessionId) this.sessionId = responseSessionId;
 
     const text = await response.text();
 
