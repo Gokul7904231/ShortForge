@@ -1,0 +1,260 @@
+{
+  "schemaVersion": "1.0",
+  "lifecycle": "IMPLEMENTED -> LIVE QUALIFICATION",
+  "qualificationIssue": 184,
+  "entries": [
+    {
+      "providerId": "openalex",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "arxiv",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "semantic_scholar",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "crossref",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "unpaywall",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "perplexity_mcp",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "pexels",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "pixabay",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "pexafy",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "arcmira",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "transcriptyt",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "vidwords",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "tubetotranscript",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "youtube_data_api",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "gemini",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "groq",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "openrouter",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "huggingface",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "ibm_tts",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "audexum",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "speak_ai",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "freesound",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "ocr_space",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "perspective",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "google_safe_browsing",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "urlscan",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "open_meteo",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    },
+    {
+      "providerId": "nominatim",
+      "disposition": "PENDING",
+      "configured": false,
+      "liveProbeRunId": null,
+      "qualifiedAt": null,
+      "evidenceRefs": [],
+      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+    }
+  ],
+  "exitCriteria": "Every provider must receive QUALIFIED, CONFIGURED-BUT-NOT-QUALIFIED, or NOT-APPLICABLE with evidence."
+}
