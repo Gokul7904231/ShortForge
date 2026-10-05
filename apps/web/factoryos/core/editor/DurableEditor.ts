@@ -146,7 +146,7 @@ export class DurableEditor implements ShortForgeEditorAPI, DurableEditorHistoryA
         ? await this.store.getRevision(existing.parentRevisionId)
         : undefined;
       return receipt(
-        existing.commandId,
+        input.commandId,
         true,
         existing.revision,
         existing.composition,
