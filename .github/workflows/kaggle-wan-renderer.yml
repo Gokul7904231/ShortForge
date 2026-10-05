@@ -1,0 +1,86 @@
+name: Kaggle Wan Dual-T4 Renderer Proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Explicit Kaggle renderer profile"
+        required: true
+        default: "PROOF"
+        type: choice
+        options:
+          - PROOF
+          - WAN_T2V_1_3B
+          - WAN_DUAL_T4_14B
+      prompt:
+        description: "Prompt for Wan model-backed modes"
+        required: false
+        default: "A cinematic vertical short-form video showing a futuristic city at sunrise, gentle camera movement, detailed lighting"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shortforge-kaggle-wan-proof
+  cancel-in-progress: true
+
+jobs:
+  kaggle-wan:
+    name: Kaggle ${{ inputs.profile }} renderer proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      NOTEBOOK_PROVIDER: KAGGLE
+      NOTEBOOK_LIVE: "1"
+      NOTEBOOK_LIVE_TIMEOUT_MS: "1500000"
+      KAGGLE_RENDERER: SHORTFORGE_WAN_DUAL_T4
+      KAGGLE_WAN_PROFILE: ${{ inputs.profile }}
+      KAGGLE_WAN_PROMPT: ${{ inputs.prompt }}
+      KAGGLE_LIVE_GPU: "1"
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+
+      - name: Require Kaggle credentials
+        run: |
+          test -n "$KAGGLE_USERNAME"
+          test -n "$KAGGLE_KEY"
+
+      - name: Validate owned Wan template
+        run: npm run factoryos:verify:kaggle-wan-template
+
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+
+      - name: Notebook contract tests
+        run: npx vitest run factoryos/tests/notebook-fabric.test.ts
+
+      - name: Execute owned Kaggle renderer
+        run: npm run factoryos:verify:notebooks
+
+      - name: Upload physical Kaggle MP4
+        if: always() && hashFiles('apps/web/artifacts/kaggle-live/shortforge-live-notebook-probe.mp4') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: shortforge-kaggle-wan-${{ inputs.profile }}
+          path: apps/web/artifacts/kaggle-live/shortforge-live-notebook-probe.mp4
+          if-no-files-found: error
+          retention-days: 14

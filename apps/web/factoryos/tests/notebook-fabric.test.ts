@@ -10,6 +10,7 @@ import { PaperspaceNotebookAdapter } from "../core/compute/notebooks/PaperspaceN
 import { LightningNotebookAdapter } from "../core/compute/notebooks/LightningNotebookAdapter";
 import { HuggingFaceZeroGPUAdapter } from "../core/compute/notebooks/HuggingFaceZeroGPUAdapter";
 import { NotebookRouter } from "../core/compute/notebooks/NotebookRouter";
+import { KAGGLE_WAN_RENDER_PROFILES, getKaggleWanRendererProfile } from "../core/compute/notebooks/KaggleRendererProfiles";
 
 const originalEnv = { ...process.env };
 const originalFetch = globalThis.fetch;
@@ -172,6 +173,20 @@ describe("Notebook & Interactive Compute Fabric", () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
+
+  it("defines explicit ShortForge Wan renderer profiles without promoting Kaggle to F06", () => {
+    expect(getKaggleWanRendererProfile("PROOF")).toEqual(
+      KAGGLE_WAN_RENDER_PROFILES.PROOF,
+    );
+    expect(KAGGLE_WAN_RENDER_PROFILES.WAN_DUAL_T4_14B.requireDualT4).toBe(true);
+    expect(KAGGLE_WAN_RENDER_PROFILES.WAN_DUAL_T4_14B.modelId).toBe(
+      "Wan-AI/Wan2.1-T2V-14B-Diffusers",
+    );
+    expect(KAGGLE_WAN_RENDER_PROFILES.WAN_T2V_1_3B.modelId).toBe(
+      "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    );
+    expect(new KaggleNotebookAdapter().metadata.capabilities.productionWorkerEligible).toBe(false);
+  });
 
   it("keeps Colab render execution enabled while preserving the non-worker boundary", () => {
     const colab = new ColabNotebookAdapter();

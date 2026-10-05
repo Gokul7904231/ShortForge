@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR163-Kaggle-Wan-Dual-T4",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/kaggle-wan-dual-t4-renderer-20261005",
+  "objective": "Upgrade the existing Kaggle notebook fabric with a ShortForge-owned Wan Dual-T4 renderer reference architecture.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Community notebooks are references, not authority or runtime dependencies.",
+      "Kaggle notebook execution remains separate from F06 worker authority.",
+      "Every successful render must end in a physical artifact subject to independent verification.",
+      "CAS owns immutable artifact identity.",
+      "F07 remains the independent physical artifact truth boundary.",
+      "Provider capability claims must be supported by live evidence before qualification."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "notes": [
+      "No credentials are committed.",
+      "Optional HF_TOKEN is read from Kaggle Secrets inside the notebook runner.",
+      "Renderer request metadata is allowlisted to prevent arbitrary environment/secret injection.",
+      "Live Wan model execution is manual-only and quota-aware."
+    ],
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "changes": [
+    "Added Kaggle renderer profiles for deterministic proof, Wan 1.3B, and explicit Wan 14B dual-T4.",
+    "Added repository-owned Kaggle kernel template with T4 inventory detection.",
+    "Added deterministic GPU-backed proof mode with no model download.",
+    "Added opt-in Wan 2.1 T2V mode using Diffusers and balanced placement on multi-GPU hosts.",
+    "Extended Kaggle adapter to package owned notebook templates.",
+    "Added manual Kaggle Wan renderer workflow and template validation.",
+    "Kept productionWorkerEligible=false."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/notebooks/KaggleNotebookAdapter.ts",
+    "apps/web/factoryos/core/compute/notebooks/KaggleRendererProfiles.ts",
+    "apps/web/factoryos/tests/notebook-fabric.test.ts",
+    "apps/web/scripts/verify-notebooks.ts",
+    "apps/web/scripts/verify-kaggle-wan-template.ts",
+    "tools/kaggle/shortforge-wan-dual-t4/",
+    ".github/workflows/kaggle-wan-renderer.yml",
+    "Issue #162",
+    "Kaggle public Wan Dual-T4 Runner reference",
+    "Hugging Face Diffusers multi-GPU device_map=balanced documentation",
+    "Official Wan Diffusers pipeline documentation"
+  ],
+  "verificationResults": {
+    "templateContract": "PENDING_CI",
+    "notebookFabric": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING_CI",
+    "kaggleT4x2PhysicalProof": "PENDING_MANUAL_LIVE_RUN",
+    "wan1_3bPhysicalProof": "PENDING_MANUAL_LIVE_RUN",
+    "wan14bDualT4Feasibility": "PENDING_MANUAL_LIVE_RUN",
+    "casIntegrity": "NOT_RUN_IN_THIS_PR",
+    "f07Physical": "NOT_RUN_IN_THIS_PR",
+    "productionWorkerEligible": false
+  },
+  "verificationPlan": [
+    "Pass repository CI and Team Change Gate.",
+    "Run the manual Kaggle Wan workflow in PROOF mode first.",
+    "Then run WAN_T2V_1_3B as an explicit model-backed smoke.",
+    "Only after 1.3B passes, optionally experiment with WAN_DUAL_T4_14B.",
+    "Do not record 14B as qualified until a physical Kaggle run succeeds.",
+    "Use the existing downstream CAS/F07 render path for provider qualification."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This PR upgrades the renderer foundation; it does not claim live Wan feasibility.",
+    "The deterministic PROOF profile is intentionally the first live target to minimize GPU quota usage."
+  ],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ]
+}
