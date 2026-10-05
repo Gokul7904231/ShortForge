@@ -8,8 +8,7 @@ import type {
   ExternalApiQualificationProfile,
   QualificationHttpObservation,
 } from "./ExternalApiQualificationContracts";
-import {
-} from "./ExternalApiQualificationContracts";
+import { redactSecretBearingUrl } from "./ExternalApiQualificationContracts";
 import { PerplexityMcpClient } from "./PerplexityMcpClient";
 
 const execFileAsync = promisify(execFile);
@@ -22,7 +21,7 @@ const PROFILES: readonly ExternalApiQualificationProfile[] = [
   { providerId: "openalex", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /works with one bounded search result", notes: "Public metadata discovery; no secret required." },
   { providerId: "arxiv", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /api/query with one result", notes: "Public Atom research discovery." },
   { providerId: "semantic_scholar", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /paper/search", notes: "API key is optional on some public traffic; configured credentials are server-side." },
-  { providerId: "crossref", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /works with polite mailto when configured", notes: "Public metadata; CROSSREF_MAILTO is recommended." },
+  { providerId: "crossref", probeKind: "JSON_GET", credentialEnvs: [], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /v1/works with one bounded representative record", notes: "Public metadata; CROSSREF_MAILTO is recommended." },
   { providerId: "unpaywall", probeKind: "JSON_GET", credentialEnvs: ["UNPAYWALL_EMAIL"], metered: false, destructive: false, defaultEnabled: false, capability: "ACADEMIC_RESEARCH", endpointDescription: "GET /v2/{doi}?email=", notes: "DOI-scoped lookup; no broad search probe." },
   { providerId: "perplexity_mcp", probeKind: "MCP", credentialEnvs: ["PERPLEXITY_API_KEY"], metered: true, destructive: false, defaultEnabled: false, capability: "WEB_RESEARCH + MCP_TOOLS", endpointDescription: "MCP initialize + tools/list", notes: "Metered remote MCP; tool surface only." },
 
@@ -85,6 +84,15 @@ export function configured(profile: ExternalApiQualificationProfile): {
 function authHeaders(providerId: string, secret?: string): Record<string, string> {
   if (!secret) return { Accept: "application/json" };
   if (providerId === "freesound") return { Accept: "application/json" };
+  if (providerId === "crossref") {
+    const mailto = process.env.CROSSREF_MAILTO?.trim();
+    return {
+      Accept: "application/json",
+      "User-Agent": mailto
+        ? "ShortForge/1.0 (https://github.com/Gokul7904231/ShortForge; mailto:" + mailto + ")"
+        : "ShortForge/1.0 (https://github.com/Gokul7904231/ShortForge)",
+    };
+  };
   if (providerId === "vidwords") return {
     Accept: "application/json",
     Authorization: "Basic " + Buffer.from(secret + ":").toString("base64"),
@@ -105,7 +113,7 @@ function currentBase(providerId: string): string {
     case "openalex": return "https://api.openalex.org";
     case "arxiv": return "https://export.arxiv.org/api";
     case "semantic_scholar": return "https://api.semanticscholar.org/graph/v1";
-    case "crossref": return "https://api.crossref.org";
+    case "crossref": return "https://api.crossref.org/v1";
     case "unpaywall": return "https://api.unpaywall.org/v2";
     case "pexels": return "https://api.pexels.com/v1";
     case "pixabay": return "https://pixabay.com/api/";
@@ -176,10 +184,10 @@ async function readText(response: Response): Promise<{ text: string; observation
   };
 }
 
-async function readJson(response: Response): Promise<unknown> {
+async function readJson(response: Response): Promise<{ data: unknown; text: string }> {
   const text = await response.text();
-  if (!text.trim()) return null;
-  try { return JSON.parse(text); } catch { return { rawText: text.slice(0, 300) }; }
+  if (!text.trim()) return { data: null, text: "" };
+  try { return { data: JSON.parse(text), text }; } catch { return { data: { rawText: text.slice(0, 300) }, text }; }
 }
 
 function shapeOf(data: unknown): Record<string, unknown> {
@@ -199,13 +207,22 @@ async function requestJson(
   providerId: string,
   url: URL,
   init: RequestInit,
-): Promise<{ data: unknown; observation: QualificationHttpObservation }> {
+): Promise<{
+  data: unknown;
+  observation: QualificationHttpObservation;
+  responseBodyPreview?: string;
+  finalUrl?: string;
+}> {
   const started = Date.now();
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
-  const data = await readJson(response);
+  const parsed = await readJson(response);
   const retryAfter = Number(response.headers.get("retry-after") || "");
   return {
-    data,
+    data: parsed.data,
+    responseBodyPreview: providerId === "crossref" && parsed.text.trim()
+      ? parsed.text.trim().slice(0, 2000)
+      : undefined,
+    finalUrl: response.url || url.toString(),
     observation: {
       status: response.status,
       durationMs: Date.now() - started,
@@ -662,10 +679,9 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
       url.searchParams.set("fields", "title,url,year");
       break;
     case "crossref":
-      url.pathname += "/v1/works";
-      url.searchParams.set("query.bibliographic", "machine learning");
+      url.pathname += "/works";
       url.searchParams.set("rows", "1");
-      url.searchParams.set("select", "DOI,title,URL");
+      url.searchParams.set("select", "DOI,title");
       if (process.env.CROSSREF_MAILTO?.trim()) url.searchParams.set("mailto", process.env.CROSSREF_MAILTO.trim());
       break;
     case "unpaywall":
@@ -791,6 +807,25 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
       ? { "x-api-key": secret || "", Accept: "application/json" }
       : requestHeadersFor(id, secret),
   });
+
+  if (id === "crossref") {
+    const items = (result.data as any)?.message?.items;
+    const capabilityVerified =
+      result.observation.status >= 200 &&
+      result.observation.status < 300 &&
+      Array.isArray(items) &&
+      items.length > 0;
+    return {
+      normalized: {
+        requestUrl: redactSecretBearingUrl(url.toString()),
+        finalUrl: result.finalUrl ? redactSecretBearingUrl(result.finalUrl) : undefined,
+        responseShape: shapeOf(result.data),
+        responseBodyPreview: result.responseBodyPreview,
+      },
+      observation: result.observation,
+      capabilityVerified,
+    };
+  }
 
   if (id === "pexels" || id === "pixabay" || id === "pexafy") {
     const assetUrl = visualAssetUrl(id, result.data);

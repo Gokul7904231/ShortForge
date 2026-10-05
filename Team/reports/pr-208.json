@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR208-Crossref-Live-Diagnostics",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/crossref-live-diagnostics-20261005",
+  "objective": "Diagnose and harden the Crossref live qualification probe after the corrected versioned endpoint still returned HTTP 404.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "IMPLEMENTED and QUALIFIED remain separate lifecycle states.",
+      "The qualification harness may only record QUALIFIED from real provider evidence.",
+      "Provider credentials remain runtime-injected only.",
+      "The Crossref probe remains advisory/control-plane only and does not gain authority over F00, Treasury, ComputeRouter, F06, CAS, F07, or Overseer."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_QUALIFICATION_PROBE",
+    "notes": [
+      "No credential handling was added.",
+      "Crossref request evidence uses the existing secret-bearing URL redaction helper.",
+      "Only a bounded provider response-body preview is retained for Crossref diagnostics.",
+      "The User-Agent is descriptive and may include CROSSREF_MAILTO only when explicitly configured."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "changes": [
+    "Moved the Crossref current base to the explicitly versioned https://api.crossref.org/v1 route and kept /works as the resource path.",
+    "Simplified the representative capability probe to rows=1 with select=DOI,title and removed query.bibliographic from the live proof path.",
+    "Added a descriptive User-Agent and optional CROSSREF_MAILTO for the polite pool.",
+    "Preserved the redacted request URL, final URL, response shape, and bounded provider response-body preview when Crossref returns non-2xx.",
+    "Added deterministic regression coverage for the request contract and non-2xx diagnostics."
+  ],
+  "failureEvidence": {
+    "sourceIssue": 197,
+    "provider": "crossref",
+    "previousRunId": "gha_37293084735",
+    "previousObservedStatus": 404,
+    "previousDisposition": "CONFIGURED-BUT-NOT-QUALIFIED",
+    "latestRunId": "gha_37334840615",
+    "latestObservedStatus": 404,
+    "latestDisposition": "CONFIGURED-BUT-NOT-QUALIFIED",
+    "latestArtifactId": "11356041628",
+    "evidence": [
+      "LIVE_NETWORK_REQUEST",
+      "PROVIDER_CAPABILITY_NOT_VERIFIED"
+    ]
+  },
+  "externalVerification": {
+    "source": "Crossref official REST API documentation",
+    "endpoint": "https://api.crossref.org/v1/works",
+    "rationale": "Crossref documents the versioned /v1/works route and recommends identifying clients with a descriptive User-Agent and optional mailto."
+  },
+  "verificationResults": {
+    "previousLiveCrossref": "FAILED_404",
+    "diagnosticHarness": "IMPLEMENTED",
+    "versionedEndpoint": "IMPLEMENTED",
+    "minimalRepresentativeRequest": "IMPLEMENTED",
+    "liveCrossrefRerun": "PENDING",
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass Team Change Gate, OKF Governance, API Provider Fabric Verification, and repository CI.",
+    "Merge PR #208 to main only after required validation succeeds.",
+    "Run Crossref live qualification from main and inspect the captured request URL and provider response body.",
+    "Mark Crossref QUALIFIED only if a real live response returns a representative message.items array and the evidence sufficiency gate passes."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This PR does not change the Crossref provider disposition in #184.",
+    "A live 404 remains an observed provider/runtime failure until the new diagnostic run identifies the cause or proves the endpoint healthy."
+  ],
+  "evidenceRefs": [
+    "Cohort 1 live run 37334840615",
+    "Cohort 1 Crossref artifact 11356041628",
+    "Previous Crossref live run 37293084735",
+    "Previous Crossref artifact 11336579891",
+    "Crossref official REST API documentation",
+    "apps/web/factoryos/core/integrations/external/ExternalApiQualificationProbes.ts",
+    "apps/web/factoryos/tests/external-api-qualification.test.ts"
+  ]
+}
