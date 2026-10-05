@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR175-Audio-API-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/audio-api-fabric-20261005",
+  "objective": "Implement governed IBM Watson TTS, Audexum TTS and Freesound audio-asset enrichment behind existing VoiceFabric/external-provider boundaries.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "External providers are replaceable resources, not authorities.",
+      "VoiceFabric remains the authoritative physical audio verification pipeline.",
+      "Provider-reported duration is never accepted as physical truth.",
+      "Freesound license and generative-AI preference metadata must remain addressable.",
+      "Speak AI is not misrepresented as a TTS provider without an endpoint contract.",
+      "No F06/CAS/F07 authority is granted."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No credential values are committed.",
+      "IBM credentials are consumed only at runtime; instance URL is configured separately.",
+      "Freesound API tokens are server-side and never emitted to result objects."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added IBM Watson Text to Speech engine to VoiceFabric.",
+    "Added Audexum TTS engine to VoiceFabric.",
+    "Added provider-neutral Freesound audio-asset search contract and adapter.",
+    "Added deterministic authentication, request-shape, normalization and malformed-response tests.",
+    "Added audio provider environment configuration and .okf documentation."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/voice/VoiceFabric.ts",
+    "apps/web/factoryos/core/integrations/external/FreesoundAudioProvider.ts",
+    "apps/web/factoryos/tests/freesound-audio-provider.test.ts",
+    "apps/web/.env.render.production.example",
+    ".okf/integrations/audio-providers.md",
+    ".okf/integrations/external-api-fabric.md",
+    "Issue #174"
+  ],
+  "verificationResults": {
+    "deterministicProviderTests": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "teamChangeGate": "PENDING",
+    "liveProviderProof": "NOT_RUN",
+    "productionWorkerEligible": "UNCHANGED"
+  },
+  "verificationPlan": [
+    "Require CI and Team Change Gate to pass before merge.",
+    "Keep IBM/Audexum/Freesound live qualification separate from deterministic tests.",
+    "Use the existing VoiceFabric physical ffprobe + SHA verification path for live audio proofs."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This PR does not claim live provider qualification.",
+    "Speak AI remains catalogued for media/transcription/analysis only.",
+    "The existing Edge/Gemini/ElevenLabs routing model remains unchanged unless a caller explicitly selects the new engines."
+  ]
+}
