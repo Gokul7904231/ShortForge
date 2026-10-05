@@ -4,7 +4,7 @@ Provides deterministic, high-performance rendering of 9:16 vertical shorts.
 Respects 9:16 safe areas and renders typography, shapes, cards, and captions.
 """
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from typing import Dict, Any, List, Optional, Tuple
 import math
 
@@ -52,25 +52,62 @@ class NativeFrameCompositor:
         """
         Renders a complete RGBA frame deterministically based on normalized progress p in [0, 1].
         """
-        # Determine background palette
-        bg_type = shot_props.get("background_type", "DARK_SLATE")
-        if bg_type == "DEEP_INDIGO":
-            img = self.create_gradient_background((9, 10, 15), (30, 27, 75))
-        elif bg_type == "AMBER_HISTORY":
-            img = self.create_gradient_background((28, 25, 23), (69, 26, 3))
-        elif bg_type == "MONOCHROME":
-            img = self.create_gradient_background((5, 5, 5), (24, 24, 27))
-        elif bg_type == "REDDIT_ORANGE":
-            img = self.create_gradient_background((3, 3, 3), (26, 26, 27))
+        # Background is explicit CompositionIR/F06 data. A transparent layer is used
+        # when the FrameEngine is stacking multiple clips.
+        if scene_props.get("transparent"):
+            img = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+        elif scene_props.get("background"):
+            background = scene_props["background"]
+            kind = str(background.get("kind", "SOLID")).upper()
+            value = background.get("value")
+            if kind == "GRADIENT" and isinstance(value, dict):
+                def parse_color(raw: Any, fallback: Tuple[int, int, int]) -> Tuple[int, int, int]:
+                    if isinstance(raw, str):
+                        text = raw.strip().lstrip("#")
+                        if len(text) == 3:
+                            text = "".join(ch * 2 for ch in text)
+                        if len(text) >= 6:
+                            try:
+                                return (int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16))
+                            except ValueError:
+                                pass
+                    return fallback
+                first = parse_color(value.get("start"), (15, 23, 42))
+                last = parse_color(value.get("end"), (30, 41, 59))
+                img = self.create_gradient_background(first, last)
+            elif kind == "BLUR":
+                base = Image.new("RGBA", (self.width, self.height), (15, 23, 42, 255))
+                img = base.filter(ImageFilter.GaussianBlur(radius=float(background.get("radius", 18))))
+            else:
+                raw = value if isinstance(value, str) else "#0f172a"
+                text = raw.strip().lstrip("#")
+                if len(text) == 3:
+                    text = "".join(ch * 2 for ch in text)
+                try:
+                    rgb = (int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16))
+                except (ValueError, IndexError):
+                    rgb = (15, 23, 42)
+                img = Image.new("RGBA", (self.width, self.height), rgb + (255,))
         else:
-            img = self.create_gradient_background((15, 23, 42), (30, 41, 59))
+            bg_type = shot_props.get("background_type", "DARK_SLATE")
+            if bg_type == "DEEP_INDIGO":
+                img = self.create_gradient_background((9, 10, 15), (30, 27, 75))
+            elif bg_type == "AMBER_HISTORY":
+                img = self.create_gradient_background((28, 25, 23), (69, 26, 3))
+            elif bg_type == "MONOCHROME":
+                img = self.create_gradient_background((5, 5, 5), (24, 24, 27))
+            elif bg_type == "REDDIT_ORANGE":
+                img = self.create_gradient_background((3, 3, 3), (26, 26, 27))
+            else:
+                img = self.create_gradient_background((15, 23, 42), (30, 41, 59))
 
         draw = ImageDraw.Draw(img)
 
-        # Draw decorative glowing center orb
-        orb_r = 380 + int(math.sin(progress * math.pi) * 20)
-        cx, cy = self.width // 2, self.height // 2
-        draw.ellipse([cx - orb_r, cy - orb_r, cx + orb_r, cy + orb_r], fill=(99, 102, 241, 18))
+        # Decorative orb belongs only to opaque scene layers.
+        if not scene_props.get("transparent"):
+            orb_r = 380 + int(math.sin(progress * math.pi) * 20)
+            cx, cy = self.width // 2, self.height // 2
+            draw.ellipse([cx - orb_r, cy - orb_r, cx + orb_r, cy + orb_r], fill=(99, 102, 241, 18))
 
         # Safe area bounds
         left_margin = 80
