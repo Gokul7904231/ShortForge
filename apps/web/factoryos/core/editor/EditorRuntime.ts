@@ -390,7 +390,7 @@ export class EditorRuntime implements ShortForgeEditorAPI {
     };
   }
 
-  async preview(sessionId: string): Promise<EditorPreviewPlan> {
+  async preview(sessionId: string, timestampSeconds = 0): Promise<EditorPreviewPlan> {
     const document = await this.editor.getDocument(sessionId);
     const renderIntent = compileCompositionToRenderIntent(
       document.composition,
@@ -402,14 +402,34 @@ export class EditorRuntime implements ShortForgeEditorAPI {
         format: "MP4",
       },
     );
+    const normalizedTimestamp = Math.max(
+      0,
+      Math.min(
+        timestampSeconds,
+        Math.max(0, renderIntent.durationSeconds - 1 / Math.max(1, renderIntent.fps)),
+      ),
+    );
+    const previewId = `preview_${sha256(
+      `${renderIntent.sourceCompositionHashSha256}:${normalizedTimestamp.toFixed(6)}`,
+    ).slice(0, 24)}`;
+    const previewDir = path.join(process.cwd(), "apps", "web", "data", "previews", "editor-runtime");
+    const previewArtifactPath = path.join(previewDir, `${previewId}.png`);
+    const previewResult = await this.renderFabric.executePreview(
+      renderIntent,
+      previewArtifactPath,
+      normalizedTimestamp,
+    );
     return Object.freeze({
-      previewId: `preview_${sha256(renderIntent.intentId).slice(0, 24)}`,
+      previewId,
       compositionId: document.composition.compositionId,
       compositionRevision: document.revision,
       compositionHashSha256: document.compositionHash,
       renderIntent,
-      physicalExecution: "NOT_EXECUTED",
+      physicalExecution: "PREVIEW_PHYSICAL",
       wasmExecution: "NOT_PROVEN",
+      timestampSeconds: previewResult.preview.timestamp_seconds,
+      previewArtifactPath: previewResult.preview.output_path,
+      previewArtifactSha256: previewResult.preview.output_sha256,
     });
   }
 
@@ -579,7 +599,11 @@ export class EditorRuntime implements ShortForgeEditorAPI {
           };
         }
         case "editor.preview": {
-          const preview = await this.preview(request.sessionId);
+          const timestampSeconds =
+            typeof request.arguments.timestampSeconds === "number"
+              ? request.arguments.timestampSeconds
+              : 0;
+          const preview = await this.preview(request.sessionId, timestampSeconds);
           return {
             accepted: true,
             tool: request.tool,
@@ -591,6 +615,9 @@ export class EditorRuntime implements ShortForgeEditorAPI {
               wasmExecution: preview.wasmExecution,
               renderIntentId: preview.renderIntent.intentId,
               jobId: preview.renderIntent.jobId,
+              timestampSeconds: preview.timestampSeconds,
+              previewArtifactPath: preview.previewArtifactPath,
+              previewArtifactSha256: preview.previewArtifactSha256,
             },
           };
         }
