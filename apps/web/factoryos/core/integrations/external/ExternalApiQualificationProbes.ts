@@ -443,8 +443,8 @@ export async function executeProfile(profile: ExternalApiQualificationProfile): 
 
   if (id === "ibm_tts" || id === "audexum") {
     const endpoint = id === "ibm_tts"
-      ? currentBase(id).replace(/\\/+$/, "") + "/v1/synthesize"
-      : currentBase(id).replace(/\\/+$/, "") + "/synthesize";
+      ? currentBase(id).replace(/\/+$/, "") + "/v1/synthesize"
+      : currentBase(id).replace(/\/+$/, "") + "/synthesize";
     const url = new URL(endpoint);
     const body = id === "ibm_tts"
       ? JSON.stringify({ text: "ShortForge qualification test.", voice: process.env.IBM_TTS_VOICE_ID || "en-US_AllisonV3Voice" })
