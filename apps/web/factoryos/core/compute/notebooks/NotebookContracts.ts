@@ -131,6 +131,7 @@ export interface NotebookExecutionRequest {
    * lifecycle executes a repository-owned entrypoint. The provider copies the
    * template into its ephemeral submission bundle before pushing it.
    */
+  /** Repository-owned renderer templates are copied into the ephemeral Kaggle submission bundle. */
   templateDirectory?: string;
   /**
    * Optional caller-owned destination for a provider-downloaded artifact.
