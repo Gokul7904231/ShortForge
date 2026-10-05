@@ -38,7 +38,7 @@ export interface VoiceProfile {
   readonly pitch: number;   // -1.0 to 1.0
   readonly speed: number;   // 0.5 to 2.0
   readonly tone: "DRAMATIC" | "ENERGETIC" | "CALM" | "CURIOUS" | "AUTHORITATIVE";
-  readonly preferredEngine?: "GEMINI" | "ELEVENLABS" | "EDGE" | "SYSTEM";
+  readonly preferredEngine?: "GEMINI" | "ELEVENLABS" | "EDGE" | "IBM_TTS" | "AUDEXUM" | "SYSTEM";
 }
 
 export type VoicePreflightStatus = "NOT_CONFIGURED" | "CONFIGURED" | "READY" | "UNAVAILABLE";
@@ -443,6 +443,233 @@ export class EdgeVoiceEngine implements IVoiceEngine {
   }
 }
 
+export class IBMWatsonTTSVoiceEngine implements IVoiceEngine {
+  readonly id = "IBM_TTS";
+  readonly name = "IBM Watson Text to Speech";
+  readonly isProductionReady = true;
+  readonly isPrimaryRoutable = true;
+  readonly isEmergencyFallback = false;
+
+  private credential(): { apiKey?: string; token?: string; url?: string } {
+    return {
+      apiKey: process.env.IBM_TTS_API_KEY?.trim() || undefined,
+      token: process.env.IBM_TTS_IAM_TOKEN?.trim() || undefined,
+      url: process.env.IBM_TTS_URL?.trim() || undefined,
+    };
+  }
+
+  getCredentialState(): CredentialState {
+    const c = this.credential();
+    if (!c.url) return "MISSING";
+    const tokenState = c.token ? detectCredentialState(c.token) : "MISSING";
+    const keyState = c.apiKey ? detectCredentialState(c.apiKey) : "MISSING";
+    return tokenState === "PRESENT" || keyState === "PRESENT"
+      ? "PRESENT"
+      : tokenState === "INVALID_SHAPE" || keyState === "INVALID_SHAPE"
+        ? "INVALID_SHAPE"
+        : "MISSING";
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return this.getCredentialState() === "PRESENT";
+  }
+
+  async synthesize(
+    text: string,
+    profile: VoiceProfile,
+    outputDir?: string,
+  ): Promise<VoiceArtifact> {
+    const c = this.credential();
+    if (this.getCredentialState() !== "PRESENT" || !c.url) {
+      throw new Error(
+        "[IBMWatsonTTSVoiceEngine] LIVE_PROVIDER_REQUIRED: IBM_TTS_URL and a live IBM credential are required.",
+      );
+    }
+
+    const bytes = Buffer.byteLength(text || "", "utf8");
+    if (!text?.trim()) {
+      throw new Error("[IBMWatsonTTSVoiceEngine] Cannot synthesize empty text.");
+    }
+    if (bytes > 5120) {
+      throw new Error(
+        "[IBMWatsonTTSVoiceEngine] POST /v1/synthesize accepts at most 5 KB of input text.",
+      );
+    }
+
+    const started = Date.now();
+    const endpoint = new URL(c.url.replace(/\/+$/, "") + "/v1/synthesize");
+    endpoint.searchParams.set(
+      "voice",
+      process.env.IBM_TTS_VOICE_ID?.trim() || "en-US_AllisonV3Voice",
+    );
+    endpoint.searchParams.set("accept", "audio/wav");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "audio/wav",
+    };
+
+    if (c.token) {
+      headers.Authorization = "Bearer " + c.token;
+    } else {
+      headers.Authorization =
+        "Basic " +
+        Buffer.from("apikey:" + c.apiKey!, "utf8").toString("base64");
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 500);
+      throw new Error(
+        "[IBMWatsonTTSVoiceEngine] Upstream HTTP " +
+          response.status +
+          (detail ? ": " + detail : ""),
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().startsWith("audio/")) {
+      throw new Error(
+        "[IBMWatsonTTSVoiceEngine] Upstream returned non-audio content-type: " +
+          contentType,
+      );
+    }
+
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    if (audioBuffer.length === 0) {
+      throw new Error("[IBMWatsonTTSVoiceEngine] Upstream returned zero audio bytes.");
+    }
+
+    const dir = outputDir || path.join(process.cwd(), "data", "audio");
+    return verifyAndPublishAudioArtifact(
+      audioBuffer,
+      dir,
+      "voice_ibm_tts_" + randomUUID().substring(0, 8),
+      {
+        provider: "IBM_TTS",
+        expectedFormat: "wav",
+        qualityClass: "PRIMARY",
+        providerRequestId:
+          response.headers.get("x-request-id") ||
+          response.headers.get("request-id") ||
+          undefined,
+        synthesisLatencyMs: Date.now() - started,
+      },
+    );
+  }
+}
+
+export class AudexumTTSVoiceEngine implements IVoiceEngine {
+  readonly id = "AUDEXUM";
+  readonly name = "Audexum TTS";
+  readonly isProductionReady = true;
+  readonly isPrimaryRoutable = true;
+  readonly isEmergencyFallback = false;
+
+  getCredentialState(): CredentialState {
+    return detectCredentialState(process.env.AUDEXUM_API_KEY);
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return this.getCredentialState() === "PRESENT";
+  }
+
+  async synthesize(
+    text: string,
+    profile: VoiceProfile,
+    outputDir?: string,
+  ): Promise<VoiceArtifact> {
+    const key = process.env.AUDEXUM_API_KEY?.trim();
+    if (this.getCredentialState() !== "PRESENT" || !key) {
+      throw new Error(
+        "[AudexumTTSVoiceEngine] LIVE_PROVIDER_REQUIRED: AUDEXUM_API_KEY is not configured with live credentials.",
+      );
+    }
+
+    if (!text?.trim()) {
+      throw new Error("[AudexumTTSVoiceEngine] Cannot synthesize empty text.");
+    }
+    if (text.length > 5000) {
+      throw new Error(
+        "[AudexumTTSVoiceEngine] Documented text limit is approximately 5,000 characters per call.",
+      );
+    }
+
+    const started = Date.now();
+    const baseUrl =
+      process.env.AUDEXUM_BASE_URL?.trim() || "https://audexum.com/api";
+    const response = await fetch(
+      baseUrl.replace(/\/+$/, "") + "/synthesize",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + key,
+          "Content-Type": "application/json",
+          Accept: "audio/wav",
+        },
+        body: JSON.stringify({
+          text,
+          ...(process.env.AUDEXUM_VOICE_ID?.trim()
+            ? { voice: process.env.AUDEXUM_VOICE_ID.trim() }
+            : {}),
+          lang:
+            profile.language?.trim() ||
+            process.env.AUDEXUM_LANGUAGE?.trim() ||
+            "en",
+          speed: Math.min(2, Math.max(0.5, profile.speed || 1)),
+          format: "wav",
+        }),
+        signal: AbortSignal.timeout(30_000),
+      },
+    );
+
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 500);
+      throw new Error(
+        "[AudexumTTSVoiceEngine] Upstream HTTP " +
+          response.status +
+          (detail ? ": " + detail : ""),
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().startsWith("audio/")) {
+      throw new Error(
+        "[AudexumTTSVoiceEngine] Upstream returned non-audio content-type: " +
+          contentType,
+      );
+    }
+
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    if (audioBuffer.length === 0) {
+      throw new Error("[AudexumTTSVoiceEngine] Upstream returned zero audio bytes.");
+    }
+
+    const dir = outputDir || path.join(process.cwd(), "data", "audio");
+    return verifyAndPublishAudioArtifact(
+      audioBuffer,
+      dir,
+      "voice_audexum_" + randomUUID().substring(0, 8),
+      {
+        provider: "AUDEXUM",
+        expectedFormat: "wav",
+        qualityClass: "PRIMARY",
+        providerRequestId:
+          response.headers.get("x-request-id") ||
+          response.headers.get("request-id") ||
+          undefined,
+        synthesisLatencyMs: Date.now() - started,
+      },
+    );
+  }
+}
+
 export class SilentWavVoiceEngine implements IVoiceEngine {
   readonly id = "SILENT_WAV_FALLBACK";
   readonly name = "Deterministic Silent PCM WAV Fallback";
@@ -606,6 +833,8 @@ export class VoiceFabric {
     this.engines.set("GEMINI", new GeminiVoiceEngine());
     this.engines.set("ELEVENLABS", new ElevenLabsVoiceEngine());
     this.engines.set("EDGE", new EdgeVoiceEngine());
+    this.engines.set("IBM_TTS", new IBMWatsonTTSVoiceEngine());
+    this.engines.set("AUDEXUM", new AudexumTTSVoiceEngine());
     this.engines.set("SILENT_WAV_FALLBACK", new SilentWavVoiceEngine());
 
     this.registerDefaultProfiles();
