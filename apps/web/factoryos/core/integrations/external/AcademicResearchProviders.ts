@@ -110,7 +110,7 @@ export class OpenAlexProvider implements ReachProvider {
                 ? work.authorships
                     .slice(0, 4)
                     .map((a: any) => a?.author?.display_name)
-                    .filter((source): source is EvidenceSource => Boolean(source))
+                    .filter(Boolean)
                     .join(", ")
                 : "";
 
@@ -127,7 +127,7 @@ export class OpenAlexProvider implements ReachProvider {
                   ? "Abstract available."
                   : "",
               ]
-                .filter((source): source is EvidenceSource => Boolean(source))
+                .filter(Boolean)
                 .join(" | ");
 
               return source(
@@ -138,7 +138,7 @@ export class OpenAlexProvider implements ReachProvider {
                 requestId,
               );
             })
-            .filter((source): source is EvidenceSource => Boolean(source))
+            .filter((item): item is EvidenceSource => Boolean(item))
         : [];
 
       return {
@@ -250,12 +250,12 @@ export class ArxivProvider implements ReachProvider {
                 ? summary.replace(/\s+/g, " ").slice(0, 450)
                 : "",
             ]
-              .filter((source): source is EvidenceSource => Boolean(source))
+              .filter(Boolean)
               .join(" | "),
             requestId,
           );
         })
-        .filter((source): source is EvidenceSource => Boolean(source));
+        .filter((item): item is EvidenceSource => Boolean(item));
 
       return {
         provider: this.id,
@@ -337,7 +337,7 @@ export class SemanticScholarProvider implements ReachProvider {
                 ? paper.authors
                     .slice(0, 4)
                     .map((a: any) => a?.name)
-                    .filter((source): source is EvidenceSource => Boolean(source))
+                    .filter(Boolean)
                     .join(", ")
                 : "";
 
@@ -350,12 +350,12 @@ export class SemanticScholarProvider implements ReachProvider {
                   authors ? "Authors: " + authors : "",
                   paper?.abstract || "",
                 ]
-                  .filter((source): source is EvidenceSource => Boolean(source))
+                  .filter(Boolean)
                   .join(" | "),
                 requestId,
               );
             })
-            .filter((source): source is EvidenceSource => Boolean(source))
+            .filter((item): item is EvidenceSource => Boolean(item))
         : [];
 
       return {
@@ -446,10 +446,10 @@ export class CrossrefProvider implements ReachProvider {
                     .slice(0, 4)
                     .map((a: any) =>
                       [a?.given, a?.family]
-                        .filter((source): source is EvidenceSource => Boolean(source))
+                        .filter(Boolean)
                         .join(" "),
                     )
-                    .filter((source): source is EvidenceSource => Boolean(source))
+                    .filter(Boolean)
                     .join(", ")
                 : "";
 
@@ -472,12 +472,12 @@ export class CrossrefProvider implements ReachProvider {
                     ? item.abstract
                     : "",
                 ]
-                  .filter((source): source is EvidenceSource => Boolean(source))
+                  .filter(Boolean)
                   .join(" | "),
                 requestId,
               );
             })
-            .filter((source): source is EvidenceSource => Boolean(source))
+            .filter((item): item is EvidenceSource => Boolean(item))
         : [];
 
       return {
@@ -560,7 +560,7 @@ export class UnpaywallProvider implements ReachProvider {
           ? "Open-access full text candidate available."
           : "No OA full-text location returned.",
       ]
-        .filter((source): source is EvidenceSource => Boolean(source))
+        .filter(Boolean)
         .join(" ");
 
       const sources = landing
