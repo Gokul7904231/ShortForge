@@ -42,7 +42,6 @@ import type {
 } from "./EditorContracts";
 import type {
   EditorCheckpoint,
-  EditorRevisionStore,
 } from "./EditorRevisionContracts";
 
 export interface EditorPreviewPlan {
@@ -399,6 +398,38 @@ export class EditorRuntime implements ShortForgeEditorAPI {
     };
   }
 
+  async undo(sessionId: string): Promise<EditorReceipt> {
+    return this.editor.undo(sessionId);
+  }
+
+  async redo(sessionId: string): Promise<EditorReceipt> {
+    return this.editor.redo(sessionId);
+  }
+
+  async checkpoint(sessionId: string, reason?: string): Promise<EditorCheckpoint> {
+    return this.editor.checkpoint(sessionId, reason);
+  }
+
+  async restore(sessionId: string, checkpointId: string): Promise<EditorReceipt> {
+    return this.editor.restore(sessionId, checkpointId);
+  }
+
+  async replay(compositionId: string) {
+    return this.editor.replay(compositionId);
+  }
+
+  async listHistory(sessionId: string) {
+    return this.editor.listHistory(sessionId);
+  }
+
+  async listOperations(sessionId: string) {
+    return this.editor.listOperations(sessionId);
+  }
+
+  async listCheckpoints(sessionId: string) {
+    return this.editor.listCheckpoints(sessionId);
+  }
+
   registerPlugin(plugin: EditorPluginDefinition) {
     return this.plugins.register(plugin);
   }
@@ -417,6 +448,10 @@ export class EditorRuntime implements ShortForgeEditorAPI {
             tool: request.tool,
             revision: document.revision,
             compositionHash: document.compositionHash,
+            data: {
+              compositionId: document.composition.compositionId,
+              schemaVersion: document.composition.schemaVersion,
+            },
           };
         }
         case "editor.apply": {
@@ -448,6 +483,13 @@ export class EditorRuntime implements ShortForgeEditorAPI {
             tool: request.tool,
             revision: preview.compositionRevision,
             compositionHash: preview.compositionHashSha256,
+            data: {
+              previewId: preview.previewId,
+              physicalExecution: preview.physicalExecution,
+              wasmExecution: preview.wasmExecution,
+              renderIntentId: preview.renderIntent.intentId,
+              jobId: preview.renderIntent.jobId,
+            },
           };
         }
         case "editor.export": {
@@ -458,6 +500,14 @@ export class EditorRuntime implements ShortForgeEditorAPI {
             tool: request.tool,
             revision: result.compositionRevision,
             compositionHash: result.compositionHashSha256,
+            data: {
+              jobId: result.jobId,
+              renderArtifactSha256: result.renderArtifact.sha256,
+              casArtifactSha256: result.casArtifact.sha256,
+              f07ReceiptId: result.f07Receipt.receiptId,
+              f07ReceiptVerified: result.f07ReceiptVerified,
+              f07ReceiptCasUri: result.f07ReceiptCasUri,
+            },
             error: result.f07Receipt.youtubePolicy.publishAllowed
               ? undefined
               : result.f07Receipt.youtubePolicy.publishBlockReason,
