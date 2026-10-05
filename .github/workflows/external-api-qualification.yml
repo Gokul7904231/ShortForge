@@ -28,6 +28,11 @@ on:
         required: false
         default: false
         type: boolean
+      perplexity_search:
+        description: "For Perplexity, execute one explicit metered search-tool call"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
