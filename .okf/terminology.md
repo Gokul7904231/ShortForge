@@ -136,3 +136,14 @@ The bounded SCL/model integration that turns TeamChangeIR into compact model con
 | **PlanLineage** | Typed provenance envelope identifying the upstream Floor 02 source, source fingerprint, script revision and F03 compiler revision. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
 | **Dependency Node Fingerprint** | Semantic fingerprint of an upstream AssetPlanNode recorded on a dependency edge to drive deterministic downstream cache invalidation after surgical regeneration. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
 | **Impact Radius** | Transitive downstream scene set whose plans may be invalidated when a scene node changes. | services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py |
+
+## 10. OKF Control Plane Terms
+
+| Term | Canonical Definition | Source |
+|---|---|---|
+| **OKF Control Plane** | The compiled governance system that turns normative .okf policy into machine identities, applicability, required evidence, enforcement links, and attested dispositions. It does not execute production work. | .okf/manifest.yaml; tools/okf/ |
+| **OKF Rule** | Governance statement with stable ID, lifecycle, severity, owner, scope, enforcement declaration, and source references. | .okf/rules/index.json |
+| **OKF Sweep Attestation** | Hashed machine envelope showing that the current .okf corpus was inventoried and applicable rules/evidence references were compiled for a change. | tools/okf/sweep.py |
+| **Policy Applicability** | Mapping from a changed surface to the active OKF rules governing it. | tools/okf/sweep.py |
+| **Exception Record** | Explicit, scoped, time-bounded, approved temporary deviation with compensating controls and closure evidence. | .okf/schemas/exception-record.schema.json |
+| **Enforcement Point** | Declared CI, runtime, GitHub, evidence, trace, or human-approval mechanism associated with a rule; declaration is not proof of pass. | .okf/rules/index.json |
