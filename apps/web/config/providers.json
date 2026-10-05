@@ -12,7 +12,7 @@
       "health": {
         "status": "unknown",
         "latency": 0,
-        "successRate": 1.0
+        "successRate": 1
       },
       "rateLimits": {
         "rpm": 15,
@@ -87,6 +87,27 @@
       "priority": 80,
       "supportedModels": [
         "glm-4.7-flash"
+      ]
+    },
+    {
+      "id": "huggingface",
+      "name": "Hugging Face Inference Providers",
+      "enabled": false,
+      "type": "openai-compatible",
+      "baseUrl": "https://router.huggingface.co/v1",
+      "apiKey": "",
+      "priority": 60,
+      "health": {
+        "status": "unknown",
+        "latency": 0,
+        "successRate": 1
+      },
+      "rateLimits": {
+        "rpm": 0,
+        "rpd": 0
+      },
+      "supportedModels": [
+        "openai/gpt-oss-120b:fastest"
       ]
     }
   ]
