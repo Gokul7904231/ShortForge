@@ -170,7 +170,7 @@ export class AutonomousFactoryController {
       this.mongoClient = new MongoDBClient(this.config.mongoUri || "mongodb://localhost:27017", this.config.dbName || "factoryos");
       const connected = await this.mongoClient.connect();
       if (connected) {
-        repos = DatabaseFactory.createRepositories(this.mongoClient.getDb());
+        repos = DatabaseFactory.createRepositories(this.mongoClient.getDb(), this.mongoClient.getClient());
       } else {
         if (this.config.strictPersistence) {
           throw new Error(`MongoDB connection failed at ${this.config.mongoUri} under strictPersistence.`);
