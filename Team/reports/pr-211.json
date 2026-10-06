@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR211-Crossref-Live-Qualification-Record",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "ops/qualify-crossref-20261006",
+  "objective": "Record the fresh physical Crossref live qualification in the canonical external API qualification matrix.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "IMPLEMENTED and QUALIFIED remain separate lifecycle states.",
+      "The qualification matrix may only record QUALIFIED from real provider evidence.",
+      "Provider credentials remain runtime-injected only.",
+      "The matrix is an evidence ledger and does not gain authority over F00, Treasury, ComputeRouter, F06, CAS, F07, or Overseer."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_QUALIFICATION_MATRIX",
+    "notes": [
+      "This change records qualification evidence only; no provider credentials or runtime behavior were added.",
+      "Evidence references are GitHub workflow run/job/artifact identifiers."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "changes": [
+    "Changed Crossref disposition from PENDING to QUALIFIED after fresh main-branch live proof.",
+    "Recorded configured=true, live probe run gha_37417006052, and qualifiedAt timestamp.",
+    "Recorded the Crossref live job and physical workflow artifact as evidence references.",
+    "Preserved the separation between implementation state and live qualification state."
+  ],
+  "qualificationEvidence": {
+    "provider": "crossref",
+    "runId": "gha_37417006052",
+    "jobId": "112117721917",
+    "observedStatus": 200,
+    "capabilityVerified": true,
+    "endpoint": "https://api.crossref.org/v1/works?rows=1&select=DOI%2Ctitle",
+    "responseShape": [
+      "status",
+      "message-type",
+      "message-version",
+      "message"
+    ],
+    "representativeCapability": "message.items[]",
+    "evidence": [
+      "LIVE_NETWORK_REQUEST",
+      "CAPABILITY_OUTPUT",
+      "NORMALIZED_PROVIDER_RESULT"
+    ],
+    "artifactId": "11392190762"
+  },
+  "verificationResults": {
+    "crossrefLiveQualification": "QUALIFIED",
+    "repositoryCI": "PENDING",
+    "teamChangeGate": "PENDING",
+    "okfGovernanceGate": "PENDING"
+  },
+  "verificationPlan": [
+    "Pass Team Change Gate, OKF Governance, and repository CI for this ledger-only change.",
+    "Merge the qualification record to main after required validation succeeds.",
+    "Continue Cohort 1 live qualification with the next provider while preserving evidence-based dispositions."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "This change does not modify the Crossref provider implementation.",
+    "The QUALIFIED disposition is supported by a fresh live HTTP 200 response containing a non-empty message.items array."
+  ],
+  "evidenceRefs": [
+    "External API Public Live Qualification run 37417006052",
+    "Live crossref job 112117721917",
+    "external-api-crossref-evidence artifact 11392190762",
+    "Commit ebba0708327300982e286158350b0ac84e6c88b3",
+    "Team/reports/external-api-qualification-matrix.json"
+  ]
+}
