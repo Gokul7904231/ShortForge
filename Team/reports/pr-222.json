@@ -49,5 +49,12 @@
     "Run the live hosted sandbox workflow with MODAL and valid repository secrets.",
     "Do not mark Modal qualified unless physical MP4, independent CAS, F07 physical verification, and signed receipt evidence all pass."
   ],
-  "disposition": "PASS"
+  "disposition": "PASS",
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts",
+    ".github/workflows/live-hosted-sandbox.yml",
+    ".okf/compute/sandbox-fabric.md",
+    "Issue #154: Daytona physical + CAS + F07 proof complete; Modal physical qualification remains pending"
+  ]
 }
