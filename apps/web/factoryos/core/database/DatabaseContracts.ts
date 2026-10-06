@@ -50,6 +50,19 @@ export class ContextConcurrencyConflictError extends Error {
   }
 }
 
+export interface ContextDurableCommit {
+  readonly workspace: import("../cognitive/context/ContextFabricContracts").ContextWorkspace;
+  readonly edits: readonly ContextEditLedgerEntry[];
+  readonly expectedVersion: number;
+}
+
+export class ContextDurabilityUnavailableError extends Error {
+  constructor(readonly workspaceId: string, message = "Atomic Context Fabric persistence is unavailable") {
+    super(`${message}: ${workspaceId}`);
+    this.name = "ContextDurabilityUnavailableError";
+  }
+}
+
 export interface IContextFabricRepository {
   getWorkspace(workspaceId: string): Promise<import("../cognitive/context/ContextFabricContracts").ContextWorkspace | null>;
   saveWorkspace(
@@ -58,6 +71,11 @@ export interface IContextFabricRepository {
   ): Promise<void>;
   appendEdit(entry: ContextEditLedgerEntry): Promise<void>;
   getEditHistory(workspaceId: string, limit?: number): Promise<ContextEditLedgerEntry[]>;
+  /**
+   * Atomically advances the workspace head and appends its edit ledger entries.
+   * Implementations must either commit both or fail without advancing the durable head.
+   */
+  commitWorkspace(commit: ContextDurableCommit): Promise<void>;
 }
 
 export interface MemoryRecord {

@@ -24,3 +24,5 @@
 | **Architecture / SDLC Baseline** | ./decisions/architecture-sdlc-baseline-context-fabric-20261006.md | Locked 2026-10-06 decision: architecture baseline, authority registry, and Context Fabric convergence precede CLM model training. |
 
 | **Context Fabric Durable Persistence** | ./decisions/context-fabric-durable-persistence-20261006.md | MongoDB workspace persistence, optimistic version concurrency, and immutable context edit ledger beneath the canonical working-context boundary. |
+
+| **Context Fabric Commit & Recovery** | ./decisions/context-fabric-commit-recovery-20261006.md | Guarded atomic durable commit, deterministic recovery, rollback, and fail-closed transaction semantics. |

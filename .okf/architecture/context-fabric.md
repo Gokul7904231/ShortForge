@@ -59,6 +59,17 @@ MongoDB is the durable operational persistence layer for Context Fabric workspac
 
 Large raw context remains externalized through RLM/PersistentContextStore instead of being copied into Mongo workspace documents.
 
+## Commit and recovery boundary
+
+Wave C adds a guarded atomic commit and recovery path.
+
+- ContextFabric.commitEdits is the durable mutation path.
+- MongoContextFabricRepository uses Mongo transactions when a transaction-capable MongoClient is supplied.
+- Missing transaction capability fails closed; there is no silent save-then-append downgrade.
+- Recovery verifies the deterministic workspace hash before restoring the active context.
+- Failed durable commits restore the prior in-memory active set and workspace version.
+- Stale durable writers are rejected before their proposed version can become durable.
+
 ## Invariants
 
 1. There is exactly one active working-context facade: ContextFabric.
@@ -76,13 +87,15 @@ Wave A (this PR): facade + contracts + registry + tests.
 
 Wave B: persist context workspace/version/edit ledger in Mongo; large payloads remain in the external context store/CAS as appropriate.
 
-Wave C: migrate direct ContextOS consumers.
+Wave C: guarded durable commit/recovery + rollback + integrity verification.
 
-Wave D: migrate cognitive orchestration and worker cognition.
+Wave D: migrate direct ContextOS consumers.
 
-Wave E: introduce CLM shadow proposals.
+Wave E: migrate cognitive orchestration and worker cognition.
 
-Wave F: evaluate CLM with ContextBench before any production promotion.
+Wave F: introduce CLM shadow proposals.
+
+Wave G: evaluate CLM with ContextBench before any production promotion.
 
 ## SDLC gate for this boundary
 

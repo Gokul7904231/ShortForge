@@ -16,7 +16,7 @@ import { CapabilityRouter } from "./routing/CapabilityRouter";
 import { SimulationDecisionEngine } from "./simulation/SimulationDecisionEngine";
 import { CognitiveTelemetryTracker } from "./telemetry/CognitiveTelemetryTracker";
 import { CaseReplayEngine, ShadowAgentRunner } from "./replay/CaseReplayEngine";
-import type { IMemoryRepository } from "../database/DatabaseContracts";
+import type { IContextFabricRepository, IMemoryRepository } from "../database/DatabaseContracts";
 import { InMemoryMemoryRepository } from "../database/InMemoryDatabase";
 
 export class CognitivePlaneEngine {
@@ -34,9 +34,15 @@ export class CognitivePlaneEngine {
   public replayEngine: CaseReplayEngine;
   public shadowRunner: ShadowAgentRunner;
 
-  constructor(memoryRepo: IMemoryRepository = new InMemoryMemoryRepository()) {
+  constructor(
+    memoryRepo: IMemoryRepository = new InMemoryMemoryRepository(),
+    contextRepository?: IContextFabricRepository,
+  ) {
     this.contextOrchestrator = new ContextOrchestrator();
-    this.contextFabric = new ContextFabric({ indexer: this.contextOrchestrator.indexer });
+    this.contextFabric = new ContextFabric({
+      indexer: this.contextOrchestrator.indexer,
+      repository: contextRepository,
+    });
     // Compatibility alias: new callers must use ContextFabric; the old manager
     // remains the same instance until direct consumers are migrated.
     this.activeContextManager = this.contextFabric.activeContext;

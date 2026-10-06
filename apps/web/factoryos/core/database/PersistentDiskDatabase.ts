@@ -5,24 +5,164 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type {
-  ICaseRepository,
-  IDecisionRepository,
-  ILeaseRepository,
-  IMemoryRepository,
-  IMissionRepository,
-  IReputationRepository,
-  ITaskDAGRepository,
-  IWorldStateRepository,
-  MemoryRecord,
-  TaskLease,
+import {
+  ContextConcurrencyConflictError,
+  type ContextDurableCommit,
+  type ContextEditLedgerEntry,
+  type ICaseRepository,
+  type IContextFabricRepository,
+  type IDecisionRepository,
+  type ILeaseRepository,
+  type IMemoryRepository,
+  type IMissionRepository,
+  type IReputationRepository,
+  type ITaskDAGRepository,
+  type IWorldStateRepository,
+  type MemoryRecord,
+  type TaskLease,
 } from "./DatabaseContracts";
 import type { WorldState } from "../contracts/WorldStateContracts";
+import type { ContextWorkspace } from "../cognitive/context/ContextFabricContracts";
 import type { Case, CaseStatus } from "../contracts/CaseContracts";
 import type { DecisionRecord, TaskDAG, TaskNode } from "../contracts/OverseerThinkingContracts";
 import type { SlayerReputation } from "../contracts/SlayerContracts";
 import type { HealerReputation } from "../contracts/HealerContracts";
 import type { Mission } from "../contracts/MissionContracts";
+
+type DiskContextState = {
+  workspace: ContextWorkspace | null;
+  edits: ContextEditLedgerEntry[];
+};
+
+export class DiskContextFabricRepository implements IContextFabricRepository {
+  private readonly dir: string;
+
+  constructor(baseDir: string) {
+    this.dir = path.join(baseDir, "context_store");
+    if (!fs.existsSync(this.dir)) fs.mkdirSync(this.dir, { recursive: true });
+  }
+
+  private file(workspaceId: string): string {
+    return path.join(this.dir, `${encodeURIComponent(workspaceId)}.json`);
+  }
+
+  private readState(workspaceId: string): DiskContextState {
+    const file = this.file(workspaceId);
+    if (!fs.existsSync(file)) return { workspace: null, edits: [] };
+    try {
+      const parsed = JSON.parse(fs.readFileSync(file, "utf-8")) as Partial<DiskContextState>;
+      return {
+        workspace: parsed.workspace ? structuredClone(parsed.workspace) : null,
+        edits: Array.isArray(parsed.edits) ? structuredClone(parsed.edits) : [],
+      };
+    } catch {
+      return { workspace: null, edits: [] };
+    }
+  }
+
+  private writeState(workspaceId: string, state: DiskContextState): void {
+    const file = this.file(workspaceId);
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), "utf-8");
+    try {
+      fs.renameSync(tmp, file);
+    } catch (err: any) {
+      if (err?.code === "EPERM" || err?.code === "EBUSY") {
+        fs.copyFileSync(tmp, file);
+        try { fs.unlinkSync(tmp); } catch {}
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  async getWorkspace(workspaceId: string): Promise<ContextWorkspace | null> {
+    const state = this.readState(workspaceId);
+    return state.workspace ? structuredClone(state.workspace) : null;
+  }
+
+  async saveWorkspace(workspace: ContextWorkspace, expectedVersion?: number): Promise<void> {
+    const state = this.readState(workspace.workspaceId);
+    const currentVersion = state.workspace?.version ?? null;
+
+    if (expectedVersion !== undefined) {
+      const matches =
+        (currentVersion === null && expectedVersion === 0) ||
+        currentVersion === expectedVersion;
+      if (!matches) {
+        throw new ContextConcurrencyConflictError(
+          workspace.workspaceId,
+          expectedVersion,
+          currentVersion,
+        );
+      }
+    }
+
+    state.workspace = structuredClone(workspace);
+    this.writeState(workspace.workspaceId, state);
+  }
+
+  async appendEdit(entry: ContextEditLedgerEntry): Promise<void> {
+    const state = this.readState(entry.workspaceId);
+    if (state.edits.some((existing) => existing.editId === entry.editId)) return;
+    state.edits.push(structuredClone(entry));
+    this.writeState(entry.workspaceId, state);
+  }
+
+  async commitWorkspace(commit: ContextDurableCommit): Promise<void> {
+    const { workspace, edits, expectedVersion } = commit;
+    const state = this.readState(workspace.workspaceId);
+    const currentVersion = state.workspace?.version ?? null;
+
+    if (currentVersion === workspace.version && edits.length > 0) {
+      const allPresent = edits.every((entry) =>
+        state.edits.some((existing) => existing.editId === entry.editId)
+      );
+      if (allPresent) return;
+    }
+
+    const matches =
+      (currentVersion === null && expectedVersion === 0) ||
+      currentVersion === expectedVersion;
+    if (!matches) {
+      throw new ContextConcurrencyConflictError(
+        workspace.workspaceId,
+        expectedVersion,
+        currentVersion,
+      );
+    }
+
+    const nextIds = new Set(state.edits.map((entry) => entry.editId));
+    for (const entry of edits) {
+      if (nextIds.has(entry.editId)) {
+        throw new Error(`Duplicate context edit id: ${entry.editId}`);
+      }
+      nextIds.add(entry.editId);
+    }
+
+    const nextState: DiskContextState = {
+      workspace: structuredClone(workspace),
+      edits: [...state.edits, ...edits.map((entry) => structuredClone(entry))],
+    };
+
+    this.writeState(workspace.workspaceId, nextState);
+  }
+
+  async getEditHistory(
+    workspaceId: string,
+    limit: number = 100,
+  ): Promise<ContextEditLedgerEntry[]> {
+    const state = this.readState(workspaceId);
+    return [...state.edits]
+      .sort((a, b) =>
+        b.resultingVersion - a.resultingVersion ||
+        b.recordedAt.localeCompare(a.recordedAt) ||
+        b.editId.localeCompare(a.editId)
+      )
+      .slice(0, limit)
+      .map((entry) => structuredClone(entry));
+  }
+}
 
 export class PersistentDiskDatabase {
   public baseDir: string;
@@ -55,6 +195,7 @@ export class PersistentDiskDatabase {
       taskDAGs: new DiskTaskDAGRepository(this.baseDir),
       leases: new DiskLeaseRepository(this.baseDir),
       missions: new DiskMissionRepository(this.baseDir),
+      contextFabric: new DiskContextFabricRepository(this.baseDir),
     };
   }
 

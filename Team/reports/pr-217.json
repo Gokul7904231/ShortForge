@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR217-Context-Fabric-Commit-Recovery",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-fabric-commit-recovery-main-20261006",
+  "objective": "Make durable ContextFabric writes a governed runtime operation with atomic workspace+ledger commit, deterministic recovery, and rollback on persistence failure.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "ContextFabric is the sole active working-context authority.",
+      "MongoDB is operational persistence; persistence code cannot become a new authority.",
+      "Stale context writers fail closed.",
+      "No non-atomic save-then-append downgrade is permitted for the durable commit path.",
+      "Recovery must verify persisted context integrity before restoring active state.",
+      "Every non-trivial change follows the Team Change Gate."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/context-fabric-durable-persistence-20261006.md",
+      ".okf/decisions/context-fabric-commit-recovery-20261006.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "changes": [
+    "Added atomic durable ContextFabric commit contract.",
+    "Added Mongo transaction-backed workspace+ledger commit.",
+    "Added fail-closed durability-unavailable behavior when transaction support is unavailable.",
+    "Added ContextFabric hydrate/recover path with deterministic hash and ledger integrity checks.",
+    "Added rollback of in-memory context on failed durable commit.",
+    "Bound MongoClient into the runtime persistence path.",
+    "Added recovery, stale-writer, rollback, and rehydration tests.",
+    "Extended the blocking Context Fabric CI lane.",
+    "Recorded Wave C decision and reconciled architecture/index documentation."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "contextFabricContract": "PASS_ON_PREVIOUS_BASELINE",
+    "commitRecoveryTests": "PENDING",
+    "mongoLiveTransactionProof": "PENDING_ENVIRONMENT",
+    "securityReview": "PENDING",
+    "note": "Fresh PR-217 exact-head validation is required. Mongo transaction/live proof remains UNPROVEN until a real transaction-capable deployment executes the atomic path."
+  },
+  "evidenceRefs": [
+    ".okf/decisions/context-fabric-commit-recovery-20261006.md",
+    "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
+    "apps/web/factoryos/core/database/DatabaseContracts.ts",
+    "apps/web/factoryos/core/database/MongoContextFabricRepository.ts",
+    "apps/web/factoryos/core/database/InMemoryDatabase.ts",
+    "apps/web/factoryos/core/database/MongoDBClient.ts",
+    "apps/web/factoryos/core/controller/AutonomousFactoryController.ts",
+    "apps/web/factoryos/core/cognitive/CognitivePlaneEngine.ts",
+    "apps/web/factoryos/tests/context/context-fabric.test.ts",
+    "apps/web/factoryos/tests/context/context-fabric-persistence.test.ts",
+    ".github/workflows/context-fabric.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority and no training activity"
+  }
+}

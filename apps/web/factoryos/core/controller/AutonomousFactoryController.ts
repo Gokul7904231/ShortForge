@@ -170,7 +170,7 @@ export class AutonomousFactoryController {
       this.mongoClient = new MongoDBClient(this.config.mongoUri || "mongodb://localhost:27017", this.config.dbName || "factoryos");
       const connected = await this.mongoClient.connect();
       if (connected) {
-        repos = DatabaseFactory.createRepositories(this.mongoClient.getDb());
+        repos = DatabaseFactory.createRepositories(this.mongoClient.getDb(), this.mongoClient.getClient());
       } else {
         if (this.config.strictPersistence) {
           throw new Error(`MongoDB connection failed at ${this.config.mongoUri} under strictPersistence.`);
@@ -356,7 +356,7 @@ export class AutonomousFactoryController {
 
     // 6. Memory & Cognitive Engine
     this.memoryEngine = new MemoryEngine(repos.memories);
-    this.cognitivePlane = new CognitivePlaneEngine(repos.memories);
+    this.cognitivePlane = new CognitivePlaneEngine(repos.memories, repos.contextFabric);
 
     // Verified production-trajectory learning bridge. It consumes only
     // independently verified outcomes and cannot grant runtime authority.
