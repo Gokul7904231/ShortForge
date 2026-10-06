@@ -19,7 +19,7 @@ export function assertSweepAttestationPayload(value: OKFSweepAttestationPayload)
   if (value.schemaVersion !== "1.0") throw new Error("[OKF] invalid attestation schema");
   if (value.attestationType !== "OKF_SWEEP") throw new Error("[OKF] invalid attestation type");
   for (const [field, expected] of [["corpusSha256", /^[a-f0-9]{64}$/],["envelopeSha256", /^[a-f0-9]{64}$/]] as const) {
-    const actual=(value as Record<string,unknown>)[field];
+    const actual = field === "corpusSha256" ? value.corpusSha256 : value.envelopeSha256;
     if (typeof actual!=="string" || !expected.test(actual)) throw new Error(`[OKF] invalid ${field}`);
   }
   if (!value.commitSha || !value.repository || !value.branch) throw new Error("[OKF] repository identity is required");
