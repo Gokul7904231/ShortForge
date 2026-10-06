@@ -20,6 +20,12 @@ import type {
   ContextWorkspace,
   ContextEdit,
   ContextOrchestrationPort,
+  CLMContextProposalPort,
+  CLMContextProposalRequest,
+  CLMContextProposal,
+  CLMShadowProposalResult,
+  ContextProposalValidationResult,
+  CONTEXT_CLM_PROPOSAL_SCHEMA_VERSION,
 } from "./ContextFabricContracts";
 
 function canonicalize(value: unknown): string {
@@ -235,6 +241,145 @@ export class ContextFabric {
     return this.orchestration.runRecursiveInvestigation(goal);
   }
 
+  /**
+   * Wave F shadow-only entry point. A CLM proposal may be generated and
+   * validated through ContextFabric, but this path never mutates the active
+   * working set and never calls the durable commit path.
+   */
+  async proposeCLMShadowEdits(
+    port: CLMContextProposalPort,
+    request: Omit<CLMContextProposalRequest, "workspace">,
+  ): Promise<CLMShadowProposalResult> {
+    const startedAt = Date.now();
+    const workspace = this.getWorkspace();
+    const proposal = await port.propose({
+      ...request,
+      workspace,
+    });
+    const observedLatencyMs = Date.now() - startedAt;
+    const validation = this.validateCLMShadowProposal(
+      proposal,
+      workspace,
+      request.budget,
+      port.modelRef,
+      observedLatencyMs,
+    );
+
+    return {
+      proposal,
+      validation,
+      observedLatencyMs,
+      contextMutated: false,
+      durableCommitAttempted: false,
+    };
+  }
+
+  /**
+   * Deterministic fail-closed validation for CLM shadow output.
+   * Validation is pure with respect to ContextFabric state.
+   */
+  validateCLMShadowProposal(
+    proposal: CLMContextProposal,
+    workspace: ContextWorkspace = this.getWorkspace(),
+    requestedBudget?: CLMContextProposalRequest["budget"],
+    expectedModelRef?: string,
+    observedLatencyMs = 0,
+  ): ContextProposalValidationResult {
+    const errors: string[] = [];
+    const candidate = proposal as unknown as Record<string, unknown>;
+
+    if (proposal.schemaVersion !== CONTEXT_CLM_PROPOSAL_SCHEMA_VERSION) {
+      errors.push("unsupported proposal schemaVersion");
+    }
+    if (!proposal.proposalId?.trim()) errors.push("proposalId is required");
+    if (proposal.workspaceId !== workspace.workspaceId) errors.push("workspaceId does not match current workspace");
+    if (proposal.missionId !== workspace.missionId) errors.push("missionId does not match current workspace");
+    if (proposal.taskId !== workspace.taskId) errors.push("taskId does not match current workspace");
+    if (proposal.baseVersion !== workspace.version) errors.push("baseVersion does not match current workspace");
+    if (proposal.provenance.source !== "CLM_SHADOW") errors.push("proposal source must be CLM_SHADOW");
+    if (expectedModelRef && proposal.provenance.modelRef !== expectedModelRef) errors.push("modelRef does not match the proposal port");
+    if (!proposal.provenance.modelVersion?.trim()) errors.push("modelVersion is required");
+    if (!proposal.provenance.traceId?.trim()) errors.push("traceId is required");
+    if (!proposal.provenance.policyVersion?.trim()) errors.push("policyVersion is required");
+    if (proposal.authorityScope !== "WORKING_CONTEXT_ONLY") errors.push("authorityScope must be WORKING_CONTEXT_ONLY");
+    if (!Number.isFinite(proposal.confidence) || proposal.confidence < 0 || proposal.confidence > 1) errors.push("confidence must be between 0 and 1");
+    if (!Number.isFinite(proposal.estimatedCost) || proposal.estimatedCost < 0) errors.push("estimatedCost must be a non-negative finite number");
+    if (!Number.isFinite(proposal.estimatedContextGrowthTokens) || proposal.estimatedContextGrowthTokens < 0) errors.push("estimatedContextGrowthTokens must be a non-negative finite number");
+    if (!proposal.rationale?.trim()) errors.push("rationale is required");
+    if (!Number.isFinite(Date.parse(proposal.generatedAt))) errors.push("generatedAt must be a valid timestamp");
+
+    const budget = proposal.budget;
+    if (!Number.isInteger(budget.maxEdits) || budget.maxEdits < 1) errors.push("budget.maxEdits must be a positive integer");
+    if (!Number.isFinite(budget.maxContextGrowthTokens) || budget.maxContextGrowthTokens < 0) errors.push("budget.maxContextGrowthTokens must be non-negative");
+    if (!Number.isFinite(budget.maxLatencyMs) || budget.maxLatencyMs <= 0) errors.push("budget.maxLatencyMs must be positive");
+    if (!Number.isFinite(budget.maxCost) || budget.maxCost < 0) errors.push("budget.maxCost must be non-negative");
+
+    if (requestedBudget) {
+      if (canonicalize(budget) !== canonicalize(requestedBudget)) errors.push("proposal budget differs from the caller budget");
+    }
+    if (observedLatencyMs > budget.maxLatencyMs) errors.push("observed proposal latency exceeds budget.maxLatencyMs");
+    if (proposal.estimatedCost > budget.maxCost) errors.push("estimatedCost exceeds budget.maxCost");
+    if (proposal.estimatedContextGrowthTokens > budget.maxContextGrowthTokens) errors.push("estimated context growth exceeds budget.maxContextGrowthTokens");
+
+    const edits = Array.isArray(proposal.edits) ? proposal.edits : [];
+    if (!Array.isArray(proposal.edits)) errors.push("edits must be an array");
+    if (edits.length > budget.maxEdits) errors.push("proposal edit count exceeds budget.maxEdits");
+
+    const ids = new Set<string>();
+    let minimumGrowth = 0;
+    const currentRefIds = new Set(workspace.activeReferences.map((reference) => reference.refId));
+
+    for (const edit of edits) {
+      if (!edit || typeof edit !== "object") {
+        errors.push("edit entries must be objects");
+        continue;
+      }
+      if (!edit.editId?.trim()) errors.push("every edit requires an editId");
+      if (ids.has(edit.editId)) errors.push("duplicate editId " + edit.editId);
+      ids.add(edit.editId);
+      if (edit.actor !== "CLM_PROPOSAL") errors.push("every shadow edit must use actor CLM_PROPOSAL");
+      if (edit.baseVersion !== workspace.version) errors.push("shadow edit " + edit.editId + " has a stale baseVersion");
+      if (!edit.reason?.trim()) errors.push("shadow edit " + edit.editId + " requires a reason");
+
+      if (edit.type === "RETAIN") {
+        if (!edit.reference || typeof edit.reference !== "object" || !edit.reference.refId) {
+          errors.push("RETAIN edit " + edit.editId + " requires a reference");
+        } else if (!currentRefIds.has(edit.reference.refId)) {
+          const tokenCount = edit.reference.tokenCount;
+          if (!Number.isFinite(tokenCount) || tokenCount < 0) errors.push("RETAIN edit " + edit.editId + " has invalid reference tokenCount");
+          else minimumGrowth += tokenCount;
+        }
+      } else if (edit.type !== "REORDER" && edit.type !== "OPTIMIZE") {
+        errors.push("edit " + edit.editId + " uses an unsupported context operation");
+      }
+    }
+
+    if (proposal.estimatedContextGrowthTokens < minimumGrowth) {
+      errors.push("estimated context growth is below deterministic minimum growth");
+    }
+
+    const forbiddenKeys = [
+      "capabilityGrant",
+      "lease",
+      "treasuryAdmission",
+      "casMutation",
+      "f07Verification",
+      "executionAuthority",
+      "publish",
+      "modelPromotion",
+    ];
+    for (const key of forbiddenKeys) {
+      if (Object.prototype.hasOwnProperty.call(candidate, key)) errors.push("forbidden authority marker " + key);
+    }
+
+    const expectedFingerprint = this.computeProposalFingerprint(proposal);
+    if (proposal.proposalFingerprint !== expectedFingerprint) errors.push("proposalFingerprint mismatch");
+
+    return errors.length === 0
+      ? { valid: true, errors: [], normalizedProposal: structuredClone(proposal) }
+      : { valid: false, errors };
+  }
+
   compileSeed(params: {
     taskId: string;
     query: string;
@@ -274,6 +419,27 @@ export class ContextFabric {
       this.workspace.version + 1
     );
     return this.getWorkspace();
+  }
+
+  private computeProposalFingerprint(proposal: CLMContextProposal): string {
+    const payload = {
+      schemaVersion: proposal.schemaVersion,
+      proposalId: proposal.proposalId,
+      workspaceId: proposal.workspaceId,
+      missionId: proposal.missionId,
+      taskId: proposal.taskId,
+      baseVersion: proposal.baseVersion,
+      generatedAt: proposal.generatedAt,
+      provenance: proposal.provenance,
+      authorityScope: proposal.authorityScope,
+      confidence: proposal.confidence,
+      estimatedCost: proposal.estimatedCost,
+      estimatedContextGrowthTokens: proposal.estimatedContextGrowthTokens,
+      budget: proposal.budget,
+      edits: proposal.edits,
+      rationale: proposal.rationale,
+    };
+    return crypto.createHash("sha256").update(canonicalize(payload)).digest("hex");
   }
 
   private computeWorkspaceHash(workspace: ContextWorkspace): string {
