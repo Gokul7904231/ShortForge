@@ -19,9 +19,9 @@ const requireText = (pattern, name) => {
   if (!pattern.test(source)) failures.push("missing benchmark invariant: " + name);
 };
 
-requireText(/CONTEXT_BENCH_VERSIONs*=s*"1\.0\.0"/, "bench version");
-requireText(/CONTEXT_BENCH_DATASET_VERSIONs*=s*"wave-g-context-policy-v1"/, "dataset version");
-requireText(/split:s*ContextBenchSplit/, "development/held-out split");
+requireText(/CONTEXT_BENCH_VERSION\s*=\s*"1\.0\.0"/, "bench version");
+requireText(/CONTEXT_BENCH_DATASET_VERSION\s*=\s*"wave-g-context-policy-v1"/, "dataset version");
+requireText(/split:\s*ContextBenchSplit/, "development/held-out split");
 requireText(/criticalAnchorRetention/, "critical anchor retention metric");
 requireText(/usefulDeletionPrecision/, "useful deletion metric");
 requireText(/contextCompression/, "compression metric");
