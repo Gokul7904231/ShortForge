@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR220-Sandbox-Connections",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/sandbox-connections-finish-20261006",
+  "objective": "Finish the hosted sandbox connection surface by making Daytona and Modal onboarding guided, retaining the admin-only boundary, and enabling the existing physical sandbox proof workflow to select Modal.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Hosted sandboxes remain separate from Notebook Fabric and API/GPU Fabric.",
+      "Sandbox connections do not grant F06 production-worker authority.",
+      "F07 remains the physical artifact authority.",
+      "Provider credentials remain encrypted and server-side."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "notes": [
+      "No secrets were added.",
+      "The catalog adds onboarding metadata only; credential storage continues through the existing encrypted ComputeConnectionStore.",
+      "Daytona and Modal remain ADMIN-only.",
+      "The live workflow reads provider credentials exclusively from GitHub Actions secrets."
+    ]
+  },
+  "changes": [
+    "Daytona hosted connection changed from generic manual setup to guided onboarding with official API-key documentation.",
+    "Modal hosted connection changed from generic manual setup to guided token onboarding with official SDK documentation.",
+    "Added a hosted Modal connection validation contract test.",
+    "Added MODAL as a selectable provider in the existing live hosted sandbox physical-proof workflow."
+  ],
+  "externalVerification": [
+    "Modal JavaScript SDK 0.11.0 documents ModalClient, app lookup/create, registry images, Sandbox.create, Sandbox.exec, filesystem access and termination.",
+    "Daytona current docs document DAYTONA_API_KEY authentication and hosted Sandbox lifecycle."
+  ],
+  "verificationPlan": [
+    "Pass repository CI, Sandbox Fabric contract tests, Team Change Gate, and OKF Governance.",
+    "Use the live hosted sandbox workflow with MODAL and repository secrets MODAL_TOKEN_ID and MODAL_TOKEN_SECRET.",
+    "Do not mark Modal physically qualified unless physical MP4, independent CAS verification, F07 physical verification, and signed receipt verification all pass."
+  ],
+  "disposition": "PASS"
+}
