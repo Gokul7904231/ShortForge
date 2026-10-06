@@ -31,3 +31,7 @@ V2 is ready for merge only after the OKF Governance Gate produces successful evi
 ## V3 boundary
 
 V3 may add cryptographic attestations, release provenance, PolicyContext projection, and governance observability. V3 must not create a second governance authority.
+
+## 2026-10-06 Mainline reconciliation
+
+This V2 promotion branch is constructed directly from the current `main` tree. Existing mainline architecture and context-fabric entries are preserved while V2 machine-rule coverage, source-drift controls, Team sweep linkage, exception expiry checks, and governed-path CODEOWNERS are added. The live repository rulesets are active; direct protected-main write attempts are rejected by GitHub and the merge path remains subject to the required status check and independent approving review.
