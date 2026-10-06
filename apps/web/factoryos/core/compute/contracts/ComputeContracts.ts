@@ -211,8 +211,8 @@ export interface ComputePolicy {
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
   policyVersion: "1.0.0",
-  allowedProviders: ["LOCAL", "AMD", "KAGGLE", "DAYTONA", "INSTAVM", "MODAL"],
-  preferredOrder: ["LOCAL", "AMD", "DAYTONA", "INSTAVM", "MODAL", "KAGGLE"],
+  allowedProviders: ["LOCAL", "AMD", "KAGGLE", "DAYTONA", "INSTAVM"],
+  preferredOrder: ["LOCAL", "AMD", "DAYTONA", "INSTAVM", "KAGGLE"],
   maxRetries: 2,
   failoverAllowed: true,
   preferLocalForShortVideos: true,
