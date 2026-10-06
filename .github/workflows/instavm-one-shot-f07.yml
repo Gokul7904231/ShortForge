@@ -1,0 +1,70 @@
+name: InstaVM One-Shot F07 Qualification
+
+on:
+  push:
+    branches:
+      - qualify/instavm-f07-20261006
+
+permissions:
+  contents: read
+
+jobs:
+  instavm-f07:
+    name: InstaVM physical render + CAS + F07
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SHORTFORGE_LIVE_SANDBOX_PROVIDER: INSTAVM
+      SHORTFORGE_LIVE_SANDBOX_OUTPUT_PATH: /tmp/shortforge/live-smoke.mp4
+      SHORTFORGE_LIVE_SANDBOX_EVIDENCE_PATH: /tmp/shortforge/live-sandbox-f07-evidence.json
+      SHORTFORGE_LIVE_SANDBOX_RENDER_COMMAND: >-
+        mkdir -p /tmp/shortforge &&
+        ffmpeg -y
+        -f lavfi -i color=c=black:s=1080x1920:r=30:d=1
+        -f lavfi -i anullsrc=r=48000:cl=mono
+        -t 1 -shortest
+        -c:v libx264 -pix_fmt yuv420p
+        -c:a aac
+        "{{OUTPUT_PATH}}"
+      INSTAVM_API_KEY: ${{ secrets.INSTAVM_API_KEY }}
+      INSTAVM_SNAPSHOT_ID: ${{ secrets.INSTAVM_SNAPSHOT_ID }}
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install InstaVM SDK
+        run: npm install --no-save --no-package-lock instavm
+
+      - name: Install verifier FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: FactoryOS strict typecheck
+        run: npm run factoryos:typecheck
+
+      - name: Run InstaVM physical + CAS + F07 proof
+        run: npx vitest run factoryos/tests/live-hosted-sandbox.test.ts --config vitest.config.ts --reporter=verbose
+
+      - name: Upload F07 physical proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instavm-f07-evidence
+          path: /tmp/shortforge/live-sandbox-f07-evidence.json
+          if-no-files-found: warn
