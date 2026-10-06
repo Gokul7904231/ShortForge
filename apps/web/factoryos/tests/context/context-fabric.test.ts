@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ContextFabric } from "../../core/cognitive/context/ContextFabric";
 import { CognitivePlaneEngine } from "../../core/cognitive/CognitivePlaneEngine";
+import { InMemoryContextFabricRepository } from "../../core/database/InMemoryDatabase";
+import { ContextConcurrencyConflictError } from "../../core/database/DatabaseContracts";
 import type { ContextReference } from "../../core/cognitive/CognitiveContracts";
 
 function ref(id: string, type: ContextReference["type"] = "DOCUMENT"): ContextReference {
@@ -76,5 +78,131 @@ describe("Cognitive plane convergence", () => {
     const plane = new CognitivePlaneEngine();
     expect(plane.contextFabric.indexer).toBe(plane.contextOrchestrator.indexer);
     expect(plane.activeContextManager).toBe(plane.contextFabric.activeContext);
+  });
+});
+
+
+describe("Context Fabric durable commit and recovery", () => {
+  it("commits a working context and rehydrates it exactly", async () => {
+    const repository = new InMemoryContextFabricRepository();
+    const first = new ContextFabric({
+      workspaceId: "ctxws_durable",
+      missionId: "mission_durable",
+      taskId: "task_durable",
+      repository,
+    });
+
+    const committed = await first.commitEdits([
+      {
+        editId: "edit_durable_1",
+        baseVersion: 0,
+        actor: "SYSTEM",
+        type: "RETAIN",
+        reference: ref("durable"),
+        reason: "durable seed",
+      },
+    ]);
+
+    const second = new ContextFabric({
+      workspaceId: "ctxws_durable",
+      missionId: "mission_other",
+      taskId: "task_other",
+      repository,
+    });
+
+    const recovered = await second.recover();
+    expect(recovered?.version).toBe(committed.version);
+    expect(recovered?.contextHash).toBe(committed.contextHash);
+    expect(recovered?.activeReferences.map((item) => item.refId)).toEqual(["durable"]);
+  });
+
+  it("rolls back the in-memory head when the durable commit fails", async () => {
+    const repository = new InMemoryContextFabricRepository();
+    await repository.saveWorkspace({
+      workspaceId: "ctxws_rollback",
+      missionId: "mission_rollback",
+      taskId: "task_rollback",
+      version: 0,
+      contextHash: "",
+      activeReferences: [],
+      totalTokens: 0,
+      createdAt: "2026-10-06T00:00:00.000Z",
+      updatedAt: "2026-10-06T00:00:00.000Z",
+    });
+
+    const originalCommit = repository.commitWorkspace.bind(repository);
+    repository.commitWorkspace = async () => {
+      throw new Error("simulated durable outage");
+    };
+
+    const fabric = new ContextFabric({
+      workspaceId: "ctxws_rollback",
+      missionId: "mission_rollback",
+      taskId: "task_rollback",
+      repository,
+    });
+
+    await expect(
+      fabric.commitEdits([
+        {
+          editId: "edit_fail",
+          baseVersion: 0,
+          actor: "SYSTEM",
+          type: "RETAIN",
+          reference: ref("should-not-stick"),
+          reason: "failure test",
+        },
+      ])
+    ).rejects.toThrow("simulated durable outage");
+
+    expect(fabric.getWorkspace().version).toBe(0);
+    expect(fabric.getWorkspace().activeReferences).toHaveLength(0);
+
+    repository.commitWorkspace = originalCommit;
+  });
+
+  it("rejects a stale durable writer before its mutation becomes durable", async () => {
+    const repository = new InMemoryContextFabricRepository();
+    const first = new ContextFabric({
+      workspaceId: "ctxws_race",
+      missionId: "mission_race",
+      taskId: "task_race",
+      repository,
+    });
+    const second = new ContextFabric({
+      workspaceId: "ctxws_race",
+      missionId: "mission_race",
+      taskId: "task_race",
+      repository,
+    });
+
+    await first.commitEdits([
+      {
+        editId: "edit_race_1",
+        baseVersion: 0,
+        actor: "SYSTEM",
+        type: "RETAIN",
+        reference: ref("winner"),
+        reason: "first writer",
+      },
+    ]);
+
+    await expect(
+      second.commitEdits([
+        {
+          editId: "edit_race_2",
+          baseVersion: 0,
+          actor: "CLM_PROPOSAL",
+          type: "RETAIN",
+          reference: ref("stale"),
+          reason: "stale writer",
+        },
+      ])
+    ).rejects.toBeInstanceOf(ContextConcurrencyConflictError);
+
+    expect((await repository.getWorkspace("ctxws_race"))?.activeReferences.map((item) => item.refId))
+      .toEqual(["winner"]);
+    expect(second.getWorkspace().version).toBe(0);
+    expect(second.getWorkspace().activeReferences).toHaveLength(0);
   });
 });
