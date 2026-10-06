@@ -2,50 +2,6 @@
   "schema": "shortforge://okf/rules/index/v1",
   "rules": [
     {
-      "ruleId": "OKF.PROCESS.FULL_SWEEP",
-      "class": "PROCESS",
-      "status": "ACTIVE",
-      "severity": "CRITICAL",
-      "owner": "Human/Overseer",
-      "normativeText": "Every non-trivial decision begins with a complete current .okf sweep.",
-      "appliesTo": {
-        "paths": [
-          "**"
-        ]
-      },
-      "enforcement": [
-        {
-          "type": "CI",
-          "ref": "tools/okf/sweep.py"
-        }
-      ],
-      "sourceRefs": [
-        ".okf/decision-protocol.md"
-      ]
-    },
-    {
-      "ruleId": "OKF.GOVERNANCE.TEAM_GATE",
-      "class": "GOVERNANCE",
-      "status": "ACTIVE",
-      "severity": "CRITICAL",
-      "owner": "Human/Overseer",
-      "normativeText": "Every non-trivial repository change must pass the Team Change Gate.",
-      "appliesTo": {
-        "paths": [
-          "**"
-        ]
-      },
-      "enforcement": [
-        {
-          "type": "CI",
-          "ref": "Team/workflow/change-gate.md"
-        }
-      ],
-      "sourceRefs": [
-        "Team/workflow/change-gate.md"
-      ]
-    },
-    {
       "ruleId": "OKF.AUTH.MODEL_NON_SOVEREIGN",
       "class": "AUTHORITY",
       "status": "ACTIVE",
@@ -96,26 +52,341 @@
       ]
     },
     {
-      "ruleId": "OKF.SECURITY.LEAST_PRIVILEGE",
-      "class": "SECURITY",
+      "ruleId": "OKF.GOVERNANCE.TEAM_GATE",
+      "class": "GOVERNANCE",
       "status": "ACTIVE",
       "severity": "CRITICAL",
       "owner": "Human/Overseer",
-      "normativeText": "Production workers operate only within explicitly granted capabilities.",
+      "normativeText": "Every non-trivial repository change must pass the Team Change Gate.",
       "appliesTo": {
         "paths": [
-          "apps/web/factoryos/core/agent/**",
-          "apps/web/factoryos/core/security/**"
+          "**"
         ]
       },
       "enforcement": [
         {
-          "type": "RUNTIME",
-          "ref": "CapabilityRegistry / Guardian"
+          "type": "CI",
+          "ref": "Team/workflow/change-gate.md"
         }
       ],
       "sourceRefs": [
-        ".okf/security/worker-permissions.md"
+        "Team/workflow/change-gate.md"
+      ]
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.BOUNDED_REPAIR",
+      "class": "RECOVERY",
+      "status": "ACTIVE",
+      "severity": "HIGH",
+      "owner": "Human/Overseer",
+      "normativeText": "Automated repair is finite and preserves the last-known-good verified baseline.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/modernization/architecture-modernization.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+      "class": "ROUTING",
+      "status": "ACTIVE",
+      "severity": "HIGH",
+      "owner": "Human/Overseer",
+      "normativeText": "Tasks declare capability requirements instead of binding cognition or compute to provider strings.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/modernization/architecture-modernization.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+      "class": "EVIDENCE",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Production success claims require concrete independently verifiable evidence.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/f07-architectural-invariants.test.ts",
+        "apps/web/factoryos/tests/ascalon/ascalon-training-readiness.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+      "class": "AUTHORITY",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Control entities remain separate from production floors; Guardian is not F07.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/modernization/architecture-modernization.test.ts",
+        "apps/web/factoryos/tests/authority-hierarchy-proof.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+      "class": "SECURITY",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Workers receive only explicitly granted capabilities and untrusted content is treated as data.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/authority-hierarchy-proof.test.ts",
+        "services/pipeline/floor04_media_synthesis/tests/api/test_floor04_architectural_invariants.py"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.REPLAY_FENCING",
+      "class": "RELIABILITY",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "State transitions and distributed leases remain replayable and stale fencing tokens are rejected.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/render-fabric-providers-and-chaos.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+      "class": "PROCESS",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Schedule-derived autonomous execution; no hard-coded business quantities or fabricated unmet capacity.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/modernization/architecture-modernization.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+      "class": "ARCHITECTURE",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Architectural entities maintain one canonical source of truth.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/modernization/architecture-modernization.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+      "class": "EVIDENCE",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Synthetic success, fake HTTP success and uncalibrated certainty are prohibited.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/f07-physical-truth.test.ts",
+        "apps/web/factoryos/tests/adversarial-p0-gates.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PRINCIPLE.TYPED_MEMORY",
+      "class": "MEMORY",
+      "status": "ACTIVE",
+      "severity": "HIGH",
+      "owner": "Human/Overseer",
+      "normativeText": "Memory is domain-isolated and promotion to durable memory requires verification.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": ".github/workflows/okf-governance.yml"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/principles.md"
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/obsidian-memory-fabric.integration.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
+    },
+    {
+      "ruleId": "OKF.PROCESS.FULL_SWEEP",
+      "class": "PROCESS",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Every non-trivial decision begins with a complete current .okf sweep.",
+      "appliesTo": {
+        "paths": [
+          "**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "CI",
+          "ref": "tools/okf/sweep.py"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/decision-protocol.md"
       ]
     },
     {
@@ -141,11 +412,34 @@
         ".okf/architecture.md",
         ".okf/floor-governance-cell.md"
       ]
+    },
+    {
+      "ruleId": "OKF.SECURITY.LEAST_PRIVILEGE",
+      "class": "SECURITY",
+      "status": "ACTIVE",
+      "severity": "CRITICAL",
+      "owner": "Human/Overseer",
+      "normativeText": "Production workers operate only within explicitly granted capabilities.",
+      "appliesTo": {
+        "paths": [
+          "apps/web/factoryos/core/agent/**",
+          "apps/web/factoryos/core/security/**"
+        ]
+      },
+      "enforcement": [
+        {
+          "type": "RUNTIME",
+          "ref": "CapabilityRegistry / Guardian"
+        }
+      ],
+      "sourceRefs": [
+        ".okf/security/worker-permissions.md"
+      ]
     }
   ],
   "coverage": {
-    "status": "PILOT",
-    "activeMachineRules": 6,
+    "status": "ENFORCED_INDEX_COVERAGE",
+    "activeMachineRules": 16,
     "target": "100% CRITICAL/HIGH"
   }
 }
