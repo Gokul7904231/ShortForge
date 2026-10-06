@@ -14,12 +14,13 @@ manual workflow -> provider credentials -> real RenderFabric -> ComputePool -> C
 | Kaggle | KAGGLE_USERNAME, KAGGLE_KEY | KAGGLE_RENDER_COMMAND | RenderFabric -> Kaggle -> CAS -> F07 |
 | Daytona | DAYTONA_API_KEY | DAYTONA_SANDBOX_IMAGE optional; SHORTFORGE_SANDBOX_RENDER_COMMAND; SHORTFORGE_SANDBOX_OUTPUT_PATH | RenderFabric -> Daytona -> CAS -> F07 |
 | Modal | MODAL_TOKEN_ID, MODAL_TOKEN_SECRET | MODAL_SANDBOX_IMAGE optional; SHORTFORGE_SANDBOX_RENDER_COMMAND; SHORTFORGE_SANDBOX_OUTPUT_PATH | RenderFabric -> Modal -> CAS -> F07 |
+| InstaVM | INSTAVM_API_KEY | INSTAVM_SNAPSHOT_ID optional; SHORTFORGE_SANDBOX_RENDER_COMMAND; SHORTFORGE_SANDBOX_OUTPUT_PATH | RenderFabric -> InstaVM -> CAS -> F07 |
 
 ## Manual procedure
 
 1. Add only the selected provider's secrets to the GitHub repository/environment.
 2. For Kaggle, set a command that creates `/kaggle/working/shortforge-output.mp4`.
-3. For Daytona/Modal, use a sandbox image that contains or can install FFmpeg. The workflow command fails closed when FFmpeg is unavailable and package installation is not possible.
+3. For Daytona/Modal, use a sandbox image that contains or can install FFmpeg. For InstaVM, the standard hosted runtime already passed the ShortForge FFmpeg probe; use INSTAVM_SNAPSHOT_ID only for a prebuilt runtime. The workflow command fails closed when FFmpeg is unavailable and package installation is not possible.
 4. Open GitHub Actions -> `Live Multi-Provider Render`.
 5. Select exactly one provider.
 6. Run the workflow.
@@ -88,3 +89,19 @@ Verified chain:
 - GitHub evidence artifact `hf-zerogpu-f07-evidence`, artifact ID **11308620102**, upload successful.
 
 This is a **REAL-SMOKE-VERIFIED** hosted-function proof. It does **not** promote HF ZeroGPU into the F06 production worker fleet; `productionWorkerEligible=false` remains mandatory.
+## Verified InstaVM Provider Physical Artifact Evidence — 2026-10-06
+
+A direct InstaVM qualification run was completed outside GitHub Actions using the official Python SDK/CLI on a verified account.
+
+Verified chain:
+- authenticated InstaVM API access;
+- real hosted Firecracker microVM provisioned;
+- real Bash execution and FFmpeg availability;
+- 1080x1920 H.264 MP4 render with 48 kHz AAC audio;
+- 1.000000s physical artifact with byte length **21341**;
+- remote SHA-256 **3c10770e8509a933cfddef5372e2ab8bcd93a966b5415fa8f65e62046aa12174**;
+- artifact downloaded from the same live session;
+- local byte length **21341** and identical SHA-256;
+- final operator proof marker: **INSTA_VM_PHYSICAL_ARTIFACT_PROOF=PASS**.
+
+This establishes provider execution and physical artifact-transfer capability. Repository-side CAS + F07 qualification remains the final acceptance step. productionWorkerEligible=false remains mandatory.
