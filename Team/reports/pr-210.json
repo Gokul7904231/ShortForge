@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR210-Architecture-SDLC-Authority-Context-Fabric",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/architecture-authority-context-fabric-20261006",
+  "objective": "Establish the architecture and SDLC baseline, make authority ownership machine-checkable, and converge fragmented active working-context implementations behind ContextFabric before any CLM model training.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Every non-trivial repository change follows the Team Change Gate.",
+      "Exactly one canonical owner exists per authority domain.",
+      "Models may propose or advise but cannot become sovereign production authority.",
+      "Unproven evidence must not be represented as PASS.",
+      "Workers remain least-privilege and execution remains Guardian-gated.",
+      "Production artifacts remain behind F07 verification and release authorization.",
+      "ContextFabric is working-context authority only; it cannot grant capabilities, issue leases, admit economics, verify F07, or own artifact identity."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/principles.md",
+      ".okf/architecture.md",
+      ".okf/rules/index.json",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/architecture-sdlc-baseline-context-fabric-20261006.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "changes": [
+    "Added machine-readable canonical authority registry and bound it from the .okf manifest.",
+    "Locked Architecture/SDLC baseline and migration boundary for Context Fabric.",
+    "Added ContextFabric and ContextFabricContracts as the single active working-context facade.",
+    "Reused ActiveContextManager, ContextIndexer and ContextCompiler as internal primitives.",
+    "Added deterministic workspace hashing, versioning and stale edit rejection.",
+    "Wired CognitivePlaneEngine through ContextFabric while retaining a compatibility alias for existing consumers.",
+    "Added blocking authority/context contract CI and dedicated tests.",
+    "Explicitly deferred CLM training, durable Mongo context persistence and direct ContextOS consumer migration to later gated waves."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "contextFabricContract": "PASS",
+    "authorityRegistry": "PASS",
+    "cognitivePlaneConvergence": "PASS",
+    "securityReview": "PENDING",
+    "note": "Fresh repository and governance checks are still required on the exact PR head before merge."
+  },
+  "evidenceRefs": [
+    ".okf/architecture/authority-registry.json",
+    ".okf/architecture/context-fabric.md",
+    ".okf/decisions/architecture-sdlc-baseline-context-fabric-20261006.md",
+    "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
+    "apps/web/factoryos/core/cognitive/context/ContextFabricContracts.ts",
+    "apps/web/factoryos/core/cognitive/CognitivePlaneEngine.ts",
+    "apps/web/factoryos/tests/context/context-fabric.test.ts",
+    "apps/web/scripts/verify-authority-registry.mjs",
+    ".github/workflows/context-fabric.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority and no training activity in this change"
+  }
+}
