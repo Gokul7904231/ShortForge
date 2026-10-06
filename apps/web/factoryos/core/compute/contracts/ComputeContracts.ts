@@ -18,7 +18,8 @@ export type ProviderType =
   | "VAST"
   | "DAYTONA"
   | "PAPERSPACE"
-  | "MODAL";
+  | "MODAL"
+  | "INSTAVM";
 
 export type ProviderExecutionModel =
   | "LOCAL_PROCESS"
@@ -210,8 +211,8 @@ export interface ComputePolicy {
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
   policyVersion: "1.0.0",
-  allowedProviders: ["LOCAL", "AMD", "KAGGLE", "DAYTONA", "MODAL"],
-  preferredOrder: ["LOCAL", "AMD", "DAYTONA", "MODAL", "KAGGLE"],
+  allowedProviders: ["LOCAL", "AMD", "KAGGLE", "DAYTONA", "INSTAVM", "MODAL"],
+  preferredOrder: ["LOCAL", "AMD", "DAYTONA", "INSTAVM", "MODAL", "KAGGLE"],
   maxRetries: 2,
   failoverAllowed: true,
   preferLocalForShortVideos: true,
