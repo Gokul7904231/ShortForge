@@ -5,7 +5,6 @@
  */
 
 import { ContextOrchestrator } from "./rlm/RecursiveInvestigator";
-import { ActiveContextManager } from "./context/ActiveContextManager";
 import { ContextFabric } from "./context/ContextFabric";
 import { IndexedExperienceMemory } from "./memory/IndexedExperienceMemory";
 import { EvidenceGraphEngine } from "./graph/EvidenceGraphEngine";
@@ -21,7 +20,8 @@ import { InMemoryMemoryRepository } from "../database/InMemoryDatabase";
 
 export class CognitivePlaneEngine {
   public contextOrchestrator: ContextOrchestrator;
-  public activeContextManager: ActiveContextManager;
+  /** @deprecated Use contextFabric.activeContext. */
+  public activeContextManager: ContextFabric["activeContext"];
   public contextFabric: ContextFabric;
   public experienceMemory: IndexedExperienceMemory;
   public evidenceGraph: EvidenceGraphEngine;
@@ -43,8 +43,7 @@ export class CognitivePlaneEngine {
       indexer: this.contextOrchestrator.indexer,
       repository: contextRepository,
     });
-    // Compatibility alias: new callers must use ContextFabric; the old manager
-    // remains the same instance until direct consumers are migrated.
+    // Compatibility alias only: ContextFabric remains the sole active-context boundary.
     this.activeContextManager = this.contextFabric.activeContext;
     this.experienceMemory = new IndexedExperienceMemory(memoryRepo);
     this.evidenceGraph = new EvidenceGraphEngine();
