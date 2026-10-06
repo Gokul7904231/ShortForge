@@ -24,7 +24,14 @@
       "sourceRefs": [
         ".okf/principles.md",
         ".okf/intelligence/aer.md"
-      ]
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/authority-hierarchy-proof.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
     },
     {
       "ruleId": "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
@@ -49,7 +56,14 @@
       "sourceRefs": [
         ".okf/production-helper.md",
         "Team/workflow/change-gate.md"
-      ]
+      ],
+      "verificationRefs": [
+        "Team/scripts/validate-team-report.mjs"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
     },
     {
       "ruleId": "OKF.GOVERNANCE.TEAM_GATE",
@@ -71,7 +85,14 @@
       ],
       "sourceRefs": [
         "Team/workflow/change-gate.md"
-      ]
+      ],
+      "verificationRefs": [
+        "Team/scripts/validate-team-report.mjs"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
     },
     {
       "ruleId": "OKF.PRINCIPLE.BOUNDED_REPAIR",
@@ -387,7 +408,14 @@
       ],
       "sourceRefs": [
         ".okf/decision-protocol.md"
-      ]
+      ],
+      "verificationRefs": [
+        "tools/okf/tests/test_control_plane.py"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
     },
     {
       "ruleId": "OKF.RELEASE.F07_VERIFIED",
@@ -411,7 +439,14 @@
       "sourceRefs": [
         ".okf/architecture.md",
         ".okf/floor-governance-cell.md"
-      ]
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/f07-architectural-invariants.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
     },
     {
       "ruleId": "OKF.SECURITY.LEAST_PRIVILEGE",
@@ -434,12 +469,21 @@
       ],
       "sourceRefs": [
         ".okf/security/worker-permissions.md"
-      ]
+      ],
+      "verificationRefs": [
+        "apps/web/factoryos/tests/authority-hierarchy-proof.test.ts"
+      ],
+      "verificationPolicy": {
+        "required": true,
+        "coverageOnly": true
+      }
     }
   ],
   "coverage": {
     "status": "ENFORCED_INDEX_COVERAGE",
-    "activeMachineRules": 16,
-    "target": "100% CRITICAL/HIGH"
+    "scope": "machine_rule_index",
+    "activeRules": 16,
+    "criticalHighRules": 16,
+    "minimumRequiredVerificationCoverage": "100%"
   }
 }
