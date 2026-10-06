@@ -33,6 +33,9 @@ jobs:
       - name: Validate authority registry
         run: cd apps/web && npm run factoryos:verify:authority-registry
 
+      - name: Validate Context Fabric boundary
+        run: cd apps/web && npm run factoryos:verify:context-fabric-boundary
+
       - name: Typecheck FactoryOS
         run: cd apps/web && npm run factoryos:typecheck
 
