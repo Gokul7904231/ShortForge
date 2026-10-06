@@ -24,7 +24,11 @@ import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeP
 import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
 import { KaggleNotebookComputeProvider } from "../providers/KaggleNotebookComputeProvider";
 import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeProvider";
-import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../sandboxes";
+import {
+  DaytonaSandboxAdapter,
+  InstaVMSandboxAdapter,
+  ModalSandboxAdapter,
+} from "../sandboxes";
 import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 import type { TreasuryEconomicPermit } from "../../treasury/TreasuryContracts";
@@ -86,6 +90,12 @@ export class ComputeGateway {
     this.registerPoolProvider(
       new HostedSandboxComputeProvider({
         adapter: new ModalSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
+        adapter: new InstaVMSandboxAdapter(),
       }),
       "SANDBOX",
     );
