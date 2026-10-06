@@ -66,6 +66,95 @@ export class MongoContextFabricRepository implements IContextFabricRepository {
     }
   }
 
+  async commitWorkspace(commit: ContextDurableCommit): Promise<void> {
+    const { workspace, edits, expectedVersion } = commit;
+    if (!this.client) {
+      throw new ContextDurabilityUnavailableError(workspace.workspaceId);
+    }
+
+    const existing = await this.getWorkspace(workspace.workspaceId);
+    if (existing && existing.version > workspace.version) {
+      throw new ContextConcurrencyConflictError(
+        workspace.workspaceId,
+        expectedVersion,
+        existing.version,
+      );
+    }
+
+    if (existing?.version === workspace.version && edits.length > 0) {
+      const ids = edits.map((entry) => entry.editId);
+      const committed = await this.ledger.find({ editId: { $in: ids } }).toArray();
+      if (committed.length === ids.length) return;
+    }
+
+    const session = this.client.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const current = await this.workspaces.findOne(
+          { workspaceId: workspace.workspaceId },
+          { session },
+        );
+
+        if (current) {
+          const currentVersion = current.version;
+          if (currentVersion !== expectedVersion) {
+            throw new ContextConcurrencyConflictError(
+              workspace.workspaceId,
+              expectedVersion,
+              currentVersion,
+            );
+          }
+
+          const result = await this.workspaces.replaceOne(
+            { workspaceId: workspace.workspaceId, version: expectedVersion },
+            structuredClone(workspace),
+            { session },
+          );
+          if (result.matchedCount !== 1) {
+            throw new ContextConcurrencyConflictError(
+              workspace.workspaceId,
+              expectedVersion,
+              currentVersion,
+            );
+          }
+        } else {
+          if (expectedVersion !== 0) {
+            throw new ContextConcurrencyConflictError(
+              workspace.workspaceId,
+              expectedVersion,
+              null,
+            );
+          }
+          await this.workspaces.insertOne(structuredClone(workspace), { session });
+        }
+
+        if (edits.length > 0) {
+          await this.ledger.insertMany(edits.map((entry) => structuredClone(entry)), {
+            session,
+            ordered: true,
+          });
+        }
+      });
+    } catch (error: any) {
+      if (error instanceof ContextConcurrencyConflictError) throw error;
+
+      const message = String(error?.message ?? error);
+      if (
+        error?.code === 20 ||
+        error?.codeName === "IllegalOperation" ||
+        /Transaction numbers are only allowed|replica set|mongos/i.test(message)
+      ) {
+        throw new ContextDurabilityUnavailableError(
+          workspace.workspaceId,
+          "MongoDB atomic transaction support is unavailable",
+        );
+      }
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
   async getEditHistory(workspaceId: string, limit: number = 100): Promise<ContextEditLedgerEntry[]> {
     const docs = await this.ledger
       .find({ workspaceId })
