@@ -19,10 +19,11 @@ The V1 sandbox registry contains only hosted providers:
 
 - Daytona Hosted
 - Modal Hosted
+- InstaVM Hosted
 
 The removed PandaStack adapter is not part of the sandbox plane.
 
-Daytona's current TypeScript SDK supports hosted Sandbox creation, command execution, filesystem upload/download, lifecycle control, and reconciliation. Modal's current JavaScript SDK supports hosted Sandbox creation, command execution, filesystem access, lifecycle control, and re-attachment by sandbox ID.
+Daytona's current TypeScript SDK supports hosted Sandbox creation, command execution, filesystem upload/download, lifecycle control, and reconciliation. Modal's current JavaScript SDK supports hosted Sandbox creation, command execution, filesystem access, lifecycle control, and re-attachment by sandbox ID. InstaVM provides hosted Firecracker microVMs, session-bound execution, file transfer, snapshots, volumes, and egress controls.
 
 ## Provider-neutral contract
 
@@ -62,6 +63,23 @@ Modal:
 - optional MODAL_SANDBOX_APP_NAME
 - optional MODAL_SANDBOX_IMAGE
 
+InstaVM:
+- INSTAVM_API_KEY
+- optional INSTAVM_SNAPSHOT_ID
+
+## InstaVM qualification evidence
+
+A real InstaVM physical artifact proof was completed on 2026-10-06:
+- 1080x1920 H.264 MP4
+- 48 kHz AAC audio
+- 1 second duration
+- 21,341 bytes
+- remote/local SHA-256: 3c10770e8509a933cfddef5372e2ab8bcd93a966b5415fa8f65e62046aa12174
+- remote/local byte count: 21,341
+- proof result: INSTA_VM_PHYSICAL_ARTIFACT_PROOF=PASS
+
+The proof qualifies the provider execution and artifact-transfer boundary. It does not promote InstaVM into F06 production-worker eligibility.
+
 ## Evidence
 
 Daytona TypeScript SDK reference: https://www.daytona.io/docs/en/typescript-sdk/
@@ -69,3 +87,5 @@ Daytona process/code execution: https://www.daytona.io/docs/en/process-code-exec
 Daytona filesystem: https://www.daytona.io/docs/en/typescript-sdk/file-system/
 Modal JavaScript SDK: https://modal.com/docs/sdk/js/latest/intro
 Modal Sandbox: https://modal.com/docs/sdk/js/latest/Sandbox
+InstaVM: https://instavm.io/docs/quickstart
+InstaVM architecture: https://instavm.io/docs/getting-started/how-it-works
