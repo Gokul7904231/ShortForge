@@ -39,15 +39,14 @@ Owner-side GitHub repository protection has now been configured and is active:
 - `OKF Release Tag Protection` targets `refs/tags/v*` and blocks tag updates and deletions.
 - Both rulesets have an empty bypass list.
 
-The cryptographic signing configuration has also been supplied through repository-managed Actions secrets/variables. The next gate is to exercise the signed-attestation path in CI and retain the resulting evidence artifact.
+The cryptographic signing configuration has been supplied through repository-managed Actions secrets/variables, and V3 Validation #8 exercised the Ed25519 signing path successfully with a retained `okf-v3-evidence` artifact. The next gate is the F07-bound release provenance path and its corresponding repository enforcement proof.
 
 ## Promotion gates
 
 Production promotion remains blocked until:
-- signed attestation verification is exercised in CI and the resulting evidence is retained;
-- release provenance is bound to the actual release authorization chain;
-- GitHub repository ruleset enforcement is proven with an actual protected-branch/tag behavior test;
-- V2 CI is passing with current evidence.
+- an actual F07 `ReleaseAuthorization` is supplied to the release-provenance binder and the resulting provenance artifact is retained;
+- GitHub repository ruleset enforcement is enabled and proven with an actual protected-branch/tag behavior test;
+- current V2 CI evidence is passing and reconciled with the promotion candidate.
 
 ## Non-goals
 
