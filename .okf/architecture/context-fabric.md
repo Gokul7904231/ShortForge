@@ -59,6 +59,17 @@ MongoDB is the durable operational persistence layer for Context Fabric workspac
 
 Large raw context remains externalized through RLM/PersistentContextStore instead of being copied into Mongo workspace documents.
 
+## Commit and recovery boundary
+
+Wave C adds a guarded atomic commit and recovery path.
+
+- ContextFabric.commitEdits is the durable mutation path.
+- MongoContextFabricRepository uses Mongo transactions when a transaction-capable MongoClient is supplied.
+- Missing transaction capability fails closed; there is no silent save-then-append downgrade.
+- Recovery verifies the deterministic workspace hash before restoring the active context.
+- Failed durable commits restore the prior in-memory active set and workspace version.
+- Stale durable writers are rejected before their proposed version can become durable.
+
 ## Invariants
 
 1. There is exactly one active working-context facade: ContextFabric.
@@ -66,23 +77,20 @@ Large raw context remains externalized through RLM/PersistentContextStore instea
 3. Memory Fabric may supply recalled knowledge but may not silently mutate the active context.
 4. Context edits are typed and bounded.
 5. Context state is never an authority shortcut.
-6. Any later durable context store must remain subordinate to the operational/authority registry.
+6. Any durable context store remains subordinate to the operational/authority registry.
 7. A model may propose ContextEdit; deterministic validation and ContextFabric own the mutation.
-8. No CLM training or production model promotion is part of this baseline.
+8. Mongo persistence is operational infrastructure and does not gain policy/security/economic/release authority.
+9. No CLM training or production model promotion is part of this baseline.
 
 ## Versioned migration
 
-Wave A (this PR): facade + contracts + registry + tests.
-
-Wave B: persist context workspace/version/edit ledger in Mongo; large payloads remain in the external context store/CAS as appropriate.
-
-Wave C: migrate direct ContextOS consumers.
-
-Wave D: migrate cognitive orchestration and worker cognition.
-
-Wave E: introduce CLM shadow proposals.
-
-Wave F: evaluate CLM with ContextBench before any production promotion.
+Wave A: facade + contracts + registry + tests.  
+Wave B: durable workspace/edit persistence substrate + optimistic concurrency tests.  
+Wave C: guarded durable commit/recovery + rollback + integrity verification.  
+Wave D: migrate direct ContextOS consumers.  
+Wave E: migrate cognitive orchestration and worker cognition.  
+Wave F: introduce CLM shadow proposals.  
+Wave G: evaluate CLM with ContextBench before any production promotion.
 
 ## SDLC gate for this boundary
 
@@ -105,16 +113,3 @@ Definition of Done:
 - runtime proof captured where the change touches production behavior;
 - .okf and derived knowledge reconciled;
 - obsolete path explicitly marked or retired.
-
-## Context budget baseline
-
-The facade may accept caller-specific policy, but a future centralized ContextBudgetPolicy must govern:
-- max input tokens;
-- max working tokens;
-- max output tokens;
-- max context growth;
-- max edit count/churn;
-- max latency;
-- max cost.
-
-This baseline deliberately leaves numeric policy in existing compiler budgets until the budget-convergence wave.
