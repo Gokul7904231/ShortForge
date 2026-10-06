@@ -7,7 +7,12 @@ const root = path.resolve(here, "../../..");
 const registryPath = path.join(root, ".okf/architecture/authority-registry.json");
 
 const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+const manifestPath = path.join(root, ".okf/manifest.yaml");
+const manifest = fs.readFileSync(manifestPath, "utf8");
 
+if (!manifest.includes("authority_registry: .okf/architecture/authority-registry.json")) {
+  throw new Error("OKF manifest must reference the canonical authority registry");
+}
 if (registry.status !== "ACTIVE") throw new Error("Authority registry must be ACTIVE");
 if (!Array.isArray(registry.domains) || registry.domains.length < 10) {
   throw new Error("Authority registry must define the canonical authority domains");
