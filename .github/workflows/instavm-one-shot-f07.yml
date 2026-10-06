@@ -47,7 +47,7 @@ jobs:
         run: npm ci
 
       - name: Install InstaVM SDK
-        run: npm install --no-save --no-package-lock instavm
+        run: npm install --no-save --no-package-lock --legacy-peer-deps instavm
 
       - name: Install verifier FFmpeg / FFprobe
         run: |
