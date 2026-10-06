@@ -16,7 +16,7 @@ import { CapabilityRouter } from "./routing/CapabilityRouter";
 import { SimulationDecisionEngine } from "./simulation/SimulationDecisionEngine";
 import { CognitiveTelemetryTracker } from "./telemetry/CognitiveTelemetryTracker";
 import { CaseReplayEngine, ShadowAgentRunner } from "./replay/CaseReplayEngine";
-import type { IMemoryRepository } from "../database/DatabaseContracts";
+import type { IContextFabricRepository, IMemoryRepository } from "../database/DatabaseContracts";
 import { InMemoryMemoryRepository } from "../database/InMemoryDatabase";
 
 export class CognitivePlaneEngine {
