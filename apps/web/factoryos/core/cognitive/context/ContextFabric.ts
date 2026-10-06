@@ -15,18 +15,18 @@ import { ActiveContextManager } from "./ActiveContextManager";
 import { ContextCompiler } from "../../intelligence/context/ContextCompiler";
 import type { ContextCapsuleV2, ContextBudgetPolicy } from "../../intelligence/context/ContextCapsuleContracts";
 import { ContextIndexer } from "../rlm/ContextIndexer";
-import type {
-  ContextFabricSeed,
-  ContextFabricSnapshot,
-  ContextWorkspace,
-  ContextEdit,
-  ContextOrchestrationPort,
-  CLMContextProposalPort,
-  CLMContextProposalRequest,
-  CLMContextProposal,
-  CLMShadowProposalResult,
-  ContextProposalValidationResult,
+import {
   CONTEXT_CLM_PROPOSAL_SCHEMA_VERSION,
+  type ContextFabricSeed,
+  type ContextFabricSnapshot,
+  type ContextWorkspace,
+  type ContextEdit,
+  type ContextOrchestrationPort,
+  type CLMContextProposalPort,
+  type CLMContextProposalRequest,
+  type CLMContextProposal,
+  type CLMShadowProposalResult,
+  type ContextProposalValidationResult,
 } from "./ContextFabricContracts";
 
 function canonicalize(value: unknown): string {
@@ -297,11 +297,11 @@ export class ContextFabric {
     if (proposal.missionId !== workspace.missionId) errors.push("missionId does not match current workspace");
     if (proposal.taskId !== workspace.taskId) errors.push("taskId does not match current workspace");
     if (proposal.baseVersion !== workspace.version) errors.push("baseVersion does not match current workspace");
-    if (proposal.provenance.source !== "CLM_SHADOW") errors.push("proposal source must be CLM_SHADOW");
-    if (expectedModelRef && proposal.provenance.modelRef !== expectedModelRef) errors.push("modelRef does not match the proposal port");
-    if (!proposal.provenance.modelVersion?.trim()) errors.push("modelVersion is required");
-    if (!proposal.provenance.traceId?.trim()) errors.push("traceId is required");
-    if (!proposal.provenance.policyVersion?.trim()) errors.push("policyVersion is required");
+    if (proposal.provenance?.source !== "CLM_SHADOW") errors.push("proposal source must be CLM_SHADOW");
+    if (expectedModelRef && proposal.provenance?.modelRef !== expectedModelRef) errors.push("modelRef does not match the proposal port");
+    if (!proposal.provenance?.modelVersion?.trim()) errors.push("modelVersion is required");
+    if (!proposal.provenance?.traceId?.trim()) errors.push("traceId is required");
+    if (!proposal.provenance?.policyVersion?.trim()) errors.push("policyVersion is required");
     if (proposal.authorityScope !== "WORKING_CONTEXT_ONLY") errors.push("authorityScope must be WORKING_CONTEXT_ONLY");
     if (!Number.isFinite(proposal.confidence) || proposal.confidence < 0 || proposal.confidence > 1) errors.push("confidence must be between 0 and 1");
     if (!Number.isFinite(proposal.estimatedCost) || proposal.estimatedCost < 0) errors.push("estimatedCost must be a non-negative finite number");
@@ -310,17 +310,21 @@ export class ContextFabric {
     if (!Number.isFinite(Date.parse(proposal.generatedAt))) errors.push("generatedAt must be a valid timestamp");
 
     const budget = proposal.budget;
-    if (!Number.isInteger(budget.maxEdits) || budget.maxEdits < 1) errors.push("budget.maxEdits must be a positive integer");
-    if (!Number.isFinite(budget.maxContextGrowthTokens) || budget.maxContextGrowthTokens < 0) errors.push("budget.maxContextGrowthTokens must be non-negative");
-    if (!Number.isFinite(budget.maxLatencyMs) || budget.maxLatencyMs <= 0) errors.push("budget.maxLatencyMs must be positive");
-    if (!Number.isFinite(budget.maxCost) || budget.maxCost < 0) errors.push("budget.maxCost must be non-negative");
+    if (!budget || typeof budget !== "object") {
+      errors.push("budget is required");
+    } else {
+      if (!Number.isInteger(budget.maxEdits) || budget.maxEdits < 1) errors.push("budget.maxEdits must be a positive integer");
+      if (!Number.isFinite(budget.maxContextGrowthTokens) || budget.maxContextGrowthTokens < 0) errors.push("budget.maxContextGrowthTokens must be non-negative");
+      if (!Number.isFinite(budget.maxLatencyMs) || budget.maxLatencyMs <= 0) errors.push("budget.maxLatencyMs must be positive");
+      if (!Number.isFinite(budget.maxCost) || budget.maxCost < 0) errors.push("budget.maxCost must be non-negative");
 
-    if (requestedBudget) {
-      if (canonicalize(budget) !== canonicalize(requestedBudget)) errors.push("proposal budget differs from the caller budget");
+      if (requestedBudget && canonicalize(budget) !== canonicalize(requestedBudget)) {
+        errors.push("proposal budget differs from the caller budget");
+      }
+      if (observedLatencyMs > budget.maxLatencyMs) errors.push("observed proposal latency exceeds budget.maxLatencyMs");
+      if (proposal.estimatedCost > budget.maxCost) errors.push("estimatedCost exceeds budget.maxCost");
+      if (proposal.estimatedContextGrowthTokens > budget.maxContextGrowthTokens) errors.push("estimated context growth exceeds budget.maxContextGrowthTokens");
     }
-    if (observedLatencyMs > budget.maxLatencyMs) errors.push("observed proposal latency exceeds budget.maxLatencyMs");
-    if (proposal.estimatedCost > budget.maxCost) errors.push("estimatedCost exceeds budget.maxCost");
-    if (proposal.estimatedContextGrowthTokens > budget.maxContextGrowthTokens) errors.push("estimated context growth exceeds budget.maxContextGrowthTokens");
 
     const edits = Array.isArray(proposal.edits) ? proposal.edits : [];
     if (!Array.isArray(proposal.edits)) errors.push("edits must be an array");
