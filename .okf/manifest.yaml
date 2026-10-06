@@ -2,6 +2,7 @@ okf_version: 2
 manifest_schema: shortforge://okf/manifest/v1
 corpus_root: .okf/
 rule_index: .okf/rules/index.json
+authority_registry: .okf/architecture/authority-registry.json
 truth_domains:
   - normative_policy
   - canonical_contract

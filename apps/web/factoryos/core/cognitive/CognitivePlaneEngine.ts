@@ -6,6 +6,7 @@
 
 import { ContextOrchestrator } from "./rlm/RecursiveInvestigator";
 import { ActiveContextManager } from "./context/ActiveContextManager";
+import { ContextFabric } from "./context/ContextFabric";
 import { IndexedExperienceMemory } from "./memory/IndexedExperienceMemory";
 import { EvidenceGraphEngine } from "./graph/EvidenceGraphEngine";
 import { ContradictionResolver } from "./conflict/ContradictionResolver";
@@ -21,6 +22,7 @@ import { InMemoryMemoryRepository } from "../database/InMemoryDatabase";
 export class CognitivePlaneEngine {
   public contextOrchestrator: ContextOrchestrator;
   public activeContextManager: ActiveContextManager;
+  public contextFabric: ContextFabric;
   public experienceMemory: IndexedExperienceMemory;
   public evidenceGraph: EvidenceGraphEngine;
   public contradictionResolver: ContradictionResolver;
@@ -34,7 +36,10 @@ export class CognitivePlaneEngine {
 
   constructor(memoryRepo: IMemoryRepository = new InMemoryMemoryRepository()) {
     this.contextOrchestrator = new ContextOrchestrator();
-    this.activeContextManager = new ActiveContextManager(this.contextOrchestrator.indexer);
+    this.contextFabric = new ContextFabric({ indexer: this.contextOrchestrator.indexer });
+    // Compatibility alias: new callers must use ContextFabric; the old manager
+    // remains the same instance until direct consumers are migrated.
+    this.activeContextManager = this.contextFabric.activeContext;
     this.experienceMemory = new IndexedExperienceMemory(memoryRepo);
     this.evidenceGraph = new EvidenceGraphEngine();
     this.contradictionResolver = new ContradictionResolver(this.evidenceGraph);

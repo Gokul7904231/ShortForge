@@ -17,3 +17,8 @@
 | **Historical Audits** | [`./audits/`](./audits/) | Archived forensic baselines, bypass analyses, and red-team findings (Historical Reference). |
 
 | **OKF Governance Control Plane** | ./manifest.yaml · ./rules/index.json · ./verification/rule-to-test-matrix.md | Machine-readable governance identity, rule applicability, deterministic sweep attestation, exception schema, and CI evidence. Markdown remains the human-readable policy projection. |
+
+
+| **Architecture Authority Registry** | ./architecture/authority-registry.json | Machine-readable canonical ownership for governance, topology, operational state, memory, context, artifacts, verification, decisions, execution, economics, and projections. |
+| **Context Fabric** | ./architecture/context-fabric.md | Canonical active working-context boundary converging ActiveContextManager, ContextCompiler, ContextOS, RLM, and Memory Fabric without creating a new database or authority. |
+| **Architecture / SDLC Baseline** | ./decisions/architecture-sdlc-baseline-context-fabric-20261006.md | Locked 2026-10-06 decision: architecture baseline, authority registry, and Context Fabric convergence precede CLM model training. |
