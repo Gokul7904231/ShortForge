@@ -1,4 +1,4 @@
-import type { Db, Collection } from "mongodb";
+import { MongoClient, type Db, type Collection } from "mongodb";
 import type { ContextWorkspace } from "../cognitive/context/ContextFabricContracts";
 import { ContextConcurrencyConflictError, type IContextFabricRepository, type ContextEditLedgerEntry } from "./DatabaseContracts";
 
