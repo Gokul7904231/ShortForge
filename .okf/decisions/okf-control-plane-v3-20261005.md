@@ -34,10 +34,11 @@ V3 does not modify this hierarchy.
 
 ## Current enforcement evidence
 
-Owner-side GitHub repository protection has now been configured and is active:
-- `OKF Main Protection` targets `refs/heads/main` and requires pull requests, one approval, Code Owner review, up-to-date branches, and the `OKF Governance Gate` status check; force updates and deletion are blocked.
-- `OKF Release Tag Protection` targets `refs/tags/v*` and blocks tag updates and deletions.
+Owner-side GitHub repository protection is configured, but the live rulesets are currently disabled and therefore do not enforce protection:
+- `OKF Main Protection` targets `refs/heads/main` and defines pull requests, one approval, Code Owner review, up-to-date branches, and the `OKF Governance Gate` status check; force updates and deletion are blocked when the ruleset is enabled.
+- `OKF Release Tag Protection` targets `refs/tags/v*` and defines update/deletion/non-fast-forward protection when enabled.
 - Both rulesets have an empty bypass list.
+- Promotion must not treat configuration-as-code as enforcement evidence; the rulesets must be enabled and exercised.
 
 The cryptographic signing configuration has been supplied through repository-managed Actions secrets/variables, and V3 Validation #8 exercised the Ed25519 signing path successfully with a retained `okf-v3-evidence` artifact. The next gate is the F07-bound release provenance path and its corresponding repository enforcement proof.
 
