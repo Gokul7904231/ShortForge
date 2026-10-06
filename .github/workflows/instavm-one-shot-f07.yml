@@ -1,9 +1,10 @@
 name: InstaVM One-Shot F07 Qualification
 
 on:
-  push:
+  pull_request:
     branches:
-      - qualify/instavm-f07-20261006
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
