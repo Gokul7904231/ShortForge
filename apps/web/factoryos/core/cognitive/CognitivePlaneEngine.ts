@@ -42,6 +42,7 @@ export class CognitivePlaneEngine {
     this.contextFabric = new ContextFabric({
       indexer: this.contextOrchestrator.indexer,
       repository: contextRepository,
+      orchestration: this.contextOrchestrator,
     });
     // Compatibility alias only: ContextFabric remains the sole active-context boundary.
     this.activeContextManager = this.contextFabric.activeContext;
