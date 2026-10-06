@@ -32,3 +32,4 @@
 | **Context Fabric Wave E Cognitive Orchestration** | ./decisions/context-fabric-wave-e-cognitive-orchestration-20261006.md | CognitiveRuntime context operations routed through ContextFabric; RLM remains the implementation substrate. |
 
 | **Context Fabric Wave F CLM Shadow Proposals** | ./decisions/context-fabric-wave-f-clm-shadow-20261006.md | Proposal-only CLM context policy seam with typed provenance, deterministic validation, and no mutation or promotion authority. |
+| **Context Fabric Wave G ContextBench** | ./decisions/context-fabric-wave-g-contextbench-20261006.md | Quantitative baseline-vs-shadow evaluation with held-out cases, safety graders, deterministic admission thresholds, and no promotion authority. |

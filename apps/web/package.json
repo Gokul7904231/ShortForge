@@ -32,7 +32,9 @@
     "factoryos:verify:authority-registry": "node scripts/verify-authority-registry.mjs",
     "factoryos:test:context-fabric": "vitest run factoryos/tests/context/context-fabric.test.ts",
     "factoryos:verify:context-fabric-boundary": "node scripts/verify-context-fabric-boundary.mjs",
-    "factoryos:verify:context-fabric-clm-shadow": "node scripts/verify-context-fabric-clm-shadow.mjs"
+    "factoryos:verify:context-fabric-clm-shadow": "node scripts/verify-context-fabric-clm-shadow.mjs",
+    "factoryos:test:context-bench": "vitest run factoryos/tests/context/context-bench.test.ts",
+    "factoryos:verify:context-bench": "node scripts/verify-context-bench.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.14",

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR227-Context-Fabric-Wave-G-ContextBench",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-fabric-wave-g-contextbench-20261006",
+  "objective": "Establish ContextBench as the quantitative evaluation gate for CLM shadow context policy before any production promotion discussion.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "ContextFabric remains the sole working-context authority.",
+      "CLM is proposal-only and cannot mutate or commit active context directly.",
+      "Evaluation must distinguish technical validity, safety, and usefulness.",
+      "Held-out evidence is required before a candidate evaluation is admitted.",
+      "A benchmark result never grants production model-promotion authority."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/context-fabric-wave-g-contextbench-20261006.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "floor01DependencyAndStaticSecurity": "PASS — run 37441203701",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "verificationPlan": [
+    "Validate Team report contract.",
+    "Run Context Fabric authority/boundary and ContextBench boundary checks.",
+    "Run ContextBench development and held-out evaluation tests.",
+    "Run strict FactoryOS typecheck and Floor 01 contract tests.",
+    "Run applicable security and repository CI lanes.",
+    "Reconcile this report with exact-head evidence before merge."
+  ],
+  "changes": [
+    "Added ContextBench runner and versioned development/held-out dataset.",
+    "Added baseline-vs-candidate comparison and deterministic admission criteria.",
+    "Added critical-anchor, useful-deletion, compression, retrieval-recovery and decision-quality graders.",
+    "Added proposal-integrity, mutation-safety, authority-violation and latency metrics.",
+    "Added fail-closed unsafe-policy benchmark coverage.",
+    "Added blocking ContextBench boundary validation and Context Fabric CI coverage.",
+    "Recorded the Wave G .okf decision."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PASS — run 37441202574",
+    "repositoryCI": "PASS — TypeCheck & Floor 01 Contract Tests run 37441203701",
+    "contextBench": "PASS — Authority Registry & Context Fabric Contract run 37441202484; benchmark test passed 24 cases (16 DEVELOPMENT, 8 HELD_OUT)",
+    "contextBenchBoundary": "PASS — run 37441202484",
+    "contextFabricBoundary": "PASS — run 37441202484",
+    "typecheck": "PASS — Typecheck FactoryOS step run 37441202484 and strict TypeCheck lane run 37441203701",
+    "contextFabricContractTests": "PASS — run 37441202484",
+    "securityReview": "TRIAGED — dependency/static security lane passed; full Semgrep/Strix unavailable",
+    "okfLint": "PASS — run 37441202906",
+    "finalWaveValidation": "PASS — run 37441202733",
+    "exactHead": "ed990fe01cb693a63fae3329661cee5bfec6be17"
+  },
+  "evidenceRefs": [
+    ".okf/decisions/context-fabric-wave-g-contextbench-20261006.md",
+    "apps/web/factoryos/core/intelligence/context/ContextBench.ts",
+    "apps/web/factoryos/tests/context/context-bench.test.ts",
+    "apps/web/scripts/verify-context-bench.mjs",
+    ".github/workflows/context-fabric.yml",
+    "ContextBench dataset is fixed at wave-g-context-policy-v1; no CLM inference/training or production promotion was executed."
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/evaluation context only; no runtime authority, training or promotion"
+  },
+  "dispositionRationale": "Wave G affected implementation and evaluation gates pass. Cumulative security admission remains BLOCKED because full Semgrep/Strix proof is unavailable in this execution environment; no Wave G-specific security failure is indicated."
+}
