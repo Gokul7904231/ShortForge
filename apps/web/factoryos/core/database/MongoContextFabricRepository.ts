@@ -1,6 +1,12 @@
 import { MongoClient, type Db, type Collection } from "mongodb";
 import type { ContextWorkspace } from "../cognitive/context/ContextFabricContracts";
-import { ContextConcurrencyConflictError, type IContextFabricRepository, type ContextEditLedgerEntry } from "./DatabaseContracts";
+import {
+  ContextConcurrencyConflictError,
+  ContextDurabilityUnavailableError,
+  type ContextDurableCommit,
+  type IContextFabricRepository,
+  type ContextEditLedgerEntry,
+} from "./DatabaseContracts";
 
 type WorkspaceDoc = ContextWorkspace & { _id?: string };
 type LedgerDoc = ContextEditLedgerEntry & { _id?: string };
