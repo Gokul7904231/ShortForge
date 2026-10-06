@@ -356,7 +356,7 @@ export class AutonomousFactoryController {
 
     // 6. Memory & Cognitive Engine
     this.memoryEngine = new MemoryEngine(repos.memories);
-    this.cognitivePlane = new CognitivePlaneEngine(repos.memories);
+    this.cognitivePlane = new CognitivePlaneEngine(repos.memories, repos.contextFabric);
 
     // Verified production-trajectory learning bridge. It consumes only
     // independently verified outcomes and cannot grant runtime authority.
