@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema": "shortforge://okf/architecture/authority-registry/v1",
+  "status": "ACTIVE",
+  "version": "1.0.0",
+  "effectiveAt": "2026-10-06",
+  "principle": "Exactly one sovereign canonical owner per authority domain; all other stores are projections, caches, evidence, or compatibility adapters.",
+  "domains": [
+    {
+      "domainId": "governance",
+      "authorityType": "NORMATIVE_POLICY",
+      "canonicalOwner": ".okf",
+      "runtimeBinding": null,
+      "persistence": "git",
+      "writeMode": "reviewed-repository-change",
+      "allowedWriters": ["Human", "Overseer"],
+      "forbiddenResponsibilities": ["runtime_execution", "artifact_mutation", "economic_admission"]
+    },
+    {
+      "domainId": "production_topology",
+      "authorityType": "CANONICAL_CONTRACT",
+      "canonicalOwner": "FloorRegistry",
+      "runtimeBinding": "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
+      "persistence": "git",
+      "writeMode": "reviewed-repository-change",
+      "allowedWriters": ["Engineering"],
+      "forbiddenResponsibilities": ["runtime_job_state", "release_authorization"]
+    },
+    {
+      "domainId": "operational_state",
+      "authorityType": "OPERATIONAL_TRUTH",
+      "canonicalOwner": "MongoDB",
+      "runtimeBinding": "apps/web/factoryos/core/database/MongoDBClient.ts",
+      "persistence": "mongodb",
+      "writeMode": "transactional",
+      "allowedWriters": ["FactoryOS runtime repositories", "authorized control-plane services"],
+      "forbiddenResponsibilities": ["normative_policy", "physical_artifact_bytes", "learned_memory_semantics"]
+    },
+    {
+      "domainId": "learned_memory",
+      "authorityType": "COGNITIVE_MEMORY",
+      "canonicalOwner": "Memory Fabric",
+      "runtimeBinding": "apps/web/factoryos/core/intelligence/memory/",
+      "persistence": "Mongo operational ledger + KnowledgeStore/derived projections",
+      "writeMode": "gated-promotion",
+      "allowedWriters": ["Memory Fabric services"],
+      "forbiddenResponsibilities": ["execution_authority", "release_authorization", "capability_grant"]
+    },
+    {
+      "domainId": "working_context",
+      "authorityType": "ACTIVE_WORKING_CONTEXT",
+      "canonicalOwner": "ContextFabric",
+      "runtimeBinding": "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
+      "persistence": "runtime state; durable persistence is a later migration wave",
+      "writeMode": "validated-context-edits",
+      "allowedWriters": ["ContextFabric", "future CLM through ContextFabric"],
+      "forbiddenResponsibilities": ["capability_grant", "lease_issuance", "treasury_admission", "f07_verification", "artifact_identity"]
+    },
+    {
+      "domainId": "external_context",
+      "authorityType": "EXTERNAL_CONTEXT_SUBSTRATE",
+      "canonicalOwner": "RLM ContextIndexer/PersistentContextStore",
+      "runtimeBinding": "apps/web/factoryos/core/cognitive/rlm/",
+      "persistence": "persistent context store",
+      "writeMode": "index-and-dereference",
+      "allowedWriters": ["RLM context services"],
+      "forbiddenResponsibilities": ["working_context_authority", "execution_authority", "release_authorization"]
+    },
+    {
+      "domainId": "artifacts",
+      "authorityType": "ARTIFACT_IDENTITY",
+      "canonicalOwner": "ContentAddressedStore",
+      "runtimeBinding": "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+      "persistence": "content-addressed filesystem/object storage",
+      "writeMode": "immutable",
+      "allowedWriters": ["artifact writers through CAS"],
+      "forbiddenResponsibilities": ["policy_decision", "execution_authority", "economic_admission"]
+    },
+    {
+      "domainId": "physical_verification",
+      "authorityType": "VERIFICATION_TRUTH",
+      "canonicalOwner": "F07 Verification / VerificationReceipt",
+      "runtimeBinding": "apps/web/factoryos/core/verification/",
+      "persistence": "verification evidence",
+      "writeMode": "evidence-producing",
+      "allowedWriters": ["F07 verification services"],
+      "forbiddenResponsibilities": ["working_context_authority", "policy_authoring", "model_training_authority"]
+    },
+    {
+      "domainId": "epistemic_state",
+      "authorityType": "EPISTEMIC_ADVISORY",
+      "canonicalOwner": "AER",
+      "runtimeBinding": "apps/web/factoryos/core/intelligence/aer/",
+      "persistence": "runtime/evidence references",
+      "writeMode": "advisory",
+      "allowedWriters": ["AER"],
+      "forbiddenResponsibilities": ["execution", "lease_issuance", "release", "economic_admission"]
+    },
+    {
+      "domainId": "decisions",
+      "authorityType": "TYPED_DECISION",
+      "canonicalOwner": "JEV / Decision Engine",
+      "runtimeBinding": "apps/web/factoryos/core/decision/",
+      "persistence": "decision records",
+      "writeMode": "typed-decision",
+      "allowedWriters": ["Decision Engine"],
+      "forbiddenResponsibilities": ["direct_tool_execution", "capability_grant", "f07_verification"]
+    },
+    {
+      "domainId": "reasoning",
+      "authorityType": "DEEP_COGNITION",
+      "canonicalOwner": "Ascalon",
+      "runtimeBinding": "future model runtime; current adapters remain bounded",
+      "persistence": "model artifacts and governed trajectories",
+      "writeMode": "bounded-inference",
+      "allowedWriters": ["Ascalon inference/training pipeline"],
+      "forbiddenResponsibilities": ["sovereign_authority", "release_authorization", "economic_admission"]
+    },
+    {
+      "domainId": "execution",
+      "authorityType": "EXECUTION_AUTHORITY",
+      "canonicalOwner": "Guardian + authorized workers",
+      "runtimeBinding": "apps/web/factoryos/core/security/ and agent runtime",
+      "persistence": "Mongo operational state + audit evidence",
+      "writeMode": "capability-and-lease-gated",
+      "allowedWriters": ["Guardian", "authorized workers"],
+      "forbiddenResponsibilities": ["policy_authoring", "memory_promotion", "model_training"]
+    },
+    {
+      "domainId": "economics",
+      "authorityType": "ECONOMIC_ADMISSION",
+      "canonicalOwner": "Treasury",
+      "runtimeBinding": "apps/web/factoryos/core/economics/ and treasurer boundary",
+      "persistence": "Mongo treasury collections + ledger",
+      "writeMode": "reservation-and-settlement",
+      "allowedWriters": ["Treasury"],
+      "forbiddenResponsibilities": ["normative_policy", "f07_verification", "working_context_authority"]
+    },
+    {
+      "domainId": "knowledge_projection",
+      "authorityType": "HUMAN_KNOWLEDGE_PROJECTION",
+      "canonicalOwner": "Obsidian projection",
+      "runtimeBinding": "knowledge/obsidian/",
+      "persistence": "markdown/Git",
+      "writeMode": "derived-projection",
+      "allowedWriters": ["knowledge compiler/projection"],
+      "forbiddenResponsibilities": ["capability_grant", "operational_truth", "memory_promotion_without_gate"]
+    },
+    {
+      "domainId": "user_projection",
+      "authorityType": "USER_FACING_PROJECTION",
+      "canonicalOwner": "Firestore projection/read models",
+      "runtimeBinding": "apps/web/lib/firebase-admin.ts",
+      "persistence": "firestore",
+      "writeMode": "projection-and-compatibility",
+      "allowedWriters": ["projection services", "compatibility adapters"],
+      "forbiddenResponsibilities": ["hot_path_economic_admission", "distributed_lease_authority", "f07_verification"]
+    }
+  ]
+}

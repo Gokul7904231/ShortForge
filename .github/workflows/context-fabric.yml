@@ -1,0 +1,36 @@
+name: Context Fabric Architecture
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  context-fabric-contract:
+    name: Authority Registry & Context Fabric Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: cd apps/web && npm ci
+
+      - name: Validate authority registry
+        run: cd apps/web && npm run factoryos:verify:authority-registry
+
+      - name: Typecheck FactoryOS
+        run: cd apps/web && npm run factoryos:typecheck
+
+      - name: Context Fabric contract tests
+        run: cd apps/web && npx vitest run factoryos/tests/context/context-fabric.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
