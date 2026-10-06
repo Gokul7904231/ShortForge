@@ -372,7 +372,7 @@ export class ContextFabric {
       if (Object.prototype.hasOwnProperty.call(candidate, key)) errors.push("forbidden authority marker " + key);
     }
 
-    const expectedFingerprint = this.computeProposalFingerprint(proposal);
+    const expectedFingerprint = this.fingerprintCLMShadowProposal(proposal);
     if (proposal.proposalFingerprint !== expectedFingerprint) errors.push("proposalFingerprint mismatch");
 
     return errors.length === 0
@@ -421,7 +421,7 @@ export class ContextFabric {
     return this.getWorkspace();
   }
 
-  private computeProposalFingerprint(proposal: CLMContextProposal): string {
+  fingerprintCLMShadowProposal(proposal: CLMContextProposal): string {
     const payload = {
       schemaVersion: proposal.schemaVersion,
       proposalId: proposal.proposalId,
