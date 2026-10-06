@@ -53,6 +53,37 @@ export class InMemoryContextFabricRepository implements IContextFabricRepository
     }
   }
 
+  async commitWorkspace(commit: import("./DatabaseContracts").ContextDurableCommit): Promise<void> {
+    const existing = this.workspaces.get(commit.workspace.workspaceId);
+    if (existing && existing.version !== commit.expectedVersion) {
+      throw new ContextConcurrencyConflictError(
+        commit.workspace.workspaceId,
+        commit.expectedVersion,
+        existing.version,
+      );
+    }
+    if (!existing && commit.expectedVersion !== 0) {
+      throw new ContextConcurrencyConflictError(
+        commit.workspace.workspaceId,
+        commit.expectedVersion,
+        null,
+      );
+    }
+
+    const duplicateIds = commit.edits.filter(
+      (entry, index, all) => all.findIndex((candidate) => candidate.editId === entry.editId) !== index
+    );
+    if (duplicateIds.length > 0) {
+      throw new Error("Duplicate Context Fabric edit IDs in durable commit");
+    }
+
+    const stagedWorkspace = structuredClone(commit.workspace);
+    const stagedLedger = commit.edits.map((entry) => structuredClone(entry));
+
+    this.workspaces.set(stagedWorkspace.workspaceId, stagedWorkspace);
+    for (const entry of stagedLedger) this.ledger.set(entry.editId, entry);
+  }
+
   async getEditHistory(workspaceId: string, limit: number = 100): Promise<ContextEditLedgerEntry[]> {
     return Array.from(this.ledger.values())
       .filter((entry) => entry.workspaceId === workspaceId)
