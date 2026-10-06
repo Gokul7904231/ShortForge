@@ -125,8 +125,6 @@ Wave F: introduce CLM shadow proposals through a proposal-only ContextFabric sea
 
 Wave G: evaluate the shadow policy with ContextBench before any production promotion.
 
-Wave G: evaluate CLM with ContextBench before any production promotion.
-
 ## SDLC gate for this boundary
 
 Every future Context Fabric change must complete:
