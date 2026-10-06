@@ -232,7 +232,27 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     providerId: "sandbox_vibengine", providerFamily: "SANDBOX", displayName: "Vibengine", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["VIBENGINE_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted sandbox backend; admin-only in v1 until the real adapter is wired.",
   },
   {
-    providerId: "sandbox_instavm", providerFamily: "SANDBOX", displayName: "InstaVM", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["INSTAVM_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted microVM backend; admin-only in v1 until the real adapter is wired.",
+    providerId: "sandbox_instavm",
+    providerFamily: "SANDBOX",
+    displayName: "InstaVM",
+    authMethod: "API_KEY",
+    connectionExperience: "GUIDED_MANUAL",
+    credentialKeys: ["INSTAVM_API_KEY"],
+    configurableKeys: [],
+    setupUrl: "https://instavm.io/docs/quickstart",
+    roles: ["ADMIN"],
+    implemented: true,
+    onboarding: {
+      summary:
+        "Connect InstaVM with one API key. ShortForge uses the hosted Firecracker microVM session for isolated rendering and keeps the credential encrypted server-side.",
+      steps: [
+        "Open the InstaVM Dashboard → API Keys and create a key starting with instavm_sk_.",
+        "Paste the API key into ShortForge. ShortForge stores it encrypted and never exposes it to worker commands, telemetry, or F06 payloads.",
+        "Choose Connect and verify. ShortForge checks the provider connection before the sandbox can be selected.",
+      ],
+    },
+    description:
+      "Hosted Firecracker microVM sandbox with session-bound command execution and physical artifact transfer; admin-only in V1 and never an F06 worker authority.",
   },
   {
     providerId: "sandbox_leap0", providerFamily: "SANDBOX", displayName: "Leap0", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["LEAP0_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted Firecracker sandbox backend; admin-only in v1 until the real adapter is wired.",
