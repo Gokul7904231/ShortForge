@@ -82,6 +82,12 @@ function sessionFrom(value: any): string | undefined {
   );
 }
 
+function redactError(value: unknown): string {
+  return String(value || "")
+    .replace(/instavm_[A-Za-z0-9._-]+/g, "instavm_[REDACTED]")
+    .slice(0, 1000);
+}
+
 function classifyStateError(error: any): "TERMINATED" | "UNKNOWN" {
   const status = Number(error?.status || error?.statusCode || 0);
   const message = String(error?.message || error || "").toLowerCase();
@@ -130,7 +136,7 @@ async function runtimeFromSession(
       providerMetadata: {
         sessionId,
         ephemeralFilesystem: true,
-        stateError: error?.message || String(error),
+        stateError: redactError(error?.message || String(error)),
       },
     };
   }
@@ -207,7 +213,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
         checkedAt,
         evidence: ["InstaVM credential validation request failed."],
         errorCode: "INSTAVM_AUTH_FAILED",
-        errorMessage: error?.message || "InstaVM validation failed.",
+        errorMessage: redactError(error?.message || "InstaVM validation failed."),
       };
     }
   }
@@ -245,6 +251,18 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
 
     if (!sessionId) {
       throw new Error("INSTAVM_SESSION_ID_MISSING");
+    }
+
+    const bootstrap = await client.execute("true", {
+      language: "bash",
+      timeout: 30,
+      sessionId,
+    });
+    const bootstrapExitCode = Number(
+      bootstrap?.exitCode ?? bootstrap?.exit_code ?? 0,
+    );
+    if (bootstrapExitCode !== 0) {
+      throw new Error("INSTAVM_BOOTSTRAP_FAILED");
     }
 
     return {
@@ -450,7 +468,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
             ? "InstaVM command exceeded the ShortForge execution timeout."
             : "InstaVM sandbox command execution failed.",
         ],
-        limitation: message,
+        limitation: redactError(message),
       };
     }
   }
@@ -497,7 +515,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
         terminal: state === "TERMINATED",
         reconciliationRequired: state === "UNKNOWN",
         evidence: [
-          "InstaVM session reconciliation failed: " + (error?.message || String(error)),
+          "InstaVM session reconciliation failed: " + redactError(error?.message || String(error)),
         ],
       };
     }
