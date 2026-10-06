@@ -7,6 +7,7 @@
  */
 
 import * as crypto from "node:crypto";
+import { fingerprintCLMShadowProposal } from "./ContextProposalIntegrity";
 import type { ContextOperationType } from "../CognitiveContracts";
 import type { IContextFabricRepository, ContextEditLedgerEntry } from "../../database/DatabaseContracts";
 import type { EvidenceItem } from "../../intelligence/retrieval/RetrievalContracts";
@@ -421,25 +422,8 @@ export class ContextFabric {
     return this.getWorkspace();
   }
 
-  fingerprintCLMShadowProposal(proposal: CLMContextProposal): string {
-    const payload = {
-      schemaVersion: proposal.schemaVersion,
-      proposalId: proposal.proposalId,
-      workspaceId: proposal.workspaceId,
-      missionId: proposal.missionId,
-      taskId: proposal.taskId,
-      baseVersion: proposal.baseVersion,
-      generatedAt: proposal.generatedAt,
-      provenance: proposal.provenance,
-      authorityScope: proposal.authorityScope,
-      confidence: proposal.confidence,
-      estimatedCost: proposal.estimatedCost,
-      estimatedContextGrowthTokens: proposal.estimatedContextGrowthTokens,
-      budget: proposal.budget,
-      edits: proposal.edits,
-      rationale: proposal.rationale,
-    };
-    return crypto.createHash("sha256").update(canonicalize(payload)).digest("hex");
+  public fingerprintCLMShadowProposal(proposal: CLMContextProposal): string {
+    return fingerprintCLMShadowProposal(proposal);
   }
 
   private computeWorkspaceHash(workspace: ContextWorkspace): string {
