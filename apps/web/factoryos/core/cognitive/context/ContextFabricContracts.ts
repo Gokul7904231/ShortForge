@@ -13,7 +13,6 @@ export type ContextOrchestrationPort = Pick<
   "indexContext" | "runRecursiveInvestigation"
 >;
 
-
 export type ContextEditActor = "SYSTEM" | "CLM_PROPOSAL" | "OPERATOR";
 
 export interface ContextEditBase {
@@ -56,4 +55,71 @@ export interface ContextFabricSeed {
   readonly missionId: string;
   readonly taskId: string;
   readonly references: ContextReference[];
+}
+
+/**
+ * Wave F is a proposal-only contract. A CLM implementation can produce this
+ * envelope, but it cannot mutate active context or durable state through it.
+ */
+export const CONTEXT_CLM_PROPOSAL_SCHEMA_VERSION = "1.0.0" as const;
+
+export interface ContextProposalBudget {
+  readonly maxEdits: number;
+  readonly maxContextGrowthTokens: number;
+  readonly maxLatencyMs: number;
+  readonly maxCost: number;
+}
+
+export interface ContextProposalProvenance {
+  readonly source: "CLM_SHADOW";
+  readonly modelRef: string;
+  readonly modelVersion: string;
+  readonly traceId: string;
+  readonly policyVersion: string;
+}
+
+export interface CLMContextProposal {
+  readonly schemaVersion: typeof CONTEXT_CLM_PROPOSAL_SCHEMA_VERSION;
+  readonly proposalId: string;
+  readonly workspaceId: string;
+  readonly missionId: string;
+  readonly taskId: string;
+  readonly baseVersion: number;
+  readonly generatedAt: string;
+  readonly provenance: ContextProposalProvenance;
+  readonly authorityScope: "WORKING_CONTEXT_ONLY";
+  readonly confidence: number;
+  readonly estimatedCost: number;
+  readonly estimatedContextGrowthTokens: number;
+  readonly budget: ContextProposalBudget;
+  readonly edits: readonly ContextEdit[];
+  readonly rationale: string;
+  readonly proposalFingerprint: string;
+}
+
+export interface CLMContextProposalRequest {
+  readonly workspace: ContextWorkspace;
+  readonly traceId: string;
+  readonly policyVersion: string;
+  readonly candidateReferences: readonly ContextReference[];
+  readonly budget: ContextProposalBudget;
+}
+
+export interface CLMContextProposalPort {
+  readonly modelRef: string;
+  propose(request: CLMContextProposalRequest): Promise<CLMContextProposal>;
+}
+
+export interface ContextProposalValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+  readonly normalizedProposal?: CLMContextProposal;
+}
+
+export interface CLMShadowProposalResult {
+  readonly proposal: CLMContextProposal;
+  readonly validation: ContextProposalValidationResult;
+  readonly observedLatencyMs: number;
+  readonly contextMutated: false;
+  readonly durableCommitAttempted: false;
 }
