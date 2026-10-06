@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR224-Context-Fabric-Wave-F-CLM-Shadow",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-fabric-wave-f-clm-shadow-20261006",
+  "objective": "Introduce a proposal-only CLM context-policy seam through ContextFabric with deterministic validation and no mutation or promotion authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "ContextFabric is the sole production working-context facade.",
+      "A model may propose ContextEdit values; deterministic validation and ContextFabric own mutation.",
+      "CLM remains shadow-only and cannot gain execution, economics, artifacts, verification, release, memory-promotion, or model-promotion authority.",
+      "No new database or sovereign authority is introduced.",
+      "Every non-trivial change follows the Team Change Gate."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/context-fabric-wave-f-clm-shadow-20261006.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "PENDING",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "PENDING_GATES",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "changes": [
+    "Added typed CLMContextProposal and CLMContextProposalPort contracts.",
+    "Added deterministic CLM proposal fingerprinting and fail-closed validation.",
+    "Added ContextFabric.proposeCLMShadowEdits as a non-mutating shadow entry point.",
+    "Added a disabled-by-default CLMContextProposalAdapter seam.",
+    "Added negative/abuse tests for stale edits, non-CLM actors, duplicates, budget drift, tampered fingerprints, forbidden authority markers, and disabled mode.",
+    "Added a blocking machine-checkable CLM shadow boundary verifier.",
+    "Reconciled .okf architecture, decision evidence, and index entries."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "contextFabricBoundary": "PENDING",
+    "clmShadowBoundary": "PENDING",
+    "typecheck": "PENDING",
+    "securityReview": "PENDING",
+    "note": "Fresh exact-head validation is required before merge. No CLM training, production promotion, automatic proposal application, or ContextBench work is included."
+  },
+  "evidenceRefs": [
+    ".okf/decisions/context-fabric-wave-f-clm-shadow-20261006.md",
+    ".okf/architecture/context-fabric.md",
+    "apps/web/factoryos/core/cognitive/context/ContextFabricContracts.ts",
+    "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
+    "apps/web/factoryos/core/cognitive/context/ContextProposalIntegrity.ts",
+    "apps/web/factoryos/core/intelligence/context/CLMContextProposalAdapter.ts",
+    "apps/web/factoryos/tests/context/context-fabric-clm-shadow.test.ts",
+    "apps/web/scripts/verify-context-fabric-clm-shadow.mjs",
+    ".github/workflows/context-fabric.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority and no training activity"
+  }
+}
