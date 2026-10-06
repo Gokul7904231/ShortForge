@@ -66,8 +66,12 @@ if (/\.applyEdits\s*\(|\.commitEdits\s*\(/.test(proposalMethod)) {
   add(relative(fabricPath), 1, "CLM shadow proposal method directly invokes a context mutator");
 }
 
+const evaluationOnlyFiles = new Set([
+  "intelligence/context/ContextBench.ts",
+]);
+
 scan(coreRoot, (_absolute, file, line, lineNo) => {
-  if (file === "cognitive/context/ContextFabric.ts") return;
+  if (file === "cognitive/context/ContextFabric.ts" || evaluationOnlyFiles.has(file)) return;
 
   if (/\.applyEdits\s*\(|\.commitEdits\s*\(/.test(line)) {
     add(file, lineNo, "direct ContextFabric mutation call outside canonical facade: " + line);
