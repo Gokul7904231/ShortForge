@@ -20,6 +20,7 @@ import {
   YouTubePolicyStore,
   VerificationReceiptVerifier,
 } from "../factoryos/core/verification/youtube";
+import { PublicationAuthorizationService } from "../publishing/authorization/PublicationAuthorizationService";
 
 const proofDir =
   process.env.HF_ZEROGPU_PROOF_DIR ||
@@ -281,6 +282,46 @@ async function main(): Promise<void> {
     const persistedReceiptUri =
       await VerificationReceiptVerifier.persistToCas(receipt);
 
+    // Exercise the real F07 -> ReleaseAuthorization issuance path against the
+    // physically verified artifact. This is a controlled qualification capability
+    // and is never used to authorize an external publication side effect.
+    const authorizationService = PublicationAuthorizationService.getInstance();
+    const authorizationPayload = {
+      jobId: "hf-zerogpu-live-" + video.videoId,
+      title: video.title,
+      description: video.description,
+      tags: video.tags,
+      privacyStatus: "unlisted" as const,
+      channelId: channel.channelId,
+      platform: "youtube",
+    };
+    const releaseAuthorization = authorizationService.issueAuthorization({
+      receipt,
+      canonicalPayload: authorizationPayload,
+      targetPlatform: "youtube",
+    });
+
+    const authorizationCheck = authorizationService.verifyAuthorization(
+      releaseAuthorization,
+      authorizationPayload,
+    );
+    if (!authorizationCheck.valid) {
+      throw new Error(
+        "F07 ReleaseAuthorization verification failed: " +
+          JSON.stringify(authorizationCheck),
+      );
+    }
+
+    const releaseAuthorizationPath = path.join(
+      proofDir,
+      "release-authorization.json",
+    );
+    await fs.writeFile(
+      releaseAuthorizationPath,
+      JSON.stringify(releaseAuthorization, null, 2),
+      "utf8",
+    );
+
     const evidence = {
       schemaVersion: "1.0",
       proofType: "HF_ZEROGPU_PHYSICAL_MP4_F07",
@@ -312,6 +353,23 @@ async function main(): Promise<void> {
         signatureVerified: signatureVerification.valid,
         persistedReceiptUri,
       },
+      releaseAuthorization: {
+        authorizationId: releaseAuthorization.authorizationId,
+        status: releaseAuthorization.status,
+        issuer: releaseAuthorization.issuer,
+        authorizationVersion: releaseAuthorization.authorizationVersion,
+        receiptId: releaseAuthorization.receiptId,
+        receiptDigestSha256: releaseAuthorization.receiptDigestSha256,
+        artifactSha256: releaseAuthorization.artifactSha256,
+        artifactCasRef: releaseAuthorization.artifactCasRef,
+        targetPlatform: releaseAuthorization.targetPlatform,
+        publicationIntentId: releaseAuthorization.publicationIntentId,
+        publicationIntentHash: releaseAuthorization.publicationIntentHash,
+        canonicalPayloadHash: releaseAuthorization.canonicalPayloadHash,
+        signerKeyId: releaseAuthorization.signerKeyId,
+        verified: authorizationCheck.valid,
+        qualificationOnly: true,
+      },
       generatedAt: new Date().toISOString(),
       productionWorkerEligible:
         adapter.metadata.capabilities.productionWorkerEligible,
@@ -328,6 +386,9 @@ async function main(): Promise<void> {
         "F07ReleaseGuardian accepted the physical artifact.",
         "F07 signed receipt verification passed.",
         "Receipt persistence to CAS completed.",
+        "F07ReleaseGuardian -> PublicationAuthorizationService issued a real Ed25519-signed ReleaseAuthorization bound to the verified receipt, artifact, CAS reference, and publication intent.",
+        "ReleaseAuthorization was cryptographically re-verified before evidence emission.",
+        "The authorization is qualification-only and no external publication side effect is performed.",
         "HF ZeroGPU remains outside F06 production-worker eligibility.",
       ],
     };
