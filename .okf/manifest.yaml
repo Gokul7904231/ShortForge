@@ -29,7 +29,7 @@ enforcement:
 provenance:
   sweep_attestation: REQUIRED
   release_attestation: REQUIRED
-  signing: PLANNED
+  signing: IMPLEMENTED
 exception_policy:
   directory: .okf/exceptions/
   required_fields:
