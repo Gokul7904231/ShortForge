@@ -15,7 +15,10 @@ export class MongoContextFabricRepository implements IContextFabricRepository {
   private readonly workspaces: Collection<WorkspaceDoc>;
   private readonly ledger: Collection<LedgerDoc>;
 
-  constructor(private readonly db: Db) {
+  constructor(
+    private readonly db: Db,
+    private readonly client?: MongoClient,
+  ) {
     this.workspaces = db.collection<WorkspaceDoc>("context_workspaces");
     this.ledger = db.collection<LedgerDoc>("context_edit_ledger");
   }
