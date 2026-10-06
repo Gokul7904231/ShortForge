@@ -29,7 +29,7 @@ function scan(dir, matcher) {
       scan(absolute, matcher);
       continue;
     }
-    if (!/.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(entry.name)) continue;
+    if (!/\\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(entry.name)) continue;
     const source = fs.readFileSync(absolute, "utf8");
     const lines = source.split(/\r?\n/);
     lines.forEach((line, index) => matcher(absolute, relative(absolute), line, index + 1));
