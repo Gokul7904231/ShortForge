@@ -7,6 +7,7 @@
  */
 
 import * as crypto from "node:crypto";
+import type { ContextOperationType } from "../CognitiveContracts";
 import type { EvidenceItem } from "../../intelligence/retrieval/RetrievalContracts";
 import { ActiveContextManager } from "./ActiveContextManager";
 import { ContextCompiler } from "../../intelligence/context/ContextCompiler";
