@@ -98,6 +98,16 @@ Wave F introduces a proposal-only seam for future CLM context policy.
 - The proposal fingerprint is deterministic and covers the proposal semantics except the fingerprint field itself.
 - A blocking verifier rejects direct ContextFabric mutation/persistence/authority paths from CLM context-proposal code and rejects production mutation calls outside ContextFabric.
 
+## Wave G ContextBench evaluation boundary
+
+Wave G makes CLM shadow policy quality measurable before any production promotion discussion.
+
+- ContextBench compares a no-policy baseline with a proposal-only shadow policy over a versioned corpus.
+- Cases are split into DEVELOPMENT and HELD_OUT; admission requires held-out evidence.
+- Deterministic graders measure critical-anchor retention, useful-deletion precision, context compression, retrieval recovery, decision quality, proposal integrity, mutation safety, authority violations, and latency.
+- Hypothetical proposal application happens only on an isolated ContextFabric clone. The original workspace is snapshotted and must remain unchanged.
+- ContextBench has no repository/persistence authority and cannot promote a model. A benchmark PASS means only that the shadow policy passed the defined evaluation gate.
+
 ## Invariants
 
 1. There is exactly one active working-context facade: ContextFabric.
