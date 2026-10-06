@@ -26,3 +26,5 @@
 | **Context Fabric Durable Persistence** | ./decisions/context-fabric-durable-persistence-20261006.md | MongoDB workspace persistence, optimistic version concurrency, and immutable context edit ledger beneath the canonical working-context boundary. |
 
 | **Context Fabric Commit & Recovery** | ./decisions/context-fabric-commit-recovery-20261006.md | Guarded atomic durable commit, deterministic recovery, rollback, and fail-closed transaction semantics. |
+
+| **Context Fabric Wave D Boundary** | ./decisions/context-fabric-wave-d-boundary-20261006.md | Machine-checked production boundary for active context; direct legacy ActiveContextManager/ContextOS consumers are prohibited outside canonical primitive files. |
