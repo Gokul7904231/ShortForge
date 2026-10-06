@@ -30,7 +30,8 @@
     "factoryos:verify:hf-zerogpu": "npx vite-node scripts/verify-hf-zerogpu-physical-mp4.ts",
     "factoryos:verify:external-apis": "npx vite-node scripts/verify-external-api-qualification.ts",
     "factoryos:verify:authority-registry": "node scripts/verify-authority-registry.mjs",
-    "factoryos:test:context-fabric": "vitest run factoryos/tests/context/context-fabric.test.ts"
+    "factoryos:test:context-fabric": "vitest run factoryos/tests/context/context-fabric.test.ts",
+    "factoryos:verify:context-fabric-boundary": "node scripts/verify-context-fabric-boundary.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.14",
