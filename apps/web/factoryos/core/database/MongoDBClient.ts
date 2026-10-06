@@ -487,7 +487,7 @@ export class MongoMissionRepository implements IMissionRepository {
 import { PersistentDiskDatabase } from "./PersistentDiskDatabase";
 
 export class DatabaseFactory {
-  static createRepositories(mongoDb?: Db | null) {
+  static createRepositories(mongoDb?: Db | null, mongoClient?: MongoClient | null) {
     if (mongoDb) {
       return {
         worldState: new MongoWorldStateRepository(mongoDb),
@@ -498,7 +498,7 @@ export class DatabaseFactory {
         taskDAGs: new MongoTaskDAGRepository(mongoDb),
         leases: new MongoLeaseRepository(mongoDb),
         missions: new MongoMissionRepository(mongoDb),
-        contextFabric: new MongoContextFabricRepository(mongoDb),
+        contextFabric: new MongoContextFabricRepository(mongoDb, mongoClient ?? undefined),
       };
     } else {
       return {
