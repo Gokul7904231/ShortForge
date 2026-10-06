@@ -43,7 +43,7 @@ function apiKeyFor(credentials?: SandboxCredentialBundle): string {
 
 function clientFor(credentials?: SandboxCredentialBundle): InstaVMClient {
   const { InstaVM } = loadInstaVM();
-  return new InstaVM(apiKeyFor(credentials));
+  return new InstaVM(apiKeyFor(credentials), { autoStartSession: false });
 }
 
 function executeTimeoutSeconds(timeoutMs: number): number {
