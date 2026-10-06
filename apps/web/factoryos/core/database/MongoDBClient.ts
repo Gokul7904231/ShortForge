@@ -10,8 +10,10 @@ import type { SlayerReputation } from "../contracts/SlayerContracts";
 import type { HealerReputation } from "../contracts/HealerContracts";
 import type { Mission } from "../contracts/MissionContracts";
 import { MissionConcurrencyConflictError } from "../missions/MissionErrors";
+import { MongoContextFabricRepository } from "./MongoContextFabricRepository";
 import {
   InMemoryCaseRepository,
+  InMemoryContextFabricRepository,
   InMemoryDecisionRepository,
   InMemoryLeaseRepository,
   InMemoryMemoryRepository,
@@ -496,6 +498,7 @@ export class DatabaseFactory {
         taskDAGs: new MongoTaskDAGRepository(mongoDb),
         leases: new MongoLeaseRepository(mongoDb),
         missions: new MongoMissionRepository(mongoDb),
+        contextFabric: new MongoContextFabricRepository(mongoDb),
       };
     } else {
       return {
@@ -507,6 +510,7 @@ export class DatabaseFactory {
         taskDAGs: new InMemoryTaskDAGRepository(),
         leases: new InMemoryLeaseRepository(),
         missions: new InMemoryMissionRepository(),
+        contextFabric: new InMemoryContextFabricRepository(),
       };
     }
   }

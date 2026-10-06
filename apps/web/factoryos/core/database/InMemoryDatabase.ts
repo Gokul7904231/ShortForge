@@ -10,6 +10,8 @@ import type { SlayerReputation } from "../contracts/SlayerContracts";
 import type { HealerReputation } from "../contracts/HealerContracts";
 import type {
   ICaseRepository,
+  IContextFabricRepository,
+  ContextEditLedgerEntry,
   IDecisionRepository,
   ILeaseRepository,
   IMemoryRepository,
@@ -19,6 +21,51 @@ import type {
   MemoryRecord,
   TaskLease,
 } from "./DatabaseContracts";
+import { ContextConcurrencyConflictError } from "./DatabaseContracts";
+
+export class InMemoryContextFabricRepository implements IContextFabricRepository {
+  private workspaces: Map<string, import("../cognitive/context/ContextFabricContracts").ContextWorkspace> = new Map();
+  private ledger: Map<string, ContextEditLedgerEntry> = new Map();
+
+  async getWorkspace(workspaceId: string) {
+    const workspace = this.workspaces.get(workspaceId);
+    return workspace ? structuredClone(workspace) : null;
+  }
+
+  async saveWorkspace(
+    workspace: import("../cognitive/context/ContextFabricContracts").ContextWorkspace,
+    expectedVersion?: number
+  ): Promise<void> {
+    const existing = this.workspaces.get(workspace.workspaceId);
+    if (expectedVersion !== undefined && (!existing || existing.version !== expectedVersion)) {
+      throw new ContextConcurrencyConflictError(
+        workspace.workspaceId,
+        expectedVersion,
+        existing?.version ?? null
+      );
+    }
+    this.workspaces.set(workspace.workspaceId, structuredClone(workspace));
+  }
+
+  async appendEdit(entry: ContextEditLedgerEntry): Promise<void> {
+    if (!this.ledger.has(entry.editId)) {
+      this.ledger.set(entry.editId, structuredClone(entry));
+    }
+  }
+
+  async getEditHistory(workspaceId: string, limit: number = 100): Promise<ContextEditLedgerEntry[]> {
+    return Array.from(this.ledger.values())
+      .filter((entry) => entry.workspaceId === workspaceId)
+      .sort((a, b) => b.resultingVersion - a.resultingVersion || b.recordedAt.localeCompare(a.recordedAt))
+      .slice(0, limit)
+      .map((entry) => structuredClone(entry));
+  }
+
+  clear(): void {
+    this.workspaces.clear();
+    this.ledger.clear();
+  }
+}
 
 export class InMemoryWorldStateRepository implements IWorldStateRepository {
   private history: WorldState[] = [];

@@ -20,6 +20,46 @@ export interface TaskLease {
   readonly status: "ACTIVE" | "EXPIRED" | "RELEASED";
 }
 
+export interface ContextEditLedgerEntry {
+  readonly editId: string;
+  readonly workspaceId: string;
+  readonly missionId: string;
+  readonly taskId: string;
+  readonly baseVersion: number;
+  readonly resultingVersion: number;
+  readonly actor: "SYSTEM" | "CLM_PROPOSAL" | "OPERATOR";
+  readonly type: "RETAIN" | "REORDER" | "OPTIMIZE";
+  readonly targetRefId?: string;
+  readonly priorityType?: "TELEMETRY" | "LOG" | "EVENT" | "CASE_HISTORY" | "DOCUMENT" | "MEMORY" | "CODE";
+  readonly reason: string;
+  readonly resultHash: string;
+  readonly recordedAt: string;
+}
+
+export class ContextConcurrencyConflictError extends Error {
+  constructor(
+    readonly workspaceId: string,
+    readonly expectedVersion: number,
+    readonly actualVersion: number | null,
+  ) {
+    super(
+      "Context workspace " + workspaceId + " version conflict: expected " + expectedVersion +
+      ", actual " + (actualVersion ?? "MISSING")
+    );
+    this.name = "ContextConcurrencyConflictError";
+  }
+}
+
+export interface IContextFabricRepository {
+  getWorkspace(workspaceId: string): Promise<import("../cognitive/context/ContextFabricContracts").ContextWorkspace | null>;
+  saveWorkspace(
+    workspace: import("../cognitive/context/ContextFabricContracts").ContextWorkspace,
+    expectedVersion?: number
+  ): Promise<void>;
+  appendEdit(entry: ContextEditLedgerEntry): Promise<void>;
+  getEditHistory(workspaceId: string, limit?: number): Promise<ContextEditLedgerEntry[]>;
+}
+
 export interface MemoryRecord {
   readonly memoryId: string;
   readonly layer: "WORKING" | "EPISODIC" | "SEMANTIC" | "OPERATIONAL" | "CASE" | "TRANSITION";

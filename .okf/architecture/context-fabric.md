@@ -47,6 +47,18 @@ Context Fabric does not own:
 | AER | epistemic interpretation of bounded context/evidence |
 | CLM | future context policy/model that proposes edits through ContextFabric |
 
+## Persistence boundary
+
+MongoDB is the durable operational persistence layer for Context Fabric workspaces.
+
+- context_workspaces stores the current durable workspace head.
+- context_edit_ledger stores immutable edit audit entries keyed by editId.
+- Workspace updates use optimistic version compare-and-swap.
+- Stale writers fail closed with a typed concurrency error.
+- The repository is persistence infrastructure, not a second context authority.
+
+Large raw context remains externalized through RLM/PersistentContextStore instead of being copied into Mongo workspace documents.
+
 ## Invariants
 
 1. There is exactly one active working-context facade: ContextFabric.
