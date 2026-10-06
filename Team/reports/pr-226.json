@@ -44,7 +44,8 @@
     "Generalized HostedSandboxComputeProvider credential and template routing for INSTAVM.",
     "Added InstaVM sandbox and connection contract tests.",
     "Added InstaVM live F07 proof workflow selection and credentials.",
-    "Recorded the local physical qualification evidence and kept productionWorkerEligible=false."
+    "Recorded the local physical qualification evidence and kept productionWorkerEligible=false.",
+    "Placed InstaVM ahead of paid-gated Modal in the default no-card ComputePolicy; Modal remains compatibility-only."
   ],
   "externalVerification": [
     "InstaVM official documentation describes Firecracker microVM isolation, session-scoped filesystem state, file upload/download, snapshots/volumes, and a no-card free tier.",
