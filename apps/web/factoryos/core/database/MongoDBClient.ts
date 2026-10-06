@@ -498,7 +498,7 @@ export class DatabaseFactory {
         taskDAGs: new MongoTaskDAGRepository(mongoDb),
         leases: new MongoLeaseRepository(mongoDb),
         missions: new MongoMissionRepository(mongoDb),
-        contextFabric: new MongoContextFabricRepository(mongoDb),
+        contextFabric: new MongoContextFabricRepository(mongoDb, mongoClient ?? undefined),
       };
     } else {
       return {
