@@ -6,6 +6,7 @@ import type {
   ContextProposalBudget,
 } from "../../core/cognitive/context/ContextFabricContracts";
 import type { ContextReference } from "../../core/cognitive/CognitiveContracts";
+import { CLMContextProposalAdapter } from "../../core/intelligence/context/CLMContextProposalAdapter";
 
 function ref(id: string, tokenCount = 40): ContextReference {
   return {
@@ -76,6 +77,84 @@ function makeProposal(
 }
 
 describe("Context Fabric Wave F — CLM shadow proposals", () => {
+  it("keeps the CLM adapter disabled unless explicitly enabled", async () => {
+    const adapter = new CLMContextProposalAdapter({
+      modelRef: "clm-disabled",
+      modelVersion: "test-1",
+      generator: async () => ({
+        edits: [],
+        confidence: 0,
+        estimatedCost: 0,
+        estimatedContextGrowthTokens: 0,
+        rationale: "unused",
+      }),
+    });
+
+    await expect(
+      adapter.propose({
+        workspace: new ContextFabric().getWorkspace(),
+        traceId: "trace-disabled",
+        policyVersion: "context-policy-v1",
+        candidateReferences: [],
+        budget,
+      }),
+    ).rejects.toThrow("disabled by policy");
+  });
+
+  it("wraps model output as a provenance-bearing typed proposal", async () => {
+    const fabric = new ContextFabric({
+      workspaceId: "ctxws_clm_adapter",
+      missionId: "mission_clm",
+      taskId: "task_clm",
+    });
+
+    const adapter = new CLMContextProposalAdapter({
+      modelRef: "clm-test-model",
+      modelVersion: "test-2",
+      enabled: true,
+      generator: async (request) => ({
+        edits: [
+          {
+            editId: "generated_edit",
+            baseVersion: request.workspace.version,
+            actor: "CLM_PROPOSAL",
+            type: "RETAIN",
+            reference: ref("generated", 30),
+            reason: "model-selected evidence",
+          },
+        ],
+        confidence: 0.7,
+        estimatedCost: 0.02,
+        estimatedContextGrowthTokens: 30,
+        rationale: "Retain a relevant evidence reference.",
+      }),
+    });
+
+    const proposal = await adapter.propose({
+      workspace: fabric.getWorkspace(),
+      traceId: "trace-adapter",
+      policyVersion: "context-policy-v1",
+      candidateReferences: [ref("generated", 30)],
+      budget,
+    });
+
+    expect(proposal.provenance.source).toBe("CLM_SHADOW");
+    expect(proposal.provenance.modelRef).toBe("clm-test-model");
+    expect(proposal.baseVersion).toBe(0);
+    expect(proposal.authorityScope).toBe("WORKING_CONTEXT_ONLY");
+    expect(proposal.proposalFingerprint).toMatch(/^[a-f0-9]{64}$/);
+
+    const result = await fabric.proposeCLMShadowEdits(adapter, {
+      traceId: "trace-adapter",
+      policyVersion: "context-policy-v1",
+      candidateReferences: [ref("generated", 30)],
+      budget,
+    });
+
+    expect(result.validation.valid).toBe(true);
+    expect(fabric.getWorkspace().version).toBe(0);
+  });
+
   it("accepts a valid proposal without mutating or committing context", async () => {
     const fabric = new ContextFabric({
       workspaceId: "ctxws_clm_shadow",
