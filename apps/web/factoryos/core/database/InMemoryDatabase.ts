@@ -11,7 +11,6 @@ import type { HealerReputation } from "../contracts/HealerContracts";
 import type {
   ICaseRepository,
   IContextFabricRepository,
-  ContextConcurrencyConflictError,
   ContextEditLedgerEntry,
   IDecisionRepository,
   ILeaseRepository,
@@ -22,6 +21,7 @@ import type {
   MemoryRecord,
   TaskLease,
 } from "./DatabaseContracts";
+import { ContextConcurrencyConflictError } from "./DatabaseContracts";
 
 export class InMemoryContextFabricRepository implements IContextFabricRepository {
   private workspaces: Map<string, import("../cognitive/context/ContextFabricContracts").ContextWorkspace> = new Map();
