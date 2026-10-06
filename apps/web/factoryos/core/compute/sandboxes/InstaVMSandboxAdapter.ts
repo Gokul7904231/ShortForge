@@ -178,9 +178,12 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
 
     try {
       const client = clientFor(credentials);
-      const currentSession = sessionFrom(client?.sessionId);
-      if (currentSession && typeof client.getUsage === "function") {
-        await client.getUsage(currentSession);
+      if (typeof client.getCurrentUser === "function") {
+        await client.getCurrentUser();
+      } else if (typeof client.getUsage === "function") {
+        await client.getUsage();
+      } else {
+        throw new Error("INSTAVM_VALIDATION_API_UNAVAILABLE");
       }
       return {
         configured: true,
