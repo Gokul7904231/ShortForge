@@ -229,6 +229,68 @@ describe("Notebook & Interactive Compute Fabric", () => {
     );
   });
 
+  it("fails with the provider operation error when Colab runtime creation is rejected", async () => {
+    const adapter = new ColabNotebookAdapter();
+    const responses = [
+      new Response(
+        JSON.stringify({
+          runtimeSpecs: [
+            {
+              key: {
+                variant: "VARIANT_GPU",
+                accelerator: "T4",
+                shape: "SHAPE_STANDARD",
+              },
+              eligible: true,
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+      new Response(
+        JSON.stringify({
+          name: "operations/colab-create-test",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+      new Response(
+        JSON.stringify({
+          name: "operations/colab-create-test",
+          done: true,
+          error: {
+            code: 8,
+            message: "RESOURCE_EXHAUSTED: test quota exceeded",
+            details: [{ reason: "TEST_QUOTA" }],
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ];
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const response = responses.shift();
+      if (!response) {
+        throw new Error("Unexpected fetch URL in Colab operation error test: " + url);
+      }
+      return response;
+    }) as typeof fetch;
+
+    await expect(
+      adapter.provision(
+        {
+          idempotencyKey: "colab-operation-error-test",
+          name: "colab-operation-error-test",
+          timeoutMs: 10_000,
+          gpuType: "T4",
+        },
+        { COLAB_ACCESS_TOKEN: "ephemeral-test-token" },
+      ),
+    ).rejects.toThrow(
+      "COLAB_RUNTIME_CREATE_FAILED: operation operations/colab-create-test completed with provider error code=8 message=RESOURCE_EXHAUSTED: test quota exceeded",
+    );
+  });
+
   it("models Paperspace as a machine-backed notebook rather than a legacy notebook API", () => {
     const paperspace = new PaperspaceNotebookAdapter();
 
