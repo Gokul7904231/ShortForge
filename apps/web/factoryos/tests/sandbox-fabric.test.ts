@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DaytonaSandboxAdapter,
   ModalSandboxAdapter,
+  InstaVMSandboxAdapter,
 } from "@/factoryos/core/compute/sandboxes";
 
 afterEach(() => {
@@ -29,10 +30,20 @@ describe("sandbox fabric", () => {
     ]);
   });
 
-  it("keeps both hosted sandbox adapters outside production worker authority", () => {
+  it("fails closed when InstaVM credentials are missing", async () => {
+    const adapter = new InstaVMSandboxAdapter();
+    const result = await adapter.validateCredentials({});
+    expect(result.configured).toBe(false);
+    expect(result.authenticated).toBe(false);
+    expect(result.missingKeys).toEqual(["INSTAVM_API_KEY"]);
+  });
+
+  it("keeps all hosted sandbox adapters outside production worker authority", () => {
     const daytona = new DaytonaSandboxAdapter();
     const modal = new ModalSandboxAdapter();
+    const instavm = new InstaVMSandboxAdapter();
     expect(daytona.metadata.capabilities.productionWorkerEligible).toBe(false);
     expect(modal.metadata.capabilities.productionWorkerEligible).toBe(false);
+    expect(instavm.metadata.capabilities.productionWorkerEligible).toBe(false);
   });
 });
