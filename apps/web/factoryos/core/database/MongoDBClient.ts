@@ -12,6 +12,7 @@ import type { Mission } from "../contracts/MissionContracts";
 import { MissionConcurrencyConflictError } from "../missions/MissionErrors";
 import {
   InMemoryCaseRepository,
+  InMemoryContextFabricRepository,
   InMemoryDecisionRepository,
   InMemoryLeaseRepository,
   InMemoryMemoryRepository,
@@ -508,7 +509,7 @@ export class DatabaseFactory {
         taskDAGs: new InMemoryTaskDAGRepository(),
         leases: new InMemoryLeaseRepository(),
         missions: new InMemoryMissionRepository(),
-        contextFabric: new (require("./InMemoryDatabase").InMemoryContextFabricRepository)(),
+        contextFabric: new InMemoryContextFabricRepository(),
       };
     }
   }
