@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ContextFabric } from "../../core/cognitive/context/ContextFabric";
+import { CognitivePlaneEngine } from "../../core/cognitive/CognitivePlaneEngine";
 import type { ContextReference } from "../../core/cognitive/CognitiveContracts";
 
 function ref(id: string, type: ContextReference["type"] = "DOCUMENT"): ContextReference {
@@ -66,5 +67,14 @@ describe("ContextFabric convergence boundary", () => {
     expect(fabric.indexer).toBeDefined();
     expect(fabric.compiler).toBeDefined();
     expect(fabric.activeContext).toBeDefined();
+  });
+});
+
+
+describe("Cognitive plane convergence", () => {
+  it("uses ContextFabric as the canonical working-context facade", () => {
+    const plane = new CognitivePlaneEngine();
+    expect(plane.contextFabric.indexer).toBe(plane.contextOrchestrator.indexer);
+    expect(plane.activeContextManager).toBe(plane.contextFabric.activeContext);
   });
 });
