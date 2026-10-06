@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - DAYTONA
+          - MODAL
       image:
         description: "Sandbox image containing ffmpeg"
         required: true
