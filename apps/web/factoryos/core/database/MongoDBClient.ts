@@ -496,6 +496,7 @@ export class DatabaseFactory {
         taskDAGs: new MongoTaskDAGRepository(mongoDb),
         leases: new MongoLeaseRepository(mongoDb),
         missions: new MongoMissionRepository(mongoDb),
+        contextFabric: new MongoContextFabricRepository(mongoDb),
       };
     } else {
       return {
@@ -507,6 +508,7 @@ export class DatabaseFactory {
         taskDAGs: new InMemoryTaskDAGRepository(),
         leases: new InMemoryLeaseRepository(),
         missions: new InMemoryMissionRepository(),
+        contextFabric: new (require("./InMemoryDatabase").InMemoryContextFabricRepository)(),
       };
     }
   }
