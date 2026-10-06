@@ -30,7 +30,7 @@ enforcement:
 provenance:
   sweep_attestation: REQUIRED
   release_attestation: REQUIRED
-  signing: PLANNED
+  signing: IMPLEMENTED_KEY_REQUIRED
 exception_policy:
   directory: .okf/exceptions/
   required_fields:
@@ -48,3 +48,17 @@ rule_coverage:
   status: PILOT
   active_machine_rules: 6
   migration_target: 100_percent_critical_high
+
+control_plane_v2:
+  policy_to_test_binding: REQUIRED
+  implementation_drift_detection: REQUIRED
+  critical_high_rule_coverage: REQUIRED
+  team_report_machine_linkage: REQUIRED
+  exception_expiration_enforcement: REQUIRED
+
+control_plane_v3:
+  cryptographic_attestations: IMPLEMENTED_KEY_REQUIRED
+  release_provenance: IMPLEMENTED_EVIDENCE_ONLY
+  aer_ascalon_policy_context: IMPLEMENTED_ADVISORY_ONLY
+  governance_dashboard: IMPLEMENTED_OBSERVABILITY_ONLY
+  production_promotion: BLOCKED_UNTIL_SIGNING_AND_REPOSITORY_ENFORCEMENT
