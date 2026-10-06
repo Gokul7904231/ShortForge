@@ -31,7 +31,7 @@
     "zap": "NOT_APPLICABLE"
   },
   "conflicts": [],
-  "disposition": "PENDING_GATES",
+  "disposition": "BLOCKED",
   "forgers": [
     "Forge Architect",
     "Forge Builder",
@@ -53,7 +53,7 @@
     "clmShadowBoundary": "PENDING",
     "typecheck": "PENDING",
     "securityReview": "PENDING",
-    "note": "Fresh exact-head validation is required before merge. No CLM training, production promotion, automatic proposal application, or ContextBench work is included."
+    "note": "BLOCKED is intentional until fresh exact-head evidence is recorded; no training, production CLM promotion, automatic proposal application, or ContextBench work is included."
   },
   "evidenceRefs": [
     ".okf/decisions/context-fabric-wave-f-clm-shadow-20261006.md",
@@ -69,5 +69,13 @@
   "model": {
     "name": "Ascalon / ShortForge Cognitive Model",
     "role": "design/review context only; no runtime authority and no training activity"
-  }
+  },
+  "dispositionRationale": "Implementation is ready for admission, but fresh exact-head verification is still pending; no PASS claim is made until the required Team, CI, Context Fabric, typecheck, governance, and security evidence is observed.",
+  "verificationPlan": [
+    "Validate the Team Change Report contract.",
+    "Run the blocking Context Fabric architecture workflow, including the CLM shadow boundary verifier.",
+    "Run strict FactoryOS typecheck and Floor 01 contract tests.",
+    "Run repository CI and applicable security validation.",
+    "Update this report with exact-head evidence before merge."
+  ]
 }
