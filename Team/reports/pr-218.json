@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR218-Colab-Operation-Diagnostics",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/colab-operation-diagnostics-20261006",
+  "objective": "Preserve the provider-side error from a completed Colab runtime-creation operation so physical render qualification failures are diagnosable instead of being collapsed into a generic missing-runtime-response error.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Notebook adapters remain bounded provider adapters and do not gain F06 worker authority.",
+      "Physical notebook qualification requires real runtime execution and physical artifact evidence.",
+      "Provider error evidence must be retained without persisting credentials or runtime proxy tokens."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE_TO_COLAB_ADAPTER",
+    "notes": [
+      "No credentials were added or persisted.",
+      "Only provider operation code/message/details are surfaced; runtime proxy tokens remain in process memory.",
+      "Provider error details are truncated to a bounded 2000-character representation."
+    ]
+  },
+  "conflicts": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "changes": [
+    "Colab provision now checks completed-operation error payloads before requiring response.name.",
+    "Provider error code, message, and bounded details are included in the thrown diagnostic.",
+    "The generic missing-response error now includes the operation name.",
+    "Added a deterministic regression test for a completed Colab operation with a RESOURCE_EXHAUSTED error."
+  ],
+  "failureEvidence": {
+    "source": "Local Colab physical render qualification run",
+    "provider": "COLAB",
+    "observedFailure": "COLAB_RUNTIME_CREATE_FAILED: completed operation did not return a runtime resource.",
+    "phase": "runtime creation operation completion before Jupyter execution",
+    "existingSuccessfulProof": "A prior live T4 create/delete control-plane run succeeded."
+  },
+  "verificationResults": {
+    "localFactoryOsTypecheck": "BLOCKED_BY_PRE-EXISTING_LOCAL_RENDERFABRIC_BACKGROUND_TYPE_MISMATCH",
+    "colabOperationDiagnosticTest": "PENDING_CI",
+    "teamChangeGate": "PENDING_CI",
+    "okfGovernanceGate": "PENDING_CI",
+    "repositoryCI": "PENDING_CI"
+  },
+  "verificationPlan": [
+    "Pass Team Change Gate, OKF Governance, and repository CI.",
+    "Run the Colab physical qualification probe once the diagnostic code is merged.",
+    "Use the surfaced provider operation error to distinguish capacity/quota from request-contract failures.",
+    "Do not mark Colab QUALIFIED unless the physical MP4, SHA-256, byte length, and MP4 signature checks pass."
+  ],
+  "disposition": "PASS",
+  "notes": [
+    "The local RenderFabric background typecheck failure was inspected against current main and is not introduced by this Colab diagnostic change.",
+    "This PR intentionally does not change Colab runtime creation semantics; it improves error observability."
+  ],
+  "evidenceRefs": [
+    "Local Colab physical qualification attempt reporting completed operation without runtime response",
+    "Successful Colab T4 control-plane create/delete proof",
+    "apps/web/factoryos/core/compute/notebooks/ColabNotebookAdapter.ts",
+    "apps/web/factoryos/tests/notebook-fabric.test.ts"
+  ]
+}

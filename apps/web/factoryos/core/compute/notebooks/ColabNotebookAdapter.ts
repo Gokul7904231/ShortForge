@@ -199,9 +199,36 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
       token,
     );
 
+    if (completed?.error) {
+      const code =
+        typeof completed.error.code === "number"
+          ? String(completed.error.code)
+          : "UNKNOWN";
+      const message =
+        typeof completed.error.message === "string"
+          ? completed.error.message
+          : "Unknown Colab runtime creation error.";
+      const details =
+        Array.isArray(completed.error.details) && completed.error.details.length
+          ? " details=" + JSON.stringify(completed.error.details).slice(0, 2000)
+          : "";
+
+      throw new Error(
+        "COLAB_RUNTIME_CREATE_FAILED: operation " +
+          String(operation.name) +
+          " completed with provider error code=" +
+          code +
+          " message=" +
+          message +
+          details,
+      );
+    }
+
     if (!completed?.response?.name) {
       throw new Error(
-        "COLAB_RUNTIME_CREATE_FAILED: completed operation did not return a runtime resource.",
+        "COLAB_RUNTIME_CREATE_FAILED: operation " +
+          String(operation.name) +
+          " completed without a runtime response.",
       );
     }
 
