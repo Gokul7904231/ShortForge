@@ -18,6 +18,8 @@ const allowed = new Set([
   path.normalize("cognitive/context/ContextFabric.ts"),
   path.normalize("cognitive/context/ActiveContextManager.ts"),
   path.normalize("memory/ContextOS.ts"),
+  path.normalize("cognitive/CognitivePlaneEngine.ts"),
+  path.normalize("cognitive/rlm/RecursiveInvestigator.ts"),
 ]);
 
 const violations = [];
@@ -38,7 +40,11 @@ function walk(dir) {
     const lines = source.split(/\r?\n/);
 
     lines.forEach((line, index) => {
-      if (/\bActiveContextManager\b/.test(line) || /\bContextOS\b/.test(line)) {
+      if (
+        /\bActiveContextManager\b/.test(line) ||
+        /\bContextOS\b/.test(line) ||
+        /\bcontextOrchestrator\s*\./.test(line)
+      ) {
         violations.push({
           file: relative.replaceAll(path.sep, "/"),
           line: index + 1,
@@ -62,5 +68,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "Context Fabric boundary valid: no direct production references to ActiveContextManager or ContextOS outside canonical primitive files.",
+  "Context Fabric boundary valid: no direct production references to ActiveContextManager, ContextOS, or contextOrchestrator outside canonical facade/wiring files.",
 );

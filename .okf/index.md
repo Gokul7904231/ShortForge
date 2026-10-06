@@ -28,3 +28,5 @@
 | **Context Fabric Commit & Recovery** | ./decisions/context-fabric-commit-recovery-20261006.md | Guarded atomic durable commit, deterministic recovery, rollback, and fail-closed transaction semantics. |
 
 | **Context Fabric Wave D Boundary** | ./decisions/context-fabric-wave-d-boundary-20261006.md | Machine-checked production boundary for active context; direct legacy ActiveContextManager/ContextOS consumers are prohibited outside canonical primitive files. |
+
+| **Context Fabric Wave E Cognitive Orchestration** | ./decisions/context-fabric-wave-e-cognitive-orchestration-20261006.md | CognitiveRuntime context operations routed through ContextFabric; RLM remains the implementation substrate. |

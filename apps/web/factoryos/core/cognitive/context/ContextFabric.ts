@@ -19,6 +19,7 @@ import type {
   ContextFabricSnapshot,
   ContextWorkspace,
   ContextEdit,
+  ContextOrchestrationPort,
 } from "./ContextFabricContracts";
 
 function canonicalize(value: unknown): string {
@@ -34,6 +35,7 @@ export class ContextFabric {
   public readonly activeContext: ActiveContextManager;
   public readonly compiler: ContextCompiler;
 
+  private readonly orchestration?: ContextOrchestrationPort;
   private createdAt: string;
   private readonly repository?: IContextFabricRepository;
   private workspace: ContextWorkspace;
@@ -47,8 +49,10 @@ export class ContextFabric {
     compiler?: ContextCompiler;
     maxActiveTokens?: number;
     repository?: IContextFabricRepository;
+    orchestration?: ContextOrchestrationPort;
   }) {
     this.repository = params?.repository;
+    this.orchestration = params?.orchestration;
     this.indexer = params?.indexer ?? new ContextIndexer();
     this.activeContext =
       params?.activeContext ??
@@ -210,6 +214,25 @@ export class ContextFabric {
       this.restoreFromSnapshot(previous);
       throw error;
     }
+  }
+
+  /**
+   * Production cognitive entry points. The facade owns the boundary while
+   * RLM/ContextOrchestrator remains the implementation substrate.
+   */
+  indexContext(items: Parameters<ContextOrchestrationPort["indexContext"]>[0]): ReturnType<ContextOrchestrationPort["indexContext"]> {
+    return this.orchestration
+      ? this.orchestration.indexContext(items)
+      : this.indexer.indexBatch(items);
+  }
+
+  async runRecursiveInvestigation(
+    goal: Parameters<ContextOrchestrationPort["runRecursiveInvestigation"]>[0],
+  ): ReturnType<ContextOrchestrationPort["runRecursiveInvestigation"]> {
+    if (!this.orchestration) {
+      throw new Error("Context Fabric cognitive orchestration unavailable");
+    }
+    return this.orchestration.runRecursiveInvestigation(goal);
   }
 
   compileSeed(params: {

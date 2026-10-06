@@ -42,7 +42,7 @@ Context Fabric does not own:
 | ContextCompiler | seed-context compiler; provenance-aware evidence packing |
 | ActiveContextManager | active working-set implementation |
 | ContextOS | legacy packaging adapter; migration target is ContextFabric |
-| CognitivePlaneEngine | orchestration owner; consumes ContextFabric rather than owning a competing context model |
+| CognitivePlaneEngine | orchestration wiring owner; binds the RLM substrate behind ContextFabric and retains only compatibility access |
 | Memory Fabric | learned-memory retrieval/projection source |
 | AER | epistemic interpretation of bounded context/evidence |
 | CLM | future context policy/model that proposes edits through ContextFabric |
@@ -78,6 +78,15 @@ Wave D makes the single-facade invariant machine-checkable.
 - `ContextOS` currently has no production runtime consumer in the FactoryOS core search surface and remains a legacy/reference primitive.
 - `factoryos:verify:context-fabric-boundary` fails on direct production references to `ActiveContextManager` or `ContextOS` outside their canonical primitive files.
 - Tests may exercise legacy primitives directly while compatibility coverage remains required.
+
+## Wave E cognitive orchestration boundary
+
+Wave E routes production cognitive context operations through ContextFabric.
+
+- CognitiveRuntime must use ContextFabric for runtime context indexing and recursive investigation.
+- ContextOrchestrator remains the RLM implementation substrate and is wired into ContextFabric by CognitivePlaneEngine.
+- The production boundary verifier rejects direct `contextOrchestrator.*` use outside the canonical wiring/substrate files.
+- No new authority is introduced; ContextFabric still owns only active working-context semantics.
 
 ## Invariants
 

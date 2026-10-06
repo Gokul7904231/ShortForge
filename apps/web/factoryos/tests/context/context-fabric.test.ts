@@ -105,6 +105,41 @@ describe("Cognitive plane convergence", () => {
     expect(plane.contextFabric.indexer).toBe(plane.contextOrchestrator.indexer);
     expect(plane.activeContextManager).toBe(plane.contextFabric.activeContext);
   });
+
+  it("routes bounded cognitive orchestration through ContextFabric", async () => {
+    const calls: string[] = [];
+    const orchestration = {
+      indexContext: (items: unknown[]) => {
+        calls.push("index");
+        return items.map((item: any) => item.refId ?? "indexed");
+      },
+      runRecursiveInvestigation: async () => {
+        calls.push("investigate");
+        return {
+          trace: {} as any,
+          conclusions: ["bounded result"],
+          dereferencedEvidence: [],
+        };
+      },
+    } as any;
+
+    const fabric = new ContextFabric({
+      workspaceId: "ctxws_orchestration",
+      missionId: "mission_orchestration",
+      taskId: "task_orchestration",
+      orchestration,
+    });
+
+    expect(fabric.indexContext([{ refId: "log-1" }] as any)).toEqual(["log-1"]);
+    const result = await fabric.runRecursiveInvestigation({
+      query: "inspect",
+      severity: "LOW",
+      targetFloor: "F01",
+    });
+
+    expect(result.conclusions).toEqual(["bounded result"]);
+    expect(calls).toEqual(["index", "investigate"]);
+  });
 });
 
 

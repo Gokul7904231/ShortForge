@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR221-Context-Fabric-Wave-E-Cognitive-Orchestration",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-fabric-wave-e-cognitive-20261006",
+  "objective": "Converge production cognitive orchestration behind ContextFabric while retaining RLM as the implementation substrate.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "ContextFabric is the sole production context entry facade.",
+      "RLM/ContextOrchestrator is an implementation substrate, not active-context authority.",
+      "Cognitive runtime context operations must route through ContextFabric.",
+      "No new database or authority is introduced.",
+      "Every non-trivial change follows the Team Change Gate."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/context-fabric-wave-e-cognitive-orchestration-20261006.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "changes": [
+    "Added a narrow ContextFabric orchestration port.",
+    "Bound ContextOrchestrator to ContextFabric from CognitivePlaneEngine.",
+    "Routed CognitiveRuntime context indexing through ContextFabric.",
+    "Routed CognitiveRuntime recursive investigation through ContextFabric.",
+    "Extended the production boundary verifier to reject direct contextOrchestrator member access outside canonical wiring/substrate files.",
+    "Added focused delegation tests and reconciled .okf evidence."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "contextFabricBoundary": "PENDING",
+    "typecheck": "PENDING",
+    "securityReview": "PENDING",
+    "note": "Fresh exact-head validation is required before merge. No CLM inference/training or ContextBench work is included."
+  },
+  "evidenceRefs": [
+    ".okf/decisions/context-fabric-wave-e-cognitive-orchestration-20261006.md",
+    ".okf/architecture/context-fabric.md",
+    "apps/web/factoryos/core/cognitive/context/ContextFabricContracts.ts",
+    "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
+    "apps/web/factoryos/core/cognitive/CognitivePlaneEngine.ts",
+    "apps/web/factoryos/core/cognitive/CognitiveRuntime.ts",
+    "apps/web/scripts/verify-context-fabric-boundary.mjs",
+    "apps/web/factoryos/tests/context/context-fabric.test.ts",
+    ".github/workflows/context-fabric.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority and no training activity"
+  }
+}

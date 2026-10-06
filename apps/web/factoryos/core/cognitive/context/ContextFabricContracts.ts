@@ -6,6 +6,13 @@
  */
 
 import type { ContextReference, ContextOperationType } from "../CognitiveContracts";
+import type { ContextOrchestrator } from "../rlm/RecursiveInvestigator";
+
+export type ContextOrchestrationPort = Pick<
+  ContextOrchestrator,
+  "indexContext" | "runRecursiveInvestigation"
+>;
+
 
 export type ContextEditActor = "SYSTEM" | "CLM_PROPOSAL" | "OPERATOR";
 
