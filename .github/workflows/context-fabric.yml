@@ -36,6 +36,9 @@ jobs:
       - name: Validate Context Fabric boundary
         run: cd apps/web && npm run factoryos:verify:context-fabric-boundary
 
+      - name: Validate CLM shadow boundary
+        run: cd apps/web && npm run factoryos:verify:context-fabric-clm-shadow
+
       - name: Typecheck FactoryOS
         run: cd apps/web && npm run factoryos:typecheck
 

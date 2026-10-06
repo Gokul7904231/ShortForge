@@ -88,6 +88,16 @@ Wave E routes production cognitive context operations through ContextFabric.
 - The production boundary verifier rejects direct `contextOrchestrator.*` use outside the canonical wiring/substrate files.
 - No new authority is introduced; ContextFabric still owns only active working-context semantics.
 
+## Wave F CLM shadow proposal boundary
+
+Wave F introduces a proposal-only seam for future CLM context policy.
+
+- CLM proposals are typed as CLMContextProposal and scoped to WORKING_CONTEXT_ONLY.
+- ContextFabric supplies the current workspace, validates provenance/version/budget/integrity, and returns a shadow result without active-context mutation or durable commit.
+- CLMContextProposalAdapter is disabled by default and has no persistence or cross-authority access.
+- The proposal fingerprint is deterministic and covers the proposal semantics except the fingerprint field itself.
+- A blocking verifier rejects direct ContextFabric mutation/persistence/authority paths from CLM context-proposal code and rejects production mutation calls outside ContextFabric.
+
 ## Invariants
 
 1. There is exactly one active working-context facade: ContextFabric.
@@ -111,9 +121,9 @@ Wave D: enforce the production boundary, migrate any direct consumers, and retir
 
 Wave E: migrate cognitive orchestration and worker cognition behind ContextFabric.
 
-Wave F: introduce CLM shadow proposals.
+Wave F: introduce CLM shadow proposals through a proposal-only ContextFabric seam; no mutation or promotion.
 
-Wave G: evaluate CLM with ContextBench before any production promotion.
+Wave G: evaluate the shadow policy with ContextBench before any production promotion.
 
 ## SDLC gate for this boundary
 

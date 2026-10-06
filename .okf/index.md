@@ -30,3 +30,5 @@
 | **Context Fabric Wave D Boundary** | ./decisions/context-fabric-wave-d-boundary-20261006.md | Machine-checked production boundary for active context; direct legacy ActiveContextManager/ContextOS consumers are prohibited outside canonical primitive files. |
 
 | **Context Fabric Wave E Cognitive Orchestration** | ./decisions/context-fabric-wave-e-cognitive-orchestration-20261006.md | CognitiveRuntime context operations routed through ContextFabric; RLM remains the implementation substrate. |
+
+| **Context Fabric Wave F CLM Shadow Proposals** | ./decisions/context-fabric-wave-f-clm-shadow-20261006.md | Proposal-only CLM context policy seam with typed provenance, deterministic validation, and no mutation or promotion authority. |

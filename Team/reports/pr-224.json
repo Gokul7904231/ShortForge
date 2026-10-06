@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR224-Context-Fabric-Wave-F-CLM-Shadow",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-fabric-wave-f-clm-shadow-20261006",
+  "objective": "Introduce a proposal-only CLM context-policy seam through ContextFabric with deterministic validation and no mutation or promotion authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "ContextFabric is the sole production working-context facade.",
+      "A model may propose ContextEdit values; deterministic validation and ContextFabric own mutation.",
+      "CLM remains shadow-only and cannot gain execution, economics, artifacts, verification, release, memory-promotion, or model-promotion authority.",
+      "No new database or sovereign authority is introduced.",
+      "Every non-trivial change follows the Team Change Gate."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/context-fabric-wave-f-clm-shadow-20261006.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "dependencyScan": "PASS — run 37434206782",
+    "staticPythonSecurity": "PASS — run 37434206782",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "changes": [
+    "Added typed CLMContextProposal and CLMContextProposalPort contracts.",
+    "Added deterministic CLM proposal fingerprinting and fail-closed validation.",
+    "Added ContextFabric.proposeCLMShadowEdits as a non-mutating shadow entry point.",
+    "Added a disabled-by-default CLMContextProposalAdapter seam.",
+    "Added negative/abuse tests for stale edits, non-CLM actors, duplicates, budget drift, tampered fingerprints, forbidden authority markers, and disabled mode.",
+    "Added a blocking machine-checkable CLM shadow boundary verifier.",
+    "Reconciled .okf architecture, decision evidence, and index entries."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PASS — run 37434206623",
+    "repositoryCI": "PASS — TypeCheck & Floor 01 Contract Tests run 37434206782",
+    "contextFabricBoundary": "PASS — Authority Registry & Context Fabric Contract run 37434206777",
+    "clmShadowBoundary": "PASS — Validate CLM shadow boundary step in run 37434206777",
+    "typecheck": "PASS — TypeScript TypeCheck step in run 37434206782",
+    "securityReview": "TRIAGED — Floor 01 dependency/static security scan passed; full Semgrep/Strix proof unavailable",
+    "okfLint": "PASS — run 37434206637",
+    "finalWaveValidation": "PASS — run 37434206653",
+    "exactHead": "7007090fd151d441c63a21148820a8d107f426dd"
+  },
+  "evidenceRefs": [
+    ".okf/decisions/context-fabric-wave-f-clm-shadow-20261006.md",
+    ".okf/architecture/context-fabric.md",
+    "apps/web/factoryos/core/cognitive/context/ContextFabricContracts.ts",
+    "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
+    "apps/web/factoryos/core/cognitive/context/ContextProposalIntegrity.ts",
+    "apps/web/factoryos/core/intelligence/context/CLMContextProposalAdapter.ts",
+    "apps/web/factoryos/tests/context/context-fabric-clm-shadow.test.ts",
+    "apps/web/scripts/verify-context-fabric-clm-shadow.mjs",
+    ".github/workflows/context-fabric.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority and no training activity"
+  },
+  "dispositionRationale": "Wave F implementation and affected blocking validations pass. Cumulative security proof remains BLOCKED because this environment does not provide the repository's full Semgrep/Strix dynamic evidence; no Wave F-specific security failure is present. Web Regression Suite remains informational and is not an admission authority for this Wave F context boundary.",
+  "verificationPlan": [
+    "Validate the Team Change Report contract.",
+    "Run the blocking Context Fabric architecture workflow, including the CLM shadow boundary verifier.",
+    "Run strict FactoryOS typecheck and Floor 01 contract tests.",
+    "Run repository CI and applicable security validation.",
+    "Update this report with exact-head evidence before merge."
+  ]
+}
