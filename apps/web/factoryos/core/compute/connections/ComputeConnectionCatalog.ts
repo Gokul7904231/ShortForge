@@ -189,11 +189,21 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     providerFamily: "SANDBOX",
     displayName: "Daytona Hosted",
     authMethod: "API_KEY",
-    connectionExperience: "MANUAL",
+    connectionExperience: "GUIDED_MANUAL",
     credentialKeys: ["DAYTONA_API_KEY"],
     configurableKeys: ["DAYTONA_API_URL", "DAYTONA_TARGET"],
+    setupUrl: "https://www.daytona.io/docs/api-keys",
     roles: ["ADMIN"],
     implemented: true,
+    onboarding: {
+      summary:
+        "Connect a hosted Daytona workspace. ShortForge only needs an API key; optional region settings can stay at Daytona's defaults.",
+      steps: [
+        "Open Daytona Dashboard and create an API key with the permissions needed for sandbox creation and execution.",
+        "Copy the generated Daytona API key.",
+        "Paste the API key into ShortForge. Leave API URL and target at their defaults unless your organization uses a custom endpoint or region.",
+      ],
+    },
     description: "Hosted sandbox execution through the Daytona TypeScript SDK.",
   },
   {
@@ -201,11 +211,21 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     providerFamily: "SANDBOX",
     displayName: "Modal Hosted",
     authMethod: "CREDENTIAL_BUNDLE",
-    connectionExperience: "MANUAL",
+    connectionExperience: "GUIDED_MANUAL",
     credentialKeys: ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"],
     configurableKeys: ["MODAL_SANDBOX_APP_NAME", "MODAL_SANDBOX_IMAGE"],
+    setupUrl: "https://modal.com/docs/sdk/js/latest/intro",
     roles: ["ADMIN"],
     implemented: true,
+    onboarding: {
+      summary:
+        "Connect Modal using a token ID and secret. The credentials stay encrypted in ShortForge and are used only server-side.",
+      steps: [
+        "Open Modal Dashboard → Workspace Settings → API Tokens and create a token.",
+        "Copy both the token ID and token secret when Modal displays them.",
+        "Paste both values into ShortForge and choose Connect and verify. Leave the optional sandbox app/image settings at their defaults unless you need a custom workspace setup.",
+      ],
+    },
     description: "Hosted sandbox execution through the Modal JavaScript SDK.",
   },
   {
