@@ -328,7 +328,9 @@ export class ContextFabric {
 
     const edits = Array.isArray(proposal.edits) ? proposal.edits : [];
     if (!Array.isArray(proposal.edits)) errors.push("edits must be an array");
-    if (edits.length > budget.maxEdits) errors.push("proposal edit count exceeds budget.maxEdits");
+    if (budget && typeof budget === "object" && edits.length > budget.maxEdits) {
+      errors.push("proposal edit count exceeds budget.maxEdits");
+    }
 
     const ids = new Set<string>();
     let minimumGrowth = 0;
