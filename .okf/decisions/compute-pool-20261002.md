@@ -19,7 +19,7 @@ A provider is a render worker only when it has a real execution path that can re
 - LOCAL: LocalComputeProvider
 - API_GPU: AmdComputeProvider
 - NOTEBOOK: KaggleNotebookComputeProvider
-- SANDBOX: HostedSandboxComputeProvider backed by Daytona or Modal
+- SANDBOX: HostedSandboxComputeProvider backed by Daytona, InstaVM, or Modal
 
 ## Decision rule
 
