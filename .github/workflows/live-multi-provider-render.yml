@@ -12,6 +12,7 @@ on:
           - KAGGLE
           - DAYTONA
           - MODAL
+          - INSTAVM
 
 permissions:
   contents: read
@@ -45,6 +46,8 @@ jobs:
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       MODAL_SANDBOX_APP_NAME: ${{ vars.MODAL_SANDBOX_APP_NAME }}
       MODAL_SANDBOX_IMAGE: ${{ vars.MODAL_SANDBOX_IMAGE }}
+      INSTAVM_API_KEY: ${{ secrets.INSTAVM_API_KEY }}
+      INSTAVM_SNAPSHOT_ID: ${{ secrets.INSTAVM_SNAPSHOT_ID }}
       SHORTFORGE_SANDBOX_OUTPUT_PATH: /tmp/shortforge/output.mp4
       SHORTFORGE_SANDBOX_RENDER_COMMAND: >-
         set -e
@@ -78,7 +81,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Install live sandbox SDKs
-        run: npm install --no-save --no-package-lock @daytona/sdk@0.220.0 modal@0.11.0
+        run: npm install --no-save --no-package-lock @daytona/sdk@0.220.0 modal@0.11.0 instavm
       - name: FactoryOS strict typecheck
         run: npm run factoryos:typecheck
       - name: Validate provider-specific activation configuration
@@ -103,6 +106,11 @@ jobs:
             MODAL)
               test -n "$MODAL_TOKEN_ID"
               test -n "$MODAL_TOKEN_SECRET"
+              test -n "$SHORTFORGE_SANDBOX_RENDER_COMMAND"
+              test -n "$SHORTFORGE_SANDBOX_OUTPUT_PATH"
+              ;;
+            INSTAVM)
+              test -n "$INSTAVM_API_KEY"
               test -n "$SHORTFORGE_SANDBOX_RENDER_COMMAND"
               test -n "$SHORTFORGE_SANDBOX_OUTPUT_PATH"
               ;;
