@@ -231,4 +231,4 @@ describe("Context Fabric durable commit and recovery", () => {
     expect(second.getWorkspace().version).toBe(0);
     expect(second.getWorkspace().activeReferences).toHaveLength(0);
   });
-}});
+});
