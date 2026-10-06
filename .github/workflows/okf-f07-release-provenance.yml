@@ -1,0 +1,110 @@
+name: OKF F07 Release Provenance Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      space:
+        description: "Private Hugging Face Space (<owner>/<space>)"
+        required: true
+        default: gokul-labs/shortforge-zerogpu-render
+        type: string
+      api_name:
+        description: "Gradio API endpoint"
+        required: true
+        default: /render
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  f07-provenance:
+    name: F07 physical artifact -> ReleaseAuthorization -> OKF provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HF_ZEROGPU_SPACE: ${{ inputs.space }}
+      HF_ZEROGPU_API_NAME: ${{ inputs.api_name }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_ZEROGPU_LIVE_TIMEOUT_MS: "180000"
+      HF_ZEROGPU_PROOF_DIR: ${{ github.workspace }}/artifacts/hf-zerogpu-live
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install PyYAML jsonschema
+          npm --prefix apps/web ci
+
+      - name: Install verifier-host FFmpeg / FFprobe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Require HF ZeroGPU secret
+        run: test -n "$HF_TOKEN"
+
+      - name: FactoryOS strict typecheck
+        working-directory: apps/web
+        run: npm run factoryos:typecheck
+
+      - name: Live F07 physical proof and ReleaseAuthorization issuance
+        working-directory: apps/web
+        run: npm run factoryos:verify:hf-zerogpu
+
+      - name: Compile current OKF governance evidence
+        run: |
+          python -m tools.okf.lint
+          python -m tools.okf.sweep --output okf-sweep.json
+          python -m tools.okf.drift --json-out okf-drift.json
+
+      - name: Bind F07 ReleaseAuthorization into OKF provenance
+        run: |
+          python -m tools.okf.provenance             --sweep okf-sweep.json             --drift okf-drift.json             --release-authorization artifacts/hf-zerogpu-live/release-authorization.json             --out okf-release-provenance.json
+
+      - name: Validate release provenance schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          schema=json.loads(Path(".okf/schemas/okf-release-provenance.schema.json").read_text(encoding="utf-8"))
+          data=json.loads(Path("okf-release-provenance.json").read_text(encoding="utf-8"))
+          errors=sorted(Draft202012Validator(schema).iter_errors(data), key=lambda e: list(e.path))
+          if errors:
+              for error in errors:
+                  print(error.message)
+              raise SystemExit(1)
+          print("OKF RELEASE PROVENANCE SCHEMA PASS")
+          PY
+
+      - name: Upload F07 + OKF provenance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: okf-f07-release-provenance
+          path: |
+            artifacts/hf-zerogpu-live/hf-zerogpu-f07-evidence.json
+            artifacts/hf-zerogpu-live/release-authorization.json
+            okf-sweep.json
+            okf-drift.json
+            okf-release-provenance.json
+          if-no-files-found: error
