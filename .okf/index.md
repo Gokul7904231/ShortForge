@@ -33,3 +33,5 @@
 
 | **Context Fabric Wave F CLM Shadow Proposals** | ./decisions/context-fabric-wave-f-clm-shadow-20261006.md | Proposal-only CLM context policy seam with typed provenance, deterministic validation, and no mutation or promotion authority. |
 | **Context Fabric Wave G ContextBench** | ./decisions/context-fabric-wave-g-contextbench-20261006.md | Quantitative baseline-vs-shadow evaluation with held-out cases, safety graders, deterministic admission thresholds, and no promotion authority. |
+
+| **OKF Control Plane v2** | [./decisions/okf-control-plane-v2-20261005.md](./decisions/okf-control-plane-v2-20261005.md) | Enforcement and drift wave: policy-to-test bindings, source drift detection, CRITICAL/HIGH coverage gates, Team report sweep linkage, and exception expiry enforcement. |
