@@ -5,21 +5,21 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type {
-  ICaseRepository,
+import {
   ContextConcurrencyConflictError,
-  ContextDurableCommit,
-  ContextEditLedgerEntry,
-  IContextFabricRepository,
-  IDecisionRepository,
-  ILeaseRepository,
-  IMemoryRepository,
-  IMissionRepository,
-  IReputationRepository,
-  ITaskDAGRepository,
-  IWorldStateRepository,
-  MemoryRecord,
-  TaskLease,
+  type ContextDurableCommit,
+  type ContextEditLedgerEntry,
+  type ICaseRepository,
+  type IContextFabricRepository,
+  type IDecisionRepository,
+  type ILeaseRepository,
+  type IMemoryRepository,
+  type IMissionRepository,
+  type IReputationRepository,
+  type ITaskDAGRepository,
+  type IWorldStateRepository,
+  type MemoryRecord,
+  type TaskLease,
 } from "./DatabaseContracts";
 import type { WorldState } from "../contracts/WorldStateContracts";
 import type { ContextWorkspace } from "../cognitive/context/ContextFabricContracts";
