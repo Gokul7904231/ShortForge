@@ -17,7 +17,11 @@ import {
 } from "../core/verification/youtube";
 import { F07PhysicalArtifactVerifier } from "../core/verification/youtube/physical/F07PhysicalArtifactVerifier";
 import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore";
-import { DaytonaSandboxAdapter, ModalSandboxAdapter } from "../core/compute/sandboxes";
+import {
+  DaytonaSandboxAdapter,
+  ModalSandboxAdapter,
+  InstaVMSandboxAdapter,
+} from "../core/compute/sandboxes";
 
 const LIVE_PROOF_CONFIGURED = Boolean(
   process.env.SHORTFORGE_LIVE_SANDBOX_PROVIDER &&
@@ -35,10 +39,15 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       process.env.SHORTFORGE_LIVE_SANDBOX_EVIDENCE_PATH ||
       path.join(os.tmpdir(), "shortforge", "live-sandbox-f07-evidence.json");
 
-    expect(["DAYTONA", "MODAL"]).toContain(provider);
+    expect(["DAYTONA", "MODAL", "INSTAVM"]).toContain(provider);
     expect(command).toBeTruthy();
 
-    const adapter = provider === "DAYTONA" ? new DaytonaSandboxAdapter() : new ModalSandboxAdapter();
+    const adapter =
+      provider === "DAYTONA"
+        ? new DaytonaSandboxAdapter()
+        : provider === "MODAL"
+          ? new ModalSandboxAdapter()
+          : new InstaVMSandboxAdapter();
     const validation = await adapter.validateCredentials();
     expect(validation.configured).toBe(true);
     expect(validation.authenticated).toBe(true);
@@ -53,8 +62,11 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       const provision = await adapter.provision({
         idempotencyKey: proofName,
         template:
-          process.env.SHORTFORGE_LIVE_SANDBOX_IMAGE ||
-          (provider === "DAYTONA" ? process.env.DAYTONA_SANDBOX_IMAGE : process.env.MODAL_SANDBOX_IMAGE),
+          provider === "DAYTONA"
+            ? process.env.DAYTONA_SANDBOX_IMAGE
+            : provider === "MODAL"
+              ? process.env.MODAL_SANDBOX_IMAGE
+              : process.env.INSTAVM_SNAPSHOT_ID,
         ttlSeconds: 900,
         metadata: { shortforge_name: proofName },
       });
