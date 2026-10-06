@@ -487,7 +487,7 @@ export class MongoMissionRepository implements IMissionRepository {
 import { PersistentDiskDatabase } from "./PersistentDiskDatabase";
 
 export class DatabaseFactory {
-  static createRepositories(mongoDb?: Db | null) {
+  static createRepositories(mongoDb?: Db | null, mongoClient?: MongoClient | null) {
     if (mongoDb) {
       return {
         worldState: new MongoWorldStateRepository(mongoDb),
