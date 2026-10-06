@@ -15,9 +15,18 @@
       "Provider credentials remain encrypted and server-side."
     ]
   },
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "conflicts": [],
   "security": {
     "required": true,
     "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
     "notes": [
       "No secrets were added.",
       "Catalog changes are onboarding metadata only; existing encrypted ComputeConnectionStore remains the credential boundary.",
@@ -28,7 +37,7 @@
   "changes": [
     "Daytona hosted connection now provides guided API-key onboarding.",
     "Modal hosted connection now provides guided token onboarding.",
-    "Added Modal hosted connection validation coverage.",
+    "Added Modal hosted connection coverage.",
     "Enabled MODAL in the existing hosted-sandbox physical proof workflow."
   ],
   "externalVerification": [
