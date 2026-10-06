@@ -1,3 +1,5 @@
+import type { OKFPolicyContext } from "../../governance/OKFPolicyContext";
+
 /**
  * ShortForge / FactoryOS — Ascalon Epistemic Runtime (AER) contracts.
  *
