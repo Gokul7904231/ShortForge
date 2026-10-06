@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR214-Context-Fabric-Durable-Persistence",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/context-fabric-durable-persistence-main-20261006",
+  "objective": "Add durable MongoDB workspace persistence and an immutable context edit ledger beneath the canonical ContextFabric working-context boundary without introducing a new authority or database.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "MongoDB is the canonical distributed operational persistence boundary.",
+      "ContextFabric is the sole active working-context authority.",
+      "Durable persistence is infrastructure and cannot become policy, capability, economic, artifact, verification, or release authority.",
+      "Stale writers must fail closed rather than overwrite newer state.",
+      "No new database or parallel context authority is introduced.",
+      "Every non-trivial change passes the Team Change Gate."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/architecture/context-fabric.md",
+      ".okf/decisions/architecture-sdlc-baseline-context-fabric-20261006.md",
+      ".okf/decisions/context-fabric-durable-persistence-20261006.md",
+      "Team/workflow/change-gate.md",
+      "apps/web/factoryos/core/database/MongoDBClient.ts"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "changes": [
+    "Added IContextFabricRepository and ContextEditLedgerEntry persistence contracts.",
+    "Added typed ContextConcurrencyConflictError for stale workspace writes.",
+    "Added MongoContextFabricRepository for context_workspaces and context_edit_ledger.",
+    "Added optimistic workspace compare-and-swap persistence.",
+    "Made edit ledger insertion idempotent by editId.",
+    "Added InMemoryContextFabricRepository for deterministic tests.",
+    "Registered the repository in DatabaseFactory.",
+    "Added Mongo indexes for durable context state.",
+    "Added persistence contract coverage.",
+    "Recorded the persistence boundary and indexed the decision under .okf.",
+    "Extended Context Fabric CI coverage to stacked feature branches."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING",
+    "repositoryCI": "PENDING",
+    "contextFabricContract": "PASS_ON_BASELINE",
+    "persistenceContractTests": "PASS_EXPECTED",
+    "mongoLivePersistence": "PENDING_ENVIRONMENT",
+    "securityReview": "PENDING",
+    "note": "Fresh PR-214 exact-head validation is required. Mongo live proof must remain UNPROVEN until a real Mongo instance verifies round-trip and concurrency behavior."
+  },
+  "evidenceRefs": [
+    ".okf/decisions/context-fabric-durable-persistence-20261006.md",
+    ".okf/architecture/context-fabric.md",
+    "apps/web/factoryos/core/database/DatabaseContracts.ts",
+    "apps/web/factoryos/core/database/InMemoryDatabase.ts",
+    "apps/web/factoryos/core/database/MongoContextFabricRepository.ts",
+    "apps/web/factoryos/core/database/MongoDBClient.ts",
+    "apps/web/factoryos/tests/context/context-fabric-persistence.test.ts",
+    ".github/workflows/context-fabric.yml"
+  ],
+  "model": {
+    "name": "Ascalon / ShortForge Cognitive Model",
+    "role": "design/review context only; no runtime authority and no training activity"
+  }
+}
