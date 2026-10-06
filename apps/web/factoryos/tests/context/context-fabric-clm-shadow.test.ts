@@ -274,6 +274,38 @@ describe("Context Fabric Wave F — CLM shadow proposals", () => {
     expect(fabric.getWorkspace().activeReferences.map((item) => item.refId)).toEqual(["a"]);
   });
 
+  it("fails closed on missing provenance and malformed budget", () => {
+    const fabric = new ContextFabric({
+      workspaceId: "ctxws_clm_malformed",
+      missionId: "mission_clm",
+      taskId: "task_clm",
+    });
+
+    const proposal = {
+      ...makeProposal(fabric),
+      provenance: undefined,
+      budget: undefined,
+    } as any;
+
+    const validation = fabric.validateCLMShadowProposal(
+      proposal,
+      fabric.getWorkspace(),
+      budget,
+      "clm-shadow-test",
+    );
+
+    expect(validation.valid).toBe(false);
+    expect(validation.errors).toEqual(
+      expect.arrayContaining([
+        "proposal source must be CLM_SHADOW",
+        "modelVersion is required",
+        "traceId is required",
+        "policyVersion is required",
+        "budget is required",
+      ]),
+    );
+  });
+
   it("rejects tampered fingerprints and forbidden authority markers", () => {
     const fabric = new ContextFabric({
       workspaceId: "ctxws_clm_tamper",
