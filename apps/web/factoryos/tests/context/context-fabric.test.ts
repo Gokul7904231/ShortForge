@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ContextFabric } from "../../core/cognitive/context/ContextFabric";
 import { CognitivePlaneEngine } from "../../core/cognitive/CognitivePlaneEngine";
 import { InMemoryContextFabricRepository } from "../../core/database/InMemoryDatabase";
-import { ContextConcurrencyConflictError } from "../../core/database/DatabaseContracts";
+import { ContextConcurrencyConflictError, ContextDurabilityUnavailableError } from "../../core/database/DatabaseContracts";
+import { MongoContextFabricRepository } from "../../core/database/MongoContextFabricRepository";
 import type { ContextReference } from "../../core/cognitive/CognitiveContracts";
 
 function ref(id: string, type: ContextReference["type"] = "DOCUMENT"): ContextReference {
@@ -70,6 +71,31 @@ describe("ContextFabric convergence boundary", () => {
     expect(fabric.compiler).toBeDefined();
     expect(fabric.activeContext).toBeDefined();
   });
+
+  it("fails closed when Mongo atomic transaction capability is not supplied", async () => {
+    const fakeDb = {
+      collection: () => ({
+        findOne: async () => null,
+        find: () => ({ toArray: async () => [] }),
+      }),
+    } as any;
+
+    const repository = new MongoContextFabricRepository(fakeDb);
+    const workspace = new ContextFabric({
+      workspaceId: "ctxws_no_transaction",
+      missionId: "mission_no_transaction",
+      taskId: "task_no_transaction",
+    }).getWorkspace();
+
+    await expect(
+      repository.commitWorkspace({
+        workspace,
+        edits: [],
+        expectedVersion: 0,
+      })
+    ).rejects.toBeInstanceOf(ContextDurabilityUnavailableError);
+  });
+
 });
 
 
@@ -205,4 +231,4 @@ describe("Context Fabric durable commit and recovery", () => {
     expect(second.getWorkspace().version).toBe(0);
     expect(second.getWorkspace().activeReferences).toHaveLength(0);
   });
-});
+}});
