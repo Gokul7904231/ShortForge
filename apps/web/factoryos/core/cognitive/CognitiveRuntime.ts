@@ -128,13 +128,14 @@ export class CognitiveRuntime {
       // 3. Active Context Management & Indexing
       if (incident.rawLogs && incident.rawLogs.length > 0) {
         for (const log of incident.rawLogs) {
-          this.plane.contextOrchestrator.indexer.indexItem({
+          this.plane.contextFabric.indexContext([{
+
             type: "LOG",
             title: `Log from ${incident.floorId || "system"}`,
             content: log,
             source: incident.floorId || "system",
             tags: [incident.category],
-          });
+          }]);
         }
       }
 
@@ -182,7 +183,7 @@ export class CognitiveRuntime {
       let rootCauseTheory = winningClaim || `Localized ${incident.category} anomaly on ${incident.floorId || "target"}`;
       if (complexityLevel === "RLM" || (incident.rawLogs && incident.rawLogs.length > 5)) {
         rlmActivated = true;
-        const result = await this.plane.contextOrchestrator.investigator.investigate({
+        const result = await this.plane.contextFabric.runRecursiveInvestigation({
           query: `Investigate root cause of ${incident.category} with symptoms: ${incident.symptoms.join(", ")}`,
           severity: incident.severity,
           targetFloor: incident.floorId,
