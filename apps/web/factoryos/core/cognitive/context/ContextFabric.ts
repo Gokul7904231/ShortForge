@@ -8,6 +8,7 @@
 
 import * as crypto from "node:crypto";
 import type { ContextOperationType } from "../CognitiveContracts";
+import type { IContextFabricRepository, ContextEditLedgerEntry } from "../../database/DatabaseContracts";
 import type { EvidenceItem } from "../../intelligence/retrieval/RetrievalContracts";
 import { ActiveContextManager } from "./ActiveContextManager";
 import { ContextCompiler } from "../../intelligence/context/ContextCompiler";
@@ -33,7 +34,8 @@ export class ContextFabric {
   public readonly activeContext: ActiveContextManager;
   public readonly compiler: ContextCompiler;
 
-  private readonly createdAt: string;
+  private createdAt: string;
+  private readonly repository?: IContextFabricRepository;
   private workspace: ContextWorkspace;
 
   constructor(params?: {
@@ -44,7 +46,9 @@ export class ContextFabric {
     activeContext?: ActiveContextManager;
     compiler?: ContextCompiler;
     maxActiveTokens?: number;
+    repository?: IContextFabricRepository;
   }) {
+    this.repository = params?.repository;
     this.indexer = params?.indexer ?? new ContextIndexer();
     this.activeContext =
       params?.activeContext ??
@@ -105,6 +109,109 @@ export class ContextFabric {
     return this.getWorkspace();
   }
 
+  async hydrate(workspaceId: string = this.workspace.workspaceId): Promise<ContextWorkspace | null> {
+    if (!this.repository) {
+      throw new Error("Context Fabric durable persistence unavailable");
+    }
+
+    const persisted = await this.repository.getWorkspace(workspaceId);
+    if (!persisted) return null;
+
+    const expectedHash = this.computeWorkspaceHash(persisted);
+    if (expectedHash !== persisted.contextHash) {
+      throw new Error(
+        "Context Fabric recovery integrity mismatch for workspace " + workspaceId
+      );
+    }
+
+    const history = await this.repository.getEditHistory(workspaceId, 1000);
+    const seen = new Set<string>();
+    for (const entry of history) {
+      if (seen.has(entry.editId)) {
+        throw new Error("Context Fabric recovery contains duplicate edit " + entry.editId);
+      }
+      seen.add(entry.editId);
+      if (entry.resultingVersion > persisted.version || entry.resultingVersion < 1) {
+        throw new Error(
+          "Context Fabric recovery found invalid ledger version " + entry.resultingVersion
+        );
+      }
+    }
+
+    const previous = this.getWorkspace();
+    try {
+      this.restoreActiveReferences(persisted.activeReferences);
+      const restored = this.activeContext.getActiveItems();
+      const restoredHash = this.computeWorkspaceHash({
+        ...persisted,
+        activeReferences: restored,
+      });
+
+      if (restoredHash !== persisted.contextHash) {
+        throw new Error(
+          "Context Fabric recovery changed the active set for workspace " + workspaceId
+        );
+      }
+
+      this.createdAt = persisted.createdAt;
+      this.workspace = structuredClone(persisted);
+      return this.getWorkspace();
+    } catch (error) {
+      this.restoreFromSnapshot(previous);
+      throw error;
+    }
+  }
+
+  async recover(workspaceId: string = this.workspace.workspaceId): Promise<ContextWorkspace | null> {
+    return this.hydrate(workspaceId);
+  }
+
+  async commitEdits(edits: ContextEdit[]): Promise<ContextWorkspace> {
+    if (!this.repository) {
+      throw new Error("Context Fabric durable persistence unavailable");
+    }
+    if (edits.length === 0) return this.getWorkspace();
+
+    const editIds = new Set<string>();
+    for (const edit of edits) {
+      if (editIds.has(edit.editId)) {
+        throw new Error("Duplicate Context Fabric edit ID: " + edit.editId);
+      }
+      editIds.add(edit.editId);
+    }
+
+    const previous = this.getWorkspace();
+    try {
+      const proposed = this.applyEdits(edits);
+      const ledgerEntries: ContextEditLedgerEntry[] = edits.map((edit) => ({
+        editId: edit.editId,
+        workspaceId: proposed.workspaceId,
+        missionId: proposed.missionId,
+        taskId: proposed.taskId,
+        baseVersion: previous.version,
+        resultingVersion: proposed.version,
+        actor: edit.actor,
+        type: edit.type,
+        targetRefId: edit.type === "RETAIN" ? edit.reference.refId : undefined,
+        priorityType: edit.type === "REORDER" ? edit.priorityType : undefined,
+        reason: edit.reason,
+        resultHash: proposed.contextHash,
+        recordedAt: proposed.updatedAt,
+      }));
+
+      await this.repository.commitWorkspace({
+        workspace: proposed,
+        edits: ledgerEntries,
+        expectedVersion: previous.version,
+      });
+
+      return this.getWorkspace();
+    } catch (error) {
+      this.restoreFromSnapshot(previous);
+      throw error;
+    }
+  }
+
   compileSeed(params: {
     taskId: string;
     query: string;
@@ -146,6 +253,30 @@ export class ContextFabric {
     return this.getWorkspace();
   }
 
+  private computeWorkspaceHash(workspace: ContextWorkspace): string {
+    const payload = {
+      workspaceId: workspace.workspaceId,
+      missionId: workspace.missionId,
+      taskId: workspace.taskId,
+      version: workspace.version,
+      activeReferences: workspace.activeReferences,
+    };
+    return crypto.createHash("sha256").update(canonicalize(payload)).digest("hex");
+  }
+
+  private restoreActiveReferences(references: ContextWorkspace["activeReferences"]): void {
+    this.activeContext.clear();
+    for (const reference of references) {
+      this.activeContext.addContextItem(reference);
+    }
+  }
+
+  private restoreFromSnapshot(snapshot: ContextWorkspace): void {
+    this.restoreActiveReferences(snapshot.activeReferences);
+    this.createdAt = snapshot.createdAt;
+    this.workspace = structuredClone(snapshot);
+  }
+
   private buildWorkspace(
     workspaceId: string,
     missionId: string,
@@ -153,8 +284,17 @@ export class ContextFabric {
     version: number
   ): ContextWorkspace {
     const activeReferences = this.activeContext.getActiveItems();
-    const payload = { workspaceId, missionId, taskId, version, activeReferences };
-    const contextHash = crypto.createHash("sha256").update(canonicalize(payload)).digest("hex");
+    const contextHash = this.computeWorkspaceHash({
+      workspaceId,
+      missionId,
+      taskId,
+      version,
+      contextHash: "",
+      activeReferences,
+      totalTokens: activeReferences.reduce((sum, item) => sum + item.tokenCount, 0),
+      createdAt: this.createdAt,
+      updatedAt: "",
+    });
     const now = new Date().toISOString();
 
     return {
