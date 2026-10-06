@@ -70,6 +70,15 @@ Wave C adds a guarded atomic commit and recovery path.
 - Failed durable commits restore the prior in-memory active set and workspace version.
 - Stale durable writers are rejected before their proposed version can become durable.
 
+## Wave D boundary
+
+Wave D makes the single-facade invariant machine-checkable.
+
+- `CognitivePlaneEngine.activeContextManager` is retained only as a deprecated compatibility alias typed through `ContextFabric`; the cognitive plane does not import or construct the legacy manager.
+- `ContextOS` currently has no production runtime consumer in the FactoryOS core search surface and remains a legacy/reference primitive.
+- `factoryos:verify:context-fabric-boundary` fails on direct production references to `ActiveContextManager` or `ContextOS` outside their canonical primitive files.
+- Tests may exercise legacy primitives directly while compatibility coverage remains required.
+
 ## Invariants
 
 1. There is exactly one active working-context facade: ContextFabric.
@@ -89,9 +98,9 @@ Wave B: persist context workspace/version/edit ledger in Mongo; large payloads r
 
 Wave C: guarded durable commit/recovery + rollback + integrity verification.
 
-Wave D: migrate direct ContextOS consumers.
+Wave D: enforce the production boundary, migrate any direct consumers, and retire duplicate active-context ownership.
 
-Wave E: migrate cognitive orchestration and worker cognition.
+Wave E: migrate cognitive orchestration and worker cognition behind ContextFabric.
 
 Wave F: introduce CLM shadow proposals.
 
