@@ -34,20 +34,22 @@ V3 does not modify this hierarchy.
 
 ## Current enforcement evidence
 
-Owner-side GitHub repository protection is configured, but the live rulesets are currently disabled and therefore do not enforce protection:
-- `OKF Main Protection` targets `refs/heads/main` and defines pull requests, one approval, Code Owner review, up-to-date branches, and the `OKF Governance Gate` status check; force updates and deletion are blocked when the ruleset is enabled.
-- `OKF Release Tag Protection` targets `refs/tags/v*` and defines update/deletion/non-fast-forward protection when enabled.
-- Both rulesets have an empty bypass list.
-- Promotion must not treat configuration-as-code as enforcement evidence; the rulesets must be enabled and exercised.
+Owner-side GitHub repository protection is active and has now been exercised:
+- `OKF Main Protection` targets `refs/heads/main`, requires pull requests, one approval, Code Owner review, up-to-date branches, and the `OKF Governance Gate` status check; force updates and deletion are blocked.
+- `OKF Release Tag Protection` targets `refs/tags/v*` and blocks tag updates/deletion/non-fast-forward changes.
+- Both rulesets have an empty bypass list and the live API reports `enforcement=active`.
+- A direct write attempt to `main` through the GitHub Contents API was rejected with the real repository-rule response: `Changes must be made through a pull request` and `Required status check "OKF Governance Gate" is expected.`
+- No release-style `v*` tag currently exists in the repository, so tag mutation behavior cannot be exercised without first creating a test tag; no tag was created solely for this qualification.
 
 The cryptographic signing configuration has been supplied through repository-managed Actions secrets/variables, and V3 Validation #8 exercised the Ed25519 signing path successfully with a retained `okf-v3-evidence` artifact. The next gate is the F07-bound release provenance path and its corresponding repository enforcement proof.
 
 ## Promotion gates
 
 Production promotion remains blocked until:
-- an actual F07 `ReleaseAuthorization` is supplied to the release-provenance binder and the resulting provenance artifact is retained;
-- GitHub repository ruleset enforcement is enabled and proven with an actual protected-branch/tag behavior test;
+- a live F07 qualification run produces and verifies a real `ReleaseAuthorization`, then binds it into `okf-release-provenance.json` and retains the evidence artifact;
+- the final PR-to-main merge is performed with the active ruleset, a valid Code Owner approval, and `OKF Governance Gate` passing;
 - current V2 CI evidence is passing and reconciled with the promotion candidate.
+
 
 ## Non-goals
 
