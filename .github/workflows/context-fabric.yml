@@ -37,6 +37,6 @@ jobs:
         run: cd apps/web && npm run factoryos:typecheck
 
       - name: Context Fabric contract tests
-        run: cd apps/web && npx vitest run factoryos/tests/context/context-fabric.test.ts
+        run: cd apps/web && npx vitest run factoryos/tests/context/context-fabric.test.ts factoryos/tests/context/context-fabric-persistence.test.ts
         env:
           NEXT_TELEMETRY_DISABLED: 1
