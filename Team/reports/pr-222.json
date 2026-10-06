@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR222-Sandbox-Connections",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/sandbox-connections-finish-20261006-v2",
+  "objective": "Finish the hosted sandbox connection surface by making Daytona and Modal onboarding guided, retaining the admin-only boundary, and enabling the existing physical sandbox proof workflow to select Modal.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Hosted sandboxes remain separate from Notebook Fabric and API/GPU Fabric.",
+      "Sandbox connections do not grant F06 production-worker authority.",
+      "F07 remains the physical artifact authority.",
+      "Provider credentials remain encrypted and server-side."
+    ]
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "conflicts": [],
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No secrets were added.",
+      "Catalog changes are onboarding metadata only; existing encrypted ComputeConnectionStore remains the credential boundary.",
+      "Daytona and Modal remain ADMIN-only.",
+      "Live proof credentials are sourced only from GitHub Actions secrets."
+    ]
+  },
+  "changes": [
+    "Daytona hosted connection now provides guided API-key onboarding.",
+    "Modal hosted connection now provides guided token onboarding.",
+    "Added Modal hosted connection coverage.",
+    "Enabled MODAL in the existing hosted-sandbox physical proof workflow."
+  ],
+  "externalVerification": [
+    "Daytona current authentication docs document DAYTONA_API_KEY and hosted Sandbox lifecycle.",
+    "Modal current JavaScript SDK docs document ModalClient, Sandbox.create, Sandbox.exec, filesystem access and token authentication."
+  ],
+  "verificationPlan": [
+    "Pass repository CI, Sandbox Fabric contract tests, Team Change Gate, and OKF Governance.",
+    "Run the live hosted sandbox workflow with MODAL and valid repository secrets.",
+    "Do not mark Modal qualified unless physical MP4, independent CAS, F07 physical verification, and signed receipt evidence all pass."
+  ],
+  "disposition": "PASS",
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts",
+    ".github/workflows/live-hosted-sandbox.yml",
+    ".okf/compute/sandbox-fabric.md",
+    "Issue #154: Daytona physical + CAS + F07 proof complete; Modal physical qualification remains pending"
+  ]
+}

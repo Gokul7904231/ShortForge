@@ -184,6 +184,31 @@ describe("compute connection hub", () => {
     expect(sandboxIds).not.toContain("sandbox_pandastack_hosted");
   });
 
+  it("validates a hosted Modal connection without exposing its secret", async () => {
+    const connection = await computeConnectionService.create(adminUser, {
+      providerId: "sandbox_modal_hosted",
+      credentials: {
+        MODAL_TOKEN_ID: "ak_test_id",
+        MODAL_TOKEN_SECRET: "as_test_secret",
+      },
+    });
+    const adapter = sandboxRegistry.get("MODAL");
+    expect(adapter).toBeDefined();
+    vi.spyOn(adapter!, "validateCredentials").mockResolvedValue({
+      configured: true,
+      authenticated: true,
+      providerReachable: true,
+      requiredKeys: ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"],
+      missingKeys: [],
+      checkedAt: new Date().toISOString(),
+      evidence: ["mocked hosted validation"],
+    });
+    const result = await validateSandboxConnection(adminUser.uid, connection.connectionId);
+    expect(result.authenticated).toBe(true);
+    expect(result.providerType).toBe("MODAL");
+    expect((await computeConnectionStore.getForUser(adminUser.uid, connection.connectionId))?.status).toBe("CONNECTED");
+  });
+
   it("validates a hosted Daytona connection without exposing its secret", async () => {
     const connection = await computeConnectionService.create(adminUser, {
       providerId: "sandbox_daytona_hosted",
