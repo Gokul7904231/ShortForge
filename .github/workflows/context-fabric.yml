@@ -39,10 +39,18 @@ jobs:
       - name: Validate CLM shadow boundary
         run: cd apps/web && npm run factoryos:verify:context-fabric-clm-shadow
 
+      - name: Validate ContextBench boundary
+        run: cd apps/web && npm run factoryos:verify:context-bench
+
       - name: Typecheck FactoryOS
         run: cd apps/web && npm run factoryos:typecheck
 
       - name: Context Fabric contract tests
         run: cd apps/web && npx vitest run factoryos/tests/context/context-fabric.test.ts factoryos/tests/context/context-fabric-persistence.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: ContextBench evaluation
+        run: cd apps/web && npm run factoryos:test:context-bench
         env:
           NEXT_TELEMETRY_DISABLED: 1
