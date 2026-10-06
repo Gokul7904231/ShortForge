@@ -32,12 +32,16 @@
     },
     {
       "providerId": "crossref",
-      "disposition": "PENDING",
-      "configured": false,
-      "liveProbeRunId": null,
-      "qualifiedAt": null,
-      "evidenceRefs": [],
-      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+      "disposition": "QUALIFIED",
+      "configured": true,
+      "liveProbeRunId": "gha_37417006052",
+      "qualifiedAt": "2026-10-06T05:08:56.879Z",
+      "evidenceRefs": [
+        "External API Public Live Qualification run 37417006052",
+        "Live crossref job 112117721917",
+        "external-api-crossref-evidence artifact 11392190762"
+      ],
+      "notes": "Live network request returned HTTP 200 from https://api.crossref.org/v1/works with a representative message.items[] record; qualification evidence includes LIVE_NETWORK_REQUEST, CAPABILITY_OUTPUT, and NORMALIZED_PROVIDER_RESULT."
     },
     {
       "providerId": "unpaywall",
