@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_COMPUTE_POLICY } from "@/factoryos/core/compute/contracts/ComputeContracts";
 import {
   DaytonaSandboxAdapter,
   ModalSandboxAdapter,
@@ -36,6 +37,14 @@ describe("sandbox fabric", () => {
     expect(result.configured).toBe(false);
     expect(result.authenticated).toBe(false);
     expect(result.missingKeys).toEqual(["INSTAVM_API_KEY"]);
+  });
+
+
+  it("keeps the no-card default compute policy on approved sandbox providers", () => {
+    expect(DEFAULT_COMPUTE_POLICY.allowedProviders).toContain("DAYTONA");
+    expect(DEFAULT_COMPUTE_POLICY.allowedProviders).toContain("INSTAVM");
+    expect(DEFAULT_COMPUTE_POLICY.allowedProviders).not.toContain("MODAL");
+    expect(DEFAULT_COMPUTE_POLICY.preferredOrder).toContain("INSTAVM");
   });
 
   it("keeps all hosted sandbox adapters outside production worker authority", () => {
