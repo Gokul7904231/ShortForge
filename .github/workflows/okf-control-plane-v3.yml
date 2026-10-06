@@ -48,6 +48,8 @@ jobs:
           python -m tools.okf.lint
           python -m tools.okf.sweep --base "$OKF_BASE_REF" --head "$OKF_HEAD_REF" --output okf-sweep.json
           python -m tools.okf.drift --json-out okf-drift.json
+      - name: Validate OKF Python control-plane tests
+        run: python -m unittest tools.okf.tests.test_control_plane tools.okf.tests.test_release_provenance
       - name: Validate Team report against compiled sweep
         if: github.event_name == 'pull_request'
         run: python -m tools.okf.validate_report Team/reports/pr-${{ github.event.pull_request.number }}.json --sweep okf-sweep.json
