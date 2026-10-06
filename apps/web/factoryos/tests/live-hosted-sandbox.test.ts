@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import {
   F07ReleaseGuardian,
   YouTubePolicyStore,
@@ -97,6 +98,24 @@ describeLiveProof("live hosted sandbox compute proof", () => {
 
       const stat = await fs.stat(localOutput);
       expect(stat.size).toBeGreaterThan(1024);
+
+      const localHash = createHash("sha256")
+        .update(await fs.readFile(localOutput))
+        .digest("hex");
+      const remoteIntegrity = await adapter.execute({
+        runtime,
+        command: "sha256sum " + shellQuote(outputPath) + " && stat -c '%s' " + shellQuote(outputPath),
+        timeoutMs: 30_000,
+      });
+      expect(remoteIntegrity.status).toBe("SUCCEEDED");
+      const remoteLines = String(remoteIntegrity.stdout || "")
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      expect(remoteLines.length).toBeGreaterThanOrEqual(2);
+      expect(remoteLines[0].split(/\s+/)[0]).toBe(localHash);
+      expect(Number(remoteLines[1])).toBe(stat.size);
 
       const cas = ContentAddressedStore.getInstance();
       const artifact = await cas.putFile(localOutput, "output_mp4", "video/mp4", {
@@ -263,3 +282,8 @@ describeLiveProof("live hosted sandbox compute proof", () => {
     }
   }, 180_000);
 });
+
+function shellQuote(value: string): string {
+  if (value.includes("\0")) throw new Error("INVALID_PATH");
+  return "'" + value.replaceAll("'", "'\\''") + "'";
+}
