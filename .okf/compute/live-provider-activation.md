@@ -105,3 +105,21 @@ Verified chain:
 - final operator proof marker: **INSTA_VM_PHYSICAL_ARTIFACT_PROOF=PASS**.
 
 This establishes provider execution and physical artifact-transfer capability. Repository-side CAS + F07 qualification remains the final acceptance step. productionWorkerEligible=false remains mandatory.
+
+
+## Verified InstaVM Repository Physical + CAS + F07 Evidence — 2026-10-09
+
+Repository-side credential-backed qualification passed on GitHub Actions workflow run **37893345664** (temporary qualification PR #229, run #14, qualification branch head `a7a7dc72505b6723be8527a7ce2d1daadd063b52`). The qualification branch and production implementation PR #226 contain the same InstaVM adapter implementation; the temporary workflow itself is not part of the production PR.
+
+Verified chain:
+- InstaVM `POST /v1/vms?wait=true` returned an active VM and real canonical session ID (HTTP 200);
+- raw session-bound `POST /execute` succeeded (HTTP 200, exit code 0); diagnostic session was terminated successfully (HTTP 200);
+- ShortForge provisioned a fresh InstaVM runtime and rendered a physical MP4 with FFmpeg;
+- artifact downloaded from the provider and independently verified, including MP4 container, decode smoke, dimensions **1080x1920**, H.264 video, AAC audio, 30fps, 1.000s video/audio, yuv420p, 48 kHz mono;
+- artifact byte length **5901** and SHA-256 **46e447aec702d345f3a6f239fced7b665606dde99c9d3e205596713f537dd623**;
+- CAS integrity verified at `cas://46e447aec702d345f3a6f239fced7b665606dde99c9d3e205596713f537dd623`;
+- independent F07 outcome **READY**, `publishAllowed=true`, and `receiptSignatureVerified=true`;
+- receipt ID `rcpt_live_instavm_mv0l1snw_2026-10-09T062658452Z`; receipt persisted to the workflow's CAS storage;
+- evidence JSON uploaded as GitHub Actions artifact **instavm-f07-evidence**, artifact ID **11599775673**.
+
+This completes repository-side physical artifact + CAS + F07 qualification for InstaVM. It does **not** grant F06 production-worker authority; `productionWorkerEligible=false` remains mandatory. The temporary qualification PR #229 is evidence-only and must not be merged.
