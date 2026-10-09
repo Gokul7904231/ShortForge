@@ -43,7 +43,7 @@ function apiKeyFor(credentials?: SandboxCredentialBundle): string {
 
 function clientFor(credentials?: SandboxCredentialBundle): InstaVMClient {
   const { InstaVM } = loadInstaVM();
-  return new InstaVM(apiKeyFor(credentials), { autoStartSession: false });
+  return new InstaVM(apiKeyFor(credentials));
 }
 
 function executeTimeoutSeconds(timeoutMs: number): number {
@@ -226,13 +226,12 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
 
     let sessionId = sessionFrom(client?.sessionId);
     let vmId: string | undefined;
+    const usesExplicitVmSession = Boolean(request.template && client?.vms?.create);
 
-    // Keep the default execution path on InstaVM's session API. A VM created
-    // through client.vms.create() can return a session id that the JS SDK's
-    // first explicit execute call rejects on an untemplated VM. Creating the
-    // execution session directly keeps provision/execute/download/close bound
-    // to the same canonical runtime identity.
-    if (request.template && client?.vms?.create) {
+    // The JavaScript SDK's documented execution contract is automatic session
+    // creation on the first execute() call. Use that path for ordinary runs;
+    // explicit VM/session binding is reserved for snapshot-backed requests.
+    if (usesExplicitVmSession) {
       const vm = await client.vms.create(
         {
           snapshot_id: request.template,
@@ -248,30 +247,43 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
       );
       sessionId = sessionFrom(vm?.session_id || vm?.sessionId) || sessionId;
       vmId = vm?.vm_id || vm?.vmId;
-    } else if (!sessionId && typeof client.createSession === "function") {
-      sessionId = sessionFrom(await client.createSession());
-    }
-
-    if (!sessionId) {
-      throw new Error("INSTAVM_SESSION_ID_MISSING");
+      if (!sessionId) {
+        throw new Error("INSTAVM_VM_SESSION_ID_MISSING");
+      }
     }
 
     try {
-      const bootstrap = await client.execute("true", {
+      const bootstrapOptions: Record<string, unknown> = {
         language: "bash",
         timeout: 30,
-        sessionId,
-      });
+      };
+      if (usesExplicitVmSession && sessionId) {
+        bootstrapOptions.sessionId = sessionId;
+      }
+
+      const bootstrap = await client.execute("true", bootstrapOptions);
       const bootstrapExitCode = Number(
         bootstrap?.exitCode ?? bootstrap?.exit_code ?? 0,
       );
       if (bootstrapExitCode !== 0) {
         throw new Error("INSTAVM_BOOTSTRAP_FAILED");
       }
+
+      // For ordinary sessions, the SDK sets sessionId as part of execute().
+      // Keep the provider runtime bound to that exact session for every later
+      // command, transfer, reconciliation and termination call.
+      sessionId =
+        sessionId ||
+        sessionFrom(client?.sessionId) ||
+        sessionFrom(bootstrap?.sessionId);
+      if (!sessionId) {
+        throw new Error("INSTAVM_SESSION_ID_MISSING_AFTER_EXECUTE");
+      }
     } catch (error: any) {
-      // Provision can fail after a remote session has already been allocated.
-      // Close it before returning the failure so retries cannot leak sessions.
-      if (typeof client.closeSession === "function") {
+      // Prefer the SDK's session identity for cleanup if execute() allocated
+      // a VM but then failed before the identity was persisted locally.
+      sessionId = sessionId || sessionFrom(client?.sessionId);
+      if (sessionId && typeof client.closeSession === "function") {
         await client.closeSession(sessionId).catch(() => undefined);
       }
       throw new Error(
