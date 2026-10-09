@@ -227,10 +227,15 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
     let sessionId = sessionFrom(client?.sessionId);
     let vmId: string | undefined;
 
-    if (client?.vms?.create) {
+    // Keep the default execution path on InstaVM's session API. A VM created
+    // through client.vms.create() can return a session id that the JS SDK's
+    // first explicit execute call rejects on an untemplated VM. Creating the
+    // execution session directly keeps provision/execute/download/close bound
+    // to the same canonical runtime identity.
+    if (request.template && client?.vms?.create) {
       const vm = await client.vms.create(
         {
-          ...(request.template ? { snapshot_id: request.template } : {}),
+          snapshot_id: request.template,
           vm_lifetime_seconds: Math.max(60, request.ttlSeconds || 900),
           ...(request.metadata?.cpuCores
             ? { vcpu_count: Number(request.metadata.cpuCores) }
@@ -243,9 +248,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
       );
       sessionId = sessionFrom(vm?.session_id || vm?.sessionId) || sessionId;
       vmId = vm?.vm_id || vm?.vmId;
-    }
-
-    if (!sessionId && typeof client.createSession === "function") {
+    } else if (!sessionId && typeof client.createSession === "function") {
       sessionId = sessionFrom(await client.createSession());
     }
 
@@ -253,16 +256,28 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
       throw new Error("INSTAVM_SESSION_ID_MISSING");
     }
 
-    const bootstrap = await client.execute("true", {
-      language: "bash",
-      timeout: 30,
-      sessionId,
-    });
-    const bootstrapExitCode = Number(
-      bootstrap?.exitCode ?? bootstrap?.exit_code ?? 0,
-    );
-    if (bootstrapExitCode !== 0) {
-      throw new Error("INSTAVM_BOOTSTRAP_FAILED");
+    try {
+      const bootstrap = await client.execute("true", {
+        language: "bash",
+        timeout: 30,
+        sessionId,
+      });
+      const bootstrapExitCode = Number(
+        bootstrap?.exitCode ?? bootstrap?.exit_code ?? 0,
+      );
+      if (bootstrapExitCode !== 0) {
+        throw new Error("INSTAVM_BOOTSTRAP_FAILED");
+      }
+    } catch (error: any) {
+      // Provision can fail after a remote session has already been allocated.
+      // Close it before returning the failure so retries cannot leak sessions.
+      if (typeof client.closeSession === "function") {
+        await client.closeSession(sessionId).catch(() => undefined);
+      }
+      throw new Error(
+        "INSTAVM_SESSION_BOOTSTRAP_FAILED:" +
+          redactError(error?.message || "InstaVM session execution failed."),
+      );
     }
 
     return {
