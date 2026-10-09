@@ -102,7 +102,7 @@ jobs:
             --request POST 'https://api.instavm.io/kill' \
             --header "X-API-Key: ${INSTAVM_API_KEY}" \
             --header 'Content-Type: application/json' \
-            --data "$PAYLOAD")"
+            --data "$KILL_PAYLOAD")"
           echo "raw_api_diagnostic_session_cleanup_http_status=${KILL_STATUS}"
 
       - name: Install verifier FFmpeg / FFprobe
