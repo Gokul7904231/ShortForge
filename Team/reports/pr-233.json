@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "okf-control-plane-v2-pr233",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/decisions.md",
+      ".okf/principles.md",
+      ".okf/terminology.md",
+      ".okf/production-helper.md",
+      ".okf/intelligence/aer.md",
+      "Team/workflow/change-gate.md",
+      "Team/contracts/team-change-ir.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "zap": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "notes": "V2 promotes existing governance policy to machine coverage/drift enforcement. No production credentials or execution capabilities are changed."
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    ".okf/manifest.yaml",
+    ".okf/rules/index.json",
+    ".okf/rules/source-digests.json",
+    ".okf/verification/rule-to-test-matrix.md",
+    "tools/okf/sweep.py",
+    "tools/okf/drift.py",
+    "tools/okf/validate_report.py",
+    "tools/okf/tests/test_control_plane.py",
+    ".github/workflows/okf-governance.yml"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Run current V2 governance and Team Change gates.",
+    "Reconcile and record current CI evidence.",
+    "Merge only after required blocking lanes and repository review requirements pass."
+  ],
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  },
+  "verificationResults": {
+    "okfGovernanceGate": "PENDING_CI",
+    "v2DriftCoverage": "IMPLEMENTED__CI_PENDING",
+    "teamReportMachineLinkage": "IMPLEMENTED__CI_PENDING",
+    "exceptionExpiry": "IMPLEMENTED__CI_PENDING",
+    "githubRepositoryProtection": "ACTIVE__BEHAVIOR_PROVEN"
+  }
+}
