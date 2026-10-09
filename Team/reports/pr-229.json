@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR229-InstaVM-Physical-F07-Qualification",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "qualify/instavm-f07-20261006",
+  "objective": "Run an isolated credential-backed InstaVM physical render, artifact transfer, CAS integrity check, and F07 release verification without granting F06 worker authority.",
+  "classification": "verification-only",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Repository-side physical artifact evidence is required before declaring hosted compute qualified.",
+      "CAS and F07 are independent physical-truth gates.",
+      "A sandbox connection does not grant F06 production-worker authority.",
+      "Provider credentials must remain secret and server-side.",
+      "Temporary qualification workflows must not be merged as production implementation."
+    ]
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "conflicts": [],
+  "security": {
+    "required": true,
+    "status": "UNPROVEN",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "INSTAVM_API_KEY is read only from GitHub Actions secrets and must never be printed.",
+      "This temporary qualification branch contains a diagnostic step that prints only allow-listed provider response fields and masks credential-like strings.",
+      "The live test has not yet passed the initial execution step, so end-to-end qualification remains unproven.",
+      "productionWorkerEligible remains false."
+    ]
+  },
+  "changes": [
+    "Added a temporary GitHub Actions path for InstaVM physical render -> download -> CAS -> F07 verification.",
+    "Added a secret-safe comparison between the JavaScript SDK execution call and InstaVM's documented raw execution endpoint.",
+    "Added cleanup of any session created by the raw diagnostic endpoint when a session identifier is returned.",
+    "Kept this qualification-only change out of main and out of production provider authority."
+  ],
+  "externalVerification": [
+    "A provider-side physical MP4 proof was performed outside GitHub Actions on 2026-10-06, including matching remote/local byte length and SHA-256.",
+    "GitHub Actions receives INSTAVM_API_KEY, and dependency installation plus FactoryOS strict typecheck passed on the qualification run.",
+    "The repository-side live test has failed during the first execution/bootstrap command before the MP4 render, CAS, or F07 evidence is produced."
+  ],
+  "verificationPlan": [
+    "Compare the credential-safe raw API diagnostic response with the JavaScript SDK execution failure.",
+    "Resolve the provider execution issue before declaring physical qualification successful.",
+    "Require a real MP4 download with matching remote/local SHA-256 and byte length.",
+    "Require CAS integrity and independent F07 physical verification, signed receipt validation, and receipt persistence.",
+    "Close this temporary qualification PR after collecting evidence; do not merge it.",
+    "Do not promote InstaVM to F06 production-worker eligibility."
+  ],
+  "disposition": "HOLD",
+  "evidenceRefs": [
+    ".github/workflows/instavm-one-shot-f07.yml",
+    "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+    "apps/web/factoryos/tests/live-hosted-sandbox.test.ts",
+    "Issue #229: test(sandbox): qualify InstaVM through F07 proof",
+    "Issue #226: compute(sandbox): integrate InstaVM hosted sandbox provider"
+  ]
+}
