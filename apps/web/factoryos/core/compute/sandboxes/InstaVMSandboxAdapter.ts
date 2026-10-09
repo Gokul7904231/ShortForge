@@ -261,7 +261,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
         bootstrapOptions.sessionId = sessionId;
       }
 
-      const bootstrap = await client.execute("true", bootstrapOptions);
+      const bootstrap = await client.execute("printf 'SHORTFORGE_INSTAVM_BOOTSTRAP_OK\\n'", bootstrapOptions);
       const bootstrapExitCode = Number(
         bootstrap?.exitCode ?? bootstrap?.exit_code ?? 0,
       );
