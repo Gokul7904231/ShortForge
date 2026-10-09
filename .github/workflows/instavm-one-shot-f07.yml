@@ -49,28 +49,72 @@ jobs:
       - name: Install InstaVM SDK
         run: npm install --no-save --no-package-lock --legacy-peer-deps instavm
 
-      - name: Diagnose InstaVM raw execute API (credential-safe)
+      - name: Diagnose InstaVM VM-create and raw execute API (credential-safe)
         continue-on-error: true
         run: |
           set +e
-          echo "=== Installed SDK execute implementation locations ==="
+          echo "=== Installed SDK JavaScript source files ==="
           find node_modules/instavm -maxdepth 4 -type f \
             \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) -print 2>/dev/null | head -n 25
-          echo "=== Documented raw execute endpoint with explicit session ID ==="
-          SESSION_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
-          export INSTAVM_DIAG_SESSION_ID="$SESSION_ID"
-          PAYLOAD="$(python3 -c 'import json, os; print(json.dumps({"command":"echo SHORTFORGE_RAW_API_EXEC_OK","language":"bash","timeout":30,"session_id":os.environ["INSTAVM_DIAG_SESSION_ID"]}))')"
-          HTTP_STATUS="$(curl --silent --show-error --max-time 45 \
-            --output /tmp/instavm-raw-execute-response.json \
+          echo "=== Create a real InstaVM session through documented VM API ==="
+          CREATE_STATUS="$(curl --silent --show-error --max-time 60 \
+            --output /tmp/instavm-create-vm-response.json \
             --write-out '%{http_code}' \
-            --request POST 'https://api.instavm.io/execute' \
+            --request POST 'https://api.instavm.io/v1/vms?wait=true' \
             --header "X-API-Key: ${INSTAVM_API_KEY}" \
             --header 'Content-Type: application/json' \
-            --data "$PAYLOAD")"
-          CURL_EXIT="$?"
-          echo "raw_api_curl_exit=${CURL_EXIT}"
-          echo "raw_api_http_status=${HTTP_STATUS}"
+            --data '{"vm_lifetime_seconds":120}')"
+          CREATE_EXIT="$?"
+          echo "create_vm_curl_exit=${CREATE_EXIT}"
+          echo "create_vm_http_status=${CREATE_STATUS}"
           python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          p = Path("/tmp/instavm-create-vm-response.json")
+          raw = p.read_text(errors="replace") if p.exists() else ""
+          key = os.environ.get("INSTAVM_API_KEY", "")
+          try:
+              data = json.loads(raw)
+          except Exception:
+              safe = raw.replace(key, "[REDACTED]") if key else raw
+              safe = re.sub(r"instavm_[A-Za-z0-9._-]+", "instavm_[REDACTED]", safe)
+              print("create_vm_non_json=" + repr(safe[:500]))
+              Path("/tmp/instavm-diagnostic-session-id").write_text("")
+              raise SystemExit(0)
+          print("create_vm_response_keys=" + repr(sorted(data.keys()) if isinstance(data, dict) else type(data).__name__))
+          if isinstance(data, dict):
+              print("create_vm_status=" + repr(data.get("status")))
+              print("create_vm_vm_id_present=" + str(bool(data.get("vm_id"))).lower())
+              sid = data.get("session_id") or data.get("sessionId")
+              Path("/tmp/instavm-diagnostic-session-id").write_text(str(sid or ""))
+              print("create_vm_session_id_present=" + str(bool(sid)).lower())
+              for field in ("detail", "error", "message"):
+                  value = data.get(field)
+                  if value is not None:
+                      value = str(value)[:400]
+                      if key:
+                          value = value.replace(key, "[REDACTED]")
+                      value = re.sub(r"instavm_[A-Za-z0-9._-]+", "instavm_[REDACTED]", value)
+                      print(f"create_vm_{field}=" + repr(value))
+          else:
+              Path("/tmp/instavm-diagnostic-session-id").write_text("")
+          PY
+          SESSION_ID="$(cat /tmp/instavm-diagnostic-session-id 2>/dev/null)"
+          if [ -n "$SESSION_ID" ]; then
+            export INSTAVM_DIAG_SESSION_ID="$SESSION_ID"
+            PAYLOAD="$(python3 -c 'import json, os; print(json.dumps({"command":"echo SHORTFORGE_RAW_API_EXEC_OK","language":"bash","timeout":30,"session_id":os.environ["INSTAVM_DIAG_SESSION_ID"]}))')"
+            HTTP_STATUS="$(curl --silent --show-error --max-time 45 \
+              --output /tmp/instavm-raw-execute-response.json \
+              --write-out '%{http_code}' \
+              --request POST 'https://api.instavm.io/execute' \
+              --header "X-API-Key: ${INSTAVM_API_KEY}" \
+              --header 'Content-Type: application/json' \
+              --data "$PAYLOAD")"
+            CURL_EXIT="$?"
+            echo "raw_api_curl_exit=${CURL_EXIT}"
+            echo "raw_api_http_status=${HTTP_STATUS}"
+            python3 - <<'PY'
           import json, os, re
           from pathlib import Path
 
@@ -84,7 +128,6 @@ jobs:
               safe = re.sub(r"instavm_[A-Za-z0-9._-]+", "instavm_[REDACTED]", safe)
               print("raw_api_response_non_json=" + repr(safe[:500]))
               raise SystemExit(0)
-
           print("raw_api_response_keys=" + repr(sorted(data.keys()) if isinstance(data, dict) else type(data).__name__))
           if isinstance(data, dict):
               for field in ("success", "status", "error", "message", "detail", "exit_code", "exitCode", "stdout", "stderr", "output", "vm_id"):
@@ -97,14 +140,17 @@ jobs:
                           value = re.sub(r"instavm_[A-Za-z0-9._-]+", "instavm_[REDACTED]", value)
                       print(f"raw_api_{field}=" + repr(value))
           PY
-          KILL_PAYLOAD="$(python3 -c 'import json, os; print(json.dumps({"session_id":os.environ["INSTAVM_DIAG_SESSION_ID"]}))')"
-          KILL_STATUS="$(curl --silent --show-error --max-time 20 \
-            --output /dev/null --write-out '%{http_code}' \
-            --request POST 'https://api.instavm.io/kill' \
-            --header "X-API-Key: ${INSTAVM_API_KEY}" \
-            --header 'Content-Type: application/json' \
-            --data "$KILL_PAYLOAD")"
-          echo "raw_api_diagnostic_session_cleanup_http_status=${KILL_STATUS}"
+            KILL_PAYLOAD="$(python3 -c 'import json, os; print(json.dumps({"session_id":os.environ["INSTAVM_DIAG_SESSION_ID"]}))')"
+            KILL_STATUS="$(curl --silent --show-error --max-time 20 \
+              --output /dev/null --write-out '%{http_code}' \
+              --request POST 'https://api.instavm.io/kill' \
+              --header "X-API-Key: ${INSTAVM_API_KEY}" \
+              --header 'Content-Type: application/json' \
+              --data "$KILL_PAYLOAD")"
+            echo "raw_api_diagnostic_session_cleanup_http_status=${KILL_STATUS}"
+          else
+            echo "raw_api_execution_skipped=no_session_id_returned_by_create_vm"
+          fi
 
       - name: Install verifier FFmpeg / FFprobe
         run: |
