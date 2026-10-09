@@ -97,6 +97,7 @@ jobs:
                           value = re.sub(r"instavm_[A-Za-z0-9._-]+", "instavm_[REDACTED]", value)
                       print(f"raw_api_{field}=" + repr(value))
           PY
+          KILL_PAYLOAD="$(python3 -c 'import json, os; print(json.dumps({"session_id":os.environ["INSTAVM_DIAG_SESSION_ID"]}))')"
           KILL_STATUS="$(curl --silent --show-error --max-time 20 \
             --output /dev/null --write-out '%{http_code}' \
             --request POST 'https://api.instavm.io/kill' \
