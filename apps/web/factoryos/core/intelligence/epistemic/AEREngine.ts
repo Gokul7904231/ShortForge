@@ -1,3 +1,4 @@
+import type { OKFPolicyContext } from "../../governance/OKFPolicyContext";
 import type {
   CognitiveProbe,
   EpistemicBudget,
@@ -29,6 +30,7 @@ export interface AERAssessmentInput extends BuildEpistemicStateInput {
   readonly episodeId?: string;
   readonly assessmentCostUnits?: number;
   readonly tokenEstimator?: (serialized: string) => number;
+  readonly okfPolicyContext?: OKFPolicyContext;
 }
 
 export interface AERAssessment {
@@ -91,6 +93,7 @@ export class AEREngine {
       usage,
       ttlMs: input.contextTtlMs,
       tokenEstimator: input.tokenEstimator,
+      okfPolicyContext: input.okfPolicyContext,
     });
 
     const ascalonAdmission = this.ascalonInvocationGate.evaluate({ context });

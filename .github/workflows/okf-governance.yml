@@ -37,7 +37,7 @@ jobs:
         run: |
           REPORT="Team/reports/pr-${{ github.event.pull_request.number }}.json"
           test -f "$REPORT" || { echo "Missing required Team Change Report: $REPORT"; exit 1; }
-          python -m tools.okf.validate_report "$REPORT"
+          python -m tools.okf.validate_report "$REPORT" --sweep okf-sweep.json
       - name: Validate root governance files
         run: |
           test -f .okf/manifest.yaml

@@ -1,0 +1,17 @@
+{
+  "schema": "shortforge://okf/source-digests/v1",
+  "algorithm": "git-blob-sha1",
+  "generatedFrom": "feat/okf-control-plane-v3-attestation-provenance",
+  "files": {
+    ".okf/architecture.md": "0b248d2514fe12883ad0e56e89efd91868badfbf",
+    ".okf/decision-protocol.md": "7d83514fb4935080566c724b5dc187abaf7208a7",
+    ".okf/floor-governance-cell.md": "83d3022e7dc5d64abf5ba36fafef49057a5f48e6",
+    ".okf/intelligence/aer.md": "419985a2f847a7bb5b65cb73d8a09d85f25a8fb3",
+    ".okf/principles.md": "206659d61446eca000236f73e7ee3d2aeb67e860",
+    ".okf/production-helper.md": "ddb8edeaa7cc33a43f869064ea96bdb39aeeb765",
+    ".okf/security/worker-permissions.md": "4cd9c51fb021defbe40d1eeb4690e0a3366cbb43",
+    "Team/workflow/change-gate.md": "0c152cf8c5ef46f772140da649132a7fb40d970e",
+    ".okf/intelligence/ascalon-model.md": "68545064773bc2d21264b2ac6398cff47804f805",
+    ".okf/decisions/okf-control-plane-v3-20261005.md": "0f35f2eb9ff2e7574aa6a005d22160e8fa65764e"
+  }
+}
