@@ -73,6 +73,148 @@ function normalizedBaseUrl(): string {
   return String(process.env.INSTAVM_BASE_URL || "https://api.instavm.io").replace(/\/+$/, "");
 }
 
+
+type InstaVMApiExecution = {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  vmId?: string;
+};
+
+function redactProviderMessage(value: unknown, apiKey: string): string {
+  return redactError(value).replaceAll(apiKey, "[REDACTED]");
+}
+
+async function postInstaVMJson(
+  apiKey: string,
+  route: string,
+  body: Record<string, unknown>,
+  timeoutMs: number,
+): Promise<any> {
+  const response = await fetch(normalizedBaseUrl() + route, {
+    method: "POST",
+    headers: {
+      "X-API-Key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  const raw = await response.text();
+  let payload: any = {};
+  if (raw) {
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      if (response.ok) throw new Error("INSTAVM_API_INVALID_JSON");
+      payload = { raw: raw.slice(0, 500) };
+    }
+  }
+
+  if (!response.ok) {
+    const detail =
+      payload?.detail ?? payload?.error ?? payload?.message ?? payload?.raw ?? raw.slice(0, 500);
+    const safeDetail =
+      typeof detail === "string" ? detail : JSON.stringify(detail);
+    throw new Error(
+      "INSTAVM_HTTP_" +
+        response.status +
+        ":" +
+        redactProviderMessage(safeDetail, apiKey),
+    );
+  }
+
+  if (!payload || typeof payload !== "object") {
+    throw new Error("INSTAVM_API_RESPONSE_INVALID");
+  }
+  return payload;
+}
+
+async function createInstaVMVm(
+  apiKey: string,
+  request: SandboxProvisionRequest,
+): Promise<{ sessionId: string; vmId?: string }> {
+  const body: Record<string, unknown> = {
+    vm_lifetime_seconds: Math.max(60, Math.floor(request.ttlSeconds || 900)),
+  };
+  if (request.template) body.snapshot_id = request.template;
+
+  const cpuCores = Number(request.metadata?.cpuCores);
+  if (Number.isFinite(cpuCores) && cpuCores > 0) {
+    body.vcpu_count = Math.max(1, Math.floor(cpuCores));
+  }
+
+  const memoryGb = Number(request.metadata?.memoryGb);
+  if (Number.isFinite(memoryGb) && memoryGb > 0) {
+    body.memory_mb = Math.max(256, Math.round(memoryGb * 1024));
+  }
+
+  const result = await postInstaVMJson(
+    apiKey,
+    "/v1/vms?wait=true",
+    body,
+    120_000,
+  );
+  const sessionId = sessionFrom(result);
+  if (!sessionId) {
+    throw new Error("INSTAVM_VM_SESSION_ID_MISSING");
+  }
+  return {
+    sessionId,
+    ...(result?.vm_id || result?.vmId
+      ? { vmId: String(result.vm_id || result.vmId) }
+      : {}),
+  };
+}
+
+async function executeInstaVMCommand(
+  apiKey: string,
+  sessionId: string,
+  command: string,
+  timeoutMs: number,
+): Promise<InstaVMApiExecution> {
+  const timeout = executeTimeoutSeconds(timeoutMs);
+  const result = await postInstaVMJson(
+    apiKey,
+    "/execute",
+    {
+      command,
+      language: "bash",
+      timeout,
+      session_id: sessionId,
+    },
+    (timeout + 15) * 1000,
+  );
+  const exitValue = result?.exit_code ?? result?.exitCode;
+  if (exitValue === undefined || exitValue === null || !Number.isFinite(Number(exitValue))) {
+    throw new Error("INSTAVM_EXECUTE_EXIT_CODE_MISSING");
+  }
+  const executionTime = Number(result?.execution_time ?? result?.executionTime ?? 0);
+  return {
+    exitCode: Number(exitValue),
+    stdout: String(result?.stdout ?? result?.output ?? result?.result ?? ""),
+    stderr: String(result?.stderr ?? ""),
+    durationMs: Number.isFinite(executionTime) ? executionTime * 1000 : 0,
+    ...(result?.vm_id || result?.vmId
+      ? { vmId: String(result.vm_id || result.vmId) }
+      : {}),
+  };
+}
+
+async function terminateInstaVMSession(
+  apiKey: string,
+  sessionId: string,
+): Promise<void> {
+  await postInstaVMJson(
+    apiKey,
+    "/kill",
+    { session_id: sessionId },
+    30_000,
+  );
+}
+
 function sessionFrom(value: any): string | undefined {
   return (
     value?.session_id ||
@@ -222,73 +364,27 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
     request: SandboxProvisionRequest,
     credentials?: SandboxCredentialBundle,
   ): Promise<SandboxProvisionResult> {
-    const client = clientFor(credentials);
-
-    let sessionId = sessionFrom(client?.sessionId);
-    let vmId: string | undefined;
-    const usesExplicitVmSession = Boolean(request.template && client?.vms?.create);
-
-    // The JavaScript SDK's documented execution contract is automatic session
-    // creation on the first execute() call. Use that path for ordinary runs;
-    // explicit VM/session binding is reserved for snapshot-backed requests.
-    if (usesExplicitVmSession) {
-      const vm = await client.vms.create(
-        {
-          snapshot_id: request.template,
-          vm_lifetime_seconds: Math.max(60, request.ttlSeconds || 900),
-          ...(request.metadata?.cpuCores
-            ? { vcpu_count: Number(request.metadata.cpuCores) }
-            : {}),
-          ...(request.metadata?.memoryGb
-            ? { memory_mb: Math.round(Number(request.metadata.memoryGb) * 1024) }
-            : {}),
-        },
-        true,
-      );
-      sessionId = sessionFrom(vm?.session_id || vm?.sessionId) || sessionId;
-      vmId = vm?.vm_id || vm?.vmId;
-      if (!sessionId) {
-        throw new Error("INSTAVM_VM_SESSION_ID_MISSING");
-      }
-    }
+    const apiKey = apiKeyFor(credentials);
+    const created = await createInstaVMVm(apiKey, request);
+    const sessionId = created.sessionId;
+    let vmId = created.vmId;
 
     try {
-      const bootstrapOptions: Record<string, unknown> = {
-        language: "bash",
-        timeout: 30,
-      };
-      if (usesExplicitVmSession && sessionId) {
-        bootstrapOptions.sessionId = sessionId;
-      }
-
-      const bootstrap = await client.execute("printf 'SHORTFORGE_INSTAVM_BOOTSTRAP_OK\\n'", bootstrapOptions);
-      const bootstrapExitCode = Number(
-        bootstrap?.exitCode ?? bootstrap?.exit_code ?? 0,
+      const bootstrap = await executeInstaVMCommand(
+        apiKey,
+        sessionId,
+        "printf 'SHORTFORGE_INSTAVM_BOOTSTRAP_OK\\n'",
+        30_000,
       );
-      if (bootstrapExitCode !== 0) {
+      if (bootstrap.exitCode !== 0) {
         throw new Error("INSTAVM_BOOTSTRAP_FAILED");
       }
-
-      // For ordinary sessions, the SDK sets sessionId as part of execute().
-      // Keep the provider runtime bound to that exact session for every later
-      // command, transfer, reconciliation and termination call.
-      sessionId =
-        sessionId ||
-        sessionFrom(client?.sessionId) ||
-        sessionFrom(bootstrap?.sessionId);
-      if (!sessionId) {
-        throw new Error("INSTAVM_SESSION_ID_MISSING_AFTER_EXECUTE");
-      }
+      vmId = vmId || bootstrap.vmId;
     } catch (error: any) {
-      // Prefer the SDK's session identity for cleanup if execute() allocated
-      // a VM but then failed before the identity was persisted locally.
-      sessionId = sessionId || sessionFrom(client?.sessionId);
-      if (sessionId && typeof client.closeSession === "function") {
-        await client.closeSession(sessionId).catch(() => undefined);
-      }
+      await terminateInstaVMSession(apiKey, sessionId).catch(() => undefined);
       throw new Error(
         "INSTAVM_SESSION_BOOTSTRAP_FAILED:" +
-          redactError(error?.message || "InstaVM session execution failed."),
+          redactProviderMessage(error?.message || "InstaVM session execution failed.", apiKey),
       );
     }
 
@@ -308,8 +404,8 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
       },
       reconciliationRequired: false,
       evidence: [
-        "InstaVM hosted microVM session created through the official TypeScript SDK.",
-        "Session ID is the canonical ShortForge runtime identity because filesystem state is scoped to the active session.",
+        "InstaVM VM-create REST API returned the canonical session ID.",
+        "InstaVM Execute REST API ran the bootstrap command inside the session-bound Firecracker microVM.",
         "Sandbox remains outside F06 production-worker authority.",
       ],
     };
@@ -347,56 +443,43 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
     request: SandboxFileTransferRequest,
     credentials?: SandboxCredentialBundle,
   ): Promise<void> {
-    // The ShortForge render manifest is small. We write it through
-    // session-bound execution so the bytes land in the exact VM behind
-    // runtime.resourceId instead of an unrelated SDK session.
     const data = await fs.readFile(request.localPath);
     const remotePath = request.remotePath;
     const parent = path.posix.dirname(remotePath);
     const timeout = request.timeoutMs || 120_000;
-    const client = clientFor(credentials);
+    const apiKey = apiKeyFor(credentials);
 
-    const initial = await client.execute(
+    const initial = await executeInstaVMCommand(
+      apiKey,
+      request.runtime.resourceId,
       "mkdir -p " + shellQuote(parent) + " && : > " + shellQuote(remotePath),
-      {
-        language: "bash",
-        timeout: executeTimeoutSeconds(timeout),
-        sessionId: request.runtime.resourceId,
-      },
+      timeout,
     );
-
-    if (Number(initial?.exitCode ?? initial?.exit_code ?? 0) !== 0) {
+    if (initial.exitCode !== 0) {
       throw new Error("INSTAVM_UPLOAD_INITIALIZE_FAILED");
     }
 
     const chunkBytes = 48 * 1024;
     for (let offset = 0; offset < data.length; offset += chunkBytes) {
       const encoded = data.subarray(offset, offset + chunkBytes).toString("base64");
-      const response = await client.execute(
-        "printf '%s' " +
-          shellQuote(encoded) +
-          " | base64 -d >> " +
-          shellQuote(remotePath),
-        {
-          language: "bash",
-          timeout: executeTimeoutSeconds(timeout),
-          sessionId: request.runtime.resourceId,
-        },
+      const response = await executeInstaVMCommand(
+        apiKey,
+        request.runtime.resourceId,
+        "printf '%s' " + shellQuote(encoded) + " | base64 -d >> " + shellQuote(remotePath),
+        timeout,
       );
-      if (Number(response?.exitCode ?? response?.exit_code ?? 0) !== 0) {
+      if (response.exitCode !== 0) {
         throw new Error("INSTAVM_UPLOAD_CHUNK_FAILED");
       }
     }
 
-    const verify = await client.execute(
+    const verify = await executeInstaVMCommand(
+      apiKey,
+      request.runtime.resourceId,
       "test -f " + shellQuote(remotePath) + " && stat -c '%s' " + shellQuote(remotePath),
-      {
-        language: "bash",
-        timeout: executeTimeoutSeconds(timeout),
-        sessionId: request.runtime.resourceId,
-      },
+      timeout,
     );
-    if (Number(verify?.exitCode ?? verify?.exit_code ?? 0) !== 0) {
+    if (verify.exitCode !== 0) {
       throw new Error("INSTAVM_UPLOAD_VERIFY_FAILED");
     }
   }
@@ -454,30 +537,22 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
   ): Promise<SandboxExecutionResult> {
     const started = Date.now();
     try {
-      const client = clientFor(credentials);
-      const response = await client.execute(
+      const response = await executeInstaVMCommand(
+        apiKeyFor(credentials),
+        request.runtime.resourceId,
         envPrefix(request.env) + request.command,
-        {
-          language: "bash",
-          timeout: executeTimeoutSeconds(request.timeoutMs),
-          sessionId: request.runtime.resourceId,
-        },
+        request.timeoutMs || 30_000,
       );
-      const exitCode = Number(response?.exitCode ?? response?.exit_code ?? 0);
       return {
         providerType: "INSTAVM",
         runtimeId: request.runtime.resourceId,
-        status: exitCode === 0 ? "SUCCEEDED" : "FAILED",
-        exitCode,
-        stdout: String(response?.stdout || response?.result || ""),
-        stderr: String(response?.stderr || ""),
-        durationMs: Number(
-          response?.executionTime ??
-            response?.execution_time ??
-            Date.now() - started,
-        ),
+        status: response.exitCode === 0 ? "SUCCEEDED" : "FAILED",
+        exitCode: response.exitCode,
+        stdout: response.stdout,
+        stderr: response.stderr,
+        durationMs: response.durationMs || Date.now() - started,
         evidence: [
-          "InstaVM Execute API ran the command inside the session-bound Firecracker microVM.",
+          "InstaVM Execute REST API ran the command inside the session-bound Firecracker microVM.",
         ],
       };
     } catch (error: any) {
@@ -486,9 +561,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
       return {
         providerType: "INSTAVM",
         runtimeId: request.runtime.resourceId,
-        status: timedOut
-          ? "TIMED_OUT"
-          : "UNAVAILABLE",
+        status: timedOut ? "TIMED_OUT" : "UNAVAILABLE",
         durationMs: Date.now() - started,
         evidence: [
           timedOut
@@ -504,14 +577,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
     runtime: SandboxRuntime,
     credentials?: SandboxCredentialBundle,
   ): Promise<SandboxRuntime> {
-    const client = clientFor(credentials);
-    if (typeof client.closeSession === "function") {
-      await client.closeSession(runtime.resourceId);
-    } else if (typeof client.kill === "function") {
-      await client.kill(runtime.resourceId);
-    } else {
-      throw new Error("INSTAVM_SESSION_TERMINATION_UNSUPPORTED");
-    }
+    await terminateInstaVMSession(apiKeyFor(credentials), runtime.resourceId);
     return {
       ...runtime,
       state: "TERMINATED",
