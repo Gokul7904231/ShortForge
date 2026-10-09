@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR226-InstaVM-Sandbox",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/sandbox-instavm-integration-20261006",
+  "objective": "Integrate and repository-qualify the InstaVM hosted sandbox through provider-neutral Sandbox Fabric, connection hub, hosted render path, CAS, and independent F07 release verification without granting F06 worker authority.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Hosted sandboxes remain separate from Notebook Fabric and API/GPU Fabric.",
+      "Sandbox connections do not grant F06 production-worker authority.",
+      "F07 remains the physical artifact authority.",
+      "Provider credentials remain encrypted and server-side.",
+      "InstaVM session identity is the canonical runtime resource because session filesystem state is ephemeral."
+    ]
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "conflicts": [],
+  "security": {
+    "required": true,
+    "status": "STATIC_REVIEW_COMPLETE",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No provider secrets are committed.",
+      "INSTAVM_API_KEY is consumed from encrypted connection secrets or server-only runtime environment.",
+      "InstaVM remains ADMIN-only.",
+      "Artifact download is explicitly session-bound and errors fail closed."
+    ]
+  },
+  "changes": [
+    "Extended SandboxProviderType and runtimeKind for INSTAVM.",
+    "Added InstaVMSandboxAdapter with session-bound provision, execute, bounded upload, binary download, termination, and reconciliation.",
+    "Registered InstaVM in SandboxRegistry.",
+    "Mapped sandbox_instavm through SandboxConnectionService.",
+    "Changed InstaVM connection UX from placeholder manual to guided manual onboarding.",
+    "Generalized HostedSandboxComputeProvider credential and template routing for INSTAVM.",
+    "Added InstaVM sandbox and connection contract tests.",
+    "Added InstaVM live F07 proof workflow selection and credentials.",
+    "Recorded the local physical qualification evidence and kept productionWorkerEligible=false.",
+    "Placed InstaVM ahead of paid-gated Modal in the default no-card ComputePolicy; Modal remains compatibility-only.",
+    "Completed repository-side credential-backed InstaVM physical render -> artifact download -> CAS integrity -> independent F07 signed-receipt verification on GitHub Actions run 37893345664 (temporary proof PR #229; same adapter code as this PR)."
+  ],
+  "externalVerification": [
+    "InstaVM official documentation describes Firecracker microVM isolation, session-scoped filesystem state, file upload/download, snapshots/volumes, and a no-card free tier.",
+    "Local live physical proof on 2026-10-06 rendered a 1080x1920 H.264 MP4 with 48 kHz AAC audio, downloaded it, and matched remote/local SHA-256 and byte count.",
+    "Repository-side live proof passed on 2026-10-09: MP4 SHA-256 46e447aec702d345f3a6f239fced7b665606dde99c9d3e205596713f537dd623, byte length 5901, CAS integrity verified, F07 outcome READY, publishAllowed=true, signed receipt verified and persisted; GitHub evidence artifact ID 11599775673."
+  ],
+  "verificationPlan": [
+    "FactoryOS strict typecheck and Sandbox/Connection tests passed on the implementation PR head.",
+    "Credential-backed physical render, artifact download, CAS verification, and F07 signed-receipt verification passed on GitHub Actions run 37893345664 using the identical adapter implementation.",
+    "Retain F07 physical artifact verification and release guardian as the final acceptance authority.",
+    "Do not promote InstaVM to F06 production-worker eligibility."
+  ],
+  "disposition": "PASS",
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+    "apps/web/factoryos/core/compute/sandboxes/SandboxContracts.ts",
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    "apps/web/factoryos/core/compute/connections/SandboxConnectionService.ts",
+    "apps/web/factoryos/core/compute/providers/HostedSandboxComputeProvider.ts",
+    "apps/web/factoryos/tests/sandbox-fabric.test.ts",
+    "apps/web/factoryos/tests/compute-connection-hub.test.ts",
+    "apps/web/factoryos/tests/live-hosted-sandbox.test.ts",
+    ".github/workflows/live-hosted-sandbox.yml",
+    ".okf/compute/sandbox-fabric.md",
+    "Issue #226: compute(sandbox): integrate InstaVM hosted sandbox provider",
+    "GitHub Actions run 37893345664: InstaVM One-Shot F07 Qualification, run #14",
+    "GitHub Actions artifact 11599775673: instavm-f07-evidence",
+    "CAS ref cas://46e447aec702d345f3a6f239fced7b665606dde99c9d3e205596713f537dd623",
+    "F07 receipt rcpt_live_instavm_mv0l1snw_2026-10-09T062658452Z",
+    ".okf/compute/live-provider-activation.md"
+  ]
+}

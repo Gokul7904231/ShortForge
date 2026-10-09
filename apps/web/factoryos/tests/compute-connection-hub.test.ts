@@ -181,6 +181,7 @@ describe("compute connection hub", () => {
       .map((p) => p.providerId);
     expect(sandboxIds).toContain("sandbox_daytona_hosted");
     expect(sandboxIds).toContain("sandbox_modal_hosted");
+    expect(sandboxIds).toContain("sandbox_instavm");
     expect(sandboxIds).not.toContain("sandbox_pandastack_hosted");
   });
 
@@ -206,6 +207,30 @@ describe("compute connection hub", () => {
     const result = await validateSandboxConnection(adminUser.uid, connection.connectionId);
     expect(result.authenticated).toBe(true);
     expect(result.providerType).toBe("MODAL");
+    expect((await computeConnectionStore.getForUser(adminUser.uid, connection.connectionId))?.status).toBe("CONNECTED");
+  });
+
+  it("validates a hosted InstaVM connection without exposing its secret", async () => {
+    const connection = await computeConnectionService.create(adminUser, {
+      providerId: "sandbox_instavm",
+      credentials: {
+        INSTAVM_API_KEY: "instavm_test_secret",
+      },
+    });
+    const adapter = sandboxRegistry.get("INSTAVM");
+    expect(adapter).toBeDefined();
+    vi.spyOn(adapter!, "validateCredentials").mockResolvedValue({
+      configured: true,
+      authenticated: true,
+      providerReachable: true,
+      requiredKeys: ["INSTAVM_API_KEY"],
+      missingKeys: [],
+      checkedAt: new Date().toISOString(),
+      evidence: ["mocked hosted validation"],
+    });
+    const result = await validateSandboxConnection(adminUser.uid, connection.connectionId);
+    expect(result.authenticated).toBe(true);
+    expect(result.providerType).toBe("INSTAVM");
     expect((await computeConnectionStore.getForUser(adminUser.uid, connection.connectionId))?.status).toBe("CONNECTED");
   });
 

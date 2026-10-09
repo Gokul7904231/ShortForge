@@ -82,20 +82,16 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
   validateConfiguration(): ProviderConfigValidationResult {
     const command = process.env[this.renderCommandEnv];
     const outputPath = process.env[this.renderOutputPathEnv];
-    const hasCredentials = this.credentials
-      ? Object.keys(this.credentials).length > 0
-      : this.type === "DAYTONA"
-        ? Boolean(process.env.DAYTONA_API_KEY)
-        : Boolean(process.env.MODAL_TOKEN_ID && process.env.MODAL_TOKEN_SECRET);
+    const requiredCredentialKeys =
+      this.type === "DAYTONA"
+        ? ["DAYTONA_API_KEY"]
+        : this.type === "MODAL"
+          ? ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"]
+          : ["INSTAVM_API_KEY"];
 
-    const missingKeys: string[] = [];
-    if (!hasCredentials) {
-      missingKeys.push(
-        this.type === "DAYTONA"
-          ? "DAYTONA_API_KEY"
-          : "MODAL_TOKEN_ID/MODAL_TOKEN_SECRET",
-      );
-    }
+    const missingKeys: string[] = requiredCredentialKeys.filter(
+      (key) => !(this.credentials?.[key] || process.env[key]),
+    );
     if (!command) missingKeys.push(this.renderCommandEnv);
     if (!outputPath) missingKeys.push(this.renderOutputPathEnv);
 
@@ -227,7 +223,11 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
         {
           idempotencyKey: job.jobId + ":" + executionId,
           template:
-            process.env[this.type === "DAYTONA" ? "DAYTONA_SANDBOX_IMAGE" : "MODAL_SANDBOX_IMAGE"],
+            this.type === "DAYTONA"
+              ? process.env.DAYTONA_SANDBOX_IMAGE
+              : this.type === "MODAL"
+                ? process.env.MODAL_SANDBOX_IMAGE
+                : process.env.INSTAVM_SNAPSHOT_ID,
           ttlSeconds: Math.max(60, Math.ceil(job.timeoutMs / 1000) + 120),
           metadata: {
             shortforge_name: "shortforge-" + executionId,
