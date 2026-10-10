@@ -20,12 +20,24 @@ const credentialsPresent = (() => {
       return Boolean(process.env.MODAL_TOKEN_ID && process.env.MODAL_TOKEN_SECRET);
     case "INSTAVM":
       return Boolean(process.env.INSTAVM_API_KEY);
+    case "OPENCOMPUTER":
+      return Boolean(process.env.OPENCOMPUTER_API_KEY);
+    case "BLAXEL":
+      return Boolean(process.env.BL_API_KEY && process.env.BL_WORKSPACE);
     default:
       return false;
   }
 })();
 
-const supported = new Set<ProviderType>(["AMD", "KAGGLE", "DAYTONA", "MODAL", "INSTAVM"]);
+const supported = new Set<ProviderType>([
+  "AMD",
+  "KAGGLE",
+  "DAYTONA",
+  "MODAL",
+  "INSTAVM",
+  "OPENCOMPUTER",
+  "BLAXEL",
+]);
 
 describe("live multi-provider compute", () => {
   it("runs a physical render through the selected non-local provider and verifies CAS + F07", async () => {
