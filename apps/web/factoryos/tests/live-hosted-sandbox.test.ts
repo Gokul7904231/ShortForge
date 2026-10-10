@@ -22,6 +22,8 @@ import {
   DaytonaSandboxAdapter,
   ModalSandboxAdapter,
   InstaVMSandboxAdapter,
+  OpenComputerSandboxAdapter,
+  BlaxelSandboxAdapter,
 } from "../core/compute/sandboxes";
 
 const LIVE_PROOF_CONFIGURED = Boolean(
@@ -40,7 +42,7 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       process.env.SHORTFORGE_LIVE_SANDBOX_EVIDENCE_PATH ||
       path.join(os.tmpdir(), "shortforge", "live-sandbox-f07-evidence.json");
 
-    expect(["DAYTONA", "MODAL", "INSTAVM"]).toContain(provider);
+    expect(["DAYTONA", "MODAL", "INSTAVM", "OPENCOMPUTER", "BLAXEL"]).toContain(provider);
     expect(command).toBeTruthy();
 
     const adapter =
@@ -48,7 +50,11 @@ describeLiveProof("live hosted sandbox compute proof", () => {
         ? new DaytonaSandboxAdapter()
         : provider === "MODAL"
           ? new ModalSandboxAdapter()
-          : new InstaVMSandboxAdapter();
+          : provider === "INSTAVM"
+            ? new InstaVMSandboxAdapter()
+            : provider === "OPENCOMPUTER"
+              ? new OpenComputerSandboxAdapter()
+              : new BlaxelSandboxAdapter();
     const validation = await adapter.validateCredentials();
     expect(validation.configured).toBe(true);
     expect(validation.authenticated).toBe(true);
@@ -67,7 +73,11 @@ describeLiveProof("live hosted sandbox compute proof", () => {
             ? process.env.DAYTONA_SANDBOX_IMAGE
             : provider === "MODAL"
               ? process.env.MODAL_SANDBOX_IMAGE
-              : process.env.INSTAVM_SNAPSHOT_ID,
+              : provider === "INSTAVM"
+                ? process.env.INSTAVM_SNAPSHOT_ID
+                : provider === "OPENCOMPUTER"
+                  ? process.env.OPENCOMPUTER_TEMPLATE || "base"
+                  : process.env.BLAXEL_SANDBOX_IMAGE || "blaxel/base-image:latest",
         ttlSeconds: 900,
         metadata: { shortforge_name: proofName },
       });
