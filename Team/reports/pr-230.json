@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR230-Sandbox-OpenComputer-Blaxel",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/sandbox-opencomputer-blaxel-20261006",
+  "objective": "Complete hosted Sandbox Fabric integration for OpenComputer and Blaxel with provider-native lifecycle, connection catalog, ComputePool registration, and live physical CAS/F07 qualification.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Hosted sandboxes remain separate from Notebook Fabric and API/GPU Fabric.",
+      "Sandbox connections do not grant F06 production-worker authority.",
+      "Provider completion is not artifact acceptance; CAS and F07 remain authoritative.",
+      "Raw provider secrets remain server-side and never enter telemetry, evidence, or MCP payloads.",
+      "Optional provider SDKs must not become mandatory for the baseline FactoryOS typecheck."
+    ],
+    "sourceRefs": [
+      ".okf/manifest.yaml",
+      ".okf/architecture/authority-registry.json",
+      ".okf/compute/sandbox-fabric.md",
+      ".okf/compute/live-provider-activation.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "Provider secrets were not added to source; live credentials are GitHub Actions secrets.",
+      "Both new adapters hard-code productionWorkerEligible=false."
+    ]
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "changes": [
+    "Added OpenComputerSandboxAdapter using the official TypeScript SDK and API key authentication.",
+    "Added BlaxelSandboxAdapter using @blaxel/core and BL_API_KEY/BL_WORKSPACE authentication.",
+    "Extended the canonical sandbox and compute provider types.",
+    "Registered both providers in SandboxRegistry, SandboxConnectionService, ComputeConnectionCatalog, and ComputeGateway/ComputePool.",
+    "Generalized hosted sandbox credential and template handling.",
+    "Added contract boundary verification, provider tests, and live physical CAS/F07 proof coverage.",
+    "Updated sandbox activation and architecture documentation.",
+    "Extended the unified live-multi-provider render harness and connection-hub tests for OpenComputer and Blaxel."
+  ],
+  "externalVerification": [
+    "OpenComputer current TypeScript SDK documents Sandbox.create/connect, exec.run, filesystem read/write, and kill.",
+    "Blaxel current TypeScript SDK documents SandboxInstance.createIfNotExists/get/delete, process.exec, filesystem operations, and BL_WORKSPACE/BL_API_KEY authentication."
+  ],
+  "verificationPlan": [
+    "Pass Sandbox Fabric provider-boundary verification and contract tests.",
+    "Pass strict FactoryOS typecheck and compute-pool/connection-hub validation.",
+    "Run applicable repository security and governance gates.",
+    "Run Live Hosted Sandbox Render Proof with OPENCOMPUTER and BLAXEL repository secrets.",
+    "Require physical MP4, independent CAS integrity, F07 physical verification, and signed receipt before physical qualification."
+  ],
+  "verificationResults": {
+    "sandboxProviderBoundary": "PENDING",
+    "sandboxFabricContractTests": "PENDING",
+    "computePool": "PENDING",
+    "connectionHub": "PENDING",
+    "repositoryCI": "PENDING",
+    "teamChangeGate": "PENDING",
+    "securityReview": "TRIAGED — full Semgrep/Strix unavailable in agent environment",
+    "liveOpenComputerF07": "PENDING",
+    "liveBlaxelF07": "PENDING",
+    "exactHead": "8190605c04c19669555a3a71a93b8645767a8203"
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/sandboxes/OpenComputerSandboxAdapter.ts",
+    "apps/web/factoryos/core/compute/sandboxes/BlaxelSandboxAdapter.ts",
+    "apps/web/factoryos/core/compute/sandboxes/SandboxContracts.ts",
+    "apps/web/factoryos/core/compute/connections/SandboxConnectionService.ts",
+    "apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts",
+    ".github/workflows/sandbox-fabric.yml",
+    ".github/workflows/live-hosted-sandbox.yml",
+    "apps/web/factoryos/tests/live-hosted-sandbox.test.ts"
+  ],
+  "notes": [
+    "OpenComputer and Blaxel are implementation-complete but remain physically unqualified until their live provider-specific proof runs pass.",
+    "The integration does not promote either provider into production F06 authority."
+  ],
+  "dispositionRationale": "Implementation is complete at this exact head. Required static/governance CI is still executing; physical OpenComputer/Blaxel qualification remains pending and full Semgrep/Strix is unavailable in this execution environment."
+}
