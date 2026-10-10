@@ -24,10 +24,6 @@ if (!sandboxRegistry.get("INSTAVM")) {
 }
 if (!sandboxRegistry.get("OPENCOMPUTER")) {
   sandboxRegistry.register(new OpenComputerSandboxAdapter());
-if (!sandboxRegistry.get("BLAXEL")) {
-  sandboxRegistry.register(new BlaxelSandboxAdapter());
-if (!sandboxRegistry.get("OPENCOMPUTER")) {
-  sandboxRegistry.register(new OpenComputerSandboxAdapter());
 }
 if (!sandboxRegistry.get("BLAXEL")) {
   sandboxRegistry.register(new BlaxelSandboxAdapter());
