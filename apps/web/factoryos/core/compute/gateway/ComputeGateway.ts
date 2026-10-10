@@ -28,6 +28,8 @@ import {
   DaytonaSandboxAdapter,
   InstaVMSandboxAdapter,
   ModalSandboxAdapter,
+  OpenComputerSandboxAdapter,
+  BlaxelSandboxAdapter,
 } from "../sandboxes";
 import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
@@ -99,6 +101,8 @@ export class ComputeGateway {
       }),
       "SANDBOX",
     );
+        adapter: new OpenComputerSandboxAdapter(),
+        adapter: new BlaxelSandboxAdapter(),
 
     // Legacy/control-plane providers remain discoverable for existing control
     // surfaces, but because they are not bound into the ComputePool they cannot
