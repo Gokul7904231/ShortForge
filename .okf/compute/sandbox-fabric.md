@@ -20,10 +20,12 @@ The V1 sandbox registry contains only hosted providers:
 - Daytona Hosted
 - Modal Hosted
 - InstaVM Hosted
+- OpenComputer
+- Blaxel
 
 The removed PandaStack adapter is not part of the sandbox plane.
 
-Daytona's current TypeScript SDK supports hosted Sandbox creation, command execution, filesystem upload/download, lifecycle control, and reconciliation. Modal's current JavaScript SDK supports hosted Sandbox creation, command execution, filesystem access, lifecycle control, and re-attachment by sandbox ID. InstaVM provides hosted Firecracker microVMs, session-bound execution, file transfer, snapshots, volumes, and egress controls.
+Daytona's current TypeScript SDK supports hosted Sandbox creation, command execution, filesystem upload/download, lifecycle control, and reconciliation. Modal's current JavaScript SDK supports hosted Sandbox creation, command execution, filesystem access, lifecycle control, and re-attachment by sandbox ID. InstaVM provides hosted Firecracker microVMs, session-bound execution, file transfer, snapshots, volumes, and egress controls. OpenComputer's current TypeScript SDK supports sandbox creation/connect, synchronous command execution, filesystem read/write, and sandbox termination. Blaxel's current TypeScript SDK supports workspace-authenticated sandbox create/get/delete, process execution, and filesystem operations.
 
 ## Provider-neutral contract
 
@@ -68,7 +70,6 @@ InstaVM:
 - optional INSTAVM_SNAPSHOT_ID
 
 ## InstaVM qualification evidence
-
 A real InstaVM physical artifact proof was completed on 2026-10-06:
 - 1080x1920 H.264 MP4
 - 48 kHz AAC audio
@@ -77,9 +78,16 @@ A real InstaVM physical artifact proof was completed on 2026-10-06:
 - remote/local SHA-256: 3c10770e8509a933cfddef5372e2ab8bcd93a966b5415fa8f65e62046aa12174
 - remote/local byte count: 21,341
 - proof result: INSTA_VM_PHYSICAL_ARTIFACT_PROOF=PASS
-
 The proof qualifies the provider execution and artifact-transfer boundary. It does not promote InstaVM into F06 production-worker eligibility.
-
+OpenComputer:
+- OPENCOMPUTER_API_KEY
+- optional OPENCOMPUTER_API_URL
+- optional OPENCOMPUTER_TEMPLATE
+Blaxel:
+- BL_API_KEY
+- BL_WORKSPACE
+- optional BLAXEL_SANDBOX_IMAGE
+- optional BLAXEL_REGION
 ## Evidence
 
 Daytona TypeScript SDK reference: https://www.daytona.io/docs/en/typescript-sdk/
@@ -89,3 +97,8 @@ Modal JavaScript SDK: https://modal.com/docs/sdk/js/latest/intro
 Modal Sandbox: https://modal.com/docs/sdk/js/latest/Sandbox
 InstaVM: https://instavm.io/docs/quickstart
 InstaVM architecture: https://instavm.io/docs/getting-started/how-it-works
+
+## OpenComputer + Blaxel qualification boundary — 2026-10-06
+OpenComputer and Blaxel are now registered as real hosted Sandbox Fabric adapters and ComputePool providers. Their credential validation, provisioning, command execution, file transfer, termination, reconciliation, and connection-hub mappings are provider-native but contract-normalized.
+Both adapters keep `productionWorkerEligible=false`. Connection/authentication success is not F06 admission and provider completion is not artifact acceptance; CAS + F07 remain the physical truth boundary.
+Live qualification is available through GitHub Actions workflow `Live Hosted Sandbox Render Proof` with provider selections `OPENCOMPUTER` and `BLAXEL`. The workflow installs the optional provider SDKs only for the live job and does not mutate the repository lockfile.
