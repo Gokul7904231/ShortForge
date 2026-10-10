@@ -101,8 +101,18 @@ export class ComputeGateway {
       }),
       "SANDBOX",
     );
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
         adapter: new OpenComputerSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
         adapter: new BlaxelSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
 
     // Legacy/control-plane providers remain discoverable for existing control
     // surfaces, but because they are not bound into the ComputePool they cannot
