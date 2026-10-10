@@ -10,6 +10,8 @@ const PROVIDER_TYPE_BY_ID: Record<string, SandboxProviderType> = {
   sandbox_daytona_hosted: "DAYTONA",
   sandbox_modal_hosted: "MODAL",
   sandbox_instavm: "INSTAVM",
+  sandbox_opencomputer: "OPENCOMPUTER",
+  sandbox_blaxel: "BLAXEL",
 };
 
 function adapterFor(providerId: string) {
