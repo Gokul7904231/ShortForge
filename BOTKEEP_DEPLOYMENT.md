@@ -28,8 +28,14 @@ Before declaring the renderer production-ready, run a live renderer health check
 - The first build runs during startup. Later starts reuse the build only when the source and dependency fingerprints match.
 - If the first build exceeds Botkeep's resource limits, do not repeatedly restart it; move the build to CI and deploy a prebuilt artifact instead.
 
+## Updating this deployment branch
+
+`main` remains the source of truth, and this branch intentionally has its own root `package.json` and `package-lock.json`. When you want to deploy newer `main` code, merge `origin/main` into `deploy/botkeep-primary` and preserve those two deployment-specific root files. If conflicts appear anywhere else, stop and review them instead of blindly choosing one side. Push the updated branch; the production-build workflow runs on branch pushes.
+
+Automatic syncing is not enabled, so `main` remains untouched by this setup.
+
 ## Verification status
 
 - Repository branch and root entry point prepared.
-- Build is separately checked by the `Botkeep web build` GitHub Actions workflow.
+- A production-build GitHub Actions workflow is configured for pushes to `deploy/botkeep-primary`.
 - A successful GitHub build does not replace the live Botkeep startup, HTTP health, secrets, or physical-render checks.
