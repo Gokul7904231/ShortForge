@@ -72,3 +72,23 @@ Track the six repository-inspired improvement workstreams on an isolated branch.
 - Local typecheck/build/tests: NOT RUN; this connector can commit/fetch GitHub content but has not executed repository commands.
 - Live mission/physical MP4/F07 proof: NOT RUN.
 - Production readiness: NOT CLAIMED.
+
+## Documentation follow-up — 2026-10-12
+
+Six dedicated repository mappings were added under .okf/research/repo-mappings:
+
+- HelixDB/helix-foundry — research-only; audit KnowledgeOS/Memory Fabric before considering any new provenance/snapshot behavior.
+- devdotfast/whiteboard — LiveMissionCanvas is a partial UI pattern slice; no external Whiteboard code.
+- twostraws/SwiftUI-Agent-Skill — evidence-first skill methodology is documented; automated skill validation remains unrun.
+- CopilotKit/OpenIntelligentUI — research-only; no general generative UI runtime or arbitrary model-authored host code.
+- datalab-to/lift — isolated experiment candidate; Apache-2.0 code and modified OpenRAIL-M model-weight terms are treated separately.
+- zvec-ai/zvec-grep — benchmark-first retrieval candidate; no integration or performance result claimed.
+
+Updated navigation/provenance files:
+- .okf/research/external-repository-mappings.md
+- .okf/research/repo-research-ledger.md
+- .okf/decisions.md
+- .okf/index.md
+- .okf/decisions/thesix-six-repo-assimilation-20261012.md
+
+This update improves research provenance and governance discoverability; it does not complete any remaining product implementation or verification gate. The full .okf sweep, typecheck/build/tests, browser validation, Lift evaluation, zvec retrieval benchmark, and live mission/F07 proof remain unrun/unproven. Do not merge to main or report production readiness based on this documentation wave.
