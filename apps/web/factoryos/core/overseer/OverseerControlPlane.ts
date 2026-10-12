@@ -1410,6 +1410,36 @@ export class OverseerControlPlane {
           consumedAudioPath: scope.voiceUrl,
         };
 
+        // Persist editable source semantics only when all real media inputs can be
+        // resolved and copied into owner-bound CAS. Missing placeholder/API URLs
+        // intentionally keep the existing flattened-MP4 fallback.
+        try {
+          const [{ buildEditorSourcePackage }, { readJobManifest }] = await Promise.all([
+            import("../editor/EditorSourcePackage"),
+            import("../../../lib/jobs-history"),
+          ]);
+          const sourceJob = await readJobManifest(targetJobId);
+          const sourceOwnerId = typeof sourceJob?.userId === "string" ? sourceJob.userId : "";
+          if (sourceOwnerId && sourceOwnerId !== "anonymous") {
+            const sourcePackage = await buildEditorSourcePackage({
+              jobId: targetJobId,
+              ownerId: sourceOwnerId,
+              renderIntent,
+              scenes: Array.isArray(scope.scenes) ? scope.scenes : [],
+              quizData: scope.quizData,
+            });
+            if (sourcePackage) {
+              scope.editorSourcePackage = sourcePackage;
+              sharedScope.editorSourcePackage = sourcePackage;
+            }
+          }
+        } catch (sourcePackageError) {
+          console.warn(
+            "[Overseer Floor05] Editor source package was not produced; flattened import remains available:",
+            sourcePackageError instanceof Error ? sourcePackageError.message : String(sourcePackageError),
+          );
+        }
+
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
         }
@@ -1595,6 +1625,9 @@ export class OverseerControlPlane {
             videoSizeMb: Number((artifact.byteLength / (1024 * 1024)).toFixed(2)),
             renderDurationSeconds: artifact.duration,
             renderReceipt: renderRes.receipt,
+            ...((scope.editorSourcePackage || sharedScope.editorSourcePackage)
+              ? { editorSourcePackage: scope.editorSourcePackage || sharedScope.editorSourcePackage }
+              : {}),
             templateId: scope.templateId,
             templateVersion: scope.templateVersion,
             contentEngine: scope.contentEngine,
