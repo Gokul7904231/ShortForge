@@ -92,6 +92,13 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     expect(exactResults[0]?.sourceRevision).toBe("corpus-revision-1");
     expect(exactResults[0]?.score).toBeGreaterThan(0);
 
+    const symbolResults = await provider.search(
+      "MissionWorkManager",
+      3,
+      new AbortController().signal,
+    );
+    expect(symbolResults[0]?.documentId).toBe("work-manager");
+
     const lexicalResults = await provider.search(
       "durable task dependency readiness",
       3,
