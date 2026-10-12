@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
+import { isAdminUser } from "@/lib/auth/roles";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import type { CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
 import type { EditorCommand } from "@/factoryos/core/editor/EditorContracts";
@@ -7,6 +8,13 @@ import type { EditorCommand } from "@/factoryos/core/editor/EditorContracts";
 function requireString(value: unknown, name: string): string {
   if (typeof value !== "string" || !value) throw new Error(`EDITOR_${name.toUpperCase()}_REQUIRED`);
   return value;
+}
+
+function assertCompositionOwner(document: EditorDocument, user: Awaited<ReturnType<typeof verifyAuthAndRole>>) {
+  const ownerId = document.composition.metadata.extensions?.ownerId;
+  if (typeof ownerId !== "string" || (ownerId !== user.uid && !isAdminUser(user.role))) {
+    throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -22,6 +30,7 @@ export async function GET(request: NextRequest) {
       mode: "EDIT",
       actor: { kind: "HUMAN", id: user.uid },
     });
+    assertCompositionOwner(document, user);
 
     return NextResponse.json({
       success: true,
@@ -45,25 +54,41 @@ export async function POST(request: NextRequest) {
     if (operation === "open") {
       const composition = body.composition as CompositionIR;
       const sessionId = requireString(body.sessionId, "sessionId");
+      if (!composition || typeof composition.compositionId !== "string") {
+        throw new Error("EDITOR_COMPOSITION_REQUIRED");
+      }
+      const declaredOwner = composition.metadata?.extensions?.ownerId;
+      if (typeof declaredOwner === "string" && declaredOwner !== user.uid && !isAdminUser(user.role)) {
+        throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
+      }
+      const ownedComposition: CompositionIR = {
+        ...composition,
+        metadata: {
+          ...composition.metadata,
+          extensions: { ...(composition.metadata?.extensions || {}), ownerId: user.uid },
+        },
+      };
       const session = {
         sessionId,
-        compositionId: composition.compositionId,
+        compositionId: ownedComposition.compositionId,
         revision: 0,
         mode: "EDIT" as const,
         actor: { kind: "HUMAN" as const, id: user.uid },
       };
-      const document = await runtime.open(session, composition);
+      const document = await runtime.open(session, ownedComposition);
+      assertCompositionOwner(document, user);
       return NextResponse.json({ success: true, document, actor: session.actor });
     }
 
     const sessionId = requireString(body.sessionId, "sessionId");
-    await runtime.resume({
+    const resumedDocument = await runtime.resume({
       sessionId,
       compositionId: requireString(body.compositionId || request.nextUrl.searchParams.get("compositionId"), "compositionId"),
       revision: Number.isInteger(Number(body.expectedRevision)) ? Number(body.expectedRevision) : 0,
       mode: "EDIT",
       actor: { kind: "HUMAN", id: user.uid },
     });
+    assertCompositionOwner(resumedDocument, user);
 
     switch (operation) {
       case "apply": {
