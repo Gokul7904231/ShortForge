@@ -2,7 +2,7 @@
 
 **Research snapshot:** 12 October 2026  
 **Implementation branch:** feat/shortforge-editor-20261012  
-**Status:** Dedicated page/source-preview scaffold is on the branch. CI and end-to-end validation are pending. Export is intentionally locked.
+**Status:** Dedicated editor page, safe flattened import, best-effort CAS-backed source packages, caption text command/inspector and timeline semantic-preservation tests are on the branch. Current-head CI/browser validation is pending. Export is intentionally locked.
 
 ## Decision
 
@@ -34,7 +34,9 @@ Follow-up trace: F05 already writes `timeline_<timeline_id>.timelineir.json`, co
 
 **Implemented on this PR branch, awaiting current-head CI:** the F02 narrative format now propagates through the F03 handoff into F05's `TimelineSpec`; the F05 JSON bridge emits the actual `compositionType`, scene IDs, source asset versions, trim ranges, caption scene/position/style identifiers and transition records. The TypeScript `upgradeTimelineIR()` adapter now carries scene/source metadata, source trims and transition nodes into CompositionIR, plus metadata on captions. Python F03/F05 and TypeScript regression tests were added for these semantics. This repairs the previously hardcoded facts-short type and several known losses at the timeline interchange boundary.
 
-**Still missing (P0):** the canonical F05 file/path is service-local, contains local source paths, and is not yet packaged as a portable, owner-bound CAS source manifest tied to the F06 job manifest. F05 currently emits empty word-cue arrays in the bridge, because word-level timing is not yet in the F05 `SubtitleItem` contract. The visual media kind is still emitted as `IMAGE` because F05's `TimelineClip` currently lacks a media-kind field. Persist the canonical composition and every source asset in CAS; add word-level cues and truthful media kinds where upstream evidence exists; propagate package ID/digest into F06/job history; then test F05→F06→Editor portability, integrity and semantic round-trip. The editor must load that package rather than reverse engineer the flattened MP4.
+**Partially implemented on this branch:** `EditorSourcePackage.ts` resolves source media only when they are real files/allowed HTTPS artifacts/owned CAS objects, checks media signatures and size limits, copies bytes into CAS, builds a CompositionIR package with scene/caption/audio metadata, and stores the composition bytes and fingerprint immutably. F05 orchestration tries to create this package from the same `RenderIntent` that is sent to F06 and records it on the completed job manifest. The editor source API validates the stored manifest, composition hash/length, ownership bindings and each declared asset's actual CAS digest before loading it. Any missing/placeholder asset or mismatched package falls back to a clearly labelled flattened import. Template-specific `LocalRenderIntent` is deliberately excluded until a faithful adapter exists.
+
+**Still missing (P0):** this package builder is best-effort and is not yet a direct packaging of the Python F05 canonical TimelineIR file. The inspected web orchestration can still construct placeholder media URLs (for example `/api/images/<job>_<index>.jpg`), so many jobs correctly fall back to flattened import; the template-specific path is also excluded. The Python F05 bridge still emits empty word-cue arrays because word-level timing is not in its SubtitleItem contract, and it marks visual inputs as images because TimelineClip has no proven media-kind field. Next, expose the real, resolved scene source assets and exact canonical timeline from the producer, package that canonical artifact/asset manifest in CAS, and add F05→F06→Editor contract tests on representative non-template and template jobs. Do not infer a scene asset from an absent URL or reverse engineer it from the MP4.
 
 ### Important export gap
 
@@ -93,7 +95,8 @@ Use CapCut's [keyframes](https://www.capcut.com/tools/keyframe-animation), [capt
 | Open exact generated source project | Adopt P0 blocker | Requires source manifest; do not fabricate scene layers |
 | Clip trim/split/move, transforms, keyframes, masks/transitions | Adopt/adapt P0/P1 | Reuse typed model; test each render-lowered operation |
 | Quiz question/options/answer reveal; replace one scene visual | Adopt after source manifest | Needs semantic fields, stable IDs and dependencies |
-| Caption editing and word timing | Adopt P0/P1 | Styling shouldn't rerun voice |
+| Caption text editing | Implemented P0 on this branch | Typed `UPDATE_CAPTION_TEXT` command, revision history, inspector; only independent caption cues can be edited |
+| Word-level caption timing and style editing | Adapt P1 | F05 needs measured word cues; styling shouldn't rerun voice |
 | Narration regeneration and music/SFX mix | Adapt P1 | Measure actual audio duration and re-align dependent captions |
 | Auto captions/translation | Adapt P1 | Qualified ASR/alignment; preserve human corrections |
 | Dependency-aware minimal scene rebuild | Adopt P1 | Content-addressed inputs and preservation proof |
@@ -173,8 +176,10 @@ A conceptual edit intent identifies the exact parent composition hash and expect
 | Authenticated source import + physical checks + CAS registration | Implemented; runtime validation pending |
 | Owner/source-CAS restrictions | Implemented; tests/CI pending |
 | Real source video and physical preview monitor | Implemented; browser E2E pending |
-| CAS digest/tamper regression test | Added; not run in this environment |
-| Per-scene source manifest | Not done; P0 next milestone |
+| Caption text inspector + versioned command | Implemented; targeted regression tests added, current-head CI pending |
+| CAS digest/tamper and source-package regression tests | Added; current-head CI pending |
+| Best-effort owner-bound composition package in job manifest | Implemented when all RenderIntent sources resolve and validate; not a guarantee for placeholder or template-specific paths |
+| Portable package directly from the canonical Python F05 artifact for all jobs | Not done; P0 next milestone |
 | Semantic quiz editing commands | Not done; needs source manifest |
 | Secure export, worker staging, Treasury/F06/F07 integration | Not done; export locked |
 | CI/production qualification | Pending; no passing test claim |
