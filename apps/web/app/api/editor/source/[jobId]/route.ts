@@ -4,7 +4,8 @@ import * as path from "node:path";
 
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
-import { readJobManifest } from "@/lib/jobs-history";
+import { db } from "@/lib/firebase-admin";
+import { getInMemoryJobs, readJobManifest } from "@/lib/jobs-history";
 import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import {
@@ -144,6 +145,23 @@ export async function POST(
       originalArtifactSha256: typeof job.artifactSha256 === "string" ? job.artifactSha256 : undefined,
       importedBy: user.uid,
     });
+
+    const editorSource = {
+      sha256: sourceArtifact.sha256,
+      artifactId: sourceArtifact.artifactId,
+      byteLength: sourceArtifact.byteLength,
+      sourceKind: "FLATTENED_MP4" as const,
+      ownerId: job.userId,
+      importedAt: new Date().toISOString(),
+    };
+    // Persist ownership with the job record; the CAS directory index is reconstructable
+    // and must not be treated as the durable authorization database.
+    if (db) {
+      await db.collection("videos").doc(jobId).set({ editorSource }, { merge: true });
+    }
+    const inMemoryJobs = getInMemoryJobs();
+    const inMemoryJob = inMemoryJobs.get(jobId);
+    if (inMemoryJob) inMemoryJobs.set(jobId, { ...inMemoryJob, editorSource });
 
     if (sourceIsTemporary && temporarySourcePath && fs.existsSync(temporarySourcePath)) {
       try {
