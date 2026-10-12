@@ -167,12 +167,17 @@ function mimeTypeForSource(src: string, role: "VISUAL" | "AUDIO", mediaType: str
 function locationForSource(
   src: string,
   jobId: string,
+  ownerId: string,
   cas: ContentAddressedStore,
 ): { location: { kind: "LOCAL"; path: string } | { kind: "REMOTE"; uri: string; provider: string }; sha256?: string } {
   if (/^cas:\/\/[a-f0-9]{64}$/i.test(src)) {
     const sha = src.slice("cas://".length).toLowerCase();
     const artifact = cas.getByHash(sha);
     if (!artifact?.uri || !fs.existsSync(artifact.uri)) throw new Error("EDITOR_SOURCE_CAS_NOT_FOUND");
+    const provenance = artifact.metadata as Record<string, unknown> | undefined;
+    if (provenance?.importedBy !== ownerId || provenance?.sourceJobId !== jobId) {
+      throw new Error("EDITOR_SOURCE_CAS_OWNER_UNVERIFIED");
+    }
     return { location: { kind: "LOCAL", path: artifact.uri }, sha256: sha };
   }
   if (/^https:\/\//i.test(src)) {
@@ -388,7 +393,7 @@ export async function buildEditorSourcePackage(
       sourceRoles.set(key, roles);
       if (resolvedBySource.has(key)) continue;
 
-      const location = locationForSource(source.src, input.jobId, cas);
+      const location = locationForSource(source.src, input.jobId, input.ownerId, cas);
       const resolved = await resolver.resolve({
         artifactId: "editor-source-" + digest(input.jobId + ":" + key).slice(0, 24),
         jobId: input.jobId,
