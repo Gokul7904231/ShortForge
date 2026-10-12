@@ -5,7 +5,8 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { KnowledgeStore } from "../factoryos/core/intelligence/knowledge/KnowledgeStore";
 import { KnowledgeStoreRetrievalProvider } from "../factoryos/core/research/KnowledgeStoreRetrievalProvider";
-import { runHybridRetrievalBenchmark } from "../factoryos/core/research/HybridRetrievalBenchmark";
+import { compareRetrievalBenchmarks, runHybridRetrievalBenchmark } from "../factoryos/core/research/HybridRetrievalBenchmark";
+import { HybridKnowledgeRetrievalProvider } from "../factoryos/core/research/HybridKnowledgeRetrievalProvider";
 
 const caseSchema = z.object({
   caseId: z.string().trim().min(1).max(128),
@@ -50,19 +51,37 @@ async function main(): Promise<void> {
 
   const corpusRevision = process.argv[3] || process.env.SHORTFORGE_BENCHMARK_REVISION || "local-unpinned";
   const store = new KnowledgeStore();
-  const provider = new KnowledgeStoreRetrievalProvider(store, corpusRevision);
-  const report = await runHybridRetrievalBenchmark(provider, parsed.data, {
+  const baselineProvider = new KnowledgeStoreRetrievalProvider(store, corpusRevision);
+  const candidateProvider = new HybridKnowledgeRetrievalProvider(store, corpusRevision);
+
+  // Both providers receive the identical human-judged cases and top-K cut-off.
+  const baseline = await runHybridRetrievalBenchmark(baselineProvider, parsed.data, {
     topK: 10,
     maxCases: 200,
     queryTimeoutMs: 30_000,
+  });
+  const candidate = await runHybridRetrievalBenchmark(candidateProvider, parsed.data, {
+    topK: 10,
+    maxCases: 200,
+    queryTimeoutMs: 30_000,
+  });
+  const comparison = compareRetrievalBenchmarks(baseline, candidate, {
+    minimumRecallDelta: 0,
+    minimumMrrDelta: 0,
+    minimumExactIdentifierDelta: 0,
+    maximumP95LatencyRegressionRatio: 1.5,
+    minimumProvenanceCoverage: 1,
+    maximumProviderErrorRate: 0,
   });
 
   const quality = store.validateShortForgeKnowledgeQuality();
   const duplicates = store.getDuplicateIdErrors().length;
   process.stdout.write(JSON.stringify({
-    schemaVersion: "shortforge-knowledge-retrieval-baseline-run.v1",
-    disposition: "BASELINE_ONLY",
-    candidateComparison: "NOT_RUN",
+    schemaVersion: "shortforge-knowledge-retrieval-evaluation.v1",
+    disposition: comparison.eligible ? "ELIGIBLE_FOR_HUMAN_REVIEW" : "NOT_QUALIFIED",
+    promotionAuthority: "NONE",
+    candidateComparison: "EXISTING_KNOWLEDGE_STORE_VS_CLEAN_ROOM_EXACT_BM25",
+    semanticScorerConfigured: false,
     datasetFileName: path.basename(datasetPath),
     datasetSha256: createHash("sha256").update(raw, "utf8").digest("hex"),
     corpusRevision,
@@ -72,8 +91,10 @@ async function main(): Promise<void> {
       secretFindingCount: quality.secretLeakErrors.length,
       duplicateIdGroupCount: duplicates,
     },
-    qualification: "This report measures the existing KnowledgeStore retrieval baseline only. It does not prove zvec-grep integration or a hybrid-search improvement.",
-    report,
+    comparison,
+    baseline,
+    candidate,
+    qualification: "This compares current KnowledgeStore ranking to the clean-room exact/BM25 candidate using the same judged cases. No vector scorer or zvec-grep integration is configured. Eligibility is only a numeric gate, not proof of factual correctness or authority to promote.",
   }, null, 2) + "\n");
 }
 
