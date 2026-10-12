@@ -329,9 +329,9 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
         waitForCompletion: true,
         // Blaxel's TypeScript SDK expects timeout in milliseconds.
         timeout: Math.max(1, Math.floor(request.timeoutMs)),
-        ...(request.env
-          ? { env: Object.entries(request.env).map(([name, value]) => ({ name, value })) }
-          : {}),
+        // The Blaxel TypeScript SDK expects env as a string-to-string object,
+        // not the array-of-pairs format used by some other providers.
+        ...(request.env ? { env: { ...request.env } } : {}),
       });
       const exitCode = Number(result?.exitCode ?? 0);
       return {
