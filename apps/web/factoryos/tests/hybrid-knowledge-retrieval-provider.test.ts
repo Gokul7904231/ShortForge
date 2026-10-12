@@ -89,7 +89,8 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     );
     expect(exactResults[0]?.documentId).toBe("work-manager");
     expect(exactResults[0]?.sourceRef).toBe("apps/web/factoryos/core/work/MissionWorkManager.ts");
-    expect(exactResults[0]?.sourceRevision).toBe("corpus-revision-1");
+    expect(exactResults[0]?.sourceRevision).toBe(knowledgeDocumentContentRevision(exact));
+    expect(exactResults[0]?.sourceRevision).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(exactResults[0]?.score).toBeGreaterThan(0);
 
     const symbolResults = await provider.search(
