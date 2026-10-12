@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import { verifyAuthAndRole, verifyWritePermission } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { db } from "@/lib/firebase-admin";
-import { getInMemoryJobs, readJobManifest } from "@/lib/jobs-history";
+import { getInMemoryJobs, readJobManifest, saveJobManifest } from "@/lib/jobs-history";
 import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import {
@@ -376,6 +377,42 @@ export async function POST(
         422,
       );
     }
+
+    // Persist the exact canonical starting composition. The runtime's open operation
+    // must compare the browser-supplied document against this immutable source before
+    // creating revision 0; subsequent edits then use revision-checked commands.
+    const compositionTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shortforge-editor-composition-"));
+    let compositionArtifact;
+    try {
+      const compositionTempPath = path.join(compositionTempDir, compositionId + ".json");
+      fs.writeFileSync(compositionTempPath, JSON.stringify(composition), { encoding: "utf8", flag: "wx" });
+      compositionArtifact = await cas.putFile(
+        compositionTempPath,
+        "editor_source_composition",
+        "application/json",
+        {
+          sourceJobId: jobId,
+          importedBy: user.uid,
+          sourceKind: "FLATTENED_MP4",
+          compositionId,
+          sourceAssetSha256: sourceArtifact.sha256,
+        },
+      );
+    } finally {
+      try { fs.rmSync(compositionTempDir, { recursive: true, force: true }); } catch {}
+    }
+
+    const editorSourceComposition = {
+      schemaVersion: "shortforge.editor-composition-binding.v1" as const,
+      compositionId,
+      sha256: compositionArtifact.sha256,
+      artifactId: compositionArtifact.artifactId,
+      byteLength: compositionArtifact.byteLength,
+      sourceKind: "FLATTENED_MP4" as const,
+      ownerId: job.userId,
+      createdAt: new Date().toISOString(),
+    };
+    await saveJobManifest(jobId, { editorSourceComposition });
 
     return NextResponse.json({
       success: true,
