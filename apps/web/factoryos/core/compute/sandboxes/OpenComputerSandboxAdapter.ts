@@ -24,8 +24,9 @@ type OpenComputerModule = {
 
 async function loadOpenComputer(): Promise<OpenComputerModule> {
   try {
-    const importModule = Function("specifier", "return import(specifier)") as (specifier: string) => Promise<unknown>;
-    return (await importModule("@opencomputer/sdk")) as OpenComputerModule;
+    // Keep this as native dynamic import: Function("return import(...)") fails in Vitest's module runner.
+    const specifier: string = "@opencomputer/sdk";
+    return (await import(/* @vite-ignore */ specifier)) as OpenComputerModule;
   } catch (error: any) {
     throw new Error(
       "OPENCOMPUTER_SDK_MISSING: install @opencomputer/sdk in the runtime that activates OpenComputer." +
