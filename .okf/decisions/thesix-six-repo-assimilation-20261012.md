@@ -21,7 +21,7 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 | twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology and basic mapping/skill verifier implemented; semantic lint and measured context-quality evaluation pending |
 | CopilotKit/OpenIntelligentUI | research/repo-mappings/copilotkit-openintelligentui.md | PARTIAL SAFE PRESENTATION | Fixed allow-listed schema-validated UI primitives; no arbitrary generated code/runtime |
 | datalab-to/lift | research/repo-mappings/datalab-to-lift.md | EXPERIMENT_ONLY / OPT-IN NORMALIZER SEAM | Disabled-by-default adapter reachable through explicit DocumentNormalizer path; no Lift provider/model, legal review or real-document qualification |
-| zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK CLI + CLEAN-ROOM CANDIDATE | Same-case KnowledgeStore baseline vs exact/BM25 RRF candidate; per-document content digests and gates; no real judged benchmark or zvec adapter |
+| zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK CLI + CLEAN-ROOM CANDIDATE | Same-case KnowledgeStore baseline vs exact/BM25 RRF candidate; per-document content digests, explicit remote opt-in and capped semantic shortlist; no real judged benchmark or zvec adapter |
 
 ## Existing .okf constraints considered
 
