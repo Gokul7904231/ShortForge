@@ -106,6 +106,7 @@ export interface EditorReceipt {
   readonly revision: number;
   readonly compositionHash: string;
   readonly changedClipIds: readonly string[];
+  readonly changedCaptionIds?: readonly string[];
   readonly commandDigestSha256?: string;
   readonly error?: string;
 }
