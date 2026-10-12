@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -20,6 +22,45 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+
+      - name: Compile complete OKF sweep attestation
+        id: okf_sweep
+        shell: bash
+        run: |
+          python3 -m pip install --quiet PyYAML
+          git fetch --no-tags origin main
+          python3 -m tools.okf.sweep \
+            --base origin/main \
+            --head HEAD \
+            --compiled-by "${GITHUB_ACTOR}" \
+            --output "${RUNNER_TEMP}/thesix-okf-sweep.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path(os.environ["RUNNER_TEMP"], "thesix-okf-sweep.json").read_text())
+          assert report["okfSweep"] == "COMPLETE"
+          assert report["corpusSha256"] and report["envelopeSha256"]
+          assert report["relevantRules"]
+          print("OKF_SWEEP=COMPLETE")
+          print(f"corpusSha256={report['corpusSha256']}")
+          print(f"envelopeSha256={report['envelopeSha256']}")
+          print(f"changedPaths={len(report['changedPaths'])}")
+          print(f"relevantRules={len(report['relevantRules'])}")
+          print(f"relevantMappings={len(report['relevantMappings'])}")
+          print("NOTE: Inventory/applicability attestation does not replace substantive review, tests, security evidence, or F07.")
+          PY
+
+      - name: Upload complete OKF sweep envelope
+        if: always() && steps.okf_sweep.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: thesix-okf-sweep-${{ github.sha }}
+          path: ${{ runner.temp }}/thesix-okf-sweep.json
+          if-no-files-found: error
+          retention-days: 30
+
 
       - name: Install dependencies
         run: cd apps/web && npm ci
