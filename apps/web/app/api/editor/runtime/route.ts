@@ -204,13 +204,9 @@ export async function POST(request: NextRequest) {
       }
       await assertCompositionSourcesOwned(composition, user);
       await assertCompositionMatchesSavedSource(composition, user);
-      const ownedComposition: CompositionIR = {
-        ...composition,
-        metadata: {
-          ...composition.metadata,
-          extensions: { ...(composition.metadata?.extensions || {}), ownerId: user.uid },
-        },
-      };
+      // The source job's owner remains the composition owner, even when an
+      // authorized admin inspects it. Do not rewrite provenance to the operator.
+      const ownedComposition: CompositionIR = composition;
       const session = {
         sessionId,
         compositionId: ownedComposition.compositionId,
