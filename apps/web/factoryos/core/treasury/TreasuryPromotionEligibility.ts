@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { TreasuryLedgerEvent } from "./TreasuryContracts";
 
 export interface VerifiedRouteOutcome {
   readonly outcomeId: string;
@@ -349,3 +350,109 @@ export function evaluateTreasuryPromotionEligibility(
     .digest("hex");
   return { ...core, artifactDigest };
 }
+
+export interface TreasuryPromotionOutcomeReadSource {
+  /**
+   * Read-only ledger seam. Implementations must return canonical Treasury ledger
+   * events and must not expose a TreasuryService mutation handle.
+   */
+  listRecentEvents(accountId?: string, limit?: number): Promise<TreasuryLedgerEvent[]>;
+}
+
+export interface TreasuryPromotionLedgerEvaluationRequest
+  extends Omit<TreasuryPromotionEligibilityRequest, "outcomes"> {
+  readonly accountId: string;
+  readonly eventLimit?: number;
+}
+
+function nonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : undefined;
+}
+
+/**
+ * Builds promotion evidence only from canonical Treasury RESOURCE_CONSUMED
+ * events explicitly tagged to this recommendation and experiment cohort.
+ *
+ * Callers must place these non-secret tags on the selected resource request:
+ * treasuryPromotionRecommendationId, treasuryPromotionRouteId,
+ * treasuryPromotionCohortId, treasuryPromotionWorkloadType and
+ * treasuryPromotionCapabilityClass. The event must also carry the real
+ * verificationReceiptId, verified result, measured amount/duration and
+ * executionEvidenceId. Missing fields become excluded outcomes (fail closed).
+ *
+ * This adapter is read-only and never mutates routing, creates canaries,
+ * calls providers, reserves spend or changes Treasury policy.
+ */
+export async function evaluateTreasuryPromotionFromLedger(
+  source: TreasuryPromotionOutcomeReadSource,
+  request: TreasuryPromotionLedgerEvaluationRequest,
+): Promise<TreasuryPromotionEligibilityArtifact> {
+  if (!nonEmptyString(request.accountId)) {
+    throw new Error("Treasury promotion ledger evaluation requires an accountId");
+  }
+  const eventLimit = Math.min(
+    10_000,
+    Math.max(1, Math.floor(request.eventLimit ?? 2_500)),
+  );
+  const events = await source.listRecentEvents(request.accountId, eventLimit);
+  const outcomes: VerifiedRouteOutcome[] = [];
+
+  for (const event of events) {
+    if (event.eventType !== "RESOURCE_CONSUMED") continue;
+    const payload =
+      event.payload && typeof event.payload === "object"
+        ? event.payload as Record<string, unknown>
+        : {};
+    const requests = Array.isArray(payload.resourceRequest)
+      ? payload.resourceRequest
+      : [];
+    const resource =
+      requests[0] && typeof requests[0] === "object"
+        ? requests[0] as Record<string, unknown>
+        : {};
+    const metadata =
+      resource.metadata && typeof resource.metadata === "object"
+        ? resource.metadata as Record<string, unknown>
+        : {};
+    const recommendationId =
+      nonEmptyString(metadata.treasuryPromotionRecommendationId) ??
+      nonEmptyString(payload.treasuryPromotionRecommendationId);
+    if (recommendationId !== request.recommendationId) continue;
+
+    const f07ReceiptId = nonEmptyString(payload.verificationReceiptId);
+    const evidenceRef = nonEmptyString(payload.executionEvidenceId);
+    const actualCostUsd =
+      typeof event.amountUsd === "number" ? event.amountUsd : Number.NaN;
+    const actualLatencyMs =
+      typeof payload.actualDurationMs === "number"
+        ? payload.actualDurationMs
+        : Number.NaN;
+
+    outcomes.push({
+      outcomeId: nonEmptyString(event.eventId) ?? "",
+      routeId: nonEmptyString(metadata.treasuryPromotionRouteId) ?? "",
+      cohortId: nonEmptyString(metadata.treasuryPromotionCohortId) ?? "",
+      workloadType:
+        nonEmptyString(metadata.treasuryPromotionWorkloadType) ?? "",
+      capabilityClass:
+        nonEmptyString(metadata.treasuryPromotionCapabilityClass) ?? "",
+      observedAt: nonEmptyString(event.occurredAt) ?? "",
+      realizedCostUsd: actualCostUsd,
+      latencyMs: actualLatencyMs,
+      verification: {
+        status: f07ReceiptId ? "VERIFIED" : "UNVERIFIED",
+        success: payload.verified === true,
+        f07ReceiptId,
+      },
+      evidenceRef,
+    });
+  }
+
+  return evaluateTreasuryPromotionEligibility({
+    ...request,
+    outcomes,
+  });
+}
+
