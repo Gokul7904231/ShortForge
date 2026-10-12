@@ -11,7 +11,7 @@
       "type":"object",
       "required":["sweepStatus","sourceRefs"],
       "properties":{
-        "sweepStatus":{"enum":["COMPLETE","INCIDENT_FOLLOWUP"]},
+        "sweepStatus":{"enum":["COMPLETE","PARTIAL","INCIDENT_FOLLOWUP"]},
         "sourceRefs":{"type":"array","items":{"type":"string"}}
       },
       "additionalProperties":true

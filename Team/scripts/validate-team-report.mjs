@@ -11,7 +11,8 @@ const errors = [];
 const required = ["schemaVersion","changeId","okf","classification","forgers","security","conflicts","disposition"];
 for (const key of required) if (!(key in report)) errors.push("missing: " + key);
 if (report.schemaVersion !== "1.0") errors.push("schemaVersion must be 1.0");
-if (!["COMPLETE","INCIDENT_FOLLOWUP"].includes(report.okf?.sweepStatus)) errors.push("okf.sweepStatus must be COMPLETE or INCIDENT_FOLLOWUP");
+if (!["COMPLETE","PARTIAL","INCIDENT_FOLLOWUP"].includes(report.okf?.sweepStatus)) errors.push("okf.sweepStatus must be COMPLETE, PARTIAL, or INCIDENT_FOLLOWUP");
+if (report.okf?.sweepStatus === "PARTIAL" && report.disposition === "PASS") errors.push("PARTIAL OKF sweep cannot produce PASS");
 const classes = ["already exists","extends existing rule","contradicts existing rule","new capability","experiment only"];
 if (!classes.includes(report.classification)) errors.push("invalid classification");
 

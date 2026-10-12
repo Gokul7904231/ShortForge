@@ -71,6 +71,9 @@ jobs:
       - name: Verify THESIX repository mapping governance
         run: node tools/okf/verify-thesix-repo-mappings.mjs
 
+      - name: Test Team partial-sweep gate
+        run: node --test tools/okf/tests/team-report-gate.test.mjs
+
       - name: Test THESIX skill-governance linter
         run: node --test tools/okf/tests/thesix-skill-quality.test.mjs
 

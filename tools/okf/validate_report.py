@@ -12,7 +12,8 @@ def main() -> int:
     data = json.loads(Path(args.report).read_text(encoding='utf-8'))
     errors: list[str] = []
     okf = data.get('okf', {})
-    if okf.get('sweepStatus') not in {'COMPLETE','INCIDENT_FOLLOWUP'}: errors.append('OKF sweep is not complete')
+    if okf.get('sweepStatus') not in {'COMPLETE','PARTIAL','INCIDENT_FOLLOWUP'}: errors.append('OKF sweep status must be COMPLETE, PARTIAL, or INCIDENT_FOLLOWUP')
+    if okf.get('sweepStatus') == 'PARTIAL' and data.get('disposition') == 'PASS': errors.append('PARTIAL OKF sweep cannot produce PASS')
     for conflict in data.get('conflicts', []):
         if conflict.get('status') == 'OPEN': errors.append(f"open conflict: {conflict.get('id')}")
     security = data.get('security', {})

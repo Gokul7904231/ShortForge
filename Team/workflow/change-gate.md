@@ -51,7 +51,7 @@ For pull requests, the required report is:
 
 Team/reports/pr-<number>.json
 
-Missing, malformed, contradictory or incomplete reports fail the Team gate.
+Missing, malformed, contradictory or incomplete reports fail the Team gate. A machine-readable PARTIAL sweep is a valid blocked-state report only; it may not be assigned PASS, which remains reserved for a COMPLETE sweep with all required evidence.
 
 ## Machine OKF binding — v1
 
