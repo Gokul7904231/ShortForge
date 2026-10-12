@@ -158,8 +158,12 @@ export class KnowledgeOSSnapshotHistory {
     const records = await this.memoryRepository.queryMemories(
       "OPERATIONAL",
       prefix,
-      MAX_HISTORY_READ,
+      MAX_HISTORY_READ + 1,
     );
+    if (records.length > MAX_HISTORY_READ) {
+      // Never return a silently truncated revision history as if it were complete.
+      throw new Error("KNOWLEDGEOS_SNAPSHOT_HISTORY_READ_LIMIT_EXCEEDED");
+    }
     const snapshots = records
       .filter((record) => record.key.startsWith(prefix))
       .map((record) => decodeSnapshotRecord(record, selection));

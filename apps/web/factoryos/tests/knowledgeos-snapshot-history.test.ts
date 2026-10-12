@@ -32,6 +32,10 @@ class FixtureMemoryRepository implements IMemoryRepository {
       .map((record) => structuredClone(record));
   }
 
+  seed(records: readonly MemoryRecord[]): void {
+    for (const record of records) this.records.set(record.memoryId, structuredClone(record));
+  }
+
   async deleteMemory(memoryId: string): Promise<void> {
     this.records.delete(memoryId);
   }
@@ -153,6 +157,26 @@ describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
     const alternativePropertyOrder = { missionId: "mission-order", scope: "MISSION" } as const;
     await expect(history.load(alternativePropertyOrder, first.snapshot.contentDigest))
       .resolves.toMatchObject({ contentDigest: first.snapshot.contentDigest });
+  });
+
+  it("fails explicitly rather than silently truncating an oversized history", async () => {
+    const memory = new FixtureMemoryRepository();
+    const prefix = `knowledgeos.snapshot.v1:${createHash("sha256").update("GLOBAL", "utf8").digest("hex")}:`;
+    const now = new Date().toISOString();
+    memory.seed(Array.from({ length: 1001 }, (_, index): MemoryRecord => ({
+      memoryId: `oversized_${index}`,
+      layer: "OPERATIONAL",
+      key: `${prefix}${String(index).padStart(64, "0")}`,
+      content: "{}",
+      metadata: {},
+      confidence: 0,
+      accessCount: 0,
+      createdAt: now,
+      lastAccessedAt: now,
+    })));
+
+    await expect(new KnowledgeOSSnapshotHistory(memory).list({ scope: "GLOBAL" }))
+      .rejects.toThrow("KNOWLEDGEOS_SNAPSHOT_HISTORY_READ_LIMIT_EXCEEDED");
   });
 
   it("rejects a corrupted stored revision instead of trusting its saved digest", async () => {
