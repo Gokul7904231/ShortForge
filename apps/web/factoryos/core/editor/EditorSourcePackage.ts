@@ -440,6 +440,7 @@ export async function buildEditorSourcePackage(
       });
     }
 
+    const sourceAssetSha256s = Array.from(new Set(sourceAssets.map((asset) => asset.sha256))).sort();
     const sceneRows = input.scenes ?? [];
     const tracks: CompositionIR["tracks"] = [{
       id: "video-main",
@@ -504,7 +505,7 @@ export async function buildEditorSourcePackage(
           compositionType: intent.compositionType,
           quizData,
           sceneManifest,
-          sourceAssetSha256s: sourceAssets.map((asset) => asset.sha256),
+          sourceAssetSha256s,
         },
       },
     };
@@ -533,7 +534,7 @@ export async function buildEditorSourcePackage(
         compositionSha256: compositionArtifact.sha256,
         compositionByteLength: compositionArtifact.byteLength,
         compositionHashSha256,
-        sourceAssetSha256s: sourceAssets.map((asset) => asset.sha256).sort(),
+        sourceAssetSha256s,
         sourceAssets,
         renderIntentId: intent.intentId,
         timelineFingerprint: sourceFingerprintSha256,
