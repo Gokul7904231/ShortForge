@@ -181,7 +181,7 @@ describe("HybridKnowledgeRetrievalProvider", () => {
       providerId: "approved-remote-embedding",
       modelRevision: "remote-v1",
       executionBoundary: "APPROVED_REMOTE",
-      async search() { return new Map(); },
+      search: vi.fn(async (): Promise<ReadonlyMap<string, number>> => new Map()),
     };
 
     expect(() => new HybridKnowledgeRetrievalProvider(
