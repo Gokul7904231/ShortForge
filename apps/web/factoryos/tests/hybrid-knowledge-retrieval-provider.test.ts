@@ -152,6 +152,30 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     expect(result[0]?.sourceRevision).toBe(knowledgeDocumentContentRevision(semantic));
   });
 
+  it("bounds how many document texts are passed to the semantic scorer", async () => {
+    const docs = Array.from({ length: 8 }, (_, index) =>
+      doc(`doc-${index}`, `knowledge/doc-${index}.md`, `Guide ${index}`, ["guide"], `query contents for item ${index}`),
+    );
+    let observedCandidateCount = 0;
+    const scorer: SemanticRetrievalScorer = {
+      providerId: "bounded-local-scorer",
+      modelRevision: "fixture-v1",
+      executionBoundary: "LOCAL",
+      async search(_query, candidates) {
+        observedCandidateCount = candidates.length;
+        return new Map(candidates.map((candidate) => [candidate.documentId, 0.5]));
+      },
+    };
+    const provider = new HybridKnowledgeRetrievalProvider(
+      corpusPort(docs),
+      "corpus-revision",
+      { semanticScorer: scorer, semanticCandidateLimit: 2 },
+    );
+
+    await provider.search("query contents", 5, new AbortController().signal);
+    expect(observedCandidateCount).toBeLessThanOrEqual(2);
+  });
+
   it("fails closed when remote semantic scoring is not explicitly approved", () => {
     const remoteScorer: SemanticRetrievalScorer = {
       providerId: "approved-remote-embedding",

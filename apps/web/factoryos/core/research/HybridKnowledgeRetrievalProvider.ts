@@ -34,6 +34,8 @@ export interface HybridKnowledgeRetrievalOptions {
   readonly exactWeight?: number;
   readonly semanticWeight?: number;
   readonly maxCorpusDocuments?: number;
+  /** Maximum document texts provided to the optional semantic scorer for a single query. */
+  readonly semanticCandidateLimit?: number;
   /** External corpus-text submission is denied unless this is explicitly enabled. */
   readonly allowApprovedRemoteSemanticScorer?: boolean;
 }
@@ -63,6 +65,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
   private readonly exactWeight: number;
   private readonly semanticWeight: number;
   private readonly maxCorpusDocuments: number;
+  private readonly semanticCandidateLimit: number;
 
   constructor(
     private readonly corpus: HybridKnowledgeCorpusPort,
@@ -77,6 +80,11 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     this.exactWeight = options.exactWeight ?? 3;
     this.semanticWeight = options.semanticWeight ?? 1.5;
     this.maxCorpusDocuments = options.maxCorpusDocuments ?? 10_000;
+    this.semanticCandidateLimit = options.semanticCandidateLimit ?? 50;
+    if (!Number.isSafeInteger(this.semanticCandidateLimit) ||
+      this.semanticCandidateLimit < 1 || this.semanticCandidateLimit > 200) {
+      throw new Error("HYBRID_RETRIEVAL_INVALID_SEMANTIC_CANDIDATE_LIMIT");
+    }
     for (const [name, value] of [
       ["bm25Weight", this.bm25Weight],
       ["exactWeight", this.exactWeight],
@@ -170,9 +178,24 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     const exactRanked = lexicalRanked.filter((document) => exactMatch(document, query));
     let semanticScores: ReadonlyMap<string, number> = new Map();
     if (this.options.semanticScorer) {
+      // Do not disclose the entire corpus to an optional scorer for each query.
+      // Seed with exact matches, then fill from lexical ranks under a hard cap.
+      const semanticCandidatesById = new Map<string, KnowledgeDocument>();
+      for (const document of exactRanked) {
+        if (semanticCandidatesById.size >= this.semanticCandidateLimit) break;
+        semanticCandidatesById.set(idOf(document), document);
+      }
+      for (const document of lexicalRanked) {
+        if (semanticCandidatesById.size >= this.semanticCandidateLimit) break;
+        if ((bm25Scores.get(idOf(document)) ?? 0) > 0) {
+          semanticCandidatesById.set(idOf(document), document);
+        }
+      }
+
+      const eligibleIds = new Set(eligible.map((document) => idOf(document)));
       semanticScores = await this.options.semanticScorer.search(
         query,
-        eligible.map((document) => ({
+        [...semanticCandidatesById.values()].map((document) => ({
           documentId: idOf(document),
           text: searchableText(document),
         })),
@@ -180,7 +203,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
       );
       if (signal.aborted) throw new Error("HYBRID_RETRIEVAL_ABORTED");
       for (const [id, score] of semanticScores) {
-        if (!eligible.some((document) => idOf(document) === id) ||
+        if (!eligibleIds.has(id) || !semanticCandidatesById.has(id) ||
           !Number.isFinite(score) || score < 0 || score > 1) {
           throw new Error("HYBRID_RETRIEVAL_INVALID_SEMANTIC_SCORE");
         }
