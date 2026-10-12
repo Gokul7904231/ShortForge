@@ -80,13 +80,20 @@ export interface KnowledgeRelationship {
   readonly provenanceDigest: string;
 }
 
-/** Read-only, versioned projection; this contract does not imply durable persistence. */
+/** Required selection boundary: snapshot reads never default to cross-mission "all". */
+export type KnowledgeOSSnapshotScope =
+  | { readonly scope: "MISSION"; readonly missionId: string }
+  | { readonly scope: "CHANNEL"; readonly channelId: string }
+  | { readonly scope: "GLOBAL" };
+
+/** Read-only, scoped versioned projection; this contract does not imply durable persistence. */
 export interface KnowledgeOSSnapshot {
   readonly schemaVersion: "knowledgeos.snapshot.v1";
+  readonly selection: KnowledgeOSSnapshotScope;
   readonly capturedAt: string;
   readonly records: readonly KnowledgeObject[];
   readonly relationships: readonly KnowledgeRelationship[];
-  /** SHA-256 of canonical records + relationships; capturedAt is intentionally excluded. */
+  /** SHA-256 of canonical selection + records + relationships; capturedAt is excluded. */
   readonly contentDigest: string;
 }
 
