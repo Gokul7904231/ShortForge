@@ -44,6 +44,16 @@
         "A dedicated editor playback route now verifies session, job ownership, source binding, byte length and SHA-256.",
         "No production export endpoint is exposed by this change; export remains locked pending worker input staging, Treasury admission, F06 output and F07 evidence."
       ]
+    },
+    {
+      "name": "timeline-interchange",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "F02 narrative format is propagated into the F03 handoff and F05 canonical TimelineSpec rather than defaulting every timeline to FACTS_SHORTS.",
+        "F05 canonical bridge preserves scene IDs, source versions, source trims, caption scene/position/font-style metadata and transitions.",
+        "TypeScript TimelineIR upgrade maps source trims, scene/source metadata, transitions and caption metadata into CompositionIR.",
+        "Regression tests cover F02-to-F03 quiz format propagation, F05 bridge field preservation, and TimelineIR-to-CompositionIR upgrade."
+      ]
     }
   ],
   "security": {
@@ -55,7 +65,14 @@
       "apps/web/app/api/editor/source/[jobId]/route.ts",
       "apps/web/app/api/editor/source/[jobId]/video/route.ts",
       "apps/web/app/api/editor/runtime/route.ts",
-      "apps/web/factoryos/core/editor/EditorRuntime.ts"
+      "apps/web/factoryos/core/editor/EditorRuntime.ts",
+      "services/pipeline/floor03_asset_realization/app/domain/handoff.py",
+      "services/pipeline/floor03_asset_realization/app/pipeline.py",
+      "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+      "services/pipeline/floor05_timeline_composition/app/workers/composition_worker.py",
+      "services/pipeline/floor05_timeline_composition/app/services/timeline_ir_bridge.py",
+      "apps/web/factoryos/core/timeline/TimelineIR.ts",
+      "apps/web/factoryos/tests/timeline-ir-editor-metadata.test.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
   },
@@ -72,6 +89,10 @@
     {
       "id": "license-boundary",
       "proposal": "Use external editor repositories as feature/architecture references. Review all licenses before vendoring or adding dependencies."
+    },
+    {
+      "id": "f05-timeline-semantic-loss",
+      "proposal": "Preserve F02 narrative format and F05 scene/asset/trim/transition/caption metadata through the canonical interchange model. Next still requires portable CAS staging and an owner-bound source-manifest link from F06 into the editor job manifest."
     }
   ],
   "acceptedResolutions": [
@@ -82,6 +103,10 @@
     {
       "id": "owner-bound-media",
       "resolution": "Use an authenticated owner-bound playback endpoint and verify the physical CAS digest before serving source bytes."
+    },
+    {
+      "id": "canonical-timeline-interop",
+      "resolution": "Retain F05 TimelineIR as a canonical source boundary and upgrade it to CompositionIR without discarding supported source scene identities, source trim ranges, caption metadata or transitions."
     }
   ],
   "disposition": "BLOCKED",
@@ -95,7 +120,9 @@
     "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197715",
     "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197787",
     "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197741",
-    ".okf/research/build-shortforge-editor-20261012.md"
+    ".okf/research/build-shortforge-editor-20261012.md",
+    "services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_f05_wave3_reconciliation.py"
   ],
   "modelMetadata": {
     "assistant": "GPT-6",
