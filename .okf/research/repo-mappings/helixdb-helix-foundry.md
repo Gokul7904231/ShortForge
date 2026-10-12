@@ -6,7 +6,7 @@
 - Review date: 2026-10-12
 - Code license reported by GitHub: Apache-2.0
 - Assimilation mode: PATTERN_EXTRACTION / CLEAN_ROOM_EXTENSION
-- ShortForge status: PARTIALLY IMPLEMENTED scoped snapshot projection and repository-backed revision history; no Helix dependency or parallel datastore. Runtime wiring and retention policy remain pending.
+- ShortForge status: PARTIALLY IMPLEMENTED canonical KnowledgeStore snapshots + content-addressed history through the existing memory repository; no Helix dependency or parallel datastore. Retention and latest-code verification remain pending.
 
 ## Problem and useful mechanism
 
