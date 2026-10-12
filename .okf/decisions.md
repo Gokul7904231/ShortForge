@@ -1651,3 +1651,18 @@ Rollback/rejection: If the machine manifest diverges from canonical textual rule
 
 **Remaining promotion gates:** complete the full relevant .okf sweep; inspect current implementation/tests; record latest CI; run browser/reconnect/auth checks; validate scope isolation and snapshot diff behavior; perform an actual document extraction benchmark and separate model-weight legal review; run a real-repository retrieval benchmark; prove live mission task/artifact/F07 links; preserve rollback and negative evidence. Do not merge to main while required gates are blocked or unproven.
 
+## 38. THESIX Continuation — Snapshot, SSE, Visual Normalization and Retrieval — 2026-10-12
+
+**Classification:** clean-room partial implementation / experiment gate on isolated THESIX; not a production promotion.
+
+**Decisions and boundaries:**
+- KnowledgeOS snapshot history uses existing IMemoryRepository only. Content digests provide change detection, not factual truth or authenticated provenance; records remain confidence 0 / UNVERIFIED. Runtime wiring, access policy and retention are still required.
+- Mission work SSE is an invalidation channel; the persisted/API work-board snapshot remains authoritative. Only allow-listed mission/task metadata is emitted. Replay is bounded to the existing in-process event bus history, not a durable distributed event log. Four-second polling remains the fallback.
+- Adaptive UI is a strict schema allow-list with fixed renderer templates. Generated HTML/JS or arbitrary component execution is prohibited.
+- Visual extraction is an explicitly supplied opt-in path behind DocumentNormalizer, disabled by default. Model/schema validity never equals factual verification or F07.
+- Retrieval uses the existing KnowledgeStore as baseline and a clean-room exact/BM25 RRF candidate, with optional semantic reranking behind an explicit local/approved-remote boundary. Per-document content revision hashes support provenance coverage. Numeric benchmark eligibility only invites human review and never promotes a provider. zvec-grep remains unintegrated.
+- Each change remains subordinate to the decision protocol, existing canonical stores/IRs, mission membership/authorization, Treasury economic admission where applicable, worker permissions, and F07 evidence authority.
+
+**Current verification status:** one earlier code revision passed strict typecheck and its targeted test/governance job. A hybrid candidate and later persistence, event-stream and per-document-provenance changes have been added since; confirm GitHub Actions for the exact current THESIX head before treating the branch as green. Full .okf sweep, browser/real mission tests, production lifecycle wiring for snapshots, Lift model qualification, and human-judged retrieval evaluation are not complete.
+
+**Promotion gate:** require current-head CI, applicable security tests, full relevant .okf sweep, live authorized mission plus F07 evidence, representative document benchmark/legal review, and same-dataset baseline-vs-candidate retrieval results. Reject or roll back if scope isolation, provenance, secret filtering, permissions, resource bounds, quality, or licensing fails.

@@ -16,12 +16,12 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 
 | Source | Mapping | Classification | Current ShortForge status |
 |---|---|---|---|
-| HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | PARTIALLY_IMPLEMENTED projection | Scoped in-memory KnowledgeOS snapshot/diff and provenance relationships; no durable history or parallel store |
-| devdotfast/whiteboard | research/repo-mappings/devdotfast-whiteboard.md | PARTIALLY_IMPLEMENTED | Guarded canvas polling, typed response validation and safe metrics; no browser/F07/replay proof yet |
-| twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology and mapping verifier implemented; skill lint/context-budget tests pending |
+| HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | PARTIALLY_IMPLEMENTED projection + history adapter | Scoped snapshots/diffs and content-addressed revision history via existing IMemoryRepository; runtime wiring/retention pending; no parallel store |
+| devdotfast/whiteboard | research/repo-mappings/devdotfast-whiteboard.md | PARTIALLY_IMPLEMENTED | Guarded canvas, typed response validation, mission-scoped SSE signals/bounded in-process replay and polling fallback; browser/F07 proof pending |
+| twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology and basic mapping/skill verifier implemented; semantic lint and measured context-quality evaluation pending |
 | CopilotKit/OpenIntelligentUI | research/repo-mappings/copilotkit-openintelligentui.md | PARTIAL SAFE PRESENTATION | Fixed allow-listed schema-validated UI primitives; no arbitrary generated code/runtime |
-| datalab-to/lift | research/repo-mappings/datalab-to-lift.md | EXPERIMENT_ONLY / ADAPTER CONTRACT | Disabled-by-default provider adapter boundary exists; no Lift provider/model; legal and qualification gates pending |
-| zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK HARNESS | Evaluator implemented; no zvec adapter or real corpus benchmark run |
+| datalab-to/lift | research/repo-mappings/datalab-to-lift.md | EXPERIMENT_ONLY / OPT-IN NORMALIZER SEAM | Disabled-by-default adapter reachable through explicit DocumentNormalizer path; no Lift provider/model, legal review or real-document qualification |
+| zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK CLI + CLEAN-ROOM CANDIDATE | Same-case KnowledgeStore baseline vs exact/BM25 RRF candidate; per-document content digests and gates; no real judged benchmark or zvec adapter |
 
 ## Existing .okf constraints considered
 

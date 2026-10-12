@@ -4,7 +4,7 @@
 - Branch: `THESIX`
 - Base commit: `9e3d7017f62625cea5258dabee926824cb43ab18`
 - Checkpoint type: implementation progress checkpoint (not final completion)
-- Status: `PARTIAL_IMPLEMENTATION; FOCUSED CI PASS; FULL REGRESSION PENDING`
+- Status: `PARTIAL_IMPLEMENTATION; NEWEST CODE REVISION AWAITING CI; FULL REGRESSION PENDING`
 
 ## Purpose
 
@@ -128,3 +128,32 @@ This update improves research provenance and governance discoverability; it does
 - Lift model/provider connection, legal assessment, representative PDF/image evaluation, hardware and latency qualification.
 - zvec-grep/provider connection, real ShortForge corpus retrieval benchmark and secret/index-freshness adversarial tests.
 - Production readiness and merge-to-main approval.
+
+## Continuation update — 2026-10-12 (newer implementation state)
+
+This addendum supersedes the older status bullets above where they conflict. It does not claim all six source projects are fully integrated.
+
+### Additional work now present on THESIX
+
+- **S1 / scoped KnowledgeOS history:** KnowledgeOSSnapshotHistory.ts stores content-addressed scoped revisions via the existing IMemoryRepository, validates stored snapshot digests, provides load/list/latest/diff and rejects cross-scope diffs. Records remain UNVERIFIED with confidence 0 because integrity is not factual truth. The existing disk memory repository now performs exact-key lookup beyond its ordinary 50-result query limit; tests cover this regression. Runtime wiring and retention policy are still pending.
+- **S2 / mission work stream:** the mission work events route provides mission-authenticated SSE and projects allow-listed task invalidations from DurableEventBus. It supports bounded in-process Last-Event-ID replay/resync; the canvas refreshes the authoritative work snapshot on signals and retains polling fallback. Cross-process durability, browser acceptance and live mission/F07 evidence are still pending.
+- **S3 / skill governance:** the repo-mapping verifier checks the assimilation skill's required metadata/sections, 1,800-word ceiling, relative references, and explicit BLOCKED/UNPROVEN semantics in addition to six mapping files. Semantic duplicate/capability lint and measured context-cost-versus-quality evaluation remain pending.
+- **S4 / safe adaptive UI:** allow-listed Zod schemas and fixed React summary/metric-grid/alert templates remain data-only; unsupported payloads are rejected. No arbitrary code execution or general generated-UI runtime is present.
+- **S5 / document path:** DocumentNormalizer.normalizeWithVision now exposes the disabled-by-default provider-neutral adapter as an explicit opt-in path, escaping extracted JSON as text, bounding output and preserving UNVERIFIED status. No Lift provider/model is connected and no representative PDF/image benchmark or model-weight legal review has run.
+- **S6 / retrieval candidate:** HybridKnowledgeRetrievalProvider.ts implements exact identifier/path + BM25 RRF with optional injected semantic scoring; the remote semantic boundary is denied unless explicitly approved. Results carry per-document SHA-256 content revisions. The CLI npm run factoryos:eval:knowledge-retrieval -- <judged-cases.json> [implementation-revision] compares current KnowledgeStore ranking to the exact/BM25 candidate on the same human-judged case set and applies explicit metric gates. It does not configure a vector scorer, does not integrate zvec-grep, and has not run on a real judged corpus.
+
+### Tests and verification scope
+
+New focused tests cover scoped snapshot history/corruption, disk exact-key lookups past 50 records, visual DocumentNormalizer integration, retrieval-baseline provenance filtering, exact/BM25/optional-semantic ranking, and remote semantic opt-in. The CI workflow includes these targeted tests in the strict TypeScript/contract-test job.
+
+A previous implementation revision passed strict typecheck and its focused test/governance job, but changes have continued since that run. The newest commit must pass CI before this checkpoint can say current code is green. The informational full Vitest regression job has failed on earlier intermediate revisions; those failures require triage against the latest logs and baseline before attribution. Recent Floor 01 security/container checks have been green on earlier revisions but do not replace the current-code targeted gate.
+
+### Remaining non-negotiable gates
+
+- Complete the full relevant .okf sweep; it remains NOT COMPLETE.
+- Inspect the latest GitHub Actions run for the current branch head and fix any failure before considering the implementation checkpoint verified.
+- Exercise SSE/UI in a browser against a real authorized mission, test denial/reconnect/resync/polling fallback and accessibility, and prove displayed artifacts/evidence through F07.
+- Wire snapshot history into the correct production KnowledgeOS lifecycle, define retention/access controls, and validate restart behavior on the chosen persistence backend.
+- Run the document adapter against representative real documents and obtain separate legal review for Lift model weights/terms.
+- Run the retrieval CLI with human-judged ShortForge cases; benchmark exact, BM25 and optional semantic modes, include secret/index freshness negative cases, and compare against baseline. No zvec integration or performance improvement is claimed.
+- Do not merge to main or claim production readiness while the relevant .okf sweep, latest-code CI, browser/F07, or real evaluation gates are blocked/unproven.
