@@ -1716,7 +1716,7 @@ export default function QuickGenerateOverlay() {
                   </div>
 
                   {/* P0-3: READY — Download + Publish + Drive triple-AND gate */}
-                  <div className="grid w-full max-w-lg grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+                  <div className="grid w-full max-w-3xl grid-cols-1 gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-4">
                     {jobStatus?.videoUrl ? (
                       <a href={jobStatus.videoUrl} target="_blank" rel="noreferrer" className="px-4 py-2.5 rounded-xl bg-[#1677FF] text-white text-xs font-bold flex items-center justify-center gap-2">
                         <Download className="w-3.5 h-3.5" /> Download MP4
@@ -1726,6 +1726,11 @@ export default function QuickGenerateOverlay() {
                         <Download className="w-3.5 h-3.5" /> Download MP4
                       </a>
                     ) : null}
+                    {jobId && (
+                      <Link href={`/factory/editor?jobId=${encodeURIComponent(jobId)}`} onClick={handleClose} className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-2 hover:bg-indigo-500">
+                        <Edit3 className="w-3.5 h-3.5" /> Edit Short
+                      </Link>
+                    )}
                     {jobId && (
                       <Link href={`/media/library?highlight=${jobId}`} onClick={handleClose} className="px-4 py-2.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.08] text-xs font-bold flex items-center justify-center gap-2 text-[#111827] dark:text-[#F5F7FA]">
                         <Film className="w-3.5 h-3.5" /> Open in Library
