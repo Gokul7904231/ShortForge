@@ -37,6 +37,13 @@ function commandDigest(input: EditorCommandEnvelope): string {
   );
 }
 
+export function changedCaptionIds(before: CompositionIR, after: CompositionIR): string[] {
+  const beforeMap = new Map(before.captions.map((caption) => [caption.id, canonicalizeComposition(caption)]));
+  const afterMap = new Map(after.captions.map((caption) => [caption.id, canonicalizeComposition(caption)]));
+  return [...new Set([...beforeMap.keys(), ...afterMap.keys()])]
+    .filter((id) => beforeMap.get(id) !== afterMap.get(id));
+}
+
 export function changedClipIds(before: CompositionIR, after: CompositionIR): string[] {
   const beforeMap = new Map<string, string>();
   const afterMap = new Map<string, string>();
@@ -287,6 +294,7 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
         revision,
         compositionHash: hashDocument(next),
         changedClipIds: changedClipIds(before, next),
+        changedCaptionIds: changedCaptionIds(before, next),
         commandDigestSha256: digest,
       };
 
