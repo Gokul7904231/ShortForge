@@ -13,7 +13,26 @@ import type {
   ChannelProfileMemory,
   TopicIntelligenceMemory,
   PerformanceAttributionMemory,
+  KnowledgeOSSnapshot,
+  KnowledgeOSSnapshotDiff,
+  KnowledgeRelationship,
 } from "./KnowledgeOSContracts";
+
+
+function canonicalizeKnowledgeValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalizeKnowledgeValue(item)).join(",")}]`;
+  }
+  if (value !== null && typeof value === "object") {
+    const objectValue = value as Record<string, unknown>;
+    const entries = Object.keys(objectValue)
+      .filter((key) => objectValue[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalizeKnowledgeValue(objectValue[key])}`);
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
 
 export class KnowledgeOS {
   private sources: Map<string, StoredSource> = new Map();
@@ -153,6 +172,103 @@ export class KnowledgeOS {
 
   public getChannelMemory(channelId: string): ChannelProfileMemory | undefined {
     return this.channels.get(channelId);
+  }
+
+  
+  /**
+   * Returns a read-only, deterministically ordered projection of canonical stores.
+   * This is a snapshot boundary, not durable persistence or a second source of truth.
+   */
+  public snapshot(): KnowledgeOSSnapshot {
+    const records: KnowledgeObject[] = [
+      ...this.sources.values(),
+      ...this.claims.values(),
+      ...this.evidence.values(),
+      ...this.topics.values(),
+      ...this.channels.values(),
+      ...this.performance.values(),
+    ]
+      .map((record) => JSON.parse(JSON.stringify(record)) as KnowledgeObject)
+      .sort((left, right) => left.id.localeCompare(right.id));
+
+    const relationships: KnowledgeRelationship[] = [];
+
+    for (const claim of this.claims.values()) {
+      for (const sourceId of claim.sourceIds) {
+        relationships.push({
+          relationshipId: `CLAIM_CITES_SOURCE:${claim.id}:${sourceId}`,
+          relationType: "CLAIM_CITES_SOURCE",
+          fromId: claim.id,
+          toId: sourceId,
+          resolved: this.sources.has(sourceId),
+          provenanceDigest: createHash("sha256")
+            .update(`${claim.provenanceDigest}:${sourceId}`, "utf8")
+            .digest("hex"),
+        });
+      }
+    }
+
+    for (const evidence of this.evidence.values()) {
+      relationships.push({
+        relationshipId: `EVIDENCE_ATTESTS_REFERENCE:${evidence.id}:${evidence.targetRef}`,
+        relationType: "EVIDENCE_ATTESTS_REFERENCE",
+        fromId: evidence.id,
+        targetRef: evidence.targetRef,
+        resolved: true,
+        provenanceDigest: createHash("sha256")
+          .update(`${evidence.provenanceDigest}:${evidence.targetRef}:${evidence.sha256}`, "utf8")
+          .digest("hex"),
+      });
+    }
+
+    relationships.sort((left, right) => left.relationshipId.localeCompare(right.relationshipId));
+    const canonicalContent = canonicalizeKnowledgeValue({ records, relationships });
+    const contentDigest = createHash("sha256").update(canonicalContent, "utf8").digest("hex");
+
+    return {
+      schemaVersion: "knowledgeos.snapshot.v1",
+      capturedAt: new Date().toISOString(),
+      records,
+      relationships,
+      contentDigest,
+    };
+  }
+
+  /** Compare two snapshots without mutating either snapshot or KnowledgeOS state. */
+  public static diffSnapshots(
+    previous: KnowledgeOSSnapshot,
+    current: KnowledgeOSSnapshot,
+  ): KnowledgeOSSnapshotDiff {
+    const previousRecords = new Map(previous.records.map((record) => [record.id, record]));
+    const currentRecords = new Map(current.records.map((record) => [record.id, record]));
+    const previousRelationships = new Map(previous.relationships.map((edge) => [edge.relationshipId, edge]));
+    const currentRelationships = new Map(current.relationships.map((edge) => [edge.relationshipId, edge]));
+
+    const addedRecordIds = [...currentRecords.keys()].filter((id) => !previousRecords.has(id)).sort();
+    const removedRecordIds = [...previousRecords.keys()].filter((id) => !currentRecords.has(id)).sort();
+    const changedRecordIds = [...currentRecords.keys()]
+      .filter((id) => {
+        const before = previousRecords.get(id);
+        const after = currentRecords.get(id);
+        return before !== undefined && after !== undefined &&
+          canonicalizeKnowledgeValue(before) !== canonicalizeKnowledgeValue(after);
+      })
+      .sort();
+    const addedRelationshipIds = [...currentRelationships.keys()]
+      .filter((id) => !previousRelationships.has(id)).sort();
+    const removedRelationshipIds = [...previousRelationships.keys()]
+      .filter((id) => !currentRelationships.has(id)).sort();
+
+    return {
+      schemaVersion: "knowledgeos.snapshot-diff.v1",
+      baseDigest: previous.contentDigest,
+      targetDigest: current.contentDigest,
+      addedRecordIds,
+      removedRecordIds,
+      changedRecordIds,
+      addedRelationshipIds,
+      removedRelationshipIds,
+    };
   }
 
   // 6. Memory Promotion Gate: only promoted when verified
