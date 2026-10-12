@@ -19,7 +19,7 @@ Whiteboard is an agent-aware software review canvas that can connect requirement
 - apps/web/factoryos/core/work/MissionWorkManager.ts is the existing task/snapshot source.
 - MissionGraphIR / EvidenceGraphIR and their validation/provenance patterns remain canonical; .okf/research/repo-mappings/tt-a1i-archify.md applies.
 
-The current Live Mission Canvas is a read-only, polling slice. It is not a Whiteboard port and does not yet establish a replayable event stream or prove live physical render/F07 completion.
+The current Live Mission Canvas is a read-only polling slice with overlapping-request prevention, stale-response cancellation, abort-on-unmount/mission-change, a typed read-response guard (`mission-work-client.ts`), and a schema-approved metric-grid presentation. It is not a Whiteboard port and does not yet establish a replayable event stream or prove live physical render/F07 completion.
 
 ## Patterns considered
 
@@ -30,7 +30,7 @@ The current Live Mission Canvas is a read-only, polling slice. It is not a White
 
 ## Status and verification required
 
-**PARTIALLY_IMPLEMENTED (ShortForge presentation slice only).** The UI code has not been typechecked or browser-tested in this environment. A complete acceptance pass must use a real mission ID, verify work-board authorization, confirm refresh/recovery from persisted snapshots, check no unauthorized mission disclosure, and trace displayed completion claims to authoritative worker/artifact/F07 evidence. A successful network request alone is not proof of physical completion.
+**PARTIALLY_IMPLEMENTED (ShortForge presentation slice).** Targeted contract tests were added for snapshot parsing and safe authorization/error messages. CI is configured to run these tests and TypeScript checks on `THESIX`; the final result must be read from GitHub Actions before calling this verified. Browser acceptance still requires a real mission ID, work-board authorization, refresh/recovery from persisted snapshots, no unauthorized mission disclosure, and evidence-linked F07 outcome. A successful network request alone is not proof of physical completion.
 
 Reject/roll back any UI path that invents state, bypasses the API permission checks, leaks hidden reasoning/secrets, or adds a competing graph source of truth.
 
