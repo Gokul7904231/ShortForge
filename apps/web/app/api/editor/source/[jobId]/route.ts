@@ -382,7 +382,7 @@ export async function POST(
     // must compare the browser-supplied document against this immutable source before
     // creating revision 0; subsequent edits then use revision-checked commands.
     const compositionTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shortforge-editor-composition-"));
-    let compositionArtifact;
+    let compositionArtifact: Awaited<ReturnType<ContentAddressedStore["putFile"]>>;
     try {
       const compositionTempPath = path.join(compositionTempDir, compositionId + ".json");
       fs.writeFileSync(compositionTempPath, JSON.stringify(composition), { encoding: "utf8", flag: "wx" });
