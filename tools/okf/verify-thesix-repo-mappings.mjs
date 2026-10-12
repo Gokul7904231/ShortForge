@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -51,11 +51,52 @@ for (const filename of requiredMappings) {
   }
 }
 
+
+const skillPath = path.join(repoRoot, ".agents", "skills", "factoryos-repo-assimilation", "SKILL.md");
+let skillContent = "";
+try {
+  skillContent = await readFile(skillPath, "utf8");
+} catch {
+  failures.push(".agents/skills/factoryos-repo-assimilation/SKILL.md: skill file is missing");
+}
+
+if (skillContent) {
+  const requiredSkillMarkers = [
+    /^---\\s*\\n/m,
+    /^name: factoryos-repo-assimilation$/m,
+    /^description: .+$/m,
+    /^# FactoryOS Repository Assimilation Skill$/m,
+    /^## The Governance Rule$/m,
+    /^## Evidence-First, Bounded Review Protocol$/m,
+    /^## Required Review Output$/m,
+  ];
+  for (const marker of requiredSkillMarkers) {
+    if (!marker.test(skillContent)) failures.push(`assimilation skill: missing required section or metadata ${marker}`);
+  }
+
+  const wordCount = skillContent.trim().split(/\\s+/).length;
+  if (wordCount > 1800) failures.push(`assimilation skill: context budget exceeded (${wordCount} words; limit 1800)`);
+  if (!/BLOCKED/.test(skillContent) || !/UNPROVEN/.test(skillContent)) {
+    failures.push("assimilation skill: blocked/unproven evidence semantics must stay explicit");
+  }
+
+  const markdownLinks = [...skillContent.matchAll(/\\[[^\\]]+\\]\\(([^)]+)\\)/g)];
+  for (const match of markdownLinks) {
+    const target = match[1].trim().split("#")[0];
+    if (!target || /^(?:https?:|mailto:|data:)/i.test(target)) continue;
+    try {
+      await access(path.resolve(path.dirname(skillPath), target));
+    } catch {
+      failures.push(`assimilation skill: broken relative reference ${target}`);
+    }
+  }
+}
+
 if (failures.length) {
   console.error("THESIX repository mapping verification FAILED:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exitCode = 1;
 } else {
-  console.log(`THESIX repository mapping verification PASS (${requiredMappings.length} mappings; structure/provenance only)`);
+  console.log(`THESIX repository mapping + assimilation-skill verification PASS (${requiredMappings.length} mappings; structure/provenance/context-budget only)`);
   console.log("This check does not validate legal sufficiency, runtime integration, benchmark quality, or production readiness.");
 }
