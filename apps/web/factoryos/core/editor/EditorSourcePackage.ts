@@ -191,6 +191,51 @@ function locationForSource(
   return { location: { kind: "LOCAL", path: candidate } };
 }
 
+function assertMediaSignature(filePath: string, mimeType: string): void {
+  const fd = fs.openSync(filePath, "r");
+  const head = Buffer.alloc(16);
+  let length = 0;
+  try {
+    length = fs.readSync(fd, head, 0, head.length, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+  const prefix = head.subarray(0, length);
+  const ascii = (start: number, end: number) => prefix.subarray(start, end).toString("ascii");
+  const valid = (() => {
+    switch (mimeType) {
+      case "image/png":
+        return prefix.length >= 8 && prefix.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      case "image/jpeg":
+        return prefix.length >= 3 && prefix[0] === 0xff && prefix[1] === 0xd8 && prefix[2] === 0xff;
+      case "image/webp":
+        return prefix.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP";
+      case "image/avif":
+        return prefix.length >= 12 && ascii(4, 8) === "ftyp" && /avif|avis/.test(ascii(8, 12));
+      case "video/mp4":
+      case "video/quicktime":
+      case "audio/mp4":
+        return prefix.length >= 12 && ascii(4, 8) === "ftyp";
+      case "video/webm":
+        return prefix.length >= 4 && prefix[0] === 0x1a && prefix[1] === 0x45 && prefix[2] === 0xdf && prefix[3] === 0xa3;
+      case "audio/wav":
+        return prefix.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WAVE";
+      case "audio/mpeg":
+        return prefix.length >= 3 && (ascii(0, 3) === "ID3" || (prefix[0] === 0xff && (prefix[1]! & 0xe0) === 0xe0));
+      case "audio/aac":
+        return prefix.length >= 2 && prefix[0] === 0xff && (prefix[1]! & 0xf6) === 0xf0;
+      case "audio/ogg":
+      case "audio/opus":
+        return prefix.length >= 4 && ascii(0, 4) === "OggS";
+      case "audio/flac":
+        return prefix.length >= 4 && ascii(0, 4) === "fLaC";
+      default:
+        return false;
+    }
+  })();
+  if (!valid) throw new Error("EDITOR_SOURCE_MEDIA_SIGNATURE_MISMATCH:" + mimeType);
+}
+
 function sceneIdAt(scenes: readonly Record<string, unknown>[], index: number, fallback: string): string {
   const scene = scenes[index];
   const value = scene?.sceneId ?? scene?.scene_id ?? scene?.id;
@@ -353,6 +398,7 @@ export async function buildEditorSourcePackage(
       });
       const stat = fs.statSync(resolved.localPath);
       if (!stat.isFile() || stat.size <= 0) throw new Error("EDITOR_SOURCE_EMPTY_MEDIA");
+      assertMediaSignature(resolved.localPath, mimeType);
       totalBytes += stat.size;
       if (totalBytes > 750 * 1024 * 1024) throw new Error("EDITOR_SOURCE_PACKAGE_TOO_LARGE");
       const record: ResolvedSource = {
