@@ -5,7 +5,10 @@ import os from "node:os";
 import path from "node:path";
 import { DiskMemoryRepository } from "../core/database/PersistentDiskDatabase";
 import type { IMemoryRepository, MemoryRecord } from "../core/database/DatabaseContracts";
-import { KnowledgeOS } from "../core/knowledge/KnowledgeOS";
+import {
+  calculateKnowledgeOSSnapshotContentDigest,
+  KnowledgeOS,
+} from "../core/knowledge/KnowledgeOS";
 import { KnowledgeOSSnapshotHistory } from "../core/knowledge/KnowledgeOSSnapshotHistory";
 
 class FixtureMemoryRepository implements IMemoryRepository {
@@ -177,6 +180,31 @@ describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
 
     await expect(new KnowledgeOSSnapshotHistory(memory).list({ scope: "GLOBAL" }))
       .rejects.toThrow("KNOWLEDGEOS_SNAPSHOT_HISTORY_READ_LIMIT_EXCEEDED");
+  });
+
+  it("rejects a cross-mission record even if its content digest is recomputed", async () => {
+    const memory = new FixtureMemoryRepository();
+    const history = new KnowledgeOSSnapshotHistory(memory);
+    const knowledge = new KnowledgeOS();
+    knowledge.storeSource({
+      url: "https://example.com/scope-integrity",
+      title: "Scoped source",
+      publisher: "Example",
+      snippet: "Must remain mission-scoped.",
+      reliabilityScore: 0.9,
+      scope: "MISSION",
+      missionId: "mission-alpha",
+    });
+    const stored = await history.capture(knowledge, { scope: "MISSION", missionId: "mission-alpha" });
+    const record = (await memory.queryMemories("OPERATIONAL"))[0];
+    const forged = JSON.parse(record.content);
+    forged.records[0].missionId = "mission-beta";
+    // A plain digest detects accidental edits; scope validation must reject even a recomputed digest.
+    forged.contentDigest = calculateKnowledgeOSSnapshotContentDigest(forged);
+    await memory.saveMemory({ ...record, content: JSON.stringify(forged) });
+
+    await expect(history.load({ scope: "MISSION", missionId: "mission-alpha" }, stored.snapshot.contentDigest))
+      .rejects.toThrow("KNOWLEDGEOS_SNAPSHOT_HISTORY_CORRUPT");
   });
 
   it("rejects a corrupted stored revision instead of trusting its saved digest", async () => {

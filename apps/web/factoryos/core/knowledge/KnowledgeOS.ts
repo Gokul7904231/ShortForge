@@ -101,7 +101,7 @@ export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeO
       if (item.scope !== "MISSION" || item.missionId !== typedSelection.missionId) return false;
     } else if (typedSelection.scope === "CHANNEL") {
       if (item.scope !== "CHANNEL" || item.channelId !== typedSelection.channelId) return false;
-    } else if (item.scope !== "GLOBAL" || item.missionId !== undefined || item.channelId !== undefined) {
+    } else if (item.scope !== "GLOBAL") {
       return false;
     }
   }
@@ -321,7 +321,7 @@ export class KnowledgeOS {
     ]
       .map((record) => JSON.parse(JSON.stringify(record)) as KnowledgeObject)
       .sort((left, right) => left.id.localeCompare(right.id));
-    const recordIds = new Set(records.map((record) => record.id));
+    const scopedSourceIds = new Set(sources.map((source) => source.id));
     const relationships: KnowledgeRelationship[] = [];
 
     for (const claim of claims) {
@@ -332,7 +332,7 @@ export class KnowledgeOS {
           fromId: claim.id,
           toId: sourceId,
           // A record outside this snapshot's scope is deliberately unresolved.
-          resolved: recordIds.has(sourceId),
+          resolved: scopedSourceIds.has(sourceId),
           provenanceDigest: createHash("sha256")
             .update(`${claim.provenanceDigest}:${sourceId}`, "utf8")
             .digest("hex"),
