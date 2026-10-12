@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await verifyAuthAndRole(request, "USER");
+    const user = await verifyAuthAndRole(request, "VIEWER");
     verifyWritePermission(user);
     const body = await request.json();
     const operation = requireString(body.operation, "operation");
