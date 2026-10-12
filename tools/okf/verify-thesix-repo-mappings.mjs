@@ -62,7 +62,7 @@ try {
 
 if (skillContent) {
   const requiredSkillMarkers = [
-    /^---\\s*\\n/m,
+    /^---\s*\n/m,
     /^name: factoryos-repo-assimilation$/m,
     /^description: .+$/m,
     /^# FactoryOS Repository Assimilation Skill$/m,
@@ -74,13 +74,13 @@ if (skillContent) {
     if (!marker.test(skillContent)) failures.push(`assimilation skill: missing required section or metadata ${marker}`);
   }
 
-  const wordCount = skillContent.trim().split(/\\s+/).length;
+  const wordCount = skillContent.trim().split(/\s+/).length;
   if (wordCount > 1800) failures.push(`assimilation skill: context budget exceeded (${wordCount} words; limit 1800)`);
-  if (!/BLOCKED/.test(skillContent) || !/UNPROVEN/.test(skillContent)) {
+  if (!/\bBLOCKED\b/i.test(skillContent) || !/\bUNPROVEN\b/i.test(skillContent)) {
     failures.push("assimilation skill: blocked/unproven evidence semantics must stay explicit");
   }
 
-  const markdownLinks = [...skillContent.matchAll(/\\[[^\\]]+\\]\\(([^)]+)\\)/g)];
+  const markdownLinks = [...skillContent.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)];
   for (const match of markdownLinks) {
     const target = match[1].trim().split("#")[0];
     if (!target || /^(?:https?:|mailto:|data:)/i.test(target)) continue;
