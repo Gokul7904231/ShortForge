@@ -105,6 +105,43 @@ function ticksToSeconds(ticks: number): number {
   return mediaTimeToMilliseconds(ticks) / 1000;
 }
 
+/** Resolve an opaque CAS source only on the server, and verify its bytes before F06 uses it. */
+function resolveCompositionMediaSource(
+  src: string,
+  cas: ContentAddressedStore = ContentAddressedStore.getInstance(),
+): string {
+  if (!src.startsWith("cas://")) return src;
+  const match = /^cas:\/\/([a-f0-9]{64})$/i.exec(src);
+  if (!match) throw new Error("EDITOR_SOURCE_CAS_URI_INVALID");
+
+  const expectedSha256 = match[1]!.toLowerCase();
+  const ref = cas.getByHash(expectedSha256);
+  if (!ref?.uri || !fs.existsSync(ref.uri)) throw new Error("EDITOR_SOURCE_CAS_NOT_FOUND");
+  const stat = fs.statSync(ref.uri);
+  if (!stat.isFile() || stat.size <= 0 || (ref.byteLength > 0 && stat.size !== ref.byteLength)) {
+    throw new Error("EDITOR_SOURCE_CAS_SIZE_MISMATCH");
+  }
+
+  const descriptor = fs.openSync(ref.uri, "r");
+  const hash = createHash("sha256");
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+  let offset = 0;
+  try {
+    while (offset < stat.size) {
+      const bytesRead = fs.readSync(descriptor, buffer, 0, Math.min(buffer.length, stat.size - offset), offset);
+      if (bytesRead <= 0) break;
+      hash.update(buffer.subarray(0, bytesRead));
+      offset += bytesRead;
+    }
+  } finally {
+    fs.closeSync(descriptor);
+  }
+  if (offset !== stat.size || hash.digest("hex") !== expectedSha256 || ref.sha256 !== expectedSha256) {
+    throw new Error("EDITOR_SOURCE_CAS_DIGEST_MISMATCH");
+  }
+  return ref.uri;
+}
+
 function compositionKind(composition: CompositionIR): RenderIntent["compositionType"] {
   const hasText = composition.tracks.some((track) =>
     track.clips.some((clip) => clip.kind === "TEXT"),
@@ -166,7 +203,7 @@ function lowerTransition(transition: CompositionClip["transitionIn"] | Compositi
     : undefined;
 }
 
-function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
+function clipToRenderAsset(clip: CompositionClip, cas: ContentAddressedStore): RenderTrackAsset {
   if (!clip.src) {
     throw new Error(`EDITOR_RENDER_SOURCE_REQUIRED:${clip.id}`);
   }
@@ -202,7 +239,7 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
   return {
     id: clip.id,
     type: renderType,
-    src: clip.src,
+    src: resolveCompositionMediaSource(clip.src, cas),
     startSeconds: ticksToSeconds(clip.start),
     durationSeconds: ticksToSeconds(clip.duration),
     zIndex: clip.zIndex,
@@ -233,7 +270,7 @@ function clipToRenderAsset(clip: CompositionClip): RenderTrackAsset {
   };
 }
 
-function audioToRenderTrack(audio: CompositionAudioClip): RenderAudioTrack {
+function audioToRenderTrack(audio: CompositionAudioClip, cas: ContentAddressedStore): RenderAudioTrack {
   if (!audio.src) throw new Error(`EDITOR_RENDER_AUDIO_SOURCE_REQUIRED:${audio.id}`);
   return {
     id: audio.id,
@@ -243,7 +280,7 @@ function audioToRenderTrack(audio: CompositionAudioClip): RenderAudioTrack {
         : audio.kind === "MUSIC"
           ? "BGM"
           : "SFX",
-    src: audio.src,
+    src: resolveCompositionMediaSource(audio.src, cas),
     volume: audio.volume,
     startSeconds: ticksToSeconds(audio.start),
     durationSeconds: ticksToSeconds(audio.duration),
@@ -281,6 +318,7 @@ export function compileCompositionToRenderIntent(
   composition: CompositionIR,
   revision: number,
   requestedOutput: HeadlessCompositionJob["requestedOutput"],
+  cas: ContentAddressedStore = ContentAddressedStore.getInstance(),
 ): RenderIntent {
   const report = validateCompositionIR(composition);
   if (!report.valid) {
@@ -309,9 +347,9 @@ export function compileCompositionToRenderIntent(
   const intentId = `editor_intent_${stableJobSeed.slice(24, 48)}`;
 
   const visualAssets = composition.tracks
-    .flatMap((track) => track.clips.map((clip) => clipToRenderAsset(clip)));
+    .flatMap((track) => track.clips.map((clip) => clipToRenderAsset(clip, cas)));
 
-  const audioTracks = composition.audio.map(audioToRenderTrack);
+  const audioTracks = composition.audio.map((audio) => audioToRenderTrack(audio, cas));
   const captions = composition.captions.map(captionToRenderCue);
 
   if (audioTracks.length === 0 || !audioTracks.some((track) => track.type === "VOICE")) {
@@ -408,6 +446,7 @@ export class EditorRuntime implements ShortForgeEditorAPI {
         fps: document.composition.canvas.frameRate.numerator / document.composition.canvas.frameRate.denominator,
         format: "MP4",
       },
+      this.cas,
     );
     const normalizedTimestamp = Math.max(
       0,
@@ -446,6 +485,7 @@ export class EditorRuntime implements ShortForgeEditorAPI {
       document.composition,
       document.revision,
       request.requestedOutput,
+      this.cas,
     );
 
     const renderResult = await this.renderFabric.executeRender(renderIntent, {
