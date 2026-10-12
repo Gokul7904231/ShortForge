@@ -35,6 +35,66 @@ function canonicalizeKnowledgeValue(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export type KnowledgeOSSnapshotContent = Pick<
+  KnowledgeOSSnapshot,
+  "selection" | "records" | "relationships"
+>;
+
+/** Recompute the content address from the canonical selection, records, and edges. */
+export function calculateKnowledgeOSSnapshotContentDigest(content: KnowledgeOSSnapshotContent): string {
+  const canonicalContent = canonicalizeKnowledgeValue({
+    selection: content.selection,
+    records: content.records,
+    relationships: content.relationships,
+  });
+  return createHash("sha256").update(canonicalContent, "utf8").digest("hex");
+}
+
+/**
+ * Validate stored snapshots before use. This checks shape and content integrity,
+ * not epistemic truth or authenticity of the storage administrator.
+ */
+export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeOSSnapshot {
+  if (!isPlainRecord(value)) return false;
+  if (value.schemaVersion !== "knowledgeos.snapshot.v1") return false;
+  if (typeof value.capturedAt !== "string" || !Number.isFinite(Date.parse(value.capturedAt))) return false;
+  if (typeof value.contentDigest !== "string" || !/^[a-f0-9]{64}$/.test(value.contentDigest)) return false;
+  if (!Array.isArray(value.records) || !Array.isArray(value.relationships)) return false;
+
+  const selection = value.selection;
+  if (!isPlainRecord(selection)) return false;
+  if (selection.scope === "MISSION") {
+    if (typeof selection.missionId !== "string" || !selection.missionId.trim()) return false;
+  } else if (selection.scope === "CHANNEL") {
+    if (typeof selection.channelId !== "string" || !selection.channelId.trim()) return false;
+  } else if (selection.scope !== "GLOBAL") {
+    return false;
+  }
+
+  if (!value.records.every((record) =>
+    isPlainRecord(record) && typeof record.id === "string" && typeof record.scope === "string",
+  )) return false;
+  if (!value.relationships.every((edge) =>
+    isPlainRecord(edge) &&
+    typeof edge.relationshipId === "string" &&
+    typeof edge.relationType === "string" &&
+    typeof edge.fromId === "string" &&
+    typeof edge.provenanceDigest === "string",
+  )) return false;
+
+  const content = {
+    selection: selection as unknown as KnowledgeOSSnapshotScope,
+    records: value.records as KnowledgeObject[],
+    relationships: value.relationships as KnowledgeRelationship[],
+  };
+  return calculateKnowledgeOSSnapshotContentDigest(content) === value.contentDigest;
+}
+
 export class KnowledgeOS {
   private sources: Map<string, StoredSource> = new Map();
   private claims: Map<string, StoredClaim> = new Map();
@@ -248,8 +308,7 @@ export class KnowledgeOS {
     }
 
     relationships.sort((left, right) => left.relationshipId.localeCompare(right.relationshipId));
-    const canonicalContent = canonicalizeKnowledgeValue({ selection, records, relationships });
-    const contentDigest = createHash("sha256").update(canonicalContent, "utf8").digest("hex");
+    const contentDigest = calculateKnowledgeOSSnapshotContentDigest({ selection, records, relationships });
 
     return {
       schemaVersion: "knowledgeos.snapshot.v1",
