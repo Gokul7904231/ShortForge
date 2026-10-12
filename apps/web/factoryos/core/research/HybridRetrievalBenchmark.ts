@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { performance } from "node:perf_hooks";
 
 export type RetrievalCaseCategory = "EXACT_IDENTIFIER" | "LEXICAL" | "SEMANTIC";
@@ -25,6 +26,9 @@ export interface RetrievalBenchmarkProvider {
 export interface RetrievalBenchmarkCaseResult {
   readonly caseId: string;
   readonly category: RetrievalCaseCategory;
+  /** Hashes allow baseline comparability checks without retaining query text in the report. */
+  readonly queryDigest: string;
+  readonly relevanceSetDigest: string;
   readonly status: "OK" | "PROVIDER_ERROR";
   readonly retrievedDocumentIds: readonly string[];
   readonly relevantCount: number;
@@ -101,8 +105,15 @@ export async function runHybridRetrievalBenchmark(
       throw new Error("RETRIEVAL_BENCHMARK_INVALID_CASE_ID");
     }
     seenCaseIds.add(item.caseId);
-    if (!item.query.trim() || item.relevantDocumentIds.length === 0) {
-      throw new Error("RETRIEVAL_BENCHMARK_CASE_NEEDS_QUERY_AND_RELEVANT_DOCUMENTS");
+    if (!item.query.trim() || item.query.length > 2000 ||
+      item.relevantDocumentIds.length === 0 || item.relevantDocumentIds.length > 100) {
+      throw new Error("RETRIEVAL_BENCHMARK_CASE_NEEDS_BOUNDED_QUERY_AND_RELEVANT_DOCUMENTS");
+    }
+    if (item.relevantDocumentIds.some((id) => !id.trim() || id.length > 512)) {
+      throw new Error("RETRIEVAL_BENCHMARK_INVALID_RELEVANT_DOCUMENT_ID");
+    }
+    if (new Set(item.relevantDocumentIds).size !== item.relevantDocumentIds.length) {
+      throw new Error("RETRIEVAL_BENCHMARK_DUPLICATE_RELEVANT_DOCUMENT_ID");
     }
   }
 
@@ -171,6 +182,10 @@ export async function runHybridRetrievalBenchmark(
     caseResults.push({
       caseId: item.caseId,
       category: item.category,
+      queryDigest: createHash("sha256").update(item.query, "utf8").digest("hex"),
+      relevanceSetDigest: createHash("sha256")
+        .update([...item.relevantDocumentIds].sort().join("\\n"), "utf8")
+        .digest("hex"),
       status,
       retrievedDocumentIds: uniqueResults.map((result) => result.documentId),
       relevantCount: relevant.size,
@@ -226,7 +241,9 @@ export function compareRetrievalBenchmarks(
     baseline.topK !== candidate.topK ||
     baseline.cases.some((item, index) =>
       item.caseId !== candidate.cases[index]?.caseId ||
-      item.category !== candidate.cases[index]?.category,
+      item.category !== candidate.cases[index]?.category ||
+      item.queryDigest !== candidate.cases[index]?.queryDigest ||
+      item.relevanceSetDigest !== candidate.cases[index]?.relevanceSetDigest,
     )
   ) {
     throw new Error("RETRIEVAL_BENCHMARK_BASELINE_MISMATCH");
