@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-AER-Core-Mainline-Reconciliation-20261012",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/aer-core-mainline-reconcile-20261012",
+  "objective": "Reconcile the AER Decision Core training/evaluation foundation onto current main while preserving advisory-only authority boundaries and Ascalon data provenance.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "AER-Core is advisory-only and cannot authorize execution or alter Guardian/F07 authority.",
+      "Only independently verified, provenance-bound gold labels may enter AER-Core training data.",
+      "Synthetic curriculum data must not enter production-golden Ascalon training exports.",
+      "Training and benchmark readiness must not be reported as trained-model or production readiness.",
+      "Fresh exact-head validation is required before merge."
+    ],
+    "sourceRefs": [
+      ".okf/intelligence/aer.md",
+      ".okf/intelligence/ascalon-model.md",
+      "docs/ascalon/aer-decision-core-standard.md",
+      "docs/ascalon/training/aer-decision-core-training.md",
+      "docs/verification/ascalon/shortforge-training-readiness-20261004.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "strictTypecheck": "PENDING on reconciled head",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "authorityBoundary": "AER-Core remains advisory/shadow-only; no execution authority is added."
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "verificationPlan": [
+    "Validate Team Change Report and OKF governance sweep.",
+    "Run strict TypeScript typecheck and AER-Core contract tests.",
+    "Run Ascalon training-readiness tests proving synthetic curriculum exclusion and explicit verified capture.",
+    "Run AER-Core dataset validation tests.",
+    "Run repository CI and applicable security/dependency checks.",
+    "Review exact-head evidence before marking this PR ready or merging."
+  ],
+  "changes": [
+    "Added AER-Core typed contract, strict validator, HTTP provider seam, adapter, shadow coordinator, and shadow ledger.",
+    "Added verified AER training-record contract/export boundary and separated captured gold examples from operational decision transactions.",
+    "Added dataset preparation, leakage-aware splitting, trainer, validation-only calibration, prediction, and AER-Bench commands.",
+    "Integrated AER-Core as a non-authoritative shadow observer.",
+    "Separated Ascalon synthetic curriculum scenarios from production-golden export and removed unmeasured quality claims.",
+    "Added training-readiness documentation and CI validation workflow."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "PENDING — fresh PR checks must run",
+    "okfGovernance": "PENDING — fresh PR checks must run",
+    "typecheck": "PENDING — validator narrowing defect was corrected before this reconciliation commit",
+    "aerCoreTests": "PENDING",
+    "ascalonReadinessTests": "PENDING",
+    "repositoryCI": "PENDING",
+    "securityReview": "TRIAGED — automated and human review evidence still required",
+    "exactHead": "bb356e7f295316f1381cd6ab9b3da0b51467d611"
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/236",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437638",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437685",
+    "docs/ascalon/aer-decision-core-standard.md",
+    "docs/ascalon/training/aer-decision-core-training.md"
+  ]
+}
