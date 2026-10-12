@@ -123,6 +123,7 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     const scorer: SemanticRetrievalScorer = {
       providerId: "test-local-embedding",
       modelRevision: "fixture-v1",
+      executionBoundary: "LOCAL",
       search: vi.fn(async (_query, docs) => new Map(
         docs.map((candidate) => [candidate.documentId, candidate.documentId === "semantic-doc" ? 0.99 : 0.2]),
       )),
@@ -141,11 +142,33 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     expect(result[0]?.sourceRevision).toContain("test-local-embedding@fixture-v1");
   });
 
+  it("fails closed when remote semantic scoring is not explicitly approved", () => {
+    const remoteScorer: SemanticRetrievalScorer = {
+      providerId: "approved-remote-embedding",
+      modelRevision: "remote-v1",
+      executionBoundary: "APPROVED_REMOTE",
+      async search() { return new Map(); },
+    };
+
+    expect(() => new HybridKnowledgeRetrievalProvider(
+      corpusPort([]),
+      "revision",
+      { semanticScorer: remoteScorer },
+    )).toThrow("HYBRID_RETRIEVAL_REMOTE_SEMANTICS_NOT_AUTHORIZED");
+
+    expect(() => new HybridKnowledgeRetrievalProvider(
+      corpusPort([]),
+      "revision",
+      { semanticScorer: remoteScorer, allowApprovedRemoteSemanticScorer: true },
+    )).not.toThrow();
+  });
+
   it("rejects malformed scorer outputs and invalid runtime inputs", async () => {
     const good = doc("doc-a", "knowledge/a.md", "A", [], "content");
     const invalidScorer: SemanticRetrievalScorer = {
       providerId: "test",
       modelRevision: "v1",
+      executionBoundary: "LOCAL",
       async search() { return new Map([["missing-doc", 0.5]]); },
     };
     const provider = new HybridKnowledgeRetrievalProvider(
