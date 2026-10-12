@@ -164,7 +164,7 @@ describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
 
   it("fails explicitly rather than silently truncating an oversized history", async () => {
     const memory = new FixtureMemoryRepository();
-    const prefix = `knowledgeos.snapshot.v1:${createHash("sha256").update("GLOBAL", "utf8").digest("hex")}:`;
+    const prefix = `knowledgeos.snapshot.v1:DOMAIN_KNOWLEDGEOS:${createHash("sha256").update("GLOBAL", "utf8").digest("hex")}:`;
     const now = new Date().toISOString();
     memory.seed(Array.from({ length: 1001 }, (_, index): MemoryRecord => ({
       memoryId: `oversized_${index}`,

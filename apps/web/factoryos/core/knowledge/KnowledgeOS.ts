@@ -105,7 +105,11 @@ export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeO
       if (item.scope !== "MISSION" || item.missionId !== typedSelection.missionId) return false;
     } else if (typedSelection.scope === "CHANNEL") {
       if (item.scope !== "CHANNEL" || item.channelId !== typedSelection.channelId) return false;
-    } else if (item.scope !== "GLOBAL") {
+    } else if (
+      item.scope !== "GLOBAL" ||
+      item.missionId !== undefined ||
+      item.channelId !== undefined
+    ) {
       return false;
     }
   }
