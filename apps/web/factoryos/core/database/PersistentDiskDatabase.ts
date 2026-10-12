@@ -405,6 +405,7 @@ export class DiskMemoryRepository implements IMemoryRepository {
 
   constructor(baseDir: string) {
     this.dir = path.join(baseDir, "memories");
+    fs.mkdirSync(this.dir, { recursive: true });
   }
 
   async saveMemory(record: MemoryRecord): Promise<void> {

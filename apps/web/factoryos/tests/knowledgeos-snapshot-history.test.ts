@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { DiskMemoryRepository } from "../core/database/PersistentDiskDatabase";
 import type { IMemoryRepository, MemoryRecord } from "../core/database/DatabaseContracts";
 import { KnowledgeOS } from "../core/knowledge/KnowledgeOS";
 import { KnowledgeOSSnapshotHistory } from "../core/knowledge/KnowledgeOSSnapshotHistory";
@@ -70,6 +74,30 @@ describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
       second.snapshot.contentDigest,
     );
     expect(diff.addedRecordIds).toHaveLength(1);
+  });
+
+  it("persists the first snapshot when the disk memory directory does not exist yet", async () => {
+    const baseDir = mkdtempSync(path.join(os.tmpdir(), "shortforge-snapshot-history-"));
+    try {
+      const repository = new DiskMemoryRepository(baseDir);
+      const history = new KnowledgeOSSnapshotHistory(repository);
+      const knowledge = new KnowledgeOS();
+      knowledge.storeSource({
+        url: "https://example.com/disk-history",
+        title: "Disk persistence",
+        publisher: "Example",
+        snippet: "The first write must create its backing directory.",
+        reliabilityScore: 0.8,
+        scope: "GLOBAL",
+      });
+
+      const captured = await history.capture(knowledge, { scope: "GLOBAL" });
+      const reloaded = new KnowledgeOSSnapshotHistory(new DiskMemoryRepository(baseDir));
+      await expect(reloaded.load({ scope: "GLOBAL" }, captured.snapshot.contentDigest))
+        .resolves.toMatchObject({ contentDigest: captured.snapshot.contentDigest });
+    } finally {
+      rmSync(baseDir, { recursive: true, force: true });
+    }
   });
 
   it("matches scope identity independent of JavaScript object property order", async () => {
