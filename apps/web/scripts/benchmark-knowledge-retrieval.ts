@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { KnowledgeStore } from "../factoryos/core/intelligence/knowledge/KnowledgeStore";
 import { KnowledgeStoreRetrievalProvider } from "../factoryos/core/research/KnowledgeStoreRetrievalProvider";
@@ -64,7 +64,7 @@ async function main(): Promise<void> {
     disposition: "BASELINE_ONLY",
     candidateComparison: "NOT_RUN",
     datasetFileName: path.basename(datasetPath),
-    datasetSha256: (await import("node:crypto")).createHash("sha256").update(raw, "utf8").digest("hex"),
+    datasetSha256: createHash("sha256").update(raw, "utf8").digest("hex"),
     corpusRevision,
     corpusQuality: {
       passing: quality.passing,
