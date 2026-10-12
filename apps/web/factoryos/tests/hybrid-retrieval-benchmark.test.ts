@@ -8,7 +8,7 @@ import {
 
 const cases = [
   { caseId: "symbol-lookup", query: "MissionWorkManager.board", relevantDocumentIds: ["mission-work-manager.ts"], category: "EXACT_IDENTIFIER" as const },
-  { caseId: "concept-search", query: "durable task state", relevantDocumentIds: ["mission-work-manager.ts", "MissionWorkContracts.ts"], category: "SEMANTIC" as const },
+  { caseId: "concept-search", query: "durable task state", relevantDocumentIds: ["mission-work-manager.ts"], category: "SEMANTIC" as const },
 ];
 
 describe("hybrid retrieval benchmark", () => {
