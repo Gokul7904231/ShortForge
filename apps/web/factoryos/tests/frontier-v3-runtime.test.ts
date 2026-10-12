@@ -10,7 +10,6 @@ import {
   VerificationEngine,
   CreativeBibleManager,
   ArtifactManager,
-  CostGovernor,
   CapabilityFirstRouter,
   ProviderTester,
   SkillEvaluatorRunner,
@@ -23,10 +22,6 @@ import { RegressionMissions } from "../evals/missions/RegressionMissions";
 import { SkillExecutionPackage } from "../core/contracts/SkillContracts";
 
 describe("FactoryOS Frontier v3 Master Runtime Suite", () => {
-  beforeEach(() => {
-    CostGovernor.setPolicy({ mode: "FREE_FIRST", paidFallbackAllowed: false });
-    CostGovernor.resetSpend();
-  });
 
   describe("1. Context Engine & Priority Budgeting", () => {
     it("assembles context in strict priority order and compacts when exceeding budget", () => {
@@ -286,20 +281,8 @@ describe("FactoryOS Frontier v3 Master Runtime Suite", () => {
     });
   });
 
-  describe("4. Cost Governor & Capability-First Router", () => {
-    it("strictly enforces $0 Free-First default and blocks paid fallback without approval", () => {
-      CostGovernor.setPolicy({ mode: "FREE_FIRST", paidFallbackAllowed: false });
-
-      // Local/Free provider evaluation
-      const freeEval = CostGovernor.evaluateInvocation(false, 0.0);
-      expect(freeEval.allowed).toBe(true);
-
-      // Paid provider evaluation
-      const paidEval = CostGovernor.evaluateInvocation(true, 0.04);
-      expect(paidEval.allowed).toBe(false);
-      expect(paidEval.requiresApproval).toBe(true);
-
-      // Capability routing selects local or free provider
+  describe("4. Treasury-gated Capability-First Router", () => {
+    it("selects a viable local/free candidate without granting economic admission", () => {
       const decision = CapabilityFirstRouter.routeCapability({ capability: "script_generation" });
       expect(decision.isPaid).toBe(false);
       expect(decision.estimatedCostUsd).toBe(0.0);

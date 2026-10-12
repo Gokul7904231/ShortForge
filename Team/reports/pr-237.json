@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR237-Treasury-Wave7-Verified-Outcome-Promotion-Evidence",
+  "pullRequest": 237,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/okf-v3-stacked-on-v2-20261012",
+  "headRef": "feat/treasury-wave7-promotion-evidence-20261012",
+  "objective": "Add a read-only Treasury Wave 7 gate that compares later verified baseline/candidate route outcomes and emits deterministic human-review evidence without acquiring economic authority.",
+  "classification": "extends existing rule",
+  "linkedIssues": [
+    145,
+    146
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Treasurer remains the only production economic-admission and settlement authority.",
+      "Economic Intelligence and promotion eligibility are read-only and advisory.",
+      "Only subsequent, F07-receipted outcomes may support a promotion candidate.",
+      "Sample/confidence, verification/non-inferiority, latency, and realized savings gates remain independent.",
+      "Legacy economic facades cannot authorize production spend.",
+      "The evidence artifact cannot mutate Treasury, alter routing, execute providers, or grant AER/Ascalon authority."
+    ],
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/economics/treasurer-operating-contract.md",
+      ".okf/hierarchy/treasurer.md",
+      ".okf/decisions/treasury-economic-intelligence-wave5-20261004.md",
+      ".okf/decisions/treasury-economic-promotion-wave7-20261012.md",
+      "docs/treasury-wave7-economic-promotion.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "The code change adds a pure read-only evaluator and tests. No keys or provider credentials are embedded. Security/runtime scan evidence remains a CI gate."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added a deterministic SHA-256-digested artifact for comparing later F07-receipted baseline and candidate route outcomes.",
+    "Enforced distinct route/cohort identities and exact workload/capability matching.",
+    "Added outcome/F07 receipt uniqueness, time-window and numeric validation.",
+    "Added independent sample/confidence, verification non-inferiority, P90 latency regression and realized-cost savings checks.",
+    "Added tests for eligible outcome sets and failure modes including stale/unverified/duplicate/mismatched evidence.",
+    "Changed reliability benchmark REL-006 to exercise the Treasury Kernel's unfunded-spend denial instead of CostGovernor.",
+    "Removed legacy CostGovernor and MissionBudgetManager exports from the primary FactoryOS barrel and made the compatibility scan inspect that barrel.",
+    "Migrated the Frontier V3 runtime test away from the removed CostGovernor barrel export; paid-spend denial remains tested through canonical Treasury Kernel tests.",
+    "Removed the unused CostGovernor import from canonical RegressionMissions.",
+    "Migrated FactoryBench Scenario 12 from deprecated AgentEconomicsEngine tier heuristics to current CapabilityFirstRouter provider selection, explicitly retaining the selection/admission boundary.",
+    "Decoupled production trajectory eligibility tests from the legacy AgentEconomicsEngine using the CognitiveOutcomeLearner telemetry-sink contract.",
+    "Archived the Phase 9 economics telemetry and Phase 13 heuristic routing tests as source-history documents because their assertions described the retired local heuristic, not Treasury admission.",
+    "Retained the StrategicMetaThinker investigation test while archiving its obsolete AgentEconomicsEngine routing/metrics tests."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/treasury/TreasuryPromotionEligibility.ts",
+    "apps/web/factoryos/tests/treasury-promotion-eligibility.test.ts",
+    "apps/web/factoryos/evals/reliability/ReliabilityBench.ts",
+    "apps/web/factoryos/core/index.ts",
+    "apps/web/factoryos/tests/treasury-compatibility-retirement.test.ts",
+    "apps/web/factoryos/core/treasury/TreasuryEconomicCalibration.ts",
+    "apps/web/factoryos/core/treasury/TreasuryShadowRouteEvaluator.ts",
+    "docs/treasury-wave7-economic-promotion.md",
+    "apps/web/factoryos/tests/frontier-v3-runtime.test.ts",
+    "apps/web/factoryos/evals/missions/RegressionMissions.ts",
+    "apps/web/factoryos/tests/factorybench-v2.test.ts",
+    "apps/web/factoryos/tests/production-trajectory-learning.test.ts",
+    "apps/web/factoryos/tests/meta-thinker-economics.test.ts",
+    "docs/archive/treasury-wave7/phase9-economics-telemetry.legacy.md",
+    "docs/archive/treasury-wave7/phase13-economic-routing.legacy.md",
+    "docs/archive/treasury-wave7/meta-thinker-economics.legacy.md"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Validate the Team report against the CI-compiled OKF sweep.",
+    "Run the new Wave 7 focused Vitest suite and strict TypeScript.",
+    "Run Treasury Wave 4/5/6, compatibility retirement, Compute Pool, ReMaker, Floor 04–07, physical F06/F07 and repository CI.",
+    "Confirm no legacy core-barrel consumers break and no economic production consumer uses a removed barrel export.",
+    "Do not merge before upstream V2/V3 promotion gates and independent human review pass.",
+    "Run exact-head FactoryOS typecheck and selected migrated test files: frontier-v3-runtime, factorybench-v2, production-trajectory-learning, meta-thinker-economics, treasury-promotion-eligibility, treasury-compatibility-retirement.",
+    "Verify no remaining executable test import requires CostGovernor through the removed core barrel and no historical Phase 9/13 legacy-only suite remains in the Vitest discovery tree."
+  ],
+  "verificationResults": {
+    "treasuryWave7": "PENDING_CI",
+    "promotionEligibilityTests": "PENDING_CI",
+    "legacyCompatibilityRetirement": "PENDING_CI",
+    "repositoryCI": "PENDING_AFTER_LEPORT_HEAD_UPDATE",
+    "computeAndReMaker": "PENDING_CI",
+    "physicalF06F07": "PENDING_CI",
+    "authorityBoundary": "IMPLEMENTED__CI_PENDING",
+    "legacyTestMigration": "IMPLEMENTED__EXACT_HEAD_CI_PENDING",
+    "legacyTestArchive": "THREE_HISTORICAL_SUITES_ARCHIVED__SOURCE_PRESERVED",
+    "factoryosTypecheck": "PENDING_AFTER_LEGACY_TEST_MIGRATION",
+    "selectedTreasuryAndCognitionTests": "PENDING_AFTER_LEGACY_TEST_MIGRATION"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canAuthorizeSpend": false,
+    "canChangeRoutingPolicy": false,
+    "canExecuteProvider": false,
+    "canMutateTreasury": false
+  }
+}

@@ -1,3 +1,12 @@
+# Archived legacy test — Phase 9 economics telemetry
+
+**Archived by Treasury Wave 7 (2026-10-12).**
+
+This test exercised the historical `AgentEconomicsEngine` heuristic/metric accumulator, not the production economic-admission path. It is retained as source history only and is no longer part of the executable Vitest suite. Authoritative admission/settlement and measured cost belong to Treasury; the current executable coverage is in the Treasury Kernel, Treasury Wave 6 calibration and Wave 7 promotion-eligibility tests.
+
+Original source path: `apps/web/factoryos/tests/phase9-economics-telemetry.test.ts`.
+
+```typescript
 import { describe, it, expect } from "vitest";
 import { AgentEconomicsEngine } from "../core/cognitive/economics/AgentEconomicsEngine";
 
@@ -22,3 +31,4 @@ describe("FactoryOS Frontier v2 — Phase 9: Cognitive Economics Telemetry Suite
     expect(metrics.totalCostUsd).toBeGreaterThan(0);
   });
 });
+```

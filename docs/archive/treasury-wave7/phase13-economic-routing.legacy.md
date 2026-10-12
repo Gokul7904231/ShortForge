@@ -1,3 +1,12 @@
+# Archived legacy test — Phase 13 economic routing
+
+**Archived by Treasury Wave 7 (2026-10-12).**
+
+This test asserted a hard-coded `AgentEconomicsEngine.routeTask()` tier/cost heuristic as though it represented model routing. That helper is advisory/compatibility-only and is not production economic admission. The old test is retained here as source history but removed from the executable suite. Current provider selection is tested through `CapabilityFirstRouter`; paid admission, reservation and settlement are tested through Treasury.
+
+Original source path: `apps/web/factoryos/tests/phase13-economic-routing.test.ts`.
+
+```typescript
 import { describe, it, expect } from "vitest";
 import { AgentEconomicsEngine } from "../core/cognitive/economics/AgentEconomicsEngine";
 
@@ -25,3 +34,4 @@ describe("FactoryOS Frontier v2 — Phase 13: Agent Economics & Model Routing Su
     expect(t4.selectedTier).toBe("MULTI_AGENT_SWARM");
   });
 });
+```

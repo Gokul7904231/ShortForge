@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { ProductionTrajectoryEvaluator, observationFromLoopReceipt } from "../core/observability/ProductionTrajectory";
 import { TrajectoryLearningBridge } from "../core/cognitive/TrajectoryLearningBridge";
-import { CognitiveOutcomeLearner } from "../core/cognitive/CognitiveOutcomeLearner";
+import { CognitiveOutcomeLearner, type EconomicTelemetrySink } from "../core/cognitive/CognitiveOutcomeLearner";
 import { IndexedExperienceMemory } from "../core/cognitive/memory/IndexedExperienceMemory";
-import { AgentEconomicsEngine } from "../core/cognitive/economics/AgentEconomicsEngine";
 import type { FloorClosedLoopReceipt } from "../core/governance/FloorClosedLoop";
 import { DurableEventBus } from "../core/events/DurableEventBus";
 import { ProductionTrajectoryCollector } from "../core/observability/ProductionTrajectoryCollector";
+
+const noOpEconomicTelemetry: EconomicTelemetrySink = {
+  recordExecution: () => undefined,
+};
+
 
 function receipt(floorId: string, verified = true, iterations = 1): FloorClosedLoopReceipt {
   return {
@@ -83,7 +87,7 @@ describe("Production trajectory proof + Ascalon learning eligibility", () => {
     expect(trajectory.evidenceRefs).toHaveLength(8);
 
     const memory = new IndexedExperienceMemory();
-    const learner = new CognitiveOutcomeLearner(memory, new AgentEconomicsEngine());
+    const learner = new CognitiveOutcomeLearner(memory, noOpEconomicTelemetry);
     const bridge = new TrajectoryLearningBridge(learner);
     const result = await bridge.recordVerifiedTrajectory(trajectory, true);
 
@@ -119,7 +123,7 @@ describe("Production trajectory proof + Ascalon learning eligibility", () => {
     expect(trajectory.verificationStatus).toBe("FAILED");
     expect(trajectory.trainingEligible).toBe(false);
 
-    const learner = new CognitiveOutcomeLearner(new IndexedExperienceMemory(), new AgentEconomicsEngine());
+    const learner = new CognitiveOutcomeLearner(new IndexedExperienceMemory(), noOpEconomicTelemetry);
     const bridge = new TrajectoryLearningBridge(learner);
     await expect(bridge.recordVerifiedTrajectory(trajectory, true)).rejects.toThrow("ASCALON_LEARNING_DENIED");
   });
@@ -168,7 +172,7 @@ describe("Production trajectory proof + Ascalon learning eligibility", () => {
   it("emits an Ascalon learning signal only after a fully verified live event trajectory", async () => {
     const bus = new DurableEventBus();
     const memory = new IndexedExperienceMemory();
-    const learner = new CognitiveOutcomeLearner(memory, new AgentEconomicsEngine());
+    const learner = new CognitiveOutcomeLearner(memory, noOpEconomicTelemetry);
     const bridge = new TrajectoryLearningBridge(learner);
     const collector = new ProductionTrajectoryCollector(bus, bridge);
     collector.start();

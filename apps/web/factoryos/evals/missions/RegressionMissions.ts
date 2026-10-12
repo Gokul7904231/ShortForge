@@ -5,7 +5,6 @@
 
 import { Mission } from "../../core/contracts/MissionContracts";
 import { VerificationEngine } from "../../core/verification/VerificationEngine";
-import { CostGovernor } from "../../core/governor/CostGovernor";
 import { CapabilityFirstRouter } from "../../core/routing/CapabilityFirstRouter";
 import { RecoveryEngine } from "../../core/recovery/RecoveryEngine";
 import { ArtifactManager } from "../../core/artifacts/ArtifactManager";

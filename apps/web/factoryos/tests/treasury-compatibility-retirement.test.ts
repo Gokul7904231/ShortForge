@@ -16,7 +16,6 @@ const excluded = new Set([
   "lib/quota/quota-service.ts",
   "factoryos/core/governor/CostGovernor.ts",
   "factoryos/core/missions/MissionBudgetManager.ts",
-  "factoryos/core/index.ts",
   "factoryos/core/treasury/TreasuryQuotaAdmission.ts",
   "factoryos/core/treasury/TreasuryQuotaCompatibility.ts",
   "ai/factory.ts",
