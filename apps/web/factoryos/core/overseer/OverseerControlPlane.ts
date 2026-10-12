@@ -1420,7 +1420,7 @@ export class OverseerControlPlane {
           ]);
           const sourceJob = await readJobManifest(targetJobId);
           const sourceOwnerId = typeof sourceJob?.userId === "string" ? sourceJob.userId : "";
-          if (sourceOwnerId && sourceOwnerId !== "anonymous") {
+          if (sourceOwnerId && sourceOwnerId !== "anonymous" && !localRenderIntent) {
             const sourcePackage = await buildEditorSourcePackage({
               jobId: targetJobId,
               ownerId: sourceOwnerId,
@@ -1432,6 +1432,10 @@ export class OverseerControlPlane {
               scope.editorSourcePackage = sourcePackage;
               sharedScope.editorSourcePackage = sourcePackage;
             }
+          } else if (localRenderIntent) {
+            console.info(
+              "[Overseer Floor05] Template-specific LocalRenderIntent is not yet losslessly lowered into CompositionIR; use the labelled flattened import.",
+            );
           }
         } catch (sourcePackageError) {
           console.warn(
