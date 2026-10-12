@@ -39,7 +39,7 @@ export async function POST(
 ) {
   let temporarySourcePath: string | undefined;
   try {
-    const user = await verifyAuthAndRole(request, "USER");
+    const user = await verifyAuthAndRole(request, "VIEWER");
     verifyWritePermission(user);
     const { jobId } = await params;
     if (!jobId || !/^[a-zA-Z0-9_-]{1,128}$/.test(jobId)) {
