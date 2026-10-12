@@ -178,6 +178,128 @@ export async function POST(
       temporarySourcePath = undefined;
     }
 
+    const media = {
+      width: measurements.width,
+      height: measurements.height,
+      fps: measurements.fps,
+      durationSeconds: measurements.videoDuration,
+      byteLength: measurements.byteLength,
+      sha256: sourceArtifact.sha256,
+    };
+    let packagedComposition: CompositionIR | null = null;
+    let packageFallbackReason = "";
+    const sourcePackage = job.editorSourcePackage;
+
+    if (sourcePackage) {
+      try {
+        if (
+          sourcePackage.schemaVersion !== "shortforge.editor-source.v1" ||
+          sourcePackage.sourceKind !== "COMPOSITION_PACKAGE" ||
+          sourcePackage.sourceJobId !== jobId ||
+          sourcePackage.ownerId !== job.userId ||
+          !/^[a-f0-9]{64}$/i.test(sourcePackage.compositionSha256) ||
+          sourcePackage.compositionSha256.toLowerCase() !== sourcePackage.compositionHashSha256.toLowerCase() ||
+          !Array.isArray(sourcePackage.sourceAssets) ||
+          !Array.isArray(sourcePackage.sourceAssetSha256s)
+        ) {
+          throw new Error("EDITOR_SOURCE_PACKAGE_BINDING_INVALID");
+        }
+
+        const allowedHashes = new Set(sourcePackage.sourceAssetSha256s.map((sha) => sha.toLowerCase()));
+        if (allowedHashes.size === 0 || sourcePackage.sourceAssets.some((asset) => !allowedHashes.has(asset.sha256.toLowerCase()))) {
+          throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_SET_INVALID");
+        }
+
+        // Verify each packaged input against its actual CAS bytes before using the composition.
+        for (const asset of sourcePackage.sourceAssets) {
+          if (!/^[a-f0-9]{64}$/i.test(asset.sha256)) throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_HASH_INVALID");
+          const ref = cas.getByHash(asset.sha256.toLowerCase());
+          if (!ref?.uri || !fs.existsSync(ref.uri) || ref.sha256 !== asset.sha256.toLowerCase()) {
+            throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_MISSING");
+          }
+          const stat = fs.statSync(ref.uri);
+          if (!stat.isFile() || stat.size !== asset.byteLength || stat.size <= 0) {
+            throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_SIZE_MISMATCH");
+          }
+          if (await ContentAddressedStore.computeFileSha256(ref.uri) !== asset.sha256.toLowerCase()) {
+            throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_DIGEST_MISMATCH");
+          }
+        }
+
+        const compositionRef = cas.getByHash(sourcePackage.compositionSha256.toLowerCase());
+        if (
+          !compositionRef?.uri ||
+          !fs.existsSync(compositionRef.uri) ||
+          compositionRef.sha256 !== sourcePackage.compositionSha256.toLowerCase()
+        ) {
+          throw new Error("EDITOR_SOURCE_PACKAGE_COMPOSITION_MISSING");
+        }
+        const compositionStat = fs.statSync(compositionRef.uri);
+        if (
+          !compositionStat.isFile() ||
+          compositionStat.size !== sourcePackage.compositionByteLength ||
+          await ContentAddressedStore.computeFileSha256(compositionRef.uri) !== sourcePackage.compositionSha256.toLowerCase()
+        ) {
+          throw new Error("EDITOR_SOURCE_PACKAGE_COMPOSITION_DIGEST_MISMATCH");
+        }
+
+        const decoded = JSON.parse(fs.readFileSync(compositionRef.uri, "utf8")) as CompositionIR;
+        if (
+          decoded.compositionId !== sourcePackage.compositionId ||
+          decoded.metadata?.extensions?.ownerId !== job.userId ||
+          decoded.metadata?.extensions?.sourceJobId !== jobId ||
+          decoded.metadata?.extensions?.sourceKind !== "COMPOSITION_PACKAGE"
+        ) {
+          throw new Error("EDITOR_SOURCE_PACKAGE_COMPOSITION_BINDING_INVALID");
+        }
+
+        const referencedHashes = new Set<string>();
+        const validatePackageSource = (src: string | undefined, required: boolean) => {
+          if (!src) {
+            if (required) throw new Error("EDITOR_SOURCE_PACKAGE_SOURCE_URI_REQUIRED");
+            return;
+          }
+          const match = /^cas:\/\/([a-f0-9]{64})$/i.exec(src);
+          if (!match) throw new Error("EDITOR_SOURCE_PACKAGE_SOURCE_URI_INVALID");
+          const sha = match[1]!.toLowerCase();
+          if (!allowedHashes.has(sha)) throw new Error("EDITOR_SOURCE_PACKAGE_UNDECLARED_ASSET");
+          referencedHashes.add(sha);
+        };
+        for (const track of decoded.tracks || []) {
+          for (const clip of track.clips || []) {
+            validatePackageSource(clip.src, clip.kind === "VIDEO" || clip.kind === "IMAGE" || clip.kind === "MOTION_CANVAS");
+          }
+        }
+        for (const audio of decoded.audio || []) validatePackageSource(audio.src, true);
+        if (referencedHashes.size === 0) throw new Error("EDITOR_SOURCE_PACKAGE_EMPTY_MEDIA_SET");
+
+        const packageValidation = validateCompositionIR(decoded);
+        if (!packageValidation.valid) throw new Error("EDITOR_SOURCE_PACKAGE_COMPOSITION_INVALID");
+        packagedComposition = decoded;
+      } catch (error) {
+        packageFallbackReason = "The saved editable source package could not be verified; this Short was opened as a flattened clip.";
+        console.warn("[Editor Source] Rejected editable package; preserving safe fallback:", error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    if (packagedComposition) {
+      return NextResponse.json({
+        success: true,
+        sourceKind: "COMPOSITION_PACKAGE",
+        sourceNotice: "Loaded the persisted source composition and its owner-bound media assets. Quiz and scene metadata are preserved where the generating pipeline supplied them; available direct edits depend on the supported editor operations.",
+        job: {
+          jobId,
+          title: job.topic || "ShortForge Short",
+          contentType: job.contentType,
+          durationSeconds: measurements.videoDuration,
+          createdAt: job.createdAt,
+        },
+        videoUrl: "/api/editor/source/" + encodeURIComponent(jobId) + "/video",
+        media,
+        composition: packagedComposition,
+      });
+    }
+
     const durationMs = Math.round(measurements.videoDuration * 1000);
     const duration = millisecondsToMediaTime(durationMs);
     const fps = Math.max(1, Math.min(120, Math.round(measurements.fps || 30)));
@@ -259,7 +381,7 @@ export async function POST(
       success: true,
       sourceKind: "FLATTENED_MP4",
       sourceNotice:
-        "This existing render was imported as one flattened video clip. Clip-level trim, transform, effects, masks, keyframes and transitions are editable. Its original questions, separate scene visuals, captions and narration text were not persisted as independent layers by the current generation flow, so they cannot be reconstructed safely from this MP4.",
+        "This existing render was imported as one flattened video clip. Clip-level trim, transform, effects, masks, keyframes and transitions are editable. Its original questions, separate scene visuals, captions and narration text were not persisted as independent layers by the current generation flow, so they cannot be reconstructed safely from this MP4." + (packageFallbackReason ? " " + packageFallbackReason : ""),
       job: {
         jobId,
         title: job.topic || "ShortForge Short",
@@ -268,14 +390,7 @@ export async function POST(
         createdAt: job.createdAt,
       },
       videoUrl: "/api/editor/source/" + encodeURIComponent(jobId) + "/video",
-      media: {
-        width: measurements.width,
-        height: measurements.height,
-        fps: measurements.fps,
-        durationSeconds: measurements.videoDuration,
-        byteLength: measurements.byteLength,
-        sha256: sourceArtifact.sha256,
-      },
+      media,
       composition,
     });
   } catch (error) {
