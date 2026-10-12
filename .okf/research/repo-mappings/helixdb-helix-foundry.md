@@ -6,7 +6,7 @@
 - Review date: 2026-10-12
 - Code license reported by GitHub: Apache-2.0
 - Assimilation mode: PATTERN_EXTRACTION / CLEAN_ROOM_EXTENSION
-- ShortForge status: PARTIALLY IMPLEMENTED snapshot projection; no Helix Foundry runtime dependency or second datastore is added.
+- ShortForge status: PARTIALLY IMPLEMENTED scoped snapshot projection and repository-backed revision history; no Helix dependency or parallel datastore. Runtime wiring and retention policy remain pending.
 
 ## Problem and useful mechanism
 
@@ -32,7 +32,7 @@ KnowledgeOS, Memory Fabric, and the existing evidence contracts remain canonical
 
 ## Status and verification required
 
-**PARTIALLY_IMPLEMENTED (in-memory snapshot projection only).** `apps/web/factoryos/core/knowledge/KnowledgeOS.ts` now exposes a versioned, deterministically ordered snapshot, provenance-bearing claim/source and evidence/reference relationships, a content digest, and a pure snapshot-diff method. This does not provide durable version history, external reference resolution, or a second datastore. Audit KnowledgeOS/Memory Fabric persistence and retention before extending it.
+**PARTIALLY_IMPLEMENTED (scoped projection + repository-backed revision-history adapter).** KnowledgeOS.ts exposes MISSION/CHANNEL/GLOBAL-scoped snapshots, a deterministic content digest, provenance-bearing claim/source and evidence/reference relationship projections, and scope-checked diffs. KnowledgeOSSnapshotHistory.ts stores immutable content-addressed revisions through the existing IMemoryRepository, validates recomputed digests, and supports load/list/latest/diff. The disk repository's exact-key lookup was corrected so it does not inherit the ordinary 50-record search limit. This is not yet wired into a production runtime or schedule, and there is no retention policy, signing/authenticity guarantee, or external-reference resolver. No Helix dependency or second datastore is introduced.
 
 Acceptance evidence must include source-linked records, deterministic snapshot/diff tests, relationship referential integrity, promotion-barrier tests for unverified claims, access control, backup/recovery behavior, and proof that no parallel store or IR was introduced. Revert/reject the change if it duplicates canonical authority or weakens evidence provenance.
 

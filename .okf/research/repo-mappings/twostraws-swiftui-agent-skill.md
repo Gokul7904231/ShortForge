@@ -23,11 +23,11 @@ The upstream skill is an intentionally modular set of guidance for AI coding ass
 
 - Adopted in part: modular skill files, high-signal instructions, selective reference loading, clear applicability, and concise domain-specific edge cases.
 - Not adopted: SwiftUI-specific API advice, Apple-platform assumptions, copied skill bodies/prompts/assets, or automatic authority to install/change a worker capability.
-- Future candidate: define a lightweight skill quality check for duplicate instructions, missing capability declarations, broken reference paths, and excessive context size. No such check is claimed by this mapping.
+- Partial check implemented: the THESIX mapping verifier checks required skill metadata/sections, an 1,800-word context ceiling, explicit BLOCKED/UNPROVEN semantics, and broken relative references. Duplicate-instruction analysis, missing capability declaration checks, and measured token/context-versus-quality benchmarking remain future work.
 
 ## Status and verification required
 
-**PARTIALLY_ADOPTED (skill methodology plus mapping-quality gate).** The assimilation skill methodology is documented and `tools/okf/verify-thesix-repo-mappings.mjs` now checks the six new mapping files for required provenance/status/security headings and a clean-room disposition. This verifier is not a full skill linter: skill duplicate/context-budget checks and skill-content regression coverage still remain. CI is configured to run the mapping verifier and the focused new contract tests; actual run conclusions must be recorded from GitHub Actions. Evaluate token/context cost and retrieval success against a baseline before expanding the catalog.
+**PARTIALLY_ADOPTED (methodology + basic skill/mapping verifier).** tools/okf/verify-thesix-repo-mappings.mjs checks the six mapping files' required provenance/status/security headings and clean-room disposition, plus the assimilation skill's front matter, key sections, explicit BLOCKED/UNPROVEN terms, relative links, and 1,800-word context ceiling. It is not a semantic linter: duplicate-instruction/capability coverage, skill-content regression scenarios, and measured token/context-versus-quality evaluation remain pending. Current CI evidence must be read on the newest THESIX commit before claiming the gate is green.
 
 Reject changes that merely inflate skill text, duplicate generic model knowledge, embed secrets, or suggest permissions that the worker's runtime does not grant.
 

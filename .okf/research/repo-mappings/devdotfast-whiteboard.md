@@ -19,24 +19,24 @@ Whiteboard is an agent-aware software review canvas that can connect requirement
 - apps/web/factoryos/core/work/MissionWorkManager.ts is the existing task/snapshot source.
 - MissionGraphIR / EvidenceGraphIR and their validation/provenance patterns remain canonical; .okf/research/repo-mappings/tt-a1i-archify.md applies.
 
-The current Live Mission Canvas is a read-only polling slice with overlapping-request prevention, stale-response cancellation, abort-on-unmount/mission-change, a typed read-response guard (`mission-work-client.ts`), and a schema-approved metric-grid presentation. It is not a Whiteboard port and does not yet establish a replayable event stream or prove live physical render/F07 completion.
+The Live Mission Canvas remains read-only and uses overlapping-request prevention, stale-response cancellation, abort-on-unmount/mission-change, a typed read-response guard (mission-work-client.ts), and schema-approved adaptive metrics. A mission-scoped SSE endpoint now projects only allow-listed task-event metadata and supports Last-Event-ID replay from the existing event bus's bounded in-process history; the client refreshes the authoritative snapshot on work signals/resync and retains four-second polling as fallback. This is not a Whiteboard port, and the in-memory event bus does not prove durable cross-process replay or a real physical render/F07 completion.
 
 ## Patterns considered
 
 - Adopted as a design direction: render the actual task DAG; expose status changes, blockers, dependency edges, owners, artifact/evidence links, and timestamps from authoritative state.
 - Adopted in part on THESIX: read-only LiveMissionCanvas UI and an Overseer entry point.
-- Still required: real mission acceptance tests, stale-data/reconnect behavior, explicit empty/error states, accessible interaction, and evidence-linked F07 outcome when available.
+- Still required: browser and reconnect/resync acceptance against a real authorized mission, accessible interaction inspection, cross-instance/distributed replay semantics if required, and evidence-linked F07 outcome.
 - Rejected: copying Whiteboard UI/components, vendored editor code, prompts, assets, or its trace model; using fabricated progress or hidden model reasoning as UI state; replacing canonical mission/evidence IR.
 
 ## Status and verification required
 
-**PARTIALLY_IMPLEMENTED (ShortForge presentation slice).** Targeted contract tests were added for snapshot parsing and safe authorization/error messages. CI is configured to run these tests and TypeScript checks on `THESIX`; the final result must be read from GitHub Actions before calling this verified. Browser acceptance still requires a real mission ID, work-board authorization, refresh/recovery from persisted snapshots, no unauthorized mission disclosure, and evidence-linked F07 outcome. A successful network request alone is not proof of physical completion.
+**PARTIALLY_IMPLEMENTED (presentation + bounded event-invalidation slice).** Targeted tests cover snapshot shape/auth errors and safe mission-event projection, including mission scoping and payload minimization. The SSE route reuses the existing auth/room permission boundary and authoritative snapshot endpoint; the event stream is an invalidation signal, not a state source. Latest-code CI and real browser acceptance must still be checked before verification claims. Required runtime proof remains a real mission ID, authorization/membership denial checks, reconnect/resync, polling fallback, artifact/evidence linkage, and independent F07 outcome. A connected SSE stream or successful snapshot response alone is not proof of physical completion.
 
 Reject/roll back any UI path that invents state, bypasses the API permission checks, leaks hidden reasoning/secrets, or adds a competing graph source of truth.
 
 ## Security, performance, and licensing
 
-Keep the component read-only unless separately authorized typed actions are designed. Polling frequency and rendering cost should be measured before scale-out; event streaming/replay is a future improvement, not claimed as implemented. MIT is the upstream license; no source code or assets were copied.
+Keep the component read-only unless separately authorized typed actions are designed. The SSE stream is scoped to the mission and exposes only bounded event metadata, with polling fallback; its event history is in-process and bounded, so do not represent it as a durable distributed log. Measure polling/event load and rendering cost before scale-out. MIT is the upstream license; no source code or assets were copied.
 
 ## Provenance
 
