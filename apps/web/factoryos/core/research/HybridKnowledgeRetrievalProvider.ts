@@ -155,7 +155,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     });
 
     const queryLower = normalize(query);
-    const exactRanked = lexicalRanked.filter((document) => exactMatch(document, queryLower));
+    const exactRanked = lexicalRanked.filter((document) => exactMatch(document, query));
     let semanticScores: ReadonlyMap<string, number> = new Map();
     if (this.options.semanticScorer) {
       semanticScores = await this.options.semanticScorer.search(
@@ -232,7 +232,8 @@ function searchableText(document: KnowledgeDocument): string {
   ].join(" ").toLowerCase();
 }
 
-function exactMatch(document: KnowledgeDocument, queryLower: string): boolean {
+function exactMatch(document: KnowledgeDocument, query: string): boolean {
+  const queryLower = normalize(query);
   if (!queryLower) return false;
   const id = normalize(idOf(document));
   const filePath = normalize(document.filePath);
@@ -240,7 +241,7 @@ function exactMatch(document: KnowledgeDocument, queryLower: string): boolean {
   if (id === queryLower || filePath === queryLower || title === queryLower) return true;
 
   // Identifiers and path-like queries are eligible for boundary-aware exact matches.
-  const identifierLike = /[._/#:-]/.test(queryLower) || /[A-Z]/.test(queryLower);
+  const identifierLike = /[._/#:-]/.test(queryLower) || /[A-Z]/.test(query);
   if (!identifierLike) return false;
   const escaped = queryLower.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const boundaryPattern = new RegExp(`(?:^|[^a-z0-9_])${escaped}(?:$|[^a-z0-9_])`, "i");
