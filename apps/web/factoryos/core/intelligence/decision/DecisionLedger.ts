@@ -121,7 +121,7 @@ export class DecisionLedger {
     const trainingEligible =
       Boolean(meta.trainingEligible) &&
       result.status !== "INVALID" &&
-      Boolean(capture) &&
+      capture !== undefined &&
       capture.verificationStatus === "VERIFIED" &&
       capture.evidenceRefs.length + capture.outcomeRefs.length > 0 &&
       capture.synthetic !== true &&
