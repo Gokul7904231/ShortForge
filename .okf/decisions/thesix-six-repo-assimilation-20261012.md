@@ -57,7 +57,7 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 
 - Mapping source review is recorded at immutable upstream commits in each mapping.
 - THESIX branch commits for the existing LiveMissionCanvas and skill-methodology slice are recorded in the checkpoint report.
-- THESIX head 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726 passed strict TypeScript + targeted contract tests, Floor 01 Python tests, security/dependency scan, and production-container smoke in CI run 38245370370. Full Vitest regression was still in progress at latest poll; an older broad failure has not been attributed to baseline. Browser run, full .okf sweep, Lift evaluation, real judged retrieval benchmark, and live mission/F07 proof remain NOT RUN or UNPROVEN.
+- THESIX implementation revision 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726 passed strict TypeScript + targeted contract tests, Floor 01 Python tests, security/dependency scan, and production-container smoke in CI run 38245370370. Its informational full Vitest job failed (61 files failed, 256 passed, 3 skipped; 20 suites and 56 individual tests failed). Baseline attribution is unproven. Browser run, full .okf sweep, Lift evaluation, real judged retrieval benchmark, and live mission/F07 proof remain NOT RUN or UNPROVEN.
 - No repository in this wave is claimed as fully integrated or production-ready.
 
 ## Rollback / rejection conditions
