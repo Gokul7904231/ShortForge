@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Activity, AlertCircle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, ShieldAlert, Workflow } from "lucide-react";
 import type { MissionWorkBoardSnapshot, WorkTaskCard } from "@/factoryos/core/work/MissionWorkManager";
 
@@ -60,6 +60,13 @@ function TaskCard({ task }: { task: WorkTaskCard }) {
   );
 }
 
+function missionWorkErrorMessage(status: number): string {
+  if (status === 401) return "Your session may have expired. Sign in and try again.";
+  if (status === 403) return "You do not have permission to view this mission work board.";
+  if (status === 404) return "This mission could not be found.";
+  return "Mission work state could not be refreshed. Retry shortly.";
+}
+
 export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
   const [board, setBoard] = useState<MissionWorkBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,31 +74,63 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
   const [error, setError] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
+  const requestInFlightRef = useRef(false);
+  const requestTokenRef = useRef(0);
+  const activeRequestRef = useRef<AbortController | null>(null);
+
   const refresh = useCallback(async (quiet = false) => {
-    if (!missionId) return;
-    if (quiet) setRefreshing(true);
-    else setLoading(true);
+    if (!missionId || requestInFlightRef.current) return;
+
+    const requestToken = ++requestTokenRef.current;
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+    requestInFlightRef.current = true;
+    setRefreshing(true);
+    if (!quiet) setLoading(true);
+
     try {
-      const response = await fetch(`/api/overseer/missions/${encodeURIComponent(missionId)}/work`, { cache: "no-store" });
-      const payload = await response.json();
-      if (!response.ok || !payload?.success || !payload?.data) {
-        throw new Error(payload?.error || `Mission work request failed (${response.status}).`);
+      const response = await fetch(
+        `/api/overseer/missions/${encodeURIComponent(missionId)}/work`,
+        { cache: "no-store", signal: controller.signal },
+      );
+      let payload: { success?: boolean; data?: MissionWorkBoardSnapshot } | null = null;
+      try {
+        payload = await response.json();
+      } catch {
+        throw new Error(missionWorkErrorMessage(response.status));
       }
-      setBoard(payload.data as MissionWorkBoardSnapshot);
+
+      if (!response.ok || !payload?.success || !payload?.data) {
+        throw new Error(missionWorkErrorMessage(response.status));
+      }
+      if (controller.signal.aborted || requestToken !== requestTokenRef.current) return;
+
+      setBoard(payload.data);
       setLastUpdatedAt(new Date().toISOString());
       setError("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to refresh mission work state.");
+      if (controller.signal.aborted || requestToken !== requestTokenRef.current) return;
+      setError(cause instanceof Error ? cause.message : "Mission work state could not be refreshed. Retry shortly.");
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestToken === requestTokenRef.current) {
+        requestInFlightRef.current = false;
+        activeRequestRef.current = null;
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [missionId]);
 
   useEffect(() => {
     void refresh(false);
     const interval = window.setInterval(() => void refresh(true), 4000);
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      requestTokenRef.current += 1;
+      activeRequestRef.current?.abort();
+      activeRequestRef.current = null;
+      requestInFlightRef.current = false;
+    };
   }, [refresh]);
 
   if (loading && !board) {
