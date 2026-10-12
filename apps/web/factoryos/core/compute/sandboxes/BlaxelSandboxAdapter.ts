@@ -50,9 +50,18 @@ function workspaceFor(credentials?: SandboxCredentialBundle): string {
 }
 
 function stateOf(sandbox: BlaxelSandbox): SandboxRuntimeState {
-  const status = String(sandbox?.status || sandbox?.state || "").toUpperCase();
-  if (["CREATING", "STARTING", "PROVISIONING", "PENDING"].includes(status)) return "PROVISIONING";
-  if (["RUNNING", "READY", "ACTIVE"].includes(status)) return "RUNNING";
+  // Blaxel's resource objects expose lifecycle status through metadata.status.
+  // Support the top-level aliases too so provider responses normalize consistently.
+  const status = String(
+    sandbox?.metadata?.status ??
+      sandbox?.status ??
+      sandbox?.state ??
+      sandbox?.metadata?.phase ??
+      sandbox?.phase ??
+      "",
+  ).toUpperCase();
+  if (["CREATING", "STARTING", "PROVISIONING", "PENDING", "BUILDING"].includes(status)) return "PROVISIONING";
+  if (["RUNNING", "READY", "ACTIVE", "AVAILABLE"].includes(status)) return "RUNNING";
   if (["PAUSED", "SUSPENDED", "HIBERNATED"].includes(status)) return "PAUSED";
   if (["FAILED", "ERROR"].includes(status)) return "FAILED";
   if (["TERMINATED", "DELETED", "DESTROYED", "TERMINATING", "DELETING"].includes(status)) return "TERMINATED";
