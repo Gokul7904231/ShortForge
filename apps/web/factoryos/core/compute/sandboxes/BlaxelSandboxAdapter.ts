@@ -322,7 +322,8 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
         command: request.command,
         workingDir: request.workdir,
         waitForCompletion: true,
-        timeout: Math.max(1, Math.ceil(request.timeoutMs / 1000)),
+        // Blaxel's TypeScript SDK expects timeout in milliseconds.
+        timeout: Math.max(1, Math.floor(request.timeoutMs)),
         ...(request.env
           ? { env: Object.entries(request.env).map(([name, value]) => ({ name, value })) }
           : {}),
