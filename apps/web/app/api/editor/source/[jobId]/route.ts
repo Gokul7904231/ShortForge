@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { verifyAuthAndRole } from "@/lib/auth/auth";
+import { verifyAuthAndRole, verifyWritePermission } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { db } from "@/lib/firebase-admin";
 import { getInMemoryJobs, readJobManifest } from "@/lib/jobs-history";
@@ -39,7 +39,8 @@ export async function POST(
 ) {
   let temporarySourcePath: string | undefined;
   try {
-    const user = await verifyAuthAndRole(request, "EDITOR");
+    const user = await verifyAuthAndRole(request, "USER");
+    verifyWritePermission(user);
     const { jobId } = await params;
     if (!jobId || !/^[a-zA-Z0-9_-]{1,128}$/.test(jobId)) {
       return failedSourceResponse("Invalid video job identifier.", 400);
