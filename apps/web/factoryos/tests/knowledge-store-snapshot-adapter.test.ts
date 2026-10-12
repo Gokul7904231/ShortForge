@@ -1,10 +1,13 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { KnowledgeStore } from "../core/intelligence/knowledge/KnowledgeStore";
+import type { IMemoryRepository, MemoryRecord } from "../core/database/DatabaseContracts";
 import { KnowledgeStoreSnapshotAdapter } from "../core/knowledge/KnowledgeStoreSnapshotAdapter";
 import { validateKnowledgeOSSnapshot } from "../core/knowledge/KnowledgeOS";
+import { KnowledgeOSSnapshotHistory } from "../core/knowledge/KnowledgeOSSnapshotHistory";
 
 const tempDirs: string[] = [];
 
@@ -97,6 +100,35 @@ function makeStore(): KnowledgeStore {
   return new KnowledgeStore(root);
 }
 
+class FixtureMemoryRepository implements IMemoryRepository {
+  private readonly records = new Map<string, MemoryRecord>();
+
+  async saveMemory(record: MemoryRecord): Promise<void> {
+    this.records.set(record.memoryId, structuredClone(record));
+  }
+
+  async getMemory(layer: MemoryRecord["layer"], key: string): Promise<MemoryRecord | null> {
+    const record = [...this.records.values()].find((item) => item.layer === layer && item.key === key);
+    return record ? structuredClone(record) : null;
+  }
+
+  async queryMemories(
+    layer?: MemoryRecord["layer"],
+    queryText?: string,
+    limit = 50,
+  ): Promise<MemoryRecord[]> {
+    return [...this.records.values()]
+      .filter((record) => !layer || record.layer === layer)
+      .filter((record) => !queryText || record.key.includes(queryText) || record.content.includes(queryText))
+      .slice(0, limit)
+      .map((record) => structuredClone(record));
+  }
+
+  async deleteMemory(memoryId: string): Promise<void> {
+    this.records.delete(memoryId);
+  }
+}
+
 afterEach(() => {
   for (const directory of tempDirs.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
@@ -157,6 +189,29 @@ describe("KnowledgeStoreSnapshotAdapter", () => {
       resolved: true,
     });
     expect(validateKnowledgeOSSnapshot(snapshot)).toBe(true);
+  });
+
+  it("persists canonical KnowledgeStore snapshots through the existing memory repository", async () => {
+    const store = makeStore();
+    const adapter = new KnowledgeStoreSnapshotAdapter(store);
+    const memory = new FixtureMemoryRepository();
+    const history = new KnowledgeOSSnapshotHistory(memory, "OKF_KNOWLEDGE_STORE");
+
+    const captured = await history.capture(adapter, { scope: "GLOBAL" });
+    const reloadedHistory = new KnowledgeOSSnapshotHistory(memory, "OKF_KNOWLEDGE_STORE");
+    const loaded = await reloadedHistory.load({ scope: "GLOBAL" }, captured.snapshot.contentDigest);
+    const prefix = "knowledgeos.snapshot.v1:OKF_KNOWLEDGE_STORE:" +
+      createHash("sha256").update("GLOBAL", "utf8").digest("hex") + ":";
+    const record = await memory.getMemory("OPERATIONAL", prefix + captured.snapshot.contentDigest);
+
+    expect(captured.snapshot.sourceKind).toBe("OKF_KNOWLEDGE_STORE");
+    expect(loaded?.contentDigest).toBe(captured.snapshot.contentDigest);
+    expect(record?.confidence).toBe(0);
+    expect(record?.metadata.verificationStatus).toBe("UNVERIFIED");
+    expect(record?.content).not.toContain("SENSITIVE_DOCUMENT_BODY");
+    await expect(new KnowledgeOSSnapshotHistory(memory, "DOMAIN_KNOWLEDGEOS")
+      .capture(adapter, { scope: "GLOBAL" }))
+      .rejects.toThrow("KNOWLEDGEOS_SNAPSHOT_SOURCE_MISMATCH");
   });
 
   it("changes the digest when a document body changes without embedding that body in the snapshot", () => {
