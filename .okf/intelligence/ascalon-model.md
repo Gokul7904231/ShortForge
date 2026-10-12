@@ -17,10 +17,12 @@ The objective is to train a domain-specialized model that understands ShortForge
 
 Ascalon is intended to become the primary **deep-cognition substrate** of the ShortForge Cognitive Layer while remaining bounded by the FactoryOS authority and safety hierarchy.
 
-The target model combines two complementary capabilities:
+The target Ascalon program is intentionally split from the fast decision-model program:
 
-1. **Decision cognition** — JEV/KEV-like useful properties such as typed choices, scoring, classification, uncertainty expression, routing suggestions, and policy-aware decisions.
-2. **Generation cognition** — LLM-style planning, reasoning, scripting, structured synthesis, research interpretation, diagnostics, and worker guidance.
+1. **AER Decision Core** — a separate compact model trained for high-frequency typed decisions (`CHOICE`, `SCORE`, `NOUL`), calibration, abstention, and bounded routing.
+2. **Ascalon deep cognition** — the fine-tuned Llama-based model for planning, reasoning, diagnosis, synthesis, research interpretation, diagnostics, worker guidance, and complex decisions.
+
+Ascalon may still emit structured decisions when deep cognition is required, but it is not the mandatory fast-decision path. AER Runtime decides whether deterministic logic, AER Decision Core, Ascalon, a specialist, or human escalation is appropriate.
 
 These capabilities do not grant Ascalon sovereign authority.
 
@@ -426,9 +428,9 @@ The model router remains deterministic infrastructure.
 
 ---
 
-## 11. Ascalon + Fast Decision Core
+## 11. Ascalon + AER Decision Core
 
-The intended long-term system is two-speed:
+The intended long-term system is two-speed, with an epistemic runtime coordinating both paths:
 
 ~~~
 FAST PATH
@@ -447,7 +449,7 @@ Higher reasoning budget
 
 This avoids making every inexpensive routing decision depend on the deepest cognitive path.
 
-The fast path can provide JEV/KEV-like decision properties without pretending that a text-generating Llama is itself a dedicated probabilistic classifier.
+The AER Decision Core provides the JEV/GLiDE/Laya-style fast typed-decision contract without pretending that a text-generating Llama is itself a dedicated probabilistic classifier.
 
 ---
 

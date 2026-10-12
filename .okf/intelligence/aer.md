@@ -1886,3 +1886,73 @@ Machine governance status is carried as evidence metadata. AER cannot turn an OK
 AER may consume the compiled `OKFPolicyContext` as bounded epistemic input. The context carries stable rule IDs, applicable normative constraints, provenance fingerprints, and evidence states. It never grants execution or policy-rewrite authority.
 
 AER/Ascalon must preserve `ADVISORY_CONTEXT_ONLY`, `canAuthorizeExecution=false`, and `canRewritePolicy=false`. Governance context may explain why an action is constrained; it cannot authorize the action.
+
+## AER Decision Core — Canonical Model Boundary
+
+AER Runtime and AER Decision Core are separate components.
+
+~~~text
+AER Runtime
+  |
+  +--> epistemic state / evidence / uncertainty / probes / budgets
+  |
+  +--> deterministic decisions
+  |
+  +--> AER Decision Core
+  |       |
+  |       +--> CHOICE
+  |       +--> SCORE
+  |       +--> NOUL
+  |       +--> probability / confidence / calibration
+  |
+  +--> Ascalon deep cognition
+~~~
+
+The **AER Decision Core** is the ShortForge-native fast typed-decision model. It is trained separately from Ascalon and is intended for high-frequency bounded decisions such as provider/worker selection, evidence sufficiency, probe selection, retry/failover, cognitive-mode routing, hypothesis ranking, and escalation.
+
+The **Ascalon model** is trained separately for deep cognition and generation. It receives AER's provenance-backed epistemic context when deeper cognition is justified. Ascalon does not need to invoke AER-Core for every decision and may disagree with an AER-Core recommendation; such disagreement remains measurable and provenance-preserving.
+
+### Authority invariant
+
+AER Decision Core is advisory only. It cannot grant capabilities, authorize execution, mint leases, change fencing, publish, certify F07, replace Guardian, or redefine policy.
+
+### Model contract invariant
+
+The Decision Core must use the canonical typed DecisionContracts and runtime-supplied questions/options/rubrics. It must not silently convert malformed model output into a synthetic valid decision.
+
+Canonical implementation boundary:
+- `apps/web/factoryos/core/intelligence/decision/AERDecisionCoreContract.ts`
+- `apps/web/factoryos/core/intelligence/decision/AERDecisionAdapter.ts`
+- `docs/ascalon/aer-decision-core-standard.md`
+- `docs/ascalon/training/aer-decision-core-training.md`
+
+The adapter is present as a contract scaffold only. A real checkpoint/provider and calibration evidence are required before any production activation.
+
+
+---
+
+## AER Decision Core training readiness — 2026-10-04
+
+**Status:** TRAINING-READY INFRASTRUCTURE / CHECKPOINT NOT TRAINED / AUTHORITY DISABLED
+
+The AER Decision Core training and evaluation foundation is implemented under `training/aer_core/`.
+
+Implemented controls:
+- verified-gold training record contract;
+- rejection of synthetic/fallback/model-prediction training truth;
+- exact question-to-gold coverage checks;
+- deterministic group-isolated dataset splitting;
+- reproducible trainer with seed and device selection;
+- validation-only temperature calibration;
+- held-out AER-Bench metrics;
+- measured p50/p95 latency;
+- AER-Core shadow comparison beside primary/JEV/GLiDE;
+- explicit non-authoritative AER-Core adapter boundary;
+- local training data/checkpoints excluded from source control.
+
+Training readiness means the software pipeline can accept a compliant corpus and produce the artifacts required for evaluation. It does not claim that such a corpus or trained checkpoint currently exists.
+
+Promotion remains blocked until:
+
+`verified corpus -> training -> calibration -> held-out AER-Bench -> shadow replay -> authority/security verification -> restricted canary -> governance promotion`
+

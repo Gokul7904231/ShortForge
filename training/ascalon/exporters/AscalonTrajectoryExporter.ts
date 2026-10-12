@@ -5,6 +5,7 @@
  * train/validation/test splits, preventing family/mission leakage.
  */
 
+import { createHash } from "node:crypto";
 import { AscalonTrajectoryValidator } from "../validators/AscalonTrajectoryValidator";
 
 export interface SplitResult {
@@ -34,12 +35,34 @@ export class AscalonTrajectoryExporter {
     // 1. Validation & Quality Filtering
     for (const traj of trajectories) {
       const report = AscalonTrajectoryValidator.validate(traj);
-      if (report.valid && traj.provenance?.trainingEligible) {
+      const isSynthetic =
+        traj.environment?.environmentType === "SIMULATION" ||
+        traj.provenance?.synthetic === true ||
+        traj.provenance?.simulation === true;
+
+      if (
+        report.valid &&
+        !isSynthetic &&
+        traj.provenance?.trainingEligible === true
+      ) {
         validTrajectories.push(traj);
       } else {
+        const reasons = report.issues.map(
+          (i) => `[${i.code}] ${i.message}`,
+        );
+        if (isSynthetic) {
+          reasons.push(
+            "[SYNTHETIC_CURRICULUM] Synthetic/simulation data belongs in the curriculum path, not production-golden training export.",
+          );
+        }
+        if (traj.provenance?.trainingEligible !== true) {
+          reasons.push(
+            "[TRAINING_INELIGIBLE] Trajectory is not explicitly marked trainingEligible.",
+          );
+        }
         rejected.push({
           trajectory: traj,
-          reasons: report.issues.map((i) => `[${i.code}] ${i.message}`),
+          reasons,
         });
       }
     }
@@ -47,7 +70,9 @@ export class AscalonTrajectoryExporter {
     // 2. Group by mission/episode family
     const familyMap = new Map<string, any[]>();
     for (const traj of validTrajectories) {
-      const familyKey = traj.episode?.missionId || traj.episode?.caseId || traj.trajectoryId;
+      const familyKey = String(
+        traj.episode?.missionId || traj.episode?.caseId || traj.trajectoryId,
+      );
       if (!familyMap.has(familyKey)) {
         familyMap.set(familyKey, []);
       }
@@ -58,17 +83,20 @@ export class AscalonTrajectoryExporter {
     const validation: any[] = [];
     const test: any[] = [];
 
-    let familyIndex = 0;
-    for (const [_, items] of familyMap.entries()) {
-      const bucket = familyIndex % 10;
-      if (bucket < 7) {
+    for (const [familyKey, items] of [...familyMap.entries()].sort()) {
+      const digest = createHash("sha256")
+        .update(familyKey)
+        .digest("hex");
+      const bucket =
+        parseInt(digest.slice(0, 8), 16) % 100;
+
+      if (bucket < 70) {
         train.push(...items);
-      } else if (bucket < 8.5) {
+      } else if (bucket < 85) {
         validation.push(...items);
       } else {
         test.push(...items);
       }
-      familyIndex++;
     }
 
     return {
