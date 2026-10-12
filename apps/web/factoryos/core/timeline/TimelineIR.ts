@@ -215,6 +215,12 @@ export function upgradeTimelineIR(timeline: TimelineIR): CompositionIR {
     src: track.src,
     start: millisecondsToMediaTime(track.timelineStartMs),
     duration: millisecondsToMediaTime(track.durationMs),
+    sourceIn: millisecondsToMediaTime(track.sourceInMs ?? 0),
+    sourceDuration: millisecondsToMediaTime(
+      track.sourceDurationMs !== undefined && track.sourceDurationMs > 0
+        ? track.sourceDurationMs
+        : track.durationMs,
+    ),
     volume: track.volume,
     fadeIn:
       track.fadeInMs !== undefined
