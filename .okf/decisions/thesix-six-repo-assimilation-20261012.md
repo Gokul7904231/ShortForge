@@ -16,7 +16,7 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 
 | Source | Mapping | Classification | Current ShortForge status |
 |---|---|---|---|
-| HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | PARTIALLY_IMPLEMENTED projection + history adapter | Scoped snapshots/diffs and content-addressed revision history via existing IMemoryRepository; runtime wiring/retention pending; no parallel store |
+| HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | PARTIALLY_IMPLEMENTED projection + history adapter | Scoped snapshots/diffs for domain KnowledgeOS and canonical OKF KnowledgeStore; content-addressed revision history via existing IMemoryRepository and owner/admin-only capture/list/load/diff API; retention/current-head verification pending; no parallel store |
 | devdotfast/whiteboard | research/repo-mappings/devdotfast-whiteboard.md | PARTIALLY_IMPLEMENTED | Guarded canvas, typed response validation, mission-scoped SSE signals/bounded in-process replay and polling fallback; browser/F07 proof pending |
 | twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology, mapping verifier, and tested exact-duplicate/capability-declaration linter implemented; semantic paraphrase and context-quality evaluation pending |
 | CopilotKit/OpenIntelligentUI | research/repo-mappings/copilotkit-openintelligentui.md | PARTIAL SAFE PRESENTATION | Fixed allow-listed schema-validated UI primitives; no arbitrary generated code/runtime |
