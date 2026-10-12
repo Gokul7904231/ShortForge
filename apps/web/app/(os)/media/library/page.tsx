@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   Film,
   Play,
+  Edit3,
   HardDrive,
   Clock,
   Search,
@@ -166,12 +167,19 @@ export default function MediaLibraryPage() {
               </div>
 
               {/* Actions Footer */}
-              <div className="pt-3 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between gap-2">
+              <div className="pt-3 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
                 <Link
                   href={`/media/library/${item.videoId}`}
                   className="px-3.5 py-1.5 rounded-xl bg-[#1677FF] hover:bg-[#0F63D8] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Play className="w-3 h-3 fill-current" /> Watch & Details
+                </Link>
+
+                <Link
+                  href={`/factory/editor?jobId=${encodeURIComponent(item.videoId)}`}
+                  className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-3 h-3" /> Edit
                 </Link>
 
                 {item.driveUrl && (
