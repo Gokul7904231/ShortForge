@@ -50,19 +50,24 @@ function workspaceFor(credentials?: SandboxCredentialBundle): string {
 }
 
 function stateOf(sandbox: BlaxelSandbox): SandboxRuntimeState {
-  // Blaxel's resource objects expose lifecycle status through metadata.status.
-  // Support the top-level aliases too so provider responses normalize consistently.
+  // @blaxel/core exposes lifecycle in the top-level status field. In particular,
+  // its normal ready state is DEPLOYED (not RUNNING); state may separately be
+  // RUNNING or STANDBY.
   const status = String(
-    sandbox?.metadata?.status ??
-      sandbox?.status ??
+    sandbox?.status ??
+      sandbox?.metadata?.status ??
       sandbox?.state ??
       sandbox?.metadata?.phase ??
       sandbox?.phase ??
       "",
   ).toUpperCase();
-  if (["CREATING", "STARTING", "PROVISIONING", "PENDING", "BUILDING"].includes(status)) return "PROVISIONING";
-  if (["RUNNING", "READY", "ACTIVE", "AVAILABLE"].includes(status)) return "RUNNING";
-  if (["PAUSED", "SUSPENDED", "HIBERNATED"].includes(status)) return "PAUSED";
+  const instanceState = String(sandbox?.state ?? "").toUpperCase();
+
+  if (["RUNNING", "READY", "ACTIVE", "AVAILABLE"].includes(instanceState)) return "RUNNING";
+  if (["STANDBY"].includes(instanceState)) return "PAUSED";
+  if (["CREATING", "STARTING", "PROVISIONING", "PENDING", "BUILDING", "UPLOADING", "DEPLOYING", "UNARCHIVING", "BUILT"].includes(status)) return "PROVISIONING";
+  if (["RUNNING", "READY", "ACTIVE", "AVAILABLE", "DEPLOYED"].includes(status)) return "RUNNING";
+  if (["PAUSED", "SUSPENDED", "HIBERNATED", "DEACTIVATED", "DEACTIVATING", "ARCHIVING", "ARCHIVED"].includes(status)) return "PAUSED";
   if (["FAILED", "ERROR"].includes(status)) return "FAILED";
   if (["TERMINATED", "DELETED", "DESTROYED", "TERMINATING", "DELETING"].includes(status)) return "TERMINATED";
   return "UNKNOWN";
@@ -88,7 +93,7 @@ function toRuntime(sandbox: BlaxelSandbox): SandboxRuntime {
     updatedAt: new Date().toISOString(),
     providerMetadata: {
       name,
-      status: sandbox.metadata?.status ?? sandbox.status ?? sandbox.state,
+      status: sandbox.status ?? sandbox.metadata?.status ?? sandbox.state,
       image: sandbox.image ?? sandbox.spec?.image,
       region: sandbox.region ?? sandbox.spec?.region,
     },
