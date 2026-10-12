@@ -4,7 +4,7 @@
 - Branch: `THESIX`
 - Base commit: `9e3d7017f62625cea5258dabee926824cb43ab18`
 - Checkpoint type: implementation progress checkpoint (not final completion)
-- Status: `PARTIAL_IMPLEMENTATION; NEWEST CODE REVISION AWAITING CI; FULL REGRESSION PENDING`
+- Status: `PARTIAL_IMPLEMENTATION; FOCUSED CI PASS; FULL REGRESSION UNRESOLVED; BROWSER/F07 PENDING`
 
 ## Purpose
 
@@ -146,7 +146,9 @@ This addendum supersedes the older status bullets above where they conflict. It 
 
 New focused tests cover scoped snapshot history/corruption, disk exact-key lookups past 50 records, visual DocumentNormalizer integration, retrieval-baseline provenance filtering, exact/BM25/optional-semantic ranking, and remote semantic opt-in. The CI workflow includes these targeted tests in the strict TypeScript/contract-test job.
 
-A previous implementation revision passed strict typecheck and its focused test/governance job, but changes have continued since that run. The newest commit must pass CI before this checkpoint can say current code is green. The informational full Vitest regression job has failed on earlier intermediate revisions; those failures require triage against the latest logs and baseline before attribution. Recent Floor 01 security/container checks have been green on earlier revisions but do not replace the current-code targeted gate.
+**Latest branch-head verification observed:** branch head 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726 (THESIX). GitHub Actions run 38245370370 passed strict TypeScript plus targeted contract tests, Floor 01 Python tests, the security/dependency scan, and production-container smoke. The informational full Vitest regression job was still running at the latest poll, so full-suite status remains UNRESOLVED. The exact implementation commit immediately before the subsequent OKF-only updates is 7cb630be8c5f9acc2e05a90ea2181afe8cb1dc7a; its focused CI gate also passed.
+
+A prior full Vitest run on older code commit 63bbd71a4b05eed42d326dab61a11b51b85da2ac completed with 61 test files failing, 256 passing, and 3 skipped. Failures spanned multiple surfaces (editor contracts, mission lifecycle, quotas, Treasury, Slayer, rendering, and retrieval). This does not establish whether those failures pre-existed on main; a same-environment baseline comparison has not been run. Do not claim the full repository is green.
 
 ### Remaining non-negotiable gates
 
@@ -157,3 +159,10 @@ A previous implementation revision passed strict typecheck and its focused test/
 - Run the document adapter against representative real documents and obtain separate legal review for Lift model weights/terms.
 - Run the retrieval CLI with human-judged ShortForge cases; benchmark exact, BM25 and optional semantic modes, include secret/index freshness negative cases, and compare against baseline. No zvec integration or performance improvement is claimed.
 - Do not merge to main or claim production readiness while the relevant .okf sweep, latest-code CI, browser/F07, or real evaluation gates are blocked/unproven.
+## Verification update — 2026-10-12, current focused gate
+
+- Required job results at branch head 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726: PASS for strict TypeScript and nine focused contract-test files; PASS for Floor 01 Python tests; PASS for security/dependency scan; PASS for production-container smoke.
+- Focused tests cover KnowledgeOS snapshot history and disk exact-key regression; adaptive presentation schema; visual normalization bounds and dual remote-consent gate; exact/BM25 retrieval, document-digest provenance, remote-query approval, candidate-count cap, and per-document text cap; and mission work client/signal projection.
+- GitHub Actions run 38245370370 full Vitest regression remained in_progress during this checkpoint update. A preceding full-suite run failed across 61 files; no baseline comparison proves those are pre-existing. Therefore this checkpoint is not a full regression pass.
+- The .okf tree inventory contains 262 files. Core decision/authority/security/production-helper documents and all six THESIX mappings were inspected, but the complete file-by-file .okf review mandated by .okf/decision-protocol.md is not yet complete; it remains a release blocker.
+- No real authorized mission browser session, reconnection/access-denial walkthrough, accessibility inspection, persistent-runtime snapshot wiring, F07 artifact proof, real Lift document evaluation/license review, or human-judged retrieval benchmark was performed.
