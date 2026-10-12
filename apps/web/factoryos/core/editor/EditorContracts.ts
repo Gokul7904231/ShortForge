@@ -1,6 +1,5 @@
 import type {
   CompositionIR,
-  CompositionCaption,
   AnimationTrack,
   EffectNode,
   MaskNode,
