@@ -205,15 +205,67 @@ describe("Project Ascalon: Heuristic Shadow & Provenance Tests", () => {
       {
         batchId: "batch_verified",
         evaluatedAt: new Date().toISOString(),
-        answers: [],
-        answersById: {},
+        answers: [
+          {
+            questionId: "q1",
+            type: "NOUL",
+            value: true,
+            probabilityTrue: 1,
+            confidence: 1,
+            status: "VALID",
+          },
+        ],
+        answersById: {
+          q1: {
+            questionId: "q1",
+            type: "NOUL",
+            value: true,
+            probabilityTrue: 1,
+            confidence: 1,
+            status: "VALID",
+          },
+        },
         adapterUsed: "DETERMINISTIC",
         totalLatencyMs: 10,
         minConfidence: 1.0,
         shouldEscalate: false,
         status: "VALID",
       },
-      { verificationResult: "VERIFIED" }
+      {
+        verificationResult: "VERIFIED",
+        trainingEligible: true,
+        trainingCapture: {
+          input: {
+            questions: [
+              {
+                id: "q1",
+                type: "NOUL",
+                question: "Is the verified outcome true?",
+              },
+            ],
+            sanitizedContext: { state: "VERIFIED" },
+          },
+          goldAnswers: [
+            {
+              questionId: "q1",
+              type: "NOUL",
+              value: true,
+              probabilityTrue: 1,
+              confidence: 1,
+              status: "VALID",
+            },
+          ],
+          evidenceRefs: ["evidence-q1"],
+          outcomeRefs: ["outcome-q1"],
+          policyRefs: ["policy-v1"],
+          verificationStatus: "VERIFIED",
+          labelSource: "VERIFIED_OUTCOME",
+          humanReviewed: true,
+          synthetic: false,
+          fallbackApplied: false,
+          provenance: { trajectoryId: "trajectory-q1" },
+        },
+      },
     );
 
     ledger.recordTransaction(
@@ -347,6 +399,42 @@ describe("Project Ascalon: Trajectory Validation & Exporter Tests", () => {
       expect(replay.replayEquivalent).toBe(true);
       expect(replay.originalDecision).toBe(replay.replayedDecision);
     }
+  });
+
+  it("21. excludes synthetic curriculum from production-golden export", () => {
+    const synthetic = {
+      ...golden[0],
+      trajectoryId: "traj_synthetic_curriculum",
+      environment: {
+        ...golden[0].environment,
+        environmentType: "SIMULATION",
+      },
+      provenance: {
+        ...golden[0].provenance,
+        labelSource: "SIMULATION",
+        trainingEligible: true,
+        simulation: true,
+        synthetic: true,
+      },
+    };
+
+    const result = AscalonTrajectoryExporter.exportDataset([
+      golden[0],
+      synthetic,
+    ]);
+
+    expect(result.train).not.toContain(synthetic);
+    expect(result.validation).not.toContain(synthetic);
+    expect(result.test).not.toContain(synthetic);
+    expect(
+      result.rejected.some(
+        (entry) =>
+          entry.trajectory.trajectoryId === "traj_synthetic_curriculum" &&
+          entry.reasons.some((reason) =>
+            reason.includes("SYNTHETIC_CURRICULUM"),
+          ),
+      ),
+    ).toBe(true);
   });
 
   it("20. verifies dataset export splits without cross-family leakage", () => {

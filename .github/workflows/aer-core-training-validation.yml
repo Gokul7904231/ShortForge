@@ -1,0 +1,51 @@
+name: AER-Core Training Boundary Validation
+
+on:
+  pull_request:
+    paths:
+      - "training/aer_core/**"
+      - "apps/web/factoryos/core/intelligence/decision/**"
+      - "apps/web/factoryos/tests/aer-decision-core.test.ts"
+      - "docs/ascalon/**"
+      - ".okf/intelligence/aer.md"
+  push:
+    branches:
+      - main
+    paths:
+      - "training/aer_core/**"
+      - "apps/web/factoryos/core/intelligence/decision/**"
+      - "apps/web/factoryos/tests/aer-decision-core.test.ts"
+
+jobs:
+  python-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Run AER-Core dataset tests
+        run: python -m pytest training/aer_core/tests -q
+
+  training-boundary-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify no production AER-Core enablement
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          engine = Path("apps/web/factoryos/core/intelligence/decision/DecisionEngine.ts").read_text()
+          contract = Path("apps/web/factoryos/core/intelligence/decision/AERDecisionCoreContract.ts").read_text()
+          policy = Path("training/aer_core/promotion_policy.json").read_text()
+
+          assert 'enableShadowAerCore?: boolean' in engine
+          assert 'enableShadowAerCore: config.enableShadowAerCore ?? false' in engine
+          assert 'productionAuthority: false' in contract
+          assert '"productionAuthority": false' in policy
+          assert '"authorityViolations": 0' in policy
+          print("AER-Core authority boundary: PASS")
+          PY
