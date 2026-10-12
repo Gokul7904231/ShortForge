@@ -4,7 +4,7 @@
 - Branch: `THESIX`
 - Base commit: `9e3d7017f62625cea5258dabee926824cb43ab18`
 - Checkpoint type: implementation progress checkpoint (not final completion)
-- Status: `PARTIAL_IMPLEMENTATION; TESTS NOT RUN`
+- Status: `PARTIAL_IMPLEMENTATION; FOCUSED CI PASS; FULL REGRESSION PENDING`
 
 ## Purpose
 
@@ -92,3 +92,39 @@ Updated navigation/provenance files:
 - .okf/decisions/thesix-six-repo-assimilation-20261012.md
 
 This update improves research provenance and governance discoverability; it does not complete any remaining product implementation or verification gate. The full .okf sweep, typecheck/build/tests, browser validation, Lift evaluation, zvec retrieval benchmark, and live mission/F07 proof remain unrun/unproven. Do not merge to main or report production readiness based on this documentation wave.
+
+## Implementation follow-up — 2026-10-12 (current verified slices)
+
+### Code work now present on THESIX
+
+- **S1 / Helix Foundry pattern:** `apps/web/factoryos/core/knowledge/KnowledgeOS.ts` and `KnowledgeOSContracts.ts` expose explicitly scoped snapshots (MISSION / CHANNEL / GLOBAL), deterministic content digest, provenance-bearing claim/source and evidence/reference relationship projections, and a read-only diff API. Scope-mismatch diffs are rejected; out-of-scope or external references stay unresolved. This is an in-memory projection, not durable snapshot history.
+- **S2 / Whiteboard pattern:** `LiveMissionCanvas.tsx` now prevents overlapping polling, cancels obsolete requests on unmount/mission change, ignores stale responses, delegates API response validation to `mission-work-client.ts`, and uses safe user-facing auth/server-error messages. Browser acceptance, event replay/SSE, and a real mission’s F07 chain remain unproven.
+- **S3 / agent skill process:** the evidence-first bounded repository assimilation skill was updated earlier; `tools/okf/verify-thesix-repo-mappings.mjs` provides a deterministic structure/provenance gate over all six mapping files. This is not a complete skill quality/context-budget linter.
+- **S4 / adaptive UI:** `AdaptivePresentationContracts.ts` defines a strict bounded Zod allow-list (summary, metric-grid, alert); `AdaptivePresentation.tsx` renders only fixed known templates and rejects invalid/unknown payloads. No arbitrary model-authored code is evaluated and no general generative-UI runtime is claimed.
+- **S5 / Lift-inspired document vision:** `VisualDocumentExtractionAdapter.ts` is a disabled-by-default provider contract with allowed MIME types, input/output/timeout bounds, abort signal, input SHA-256 and caller-supplied Zod output validation. It marks results UNVERIFIED. There is no Lift provider/model integration or real document-quality benchmark.
+- **S6 / zvec-grep-inspired retrieval:** `HybridRetrievalBenchmark.ts` compares injected providers on identical benchmark-case IDs/categories and measures recall@k, MRR, exact identifier rate, source provenance, p50/p95 latency, and provider error rate. It times out queries and exposes gate failures. No zvec-grep adapter or real-repository benchmark exists yet.
+
+### Added focused tests
+
+- `apps/web/factoryos/tests/knowledgeos-snapshot.test.ts`
+- `apps/web/factoryos/tests/mission-work-canvas-client.test.ts`
+- `apps/web/factoryos/tests/adaptive-presentation.test.ts`
+- `apps/web/factoryos/tests/visual-document-extraction-adapter.test.ts`
+- `apps/web/factoryos/tests/hybrid-retrieval-benchmark.test.ts`
+
+`tools/okf/verify-thesix-repo-mappings.mjs` is registered at the repository root as `npm run okf:verify:thesix-mappings`. `.github/workflows/ci.yml` now runs on pushes to THESIX and requires the mapping verifier plus the five targeted test files in the TypeScript/contract-test job.
+
+### Verification evidence
+
+- **Implementation commit:** `4bb485bfd29d4395ef6640388cac3b16cffbe5ed`.
+- **Focused CI workflow:** [run 38236585789](https://github.com/Gokul7904231/ShortForge/actions/runs/38236585789).
+- **Confirmed PASS on that commit:** `npm run typecheck`; the repository-mapping governance verifier; the five THESIX focused test files; the existing Floor 01 Runtime Adapter, Notebook Fabric, and AER Epistemic Runtime contract test steps; Floor 01 Python v2 tests; Floor 01 dependency/security scan; Floor 01 production-container smoke.
+- **Full Vitest regression suite:** was still running at last poll. Do not label the entire repository green until its final conclusion is inspected. Earlier runs on preceding intermediate commits failed the mapping verifier due to required heading mismatches and one adapter fixture’s strict schema; both of those specific issues were fixed before the passing focused CI run. An earlier broad-suite run also showed Treasury/AER failures; baseline attribution is not yet established.
+- The branch head subsequently advanced to `5c3e9af89460b4cdd428eb5ad6142477c86a4cb2` for OKF status reconciliation only; CI for that documentation commit is queued/in flight as last observed.
+
+### Still blocked / not claimed
+
+- Full current .okf sweep, browser interaction/accessibility inspection, live mission and F07 artifact/evidence proof, event replay/SSE, persistent snapshot history, and skill context-budget benchmarking.
+- Lift model/provider connection, legal assessment, representative PDF/image evaluation, hardware and latency qualification.
+- zvec-grep/provider connection, real ShortForge corpus retrieval benchmark and secret/index-freshness adversarial tests.
+- Production readiness and merge-to-main approval.
