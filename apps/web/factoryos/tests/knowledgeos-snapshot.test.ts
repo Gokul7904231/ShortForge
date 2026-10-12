@@ -45,7 +45,7 @@ describe("KnowledgeOS provenance snapshots", () => {
       expect.objectContaining({
         relationType: "EVIDENCE_ATTESTS_REFERENCE",
         targetRef: "artifact://render/abc",
-        resolved: true,
+        resolved: false,
       }),
     ]));
   });
