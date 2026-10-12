@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Activity, AlertCircle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, ShieldAlert, Workflow } from "lucide-react";
 import type { MissionWorkBoardSnapshot, WorkTaskCard } from "@/factoryos/core/work/MissionWorkManager";
+import { AdaptivePresentation } from "./AdaptivePresentation";
 
 interface LiveMissionCanvasProps {
   missionId: string;
@@ -163,19 +164,16 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
 
       {error && <div role="status" className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[10px] text-amber-700 dark:text-amber-300">Latest refresh failed; showing the last successful snapshot. {error}</div>}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[
-          ["Total tasks", tasks.length],
-          ["Running", counts.RUNNING || 0],
-          ["Blocked / failed", (counts.BLOCKED || 0) + (counts.FAILED || 0)],
-          ["Completed", counts.DONE || 0],
-        ].map(([label, value]) => (
-          <div key={String(label)} className="rounded-xl border border-black/[0.07] p-3 dark:border-white/[0.08]">
-            <div className="text-[9px] uppercase tracking-wide text-[#667085]">{label}</div>
-            <div className="mt-1 text-xl font-bold tabular-nums text-[#111827] dark:text-[#F5F7FA]">{value}</div>
-          </div>
-        ))}
-      </div>
+      <AdaptivePresentation payload={{
+        kind: "metric-grid",
+        title: "Task state at a glance",
+        items: [
+          { label: "Total tasks", value: tasks.length },
+          { label: "Running", value: counts.RUNNING || 0 },
+          { label: "Blocked / failed", value: (counts.BLOCKED || 0) + (counts.FAILED || 0) },
+          { label: "Completed", value: counts.DONE || 0 },
+        ],
+      }} />
 
       {tasks.length === 0 ? (
         <div className="rounded-xl border border-dashed border-black/[0.1] p-8 text-center dark:border-white/[0.1]">
