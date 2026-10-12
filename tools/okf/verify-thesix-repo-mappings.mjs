@@ -24,7 +24,7 @@ const requiredMarkers = [
   /^- Assimilation mode:/m,
   /^- ShortForge status:/m,
   /^## Status and verification required$/m,
-  /^## Security,.*$/m,
+  /^## Security\b.*$/m,
   /^## Provenance$/m,
 ];
 
