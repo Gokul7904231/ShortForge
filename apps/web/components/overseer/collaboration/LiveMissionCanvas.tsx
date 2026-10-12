@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Activity, AlertCircle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw, ShieldAlert, Workflow } from "lucide-react";
 import type { MissionWorkBoardSnapshot, WorkTaskCard } from "@/factoryos/core/work/MissionWorkManager";
 import { AdaptivePresentation } from "./AdaptivePresentation";
+import { readMissionWorkSnapshot } from "./mission-work-client";
 
 interface LiveMissionCanvasProps {
   missionId: string;
@@ -61,13 +62,6 @@ function TaskCard({ task }: { task: WorkTaskCard }) {
   );
 }
 
-function missionWorkErrorMessage(status: number): string {
-  if (status === 401) return "Your session may have expired. Sign in and try again.";
-  if (status === 403) return "You do not have permission to view this mission work board.";
-  if (status === 404) return "This mission could not be found.";
-  return "Mission work state could not be refreshed. Retry shortly.";
-}
-
 export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
   const [board, setBoard] = useState<MissionWorkBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,19 +88,10 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
         `/api/overseer/missions/${encodeURIComponent(missionId)}/work`,
         { cache: "no-store", signal: controller.signal },
       );
-      let payload: { success?: boolean; data?: MissionWorkBoardSnapshot } | null = null;
-      try {
-        payload = await response.json();
-      } catch {
-        throw new Error(missionWorkErrorMessage(response.status));
-      }
-
-      if (!response.ok || !payload?.success || !payload?.data) {
-        throw new Error(missionWorkErrorMessage(response.status));
-      }
+      const snapshot = await readMissionWorkSnapshot(response);
       if (controller.signal.aborted || requestToken !== requestTokenRef.current) return;
 
-      setBoard(payload.data);
+      setBoard(snapshot);
       setLastUpdatedAt(new Date().toISOString());
       setError("");
     } catch (cause) {
