@@ -176,7 +176,7 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     expect(observedCandidateCount).toBeLessThanOrEqual(2);
   });
 
-  it("fails closed when remote semantic scoring is not explicitly approved", () => {
+  it("fails closed when remote semantic scoring is not explicitly approved", async () => {
     const remoteScorer: SemanticRetrievalScorer = {
       providerId: "approved-remote-embedding",
       modelRevision: "remote-v1",
