@@ -248,6 +248,9 @@ export interface CompositionCaption {
     readonly highlightColor?: string;
     readonly animation: "POP_IN" | "FADE" | "KINETIC_WORD" | "NONE";
   };
+  /** Optional portable-editor fields; renderers may ignore unsupported positioning until qualified. */
+  readonly position?: string;
+  readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
 export interface CompositionCanvas {
