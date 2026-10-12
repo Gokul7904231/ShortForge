@@ -332,14 +332,12 @@ export async function buildEditorSourcePackage(
 
   const resolvedFiles: ResolvedSource[] = [];
   const sourceRoles = new Map<string, Set<"VISUAL" | "AUDIO">>();
-  const sourceMediaTypes = new Map<string, string>();
   let totalBytes = 0;
 
   try {
     for (const source of pending) {
       const key = source.src;
       const mimeType = mimeTypeForSource(source.src, source.role, source.mediaType);
-      sourceMediaTypes.set(key, mimeType);
       const roles = sourceRoles.get(key) ?? new Set<"VISUAL" | "AUDIO">();
       roles.add(source.role);
       sourceRoles.set(key, roles);
