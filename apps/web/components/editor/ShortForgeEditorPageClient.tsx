@@ -278,7 +278,14 @@ export default function ShortForgeEditorPageClient({ jobId }: { jobId: string })
           throw new Error("The preview renderer did not return a frame.");
         }
         const cacheKey = document?.revision ?? 0;
-        setPreviewFrameUrl(payload.preview.previewUrl + "?revision=" + cacheKey + "&t=" + Date.now());
+        const previewQuery = new URLSearchParams({
+          compositionId: source.composition.compositionId,
+          sessionId,
+          timestampSeconds: String(seconds),
+          revision: String(cacheKey),
+          t: String(Date.now()),
+        });
+        setPreviewFrameUrl(payload.preview.previewUrl + "?" + previewQuery.toString());
         setStatus("Physical preview rendered at " + seconds.toFixed(2) + "s");
         return payload.preview;
       } catch (cause) {
