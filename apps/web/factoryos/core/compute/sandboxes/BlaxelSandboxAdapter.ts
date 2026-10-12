@@ -88,9 +88,9 @@ function toRuntime(sandbox: BlaxelSandbox): SandboxRuntime {
     updatedAt: new Date().toISOString(),
     providerMetadata: {
       name,
-      status: sandbox.status,
-      image: sandbox.image,
-      region: sandbox.region,
+      status: sandbox.metadata?.status ?? sandbox.status ?? sandbox.state,
+      image: sandbox.image ?? sandbox.spec?.image,
+      region: sandbox.region ?? sandbox.spec?.region,
     },
   };
 }
