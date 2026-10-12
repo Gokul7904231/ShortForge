@@ -44,7 +44,8 @@ function revisionMemoryId(scope: KnowledgeOSSnapshotScope, digest: string): stri
 }
 
 function sameScope(left: KnowledgeOSSnapshotScope, right: KnowledgeOSSnapshotScope): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  // Compare semantic scope identity, not caller-owned object property order.
+  return scopeLabel(left) === scopeLabel(right);
 }
 
 function decodeSnapshotRecord(

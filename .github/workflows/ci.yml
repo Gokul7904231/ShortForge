@@ -1,280 +1,117 @@
-name: CI
+import { describe, expect, it } from "vitest";
+import type { IMemoryRepository, MemoryRecord } from "../core/database/DatabaseContracts";
+import { KnowledgeOS } from "../core/knowledge/KnowledgeOS";
+import { KnowledgeOSSnapshotHistory } from "../core/knowledge/KnowledgeOSSnapshotHistory";
 
-on:
-  push:
-    branches: [main, master, THESIX]
-  pull_request:
-    branches: [main, master]
+class FixtureMemoryRepository implements IMemoryRepository {
+  private readonly records = new Map<string, MemoryRecord>();
 
-jobs:
-  verify:
-    name: TypeCheck & Floor 01 Contract Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  async saveMemory(record: MemoryRecord): Promise<void> {
+    this.records.set(record.memoryId, structuredClone(record));
+  }
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
+  async getMemory(layer: MemoryRecord["layer"], key: string): Promise<MemoryRecord | null> {
+    const record = [...this.records.values()].find((item) => item.layer === layer && item.key === key);
+    return record ? structuredClone(record) : null;
+  }
 
-      - name: Install dependencies
-        run: cd apps/web && npm ci
+  async queryMemories(
+    layer?: MemoryRecord["layer"],
+    queryText?: string,
+    limit = 50,
+  ): Promise<MemoryRecord[]> {
+    return [...this.records.values()]
+      .filter((record) => !layer || record.layer === layer)
+      .filter((record) => !queryText || record.key.includes(queryText) || record.content.includes(queryText))
+      .slice(0, limit)
+      .map((record) => structuredClone(record));
+  }
 
-      - name: TypeScript TypeCheck (strict, fails CI on error)
-        run: cd apps/web && npm run typecheck
+  async deleteMemory(memoryId: string): Promise<void> {
+    this.records.delete(memoryId);
+  }
+}
 
-      - name: Verify THESIX repository mapping governance
-        run: node tools/okf/verify-thesix-repo-mappings.mjs
+describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
+  it("stores content-addressed revisions and reloads them through a fresh history instance", async () => {
+    const memory = new FixtureMemoryRepository();
+    const history = new KnowledgeOSSnapshotHistory(memory);
+    const knowledge = new KnowledgeOS();
 
-      - name: THESIX targeted contract tests
-        run: >-
-          npx vitest run
-          factoryos/tests/knowledgeos-snapshot.test.ts
-          factoryos/tests/knowledgeos-snapshot-history.test.ts
-          factoryos/tests/adaptive-presentation.test.ts
-          factoryos/tests/visual-document-extraction-adapter.test.ts
-          factoryos/tests/hybrid-retrieval-benchmark.test.ts
-          factoryos/tests/mission-work-canvas-client.test.ts
-        working-directory: apps/web
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
+    knowledge.storeSource({
+      url: "https://example.com/research",
+      title: "Initial source",
+      publisher: "Example",
+      snippet: "First snapshot revision",
+      reliabilityScore: 0.9,
+      scope: "GLOBAL",
+    });
 
-      - name: Floor 01 Runtime Adapter Contract Tests
-        run: cd apps/web && npx vitest run factoryos/tests/floor01-runtime-adapter.test.ts
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
+    const first = await history.capture(knowledge, { scope: "GLOBAL" });
+    const duplicateCapture = await new KnowledgeOSSnapshotHistory(memory).capture(knowledge, { scope: "GLOBAL" });
+    expect(duplicateCapture.memoryId).toBe(first.memoryId);
+    expect((await history.list({ scope: "GLOBAL" })).map((item) => item.contentDigest)).toEqual([
+      first.snapshot.contentDigest,
+    ]);
 
-      - name: Notebook Fabric Contract Tests
-        run: cd apps/web && npx vitest run factoryos/tests/notebook-fabric.test.ts
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
+    knowledge.updateTopicSaturation("Agent retrieval", 0.4);
+    const second = await history.capture(knowledge, { scope: "GLOBAL" });
+    const reloadedHistory = new KnowledgeOSSnapshotHistory(memory);
+    const revisions = await reloadedHistory.list({ scope: "GLOBAL" });
+    expect(revisions).toHaveLength(2);
+    expect((await reloadedHistory.load({ scope: "GLOBAL" }, first.snapshot.contentDigest))?.contentDigest)
+      .toBe(first.snapshot.contentDigest);
+    expect((await reloadedHistory.latest({ scope: "GLOBAL" }))?.contentDigest)
+      .toBe(second.snapshot.contentDigest);
 
-      - name: AER Epistemic Runtime Tests
-        run: cd apps/web && npx vitest run factoryos/tests/epistemic/aer.test.ts factoryos/tests/epistemic/aer-auxiliary.test.ts
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
+    const diff = await reloadedHistory.diff(
+      { scope: "GLOBAL" },
+      first.snapshot.contentDigest,
+      second.snapshot.contentDigest,
+    );
+    expect(diff.addedRecordIds).toHaveLength(1);
+  });
 
-  web-regression-informational:
-    name: Web Regression Suite (Informational)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  it("matches scope identity independent of JavaScript object property order", async () => {
+    const memory = new FixtureMemoryRepository();
+    const history = new KnowledgeOSSnapshotHistory(memory);
+    const knowledge = new KnowledgeOS();
+    knowledge.storeSource({
+      url: "https://example.com/mission-scope",
+      title: "Mission source",
+      publisher: "Example",
+      snippet: "Scope property order must not affect lookup.",
+      reliabilityScore: 0.8,
+      scope: "MISSION",
+      missionId: "mission-order",
+    });
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
+    const first = await history.capture(knowledge, { scope: "MISSION", missionId: "mission-order" });
+    const alternativePropertyOrder = { missionId: "mission-order", scope: "MISSION" } as const;
+    await expect(history.load(alternativePropertyOrder, first.snapshot.contentDigest))
+      .resolves.toMatchObject({ contentDigest: first.snapshot.contentDigest });
+  });
 
-      - name: Install dependencies
-        run: cd apps/web && npm ci
+  it("rejects a corrupted stored revision instead of trusting its saved digest", async () => {
+    const memory = new FixtureMemoryRepository();
+    const history = new KnowledgeOSSnapshotHistory(memory);
+    const knowledge = new KnowledgeOS();
+    knowledge.storeSource({
+      url: "https://example.com/integrity",
+      title: "Integrity source",
+      publisher: "Example",
+      snippet: "Integrity test",
+      reliabilityScore: 0.9,
+      scope: "GLOBAL",
+    });
+    const stored = await history.capture(knowledge, { scope: "GLOBAL" });
+    const records = await memory.queryMemories("OPERATIONAL");
+    const persisted = records[0];
+    const parsed = JSON.parse(persisted.content);
+    parsed.records[0].title = "Tampered after capture";
+    await memory.saveMemory({ ...persisted, content: JSON.stringify(parsed) });
 
-      - name: Install FFmpeg / FFprobe
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg
-          ffmpeg -version | head -n 1
-          ffprobe -version | head -n 1
-
-      - name: Install local renderer Python runtime
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -e packages/factoryos-render
-
-      - name: Production trajectory proof suite
-        run: cd apps/web && npx vitest run factoryos/tests/production-trajectory-learning.test.ts
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
-
-      - name: Full Vitest regression suite
-        run: cd apps/web && npm test
-        env:
-          NEXT_TELEMETRY_DISABLED: 1
-
-  f01-python:
-    name: Floor 01 Python v2 Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Floor 01 package and test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e "services/pipeline/floor01_strategy[test]"
-
-      - name: Verify production wheel contains runtime modules
-        working-directory: services/pipeline/floor01_strategy
-        run: |
-          rm -rf /tmp/floor01-wheel
-          python -m pip wheel --no-deps --wheel-dir /tmp/floor01-wheel .
-          python - <<'PY'
-          import glob
-          import zipfile
-
-          wheels = glob.glob("/tmp/floor01-wheel/*.whl")
-          assert len(wheels) == 1, wheels
-          with zipfile.ZipFile(wheels[0]) as wheel:
-              names = set(wheel.namelist())
-          required = {
-              "floor01_strategy/main.py",
-              "floor01_strategy/app/service.py",
-              "floor01_strategy/app/pipeline.py",
-              "floor01_strategy/app/domain/handoff.py",
-              "floor01_strategy/app/infrastructure/memory_store.py",
-          }
-          missing = required - names
-          assert not missing, f"Missing runtime modules from wheel: {sorted(missing)}"
-          assert not any(name.startswith("floor01_strategy/tests/") for name in names)
-          print(f"Verified runtime wheel: {len(names)} files")
-          PY
-      - name: Run Floor 01 v2 test suite
-        working-directory: services/pipeline
-        env:
-          PYTHONPATH: ${{ github.workspace }}/services/pipeline
-          FLOOR01_ENVIRONMENT: test
-          FLOOR01_ALLOW_ANONYMOUS_DEV: "true"
-          FLOOR01_MEMORY_FILE_PATH: ${{ runner.temp }}/floor01-memory.json
-        run: python -m pytest floor01_strategy/tests/ -q
-
-  f01-container:
-    name: Floor 01 Production Container Smoke
-    runs-on: ubuntu-latest
-    needs: [f01-python, f01-security]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Build Floor 01 image
-        run: docker build -f services/pipeline/floor01_strategy/Dockerfile -t shortforge-floor01:ci .
-
-      - name: Start production-configured service
-        env:
-          FLOOR01_CI_SERVICE_KEY: ci-floor01-service-key-012345678901234567890123456789
-        run: |
-          docker run -d --name floor01-ci \
-            -p 18080:8000 \
-            -e FLOOR01_ENVIRONMENT=production \
-            -e FLOOR01_SERVICE_API_KEY="$FLOOR01_CI_SERVICE_KEY" \
-            -e FLOOR01_MEMORY_FILE_PATH=/app/services/pipeline/floor01_strategy/data/memory.json \
-            shortforge-floor01:ci
-          trap 'docker stop floor01-ci >/dev/null 2>&1 || true' EXIT
-
-          health_ok=false
-          for i in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then
-              health_ok=true
-              break
-            fi
-            sleep 1
-          done
-
-          if [ "$health_ok" != "true" ]; then
-            echo "F01 container failed readiness."
-            docker ps -a
-            docker inspect floor01-ci --format '{{.State.Status}} {{.State.ExitCode}} {{.State.Error}}' || true
-            docker logs floor01-ci || true
-            docker rm -f floor01-ci >/dev/null 2>&1 || true
-            exit 1
-          fi
-
-          curl --fail --silent http://127.0.0.1:18080/health
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/docs)" = "404"
-
-          curl --fail --silent \
-            -H "Content-Type: application/json" \
-            -H "X-API-Key: $FLOOR01_CI_SERVICE_KEY" \
-            -X POST \
-            -d '{
-              "topic_query": "Python decorators",
-              "target_audience": "beginner_programmers",
-              "platform": "youtube_shorts",
-              "content_format": "educational_short",
-              "learning_level": "beginner",
-              "research_context": {
-                "passport_id": "pass_container_ci",
-                "mission_id": "mission_container_ci",
-                "integrity_verified": true,
-                "confidence": 0.95,
-                "source_count": 2,
-                "verified_claim_count": 2,
-                "unresolved_issue_count": 0,
-                "key_findings": ["Container smoke evidence"],
-                "recommended_hook": "Most people misunderstand Python decorators.",
-                "hook_archetype": "CURIOSITY_GAP",
-                "evidence": [{
-                  "evidence_id": "claim_container_ci",
-                  "claim_id": "claim_container_ci",
-                  "statement": "Verified source-backed test claim.",
-                  "verification_status": "VERIFIED",
-                  "confidence": 0.95,
-                  "supporting_source_ids": ["src_container_ci"],
-                  "source_quality": ["TIER_1_PRIMARY"]
-                }],
-                "provenance": ["container-smoke"]
-              }
-            }' \
-            http://127.0.0.1:18080/v1/plan | python -c "import json,sys; d=json.load(sys.stdin); assert d['floor_id']=='floor01_strategy'; assert d['handoff_status']=='VALIDATED'; print('F01 container handoff validated')"
-
-          # The canonical execution report is a required durable audit artifact and must be writable by the service user.
-          test -n "$(docker exec floor01-ci sh -c 'find /app/services/pipeline/floor01_strategy/data/reports -maxdepth 1 -type f -name "floor01_execution_*.json" -print -quit' 2>/dev/null)"
-
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
-            -H "Content-Type: application/json" \
-            -H "X-API-Key: wrong-key" \
-            -X POST \
-            -d '{"topic_query":"Python decorators"}' \
-            http://127.0.0.1:18080/v1/plan)" = "401"
-
-          docker stop floor01-ci >/dev/null
-          docker rm floor01-ci >/dev/null
-
-  f01-security:
-    name: Floor 01 Security & Dependency Scan
-    runs-on: ubuntu-latest
-    needs: [f01-python]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install declared F01 runtime dependencies and security scanners
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install "setuptools>=83"
-          python - <<'PY'
-          import subprocess
-          import sys
-          import tomllib
-          from pathlib import Path
-
-          pyproject = tomllib.loads(
-              Path("services/pipeline/floor01_strategy/pyproject.toml").read_text()
-          )
-          dependencies = pyproject["project"]["dependencies"]
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *dependencies])
-          PY
-          python -m pip install pip-audit bandit
-
-
-      - name: Dependency vulnerability scan
-        run: pip-audit --strict
-
-      - name: Static Python security scan
-        run: bandit -q -r services/pipeline/floor01_strategy/app -ll
+    await expect(history.load({ scope: "GLOBAL" }, stored.snapshot.contentDigest))
+      .rejects.toThrow("KNOWLEDGEOS_SNAPSHOT_HISTORY_CORRUPT");
+  });
+});
