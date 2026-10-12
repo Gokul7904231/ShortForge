@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "okf-control-plane-v3-pr195",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/decision-protocol.md",
+      ".okf/principles.md",
+      ".okf/intelligence/aer.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/decisions/okf-control-plane-v3-20261005.md",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.SECURITY.LEAST_PRIVILEGE",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "zap": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "notes": "V3 adds governance evidence, bounded policy context, and read-only observability. Key-required signing is fail-closed and no production key fallback exists."
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/governance/OKFAttestationSigner.ts",
+    "apps/web/factoryos/core/governance/OKFAttestationContracts.ts",
+    ".okf/schemas/okf-signed-attestation.schema.json",
+    ".okf/schemas/okf-release-provenance.schema.json",
+    ".okf/schemas/okf-policy-context.schema.json",
+    "tools/okf/attest.mjs",
+    "tools/okf/provenance.py",
+    "apps/web/factoryos/core/governance/OKFPolicyContext.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERPolicyContextLink.ts",
+    "apps/web/app/api/governance/okf/route.ts",
+    "apps/web/app/(os)/governance/okf/page.tsx",
+    "apps/web/factoryos/tests/okf-control-plane-v3.test.ts",
+    ".github/workflows/okf-control-plane-v3.yml"
+  ],
+  "disposition": "BLOCKED",
+  "verificationResults": {
+    "okfV2": "PENDING_CI",
+    "okfV3": "PENDING_CI",
+    "signedAttestation": "KEY_CONFIGURATION_REQUIRED",
+    "releaseProvenance": "IMPLEMENTED_EVIDENCE_ONLY",
+    "policyContext": "IMPLEMENTED_ADVISORY_ONLY",
+    "dashboard": "IMPLEMENTED_OBSERVABILITY_ONLY",
+    "githubRepositoryProtection": "UNPROVEN__ISSUE_188"
+  },
+  "verificationPlan": [
+    "Run V2/V3 governance CI on current branch head.",
+    "Configure durable Ed25519 attestation keys and required signed-attestation check before production promotion.",
+    "Bind release provenance to F07 ReleaseAuthorization evidence.",
+    "Validate dashboard against current machine evidence.",
+    "Do not promote while required evidence remains pending."
+  ],
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  }
+}

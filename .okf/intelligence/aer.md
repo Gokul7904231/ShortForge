@@ -1880,3 +1880,9 @@ AER and Ascalon may receive compact applicable policy context and rule IDs, but 
 Where an OKF rule is unavailable, contradictory, expired, or UNPROVEN, AER must surface the condition and follow the existing fail-closed/escalation policy rather than synthesize certainty.
 
 Machine governance status is carried as evidence metadata. AER cannot turn an OKF sweep attestation into a production authorization decision.
+
+## V3 PolicyContext binding — 2026-10-05
+
+AER may consume the compiled `OKFPolicyContext` as bounded epistemic input. The context carries stable rule IDs, applicable normative constraints, provenance fingerprints, and evidence states. It never grants execution or policy-rewrite authority.
+
+AER/Ascalon must preserve `ADVISORY_CONTEXT_ONLY`, `canAuthorizeExecution=false`, and `canRewritePolicy=false`. Governance context may explain why an action is constrained; it cannot authorize the action.

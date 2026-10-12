@@ -32,11 +32,6 @@ jobs:
           if [ -z "$OKF_BASE_REF" ]; then OKF_BASE_REF="${{ github.event.before }}"; fi
           python -m tools.okf.lint
           python -m tools.okf.sweep --base "$OKF_BASE_REF" --head "$OKF_HEAD_REF" --output okf-sweep.json
-      - name: Run OKF control-plane V2 drift and coverage gate
-        run: |
-          python -m unittest tools.okf.tests.test_control_plane -v
-          python -m tools.okf.drift --json-out okf-drift.json
-
       - name: Require and validate Team report on pull requests
         if: github.event_name == 'pull_request'
         run: |
@@ -53,8 +48,6 @@ jobs:
       - name: Upload sweep evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: okf-v2-evidence
-          path: |
-            okf-sweep.json
-            okf-drift.json
+          name: okf-sweep-attestation
+          path: okf-sweep.json
           if-no-files-found: error
