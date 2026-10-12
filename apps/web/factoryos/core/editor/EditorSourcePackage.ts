@@ -413,7 +413,7 @@ export async function buildEditorSourcePackage(
     const captions = intent.tracks.captions.map(captionForCue);
     const createdAt = new Date().toISOString();
     const compositionId = "sf-editor-" + digest(input.jobId + ":" + intent.intentId).slice(0, 24);
-    const compositionHashSha256 = digest(JSON.stringify({
+    const sourceFingerprintSha256 = digest(JSON.stringify({
       renderIntentId: intent.intentId,
       jobId: input.jobId,
       sourceAssets: sourceAssets.map((asset) => asset.sha256).sort(),
@@ -444,7 +444,7 @@ export async function buildEditorSourcePackage(
       metadata: {
         missionId: intent.missionId,
         sourceTimelineId: intent.sourceCompositionId || intent.intentId,
-        provenanceDigest: compositionHashSha256,
+        provenanceDigest: sourceFingerprintSha256,
         extensions: {
           ownerId: input.ownerId,
           sourceJobId: input.jobId,
@@ -460,6 +460,7 @@ export async function buildEditorSourcePackage(
 
     const validation = validateCompositionIR(composition);
     if (!validation.valid) throw new Error("EDITOR_SOURCE_COMPOSITION_INVALID:" + validation.errors.join("; "));
+    const compositionHashSha256 = digest(JSON.stringify(composition));
 
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shortforge-editor-source-"));
     const compositionPath = path.join(tempDir, compositionId + ".json");
@@ -484,7 +485,7 @@ export async function buildEditorSourcePackage(
         sourceAssetSha256s: sourceAssets.map((asset) => asset.sha256).sort(),
         sourceAssets,
         renderIntentId: intent.intentId,
-        timelineFingerprint: compositionHashSha256,
+        timelineFingerprint: sourceFingerprintSha256,
         createdAt,
       };
     } finally {
