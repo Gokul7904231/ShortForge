@@ -54,6 +54,25 @@
         "TypeScript TimelineIR upgrade maps source trims, scene/source metadata, transitions and caption metadata into CompositionIR.",
         "Regression tests cover F02-to-F03 quiz format propagation, F05 bridge field preservation, and TimelineIR-to-CompositionIR upgrade."
       ]
+    },
+    {
+      "name": "source-package",
+      "status": "IMPLEMENTED_BEST_EFFORT_PENDING_CI",
+      "findings": [
+        "Added a bounded EditorSourcePackage builder that stages real source files into CAS, validates signatures, saves CompositionIR as an immutable CAS artifact, and records owner/job/source hashes.",
+        "Floor 05 orchestration attempts package creation from the same RenderIntent used for F06 and persists a successful package in the completed VideoJob manifest.",
+        "The editor source API verifies package schema, job/owner binding, composition hash/length and each source asset's actual CAS digest before opening it.",
+        "Missing placeholder media and template-specific LocalRenderIntent intentionally fall back; the Python canonical F05 TimelineIR is not yet directly packaged for every job."
+      ]
+    },
+    {
+      "name": "caption-editing",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "Added a revision-checked UPDATE_CAPTION_TEXT operation to the canonical editor command engine.",
+        "Studio now exposes a caption inspector and Apply caption text action; flattened jobs with no independent caption cues explain the limitation.",
+        "Regression tests cover successful text change, preservation of scene metadata, and rejection of empty/unknown captions."
+      ]
     }
   ],
   "security": {
@@ -72,7 +91,12 @@
       "services/pipeline/floor05_timeline_composition/app/workers/composition_worker.py",
       "services/pipeline/floor05_timeline_composition/app/services/timeline_ir_bridge.py",
       "apps/web/factoryos/core/timeline/TimelineIR.ts",
-      "apps/web/factoryos/tests/timeline-ir-editor-metadata.test.ts"
+      "apps/web/factoryos/tests/timeline-ir-editor-metadata.test.ts",
+      "apps/web/factoryos/core/editor/EditorSourcePackage.ts",
+      "apps/web/factoryos/tests/editor-source-package.test.ts",
+      "apps/web/factoryos/tests/editor-contracts.test.ts",
+      "apps/web/components/editor/ShortForgeEditorStudio.tsx",
+      "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
   },
@@ -93,6 +117,10 @@
     {
       "id": "f05-timeline-semantic-loss",
       "proposal": "Preserve F02 narrative format and F05 scene/asset/trim/transition/caption metadata through the canonical interchange model. Next still requires portable CAS staging and an owner-bound source-manifest link from F06 into the editor job manifest."
+    },
+    {
+      "id": "best-effort-source-package",
+      "proposal": "Persist an owner-bound CAS composition package when every real RenderIntent dependency resolves; reject placeholder or unsupported sources and retain labelled flattened fallback. Follow up by packaging the canonical F05 TimelineIR plus source media for non-template and template execution paths."
     }
   ],
   "acceptedResolutions": [
@@ -107,12 +135,16 @@
     {
       "id": "canonical-timeline-interop",
       "resolution": "Retain F05 TimelineIR as a canonical source boundary and upgrade it to CompositionIR without discarding supported source scene identities, source trim ranges, caption metadata or transitions."
+    },
+    {
+      "id": "caption-text-command",
+      "resolution": "Edit caption text only through a typed, revision-checked command and preserve existing caption timing, style and scene metadata."
     }
   ],
   "disposition": "BLOCKED",
   "finalDisposition": {
     "status": "BLOCKED_PENDING_QUALIFICATION",
-    "reason": "The draft implementation has not passed full CI/E2E/security qualification, and true scene-level editing still depends on a persistent F05/F06 source manifest."
+    "reason": "The native page, owner-bound source package scaffold and caption edit command are implemented on the draft branch; current-head CI/E2E and security qualification are pending, and canonical F05 source portability/template adapters plus safe export remain incomplete."
   },
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/242",
@@ -122,7 +154,9 @@
     "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197741",
     ".okf/research/build-shortforge-editor-20261012.md",
     "services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py",
-    "services/pipeline/floor05_timeline_composition/tests/test_f05_wave3_reconciliation.py"
+    "services/pipeline/floor05_timeline_composition/tests/test_f05_wave3_reconciliation.py",
+    "apps/web/factoryos/tests/editor-source-package.test.ts",
+    "apps/web/factoryos/tests/editor-contracts.test.ts"
   ],
   "modelMetadata": {
     "assistant": "GPT-6",
