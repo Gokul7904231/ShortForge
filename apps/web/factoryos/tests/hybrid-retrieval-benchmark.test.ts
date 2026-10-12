@@ -84,11 +84,52 @@ describe("hybrid retrieval benchmark", () => {
     await expect(runHybridRetrievalBenchmark(provider, [cases[0], cases[0]])).rejects.toThrow("RETRIEVAL_BENCHMARK_INVALID_CASE_ID");
   });
 
+  it("rejects comparisons when the judged query or relevance set differs", () => {
+    const baseCase: RetrievalBenchmarkReport["cases"][number] = {
+      caseId: "case-1",
+      category: "LEXICAL",
+      queryDigest: "1".repeat(64),
+      relevanceSetDigest: "a".repeat(64),
+      status: "OK",
+      retrievedDocumentIds: ["doc-a"],
+      relevantCount: 1,
+      relevantRetrievedAtK: 1,
+      reciprocalRank: 1,
+      exactIdentifierHit: null,
+      latencyMs: 1,
+    };
+    const candidateCase = { ...baseCase, relevanceSetDigest: "b".repeat(64) };
+    const metrics: RetrievalBenchmarkReport["metrics"] = {
+      recallAtK: 1,
+      meanReciprocalRank: 1,
+      exactIdentifierHitRate: null,
+      provenanceCoverage: 1,
+      p50LatencyMs: 1,
+      p95LatencyMs: 1,
+      providerErrorRate: 0,
+    };
+    const report = (providerId: string, item: RetrievalBenchmarkReport["cases"][number]): RetrievalBenchmarkReport => ({
+      schemaVersion: "hybrid-retrieval-benchmark.v1",
+      providerId,
+      implementationRevision: "rev",
+      measuredAt: "2026-10-12T00:00:00.000Z",
+      caseCount: 1,
+      topK: 5,
+      metrics,
+      cases: [item],
+    });
+
+    expect(() => compareRetrievalBenchmarks(report("baseline", baseCase), report("candidate", candidateCase)))
+      .toThrow("RETRIEVAL_BENCHMARK_BASELINE_MISMATCH");
+  });
+
   it("keeps a candidate blocked if ranking, provenance, latency, or provider health misses its gate", () => {
     const benchmarkCases: RetrievalBenchmarkReport["cases"] = [
       {
         caseId: "case-a",
         category: "LEXICAL",
+        queryDigest: "1".repeat(64),
+        relevanceSetDigest: "a".repeat(64),
         status: "OK",
         retrievedDocumentIds: [],
         relevantCount: 1,
@@ -100,6 +141,8 @@ describe("hybrid retrieval benchmark", () => {
       {
         caseId: "case-b",
         category: "EXACT_IDENTIFIER",
+        queryDigest: "2".repeat(64),
+        relevanceSetDigest: "b".repeat(64),
         status: "OK",
         retrievedDocumentIds: [],
         relevantCount: 1,
