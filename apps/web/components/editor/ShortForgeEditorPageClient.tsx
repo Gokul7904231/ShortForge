@@ -15,7 +15,7 @@ import type { CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
 interface EditorSourceResponse {
   success: boolean;
   error?: string;
-  sourceKind: "FLATTENED_MP4";
+  sourceKind: "FLATTENED_MP4" | "COMPOSITION_PACKAGE";
   sourceNotice: string;
   job: {
     jobId: string;
