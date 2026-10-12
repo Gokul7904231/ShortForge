@@ -60,21 +60,26 @@ export async function GET(
     const job = await readJobManifest(sourceJobId);
     if (
       !job ||
-      !job.editorSource ||
+      (!job.editorSource && !job.editorSourcePackage) ||
       (job.userId !== user.uid && !isAdminUser(user.role)) ||
-      job.editorSource.ownerId !== job.userId
+      (job.editorSourcePackage && job.editorSourcePackage.ownerId !== job.userId) ||
+      (job.editorSource && job.editorSource.ownerId !== job.userId)
     ) {
       return new Response("Preview not found.", { status: 404 });
     }
 
     // A preview ID is derived from content and timestamp, so the ID itself is not a capability.
     // Bind every preview request to the source job's exact single-asset CAS digest.
-    const expectedSourceSha = job.editorSource.sha256.toLowerCase();
+    const allowedSourceHashes = job.editorSourcePackage
+      ? new Set(job.editorSourcePackage.sourceAssetSha256s.map((sha) => sha.toLowerCase()))
+      : new Set(job.editorSource ? [job.editorSource.sha256.toLowerCase()] : []);
     const sourceHashes = new Set<string>();
     const validateSource = (src: string | undefined) => {
       const match = typeof src === "string" ? /^cas:\/\/([a-f0-9]{64})$/i.exec(src) : null;
       if (!match) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED");
-      sourceHashes.add(match[1]!.toLowerCase());
+      const sha = match[1]!.toLowerCase();
+      if (!allowedSourceHashes.has(sha)) throw new Error("EDITOR_SOURCE_CAS_NOT_DECLARED");
+      sourceHashes.add(sha);
     };
     for (const track of document.composition.tracks || []) {
       for (const clip of track.clips || []) {
@@ -84,7 +89,11 @@ export async function GET(
       }
     }
     for (const audio of document.composition.audio || []) validateSource(audio.src);
-    if (sourceHashes.size !== 1 || !sourceHashes.has(expectedSourceSha)) {
+    if (
+      sourceHashes.size === 0 ||
+      (!job.editorSourcePackage &&
+        (sourceHashes.size !== 1 || !sourceHashes.has(job.editorSource!.sha256.toLowerCase())))
+    ) {
       return new Response("Preview not found.", { status: 404 });
     }
 
