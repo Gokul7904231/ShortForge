@@ -12,6 +12,8 @@ export type VisualDocumentMimeType = (typeof VISUAL_DOCUMENT_MIME_TYPES)[number]
 
 export interface VisualDocumentExtractionProvider {
   readonly providerId: string;
+  /** LOCAL providers never send document bytes off-host; remote providers require explicit caller opt-in. */
+  readonly executionBoundary: "LOCAL" | "APPROVED_REMOTE";
   extract(request: {
     readonly bytes: Uint8Array;
     readonly mimeType: VisualDocumentMimeType;
@@ -24,6 +26,8 @@ export interface VisualDocumentExtractionProvider {
 export interface VisualDocumentExtractionOptions {
   /** Must be deliberately enabled by a caller after license, privacy, and hardware review. */
   readonly enabled?: boolean;
+  /** Must be explicitly true before an APPROVED_REMOTE provider may receive document bytes. */
+  readonly allowApprovedRemoteProvider?: boolean;
   readonly maxInputBytes?: number;
   readonly maxOutputBytes?: number;
   readonly timeoutMs?: number;
@@ -53,6 +57,7 @@ export interface VisualDocumentExtractionReceipt<T> {
 
 export class VisualDocumentExtractionAdapter {
   private readonly enabled: boolean;
+  private readonly allowApprovedRemoteProvider: boolean;
   private readonly maxInputBytes: number;
   private readonly maxOutputBytes: number;
   private readonly timeoutMs: number;
@@ -62,6 +67,7 @@ export class VisualDocumentExtractionAdapter {
     options: VisualDocumentExtractionOptions = {},
   ) {
     this.enabled = options.enabled === true;
+    this.allowApprovedRemoteProvider = options.allowApprovedRemoteProvider === true;
     this.maxInputBytes = options.maxInputBytes ?? 12 * 1024 * 1024;
     this.maxOutputBytes = options.maxOutputBytes ?? 256 * 1024;
     this.timeoutMs = options.timeoutMs ?? 30_000;
@@ -82,6 +88,16 @@ export class VisualDocumentExtractionAdapter {
   ): Promise<VisualDocumentExtractionReceipt<T>> {
     if (!this.enabled) throw new Error("VISION_EXTRACTION_DISABLED");
     if (!this.provider) throw new Error("VISION_EXTRACTION_PROVIDER_UNAVAILABLE");
+    if (!["LOCAL", "APPROVED_REMOTE"].includes(this.provider.executionBoundary)) {
+      throw new Error("VISION_EXTRACTION_INVALID_PROVIDER_BOUNDARY");
+    }
+    if (this.provider.executionBoundary === "APPROVED_REMOTE" && !this.allowApprovedRemoteProvider) {
+      throw new Error("VISION_EXTRACTION_REMOTE_PROVIDER_NOT_AUTHORIZED");
+    }
+    if (!this.provider.providerId.trim() || this.provider.providerId.length > 128 ||
+      /[\\u0000-\\u001F\\u007F]/.test(this.provider.providerId)) {
+      throw new Error("VISION_EXTRACTION_INVALID_PROVIDER_ID");
+    }
     if (!(request.bytes instanceof Uint8Array) || request.bytes.byteLength === 0) {
       throw new Error("VISION_EXTRACTION_EMPTY_INPUT");
     }

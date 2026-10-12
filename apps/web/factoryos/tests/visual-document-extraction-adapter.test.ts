@@ -11,6 +11,7 @@ const outputSchema = z.object({ title: z.string().min(1), pageCount: z.number().
 function providerReturning(value: unknown): VisualDocumentExtractionProvider {
   return {
     providerId: "test-vision-provider",
+    executionBoundary: "LOCAL",
     extract: vi.fn(async () => value),
   };
 }
@@ -35,6 +36,27 @@ describe("VisualDocumentExtractionAdapter", () => {
 
     await expect(adapter.extract(request())).rejects.toThrow("VISION_EXTRACTION_DISABLED");
     expect(provider.extract).not.toHaveBeenCalled();
+  });
+
+  it("denies remote document submission until the caller explicitly approves that boundary", async () => {
+    const provider: VisualDocumentExtractionProvider = {
+      providerId: "approved-hosted-vision",
+      executionBoundary: "APPROVED_REMOTE",
+      extract: vi.fn(async () => ({ title: "Invoice", pageCount: 1 })),
+    };
+    const denied = new VisualDocumentExtractionAdapter(provider, { enabled: true });
+    await expect(denied.extract(request())).rejects.toThrow("VISION_EXTRACTION_REMOTE_PROVIDER_NOT_AUTHORIZED");
+    expect(provider.extract).not.toHaveBeenCalled();
+
+    const approved = new VisualDocumentExtractionAdapter(provider, {
+      enabled: true,
+      allowApprovedRemoteProvider: true,
+    });
+    await expect(approved.extract(request())).resolves.toMatchObject({
+      providerId: "approved-hosted-vision",
+      verificationStatus: "UNVERIFIED",
+    });
+    expect(provider.extract).toHaveBeenCalledTimes(1);
   });
 
   it("validates output locally and records the source digest without claiming verification", async () => {
@@ -64,6 +86,7 @@ describe("VisualDocumentExtractionAdapter", () => {
     let signal: AbortSignal | undefined;
     const provider: VisualDocumentExtractionProvider = {
       providerId: "slow-provider",
+      executionBoundary: "LOCAL",
       extract: ({ signal: providerSignal }) => {
         signal = providerSignal;
         return new Promise(() => undefined);

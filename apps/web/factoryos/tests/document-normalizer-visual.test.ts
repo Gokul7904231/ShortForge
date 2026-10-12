@@ -11,6 +11,7 @@ const schema = z.object({ title: z.string().min(1), summary: z.string().min(1) }
 function fakeProvider(response: unknown): VisualDocumentExtractionProvider {
   return {
     providerId: "document-fixture",
+    executionBoundary: "LOCAL",
     async extract(request) {
       expect(request.mimeType).toBe("application/pdf");
       expect(request.sourceSha256).toMatch(/^[a-f0-9]{64}$/);
