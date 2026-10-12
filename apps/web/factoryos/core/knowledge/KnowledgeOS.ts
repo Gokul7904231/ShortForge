@@ -214,7 +214,8 @@ export class KnowledgeOS {
         relationType: "EVIDENCE_ATTESTS_REFERENCE",
         fromId: evidence.id,
         targetRef: evidence.targetRef,
-        resolved: true,
+        // External references are preserved but not dereferenced by KnowledgeOS.
+        resolved: false,
         provenanceDigest: createHash("sha256")
           .update(`${evidence.provenanceDigest}:${evidence.targetRef}:${evidence.sha256}`, "utf8")
           .digest("hex"),
