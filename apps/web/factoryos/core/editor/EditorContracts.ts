@@ -59,7 +59,7 @@ export type EditorCommand =
   | {
       readonly type: "UPDATE_CAPTION_STYLE";
       readonly captionId: string;
-      readonly stylePatch: Partial<CompositionCaption["style"]>;
+      readonly stylePatch: Partial<Pick<CompositionCaption["style"], "fontSize" | "primaryColor" | "highlightColor" | "animation">>;
     }
   | {
       readonly type: "SET_CLIP_TRANSFORM";
