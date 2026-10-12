@@ -42,7 +42,8 @@
       "status": "FOLLOW_UP_REQUIRED",
       "findings": [
         "A dedicated editor playback route now verifies session, job ownership, source binding, byte length and SHA-256.",
-        "No production export endpoint is exposed by this change; export remains locked pending worker input staging, Treasury admission, F06 output and F07 evidence."
+        "No production export endpoint is exposed by this change; export remains locked pending worker input staging, Treasury admission, F06 output and F07 evidence.",
+        "Initial editor open is now bound to the persisted CompositionIR digest; browser input cannot seed revision 0 from a hand-crafted document that merely reuses the job's allowed media hashes."
       ]
     },
     {
@@ -62,7 +63,9 @@
         "Added a bounded EditorSourcePackage builder that stages real source files into CAS, validates signatures, saves CompositionIR as an immutable CAS artifact, and records owner/job/source hashes.",
         "Floor 05 orchestration attempts package creation from the same RenderIntent used for F06 and persists a successful package in the completed VideoJob manifest.",
         "The editor source API verifies package schema, job/owner binding, composition hash/length and each source asset's actual CAS digest before opening it.",
-        "Missing placeholder media and template-specific LocalRenderIntent intentionally fall back; the Python canonical F05 TimelineIR is not yet directly packaged for every job."
+        "Missing placeholder media and template-specific LocalRenderIntent intentionally fall back; the Python canonical F05 TimelineIR is not yet directly packaged for every job.",
+        "CAS source MIME inference now reads the staged artifact metadata rather than requiring a filename extension, with a regression test for already-staged image/audio inputs.",
+        "Flattened imports now persist the exact initial CompositionIR as a CAS artifact; editor open verifies that the submitted document canonicalizes identically to the immutable saved composition."
       ]
     },
     {
@@ -103,7 +106,10 @@
       "apps/web/factoryos/core/editor/EditorContracts.ts",
       "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
       "apps/web/factoryos/core/editor/DurableEditor.ts",
-      "apps/web/factoryos/tests/editor-contracts.test.ts"
+      "apps/web/factoryos/tests/editor-contracts.test.ts",
+      "apps/web/app/api/editor/runtime/route.ts",
+      "apps/web/app/api/editor/source/[jobId]/route.ts",
+      "apps/web/factoryos/tests/editor-source-package.test.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
   },
@@ -151,7 +157,7 @@
   "disposition": "BLOCKED",
   "finalDisposition": {
     "status": "BLOCKED_PENDING_QUALIFICATION",
-    "reason": "The native page, best-effort owner-bound CAS source packages, F02-F05 timeline semantic preservation, caption text/style editing and caption-aware receipts are implemented on the draft branch. Current-head CI/browser/security qualification remains pending; portable canonical F05 source packages for every render path and safe export remain incomplete."
+    "reason": "The native page, best-effort CAS source package, immutable starting-composition guard, caption text/style editing and timeline semantics are implemented on the draft branch. Current-head CI/browser/security qualification remains pending; source packages for all renderer paths and safe export remain incomplete."
   },
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/242",
