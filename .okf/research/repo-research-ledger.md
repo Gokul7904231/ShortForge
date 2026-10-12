@@ -302,3 +302,19 @@ Observed pattern: timing quality can benefit from explicit cross-modal temporal 
 Design application: ReMaker treats temporal changes as first-class repair actions and can carry frame windows/temporal evidence; rhythm-aware repair policy is future work.
 Evidence: https://arxiv.org/abs/2605.27067
 
+## THESIX research wave — six repository inspirations — 2026-10-12
+
+The source mappings pin the inspected upstream commit and separately record ShortForge adoption status. These are clean-room reference records; they do not mean upstream code, tests, prompts, assets, or model weights have been copied.
+
+| Repository / pinned ref | License disclosure | Capability reviewed | Assimilation mode | ShortForge destination / current status |
+|---|---|---|---|---|
+| [HelixDB/helix-foundry](https://github.com/HelixDB/helix-foundry) @ 9780d74c85631a36bfdc545e105ffd7786477e63 | Apache-2.0 code | Local-first connected ontology / source relationships | RESEARCH_ONLY / PATTERN_EXTRACTION | KnowledgeOS, Memory Fabric, EvidenceGraphIR; audit gaps first; no new datastore |
+| [devdotfast/whiteboard](https://github.com/devdotfast/whiteboard) @ 2ddf3eb6c13d97b1d04a932c21de9a92029adaf9 | MIT | Requirement-to-implementation trace canvas | PARTIAL PATTERN ADOPTION | Overseer LiveMissionCanvas is a partial UI slice; tests and real mission proof pending |
+| [twostraws/SwiftUI-Agent-Skill](https://github.com/twostraws/SwiftUI-Agent-Skill) @ f9800713b24580bc444931949aad4519128605e8 | MIT | Modular agent skills and high-signal/token-conscious guidance | PARTIAL METHODOLOGY ADOPTION | Existing repo-assimilation skill updated; linter/tests pending; SwiftUI content excluded |
+| [CopilotKit/OpenIntelligentUI](https://github.com/CopilotKit/OpenIntelligentUI) @ f6e4388b26a64b9a0714943b08a1ce622b924eec | MIT | Sandboxed adaptive/generative UI and a structured interaction bridge | RESEARCH_ONLY | Existing task-specific React UI only; no general generative renderer |
+| [datalab-to/lift](https://github.com/datalab-to/lift) @ 1590a27d6cd2e31ac5ea826bd8ceedf07f950d37 | Apache-2.0 code; modified OpenRAIL-M model-weight terms per upstream README | Schema-directed vision extraction from PDFs/images | EXPERIMENT_ONLY / ISOLATED_PROVIDER | Candidate behind DocumentNormalizer; license, hardware, privacy, and quality gates pending |
+| [zvec-ai/zvec-grep](https://github.com/zvec-ai/zvec-grep) @ 49e11642f0fd8817407102fdb5696b1a48283412 | Apache-2.0 | Exact/ripgrep-style search + BM25 + vector retrieval | EXPERIMENT_ONLY / BENCHMARK_FIRST | Benchmark candidate for repository search/Devourer; no runtime integration |
+
+See .okf/research/repo-mappings/ for source-specific adopted/rejected patterns, risks, acceptance criteria, and verification limits. Decision gate: .okf/decisions/thesix-six-repo-assimilation-20261012.md.
+
+Important: upstream license metadata and README disclosures were reviewed, but this ledger is not a legal opinion. Model weights and hosted APIs can have terms different from the code license; Lift specifically requires separate model-weight review. No ShortForge integration/test/benchmark is implied by source review.
