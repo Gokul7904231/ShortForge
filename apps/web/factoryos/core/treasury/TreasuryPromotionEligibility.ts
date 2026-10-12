@@ -280,7 +280,7 @@ export function evaluateTreasuryPromotionEligibility(
   if (!costEligible) reasonCodes.push("SAVINGS_THRESHOLD_NOT_MET_OR_COST_UNMEASURED");
   if (!latencyEligible) reasonCodes.push("P90_LATENCY_GATE_FAILED_OR_BASELINE_UNMEASURED");
   if (!verificationEligible) reasonCodes.push("VERIFICATION_NON_INFERIORITY_GATE_FAILED");
-  const decision =
+  const decision: "ELIGIBLE_FOR_HUMAN_REVIEW" | "NOT_ELIGIBLE" =
     sampleEligible && costEligible && latencyEligible && verificationEligible
       ? "ELIGIBLE_FOR_HUMAN_REVIEW"
       : "NOT_ELIGIBLE";
