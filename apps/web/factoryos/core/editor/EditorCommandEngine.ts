@@ -114,6 +114,27 @@ export function applyEditorCommand(composition: CompositionIR, command: EditorCo
       if (!found) throw new Error("EDITOR_CAPTION_NOT_FOUND");
       return { ...composition, captions };
     }
+    case "UPDATE_CAPTION_STYLE": {
+      const patch = command.stylePatch;
+      if (patch.fontSize !== undefined && (!Number.isFinite(patch.fontSize) || patch.fontSize < 8 || patch.fontSize > 144)) {
+        throw new Error("EDITOR_CAPTION_FONT_SIZE_OUT_OF_RANGE");
+      }
+      if (patch.primaryColor !== undefined && !/^#[0-9a-f]{6}$/i.test(patch.primaryColor)) {
+        throw new Error("EDITOR_CAPTION_COLOR_INVALID");
+      }
+      if (patch.highlightColor !== undefined && !/^#[0-9a-f]{6}$/i.test(patch.highlightColor)) {
+        throw new Error("EDITOR_CAPTION_HIGHLIGHT_COLOR_INVALID");
+      }
+      if (Object.keys(patch).length === 0) throw new Error("EDITOR_CAPTION_STYLE_PATCH_EMPTY");
+      let found = false;
+      const captions = composition.captions.map((caption) => {
+        if (caption.id !== command.captionId) return caption;
+        found = true;
+        return { ...caption, style: { ...caption.style, ...patch } };
+      });
+      if (!found) throw new Error("EDITOR_CAPTION_NOT_FOUND");
+      return { ...composition, captions };
+    }
     case "SET_CLIP_TRANSFORM":
       return updateClip(composition, command.trackId, command.clipId, (clip) => ({
         ...clip,
