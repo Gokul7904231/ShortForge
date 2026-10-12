@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
-import { verifyAuthAndRole } from "@/lib/auth/auth";
+import { verifyAuthAndRole, verifyWritePermission } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import { readJobManifest } from "@/lib/jobs-history";
@@ -98,7 +98,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await verifyAuthAndRole(request, "EDITOR");
+    const user = await verifyAuthAndRole(request, "USER");
+    verifyWritePermission(user);
     const body = await request.json();
     const operation = requireString(body.operation, "operation");
     const runtime = await getEditorRuntime();
