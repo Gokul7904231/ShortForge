@@ -1,5 +1,4 @@
 import type {
-  KnowledgeContentType,
   KnowledgeDocument,
   ShortForgeQualityReport,
 } from "../intelligence/knowledge/OKFContracts";
@@ -85,6 +84,16 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     if (!Number.isSafeInteger(this.maxCorpusDocuments) ||
       this.maxCorpusDocuments < 1 || this.maxCorpusDocuments > 50_000) {
       throw new Error("HYBRID_RETRIEVAL_INVALID_CORPUS_LIMIT");
+    }
+    if (options.semanticScorer && (
+      !options.semanticScorer.providerId.trim() ||
+      options.semanticScorer.providerId.length > 96 ||
+      SECRET_PATH_CONTROL.test(options.semanticScorer.providerId) ||
+      !options.semanticScorer.modelRevision.trim() ||
+      options.semanticScorer.modelRevision.length > 128 ||
+      SECRET_PATH_CONTROL.test(options.semanticScorer.modelRevision)
+    )) {
+      throw new Error("HYBRID_RETRIEVAL_INVALID_SEMANTIC_PROVIDER");
     }
     this.providerId = options.semanticScorer
       ? "shortforge-hybrid-exact-bm25-vector-rerank"
@@ -265,7 +274,6 @@ function scoreBm25(
       document,
       frequencies,
       length: weightedTokens.length,
-      titleTokenCount: titleTokens.length,
     };
   });
 
