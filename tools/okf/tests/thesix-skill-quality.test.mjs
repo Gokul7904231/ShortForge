@@ -35,7 +35,7 @@ test("enforces the context ceiling and blocked/unproven evidence semantics", () 
 });
 
 test("ignores short repeated labels and accepts canonical capabilities", () => {
-  const content = "- License\n- License\nBLOCKED and UNPROVEN are explicit. CAP_NET_READ";
+  const content = "- License\n- License\nBLOCKED and UNPROVEN are explicit.\n## Required Capabilities\n- CAP_NET_READ";
   const result = analyzeSkillQuality(content, "CAP_NET_READ");
   assert.equal(result.issues.length, 0);
   assert.deepEqual(result.capabilityReferences, ["CAP_NET_READ"]);
