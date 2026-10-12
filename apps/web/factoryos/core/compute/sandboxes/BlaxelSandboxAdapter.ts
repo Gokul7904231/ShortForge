@@ -258,7 +258,11 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
       if (state === "FAILED" || state === "TERMINATED") return toRuntime(sandbox);
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    return this.getRuntime(resourceId, credentials);
+    const last = await this.getRuntime(resourceId, credentials);
+    if (last.state !== "RUNNING") {
+      throw new Error("BLAXEL_SANDBOX_NOT_READY:" + last.state);
+    }
+    return last;
   }
 
   async uploadFile(
