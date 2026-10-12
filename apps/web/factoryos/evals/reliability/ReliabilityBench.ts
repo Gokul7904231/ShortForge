@@ -4,7 +4,14 @@
  */
 
 import { RecoveryEngine } from "../../core/recovery/RecoveryEngine";
-import { CostGovernor } from "../../core/governor/CostGovernor";
+import {
+  createTreasuryAccount,
+  InMemoryTreasuryLedger,
+} from "../../core/treasury/TreasuryLedger";
+import { TreasuryDeniedError, TreasuryKernel } from "../../core/treasury/TreasuryKernel";
+import { TreasuryPriceRegistry } from "../../core/treasury/TreasuryPriceRegistry";
+import { TreasuryService } from "../../core/treasury/TreasuryService";
+import { computeTreasuryExecutionScopeDigest } from "../../core/treasury/TreasuryScope";
 
 export interface ReliabilityScenarioResult {
   readonly scenarioId: string;
@@ -50,7 +57,7 @@ export class ReliabilityBench {
     results.push(this.runQuotaRaceScenario());
 
     // Scenario 6: Free-First Cost Policy Enforcement (Blocking Paid API)
-    results.push(this.runCostGovernorEnforcementScenario());
+    results.push(await this.runTreasuryAdmissionDenialScenario());
 
     // Scenario 7: Stale Job Recovery
     results.push(this.runStaleJobRecoveryScenario());
@@ -168,19 +175,78 @@ export class ReliabilityBench {
     };
   }
 
-  private static runCostGovernorEnforcementScenario(): ReliabilityScenarioResult {
-    CostGovernor.setPolicy({ mode: "FREE_FIRST", paidFallbackAllowed: false });
-    const check = CostGovernor.evaluateInvocation(true, 0.05);
-    const passed = !check.allowed && check.requiresApproval;
+  private static async runTreasuryAdmissionDenialScenario(): Promise<ReliabilityScenarioResult> {
+    const now = new Date();
+    const ledger = new InMemoryTreasuryLedger();
+    const kernel = new TreasuryKernel(
+      ledger,
+      new TreasuryPriceRegistry(),
+      undefined,
+      () => new Date(now),
+    );
+    const treasury = new TreasuryService(kernel);
+    const accountId = "reliability-bench-unfunded";
+    ledger.seedAccount(
+      createTreasuryAccount(accountId, 0, 0, "OPEN", now, 0),
+    );
+
+    const commandId = "reliability-rel-006-unfunded-spend";
+    let deniedByTreasury = false;
+    try {
+      await treasury.reserve({
+        commandId,
+        overseerCommandId: commandId,
+        issuer: { authority: "OVERSEER", issuerId: "reliability-bench" },
+        accountId,
+        missionId: "reliability-rel-006",
+        runId: "reliability-bench",
+        floorId: "floor02_scripting",
+        taskId: commandId,
+        attemptId: commandId,
+        purpose: "REL-006 must prove Treasury rejects unfunded spend",
+        resourceRequest: [{
+          kind: "INFERENCE",
+          providerId: "reliability-bench-provider",
+          modelId: "reliability-bench-model",
+          unit: "INVOCATION",
+          quantity: 1,
+          verificationRequired: false,
+          paidRoute: false,
+          metadata: { capability: "SCRIPT" },
+        }],
+        budgetEnvelope: {
+          maxCostUsd: 0.05,
+          maxTokens: 0,
+          maxCapacityUnits: 0,
+          maxRetries: 0,
+        },
+        priority: "NORMAL",
+        expiresAt: new Date(now.getTime() + 60_000).toISOString(),
+        idempotencyKey: commandId,
+        scopeDigest: computeTreasuryExecutionScopeDigest({
+          version: 1,
+          missionId: "reliability-rel-006",
+          jobId: commandId,
+          floorId: "floor02_scripting",
+          overseerCommandId: commandId,
+          kind: "INFERENCE",
+          resourceId: "reliability-bench-model",
+        }),
+      });
+    } catch (error) {
+      deniedByTreasury = error instanceof TreasuryDeniedError;
+    }
+
+    const passed = deniedByTreasury;
     return {
       scenarioId: "REL-006",
-      name: "CostGovernor Paid Provider Silent Spend Block",
-      trialsCount: 5,
+      name: "Treasury Kernel rejects unfunded spend",
+      trialsCount: 1,
       passAt1: passed ? 1.0 : 0.0,
-      passAt3: 1.0,
-      recoverySuccessRate: 1.0,
+      passAt3: passed ? 1.0 : 0.0,
+      recoverySuccessRate: passed ? 1.0 : 0.0,
       meanTimeToRecoveryMs: 5,
-      policyViolations: 0,
+      policyViolations: passed ? 0 : 1,
       totalCostUsd: 0.0,
     };
   }

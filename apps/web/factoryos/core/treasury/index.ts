@@ -13,3 +13,5 @@ export * from "./TreasuryEntitlementPolicy";
 export * from "./TreasuryEconomicAdvice";
 export * from "./TreasuryEconomicCalibration";
 export * from "./TreasuryShadowRouteEvaluator";
+
+export * from "./TreasuryPromotionEligibility";
