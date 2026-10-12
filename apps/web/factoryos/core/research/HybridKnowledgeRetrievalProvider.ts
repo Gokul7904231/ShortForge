@@ -217,8 +217,9 @@ function normalize(value: string): string {
 }
 
 function tokenize(value: string): string[] {
-  return (value.toLowerCase().match(TOKEN_REGEX) ?? [])
-    .filter((token) => token.length >= 2 && !STOP_WORDS.has(token));
+  const matches = value.toLowerCase().match(TOKEN_REGEX);
+  const tokens: string[] = matches ? Array.from(matches) : [];
+  return tokens.filter((token: string) => token.length >= 2 && !STOP_WORDS.has(token));
 }
 
 function searchableText(document: KnowledgeDocument): string {
