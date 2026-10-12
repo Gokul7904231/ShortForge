@@ -67,10 +67,16 @@ export interface PerformanceAttributionMemory extends KnowledgeObject {
   readonly completionRate: number;
 }
 
-/** A provenance-preserving relationship projected from existing KnowledgeOS records. */
+export type KnowledgeOSSnapshotSourceKind = "DOMAIN_KNOWLEDGEOS" | "OKF_KNOWLEDGE_STORE";
+
+/** A provenance-preserving relationship projected from existing knowledge records. */
 export interface KnowledgeRelationship {
   readonly relationshipId: string;
-  readonly relationType: "CLAIM_CITES_SOURCE" | "EVIDENCE_ATTESTS_REFERENCE";
+  readonly relationType:
+    | "CLAIM_CITES_SOURCE"
+    | "EVIDENCE_ATTESTS_REFERENCE"
+    | "DOCUMENT_CITES_SOURCE"
+    | "DOCUMENT_REFERENCES_EVIDENCE";
   readonly fromId: string;
   /** Populated for relationships to another KnowledgeOS record. */
   readonly toId?: string;
@@ -86,9 +92,16 @@ export type KnowledgeOSSnapshotScope =
   | { readonly scope: "CHANNEL"; readonly channelId: string }
   | { readonly scope: "GLOBAL" };
 
+/** Read-only producer boundary; adapters project canonical stores without creating a new authority. */
+export interface KnowledgeOSSnapshotSource {
+  readonly sourceKind: KnowledgeOSSnapshotSourceKind;
+  snapshot(selection: KnowledgeOSSnapshotScope): KnowledgeOSSnapshot;
+}
+
 /** Read-only, scoped versioned projection; this contract does not imply durable persistence. */
 export interface KnowledgeOSSnapshot {
   readonly schemaVersion: "knowledgeos.snapshot.v1";
+  readonly sourceKind: KnowledgeOSSnapshotSourceKind;
   readonly selection: KnowledgeOSSnapshotScope;
   readonly capturedAt: string;
   readonly records: readonly KnowledgeObject[];

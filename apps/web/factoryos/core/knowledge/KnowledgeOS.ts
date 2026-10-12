@@ -16,6 +16,8 @@ import type {
   KnowledgeOSSnapshot,
   KnowledgeOSSnapshotDiff,
   KnowledgeOSSnapshotScope,
+  KnowledgeOSSnapshotSource,
+  KnowledgeOSSnapshotSourceKind,
   KnowledgeRelationship,
 } from "./KnowledgeOSContracts";
 
@@ -42,12 +44,13 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 export type KnowledgeOSSnapshotContent = Pick<
   KnowledgeOSSnapshot,
-  "selection" | "records" | "relationships"
+  "sourceKind" | "selection" | "records" | "relationships"
 >;
 
 /** Recompute the content address from the canonical selection, records, and edges. */
 export function calculateKnowledgeOSSnapshotContentDigest(content: KnowledgeOSSnapshotContent): string {
   const canonicalContent = canonicalizeKnowledgeValue({
+    sourceKind: content.sourceKind,
     selection: content.selection,
     records: content.records,
     relationships: content.relationships,
@@ -62,6 +65,7 @@ export function calculateKnowledgeOSSnapshotContentDigest(content: KnowledgeOSSn
 export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeOSSnapshot {
   if (!isPlainRecord(value)) return false;
   if (value.schemaVersion !== "knowledgeos.snapshot.v1") return false;
+  if (value.sourceKind !== "DOMAIN_KNOWLEDGEOS" && value.sourceKind !== "OKF_KNOWLEDGE_STORE") return false;
   if (typeof value.capturedAt !== "string" || !Number.isFinite(Date.parse(value.capturedAt))) return false;
   if (typeof value.contentDigest !== "string" || !/^[a-f0-9]{64}$/.test(value.contentDigest)) return false;
   if (!Array.isArray(value.records) || !Array.isArray(value.relationships)) return false;
@@ -129,12 +133,20 @@ export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeO
       if (item.resolved !== (target?.type === "SOURCE")) return false;
     } else if (item.relationType === "EVIDENCE_ATTESTS_REFERENCE") {
       if (fromRecord.type !== "EVIDENCE" || typeof item.targetRef !== "string" || item.resolved) return false;
+    } else if (item.relationType === "DOCUMENT_CITES_SOURCE") {
+      if (fromRecord.type !== "KNOWLEDGE_DOCUMENT" ||
+        typeof item.toId !== "string" || typeof item.targetRef !== "string") return false;
+      if (item.resolved !== recordById.has(item.toId)) return false;
+    } else if (item.relationType === "DOCUMENT_REFERENCES_EVIDENCE") {
+      if (fromRecord.type !== "KNOWLEDGE_DOCUMENT" ||
+        typeof item.targetRef !== "string" || item.resolved) return false;
     } else {
       return false;
     }
   }
 
   const content = {
+    sourceKind: value.sourceKind as KnowledgeOSSnapshotSourceKind,
     selection: typedSelection,
     records: records as KnowledgeObject[],
     relationships: value.relationships as KnowledgeRelationship[],
@@ -142,7 +154,8 @@ export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeO
   return calculateKnowledgeOSSnapshotContentDigest(content) === value.contentDigest;
 }
 
-export class KnowledgeOS {
+export class KnowledgeOS implements KnowledgeOSSnapshotSource {
+  public readonly sourceKind = "DOMAIN_KNOWLEDGEOS" as const;
   private sources: Map<string, StoredSource> = new Map();
   private claims: Map<string, StoredClaim> = new Map();
   private evidence: Map<string, StoredEvidence> = new Map();
@@ -359,6 +372,7 @@ export class KnowledgeOS {
 
     return {
       schemaVersion: "knowledgeos.snapshot.v1",
+      sourceKind: this.sourceKind,
       selection: JSON.parse(JSON.stringify(selection)) as KnowledgeOSSnapshotScope,
       capturedAt: new Date().toISOString(),
       records,
@@ -373,6 +387,9 @@ export class KnowledgeOS {
     previous: KnowledgeOSSnapshot,
     current: KnowledgeOSSnapshot,
   ): KnowledgeOSSnapshotDiff {
+    if (previous.sourceKind !== current.sourceKind) {
+      throw new Error("KNOWLEDGEOS_SNAPSHOT_SOURCE_MISMATCH");
+    }
     if (canonicalizeKnowledgeValue(previous.selection) !== canonicalizeKnowledgeValue(current.selection)) {
       throw new Error("KNOWLEDGEOS_SNAPSHOT_SCOPE_MISMATCH");
     }
