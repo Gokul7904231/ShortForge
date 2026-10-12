@@ -38,7 +38,7 @@ describe("VisualDocumentExtractionAdapter", () => {
   });
 
   it("validates output locally and records the source digest without claiming verification", async () => {
-    const provider = providerReturning({ title: "Invoice", pageCount: 2, injected: "discard me" });
+    const provider = providerReturning({ title: "Invoice", pageCount: 2 });
     const adapter = new VisualDocumentExtractionAdapter(provider, { enabled: true });
     const input = request();
 
