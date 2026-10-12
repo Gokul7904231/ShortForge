@@ -20,6 +20,7 @@ import type { ChatMessage, OverseerMode } from "./OverseerChat";
 import { Activity, Layers, ShieldCheck, Bot, Eye, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/hooks";
 import { MissionRoomPanel } from "../collaboration/MissionRoomPanel";
+import { LiveMissionCanvas } from "../collaboration/LiveMissionCanvas";
 import { AgentWorkforcePanel } from "../collaboration/AgentWorkforcePanel";
 import { FleetOrchestrationPanel } from "../collaboration/FleetOrchestrationPanel";
 
@@ -418,7 +419,7 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
               </button>
             </header>
             <div className="min-h-0 overflow-y-auto p-3 sm:p-4">
-              <MissionRoomPanel key={primaryMissionId} missionId={primaryMissionId} accentColor={accentColor} initialView="WORK" />
+              <LiveMissionCanvas key={primaryMissionId} missionId={primaryMissionId} />
             </div>
           </section>
         </div>
