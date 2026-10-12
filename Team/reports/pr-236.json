@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-AER-Core-Mainline-Reconciliation-20261012",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/okf-v3-stacked-on-v2-20261012",
+  "headRef": "feat/aer-core-mainline-reconcile-20261012",
+  "objective": "Stack the AER Decision Core training/evaluation foundation on the validated OKF V3 PolicyContext branch, preserving governance policy-context bindings and the branch-scoped physical-proof workflow.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "AER-Core is advisory-only and cannot authorize execution or alter Guardian/F07 authority.",
+      "Only independently verified, provenance-bound gold labels may enter AER-Core training data.",
+      "Synthetic curriculum data must not enter production-golden Ascalon training exports.",
+      "Training and benchmark readiness must not be reported as trained-model or production readiness.",
+      "Fresh exact-head validation is required before merge."
+    ],
+    "sourceRefs": [
+      ".okf/intelligence/aer.md",
+      ".okf/intelligence/ascalon-model.md",
+      "docs/ascalon/aer-decision-core-standard.md",
+      "docs/ascalon/training/aer-decision-core-training.md",
+      "docs/verification/ascalon/shortforge-training-readiness-20261004.md",
+      "Team/workflow/change-gate.md"
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "strictTypecheck": "PASS — CI run 38215748944, TypeCheck & Floor 01 Contract Tests job succeeded.",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "authorityBoundary": "AER-Core remains advisory/shadow-only; no execution authority is added.",
+    "notes": "AER-Core remains advisory/shadow-only. The reconciliation preserves OKF V3 PolicyContext restrictions; repository rulesets are not modified. Dynamic Strix security review remains unavailable until the Strix trial/billing and supported provider credential are configured."
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "verificationPlan": [
+    "Validate merged Team Change Report and OKF governance sweep on the new stacked head.",
+    "Run strict TypeScript typecheck, AER-Core contract tests, dataset Python contracts, and Ascalon training-readiness tests.",
+    "Run signed V3 attestation + independent trusted-public-key verification and policy-context/dashboard validation from the base.",
+    "Run full current-head repository checks, Floor 04–07, Treasury Wave 4–6, Compute Pool, ReMaker, single-mission F00-F07, and Lightning physical MP4/CAS/F07.",
+    "Keep AER-Core advisory/shadow-only. Do not promote without real verified corpus, trained checkpoint, validation-only calibration, held-out AER-Bench and shadow replay.",
+    "Require independent human review before merge."
+  ],
+  "changes": [
+    "Added AER-Core typed contract, strict validator, HTTP provider seam, adapter, shadow coordinator, and shadow ledger.",
+    "Added verified AER training-record contract/export boundary and separated captured gold examples from operational decision transactions.",
+    "Added dataset preparation, leakage-aware splitting, trainer, validation-only calibration, prediction, and AER-Bench commands.",
+    "Integrated AER-Core as a non-authoritative shadow observer.",
+    "Separated Ascalon synthetic curriculum scenarios from production-golden export and removed unmeasured quality claims.",
+    "Added training-readiness documentation and CI validation workflow.",
+    "Corrected optional verified-training-capture narrowing in DecisionLedger after the first strict typecheck exposed TS18048.",
+    "Scoped the shared Lightning physical-proof workflow by branch to prevent cross-PR cancellation.",
+    "Rebased as a two-parent reconciliation on OKF V3 while retaining its PolicyContext binding sections in both AER/Ascalon architecture documents.",
+    "Preserved the branch-scoped Lightning physical-proof concurrency fix from the V3 base."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "FRESH_STACKED_CI_PENDING",
+    "okfGovernance": "FRESH_STACKED_CI_PENDING",
+    "typecheck": "FRESH_STACKED_CI_PENDING",
+    "floor01Python": "PASS — run 38215748944",
+    "floor01Security": "PASS — run 38215748944",
+    "productionContainerSmoke": "PASS — run 38215748944",
+    "aerCoreTests": "FRESH_STACKED_CI_PENDING",
+    "ascalonReadinessTests": "FRESH_STACKED_CI_PENDING",
+    "integrationChecks": "PASS_ON_PREVIOUS_SOURCE_HEAD__LIGHTNING_RETRY_REQUIRED_AFTER_CONCURRENCY_FIX",
+    "fullVitestRegression": "KNOWN_INFORMATIONAL_BASELINE_FAILURES__RECHECK_ON_STACKED_HEAD",
+    "securityReview": "STRIX_UNAVAILABLE__INDEPENDENT_HUMAN_REVIEW_REQUIRED",
+    "exactHead": "FRESH_STACKED_HEAD_CI_PENDING",
+    "lightningPhysicalF07": "FRESH_STACKED_PROOF_PENDING",
+    "v3PolicyContextMerge": "MERGED_IN_SOURCE__FRESH_STACKED_CI_PENDING",
+    "trainingCorpus": "REQUIRED__NO_REAL_VERIFIED_CORPUS_IN_REPOSITORY",
+    "checkpoint": "NOT_TRAINED__NOT_PROMOTED"
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/236",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437638",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437685",
+    "docs/ascalon/aer-decision-core-standard.md",
+    "docs/ascalon/training/aer-decision-core-training.md"
+  ],
+  "blockers": [
+    "Repository governance requires an independent human review/approval before merge.",
+    "The full Vitest regression suite retains widespread baseline failures despite no new failing signatures being identified in the comparison.",
+    "Independent human review/approval is required before merge.",
+    "The informational full-web regression suite has known baseline failures; do not misclassify these as clean security or production evidence.",
+    "Verified training corpus/checkpoint/calibration/AER-Bench/shadow replay remain future evidence gates."
+  ],
+  "notes": [
+    "The previously green Lightning physical proof was cancelled on a later report-only commit by the workflow's global concurrency group. The group is now branch-scoped so the new exact-head physical proof can complete independently."
+  ]
+}

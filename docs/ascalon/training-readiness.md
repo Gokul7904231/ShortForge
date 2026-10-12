@@ -159,3 +159,18 @@ A production Blender trajectory is eligible only when:
 ### Current upstream boundary
 
 The third-party integration currently exposes Blender through an MCP server and a Blender addon; current package release is 2.1.1. The addon socket is unauthenticated, so the transport must stay inside a trusted worker/network boundary. Safe mode should remain enabled for ShortForge workers. The training contract therefore treats network/process/filesystem operations reachable through arbitrary Python as privileged and non-default.
+
+
+## AER Decision Core training wave — 2026-10-04
+
+The AER Decision Core is now separated from Ascalon deep cognition and has a dedicated offline training/evaluation boundary at `training/aer_core/`.
+
+**AER-Core infrastructure status:** READY  
+**Verified AER-Core corpus:** REQUIRED  
+**Checkpoint:** NOT TRAINED / NOT PROMOTED  
+**Production authority:** DISABLED  
+**Shadow path:** NON-AUTHORITATIVE, ready for an injected trained provider
+
+The AER-Core boundary enforces verified gold labels, provenance, leakage-safe splits, calibration, held-out AER-Bench evaluation, and shadow replay against the existing decision baselines.
+
+Ascalon and AER-Core must continue to use separate training objectives and separate promotion gates.
