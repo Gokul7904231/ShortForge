@@ -33,3 +33,11 @@
 
 | **Context Fabric Wave F CLM Shadow Proposals** | ./decisions/context-fabric-wave-f-clm-shadow-20261006.md | Proposal-only CLM context policy seam with typed provenance, deterministic validation, and no mutation or promotion authority. |
 | **Context Fabric Wave G ContextBench** | ./decisions/context-fabric-wave-g-contextbench-20261006.md | Quantitative baseline-vs-shadow evaluation with held-out cases, safety graders, deterministic admission thresholds, and no promotion authority. |
+
+## THESIX — 2026-10-12 reference wave
+
+- Six repository mappings: [repo-mappings index](./research/external-repository-mappings.md) and [research provenance ledger](./research/repo-research-ledger.md).
+- Scoped decision: [Six-Repository Assimilation Gate](./decisions/thesix-six-repo-assimilation-20261012.md).
+- Progress/evidence checkpoint: [THESIX imp-completion](./audits/THESIX-imp-completion.md).
+
+The mapping wave documents patterns and qualification gates; it does not promote unverified integrations or replace the mandatory full .okf sweep.
