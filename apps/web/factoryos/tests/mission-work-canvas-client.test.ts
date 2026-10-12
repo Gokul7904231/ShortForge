@@ -31,3 +31,43 @@ describe("mission work canvas API client", () => {
     expect(missionWorkErrorMessage(404)).toBe("This mission could not be found.");
   });
 });
+
+import { projectMissionWorkSignal } from "../../components/overseer/collaboration/mission-work-events";
+
+describe("mission work event projection", () => {
+  const envelope = (overrides: Record<string, unknown> = {}) => ({
+    eventId: "evt_12345",
+    topic: "TASK_COMPLETED",
+    timestamp: "2026-10-12T09:00:00.000Z",
+    source: "worker-runtime",
+    payload: {
+      missionId: "mission-safe-read",
+      taskId: "task-a",
+      output: "SENSITIVE_WORKER_OUTPUT",
+      token: "SHOULD_NOT_LEAK",
+    },
+    ...overrides,
+  });
+
+  it("accepts only allow-listed signals for the requested mission and projects no raw payload", () => {
+    const signal = projectMissionWorkSignal(envelope(), "mission-safe-read");
+    expect(signal).toEqual({
+      type: "MISSION_WORK_CHANGED",
+      eventId: "evt_12345",
+      topic: "TASK_COMPLETED",
+      timestamp: "2026-10-12T09:00:00.000Z",
+      missionId: "mission-safe-read",
+      taskId: "task-a",
+    });
+    expect(JSON.stringify(signal)).not.toContain("SENSITIVE_WORKER_OUTPUT");
+    expect(JSON.stringify(signal)).not.toContain("SHOULD_NOT_LEAK");
+  });
+
+  it("rejects events for another mission, non-work topics, invalid cursors, and invalid timestamps", () => {
+    expect(projectMissionWorkSignal(envelope(), "other-mission")).toBeNull();
+    expect(projectMissionWorkSignal(envelope({ topic: "OVERSEER_PRESENCE_STATE" }), "mission-safe-read")).toBeNull();
+    expect(projectMissionWorkSignal(envelope({ eventId: "evt_1\\ndata: forged" }), "mission-safe-read")).toBeNull();
+    expect(projectMissionWorkSignal(envelope({ timestamp: "not-a-time" }), "mission-safe-read")).toBeNull();
+  });
+});
+

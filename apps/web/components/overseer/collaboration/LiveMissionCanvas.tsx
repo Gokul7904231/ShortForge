@@ -5,6 +5,7 @@ import { Activity, AlertCircle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw
 import type { MissionWorkBoardSnapshot, WorkTaskCard } from "@/factoryos/core/work/MissionWorkManager";
 import { AdaptivePresentation } from "./AdaptivePresentation";
 import { readMissionWorkSnapshot } from "./mission-work-client";
+import { Activity as ActivityPulse } from "lucide-react";
 
 interface LiveMissionCanvasProps {
   missionId: string;
@@ -68,6 +69,7 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [liveFeedStatus, setLiveFeedStatus] = useState<"CONNECTING" | "LIVE" | "POLLING_FALLBACK">("CONNECTING");
 
   const requestInFlightRef = useRef(false);
   const requestTokenRef = useRef(0);
@@ -108,6 +110,43 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
   }, [missionId]);
 
   useEffect(() => {
+    let disposed = false;
+    const source = new EventSource(
+      `/api/overseer/missions/${encodeURIComponent(missionId)}/work/events`,
+    );
+
+    source.onopen = () => {
+      if (!disposed) setLiveFeedStatus("LIVE");
+    };
+    source.onmessage = (message) => {
+      if (disposed) return;
+      try {
+        const signal: unknown = JSON.parse(message.data);
+        if (
+          signal !== null &&
+          typeof signal === "object" &&
+          "type" in signal &&
+          ((signal as { type?: unknown }).type === "MISSION_WORK_CHANGED" ||
+            (signal as { type?: unknown }).type === "RESYNC_REQUIRED")
+        ) {
+          void refresh(true);
+        }
+      } catch {
+        // An invalid signal is never rendered; the snapshot poll remains authoritative.
+      }
+    };
+    source.onerror = () => {
+      if (!disposed) setLiveFeedStatus("POLLING_FALLBACK");
+      // EventSource reconnects automatically. The four-second authoritative snapshot poll stays active.
+    };
+
+    return () => {
+      disposed = true;
+      source.close();
+    };
+  }, [missionId, refresh]);
+
+  useEffect(() => {
     void refresh(false);
     const interval = window.setInterval(() => void refresh(true), 4000);
     return () => {
@@ -140,7 +179,14 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-bold text-[#111827] dark:text-[#F5F7FA]"><Workflow className="h-4 w-4 text-[#1769E8]" />{board?.goal || "Mission work"}</div>
           <div className="mt-1 break-all text-[9px] font-mono text-[#667085]">Mission {missionId} · Status {board?.missionStatus || "UNKNOWN"}</div>
-          <div className="mt-1 text-[10px] text-[#667085]">{lastUpdatedAt ? `Last refreshed ${new Date(lastUpdatedAt).toLocaleTimeString()}` : "Waiting for first snapshot"} · refreshes every 4 seconds</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[10px] text-[#667085]">
+            <span>{lastUpdatedAt ? `Last refreshed ${new Date(lastUpdatedAt).toLocaleTimeString()}` : "Waiting for first snapshot"}</span>
+            <span aria-live="polite" className="inline-flex items-center gap-1">
+              <ActivityPulse className={`h-3 w-3 ${liveFeedStatus === "LIVE" ? "text-emerald-500" : "text-amber-500"}`} />
+              {liveFeedStatus === "LIVE" ? "Live events connected" : liveFeedStatus === "CONNECTING" ? "Connecting to live events" : "Polling fallback active"}
+            </span>
+            <span>snapshot refresh every 4s</span>
+          </div>
         </div>
         <button type="button" onClick={() => void refresh(false)} disabled={refreshing} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-black/[0.08] px-3 py-2 text-[10px] font-semibold text-[#344054] disabled:opacity-50 dark:border-white/[0.1] dark:text-[#D0D5DD]">
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh now
