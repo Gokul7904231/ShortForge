@@ -19,19 +19,29 @@ on:
         required: true
         default: ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404
         type: string
-
+  # Temporary self-dispatch path to execute both new providers without requiring UI access.
+  # Remove this branch-scoped trigger after the live proof run is queued.
+  push:
+    branches:
+      - feat/sandbox-opencomputer-blaxel-20261006
+    paths:
+      - ".github/workflows/live-hosted-sandbox.yml"
 
 permissions:
   contents: read
 
 jobs:
   live-sandbox:
-    name: ${{ inputs.provider }} physical render smoke
+    name: ${{ matrix.provider }} physical render smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: ${{ github.event_name == 'push' && fromJSON('["OPENCOMPUTER","BLAXEL"]') || fromJSON(format('["{0}"]', inputs.provider)) }}
     env:
-      SHORTFORGE_LIVE_SANDBOX_PROVIDER: ${{ inputs.provider }}
-      SHORTFORGE_LIVE_SANDBOX_IMAGE: ${{ inputs.image }}
+      SHORTFORGE_LIVE_SANDBOX_PROVIDER: ${{ matrix.provider }}
+      SHORTFORGE_LIVE_SANDBOX_IMAGE: ${{ inputs.image || 'ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404' }}
       SHORTFORGE_LIVE_SANDBOX_OUTPUT_PATH: /tmp/shortforge/live-smoke.mp4
       SHORTFORGE_LIVE_SANDBOX_EVIDENCE_PATH: /tmp/shortforge/live-sandbox-f07-evidence.json
       SHORTFORGE_LIVE_SANDBOX_RENDER_COMMAND: >-
@@ -50,7 +60,7 @@ jobs:
       MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       MODAL_SANDBOX_APP_NAME: ${{ secrets.MODAL_SANDBOX_APP_NAME }}
-      MODAL_SANDBOX_IMAGE: ${{ inputs.image }}
+      MODAL_SANDBOX_IMAGE: ${{ inputs.image || 'ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404' }}
       INSTAVM_API_KEY: ${{ secrets.INSTAVM_API_KEY }}
       INSTAVM_SNAPSHOT_ID: ${{ secrets.INSTAVM_SNAPSHOT_ID }}
       OPENCOMPUTER_API_KEY: ${{ secrets.OPENCOMPUTER_API_KEY }}
@@ -90,6 +100,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: live-hosted-sandbox-f07-evidence
+          name: live-hosted-sandbox-f07-evidence-${{ matrix.provider }}
           path: /tmp/shortforge/live-sandbox-f07-evidence.json
           if-no-files-found: warn
