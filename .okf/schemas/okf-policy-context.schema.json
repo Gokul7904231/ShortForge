@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://okf/policy-context/v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "contextId",
+    "corpusSha256",
+    "sweepEnvelopeSha256",
+    "generatedAt",
+    "applicableRules",
+    "constraints",
+    "evidenceState",
+    "authority",
+    "canAuthorizeExecution",
+    "canRewritePolicy",
+    "contextFingerprint"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "contextId": {
+      "type": "string"
+    },
+    "corpusSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sweepEnvelopeSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "applicableRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "ruleId",
+          "severity",
+          "normativeText",
+          "sourceRefs",
+          "verificationRefs"
+        ],
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "pattern": "^OKF\\."
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "normativeText": {
+            "type": "string"
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verificationRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidenceState": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "status"
+        ],
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "VERIFIED",
+              "OBSERVED",
+              "UNPROVEN",
+              "BLOCKED"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "authority": {
+      "const": "ADVISORY_CONTEXT_ONLY"
+    },
+    "canAuthorizeExecution": {
+      "const": false
+    },
+    "canRewritePolicy": {
+      "const": false
+    },
+    "contextFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

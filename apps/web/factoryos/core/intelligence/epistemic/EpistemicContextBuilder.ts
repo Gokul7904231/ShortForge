@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { OKFPolicyContext } from "../../governance/OKFPolicyContext";
 import type {
   CognitiveRecommendation,
   EpistemicBudget,
@@ -70,6 +71,7 @@ export interface BuildEpistemicContextOptions {
   readonly usage?: EpistemicUsage;
   readonly ttlMs?: number;
   readonly tokenEstimator?: (serialized: string) => number;
+  readonly okfPolicyContext?: OKFPolicyContext;
 }
 
 export class EpistemicContextBuilder {
@@ -83,6 +85,7 @@ export class EpistemicContextBuilder {
       cognitiveRecommendation: options.recommendation,
       budgets: options.budget,
       usage,
+      okfPolicyContext: options.okfPolicyContext,
     }) as Omit<EpistemicState, "cognitiveRecommendation" | "budgets" | "usage"> & {
       cognitiveRecommendation: CognitiveRecommendation;
       budgets: EpistemicBudget;

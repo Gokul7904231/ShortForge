@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "okf-control-plane-v3-pr235-stacked-on-v2-reconciliation",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/manifest.yaml",
+      ".okf/decisions/okf-control-plane-v3-20261005.md",
+      ".okf/schemas/okf-signed-attestation.schema.json",
+      ".okf/schemas/okf-release-provenance.schema.json",
+      ".okf/schemas/okf-policy-context.schema.json",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.SECURITY.LEAST_PRIVILEGE",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "zap": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "notes": "The current V3 workflow run produced a signed Ed25519 attestation with key ID shortforge-okf-attestation, version 1. The new verifier independently checks the artifact against the configured trusted public key and exact key ID/version. Main and release-tag rulesets remain disabled; production promotion remains blocked."
+  },
+  "conflicts": [],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/governance/OKFAttestationSigner.ts",
+    "apps/web/factoryos/core/governance/OKFAttestationContracts.ts",
+    ".okf/schemas/okf-signed-attestation.schema.json",
+    ".okf/schemas/okf-release-provenance.schema.json",
+    ".okf/schemas/okf-policy-context.schema.json",
+    "tools/okf/attest.mjs",
+    "tools/okf/provenance.py",
+    "apps/web/factoryos/core/governance/OKFPolicyContext.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERPolicyContextLink.ts",
+    "apps/web/app/api/governance/okf/route.ts",
+    "apps/web/app/(os)/governance/okf/page.tsx",
+    "apps/web/factoryos/tests/okf-control-plane-v3.test.ts",
+    ".github/workflows/okf-control-plane-v3.yml",
+    "tools/okf/verify-attestation.mjs",
+    "tools/okf/tests/test_verify_attestation.mjs"
+  ],
+  "disposition": "BLOCKED",
+  "verificationResults": {
+    "okfV2": "CORE_REQUIRED_CHECKS_PASS__PHYSICAL_PROOF_RETRY_PENDING",
+    "okfV3": "FRESH_HEAD_CI_PENDING",
+    "signedAttestation": "CONFIGURED__SIGNING_OBSERVED__INDEPENDENT_VERIFIER_ADDED__FRESH_CI_PENDING",
+    "releaseProvenance": "F07_RELEASE_AUTHORIZATION_BINDING_REQUIRES_REAL_EVIDENCE_ARTIFACT",
+    "policyContext": "IMPLEMENTED_ADVISORY_ONLY",
+    "dashboard": "IMPLEMENTED__CURRENT_MACHINE_EVIDENCE_VALIDATION_PENDING",
+    "githubRepositoryProtection": "DISABLED__PROMOTION_BLOCKED"
+  },
+  "verificationPlan": [
+    "Run current V2 control-plane and Team gates on PR #234 head before V3 is promoted.",
+    "Verify the signed V3 artifact with the configured trusted public key, key ID and version on every V3 validation run.",
+    "Bind release provenance to a real F07 ReleaseAuthorization evidence artifact; do not synthesize an authorization record.",
+    "Validate the read-only dashboard against current machine evidence.",
+    "Confirm fresh physical MP4/F07 and True Eight-Floor proofs on the exact current V3 head.",
+    "Do not promote until independent human review and the repository-enforcement requirements pass."
+  ],
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  },
+  "pullRequest": 235,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/okf-v2-current-main-20261012",
+  "headRef": "feat/okf-v3-stacked-on-v2-20261012",
+  "objective": "Reconcile V3 signing, release provenance, bounded policy context, and read-only governance dashboard on the V2 current-main control-plane branch."
+}
