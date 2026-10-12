@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { createHash } from "node:crypto";
 
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
@@ -17,10 +16,6 @@ import { VerificationEngine } from "@/factoryos/core/verification/VerificationEn
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-function sha256(value: string): string {
-  return createHash("sha256").update(value, "utf8").digest("hex");
-}
 
 function failedSourceResponse(message: string, status: number) {
   return NextResponse.json(
@@ -141,7 +136,7 @@ export async function POST(
     const sourceArtifact = await cas.putFile(sourcePath, "editor_source_mp4", "video/mp4", {
       jobId,
       sourceKind: "FLATTENED_MP4_IMPORT",
-      originalArtifactSha256: job.artifactSha256 || String(measurements.byteLength),
+      originalArtifactSha256: typeof job.artifactSha256 === "string" ? job.artifactSha256 : undefined,
       importedBy: user.uid,
     });
 
