@@ -66,3 +66,38 @@ export interface PerformanceAttributionMemory extends KnowledgeObject {
   readonly retentionAt3s: number;
   readonly completionRate: number;
 }
+
+/** A provenance-preserving relationship projected from existing KnowledgeOS records. */
+export interface KnowledgeRelationship {
+  readonly relationshipId: string;
+  readonly relationType: "CLAIM_CITES_SOURCE" | "EVIDENCE_ATTESTS_REFERENCE";
+  readonly fromId: string;
+  /** Populated for relationships to another KnowledgeOS record. */
+  readonly toId?: string;
+  /** External artifact/passport/reference; never interpreted as a permission-bearing URL. */
+  readonly targetRef?: string;
+  readonly resolved: boolean;
+  readonly provenanceDigest: string;
+}
+
+/** Read-only, versioned projection; this contract does not imply durable persistence. */
+export interface KnowledgeOSSnapshot {
+  readonly schemaVersion: "knowledgeos.snapshot.v1";
+  readonly capturedAt: string;
+  readonly records: readonly KnowledgeObject[];
+  readonly relationships: readonly KnowledgeRelationship[];
+  /** SHA-256 of canonical records + relationships; capturedAt is intentionally excluded. */
+  readonly contentDigest: string;
+}
+
+export interface KnowledgeOSSnapshotDiff {
+  readonly schemaVersion: "knowledgeos.snapshot-diff.v1";
+  readonly baseDigest: string;
+  readonly targetDigest: string;
+  readonly addedRecordIds: readonly string[];
+  readonly removedRecordIds: readonly string[];
+  readonly changedRecordIds: readonly string[];
+  readonly addedRelationshipIds: readonly string[];
+  readonly removedRelationshipIds: readonly string[];
+}
+
