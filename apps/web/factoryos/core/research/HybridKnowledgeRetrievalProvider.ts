@@ -36,6 +36,8 @@ export interface HybridKnowledgeRetrievalOptions {
   readonly maxCorpusDocuments?: number;
   /** Maximum document texts provided to the optional semantic scorer for a single query. */
   readonly semanticCandidateLimit?: number;
+  /** Maximum characters exposed from each candidate to the semantic scorer. */
+  readonly semanticDocumentTextLimit?: number;
   /** External corpus-text submission is denied unless this is explicitly enabled. */
   readonly allowApprovedRemoteSemanticScorer?: boolean;
 }
@@ -66,6 +68,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
   private readonly semanticWeight: number;
   private readonly maxCorpusDocuments: number;
   private readonly semanticCandidateLimit: number;
+  private readonly semanticDocumentTextLimit: number;
 
   constructor(
     private readonly corpus: HybridKnowledgeCorpusPort,
@@ -84,6 +87,11 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     if (!Number.isSafeInteger(this.semanticCandidateLimit) ||
       this.semanticCandidateLimit < 1 || this.semanticCandidateLimit > 200) {
       throw new Error("HYBRID_RETRIEVAL_INVALID_SEMANTIC_CANDIDATE_LIMIT");
+    }
+    this.semanticDocumentTextLimit = options.semanticDocumentTextLimit ?? 8_000;
+    if (!Number.isSafeInteger(this.semanticDocumentTextLimit) ||
+      this.semanticDocumentTextLimit < 1 || this.semanticDocumentTextLimit > 32_768) {
+      throw new Error("HYBRID_RETRIEVAL_INVALID_SEMANTIC_TEXT_LIMIT");
     }
     for (const [name, value] of [
       ["bm25Weight", this.bm25Weight],
@@ -204,7 +212,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
         query,
         [...semanticCandidatesById.values()].map((document) => ({
           documentId: idOf(document),
-          text: searchableText(document),
+          text: searchableText(document).slice(0, this.semanticDocumentTextLimit),
         })),
         signal,
       );

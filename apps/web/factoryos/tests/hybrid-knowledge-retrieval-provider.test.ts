@@ -176,6 +176,28 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     expect(observedCandidateCount).toBeLessThanOrEqual(2);
   });
 
+  it("caps each candidate text before semantic scoring", async () => {
+    const oversized = doc("long-doc", "knowledge/long.md", "Long reference", [], "x".repeat(12_000));
+    let seenTextLength = 0;
+    const scorer: SemanticRetrievalScorer = {
+      providerId: "bounded-text-scorer",
+      modelRevision: "fixture-v1",
+      executionBoundary: "LOCAL",
+      async search(_query, candidates) {
+        seenTextLength = candidates[0]?.text.length ?? 0;
+        return new Map(candidates.map((candidate) => [candidate.documentId, 0.8]));
+      },
+    };
+    const provider = new HybridKnowledgeRetrievalProvider(
+      corpusPort([oversized]),
+      "revision",
+      { semanticScorer: scorer, semanticDocumentTextLimit: 1024 },
+    );
+
+    await provider.search("long reference", 5, new AbortController().signal);
+    expect(seenTextLength).toBeLessThanOrEqual(1024);
+  });
+
   it("fails closed when remote semantic scoring is not explicitly approved", async () => {
     const remoteScorer: SemanticRetrievalScorer = {
       providerId: "approved-remote-embedding",
