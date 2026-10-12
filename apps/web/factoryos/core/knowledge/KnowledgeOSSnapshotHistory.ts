@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { IMemoryRepository, MemoryRecord } from "../database/DatabaseContracts";
 import {
   calculateKnowledgeOSSnapshotContentDigest,
+  KnowledgeOS,
   validateKnowledgeOSSnapshot,
 } from "./KnowledgeOS";
 import type {

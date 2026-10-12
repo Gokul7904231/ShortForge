@@ -372,7 +372,7 @@ export class KnowledgeOS implements KnowledgeOSSnapshotSource {
     }
 
     relationships.sort((left, right) => left.relationshipId.localeCompare(right.relationshipId));
-    const contentDigest = calculateKnowledgeOSSnapshotContentDigest({ selection, records, relationships });
+    const contentDigest = calculateKnowledgeOSSnapshotContentDigest({ sourceKind: this.sourceKind, selection, records, relationships });
 
     return {
       schemaVersion: "knowledgeos.snapshot.v1",
