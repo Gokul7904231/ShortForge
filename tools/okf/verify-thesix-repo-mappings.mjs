@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { analyzeSkillQuality } from "./thesix-skill-quality.mjs";
 import { access, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -74,10 +75,16 @@ if (skillContent) {
     if (!marker.test(skillContent)) failures.push(`assimilation skill: missing required section or metadata ${marker}`);
   }
 
-  const wordCount = skillContent.trim().split(/\s+/).length;
-  if (wordCount > 1800) failures.push(`assimilation skill: context budget exceeded (${wordCount} words; limit 1800)`);
-  if (!/\bBLOCKED\b/i.test(skillContent) || !/\bUNPROVEN\b/i.test(skillContent)) {
-    failures.push("assimilation skill: blocked/unproven evidence semantics must stay explicit");
+  const workerPermissionsPath = path.join(repoRoot, ".okf", "security", "worker-permissions.md");
+  let workerPermissionsContent = "";
+  try {
+    workerPermissionsContent = await readFile(workerPermissionsPath, "utf8");
+  } catch {
+    failures.push(".okf/security/worker-permissions.md: canonical capability vocabulary is missing");
+  }
+  if (workerPermissionsContent) {
+    const qualityReport = analyzeSkillQuality(skillContent, workerPermissionsContent, 1800);
+    for (const issue of qualityReport.issues) failures.push("assimilation skill: " + issue.message);
   }
 
   const markdownLinks = [...skillContent.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)];
@@ -97,6 +104,6 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exitCode = 1;
 } else {
-  console.log(`THESIX repository mapping + assimilation-skill verification PASS (${requiredMappings.length} mappings; structure/provenance/context-budget only)`);
+  console.log("THESIX repository mapping + assimilation-skill verification PASS (" + requiredMappings.length + " mappings; structure/provenance/context-budget/duplicate-instruction/capability-reference checks)");
   console.log("This check does not validate legal sufficiency, runtime integration, benchmark quality, or production readiness.");
 }

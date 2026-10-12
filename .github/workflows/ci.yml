@@ -30,6 +30,9 @@ jobs:
       - name: Verify THESIX repository mapping governance
         run: node tools/okf/verify-thesix-repo-mappings.mjs
 
+      - name: Test THESIX skill-governance linter
+        run: node --test tools/okf/tests/thesix-skill-quality.test.mjs
+
       - name: THESIX targeted contract tests
         run: >-
           npx vitest run
