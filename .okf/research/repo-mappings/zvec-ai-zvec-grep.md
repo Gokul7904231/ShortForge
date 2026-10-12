@@ -6,7 +6,7 @@
 - Review date: 2026-10-12
 - Code license reported by GitHub: Apache-2.0
 - Assimilation mode: BENCHMARK_FIRST / EXPERIMENT_ONLY
-- ShortForge status: NOT INTEGRATED; no runtime package or index is enabled by this mapping.
+- ShortForge status: EVALUATION HARNESS IMPLEMENTED; ZVEC-GREP ADAPTER/INTEGRATION NOT IMPLEMENTED.
 
 ## Problem and useful mechanism
 
@@ -28,7 +28,7 @@ zvec-grep describes local-first workspace search combining ripgrep-style exact m
 
 ## Status and qualification gate
 
-**EXPERIMENT_ONLY; BENCHMARK NOT RUN.** Build a reproducible evaluation set from ShortForge tasks and compare baseline retrieval versus exact-only, BM25-only, vector-only, and hybrid modes. Track recall@k, MRR or nDCG, exact identifier/path hit rate, stale-index behavior, index update cost, p50/p95 query latency, memory/disk footprint, provenance completeness, and retrieval-induced false-positive/secret leakage. Include changed files, deleted paths, private configuration, and malicious repository content in negative tests.
+**EXPERIMENT_ONLY; REAL BENCHMARK NOT RUN.** `apps/web/factoryos/core/research/HybridRetrievalBenchmark.ts` now evaluates injected baseline/candidate providers on identical case sets, measures recall@k, MRR, exact-identifier hit rate, provenance coverage, p50/p95 latency, and provider error rate, times out stuck probes, and blocks candidates that regress the configured gates. A synthetic test fixture exercises the harness; no real ShortForge corpus, zvec-grep provider, or comparative performance result has been run. Build a reproducible evaluation set from real ShortForge tasks and compare exact-only, BM25-only, vector-only, and hybrid modes. Track index freshness/update cost, resource footprint, provenance, secret leakage, changed/deleted paths, private configuration, and malicious repository content.
 
 Do not integrate until the hybrid mode shows a repeatable improvement over baseline without unacceptable resource or leakage regressions. The system must honor ignore rules, explicit secret exclusions, workspace boundaries, and source policy. Retrieved text remains untrusted and cannot directly authorize tools or promote claims.
 
