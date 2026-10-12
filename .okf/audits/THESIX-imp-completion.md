@@ -3,8 +3,8 @@
 - Date: 2026-10-12
 - Branch: `THESIX`
 - Base commit: `9e3d7017f62625cea5258dabee926824cb43ab18`
-- Checkpoint type: baseline / pre-implementation
-- Status: `BASELINE_CAPTURED; IMPLEMENTATION NOT YET VERIFIED`
+- Checkpoint type: implementation progress checkpoint (not final completion)
+- Status: `PARTIAL_IMPLEMENTATION; TESTS NOT RUN`
 
 ## Purpose
 
@@ -49,13 +49,26 @@ Track the six repository-inspired improvement workstreams on an isolated branch.
 4. Run targeted tests, typecheck/build, applicable security scans, and production-helper checks.
 5. Create a completion checkpoint named `imp-completion` only after reporting actual changed files, commit SHA, tests run, test results, and remaining blocked/unproven gates.
 
+## Changes implemented on THESIX after the baseline
+
+1. **Live Mission Canvas UI (partial S2):** added `apps/web/components/overseer/collaboration/LiveMissionCanvas.tsx`. It reads the existing authenticated mission work-board GET route, refreshes every four seconds, shows task states/dependencies/owners/capabilities/errors/artifact and evidence IDs, and displays persisted task activity. It is read-only and does not claim hidden model reasoning or alter authority.
+2. **Overseer entry point (partial S2/S4):** `OverseerCommandSurface.tsx` now exposes the requested top-level “Check What's Happening and How it's Being Cooked!” action when a primary mission ID exists and opens the Live Mission Canvas modal.
+3. **Mission Room view option:** `MissionRoomPanel.tsx` accepts an optional initial view, defaulting to the existing THREAD behavior. The live canvas currently uses its own read-only work-board component.
+4. **Skill methodology (partial S3):** `.agents/skills/factoryos-repo-assimilation/SKILL.md` now requires selective reference loading, evidence-grounded findings, bounded scope/repair, explicit adoption classification, and disclosure of negative or blocked evidence.
+
 ## Current verification status
 
-- Branch existence: VERIFIED.
-- Base commit identity: VERIFIED.
-- Baseline source/mapping samples: VERIFIED.
+- Branch existence and base commit: VERIFIED.
+- Baseline mappings and governance contract samples: VERIFIED.
+- Source commits on THESIX: VERIFIED by GitHub commit responses.
+- Live Mission Canvas source and UI wiring: IMPLEMENTED, NOT TYPECHECKED.
+- Polling/reconnect: periodic snapshot refresh implemented; durable work snapshot is used for refresh recovery. No dedicated task-event SSE/replay stream added yet.
+- S3 skill methodology update: IMPLEMENTED IN DOCUMENTATION, NOT LINT-VERIFIED.
+- S1 Helix-inspired KnowledgeOS improvement: NOT IMPLEMENTED; existing graph snapshot/evidence patterns must be audited before changing code.
+- S4 general-purpose generative UI runtime: NOT IMPLEMENTED; only a safe, task-specific live mission UI slice exists.
+- S5 Lift adapter/benchmark: NOT IMPLEMENTED; remains conditional.
+- S6 zvec-grep integration/benchmark: NOT IMPLEMENTED.
 - Full .okf sweep: NOT YET COMPLETE.
-- Source implementation for these six improvements: NOT YET CLAIMED.
-- Local typecheck/build/tests: NOT RUN by this checkpoint.
-- Live mission/physical MP4/F07 proof: NOT RUN by this checkpoint.
+- Local typecheck/build/tests: NOT RUN; this connector can commit/fetch GitHub content but has not executed repository commands.
+- Live mission/physical MP4/F07 proof: NOT RUN.
 - Production readiness: NOT CLAIMED.
