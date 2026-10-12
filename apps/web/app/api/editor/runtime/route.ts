@@ -5,7 +5,7 @@ import { isAdminUser } from "@/lib/auth/roles";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import { readJobManifest } from "@/lib/jobs-history";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
-import type { CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
+import { canonicalizeComposition, type CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
 import type { EditorCommand, EditorDocument } from "@/factoryos/core/editor/EditorContracts";
 
 function requireString(value: unknown, name: string): string {
@@ -87,6 +87,75 @@ async function assertCompositionSourcesOwned(
     throw new Error("EDITOR_SOURCE_ASSET_SET_UNSUPPORTED");
   }
 }
+/** The browser may open only the exact immutable source CompositionIR delivered by the source API. */
+async function assertCompositionMatchesSavedSource(
+  candidate: CompositionIR,
+  user: { uid: string; role: string },
+) {
+  const sourceJobId = candidate.metadata?.extensions?.sourceJobId;
+  if (typeof sourceJobId !== "string" || !sourceJobId) {
+    throw new Error("EDITOR_SOURCE_JOB_BINDING_REQUIRED");
+  }
+  const job = await readJobManifest(sourceJobId);
+  if (!job || (job.userId !== user.uid && !isAdminUser(user.role))) {
+    throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN");
+  }
+
+  let compositionSha256: string;
+  let compositionByteLength: number;
+  let compositionId: string;
+  let expectedSourceKind: string;
+
+  if (job.editorSourcePackage) {
+    const sourcePackage = job.editorSourcePackage;
+    if (
+      sourcePackage.schemaVersion !== "shortforge.editor-source.v1" ||
+      sourcePackage.sourceKind !== "COMPOSITION_PACKAGE" ||
+      sourcePackage.sourceJobId !== sourceJobId ||
+      sourcePackage.ownerId !== job.userId
+    ) throw new Error("EDITOR_SOURCE_PACKAGE_BINDING_INVALID");
+    compositionSha256 = sourcePackage.compositionSha256.toLowerCase();
+    compositionByteLength = sourcePackage.compositionByteLength;
+    compositionId = sourcePackage.compositionId;
+    expectedSourceKind = "COMPOSITION_PACKAGE";
+  } else if (job.editorSourceComposition) {
+    const binding = job.editorSourceComposition;
+    if (
+      binding.schemaVersion !== "shortforge.editor-composition-binding.v1" ||
+      binding.sourceKind !== "FLATTENED_MP4" ||
+      binding.ownerId !== job.userId
+    ) throw new Error("EDITOR_SOURCE_COMPOSITION_BINDING_INVALID");
+    compositionSha256 = binding.sha256.toLowerCase();
+    compositionByteLength = binding.byteLength;
+    compositionId = binding.compositionId;
+    expectedSourceKind = "FLATTENED_MP4";
+  } else {
+    throw new Error("EDITOR_SOURCE_COMPOSITION_BINDING_MISSING");
+  }
+
+  if (!/^[a-f0-9]{64}$/.test(compositionSha256)) throw new Error("EDITOR_SOURCE_COMPOSITION_DIGEST_INVALID");
+  const ref = ContentAddressedStore.getInstance().getByHash(compositionSha256);
+  if (!ref?.uri || !fs.existsSync(ref.uri)) throw new Error("EDITOR_SOURCE_COMPOSITION_NOT_FOUND");
+  const stat = fs.statSync(ref.uri);
+  if (
+    !stat.isFile() ||
+    stat.size !== compositionByteLength ||
+    await ContentAddressedStore.computeFileSha256(ref.uri) !== compositionSha256
+  ) throw new Error("EDITOR_SOURCE_COMPOSITION_DIGEST_MISMATCH");
+
+  const persisted = JSON.parse(fs.readFileSync(ref.uri, "utf8")) as CompositionIR;
+  if (
+    persisted.compositionId !== compositionId ||
+    persisted.metadata?.extensions?.ownerId !== job.userId ||
+    persisted.metadata?.extensions?.sourceJobId !== sourceJobId ||
+    persisted.metadata?.extensions?.sourceKind !== expectedSourceKind ||
+    candidate.compositionId !== compositionId ||
+    canonicalizeComposition(candidate) !== canonicalizeComposition(persisted)
+  ) {
+    throw new Error("EDITOR_SOURCE_COMPOSITION_TAMPERED");
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await verifyAuthAndRole(request, "VIEWER");
@@ -134,6 +203,7 @@ export async function POST(request: NextRequest) {
         throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
       }
       await assertCompositionSourcesOwned(composition, user);
+      await assertCompositionMatchesSavedSource(composition, user);
       const ownedComposition: CompositionIR = {
         ...composition,
         metadata: {
