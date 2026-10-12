@@ -47,6 +47,9 @@ import { EvolutionBrainSeam } from "../evolution/EvolutionBrainSeam";
 import { ContentGenomeTracker } from "../artifacts/ContentGenome";
 import { ResearchRuntime } from "../research/ResearchRuntime";
 import { KnowledgeStore } from "../intelligence/knowledge/KnowledgeStore";
+import { KnowledgeStoreSnapshotAdapter } from "../knowledge/KnowledgeStoreSnapshotAdapter";
+import { KnowledgeOSSnapshotHistory, type StoredKnowledgeOSSnapshot } from "../knowledge/KnowledgeOSSnapshotHistory";
+import type { KnowledgeOSSnapshot, KnowledgeOSSnapshotDiff, KnowledgeOSSnapshotScope } from "../knowledge/KnowledgeOSContracts";
 import { MemoryWriter } from "../intelligence/writer/MemoryWriter";
 import { MemoryFabricBridge } from "../intelligence/memory/MemoryFabricBridge";
 import { InMemoryMemoryFabricLedger, MongoMemoryFabricLedger } from "../intelligence/memory/MongoMemoryFabricLedger";
@@ -126,6 +129,10 @@ export class AutonomousFactoryController {
   public researchRuntime: ResearchRuntime = new ResearchRuntime();
   public memoryFabric?: MemoryFabricBridge;
   public intelligenceGateway?: IntelligenceGateway;
+  /** Read-only snapshot projection of the canonical KnowledgeStore; never a second knowledge authority. */
+  public knowledgeStoreSnapshotSource?: KnowledgeStoreSnapshotAdapter;
+  /** Content-addressed snapshot history stored in the existing operational memory repository. */
+  public knowledgeStoreSnapshotHistory?: KnowledgeOSSnapshotHistory;
   public slayerPrimeStateStore!: SlayerPrimeStateStore;
   public treasuryService?: TreasuryService;
   public treasuryEconomicIntelligence?: TreasuryEconomicIntelligence;
@@ -282,6 +289,11 @@ export class AutonomousFactoryController {
         vaultPath: this.config.memoryFabricVaultPath,
       });
       const knowledgeStore = this.intelligenceGateway.knowledgeStore;
+      this.knowledgeStoreSnapshotSource = new KnowledgeStoreSnapshotAdapter(knowledgeStore);
+      this.knowledgeStoreSnapshotHistory = new KnowledgeOSSnapshotHistory(
+        repos.memories,
+        "OKF_KNOWLEDGE_STORE",
+      );
       const memoryWriter = this.intelligenceGateway.memoryWriter as MemoryWriter;
       const mongoDb = this.mongoClient?.getDb() || null;
       const ledger = mongoDb
@@ -620,6 +632,53 @@ export class AutonomousFactoryController {
     this.mainLoopTimer = setInterval(() => {
       this.runAutonomousCycle().catch(() => {});
     }, 5000);
+  }
+
+  /**
+   * Capture a scoped snapshot of the existing canonical OKF KnowledgeStore.
+   * This writes only content hashes/allow-listed metadata through the already
+   * configured memory repository. It does not create a second knowledge store,
+   * dispatch an agent, spend external compute, or imply F07 verification.
+   */
+  async captureKnowledgeStoreSnapshot(
+    selection: KnowledgeOSSnapshotScope,
+  ): Promise<StoredKnowledgeOSSnapshot> {
+    if (!this.isBooted || !this.intelligenceGateway ||
+      !this.knowledgeStoreSnapshotSource || !this.knowledgeStoreSnapshotHistory) {
+      throw new Error("KNOWLEDGE_STORE_SNAPSHOT_RUNTIME_UNAVAILABLE");
+    }
+    return this.knowledgeStoreSnapshotHistory.capture(this.knowledgeStoreSnapshotSource, selection);
+  }
+
+  async listKnowledgeStoreSnapshots(
+    selection: KnowledgeOSSnapshotScope,
+    limit = 100,
+  ): Promise<KnowledgeOSSnapshot[]> {
+    if (!this.isBooted || !this.knowledgeStoreSnapshotHistory) {
+      throw new Error("KNOWLEDGE_STORE_SNAPSHOT_RUNTIME_UNAVAILABLE");
+    }
+    return this.knowledgeStoreSnapshotHistory.list(selection, limit);
+  }
+
+  async loadKnowledgeStoreSnapshot(
+    selection: KnowledgeOSSnapshotScope,
+    contentDigest: string,
+  ): Promise<KnowledgeOSSnapshot | null> {
+    if (!this.isBooted || !this.knowledgeStoreSnapshotHistory) {
+      throw new Error("KNOWLEDGE_STORE_SNAPSHOT_RUNTIME_UNAVAILABLE");
+    }
+    return this.knowledgeStoreSnapshotHistory.load(selection, contentDigest);
+  }
+
+  async diffKnowledgeStoreSnapshots(
+    selection: KnowledgeOSSnapshotScope,
+    baseDigest: string,
+    targetDigest: string,
+  ): Promise<KnowledgeOSSnapshotDiff> {
+    if (!this.isBooted || !this.knowledgeStoreSnapshotHistory) {
+      throw new Error("KNOWLEDGE_STORE_SNAPSHOT_RUNTIME_UNAVAILABLE");
+    }
+    return this.knowledgeStoreSnapshotHistory.diff(selection, baseDigest, targetDigest);
   }
 
   async startMission(
