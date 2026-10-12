@@ -59,8 +59,12 @@ export async function POST(
     }
 
     const resolver = new ArtifactResolver();
+    const casSource = typeof job.artifactSha256 === "string" && /^[a-f0-9]{64}$/i.test(job.artifactSha256)
+      ? ContentAddressedStore.getInstance().getByHash(job.artifactSha256.toLowerCase())
+      : undefined;
     const sourceCandidates = [
       typeof job.localVideoPath === "string" ? job.localVideoPath : undefined,
+      casSource?.uri,
       path.join(process.cwd(), "data", "renders", jobId + ".mp4"),
     ].filter((candidate): candidate is string => Boolean(candidate && fs.existsSync(candidate)));
 
