@@ -33,8 +33,10 @@ Before any commercial or production deployment, legal review must separately app
 
 Reject/roll back if provenance is lost, untrusted documents can reach arbitrary filesystem/network targets, resource limits are unbounded, extraction quality does not beat baseline, or the licensing model is incompatible.
 
-## Security, privacy, and provenance
+## Security, privacy, and licensing
 
 Treat documents and extracted strings as hostile input. Enforce byte/page/time limits, path containment, sandboxing, no ambient egress, credential isolation, schema validation, and downstream independent fact verification. Upstream README: https://github.com/datalab-to/lift; it distinguishes Apache-2.0 code from modified OpenRAIL-M model-weight terms.
+
+## Provenance
 
 Reviewed repository metadata, README, and license disclosure at the immutable commit above. This is a clean-room research mapping only: no Lift code, prompt, test, or model weights were copied, downloaded, or run. All quality and hardware claims remain unverified locally.
