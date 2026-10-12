@@ -79,6 +79,7 @@ jobs:
           npx vitest run
           factoryos/tests/knowledgeos-snapshot.test.ts
           factoryos/tests/knowledgeos-snapshot-history.test.ts
+          factoryos/tests/knowledge-store-snapshot-adapter.test.ts
           factoryos/tests/document-normalizer-visual.test.ts
           factoryos/tests/adaptive-presentation.test.ts
           factoryos/tests/visual-document-extraction-adapter.test.ts
