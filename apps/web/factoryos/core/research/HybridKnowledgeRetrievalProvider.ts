@@ -143,11 +143,18 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     query: string,
     limit: number,
     signal: AbortSignal,
+    requestOptions: { readonly allowRemoteSemanticSubmission?: boolean } = {},
   ): Promise<readonly RetrievalBenchmarkItem[]> {
     if (signal.aborted) throw new Error("HYBRID_RETRIEVAL_ABORTED");
     if (!query.trim() || query.length > 2000) throw new Error("HYBRID_RETRIEVAL_INVALID_QUERY");
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
       throw new Error("HYBRID_RETRIEVAL_INVALID_LIMIT");
+    }
+    if (
+      this.options.semanticScorer?.executionBoundary === "APPROVED_REMOTE" &&
+      requestOptions.allowRemoteSemanticSubmission !== true
+    ) {
+      throw new Error("HYBRID_RETRIEVAL_REMOTE_QUERY_NOT_AUTHORIZED");
     }
 
     const safety = this.getSafetySnapshot();

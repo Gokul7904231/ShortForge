@@ -190,11 +190,20 @@ describe("HybridKnowledgeRetrievalProvider", () => {
       { semanticScorer: remoteScorer },
     )).toThrow("HYBRID_RETRIEVAL_REMOTE_SEMANTICS_NOT_AUTHORIZED");
 
-    expect(() => new HybridKnowledgeRetrievalProvider(
+    const approvedProvider = new HybridKnowledgeRetrievalProvider(
       corpusPort([]),
       "revision",
       { semanticScorer: remoteScorer, allowApprovedRemoteSemanticScorer: true },
-    )).not.toThrow();
+    );
+    const signal = new AbortController().signal;
+    await expect(approvedProvider.search("sensitive query", 5, signal))
+      .rejects.toThrow("HYBRID_RETRIEVAL_REMOTE_QUERY_NOT_AUTHORIZED");
+    expect(remoteScorer.search).not.toHaveBeenCalled();
+
+    await expect(approvedProvider.search("approved query", 5, signal, {
+      allowRemoteSemanticSubmission: true,
+    })).resolves.toEqual([]);
+    expect(remoteScorer.search).toHaveBeenCalledTimes(1);
   });
 
   it("rejects malformed scorer outputs and invalid runtime inputs", async () => {
