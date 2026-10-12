@@ -10,7 +10,7 @@ function requireString(value: unknown, name: string): string {
   return value;
 }
 
-function assertCompositionOwner(document: EditorDocument, user: Awaited<ReturnType<typeof verifyAuthAndRole>>) {
+function assertCompositionOwner(document: EditorDocument, user: { uid: string; role: string }) {
   const ownerId = document.composition.metadata.extensions?.ownerId;
   if (typeof ownerId !== "string" || (ownerId !== user.uid && !isAdminUser(user.role))) {
     throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
