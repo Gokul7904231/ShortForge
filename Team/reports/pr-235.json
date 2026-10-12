@@ -50,7 +50,7 @@
     "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
     "strix": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
     "zap": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
-    "notes": "V3 remains advisory-only. No signing key is assumed configured; key material and key ID/version remain an operator/repository-secret gate. Repository main/release rulesets were observed disabled and production promotion remains blocked."
+    "notes": "The current V3 workflow run produced a signed Ed25519 attestation with key ID shortforge-okf-attestation, version 1. The new verifier independently checks the artifact against the configured trusted public key and exact key ID/version. Main and release-tag rulesets remain disabled; production promotion remains blocked."
   },
   "conflicts": [],
   "evidenceRefs": [
@@ -66,25 +66,27 @@
     "apps/web/app/api/governance/okf/route.ts",
     "apps/web/app/(os)/governance/okf/page.tsx",
     "apps/web/factoryos/tests/okf-control-plane-v3.test.ts",
-    ".github/workflows/okf-control-plane-v3.yml"
+    ".github/workflows/okf-control-plane-v3.yml",
+    "tools/okf/verify-attestation.mjs",
+    "tools/okf/tests/test_verify_attestation.mjs"
   ],
   "disposition": "BLOCKED",
   "verificationResults": {
-    "okfV2": "PENDING_CI",
-    "okfV3": "PENDING_CI",
-    "signedAttestation": "KEY_CONFIGURATION_REQUIRED",
-    "releaseProvenance": "F07_RELEASE_AUTHORIZATION_BINDING_REQUIRES_VALIDATION",
+    "okfV2": "CORE_REQUIRED_CHECKS_PASS__PHYSICAL_PROOF_RETRY_PENDING",
+    "okfV3": "FRESH_HEAD_CI_PENDING",
+    "signedAttestation": "CONFIGURED__SIGNING_OBSERVED__INDEPENDENT_VERIFIER_ADDED__FRESH_CI_PENDING",
+    "releaseProvenance": "F07_RELEASE_AUTHORIZATION_BINDING_REQUIRES_REAL_EVIDENCE_ARTIFACT",
     "policyContext": "IMPLEMENTED_ADVISORY_ONLY",
     "dashboard": "IMPLEMENTED__CURRENT_MACHINE_EVIDENCE_VALIDATION_PENDING",
     "githubRepositoryProtection": "DISABLED__PROMOTION_BLOCKED"
   },
   "verificationPlan": [
-    "Run current V2 control plane and Team gates on PR #234 head before V3 is promoted.",
-    "Validate Ed25519 signature key configuration and key ID/version using protected repository secrets or managed trust.",
-    "Make signed-attestation verification a required CI check.",
-    "Bind release provenance to F07 ReleaseAuthorization evidence and validate the read-only dashboard against machine evidence.",
+    "Run current V2 control-plane and Team gates on PR #234 head before V3 is promoted.",
+    "Verify the signed V3 artifact with the configured trusted public key, key ID and version on every V3 validation run.",
+    "Bind release provenance to a real F07 ReleaseAuthorization evidence artifact; do not synthesize an authorization record.",
+    "Validate the read-only dashboard against current machine evidence.",
     "Confirm fresh physical MP4/F07 and True Eight-Floor proofs on the exact current V3 head.",
-    "Do not promote until repository enforcement is active and all independent review/check gates pass."
+    "Do not promote until independent human review and the repository-enforcement requirements pass."
   ],
   "model": {
     "authority": "ADVISORY_ONLY",
