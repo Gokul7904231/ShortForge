@@ -42,7 +42,7 @@ function sanitizeProofDiagnostic(value: unknown): string {
   ]) {
     if (secret) message = message.split(secret).join("[REDACTED]");
   }
-  return message.replace(/\\s+/g, " ").slice(0, 320);
+  return message.replace(/\s+/g, " ").slice(0, 320);
 }
 
 describeLiveProof("live hosted sandbox compute proof", () => {
