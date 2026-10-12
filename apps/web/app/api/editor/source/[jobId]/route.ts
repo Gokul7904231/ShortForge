@@ -112,6 +112,11 @@ export async function POST(
       );
     }
 
+    const sourceStat = fs.statSync(sourcePath);
+    if (sourceStat.size > ArtifactResolver.MAX_DOWNLOAD_BYTES) {
+      return failedSourceResponse("Source MP4 exceeds the editor import size limit of 250 MB.", 413);
+    }
+
     const measurements = await VerificationEngine.probeMediaFile(sourcePath);
     const sourceIsValid =
       measurements.fileExists &&
