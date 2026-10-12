@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type {
   EditorCommand,
   EditorCommandEnvelope,
@@ -114,6 +114,10 @@ export function ShortForgeEditorStudio({
   const [snapStep, setSnapStep] = useState(0.1);
   const [draggingClipId, setDraggingClipId] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [selectedCaptionId, setSelectedCaptionId] = useState<string | null>(
+    composition.captions[0]?.id ?? null,
+  );
+  const [captionDraft, setCaptionDraft] = useState(composition.captions[0]?.text ?? "");
 
   const selected = useMemo(
     () =>
@@ -122,6 +126,14 @@ export function ShortForgeEditorStudio({
         .find((clip) => clip.id === selectedClipId),
     [composition.tracks, selectedClipId],
   );
+  const selectedCaption = useMemo(
+    () => composition.captions.find((caption) => caption.id === selectedCaptionId),
+    [composition.captions, selectedCaptionId],
+  );
+
+  useEffect(() => {
+    setCaptionDraft(selectedCaption?.text ?? "");
+  }, [selectedCaption?.id, selectedCaption?.text]);
 
   const durationSeconds = secondsFromMediaTime(composition.canvas.duration);
   const timelineWidth = Math.min(MAX_TIMELINE_PX, Math.max(760, durationSeconds * 90));
@@ -253,6 +265,21 @@ export function ShortForgeEditorStudio({
         feather: 8,
       },
     });
+  }
+
+  function saveCaptionText() {
+    if (readOnly || !selectedCaption || !captionDraft.trim() || captionDraft === selectedCaption.text) return;
+    void emit({
+      type: "UPDATE_CAPTION_TEXT",
+      captionId: selectedCaption.id,
+      text: captionDraft,
+    });
+  }
+
+  function selectCaption(captionId: string) {
+    setSelectedCaptionId(captionId);
+    const caption = composition.captions.find((item) => item.id === captionId);
+    setCaptionDraft(caption?.text ?? "");
   }
 
   function setBackground(kind: "SOLID" | "GRADIENT" | "BLUR") {
@@ -725,6 +752,58 @@ export function ShortForgeEditorStudio({
               <div className="mt-1">{composition.captions.length} cues</div>
             </div>
           </div>
+
+          <section className="mt-5 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              Caption Editor
+            </div>
+            {composition.captions.length > 0 && selectedCaption ? (
+              <div className="mt-3 space-y-2">
+                {composition.captions.length > 1 && (
+                  <select
+                    value={selectedCaption.id}
+                    onChange={(event) => selectCaption(event.target.value)}
+                    disabled={readOnly}
+                    aria-label="Caption cue"
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-2 text-xs text-zinc-200 disabled:opacity-50"
+                  >
+                    {composition.captions.map((caption) => (
+                      <option key={caption.id} value={caption.id}>
+                        {formatTime(secondsFromMediaTime(caption.start))} · {caption.text.slice(0, 44)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="text-[10px] text-zinc-500">
+                  {formatTime(secondsFromMediaTime(selectedCaption.start))}–{formatTime(secondsFromMediaTime(selectedCaption.end))}
+                </div>
+                <textarea
+                  value={captionDraft}
+                  onChange={(event) => setCaptionDraft(event.target.value)}
+                  disabled={readOnly}
+                  rows={4}
+                  maxLength={500}
+                  aria-label="Caption text"
+                  className="w-full resize-y rounded-md border border-zinc-700 bg-zinc-950 p-2 text-xs leading-5 text-zinc-100 outline-none focus:border-indigo-400 disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={saveCaptionText}
+                  disabled={readOnly || !captionDraft.trim() || captionDraft === selectedCaption.text}
+                  className="w-full rounded-md bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Apply caption text
+                </button>
+                <p className="text-[10px] leading-4 text-zinc-500">
+                  Saves a new revision. Use Preview to render the updated frame.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-[11px] leading-5 text-zinc-500">
+                This source has no independent caption cues. Legacy flattened videos cannot be edited at the caption layer; reopen a source-composition project when available.
+              </p>
+            )}
+          </section>
 
           {!readOnly && (
             <div className="mt-5">
