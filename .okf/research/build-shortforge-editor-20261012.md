@@ -140,7 +140,7 @@ A conceptual edit intent identifies the exact parent composition hash and expect
 ## 5. Security and smart rendering
 
 1. Recheck session/write role, job owner, persisted source owner and source-manifest binding every time. Guessed IDs are not permission.
-2. Browser source references must be authorized CAS URIs, not arbitrary filesystem paths or URLs. Hash the actual bytes before render lowering.
+2. Browser source references must be authorized CAS URIs, not arbitrary filesystem paths or URLs. Hash the actual bytes before render lowering. On initial `open`, require the submitted composition to canonicalize identically to the immutable source composition bound to that job; allowed asset hashes alone are not sufficient to seed revision 0.
 3. Every mutation uses actor, expected revision and idempotent command ID; reject stale documents.
 4. Cache on canonical scene structure, hashes, timings, narration, word cues, transforms/effects and renderer version. Never use filename alone.
 5. Recompute affected dependency nodes only; narration changes can affect captions and scene timing, while global style may affect all scenes.
@@ -178,7 +178,8 @@ A conceptual edit intent identifies the exact parent composition hash and expect
 | Owner/source-CAS restrictions | Implemented; tests/CI pending |
 | Real source video and physical preview monitor | Implemented; browser E2E pending |
 | Caption text/style inspector + versioned commands + changed-caption receipts | Implemented; targeted regression tests added for text, colour and style validation, current-head CI pending |
-| CAS digest/tamper and source-package regression tests | Added; current-head CI pending |
+| CAS digest/tamper and source-package regression tests | Added, including pre-staged CAS media type; current-head CI pending |
+| Exact immutable starting-composition check on editor open | Implemented for packaged and flattened imports; current-head CI pending |
 | Best-effort owner-bound composition package in job manifest | Implemented when all RenderIntent sources resolve and validate; not a guarantee for placeholder or template-specific paths |
 | Portable package directly from the canonical Python F05 artifact for all jobs | Not done; P0 next milestone |
 | Semantic quiz editing commands | Not done; needs source manifest |
