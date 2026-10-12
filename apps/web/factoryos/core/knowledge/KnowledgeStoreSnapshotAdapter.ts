@@ -228,7 +228,10 @@ export class KnowledgeStoreSnapshotAdapter implements KnowledgeOSSnapshotSource 
     }
 
     const allDocuments = this.store.list();
-    if (allDocuments.length > this.maxDocuments) {
+    const scopedDocuments = allDocuments.filter((document) =>
+      isInScope(document.frontmatter, selection),
+    );
+    if (scopedDocuments.length > this.maxDocuments) {
       throw new Error("KNOWLEDGE_STORE_SNAPSHOT_DOCUMENT_LIMIT_EXCEEDED");
     }
 
@@ -239,9 +242,6 @@ export class KnowledgeStoreSnapshotAdapter implements KnowledgeOSSnapshotSource 
     }).filter((value): value is string => Boolean(value)));
     const duplicateIds = new Set(this.store.getDuplicateIdErrors().map((item) => item.id));
 
-    const scopedDocuments = allDocuments.filter((document) =>
-      isInScope(document.frontmatter, selection),
-    );
     const records: KnowledgeStoreSnapshotRecord[] = [];
     for (const document of scopedDocuments) {
       const rawId = safeString(document.frontmatter.sf_id || document.frontmatter.id, 512);
@@ -281,7 +281,7 @@ export class KnowledgeStoreSnapshotAdapter implements KnowledgeOSSnapshotSource 
         const mappedTarget = aliasToRecordId.get(sourceId) || aliasToRecordId.get(targetRef);
         const toId = mappedTarget || ("okfsrc:" + sourceId);
         relationships.push({
-          relationshipId: "DOCUMENT_CITES_SOURCE:" + record.id + ":" + sourceId,
+          relationshipId: "DOCUMENT_CITES_SOURCE:" + record.id + ":" + digest(sourceId + ":" + targetRef).slice(0, 24),
           relationType: "DOCUMENT_CITES_SOURCE",
           fromId: record.id,
           toId,
