@@ -83,6 +83,9 @@ describe("Treasury Wave 7 promotion eligibility", () => {
     expect(first.authority.canMutateTreasury).toBe(false);
     expect(first.authority.requiresHumanOverseerReview).toBe(true);
     expect(first.artifactDigest).toBe(second.artifactDigest);
+    expect(first.artifactDigest).toBe(
+      evaluateTreasuryPromotionEligibility({ ...input, outcomes: [...input.outcomes].reverse() }).artifactDigest,
+    );
   });
 
   it("rejects candidate verification regression even when candidate is cheaper", () => {
@@ -120,9 +123,9 @@ describe("Treasury Wave 7 promotion eligibility", () => {
       valid[0],
     ];
     const result = evaluateTreasuryPromotionEligibility(request([...valid, ...bad]));
-    expect(result.decision).toBe("ELIGIBLE_FOR_HUMAN_REVIEW");
-    expect(result.excludedOutcomeCount).toBeGreaterThanOrEqual(5);
-    expect(result.baseline.sampleCount).toBe(30);
+    expect(result.decision).toBe("NOT_ELIGIBLE");
+    expect(result.excludedOutcomeCount).toBeGreaterThanOrEqual(6);
+    expect(result.baseline.sampleCount).toBe(29);
     expect(result.candidate.sampleCount).toBe(30);
   });
 
@@ -133,6 +136,25 @@ describe("Treasury Wave 7 promotion eligibility", () => {
     const result = evaluateTreasuryPromotionEligibility(request(barelyCheaper));
     expect(result.decision).toBe("NOT_ELIGIBLE");
     expect(result.comparison.costEligible).toBe(false);
+  });
+
+  it("fails closed on missing verification objects and excludes all duplicate identity collisions", () => {
+    const outcomes = pairedOutcomes();
+    const malformed = outcome("candidate", "candidate-cohort", 501, {
+      verification: undefined as unknown as VerifiedRouteOutcome["verification"],
+    });
+    const crossRouteDuplicate = outcome("candidate", "candidate-cohort", 502, {
+      outcomeId: outcomes[0].outcomeId,
+      verification: { status: "VERIFIED", success: true, f07ReceiptId: "cross-route-duplicate-receipt" },
+    });
+    const input = request([...outcomes, malformed, crossRouteDuplicate]);
+    const forward = evaluateTreasuryPromotionEligibility(input);
+    const reverse = evaluateTreasuryPromotionEligibility({ ...input, outcomes: [...input.outcomes].reverse() });
+
+    expect(forward.decision).toBe("NOT_ELIGIBLE");
+    expect(forward.excludedOutcomeCount).toBeGreaterThanOrEqual(3);
+    expect(forward.baseline.sampleCount).toBe(29);
+    expect(forward.artifactDigest).toBe(reverse.artifactDigest);
   });
 
   it("rejects invalid identity and threshold windows", () => {
