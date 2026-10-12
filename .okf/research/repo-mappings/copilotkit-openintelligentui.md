@@ -5,8 +5,8 @@
 - Reviewed commit: f6e4388b26a64b9a0714943b08a1ce622b924eec
 - License reported by GitHub: MIT
 - Review date: 2026-10-12
-- Assimilation mode: PATTERN_EXTRACTION / RESEARCH_ONLY
-- ShortForge status: NO GENERAL GENERATIVE-UI RUNTIME IMPLEMENTED.
+- Assimilation mode: PATTERN_EXTRACTION / CLEAN_ROOM SAFE PRESENTATION
+- ShortForge status: PARTIALLY IMPLEMENTED allow-listed presentation primitives; NO GENERAL GENERATIVE-UI RUNTIME.
 
 ## Problem and useful mechanism
 
@@ -27,7 +27,7 @@ OpenIntelligentUI explores agent-produced interactive UI, including sandboxed pr
 
 ## Status and verification required
 
-**RESEARCH_ONLY.** Only explicit task-specific UI exists on THESIX; no broad generative UI runtime was implemented. Before enabling a dynamic renderer, perform a threat model, sandbox escape review, schema-fuzzing, CSP/origin tests, untrusted-content/XSS tests, action-authorization tests, accessibility checks, and performance budgets. User interaction must enter the existing tool/action contract and be reauthorized server-side.
+**PARTIALLY_IMPLEMENTED (allow-listed, schema-validated presentation primitives only).** `apps/web/factoryos/core/ui/AdaptivePresentationContracts.ts` defines strict, bounded summary/metric-grid/alert payloads; `apps/web/components/overseer/collaboration/AdaptivePresentation.tsx` renders only those fixed variants and is used by LiveMissionCanvas. It never executes generated HTML/JavaScript and the metric data remains derived from authoritative mission state. No arbitrary model-authored UI runtime was implemented. Before any dynamic renderer is considered, perform a threat model, sandbox escape review, schema-fuzzing, CSP/origin tests, untrusted-content/XSS tests, action-authorization tests, accessibility checks, and performance budgets. User interaction must enter the existing tool/action contract and be reauthorized server-side.
 
 Reject the design if sandbox safety depends only on prompt instructions or if presentation content can call APIs or mutate state outside the typed host bridge.
 
