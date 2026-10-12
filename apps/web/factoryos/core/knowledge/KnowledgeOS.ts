@@ -240,10 +240,14 @@ export class KnowledgeOS {
     previous: KnowledgeOSSnapshot,
     current: KnowledgeOSSnapshot,
   ): KnowledgeOSSnapshotDiff {
-    const previousRecords = new Map(previous.records.map((record) => [record.id, record]));
-    const currentRecords = new Map(current.records.map((record) => [record.id, record]));
-    const previousRelationships = new Map(previous.relationships.map((edge) => [edge.relationshipId, edge]));
-    const currentRelationships = new Map(current.relationships.map((edge) => [edge.relationshipId, edge]));
+    const previousRecords = new Map<string, KnowledgeObject>(previous.records.map((record) => [record.id, record] as const));
+    const currentRecords = new Map<string, KnowledgeObject>(current.records.map((record) => [record.id, record] as const));
+    const previousRelationships = new Map<string, KnowledgeRelationship>(
+      previous.relationships.map((edge) => [edge.relationshipId, edge] as const),
+    );
+    const currentRelationships = new Map<string, KnowledgeRelationship>(
+      current.relationships.map((edge) => [edge.relationshipId, edge] as const),
+    );
 
     const addedRecordIds = [...currentRecords.keys()].filter((id) => !previousRecords.has(id)).sort();
     const removedRecordIds = [...previousRecords.keys()].filter((id) => !currentRecords.has(id)).sort();
