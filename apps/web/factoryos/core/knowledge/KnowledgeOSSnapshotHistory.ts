@@ -115,7 +115,8 @@ export class KnowledgeOSSnapshotHistory {
         verificationStatus: "UNVERIFIED",
         confidenceSemantics: "snapshot byte/content integrity only; not epistemic truth",
       },
-      confidence: 1,
+      // A snapshot is an integrity artifact, not an epistemically trusted fact.
+      confidence: 0,
       accessCount: 0,
       createdAt: now,
       lastAccessedAt: now,

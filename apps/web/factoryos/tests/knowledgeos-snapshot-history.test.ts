@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -119,6 +120,13 @@ describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
       });
 
       const captured = await history.capture(knowledge, { scope: "GLOBAL" });
+      const memoryRecord = await repository.getMemory(
+        "OPERATIONAL",
+        `knowledgeos.snapshot.v1:${createHash("sha256").update("GLOBAL", "utf8").digest("hex")}:${captured.snapshot.contentDigest}`,
+      );
+      expect(memoryRecord?.confidence).toBe(0);
+      expect(memoryRecord?.metadata.verificationStatus).toBe("UNVERIFIED");
+
       const reloaded = new KnowledgeOSSnapshotHistory(new DiskMemoryRepository(baseDir));
       await expect(reloaded.load({ scope: "GLOBAL" }, captured.snapshot.contentDigest))
         .resolves.toMatchObject({ contentDigest: captured.snapshot.contentDigest });
