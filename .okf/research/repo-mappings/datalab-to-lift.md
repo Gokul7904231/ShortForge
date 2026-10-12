@@ -7,7 +7,7 @@
 - Code license reported by GitHub: Apache-2.0
 - Model-weight license: upstream README identifies a modified OpenRAIL-M license with additional commercial/use restrictions; review the current MODEL_LICENSE before any use.
 - Assimilation mode: ISOLATED_PROVIDER / EXPERIMENT_ONLY
-- ShortForge status: NOT INTEGRATED; no model, service, or package dependency is added.
+- ShortForge status: ADAPTER CONTRACT IMPLEMENTED; LIFT PROVIDER/MODEL NOT INTEGRATED.
 
 ## Problem and useful mechanism
 
@@ -27,7 +27,7 @@ Lift is described upstream as a schema-directed vision model for extracting stru
 
 ## Status and verification required
 
-**EXPERIMENT_ONLY.** First run an isolated benchmark against representative text PDFs, scanned PDFs, multi-column layouts, tables, and figures. Measure field accuracy, citation/region fidelity, schema-valid rate, failure modes, throughput, p50/p95 latency, CPU/GPU/RAM/VRAM, cold-start and operating cost. Compare against the current DocumentNormalizer and other existing document paths. Confirm model artifact size and supported hardware rather than assuming the target runtime can host it.
+**EXPERIMENT_ONLY (provider-neutral safety boundary implemented; no Lift provider/model connected).** `apps/web/factoryos/core/research/VisualDocumentExtractionAdapter.ts` is disabled by default, validates a MIME allow-list, bounds input/output and timeout, aborts timed-out providers, validates outputs through a caller-owned Zod schema, records the input SHA-256, and marks output `UNVERIFIED`. This is not a Lift integration and no model weights were downloaded or run. First run an isolated benchmark against representative text PDFs, scanned PDFs, multi-column layouts, tables, and figures. Measure field accuracy, citation/region fidelity, schema-valid rate, failure modes, throughput, p50/p95 latency, CPU/GPU/RAM/VRAM, cold-start and operating cost. Compare against DocumentNormalizer and existing document paths.
 
 Before any commercial or production deployment, legal review must separately approve code, model-weight terms, redistribution, on-premise use, and hosted-processing constraints. Until then, the adapter remains disabled and research-only.
 
