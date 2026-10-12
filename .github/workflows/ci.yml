@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, THESIX]
   pull_request:
     branches: [main, master]
 
@@ -26,6 +26,9 @@ jobs:
 
       - name: TypeScript TypeCheck (strict, fails CI on error)
         run: cd apps/web && npm run typecheck
+
+      - name: Verify THESIX repository mapping governance
+        run: node tools/okf/verify-thesix-repo-mappings.mjs
 
       - name: Floor 01 Runtime Adapter Contract Tests
         run: cd apps/web && npx vitest run factoryos/tests/floor01-runtime-adapter.test.ts
