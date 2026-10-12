@@ -16,6 +16,19 @@ describe("schema-constrained adaptive presentation", () => {
     if (result.success) expect(result.presentation.kind).toBe("metric-grid");
   });
 
+  it("accepts bounded alert presentation variants with an explicit severity", () => {
+    const result = resolveAdaptivePresentation({
+      kind: "alert",
+      severity: "warning",
+      title: "Mission blocked",
+      message: "A dependency is unresolved.",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.presentation).toMatchObject({ kind: "alert", severity: "warning" });
+    }
+  });
+
   it("rejects executable/unknown fields and unbounded presentation payloads", () => {
     const arbitraryCode = resolveAdaptivePresentation({
       kind: "summary",
