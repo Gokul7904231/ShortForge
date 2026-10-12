@@ -47,6 +47,17 @@ export interface VideoJob {
   };
   /** Immutable per-scene source composition package, when all source assets were resolved into CAS. */
   editorSourcePackage?: EditorSourcePackageRecord;
+  /** Digest-bound server record for the canonical first composition of a flattened MP4 import. */
+  editorSourceComposition?: {
+    schemaVersion: "shortforge.editor-composition-binding.v1";
+    compositionId: string;
+    sha256: string;
+    artifactId: string;
+    byteLength: number;
+    sourceKind: "FLATTENED_MP4";
+    ownerId: string;
+    createdAt: string;
+  };
 }
 
 const inMemoryJobs = new Map<string, VideoJob>();
