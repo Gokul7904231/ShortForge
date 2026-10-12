@@ -17,7 +17,7 @@ import type {
 } from "./OverseerProgressiveDisclosure";
 import type { FactoryMetrics } from "./OverseerMetricsHUD";
 import type { ChatMessage, OverseerMode } from "./OverseerChat";
-import { Activity, Layers, ShieldCheck, Bot } from "lucide-react";
+import { Activity, Layers, ShieldCheck, Bot, Eye, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/hooks";
 import { MissionRoomPanel } from "../collaboration/MissionRoomPanel";
 import { AgentWorkforcePanel } from "../collaboration/AgentWorkforcePanel";
@@ -66,6 +66,7 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
   const [currentMode, setCurrentMode] = useState<OverseerMode>("CHAT");
   const [isConnected, setIsConnected] = useState(false);
   const [activePanel, setActivePanel] = useState<DisclosurePanel | null>(null);
+  const [showLiveMissionCanvas, setShowLiveMissionCanvas] = useState(false);
   const [stateData, setStateData] = useState<OperationalStateData | undefined>(undefined);
   const [sessionUser, setSessionUser] = useState<any>(null);
 
@@ -334,6 +335,19 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
           : "min-h-[calc(100vh-6.5rem)] py-4 justify-between"
       } max-w-4xl mx-auto select-none ${className}`}
     >
+      <div className="w-full flex justify-end mb-2">
+        <button
+          type="button"
+          onClick={() => setShowLiveMissionCanvas(true)}
+          disabled={!primaryMissionId}
+          title={primaryMissionId ? "Inspect live task state for the active mission" : "Start or select a mission first"}
+          className="inline-flex items-center gap-2 rounded-xl border border-[#1769E8]/25 bg-[#1769E8]/[0.08] px-3 py-2 text-xs font-semibold text-[#1769E8] transition-colors hover:bg-[#1769E8]/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Eye className="h-4 w-4" />
+          Check What&apos;s Happening and How it&apos;s Being Cooked!
+        </button>
+      </div>
+
       {/* 1. TOP/CENTER: GRAND LIVING OVERSEER HERO & CONVERSATION */}
       <div className="w-full flex-1 flex flex-col justify-center items-center my-auto">
         <OverseerHero
@@ -390,6 +404,25 @@ export const OverseerCommandSurface: React.FC<OverseerCommandSurfaceProps> = mem
           <FleetOrchestrationPanel accentColor={accentColor} />
         </section>
       </div>
+
+      {showLiveMissionCanvas && primaryMissionId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="Live Mission Canvas">
+          <section className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl dark:bg-[#050A12]">
+            <header className="flex items-center justify-between gap-3 border-b border-black/[0.06] px-4 py-3 dark:border-white/[0.08]">
+              <div>
+                <h2 className="text-sm font-bold text-[#111827] dark:text-[#F5F7FA]">Live Mission Canvas</h2>
+                <p className="mt-0.5 text-[10px] text-[#667085] dark:text-[#A8B2C1]">Read-only view of the selected mission&apos;s authoritative work board. Updates are polled from the mission API.</p>
+              </div>
+              <button type="button" onClick={() => setShowLiveMissionCanvas(false)} className="rounded-lg p-2 text-[#667085] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]" aria-label="Close Live Mission Canvas">
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+            <div className="min-h-0 overflow-y-auto p-3 sm:p-4">
+              <MissionRoomPanel key={primaryMissionId} missionId={primaryMissionId} accentColor={accentColor} initialView="WORK" />
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* 3. BOTTOM OF VIEWER SEEING PAGE: CHATBOX / COMPOSER */}
       <div className="w-full max-w-2xl mx-auto space-y-3 pt-3 flex flex-col items-center">
