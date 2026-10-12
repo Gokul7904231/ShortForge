@@ -96,6 +96,7 @@ export interface NotebookProvisionRequest {
   diskGb?: number;
   timeoutMs?: number;
   region?: string;
+  /** Provider-specific, non-secret metadata; arbitrary environmentVariables are rejected. */
   metadata?: Record<string, unknown>;
 }
 

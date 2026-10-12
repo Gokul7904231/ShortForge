@@ -120,3 +120,11 @@ Byte length: `277495`
 F07 receipt: `rcpt_live_hf_zerogpu_muu0d83o_2026-10-04T160122706Z`
 
 The live proof workflow is manual-only after qualification to prevent ordinary PR synchronization from consuming ZeroGPU quota. No F06 worker promotion is granted.
+
+## Kaggle + Wan Dual-T4 renderer — reference integration
+
+ShortForge contains a repository-owned Kaggle kernel template under tools/kaggle/shortforge-wan-dual-t4/. It uses explicit runtime GPU inventory checks, profile switching, a deterministic proof path, and an opt-in model-backed Wan path. Community examples remain references rather than execution dependencies.
+
+Profiles are PROOF (no model download), WAN_T2V_1_3B (lower-risk model-backed smoke), and WAN_DUAL_T4_14B (explicit dual-T4 experiment). Actual live feasibility of model-backed modes is not claimed until a manual Kaggle execution proves it.
+
+Successful outputs remain subject to the normal artifact pipeline: download, independent SHA-256 and byte-length verification, media probing, CAS acceptance and F07 proof. Kaggle remains productionWorkerEligible=false.
