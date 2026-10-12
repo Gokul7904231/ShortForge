@@ -30,15 +30,36 @@ async function assertCompositionSourcesOwned(
     throw new Error("EDITOR_SOURCE_JOB_BINDING_REQUIRED");
   }
   const sourceJob = await readJobManifest(sourceJobId);
-  if (!sourceJob?.editorSource) throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_MISSING");
+  if (!sourceJob) throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_MISSING");
   if (sourceJob.userId !== user.uid && !isAdminUser(user.role)) {
     throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN");
   }
-  if (sourceJob.editorSource.ownerId !== sourceJob.userId) {
-    throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_INVALID");
+
+  const sourcePackage = sourceJob.editorSourcePackage;
+  const flatSource = sourceJob.editorSource;
+  let allowedHashes: Set<string>;
+  if (sourcePackage) {
+    if (
+      sourcePackage.schemaVersion !== "shortforge.editor-source.v1" ||
+      sourcePackage.sourceKind !== "COMPOSITION_PACKAGE" ||
+      sourcePackage.sourceJobId !== sourceJobId ||
+      sourcePackage.ownerId !== sourceJob.userId ||
+      !Array.isArray(sourcePackage.sourceAssetSha256s)
+    ) {
+      throw new Error("EDITOR_SOURCE_PACKAGE_BINDING_INVALID");
+    }
+    allowedHashes = new Set(sourcePackage.sourceAssetSha256s.map((sha) => sha.toLowerCase()));
+  } else if (flatSource) {
+    if (flatSource.ownerId !== sourceJob.userId || !/^[a-f0-9]{64}$/i.test(flatSource.sha256)) {
+      throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_INVALID");
+    }
+    allowedHashes = new Set([flatSource.sha256.toLowerCase()]);
+  } else {
+    throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_MISSING");
   }
 
   const hashes = new Set<string>();
+  const cas = ContentAddressedStore.getInstance();
   const validateSource = (src: string | undefined, required: boolean, label: string) => {
     if (!src) {
       if (required) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED:" + label);
@@ -46,8 +67,10 @@ async function assertCompositionSourcesOwned(
     }
     const match = /^cas:\/\/([a-f0-9]{64})$/i.exec(src);
     if (!match) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED:" + label);
-    hashes.add(match[1]!.toLowerCase());
-    const ref = ContentAddressedStore.getInstance().getByHash(match[1]!.toLowerCase());
+    const sha = match[1]!.toLowerCase();
+    if (!allowedHashes.has(sha)) throw new Error("EDITOR_SOURCE_CAS_NOT_DECLARED:" + label);
+    hashes.add(sha);
+    const ref = cas.getByHash(sha);
     if (!ref?.uri || !fs.existsSync(ref.uri)) throw new Error("EDITOR_SOURCE_CAS_NOT_FOUND:" + label);
   };
 
@@ -57,17 +80,13 @@ async function assertCompositionSourcesOwned(
       validateSource(clip.src, requiresSource, clip.id || track.id);
     }
   }
-  for (const audio of composition.audio || []) {
-    validateSource(audio.src, true, audio.id);
-  }
+  for (const audio of composition.audio || []) validateSource(audio.src, true, audio.id);
 
-  // The current importer intentionally supports one flattened MP4 source. Multi-asset
-  // editable project packages require an explicit per-asset ownership manifest first.
-  if (hashes.size !== 1 || !hashes.has(sourceJob.editorSource.sha256)) {
+  if (hashes.size === 0) throw new Error("EDITOR_SOURCE_ASSET_SET_EMPTY");
+  if (!sourcePackage && (hashes.size !== 1 || !hashes.has(flatSource!.sha256.toLowerCase()))) {
     throw new Error("EDITOR_SOURCE_ASSET_SET_UNSUPPORTED");
   }
 }
-
 export async function GET(request: NextRequest) {
   try {
     const user = await verifyAuthAndRole(request, "VIEWER");
