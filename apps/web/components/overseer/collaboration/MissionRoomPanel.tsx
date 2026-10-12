@@ -26,6 +26,7 @@ type PanelView = "THREAD" | "CANVAS" | "WORK" | "HANDOFFS";
 interface MissionRoomPanelProps {
   missionId: string | null;
   accentColor?: string;
+  initialView?: PanelView;
 }
 
 function statusClass(status: string): string {
@@ -46,10 +47,11 @@ function statusClass(status: string): string {
 export const MissionRoomPanel: React.FC<MissionRoomPanelProps> = ({
   missionId,
   accentColor = "#1769E8",
+  initialView = "THREAD",
 }) => {
   const [snapshot, setSnapshot] = useState<MissionRoomSnapshot | null>(null);
   const [workBoard, setWorkBoard] = useState<MissionWorkBoardSnapshot | null>(null);
-  const [view, setView] = useState<PanelView>("THREAD");
+  const [view, setView] = useState<PanelView>(initialView);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
