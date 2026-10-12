@@ -1,5 +1,6 @@
 import type {
   CompositionIR,
+  CompositionCaption,
   AnimationTrack,
   EffectNode,
   MaskNode,
@@ -54,6 +55,11 @@ export type EditorCommand =
       readonly type: "UPDATE_CAPTION_TEXT";
       readonly captionId: string;
       readonly text: string;
+    }
+  | {
+      readonly type: "UPDATE_CAPTION_STYLE";
+      readonly captionId: string;
+      readonly stylePatch: Partial<CompositionCaption["style"]>;
     }
   | {
       readonly type: "SET_CLIP_TRANSFORM";
