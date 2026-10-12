@@ -6,7 +6,7 @@ import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddre
 import { readJobManifest } from "@/lib/jobs-history";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import type { CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
-import type { EditorCommand } from "@/factoryos/core/editor/EditorContracts";
+import type { EditorCommand, EditorDocument } from "@/factoryos/core/editor/EditorContracts";
 
 function requireString(value: unknown, name: string): string {
   if (typeof value !== "string" || !value) throw new Error(`EDITOR_${name.toUpperCase()}_REQUIRED`);
