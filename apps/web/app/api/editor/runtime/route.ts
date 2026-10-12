@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as fs from "node:fs";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
+import { readJobManifest } from "@/lib/jobs-history";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import type { CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
 import type { EditorCommand } from "@/factoryos/core/editor/EditorContracts";
@@ -19,12 +21,24 @@ function assertCompositionOwner(document: EditorDocument, user: { uid: string; r
 }
 
 /** Browser-originated compositions may reference only verified CAS media, never filesystem paths or arbitrary URLs. */
-function assertCompositionSourcesOwned(
+async function assertCompositionSourcesOwned(
   composition: CompositionIR,
   user: { uid: string; role: string },
 ) {
-  const isAdmin = isAdminUser(user.role);
-  const cas = ContentAddressedStore.getInstance();
+  const sourceJobId = composition.metadata.extensions?.sourceJobId;
+  if (typeof sourceJobId !== "string" || !sourceJobId) {
+    throw new Error("EDITOR_SOURCE_JOB_BINDING_REQUIRED");
+  }
+  const sourceJob = await readJobManifest(sourceJobId);
+  if (!sourceJob?.editorSource) throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_MISSING");
+  if (sourceJob.userId !== user.uid && !isAdminUser(user.role)) {
+    throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN");
+  }
+  if (sourceJob.editorSource.ownerId !== sourceJob.userId) {
+    throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_INVALID");
+  }
+
+  const hashes = new Set<string>();
   const validateSource = (src: string | undefined, required: boolean, label: string) => {
     if (!src) {
       if (required) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED:" + label);
@@ -32,11 +46,9 @@ function assertCompositionSourcesOwned(
     }
     const match = /^cas:\/\/([a-f0-9]{64})$/i.exec(src);
     if (!match) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED:" + label);
-    const ref = cas.getByHash(match[1]!.toLowerCase());
-    if (!ref || !ref.uri || !fs.existsSync(ref.uri)) throw new Error("EDITOR_SOURCE_CAS_NOT_FOUND:" + label);
-    if (!isAdmin && ref.metadata?.importedBy !== user.uid) {
-      throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN:" + label);
-    }
+    hashes.add(match[1]!.toLowerCase());
+    const ref = ContentAddressedStore.getInstance().getByHash(match[1]!.toLowerCase());
+    if (!ref?.uri || !fs.existsSync(ref.uri)) throw new Error("EDITOR_SOURCE_CAS_NOT_FOUND:" + label);
   };
 
   for (const track of composition.tracks || []) {
@@ -47,6 +59,12 @@ function assertCompositionSourcesOwned(
   }
   for (const audio of composition.audio || []) {
     validateSource(audio.src, true, audio.id);
+  }
+
+  // The current importer intentionally supports one flattened MP4 source. Multi-asset
+  // editable project packages require an explicit per-asset ownership manifest first.
+  if (hashes.size !== 1 || !hashes.has(sourceJob.editorSource.sha256)) {
+    throw new Error("EDITOR_SOURCE_ASSET_SET_UNSUPPORTED");
   }
 }
 
@@ -64,7 +82,7 @@ export async function GET(request: NextRequest) {
       actor: { kind: "HUMAN", id: user.uid },
     });
     assertCompositionOwner(document, user);
-    assertCompositionSourcesOwned(document.composition, user);
+    await assertCompositionSourcesOwned(document.composition, user);
 
     return NextResponse.json({
       success: true,
@@ -95,7 +113,7 @@ export async function POST(request: NextRequest) {
       if (typeof declaredOwner === "string" && declaredOwner !== user.uid && !isAdminUser(user.role)) {
         throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
       }
-      assertCompositionSourcesOwned(composition, user);
+      await assertCompositionSourcesOwned(composition, user);
       const ownedComposition: CompositionIR = {
         ...composition,
         metadata: {
@@ -112,7 +130,7 @@ export async function POST(request: NextRequest) {
       };
       const document = await runtime.open(session, ownedComposition);
       assertCompositionOwner(document, user);
-      assertCompositionSourcesOwned(document.composition, user);
+      await assertCompositionSourcesOwned(document.composition, user);
       return NextResponse.json({ success: true, document, actor: session.actor });
     }
 
@@ -125,7 +143,7 @@ export async function POST(request: NextRequest) {
       actor: { kind: "HUMAN", id: user.uid },
     });
     assertCompositionOwner(resumedDocument, user);
-    assertCompositionSourcesOwned(resumedDocument.composition, user);
+    await assertCompositionSourcesOwned(resumedDocument.composition, user);
 
     switch (operation) {
       case "apply": {
