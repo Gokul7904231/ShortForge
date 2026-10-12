@@ -27,7 +27,7 @@ The upstream skill is an intentionally modular set of guidance for AI coding ass
 
 ## Status and verification required
 
-**PARTIALLY_ADOPTED (documentation only).** The assimilation skill methodology was updated on THESIX, but no skill linter or regression suite has run. Verification should add or use repository-native tests to check required headers, existing reference paths, capability mapping, bounded length, and absence of conflicting authority instructions. Evaluate token/context cost and retrieval success against a baseline before expanding the catalog.
+**PARTIALLY_ADOPTED (skill methodology plus mapping-quality gate).** The assimilation skill methodology is documented and `tools/okf/verify-thesix-repo-mappings.mjs` now checks the six new mapping files for required provenance/status/security headings and a clean-room disposition. This verifier is not a full skill linter: skill duplicate/context-budget checks and skill-content regression coverage still remain. CI is configured to run the mapping verifier and the focused new contract tests; actual run conclusions must be recorded from GitHub Actions. Evaluate token/context cost and retrieval success against a baseline before expanding the catalog.
 
 Reject changes that merely inflate skill text, duplicate generic model knowledge, embed secrets, or suggest permissions that the worker's runtime does not grant.
 
