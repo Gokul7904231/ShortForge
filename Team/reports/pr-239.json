@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR239-Visual-Provider-Contract-Coverage",
+  "pullRequest": 239,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/treasury-wave7-promotion-evidence-20261012",
+  "headRef": "feat/visual-provider-contracts-current-main-20261012",
+  "objective": "Add current-main contract coverage for the already registered Pexels, Pixabay and Pexafy visual acquisition adapters without replacing current provider implementations or changing production routing defaults.",
+  "classification": "extends existing rule",
+  "linkedIssues": [
+    164,
+    166,
+    184,
+    197
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/integrations/external-api-fabric.md",
+      "apps/web/lib/visual-assets/ProviderFramework.ts",
+      "apps/web/lib/visual-assets/VisualIntelligenceTypes.ts",
+      "apps/web/factoryos/core/integrations/external/ExternalApiRegistry.ts"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Tests use mocked HTTP and synthetic response metadata. They do not embed credentials or claim live provider qualification. Provider results remain candidates until asset bytes, licence/attribution, hash, CAS and downstream F07 requirements are satisfied."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added mocked contract tests for Pexels authentication/normalization and source attribution.",
+    "Added mocked contract tests for Pixabay safe-search, licence/source metadata and normalization.",
+    "Added mocked contract tests for Pexafy authentication, semantic search and returned licence/attribution metadata.",
+    "Verified missing provider credentials fail closed and all three providers remain explicitly selected by providerPriority rather than implicitly promoted.",
+    "Preserved current-main ProviderFramework and ExternalApiRegistry instead of replacing them with stale #167 versions."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/tests/visual-stock-providers.test.ts",
+    "apps/web/lib/visual-assets/ProviderFramework.ts",
+    "apps/web/lib/visual-assets/VisualIntelligenceTypes.ts",
+    "apps/web/factoryos/core/integrations/external/ExternalApiRegistry.ts",
+    "apps/web/.env.render.production.example"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Run the new visual provider test suite and repository CI on this exact head.",
+    "Run authenticated manual provider requests once secrets are available; record status, normalized output, quota/error semantics and sanitized evidence.",
+    "For any selected asset, download bytes and independently verify media/hash/size before CAS; preserve licence/attribution through F07 lineage.",
+    "Do not promote provider output into default routing or production claims without provider-specific live evidence and independent review."
+  ],
+  "verificationResults": {
+    "visualProviderContractTests": "PENDING_CI",
+    "pexelsLiveQualification": "PENDING_CREDENTIALS",
+    "pixabayLiveQualification": "PENDING_CREDENTIALS",
+    "pexafyLiveQualification": "PENDING_CREDENTIALS",
+    "assetCASF07Evidence": "PENDING_LIVE_ASSET_PROOF",
+    "defaultProviderPromotion": "DISABLED"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  }
+}
