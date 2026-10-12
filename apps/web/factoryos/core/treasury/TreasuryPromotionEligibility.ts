@@ -121,22 +121,23 @@ function summarize(
   outcomes: readonly VerifiedRouteOutcome[],
   thresholds: Required<TreasuryPromotionThresholds>,
 ): TreasuryPromotionCohortMetrics {
-  const costs = outcomes.map((outcome) => outcome.realizedCostUsd);
-  const latencies = outcomes.map((outcome) => outcome.latencyMs);
-  const successCount = outcomes.filter((outcome) => outcome.verification.success).length;
+  const ordered = [...outcomes].sort((a, b) => a.outcomeId.localeCompare(b.outcomeId));
+  const costs = ordered.map((outcome) => outcome.realizedCostUsd);
+  const latencies = ordered.map((outcome) => outcome.latencyMs);
+  const successCount = ordered.filter((outcome) => outcome.verification.success).length;
   return {
     routeId,
     cohortId,
-    sampleCount: outcomes.length,
+    sampleCount: ordered.length,
     meanRealizedCostUsd:
       costs.length > 0 ? costs.reduce((sum, value) => sum + value, 0) / costs.length : undefined,
     p90LatencyMs: percentile90(latencies),
     verificationSuccessRate:
-      outcomes.length > 0 ? successCount / outcomes.length : undefined,
+      ordered.length > 0 ? successCount / ordered.length : undefined,
     confidence: confidenceFor(outcomes.length, thresholds),
-    qualifyingOutcomeIds: outcomes.map((outcome) => outcome.outcomeId).sort(),
-    f07ReceiptIds: outcomes.map((outcome) => outcome.verification.f07ReceiptId!).sort(),
-    evidenceRefs: outcomes
+    qualifyingOutcomeIds: ordered.map((outcome) => outcome.outcomeId),
+    f07ReceiptIds: ordered.map((outcome) => outcome.verification.f07ReceiptId!),
+    evidenceRefs: ordered
       .map((outcome) => outcome.evidenceRef)
       .filter((value): value is string => typeof value === "string" && value.length > 0)
       .sort(),
@@ -151,10 +152,19 @@ function summarize(
 export function evaluateTreasuryPromotionEligibility(
   request: TreasuryPromotionEligibilityRequest,
 ): TreasuryPromotionEligibilityArtifact {
+  if (!request || typeof request !== "object" || !Array.isArray(request.outcomes)) {
+    throw new Error("Invalid Treasury promotion evaluation request");
+  }
   const issuedAt = canonicalTime(request.recommendationIssuedAt);
   const evaluatedAt = canonicalTime(request.evaluatedAt);
   if (
     !request.recommendationId ||
+    !request.baseline ||
+    typeof request.baseline !== "object" ||
+    !request.candidate ||
+    typeof request.candidate !== "object" ||
+    !request.workloadType ||
+    !request.capabilityClass ||
     issuedAt === undefined ||
     evaluatedAt === undefined ||
     evaluatedAt < issuedAt ||
@@ -191,13 +201,18 @@ export function evaluateTreasuryPromotionEligibility(
     throw new Error("Invalid Treasury promotion eligibility thresholds");
   }
 
-  const seenOutcomeIds = new Set<string>();
-  const seenReceiptIds = new Set<string>();
-  const baselineOutcomes: VerifiedRouteOutcome[] = [];
-  const candidateOutcomes: VerifiedRouteOutcome[] = [];
   let excludedOutcomeCount = 0;
+  const preliminarilyEligible: VerifiedRouteOutcome[] = [];
 
-  for (const outcome of request.outcomes) {
+  for (const rawOutcome of request.outcomes as readonly unknown[]) {
+    if (!rawOutcome || typeof rawOutcome !== "object") {
+      excludedOutcomeCount += 1;
+      continue;
+    }
+    const outcome = rawOutcome as VerifiedRouteOutcome;
+    const verification = outcome.verification;
+    const hasVerificationObject =
+      verification !== null && typeof verification === "object";
     const observedAt = canonicalTime(outcome.observedAt);
     const routeMatches =
       (outcome.routeId === request.baseline.routeId && outcome.cohortId === request.baseline.cohortId) ||
@@ -209,27 +224,41 @@ export function evaluateTreasuryPromotionEligibility(
       observedAt !== undefined &&
       observedAt > issuedAt &&
       observedAt <= evaluatedAt &&
-      outcome.verification.status === "VERIFIED" &&
-      typeof outcome.verification.f07ReceiptId === "string" &&
-      outcome.verification.f07ReceiptId.length > 0 &&
-      typeof outcome.verification.success === "boolean" &&
+      hasVerificationObject &&
+      verification.status === "VERIFIED" &&
+      typeof verification.f07ReceiptId === "string" &&
+      verification.f07ReceiptId.length > 0 &&
+      typeof verification.success === "boolean" &&
       validNonNegativeFinite(outcome.realizedCostUsd) &&
       validNonNegativeFinite(outcome.latencyMs) &&
       typeof outcome.outcomeId === "string" &&
       outcome.outcomeId.length > 0;
 
-    const receiptId = outcome.verification.f07ReceiptId ?? "";
-    if (
-      !basicEligible ||
-      seenOutcomeIds.has(outcome.outcomeId) ||
-      seenReceiptIds.has(receiptId)
-    ) {
+    if (!basicEligible) {
       excludedOutcomeCount += 1;
       continue;
     }
+    preliminarilyEligible.push(outcome);
+  }
 
-    seenOutcomeIds.add(outcome.outcomeId);
-    seenReceiptIds.add(receiptId);
+  // Fail closed on every member of a duplicate group. Keeping whichever record
+  // appeared first would make eligibility depend on caller-controlled array order.
+  const outcomeIdCounts = new Map<string, number>();
+  const receiptIdCounts = new Map<string, number>();
+  for (const outcome of preliminarilyEligible) {
+    outcomeIdCounts.set(outcome.outcomeId, (outcomeIdCounts.get(outcome.outcomeId) ?? 0) + 1);
+    const receiptId = outcome.verification.f07ReceiptId!;
+    receiptIdCounts.set(receiptId, (receiptIdCounts.get(receiptId) ?? 0) + 1);
+  }
+
+  const baselineOutcomes: VerifiedRouteOutcome[] = [];
+  const candidateOutcomes: VerifiedRouteOutcome[] = [];
+  for (const outcome of preliminarilyEligible) {
+    const receiptId = outcome.verification.f07ReceiptId!;
+    if ((outcomeIdCounts.get(outcome.outcomeId) ?? 0) > 1 || (receiptIdCounts.get(receiptId) ?? 0) > 1) {
+      excludedOutcomeCount += 1;
+      continue;
+    }
     if (outcome.routeId === request.baseline.routeId && outcome.cohortId === request.baseline.cohortId) {
       baselineOutcomes.push(outcome);
     } else {
