@@ -5,6 +5,7 @@ import {
   type CompositionIR,
 } from "../timeline/CompositionIR";
 import {
+  changedCaptionIds,
   changedClipIds,
   applyEditorCommand,
 } from "./EditorCommandEngine";
@@ -79,6 +80,7 @@ function receipt(
     revision,
     compositionHash: compositionHash(composition),
     changedClipIds: before ? changedClipIds(before, composition) : [],
+    changedCaptionIds: before ? changedCaptionIds(before, composition) : [],
     commandDigestSha256,
     error,
   };
