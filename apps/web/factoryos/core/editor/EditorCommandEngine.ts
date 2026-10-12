@@ -96,6 +96,17 @@ export function applyEditorCommand(composition: CompositionIR, command: EditorCo
       });
     case "RETIME_CLIP":
       return retimeClip(composition, command.trackId, command.clipId, command.duration);
+    case "UPDATE_CAPTION_TEXT": {
+      if (!command.text.trim()) throw new Error("EDITOR_CAPTION_TEXT_REQUIRED");
+      let found = false;
+      const captions = composition.captions.map((caption) => {
+        if (caption.id !== command.captionId) return caption;
+        found = true;
+        return { ...caption, text: command.text };
+      });
+      if (!found) throw new Error("EDITOR_CAPTION_NOT_FOUND");
+      return { ...composition, captions };
+    }
     case "SET_CLIP_TRANSFORM":
       return updateClip(composition, command.trackId, command.clipId, (clip) => ({
         ...clip,
