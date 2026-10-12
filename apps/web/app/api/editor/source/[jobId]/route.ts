@@ -128,6 +128,7 @@ export async function POST(
       measurements.height === 1920 &&
       (measurements.videoCodec === "h264" || measurements.videoCodec === "hevc") &&
       (measurements.audioCodec === "aac" || measurements.audioCodec === "mp3") &&
+      measurements.syncDriftMs <= 1000 &&
       measurements.videoDuration >= 1 &&
       measurements.videoDuration <= 180;
 
