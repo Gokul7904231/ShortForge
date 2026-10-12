@@ -19,6 +19,7 @@ export interface SemanticRetrievalCandidate {
 export interface SemanticRetrievalScorer {
   readonly providerId: string;
   readonly modelRevision: string;
+  readonly executionBoundary: "LOCAL" | "APPROVED_REMOTE";
   search(
     query: string,
     documents: readonly SemanticRetrievalCandidate[],
@@ -32,6 +33,8 @@ export interface HybridKnowledgeRetrievalOptions {
   readonly exactWeight?: number;
   readonly semanticWeight?: number;
   readonly maxCorpusDocuments?: number;
+  /** External corpus-text submission is denied unless this is explicitly enabled. */
+  readonly allowApprovedRemoteSemanticScorer?: boolean;
 }
 
 const RRF_CONSTANT = 60;
@@ -94,6 +97,10 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
       SECRET_PATH_CONTROL.test(options.semanticScorer.modelRevision)
     )) {
       throw new Error("HYBRID_RETRIEVAL_INVALID_SEMANTIC_PROVIDER");
+    }
+    if (options.semanticScorer?.executionBoundary === "APPROVED_REMOTE" &&
+      options.allowApprovedRemoteSemanticScorer !== true) {
+      throw new Error("HYBRID_RETRIEVAL_REMOTE_SEMANTICS_NOT_AUTHORIZED");
     }
     this.providerId = options.semanticScorer
       ? "shortforge-hybrid-exact-bm25-vector-rerank"
