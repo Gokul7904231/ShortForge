@@ -10,6 +10,7 @@ import type {
 import type {
   AnimationTrack as CompositionAnimationTrack,
   CompositionClip,
+  CompositionCaption,
   MediaTime,
 } from "@/factoryos/core/timeline/CompositionIR";
 
@@ -118,6 +119,15 @@ export function ShortForgeEditorStudio({
     composition.captions[0]?.id ?? null,
   );
   const [captionDraft, setCaptionDraft] = useState(composition.captions[0]?.text ?? "");
+  const [captionFontSizeDraft, setCaptionFontSizeDraft] = useState(
+    composition.captions[0]?.style.fontSize ?? 42,
+  );
+  const [captionColorDraft, setCaptionColorDraft] = useState(
+    composition.captions[0]?.style.primaryColor ?? "#FFFFFF",
+  );
+  const [captionAnimationDraft, setCaptionAnimationDraft] = useState<CompositionCaption["style"]["animation"]>(
+    composition.captions[0]?.style.animation ?? "NONE",
+  );
 
   const selected = useMemo(
     () =>
@@ -133,7 +143,16 @@ export function ShortForgeEditorStudio({
 
   useEffect(() => {
     setCaptionDraft(selectedCaption?.text ?? "");
-  }, [selectedCaption?.id, selectedCaption?.text]);
+    setCaptionFontSizeDraft(selectedCaption?.style.fontSize ?? 42);
+    setCaptionColorDraft(selectedCaption?.style.primaryColor ?? "#FFFFFF");
+    setCaptionAnimationDraft(selectedCaption?.style.animation ?? "NONE");
+  }, [
+    selectedCaption?.id,
+    selectedCaption?.text,
+    selectedCaption?.style.fontSize,
+    selectedCaption?.style.primaryColor,
+    selectedCaption?.style.animation,
+  ]);
 
   const durationSeconds = secondsFromMediaTime(composition.canvas.duration);
   const timelineWidth = Math.min(MAX_TIMELINE_PX, Math.max(760, durationSeconds * 90));
@@ -280,6 +299,27 @@ export function ShortForgeEditorStudio({
     setSelectedCaptionId(captionId);
     const caption = composition.captions.find((item) => item.id === captionId);
     setCaptionDraft(caption?.text ?? "");
+  }
+
+  function saveCaptionStyle() {
+    if (!selectedCaption) return;
+    const fontSize = Number(captionFontSizeDraft);
+    if (!Number.isFinite(fontSize) || fontSize < 8 || fontSize > 144) return;
+    if (!/^#[0-9a-f]{6}$/i.test(captionColorDraft)) return;
+    if (
+      fontSize === selectedCaption.style.fontSize &&
+      captionColorDraft.toUpperCase() === selectedCaption.style.primaryColor.toUpperCase() &&
+      captionAnimationDraft === selectedCaption.style.animation
+    ) return;
+    void emit({
+      type: "UPDATE_CAPTION_STYLE",
+      captionId: selectedCaption.id,
+      stylePatch: {
+        fontSize,
+        primaryColor: captionColorDraft.toUpperCase(),
+        animation: captionAnimationDraft,
+      },
+    });
   }
 
   function setBackground(kind: "SOLID" | "GRADIENT" | "BLUR") {
@@ -794,8 +834,64 @@ export function ShortForgeEditorStudio({
                 >
                   Apply caption text
                 </button>
+
+                <div className="grid grid-cols-[1fr_76px] gap-2 pt-2">
+                  <label className="text-[10px] text-zinc-400">
+                    Font size
+                    <input
+                      type="number"
+                      min={8}
+                      max={144}
+                      value={captionFontSizeDraft}
+                      onChange={(event) => setCaptionFontSizeDraft(Number(event.target.value))}
+                      disabled={readOnly}
+                      className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-2 text-xs text-zinc-100 disabled:opacity-50"
+                    />
+                  </label>
+                  <label className="text-[10px] text-zinc-400">
+                    Text colour
+                    <input
+                      type="color"
+                      value={/^#[0-9a-f]{6}$/i.test(captionColorDraft) ? captionColorDraft : "#FFFFFF"}
+                      onChange={(event) => setCaptionColorDraft(event.target.value.toUpperCase())}
+                      disabled={readOnly}
+                      className="mt-1 h-[34px] w-full rounded-md border border-zinc-700 bg-zinc-950 p-1 disabled:opacity-50"
+                    />
+                  </label>
+                </div>
+                <label className="block pt-1 text-[10px] text-zinc-400">
+                  Animation
+                  <select
+                    value={captionAnimationDraft}
+                    onChange={(event) => setCaptionAnimationDraft(event.target.value as CompositionCaption["style"]["animation"])}
+                    disabled={readOnly}
+                    className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-2 text-xs text-zinc-200 disabled:opacity-50"
+                  >
+                    <option value="NONE">None</option>
+                    <option value="POP_IN">Pop in</option>
+                    <option value="FADE">Fade</option>
+                    <option value="KINETIC_WORD">Kinetic word</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={saveCaptionStyle}
+                  disabled={
+                    readOnly ||
+                    !Number.isFinite(Number(captionFontSizeDraft)) ||
+                    Number(captionFontSizeDraft) < 8 ||
+                    Number(captionFontSizeDraft) > 144 ||
+                    !/^#[0-9a-f]{6}$/i.test(captionColorDraft) ||
+                    (Number(captionFontSizeDraft) === selectedCaption.style.fontSize &&
+                      captionColorDraft.toUpperCase() === selectedCaption.style.primaryColor.toUpperCase() &&
+                      captionAnimationDraft === selectedCaption.style.animation)
+                  }
+                  className="w-full rounded-md border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Apply caption style
+                </button>
                 <p className="text-[10px] leading-4 text-zinc-500">
-                  Saves a new revision. Use Preview to render the updated frame.
+                  Text and style changes create new revisions. Use Preview to render the updated frame.
                 </p>
               </div>
             ) : (
