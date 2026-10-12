@@ -6,7 +6,7 @@ import { ActiveContextManager } from "../core/cognitive/context/ActiveContextMan
 import { EvidenceGraphEngine } from "../core/cognitive/graph/EvidenceGraphEngine";
 import { ContradictionResolver } from "../core/cognitive/conflict/ContradictionResolver";
 import { StrategicMetaThinker } from "../core/cognitive/meta/StrategicMetaThinker";
-import { AgentEconomicsEngine } from "../core/cognitive/economics/AgentEconomicsEngine";
+import { CapabilityFirstRouter } from "../core/routing/CapabilityFirstRouter";
 import { PredictiveFactoryEngine } from "../core/cognitive/predictive/PredictiveFactoryEngine";
 
 describe("FactoryOS Frontier v2 — FactoryBench 2.0 Evaluation Suite (15 Scenarios)", () => {
@@ -245,17 +245,16 @@ describe("FactoryOS Frontier v2 — FactoryBench 2.0 Evaluation Suite (15 Scenar
     expect(contradictions.length).toBe(1);
   });
 
-  it("Scenario 12: Cascading Failure -> Adaptive Model Routing switches to Multi-Agent Swarm", () => {
-    // Legacy economics remains a test-only compatibility benchmark; it is
-    // not instantiated by the production CognitivePlaneEngine.
-    const economics = new AgentEconomicsEngine();
-    const route = economics.routeTask("Cascading multi-floor deadlock across all pipelines", {
-      severity: "CRITICAL",
-      isMultiAgentRequired: true,
+  it("Scenario 12: Capability routing selects a viable local/free provider without granting admission", () => {
+    // Provider selection is a hint. Treasury owns economic admission and
+    // reservation; this benchmark must not treat the legacy heuristic as authority.
+    const route = CapabilityFirstRouter.routeCapability({
+      capability: "script_generation",
     });
 
-    expect(route.selectedTier).toBe("MULTI_AGENT_SWARM");
-    expect(route.estimatedTokens).toBeGreaterThan(5000);
+    expect(route.isPaid).toBe(false);
+    expect(route.estimatedCostUsd).toBe(0);
+    expect(["ollama_local", "gemini", "groq"]).toContain(route.selectedProviderId);
   });
 
   it("Scenario 13: Restart During Reasoning -> Indexed Experience Memory retrieves persistent record", async () => {
