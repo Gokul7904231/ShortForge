@@ -74,13 +74,14 @@ function receipt(
   error?: string,
   commandDigestSha256?: string,
 ): EditorReceipt {
+  const captionChanges = before ? changedCaptionIds(before, composition) : [];
   return {
     commandId,
     accepted,
     revision,
     compositionHash: compositionHash(composition),
     changedClipIds: before ? changedClipIds(before, composition) : [],
-    changedCaptionIds: before ? changedCaptionIds(before, composition) : [],
+    ...(captionChanges.length > 0 ? { changedCaptionIds: captionChanges } : {}),
     commandDigestSha256,
     error,
   };
