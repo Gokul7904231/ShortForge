@@ -72,7 +72,9 @@
         "Added a revision-checked UPDATE_CAPTION_TEXT operation to the canonical editor command engine.",
         "Studio now exposes a caption inspector and Apply caption text action; flattened jobs with no independent caption cues explain the limitation.",
         "Regression tests cover successful text change, preservation of scene metadata, and rejection of empty/unknown captions.",
-        "Successful editor receipts now expose changedCaptionIds so downstream verification can identify caption-level changes rather than treating them as an empty clip edit."
+        "Successful editor receipts now expose changedCaptionIds so downstream verification can identify caption-level changes rather than treating them as an empty clip edit.",
+        "Added UPDATE_CAPTION_STYLE with strict server-side allowlisting for font size, six-digit hex colours and supported animation values.",
+        "Editor inspector now supports text, font size, text colour and animation edits; the receipt carries changedCaptionIds for audit and downstream targeted-render planning."
       ]
     }
   ],
@@ -100,7 +102,8 @@
       "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
       "apps/web/factoryos/core/editor/EditorContracts.ts",
       "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
-      "apps/web/factoryos/core/editor/DurableEditor.ts"
+      "apps/web/factoryos/core/editor/DurableEditor.ts",
+      "apps/web/factoryos/tests/editor-contracts.test.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
   },
@@ -148,7 +151,7 @@
   "disposition": "BLOCKED",
   "finalDisposition": {
     "status": "BLOCKED_PENDING_QUALIFICATION",
-    "reason": "Current draft includes the dedicated page, best-effort CAS source packages with truthful fallback, F02-F05 timeline semantic preservation, caption text editing and caption-aware receipts. Current-head CI/browser/security qualification remains pending; the canonical F05 package path is not portable for every renderer, and safe export remains disabled."
+    "reason": "The native page, best-effort owner-bound CAS source packages, F02-F05 timeline semantic preservation, caption text/style editing and caption-aware receipts are implemented on the draft branch. Current-head CI/browser/security qualification remains pending; portable canonical F05 source packages for every render path and safe export remain incomplete."
   },
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/242",
