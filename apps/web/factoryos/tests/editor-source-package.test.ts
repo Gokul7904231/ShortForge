@@ -121,6 +121,42 @@ describe("EditorSourcePackage", () => {
     expect(composition.captions[0].text).toContain("capital of Tamil Nadu");
   });
 
+  it("uses declared CAS MIME metadata for already-staged image and audio inputs", async () => {
+    const base = makeTempRoot();
+    const imagePath = path.join(base, "inputs", "owned-question.png");
+    const audioPath = path.join(base, "inputs", "owned-voice.wav");
+    fs.writeFileSync(
+      imagePath,
+      Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+    );
+    writeTinyWav(audioPath);
+
+    const cas = new ContentAddressedStore(path.join(base, "cas"));
+    const ownerId = "user-editor-package-cas";
+    const jobId = "job-editor-package-cas";
+    const image = await cas.putFile(imagePath, "source-image", "image/png", {
+      sourceJobId: jobId,
+      importedBy: ownerId,
+    });
+    const audio = await cas.putFile(audioPath, "source-audio", "audio/wav", {
+      sourceJobId: jobId,
+      importedBy: ownerId,
+    });
+
+    const packageRecord = await buildEditorSourcePackage({
+      jobId,
+      ownerId,
+      renderIntent: renderIntent("cas://" + image.sha256, "cas://" + audio.sha256),
+      scenes: [{ sceneId: "quiz-question-cas", text: "Which city is the capital of Tamil Nadu?", durationSeconds: 1 }],
+      cas,
+      resolver: new ArtifactResolver(base),
+    });
+
+    expect(packageRecord).not.toBeNull();
+    expect(packageRecord?.sourceAssetSha256s).toContain(image.sha256);
+    expect(packageRecord?.sourceAssetSha256s).toContain(audio.sha256);
+  });
+
   it("declines source-package creation for missing placeholder media URLs", async () => {
     const base = makeTempRoot();
     const cas = new ContentAddressedStore(path.join(base, "cas"));
