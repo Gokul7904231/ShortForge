@@ -39,6 +39,7 @@ jobs:
           factoryos/tests/adaptive-presentation.test.ts
           factoryos/tests/visual-document-extraction-adapter.test.ts
           factoryos/tests/hybrid-retrieval-benchmark.test.ts
+          factoryos/tests/hybrid-knowledge-retrieval-provider.test.ts
           factoryos/tests/knowledge-store-retrieval-provider.test.ts
           factoryos/tests/mission-work-canvas-client.test.ts
         working-directory: apps/web
