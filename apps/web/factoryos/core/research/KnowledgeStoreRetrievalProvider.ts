@@ -20,6 +20,7 @@ export interface KnowledgeStoreRetrievalPort {
  */
 export class KnowledgeStoreRetrievalProvider implements RetrievalBenchmarkProvider {
   public readonly providerId = "shortforge-knowledge-store";
+  private qualitySnapshot: { readonly secretLeakErrors: readonly string[]; readonly duplicateIds: ReadonlySet<string> } | null = null;
 
   constructor(
     private readonly store: KnowledgeStoreRetrievalPort,
@@ -29,6 +30,25 @@ export class KnowledgeStoreRetrievalProvider implements RetrievalBenchmarkProvid
       /[\u0000-\u001F\u007F]/.test(implementationRevision)) {
       throw new Error("KNOWLEDGE_RETRIEVAL_INVALID_REVISION");
     }
+  }
+
+  /**
+   * Refreshes the exclusion snapshot between benchmark runs when the underlying
+   * corpus may have changed. A single run then uses one stable safety baseline.
+   */
+  public refreshQualitySnapshot(): void {
+    this.qualitySnapshot = null;
+  }
+
+  private getQualitySnapshot(): { readonly secretLeakErrors: readonly string[]; readonly duplicateIds: ReadonlySet<string> } {
+    if (!this.qualitySnapshot) {
+      const quality = this.store.validateShortForgeKnowledgeQuality();
+      this.qualitySnapshot = {
+        secretLeakErrors: [...quality.secretLeakErrors],
+        duplicateIds: new Set(this.store.getDuplicateIdErrors().map((entry) => entry.id)),
+      };
+    }
+    return this.qualitySnapshot;
   }
 
   public async search(
@@ -42,8 +62,8 @@ export class KnowledgeStoreRetrievalProvider implements RetrievalBenchmarkProvid
       throw new Error("KNOWLEDGE_RETRIEVAL_INVALID_LIMIT");
     }
 
-    const quality = this.store.validateShortForgeKnowledgeQuality();
-    const duplicateIds = new Set(this.store.getDuplicateIdErrors().map((entry) => entry.id));
+    const quality = this.getQualitySnapshot();
+    const duplicateIds = quality.duplicateIds;
     if (signal.aborted) throw new Error("KNOWLEDGE_RETRIEVAL_ABORTED");
 
     const candidates = this.store.search(query, { limit: Math.min(limit * 4, 200) });
