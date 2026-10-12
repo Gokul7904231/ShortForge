@@ -286,7 +286,7 @@ The following mappings capture six repository-inspired ideas as clean-room patte
 
 | Repository | Mapping | Initial disposition |
 |---|---|---|
-| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Scoped snapshots/diffs plus content-addressed history over existing IMemoryRepository; runtime wiring and retention policy pending, no second datastore |
+| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Scoped snapshots/diffs for domain KnowledgeOS and canonical OKF KnowledgeStore; content-addressed history over existing IMemoryRepository and owner/admin-only API; no second datastore; retention/current-head verification pending |
 | devdotfast/whiteboard | [devdotfast-whiteboard.md](./repo-mappings/devdotfast-whiteboard.md) | Guarded read-only canvas plus mission-scoped SSE invalidations/replay over bounded in-process history and polling fallback; browser/F07 proof pending |
 | twostraws/SwiftUI-Agent-Skill | [twostraws-swiftui-agent-skill.md](./repo-mappings/twostraws-swiftui-agent-skill.md) | Evidence-first methodology plus CI verifier for mappings/skill sections, relative links, explicit evidence semantics and word ceiling; semantic linter/context-quality benchmark pending |
 | CopilotKit/OpenIntelligentUI | [copilotkit-openintelligentui.md](./repo-mappings/copilotkit-openintelligentui.md) | Partial implementation: strict allow-listed summary/metric-grid/alert contracts and safe fixed renderer; no arbitrary generated-code runtime |
