@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFactoryOSController } from "@/lib/overseer/factoryos-runtime";
 import { resolveCollaborationActor } from "@/lib/overseer/collaboration-auth";
-import { projectMissionWorkSignal } from "@/components/overseer/collaboration/mission-work-events";
+import { projectMissionWorkSignal } from "@/factoryos/core/work/MissionWorkEventSignals";
 
 interface RouteContext {
   params: Promise<{ missionId: string }>;
@@ -44,6 +44,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ success: false, error: "Invalid event cursor." }, { status: 400 });
     }
 
+    let shutdownStream = () => {};
     const stream = new ReadableStream<Uint8Array>({
       start(streamController) {
         let closed = false;
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
           try { streamController.close(); } catch {}
         };
 
+        shutdownStream = close;
         const onAbort = () => close();
 
         // Subscribe before sampling history. Live signals are buffered until replay is complete.
@@ -125,7 +127,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         if (request.signal.aborted) close();
       },
       cancel() {
-        // Abort signal also cleans up; this is an additional safety path for consumers that cancel.
+        shutdownStream();
       },
     });
 

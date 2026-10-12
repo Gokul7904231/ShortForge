@@ -5,7 +5,6 @@ import { Activity, AlertCircle, CheckCircle2, Circle, Clock3, Loader2, RefreshCw
 import type { MissionWorkBoardSnapshot, WorkTaskCard } from "@/factoryos/core/work/MissionWorkManager";
 import { AdaptivePresentation } from "./AdaptivePresentation";
 import { readMissionWorkSnapshot } from "./mission-work-client";
-import { Activity as ActivityPulse } from "lucide-react";
 
 interface LiveMissionCanvasProps {
   missionId: string;
@@ -182,7 +181,7 @@ export function LiveMissionCanvas({ missionId }: LiveMissionCanvasProps) {
           <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[10px] text-[#667085]">
             <span>{lastUpdatedAt ? `Last refreshed ${new Date(lastUpdatedAt).toLocaleTimeString()}` : "Waiting for first snapshot"}</span>
             <span aria-live="polite" className="inline-flex items-center gap-1">
-              <ActivityPulse className={`h-3 w-3 ${liveFeedStatus === "LIVE" ? "text-emerald-500" : "text-amber-500"}`} />
+              <Activity className={`h-3 w-3 ${liveFeedStatus === "LIVE" ? "text-emerald-500" : "text-amber-500"}`} />
               {liveFeedStatus === "LIVE" ? "Live events connected" : liveFeedStatus === "CONNECTING" ? "Connecting to live events" : "Polling fallback active"}
             </span>
             <span>snapshot refresh every 4s</span>

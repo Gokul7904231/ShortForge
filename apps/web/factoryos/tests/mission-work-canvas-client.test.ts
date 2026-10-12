@@ -32,7 +32,7 @@ describe("mission work canvas API client", () => {
   });
 });
 
-import { projectMissionWorkSignal } from "../../components/overseer/collaboration/mission-work-events";
+import { projectMissionWorkSignal } from "../core/work/MissionWorkEventSignals";
 
 describe("mission work event projection", () => {
   const envelope = (overrides: Record<string, unknown> = {}) => ({
