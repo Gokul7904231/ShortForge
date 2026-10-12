@@ -369,6 +369,16 @@ export async function buildEditorSourcePackage(
   const cas = input.cas ?? ContentAddressedStore.getInstance();
   const resolver = input.resolver ?? new ArtifactResolver();
   const intent = input.renderIntent;
+  const sceneRows = input.scenes ?? [];
+  // A source package is only semantic when the scene identities are explicitly
+  // aligned with the ordered visual inputs supplied to the render intent.
+  if (
+    sceneRows.length !== intent.tracks.visualAssets.length ||
+    !sceneRows.every((scene) => {
+      const id = scene.sceneId ?? scene.scene_id ?? scene.id;
+      return typeof id === "string" && id.length > 0;
+    })
+  ) return null;
   if (intent.tracks.visualAssets.length + intent.tracks.audioTracks.length > 128) return null;
 
   const resolvedBySource = new Map<string, ResolvedSource>();
@@ -441,7 +451,6 @@ export async function buildEditorSourcePackage(
     }
 
     const sourceAssetSha256s = Array.from(new Set(sourceAssets.map((asset) => asset.sha256))).sort();
-    const sceneRows = input.scenes ?? [];
     const tracks: CompositionIR["tracks"] = [{
       id: "video-main",
       kind: "VIDEO",
@@ -465,18 +474,21 @@ export async function buildEditorSourcePackage(
     const captions = intent.tracks.captions.map(captionForCue);
     const createdAt = new Date().toISOString();
     const compositionId = "sf-editor-" + digest(input.jobId + ":" + intent.intentId).slice(0, 24);
-    const sourceFingerprintSha256 = digest(JSON.stringify({
-      renderIntentId: intent.intentId,
-      jobId: input.jobId,
-      sourceAssets: sourceAssets.map((asset) => asset.sha256).sort(),
-      tracks: intent.tracks,
-    }));
     const quizData = input.quizData === undefined ? undefined : JSON.parse(JSON.stringify(input.quizData));
     const sceneManifest = sceneRows.map((scene, index) => ({
       sceneId: sceneIdAt(sceneRows, index, "scene-" + index),
       text: typeof scene.text === "string" ? scene.text : undefined,
       durationSeconds: typeof scene.durationSeconds === "number" ? scene.durationSeconds : undefined,
       assetId: typeof scene.assetId === "string" ? scene.assetId : undefined,
+    }));
+    const sourceFingerprintSha256 = digest(JSON.stringify({
+      renderIntentId: intent.intentId,
+      jobId: input.jobId,
+      compositionType: intent.compositionType,
+      sourceAssets: sourceAssets.map((asset) => asset.sha256).sort(),
+      tracks: intent.tracks,
+      sceneManifest,
+      quizData,
     }));
     const composition: CompositionIR = {
       compositionId,
