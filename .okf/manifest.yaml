@@ -45,6 +45,13 @@ exception_policy:
     - status
 
 rule_coverage:
-  status: PILOT
-  active_machine_rules: 6
-  migration_target: 100_percent_critical_high
+  status: ENFORCED_INDEX_COVERAGE
+  active_machine_rules: 16
+  migration_target: 100_percent_machine_index_critical_high
+
+control_plane_v2:
+  policy_to_test_binding: REQUIRED
+  implementation_drift_detection: REQUIRED
+  critical_high_rule_coverage: REQUIRED
+  team_report_machine_linkage: REQUIRED
+  exception_expiration_enforcement: REQUIRED

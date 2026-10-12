@@ -36,3 +36,7 @@ Use the same semantic object in three projections:
 For model calls, Context Compiler emits the smallest sufficient serialized projection from TeamChangeIR rather than the entire .okf corpus.
 
 The full sweep is still mandatory: compact model context is an optimization of transfer, not a waiver of governance.
+
+## V2 governance binding
+
+TeamChangeIR retains the compiled OKF sweep status, corpus hash, envelope hash when available, applicable rule IDs, and sweep artifact reference. Compact model context may omit irrelevant corpus content but must preserve these governance identifiers for traceability.

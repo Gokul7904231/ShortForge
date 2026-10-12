@@ -1,0 +1,9 @@
+# ShortForge governance / security ownership
+# A separate approving human reviewer is required for protected-main merges.
+
+/.okf/ @Gokul7904231
+/.github/workflows/ @Gokul7904231
+/apps/web/factoryos/core/governance/ @Gokul7904231
+/apps/web/factoryos/core/intelligence/epistemic/ @Gokul7904231
+/apps/web/factoryos/core/verification/ @Gokul7904231
+/apps/web/publishing/authorization/ @Gokul7904231

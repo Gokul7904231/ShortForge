@@ -39,8 +39,8 @@ def changed_paths(base: str | None, head: str | None) -> list[str]:
         result = subprocess.run([
             'git', 'diff', '--name-only', f'{base}...{head}'
         ], cwd=ROOT, capture_output=True, text=True, check=True)
-    except (OSError, subprocess.CalledProcessError):
-        return []
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f'cannot determine changed paths for {base}...{head}: {exc}') from exc
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 def applies(path: str, patterns: list[str]) -> bool:
