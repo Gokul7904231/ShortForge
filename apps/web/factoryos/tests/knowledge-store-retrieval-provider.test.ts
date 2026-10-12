@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { KnowledgeDocument, ShortForgeQualityReport } from "../core/intelligence/knowledge/OKFContracts";
 import {
   KnowledgeStoreRetrievalProvider,
+  knowledgeDocumentContentRevision,
   type KnowledgeStoreRetrievalPort,
 } from "../core/research/KnowledgeStoreRetrievalProvider";
 
@@ -42,8 +43,11 @@ describe("KnowledgeStore retrieval benchmark baseline adapter", () => {
     expect(results).toEqual([{
       documentId: "safe-doc",
       sourceRef: "knowledge/research/safe.md",
-      sourceRevision: "a".repeat(40),
+      sourceRevision: knowledgeDocumentContentRevision(safe),
     }]);
+    expect(results[0].sourceRevision).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(knowledgeDocumentContentRevision({ ...safe, content: "changed content" }))
+      .not.toBe(results[0].sourceRevision);
   });
 
   it("excludes documents flagged by secret scan or duplicate-ID detection", async () => {

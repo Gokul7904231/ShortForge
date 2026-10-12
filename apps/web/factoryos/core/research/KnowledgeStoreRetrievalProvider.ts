@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type {
   KnowledgeContentType,
   KnowledgeDocument,
@@ -86,10 +87,32 @@ export class KnowledgeStoreRetrievalProvider implements RetrievalBenchmarkProvid
       output.push({
         documentId: id,
         sourceRef: filePath,
-        sourceRevision: this.implementationRevision,
+        sourceRevision: knowledgeDocumentContentRevision(document),
       });
       if (output.length >= limit) break;
     }
     return output;
   }
+}
+
+/** Content address for a parsed KnowledgeStore document, distinct from its retriever revision. */
+export function knowledgeDocumentContentRevision(document: KnowledgeDocument): string {
+  const canonical = canonicalizeRevisionValue({
+    filePath: document.filePath.replace(/\\/g, "/"),
+    frontmatter: document.frontmatter,
+    content: document.content,
+  });
+  return `sha256:${createHash("sha256").update(canonical, "utf8").digest("hex")}`;
+}
+
+function canonicalizeRevisionValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalizeRevisionValue(item)).join(",")}]`;
+  }
+  if (value !== null && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).filter((key) => record[key] !== undefined).sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalizeRevisionValue(record[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
 }

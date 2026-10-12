@@ -3,6 +3,7 @@ import type {
   KnowledgeDocument,
   ShortForgeQualityReport,
 } from "../core/intelligence/knowledge/OKFContracts";
+import { knowledgeDocumentContentRevision } from "../core/research/KnowledgeStoreRetrievalProvider";
 import {
   HybridKnowledgeRetrievalProvider,
   type HybridKnowledgeCorpusPort,
@@ -139,7 +140,8 @@ describe("HybridKnowledgeRetrievalProvider", () => {
     expect(provider.providerId).toBe("shortforge-hybrid-exact-bm25-vector-rerank");
     expect(scorer.search).toHaveBeenCalledTimes(1);
     expect(result[0]?.documentId).toBe("semantic-doc");
-    expect(result[0]?.sourceRevision).toContain("test-local-embedding@fixture-v1");
+    expect(provider.implementationRevision).toContain("test-local-embedding@fixture-v1");
+    expect(result[0]?.sourceRevision).toBe(knowledgeDocumentContentRevision(semantic));
   });
 
   it("fails closed when remote semantic scoring is not explicitly approved", () => {

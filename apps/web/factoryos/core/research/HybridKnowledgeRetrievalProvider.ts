@@ -3,6 +3,7 @@ import type {
   ShortForgeQualityReport,
 } from "../intelligence/knowledge/OKFContracts";
 import type { RetrievalBenchmarkItem, RetrievalBenchmarkProvider } from "./HybridRetrievalBenchmark";
+import { knowledgeDocumentContentRevision } from "./KnowledgeStoreRetrievalProvider";
 
 export interface HybridKnowledgeCorpusPort {
   list(): KnowledgeDocument[];
@@ -53,6 +54,7 @@ const SECRET_PATH_CONTROL = /[\u0000-\u001F\u007F]/;
  */
 export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvider {
   public readonly providerId: string;
+  public readonly implementationRevision: string;
   private qualitySnapshot: {
     readonly secretLeakErrors: readonly string[];
     readonly duplicateIds: ReadonlySet<string>;
@@ -64,7 +66,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
 
   constructor(
     private readonly corpus: HybridKnowledgeCorpusPort,
-    public readonly implementationRevision: string,
+    implementationRevision: string,
     private readonly options: HybridKnowledgeRetrievalOptions = {},
   ) {
     if (!implementationRevision.trim() || implementationRevision.length > 128 ||
@@ -105,6 +107,9 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     this.providerId = options.semanticScorer
       ? "shortforge-hybrid-exact-bm25-vector-rerank"
       : "shortforge-hybrid-exact-bm25";
+    this.implementationRevision = options.semanticScorer
+      ? `${implementationRevision}+semantic:${options.semanticScorer.providerId}@${options.semanticScorer.modelRevision}`
+      : implementationRevision;
   }
 
   /** Re-run the canonical secret/duplicate checks after refreshing the corpus. */
@@ -207,9 +212,7 @@ export class HybridKnowledgeRetrievalProvider implements RetrievalBenchmarkProvi
     return fused.map(({ document, id, score }) => ({
       documentId: id,
       sourceRef: document.filePath.replace(/\\/g, "/"),
-      sourceRevision: this.options.semanticScorer
-        ? `${this.implementationRevision}+${this.options.semanticScorer.providerId}@${this.options.semanticScorer.modelRevision}`.slice(0, 256)
-        : this.implementationRevision,
+      sourceRevision: knowledgeDocumentContentRevision(document),
       score,
     }));
   }
