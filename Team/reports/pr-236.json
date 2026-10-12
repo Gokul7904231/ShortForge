@@ -27,7 +27,7 @@
   "security": {
     "required": true,
     "status": "TRIAGED",
-    "strictTypecheck": "PENDING on reconciled head",
+    "strictTypecheck": "PASS — CI run 38215748944, TypeCheck & Floor 01 Contract Tests job succeeded.",
     "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
     "strix": "UNAVAILABLE",
     "zap": "NOT_APPLICABLE",
@@ -54,17 +54,22 @@
     "Added dataset preparation, leakage-aware splitting, trainer, validation-only calibration, prediction, and AER-Bench commands.",
     "Integrated AER-Core as a non-authoritative shadow observer.",
     "Separated Ascalon synthetic curriculum scenarios from production-golden export and removed unmeasured quality claims.",
-    "Added training-readiness documentation and CI validation workflow."
+    "Added training-readiness documentation and CI validation workflow.",
+    "Corrected optional verified-training-capture narrowing in DecisionLedger after the first strict typecheck exposed TS18048."
   ],
   "verificationResults": {
-    "teamChangeGate": "PENDING — fresh PR checks must run",
-    "okfGovernance": "PENDING — fresh PR checks must run",
-    "typecheck": "PENDING — validator narrowing defect was corrected before this reconciliation commit",
-    "aerCoreTests": "PENDING",
-    "ascalonReadinessTests": "PENDING",
-    "repositoryCI": "PENDING",
-    "securityReview": "TRIAGED — automated and human review evidence still required",
-    "exactHead": "bb356e7f295316f1381cd6ab9b3da0b51467d611"
+    "teamChangeGate": "PASS — run 38215748981",
+    "okfGovernance": "PASS — run 38215748932",
+    "typecheck": "PASS — run 38215748944, TypeCheck & Floor 01 Contract Tests job succeeded on code head d08ffe03e3d5859763773b842f15a3e461f3bfc9.",
+    "floor01Python": "PASS — run 38215748944",
+    "floor01Security": "PASS — run 38215748944",
+    "productionContainerSmoke": "PASS — run 38215748944",
+    "aerCoreTests": "PASS — 5/5 AER Decision Core boundary tests in full Vitest run 38215748944; dedicated training-boundary audit and Python contract tests passed in run 38215748931.",
+    "ascalonReadinessTests": "PASS — the Ascalon training-readiness test file passed, including synthetic curriculum exclusion, in run 38215748944.",
+    "integrationChecks": "PASS — GLiDE 38215749071; Blender MCP 38215748998; Context Fabric 38215748961; Compute Pool 38215748965; Treasury Waves 4–6 (38215748934, 38215748954, 38215748972); Floors 4–7; ReMaker 38215748957; Compute Golden Mission 38215748996; eight-floor production trajectory 38215749050; Lightning physical MP4 → CAS → F07 proof 38215748945.",
+    "fullVitestRegression": "INFORMATIONAL_FAILURE — 55 failed, 1451 passed, 9 skipped on code head d08ffe03e3d5859763773b842f15a3e461f3bfc9. Baseline run on the exact main base commit 9e3d7017f62625cea5258dabee926824cb43ab18 had 56 failed, 1444 passed, 9 skipped. Failure-signature comparison found no new failing test signatures; one baseline failure no longer failed. The broader suite still has pre-existing failures and should be tracked separately.",
+    "securityReview": "Automated dependency/static-security lane passed; independent human review remains required by repository governance.",
+    "exactHead": "d08ffe03e3d5859763773b842f15a3e461f3bfc9 (implementation head evaluated before this evidence-report refresh)"
   },
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/236",
@@ -72,5 +77,9 @@
     "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437685",
     "docs/ascalon/aer-decision-core-standard.md",
     "docs/ascalon/training/aer-decision-core-training.md"
+  ],
+  "blockers": [
+    "Repository governance requires an independent human review/approval before merge.",
+    "The full Vitest regression suite retains widespread baseline failures despite no new failing signatures being identified in the comparison."
   ]
 }
