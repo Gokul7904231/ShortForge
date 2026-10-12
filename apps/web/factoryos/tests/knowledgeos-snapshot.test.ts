@@ -13,10 +13,19 @@ describe("KnowledgeOS provenance snapshots", () => {
       scope: "MISSION",
       missionId: "mission_snapshot",
     });
+    const otherMissionSource = knowledge.storeSource({
+      url: "https://example.net/private",
+      title: "Other mission source",
+      publisher: "Other",
+      snippet: "Must not be included in this mission snapshot.",
+      reliabilityScore: 0.7,
+      scope: "MISSION",
+      missionId: "other_mission",
+    });
     const claim = knowledge.storeClaim({
       statement: "A claim grounded in a real source.",
       verificationStatus: "UNVERIFIED",
-      sourceIds: [source.id, "src_missing"],
+      sourceIds: [source.id, otherMissionSource.id, "src_missing"],
       confidence: 0.4,
       scope: "MISSION",
       missionId: "mission_snapshot",
@@ -29,16 +38,19 @@ describe("KnowledgeOS provenance snapshots", () => {
       missionId: "mission_snapshot",
     });
 
-    const snapshot = knowledge.snapshot();
+    const snapshot = knowledge.snapshot({ scope: "MISSION", missionId: "mission_snapshot" });
     const claimLinks = snapshot.relationships.filter((edge) => edge.fromId === claim.id);
 
     expect(snapshot.schemaVersion).toBe("knowledgeos.snapshot.v1");
     expect(snapshot.contentDigest).toMatch(/^[a-f0-9]{64}$/);
+    expect(snapshot.selection).toEqual({ scope: "MISSION", missionId: "mission_snapshot" });
     expect(snapshot.records.map((record) => record.id)).toEqual(
       [...snapshot.records.map((record) => record.id)].sort(),
     );
+    expect(snapshot.records.some((record) => record.id === otherMissionSource.id)).toBe(false);
     expect(claimLinks).toEqual(expect.arrayContaining([
       expect.objectContaining({ toId: source.id, relationType: "CLAIM_CITES_SOURCE", resolved: true }),
+      expect.objectContaining({ toId: otherMissionSource.id, relationType: "CLAIM_CITES_SOURCE", resolved: false }),
       expect.objectContaining({ toId: "src_missing", relationType: "CLAIM_CITES_SOURCE", resolved: false }),
     ]));
     expect(snapshot.relationships).toEqual(expect.arrayContaining([
@@ -68,18 +80,22 @@ describe("KnowledgeOS provenance snapshots", () => {
       scope: "GLOBAL",
     });
 
-    const baseline = knowledge.snapshot();
-    expect(knowledge.snapshot().contentDigest).toBe(baseline.contentDigest);
+    const baseline = knowledge.snapshot({ scope: "GLOBAL" });
+    expect(knowledge.snapshot({ scope: "GLOBAL" }).contentDigest).toBe(baseline.contentDigest);
+    expect(() => KnowledgeOS.diffSnapshots(
+      baseline,
+      knowledge.snapshot({ scope: "MISSION", missionId: "different_mission" }),
+    )).toThrow("KNOWLEDGEOS_SNAPSHOT_SCOPE_MISMATCH");
 
     knowledge.updateTopicSaturation("Agent retrieval", 0.2);
-    const withTopic = knowledge.snapshot();
+    const withTopic = knowledge.snapshot({ scope: "GLOBAL" });
     const added = KnowledgeOS.diffSnapshots(baseline, withTopic);
     expect(added.addedRecordIds).toHaveLength(1);
     expect(added.baseDigest).toBe(baseline.contentDigest);
     expect(added.targetDigest).toBe(withTopic.contentDigest);
 
     knowledge.updateTopicSaturation("Agent retrieval", 0.85);
-    const changedTopic = knowledge.snapshot();
+    const changedTopic = knowledge.snapshot({ scope: "GLOBAL" });
     const changed = KnowledgeOS.diffSnapshots(withTopic, changedTopic);
     expect(changed.changedRecordIds).toHaveLength(1);
     expect(changed.addedRecordIds).toHaveLength(0);
