@@ -57,7 +57,11 @@ describeLiveProof("live hosted sandbox compute proof", () => {
               : new BlaxelSandboxAdapter();
     const validation = await adapter.validateCredentials();
     expect(validation.configured).toBe(true);
-    expect(validation.authenticated).toBe(true);
+    // Include only a stable, non-secret error code in failures; never print credential values or raw SDK errors.
+    expect(
+      validation.authenticated,
+      `LIVE_SANDBOX_AUTH_FAILED provider=${provider} errorCode=${validation.errorCode || "UNKNOWN"}`,
+    ).toBe(true);
     expect(validation.providerReachable).toBe(true);
 
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "shortforge-live-sandbox-"));
