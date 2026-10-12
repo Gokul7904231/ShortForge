@@ -19,7 +19,7 @@ export interface RetrievalBenchmarkItem {
 export interface RetrievalBenchmarkProvider {
   readonly providerId: string;
   readonly implementationRevision: string;
-  search(query: string, limit: number): Promise<readonly RetrievalBenchmarkItem[]>;
+  search(query: string, limit: number, signal: AbortSignal): Promise<readonly RetrievalBenchmarkItem[]>;
 }
 
 export interface RetrievalBenchmarkCaseResult {
@@ -78,15 +78,19 @@ export interface RetrievalBenchmarkComparison {
 export async function runHybridRetrievalBenchmark(
   provider: RetrievalBenchmarkProvider,
   cases: readonly RetrievalBenchmarkCase[],
-  options: { readonly topK?: number; readonly maxCases?: number } = {},
+  options: { readonly topK?: number; readonly maxCases?: number; readonly queryTimeoutMs?: number } = {},
 ): Promise<RetrievalBenchmarkReport> {
   const topK = options.topK ?? 10;
   const maxCases = options.maxCases ?? 200;
+  const queryTimeoutMs = options.queryTimeoutMs ?? 30_000;
   if (!Number.isSafeInteger(topK) || topK < 1 || topK > 50) {
     throw new Error("RETRIEVAL_BENCHMARK_INVALID_TOP_K");
   }
   if (!Number.isSafeInteger(maxCases) || maxCases < 1 || maxCases > 1000) {
     throw new Error("RETRIEVAL_BENCHMARK_INVALID_CASE_LIMIT");
+  }
+  if (!Number.isSafeInteger(queryTimeoutMs) || queryTimeoutMs < 1 || queryTimeoutMs > 120_000) {
+    throw new Error("RETRIEVAL_BENCHMARK_INVALID_QUERY_TIMEOUT");
   }
   if (cases.length === 0 || cases.length > maxCases) {
     throw new Error("RETRIEVAL_BENCHMARK_CASE_COUNT_OUT_OF_RANGE");
@@ -111,10 +115,27 @@ export async function runHybridRetrievalBenchmark(
     const startedAt = performance.now();
     let rawResults: readonly RetrievalBenchmarkItem[] = [];
     let status: RetrievalBenchmarkCaseResult["status"] = "OK";
+    const controller = new AbortController();
+    let queryTimeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      rawResults = await provider.search(item.query, topK);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        queryTimeout = setTimeout(() => {
+          controller.abort();
+          reject(new Error("RETRIEVAL_QUERY_TIMEOUT"));
+        }, queryTimeoutMs);
+      });
+      const candidateResults = await Promise.race([
+        provider.search(item.query, topK, controller.signal),
+        timeoutPromise,
+      ]);
+      if (!Array.isArray(candidateResults)) throw new Error("RETRIEVAL_PROVIDER_INVALID_RESPONSE");
+      rawResults = candidateResults;
     } catch {
       status = "PROVIDER_ERROR";
+      rawResults = [];
+    } finally {
+      if (queryTimeout) clearTimeout(queryTimeout);
+      if (!controller.signal.aborted) controller.abort();
     }
     const latencyMs = Math.max(0, performance.now() - startedAt);
     latencySamples.push(latencyMs);
@@ -199,7 +220,15 @@ export function compareRetrievalBenchmarks(
   candidate: RetrievalBenchmarkReport,
   thresholds: RetrievalBenchmarkThresholds = {},
 ): RetrievalBenchmarkComparison {
-  if (baseline.caseCount !== candidate.caseCount || baseline.topK !== candidate.topK) {
+  if (
+    baseline.caseCount !== candidate.caseCount ||
+    candidate.cases.length !== baseline.cases.length ||
+    baseline.topK !== candidate.topK ||
+    baseline.cases.some((item, index) =>
+      item.caseId !== candidate.cases[index]?.caseId ||
+      item.category !== candidate.cases[index]?.category,
+    )
+  ) {
     throw new Error("RETRIEVAL_BENCHMARK_BASELINE_MISMATCH");
   }
 
