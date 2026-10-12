@@ -26,8 +26,9 @@ type BlaxelModule = {
 
 async function loadBlaxel(): Promise<BlaxelModule> {
   try {
-    const importModule = Function("specifier", "return import(specifier)") as (specifier: string) => Promise<unknown>;
-    return (await importModule("@blaxel/core")) as BlaxelModule;
+    // Keep this as native dynamic import: Function("return import(...)") fails in Vitest's module runner.
+    const specifier: string = "@blaxel/core";
+    return (await import(/* @vite-ignore */ specifier)) as BlaxelModule;
   } catch (error: any) {
     throw new Error(
       "BLAXEL_SDK_MISSING: install @blaxel/core in the runtime that activates Blaxel." +
