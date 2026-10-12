@@ -133,7 +133,7 @@ describe("HybridKnowledgeRetrievalProvider", () => {
       { semanticScorer: scorer },
     );
 
-    const result = await provider.search("query for semantic concept", 2, new AbortController().signal);
+    const result = await provider.search("different wording concept", 2, new AbortController().signal);
 
     expect(provider.providerId).toBe("shortforge-hybrid-exact-bm25-vector-rerank");
     expect(scorer.search).toHaveBeenCalledTimes(1);
