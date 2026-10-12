@@ -1,4 +1,5 @@
 import { db } from "./firebase-admin";
+import type { EditorSourcePackageRecord } from "@/factoryos/core/editor/EditorSourcePackage";
 
 export interface VideoJob {
   id: string;
@@ -44,6 +45,8 @@ export interface VideoJob {
     ownerId: string;
     importedAt: string;
   };
+  /** Immutable per-scene source composition package, when all source assets were resolved into CAS. */
+  editorSourcePackage?: EditorSourcePackageRecord;
 }
 
 const inMemoryJobs = new Map<string, VideoJob>();
