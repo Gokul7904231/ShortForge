@@ -1,5 +1,6 @@
 import type {
   CompositionIR,
+  CompositionCaption,
   AnimationTrack,
   EffectNode,
   MaskNode,
@@ -49,6 +50,11 @@ export type EditorCommand =
       readonly trackId: string;
       readonly clipId: string;
       readonly duration: MediaTime;
+    }
+  | {
+      readonly type: "UPDATE_CAPTION_TEXT";
+      readonly captionId: string;
+      readonly text: string;
     }
   | {
       readonly type: "SET_CLIP_TRANSFORM";
