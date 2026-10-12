@@ -95,7 +95,7 @@ export class VisualDocumentExtractionAdapter {
       throw new Error("VISION_EXTRACTION_REMOTE_PROVIDER_NOT_AUTHORIZED");
     }
     if (!this.provider.providerId.trim() || this.provider.providerId.length > 128 ||
-      /[\\u0000-\\u001F\\u007F]/.test(this.provider.providerId)) {
+      /[\u0000-\u001F\u007F]/.test(this.provider.providerId)) {
       throw new Error("VISION_EXTRACTION_INVALID_PROVIDER_ID");
     }
     if (!(request.bytes instanceof Uint8Array) || request.bytes.byteLength === 0) {
