@@ -26,7 +26,7 @@ zvec-grep describes local-first workspace search combining ripgrep-style exact m
 - Rejected: immediately replacing the current retrieval path, indexing secrets or ignored files, using semantic similarity as a substitute for exact identifier lookup, or merging untrusted remote results into verified knowledge without source review.
 - Rejected: adding a second durable knowledge store merely because the upstream tool includes local indexing.
 
-## Status and qualification gate
+## Status and verification required
 
 **EXPERIMENT_ONLY; REAL BENCHMARK NOT RUN.** `apps/web/factoryos/core/research/HybridRetrievalBenchmark.ts` now evaluates injected baseline/candidate providers on identical case sets, measures recall@k, MRR, exact-identifier hit rate, provenance coverage, p50/p95 latency, and provider error rate, times out stuck probes, and blocks candidates that regress the configured gates. A synthetic test fixture exercises the harness; no real ShortForge corpus, zvec-grep provider, or comparative performance result has been run. Build a reproducible evaluation set from real ShortForge tasks and compare exact-only, BM25-only, vector-only, and hybrid modes. Track index freshness/update cost, resource footprint, provenance, secret leakage, changed/deleted paths, private configuration, and malicious repository content.
 
