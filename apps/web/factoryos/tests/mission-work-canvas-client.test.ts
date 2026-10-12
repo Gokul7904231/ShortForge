@@ -32,7 +32,7 @@ describe("mission work canvas API client", () => {
   });
 });
 
-import { projectMissionWorkSignal } from "../core/work/MissionWorkEventSignals";
+import { projectMissionWorkReplay, projectMissionWorkSignal } from "../core/work/MissionWorkEventSignals";
 
 describe("mission work event projection", () => {
   const envelope = (overrides: Record<string, unknown> = {}) => ({
@@ -61,6 +61,54 @@ describe("mission work event projection", () => {
     });
     expect(JSON.stringify(signal)).not.toContain("SENSITIVE_WORKER_OUTPUT");
     expect(JSON.stringify(signal)).not.toContain("SHOULD_NOT_LEAK");
+  });
+
+  it("replays only allow-listed signals after an existing cursor", () => {
+    const history = [
+      envelope({ eventId: "evt_cursor", topic: "MISSION_STARTED", payload: { missionId: "mission-safe-read" } }),
+      envelope({ eventId: "evt_task1", topic: "TASK_PROGRESS", timestamp: "2026-10-12T09:01:00.000Z" }),
+      envelope({
+        eventId: "evt_other",
+        topic: "TASK_COMPLETED",
+        payload: { missionId: "another-mission", taskId: "private-task", secret: "omit" },
+      }),
+      envelope({
+        eventId: "evt_task2",
+        topic: "TASK_FAILED",
+        timestamp: "2026-10-12T09:02:00.000Z",
+        payload: { missionId: "mission-safe-read", taskId: "task-b", workerLog: "do not send" },
+      }),
+    ];
+
+    const replay = projectMissionWorkReplay(history, "evt_cursor", "mission-safe-read");
+
+    expect(replay.resyncRequired).toBe(false);
+    expect(replay.latestEventId).toBe("evt_task2");
+    expect(replay.signals.map((item) => item.eventId)).toEqual(["evt_task1", "evt_task2"]);
+    expect(JSON.stringify(replay.signals)).not.toContain("workerLog");
+    expect(JSON.stringify(replay.signals)).not.toContain("private-task");
+  });
+
+  it("requires resync when the reconnect cursor has expired from the bounded history", () => {
+    const history = [
+      envelope({ eventId: "evt_recent1" }),
+      envelope({ eventId: "evt_recent2", topic: "TASK_PROGRESS" }),
+    ];
+
+    expect(projectMissionWorkReplay(history, "evt_expired", "mission-safe-read")).toEqual({
+      resyncRequired: true,
+      latestEventId: "evt_recent2",
+      signals: [],
+    });
+  });
+
+  it("does not replay history for a fresh connection without a Last-Event-ID", () => {
+    const history = [envelope({ eventId: "evt_existing" })];
+    expect(projectMissionWorkReplay(history, undefined, "mission-safe-read")).toEqual({
+      resyncRequired: false,
+      latestEventId: "evt_existing",
+      signals: [],
+    });
   });
 
   it("rejects events for another mission, non-work topics, invalid cursors, and invalid timestamps", () => {

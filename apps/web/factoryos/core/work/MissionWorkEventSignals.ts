@@ -69,3 +69,45 @@ export function projectMissionWorkSignal(
     ...(taskId ? { taskId } : {}),
   };
 }
+
+export interface MissionWorkReplayProjection {
+  readonly resyncRequired: boolean;
+  readonly latestEventId?: string;
+  readonly signals: readonly MissionWorkSignal[];
+}
+
+/**
+ * Project bounded in-process history into mission-safe signals after a browser cursor.
+ * A missing cursor means the history was lost/rolled over; callers must refresh the
+ * authoritative snapshot rather than pretending replay is complete.
+ */
+export function projectMissionWorkReplay(
+  history: readonly unknown[],
+  requestedCursor: string | undefined,
+  expectedMissionId: string,
+): MissionWorkReplayProjection {
+  const last = history.length ? asRecord(history[history.length - 1]) : null;
+  const latestEventId = typeof last?.eventId === "string" &&
+    /^[A-Za-z0-9_-]{1,128}$/.test(last.eventId)
+      ? last.eventId
+      : undefined;
+
+  if (!requestedCursor) {
+    return { resyncRequired: false, latestEventId, signals: [] };
+  }
+
+  const cursorIndex = history.findIndex((rawEvent) => asRecord(rawEvent)?.eventId === requestedCursor);
+  if (cursorIndex < 0) {
+    return { resyncRequired: true, latestEventId, signals: [] };
+  }
+
+  const seen = new Set<string>();
+  const signals: MissionWorkSignal[] = [];
+  for (const rawEvent of history.slice(cursorIndex + 1)) {
+    const signal = projectMissionWorkSignal(rawEvent, expectedMissionId);
+    if (!signal || seen.has(signal.eventId)) continue;
+    seen.add(signal.eventId);
+    signals.push(signal);
+  }
+  return { resyncRequired: false, latestEventId, signals };
+}

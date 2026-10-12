@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFactoryOSController } from "@/lib/overseer/factoryos-runtime";
 import { resolveCollaborationActor } from "@/lib/overseer/collaboration-auth";
-import { projectMissionWorkSignal } from "@/factoryos/core/work/MissionWorkEventSignals";
+import { projectMissionWorkReplay, projectMissionWorkSignal } from "@/factoryos/core/work/MissionWorkEventSignals";
 
 interface RouteContext {
   params: Promise<{ missionId: string }>;
@@ -97,20 +97,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
           else sendSignal(signal);
         });
 
-        const history = factory.eventBus.getEvents(5000);
-        const latest = history[history.length - 1];
-        if (requestedCursor) {
-          const cursorIndex = history.findIndex((event) => event.eventId === requestedCursor);
-          if (cursorIndex < 0) {
-            // History has rolled over or the process restarted; force an authoritative snapshot refresh.
-            send({ type: "RESYNC_REQUIRED", missionId }, latest?.eventId);
-          } else {
-            for (const event of history.slice(cursorIndex + 1)) {
-              const signal = projectMissionWorkSignal(event, missionId);
-              if (signal) sendSignal(signal);
-            }
-          }
+        const replay = projectMissionWorkReplay(
+          factory.eventBus.getEvents(5000),
+          requestedCursor || undefined,
+          missionId,
+        );
+        if (replay.resyncRequired) {
+          // History rolled over or the process restarted; request an authoritative snapshot.
+          send({ type: "RESYNC_REQUIRED", missionId }, replay.latestEventId);
         }
+        for (const signal of replay.signals) sendSignal(signal);
 
         for (const signal of pending) sendSignal(signal);
         replaying = false;
