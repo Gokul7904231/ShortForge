@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "shortforge-editor-page-20261012",
+  "date": "2026-10-12",
+  "mission": "Build the native ShortForge Editor page and safely connect existing generated Shorts",
+  "pullRequest": 242,
+  "base": "main",
+  "activeFeature": "feat/shortforge-editor-20261012",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "sourceRefs": [
+      ".okf/research/build-shortforge-editor-20261012.md",
+      "apps/web/factoryos/core/timeline/CompositionIR.ts",
+      "apps/web/factoryos/core/editor/EditorRuntime.ts",
+      "apps/web/factoryos/core/editor/DurableEditor.ts",
+      "apps/web/factoryos/core/fabric/RenderFabric.ts",
+      "apps/web/factoryos/core/verification/VerificationEngine.ts"
+    ],
+    "summary": "Architecture and code paths reviewed. Follow-up is required because legacy jobs lack a guaranteed editable source manifest and export is intentionally disabled."
+  },
+  "forgers": [
+    {
+      "name": "product-design",
+      "status": "IMPLEMENTED_WITH_LIMITS",
+      "findings": [
+        "Generation READY panel and Media Library route to a dedicated editor page.",
+        "Legacy flattened imports are clearly labelled and do not claim recovered scene/question layers."
+      ]
+    },
+    {
+      "name": "editor-runtime",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "Existing CompositionIR and DurableEditor are reused.",
+        "CAS sources are resolved server-side and actual bytes are hash checked before compilation.",
+        "A regression test covers successful CAS resolution and tamper rejection."
+      ]
+    },
+    {
+      "name": "render-security",
+      "status": "FOLLOW_UP_REQUIRED",
+      "findings": [
+        "A dedicated editor playback route now verifies session, job ownership, source binding, byte length and SHA-256.",
+        "No production export endpoint is exposed by this change; export remains locked pending worker input staging, Treasury admission, F06 output and F07 evidence."
+      ]
+    }
+  ],
+  "security": {
+    "status": "UNPROVEN",
+    "semgrep": "UNPROVEN",
+    "strix": "UNPROVEN",
+    "zap": "UNPROVEN",
+    "evidence": [
+      "apps/web/app/api/editor/source/[jobId]/route.ts",
+      "apps/web/app/api/editor/source/[jobId]/video/route.ts",
+      "apps/web/app/api/editor/runtime/route.ts",
+      "apps/web/factoryos/core/editor/EditorRuntime.ts"
+    ],
+    "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
+  },
+  "conflicts": [],
+  "proposedResolutions": [
+    {
+      "id": "editor-export-gate",
+      "proposal": "Keep export disabled until F05 source manifest, worker-side source staging/hash validation, server-authorized Treasury, F06 render, CAS output and F07 receipt are integrated and tested."
+    },
+    {
+      "id": "legacy-flattened-source",
+      "proposal": "Import old completed MP4s as one explicitly labelled clip. Do not invent original scenes, question data, captions, or independent narration."
+    },
+    {
+      "id": "license-boundary",
+      "proposal": "Use external editor repositories as feature/architecture references. Review all licenses before vendoring or adding dependencies."
+    }
+  ],
+  "acceptedResolutions": [
+    {
+      "id": "editor-page",
+      "resolution": "Reuse CompositionIR, DurableEditor and the existing Studio rather than creating a competing timeline runtime."
+    },
+    {
+      "id": "owner-bound-media",
+      "resolution": "Use an authenticated owner-bound playback endpoint and verify the physical CAS digest before serving source bytes."
+    }
+  ],
+  "disposition": "BLOCKED",
+  "finalDisposition": {
+    "status": "BLOCKED_PENDING_QUALIFICATION",
+    "reason": "The draft implementation has not passed full CI/E2E/security qualification, and true scene-level editing still depends on a persistent F05/F06 source manifest."
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/242",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197793",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197715",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197787",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197741",
+    ".okf/research/build-shortforge-editor-20261012.md"
+  ],
+  "modelMetadata": {
+    "assistant": "GPT-6",
+    "modelVersion": "not applicable to application runtime",
+    "automatedReview": false
+  }
+}
