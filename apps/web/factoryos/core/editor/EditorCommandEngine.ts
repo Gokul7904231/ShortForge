@@ -321,13 +321,14 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
       state.composition = next;
       state.session = { ...state.session, revision };
 
+      const captionChanges = changedCaptionIds(before, next);
       const receipt: EditorReceipt = {
         commandId: input.commandId,
         accepted: true,
         revision,
         compositionHash: hashDocument(next),
         changedClipIds: changedClipIds(before, next),
-        changedCaptionIds: changedCaptionIds(before, next),
+        ...(captionChanges.length > 0 ? { changedCaptionIds: captionChanges } : {}),
         commandDigestSha256: digest,
       };
 
