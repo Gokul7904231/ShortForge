@@ -404,6 +404,18 @@ class Floor03Pipeline:
             visual_reqs=visual_reqs,
         )
 
+        composition_type_by_format = {
+            "educational_explainer": "FACTS_SHORTS",
+            "quiz_shorts": "QUIZ_SHORTS",
+            "story_narrative": "NARRATIVE_STORY",
+        }
+        narrative_format = getattr(inp.floor02_payload.format, "value", str(inp.floor02_payload.format))
+        composition_type = composition_type_by_format.get(narrative_format)
+        if composition_type is None:
+            raise Floor03ValidationError(
+                f"Unsupported F02 narrative format for editor timeline: {narrative_format!r}"
+            )
+
         payload = Floor03HandoffPayload(
             asset_plan_id=asset_plan_ir.plan_id,
             asset_plan_version=1,
@@ -411,6 +423,7 @@ class Floor03Pipeline:
             script_version=inp.floor02_payload.script_version,
             request_id=inp.request_id,
             resolved_platform=platform,
+            composition_type=composition_type,
             execution_mode=exec_details,
             visual_asset_requirements=visual_reqs,
             audio_asset_requirements=audio_reqs,
