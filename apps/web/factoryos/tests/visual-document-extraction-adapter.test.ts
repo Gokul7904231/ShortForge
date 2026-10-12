@@ -15,13 +15,17 @@ function providerReturning(value: unknown): VisualDocumentExtractionProvider {
   };
 }
 
-const request = (overrides: Partial<Parameters<VisualDocumentExtractionAdapter["extract"]>[0]> = {}) => ({
-  bytes: new Uint8Array([1, 2, 3, 4]),
-  mimeType: "application/pdf",
-  sourceRef: "fixture://document-1",
-  schemaDescription: "Return title and positive pageCount.",
+const request = (overrides: {
+  readonly bytes?: Uint8Array;
+  readonly mimeType?: string;
+  readonly sourceRef?: string;
+  readonly schemaDescription?: string;
+} = {}) => ({
+  bytes: overrides.bytes ?? new Uint8Array([1, 2, 3, 4]),
+  mimeType: overrides.mimeType ?? "application/pdf",
+  sourceRef: overrides.sourceRef ?? "fixture://document-1",
+  schemaDescription: overrides.schemaDescription ?? "Return title and positive pageCount.",
   outputSchema,
-  ...overrides,
 });
 
 describe("VisualDocumentExtractionAdapter", () => {
