@@ -5,8 +5,8 @@
 - Reviewed commit: 9780d74c85631a36bfdc545e105ffd7786477e63
 - Review date: 2026-10-12
 - Code license reported by GitHub: Apache-2.0
-- Assimilation mode: PATTERN_EXTRACTION / RESEARCH_ONLY
-- ShortForge status: NOT INTEGRATED; no Helix Foundry runtime dependency is added by this mapping.
+- Assimilation mode: PATTERN_EXTRACTION / CLEAN_ROOM_EXTENSION
+- ShortForge status: PARTIALLY IMPLEMENTED snapshot projection; no Helix Foundry runtime dependency or second datastore is added.
 
 ## Problem and useful mechanism
 
@@ -32,7 +32,7 @@ KnowledgeOS, Memory Fabric, and the existing evidence contracts remain canonical
 
 ## Status and verification required
 
-**RESEARCH_ONLY.** Existing ShortForge graph/evidence patterns already cover part of the need, but a Helix-specific implementation is not present or claimed. Before any implementation, audit the current KnowledgeOS/Memory Fabric snapshot and provenance contracts to demonstrate the exact missing capability.
+**PARTIALLY_IMPLEMENTED (in-memory snapshot projection only).** `apps/web/factoryos/core/knowledge/KnowledgeOS.ts` now exposes a versioned, deterministically ordered snapshot, provenance-bearing claim/source and evidence/reference relationships, a content digest, and a pure snapshot-diff method. This does not provide durable version history, external reference resolution, or a second datastore. Audit KnowledgeOS/Memory Fabric persistence and retention before extending it.
 
 Acceptance evidence must include source-linked records, deterministic snapshot/diff tests, relationship referential integrity, promotion-barrier tests for unverified claims, access control, backup/recovery behavior, and proof that no parallel store or IR was introduced. Revert/reject the change if it duplicates canonical authority or weakens evidence provenance.
 
