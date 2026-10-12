@@ -31,8 +31,10 @@ The upstream skill is an intentionally modular set of guidance for AI coding ass
 
 Reject changes that merely inflate skill text, duplicate generic model knowledge, embed secrets, or suggest permissions that the worker's runtime does not grant.
 
-## Security and provenance
+## Security and licensing
 
 A skill is advisory context, never an authorization mechanism. Tool execution must still be checked by AgentRuntime, Guardian/policy gates, session grants, and lease/fencing rules where applicable. MIT license; no upstream skill text was copied.
+
+## Provenance
 
 Reviewed upstream README and LICENSE at the immutable commit above. ShortForge skill validation is UNPROVEN.
