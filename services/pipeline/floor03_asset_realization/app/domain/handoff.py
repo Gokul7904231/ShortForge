@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -74,6 +74,9 @@ class Floor03HandoffPayload(BaseModel):
     request_id: str
     floor_id: str = "floor03_asset_realization"
     floor_version: str = "2.3.1"
+    # Preserve the original F02 narrative format so editor/export adapters don't
+    # silently reinterpret a quiz or story timeline as a generic facts short.
+    composition_type: Literal["FACTS_SHORTS", "QUIZ_SHORTS", "NARRATIVE_STORY", "VIRAL_HOOK"] = "FACTS_SHORTS"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     resolved_platform: str
     execution_mode: ExecutionModeDetails = Field(default_factory=ExecutionModeDetails)
