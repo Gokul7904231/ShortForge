@@ -279,3 +279,18 @@ The research produced:
 - regeneration remapping of dependency fingerprints.
 
 These are implemented as clean-room ShortForge structures only. No upstream code, prompts, models, credentials, or runtime dependencies were imported.
+
+## THESIX reference wave — 2026-10-12
+
+The following mappings capture six repository-inspired ideas as clean-room patterns or gated experiments. The mapping is not proof of runtime integration.
+
+| Repository | Mapping | Initial disposition |
+|---|---|---|
+| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Research only; inspect KnowledgeOS/Memory Fabric before any new storage pattern |
+| devdotfast/whiteboard | [devdotfast-whiteboard.md](./repo-mappings/devdotfast-whiteboard.md) | LiveMissionCanvas is a partial, unverified ShortForge design slice; no Whiteboard dependency |
+| twostraws/SwiftUI-Agent-Skill | [twostraws-swiftui-agent-skill.md](./repo-mappings/twostraws-swiftui-agent-skill.md) | Skill methodology partially adopted; automated validation pending |
+| CopilotKit/OpenIntelligentUI | [copilotkit-openintelligentui.md](./repo-mappings/copilotkit-openintelligentui.md) | Research only; general generative UI not implemented |
+| datalab-to/lift | [datalab-to-lift.md](./repo-mappings/datalab-to-lift.md) | Isolated experiment only; model-weight licensing and hardware/quality gates remain |
+| zvec-ai/zvec-grep | [zvec-ai-zvec-grep.md](./repo-mappings/zvec-ai-zvec-grep.md) | Benchmark-first experiment; no integration or benchmark claimed |
+
+Decision record: [../decisions/thesix-six-repo-assimilation-20261012.md](../decisions/thesix-six-repo-assimilation-20261012.md).
