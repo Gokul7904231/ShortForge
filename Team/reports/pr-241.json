@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-AER-Core-V3-Stacked-Reconciliation-20261012",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/okf-v3-stacked-on-v2-20261012",
+  "headRef": "feat/aer-core-v3-stacked-20261012",
+  "objective": "Stack the AER Decision Core training/evaluation foundation on OKF V3 and preserve the V3 PolicyContext restrictions in AER and Ascalon source-of-truth documents.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "AER-Core is advisory-only and cannot authorize execution or alter Guardian/F07 authority.",
+      "Only independently verified, provenance-bound gold labels may enter AER-Core training data.",
+      "Synthetic curriculum data must not enter production-golden Ascalon training exports.",
+      "Training and benchmark readiness must not be reported as trained-model or production readiness.",
+      "Fresh exact-head validation is required before merge."
+    ],
+    "sourceRefs": [
+      ".okf/intelligence/aer.md",
+      ".okf/intelligence/ascalon-model.md",
+      "docs/ascalon/aer-decision-core-standard.md",
+      "docs/ascalon/training/aer-decision-core-training.md",
+      "docs/verification/ascalon/shortforge-training-readiness-20261004.md",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "strictTypecheck": "PASS — CI run 38215748944, TypeCheck & Floor 01 Contract Tests job succeeded.",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "authorityBoundary": "AER-Core remains advisory/shadow-only. V3 PolicyContext is preserved as evidence/constraint context only; repository rulesets are not modified.",
+    "notes": "Fresh exact-head CI is required after this reconciliation. Strix review remains unavailable until trial/billing and a supported provider credential are configured."
+  },
+  "conflicts": [],
+  "disposition": "BLOCKED",
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Security"
+  ],
+  "verificationPlan": [
+    "Validate Team Change Report against the compiled OKF sweep.",
+    "Run OKF lint/drift and V3 signed-attestation/independent verification tests.",
+    "Run strict TypeScript, AER-Core contracts, dataset tests and Ascalon training-readiness tests.",
+    "Run required repository checks, all floor/Treasury/ComputePool/ReMaker checks and physical MP4/CAS/F07 on this exact head.",
+    "Keep AER-Core advisory/shadow-only until real verified corpus, training, calibration, held-out AER-Bench and shadow replay evidence pass.",
+    "Require independent human review before merge."
+  ],
+  "changes": [
+    "Added AER-Core typed contract, strict validator, HTTP provider seam, adapter, shadow coordinator, and shadow ledger.",
+    "Added verified AER training-record contract/export boundary and separated captured gold examples from operational decision transactions.",
+    "Added dataset preparation, leakage-aware splitting, trainer, validation-only calibration, prediction, and AER-Bench commands.",
+    "Integrated AER-Core as a non-authoritative shadow observer.",
+    "Separated Ascalon synthetic curriculum scenarios from production-golden export and removed unmeasured quality claims.",
+    "Added training-readiness documentation and CI validation workflow.",
+    "Corrected optional verified-training-capture narrowing in DecisionLedger after the first strict typecheck exposed TS18048.",
+    "Scoped the shared Lightning physical-proof workflow by branch to prevent cross-PR cancellation.",
+    "Rebased as a two-parent reconciliation on OKF V3 while retaining its PolicyContext binding sections in both AER/Ascalon architecture documents.",
+    "Preserved the branch-scoped Lightning physical-proof concurrency fix from the V3 base.",
+    "Added PR-specific Team Change Report and aligned OKF source-digests.json to the merged AER/Ascalon document blobs.",
+    "Stacked as a two-parent reconciliation on OKF V3, preserving V3 PolicyContext binding while retaining AER-Core additions."
+  ],
+  "verificationResults": {
+    "teamChangeGate": "FRESH_CI_PENDING",
+    "okfGovernance": "FRESH_CI_PENDING",
+    "okfSourceDrift": "SOURCE_DIGESTS_UPDATED__FRESH_CI_PENDING",
+    "v3SignedAttestation": "FRESH_CI_PENDING",
+    "independentAttestationVerification": "FRESH_CI_PENDING",
+    "typecheck": "FRESH_CI_PENDING",
+    "aerCoreTests": "FRESH_CI_PENDING",
+    "ascalonReadinessTests": "FRESH_CI_PENDING",
+    "lightningPhysicalF07": "FRESH_CI_PENDING",
+    "trainingCorpus": "REQUIRED__NO_REAL_VERIFIED_CORPUS_IN_REPOSITORY",
+    "checkpoint": "NOT_TRAINED__NOT_PROMOTED",
+    "calibration": "NOT_RUN",
+    "heldOutAERBench": "NOT_RUN",
+    "exactHead": "FRESH_CI_PENDING"
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/241",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437638",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37195437685",
+    "docs/ascalon/aer-decision-core-standard.md",
+    "docs/ascalon/training/aer-decision-core-training.md"
+  ],
+  "blockers": [
+    "Repository governance requires an independent human review/approval before merge.",
+    "The full Vitest regression suite retains widespread baseline failures despite no new failing signatures being identified in the comparison.",
+    "Independent human review/approval is required before merge.",
+    "The informational full-web regression suite has known baseline failures; do not misclassify these as clean security or production evidence.",
+    "Verified training corpus/checkpoint/calibration/AER-Bench/shadow replay remain future evidence gates."
+  ],
+  "notes": [
+    "The previously green Lightning physical proof was cancelled on a later report-only commit by the workflow's global concurrency group. The group is now branch-scoped so the new exact-head physical proof can complete independently."
+  ],
+  "pullRequest": 241
+}
