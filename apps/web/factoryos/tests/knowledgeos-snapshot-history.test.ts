@@ -76,6 +76,33 @@ describe("KnowledgeOS snapshot history backed by MemoryRepository", () => {
     expect(diff.addedRecordIds).toHaveLength(1);
   });
 
+  it("finds an exact memory key past the ordinary 50-record query limit", async () => {
+    const baseDir = mkdtempSync(path.join(os.tmpdir(), "shortforge-memory-exact-lookup-"));
+    try {
+      const repository = new DiskMemoryRepository(baseDir);
+      const now = new Date().toISOString();
+      for (let index = 0; index < 65; index += 1) {
+        await repository.saveMemory({
+          memoryId: `fixture_${String(index).padStart(3, "0")}`,
+          layer: "OPERATIONAL",
+          key: `fixture:key:${index}`,
+          content: `Fixture ${index}`,
+          metadata: {},
+          confidence: 1,
+          accessCount: 0,
+          createdAt: now,
+          lastAccessedAt: now,
+        });
+      }
+
+      await expect(repository.queryMemories("OPERATIONAL")).resolves.toHaveLength(50);
+      await expect(repository.getMemory("OPERATIONAL", "fixture:key:64"))
+        .resolves.toMatchObject({ memoryId: "fixture_064", key: "fixture:key:64" });
+    } finally {
+      rmSync(baseDir, { recursive: true, force: true });
+    }
+  });
+
   it("persists the first snapshot when the disk memory directory does not exist yet", async () => {
     const baseDir = mkdtempSync(path.join(os.tmpdir(), "shortforge-snapshot-history-"));
     try {

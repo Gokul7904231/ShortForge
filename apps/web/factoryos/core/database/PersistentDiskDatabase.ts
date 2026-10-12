@@ -414,8 +414,22 @@ export class DiskMemoryRepository implements IMemoryRepository {
   }
 
   async getMemory(layer: MemoryRecord["layer"], key: string): Promise<MemoryRecord | null> {
-    const all = await this.queryMemories(layer);
-    return all.find((m) => m.key === key) || null;
+    if (!fs.existsSync(this.dir)) return null;
+
+    // Exact-key lookups must not inherit queryMemories' bounded search limit.
+    // Snapshot history and idempotency checks may target records beyond the first page.
+    const files = fs.readdirSync(this.dir).filter((file) => file.endsWith(".json"));
+    for (const fileName of files) {
+      try {
+        const record = JSON.parse(
+          fs.readFileSync(path.join(this.dir, fileName), "utf-8"),
+        ) as MemoryRecord;
+        if (record.layer === layer && record.key === key) return record;
+      } catch {
+        // A malformed unrelated memory file must not prevent a later exact match.
+      }
+    }
+    return null;
   }
 
   async queryMemories(layer?: MemoryRecord["layer"], queryText?: string, limit: number = 50): Promise<MemoryRecord[]> {
