@@ -132,20 +132,101 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
     );
     const outputDir = path.join(workDir, "output");
 
-    const metadata = {
-      id: kernelId,
-      title: kernelTitle,
-      code_file: "worker.py",
-      language: "python",
-      kernel_type: "script",
-      is_private: "true",
-      enable_gpu: request.gpuType ? "true" : "false",
-      enable_internet: "true",
-      dataset_sources: [],
-      competition_sources: [],
-      kernel_sources: [],
-      model_sources: [],
-    };
+    const templateDirectory =
+      typeof request.metadata?.templateDirectory === "string"
+        ? String(request.metadata.templateDirectory).trim()
+        : "";
+
+    let metadata: Record<string, unknown> = {};
+    let codeFile = "worker.py";
+
+    if (templateDirectory) {
+      const templateStat = await fs.stat(templateDirectory).catch(() => undefined);
+      if (!templateStat?.isDirectory()) {
+        throw new Error(
+          "KAGGLE_TEMPLATE_DIRECTORY_NOT_FOUND: " + templateDirectory,
+        );
+      }
+
+      await fs.cp(templateDirectory, workDir, {
+        recursive: true,
+        force: true,
+      });
+
+      const templateMetadataPath = path.join(workDir, "kernel-metadata.json");
+      const templateMetadataRaw = await fs
+        .readFile(templateMetadataPath, "utf8")
+        .catch(() => "{}");
+      try {
+        metadata = JSON.parse(templateMetadataRaw) as Record<string, unknown>;
+      } catch {
+        throw new Error("KAGGLE_TEMPLATE_METADATA_INVALID");
+      }
+
+      codeFile =
+        typeof metadata.code_file === "string" && metadata.code_file
+          ? metadata.code_file
+          : "worker.py";
+
+      await fs.access(path.join(workDir, codeFile)).catch(() => {
+        throw new Error(
+          "KAGGLE_TEMPLATE_ENTRYPOINT_MISSING: " + codeFile,
+        );
+      });
+
+      const templateMarker =
+        typeof metadata.kernel_type === "string"
+          ? String(metadata.kernel_type)
+          : "";
+      metadata = {
+        ...metadata,
+        id: kernelId,
+        title: kernelTitle,
+        code_file: codeFile,
+        language: "python",
+        kernel_type: templateMarker || "script",
+        is_private: "true",
+        enable_gpu: request.gpuType ? "true" : "false",
+        enable_internet: "true",
+        dataset_sources: Array.isArray(metadata.dataset_sources)
+          ? metadata.dataset_sources
+          : [],
+        competition_sources: Array.isArray(metadata.competition_sources)
+          ? metadata.competition_sources
+          : [],
+        kernel_sources: Array.isArray(metadata.kernel_sources)
+          ? metadata.kernel_sources
+          : [],
+        model_sources: Array.isArray(metadata.model_sources)
+          ? metadata.model_sources
+          : [],
+      };
+    } else {
+      metadata = {
+        id: kernelId,
+        title: kernelTitle,
+        code_file: "worker.py",
+        language: "python",
+        kernel_type: "script",
+        is_private: "true",
+        enable_gpu: request.gpuType ? "true" : "false",
+        enable_internet: "true",
+        dataset_sources: [],
+        competition_sources: [],
+        kernel_sources: [],
+        model_sources: [],
+      };
+
+      const command = Array.isArray(request.command)
+        ? request.command.map((part) => JSON.stringify(part)).join(" ")
+        : request.command || `python -c "print('ShortForge Kaggle notebook probe')"`;
+
+      const script = this.workerScript(
+        command,
+        request.outputPath || "/kaggle/working/shortforge-output.mp4",
+      );
+      await fs.writeFile(path.join(workDir, "worker.py"), script, "utf8");
+    }
 
     await fs.writeFile(
       path.join(workDir, "kernel-metadata.json"),
@@ -153,15 +234,64 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
       "utf8",
     );
 
-    const command = Array.isArray(request.command)
-      ? request.command.map((part) => JSON.stringify(part)).join(" ")
-      : request.command || `python -c "print('ShortForge Kaggle notebook probe')"`;
+    if (templateDirectory) {
+      const safeMetadata = {
+        renderer:
+          typeof request.metadata?.renderer === "string"
+            ? request.metadata.renderer
+            : "shortforge",
+        outputPath:
+          request.outputPath ||
+          "/kaggle/working/shortforge/outputs/shortforge-output.mp4",
+        command:
+          Array.isArray(request.command)
+            ? request.command
+            : request.command || "",
+        modelId:
+          typeof request.metadata?.modelId === "string"
+            ? request.metadata.modelId
+            : "",
+        prompt:
+          typeof request.metadata?.prompt === "string"
+            ? request.metadata.prompt
+            : "",
+        negativePrompt:
+          typeof request.metadata?.negativePrompt === "string"
+            ? request.metadata.negativePrompt
+            : "",
+        nativeWidth:
+          typeof request.metadata?.nativeWidth === "number"
+            ? request.metadata.nativeWidth
+            : 480,
+        nativeHeight:
+          typeof request.metadata?.nativeHeight === "number"
+            ? request.metadata.nativeHeight
+            : 832,
+        fps:
+          typeof request.metadata?.fps === "number"
+            ? request.metadata.fps
+            : 16,
+        numFrames:
+          typeof request.metadata?.numFrames === "number"
+            ? request.metadata.numFrames
+            : 21,
+        numInferenceSteps:
+          typeof request.metadata?.numInferenceSteps === "number"
+            ? request.metadata.numInferenceSteps
+            : 12,
+        guidanceScale:
+          typeof request.metadata?.guidanceScale === "number"
+            ? request.metadata.guidanceScale
+            : 5,
+        requireDualT4: Boolean(request.metadata?.requireDualT4),
+      };
 
-    const script = this.workerScript(
-      command,
-      request.outputPath || "/kaggle/working/shortforge-output.mp4",
-    );
-    await fs.writeFile(path.join(workDir, "worker.py"), script, "utf8");
+      await fs.writeFile(
+        path.join(workDir, "shortforge-render-request.json"),
+        JSON.stringify(safeMetadata, null, 2),
+        "utf8",
+      );
+    }
 
     const accelerator = request.gpuType
       ? this.mapAccelerator(request.gpuType)

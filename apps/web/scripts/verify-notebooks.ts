@@ -51,7 +51,19 @@ async function runLive(provider: NotebookProviderType) {
     // before the worker reaches RUNNING. Keep the live proof bounded, but do not
     // turn normal hosted-capacity latency into a false failure.
     const timeoutMs = Number(process.env.NOTEBOOK_LIVE_TIMEOUT_MS || 1200000);
-    const outputPath = "/kaggle/working/shortforge-live-notebook-probe.mp4";
+    const useWanTemplate = process.env.KAGGLE_RENDERER === "SHORTFORGE_WAN_DUAL_T4";
+    const rendererProfile = process.env.KAGGLE_WAN_PROFILE || "PROOF";
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const templateDirectory = path.join(
+      repoRoot,
+      "tools",
+      "kaggle",
+      "shortforge-wan-dual-t4",
+    );
+    const outputPath =
+      "/kaggle/working/shortforge/outputs/shortforge-live-" +
+      Date.now() +
+      ".mp4";
     const artifactDir = path.join(
       process.env.GITHUB_WORKSPACE || process.cwd(),
       "artifacts",
@@ -62,19 +74,66 @@ async function runLive(provider: NotebookProviderType) {
       artifactDir,
       "shortforge-live-notebook-probe.mp4",
     );
+
+    const provisionMetadata: Record<string, unknown> = {
+      factoryExecutionId: "notebook-live",
+      missionId: "kaggle-live",
+    };
+
+    let command =
+      "ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=320x180:d=1 -an -c:v libx264 -pix_fmt yuv420p " +
+      outputPath;
+
+    if (useWanTemplate) {
+      const { getKaggleWanRendererProfile } =
+        await import("../factoryos/core/compute/notebooks/KaggleRendererProfiles");
+      const profile = getKaggleWanRendererProfile(rendererProfile);
+      command = "shortforge-template-entrypoint";
+      provisionMetadata.renderer =
+        profile.renderer === "wan2.1" ? "wan2.1" : "shortforge-deterministic";
+      provisionMetadata.modelId = profile.modelId || "";
+      provisionMetadata.prompt =
+        process.env.KAGGLE_WAN_PROMPT ||
+        "A cinematic vertical short-form video showing a futuristic city at sunrise, gentle camera movement, detailed lighting";
+      provisionMetadata.negativePrompt =
+        process.env.KAGGLE_WAN_NEGATIVE_PROMPT || "";
+      provisionMetadata.nativeWidth = profile.nativeWidth;
+      provisionMetadata.nativeHeight = profile.nativeHeight;
+      provisionMetadata.fps = profile.fps;
+      provisionMetadata.numFrames = Number(
+        process.env.KAGGLE_WAN_NUM_FRAMES || profile.numFrames,
+      );
+      provisionMetadata.numInferenceSteps = Number(
+        process.env.KAGGLE_WAN_STEPS || profile.numInferenceSteps,
+      );
+      provisionMetadata.guidanceScale = Number(
+        process.env.KAGGLE_WAN_GUIDANCE || profile.guidanceScale,
+      );
+      provisionMetadata.requireDualT4 = profile.requireDualT4;
+    }
+
     const result = await adapter.execute(
       {
         artifactDestinationPath: persistedArtifact,
-        command:
-          "ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=320x180:d=1 -an -c:v libx264 -pix_fmt yuv420p " +
-          outputPath,
+        command,
         timeoutMs,
         outputPath,
         provision: {
-          idempotencyKey: "shortforge-live-kaggle-" + Date.now(),
-          name: "ShortForge Live Notebook Probe",
-          gpuType: process.env.KAGGLE_LIVE_GPU === "1" ? "NvidiaTeslaT4" : undefined,
+          idempotencyKey:
+            "shortforge-live-kaggle-" + Date.now(),
+          name:
+            useWanTemplate
+              ? "ShortForge Wan " + rendererProfile
+              : "ShortForge Live Notebook Probe",
+          gpuType:
+            useWanTemplate || process.env.KAGGLE_LIVE_GPU === "1"
+              ? "NvidiaTeslaT4"
+              : undefined,
           timeoutMs,
+          metadata: {
+            ...provisionMetadata,
+            templateDirectory: useWanTemplate ? templateDirectory : undefined,
+          },
         },
       },
       credentials,

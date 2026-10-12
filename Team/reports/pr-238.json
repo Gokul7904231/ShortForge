@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR238-Kaggle-Wan-Dual-T4-Current-Main",
+  "pullRequest": 238,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "feat/treasury-wave7-promotion-evidence-20261012",
+  "headRef": "feat/kaggle-wan-dual-t4-current-main-20261012",
+  "objective": "Reconcile the ShortForge-owned Kaggle Wan Dual-T4 renderer into the current Notebook Fabric without replacing later notebook lifecycle or provider-boundary changes.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/compute/notebook-fabric.md",
+      "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+      "apps/web/factoryos/core/compute/notebooks/KaggleNotebookAdapter.ts",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "The renderer template is repository-owned. Provider secrets are read from GitHub Actions secrets only. No credential, runtime admission, or production-worker authority is added. Live Kaggle execution has not yet been run."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added repository-owned Kaggle Wan renderer profiles for deterministic proof, Wan 1.3B smoke and explicit dual-T4 14B experiment.",
+    "Added manual Kaggle renderer workflow and template integrity check.",
+    "Reconciled template packaging into the current Kaggle adapter without reverting later notebook lifecycle changes.",
+    "Updated only the Kaggle leg of the live notebook verifier while preserving current Colab and Lightning behavior.",
+    "Added deterministic contract coverage and configuration/documentation.",
+    "Kept Kaggle productionWorkerEligible=false; provider output must still pass independent hash/size/media verification, CAS and F07."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/compute/notebooks/KaggleNotebookAdapter.ts",
+    "apps/web/factoryos/core/compute/notebooks/KaggleRendererProfiles.ts",
+    "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+    "apps/web/factoryos/tests/notebook-fabric.test.ts",
+    "apps/web/scripts/verify-notebooks.ts",
+    "apps/web/scripts/verify-kaggle-wan-template.ts",
+    ".github/workflows/kaggle-wan-renderer.yml",
+    "tools/kaggle/shortforge-wan-dual-t4/worker.py",
+    "tools/kaggle/shortforge-wan-dual-t4/kernel-metadata.json",
+    ".okf/compute/notebook-fabric.md"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Run current-head strict TypeScript and notebook-fabric contract tests.",
+    "Validate the ShortForge-owned kernel template on CI.",
+    "Run CI, Team and OKF governance checks on this exact PR head.",
+    "Run the manual Kaggle PROOF profile with repository Actions secrets KAGGLE_USERNAME and KAGGLE_KEY.",
+    "Verify physical MP4 download, independently calculated SHA-256 and byte length, media validity, CAS acceptance and F07 evidence.",
+    "Keep the PR unmerged until upstream governance/Treasury sequencing, current-head gates and independent human review pass."
+  ],
+  "verificationResults": {
+    "templateValidation": "PENDING_CI",
+    "notebookContracts": "PENDING_CI",
+    "repositoryCI": "PENDING_CI",
+    "liveKaggleProof": "NOT_RUN__ACTIONS_CREDENTIALS_REQUIRED",
+    "physicalMP4CasF07": "PENDING_LIVE_PROVIDER_PROOF",
+    "productionWorkerEligibility": "FALSE__NOT_PROMOTED"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  }
+}
