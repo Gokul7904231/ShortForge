@@ -69,6 +69,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
         const sendSignal = (signal: NonNullable<ReturnType<typeof projectMissionWorkSignal>>) => {
           if (deliveredIds.has(signal.eventId)) return;
           deliveredIds.add(signal.eventId);
+          // Deduplication is per live connection; cap memory for long-lived streams.
+          if (deliveredIds.size > 1024) {
+            const oldest = deliveredIds.values().next().value;
+            if (typeof oldest === "string") deliveredIds.delete(oldest);
+          }
           send(signal, signal.eventId);
         };
 
