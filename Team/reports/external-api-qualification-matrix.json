@@ -5,21 +5,31 @@
   "entries": [
     {
       "providerId": "openalex",
-      "disposition": "PENDING",
-      "configured": false,
-      "liveProbeRunId": null,
-      "qualifiedAt": null,
-      "evidenceRefs": [],
-      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+      "disposition": "QUALIFIED",
+      "configured": true,
+      "liveProbeRunId": "gha_37417006052",
+      "qualifiedAt": "2026-10-06T05:08:39.108Z",
+      "evidenceRefs": [
+        "External API Public Live Qualification run 37417006052",
+        "Live openalex job 112117722223",
+        "external-api-openalex-evidence artifact 11391836904",
+        "HTTP 200; duration 1073 ms; normalized resultsCount 1; provider rate-limit remaining 990/1000"
+      ],
+      "notes": "Live public OpenAlex request returned HTTP 200 and one normalized result. Evidence records a 1,073 ms request, response shape keys meta/results/group_by, resultsCount=1, and rateLimitLimit=1000/rateLimitRemaining=990. This qualifies endpoint capability only; source content remains candidate evidence, not F00 truth."
     },
     {
       "providerId": "arxiv",
-      "disposition": "PENDING",
-      "configured": false,
-      "liveProbeRunId": null,
-      "qualifiedAt": null,
-      "evidenceRefs": [],
-      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+      "disposition": "QUALIFIED",
+      "configured": true,
+      "liveProbeRunId": "gha_37417006052",
+      "qualifiedAt": "2026-10-06T05:08:49.200Z",
+      "evidenceRefs": [
+        "External API Public Live Qualification run 37417006052",
+        "Live arxiv job 112117722157",
+        "external-api-arxiv-evidence artifact 11391396405",
+        "HTTP 200; duration 3 ms; application/atom+xml; response 3355 bytes; entryPresent=true"
+      ],
+      "notes": "Live public arXiv Atom request returned HTTP 200 with an entry present. Evidence records 3 ms duration, application/atom+xml response, and 3,355 response bytes. This qualifies acquisition/normalization only; it does not make arXiv content authoritative truth."
     },
     {
       "providerId": "semantic_scholar",
@@ -39,9 +49,10 @@
       "evidenceRefs": [
         "External API Public Live Qualification run 37417006052",
         "Live crossref job 112117721917",
-        "external-api-crossref-evidence artifact 11392190762"
+        "external-api-crossref-evidence artifact 11392190762",
+        "HTTP 200; duration 631 ms; response content type application/json; Retry-After=0"
       ],
-      "notes": "Live network request returned HTTP 200 from https://api.crossref.org/v1/works with a representative message.items[] record; qualification evidence includes LIVE_NETWORK_REQUEST, CAPABILITY_OUTPUT, and NORMALIZED_PROVIDER_RESULT."
+      "notes": "Live Crossref works request returned HTTP 200 with a normalized message/items representative record. Evidence records 631 ms duration and application/json response. Provider metadata remains candidate evidence and does not establish source truth."
     },
     {
       "providerId": "unpaywall",
@@ -243,12 +254,17 @@
     },
     {
       "providerId": "open_meteo",
-      "disposition": "PENDING",
-      "configured": false,
-      "liveProbeRunId": null,
-      "qualifiedAt": null,
-      "evidenceRefs": [],
-      "notes": "No provider is QUALIFIED from implementation or CI status alone."
+      "disposition": "QUALIFIED",
+      "configured": true,
+      "liveProbeRunId": "gha_37417006052",
+      "qualifiedAt": "2026-10-06T05:08:57.305Z",
+      "evidenceRefs": [
+        "External API Public Live Qualification run 37417006052",
+        "Live open_meteo job 112117722080",
+        "external-api-open_meteo-evidence artifact 11391261507",
+        "HTTP 200; duration 480 ms; JSON response includes current weather fields; Retry-After=0"
+      ],
+      "notes": "Live public Open-Meteo request returned HTTP 200 with normalized forecast/current-weather fields. Evidence records 480 ms duration and JSON response. This qualifies API capability only; weather data remains contextual provider output."
     },
     {
       "providerId": "nominatim",
