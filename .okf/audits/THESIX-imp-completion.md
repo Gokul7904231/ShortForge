@@ -4,7 +4,7 @@
 - Branch: `THESIX`
 - Base commit: `9e3d7017f62625cea5258dabee926824cb43ab18`
 - Checkpoint type: implementation progress checkpoint (not final completion)
-- Status: `PARTIAL_IMPLEMENTATION; FOCUSED CI PASS; PRIOR FULL-REGRESSION FAILURE OBSERVED; CURRENT RUN PENDING; BROWSER/F07 PENDING`
+- Status: `PARTIAL_IMPLEMENTATION; REQUIRED CI PASS ON CODE REVISION 66e878e; FULL VITEST REGRESSION FAILS; FULL .OKF REVIEW/BROWSER/F07 PENDING`
 
 ## Purpose
 
@@ -166,3 +166,12 @@ Failure examples span editor contracts, mission lifecycle, quotas, Treasury, Sla
 - GitHub Actions run 38246627642 for implementation revision 2969f0f passed the focused/required jobs; its informational full Vitest job was still in progress at last poll. The prior full-suite run failed with 61 files failing, 256 passing, and 3 skipped, with no baseline comparison to establish attribution. Therefore this checkpoint is not yet a full regression pass.
 - The .okf tree inventory contains 262 files. Core decision/authority/security/production-helper documents and all six THESIX mappings were inspected, but the complete file-by-file .okf review mandated by .okf/decision-protocol.md is not yet complete; it remains a release blocker.
 - No real authorized mission browser session, reconnection/access-denial walkthrough, accessibility inspection, persistent-runtime snapshot wiring, F07 artifact proof, real Lift document evaluation/license review, or human-judged retrieval benchmark was performed.
+
+## Verification update — 2026-10-12, latest inspected code revision
+
+- **Code revision:** `66e878e0c7287eca74f86c4bc2a084117221b6dd` on `THESIX` (131 commits ahead of base `9e3d7017f62625cea5258dabee926824cb43ab18`, 0 commits behind at the time checked). This remains isolated; nothing was merged to `main`.
+- **CI run:** [38247075879](https://github.com/Gokul7904231/ShortForge/actions/runs/38247075879) completed at this SHA with workflow conclusion `success`. Required jobs passed: strict TypeScript, repo-mapping verifier, skill-governance Node tests, focused THESIX contract tests, existing Floor 01 runtime adapter / Notebook Fabric / AER test steps, Floor 01 Python v2, dependency/security scan, and production-container smoke.
+- **Important distinction:** the workflow contains an informational full Vitest job. That job failed on this revision: **61 test files failed, 256 passed, 3 skipped (320 total)**. Failures span multiple pre-existing repository surfaces (including editor revisions, compute/provider qualification, mission/eight-floor lifecycle, quota/Treasury, Memory Fabric, Slayer, AER, and integration tests). No same-configuration baseline run of that full suite on `main` is available in the inspected Actions history; do not label these definitively pre-existing or attribute them to THESIX without a baseline comparison.
+- **S3 skill governance is now stronger than the earlier checkpoint:** `tools/okf/thesix-skill-quality.mjs` plus five Node tests check the 1,800-word ceiling, explicit BLOCKED/UNPROVEN semantics, exact normalized duplicate long instruction bullets, canonical `CAP_*` vocabulary, and required capability declarations when a skill references capabilities. Semantic paraphrase-duplicate detection and measured token/context-versus-quality testing are still pending.
+- **OKF sweep state:** the current `.okf` tree has 262 blob files. The mandatory protocol, root/index/authority architecture, hierarchy/security/production-helper, relevant memory/research/workflow/compute/decisions and all six THESIX mappings have been inspected. A full line-by-line reading and contradiction reconciliation across all 262 files is **not complete** and remains a release blocker. The earlier `03d810ad` / `2969f0f` status notes are historical checkpoints, not the latest verified code revision.
+- **Still unproven:** live browser behavior against a real authorized mission; reconnect/replay and authorization-denial walkthrough; accessibility; persistent runtime wiring/retention for KnowledgeOS snapshot history; F07 proof for an actual artifact; Lift-model/legal/representative-document evaluation; and a real human-judged retrieval benchmark. The retrieval CLI and visual adapter tests use synthetic fixtures only.
