@@ -104,7 +104,9 @@ export function applyEditorCommand(composition: CompositionIR, command: EditorCo
     case "RETIME_CLIP":
       return retimeClip(composition, command.trackId, command.clipId, command.duration);
     case "UPDATE_CAPTION_TEXT": {
-      if (!command.text.trim()) throw new Error("EDITOR_CAPTION_TEXT_REQUIRED");
+      if (typeof command.text !== "string" || !command.text.trim()) throw new Error("EDITOR_CAPTION_TEXT_REQUIRED");
+      if (command.text.length > 1000) throw new Error("EDITOR_CAPTION_TEXT_TOO_LONG");
+      if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(command.text)) throw new Error("EDITOR_CAPTION_TEXT_CONTROL_CHAR");
       let found = false;
       const captions = composition.captions.map((caption) => {
         if (caption.id !== command.captionId) return caption;
@@ -116,6 +118,16 @@ export function applyEditorCommand(composition: CompositionIR, command: EditorCo
     }
     case "UPDATE_CAPTION_STYLE": {
       const patch = command.stylePatch;
+      if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+        throw new Error("EDITOR_CAPTION_STYLE_PATCH_INVALID");
+      }
+      const allowedStyleKeys = new Set(["fontSize", "primaryColor", "highlightColor", "animation"]);
+      if (Object.keys(patch).some((key) => !allowedStyleKeys.has(key))) {
+        throw new Error("EDITOR_CAPTION_STYLE_PROPERTY_UNSUPPORTED");
+      }
+      if (patch.animation !== undefined && !["POP_IN", "FADE", "KINETIC_WORD", "NONE"].includes(patch.animation)) {
+        throw new Error("EDITOR_CAPTION_ANIMATION_UNSUPPORTED");
+      }
       if (patch.fontSize !== undefined && (!Number.isFinite(patch.fontSize) || patch.fontSize < 8 || patch.fontSize > 144)) {
         throw new Error("EDITOR_CAPTION_FONT_SIZE_OUT_OF_RANGE");
       }
