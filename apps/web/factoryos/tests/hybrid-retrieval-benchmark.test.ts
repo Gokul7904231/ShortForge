@@ -63,7 +63,7 @@ describe("hybrid retrieval benchmark", () => {
       implementationRevision: "v1",
       search: (_query, _limit, requestSignal) => {
         signal = requestSignal;
-        return new Promise(() => undefined);
+        return new Promise<never>(() => undefined);
       },
     };
     const report = await runHybridRetrievalBenchmark(provider, [cases[0]], { queryTimeoutMs: 5 });
