@@ -76,20 +76,67 @@ export function validateKnowledgeOSSnapshot(value: unknown): value is KnowledgeO
     return false;
   }
 
-  if (!value.records.every((record) =>
-    isPlainRecord(record) && typeof record.id === "string" && typeof record.scope === "string",
-  )) return false;
-  if (!value.relationships.every((edge) =>
-    isPlainRecord(edge) &&
-    typeof edge.relationshipId === "string" &&
-    typeof edge.relationType === "string" &&
-    typeof edge.fromId === "string" &&
-    typeof edge.provenanceDigest === "string",
-  )) return false;
+  const typedSelection = selection as unknown as KnowledgeOSSnapshotScope;
+  const records = value.records;
+  const recordIds = new Set<string>();
+  const recordById = new Map<string, Record<string, unknown>>();
+  let previousRecordId = "";
+
+  for (const item of records) {
+    if (!isPlainRecord(item) ||
+      typeof item.id !== "string" || !item.id.trim() ||
+      typeof item.type !== "string" ||
+      typeof item.schemaVersion !== "string" ||
+      typeof item.createdAt !== "string" ||
+      typeof item.updatedAt !== "string" ||
+      typeof item.provenanceDigest !== "string" ||
+      !/^[a-f0-9]{64}$/.test(item.provenanceDigest) ||
+      !["MISSION", "CHANNEL", "GLOBAL"].includes(String(item.scope))) return false;
+    if (recordIds.has(item.id) || (previousRecordId && previousRecordId.localeCompare(item.id) > 0)) return false;
+    recordIds.add(item.id);
+    recordById.set(item.id, item);
+    previousRecordId = item.id;
+
+    if (typedSelection.scope === "MISSION") {
+      if (item.scope !== "MISSION" || item.missionId !== typedSelection.missionId) return false;
+    } else if (typedSelection.scope === "CHANNEL") {
+      if (item.scope !== "CHANNEL" || item.channelId !== typedSelection.channelId) return false;
+    } else if (item.scope !== "GLOBAL" || item.missionId !== undefined || item.channelId !== undefined) {
+      return false;
+    }
+  }
+
+  const relationshipIds = new Set<string>();
+  let previousRelationshipId = "";
+  for (const item of value.relationships) {
+    if (!isPlainRecord(item) ||
+      typeof item.relationshipId !== "string" || !item.relationshipId.trim() ||
+      typeof item.relationType !== "string" ||
+      typeof item.fromId !== "string" ||
+      typeof item.provenanceDigest !== "string" ||
+      !/^[a-f0-9]{64}$/.test(item.provenanceDigest) ||
+      typeof item.resolved !== "boolean") return false;
+    if (relationshipIds.has(item.relationshipId) ||
+      (previousRelationshipId && previousRelationshipId.localeCompare(item.relationshipId) > 0)) return false;
+    relationshipIds.add(item.relationshipId);
+    previousRelationshipId = item.relationshipId;
+
+    const fromRecord = recordById.get(item.fromId);
+    if (!fromRecord) return false;
+    if (item.relationType === "CLAIM_CITES_SOURCE") {
+      if (fromRecord.type !== "CLAIM" || typeof item.toId !== "string") return false;
+      const target = recordById.get(item.toId);
+      if (item.resolved !== (target?.type === "SOURCE")) return false;
+    } else if (item.relationType === "EVIDENCE_ATTESTS_REFERENCE") {
+      if (fromRecord.type !== "EVIDENCE" || typeof item.targetRef !== "string" || item.resolved) return false;
+    } else {
+      return false;
+    }
+  }
 
   const content = {
-    selection: selection as unknown as KnowledgeOSSnapshotScope,
-    records: value.records as KnowledgeObject[],
+    selection: typedSelection,
+    records: records as KnowledgeObject[],
     relationships: value.relationships as KnowledgeRelationship[],
   };
   return calculateKnowledgeOSSnapshotContentDigest(content) === value.contentDigest;
