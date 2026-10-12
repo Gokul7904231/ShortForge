@@ -16,12 +16,12 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 
 | Source | Mapping | Classification | Current ShortForge status |
 |---|---|---|---|
-| HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | RESEARCH_ONLY / PATTERN_EXTRACTION | No integration; audit KnowledgeOS/Memory Fabric first; do not add parallel store |
-| devdotfast/whiteboard | research/repo-mappings/devdotfast-whiteboard.md | PARTIALLY IMPLEMENTED PATTERN | LiveMissionCanvas UI slice exists on THESIX; untypechecked and unbrowser-tested |
-| twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY ADOPTED METHODOLOGY | Assimilation skill docs updated; skill lint/regression unrun |
-| CopilotKit/OpenIntelligentUI | research/repo-mappings/copilotkit-openintelligentui.md | RESEARCH_ONLY | No general generative UI runtime; arbitrary generated code is not approved |
-| datalab-to/lift | research/repo-mappings/datalab-to-lift.md | EXPERIMENT_ONLY | No adapter/model/service integrated; model-weight license/resource qualification pending |
-| zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK_FIRST | No integration; no comparative retrieval benchmark run |
+| HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | PARTIALLY_IMPLEMENTED projection | Scoped in-memory KnowledgeOS snapshot/diff and provenance relationships; no durable history or parallel store |
+| devdotfast/whiteboard | research/repo-mappings/devdotfast-whiteboard.md | PARTIALLY_IMPLEMENTED | Guarded canvas polling, typed response validation and safe metrics; no browser/F07/replay proof yet |
+| twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology and mapping verifier implemented; skill lint/context-budget tests pending |
+| CopilotKit/OpenIntelligentUI | research/repo-mappings/copilotkit-openintelligentui.md | PARTIAL SAFE PRESENTATION | Fixed allow-listed schema-validated UI primitives; no arbitrary generated code/runtime |
+| datalab-to/lift | research/repo-mappings/datalab-to-lift.md | EXPERIMENT_ONLY / ADAPTER CONTRACT | Disabled-by-default provider adapter boundary exists; no Lift provider/model; legal and qualification gates pending |
+| zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK HARNESS | Evaluator implemented; no zvec adapter or real corpus benchmark run |
 
 ## Existing .okf constraints considered
 
@@ -57,7 +57,7 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 
 - Mapping source review is recorded at immutable upstream commits in each mapping.
 - THESIX branch commits for the existing LiveMissionCanvas and skill-methodology slice are recorded in the checkpoint report.
-- Local typecheck/build/tests, browser run, six-workstream integration, Lift evaluation, zvec retrieval benchmark, full .okf sweep, and live mission/F07 proof remain NOT RUN or UNPROVEN as described in .okf/audits/THESIX-imp-completion.md.
+- Strict TypeScript check passed in CI for an earlier code revision; the latest scoped snapshot and targeted tests must be assessed from the current THESIX CI run. Browser run, full .okf sweep, Lift evaluation, real zvec retrieval benchmark, and live mission/F07 proof remain NOT RUN or UNPROVEN.
 - No repository in this wave is claimed as fully integrated or production-ready.
 
 ## Rollback / rejection conditions

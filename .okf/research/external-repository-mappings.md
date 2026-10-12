@@ -286,11 +286,11 @@ The following mappings capture six repository-inspired ideas as clean-room patte
 
 | Repository | Mapping | Initial disposition |
 |---|---|---|
-| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Research only; inspect KnowledgeOS/Memory Fabric before any new storage pattern |
-| devdotfast/whiteboard | [devdotfast-whiteboard.md](./repo-mappings/devdotfast-whiteboard.md) | LiveMissionCanvas is a partial, unverified ShortForge design slice; no Whiteboard dependency |
-| twostraws/SwiftUI-Agent-Skill | [twostraws-swiftui-agent-skill.md](./repo-mappings/twostraws-swiftui-agent-skill.md) | Skill methodology partially adopted; automated validation pending |
-| CopilotKit/OpenIntelligentUI | [copilotkit-openintelligentui.md](./repo-mappings/copilotkit-openintelligentui.md) | Research only; general generative UI not implemented |
-| datalab-to/lift | [datalab-to-lift.md](./repo-mappings/datalab-to-lift.md) | Isolated experiment only; model-weight licensing and hardware/quality gates remain |
-| zvec-ai/zvec-grep | [zvec-ai-zvec-grep.md](./repo-mappings/zvec-ai-zvec-grep.md) | Benchmark-first experiment; no integration or benchmark claimed |
+| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Partial implementation: scoped KnowledgeOS snapshot, provenance relationship projection, deterministic content digest and diffs; in-memory only, no second datastore |
+| devdotfast/whiteboard | [devdotfast-whiteboard.md](./repo-mappings/devdotfast-whiteboard.md) | Partial implementation: guarded read-only LiveMissionCanvas, response validation and adaptive metric-grid; event replay/browser/F07 proof still pending |
+| twostraws/SwiftUI-Agent-Skill | [twostraws-swiftui-agent-skill.md](./repo-mappings/twostraws-swiftui-agent-skill.md) | Partial methodology adoption plus mapping metadata verifier; full skill linter/context-cost tests still pending |
+| CopilotKit/OpenIntelligentUI | [copilotkit-openintelligentui.md](./repo-mappings/copilotkit-openintelligentui.md) | Partial implementation: strict allow-listed summary/metric-grid/alert contracts and safe fixed renderer; no arbitrary generated-code runtime |
+| datalab-to/lift | [datalab-to-lift.md](./repo-mappings/datalab-to-lift.md) | Isolated provider contract implemented; Lift provider/model not connected; licensing, hardware and quality gates remain |
+| zvec-ai/zvec-grep | [zvec-ai-zvec-grep.md](./repo-mappings/zvec-ai-zvec-grep.md) | Benchmark harness implemented and covered by synthetic fixtures; no zvec adapter or real-repository comparative benchmark yet |
 
 Decision record: [../decisions/thesix-six-repo-assimilation-20261012.md](../decisions/thesix-six-repo-assimilation-20261012.md).

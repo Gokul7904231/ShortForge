@@ -1634,3 +1634,20 @@ Rollback/rejection: If the machine manifest diverges from canonical textual rule
 **Verification truth:** LiveMissionCanvas and skill methodology are partial work only. Full .okf sweep, local typecheck/build/tests, browser testing, live mission/F07 proof, Lift evaluation, and zvec-grep retrieval benchmark remain unrun or unproven. See [the scoped decision record](./decisions/thesix-six-repo-assimilation-20261012.md) and [THESIX checkpoint](./audits/THESIX-imp-completion.md).
 
 **Promotion rule:** each runtime adoption requires a complete relevant .okf sweep, current implementation/test inspection, license and security review, declared baseline/acceptance metrics, applicable production-helper evidence, rollback criteria, and human review. BLOCKED/UNPROVEN remains non-pass.
+
+## 37. THESIX Implementation Follow-up — 2026-10-12
+
+**Classification:** partial clean-room implementation on the isolated THESIX branch; not a production promotion.
+
+**Implemented slices in this wave:**
+- S1: explicitly scoped KnowledgeOS snapshots, stable content digest, provenance-bearing claim/source and evidence/reference projections, deterministic diff, and scope-mismatch rejection. Snapshot retention/persistence is not implemented.
+- S2: read-only Live Mission Canvas; overlapping-poll guard; abort-on-unmount/mission-switch; safe HTTP error mapping; API response shape checks; task metric presentation. Event replay, browser acceptance, and live F07 proof remain pending.
+- S3: evidence-first assimilation skill methodology and a structure/provenance verifier for the six mapping documents. A full agent-skill linter and context-budget benchmarking remain pending.
+- S4: allow-listed Zod-validated summary/metric-grid/alert UI contracts and fixed React renderer. No arbitrary generated HTML/JavaScript or general agent-generated UI runtime.
+- S5: provider-neutral visual document extraction contract disabled by default; bounded MIME/input/output/timeout; schema validation; source digest; outputs remain UNVERIFIED. Lift model/provider is not connected.
+- S6: baseline/candidate retrieval benchmark harness measuring recall@k, MRR, exact-identifier hits, provenance coverage, latency and provider failures with timeout and admission gates. zvec-grep is not connected; no real corpus benchmark has run.
+
+**Verification rule:** strict typecheck and the focused test/gov-verifier step must be checked against the current branch head in GitHub Actions. Synthetic unit fixtures are not upstream/provider qualification. The full web regression job is informational and may report unrelated repository failures; do not attribute them to this wave without baseline comparison.
+
+**Remaining promotion gates:** complete the full relevant .okf sweep; inspect current implementation/tests; record latest CI; run browser/reconnect/auth checks; validate scope isolation and snapshot diff behavior; perform an actual document extraction benchmark and separate model-weight legal review; run a real-repository retrieval benchmark; prove live mission task/artifact/F07 links; preserve rollback and negative evidence. Do not merge to main while required gates are blocked or unproven.
+
