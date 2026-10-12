@@ -84,6 +84,7 @@ describe("ShortForge editor contract", () => {
 
     expect(receipt.accepted).toBe(true);
     expect(receipt.revision).toBe(1);
+    expect(receipt.changedCaptionIds).toEqual(["caption-question"]);
     const updated = await editor.getDocument("caption-session");
     expect(updated.composition.captions[0]?.text).toBe("Which city is the capital of Tamil Nadu?");
     expect(updated.composition.captions[0]?.metadata?.sceneId).toBe("quiz-question-1");
