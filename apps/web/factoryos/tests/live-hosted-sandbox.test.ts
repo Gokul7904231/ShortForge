@@ -33,6 +33,18 @@ const LIVE_PROOF_CONFIGURED = Boolean(
 
 const describeLiveProof = LIVE_PROOF_CONFIGURED ? describe : describe.skip;
 
+function sanitizeProofDiagnostic(value: unknown): string {
+  let message = String(value ?? "");
+  for (const secret of [
+    process.env.OPENCOMPUTER_API_KEY,
+    process.env.BL_API_KEY,
+    process.env.BL_WORKSPACE,
+  ]) {
+    if (secret) message = message.split(secret).join("[REDACTED]");
+  }
+  return message.replace(/\\s+/g, " ").slice(0, 320);
+}
+
 describeLiveProof("live hosted sandbox compute proof", () => {
   it("provisions, executes a physical render, verifies CAS independently, and closes the F07 evidence boundary", async () => {
     const provider = String(process.env.SHORTFORGE_LIVE_SANDBOX_PROVIDER || "").toUpperCase();
@@ -90,6 +102,10 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       if (runtime.state !== "RUNNING" && runtime.state !== "READY") {
         runtime = await adapter.waitReady(runtime.resourceId, 120_000);
       }
+      expect(
+        ["RUNNING", "READY"],
+        `LIVE_SANDBOX_NOT_READY provider=${provider} state=${runtime.state}`,
+      ).toContain(runtime.state);
 
       const result = await adapter.execute({
         runtime,
@@ -98,7 +114,10 @@ describeLiveProof("live hosted sandbox compute proof", () => {
         env: { SHORTFORGE_OUTPUT_PATH: outputPath },
       });
 
-      expect(result.status).toBe("SUCCEEDED");
+      expect(
+        result.status,
+        `LIVE_SANDBOX_EXECUTION_FAILED provider=${provider} status=${result.status} exitCode=${result.exitCode ?? "NA"} detail=${sanitizeProofDiagnostic((result as any).limitation ?? result.stderr ?? "")}`,
+      ).toBe("SUCCEEDED");
       expect(result.exitCode).toBe(0);
 
       await fs.mkdir(path.dirname(localOutput), { recursive: true });
