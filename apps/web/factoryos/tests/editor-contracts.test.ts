@@ -90,6 +90,92 @@ describe("ShortForge editor contract", () => {
     expect(updated.composition.captions[0]?.metadata?.sceneId).toBe("quiz-question-1");
   });
 
+  it("updates caption style deterministically and reports the changed caption id", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    const withCaption: CompositionIR = {
+      ...base,
+      captions: [{
+        id: "caption-style",
+        text: "Tamil Nadu quiz",
+        start: 0,
+        end: millisecondsToMediaTime(2_000),
+        style: {
+          fontFamily: "sans-serif",
+          fontSize: 42,
+          primaryColor: "#FFFFFF",
+          animation: "NONE",
+        },
+      }],
+    };
+    await editor.open({
+      sessionId: "caption-style-session",
+      compositionId: base.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "caption-editor" },
+    }, withCaption);
+
+    const receipt = await editor.apply({
+      commandId: "caption-style-update",
+      sessionId: "caption-style-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: {
+        type: "UPDATE_CAPTION_STYLE",
+        captionId: "caption-style",
+        stylePatch: { fontSize: 54, primaryColor: "#FCD34D", animation: "POP_IN" },
+      },
+    });
+    expect(receipt.accepted).toBe(true);
+    expect(receipt.changedCaptionIds).toEqual(["caption-style"]);
+    const updated = await editor.getDocument("caption-style-session");
+    expect(updated.composition.captions[0]?.style.fontSize).toBe(54);
+    expect(updated.composition.captions[0]?.style.primaryColor).toBe("#FCD34D");
+    expect(updated.composition.captions[0]?.style.animation).toBe("POP_IN");
+  });
+
+  it("rejects unsafe caption style values", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    const withCaption: CompositionIR = {
+      ...base,
+      captions: [{
+        id: "caption-safe-style",
+        text: "Safe",
+        start: 0,
+        end: millisecondsToMediaTime(2_000),
+        style: {
+          fontFamily: "sans-serif",
+          fontSize: 42,
+          primaryColor: "#FFFFFF",
+          animation: "NONE",
+        },
+      }],
+    };
+    await editor.open({
+      sessionId: "caption-safe-style-session",
+      compositionId: base.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "caption-editor" },
+    }, withCaption);
+
+    const receipt = await editor.apply({
+      commandId: "caption-style-invalid-color",
+      sessionId: "caption-safe-style-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: {
+        type: "UPDATE_CAPTION_STYLE",
+        captionId: "caption-safe-style",
+        stylePatch: { primaryColor: "red; import malicious-style" },
+      },
+    });
+    expect(receipt.accepted).toBe(false);
+    expect(receipt.error).toContain("EDITOR_CAPTION_COLOR_INVALID");
+  });
+
   it("rejects empty or unknown caption text updates", async () => {
     const editor = new InMemoryEditor();
     const base = composition();
