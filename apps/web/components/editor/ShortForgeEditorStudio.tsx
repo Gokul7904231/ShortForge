@@ -21,6 +21,10 @@ export interface ShortForgeEditorStudioProps {
   onUndo?: () => Promise<unknown> | unknown;
   onRedo?: () => Promise<unknown> | unknown;
   onPreviewAt?: (seconds: number) => Promise<unknown> | unknown;
+  /** Verified source MP4 used until the source project contains semantic scene layers. */
+  sourceVideoUrl?: string;
+  /** Physically rendered frame from the canonical editor preview endpoint. */
+  previewFrameUrl?: string;
   readOnly?: boolean;
 }
 
@@ -97,6 +101,8 @@ export function ShortForgeEditorStudio({
   onUndo,
   onRedo,
   onPreviewAt,
+  sourceVideoUrl,
+  previewFrameUrl,
   readOnly = false,
 }: ShortForgeEditorStudioProps) {
   const composition = document.composition;
@@ -352,7 +358,7 @@ export function ShortForgeEditorStudio({
           <section className="grid min-h-[380px] min-w-0 grid-cols-[minmax(0,1fr)_210px] border-b border-zinc-800">
             <div className="relative flex items-center justify-center overflow-hidden bg-zinc-900">
               <div
-                className="relative aspect-[9/16] max-h-[92%] w-auto rounded-xl border border-zinc-700 bg-black shadow-xl"
+                className="relative aspect-[9/16] h-[min(72vh,760px)] max-h-[92%] max-w-full overflow-hidden rounded-xl border border-zinc-700 bg-black shadow-xl"
                 style={{
                   background:
                     composition.canvas.background?.kind === "SOLID"
@@ -360,10 +366,27 @@ export function ShortForgeEditorStudio({
                       : undefined,
                 }}
               >
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-zinc-500">
-                  {selected ? clipLabel(selected) : "Select a clip"}
-                </div>
-                <div className="absolute inset-x-0 bottom-3 text-center text-[10px] text-zinc-600">
+                {previewFrameUrl ? (
+                  <img
+                    src={previewFrameUrl}
+                    alt="Rendered ShortForge editor preview frame"
+                    className="absolute inset-0 h-full w-full object-contain"
+                  />
+                ) : sourceVideoUrl ? (
+                  <video
+                    key={sourceVideoUrl}
+                    src={sourceVideoUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="absolute inset-0 h-full w-full bg-black object-contain"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-zinc-500">
+                    {selected ? clipLabel(selected) : "Select a clip"}
+                  </div>
+                )}
+                <div className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-[10px] text-white/75 drop-shadow">
                   {formatTime(playheadSeconds)}
                 </div>
               </div>
