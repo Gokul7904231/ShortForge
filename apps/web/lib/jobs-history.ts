@@ -35,6 +35,15 @@ export interface VideoJob {
   updatedAt?: string;
   remoteState?: string;
   artifactSha256?: string;
+  /** Durable owner binding for the media package imported into ShortForge Editor. */
+  editorSource?: {
+    sha256: string;
+    artifactId: string;
+    byteLength: number;
+    sourceKind: "FLATTENED_MP4";
+    ownerId: string;
+    importedAt: string;
+  };
 }
 
 const inMemoryJobs = new Map<string, VideoJob>();
