@@ -20,6 +20,7 @@
     "lint": "eslint",
     "factoryos:test": "vitest run --config vitest.config.ts",
     "factoryos:eval:rag": "vitest run factoryos/tests/rag-eval.test.ts",
+    "factoryos:eval:knowledge-retrieval": "npx vite-node scripts/benchmark-knowledge-retrieval.ts",
     "factoryos:typecheck": "tsc --project tsconfig.factoryos.json --noEmit",
     "factoryos:eval:quiz": "vitest run factoryos/tests/quiz-eval.test.ts",
     "factoryos:demo": "npx vite-node factoryos/demo.ts",
