@@ -162,6 +162,10 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
           error?.cause?.status,
       );
       const hasHttpStatus = Number.isInteger(status) && status >= 100 && status <= 599;
+      const message = String(error?.message || "");
+      const sdkLoadFailed =
+        /dynamic import callback|ERR_MODULE_NOT_FOUND|Cannot find package|BLAXEL_SDK_MISSING/i.test(message);
+      const authRejected = /unauthori[sz]ed|forbidden|invalid (api )?(key|token)|\\b401\\b|\\b403\\b/i.test(message);
       return {
         configured: true,
         authenticated: false,
@@ -170,7 +174,13 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
         missingKeys: [],
         checkedAt,
         evidence: ["Blaxel credential validation request failed."],
-        errorCode: hasHttpStatus ? `BLAXEL_HTTP_${status}` : "BLAXEL_AUTH_FAILED",
+        errorCode: sdkLoadFailed
+          ? "BLAXEL_SDK_LOAD_FAILED"
+          : hasHttpStatus
+            ? `BLAXEL_HTTP_${status}`
+            : authRejected
+              ? "BLAXEL_AUTH_REJECTED"
+              : "BLAXEL_AUTH_FAILED",
         errorMessage: error?.message || "Blaxel validation failed.",
       };
     }
