@@ -153,6 +153,14 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
         evidence: ["Authenticated against the configured Blaxel workspace."],
       };
     } catch (error: any) {
+      const status = Number(
+        error?.status ??
+          error?.statusCode ??
+          error?.response?.status ??
+          error?.response?.statusCode ??
+          error?.cause?.status,
+      );
+      const hasHttpStatus = Number.isInteger(status) && status >= 100 && status <= 599;
       return {
         configured: true,
         authenticated: false,
@@ -161,7 +169,7 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
         missingKeys: [],
         checkedAt,
         evidence: ["Blaxel credential validation request failed."],
-        errorCode: "BLAXEL_AUTH_FAILED",
+        errorCode: hasHttpStatus ? `BLAXEL_HTTP_${status}` : "BLAXEL_AUTH_FAILED",
         errorMessage: error?.message || "Blaxel validation failed.",
       };
     }
