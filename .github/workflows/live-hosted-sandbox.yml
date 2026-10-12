@@ -19,12 +19,6 @@ on:
         required: true
         default: ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404
         type: string
-  # Temporary one-shot Blaxel verification trigger; removed after queueing.
-  push:
-    branches:
-      - feat/sandbox-opencomputer-blaxel-20261006
-    paths:
-      - ".github/workflows/live-hosted-sandbox.yml"
 
 permissions:
   contents: read
@@ -37,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: ${{ github.event_name == 'push' && fromJSON('["BLAXEL"]') || fromJSON(format('["{0}"]', inputs.provider)) }}
+        provider: ${{ fromJSON(format('["{0}"]', inputs.provider)) }}
     env:
       SHORTFORGE_LIVE_SANDBOX_PROVIDER: ${{ matrix.provider }}
       SHORTFORGE_LIVE_SANDBOX_IMAGE: ${{ inputs.image || 'ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404' }}
