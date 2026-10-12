@@ -4,7 +4,7 @@
 - Branch: `THESIX`
 - Base commit: `9e3d7017f62625cea5258dabee926824cb43ab18`
 - Checkpoint type: implementation progress checkpoint (not final completion)
-- Status: `PARTIAL_IMPLEMENTATION; FOCUSED CI PASS; FULL REGRESSION FAILURE (61 FILES); BROWSER/F07 PENDING`
+- Status: `PARTIAL_IMPLEMENTATION; FOCUSED CI PASS; PRIOR FULL-REGRESSION FAILURE OBSERVED; CURRENT RUN PENDING; BROWSER/F07 PENDING`
 
 ## Purpose
 
@@ -63,7 +63,7 @@ Track the six repository-inspired improvement workstreams on an isolated branch.
 - Source commits on THESIX: VERIFIED by GitHub commit responses.
 - Live Mission Canvas source and UI wiring: IMPLEMENTED, NOT TYPECHECKED.
 - Polling/reconnect: periodic snapshot refresh implemented; durable work snapshot is used for refresh recovery. No dedicated task-event SSE/replay stream added yet.
-- S3 skill methodology update: IMPLEMENTED IN DOCUMENTATION, NOT LINT-VERIFIED.
+- S3 skill methodology and quality linter: IMPLEMENTED; targeted Node tests pass on implementation revision 2969f0f; context/quality benchmarking remains pending.
 - S1 Helix-inspired KnowledgeOS improvement: NOT IMPLEMENTED; existing graph snapshot/evidence patterns must be audited before changing code.
 - S4 general-purpose generative UI runtime: NOT IMPLEMENTED; only a safe, task-specific live mission UI slice exists.
 - S5 Lift adapter/benchmark: NOT IMPLEMENTED; remains conditional.
@@ -79,7 +79,7 @@ Six dedicated repository mappings were added under .okf/research/repo-mappings:
 
 - HelixDB/helix-foundry — research-only; audit KnowledgeOS/Memory Fabric before considering any new provenance/snapshot behavior.
 - devdotfast/whiteboard — LiveMissionCanvas is a partial UI pattern slice; no external Whiteboard code.
-- twostraws/SwiftUI-Agent-Skill — evidence-first skill methodology is documented; automated skill validation remains unrun.
+- twostraws/SwiftUI-Agent-Skill — evidence-first methodology plus deterministic structure/duplicate-instruction/capability linter are implemented and focused-tested; semantic paraphrase detection and context-quality benchmark remain unrun.
 - CopilotKit/OpenIntelligentUI — research-only; no general generative UI runtime or arbitrary model-authored host code.
 - datalab-to/lift — isolated experiment candidate; Apache-2.0 code and modified OpenRAIL-M model-weight terms are treated separately.
 - zvec-ai/zvec-grep — benchmark-first retrieval candidate; no integration or performance result claimed.
@@ -137,7 +137,7 @@ This addendum supersedes the older status bullets above where they conflict. It 
 
 - **S1 / scoped KnowledgeOS history:** KnowledgeOSSnapshotHistory.ts stores content-addressed scoped revisions via the existing IMemoryRepository, validates stored snapshot digests, provides load/list/latest/diff and rejects cross-scope diffs. Records remain UNVERIFIED with confidence 0 because integrity is not factual truth. The existing disk memory repository now performs exact-key lookup beyond its ordinary 50-result query limit; tests cover this regression. Runtime wiring and retention policy are still pending.
 - **S2 / mission work stream:** the mission work events route provides mission-authenticated SSE and projects allow-listed task invalidations from DurableEventBus. It supports bounded in-process Last-Event-ID replay/resync; the canvas refreshes the authoritative work snapshot on signals and retains polling fallback. Cross-process durability, browser acceptance and live mission/F07 evidence are still pending.
-- **S3 / skill governance:** the repo-mapping verifier checks the assimilation skill's required metadata/sections, 1,800-word ceiling, relative references, and explicit BLOCKED/UNPROVEN semantics in addition to six mapping files. Semantic duplicate/capability lint and measured context-cost-versus-quality evaluation remain pending.
+- **S3 / skill governance:** the mapping verifier checks six mappings and skill structure/links/context budget; tools/okf/thesix-skill-quality.mjs adds exact normalized long-list-instruction duplicate detection, canonical CAP_* vocabulary checks and required capability declarations. Five Node unit tests now cover these implemented rules. Semantic paraphrase detection and measured context-cost-versus-quality evaluation remain pending.
 - **S4 / safe adaptive UI:** allow-listed Zod schemas and fixed React summary/metric-grid/alert templates remain data-only; unsupported payloads are rejected. No arbitrary code execution or general generated-UI runtime is present.
 - **S5 / document path:** DocumentNormalizer.normalizeWithVision now exposes the disabled-by-default provider-neutral adapter as an explicit opt-in path, escaping extracted JSON as text, bounding output and preserving UNVERIFIED status. No Lift provider/model is connected and no representative PDF/image benchmark or model-weight legal review has run. Remote vision processing requires both provider-level approval and a per-document allowRemoteSubmission flag; both gates default closed. Merely enabling the adapter does not authorize cloud submission.
 - **S6 / retrieval candidate:** HybridKnowledgeRetrievalProvider.ts implements exact identifier/path + BM25 RRF with optional injected semantic scoring; the remote semantic boundary requires provider-level approval plus per-query allowRemoteSemanticSubmission=true; both default closed. The scorer receives at most 200 candidates and a bounded text excerpt per document. Results carry per-document SHA-256 content revisions. The CLI npm run factoryos:eval:knowledge-retrieval -- <judged-cases.json> [implementation-revision] compares current KnowledgeStore ranking to the exact/BM25 candidate on the same human-judged case set and applies explicit metric gates. It does not configure a vector scorer, does not integrate zvec-grep, and has not run on a real judged corpus.
@@ -146,14 +146,14 @@ This addendum supersedes the older status bullets above where they conflict. It 
 
 New focused tests cover scoped snapshot history/corruption, disk exact-key lookups past 50 records, visual DocumentNormalizer integration, retrieval-baseline provenance filtering, exact/BM25/optional-semantic ranking, and remote semantic opt-in. The CI workflow includes these targeted tests in the strict TypeScript/contract-test job.
 
-**Latest code verification:** implementation revision 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726 (later THESIX commits are checkpoint/OKF documentation updates only). GitHub Actions run 38245370370 passed strict TypeScript plus the nine focused contract-test files, Floor 01 Python tests, the security/dependency scan, and production-container smoke. Its informational full Vitest regression job **failed**: 61 test files failed, 256 passed, 3 were skipped (320 total); GitHub reported 20 failed suites and 56 failed individual tests. The workflow's overall conclusion is success because that job is configured as informational; this does not mean full regression is green.
+**Latest code verification:** implementation revision 2969f0f5924563bf4843b810fbafcf1cc0acdb45 includes the skill quality linter and corrected linter fixtures. GitHub Actions run 38246627642 passed strict TypeScript, the mapping verifier, all nine targeted contract-test files plus the five Node skill-linter tests, Floor 01 Python tests, security/dependency scan, and production-container smoke. Its informational full Vitest regression job remained in progress at the latest poll. A prior full Vitest job on revision 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726 failed: 61 test files failed, 256 passed, 3 were skipped (320 total); GitHub reported 20 failed suites and 56 failed individual tests. Failure attribution against main is unproven; the current full-suite run must be read before claiming broader regression status.
 
 Failure examples span editor contracts, mission lifecycle, quotas, Treasury, Slayer, rendering, retrieval, graph/UI helpers and integration tests. This shows broad coverage gaps but does not establish whether failures pre-existed on main or were introduced by THESIX; a same-environment baseline comparison has not been run. Do not attribute or waive these failures without that comparison.
 
 ### Remaining non-negotiable gates
 
 - Complete the full relevant .okf sweep; it remains NOT COMPLETE.
-- Inspect the latest GitHub Actions run for the current branch head and fix any failure before considering the implementation checkpoint verified.
+- Inspect GitHub Actions run 38246627642 for the current implementation commit 2969f0f and its full Vitest job conclusion; focus tests/other required jobs pass, but full regression status is still pending.
 - Exercise SSE/UI in a browser against a real authorized mission, test denial/reconnect/resync/polling fallback and accessibility, and prove displayed artifacts/evidence through F07.
 - Wire snapshot history into the correct production KnowledgeOS lifecycle, define retention/access controls, and validate restart behavior on the chosen persistence backend.
 - Run the document adapter against representative real documents and obtain separate legal review for Lift model weights/terms.
@@ -163,6 +163,6 @@ Failure examples span editor contracts, mission lifecycle, quotas, Treasury, Sla
 
 - Required job results at branch head 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726: PASS for strict TypeScript and nine focused contract-test files; PASS for Floor 01 Python tests; PASS for security/dependency scan; PASS for production-container smoke.
 - Focused tests cover KnowledgeOS snapshot history and disk exact-key regression; adaptive presentation schema; visual normalization bounds and dual remote-consent gate; exact/BM25 retrieval, document-digest provenance, remote-query approval, candidate-count cap, and per-document text cap; and mission work client/signal projection.
-- GitHub Actions run 38245370370 completed with the focused/required jobs passing and the informational full Vitest regression failing (61 files failed, 256 passed, 3 skipped). No baseline comparison proves those failures are pre-existing. Therefore this checkpoint is not a full regression pass.
+- GitHub Actions run 38246627642 for implementation revision 2969f0f passed the focused/required jobs; its informational full Vitest job was still in progress at last poll. The prior full-suite run failed with 61 files failing, 256 passing, and 3 skipped, with no baseline comparison to establish attribution. Therefore this checkpoint is not yet a full regression pass.
 - The .okf tree inventory contains 262 files. Core decision/authority/security/production-helper documents and all six THESIX mappings were inspected, but the complete file-by-file .okf review mandated by .okf/decision-protocol.md is not yet complete; it remains a release blocker.
 - No real authorized mission browser session, reconnection/access-denial walkthrough, accessibility inspection, persistent-runtime snapshot wiring, F07 artifact proof, real Lift document evaluation/license review, or human-judged retrieval benchmark was performed.

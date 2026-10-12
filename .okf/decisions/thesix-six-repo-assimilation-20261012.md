@@ -18,7 +18,7 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 |---|---|---|---|
 | HelixDB/helix-foundry | research/repo-mappings/helixdb-helix-foundry.md | PARTIALLY_IMPLEMENTED projection + history adapter | Scoped snapshots/diffs and content-addressed revision history via existing IMemoryRepository; runtime wiring/retention pending; no parallel store |
 | devdotfast/whiteboard | research/repo-mappings/devdotfast-whiteboard.md | PARTIALLY_IMPLEMENTED | Guarded canvas, typed response validation, mission-scoped SSE signals/bounded in-process replay and polling fallback; browser/F07 proof pending |
-| twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology and basic mapping/skill verifier implemented; semantic lint and measured context-quality evaluation pending |
+| twostraws/SwiftUI-Agent-Skill | research/repo-mappings/twostraws-swiftui-agent-skill.md | PARTIALLY_ADOPTED | Skill methodology, mapping verifier, and tested exact-duplicate/capability-declaration linter implemented; semantic paraphrase and context-quality evaluation pending |
 | CopilotKit/OpenIntelligentUI | research/repo-mappings/copilotkit-openintelligentui.md | PARTIAL SAFE PRESENTATION | Fixed allow-listed schema-validated UI primitives; no arbitrary generated code/runtime |
 | datalab-to/lift | research/repo-mappings/datalab-to-lift.md | EXPERIMENT_ONLY / OPT-IN NORMALIZER SEAM | Disabled-by-default adapter reachable through explicit DocumentNormalizer path; no Lift provider/model, legal review or real-document qualification |
 | zvec-ai/zvec-grep | research/repo-mappings/zvec-ai-zvec-grep.md | EXPERIMENT_ONLY / BENCHMARK CLI + CLEAN-ROOM CANDIDATE | Same-case KnowledgeStore baseline vs exact/BM25 RRF candidate; per-document content digests, explicit remote opt-in and capped semantic shortlist; no real judged benchmark or zvec adapter |
@@ -57,7 +57,7 @@ This is a scoped assimilation record, not evidence that the mandatory full .okf 
 
 - Mapping source review is recorded at immutable upstream commits in each mapping.
 - THESIX branch commits for the existing LiveMissionCanvas and skill-methodology slice are recorded in the checkpoint report.
-- THESIX implementation revision 03d810ad4c80956f0080e4f4b2e3f9c5b8ef1726 passed strict TypeScript + targeted contract tests, Floor 01 Python tests, security/dependency scan, and production-container smoke in CI run 38245370370. Its informational full Vitest job failed (61 files failed, 256 passed, 3 skipped; 20 suites and 56 individual tests failed). Baseline attribution is unproven. Browser run, full .okf sweep, Lift evaluation, real judged retrieval benchmark, and live mission/F07 proof remain NOT RUN or UNPROVEN.
+- THESIX implementation revision 2969f0f5924563bf4843b810fbafcf1cc0acdb45 passed strict TypeScript + focused contract tests, mapping/skill linter, Floor 01 Python tests, security/dependency scan, and production-container smoke in CI run 38246627642. The full Vitest job remained in progress at last poll. An earlier full Vitest run at 03d810ad failed (61 files failed, 256 passed, 3 skipped); attribution to main is unproven. Browser run, full .okf sweep, Lift evaluation, real judged retrieval benchmark, and live mission/F07 proof remain NOT RUN or UNPROVEN.
 - No repository in this wave is claimed as fully integrated or production-ready.
 
 ## Rollback / rejection conditions
