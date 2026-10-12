@@ -56,6 +56,23 @@ describe("hybrid retrieval benchmark", () => {
     expect(JSON.stringify(report)).not.toContain("sensitive provider detail");
   });
 
+  it("times out a stuck candidate and cancels its probe signal", async () => {
+    let signal: AbortSignal | undefined;
+    const provider: RetrievalBenchmarkProvider = {
+      providerId: "stuck-provider",
+      implementationRevision: "v1",
+      search: (_query, _limit, requestSignal) => {
+        signal = requestSignal;
+        return new Promise(() => undefined);
+      },
+    };
+    const report = await runHybridRetrievalBenchmark(provider, [cases[0]], { queryTimeoutMs: 5 });
+
+    expect(report.cases[0].status).toBe("PROVIDER_ERROR");
+    expect(report.metrics.providerErrorRate).toBe(1);
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("rejects invalid benchmark sizes and duplicate case ids", async () => {
     const provider: RetrievalBenchmarkProvider = {
       providerId: "fixture",
@@ -68,6 +85,30 @@ describe("hybrid retrieval benchmark", () => {
   });
 
   it("keeps a candidate blocked if ranking, provenance, latency, or provider health misses its gate", () => {
+    const benchmarkCases: RetrievalBenchmarkReport["cases"] = [
+      {
+        caseId: "case-a",
+        category: "LEXICAL",
+        status: "OK",
+        retrievedDocumentIds: [],
+        relevantCount: 1,
+        relevantRetrievedAtK: 0,
+        reciprocalRank: 0,
+        exactIdentifierHit: null,
+        latencyMs: 10,
+      },
+      {
+        caseId: "case-b",
+        category: "EXACT_IDENTIFIER",
+        status: "OK",
+        retrievedDocumentIds: [],
+        relevantCount: 1,
+        relevantRetrievedAtK: 0,
+        reciprocalRank: 0,
+        exactIdentifierHit: false,
+        latencyMs: 10,
+      },
+    ];
     const report = (providerId: string, metrics: RetrievalBenchmarkReport["metrics"]): RetrievalBenchmarkReport => ({
       schemaVersion: "hybrid-retrieval-benchmark.v1",
       providerId,
@@ -76,7 +117,7 @@ describe("hybrid retrieval benchmark", () => {
       caseCount: 2,
       topK: 5,
       metrics,
-      cases: [],
+      cases: benchmarkCases,
     });
     const baseMetrics: RetrievalBenchmarkReport["metrics"] = {
       recallAtK: 0.8,
