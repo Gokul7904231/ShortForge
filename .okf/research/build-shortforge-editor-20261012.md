@@ -28,7 +28,13 @@ Keep export disabled until the server can stage and verify source assets on the 
 
 ### Important source gap
 
-The generated VideoJob history does not guarantee a full, immutable CompositionIR/TimelineIR and per-scene/audio/caption source manifest. Do not infer source layers from the final MP4. Phase 1 must add a versioned EditorSourceManifest written from the real F05 composition and source assets. It must include owner/job identity, composition CAS URI and hash, timeline fingerprint, scene IDs, image/audio/caption asset references and hashes, byte length/MIME, rights/provenance and parent artifact IDs. F06/job history should reference the package by immutable ID/digest.
+The generated VideoJob history does not guarantee a full, immutable CompositionIR/TimelineIR and per-scene/audio/caption source manifest. Do not infer source layers from the final MP4.
+
+Follow-up trace: F05 already writes `timeline_<timeline_id>.timelineir.json`, computes a canonical fingerprint, and returns `canonical_timeline_ir_path` plus `canonical_timeline_ir_fingerprint` from `services/pipeline/floor05_timeline_composition/app/services/pipeline.py`. The missing integration is a portable CAS-backed source package and linkage into F06/job history—not the invention of a new timeline model.
+
+The inspected F05 bridge (`services/pipeline/floor05_timeline_composition/app/services/timeline_ir_bridge.py`) drops editor semantics: it hardcodes `compositionType=FACTS_SHORTS`, every visual `assetType=IMAGE`, omits `scene_id`, `source_asset_version`, trims and transitions, emits empty word cues and default caption styles. The handoff path/fingerprint is a service-local reference and is not bound as an editor-owned CAS package by the inspected web F06 job-manifest write.
+
+P0 follow-up: preserve the F05 artifact/fingerprint as an immutable CAS-backed source package, fix the bridge to retain scene IDs, media kinds/versions, trims, transitions, real caption cues and content type, propagate the package ID/digest into F06/job history, and add F05→F06→Editor contract tests for portability, integrity and semantic round-trip. The editor must load this package rather than reverse engineer the flattened MP4.
 
 ### Important export gap
 
