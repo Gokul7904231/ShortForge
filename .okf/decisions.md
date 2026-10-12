@@ -1622,3 +1622,15 @@ Validation required:
 - Production promotion requires actual GitHub ruleset/status protection and provenance evidence.
 
 Rollback/rejection: If the machine manifest diverges from canonical textual rules, treat the manifest as invalid and revert the control-plane wave. Existing .okf and source-of-truth hierarchy remain intact.
+
+## 36. THESIX Six-Repository Reference Assimilation Gate — 2026-10-12
+
+**Classification:** scoped research documentation decision; not a production promotion.
+
+**Decision:** add six pinned, clean-room repository mappings and register them in the research ledger. Keep them as research-only, partial-pattern, or experiment-only according to the evidence; do not add runtime dependencies or authorize deployment merely through documentation.
+
+**Authority constraints:** existing .okf decision protocol, hierarchy, worker permission boundaries, production-helper evidence requirements, Archify graph/evidence conventions, and MarkItDown isolation guidance remain unchanged. Reuse KnowledgeOS/Memory Fabric, MissionGraphIR/EvidenceGraphIR/InteractionIR/TimelineIR, DocumentNormalizer, existing mission-work API, and current retrieval baseline rather than introducing duplicate sources of truth.
+
+**Verification truth:** LiveMissionCanvas and skill methodology are partial work only. Full .okf sweep, local typecheck/build/tests, browser testing, live mission/F07 proof, Lift evaluation, and zvec-grep retrieval benchmark remain unrun or unproven. See [the scoped decision record](./decisions/thesix-six-repo-assimilation-20261012.md) and [THESIX checkpoint](./audits/THESIX-imp-completion.md).
+
+**Promotion rule:** each runtime adoption requires a complete relevant .okf sweep, current implementation/test inspection, license and security review, declared baseline/acceptance metrics, applicable production-helper evidence, rollback criteria, and human review. BLOCKED/UNPROVEN remains non-pass.
