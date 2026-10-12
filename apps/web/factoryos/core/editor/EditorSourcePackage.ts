@@ -127,7 +127,24 @@ function sourceExtension(src: string): string {
   }
 }
 
-function mimeTypeForSource(src: string, role: "VISUAL" | "AUDIO", mediaType: string): string {
+function mimeTypeForSource(
+  src: string,
+  role: "VISUAL" | "AUDIO",
+  mediaType: string,
+  cas: ContentAddressedStore,
+): string {
+  const casMatch = /^cas:\/\/([a-f0-9]{64})$/i.exec(src);
+  if (casMatch) {
+    const ref = cas.getByHash(casMatch[1]!.toLowerCase());
+    const mime = ref?.mimeType || "";
+    const validForRole = role === "VISUAL"
+      ? mediaType === "IMAGE"
+        ? mime.startsWith("image/")
+        : mediaType === "VIDEO" && mime.startsWith("video/")
+      : mime.startsWith("audio/");
+    if (!ref || !validForRole) throw new Error("EDITOR_SOURCE_CAS_MEDIA_TYPE_UNPROVEN");
+    return mime;
+  }
   const ext = sourceExtension(src);
   if (role === "VISUAL") {
     if (mediaType === "IMAGE") {
@@ -397,7 +414,7 @@ export async function buildEditorSourcePackage(
   try {
     for (const source of pending) {
       const key = source.src;
-      const mimeType = mimeTypeForSource(source.src, source.role, source.mediaType);
+      const mimeType = mimeTypeForSource(source.src, source.role, source.mediaType, cas);
       const roles = sourceRoles.get(key) ?? new Set<"VISUAL" | "AUDIO">();
       roles.add(source.role);
       sourceRoles.set(key, roles);
