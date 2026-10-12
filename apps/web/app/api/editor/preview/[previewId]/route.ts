@@ -67,6 +67,27 @@ export async function GET(
       return new Response("Preview not found.", { status: 404 });
     }
 
+    // A preview ID is derived from content and timestamp, so the ID itself is not a capability.
+    // Bind every preview request to the source job's exact single-asset CAS digest.
+    const expectedSourceSha = job.editorSource.sha256.toLowerCase();
+    const sourceHashes = new Set<string>();
+    const validateSource = (src: string | undefined) => {
+      const match = typeof src === "string" ? /^cas:\/\/([a-f0-9]{64})$/i.exec(src) : null;
+      if (!match) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED");
+      sourceHashes.add(match[1]!.toLowerCase());
+    };
+    for (const track of document.composition.tracks || []) {
+      for (const clip of track.clips || []) {
+        if (clip.kind === "VIDEO" || clip.kind === "IMAGE" || clip.kind === "MOTION_CANVAS") {
+          validateSource(clip.src);
+        }
+      }
+    }
+    for (const audio of document.composition.audio || []) validateSource(audio.src);
+    if (sourceHashes.size !== 1 || !sourceHashes.has(expectedSourceSha)) {
+      return new Response("Preview not found.", { status: 404 });
+    }
+
     // Resolve/verify the composition's media before deriving a predictable preview id.
     const renderIntent = compileCompositionToRenderIntent(
       document.composition,
