@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
+import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import type { CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
 import type { EditorCommand } from "@/factoryos/core/editor/EditorContracts";
@@ -14,6 +15,38 @@ function assertCompositionOwner(document: EditorDocument, user: { uid: string; r
   const ownerId = document.composition.metadata.extensions?.ownerId;
   if (typeof ownerId !== "string" || (ownerId !== user.uid && !isAdminUser(user.role))) {
     throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
+  }
+}
+
+/** Browser-originated compositions may reference only verified CAS media, never filesystem paths or arbitrary URLs. */
+function assertCompositionSourcesOwned(
+  composition: CompositionIR,
+  user: { uid: string; role: string },
+) {
+  const isAdmin = isAdminUser(user.role);
+  const cas = ContentAddressedStore.getInstance();
+  const validateSource = (src: string | undefined, required: boolean, label: string) => {
+    if (!src) {
+      if (required) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED:" + label);
+      return;
+    }
+    const match = /^cas:\/\/([a-f0-9]{64})$/i.exec(src);
+    if (!match) throw new Error("EDITOR_SOURCE_CAS_URI_REQUIRED:" + label);
+    const ref = cas.getByHash(match[1]!.toLowerCase());
+    if (!ref || !ref.uri || !fs.existsSync(ref.uri)) throw new Error("EDITOR_SOURCE_CAS_NOT_FOUND:" + label);
+    if (!isAdmin && ref.metadata?.importedBy !== user.uid) {
+      throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN:" + label);
+    }
+  };
+
+  for (const track of composition.tracks || []) {
+    for (const clip of track.clips || []) {
+      const requiresSource = clip.kind === "VIDEO" || clip.kind === "IMAGE" || clip.kind === "MOTION_CANVAS";
+      validateSource(clip.src, requiresSource, clip.id || track.id);
+    }
+  }
+  for (const audio of composition.audio || []) {
+    validateSource(audio.src, true, audio.id);
   }
 }
 
@@ -31,6 +64,7 @@ export async function GET(request: NextRequest) {
       actor: { kind: "HUMAN", id: user.uid },
     });
     assertCompositionOwner(document, user);
+    assertCompositionSourcesOwned(document.composition, user);
 
     return NextResponse.json({
       success: true,
@@ -61,6 +95,7 @@ export async function POST(request: NextRequest) {
       if (typeof declaredOwner === "string" && declaredOwner !== user.uid && !isAdminUser(user.role)) {
         throw new Error("EDITOR_COMPOSITION_FORBIDDEN");
       }
+      assertCompositionSourcesOwned(composition, user);
       const ownedComposition: CompositionIR = {
         ...composition,
         metadata: {
@@ -77,6 +112,7 @@ export async function POST(request: NextRequest) {
       };
       const document = await runtime.open(session, ownedComposition);
       assertCompositionOwner(document, user);
+      assertCompositionSourcesOwned(document.composition, user);
       return NextResponse.json({ success: true, document, actor: session.actor });
     }
 
@@ -89,6 +125,7 @@ export async function POST(request: NextRequest) {
       actor: { kind: "HUMAN", id: user.uid },
     });
     assertCompositionOwner(resumedDocument, user);
+    assertCompositionSourcesOwned(resumedDocument.composition, user);
 
     switch (operation) {
       case "apply": {
