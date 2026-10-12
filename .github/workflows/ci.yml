@@ -30,6 +30,18 @@ jobs:
       - name: Verify THESIX repository mapping governance
         run: node tools/okf/verify-thesix-repo-mappings.mjs
 
+      - name: THESIX targeted contract tests
+        run: >-
+          npx vitest run
+          factoryos/tests/knowledgeos-snapshot.test.ts
+          factoryos/tests/adaptive-presentation.test.ts
+          factoryos/tests/visual-document-extraction-adapter.test.ts
+          factoryos/tests/hybrid-retrieval-benchmark.test.ts
+          factoryos/tests/mission-work-canvas-client.test.ts
+        working-directory: apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
       - name: Floor 01 Runtime Adapter Contract Tests
         run: cd apps/web && npx vitest run factoryos/tests/floor01-runtime-adapter.test.ts
         env:
