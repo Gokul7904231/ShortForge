@@ -68,13 +68,20 @@ jobs:
       - name: Build unsigned V3 provenance candidate
         run: python -m tools.okf.provenance --sweep okf-sweep.json --drift okf-drift.json --out okf-release-provenance.json
       - name: Require cryptographic attestation keys for signed V3 promotion
-        if: ${{ vars.OKF_V3_REQUIRE_SIGNATURE == 'true' }}
         env:
           OKF_ATTESTATION_PRIVATE_KEY_PEM: ${{ secrets.OKF_ATTESTATION_PRIVATE_KEY_PEM }}
           OKF_ATTESTATION_PUBLIC_KEY_PEM: ${{ secrets.OKF_ATTESTATION_PUBLIC_KEY_PEM }}
           OKF_ATTESTATION_KEY_ID: ${{ vars.OKF_ATTESTATION_KEY_ID }}
           OKF_ATTESTATION_KEY_VERSION: ${{ vars.OKF_ATTESTATION_KEY_VERSION }}
         run: node tools/okf/attest.mjs okf-sweep.json okf-signed-attestation.json
+      - name: Independently verify signed V3 attestation against trusted public key
+        env:
+          OKF_ATTESTATION_PUBLIC_KEY_PEM: ${{ secrets.OKF_ATTESTATION_PUBLIC_KEY_PEM }}
+          OKF_ATTESTATION_KEY_ID: ${{ vars.OKF_ATTESTATION_KEY_ID }}
+          OKF_ATTESTATION_KEY_VERSION: ${{ vars.OKF_ATTESTATION_KEY_VERSION }}
+        run: node tools/okf/verify-attestation.mjs okf-signed-attestation.json
+      - name: Test signed-attestation verifier tamper resistance
+        run: node --test tools/okf/tests/test_verify_attestation.mjs
       - name: Upload V3 evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
