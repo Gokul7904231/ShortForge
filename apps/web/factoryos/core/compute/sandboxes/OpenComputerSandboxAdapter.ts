@@ -154,6 +154,10 @@ export class OpenComputerSandboxAdapter implements SandboxProviderAdapter {
         evidence: ["Authenticated against the OpenComputer sandbox API."],
       };
     } catch (error: any) {
+      const status = Number(
+        error?.status ?? error?.statusCode ?? error?.response?.status ?? error?.response?.statusCode,
+      );
+      const hasHttpStatus = Number.isInteger(status) && status >= 100 && status <= 599;
       return {
         configured: true,
         authenticated: false,
@@ -162,7 +166,7 @@ export class OpenComputerSandboxAdapter implements SandboxProviderAdapter {
         missingKeys: [],
         checkedAt,
         evidence: ["OpenComputer credential validation request failed."],
-        errorCode: "OPENCOMPUTER_AUTH_FAILED",
+        errorCode: hasHttpStatus ? `OPENCOMPUTER_HTTP_${status}` : "OPENCOMPUTER_AUTH_FAILED",
         errorMessage: error?.message || "OpenComputer validation failed.",
       };
     }
