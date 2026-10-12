@@ -283,7 +283,7 @@ export default function ShortForgeEditorPageClient({ jobId }: { jobId: string })
         return payload.preview;
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : String(cause));
-        throw cause;
+        return undefined;
       } finally {
         setBusy(false);
       }
