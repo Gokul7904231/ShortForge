@@ -16,6 +16,18 @@ test("fails closed on capability identifiers missing from the canonical permissi
   assert.ok(result.issues.some((issue) => issue.code === "UNDECLARED_CAPABILITY" && issue.message.includes("CAP_MADE_UP")));
 });
 
+test("requires an explicit capability declaration when a skill references capabilities", () => {
+  const missing = analyzeSkillQuality("BLOCKED UNPROVEN CAP_NET_READ", "CAP_NET_READ");
+  assert.ok(missing.issues.some((issue) => issue.code === "CAPABILITY_DECLARATION_MISSING"));
+
+  const declared = analyzeSkillQuality(
+    "BLOCKED UNPROVEN\n## Required Capabilities\n- CAP_NET_READ",
+    "CAP_NET_READ",
+  );
+  assert.ok(!declared.issues.some((issue) => issue.code === "CAPABILITY_DECLARATION_MISSING"));
+  assert.equal(declared.issues.length, 0);
+});
+
 test("enforces the context ceiling and blocked/unproven evidence semantics", () => {
   const result = analyzeSkillQuality("word ".repeat(21) + "CAP_NET_READ", "CAP_NET_READ", 20);
   assert.ok(result.issues.some((issue) => issue.code === "CONTEXT_BUDGET_EXCEEDED"));

@@ -20,6 +20,15 @@ export function analyzeSkillQuality(skillContent, canonicalPermissionContent, ma
 
   const canonicalCapabilities = new Set(canonicalPermissionContent.match(/\bCAP_[A-Z0-9_]+\b/g) || []);
   const capabilityReferences = [...new Set(skillContent.match(/\bCAP_[A-Z0-9_]+\b/g) || [])].sort();
+  const hasCapabilityDeclaration =
+    /^## Required Capabilities\b/im.test(skillContent) ||
+    /^required_capabilities\s*:/im.test(skillContent);
+  if (capabilityReferences.length > 0 && !hasCapabilityDeclaration) {
+    issues.push({
+      code: "CAPABILITY_DECLARATION_MISSING",
+      message: "skill references capability identifiers but has no Required Capabilities section or required_capabilities field",
+    });
+  }
   for (const capability of capabilityReferences) {
     if (!canonicalCapabilities.has(capability)) {
       issues.push({
