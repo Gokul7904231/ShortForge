@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateTreasuryPromotionEligibility,
+  evaluateTreasuryPromotionFromLedger,
   type TreasuryPromotionEligibilityRequest,
+  type TreasuryPromotionLedgerEvaluationRequest,
+  type TreasuryPromotionOutcomeReadSource,
   type VerifiedRouteOutcome,
 } from "../core/treasury/TreasuryPromotionEligibility";
+import type { TreasuryLedgerEvent } from "../core/treasury/TreasuryContracts";
 
 const issuedAt = "2026-10-01T00:00:00.000Z";
 const evaluatedAt = "2026-10-05T00:00:00.000Z";
@@ -155,6 +159,117 @@ describe("Treasury Wave 7 promotion eligibility", () => {
     expect(forward.excludedOutcomeCount).toBeGreaterThanOrEqual(3);
     expect(forward.baseline.sampleCount).toBe(29);
     expect(forward.artifactDigest).toBe(reverse.artifactDigest);
+  });
+
+  it("builds eligibility evidence from tagged, later Treasury ledger settlements", async () => {
+    const events: TreasuryLedgerEvent[] = [];
+    for (let i = 0; i < 30; i += 1) {
+      for (const route of [
+        { routeId: "baseline", cohortId: "baseline-cohort", cost: 1, latency: 100 },
+        { routeId: "candidate", cohortId: "candidate-cohort", cost: 0.4, latency: 108 },
+      ]) {
+        events.push({
+          eventId: "event-" + route.routeId + "-" + i,
+          eventType: "RESOURCE_CONSUMED",
+          eventVersion: 1,
+          commandId: "command-" + route.routeId + "-" + i,
+          reservationId: "reservation-" + route.routeId + "-" + i,
+          accountId: "account-promotion",
+          missionId: "mission-promotion",
+          runId: "run-promotion-" + i,
+          floorId: "floor02_scripting",
+          amountUsd: route.cost,
+          occurredAt: new Date(Date.parse(issuedAt) + (i + 1) * 60_000).toISOString(),
+          actorAuthority: "TREASURER",
+          payload: {
+            resourceRequest: [{
+              kind: "INFERENCE",
+              providerId: route.routeId,
+              modelId: route.routeId + "-model",
+              workloadType: "RENDER",
+              metadata: {
+                treasuryPromotionRecommendationId: "shadow-rec-2026-10-01",
+                treasuryPromotionRouteId: route.routeId,
+                treasuryPromotionCohortId: route.cohortId,
+                treasuryPromotionWorkloadType: "RENDER",
+                treasuryPromotionCapabilityClass: "VIDEO_1080X1920",
+              },
+            }],
+            actualDurationMs: route.latency,
+            actualTokens: 1000,
+            executionEvidenceId: "exec-" + route.routeId + "-" + i,
+            verificationReceiptId: "f07-" + route.routeId + "-" + i,
+            verified: true,
+          },
+        });
+      }
+    }
+    const baseRequest = request([]);
+    const { outcomes: _ignored, ...withoutOutcomes } = baseRequest;
+    const readSource: TreasuryPromotionOutcomeReadSource = {
+      listRecentEvents: async (accountId, limit) => {
+        expect(accountId).toBe("account-promotion");
+        expect(limit).toBe(1000);
+        return [...events].reverse();
+      },
+    };
+    const ledgerRequest: TreasuryPromotionLedgerEvaluationRequest = {
+      ...withoutOutcomes,
+      accountId: "account-promotion",
+      eventLimit: 1000,
+    };
+
+    const result = await evaluateTreasuryPromotionFromLedger(readSource, ledgerRequest);
+    expect(result.decision).toBe("ELIGIBLE_FOR_HUMAN_REVIEW");
+    expect(result.baseline.sampleCount).toBe(30);
+    expect(result.candidate.sampleCount).toBe(30);
+    expect(result.comparison.realizedCostSavingsPct).toBeCloseTo(60, 8);
+    expect(result.authority.canAuthorizeSpend).toBe(false);
+    expect(result.authority.canChangeRoutingPolicy).toBe(false);
+  });
+
+  it("fails closed for tagged ledger events missing verified receipt evidence", async () => {
+    const baseRequest = request([]);
+    const { outcomes: _ignored, ...withoutOutcomes } = baseRequest;
+    const event: TreasuryLedgerEvent = {
+      eventId: "missing-f07",
+      eventType: "RESOURCE_CONSUMED",
+      eventVersion: 1,
+      accountId: "account-promotion",
+      missionId: "mission-promotion",
+      amountUsd: 0.1,
+      occurredAt: "2026-10-02T00:00:00.000Z",
+      actorAuthority: "TREASURER",
+      payload: {
+        resourceRequest: [{
+          kind: "INFERENCE",
+          providerId: "candidate",
+          modelId: "candidate-model",
+          workloadType: "RENDER",
+          metadata: {
+            treasuryPromotionRecommendationId: "shadow-rec-2026-10-01",
+            treasuryPromotionRouteId: "candidate",
+            treasuryPromotionCohortId: "candidate-cohort",
+            treasuryPromotionWorkloadType: "RENDER",
+            treasuryPromotionCapabilityClass: "VIDEO_1080X1920",
+          },
+        }],
+        actualDurationMs: 100,
+        executionEvidenceId: "execution-missing-f07",
+        verified: true,
+      },
+    };
+    const source: TreasuryPromotionOutcomeReadSource = {
+      listRecentEvents: async () => [event],
+    };
+    const result = await evaluateTreasuryPromotionFromLedger(source, {
+      ...withoutOutcomes,
+      accountId: "account-promotion",
+    });
+    expect(result.decision).toBe("NOT_ELIGIBLE");
+    expect(result.candidate.sampleCount).toBe(0);
+    expect(result.excludedOutcomeCount).toBe(1);
+    expect(result.reasonCodes).toContain("INSUFFICIENT_VERIFIED_SAMPLES_OR_CONFIDENCE");
   });
 
   it("rejects invalid identity and threshold windows", () => {
