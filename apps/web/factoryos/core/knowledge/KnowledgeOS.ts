@@ -15,6 +15,7 @@ import type {
   PerformanceAttributionMemory,
   KnowledgeOSSnapshot,
   KnowledgeOSSnapshotDiff,
+  KnowledgeOSSnapshotScope,
   KnowledgeRelationship,
 } from "./KnowledgeOSContracts";
 
@@ -179,28 +180,52 @@ export class KnowledgeOS {
    * Returns a read-only, deterministically ordered projection of canonical stores.
    * This is a snapshot boundary, not durable persistence or a second source of truth.
    */
-  public snapshot(): KnowledgeOSSnapshot {
+  public snapshot(selection: KnowledgeOSSnapshotScope): KnowledgeOSSnapshot {
+    if (selection.scope === "MISSION" && !selection.missionId.trim()) {
+      throw new Error("KNOWLEDGEOS_SNAPSHOT_MISSION_ID_REQUIRED");
+    }
+    if (selection.scope === "CHANNEL" && !selection.channelId.trim()) {
+      throw new Error("KNOWLEDGEOS_SNAPSHOT_CHANNEL_ID_REQUIRED");
+    }
+
+    const isInScope = (record: KnowledgeObject): boolean => {
+      if (selection.scope === "GLOBAL") return record.scope === "GLOBAL";
+      if (selection.scope === "MISSION") {
+        return record.scope === "MISSION" && record.missionId === selection.missionId;
+      }
+      return record.scope === "CHANNEL" &&
+        "channelId" in record &&
+        (record as ChannelProfileMemory).channelId === selection.channelId;
+    };
+
+    const sources = [...this.sources.values()].filter(isInScope);
+    const claims = [...this.claims.values()].filter(isInScope);
+    const evidence = [...this.evidence.values()].filter(isInScope);
+    const topics = [...this.topics.values()].filter(isInScope);
+    const channels = [...this.channels.values()].filter(isInScope);
+    const performance = [...this.performance.values()].filter(isInScope);
     const records: KnowledgeObject[] = [
-      ...this.sources.values(),
-      ...this.claims.values(),
-      ...this.evidence.values(),
-      ...this.topics.values(),
-      ...this.channels.values(),
-      ...this.performance.values(),
+      ...sources,
+      ...claims,
+      ...evidence,
+      ...topics,
+      ...channels,
+      ...performance,
     ]
       .map((record) => JSON.parse(JSON.stringify(record)) as KnowledgeObject)
       .sort((left, right) => left.id.localeCompare(right.id));
-
+    const recordIds = new Set(records.map((record) => record.id));
     const relationships: KnowledgeRelationship[] = [];
 
-    for (const claim of this.claims.values()) {
+    for (const claim of claims) {
       for (const sourceId of claim.sourceIds) {
         relationships.push({
           relationshipId: `CLAIM_CITES_SOURCE:${claim.id}:${sourceId}`,
           relationType: "CLAIM_CITES_SOURCE",
           fromId: claim.id,
           toId: sourceId,
-          resolved: this.sources.has(sourceId),
+          // A record outside this snapshot's scope is deliberately unresolved.
+          resolved: recordIds.has(sourceId),
           provenanceDigest: createHash("sha256")
             .update(`${claim.provenanceDigest}:${sourceId}`, "utf8")
             .digest("hex"),
@@ -208,26 +233,27 @@ export class KnowledgeOS {
       }
     }
 
-    for (const evidence of this.evidence.values()) {
+    for (const item of evidence) {
       relationships.push({
-        relationshipId: `EVIDENCE_ATTESTS_REFERENCE:${evidence.id}:${evidence.targetRef}`,
+        relationshipId: `EVIDENCE_ATTESTS_REFERENCE:${item.id}:${item.targetRef}`,
         relationType: "EVIDENCE_ATTESTS_REFERENCE",
-        fromId: evidence.id,
-        targetRef: evidence.targetRef,
-        // External references are preserved but not dereferenced by KnowledgeOS.
+        fromId: item.id,
+        targetRef: item.targetRef,
+        // External references are retained, but not dereferenced by KnowledgeOS.
         resolved: false,
         provenanceDigest: createHash("sha256")
-          .update(`${evidence.provenanceDigest}:${evidence.targetRef}:${evidence.sha256}`, "utf8")
+          .update(`${item.provenanceDigest}:${item.targetRef}:${item.sha256}`, "utf8")
           .digest("hex"),
       });
     }
 
     relationships.sort((left, right) => left.relationshipId.localeCompare(right.relationshipId));
-    const canonicalContent = canonicalizeKnowledgeValue({ records, relationships });
+    const canonicalContent = canonicalizeKnowledgeValue({ selection, records, relationships });
     const contentDigest = createHash("sha256").update(canonicalContent, "utf8").digest("hex");
 
     return {
       schemaVersion: "knowledgeos.snapshot.v1",
+      selection: JSON.parse(JSON.stringify(selection)) as KnowledgeOSSnapshotScope,
       capturedAt: new Date().toISOString(),
       records,
       relationships,
@@ -235,11 +261,15 @@ export class KnowledgeOS {
     };
   }
 
+
   /** Compare two snapshots without mutating either snapshot or KnowledgeOS state. */
   public static diffSnapshots(
     previous: KnowledgeOSSnapshot,
     current: KnowledgeOSSnapshot,
   ): KnowledgeOSSnapshotDiff {
+    if (canonicalizeKnowledgeValue(previous.selection) !== canonicalizeKnowledgeValue(current.selection)) {
+      throw new Error("KNOWLEDGEOS_SNAPSHOT_SCOPE_MISMATCH");
+    }
     const previousRecords = new Map<string, KnowledgeObject>(previous.records.map((record) => [record.id, record] as const));
     const currentRecords = new Map<string, KnowledgeObject>(current.records.map((record) => [record.id, record] as const));
     const previousRelationships = new Map<string, KnowledgeRelationship>(
