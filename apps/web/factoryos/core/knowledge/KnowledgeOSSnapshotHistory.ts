@@ -2,13 +2,14 @@ import { createHash } from "node:crypto";
 import type { IMemoryRepository, MemoryRecord } from "../database/DatabaseContracts";
 import {
   calculateKnowledgeOSSnapshotContentDigest,
-  KnowledgeOS,
   validateKnowledgeOSSnapshot,
 } from "./KnowledgeOS";
 import type {
   KnowledgeOSSnapshot,
   KnowledgeOSSnapshotDiff,
   KnowledgeOSSnapshotScope,
+  KnowledgeOSSnapshotSource,
+  KnowledgeOSSnapshotSourceKind,
 } from "./KnowledgeOSContracts";
 
 export interface StoredKnowledgeOSSnapshot {
@@ -31,16 +32,27 @@ function scopeHash(scope: KnowledgeOSSnapshotScope): string {
   return createHash("sha256").update(scopeLabel(scope), "utf8").digest("hex");
 }
 
-function scopePrefix(scope: KnowledgeOSSnapshotScope): string {
-  return `${SNAPSHOT_NAMESPACE}:${scopeHash(scope)}:`;
+function scopePrefix(
+  scope: KnowledgeOSSnapshotScope,
+  sourceKind: KnowledgeOSSnapshotSourceKind,
+): string {
+  return `${SNAPSHOT_NAMESPACE}:${sourceKind}:${scopeHash(scope)}:`;
 }
 
-function revisionKey(scope: KnowledgeOSSnapshotScope, digest: string): string {
-  return `${scopePrefix(scope)}${digest}`;
+function revisionKey(
+  scope: KnowledgeOSSnapshotScope,
+  sourceKind: KnowledgeOSSnapshotSourceKind,
+  digest: string,
+): string {
+  return `${scopePrefix(scope, sourceKind)}${digest}`;
 }
 
-function revisionMemoryId(scope: KnowledgeOSSnapshotScope, digest: string): string {
-  return `ksnap_${scopeHash(scope).slice(0, 24)}_${digest}`;
+function revisionMemoryId(
+  scope: KnowledgeOSSnapshotScope,
+  sourceKind: KnowledgeOSSnapshotSourceKind,
+  digest: string,
+): string {
+  return `ksnap_${sourceKind === "DOMAIN_KNOWLEDGEOS" ? "domain" : "okf"}_${scopeHash(scope).slice(0, 20)}_${digest}`;
 }
 
 function sameScope(left: KnowledgeOSSnapshotScope, right: KnowledgeOSSnapshotScope): boolean {
@@ -51,6 +63,7 @@ function sameScope(left: KnowledgeOSSnapshotScope, right: KnowledgeOSSnapshotSco
 function decodeSnapshotRecord(
   record: MemoryRecord,
   expectedScope: KnowledgeOSSnapshotScope,
+  expectedSourceKind: KnowledgeOSSnapshotSourceKind,
   expectedDigest?: string,
 ): KnowledgeOSSnapshot {
   let parsed: unknown;
@@ -63,10 +76,11 @@ function decodeSnapshotRecord(
   if (!validateKnowledgeOSSnapshot(parsed)) {
     throw new Error("KNOWLEDGEOS_SNAPSHOT_HISTORY_CORRUPT");
   }
-  if (!sameScope(parsed.selection, expectedScope) ||
-      !record.key.startsWith(scopePrefix(expectedScope)) ||
+  if (parsed.sourceKind !== expectedSourceKind ||
+      !sameScope(parsed.selection, expectedScope) ||
+      !record.key.startsWith(scopePrefix(expectedScope, expectedSourceKind)) ||
       (expectedDigest && parsed.contentDigest !== expectedDigest) ||
-      record.key !== revisionKey(expectedScope, parsed.contentDigest)) {
+      record.key !== revisionKey(expectedScope, expectedSourceKind, parsed.contentDigest)) {
     throw new Error("KNOWLEDGEOS_SNAPSHOT_HISTORY_SCOPE_OR_KEY_MISMATCH");
   }
   if (calculateKnowledgeOSSnapshotContentDigest(parsed) !== parsed.contentDigest) {
@@ -80,29 +94,35 @@ function decodeSnapshotRecord(
  * No new datastore is introduced; durability is exactly that of the injected repository.
  */
 export class KnowledgeOSSnapshotHistory {
-  constructor(private readonly memoryRepository: IMemoryRepository) {}
+  constructor(
+    private readonly memoryRepository: IMemoryRepository,
+    private readonly sourceKind: KnowledgeOSSnapshotSourceKind = "DOMAIN_KNOWLEDGEOS",
+  ) {}
 
   public async capture(
-    knowledgeOS: KnowledgeOS,
+    source: KnowledgeOSSnapshotSource,
     selection: KnowledgeOSSnapshotScope,
   ): Promise<StoredKnowledgeOSSnapshot> {
-    const snapshot = knowledgeOS.snapshot(selection);
+    if (source.sourceKind !== this.sourceKind) {
+      throw new Error("KNOWLEDGEOS_SNAPSHOT_SOURCE_MISMATCH");
+    }
+    const snapshot = source.snapshot(selection);
     if (!validateKnowledgeOSSnapshot(snapshot)) {
       throw new Error("KNOWLEDGEOS_SNAPSHOT_INVALID");
     }
 
-    const key = revisionKey(selection, snapshot.contentDigest);
+    const key = revisionKey(selection, this.sourceKind, snapshot.contentDigest);
     const existing = await this.memoryRepository.getMemory("OPERATIONAL", key);
     if (existing) {
       return {
-        snapshot: decodeSnapshotRecord(existing, selection, snapshot.contentDigest),
+        snapshot: decodeSnapshotRecord(existing, selection, this.sourceKind, snapshot.contentDigest),
         memoryId: existing.memoryId,
       };
     }
 
     const now = snapshot.capturedAt;
     const record: MemoryRecord = {
-      memoryId: revisionMemoryId(selection, snapshot.contentDigest),
+      memoryId: revisionMemoryId(selection, this.sourceKind, snapshot.contentDigest),
       layer: "OPERATIONAL",
       key,
       content: JSON.stringify(snapshot),
@@ -127,7 +147,7 @@ export class KnowledgeOSSnapshotHistory {
     if (!persisted) throw new Error("KNOWLEDGEOS_SNAPSHOT_PERSISTENCE_FAILED");
 
     return {
-      snapshot: decodeSnapshotRecord(persisted, selection, snapshot.contentDigest),
+      snapshot: decodeSnapshotRecord(persisted, selection, this.sourceKind, snapshot.contentDigest),
       memoryId: persisted.memoryId,
     };
   }
@@ -141,9 +161,9 @@ export class KnowledgeOSSnapshotHistory {
     }
     const record = await this.memoryRepository.getMemory(
       "OPERATIONAL",
-      revisionKey(selection, contentDigest),
+      revisionKey(selection, this.sourceKind, contentDigest),
     );
-    return record ? decodeSnapshotRecord(record, selection, contentDigest) : null;
+    return record ? decodeSnapshotRecord(record, selection, this.sourceKind, contentDigest) : null;
   }
 
   /** Chronological content revisions; identical content digests are idempotent. */
@@ -154,7 +174,7 @@ export class KnowledgeOSSnapshotHistory {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
       throw new Error("KNOWLEDGEOS_SNAPSHOT_HISTORY_INVALID_LIMIT");
     }
-    const prefix = scopePrefix(selection);
+    const prefix = scopePrefix(selection, this.sourceKind);
     const records = await this.memoryRepository.queryMemories(
       "OPERATIONAL",
       prefix,
@@ -166,7 +186,7 @@ export class KnowledgeOSSnapshotHistory {
     }
     const snapshots = records
       .filter((record) => record.key.startsWith(prefix))
-      .map((record) => decodeSnapshotRecord(record, selection));
+      .map((record) => decodeSnapshotRecord(record, selection, this.sourceKind));
     snapshots.sort((left, right) =>
       left.capturedAt.localeCompare(right.capturedAt) ||
       left.contentDigest.localeCompare(right.contentDigest)
