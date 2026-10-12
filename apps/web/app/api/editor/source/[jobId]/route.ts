@@ -263,7 +263,7 @@ export async function POST(
         durationSeconds: measurements.videoDuration,
         createdAt: job.createdAt,
       },
-      videoUrl: "/api/media/video/" + encodeURIComponent(jobId),
+      videoUrl: "/api/editor/source/" + encodeURIComponent(jobId) + "/video",
       media: {
         width: measurements.width,
         height: measurements.height,
