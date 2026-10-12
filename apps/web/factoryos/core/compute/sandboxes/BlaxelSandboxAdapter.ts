@@ -165,7 +165,7 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
       const message = String(error?.message || "");
       const sdkLoadFailed =
         /dynamic import callback|ERR_MODULE_NOT_FOUND|Cannot find package|BLAXEL_SDK_MISSING/i.test(message);
-      const authRejected = /unauthori[sz]ed|forbidden|invalid (api )?(key|token)|\\b401\\b|\\b403\\b/i.test(message);
+      const authRejected = /unauthori[sz]ed|forbidden|invalid (api )?(key|token)|\b401\b|\b403\b/i.test(message);
       return {
         configured: true,
         authenticated: false,
