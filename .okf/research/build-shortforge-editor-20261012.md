@@ -95,7 +95,7 @@ Use CapCut's [keyframes](https://www.capcut.com/tools/keyframe-animation), [capt
 | Open exact generated source project | Adopt P0 blocker | Requires source manifest; do not fabricate scene layers |
 | Clip trim/split/move, transforms, keyframes, masks/transitions | Adopt/adapt P0/P1 | Reuse typed model; test each render-lowered operation |
 | Quiz question/options/answer reveal; replace one scene visual | Adopt after source manifest | Needs semantic fields, stable IDs and dependencies |
-| Caption text editing | Implemented P0 on this branch | Typed `UPDATE_CAPTION_TEXT` command, revision history, inspector; only independent caption cues can be edited |
+| Caption text editing | Implemented P0 on this branch | Typed `UPDATE_CAPTION_TEXT` command, durable revision history, caption inspector and explicit `changedCaptionIds` in receipts; only independent caption cues can be edited |
 | Word-level caption timing and style editing | Adapt P1 | F05 needs measured word cues; styling shouldn't rerun voice |
 | Narration regeneration and music/SFX mix | Adapt P1 | Measure actual audio duration and re-align dependent captions |
 | Auto captions/translation | Adapt P1 | Qualified ASR/alignment; preserve human corrections |
@@ -176,7 +176,7 @@ A conceptual edit intent identifies the exact parent composition hash and expect
 | Authenticated source import + physical checks + CAS registration | Implemented; runtime validation pending |
 | Owner/source-CAS restrictions | Implemented; tests/CI pending |
 | Real source video and physical preview monitor | Implemented; browser E2E pending |
-| Caption text inspector + versioned command | Implemented; targeted regression tests added, current-head CI pending |
+| Caption text inspector + versioned command + changed-caption receipts | Implemented; targeted regression tests added, current-head CI pending |
 | CAS digest/tamper and source-package regression tests | Added; current-head CI pending |
 | Best-effort owner-bound composition package in job manifest | Implemented when all RenderIntent sources resolve and validate; not a guarantee for placeholder or template-specific paths |
 | Portable package directly from the canonical Python F05 artifact for all jobs | Not done; P0 next milestone |
