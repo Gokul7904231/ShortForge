@@ -6,7 +6,7 @@
 - Review date: 2026-10-12
 - Code license reported by GitHub: Apache-2.0
 - Assimilation mode: BENCHMARK_FIRST / EXPERIMENT_ONLY
-- ShortForge status: EVALUATION HARNESS IMPLEMENTED; ZVEC-GREP ADAPTER/INTEGRATION NOT IMPLEMENTED.
+- ShortForge status: CLEAN-ROOM EXACT/BM25 CANDIDATE + BENCHMARK RUNNER IMPLEMENTED; OPTIONAL SEMANTIC SCORER GATED; ZVEC-GREP NOT INTEGRATED.
 
 ## Problem and useful mechanism
 
@@ -28,7 +28,7 @@ zvec-grep describes local-first workspace search combining ripgrep-style exact m
 
 ## Status and verification required
 
-**EXPERIMENT_ONLY; REAL BENCHMARK NOT RUN.** `apps/web/factoryos/core/research/HybridRetrievalBenchmark.ts` now evaluates injected baseline/candidate providers on identical case sets, measures recall@k, MRR, exact-identifier hit rate, provenance coverage, p50/p95 latency, and provider error rate, times out stuck probes, and blocks candidates that regress the configured gates. A synthetic test fixture exercises the harness; no real ShortForge corpus, zvec-grep provider, or comparative performance result has been run. Build a reproducible evaluation set from real ShortForge tasks and compare exact-only, BM25-only, vector-only, and hybrid modes. Track index freshness/update cost, resource footprint, provenance, secret leakage, changed/deleted paths, private configuration, and malicious repository content.
+**EXPERIMENT_ONLY; REAL JUDGED CORPUS BENCHMARK NOT RUN.** HybridKnowledgeRetrievalProvider.ts implements clean-room exact identifier/path ranking plus BM25 with reciprocal-rank fusion and an optional injected semantic re-ranker. Remote semantic scoring is denied unless explicitly approved by configuration. The existing KnowledgeStoreRetrievalProvider.ts is the baseline; both filter canonical secret findings and duplicate IDs, and attach per-document SHA-256 content revisions. benchmark-knowledge-retrieval.ts and npm run factoryos:eval:knowledge-retrieval validate human-judged cases, run baseline and candidate on identical queries, report recall@k/MRR/exact hits/provenance/latency/errors, and apply numeric gates. Tests use synthetic fixtures only. The CLI does not configure a semantic scorer, and no zvec-grep adapter or real ShortForge judged dataset has run. The result is eligible only for human review; it never authorizes promotion.
 
 Do not integrate until the hybrid mode shows a repeatable improvement over baseline without unacceptable resource or leakage regressions. The system must honor ignore rules, explicit secret exclusions, workspace boundaries, and source policy. Retrieved text remains untrusted and cannot directly authorize tools or promote claims.
 

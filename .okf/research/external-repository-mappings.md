@@ -286,11 +286,11 @@ The following mappings capture six repository-inspired ideas as clean-room patte
 
 | Repository | Mapping | Initial disposition |
 |---|---|---|
-| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Partial implementation: scoped KnowledgeOS snapshot, provenance relationship projection, deterministic content digest and diffs; in-memory only, no second datastore |
-| devdotfast/whiteboard | [devdotfast-whiteboard.md](./repo-mappings/devdotfast-whiteboard.md) | Partial implementation: guarded read-only LiveMissionCanvas, response validation and adaptive metric-grid; event replay/browser/F07 proof still pending |
-| twostraws/SwiftUI-Agent-Skill | [twostraws-swiftui-agent-skill.md](./repo-mappings/twostraws-swiftui-agent-skill.md) | Partial methodology adoption plus mapping metadata verifier; full skill linter/context-cost tests still pending |
+| HelixDB/helix-foundry | [helixdb-helix-foundry.md](./repo-mappings/helixdb-helix-foundry.md) | Scoped snapshots/diffs plus content-addressed history over existing IMemoryRepository; runtime wiring and retention policy pending, no second datastore |
+| devdotfast/whiteboard | [devdotfast-whiteboard.md](./repo-mappings/devdotfast-whiteboard.md) | Guarded read-only canvas plus mission-scoped SSE invalidations/replay over bounded in-process history and polling fallback; browser/F07 proof pending |
+| twostraws/SwiftUI-Agent-Skill | [twostraws-swiftui-agent-skill.md](./repo-mappings/twostraws-swiftui-agent-skill.md) | Evidence-first methodology plus CI verifier for mappings/skill sections, relative links, explicit evidence semantics and word ceiling; semantic linter/context-quality benchmark pending |
 | CopilotKit/OpenIntelligentUI | [copilotkit-openintelligentui.md](./repo-mappings/copilotkit-openintelligentui.md) | Partial implementation: strict allow-listed summary/metric-grid/alert contracts and safe fixed renderer; no arbitrary generated-code runtime |
-| datalab-to/lift | [datalab-to-lift.md](./repo-mappings/datalab-to-lift.md) | Isolated provider contract implemented; Lift provider/model not connected; licensing, hardware and quality gates remain |
-| zvec-ai/zvec-grep | [zvec-ai-zvec-grep.md](./repo-mappings/zvec-ai-zvec-grep.md) | Benchmark harness implemented and covered by synthetic fixtures; no zvec adapter or real-repository comparative benchmark yet |
+| datalab-to/lift | [datalab-to-lift.md](./repo-mappings/datalab-to-lift.md) | Disabled-by-default visual adapter connected to an explicit DocumentNormalizer path; no Lift provider/model; licensing and real-document evaluation pending |
+| zvec-ai/zvec-grep | [zvec-ai-zvec-grep.md](./repo-mappings/zvec-ai-zvec-grep.md) | Existing KnowledgeStore baseline + clean-room exact/BM25 candidate and same-case benchmark CLI implemented; optional semantic scoring gated; no real judged corpus run or zvec adapter |
 
 Decision record: [../decisions/thesix-six-repo-assimilation-20261012.md](../decisions/thesix-six-repo-assimilation-20261012.md).
