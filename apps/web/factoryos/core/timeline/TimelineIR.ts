@@ -28,11 +28,15 @@ export interface WordTimestampCue {
 
 export interface TimelineClipNode {
   readonly clipId: string;
+  readonly sceneId?: string;
   readonly assetId: string;
+  readonly sourceAssetVersion?: string;
   readonly assetType: "IMAGE" | "VIDEO_SEGMENT" | "MOTION_CANVAS";
   readonly src: string;
   readonly timelineStartMs: number;
   readonly durationMs: number;
+  readonly trimStartMs?: number;
+  readonly trimEndMs?: number | null;
   readonly zIndex: number;
   readonly motion?: {
     readonly type: "ZOOM_IN" | "ZOOM_OUT" | "PAN_LEFT" | "PAN_RIGHT" | "STATIC";
@@ -43,10 +47,14 @@ export interface TimelineClipNode {
 
 export interface TimelineAudioNode {
   readonly audioId: string;
+  readonly sceneId?: string;
+  readonly sourceAssetVersion?: string;
   readonly trackType: "VOICE" | "BACKGROUND_MUSIC" | "SFX";
   readonly src: string;
   readonly timelineStartMs: number;
   readonly durationMs: number;
+  readonly sourceInMs?: number;
+  readonly sourceDurationMs?: number;
   readonly volume: number;
   readonly verifiedDurationMs?: number;
   readonly verifiedSampleRate?: number;
@@ -58,6 +66,9 @@ export interface TimelineAudioNode {
 
 export interface TimelineSubtitleNode {
   readonly subtitleId: string;
+  readonly sceneId?: string;
+  readonly position?: string;
+  readonly fontStyle?: string;
   readonly text: string;
   readonly startMs: number;
   readonly endMs: number;
@@ -69,6 +80,14 @@ export interface TimelineSubtitleNode {
     readonly highlightColor?: string;
     readonly animation: "POP_IN" | "FADE" | "KINETIC_WORD" | "NONE";
   };
+}
+
+export interface TimelineTransitionNode {
+  readonly transitionId: string;
+  readonly fromSceneId: string;
+  readonly toSceneId: string;
+  readonly transitionType: string;
+  readonly durationMs: number;
 }
 
 export interface TimelineIR {
@@ -86,6 +105,7 @@ export interface TimelineIR {
   readonly visualTracks: TimelineClipNode[];
   readonly audioTracks: TimelineAudioNode[];
   readonly subtitleTracks: TimelineSubtitleNode[];
+  readonly transitions?: TimelineTransitionNode[];
   readonly provenanceDigest: string;
   readonly compositionV2?: CompositionIR;
 }
@@ -132,24 +152,50 @@ function mapLegacyMotion(clip: TimelineClipNode): Pick<CompositionClip, "animati
 /** Deterministically upgrades legacy TimelineIR into CompositionIR v2. */
 export function upgradeTimelineIR(timeline: TimelineIR): CompositionIR {
   const duration = millisecondsToMediaTime(timeline.totalDurationMs);
+  const transitionsByFromScene = new Map<string, TimelineTransitionNode>();
+  const transitionsByToScene = new Map<string, TimelineTransitionNode>();
+  for (const transition of timeline.transitions ?? []) {
+    if (transition.transitionType.toUpperCase() === "CUT" || transition.durationMs <= 0) continue;
+    transitionsByFromScene.set(transition.fromSceneId, transition);
+    transitionsByToScene.set(transition.toSceneId, transition);
+  }
+  const toTransitionNode = (transition: TimelineTransitionNode | undefined) => transition
+    ? {
+        transitionId: transition.transitionId,
+        kind: transition.transitionType,
+        duration: millisecondsToMediaTime(transition.durationMs),
+      }
+    : undefined;
 
-  const visualClips: CompositionClip[] = timeline.visualTracks.map((clip) => ({
-    id: clip.clipId,
-    kind:
-      clip.assetType === "IMAGE"
-        ? "IMAGE"
-        : clip.assetType === "MOTION_CANVAS"
-          ? "MOTION_CANVAS"
-          : "VIDEO",
-    assetId: clip.assetId,
-    src: clip.src,
-    start: millisecondsToMediaTime(clip.timelineStartMs),
-    duration: millisecondsToMediaTime(clip.durationMs),
-    sourceIn: 0,
-    sourceDuration: millisecondsToMediaTime(clip.durationMs),
-    zIndex: clip.zIndex,
-    ...mapLegacyMotion(clip),
-  }));
+  const visualClips: CompositionClip[] = timeline.visualTracks.map((clip) => {
+    const trimStartMs = clip.trimStartMs ?? 0;
+    const hasValidTrimEnd = clip.trimEndMs !== undefined && clip.trimEndMs !== null && clip.trimEndMs > trimStartMs;
+    return {
+      id: clip.clipId,
+      kind:
+        clip.assetType === "IMAGE"
+          ? "IMAGE"
+          : clip.assetType === "MOTION_CANVAS"
+            ? "MOTION_CANVAS"
+            : "VIDEO",
+      assetId: clip.assetId,
+      src: clip.src,
+      start: millisecondsToMediaTime(clip.timelineStartMs),
+      duration: millisecondsToMediaTime(clip.durationMs),
+      sourceIn: millisecondsToMediaTime(trimStartMs),
+      sourceDuration: hasValidTrimEnd
+        ? millisecondsToMediaTime(clip.trimEndMs! - trimStartMs)
+        : millisecondsToMediaTime(clip.durationMs),
+      zIndex: clip.zIndex,
+      transitionIn: clip.sceneId ? toTransitionNode(transitionsByToScene.get(clip.sceneId)) : undefined,
+      transitionOut: clip.sceneId ? toTransitionNode(transitionsByFromScene.get(clip.sceneId)) : undefined,
+      metadata: {
+        ...(clip.sceneId ? { sceneId: clip.sceneId } : {}),
+        ...(clip.sourceAssetVersion ? { sourceAssetVersion: clip.sourceAssetVersion } : {}),
+      },
+      ...mapLegacyMotion(clip),
+    };
+  });
 
   const tracks: CompositionTrack[] = [{
     id: "video-main",
@@ -182,6 +228,10 @@ export function upgradeTimelineIR(timeline: TimelineIR): CompositionIR {
       track.verifiedDurationMs !== undefined
         ? millisecondsToMediaTime(track.verifiedDurationMs)
         : undefined,
+    metadata: {
+      ...(track.sceneId ? { sceneId: track.sceneId } : {}),
+      ...(track.sourceAssetVersion ? { sourceAssetVersion: track.sourceAssetVersion } : {}),
+    },
     waveform:
       track.verifiedSampleRate !== undefined &&
       track.verifiedSampleCount !== undefined
@@ -206,11 +256,16 @@ export function upgradeTimelineIR(timeline: TimelineIR): CompositionIR {
       confidence: cue.confidence,
     })),
     style: {
-      fontFamily: caption.style.fontFamily,
+      fontFamily: caption.style.fontFamily || caption.fontStyle || "sans-serif",
       fontSize: caption.style.fontSize,
       primaryColor: caption.style.primaryColor,
       highlightColor: caption.style.highlightColor,
       animation: caption.style.animation,
+    },
+    position: caption.position,
+    metadata: {
+      ...(caption.sceneId ? { sceneId: caption.sceneId } : {}),
+      ...(caption.fontStyle ? { fontStyle: caption.fontStyle } : {}),
     },
   }));
 
@@ -230,6 +285,7 @@ export function upgradeTimelineIR(timeline: TimelineIR): CompositionIR {
       missionId: timeline.missionId,
       sourceTimelineId: timeline.timelineId,
       provenanceDigest: timeline.provenanceDigest,
+      extensions: { compositionType: timeline.compositionType },
     },
   };
 }
