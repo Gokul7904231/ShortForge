@@ -76,7 +76,13 @@
     "Added independent sample/confidence, verification non-inferiority, P90 latency regression and realized-cost savings checks.",
     "Added tests for eligible outcome sets and failure modes including stale/unverified/duplicate/mismatched evidence.",
     "Changed reliability benchmark REL-006 to exercise the Treasury Kernel's unfunded-spend denial instead of CostGovernor.",
-    "Removed legacy CostGovernor and MissionBudgetManager exports from the primary FactoryOS barrel and made the compatibility scan inspect that barrel."
+    "Removed legacy CostGovernor and MissionBudgetManager exports from the primary FactoryOS barrel and made the compatibility scan inspect that barrel.",
+    "Migrated the Frontier V3 runtime test away from the removed CostGovernor barrel export; paid-spend denial remains tested through canonical Treasury Kernel tests.",
+    "Removed the unused CostGovernor import from canonical RegressionMissions.",
+    "Migrated FactoryBench Scenario 12 from deprecated AgentEconomicsEngine tier heuristics to current CapabilityFirstRouter provider selection, explicitly retaining the selection/admission boundary.",
+    "Decoupled production trajectory eligibility tests from the legacy AgentEconomicsEngine using the CognitiveOutcomeLearner telemetry-sink contract.",
+    "Archived the Phase 9 economics telemetry and Phase 13 heuristic routing tests as source-history documents because their assertions described the retired local heuristic, not Treasury admission.",
+    "Retained the StrategicMetaThinker investigation test while archiving its obsolete AgentEconomicsEngine routing/metrics tests."
   ],
   "evidenceRefs": [
     "apps/web/factoryos/core/treasury/TreasuryPromotionEligibility.ts",
@@ -86,7 +92,15 @@
     "apps/web/factoryos/tests/treasury-compatibility-retirement.test.ts",
     "apps/web/factoryos/core/treasury/TreasuryEconomicCalibration.ts",
     "apps/web/factoryos/core/treasury/TreasuryShadowRouteEvaluator.ts",
-    "docs/treasury-wave7-economic-promotion.md"
+    "docs/treasury-wave7-economic-promotion.md",
+    "apps/web/factoryos/tests/frontier-v3-runtime.test.ts",
+    "apps/web/factoryos/evals/missions/RegressionMissions.ts",
+    "apps/web/factoryos/tests/factorybench-v2.test.ts",
+    "apps/web/factoryos/tests/production-trajectory-learning.test.ts",
+    "apps/web/factoryos/tests/meta-thinker-economics.test.ts",
+    "docs/archive/treasury-wave7/phase9-economics-telemetry.legacy.md",
+    "docs/archive/treasury-wave7/phase13-economic-routing.legacy.md",
+    "docs/archive/treasury-wave7/meta-thinker-economics.legacy.md"
   ],
   "disposition": "BLOCKED",
   "verificationPlan": [
@@ -94,16 +108,22 @@
     "Run the new Wave 7 focused Vitest suite and strict TypeScript.",
     "Run Treasury Wave 4/5/6, compatibility retirement, Compute Pool, ReMaker, Floor 04–07, physical F06/F07 and repository CI.",
     "Confirm no legacy core-barrel consumers break and no economic production consumer uses a removed barrel export.",
-    "Do not merge before upstream V2/V3 promotion gates and independent human review pass."
+    "Do not merge before upstream V2/V3 promotion gates and independent human review pass.",
+    "Run exact-head FactoryOS typecheck and selected migrated test files: frontier-v3-runtime, factorybench-v2, production-trajectory-learning, meta-thinker-economics, treasury-promotion-eligibility, treasury-compatibility-retirement.",
+    "Verify no remaining executable test import requires CostGovernor through the removed core barrel and no historical Phase 9/13 legacy-only suite remains in the Vitest discovery tree."
   ],
   "verificationResults": {
     "treasuryWave7": "PENDING_CI",
     "promotionEligibilityTests": "PENDING_CI",
     "legacyCompatibilityRetirement": "PENDING_CI",
-    "repositoryCI": "PENDING_CI",
+    "repositoryCI": "PENDING_AFTER_LEPORT_HEAD_UPDATE",
     "computeAndReMaker": "PENDING_CI",
     "physicalF06F07": "PENDING_CI",
-    "authorityBoundary": "IMPLEMENTED__CI_PENDING"
+    "authorityBoundary": "IMPLEMENTED__CI_PENDING",
+    "legacyTestMigration": "IMPLEMENTED__EXACT_HEAD_CI_PENDING",
+    "legacyTestArchive": "THREE_HISTORICAL_SUITES_ARCHIVED__SOURCE_PRESERVED",
+    "factoryosTypecheck": "PENDING_AFTER_LEGACY_TEST_MIGRATION",
+    "selectedTreasuryAndCognitionTests": "PENDING_AFTER_LEGACY_TEST_MIGRATION"
   },
   "model": {
     "authority": "ADVISORY_ONLY",
