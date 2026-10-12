@@ -40,6 +40,8 @@ export interface VisualDocumentExtractionRequest<T> {
   readonly sourceRef: string;
   /** Caller-owned, trusted description of the expected output contract. */
   readonly schemaDescription: string;
+  /** Required true per request when document bytes may be sent to an approved remote provider. */
+  readonly allowRemoteSubmission?: boolean;
   readonly outputSchema: z.ZodType<T>;
 }
 
@@ -93,6 +95,9 @@ export class VisualDocumentExtractionAdapter {
     }
     if (this.provider.executionBoundary === "APPROVED_REMOTE" && !this.allowApprovedRemoteProvider) {
       throw new Error("VISION_EXTRACTION_REMOTE_PROVIDER_NOT_AUTHORIZED");
+    }
+    if (this.provider.executionBoundary === "APPROVED_REMOTE" && request.allowRemoteSubmission !== true) {
+      throw new Error("VISION_EXTRACTION_REMOTE_DOCUMENT_NOT_AUTHORIZED");
     }
     if (!this.provider.providerId.trim() || this.provider.providerId.length > 128 ||
       /[\u0000-\u001F\u007F]/.test(this.provider.providerId)) {

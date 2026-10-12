@@ -31,6 +31,8 @@ export interface VisualDocumentNormalizerOptions<T> {
   readonly outputSchema: ZodType<T>;
   readonly titleHint?: string;
   readonly maxOutputByteLength?: number;
+  /** Per-document consent for approved remote extraction; false/omitted is fail-closed. */
+  readonly allowRemoteSubmission?: boolean;
 }
 
 export class DocumentNormalizer {
@@ -80,6 +82,7 @@ export class DocumentNormalizer {
       sourceRef: options.sourceRef,
       schemaDescription: options.schemaDescription,
       outputSchema: options.outputSchema,
+      allowRemoteSubmission: options.allowRemoteSubmission,
     });
 
     const serialized = JSON.stringify(receipt.data, null, 2);

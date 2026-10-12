@@ -45,6 +45,36 @@ describe("DocumentNormalizer opt-in visual extraction", () => {
     expect(document.markdownContent).not.toContain("<script>");
   });
 
+  it("requires per-document approval when an explicitly approved remote provider is used", async () => {
+    const provider: VisualDocumentExtractionProvider = {
+      providerId: "approved-remote-fixture",
+      executionBoundary: "APPROVED_REMOTE",
+      async extract() {
+        return { title: "Remote document", summary: "Approved fixture." };
+      },
+    };
+    const adapter = new VisualDocumentExtractionAdapter(provider, {
+      enabled: true,
+      allowApprovedRemoteProvider: true,
+    });
+    const request = {
+      adapter,
+      sourceRef: "fixture://remote-opt-in",
+      schemaDescription: "Extract title and summary.",
+      outputSchema: schema,
+    };
+
+    await expect(DocumentNormalizer.normalizeWithVision(Buffer.from("%PDF"), "application/pdf", request))
+      .rejects.toThrow("VISION_EXTRACTION_REMOTE_DOCUMENT_NOT_AUTHORIZED");
+    await expect(DocumentNormalizer.normalizeWithVision(
+      Buffer.from("%PDF"),
+      "application/pdf",
+      { ...request, allowRemoteSubmission: true },
+    )).resolves.toMatchObject({
+      metadata: { engine: "EXPERIMENTAL_VISUAL_EXTRACTION", verificationStatus: "UNVERIFIED" },
+    });
+  });
+
   it("keeps the visual path gated by the injected adapter and enforces normalized output bounds", async () => {
     const disabled = new VisualDocumentExtractionAdapter(
       fakeProvider({ title: "Invoice", summary: "Short text" }),

@@ -21,11 +21,13 @@ const request = (overrides: {
   readonly mimeType?: string;
   readonly sourceRef?: string;
   readonly schemaDescription?: string;
+  readonly allowRemoteSubmission?: boolean;
 } = {}) => ({
   bytes: overrides.bytes ?? new Uint8Array([1, 2, 3, 4]),
   mimeType: overrides.mimeType ?? "application/pdf",
   sourceRef: overrides.sourceRef ?? "fixture://document-1",
   schemaDescription: overrides.schemaDescription ?? "Return title and positive pageCount.",
+  allowRemoteSubmission: overrides.allowRemoteSubmission,
   outputSchema,
 });
 
@@ -52,7 +54,11 @@ describe("VisualDocumentExtractionAdapter", () => {
       enabled: true,
       allowApprovedRemoteProvider: true,
     });
-    await expect(approved.extract(request())).resolves.toMatchObject({
+    await expect(approved.extract(request()))
+      .rejects.toThrow("VISION_EXTRACTION_REMOTE_DOCUMENT_NOT_AUTHORIZED");
+    expect(provider.extract).not.toHaveBeenCalled();
+
+    await expect(approved.extract(request({ allowRemoteSubmission: true }))).resolves.toMatchObject({
       providerId: "approved-hosted-vision",
       verificationStatus: "UNVERIFIED",
     });
