@@ -360,7 +360,7 @@ export async function POST(
         sourceTimelineId: "flattened-import-" + jobId,
         provenanceDigest: sourceArtifact.sha256,
         extensions: {
-          ownerId: user.uid,
+          ownerId: job.userId,
           sourceJobId: jobId,
           sourceKind: "FLATTENED_MP4",
           sourceAssetSha256: sourceArtifact.sha256,
