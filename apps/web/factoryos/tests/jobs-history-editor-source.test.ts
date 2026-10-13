@@ -36,7 +36,7 @@ const firestoreTestDouble = vi.hoisted(() => {
 
 vi.mock("../../lib/firebase-admin", () => ({ db: firestoreTestDouble.db }));
 
-import { getInMemoryJobs, saveJobManifest } from "../../lib/jobs-history";
+import { getInMemoryJobs, readJobManifestAuthoritative, saveJobManifest } from "../../lib/jobs-history";
 
 describe("editor source job-manifest durability", () => {
   beforeEach(() => {
@@ -44,6 +44,44 @@ describe("editor source job-manifest durability", () => {
     firestoreTestDouble.setFailReads(false);
     firestoreTestDouble.setFailWrites(false);
     getInMemoryJobs().clear();
+  });
+
+  it("prefers the persisted owner/status record over a stale process-local job", async () => {
+    const jobId = "job-editor-stale-cache";
+    firestoreTestDouble.documents.set(jobId, {
+      id: jobId,
+      jobId,
+      userId: "real-owner",
+      status: "completed",
+      videoUrl: "https://cdn.example.test/real.mp4",
+    });
+    getInMemoryJobs().set(jobId, {
+      id: jobId,
+      jobId,
+      userId: "stale-wrong-owner",
+      status: "failed",
+      videoUrl: null,
+    } as any);
+
+    const job = await readJobManifestAuthoritative(jobId);
+
+    expect(job?.userId).toBe("real-owner");
+    expect(job?.status).toBe("completed");
+    expect(job?.videoUrl).toBe("https://cdn.example.test/real.mp4");
+    expect(getInMemoryJobs().get(jobId)?.userId).toBe("real-owner");
+  });
+
+  it("fails closed when the authoritative manifest database cannot be read", async () => {
+    const jobId = "job-editor-authority-unavailable";
+    getInMemoryJobs().set(jobId, {
+      id: jobId,
+      jobId,
+      userId: "cached-owner",
+      status: "completed",
+    } as any);
+    firestoreTestDouble.setFailReads(true);
+
+    await expect(readJobManifestAuthoritative(jobId)).rejects.toThrow("EDITOR_JOB_MANIFEST_READ_FAILED");
   });
 
   it("merges an editor source binding into the persisted job on a cold application instance", async () => {
