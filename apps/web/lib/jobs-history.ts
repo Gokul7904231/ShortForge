@@ -111,7 +111,9 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
       if (snapshot.exists) {
         const data = snapshot.data() || {};
         persistedRecord = { id: snapshot.id, jobId: snapshot.id, ...data } as VideoJob;
-      } else if (!previousInMemory) {
+      } else {
+        // An editor-source artifact must attach to a real persisted job. An
+        // in-memory ghost/stale manifest is never sufficient authorization.
         throw new Error("EDITOR_SOURCE_JOB_NOT_FOUND");
       }
     } catch (err: any) {
