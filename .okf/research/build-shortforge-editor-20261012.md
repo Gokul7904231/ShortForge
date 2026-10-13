@@ -184,6 +184,7 @@ A conceptual edit intent identifies the exact parent composition hash and expect
 | Scene/clip navigator + trim/split-at-playhead controls | Implemented; focused command tests added for split source-contiguity, trim source offsets and invalid edge split, current-head CI pending |
 | Caption text/style inspector + versioned commands + changed-caption receipts | Implemented; targeted regression tests added for text, colour and style validation, current-head CI pending |
 | CAS digest/tamper and source-package regression tests | Added, including pre-staged CAS media type; current-head CI pending |
+| Cold-start Firestore source-manifest persistence regression tests | Added: verify existing job owner/status/video bytes survive metadata writes, DB read failure fails closed, and write failure rolls back in-memory source bindings; current-head CI pending |
 | Exact immutable starting-composition check on editor open | Implemented for packaged and flattened imports; current-head CI pending |
 | Best-effort owner-bound composition package in job manifest | Implemented when all RenderIntent sources resolve and validate; not a guarantee for placeholder or template-specific paths |
 | Portable package directly from the canonical Python F05 artifact for all jobs | Not done; P0 next milestone |
