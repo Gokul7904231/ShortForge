@@ -93,7 +93,8 @@ export async function getJobsIndex(userId: string = "anonymous"): Promise<VideoJ
 
 // Replaces writing to individual local JSON sheets
 export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>): Promise<void> {
-  const existing = inMemoryJobs.get(jobId) || {
+  const previous = inMemoryJobs.get(jobId);
+  const existing = previous || {
     id: jobId,
     jobId,
     userId: "anonymous",
@@ -111,12 +112,21 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
 
   if (db) {
     const cleanPayload = JSON.parse(JSON.stringify(updated));
-    db.collection("videos")
-      .doc(jobId)
-      .set(cleanPayload, { merge: true })
-      .catch((err: any) => {
-        console.warn("[JobsHistory] Firestore write warning:", err.message);
-      });
+    const writeContainsEditorSource = Boolean(
+      payload.editorSourcePackage || payload.editorSourceComposition || payload.editorSource,
+    );
+    try {
+      // Editable source records must be durable before the render worker reports
+      // completion; another app instance cannot rely on this process's memory map.
+      await db.collection("videos").doc(jobId).set(cleanPayload, { merge: true });
+    } catch (err: any) {
+      console.warn("[JobsHistory] Firestore write warning:", err?.message || String(err));
+      if (writeContainsEditorSource) {
+        if (previous) inMemoryJobs.set(jobId, previous);
+        else inMemoryJobs.delete(jobId);
+        throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_FAILED");
+      }
+    }
   }
 }
 
