@@ -170,6 +170,25 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
   }
 }
 
+/**
+ * Read the persisted job record for security-sensitive editor authorization.
+ * Unlike the legacy cache-first reader, this never authorizes from a stale process-local copy
+ * when a database is configured.
+ */
+export async function readJobManifestAuthoritative(jobId: string): Promise<VideoJob | null> {
+  if (!db) return inMemoryJobs.get(jobId) || null;
+  try {
+    const doc = await db.collection("videos").doc(jobId).get();
+    if (!doc.exists) return null;
+    const data = doc.data() || {};
+    const job = { id: doc.id, jobId: doc.id, ...data } as VideoJob;
+    inMemoryJobs.set(jobId, job);
+    return job;
+  } catch {
+    throw new Error("EDITOR_JOB_MANIFEST_READ_FAILED");
+  }
+}
+
 // Replaces fetching a local file sheet
 export async function readJobManifest(jobId: string): Promise<VideoJob | null> {
   if (inMemoryJobs.has(jobId)) {
