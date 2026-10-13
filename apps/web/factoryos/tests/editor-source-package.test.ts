@@ -62,6 +62,7 @@ function renderIntent(imagePath: string, audioPath: string): RenderIntent {
         durationSeconds: 1,
       }],
       captions: [{
+        sceneId: "quiz-question-1",
         text: "Which city is the capital of Tamil Nadu?",
         startMs: 0,
         endMs: 900,
