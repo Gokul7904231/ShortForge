@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import type { AdminUser } from "@/lib/auth/types";
-import { readJobManifest } from "@/lib/jobs-history";
+import { readJobManifestAuthoritative } from "@/lib/jobs-history";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import { compileCompositionToRenderIntent } from "@/factoryos/core/editor/EditorRuntime";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
@@ -58,7 +58,7 @@ export async function GET(
       return new Response("Preview source is not bound to a job.", { status: 403 });
     }
 
-    const job = await readJobManifest(sourceJobId);
+    const job = await readJobManifestAuthoritative(sourceJobId);
     if (
       !job ||
       (!job.editorSource && !job.editorSourcePackage) ||
