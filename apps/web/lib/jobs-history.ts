@@ -176,7 +176,12 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
  * when a database is configured.
  */
 export async function readJobManifestAuthoritative(jobId: string): Promise<VideoJob | null> {
-  if (!db) return inMemoryJobs.get(jobId) || null;
+  if (!db) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("EDITOR_JOB_MANIFEST_PERSISTENCE_UNAVAILABLE");
+    }
+    return inMemoryJobs.get(jobId) || null;
+  }
   try {
     const doc = await db.collection("videos").doc(jobId).get();
     if (!doc.exists) return null;
