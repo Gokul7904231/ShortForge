@@ -119,6 +119,7 @@ describe("EditorSourcePackage", () => {
     expect(composition.tracks[0].clips[0].src).toMatch(/^cas:\/\/[a-f0-9]{64}$/);
     expect(composition.audio[0].src).toMatch(/^cas:\/\/[a-f0-9]{64}$/);
     expect(composition.captions[0].text).toContain("capital of Tamil Nadu");
+    expect(composition.captions[0].metadata.sceneId).toBe("quiz-question-1");
   });
 
   it("uses declared CAS MIME metadata for already-staged image and audio inputs", async () => {
