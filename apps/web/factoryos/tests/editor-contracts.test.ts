@@ -24,7 +24,9 @@ function composition(): CompositionIR {
         assetId: "asset",
         src: "cas://asset",
         start: 0,
-        duration,
+        // Leave room at the end of the canvas so a valid 500ms MOVE_CLIP
+        // exercises actor/idempotency semantics rather than failing bounds validation.
+        duration: millisecondsToMediaTime(10_000),
         zIndex: 0,
       }],
     }],
