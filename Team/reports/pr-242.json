@@ -25,7 +25,8 @@
       "status": "IMPLEMENTED_WITH_LIMITS",
       "findings": [
         "Generation READY panel and Media Library route to a dedicated editor page.",
-        "Legacy flattened imports are clearly labelled and do not claim recovered scene/question layers."
+        "Legacy flattened imports are clearly labelled and do not claim recovered scene/question layers.",
+        "Native studio adds a scene/clip navigator driven only by clip IDs and explicit scene metadata; legacy flattened videos remain one clip."
       ]
     },
     {
@@ -34,7 +35,8 @@
       "findings": [
         "Existing CompositionIR and DurableEditor are reused.",
         "CAS sources are resolved server-side and actual bytes are hash checked before compilation.",
-        "A regression test covers successful CAS resolution and tamper rejection."
+        "A regression test covers successful CAS resolution and tamper rejection.",
+        "Studio exposes split-at-playhead and trim-range controls wired to typed SPLIT_CLIP/TRIM_CLIP commands; dedicated tests check source-contiguous split offsets, trim source offsets and edge-split rejection."
       ]
     },
     {
@@ -113,7 +115,8 @@
       "apps/web/factoryos/tests/editor-contracts.test.ts",
       "apps/web/app/api/editor/runtime/route.ts",
       "apps/web/app/api/editor/source/[jobId]/route.ts",
-      "apps/web/factoryos/tests/editor-source-package.test.ts"
+      "apps/web/factoryos/tests/editor-source-package.test.ts",
+      "apps/web/factoryos/tests/editor-trim-split.test.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
   },
@@ -160,6 +163,10 @@
     {
       "id": "caption-text-command",
       "resolution": "Edit caption text only through a typed, revision-checked command and preserve existing caption timing, style and scene metadata."
+    },
+    {
+      "id": "timeline-basic-edit-controls",
+      "resolution": "Expose basic trim and split controls through canonical revision-checked commands and test source timing, instead of modifying MP4 bytes directly."
     }
   ],
   "disposition": "BLOCKED",
