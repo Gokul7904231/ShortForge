@@ -47,9 +47,13 @@ function nextCommandId() {
 }
 
 function clipLabel(clip: CompositionClip): string {
-  return clip.metadata?.label
-    ? String(clip.metadata.label)
-    : clip.assetId || clip.id;
+  const label = clip.metadata?.label;
+  if (typeof label === "string" && label.trim()) return label;
+  const sceneLabel = clip.metadata?.sceneLabel;
+  if (typeof sceneLabel === "string" && sceneLabel.trim()) return sceneLabel;
+  const sceneId = clip.metadata?.sceneId;
+  if (typeof sceneId === "string" && sceneId.trim()) return "Scene " + sceneId;
+  return clip.assetId || clip.id;
 }
 
 function clipColor(clip: CompositionClip): string {
@@ -463,6 +467,34 @@ export function ShortForgeEditorStudio({
               <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Inspector
               </div>
+              <section className="mb-4 border-b border-zinc-800 pb-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Scenes / Clips</div>
+                  <div className="text-[10px] text-zinc-600">{composition.tracks.reduce((count, track) => count + track.clips.length, 0)}</div>
+                </div>
+                <div className="max-h-36 space-y-1 overflow-auto pr-1">
+                  {composition.tracks.flatMap((track) => track.clips.map((clip) => ({ track, clip }))).map(({ track, clip }) => (
+                    <button
+                      key={clip.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedClipId(clip.id);
+                        void preview(secondsFromMediaTime(clip.start));
+                      }}
+                      disabled={readOnly && !onPreviewAt}
+                      className={
+                        "flex w-full items-center justify-between gap-2 rounded-md border px-2 py-2 text-left text-[10px] " +
+                        (selectedClipId === clip.id
+                          ? "border-indigo-500/70 bg-indigo-500/10 text-indigo-100"
+                          : "border-zinc-800 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-900")
+                      }
+                    >
+                      <span className="min-w-0 truncate">{clipLabel(clip)}</span>
+                      <span className="shrink-0 text-zinc-500">{secondsFromMediaTime(clip.duration).toFixed(1)}s</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
               {selected ? (
                 <div className="space-y-4">
                   <div>
