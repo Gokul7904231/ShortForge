@@ -93,8 +93,34 @@ export async function getJobsIndex(userId: string = "anonymous"): Promise<VideoJ
 
 // Replaces writing to individual local JSON sheets
 export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>): Promise<void> {
-  const previous = inMemoryJobs.get(jobId);
-  const existing = previous || {
+  const previousInMemory = inMemoryJobs.get(jobId);
+  const writeContainsEditorSource = Boolean(
+    payload.editorSourcePackage || payload.editorSourceComposition || payload.editorSource,
+  );
+
+  if (!db && writeContainsEditorSource && process.env.NODE_ENV === "production") {
+    throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_UNAVAILABLE");
+  }
+
+  let persistedRecord: VideoJob | undefined;
+  if (db) {
+    try {
+      const snapshot = await db.collection("videos").doc(jobId).get();
+      if (snapshot.exists) {
+        const data = snapshot.data() || {};
+        persistedRecord = { id: snapshot.id, jobId: snapshot.id, ...data } as VideoJob;
+      }
+    } catch (err: any) {
+      console.warn("[JobsHistory] Firestore read warning:", err?.message || String(err));
+      // For editor source bindings, a stale in-memory/default record is not enough
+      // to authorize a production write: it could overwrite owner/status fields.
+      if (writeContainsEditorSource) {
+        throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_READ_FAILED");
+      }
+    }
+  }
+
+  const defaults: VideoJob = {
     id: jobId,
     jobId,
     userId: "anonymous",
@@ -106,19 +132,21 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
     createdAt: new Date().toISOString(),
     renderDurationSeconds: 0,
     videoSizeMb: 0,
-  };
-  const updated = { ...existing, ...payload, updatedAt: new Date().toISOString() } as VideoJob;
+  } as VideoJob;
+
+  // Firestore is authoritative when present; retain memory-only fields only when
+  // no persisted job exists (for example an in-process test or newly initialized job).
+  const existing = persistedRecord
+    ? { ...(previousInMemory || {}), ...persistedRecord }
+    : previousInMemory || defaults;
+  const updated = {
+    ...existing,
+    ...payload,
+    id: existing.id || jobId,
+    jobId,
+    updatedAt: new Date().toISOString(),
+  } as VideoJob;
   inMemoryJobs.set(jobId, updated);
-
-  const writeContainsEditorSource = Boolean(
-    payload.editorSourcePackage || payload.editorSourceComposition || payload.editorSource,
-  );
-
-  if (!db && writeContainsEditorSource && process.env.NODE_ENV === "production") {
-    if (previous) inMemoryJobs.set(jobId, previous);
-    else inMemoryJobs.delete(jobId);
-    throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_UNAVAILABLE");
-  }
 
   if (db) {
     const cleanPayload = JSON.parse(JSON.stringify(updated));
@@ -129,7 +157,8 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
     } catch (err: any) {
       console.warn("[JobsHistory] Firestore write warning:", err?.message || String(err));
       if (writeContainsEditorSource) {
-        if (previous) inMemoryJobs.set(jobId, previous);
+        if (persistedRecord) inMemoryJobs.set(jobId, persistedRecord);
+        else if (previousInMemory) inMemoryJobs.set(jobId, previousInMemory);
         else inMemoryJobs.delete(jobId);
         throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_FAILED");
       }
