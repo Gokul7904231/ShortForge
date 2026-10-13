@@ -283,6 +283,7 @@ function captionForCue(cue: RenderCaptionCue, index: number): CompositionCaption
       animation,
     },
     position: "bottom_center",
+    metadata: cue.sceneId ? { sceneId: cue.sceneId } : undefined,
   };
 }
 
