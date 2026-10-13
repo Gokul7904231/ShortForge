@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
-import { readJobManifest } from "@/lib/jobs-history";
+import { readJobManifestAuthoritative } from "@/lib/jobs-history";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid job identifier." }, { status: 400 });
     }
 
-    const job = await readJobManifest(jobId);
+    const job = await readJobManifestAuthoritative(jobId);
     const source = job?.editorSource;
     if (!job || job.status !== "completed" || !source) {
       return NextResponse.json({ error: "Editor source not found." }, { status: 404 });
