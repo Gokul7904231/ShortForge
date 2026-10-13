@@ -132,6 +132,13 @@ export function ShortForgeEditorStudio({
   const [captionAnimationDraft, setCaptionAnimationDraft] = useState<CompositionCaption["style"]["animation"]>(
     composition.captions[0]?.style.animation ?? "NONE",
   );
+  const initialClip = composition.tracks.flatMap((track) => track.clips)[0];
+  const [clipStartDraft, setClipStartDraft] = useState(
+    secondsFromMediaTime(initialClip?.start ?? 0).toFixed(2),
+  );
+  const [clipEndDraft, setClipEndDraft] = useState(
+    secondsFromMediaTime((initialClip?.start ?? 0) + (initialClip?.duration ?? 0)).toFixed(2),
+  );
 
   const selected = useMemo(
     () =>
@@ -157,6 +164,13 @@ export function ShortForgeEditorStudio({
     selectedCaption?.style.primaryColor,
     selectedCaption?.style.animation,
   ]);
+
+  useEffect(() => {
+    setClipStartDraft(secondsFromMediaTime(selected?.start ?? 0).toFixed(2));
+    setClipEndDraft(
+      secondsFromMediaTime((selected?.start ?? 0) + (selected?.duration ?? 0)).toFixed(2),
+    );
+  }, [selected?.id, selected?.start, selected?.duration]);
 
   const durationSeconds = secondsFromMediaTime(composition.canvas.duration);
   const timelineWidth = Math.min(MAX_TIMELINE_PX, Math.max(760, durationSeconds * 90));
@@ -288,6 +302,45 @@ export function ShortForgeEditorStudio({
         feather: 8,
       },
     });
+  }
+
+  async function saveSelectedClipRange() {
+    if (readOnly || !selected) return;
+    const startSeconds = Number(clipStartDraft);
+    const endSeconds = Number(clipEndDraft);
+    if (
+      !Number.isFinite(startSeconds) || !Number.isFinite(endSeconds) ||
+      startSeconds < 0 || endSeconds <= startSeconds || endSeconds > durationSeconds
+    ) return;
+    const trackId = composition.tracks.find((track) => track.clips.some((clip) => clip.id === selected.id))?.id;
+    if (!trackId) return;
+    const result = await emit({
+      type: "TRIM_CLIP",
+      trackId,
+      clipId: selected.id,
+      start: mediaTimeFromSeconds(startSeconds),
+      end: mediaTimeFromSeconds(endSeconds),
+    });
+    if (result && typeof result === "object" && "success" in result && (result as { success?: boolean }).success) {
+      setPlayheadSeconds(startSeconds);
+    }
+  }
+
+  async function splitSelectedAtPlayhead() {
+    if (readOnly || !selected) return;
+    const splitTime = mediaTimeFromSeconds(playheadSeconds);
+    if (splitTime <= selected.start || splitTime >= selected.start + selected.duration) return;
+    const trackId = composition.tracks.find((track) => track.clips.some((clip) => clip.id === selected.id))?.id;
+    if (!trackId) return;
+    const result = await emit({
+      type: "SPLIT_CLIP",
+      trackId,
+      clipId: selected.id,
+      splitTime,
+    });
+    if (result && typeof result === "object" && "success" in result && (result as { success?: boolean }).success) {
+      setSelectedClipId(selected.id + ":a");
+    }
   }
 
   function saveCaptionText() {
@@ -503,6 +556,54 @@ export function ShortForgeEditorStudio({
                       {selected.kind} · {secondsFromMediaTime(selected.duration).toFixed(2)}s
                     </div>
                   </div>
+
+                  <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                    <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Trim / position</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="space-y-1 text-[10px] text-zinc-500">
+                        Timeline start (s)
+                        <input
+                          type="number"
+                          min={0}
+                          max={durationSeconds}
+                          step={0.05}
+                          value={clipStartDraft}
+                          disabled={readOnly}
+                          onChange={(event) => setClipStartDraft(event.target.value)}
+                          className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-xs text-zinc-100 disabled:opacity-50"
+                        />
+                      </label>
+                      <label className="space-y-1 text-[10px] text-zinc-500">
+                        Timeline end (s)
+                        <input
+                          type="number"
+                          min={0}
+                          max={durationSeconds}
+                          step={0.05}
+                          value={clipEndDraft}
+                          disabled={readOnly}
+                          onChange={(event) => setClipEndDraft(event.target.value)}
+                          className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-xs text-zinc-100 disabled:opacity-50"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void saveSelectedClipRange()}
+                      disabled={readOnly || !clipStartDraft.trim() || !clipEndDraft.trim() || Number(clipEndDraft) <= Number(clipStartDraft)}
+                      className="mt-2 w-full rounded-md border border-zinc-700 px-2 py-2 text-[10px] font-semibold text-zinc-200 hover:bg-zinc-900 disabled:opacity-40"
+                    >
+                      Apply trim
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void splitSelectedAtPlayhead()}
+                      disabled={readOnly || playheadSeconds <= secondsFromMediaTime(selected.start) || playheadSeconds >= secondsFromMediaTime(selected.start + selected.duration)}
+                      className="mt-2 w-full rounded-md bg-indigo-500/15 px-2 py-2 text-[10px] font-semibold text-indigo-200 hover:bg-indigo-500/25 disabled:opacity-40"
+                    >
+                      Split at playhead
+                    </button>
+                  </section>
 
                   <div className="grid grid-cols-2 gap-2">
                     {(Object.keys(transformValues) as InspectorField[]).map((field) => (
