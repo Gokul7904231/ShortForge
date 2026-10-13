@@ -110,11 +110,18 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
   const updated = { ...existing, ...payload, updatedAt: new Date().toISOString() } as VideoJob;
   inMemoryJobs.set(jobId, updated);
 
+  const writeContainsEditorSource = Boolean(
+    payload.editorSourcePackage || payload.editorSourceComposition || payload.editorSource,
+  );
+
+  if (!db && writeContainsEditorSource && process.env.NODE_ENV === "production") {
+    if (previous) inMemoryJobs.set(jobId, previous);
+    else inMemoryJobs.delete(jobId);
+    throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_UNAVAILABLE");
+  }
+
   if (db) {
     const cleanPayload = JSON.parse(JSON.stringify(updated));
-    const writeContainsEditorSource = Boolean(
-      payload.editorSourcePackage || payload.editorSourceComposition || payload.editorSource,
-    );
     try {
       // Editable source records must be durable before the render worker reports
       // completion; another app instance cannot rely on this process's memory map.
