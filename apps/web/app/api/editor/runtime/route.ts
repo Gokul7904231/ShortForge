@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import { verifyAuthAndRole, verifyWritePermission } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
-import { readJobManifest } from "@/lib/jobs-history";
+import { readJobManifestAuthoritative } from "@/lib/jobs-history";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import { canonicalizeComposition, type CompositionIR } from "@/factoryos/core/timeline/CompositionIR";
 import type { EditorCommand, EditorDocument } from "@/factoryos/core/editor/EditorContracts";
@@ -29,7 +29,7 @@ async function assertCompositionSourcesOwned(
   if (typeof sourceJobId !== "string" || !sourceJobId) {
     throw new Error("EDITOR_SOURCE_JOB_BINDING_REQUIRED");
   }
-  const sourceJob = await readJobManifest(sourceJobId);
+  const sourceJob = await readJobManifestAuthoritative(sourceJobId);
   if (!sourceJob) throw new Error("EDITOR_SOURCE_OWNERSHIP_BINDING_MISSING");
   if (sourceJob.userId !== user.uid && !isAdminUser(user.role)) {
     throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN");
@@ -96,7 +96,7 @@ async function assertCompositionMatchesSavedSource(
   if (typeof sourceJobId !== "string" || !sourceJobId) {
     throw new Error("EDITOR_SOURCE_JOB_BINDING_REQUIRED");
   }
-  const job = await readJobManifest(sourceJobId);
+  const job = await readJobManifestAuthoritative(sourceJobId);
   if (!job || (job.userId !== user.uid && !isAdminUser(user.role))) {
     throw new Error("EDITOR_SOURCE_CAS_FORBIDDEN");
   }
