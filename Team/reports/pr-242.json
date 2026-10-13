@@ -48,7 +48,8 @@
         "Initial editor open is now bound to the persisted CompositionIR digest; browser input cannot seed revision 0 from a hand-crafted document that merely reuses the job's allowed media hashes.",
         "Job-manifest writes now load the persisted Firestore record before merging editor source metadata; a cold instance cannot replace owner/status/video fields with default values.",
         "Source metadata updates fail closed on authoritative-record read/write failures and restore the previous in-memory record instead of exposing a non-durable package.",
-        "Regression tests cover cold-start merge preservation, fail-closed read errors and in-memory rollback on write errors."
+        "Regression tests cover cold-start merge preservation, fail-closed read errors and in-memory rollback on write errors.",
+        "Editor-source persistence now also rejects missing persisted jobs even when a stale in-memory copy exists; no orphan source package can be written against a ghost job."
       ]
     },
     {
@@ -130,7 +131,8 @@
       "apps/web/factoryos/tests/editor-source-package.test.ts",
       "apps/web/factoryos/tests/editor-trim-split.test.ts",
       "apps/web/factoryos/tests/jobs-history-editor-source.test.ts",
-      "apps/web/factoryos/tests/editor-trim-split.test.ts"
+      "apps/web/factoryos/tests/editor-trim-split.test.ts",
+      "apps/web/factoryos/tests/jobs-history-editor-source.test.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
   },
@@ -181,6 +183,10 @@
     {
       "id": "timeline-basic-edit-controls",
       "resolution": "Expose basic trim and split controls through canonical revision-checked commands and test source timing, instead of modifying MP4 bytes directly."
+    },
+    {
+      "id": "editor-source-persisted-parent",
+      "resolution": "A source package or flattened-source binding may be attached only to an existing authoritative persisted job; missing/cold/stale job records fail closed."
     }
   ],
   "disposition": "BLOCKED",
