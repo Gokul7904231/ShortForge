@@ -1614,6 +1614,7 @@ export class OverseerControlPlane {
         const finalVideoUrl = (artifact.location as any).path;
         scope.videoUrl = finalVideoUrl;
         sharedScope.videoUrl = finalVideoUrl;
+        const editorSourcePackage = scope.editorSourcePackage || sharedScope.editorSourcePackage;
 
         const renderOutputMessage =
           `RenderFabric/ComputeRouter produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
@@ -1630,9 +1631,7 @@ export class OverseerControlPlane {
             videoSizeMb: Number((artifact.byteLength / (1024 * 1024)).toFixed(2)),
             renderDurationSeconds: artifact.duration,
             renderReceipt: renderRes.receipt,
-            ...((scope.editorSourcePackage || sharedScope.editorSourcePackage)
-              ? { editorSourcePackage: scope.editorSourcePackage || sharedScope.editorSourcePackage }
-              : {}),
+            ...(editorSourcePackage ? { editorSourcePackage } : {}),
             templateId: scope.templateId,
             templateVersion: scope.templateVersion,
             contentEngine: scope.contentEngine,
@@ -1640,6 +1639,14 @@ export class OverseerControlPlane {
             completedAt: new Date().toISOString(),
           } as any);
         } catch (e: any) {
+          if (editorSourcePackage) {
+            // A source package is a production editing contract, not a best-effort
+            // cache. Never mark this render complete when its ownership binding was
+            // not durably committed with the job manifest.
+            throw new Error(
+              `[Overseer Floor06] Failed to persist editable source package: ${e?.message || "unknown error"}`,
+            );
+          }
           console.warn(`[Overseer Floor06] Manifest note: ${e?.message}`);
         }
 
