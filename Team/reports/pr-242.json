@@ -45,7 +45,10 @@
       "findings": [
         "A dedicated editor playback route now verifies session, job ownership, source binding, byte length and SHA-256.",
         "No production export endpoint is exposed by this change; export remains locked pending worker input staging, Treasury admission, F06 output and F07 evidence.",
-        "Initial editor open is now bound to the persisted CompositionIR digest; browser input cannot seed revision 0 from a hand-crafted document that merely reuses the job's allowed media hashes."
+        "Initial editor open is now bound to the persisted CompositionIR digest; browser input cannot seed revision 0 from a hand-crafted document that merely reuses the job's allowed media hashes.",
+        "Job-manifest writes now load the persisted Firestore record before merging editor source metadata; a cold instance cannot replace owner/status/video fields with default values.",
+        "Source metadata updates fail closed on authoritative-record read/write failures and restore the previous in-memory record instead of exposing a non-durable package.",
+        "Regression tests cover cold-start merge preservation, fail-closed read errors and in-memory rollback on write errors."
       ]
     },
     {
@@ -85,6 +88,15 @@
         "Added UPDATE_CAPTION_STYLE with strict server-side allowlisting for font size, six-digit hex colours and supported animation values.",
         "Editor inspector now supports text, font size, text colour and animation edits; the receipt carries changedCaptionIds for audit and downstream targeted-render planning."
       ]
+    },
+    {
+      "name": "timeline-controls",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "Studio exposes a scene/clip navigator from existing CompositionIR clips and explicit scene metadata.",
+        "Clip range trim and split-at-playhead are wired through TRIM_CLIP and SPLIT_CLIP revision-checked commands.",
+        "Tests assert source time continuity, trim offsets and fail-closed edge splits."
+      ]
     }
   ],
   "security": {
@@ -116,6 +128,8 @@
       "apps/web/app/api/editor/runtime/route.ts",
       "apps/web/app/api/editor/source/[jobId]/route.ts",
       "apps/web/factoryos/tests/editor-source-package.test.ts",
+      "apps/web/factoryos/tests/editor-trim-split.test.ts",
+      "apps/web/factoryos/tests/jobs-history-editor-source.test.ts",
       "apps/web/factoryos/tests/editor-trim-split.test.ts"
     ],
     "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
