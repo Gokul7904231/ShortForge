@@ -125,6 +125,31 @@ describe("editor source job-manifest durability", () => {
     });
   });
 
+  it("does not create an editor source binding for a missing persisted job", async () => {
+    const jobId = "job-editor-missing-persisted";
+    getInMemoryJobs().set(jobId, {
+      id: jobId,
+      jobId,
+      userId: "stale-cache-owner",
+      status: "completed",
+    } as any);
+
+    await expect(saveJobManifest(jobId, {
+      editorSource: {
+        sha256: "1".repeat(64),
+        artifactId: "orphan-artifact",
+        byteLength: 42,
+        sourceKind: "FLATTENED_MP4",
+        ownerId: "stale-cache-owner",
+        importedAt: "2026-10-13T10:01:00.000Z",
+      },
+    })).rejects.toThrow("EDITOR_SOURCE_PACKAGE_PERSISTENCE_READ_FAILED");
+
+    expect(firestoreTestDouble.documents.has(jobId)).toBe(false);
+    expect(getInMemoryJobs().get(jobId)).toMatchObject({ userId: "stale-cache-owner" });
+    expect(getInMemoryJobs().get(jobId)).not.toHaveProperty("editorSource");
+  });
+
   it("fails closed before mutating memory when the existing job cannot be read", async () => {
     const jobId = "job-editor-read-failure";
     firestoreTestDouble.setFailReads(true);
