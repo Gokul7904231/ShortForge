@@ -1380,6 +1380,7 @@ export class OverseerControlPlane {
               durationSeconds,
             }],
             captions: (scope.scenes || []).map((s: any, idx: number) => ({
+              sceneId: typeof s.sceneId === "string" ? s.sceneId : typeof s.scene_id === "string" ? s.scene_id : undefined,
               text: s.contactText || s.text || "",
               startMs: idx * 5000,
               endMs: (idx + 1) * 5000,
