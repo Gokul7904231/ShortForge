@@ -425,7 +425,6 @@ export async function buildEditorSourcePackage(
         artifactId: "editor-source-" + digest(input.jobId + ":" + key).slice(0, 24),
         jobId: input.jobId,
         location: location.location,
-        mimeType,
         sha256: location.sha256,
       });
       const stat = fs.statSync(resolved.localPath);

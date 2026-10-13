@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 
 import { verifyAuthAndRole } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
+import type { AdminUser } from "@/lib/auth/types";
 import { readJobManifest } from "@/lib/jobs-history";
 import { getEditorRuntime } from "@/lib/editor-runtime-server";
 import { compileCompositionToRenderIntent } from "@/factoryos/core/editor/EditorRuntime";
@@ -14,7 +15,7 @@ export async function GET(
   _request: NextRequest,
   props: { params: Promise<{ previewId: string }> },
 ) {
-  let user: Awaited<ReturnType<typeof verifyAuthAndRole>>;
+  let user: AdminUser;
   try {
     user = await verifyAuthAndRole(_request, "VIEWER");
   } catch (error) {
