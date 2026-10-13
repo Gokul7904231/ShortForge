@@ -74,6 +74,8 @@ export interface RenderTrackAsset {
 
 export interface RenderCaptionCue {
   readonly text: string;
+  /** Stable source scene identity for editable caption-to-scene linkage. */
+  readonly sceneId?: string;
   readonly startMs: number;
   readonly endMs: number;
   readonly style?: {
