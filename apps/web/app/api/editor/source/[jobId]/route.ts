@@ -6,7 +6,7 @@ import * as path from "node:path";
 import { verifyAuthAndRole, verifyWritePermission } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { db } from "@/lib/firebase-admin";
-import { getInMemoryJobs, readJobManifest, saveJobManifest } from "@/lib/jobs-history";
+import { getInMemoryJobs, readJobManifestAuthoritative, saveJobManifest } from "@/lib/jobs-history";
 import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import {
@@ -47,7 +47,7 @@ export async function POST(
       return failedSourceResponse("Invalid video job identifier.", 400);
     }
 
-    const job = await readJobManifest(jobId);
+    const job = await readJobManifestAuthoritative(jobId);
     if (!job || !job.userId) {
       // Use 404 for missing/orphaned/foreign jobs to avoid confirming other users' IDs.
       return failedSourceResponse("Completed video was not found.", 404);
