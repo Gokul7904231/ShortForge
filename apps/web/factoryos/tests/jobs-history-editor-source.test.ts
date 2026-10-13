@@ -34,7 +34,7 @@ const firestoreTestDouble = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/lib/firebase-admin", () => ({ db: firestoreTestDouble.db }));
+vi.mock("../../lib/firebase-admin", () => ({ db: firestoreTestDouble.db }));
 
 import { getInMemoryJobs, saveJobManifest } from "../../lib/jobs-history";
 
