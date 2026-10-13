@@ -2,7 +2,7 @@
 
 **Research snapshot:** 12 October 2026  
 **Implementation branch:** feat/shortforge-editor-20261012  
-**Status:** Dedicated editor page, safe flattened import, conditional CAS-backed source packages, caption text/style commands, owner-bound playback and timeline semantic-preservation tests are on the branch. Job-manifest persistence now awaits Firestore writes for editor source records and fails closed if the production persistence boundary is unavailable. Current-head CI/browser validation is pending. Export is intentionally locked.
+**Status:** Dedicated editor page, safe flattened import, conditional CAS-backed source packages, scene/clip navigator, trim/split controls, caption text/style commands, owner-bound playback and timeline semantic-preservation tests are on the branch. Job-manifest persistence now awaits Firestore writes for editor source records and fails closed if the production persistence boundary is unavailable. Current-head CI/browser validation is pending. Export is intentionally locked.
 
 ## Decision
 
@@ -97,7 +97,7 @@ Use CapCut's [keyframes](https://www.capcut.com/tools/keyframe-animation), [capt
 |---|---|---|
 | Pencil -> dedicated editor page, video/preview monitor, undo/redo/history | Adopt P0 | First creator-facing workflow |
 | Open exact generated source project | Adopt P0 blocker | Requires source manifest; do not fabricate scene layers |
-| Clip trim/split/move, transforms, keyframes, masks/transitions | Adopt/adapt P0/P1 | Reuse typed model; test each render-lowered operation |
+| Clip trim/split/move, transforms, keyframes, masks/transitions | Adopt/adapt P0/P1 | Native Studio now exposes range trim, split-at-playhead, timeline movement, transforms, keyframes, masks and transitions; test each render-lowered operation |
 | Quiz question/options/answer reveal; replace one scene visual | Adopt after source manifest | Needs semantic fields, stable IDs and dependencies |
 | Caption text editing | Implemented P0 on this branch | Typed `UPDATE_CAPTION_TEXT` command, durable revision history, caption inspector and explicit `changedCaptionIds` in receipts; only independent caption cues can be edited |
 | Caption font size, colour and animation | Implemented P0 on this branch | Typed `UPDATE_CAPTION_STYLE` command with a strict property allowlist and bounded value validation |
@@ -181,6 +181,7 @@ A conceptual edit intent identifies the exact parent composition hash and expect
 | Authenticated source import + physical checks + CAS registration | Implemented; runtime validation pending |
 | Owner/source-CAS restrictions | Implemented; tests/CI pending |
 | Real source video and physical preview monitor | Implemented; browser E2E pending |
+| Scene/clip navigator + trim/split-at-playhead controls | Implemented; focused command tests added for split source-contiguity, trim source offsets and invalid edge split, current-head CI pending |
 | Caption text/style inspector + versioned commands + changed-caption receipts | Implemented; targeted regression tests added for text, colour and style validation, current-head CI pending |
 | CAS digest/tamper and source-package regression tests | Added, including pre-staged CAS media type; current-head CI pending |
 | Exact immutable starting-composition check on editor open | Implemented for packaged and flattened imports; current-head CI pending |
