@@ -103,12 +103,16 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
   }
 
   let persistedRecord: VideoJob | undefined;
-  if (db) {
+  // Only the ownership-critical editor-source write requires a database read-before-merge.
+  // Ordinary job status updates retain the existing low-latency in-memory merge path.
+  if (db && writeContainsEditorSource) {
     try {
       const snapshot = await db.collection("videos").doc(jobId).get();
       if (snapshot.exists) {
         const data = snapshot.data() || {};
         persistedRecord = { id: snapshot.id, jobId: snapshot.id, ...data } as VideoJob;
+      } else if (!previousInMemory) {
+        throw new Error("EDITOR_SOURCE_JOB_NOT_FOUND");
       }
     } catch (err: any) {
       console.warn("[JobsHistory] Firestore read warning:", err?.message || String(err));
@@ -134,9 +138,9 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
     videoSizeMb: 0,
   } as VideoJob;
 
-  // Firestore is authoritative when present; retain memory-only fields only when
-  // no persisted job exists (for example an in-process test or newly initialized job).
-  const existing = persistedRecord
+  // For the critical source-binding path, the persisted record wins over a possibly
+  // stale process-local copy. Non-editor job updates preserve the pre-existing memory merge.
+  const existing = writeContainsEditorSource && persistedRecord
     ? { ...(previousInMemory || {}), ...persistedRecord }
     : previousInMemory || defaults;
   const updated = {
