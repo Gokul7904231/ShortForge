@@ -65,7 +65,11 @@
         "The editor source API verifies package schema, job/owner binding, composition hash/length and each source asset's actual CAS digest before opening it.",
         "Missing placeholder media and template-specific LocalRenderIntent intentionally fall back; the Python canonical F05 TimelineIR is not yet directly packaged for every job.",
         "CAS source MIME inference now reads the staged artifact metadata rather than requiring a filename extension, with a regression test for already-staged image/audio inputs.",
-        "Flattened imports now persist the exact initial CompositionIR as a CAS artifact; editor open verifies that the submitted document canonicalizes identically to the immutable saved composition."
+        "Flattened imports now persist the exact initial CompositionIR as a CAS artifact; editor open verifies that the submitted document canonicalizes identically to the immutable saved composition.",
+        "Job-manifest persistence now awaits the database write for editor source records and fails closed in production when persistent storage is unavailable or the write fails.",
+        "Caption-to-scene identity is preserved only when explicit sceneId metadata is present; no array-position relationship is invented.",
+        "The normal inspected render-intent path can still produce placeholder image URLs rather than resolved source files, so source-package creation safely declines and the editor falls back to flattened import for those jobs.",
+        "Quiz question editing remains gated until source records establish question-to-scene/caption bindings and whether text is separately rendered or burned into source visuals."
       ]
     },
     {
@@ -134,6 +138,10 @@
     {
       "id": "best-effort-source-package",
       "proposal": "Persist an owner-bound CAS composition package when every real RenderIntent dependency resolves; reject placeholder or unsupported sources and retain labelled flattened fallback. Follow up by packaging the canonical F05 TimelineIR plus source media for non-template and template execution paths."
+    },
+    {
+      "id": "quiz-source-binding",
+      "proposal": "Do not enable quiz question/options/answer editing until the source package explicitly binds question indices to scene/caption identities and regeneration/preservation invariants prove the changed output reflects the requested field."
     }
   ],
   "acceptedResolutions": [
@@ -170,7 +178,10 @@
     "services/pipeline/floor05_timeline_composition/tests/test_f05_wave3_reconciliation.py",
     "apps/web/factoryos/tests/editor-source-package.test.ts",
     "apps/web/factoryos/tests/editor-contracts.test.ts",
-    "apps/web/factoryos/tests/editor-contracts.test.ts"
+    "apps/web/factoryos/tests/editor-contracts.test.ts",
+    "apps/web/lib/jobs-history.ts",
+    "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+    "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
   ],
   "modelMetadata": {
     "assistant": "GPT-6",
