@@ -1,5 +1,5 @@
 import { db } from "./firebase-admin";
-import type { EditorSourcePackageRecord } from "@/factoryos/core/editor/EditorSourcePackage";
+import type { EditorSourcePackageRecord } from "../factoryos/core/editor/EditorSourcePackage";
 
 export interface VideoJob {
   id: string;
