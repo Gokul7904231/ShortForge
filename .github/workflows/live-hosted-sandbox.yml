@@ -1,12 +1,6 @@
 name: Live Hosted Sandbox Render Proof
 
 on:
-  # One-shot proof dispatch; removed by the immediately following cleanup commit.
-  push:
-    branches:
-      - feat/sandbox-opencomputer-blaxel-20261006
-    paths:
-      - ".github/workflows/live-hosted-sandbox.yml"
   workflow_dispatch:
     inputs:
       provider:
@@ -31,14 +25,13 @@ permissions:
 
 jobs:
   live-sandbox:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[sandbox-physical-proof-once-v2]')
     name: ${{ matrix.provider }} physical render smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        provider: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[sandbox-physical-proof-once-v2]') && fromJSON('["OPENCOMPUTER","BLAXEL"]') || fromJSON(format('[\"{0}\"]', inputs.provider || 'DAYTONA')) }}
+        provider: ${{ fromJSON(format('["{0}"]', inputs.provider)) }}
     env:
       SHORTFORGE_LIVE_SANDBOX_PROVIDER: ${{ matrix.provider }}
       SHORTFORGE_LIVE_SANDBOX_IMAGE: ${{ inputs.image || 'ghcr.io/jrottenberg/ffmpeg:9.0.1-ubuntu2404' }}
