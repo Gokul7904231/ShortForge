@@ -225,7 +225,8 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
       memory: request.metadata?.memoryMb
         ? Number(request.metadata.memoryMb)
         : 4096,
-      region: process.env.BLAXEL_REGION || undefined,
+      // Blaxel's SDK examples use a concrete region; allow an explicit override.
+      region: process.env.BLAXEL_REGION?.trim() || "us-pdx-1",
       labels: {
         shortforge_managed: "true",
         shortforge_operation_key: request.idempotencyKey,
@@ -316,37 +317,59 @@ export class BlaxelSandboxAdapter implements SandboxProviderAdapter {
     credentials?: SandboxCredentialBundle,
   ): Promise<SandboxExecutionResult> {
     const started = Date.now();
+    const timeoutMs = Number.isFinite(request.timeoutMs)
+      ? Math.max(1, Math.floor(request.timeoutMs))
+      : 120_000;
+    const timeoutSeconds = Math.max(1, Math.ceil(timeoutMs / 1000));
+    let sandbox: BlaxelSandbox | undefined;
+    let processName: string | undefined;
+    let processStarted = false;
+
     try {
-      const sandbox = await getSandbox(request.runtime.resourceId, credentials);
-      const result = await sandbox.process.exec({
-        name:
-          "shortforge-" +
-          request.runtime.resourceId.replace(/[^a-zA-Z0-9-]/g, "-").slice(-30) +
-          "-" +
-          Date.now().toString(36),
+      sandbox = await getSandbox(request.runtime.resourceId, credentials);
+      processName =
+        "shortforge-" +
+        request.runtime.resourceId.replace(/[^a-zA-Z0-9-]/g, "-").slice(-30) +
+        "-" +
+        Date.now().toString(36);
+
+      // The SDK's timeout is measured in seconds. Submit asynchronously, then
+      // observe the named process using wait()'s millisecond maxWait contract.
+      // This avoids synchronous waitForCompletion limits on longer renders.
+      await sandbox.process.exec({
+        name: processName,
         command: request.command,
         workingDir: request.workdir,
-        waitForCompletion: true,
-        // Blaxel's TypeScript SDK expects timeout in milliseconds.
-        timeout: Math.max(1, Math.floor(request.timeoutMs)),
-        // The Blaxel TypeScript SDK expects env as a string-to-string object,
-        // not the array-of-pairs format used by some other providers.
+        waitForCompletion: false,
+        timeout: timeoutSeconds,
         ...(request.env ? { env: { ...request.env } } : {}),
       });
-      const exitCode = Number(result?.exitCode ?? 0);
+      processStarted = true;
+
+      const result = await sandbox.process.wait(processName, { maxWait: timeoutMs });
+      const processStatus = String(result?.status || "").toLowerCase();
+      const exitCode = Number(result?.exitCode ?? (processStatus === "completed" ? 0 : 1));
+      const succeeded = processStatus === "completed" && exitCode === 0;
+
       return {
         providerType: "BLAXEL",
         runtimeId: request.runtime.resourceId,
-        status: exitCode === 0 ? "SUCCEEDED" : "FAILED",
+        status: succeeded ? "SUCCEEDED" : "FAILED",
         exitCode,
-        stdout: String(result?.stdout || ""),
+        stdout: String(result?.stdout || result?.logs || ""),
         stderr: String(result?.stderr || ""),
         durationMs: Date.now() - started,
-        evidence: ["Blaxel sandbox process.exec executed the command inside the hosted sandbox."],
+        evidence: [
+          "Blaxel process.exec submitted the command and process.wait observed its terminal state.",
+        ],
       };
     } catch (error: any) {
       const message = error?.message || String(error);
-      const timedOut = /timeout|timed out|deadline/i.test(message);
+      const timedOut = /timeout|timed out|deadline|did not finish in time/i.test(message);
+      if (timedOut && sandbox && processName && processStarted) {
+        // wait() timing out does not stop the provider process; clean it up.
+        await sandbox.process.kill(processName).catch(() => undefined);
+      }
       return {
         providerType: "BLAXEL",
         runtimeId: request.runtime.resourceId,
