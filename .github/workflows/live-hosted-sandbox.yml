@@ -1,6 +1,12 @@
 name: Live Hosted Sandbox Render Proof
 
 on:
+  # Temporary, one-shot provider qualification trigger; removed immediately after this commit.
+  push:
+    branches:
+      - feat/sandbox-opencomputer-blaxel-20261006
+    paths:
+      - ".github/workflows/live-hosted-sandbox.yml"
   workflow_dispatch:
     inputs:
       provider:
@@ -25,6 +31,7 @@ permissions:
 
 jobs:
   live-sandbox:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[sandbox-physical-proof-once]')
     name: ${{ matrix.provider }} physical render smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
