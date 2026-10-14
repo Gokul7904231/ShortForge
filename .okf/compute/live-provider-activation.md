@@ -121,3 +121,28 @@ This completes repository-side physical artifact + CAS + F07 qualification for I
 ## Provider qualification status — 2026-10-06
 OpenComputer and Blaxel adapter/connection integration is COMPLETE at the Sandbox Fabric contract level. Live physical + CAS + F07 evidence is still credential-run dependent and must be recorded from the GitHub Actions live workflow before either provider can be considered physically qualified.
 This preserves the rule that implementation status and physical qualification status are separate facts.
+## Provider qualification update — 2026-10-14
+
+### Blaxel — physically qualified
+
+GitHub Actions [Live Hosted Sandbox Render Proof run 38510539669](https://github.com/Gokul7904231/ShortForge/actions/runs/38510539669) completed the Blaxel job successfully and uploaded evidence artifact **11868869906** (`live-hosted-sandbox-f07-evidence-BLAXEL`).
+
+The evidence records:
+- MP4 SHA-256: `93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7`
+- Byte length: **5,201**
+- CAS reference matches the artifact SHA-256
+- F07 outcome: **READY**, `publishAllowed=true`
+- Signed receipt: `receiptSignatureVerified=true`
+- Video validation: 1080×1920, H.264/AAC, MP4 container present, decode smoke passed
+
+This qualifies Blaxel for the hosted-sandbox physical-proof requirement. It does **not** grant F06 production-worker authority; `productionWorkerEligible=false` remains mandatory until the separate admission/release policy allows promotion.
+
+### OpenComputer — blocked by provider capacity
+
+The same workflow attempted OpenComputer twice. Both attempts failed during `Sandbox.create` with HTTP **503** and the provider response `no cells available with capacity`. Neither attempt produced an MP4 or F07 evidence artifact.
+
+The adapter passed the workflow's strict FactoryOS typecheck; the failure occurs at provider provisioning before command execution. This is an upstream capacity blocker. Do not represent OpenComputer as physically qualified, and do not enable it for F06 production-worker use.
+
+### Current release boundary
+
+At the reconciliation snapshot, the dedicated sandbox-fabric, compute-connection-hub, Compute Pool, Team Change Gate, and OKF Governance Gate runs passed on PR #230's implementation head. Repository CI and the independent Lightning physical proof were still running, and the full Strix security review remains unavailable/triaged. Keep PR #230 blocked from merge until those remaining requirements are resolved.

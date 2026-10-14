@@ -66,16 +66,16 @@
     "Require physical MP4, independent CAS integrity, F07 physical verification, and signed receipt before physical qualification."
   ],
   "verificationResults": {
-    "sandboxProviderBoundary": "PASS__CHECKS_AT_PRIOR_SOURCE_HEAD__RERUN_REQUIRED_AFTER_CONCURRENCY_FIX",
-    "sandboxFabricContractTests": "PASS__CHECKS_AT_PRIOR_SOURCE_HEAD__RERUN_REQUIRED_AFTER_CONCURRENCY_FIX",
-    "computePool": "PASS__CHECKS_AT_PRIOR_SOURCE_HEAD__RERUN_REQUIRED_AFTER_CONCURRENCY_FIX",
-    "connectionHub": "PASS__CHECKS_AT_PRIOR_SOURCE_HEAD__RERUN_REQUIRED_AFTER_CONCURRENCY_FIX",
-    "repositoryCI": "REQUIRED_CHECKS_PASS__WEB_REGRESSION_INFORMATIONAL_FAILURE__PHYSICAL_PROOF_CANCELLED_ON_PRIOR_HEAD",
-    "teamChangeGate": "PASS__CHECKS_AT_PRIOR_SOURCE_HEAD__RERUN_REQUIRED_AFTER_CONCURRENCY_FIX",
-    "securityReview": "TRIAGED — full Semgrep/Strix unavailable in agent environment",
-    "liveOpenComputerF07": "PENDING__MANUAL_PROVIDER_CREDENTIALLED_RUN",
-    "liveBlaxelF07": "PENDING__MANUAL_PROVIDER_CREDENTIALLED_RUN",
-    "exactHead": "67bf3e3a8120480b3c0bf43fa9a35a550d5291d5"
+    "sandboxProviderBoundary": "PASS__SANDBOX_FABRIC_RUN_38510561204__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
+    "sandboxFabricContractTests": "PASS__SANDBOX_FABRIC_RUN_38510561204__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
+    "computePool": "PASS__RUN_38510561016__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
+    "connectionHub": "PASS__RUN_38510561227__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
+    "repositoryCI": "CORE_CHECKS_PASS__CI_RUN_38510561115_AND_LIGHTNING_PHYSICAL_PROOF_RUN_38510561151_IN_PROGRESS_AT_RECONCILIATION",
+    "teamChangeGate": "PASS__RUN_38510561086__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
+    "securityReview": "FLOOR_01_SECURITY_DEPENDENCY_SCAN_PASS__STRIX_REVIEW_UNAVAILABLE__STATUS_TRIAGED",
+    "liveOpenComputerF07": "FAIL__RUN_38510539669_ATTEMPTS_1_AND_2__HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_PHYSICAL_EVIDENCE",
+    "liveBlaxelF07": "PASS__RUN_38510539669__ARTIFACT_11868869906__F07_READY__SIGNED_RECEIPT_VERIFIED",
+    "exactHead": "4ffea03ce94e0ef96e1d8ce84000d1af67613359"
   },
   "evidenceRefs": [
     "apps/web/factoryos/core/compute/sandboxes/OpenComputerSandboxAdapter.ts",
@@ -90,7 +90,11 @@
   "notes": [
     "OpenComputer and Blaxel are implementation-complete but remain physically unqualified until their live provider-specific proof runs pass.",
     "The integration does not promote either provider into production F06 authority.",
-    "Branch-scoped Lightning proof concurrency has been added; a fresh validation cohort is required for the updated PR head. OpenComputer and Blaxel remain outside production-worker eligibility until live F07 proof."
+    "Branch-scoped Lightning proof concurrency has been added; a fresh validation cohort is required for the updated PR head. OpenComputer and Blaxel remain outside production-worker eligibility until live F07 proof.",
+    "Blaxel physical qualification passed in GitHub Actions run 38510539669: evidence artifact 11868869906 records MP4 SHA-256 93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7, byte length 5201, matching CAS reference, F07 outcome READY, publishAllowed=true, and receiptSignatureVerified=true.",
+    "OpenComputer physical qualification was attempted twice in run 38510539669. Both attempts failed at Sandbox.create with HTTP 503: no cells available with capacity. Neither attempt produced the physical MP4/F07 evidence artifact; this is recorded as a provider-side capacity blocker, not as a successful qualification.",
+    "At the verification snapshot, sandbox-fabric, Compute Pool, connection-hub, Team Change Gate, and OKF Governance Gate passed on PR head 4ffea03ce94e0ef96e1d8ce84000d1af67613359. Repository CI and Lightning physical proof were still running.",
+    "The temporary physical-proof trigger has been removed; the branch workflow is restored to its original workflow_dispatch-only configuration. OpenComputer and Blaxel remain productionWorkerEligible=false."
   ],
-  "dispositionRationale": "Implementation is complete at this exact head. Required static/governance CI is still executing; physical OpenComputer/Blaxel qualification remains pending and full Semgrep/Strix is unavailable in this execution environment."
+  "dispositionRationale": "Blaxel now has verified physical MP4 + CAS + signed F07 evidence. OpenComputer remains physically blocked after two upstream HTTP 503 capacity failures. Core dedicated integration/governance checks passed, but CI/Lightning proof and full Strix review were not complete at the reconciliation snapshot. Keep both providers outside F06 production-worker eligibility, and do not merge until the remaining release/security requirements and OpenComputer physical evidence are resolved."
 }
