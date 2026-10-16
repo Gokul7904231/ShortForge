@@ -117,6 +117,9 @@ describe("EditorSourcePackage", () => {
     const baseIntent = renderIntent(imageB, audioPath, "scene-b", audioSha256);
     const intent: RenderIntent = {
       ...baseIntent,
+      // Two one-second visuals and the narration span two seconds; the canvas
+      // must cover the actual timeline or the package correctly fails validation.
+      durationSeconds: 2,
       tracks: {
         visualAssets: [
           { id: "scene-b", type: "IMAGE", src: imageB, startSeconds: 0, durationSeconds: 1, zIndex: 1 },
