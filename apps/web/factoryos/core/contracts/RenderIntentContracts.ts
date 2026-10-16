@@ -86,6 +86,18 @@ export interface RenderCaptionCue {
   };
 }
 
+export interface RenderSourceProvenance {
+  readonly sha256: string;
+  readonly mimeType: string;
+  readonly sourceAssetId: string;
+  readonly provider: string;
+  readonly license: string;
+  readonly author: string;
+  readonly sourceUrl: string;
+  readonly attributionRequired: boolean;
+  readonly provenanceKind: "RETRIEVED" | "GENERATED" | "USER_PROVIDED";
+}
+
 export interface RenderAudioTrack {
   readonly id: string;
   readonly type: "VOICE" | "BGM" | "SFX";
@@ -98,6 +110,8 @@ export interface RenderAudioTrack {
   readonly sourceInSeconds?: number;
   readonly sourceDurationSeconds?: number;
   readonly playbackRate?: number;
+  /** Verified physical media provenance; omitted provenance makes source packaging fail closed. */
+  readonly sourceProvenance?: RenderSourceProvenance;
 }
 
 export interface RenderBackground {
