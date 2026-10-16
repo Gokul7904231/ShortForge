@@ -78,13 +78,16 @@
     "okfGovernanceGate": "PENDING__RUN_38886983284__HEAD_6b6fa03ce9663648f3c9a8af59215dd01e63faa1",
     "apiProviderFabric": "PENDING__RUN_38886983340__HEAD_6b6fa03ce9663648f3c9a8af59215dd01e63faa1",
     "lightningPhysicalProof": "PENDING__RUN_38886983209__HEAD_6b6fa03ce9663648f3c9a8af59215dd01e63faa1",
-    "daytonaAdapterFix": "IMPLEMENTED__COMMITS_995f36119fa7dcf852284be24451bfacd87643f4_AND_6b6fa03ce9663648f3c9a8af59215dd01e63faa1__SDK_STATE_AND_DOWNLOAD_FIX",
-    "daytonaPhysicalProofInitial": "FAIL__RUN_38886493673__HEAD_3be9c7cc21595bef2a7056f3b26ed7c04d54d619__DAYTONA_STATE_STARTED_MAPPED_TO_UNKNOWN__NO_RENDER_OR_ARTIFACT",
-    "daytonaPhysicalProofCorrected": "QUEUED__RUN_38887004324__BRANCH_proof/daytona-physical-fixed-20261016__SOURCE_HEAD_6b6fa03ce9663648f3c9a8af59215dd01e63faa1",
+    "daytonaAdapterFix": "IMPLEMENTED__STATE_STARTED_NORMALIZATION__PROVISIONING_POLLING__SDK_DOWNLOAD_BYTES__BOUNDED_TTL__UNIT_TESTED",
+    "daytonaPhysicalProofInitial": "FAIL__RUN_38886493673__DAYTONA_NATIVE_STARTED_MAPPED_TO_UNKNOWN__NO_RENDER",
+    "daytonaPhysicalProofCorrected": "FAIL__RUN_38887004324__PHYSICAL_MP4_RENDERED_AND_CAS_INTEGRITY_CHECKED__F07_PUBLISH_ALLOWED_FALSE_DUE_POLICY_STALENESS__NO_ARTIFACT_BECAUSE_TEST_ASSERTED_BEFORE_EVIDENCE_WRITE",
     "liveOpenComputerF07": "FAIL__RUN_38510539669__JOB_115678468396__HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_PHYSICAL_EVIDENCE_ARTIFACT",
     "liveBlaxelF07": "PASS__RUN_38510539669__ARTIFACT_11868869906__MP4_SHA256_93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7__BYTE_LENGTH_5201__CAS_MATCH__F07_READY__PUBLISH_ALLOWED_TRUE__SIGNED_RECEIPT_VERIFIED",
     "securityReview": "TRIAGED__FLOOR_01_SECURITY_DEPENDENCY_SCAN_PASSED__STRIX_UNAVAILABLE__NO_PR_REVIEW_SUBMITTED",
-    "previousValidatedHead": "05512802a7247f7ac44f5e5b3eb0433db153b153"
+    "previousValidatedHead": "05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "prHeadAtReconciliation": "7cf2d2af825f2be5346031a1aae0c9a3d876fea9",
+    "f07PolicyRefresh": "OPEN_PR_244__OFFICIAL_SOURCES_REVIEWED_2026-10-16__SNAPSHOT_REFRESH_AND_SHORTS_CONTENT_ID_RULE_CORRECTION__CHECKS_PENDING",
+    "daytonaPhysicalProofAfterPolicyRefresh": "QUEUED__RUN_38888809202__BRANCH_proof/daytona-policy-refresh-20261016__USES_DAYTONA_FIX_AND_F07_POLICY_REFRESH"
   },
   "evidenceRefs": [
     "apps/web/factoryos/core/compute/sandboxes/OpenComputerSandboxAdapter.ts",
@@ -97,15 +100,15 @@
     "apps/web/factoryos/tests/live-hosted-sandbox.test.ts"
   ],
   "notes": [
-    "Current implementation head at this report update is 6b6fa03ce9663648f3c9a8af59215dd01e63faa1. The listed 2026-10-14 green validation cohort was on earlier implementation head 05512802a7247f7ac44f5e5b3eb0433db153b153 and must not be represented as a pass on the current head.",
-    "The initial live Daytona attempt in run 38886493673 successfully reached the provider but failed before render because Daytona's native state 'started' was normalized to UNKNOWN. No physical MP4 or F07 artifact was produced.",
-    "The Daytona adapter now normalizes provider-native states, waits through provisioning, handles fs.downloadFile's SDK-returned bytes correctly, and avoids the conflicting ephemeral/autoDeleteInterval configuration. Unit coverage for state normalization was added.",
-    "Corrected Daytona physical proof run 38887004324 was queued on branch proof/daytona-physical-fixed-20261016, based on corrected source head 6b6fa03ce9663648f3c9a8af59215dd01e63faa1. Physical qualification remains unproven until this run produces the MP4/CAS/signed F07 artifact.",
-    "OpenComputer physical qualification remains blocked after provider HTTP 503 'no cells available with capacity' in run 38510539669; no provider-side output artifact exists.",
-    "Blaxel physical qualification passed in run 38510539669 with artifact 11868869906, a 5201-byte MP4, matching CAS reference, F07 READY, publishAllowed=true, and verified signed receipt.",
-    "A standalone Daytona SDK lifecycle fix is available in PR #243 against main. Its code checks and the current PR #230 head verification cohort are pending in GitHub Actions.",
-    "The Floor 01 security/dependency scan passed but Strix review remains unavailable due to expired workspace trial. No PR reviews have been submitted, so security status remains TRIAGED.",
-    "Hosted sandbox adapters remain outside F06 production-worker authority unless separately qualified and approved. Keep productionWorkerEligible=false."
+    "PR #230 current application/source head is 6b6fa03ce9663648f3c9a8af59215dd01e63faa1; latest PR head at this report update was 7cf2d2af825f2be5346031a1aae0c9a3d876fea9, a report-only commit. Prior green integration cohort is on 05512802a7247f7ac44f5e5b3eb0433db153b153, not the latest source head.",
+    "Daytona's real proof run 38886493673 authenticated and created a sandbox, then failed before render because the adapter mapped Daytona native state 'started' to UNKNOWN. That mapping, readiness polling, download bytes handling and ephemeral/TTL configuration have been fixed and unit coverage added.",
+    "Corrected Daytona run 38887004324 rendered a physical 1080x1920 MP4, downloaded it, passed remote/local SHA-256 and byte-count comparison, verified CAS integrity, and reached F07. It failed the publishAllowed assertion because the canonical YouTube policy snapshot expired 2026-10-15; the test did not yet write the F07 artifact before assertion, so no workflow evidence artifact was uploaded.",
+    "PR #244 (fix/f07-policy-refresh-20261016) refreshes the official source registry and date-bounded snapshot through 2026-10-30, and corrects an inaccurate Shorts Content ID rule using current official YouTube sources. Its validation checks are queued/pending, so the change is not yet approved or merged.",
+    "Corrected physical Daytona proof with the refreshed policy and earlier-diagnostic evidence write is queued as run 38888809202 on branch proof/daytona-policy-refresh-20261016. Do not claim physical qualification until this run passes the F07 publishAllowed and signed receipt requirements and uploads its evidence artifact.",
+    "Blaxel physical qualification passed in run 38510539669, artifact 11868869906, with 5201-byte MP4, SHA-256 93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7, matching CAS reference, F07 READY, publishAllowed=true, and receiptSignatureVerified=true.",
+    "OpenComputer remains physically unqualified due HTTP 503 'no cells available with capacity' in run 38510539669; no physical artifact was generated.",
+    "The main workflow live-hosted-sandbox.yml still only offers Daytona, Modal and InstaVM; OpenComputer/Blaxel proof options are present on PR #230's branch, not main.",
+    "Floor 01 security/dependency scan passed, but Strix remains unavailable due expired workspace trial and no PR reviews are submitted. Security is TRIAGED, not PASS. Keep hosted sandbox productionWorkerEligible=false."
   ],
-  "dispositionRationale": "BLOCKED. Blaxel has verified physical MP4 + CAS + signed F07 evidence. OpenComputer remains physically unqualified due upstream HTTP 503 capacity exhaustion. Daytona adapter defects uncovered by a real proof attempt have been corrected, but the corrected physical proof is queued and not yet verified. The current PR-head validation cohort is pending, and the full Strix review is unavailable. Do not promote providers into F06 production-worker authority or merge until required physical proofs, current-head checks, and repository review/security requirements are resolved."
+  "dispositionRationale": "BLOCKED. Blaxel has complete physical MP4/CAS/signed F07 evidence. OpenComputer remains blocked by provider capacity. Daytona's adapter is corrected and the physical output path reached CAS, but the prior F07 publish assertion was blocked by an expired official-policy snapshot; PR #244 refreshes canonical policy and corrects a false Shorts Content ID rule, while the final physical rerun is still queued. Current-head validation/security review is outstanding. Do not merge or activate production-worker authority until the policy, physical-proof and release-review gates pass."
 }
