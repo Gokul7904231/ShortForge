@@ -1253,6 +1253,110 @@ export class OverseerControlPlane {
         sharedScope.voiceUrl = synthRes.localPath;
         sharedScope.voiceArtifact = synthRes;
 
+        // Floor 04 is the physical-media boundary. Resolve actual licensed visual
+        // bytes for stable scene IDs here, before Floor 05 compiles RenderIntent.
+        // If the provider pipeline can only produce its synthetic solid-color
+        // fallback, keep the scene unresolved so EditorSourcePackage fails closed.
+        let editorVisualSourcesResolved = 0;
+        let editorVisualSourcesUnavailable = 0;
+        const inputSceneRows = Array.isArray(scope.scenes) ? scope.scenes : [];
+        if (inputSceneRows.length > 0) {
+          const [{ VisualAssetManager }, fs, path] = await Promise.all([
+            import("../../../lib/visual-assets/VisualAssetManager"),
+            import("node:fs"),
+            import("node:path"),
+          ]);
+          const textOrEmpty = (value: unknown): string =>
+            typeof value === "string" ? value.trim() : "";
+          const stableIdOf = (scene: Record<string, unknown>): string =>
+            textOrEmpty(scene.sceneId) || textOrEmpty(scene.scene_id) || textOrEmpty(scene.id);
+          const sourceStringOf = (scene: Record<string, unknown>): string =>
+            textOrEmpty(scene.imageUrl) || textOrEmpty(scene.image_url) || textOrEmpty(scene.sourceUri);
+          const supportedVisualExtension = (value: string): boolean =>
+            [".png", ".jpg", ".jpeg", ".webp", ".avif"].includes(path.extname(value.split(/[?#]/, 1)[0] || value).toLowerCase());
+          const hasPhysicalSource = (scene: Record<string, unknown>): boolean => {
+            const src = sourceStringOf(scene);
+            if (!src || src.startsWith("/api/") || src.startsWith("http://")) return false;
+            if (/^cas:\/\/[a-f0-9]{64}$/i.test(src)) return true;
+            if (/^https:\/\//i.test(src)) {
+              return supportedVisualExtension(src) && Boolean(record(scene.sourceProvenance) || record(scene.source_provenance));
+            }
+            try {
+              const localPath = src.startsWith("file://")
+                ? decodeURIComponent(new URL(src).pathname)
+                : src;
+              return path.isAbsolute(localPath) &&
+                supportedVisualExtension(localPath) &&
+                fs.statSync(localPath).isFile() &&
+                fs.statSync(localPath).size > 0;
+            } catch {
+              return false;
+            }
+          };
+          const todo = inputSceneRows.filter((scene: unknown) => {
+            const row = record(scene);
+            return Boolean(row && stableIdOf(row) && !hasPhysicalSource(row));
+          }) as Record<string, unknown>[];
+          const generatedSources: Record<string, unknown>[] = [];
+          let nextSource = 0;
+          const workerCount = Math.min(3, todo.length);
+          await Promise.all(Array.from({ length: workerCount }, async () => {
+            while (nextSource < todo.length) {
+              const index = nextSource++;
+              const scene = todo[index]!;
+              const sceneId = stableIdOf(scene);
+              try {
+                const source = await VisualAssetManager.getEditorSceneSource({
+                  jobId: String(scope.jobId || sharedScope.jobId || missionId || executionId),
+                  sceneId,
+                  sceneText:
+                    textOrEmpty(scene.text) ||
+                    textOrEmpty(scene.narration_text) ||
+                    textOrEmpty(scene.narrative) ||
+                    textOrEmpty(scene.contactText),
+                  imagePrompt:
+                    textOrEmpty(scene.imagePrompt) ||
+                    textOrEmpty(scene.image_prompt) ||
+                    textOrEmpty(scene.prompt_text),
+                  topic: String(scope.topic || sharedScope.topic || "educational shorts"),
+                  style: String(scope.style || sharedScope.style || "quiz"),
+                  role: scene.isHook ? "hook" : scene.isQuestionReveal ? "reveal" : scene.isOutro ? "outro" : "read",
+                });
+                generatedSources.push({
+                  sceneId,
+                  imageUrl: source.path,
+                  mediaType: "IMAGE",
+                  sourceProvenance: {
+                    sha256: source.sha256,
+                    mimeType: source.mimeType,
+                    sourceAssetId: source.sourceAssetId,
+                    provider: source.provider,
+                    license: source.license,
+                    author: source.author,
+                    sourceUrl: source.sourceUrl,
+                    attributionRequired: source.attributionRequired,
+                  },
+                });
+                editorVisualSourcesResolved++;
+              } catch (sourceError) {
+                editorVisualSourcesUnavailable++;
+                console.warn(
+                  "[Overseer Floor04] No verified editor source for scene " + sceneId + "; leave it unavailable rather than inventing a media URL:",
+                  sourceError instanceof Error ? sourceError.message : String(sourceError),
+                );
+              }
+            }
+          }));
+
+          // F03 can finish concurrently with F04. Merge visual results into the
+          // latest shared scene rows, never overwrite a newer canonical F03 plan.
+          if (generatedSources.length > 0) {
+            const latestSceneRows = Array.isArray(scope.scenes) ? scope.scenes : inputSceneRows;
+            scope.scenes = mergeEditorSceneSources(latestSceneRows, generatedSources);
+            sharedScope.scenes = scope.scenes;
+          }
+        }
+
         const mediaPayload = {
           voice: scope.engineSnapshot?.effectiveConfig?.voice || "neutral",
           estimatedDuration: synthRes.durationSeconds,
@@ -1262,6 +1366,8 @@ export class OverseerControlPlane {
           byteLength: synthRes.byteLength,
           sha256: synthRes.sha256,
           isFallback: synthRes.isFallback,
+          editorVisualSourcesResolved,
+          editorVisualSourcesUnavailable,
         };
 
         if (missionId && this.missionManager) {
