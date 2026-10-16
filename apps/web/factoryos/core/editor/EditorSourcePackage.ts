@@ -522,9 +522,13 @@ export async function buildEditorSourcePackage(
       const provenance = visualAsset
         ? sceneSourceProvenance(sceneRow)
         : audioTrack?.sourceProvenance;
-      if (!provenance ||
+      if (
+          !provenance ||
+          typeof provenance.sha256 !== "string" ||
+          typeof provenance.mimeType !== "string" ||
           provenance.sha256.toLowerCase() !== record.sha256.toLowerCase() ||
-          provenance.mimeType.toLowerCase() !== record.mimeType.toLowerCase()) {
+          provenance.mimeType.toLowerCase() !== record.mimeType.toLowerCase()
+      ) {
         throw new Error("EDITOR_SOURCE_PROVENANCE_DIGEST_OR_MIME_MISMATCH");
       }
       const sceneId = visualAsset?.id;
@@ -643,6 +647,7 @@ export async function buildEditorSourcePackage(
         compositionId,
         compositionHashSha256,
       });
+      if (!compositionArtifact.uri) throw new Error("EDITOR_SOURCE_COMPOSITION_CAS_URI_MISSING");
       // Production source packages are portable only after every source blob and
       // the canonical composition are committed to durable, owner/job-bound storage.
       // Local development may omit remote keys; production refuses that downgrade.
