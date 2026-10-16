@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 
 import { ArtifactResolver } from "../rendering/ArtifactResolver";
 import { ContentAddressedStore } from "../compute/cas/ContentAddressedStore";
+import { persistEditorSourcePackageBlobs } from "./EditorSourcePackageStorage";
 import {
   millisecondsToMediaTime,
   validateCompositionIR,
@@ -47,6 +48,8 @@ export interface EditorSourcePackageAsset {
   readonly roles: readonly ("VISUAL" | "AUDIO")[];
   readonly sceneId?: string;
   readonly sourceProvenance?: EditorSourceProvenance;
+  /** Owner/job-bound durable object key; optional only for non-production local development. */
+  readonly storageKey?: string;
 }
 
 export interface EditorSourcePackageRecord {
@@ -56,6 +59,7 @@ export interface EditorSourcePackageRecord {
   readonly ownerId: string;
   readonly compositionId: string;
   readonly compositionArtifactId: string;
+  readonly compositionStorageKey?: string;
   readonly compositionSha256: string;
   readonly compositionByteLength: number;
   readonly compositionHashSha256: string;
@@ -639,6 +643,24 @@ export async function buildEditorSourcePackage(
         compositionId,
         compositionHashSha256,
       });
+      // Production source packages are portable only after every source blob and
+      // the canonical composition are committed to durable, owner/job-bound storage.
+      // Local development may omit remote keys; production refuses that downgrade.
+      const durableBlobs = await persistEditorSourcePackageBlobs({
+        ownerId: input.ownerId,
+        jobId: input.jobId,
+        compositionPath: compositionArtifact.uri,
+        compositionSha256: compositionArtifact.sha256,
+        compositionByteLength: compositionArtifact.byteLength,
+        sourceAssets,
+        cas,
+      });
+      const durableSourceAssets = sourceAssets.map((asset) => ({
+        ...asset,
+        ...(durableBlobs?.sourceAssetStorageKeys[asset.sha256.toLowerCase()]
+          ? { storageKey: durableBlobs.sourceAssetStorageKeys[asset.sha256.toLowerCase()] }
+          : {}),
+      }));
       return {
         schemaVersion: "shortforge.editor-source.v1",
         sourceKind: "COMPOSITION_PACKAGE",
@@ -650,8 +672,9 @@ export async function buildEditorSourcePackage(
         compositionByteLength: compositionArtifact.byteLength,
         compositionHashSha256,
         sourceAssetSha256s,
-        sourceAssets,
-        warnings: sourceAssets
+        sourceAssets: durableSourceAssets,
+        ...(durableBlobs ? { compositionStorageKey: durableBlobs.compositionStorageKey } : {}),
+        warnings: durableSourceAssets
           .filter((asset) => asset.roles.includes("AUDIO") && asset.sourceProvenance?.provenanceKind === "FALLBACK")
           .map((asset) => "AUDIO_SOURCE_FALLBACK: " + asset.originalAssetId +
             " is a degraded fallback artifact, not verified narration; replace or regenerate it before production export."),
