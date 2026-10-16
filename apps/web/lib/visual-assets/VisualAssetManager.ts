@@ -558,20 +558,42 @@ class VisualAssetManagerClass {
       throw new Error("EDITOR_SCENE_SOURCE_COPY_INTEGRITY_FAILURE");
     }
 
-    const sourceUrl = typeof selected.sourceUrl === "string" ? selected.sourceUrl : "";
+    const sourceUrl = typeof selected.sourceUrl === "string" ? selected.sourceUrl.trim() : "";
     let parsedSourceUrl: URL;
     try {
       parsedSourceUrl = new URL(sourceUrl);
     } catch {
       throw new Error("EDITOR_SCENE_SOURCE_PROVENANCE_URL_INVALID");
     }
-    if (parsedSourceUrl.protocol !== "https:") {
-      throw new Error("EDITOR_SCENE_SOURCE_PROVENANCE_URL_INSECURE");
+    if (
+      parsedSourceUrl.protocol !== "https:" ||
+      !parsedSourceUrl.hostname ||
+      parsedSourceUrl.pathname === "/" ||
+      parsedSourceUrl.username ||
+      parsedSourceUrl.password
+    ) {
+      throw new Error("EDITOR_SCENE_SOURCE_PROVENANCE_URL_UNVERIFIABLE");
     }
-    if (typeof selected.license !== "string" || !selected.license.trim() ||
-        typeof selected.author !== "string" || !selected.author.trim() ||
-        typeof selected.attributionRequired !== "boolean") {
+
+    const license = typeof selected.license === "string" ? selected.license.trim() : "";
+    const author = typeof selected.author === "string" ? selected.author.trim() : "";
+    const unusableLicenseLabels = new Set([
+      "unknown", "unknown license", "license unknown", "public", "default", "n/a", "na",
+    ]);
+    const unusableAuthorLabels = new Set([
+      "unknown", "unknown artist", "unknown creator", "unknown contributor", "anonymous",
+    ]);
+    if (
+      !license ||
+      unusableLicenseLabels.has(license.toLowerCase()) ||
+      !author ||
+      unusableAuthorLabels.has(author.toLowerCase()) ||
+      typeof selected.attributionRequired !== "boolean"
+    ) {
       throw new Error("EDITOR_SCENE_SOURCE_RIGHTS_METADATA_INCOMPLETE");
+    }
+    if (selected.usagePolicy?.materialization === "PREVIEW_ONLY") {
+      throw new Error("EDITOR_SCENE_SOURCE_NOT_LICENSED_FOR_MATERIALIZATION");
     }
 
     return {
@@ -580,8 +602,8 @@ class VisualAssetManagerClass {
       mimeType,
       sourceAssetId: selected.id,
       provider: selected.source,
-      license: selected.license,
-      author: selected.author,
+      license,
+      author,
       sourceUrl,
       attributionRequired: selected.attributionRequired,
       provenanceKind: "RETRIEVED",
