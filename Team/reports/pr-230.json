@@ -30,8 +30,9 @@
     "strix": "UNAVAILABLE",
     "zap": "NOT_APPLICABLE",
     "notes": [
-      "Provider secrets were not added to source; live credentials are GitHub Actions secrets.",
-      "Both new adapters hard-code productionWorkerEligible=false."
+      "Provider secrets were not added to source; live credentials remain GitHub Actions secrets.",
+      "Both new adapters keep productionWorkerEligible=false.",
+      "The Strix bot could not run its PR review because the workspace trial had ended; security review is not a PASS."
     ]
   },
   "conflicts": [],
@@ -51,31 +52,34 @@
     "Generalized hosted sandbox credential and template handling.",
     "Added contract boundary verification, provider tests, and live physical CAS/F07 proof coverage.",
     "Updated sandbox activation and architecture documentation.",
-    "Extended the unified live-multi-provider render harness and connection-hub tests for OpenComputer and Blaxel.",
-    "Scoped Lightning physical-proof concurrency by branch so independent PRs no longer cancel each other."
+    "Extended the live multi-provider render harness and connection-hub tests for OpenComputer and Blaxel.",
+    "Scoped Lightning physical-proof concurrency by branch."
   ],
   "externalVerification": [
-    "OpenComputer current TypeScript SDK documents Sandbox.create/connect, exec.run, filesystem read/write, and kill.",
-    "Blaxel current TypeScript SDK documents SandboxInstance.createIfNotExists/get/delete, process.exec, filesystem operations, and BL_WORKSPACE/BL_API_KEY authentication."
+    "OpenComputer TypeScript SDK documents Sandbox.create/connect, exec.run, filesystem read/write, and kill.",
+    "Blaxel TypeScript SDK documents SandboxInstance lifecycle, process execution, filesystem operations, and BL_WORKSPACE/BL_API_KEY authentication."
   ],
   "verificationPlan": [
     "Pass Sandbox Fabric provider-boundary verification and contract tests.",
-    "Pass strict FactoryOS typecheck and compute-pool/connection-hub validation.",
+    "Pass strict FactoryOS typecheck and Compute Pool/connection-hub validation.",
     "Run applicable repository security and governance gates.",
-    "Run Live Hosted Sandbox Render Proof with OPENCOMPUTER and BLAXEL repository secrets.",
-    "Require physical MP4, independent CAS integrity, F07 physical verification, and signed receipt before physical qualification."
+    "Run Live Hosted Sandbox Render Proof with OpenComputer and Blaxel credentials.",
+    "Require physical MP4, independently matching remote/local SHA-256 and byte length, CAS acceptance, F07 physical verification, and signed receipt before physical qualification."
   ],
   "verificationResults": {
-    "sandboxProviderBoundary": "PASS__SANDBOX_FABRIC_RUN_38510561204__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
-    "sandboxFabricContractTests": "PASS__SANDBOX_FABRIC_RUN_38510561204__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
-    "computePool": "PASS__RUN_38510561016__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
-    "connectionHub": "PASS__RUN_38510561227__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
-    "repositoryCI": "CORE_CHECKS_PASS__CI_RUN_38510561115_AND_LIGHTNING_PHYSICAL_PROOF_RUN_38510561151_IN_PROGRESS_AT_RECONCILIATION",
-    "teamChangeGate": "PASS__RUN_38510561086__HEAD_4ffea03ce94e0ef96e1d8ce84000d1af67613359",
-    "securityReview": "FLOOR_01_SECURITY_DEPENDENCY_SCAN_PASS__STRIX_REVIEW_UNAVAILABLE__STATUS_TRIAGED",
-    "liveOpenComputerF07": "FAIL__RUN_38510539669_ATTEMPTS_1_AND_2__HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_PHYSICAL_EVIDENCE",
-    "liveBlaxelF07": "PASS__RUN_38510539669__ARTIFACT_11868869906__F07_READY__SIGNED_RECEIPT_VERIFIED",
-    "exactHead": "4ffea03ce94e0ef96e1d8ce84000d1af67613359"
+    "exactHead": "05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "headCommit": "05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "sandboxFabric": "PASS__RUN_38511064479__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "computePool": "PASS__RUN_38511064539__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "connectionHub": "PASS__RUN_38511064544__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "repositoryCI": "PASS__RUN_38511064445__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "teamChangeGate": "PASS__RUN_38511064475__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "okfGovernanceGate": "PASS__RUN_38511064585__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "apiProviderFabric": "PASS__RUN_38511064476__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "lightningPhysicalProof": "PASS__RUN_38511064534__HEAD_05512802a7247f7ac44f5e5b3eb0433db153b153",
+    "securityReview": "TRIAGED__FLOOR_01_SECURITY_DEPENDENCY_SCAN_PASSED__STRIX_UNAVAILABLE__NO_PR_REVIEW_SUBMITTED",
+    "liveOpenComputerF07": "FAIL__RUN_38510539669__JOB_115678468396__HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_PHYSICAL_EVIDENCE_ARTIFACT",
+    "liveBlaxelF07": "PASS__RUN_38510539669__ARTIFACT_11868869906__MP4_SHA256_93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7__BYTE_LENGTH_5201__CAS_MATCH__F07_READY__PUBLISH_ALLOWED_TRUE__SIGNED_RECEIPT_VERIFIED"
   },
   "evidenceRefs": [
     "apps/web/factoryos/core/compute/sandboxes/OpenComputerSandboxAdapter.ts",
@@ -88,13 +92,13 @@
     "apps/web/factoryos/tests/live-hosted-sandbox.test.ts"
   ],
   "notes": [
-    "OpenComputer and Blaxel are implementation-complete but remain physically unqualified until their live provider-specific proof runs pass.",
-    "The integration does not promote either provider into production F06 authority.",
-    "Branch-scoped Lightning proof concurrency has been added; a fresh validation cohort is required for the updated PR head. OpenComputer and Blaxel remain outside production-worker eligibility until live F07 proof.",
-    "Blaxel physical qualification passed in GitHub Actions run 38510539669: evidence artifact 11868869906 records MP4 SHA-256 93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7, byte length 5201, matching CAS reference, F07 outcome READY, publishAllowed=true, and receiptSignatureVerified=true.",
-    "OpenComputer physical qualification was attempted twice in run 38510539669. Both attempts failed at Sandbox.create with HTTP 503: no cells available with capacity. Neither attempt produced the physical MP4/F07 evidence artifact; this is recorded as a provider-side capacity blocker, not as a successful qualification.",
-    "At the verification snapshot, sandbox-fabric, Compute Pool, connection-hub, Team Change Gate, and OKF Governance Gate passed on PR head 4ffea03ce94e0ef96e1d8ce84000d1af67613359. Repository CI and Lightning physical proof were still running.",
-    "The temporary physical-proof trigger has been removed; the branch workflow is restored to its original workflow_dispatch-only configuration. OpenComputer and Blaxel remain productionWorkerEligible=false."
+    "As of 2026-10-16, the latest PR head is 05512802a7247f7ac44f5e5b3eb0433db153b153; earlier exactHead 4ffea03ce94e0ef96e1d8ce84000d1af67613359 was stale.",
+    "The PR-head dedicated verification cohort completed successfully: CI run 38511064445, sandbox-fabric 38511064479, Compute Pool 38511064539, connection hub 38511064544, Team Change Gate 38511064475, OKF Governance Gate 38511064585, API Provider Fabric 38511064476, and Lightning physical proof 38511064534.",
+    "Blaxel physical qualification passed in run 38510539669. Artifact 11868869906 records MP4 SHA-256 93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7, byte length 5201, matching CAS reference, F07 READY, publishAllowed=true, and receiptSignatureVerified=true.",
+    "OpenComputer qualification remains blocked. Its job 115678468396 in run 38510539669 failed at official SDK Sandbox.create with HTTP 503: no cells available with capacity; the run produced no OpenComputer evidence file/artifact.",
+    "The live workflow is workflow_dispatch-only on the PR branch and exposes OPENCOMPUTER as an option. The latest checked-in main copy of the workflow is stale and does not expose OpenComputer or Blaxel; do not use main's older workflow to claim current provider proof coverage.",
+    "No PR reviews have been submitted. Strix explicitly reported that the workspace trial had ended, so security remains TRIAGED.",
+    "Keep OpenComputer and Blaxel productionWorkerEligible=false and outside F06 production-worker authority until required physical proof and release/security requirements are approved."
   ],
-  "dispositionRationale": "Blaxel now has verified physical MP4 + CAS + signed F07 evidence. OpenComputer remains physically blocked after two upstream HTTP 503 capacity failures. Core dedicated integration/governance checks passed, but CI/Lightning proof and full Strix review were not complete at the reconciliation snapshot. Keep both providers outside F06 production-worker eligibility, and do not merge until the remaining release/security requirements and OpenComputer physical evidence are resolved."
+  "dispositionRationale": "BLOCKED. Blaxel has verified physical MP4 + CAS + signed F07 evidence and PR-head static/integration/governance/CI/Lightning checks pass. OpenComputer remains physically unqualified due to provider-side HTTP 503 capacity exhaustion. Security review remains TRIAGED because Strix could not run and no PR reviews have been submitted. Do not merge until the outstanding OpenComputer qualification and repository security/review requirements are resolved."
 }
