@@ -1482,7 +1482,16 @@ export class OverseerControlPlane {
           resolution: { width: 1080, height: 1920 },
           tracks: {
             visualAssets: (scope.scenes || []).map((s: any, idx: number) => ({
-              id: `asset_${idx}`,
+              // Bind each visual track to the stable scene identity. The editor
+              // source adapter rejects duplicate/missing IDs instead of relying
+              // on array position to recover scene semantics.
+              id: typeof s.sceneId === "string" && s.sceneId.trim()
+                ? s.sceneId.trim()
+                : typeof s.scene_id === "string" && s.scene_id.trim()
+                  ? s.scene_id.trim()
+                  : typeof s.id === "string" && s.id.trim()
+                    ? s.id.trim()
+                    : `asset_${idx}`,
               // Carry a declared source media kind when one exists; do not infer
               // VIDEO from duration or from visual prompt metadata.
               type: s.mediaType === "VIDEO" ? "VIDEO" as const : "IMAGE" as const,
