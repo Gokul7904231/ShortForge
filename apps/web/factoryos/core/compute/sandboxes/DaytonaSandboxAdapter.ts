@@ -1,3 +1,5 @@
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import type {
   SandboxCredentialBundle,
   SandboxCredentialValidation,
@@ -227,11 +229,12 @@ export class DaytonaSandboxAdapter implements SandboxProviderAdapter {
     credentials?: SandboxCredentialBundle,
   ): Promise<void> {
     const sandbox = await clientFor(credentials).get(request.runtime.resourceId);
-    await sandbox.fs.downloadFile(
+    const bytes = await sandbox.fs.downloadFile(
       request.remotePath,
-      request.localPath,
       Math.max(1, Math.ceil((request.timeoutMs || 1_800_000) / 1000)),
     );
+    await fs.mkdir(path.dirname(request.localPath), { recursive: true });
+    await fs.writeFile(request.localPath, Buffer.from(bytes));
   }
 
   async execute(
