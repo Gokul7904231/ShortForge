@@ -65,9 +65,22 @@ export function mergeEditorSceneSources<T extends EditorSceneSourceRow>(
     // Duplicate IDs are ambiguous and fail closed instead of choosing a source
     // by ordering. The canonical plan remains authoritative for scene semantics.
     const existing = matches?.length === 1 ? matches[0] : undefined;
-    const imageUrl = nonEmptyString(planned.imageUrl) ?? nonEmptyString(existing?.imageUrl);
-    const mediaType = supportedMediaType(planned.mediaType) ?? supportedMediaType(existing?.mediaType);
-    const provenance = sourceProvenance(planned, existing);
+    const plannedImage = nonEmptyString(planned.imageUrl);
+    const existingImage = nonEmptyString(existing?.imageUrl);
+    const plannedProvenance = sourceProvenance(planned, undefined);
+    const existingProvenance = existing ? sourceProvenance(existing, undefined) : undefined;
+    // A canonical scene's existing source remains authoritative when it has its
+    // own provenance. A newly retrieved, provenance-backed source replaces an
+    // unproven placeholder or stale locator.
+    const usePlannedSource = Boolean(plannedImage) &&
+      (Boolean(plannedProvenance) || !existingImage || !existingProvenance);
+    const imageUrl = usePlannedSource ? plannedImage : existingImage ?? plannedImage;
+    const mediaType = usePlannedSource
+      ? supportedMediaType(planned.mediaType) ?? supportedMediaType(existing?.mediaType)
+      : supportedMediaType(existing?.mediaType) ?? supportedMediaType(planned.mediaType);
+    const provenance = usePlannedSource
+      ? plannedProvenance ?? existingProvenance
+      : existingProvenance ?? plannedProvenance;
 
     return {
       ...planned,
