@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { mergeEditorSceneSources } from "../core/editor/EditorSceneSourceBridge";
+import {
+  mergeEditorSceneSources,
+  replaceVerifiedEditorSceneSources,
+} from "../core/editor/EditorSceneSourceBridge";
 
 describe("editor scene source bridge", () => {
   it("preserves source media by stable scene ID while keeping canonical scene order and semantics", () => {
@@ -89,6 +92,97 @@ describe("editor scene source bridge", () => {
       mediaType: "IMAGE",
       sourceProvenance: provenance,
     });
+  });
+
+  it("replaces media only on the exact unique scene ID with complete retrieved provenance", () => {
+    const provenance = {
+      sha256: "c".repeat(64),
+      mimeType: "image/jpeg",
+      sourceAssetId: "retrieved-asset-42",
+      provider: "wikimedia",
+      license: "CC-BY-4.0",
+      author: "Verified Artist",
+      sourceUrl: "https://commons.wikimedia.org/wiki/File:verified.jpg",
+      attributionRequired: true,
+      provenanceKind: "RETRIEVED",
+    };
+    const canonical = [
+      { sceneId: "scene-a", text: "Keep A", imageUrl: "/api/images/placeholder-a.jpg" },
+      { sceneId: "scene-b", text: "Replace B", assetId: "logical-b", durationSeconds: 6 },
+    ];
+    const updated = replaceVerifiedEditorSceneSources(canonical, [
+      {
+        sceneId: "scene-b",
+        imageUrl: "/data/editor-source-assets/verified.jpg",
+        mediaType: "IMAGE",
+        sourceProvenance: provenance,
+      },
+    ]);
+
+    expect(updated[0]).toEqual(canonical[0]);
+    expect(updated[1]).toMatchObject({
+      sceneId: "scene-b",
+      text: "Replace B",
+      assetId: "logical-b",
+      durationSeconds: 6,
+      imageUrl: "/data/editor-source-assets/verified.jpg",
+      mediaType: "IMAGE",
+      sourceProvenance: provenance,
+    });
+  });
+
+  it("does not overwrite ambiguous scene IDs or accept incomplete rights metadata", () => {
+    const canonical = [
+      { sceneId: "duplicate", text: "A", imageUrl: "/api/images/a.jpg" },
+      { sceneId: "duplicate", text: "B", imageUrl: "/api/images/b.jpg" },
+      { sceneId: "scene-c", text: "C", imageUrl: "/api/images/c.jpg" },
+    ];
+    const replacement = {
+      sceneId: "duplicate",
+      imageUrl: "/data/should-not-be-used.jpg",
+      mediaType: "IMAGE",
+      sourceProvenance: {
+        sha256: "d".repeat(64),
+        mimeType: "image/jpeg",
+        sourceAssetId: "asset",
+        provider: "wikimedia",
+        license: "CC-BY-4.0",
+        author: "Artist",
+        sourceUrl: "https://commons.wikimedia.org/wiki/File:ambiguous.jpg",
+        attributionRequired: true,
+        provenanceKind: "RETRIEVED",
+      },
+    };
+    const incomplete = {
+      sceneId: "scene-c",
+      imageUrl: "/data/incomplete.jpg",
+      mediaType: "IMAGE",
+      sourceProvenance: { sha256: "e".repeat(64), provenanceKind: "RETRIEVED" },
+    };
+
+    const updated = replaceVerifiedEditorSceneSources(canonical, [replacement, incomplete]);
+    expect(updated).toEqual(canonical);
+  });
+
+  it("rejects non-HTTPS and root-only source URLs from verified source overlays", () => {
+    const canonical = [{ sceneId: "scene-a", text: "A" }];
+    const updated = replaceVerifiedEditorSceneSources(canonical, [{
+      sceneId: "scene-a",
+      imageUrl: "/data/unverified.jpg",
+      mediaType: "IMAGE",
+      sourceProvenance: {
+        sha256: "f".repeat(64),
+        mimeType: "image/jpeg",
+        sourceAssetId: "asset",
+        provider: "wikimedia",
+        license: "CC-BY-4.0",
+        author: "Artist",
+        sourceUrl: "https://commons.wikimedia.org/",
+        attributionRequired: true,
+        provenanceKind: "RETRIEVED",
+      },
+    }]);
+    expect(updated).toEqual(canonical);
   });
 
   it("prefers an explicitly supplied source on the canonical row", () => {
