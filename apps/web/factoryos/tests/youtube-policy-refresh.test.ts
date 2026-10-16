@@ -1,7 +1,6 @@
 /**
  * FactoryOS YouTube Monetization Guardian — Test Suite 5: Policy Refresh & Date Transition
- * Tests stale policy detection, source failures, effective-date transitions (TODAY vs 2026-09-24),
- * and scheduled publication crossing policy boundary.
+ * Tests stale-policy detection, source failures, current Shorts Content ID blocking, and claim resolution.
  */
 
 import { describe, it, expect } from "vitest";
@@ -140,7 +139,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     expect(g12?.explanation).toContain("blocked globally");
   });
 
-  it("3. Current Policy Boundary — a claimed 110s Short remains blocked after September 24", () => {
+  it("3. Current Policy Boundary — a claimed 110s Short is blocked for a September 25 upload", () => {
     const result = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
