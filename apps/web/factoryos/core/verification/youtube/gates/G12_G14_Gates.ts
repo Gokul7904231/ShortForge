@@ -91,58 +91,13 @@ export class G12_ShortsEligibilityGate {
       };
     }
 
-    // 2. Date-Aware Content ID Rule for Shorts 60s < duration < 180s (Transition on September 24, 2026)
+    // 2. Current YouTube rule: a Short over one minute with any active
+    // copyright claim is blocked globally and is not eligible for monetization.
     if (rule.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE") {
-      const uploadDate = new Date(uploadIntentAt).getTime();
-      const effectiveDate = new Date(rule.effectiveFrom).getTime();
-      const isEffective = uploadDate >= effectiveDate;
-
       const hasClaim = Boolean(video.hasActiveContentIdClaim);
-      const isOver60sUnder180s = duration > 60.0 && duration < 180.0;
+      const overOneMinute = duration > 60.0;
 
-      if (isEffective && isOver60sUnder180s && hasClaim) {
-        // Post-2026-09-24: Shorts may remain playable, but claimant receives revenue.
-        return {
-          gateId: "G12_SHORTS_ELIGIBILITY",
-          ruleId: rule.ruleId,
-          status: "PASS",
-          severity: "WARNING",
-          observedSignal: {
-            duration,
-            hasActiveContentIdClaim: true,
-            effectiveFrom: rule.effectiveFrom,
-            uploadIntentAt,
-            playbackEffect: "PLAYABLE",
-            revenueEffect: "CLAIMANT_MONETIZED",
-          },
-          explanation: `Upload intent date '${uploadIntentAt}' falls on/after effective date (${rule.effectiveFrom}). ` +
-            `Under updated YouTube documentation, Shorts over one minute and under three minutes with an active Content ID claim ` +
-            `will no longer be automatically blocked and may remain playable; however, creator revenue share may be redirected to claimant. Playback and revenue are not guaranteed.`,
-          evidence: [
-            `Duration: ${duration.toFixed(1)}s (60s < d < 180s)`,
-            `Content ID claim: ACTIVE`,
-            `Effective date: ${rule.effectiveFrom}`,
-            `Status: May remain playable; revenue impact active`,
-          ],
-          evidenceRefs: [
-            EvidenceRefFactory.create({
-              evidenceType: "PLATFORM_OBSERVATION",
-              producer: "G12_ShortsEligibilityGate",
-              method: "PLATFORM_API",
-              confidence: 0.95,
-              metadata: { duration, hasClaim: true, effectiveFrom: rule.effectiveFrom },
-            }),
-          ],
-          affectedStages: ["F04"],
-          suggestedRemediation: "Review audio bed: copyright claimant may claim ad revenue.",
-          forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
-          evaluationType: "DETERMINISTIC",
-          confidence: 1.0,
-        };
-      }
-
-      if (!isEffective && isOver60sUnder180s && hasClaim) {
-        // Pre-2026-09-24: Legacy rule where Content ID on long Shorts resulted in block
+      if (hasClaim && overOneMinute) {
         return {
           gateId: "G12_SHORTS_ELIGIBILITY",
           ruleId: rule.ruleId,
@@ -151,28 +106,34 @@ export class G12_ShortsEligibilityGate {
           observedSignal: {
             duration,
             hasActiveContentIdClaim: true,
-            effectiveFrom: rule.effectiveFrom,
             uploadIntentAt,
             playbackEffect: "BLOCKED",
+            monetizationEligible: false,
           },
-          explanation: `Prior to September 24, 2026 (${rule.effectiveFrom}), Shorts longer than 60s with active Content ID claims are blocked from playback/distribution on the Shorts shelf.`,
+          explanation:
+            "YouTube's current Shorts monetization policy blocks Shorts over one minute with any active copyright claim globally; the Short is not eligible for monetization.",
           evidence: [
-            `Duration: ${duration.toFixed(1)}s (> 60s)`,
-            `Content ID claim: ACTIVE`,
-            `Effective date: ${rule.effectiveFrom}`,
-            `Upload date: ${uploadIntentAt}`,
+            "Measured duration: " + duration.toFixed(1) + "s (greater than 60s)",
+            "Active copyright claim: PRESENT",
+            "Official Shorts policy result: BLOCKED and not eligible for monetization",
           ],
           evidenceRefs: [
             EvidenceRefFactory.create({
-              evidenceType: "PLATFORM_OBSERVATION",
+              evidenceType: "POLICY_SNAPSHOT",
               producer: "G12_ShortsEligibilityGate",
-              method: "PLATFORM_API",
+              method: "HTTP_FETCH_VERIFY",
               confidence: 1.0,
-              metadata: { duration, hasClaim: true, uploadIntentAt },
+              metadata: {
+                sourceDocumentId: rule.sourceDocumentId,
+                duration,
+                hasActiveContentIdClaim: true,
+                uploadIntentAt,
+              },
             }),
           ],
-          affectedStages: ["F04", "F05"],
-          suggestedRemediation: "Replace claimed audio or trim duration under 60s prior to September 24, 2026.",
+          affectedStages: ["F04", "F05", "F07"],
+          suggestedRemediation:
+            "Resolve the copyright claim, replace the claimed content, or keep the Short at one minute or less; then rerun rights and physical verification.",
           forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
           evaluationType: "DETERMINISTIC",
           confidence: 1.0,
@@ -183,23 +144,36 @@ export class G12_ShortsEligibilityGate {
         gateId: "G12_SHORTS_ELIGIBILITY",
         ruleId: rule.ruleId,
         status: "PASS",
-        severity: "WARNING",
+        severity: rule.severity,
         observedSignal: {
-          hasActiveContentIdClaim: false,
           duration,
+          hasActiveContentIdClaim: hasClaim,
+          uploadIntentAt,
+          contentIdClaimCheck: hasClaim ? "ACTIVE_CLAIM_AT_MOST_60_SECONDS" : "NO_ACTIVE_CLAIM",
         },
-        explanation: "Content ID claim check clean for Shorts duration tier.",
-        evidence: [`Content ID claim: ${hasClaim ? "ACTIVE" : "NONE"}`],
+        explanation:
+          "No active copyright claim blocks this Short under the over-one-minute Content ID rule.",
+        evidence: [
+          "Measured duration: " + duration.toFixed(1) + "s",
+          "Active copyright claim: " + (hasClaim ? "PRESENT" : "NONE"),
+        ],
         evidenceRefs: [
           EvidenceRefFactory.create({
-            evidenceType: "PLATFORM_OBSERVATION",
+            evidenceType: "POLICY_SNAPSHOT",
             producer: "G12_ShortsEligibilityGate",
-            method: "PLATFORM_API",
+            method: "HTTP_FETCH_VERIFY",
             confidence: 1.0,
-            metadata: { hasClaim, duration },
+            metadata: {
+              sourceDocumentId: rule.sourceDocumentId,
+              duration,
+              hasActiveContentIdClaim: hasClaim,
+              uploadIntentAt,
+            },
           }),
         ],
         affectedStages: [],
+        suggestedRemediation: undefined,
+        forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
         evaluationType: "DETERMINISTIC",
         confidence: 1.0,
       };
