@@ -34,7 +34,7 @@ export interface EditorSourceProvenance {
   readonly author?: string;
   readonly sourceUrl?: string;
   readonly attributionRequired?: boolean;
-  readonly provenanceKind?: "RETRIEVED" | "GENERATED" | "USER_PROVIDED";
+  readonly provenanceKind?: "RETRIEVED" | "GENERATED" | "USER_PROVIDED" | "FALLBACK";
 }
 
 export interface EditorSourcePackageAsset {
@@ -61,6 +61,7 @@ export interface EditorSourcePackageRecord {
   readonly compositionHashSha256: string;
   readonly sourceAssetSha256s: readonly string[];
   readonly sourceAssets: readonly EditorSourcePackageAsset[];
+  readonly warnings: readonly string[];
   readonly renderIntentId: string;
   readonly timelineFingerprint: string;
   readonly createdAt: string;
@@ -286,7 +287,9 @@ function sceneSourceProvenance(scene: Record<string, unknown> | undefined): Edit
   }
   if (typeof candidate.attributionRequired === "boolean") result.attributionRequired = candidate.attributionRequired;
   if (candidate.provenanceKind === "RETRIEVED" || candidate.provenanceKind === "GENERATED" ||
-      candidate.provenanceKind === "USER_PROVIDED") result.provenanceKind = candidate.provenanceKind;
+      candidate.provenanceKind === "USER_PROVIDED" || candidate.provenanceKind === "FALLBACK") {
+    result.provenanceKind = candidate.provenanceKind;
+  }
   return Object.keys(result).length ? result as EditorSourceProvenance : undefined;
 }
 
@@ -441,7 +444,7 @@ export async function buildEditorSourcePackage(
         !candidate.author?.trim() ||
         !candidate.sourceUrl?.trim() ||
         typeof candidate.attributionRequired !== "boolean" ||
-        !candidate.provenanceKind) return false;
+        !["RETRIEVED", "GENERATED", "USER_PROVIDED", "FALLBACK"].includes(candidate.provenanceKind)) return false;
     try {
       const url = new URL(candidate.sourceUrl);
       return url.protocol === "https:" || url.protocol === "shortforge:";
@@ -449,7 +452,10 @@ export async function buildEditorSourcePackage(
       return false;
     }
   };
-  if (!sceneRows.every((scene) => completeProvenanceShape(sceneSourceProvenance(scene)))) return null;
+  if (!sceneRows.every((scene) => {
+    const provenance = sceneSourceProvenance(scene);
+    return completeProvenanceShape(provenance) && provenance?.provenanceKind !== "FALLBACK";
+  })) return null;
   if (!intent.tracks.audioTracks.every((track) => completeProvenanceShape(track.sourceProvenance))) return null;
   if (intent.tracks.visualAssets.length + intent.tracks.audioTracks.length > 128) return null;
 
@@ -644,6 +650,10 @@ export async function buildEditorSourcePackage(
         compositionHashSha256,
         sourceAssetSha256s,
         sourceAssets,
+        warnings: sourceAssets
+          .filter((asset) => asset.roles.includes("AUDIO") && asset.sourceProvenance?.provenanceKind === "FALLBACK")
+          .map((asset) => "AUDIO_SOURCE_FALLBACK: " + asset.originalAssetId +
+            " is a degraded fallback artifact, not verified narration; replace or regenerate it before production export."),
         renderIntentId: intent.intentId,
         timelineFingerprint: sourceFingerprintSha256,
         createdAt,
