@@ -15,6 +15,31 @@ function nonEmptyString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
 
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function sourceProvenance(
+  planned: EditorSceneSourceRow,
+  existing: EditorSceneSourceRow | undefined,
+): Record<string, unknown> | undefined {
+  const candidate = record(planned.sourceProvenance) ??
+    record(planned.source_provenance) ??
+    record(existing?.sourceProvenance) ??
+    record(existing?.source_provenance);
+  if (!candidate) return undefined;
+  const allowed: Record<string, unknown> = {};
+  for (const key of ["sha256", "mimeType", "sourceAssetId", "provider", "license", "author", "sourceUrl"]) {
+    if (typeof candidate[key] === "string" && candidate[key].trim()) allowed[key] = candidate[key].trim();
+  }
+  if (typeof candidate.attributionRequired === "boolean") {
+    allowed.attributionRequired = candidate.attributionRequired;
+  }
+  return Object.keys(allowed).length ? allowed : undefined;
+}
+
 function supportedMediaType(value: unknown): "IMAGE" | "VIDEO" | undefined {
   return value === "IMAGE" || value === "VIDEO" ? value : undefined;
 }
@@ -42,11 +67,13 @@ export function mergeEditorSceneSources<T extends EditorSceneSourceRow>(
     const existing = matches?.length === 1 ? matches[0] : undefined;
     const imageUrl = nonEmptyString(planned.imageUrl) ?? nonEmptyString(existing?.imageUrl);
     const mediaType = supportedMediaType(planned.mediaType) ?? supportedMediaType(existing?.mediaType);
+    const provenance = sourceProvenance(planned, existing);
 
     return {
       ...planned,
       ...(imageUrl ? { imageUrl } : {}),
       ...(mediaType ? { mediaType } : {}),
+      ...(provenance ? { sourceProvenance: provenance } : {}),
     } as T;
   });
 }
