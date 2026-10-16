@@ -1294,6 +1294,12 @@ export class OverseerControlPlane {
               typeof provenance.attributionRequired !== "boolean" ||
               !["RETRIEVED", "GENERATED", "USER_PROVIDED"].includes(String(provenance.provenanceKind))
             ) return undefined;
+            try {
+              const sourceUrl = new URL(String(provenance.sourceUrl));
+              if (sourceUrl.protocol !== "https:" && sourceUrl.protocol !== "shortforge:") return undefined;
+            } catch {
+              return undefined;
+            }
             return provenance;
           };
           const hasPhysicalSource = (scene: Record<string, unknown>): boolean => {
