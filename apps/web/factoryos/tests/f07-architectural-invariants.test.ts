@@ -339,7 +339,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // ───────────────────────────────────────────────────────────────────────────
   // Invariant #12: G12 SHORTS ELIGIBILITY BOUNDARY
   // ───────────────────────────────────────────────────────────────────────────
-  it("Invariant #12: G12 SHORTS ELIGIBILITY BOUNDARY — 0 < d <= 180s and Sept 24, 2026 Content ID transition", () => {
+  it("Invariant #12: G12 SHORTS ELIGIBILITY — 0 < d <= 180s and active claims block Shorts over one minute", () => {
     // 175s clean Short passes
     const longCleanShort = {
       ...sampleVideo,
@@ -358,23 +358,24 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
     const result181 = guardian.evaluate({ video: over180Short, channel: sampleChannelMonetizing });
     expect(result181.publishAllowed).toBe(false);
 
-    // Post-Sept 24 Content ID on 110s Short: may remain playable, with revenue impact
+    // A 110s Short with an active claim is blocked under the current official rule.
     const claimedLongShort = {
       ...sampleVideo,
       measurements: { ...baseMeasurements, videoDuration: 110.0, audioDuration: 110.0 },
       hasActiveContentIdClaim: true,
       contentIdClaimDurationSeconds: 110,
     };
-    const resultSept25 = guardian.evaluate({
+    const resultClaimedLongShort = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannelMonetizing,
-      publicationIntentAt: "2026-09-25T00:00:00Z",
-      uploadIntentAt: "2026-09-25T00:00:00Z",
+      publicationIntentAt: "2026-10-16T12:00:00Z",
+      uploadIntentAt: "2026-10-16T12:00:00Z",
     });
-    expect(resultSept25.publishAllowed).toBe(true);
-    expect(resultSept25.activePolicyEffects).toContain("REVENUE_IMPACT");
-    const g12 = resultSept25.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
-    expect(g12?.explanation).toContain("may remain playable");
+    expect(resultClaimedLongShort.publishAllowed).toBe(false);
+    expect(resultClaimedLongShort.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+    const g12 = resultClaimedLongShort.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
+    expect(g12?.status).toBe("BLOCKED");
+    expect(g12?.explanation).toContain("blocked globally");
   });
 
   // ───────────────────────────────────────────────────────────────────────────
