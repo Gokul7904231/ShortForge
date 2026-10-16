@@ -3,8 +3,8 @@
 **Audit date:** 16 October 2026  
 **PR:** [#242 — feat(editor): wire dedicated ShortForge editing page](https://github.com/Gokul7904231/ShortForge/pull/242)  
 **Branch:** feat/shortforge-editor-20261012  
-**Latest inspected head:** 1fa812b97fde02179f4f94aa88e13ad7378a0cb0 (workflow evidence inspected from 13 October 2026)  
-**Verdict:** PARTIALLY IMPLEMENTED — NOT PRODUCTION-READY.
+**Latest audited PR head:** 3d5c822f074b58ace676ae3634f3c707f2b47545 (workflow evidence inspected 16 October 2026)  
+**Verdict:** PARTIALLY IMPLEMENTED — NOT PRODUCTION-READY. The editor-focused gate passes, while the dedicated F07 gate and Lightning provider proof still fail.
 
 This task register is evidence-based: the presence of a helper or a successful isolated test is not proof of end-to-end completion.
 
@@ -31,23 +31,23 @@ Three top blockers:
 - F02 format to F03/F05 timeline composition-type propagation, plus preservation of supported scene/source IDs, source versions, trims, caption metadata and transition records.
 - Research blueprint and Team Change Report.
 
-### Latest inspected CI snapshot — 13 October 2026
+### Latest inspected CI snapshot — 16 October 2026
+
+Run set is tied to audited PR head `3d5c822f074b58ace676ae3634f3c707f2b47545`.
+
 | Check | Result |
 |---|---|
-| TypeCheck & Floor 01 contract tests | Pass |
-| Floor 01 Python v2 tests | Pass |
-| Security & dependency scan | Pass (not an adversarial application-security qualification) |
-| Production container smoke | Pass |
-| Editor → F06 → CAS → F07 physical-proof workflow | Pass |
-| F05 validation | Pass |
-| F02/F03 production gates | Pass |
-| Team Change Gate / OKF Governance Gate | Pass |
-| Full informational Vitest suite | **Fail: 60 files failed, 253 passed, 3 skipped; 55 tests failed, 1,465 passed, 9 skipped** |
-| durable-editor.test.ts | **3 failures** involving persisted command/restart-safety and undo/redo history |
+| Editor Focused Gate | **Pass** — [38893580229](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580229) |
+| Editor → F06 → CAS → F07 physical proof | **Pass** — [38893580319](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580319) |
+| F05 validation | **Pass** — [38893580276](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580276) |
+| Strict typecheck/contract tests, Python v2 tests, dependency/security scan, container smoke | **Pass** in [CI 38893580220](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580220) |
+| Team Change / OKF Governance | **Pass** — [38893580302](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580302), [38893580238](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580238) |
+| F02/F03, F04/F05/F06, Treasury, Compute, ReMaker and other production checks | **Pass** in the observed workflow batch |
+| F07 pre-training invariants | **Fail: 4 assertions** — [38893580265](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580265). Failed invariants #5, #6, #7 (`POLICY_STALE` instead of expected `READY`) and #12 (Shorts eligibility/policy boundary). |
+| Lightning physical MP4 proof | **Fail: provider authentication** — [38893580274](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580274), `Authentication failed. Please run lightning login.` |
+| Full informational Vitest suite | **Fail** in [CI 38893580220](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580220): 62 files failed, 254 passed, 3 skipped; 64 tests failed, 1,474 passed, 9 skipped. The current log visibly passes editor contracts, source-package tests, durable-editor revision history, trim/split and TimelineIR metadata tests. Remaining broad-suite failures require a clean-main baseline comparison. |
 
-Focused new editor tests passed in that logged run (source-package, CAS tamper, trim/split, job-history source persistence, caption commands and TimelineIR metadata). The three durable-editor failures are directly relevant and remain blockers until fixed or conclusively shown to reproduce unchanged on main. Other Vitest failures span unrelated systems; do not assign blame to this PR without baseline comparison.
-
-**Freshness:** The implementation-code test results summarized above are from the 13 October code head. Documentation-only report commits were added on 16 October and triggered fresh workflows. In the latest inspected run batch, Team Change Gate and OKF Governance Gate had passed; F02/F03 and the other CI/production/physical-proof workflows were still in progress. No new full Vitest result on a documentation-only head was available. The report commits did not change application code.
+The umbrella CI workflow has an overall `success` conclusion because the full Vitest suite is marked informational; that does not make the sub-job pass. The dependency/static scan is also not a substitute for adversarial API/browser security tests.
 
 ## 3. P0 — release and correctness blockers
 
@@ -75,7 +75,7 @@ Focused new editor tests passed in that logged run (source-package, CAS tamper, 
 **Status:** Blocking qualification.  
 **Evidence:** Three failures in apps/web/factoryos/tests/durable-editor.test.ts around commands across restart, undo/redo navigation revisions and branching after undo; 55 test failures in the broad Vitest suite.  
 **Work:** Run the three history tests individually on the PR head; record failed assertions and revision-store contents. Run the same cases against a clean current main baseline. Fix PR-caused history/idempotency regressions; test concurrent writers, duplicate command IDs, stale revisions, restart-safe undo/redo and checkpoint restore. Classify remaining broad-suite failures as baseline, regression, environment/dependency or unclassified; rerun after fixes.  
-**Done when:** all editor-specific history tests pass; other failures have reproducible classification and an explicit merge policy.
+**Done when:** all editor-specific history tests pass; remaining broad-suite failures have reproducible classification and an explicit merge policy.
 
 ### SFED-06 — Adversarial security and concurrency qualification
 **Status:** Partial implementation; application-level security not proven.  
