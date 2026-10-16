@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_COMPUTE_POLICY } from "@/factoryos/core/compute/contracts/ComputeContracts";
+import { normalizeDaytonaSandboxState } from "@/factoryos/core/compute/sandboxes/DaytonaSandboxAdapter";
 import {
   DaytonaSandboxAdapter,
   ModalSandboxAdapter,
@@ -12,6 +13,17 @@ afterEach(() => {
 });
 
 describe("sandbox fabric", () => {
+  it("normalizes Daytona's documented lifecycle states", () => {
+    expect(normalizeDaytonaSandboxState("started")).toBe("RUNNING");
+    expect(normalizeDaytonaSandboxState("pulling_snapshot")).toBe("PROVISIONING");
+    expect(normalizeDaytonaSandboxState("pending_build")).toBe("PROVISIONING");
+    expect(normalizeDaytonaSandboxState("stopped")).toBe("PAUSED");
+    expect(normalizeDaytonaSandboxState("archived")).toBe("HIBERNATED");
+    expect(normalizeDaytonaSandboxState("build_failed")).toBe("FAILED");
+    expect(normalizeDaytonaSandboxState("destroyed")).toBe("TERMINATED");
+    expect(normalizeDaytonaSandboxState("unknown")).toBe("UNKNOWN");
+  });
+
   it("fails closed when Daytona credentials are missing", async () => {
     const adapter = new DaytonaSandboxAdapter();
     const result = await adapter.validateCredentials({});
