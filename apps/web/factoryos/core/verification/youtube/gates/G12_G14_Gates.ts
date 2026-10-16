@@ -172,7 +172,6 @@ export class G12_ShortsEligibilityGate {
           }),
         ],
         affectedStages: [],
-        suggestedRemediation: undefined,
         forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
         evaluationType: "DETERMINISTIC",
         confidence: 1.0,
