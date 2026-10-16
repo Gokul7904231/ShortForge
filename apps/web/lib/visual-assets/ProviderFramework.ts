@@ -32,7 +32,9 @@ export class WikimediaProvider implements MediaProvider {
         const author = artistHtml.replace(/<[^>]*>/g, "").trim();
         const imageDescription = extmetadata.ImageDescription?.value || "";
 
-        const licenseName = extmetadata.LicenseShortName?.value || "CC-BY";
+        const licenseName = typeof extmetadata.LicenseShortName?.value === "string" && extmetadata.LicenseShortName.value.trim()
+          ? extmetadata.LicenseShortName.value.trim()
+          : "unknown";
         const attributionRequired = !["cc0", "pd", "public domain"].includes(licenseName.toLowerCase());
 
         const credits = `Image by ${author}. Source: ${info.descriptionurl || "https://commons.wikimedia.org"}. License: ${licenseName}`;
@@ -88,7 +90,7 @@ export class OpenverseProvider implements MediaProvider {
       const results = data?.results || [];
 
       return results.map((item: any) => {
-        const licenseName = item.license ? String(item.license).toUpperCase() : "CC-BY";
+        const licenseName = item.license ? String(item.license).trim().toUpperCase() : "unknown";
         const attributionRequired = !["CC0", "PDM", "PUBLIC DOMAIN"].includes(licenseName);
         const author = item.creator || "Unknown Creator";
         const credits = `Image by ${author}. Source: ${item.foreign_landing_url || "https://openverse.org"}. License: ${licenseName}`;
