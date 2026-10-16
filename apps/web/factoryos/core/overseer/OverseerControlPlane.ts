@@ -1266,6 +1266,10 @@ export class OverseerControlPlane {
             import("node:fs"),
             import("node:path"),
           ]);
+          const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+            value && typeof value === "object" && !Array.isArray(value)
+              ? value as Record<string, unknown>
+              : undefined;
           const textOrEmpty = (value: unknown): string =>
             typeof value === "string" ? value.trim() : "";
           const stableIdOf = (scene: Record<string, unknown>): string =>
@@ -1279,7 +1283,7 @@ export class OverseerControlPlane {
             if (!src || src.startsWith("/api/") || src.startsWith("http://")) return false;
             if (/^cas:\/\/[a-f0-9]{64}$/i.test(src)) return true;
             if (/^https:\/\//i.test(src)) {
-              return supportedVisualExtension(src) && Boolean(record(scene.sourceProvenance) || record(scene.source_provenance));
+              return supportedVisualExtension(src) && Boolean(asRecord(scene.sourceProvenance) || asRecord(scene.source_provenance));
             }
             try {
               const localPath = src.startsWith("file://")
