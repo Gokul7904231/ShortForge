@@ -31,7 +31,7 @@ function sourceProvenance(
     record(existing?.source_provenance);
   if (!candidate) return undefined;
   const allowed: Record<string, unknown> = {};
-  for (const key of ["sha256", "mimeType", "sourceAssetId", "provider", "license", "author", "sourceUrl"]) {
+  for (const key of ["sha256", "mimeType", "sourceAssetId", "provider", "license", "author", "sourceUrl", "provenanceKind"]) {
     if (typeof candidate[key] === "string" && candidate[key].trim()) allowed[key] = candidate[key].trim();
   }
   if (typeof candidate.attributionRequired === "boolean") {
