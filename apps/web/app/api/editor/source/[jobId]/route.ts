@@ -288,6 +288,7 @@ export async function POST(
         success: true,
         sourceKind: "COMPOSITION_PACKAGE",
         sourceNotice: "Loaded the persisted source composition and its owner-bound media assets. Quiz and scene metadata are preserved where the generating pipeline supplied them; available direct edits depend on the supported editor operations.",
+        sourceWarnings: Array.isArray(sourcePackage.warnings) ? sourcePackage.warnings : [],
         job: {
           jobId,
           title: job.topic || "ShortForge Short",
