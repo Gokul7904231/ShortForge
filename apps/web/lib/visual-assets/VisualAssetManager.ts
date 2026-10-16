@@ -423,6 +423,7 @@ class VisualAssetManagerClass {
     author: string;
     sourceUrl: string;
     attributionRequired: boolean;
+    provenanceKind: "RETRIEVED";
   }> {
     const jobId = params.jobId.trim();
     const sceneId = params.sceneId.trim();
@@ -583,6 +584,7 @@ class VisualAssetManagerClass {
       author: selected.author,
       sourceUrl,
       attributionRequired: selected.attributionRequired,
+      provenanceKind: "RETRIEVED",
     };
   }
 
