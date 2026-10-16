@@ -25,6 +25,17 @@ import type {
   RenderTrackAsset,
 } from "../contracts/RenderIntentContracts";
 
+export interface EditorSourceProvenance {
+  readonly sha256?: string;
+  readonly mimeType?: string;
+  readonly sourceAssetId?: string;
+  readonly provider?: string;
+  readonly license?: string;
+  readonly author?: string;
+  readonly sourceUrl?: string;
+  readonly attributionRequired?: boolean;
+}
+
 export interface EditorSourcePackageAsset {
   readonly assetId: string;
   readonly originalAssetId: string;
@@ -34,6 +45,7 @@ export interface EditorSourcePackageAsset {
   readonly mimeType: string;
   readonly roles: readonly ("VISUAL" | "AUDIO")[];
   readonly sceneId?: string;
+  readonly sourceProvenance?: EditorSourceProvenance;
 }
 
 export interface EditorSourcePackageRecord {
@@ -258,10 +270,21 @@ function assertMediaSignature(filePath: string, mimeType: string): void {
   if (!valid) throw new Error("EDITOR_SOURCE_MEDIA_SIGNATURE_MISMATCH:" + mimeType);
 }
 
-function sceneIdAt(scenes: readonly Record<string, unknown>[], index: number, fallback: string): string {
-  const scene = scenes[index];
+function stableSceneId(scene: Record<string, unknown> | undefined): string | undefined {
   const value = scene?.sceneId ?? scene?.scene_id ?? scene?.id;
-  return typeof value === "string" && value.length ? value : fallback;
+  return typeof value === "string" && value.trim().length ? value.trim() : undefined;
+}
+
+function sceneSourceProvenance(scene: Record<string, unknown> | undefined): EditorSourceProvenance | undefined {
+  const raw = scene?.sourceProvenance ?? scene?.source_provenance;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const candidate = raw as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const key of ["sha256", "mimeType", "sourceAssetId", "provider", "license", "author", "sourceUrl"]) {
+    if (typeof candidate[key] === "string" && candidate[key].trim()) result[key] = candidate[key].trim();
+  }
+  if (typeof candidate.attributionRequired === "boolean") result.attributionRequired = candidate.attributionRequired;
+  return Object.keys(result).length ? result as EditorSourceProvenance : undefined;
 }
 
 function captionForCue(cue: RenderCaptionCue, index: number): CompositionCaption {
@@ -307,13 +330,14 @@ function audioForTrack(track: RenderAudioTrack, source: ResolvedSource): Composi
 function visualForTrack(
   asset: RenderTrackAsset,
   source: ResolvedSource,
-  index: number,
   scenes: readonly Record<string, unknown>[],
 ): CompositionClip {
   if (asset.type !== "IMAGE" && asset.type !== "VIDEO") {
     throw new Error("EDITOR_SOURCE_VISUAL_KIND_UNSUPPORTED:" + asset.type);
   }
-  const sceneId = sceneIdAt(scenes, index, asset.id);
+  const sceneRow = scenes.find((scene) => stableSceneId(scene) === asset.id);
+  const sceneId = stableSceneId(sceneRow) ?? asset.id;
+  const provenance = sceneSourceProvenance(sceneRow);
   const transition = (t: RenderTrackAsset["transitionIn"]): TransitionNode | undefined =>
     t ? {
       transitionId: t.transitionId,
@@ -365,6 +389,7 @@ function visualForTrack(
       sceneId,
       originalAssetId: asset.id,
       sourceSha256: source.sha256,
+      ...(provenance ? { sourceProvenance: provenance } : {}),
     },
   };
 }
@@ -390,12 +415,14 @@ export async function buildEditorSourcePackage(
   const sceneRows = input.scenes ?? [];
   // A source package is only semantic when the scene identities are explicitly
   // aligned with the ordered visual inputs supplied to the render intent.
+  const sceneIds = sceneRows.map((scene) => stableSceneId(scene));
+  const visualIds = intent.tracks.visualAssets.map((asset) => asset.id);
   if (
     sceneRows.length !== intent.tracks.visualAssets.length ||
-    !sceneRows.every((scene) => {
-      const id = scene.sceneId ?? scene.scene_id ?? scene.id;
-      return typeof id === "string" && id.length > 0;
-    })
+    sceneIds.some((id) => !id) ||
+    new Set(sceneIds).size !== sceneIds.length ||
+    new Set(visualIds).size !== visualIds.length ||
+    visualIds.some((id) => !sceneIds.includes(id))
   ) return null;
   if (intent.tracks.visualAssets.length + intent.tracks.audioTracks.length > 128) return null;
 
@@ -449,11 +476,22 @@ export async function buildEditorSourcePackage(
     const sourceAssets: EditorSourcePackageAsset[] = [];
     const shaBySource = new Map<string, string>();
     for (const [src, record] of resolvedBySource) {
+      const visualAsset = intent.tracks.visualAssets.find((asset) => asset.src === src);
+      const sceneRow = visualAsset
+        ? sceneRows.find((scene) => stableSceneId(scene) === visualAsset.id)
+        : undefined;
+      const provenance = sceneSourceProvenance(sceneRow);
+      if (provenance?.sha256 && provenance.sha256.toLowerCase() !== record.sha256.toLowerCase()) {
+        throw new Error("EDITOR_SOURCE_PROVENANCE_DIGEST_MISMATCH");
+      }
+      const sceneId = visualAsset?.id;
       const casArtifact = await cas.putFile(record.localPath, "editor_source_asset", record.mimeType, {
         sourceJobId: input.jobId,
         importedBy: input.ownerId,
         originalAssetId: src,
         roles: Array.from(sourceRoles.get(src) ?? []),
+        ...(sceneId ? { sceneId } : {}),
+        ...(provenance ? { sourceProvenance: provenance } : {}),
       });
       shaBySource.set(src, casArtifact.sha256);
       sourceAssets.push({
@@ -464,6 +502,8 @@ export async function buildEditorSourcePackage(
         byteLength: casArtifact.byteLength,
         mimeType: record.mimeType,
         roles: Array.from(sourceRoles.get(src) ?? []),
+        ...(sceneId ? { sceneId } : {}),
+        ...(provenance ? { sourceProvenance: provenance } : {}),
       });
     }
 
@@ -472,12 +512,12 @@ export async function buildEditorSourcePackage(
       id: "video-main",
       kind: "VIDEO",
       zIndex: 0,
-      clips: intent.tracks.visualAssets.map((asset, index) => {
+      clips: intent.tracks.visualAssets.map((asset) => {
         const sourceSha = shaBySource.get(asset.src);
         const source = resolvedBySource.get(asset.src);
         if (!sourceSha || !source) throw new Error("EDITOR_SOURCE_ASSET_MAPPING_MISSING");
         const copiedSource: ResolvedSource = { ...source, sha256: sourceSha };
-        return visualForTrack(asset, copiedSource, index, sceneRows);
+        return visualForTrack(asset, copiedSource, sceneRows);
       }),
     }];
 
@@ -492,12 +532,19 @@ export async function buildEditorSourcePackage(
     const createdAt = new Date().toISOString();
     const compositionId = "sf-editor-" + digest(input.jobId + ":" + intent.intentId).slice(0, 24);
     const quizData = input.quizData === undefined ? undefined : JSON.parse(JSON.stringify(input.quizData));
-    const sceneManifest = sceneRows.map((scene, index) => ({
-      sceneId: sceneIdAt(sceneRows, index, "scene-" + index),
-      text: typeof scene.text === "string" ? scene.text : undefined,
-      durationSeconds: typeof scene.durationSeconds === "number" ? scene.durationSeconds : undefined,
-      assetId: typeof scene.assetId === "string" ? scene.assetId : undefined,
-    }));
+    const sceneManifest = sceneRows.map((scene) => {
+      const sceneId = stableSceneId(scene)!;
+      const visualAsset = intent.tracks.visualAssets.find((asset) => asset.id === sceneId);
+      const provenance = sceneSourceProvenance(scene);
+      return {
+        sceneId,
+        text: typeof scene.text === "string" ? scene.text : undefined,
+        durationSeconds: typeof scene.durationSeconds === "number" ? scene.durationSeconds : undefined,
+        assetId: typeof scene.assetId === "string" ? scene.assetId : undefined,
+        sourceSha256: visualAsset ? shaBySource.get(visualAsset.src) : undefined,
+        sourceProvenance: provenance,
+      };
+    });
     const sourceFingerprintSha256 = digest(JSON.stringify({
       renderIntentId: intent.intentId,
       jobId: input.jobId,
