@@ -35,7 +35,12 @@ function writeTinyWav(filePath: string) {
   fs.writeFileSync(filePath, bytes);
 }
 
-function renderIntent(imagePath: string, audioPath: string, sceneId = "quiz-question-1"): RenderIntent {
+function renderIntent(
+  imagePath: string,
+  audioPath: string,
+  sceneId = "quiz-question-1",
+  audioSha256?: string,
+): RenderIntent {
   return {
     intentId: "intent-editor-package-test",
     jobId: "job-editor-package-test",
@@ -60,9 +65,22 @@ function renderIntent(imagePath: string, audioPath: string, sceneId = "quiz-ques
         volume: 1,
         startSeconds: 0,
         durationSeconds: 1,
+        ...(audioSha256 ? {
+          sourceProvenance: {
+            sha256: audioSha256,
+            mimeType: "audio/wav",
+            sourceAssetId: "voice-fixture-" + audioSha256.slice(0, 12),
+            provider: "voice-fixture",
+            license: "GENERATED_CONTENT",
+            author: "ShortForge test fixture",
+            sourceUrl: "shortforge://test/audio",
+            attributionRequired: false,
+            provenanceKind: "GENERATED" as const,
+          },
+        } : {}),
       }],
       captions: [{
-        sceneId: "quiz-question-1",
+        sceneId,
         text: "Which city is the capital of Tamil Nadu?",
         startMs: 0,
         endMs: 900,
@@ -95,15 +113,19 @@ describe("EditorSourcePackage", () => {
     writeTinyWav(audioPath);
 
     const cas = new ContentAddressedStore(path.join(base, "cas"));
+    const audioSha256 = await ContentAddressedStore.computeFileSha256(audioPath);
+    const baseIntent = renderIntent(imageB, audioPath, "scene-b", audioSha256);
     const intent: RenderIntent = {
-      ...renderIntent(imageB, audioPath, "scene-b"),
+      ...baseIntent,
       tracks: {
         visualAssets: [
           { id: "scene-b", type: "IMAGE", src: imageB, startSeconds: 0, durationSeconds: 1, zIndex: 1 },
           { id: "scene-a", type: "IMAGE", src: imageA, startSeconds: 1, durationSeconds: 1, zIndex: 1 },
         ],
         audioTracks: [{
-          id: "voice", type: "VOICE", src: audioPath, volume: 1, startSeconds: 0, durationSeconds: 2,
+          ...baseIntent.tracks.audioTracks[0]!,
+          id: "voice",
+          durationSeconds: 2,
         }],
         captions: [],
       },
@@ -121,6 +143,7 @@ describe("EditorSourcePackage", () => {
           author: "Artist A",
           sourceUrl: "https://commons.wikimedia.org/wiki/File:scene-a.png",
           attributionRequired: true,
+          provenanceKind: "RETRIEVED",
         },
       },
       {
@@ -135,6 +158,7 @@ describe("EditorSourcePackage", () => {
           author: "Artist B",
           sourceUrl: "https://openverse.org/image/scene-b",
           attributionRequired: false,
+          provenanceKind: "RETRIEVED",
         },
       },
     ];
@@ -180,8 +204,23 @@ describe("EditorSourcePackage", () => {
     const packageRecord = await buildEditorSourcePackage({
       jobId: "job-editor-package-test",
       ownerId: "user-editor-package-test",
-      renderIntent: renderIntent(imagePath, audioPath),
-      scenes: [{ sceneId: "quiz-question-1", text: "Which city is the capital of Tamil Nadu?", durationSeconds: 1 }],
+      renderIntent: renderIntent(imagePath, audioPath, "quiz-question-1", await ContentAddressedStore.computeFileSha256(audioPath)),
+      scenes: [{
+        sceneId: "quiz-question-1",
+        text: "Which city is the capital of Tamil Nadu?",
+        durationSeconds: 1,
+        sourceProvenance: {
+          sha256: await ContentAddressedStore.computeFileSha256(imagePath),
+          mimeType: "image/png",
+          sourceAssetId: "question-fixture-1",
+          provider: "user-fixture",
+          license: "USER_PROVIDED_FIXTURE",
+          author: "ShortForge test fixture",
+          sourceUrl: "shortforge://test/image/question-1",
+          attributionRequired: false,
+          provenanceKind: "USER_PROVIDED",
+        },
+      }],
       quizData: { question: "Which city is the capital of Tamil Nadu?", answer: "Chennai" },
       cas,
       resolver: new ArtifactResolver(base),
@@ -233,8 +272,23 @@ describe("EditorSourcePackage", () => {
     const packageRecord = await buildEditorSourcePackage({
       jobId,
       ownerId,
-      renderIntent: renderIntent("cas://" + image.sha256, "cas://" + audio.sha256, "quiz-question-cas"),
-      scenes: [{ sceneId: "quiz-question-cas", text: "Which city is the capital of Tamil Nadu?", durationSeconds: 1 }],
+      renderIntent: renderIntent("cas://" + image.sha256, "cas://" + audio.sha256, "quiz-question-cas", audio.sha256),
+      scenes: [{
+        sceneId: "quiz-question-cas",
+        text: "Which city is the capital of Tamil Nadu?",
+        durationSeconds: 1,
+        sourceProvenance: {
+          sha256: image.sha256,
+          mimeType: "image/png",
+          sourceAssetId: "user-cas-image",
+          provider: "user-provided",
+          license: "USER_PROVIDED",
+          author: "Test owner",
+          sourceUrl: "shortforge://user-upload/question-cas",
+          attributionRequired: false,
+          provenanceKind: "USER_PROVIDED",
+        },
+      }],
       cas,
       resolver: new ArtifactResolver(base),
     });
