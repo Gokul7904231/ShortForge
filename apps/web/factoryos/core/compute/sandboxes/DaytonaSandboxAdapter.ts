@@ -33,15 +33,41 @@ function loadDaytona(): DaytonaModule {
   }
 }
 
-function stateOf(sandbox: DaytonaSandbox): SandboxRuntimeState {
-  const state = String(sandbox?.state || sandbox?.status || "").toUpperCase();
-  if (["STARTING", "CREATING", "PROVISIONING", "PENDING"].includes(state)) return "PROVISIONING";
-  if (["RUNNING", "READY"].includes(state)) return "RUNNING";
-  if (["PAUSED"].includes(state)) return "PAUSED";
+export function normalizeDaytonaSandboxState(value: unknown): SandboxRuntimeState {
+  const state = String(value ?? "")
+    .trim()
+    .replace(/[-_]+/g, " ")
+    .replace(/\\s+/g, " ")
+    .toUpperCase();
+
+  // Daytona's SDK uses provider-native states such as "started",
+  // "pulling_snapshot", "pending_build", and "build_failed".
+  if (["STARTED", "RUNNING", "READY"].includes(state)) return "RUNNING";
+  if (
+    [
+      "STARTING",
+      "CREATING",
+      "PROVISIONING",
+      "PENDING",
+      "PULLING SNAPSHOT",
+      "BUILDING SNAPSHOT",
+      "PENDING BUILD",
+      "RESTORING",
+      "RESUMING",
+      "BUILDING",
+    ].includes(state)
+  ) {
+    return "PROVISIONING";
+  }
+  if (["PAUSED", "PAUSING", "STOPPED", "STOPPING"].includes(state)) return "PAUSED";
   if (["HIBERNATED", "ARCHIVED"].includes(state)) return "HIBERNATED";
-  if (["FAILED", "ERROR"].includes(state)) return "FAILED";
+  if (["FAILED", "ERROR", "BUILD FAILED"].includes(state)) return "FAILED";
   if (["TERMINATED", "DELETED", "DESTROYED"].includes(state)) return "TERMINATED";
   return "UNKNOWN";
+}
+
+function stateOf(sandbox: DaytonaSandbox): SandboxRuntimeState {
+  return normalizeDaytonaSandboxState(sandbox?.state ?? sandbox?.status);
 }
 
 function clientFor(credentials?: SandboxCredentialBundle): DaytonaClient {
@@ -161,8 +187,11 @@ export class DaytonaSandboxAdapter implements SandboxProviderAdapter {
         SHORTFORGE_OPERATION_KEY: request.idempotencyKey,
         SHORTFORGE_SURFACE: "sandbox-fabric",
       },
-      autoDeleteInterval: ttlMinutes,
-      ephemeral: request.metadata?.ephemeral === "false" ? false : true,
+      // Daytona ignores autoDeleteInterval when ephemeral=true. Prefer a
+      // bounded auto-delete TTL unless the caller explicitly requests an
+      // ephemeral sandbox that is deleted when stopped.
+      autoDeleteInterval: request.metadata?.ephemeral === "true" ? undefined : ttlMinutes,
+      ephemeral: request.metadata?.ephemeral === "true",
       ...(request.metadata?.gpuType
         ? {
             resources: {
@@ -205,11 +234,29 @@ export class DaytonaSandboxAdapter implements SandboxProviderAdapter {
     credentials?: SandboxCredentialBundle,
   ): Promise<SandboxRuntime> {
     const client = clientFor(credentials);
-    const sandbox = await client.get(resourceId);
-    if (stateOf(sandbox) !== "RUNNING" && stateOf(sandbox) !== "READY") {
+    const deadline = Date.now() + Math.max(1, timeoutMs);
+    let sandbox = await client.get(resourceId);
+    let state = stateOf(sandbox);
+
+    // Only start sandboxes that are stopped/paused. Daytona provisions new
+    // sandboxes through its own creating/building/starting states; asking to
+    // start those prematurely can race the provider lifecycle.
+    if (state === "PAUSED" || state === "HIBERNATED") {
       await client.start(sandbox, Math.max(1, Math.ceil(timeoutMs / 1000)));
+      sandbox = await client.get(resourceId);
+      state = stateOf(sandbox);
     }
-    return toRuntime(await client.get(resourceId));
+
+    while (Date.now() < deadline) {
+      if (state === "RUNNING" || state === "FAILED" || state === "TERMINATED") {
+        return toRuntime(sandbox);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      sandbox = await client.get(resourceId);
+      state = stateOf(sandbox);
+    }
+
+    return toRuntime(sandbox);
   }
 
   async uploadFile(
