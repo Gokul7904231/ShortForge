@@ -1381,7 +1381,36 @@ export class OverseerControlPlane {
           // latest shared scene rows, never overwrite a newer canonical F03 plan.
           if (generatedSources.length > 0) {
             const latestSceneRows = Array.isArray(scope.scenes) ? scope.scenes : inputSceneRows;
-            scope.scenes = mergeEditorSceneSources(latestSceneRows, generatedSources);
+            const replacementsById = new Map<string, Record<string, unknown>[]>();
+            for (const replacement of generatedSources) {
+              const replacementId = stableIdOf(replacement);
+              const rows = replacementsById.get(replacementId) || [];
+              rows.push(replacement);
+              replacementsById.set(replacementId, rows);
+            }
+            const latestIdCounts = new Map<string, number>();
+            for (const candidate of latestSceneRows) {
+              const row = asRecord(candidate);
+              if (!row) continue;
+              const id = stableIdOf(row);
+              latestIdCounts.set(id, (latestIdCounts.get(id) || 0) + 1);
+            }
+            scope.scenes = latestSceneRows.map((candidate: unknown) => {
+              const row = asRecord(candidate);
+              if (!row) return candidate;
+              const id = stableIdOf(row);
+              const replacements = replacementsById.get(id) || [];
+              // A source is replaced only for a unique scene identity. Do not use
+              // position or overwrite an ambiguous duplicate scene.
+              if (latestIdCounts.get(id) !== 1 || replacements.length !== 1) return row;
+              const replacement = replacements[0]!;
+              return {
+                ...row,
+                imageUrl: replacement.imageUrl,
+                mediaType: replacement.mediaType,
+                sourceProvenance: replacement.sourceProvenance,
+              };
+            });
             sharedScope.scenes = scope.scenes;
           }
         }
