@@ -17,6 +17,7 @@ interface EditorSourceResponse {
   error?: string;
   sourceKind: "FLATTENED_MP4" | "COMPOSITION_PACKAGE";
   sourceNotice: string;
+  sourceWarnings?: string[];
   job: {
     jobId: string;
     title: string;
@@ -352,6 +353,20 @@ export default function ShortForgeEditorPageClient({ jobId }: { jobId: string })
             <div>
               <div className="font-semibold">Flattened source - clip-level editing only</div>
               <p className="mt-1 text-xs leading-5 text-amber-100/80">{source.sourceNotice}</p>
+            </div>
+          </div>
+        )}
+
+        {source?.sourceKind === "COMPOSITION_PACKAGE" && (source.sourceWarnings?.length || 0) > 0 && (
+          <div role="status" className="flex items-start gap-3 rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-sm text-amber-100">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="min-w-0">
+              <div className="font-semibold">Source media needs attention</div>
+              <ul className="mt-1 space-y-1 text-xs leading-5 text-amber-100/80">
+                {source.sourceWarnings!.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
