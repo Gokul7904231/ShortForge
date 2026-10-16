@@ -224,6 +224,41 @@ describeLiveProof("live hosted sandbox compute proof", () => {
         artifactCasRef,
       });
 
+      // Preserve a diagnostic artifact before policy assertions. A legitimate
+      // F07 rejection must fail qualification, but should not erase its evidence.
+      const preliminarySignature = VerificationReceiptVerifier.verify(receipt);
+      await fs.mkdir(path.dirname(evidencePath), { recursive: true });
+      await fs.writeFile(
+        evidencePath,
+        JSON.stringify(
+          {
+            evidenceVersion: "1.0",
+            proof: "live-hosted-sandbox-f07",
+            provider,
+            runtimeId: runtime.resourceId,
+            artifact: {
+              sha256: artifact.sha256,
+              casRef: artifactCasRef,
+              byteLength: artifact.byteLength,
+            },
+            f07: {
+              receiptId: receipt.receiptId,
+              overallOutcome: receipt.youtubePolicy.overallOutcome,
+              publishAllowed: receipt.youtubePolicy.publishAllowed,
+              publishBlockReason: receipt.youtubePolicy.publishBlockReason,
+              artifactCasRef: receipt.artifactCasRef,
+              artifactSha256: receipt.artifactSha256,
+              receiptSignatureVerified: preliminarySignature.valid,
+              measurements: receipt.technicalForensics.measurements,
+            },
+            generatedAt: receipt.generatedAt,
+          },
+          null,
+          2
+        ),
+        "utf8"
+      );
+
       expect(receipt.artifactSha256).toBe(artifact.sha256);
       expect(receipt.artifactCasRef).toBe(artifactCasRef);
       expect(receipt.technicalForensics.artifactExists).toBe(true);
