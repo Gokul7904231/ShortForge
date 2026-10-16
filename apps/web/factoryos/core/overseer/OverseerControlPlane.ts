@@ -1339,6 +1339,7 @@ export class OverseerControlPlane {
                     author: source.author,
                     sourceUrl: source.sourceUrl,
                     attributionRequired: source.attributionRequired,
+                    provenanceKind: source.provenanceKind,
                   },
                 });
                 editorVisualSourcesResolved++;
