@@ -17,7 +17,7 @@ describe("editor scene timing allocation", () => {
     expect(timings[0]?.endMs).toBe(timings[1]?.startMs);
     expect(timings[1]?.endMs).toBe(timings[2]?.startMs);
     expect(timings[2]?.endMs).toBe(19_237);
-    expect(timings.reduce((sum, timing) => sum + timing.durationSeconds, 0)).toBe(19.237);
+    expect(timings.reduce((sum, timing) => sum + timing.durationSeconds, 0)).toBeCloseTo(19.237, 9);
     expect(timings[1]!.durationSeconds).toBeGreaterThan(timings[0]!.durationSeconds);
     expect(timings[2]!.durationSeconds).toBeGreaterThan(timings[0]!.durationSeconds);
   });
