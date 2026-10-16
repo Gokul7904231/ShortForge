@@ -1542,7 +1542,11 @@ export class OverseerControlPlane {
           voiceArtifactForSource?.success === true &&
           voiceArtifactForSource.byteLength > 0 &&
           /^[a-f0-9]{64}$/i.test(voiceSourceSha) &&
-          voiceSourceMime
+          voiceSourceMime &&
+          (
+            voiceIsExplicitFallback ||
+            (voiceArtifactForSource.isFallback === false && voiceArtifactForSource.qualityClass === "PRIMARY")
+          )
         );
         const voiceSourceProvenance = voiceIsVerifiedPhysicalArtifact
           ? {
