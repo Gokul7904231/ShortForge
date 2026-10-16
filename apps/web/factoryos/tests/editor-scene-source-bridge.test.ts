@@ -59,6 +59,38 @@ describe("editor scene source bridge", () => {
     expect(merged).toEqual([{ sceneId: "scene-1", assetId: "logical-asset-1" }]);
   });
 
+  it("preserves rights and digest provenance for the exact stable scene ID", () => {
+    const provenance = {
+      sha256: "a".repeat(64),
+      mimeType: "image/jpeg",
+      sourceAssetId: "commons-asset-123",
+      provider: "wikimedia",
+      license: "CC-BY-4.0",
+      author: "Artist",
+      sourceUrl: "https://commons.wikimedia.org/wiki/File:sample.jpg",
+      attributionRequired: true,
+      provenanceKind: "RETRIEVED",
+    };
+    const merged = mergeEditorSceneSources(
+      [
+        { sceneId: "scene-a", assetId: "logical-a", text: "A" },
+        { sceneId: "scene-b", assetId: "logical-b", text: "B" },
+      ],
+      [
+        { sceneId: "scene-b", imageUrl: "/data/scene-b.jpg", mediaType: "IMAGE", sourceProvenance: provenance },
+      ],
+    );
+
+    expect(merged[0]).toEqual({ sceneId: "scene-a", assetId: "logical-a", text: "A" });
+    expect(merged[1]).toMatchObject({
+      sceneId: "scene-b",
+      assetId: "logical-b",
+      imageUrl: "/data/scene-b.jpg",
+      mediaType: "IMAGE",
+      sourceProvenance: provenance,
+    });
+  });
+
   it("prefers an explicitly supplied source on the canonical row", () => {
     const merged = mergeEditorSceneSources(
       [{ sceneId: "scene-1", imageUrl: "cas://" + "b".repeat(64), mediaType: "VIDEO" }],
