@@ -1473,6 +1473,31 @@ export class OverseerControlPlane {
             "[Overseer Floor05] Treasury-gated timeline requires Overseer command identity",
           );
         }
+        const voiceArtifactForSource = scope.voiceArtifact || sharedScope.voiceArtifact;
+        const voiceSourceFormat = String(voiceArtifactForSource?.format || path.extname(String(scope.voiceUrl || "")).slice(1)).toLowerCase();
+        const voiceSourceMime =
+          voiceSourceFormat === "mp3" ? "audio/mpeg" :
+          voiceSourceFormat === "aac" ? "audio/aac" :
+          voiceSourceFormat === "wav" ? "audio/wav" : "";
+        const voiceSourceSha = String(voiceArtifactForSource?.sha256 || "");
+        const voiceSourceProvenance = voiceArtifactForSource &&
+          voiceArtifactForSource.isFallback === false &&
+          voiceArtifactForSource.qualityClass === "PRIMARY" &&
+          /^[a-f0-9]{64}$/i.test(voiceSourceSha) &&
+          voiceSourceMime
+          ? {
+              sha256: voiceSourceSha.toLowerCase(),
+              mimeType: voiceSourceMime,
+              sourceAssetId: String(voiceArtifactForSource.artifactId || "voice-" + voiceSourceSha.slice(0, 16)),
+              provider: String(voiceArtifactForSource.provider || "VoiceFabric"),
+              license: "ShortForge-generated audio",
+              author: "ShortForge VoiceFabric",
+              sourceUrl: "shortforge://voicefabric/" + encodeURIComponent(String(voiceArtifactForSource.provider || "primary")),
+              attributionRequired: false,
+              provenanceKind: "GENERATED" as const,
+            }
+          : undefined;
+
         const renderIntent: RenderIntent = {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
           jobId: targetJobId,
@@ -1508,6 +1533,7 @@ export class OverseerControlPlane {
               volume: 1.0,
               startSeconds: 0,
               durationSeconds,
+              ...(voiceSourceProvenance ? { sourceProvenance: voiceSourceProvenance } : {}),
             }],
             captions: (scope.scenes || []).map((s: any, idx: number) => ({
               sceneId: typeof s.sceneId === "string" ? s.sceneId : typeof s.scene_id === "string" ? s.scene_id : undefined,
