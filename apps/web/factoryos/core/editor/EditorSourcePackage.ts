@@ -34,6 +34,7 @@ export interface EditorSourceProvenance {
   readonly author?: string;
   readonly sourceUrl?: string;
   readonly attributionRequired?: boolean;
+  readonly provenanceKind?: "RETRIEVED" | "GENERATED" | "USER_PROVIDED";
 }
 
 export interface EditorSourcePackageAsset {
@@ -284,6 +285,8 @@ function sceneSourceProvenance(scene: Record<string, unknown> | undefined): Edit
     if (typeof candidate[key] === "string" && candidate[key].trim()) result[key] = candidate[key].trim();
   }
   if (typeof candidate.attributionRequired === "boolean") result.attributionRequired = candidate.attributionRequired;
+  if (candidate.provenanceKind === "RETRIEVED" || candidate.provenanceKind === "GENERATED" ||
+      candidate.provenanceKind === "USER_PROVIDED") result.provenanceKind = candidate.provenanceKind;
   return Object.keys(result).length ? result as EditorSourceProvenance : undefined;
 }
 
@@ -323,7 +326,11 @@ function audioForTrack(track: RenderAudioTrack, source: ResolvedSource): Composi
     playbackRate: track.playbackRate ?? 1,
     fadeIn: track.fadeInSeconds === undefined ? undefined : toMediaTime(track.fadeInSeconds),
     fadeOut: track.fadeOutSeconds === undefined ? undefined : toMediaTime(track.fadeOutSeconds),
-    metadata: { originalAssetId: track.id, editorSourceSha256: source.sha256 },
+    metadata: {
+      originalAssetId: track.id,
+      editorSourceSha256: source.sha256,
+      ...(track.sourceProvenance ? { sourceProvenance: track.sourceProvenance } : {}),
+    },
   };
 }
 
@@ -424,6 +431,26 @@ export async function buildEditorSourcePackage(
     new Set(visualIds).size !== visualIds.length ||
     visualIds.some((id) => !sceneIds.includes(id))
   ) return null;
+  const completeProvenanceShape = (candidate: EditorSourceProvenance | undefined): boolean => {
+    if (!candidate ||
+        !/^[a-f0-9]{64}$/i.test(candidate.sha256 || "") ||
+        !candidate.mimeType ||
+        !candidate.sourceAssetId?.trim() ||
+        !candidate.provider?.trim() ||
+        !candidate.license?.trim() ||
+        !candidate.author?.trim() ||
+        !candidate.sourceUrl?.trim() ||
+        typeof candidate.attributionRequired !== "boolean" ||
+        !candidate.provenanceKind) return false;
+    try {
+      const url = new URL(candidate.sourceUrl);
+      return url.protocol === "https:" || url.protocol === "shortforge:";
+    } catch {
+      return false;
+    }
+  };
+  if (!sceneRows.every((scene) => completeProvenanceShape(sceneSourceProvenance(scene)))) return null;
+  if (!intent.tracks.audioTracks.every((track) => completeProvenanceShape(track.sourceProvenance))) return null;
   if (intent.tracks.visualAssets.length + intent.tracks.audioTracks.length > 128) return null;
 
   const resolvedBySource = new Map<string, ResolvedSource>();
@@ -480,9 +507,14 @@ export async function buildEditorSourcePackage(
       const sceneRow = visualAsset
         ? sceneRows.find((scene) => stableSceneId(scene) === visualAsset.id)
         : undefined;
-      const provenance = sceneSourceProvenance(sceneRow);
-      if (provenance?.sha256 && provenance.sha256.toLowerCase() !== record.sha256.toLowerCase()) {
-        throw new Error("EDITOR_SOURCE_PROVENANCE_DIGEST_MISMATCH");
+      const audioTrack = visualAsset ? undefined : intent.tracks.audioTracks.find((track) => track.src === src);
+      const provenance = visualAsset
+        ? sceneSourceProvenance(sceneRow)
+        : audioTrack?.sourceProvenance;
+      if (!provenance ||
+          provenance.sha256.toLowerCase() !== record.sha256.toLowerCase() ||
+          provenance.mimeType.toLowerCase() !== record.mimeType.toLowerCase()) {
+        throw new Error("EDITOR_SOURCE_PROVENANCE_DIGEST_OR_MIME_MISMATCH");
       }
       const sceneId = visualAsset?.id;
       const casArtifact = await cas.putFile(record.localPath, "editor_source_asset", record.mimeType, {
