@@ -1278,21 +1278,45 @@ export class OverseerControlPlane {
             textOrEmpty(scene.imageUrl) || textOrEmpty(scene.image_url) || textOrEmpty(scene.sourceUri);
           const supportedVisualExtension = (value: string): boolean =>
             [".png", ".jpg", ".jpeg", ".webp", ".avif"].includes(path.extname(value.split(/[?#]/, 1)[0] || value).toLowerCase());
+          const hasSourceProvenance = (scene: Record<string, unknown>): Record<string, unknown> | undefined => {
+            const provenance = asRecord(scene.sourceProvenance) || asRecord(scene.source_provenance);
+            if (
+              !provenance ||
+              typeof provenance.sha256 !== "string" ||
+              !/^[a-f0-9]{64}$/i.test(provenance.sha256) ||
+              typeof provenance.mimeType !== "string" ||
+              !provenance.mimeType.startsWith("image/") ||
+              typeof provenance.sourceAssetId !== "string" || !provenance.sourceAssetId.trim() ||
+              typeof provenance.provider !== "string" || !provenance.provider.trim() ||
+              typeof provenance.license !== "string" || !provenance.license.trim() ||
+              typeof provenance.author !== "string" || !provenance.author.trim() ||
+              typeof provenance.sourceUrl !== "string" || !provenance.sourceUrl.trim() ||
+              typeof provenance.attributionRequired !== "boolean" ||
+              !["RETRIEVED", "GENERATED", "USER_PROVIDED"].includes(String(provenance.provenanceKind))
+            ) return undefined;
+            return provenance;
+          };
           const hasPhysicalSource = (scene: Record<string, unknown>): boolean => {
             const src = sourceStringOf(scene);
             if (!src || src.startsWith("/api/") || src.startsWith("http://")) return false;
-            if (/^cas:\/\/[a-f0-9]{64}$/i.test(src)) return true;
-            if (/^https:\/\//i.test(src)) {
-              return supportedVisualExtension(src) && Boolean(asRecord(scene.sourceProvenance) || asRecord(scene.source_provenance));
+            const provenance = hasSourceProvenance(scene);
+            if (!provenance) return false;
+            if (/^cas:\/\/([a-f0-9]{64})$/i.test(src)) {
+              return src.slice("cas://".length).toLowerCase() === String(provenance.sha256).toLowerCase();
             }
+            if (/^https:\/\//i.test(src)) return supportedVisualExtension(src);
             try {
               const localPath = src.startsWith("file://")
                 ? decodeURIComponent(new URL(src).pathname)
                 : src;
-              return path.isAbsolute(localPath) &&
-                supportedVisualExtension(localPath) &&
-                fs.statSync(localPath).isFile() &&
-                fs.statSync(localPath).size > 0;
+              if (
+                !path.isAbsolute(localPath) ||
+                !supportedVisualExtension(localPath) ||
+                !fs.statSync(localPath).isFile() ||
+                fs.statSync(localPath).size <= 0
+              ) return false;
+              const actualSha256 = createHash("sha256").update(fs.readFileSync(localPath)).digest("hex");
+              return actualSha256 === String(provenance.sha256).toLowerCase();
             } catch {
               return false;
             }
