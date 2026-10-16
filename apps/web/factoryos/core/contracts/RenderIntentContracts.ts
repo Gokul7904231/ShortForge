@@ -95,7 +95,7 @@ export interface RenderSourceProvenance {
   readonly author: string;
   readonly sourceUrl: string;
   readonly attributionRequired: boolean;
-  readonly provenanceKind: "RETRIEVED" | "GENERATED" | "USER_PROVIDED";
+  readonly provenanceKind: "RETRIEVED" | "GENERATED" | "USER_PROVIDED" | "FALLBACK";
 }
 
 export interface RenderAudioTrack {
