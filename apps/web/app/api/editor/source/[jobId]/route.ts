@@ -229,6 +229,9 @@ export async function POST(
           if (!ref?.uri || !fs.existsSync(ref.uri) || ref.sha256 !== asset.sha256.toLowerCase()) {
             throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_MISSING");
           }
+          if (ref.mimeType !== asset.mimeType) {
+            throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_MIME_MISMATCH");
+          }
           const stat = fs.statSync(ref.uri);
           if (!stat.isFile() || stat.size !== asset.byteLength || stat.size <= 0) {
             throw new Error("EDITOR_SOURCE_PACKAGE_ASSET_SIZE_MISMATCH");
@@ -245,6 +248,9 @@ export async function POST(
           compositionRef.sha256 !== sourcePackage.compositionSha256.toLowerCase()
         ) {
           throw new Error("EDITOR_SOURCE_PACKAGE_COMPOSITION_MISSING");
+        }
+        if (compositionRef.mimeType !== "application/json") {
+          throw new Error("EDITOR_SOURCE_PACKAGE_COMPOSITION_MIME_MISMATCH");
         }
         const compositionStat = fs.statSync(compositionRef.uri);
         if (
