@@ -1480,21 +1480,28 @@ export class OverseerControlPlane {
           voiceSourceFormat === "aac" ? "audio/aac" :
           voiceSourceFormat === "wav" ? "audio/wav" : "";
         const voiceSourceSha = String(voiceArtifactForSource?.sha256 || "");
-        const voiceSourceProvenance = voiceArtifactForSource &&
-          voiceArtifactForSource.isFallback === false &&
-          voiceArtifactForSource.qualityClass === "PRIMARY" &&
+        const voiceIsExplicitFallback = Boolean(voiceArtifactForSource) && (
+          voiceArtifactForSource.isFallback === true ||
+          voiceArtifactForSource.qualityClass === "FALLBACK" ||
+          voiceArtifactForSource.qualityClass === "DEGRADED_FALLBACK"
+        );
+        const voiceIsVerifiedPhysicalArtifact = Boolean(
+          voiceArtifactForSource?.success === true &&
+          voiceArtifactForSource.byteLength > 0 &&
           /^[a-f0-9]{64}$/i.test(voiceSourceSha) &&
           voiceSourceMime
+        );
+        const voiceSourceProvenance = voiceIsVerifiedPhysicalArtifact
           ? {
               sha256: voiceSourceSha.toLowerCase(),
               mimeType: voiceSourceMime,
               sourceAssetId: String(voiceArtifactForSource.artifactId || "voice-" + voiceSourceSha.slice(0, 16)),
-              provider: String(voiceArtifactForSource.provider || "VoiceFabric"),
-              license: "ShortForge-generated audio",
-              author: "ShortForge VoiceFabric",
-              sourceUrl: "shortforge://voicefabric/" + encodeURIComponent(String(voiceArtifactForSource.provider || "primary")),
+              provider: String(voiceArtifactForSource.provider || (voiceIsExplicitFallback ? "VoiceFabricFallback" : "VoiceFabric")),
+              license: voiceIsExplicitFallback ? "ShortForge fallback audio" : "ShortForge-generated audio",
+              author: voiceIsExplicitFallback ? "ShortForge VoiceFabric fallback" : "ShortForge VoiceFabric",
+              sourceUrl: "shortforge://voicefabric/" + encodeURIComponent(String(voiceArtifactForSource.provider || "unknown")),
               attributionRequired: false,
-              provenanceKind: "GENERATED" as const,
+              provenanceKind: voiceIsExplicitFallback ? "FALLBACK" as const : "GENERATED" as const,
             }
           : undefined;
 
