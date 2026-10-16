@@ -63,6 +63,7 @@ import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
 import { mergeEditorSceneSources } from "../editor/EditorSceneSourceBridge";
+import { buildEditorSceneTimings } from "../editor/EditorSceneTiming";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 
@@ -1517,13 +1518,22 @@ export class OverseerControlPlane {
           sharedScope.localRenderIntent = localRenderIntent;
         }
 
+        const voiceArtifactForTimeline = scope.voiceArtifact || sharedScope.voiceArtifact;
+        const measuredVoiceDuration =
+          typeof voiceArtifactForTimeline?.durationSeconds === "number" &&
+          Number.isFinite(voiceArtifactForTimeline.durationSeconds) &&
+          voiceArtifactForTimeline.durationSeconds > 0
+            ? voiceArtifactForTimeline.durationSeconds
+            : undefined;
         const durationSeconds =
-          localRenderIntent?.scenes.reduce((acc, s) => acc + s.duration_seconds, 0) ||
+          localRenderIntent?.scenes.reduce((acc, scene) => acc + scene.duration_seconds, 0) ||
+          measuredVoiceDuration ||
           scope.durationSeconds ||
-          sharedScope.voiceArtifact?.durationSeconds ||
-          scope.voiceArtifact?.durationSeconds ||
+          sharedScope.engineSnapshot?.effectiveConfig?.durationSeconds ||
           scope.engineSnapshot?.effectiveConfig?.durationSeconds ||
           5;
+        const renderSceneRows = Array.isArray(scope.scenes) ? scope.scenes : [];
+        const renderSceneTimings = buildEditorSceneTimings(renderSceneRows, durationSeconds);
         const overseerCommandId = String(
           scope.overseerCommandId || sharedScope.overseerCommandId || "",
         );
@@ -1532,7 +1542,7 @@ export class OverseerControlPlane {
             "[Overseer Floor05] Treasury-gated timeline requires Overseer command identity",
           );
         }
-        const voiceArtifactForSource = scope.voiceArtifact || sharedScope.voiceArtifact;
+        const voiceArtifactForSource = voiceArtifactForTimeline;
         const voiceSourceFormat = String(voiceArtifactForSource?.format || "").toLowerCase();
         const voiceSourceMime =
           voiceSourceFormat === "mp3" ? "audio/mpeg" :
@@ -1577,7 +1587,7 @@ export class OverseerControlPlane {
           fps: 30,
           resolution: { width: 1080, height: 1920 },
           tracks: {
-            visualAssets: (scope.scenes || []).map((s: any, idx: number) => ({
+            visualAssets: renderSceneRows.map((s: any, idx: number) => ({
               // Bind each visual track to the stable scene identity. The editor
               // source adapter rejects duplicate/missing IDs instead of relying
               // on array position to recover scene semantics.
@@ -1592,8 +1602,8 @@ export class OverseerControlPlane {
               // VIDEO from duration or from visual prompt metadata.
               type: s.mediaType === "VIDEO" ? "VIDEO" as const : "IMAGE" as const,
               src: s.imageUrl || `/api/images/${targetJobId}_${idx}.jpg`,
-              startSeconds: idx * 5,
-              durationSeconds: 5,
+              startSeconds: renderSceneTimings[idx]!.startSeconds,
+              durationSeconds: renderSceneTimings[idx]!.durationSeconds,
               zIndex: 1,
             })),
             audioTracks: [{
@@ -1605,11 +1615,11 @@ export class OverseerControlPlane {
               durationSeconds,
               ...(voiceSourceProvenance ? { sourceProvenance: voiceSourceProvenance } : {}),
             }],
-            captions: (scope.scenes || []).map((s: any, idx: number) => ({
-              sceneId: typeof s.sceneId === "string" ? s.sceneId : typeof s.scene_id === "string" ? s.scene_id : undefined,
-              text: s.contactText || s.text || "",
-              startMs: idx * 5000,
-              endMs: (idx + 1) * 5000,
+            captions: renderSceneRows.map((s: any, idx: number) => ({
+              sceneId: typeof s.sceneId === "string" ? s.sceneId : typeof s.scene_id === "string" ? s.scene_id : typeof s.id === "string" ? s.id : undefined,
+              text: s.contactText || s.text || s.narration_text || s.narrative || "",
+              startMs: renderSceneTimings[idx]!.startMs,
+              endMs: renderSceneTimings[idx]!.endMs,
               style: { animation: "POP" as const },
             })),
           },
