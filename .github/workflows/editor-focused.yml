@@ -1,0 +1,81 @@
+name: Editor Focused Gate
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "apps/web/factoryos/core/editor/**"
+      - "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
+      - "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts"
+      - "apps/web/factoryos/core/overseer/OverseerControlPlane.ts"
+      - "apps/web/lib/visual-assets/**"
+      - "apps/web/app/api/editor/source/**"
+      - "apps/web/lib/jobs-history.ts"
+      - "apps/web/factoryos/tests/editor-*.test.ts"
+      - "apps/web/factoryos/tests/jobs-history-editor-source.test.ts"
+      - "apps/web/factoryos/tests/timeline-ir-editor-metadata.test.ts"
+      - "apps/web/package.json"
+      - "apps/web/package-lock.json"
+      - ".github/workflows/editor-focused.yml"
+  push:
+    branches: [main, master, "feat/shortforge-editor-20261012"]
+    paths:
+      - "apps/web/factoryos/core/editor/**"
+      - "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
+      - "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts"
+      - "apps/web/factoryos/core/overseer/OverseerControlPlane.ts"
+      - "apps/web/lib/visual-assets/**"
+      - "apps/web/app/api/editor/source/**"
+      - "apps/web/lib/jobs-history.ts"
+      - "apps/web/factoryos/tests/editor-*.test.ts"
+      - "apps/web/factoryos/tests/jobs-history-editor-source.test.ts"
+      - "apps/web/factoryos/tests/timeline-ir-editor-metadata.test.ts"
+      - "apps/web/package.json"
+      - "apps/web/package-lock.json"
+      - ".github/workflows/editor-focused.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editor-focused-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editor-focused:
+    name: Editor source package + command contract gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: cd apps/web && npm ci
+
+      - name: TypeScript typecheck
+        run: cd apps/web && npm run typecheck
+
+      - name: Verify durable source package, scene bridge, and editor contracts
+        run: >
+          cd apps/web &&
+          npx vitest run
+          factoryos/tests/editor-source-package.test.ts
+          factoryos/tests/editor-source-package-storage.test.ts
+          factoryos/tests/editor-scene-source-bridge.test.ts
+          factoryos/tests/editor-cas-source.test.ts
+          factoryos/tests/editor-contracts.test.ts
+          factoryos/tests/editor-trim-split.test.ts
+          factoryos/tests/jobs-history-editor-source.test.ts
+          factoryos/tests/timeline-ir-editor-metadata.test.ts
+          --config vitest.config.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
