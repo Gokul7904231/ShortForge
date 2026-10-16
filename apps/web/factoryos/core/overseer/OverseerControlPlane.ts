@@ -1474,7 +1474,7 @@ export class OverseerControlPlane {
           );
         }
         const voiceArtifactForSource = scope.voiceArtifact || sharedScope.voiceArtifact;
-        const voiceSourceFormat = String(voiceArtifactForSource?.format || path.extname(String(scope.voiceUrl || "")).slice(1)).toLowerCase();
+        const voiceSourceFormat = String(voiceArtifactForSource?.format || "").toLowerCase();
         const voiceSourceMime =
           voiceSourceFormat === "mp3" ? "audio/mpeg" :
           voiceSourceFormat === "aac" ? "audio/aac" :
