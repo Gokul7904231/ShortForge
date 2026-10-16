@@ -47,7 +47,7 @@ Three top blockers:
 
 Focused new editor tests passed in that logged run (source-package, CAS tamper, trim/split, job-history source persistence, caption commands and TimelineIR metadata). The three durable-editor failures are directly relevant and remain blockers until fixed or conclusively shown to reproduce unchanged on main. Other Vitest failures span unrelated systems; do not assign blame to this PR without baseline comparison.
 
-**Freshness:** I did not observe a newer current-head workflow set for 16 October. This is the latest verified evidence available for the inspected head, not a claim that CI was rerun today.
+**Freshness:** The implementation-code test results summarized above are from the 13 October code head. On 16 October, a documentation-only report commit triggered new workflows; in the latest observed state, Team Change Gate, OKF Governance Gate and F02/F03 gates had passed while the remaining CI/production/physical-proof workflows were still in progress. No new full Vitest result on that documentation-only head was available at the time of the audit. The report commit made no application-code changes.
 
 ## 3. P0 — release and correctness blockers
 
