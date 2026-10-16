@@ -9,6 +9,7 @@ import { db } from "@/lib/firebase-admin";
 import { getInMemoryJobs, readJobManifestAuthoritative, saveJobManifest } from "@/lib/jobs-history";
 import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
+import { hydrateEditorSourcePackageBlobs } from "@/factoryos/core/editor/EditorSourcePackageStorage";
 import {
   millisecondsToMediaTime,
   validateCompositionIR,
@@ -205,6 +206,16 @@ export async function POST(
         ) {
           throw new Error("EDITOR_SOURCE_PACKAGE_BINDING_INVALID");
         }
+
+        // A local CAS hit is not assumed on a cold web instance. Restore missing
+        // package blobs from the owner/job-bound durable object keys before validating
+        // every physical byte and the composition's full reference graph below.
+        await hydrateEditorSourcePackageBlobs({
+          packageRecord: sourcePackage,
+          ownerId: job.userId,
+          jobId,
+          cas,
+        });
 
         const allowedHashes = new Set(sourcePackage.sourceAssetSha256s.map((sha) => sha.toLowerCase()));
         if (allowedHashes.size === 0 || sourcePackage.sourceAssets.some((asset) => !allowedHashes.has(asset.sha256.toLowerCase()))) {
