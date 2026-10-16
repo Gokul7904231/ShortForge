@@ -71,6 +71,7 @@ jobs:
           factoryos/tests/editor-source-package.test.ts
           factoryos/tests/editor-source-package-storage.test.ts
           factoryos/tests/editor-scene-source-bridge.test.ts
+          factoryos/tests/editor-scene-timing.test.ts
           factoryos/tests/editor-cas-source.test.ts
           factoryos/tests/editor-contracts.test.ts
           factoryos/tests/editor-trim-split.test.ts
