@@ -62,6 +62,7 @@ import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
+import { mergeEditorSceneSources } from "../editor/EditorSceneSourceBridge";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 
@@ -1172,11 +1173,18 @@ export class OverseerControlPlane {
         scope.f03Handoff = canonicalF03; sharedScope.f03Handoff = canonicalF03;
         scope.f03ExecutionReport = f03.executionReport; sharedScope.f03ExecutionReport = f03.executionReport;
         scope.assetPlanIR = canonicalF03.asset_plan_ir; sharedScope.assetPlanIR = canonicalF03.asset_plan_ir;
-        scope.scenes = visualRequirements.map((req: any) => ({
+        // Keep a source locator only when it was already attached to this exact
+        // stable scene ID. F03 creates the canonical plan, not physical media;
+        // a prompt or logical asset ID must never be promoted into a source URL.
+        const previousSceneSources = Array.isArray(scope.scenes) ? scope.scenes : [];
+        const plannedScenes = visualRequirements.map((req: any) => ({
           sceneId: req.scene_id,
           text: f02Handoff.scenes?.find((scene: any) => scene.scene_id === req.scene_id)?.narration_text || "",
-          durationSeconds: req.target_duration_seconds, imagePrompt: req.prompt_text, assetId: req.asset_id,
+          durationSeconds: req.target_duration_seconds,
+          imagePrompt: req.prompt_text,
+          assetId: req.asset_id,
         }));
+        scope.scenes = mergeEditorSceneSources(plannedScenes, previousSceneSources);
         sharedScope.scenes = scope.scenes;
         const assetPayload = { floor03Handoff: canonicalF03, assetPlanIR: canonicalF03.asset_plan_ir, assetManifest: canonicalF03.manifest, scenes: scope.scenes };
         scope.assetPayload = assetPayload; sharedScope.assetPayload = assetPayload;
@@ -1365,7 +1373,9 @@ export class OverseerControlPlane {
           tracks: {
             visualAssets: (scope.scenes || []).map((s: any, idx: number) => ({
               id: `asset_${idx}`,
-              type: "IMAGE" as const,
+              // Carry a declared source media kind when one exists; do not infer
+              // VIDEO from duration or from visual prompt metadata.
+              type: s.mediaType === "VIDEO" ? "VIDEO" as const : "IMAGE" as const,
               src: s.imageUrl || `/api/images/${targetJobId}_${idx}.jpg`,
               startSeconds: idx * 5,
               durationSeconds: 5,
