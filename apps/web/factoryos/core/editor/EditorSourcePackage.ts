@@ -61,7 +61,7 @@ export interface EditorSourcePackageRecord {
   readonly compositionHashSha256: string;
   readonly sourceAssetSha256s: readonly string[];
   readonly sourceAssets: readonly EditorSourcePackageAsset[];
-  readonly warnings: readonly string[];
+  readonly warnings?: readonly string[];
   readonly renderIntentId: string;
   readonly timelineFingerprint: string;
   readonly createdAt: string;
@@ -444,6 +444,7 @@ export async function buildEditorSourcePackage(
         !candidate.author?.trim() ||
         !candidate.sourceUrl?.trim() ||
         typeof candidate.attributionRequired !== "boolean" ||
+        typeof candidate.provenanceKind !== "string" ||
         !["RETRIEVED", "GENERATED", "USER_PROVIDED", "FALLBACK"].includes(candidate.provenanceKind)) return false;
     try {
       const url = new URL(candidate.sourceUrl);
