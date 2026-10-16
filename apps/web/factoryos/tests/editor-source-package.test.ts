@@ -298,6 +298,29 @@ describe("EditorSourcePackage", () => {
     expect(packageRecord?.sourceAssetSha256s).toContain(audio.sha256);
   });
 
+  it("declines local physical media without complete digest and rights provenance", async () => {
+    const base = makeTempRoot();
+    const imagePath = path.join(base, "inputs", "unproven-image.png");
+    const audioPath = path.join(base, "inputs", "unproven-voice.wav");
+    fs.writeFileSync(
+      imagePath,
+      Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+    );
+    writeTinyWav(audioPath);
+    const cas = new ContentAddressedStore(path.join(base, "cas"));
+
+    const packageRecord = await buildEditorSourcePackage({
+      jobId: "job-editor-unproven-source",
+      ownerId: "user-editor-unproven-source",
+      renderIntent: renderIntent(imagePath, audioPath),
+      scenes: [{ sceneId: "quiz-question-1", text: "An unproven source" }],
+      cas,
+      resolver: new ArtifactResolver(base),
+    });
+
+    expect(packageRecord).toBeNull();
+  });
+
   it("declines source-package creation for missing placeholder media URLs", async () => {
     const base = makeTempRoot();
     const cas = new ContentAddressedStore(path.join(base, "cas"));
