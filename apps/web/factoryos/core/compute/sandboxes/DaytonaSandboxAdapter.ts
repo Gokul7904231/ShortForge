@@ -37,7 +37,7 @@ export function normalizeDaytonaSandboxState(value: unknown): SandboxRuntimeStat
   const state = String(value ?? "")
     .trim()
     .replace(/[-_]+/g, " ")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .toUpperCase();
 
   // Daytona's SDK uses provider-native states such as "started",
