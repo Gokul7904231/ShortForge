@@ -9,6 +9,7 @@ import type { EditorCommandEnvelope } from "../core/editor/EditorContracts";
 
 function composition(): CompositionIR {
   const duration = millisecondsToMediaTime(12_000);
+  const clipDuration = millisecondsToMediaTime(10_000);
   return {
     compositionId: "durable-editor-comp",
     schemaVersion: "2.0.0",
@@ -28,7 +29,7 @@ function composition(): CompositionIR {
         assetId: "asset",
         src: "cas://asset",
         start: 0,
-        duration,
+        duration: clipDuration,
         zIndex: 0,
       }],
     }],
