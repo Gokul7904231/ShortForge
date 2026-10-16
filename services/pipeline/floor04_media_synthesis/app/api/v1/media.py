@@ -71,6 +71,15 @@ def health_check() -> Dict[str, str]:
     }
 
 
+def _valid_request_id(value: str) -> bool:
+    return bool(
+        value
+        and len(value) <= 200
+        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,199}", value)
+        and ".." not in value
+    )
+
+
 @router.post("/execution-report", status_code=status.HTTP_200_OK)
 def execute_media(
     inp: Floor04Input,
@@ -78,6 +87,8 @@ def execute_media(
     _api_key: str = Depends(verify_api_key),
 ) -> Dict[str, Any]:
     """Execute authorized F04 synthesis and return a lineage-checked media handoff."""
+    if inp.request_id is not None and not _valid_request_id(inp.request_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Floor 04 request identity.")
     guardian = request.app.state.guardian
     try:
         report = guardian.execute(inp)
@@ -135,6 +146,11 @@ def download_validated_asset(
     """Stream one committed F04 asset only when request identity and physical bytes match."""
     if not re.fullmatch(r"[a-f0-9]{64}", sha256):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid SHA-256 encoding.")
+
+    if not _valid_request_id(request_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Floor 04 request identity.")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,199}", asset_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Floor 04 asset identity.")
 
     guardian = request.app.state.guardian
     record = guardian.pipeline_service.registry.get_asset(asset_id)
