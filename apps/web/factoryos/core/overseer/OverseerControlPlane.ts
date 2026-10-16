@@ -1298,7 +1298,7 @@ export class OverseerControlPlane {
             }
           };
           const todo = inputSceneRows.filter((scene: unknown) => {
-            const row = record(scene);
+            const row = asRecord(scene);
             return Boolean(row && stableIdOf(row) && !hasPhysicalSource(row));
           }) as Record<string, unknown>[];
           const generatedSources: Record<string, unknown>[] = [];
