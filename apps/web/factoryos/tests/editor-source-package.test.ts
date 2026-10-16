@@ -35,7 +35,7 @@ function writeTinyWav(filePath: string) {
   fs.writeFileSync(filePath, bytes);
 }
 
-function renderIntent(imagePath: string, audioPath: string): RenderIntent {
+function renderIntent(imagePath: string, audioPath: string, sceneId = "quiz-question-1"): RenderIntent {
   return {
     intentId: "intent-editor-package-test",
     jobId: "job-editor-package-test",
@@ -46,7 +46,7 @@ function renderIntent(imagePath: string, audioPath: string): RenderIntent {
     resolution: { width: 1080, height: 1920 },
     tracks: {
       visualAssets: [{
-        id: "asset-question-1",
+        id: sceneId,
         type: "IMAGE",
         src: imagePath,
         startSeconds: 0,
@@ -81,6 +81,91 @@ afterEach(() => {
 });
 
 describe("EditorSourcePackage", () => {
+  it("binds source provenance by stable scene ID rather than scene array order", async () => {
+    const base = makeTempRoot();
+    const imageA = path.join(base, "inputs", "scene-a.png");
+    const imageB = path.join(base, "inputs", "scene-b.png");
+    const audioPath = path.join(base, "inputs", "narration.wav");
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
+    fs.writeFileSync(imageA, png);
+    fs.writeFileSync(imageB, png);
+    writeTinyWav(audioPath);
+
+    const cas = new ContentAddressedStore(path.join(base, "cas"));
+    const intent: RenderIntent = {
+      ...renderIntent(imageB, audioPath, "scene-b"),
+      tracks: {
+        visualAssets: [
+          { id: "scene-b", type: "IMAGE", src: imageB, startSeconds: 0, durationSeconds: 1, zIndex: 1 },
+          { id: "scene-a", type: "IMAGE", src: imageA, startSeconds: 1, durationSeconds: 1, zIndex: 1 },
+        ],
+        audioTracks: [{
+          id: "voice", type: "VOICE", src: audioPath, volume: 1, startSeconds: 0, durationSeconds: 2,
+        }],
+        captions: [],
+      },
+    };
+    const scenes = [
+      {
+        sceneId: "scene-a",
+        text: "Scene A",
+        sourceProvenance: {
+          sha256: await ContentAddressedStore.computeFileSha256(imageA),
+          mimeType: "image/png",
+          sourceAssetId: "source-a",
+          provider: "wikimedia",
+          license: "CC-BY-4.0",
+          author: "Artist A",
+          sourceUrl: "https://commons.wikimedia.org/wiki/File:scene-a.png",
+          attributionRequired: true,
+        },
+      },
+      {
+        sceneId: "scene-b",
+        text: "Scene B",
+        sourceProvenance: {
+          sha256: await ContentAddressedStore.computeFileSha256(imageB),
+          mimeType: "image/png",
+          sourceAssetId: "source-b",
+          provider: "openverse",
+          license: "CC0",
+          author: "Artist B",
+          sourceUrl: "https://openverse.org/image/scene-b",
+          attributionRequired: false,
+        },
+      },
+    ];
+
+    const packageRecord = await buildEditorSourcePackage({
+      jobId: "job-editor-source-order",
+      ownerId: "user-editor-source-order",
+      renderIntent: intent,
+      scenes,
+      cas,
+      resolver: new ArtifactResolver(base),
+    });
+    expect(packageRecord).not.toBeNull();
+
+    const compositionRef = cas.getByHash(packageRecord!.compositionSha256);
+    const composition = JSON.parse(fs.readFileSync(compositionRef!.uri, "utf8"));
+    expect(composition.tracks[0].clips[0].metadata.sceneId).toBe("scene-b");
+    expect(composition.tracks[0].clips[0].metadata.sourceProvenance.sourceAssetId).toBe("source-b");
+    expect(composition.tracks[0].clips[1].metadata.sceneId).toBe("scene-a");
+    expect(composition.tracks[0].clips[1].metadata.sourceProvenance.sourceAssetId).toBe("source-a");
+    expect(composition.metadata.extensions.sceneManifest.map((scene: any) => scene.sceneId)).toEqual([
+      "scene-a",
+      "scene-b",
+    ]);
+    expect(packageRecord!.sourceAssets.some((asset) => asset.sceneId === "scene-a" &&
+      asset.sourceProvenance?.license === "CC-BY-4.0")).toBe(true);
+    expect(packageRecord!.sourceAssets.some((asset) => asset.sceneId === "scene-b" &&
+      asset.sourceProvenance?.license === "CC0")).toBe(true);
+  });
+
+
   it("persists verified source assets and a canonical editable composition to CAS", async () => {
     const base = makeTempRoot();
     const imagePath = path.join(base, "inputs", "question.png");
@@ -148,7 +233,7 @@ describe("EditorSourcePackage", () => {
     const packageRecord = await buildEditorSourcePackage({
       jobId,
       ownerId,
-      renderIntent: renderIntent("cas://" + image.sha256, "cas://" + audio.sha256),
+      renderIntent: renderIntent("cas://" + image.sha256, "cas://" + audio.sha256, "quiz-question-cas"),
       scenes: [{ sceneId: "quiz-question-cas", text: "Which city is the capital of Tamil Nadu?", durationSeconds: 1 }],
       cas,
       resolver: new ArtifactResolver(base),
