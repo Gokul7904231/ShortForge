@@ -62,7 +62,10 @@ import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
-import { mergeEditorSceneSources } from "../editor/EditorSceneSourceBridge";
+import {
+  mergeEditorSceneSources,
+  replaceVerifiedEditorSceneSources,
+} from "../editor/EditorSceneSourceBridge";
 import { buildEditorSceneTimings } from "../editor/EditorSceneTiming";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
@@ -1384,40 +1387,11 @@ export class OverseerControlPlane {
             }
           }));
 
-          // F03 can finish concurrently with F04. Merge visual results into the
-          // latest shared scene rows, never overwrite a newer canonical F03 plan.
+          // F03 can finish concurrently with F04. Apply verified sources to the
+          // latest canonical rows, only when both source and scene IDs are unique.
           if (generatedSources.length > 0) {
             const latestSceneRows = Array.isArray(scope.scenes) ? scope.scenes : inputSceneRows;
-            const replacementsById = new Map<string, Record<string, unknown>[]>();
-            for (const replacement of generatedSources) {
-              const replacementId = stableIdOf(replacement);
-              const rows = replacementsById.get(replacementId) || [];
-              rows.push(replacement);
-              replacementsById.set(replacementId, rows);
-            }
-            const latestIdCounts = new Map<string, number>();
-            for (const candidate of latestSceneRows) {
-              const row = asRecord(candidate);
-              if (!row) continue;
-              const id = stableIdOf(row);
-              latestIdCounts.set(id, (latestIdCounts.get(id) || 0) + 1);
-            }
-            scope.scenes = latestSceneRows.map((candidate: unknown) => {
-              const row = asRecord(candidate);
-              if (!row) return candidate;
-              const id = stableIdOf(row);
-              const replacements = replacementsById.get(id) || [];
-              // A source is replaced only for a unique scene identity. Do not use
-              // position or overwrite an ambiguous duplicate scene.
-              if (latestIdCounts.get(id) !== 1 || replacements.length !== 1) return row;
-              const replacement = replacements[0]!;
-              return {
-                ...row,
-                imageUrl: replacement.imageUrl,
-                mediaType: replacement.mediaType,
-                sourceProvenance: replacement.sourceProvenance,
-              };
-            });
+            scope.scenes = replaceVerifiedEditorSceneSources(latestSceneRows, generatedSources);
             sharedScope.scenes = scope.scenes;
           }
         }
