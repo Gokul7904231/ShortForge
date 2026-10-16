@@ -4,9 +4,9 @@
 **Repository:** https://github.com/Gokul7904231/ShortForge  
 **Working PR:** https://github.com/Gokul7904231/ShortForge/pull/242  
 **Branch:** `feat/shortforge-editor-20261012`  
-**Application-code head audited:** `ad9d68e7e42c4061903cb412cbbe9657062b4b13`  
-**Latest validation commit:** `4a87664141558b13941e3b088d9e353c56f7ff18` (documentation-only commit after the code fixes)  
-**Decision:** **NOT READY TO MERGE OR RELEASE** — the editor page and bounded editing controls exist, but the core generated-quiz-to-editable-source path is incomplete, safe export is not wired, and current-head CI was still running when this report was prepared.
+**Audited PR head:** `3d5c822f074b58ace676ae3634f3c707f2b47545`  
+**Latest validation batch:** 16 October 2026, GitHub Actions run set on the audited PR head.  
+**Decision:** **NOT READY TO MERGE OR RELEASE** — the dedicated editor gate and source-to-F07 physical proof pass, but actual quiz source linkage and secure edited export are incomplete. The latest F07 policy gate and Lightning provider proof also fail, and the full informational Vitest suite remains broadly failing.
 
 ## Executive conclusion
 
@@ -30,8 +30,8 @@ A third concern is **qualification**. On the preceding audited commit (`687b10bc
 
 | ID | Priority | Task | Current status | Completion / acceptance evidence |
 |---|---|---|---|---|
-| SF-ED-001 | P0 | Re-run current-head strict TypeScript and focused editor gates | PASSED ON OBSERVED RUNSET; broad informational regression still running | CI on `ad9d68e` passes strict FactoryOS typecheck, source-package tests, editor command tests, and focused Editor Gate with no skipped assertion. |
-| SF-ED-002 | P0 | Fix remaining editor-source package contract/test regressions | PASSED IN LATEST EDITOR FOCUSED GATE | Optional provenance fields are type-guarded; a missing CompositionIR CAS URI fails closed; the provenance-order fixture's total duration covers all clips/audio; focused tests pass. |
+| SF-ED-001 | P0 | Re-run current-head strict TypeScript and focused editor gates | PASSED on observed 16 Oct runset | Strict TypeScript/Floor 01 contract tests passed in [CI 38893580220](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580220); focused editor gate passed in [38893580229](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580229). The informational full suite is a separate failing job; see SF-ED-010. |
+| SF-ED-002 | P0 | Fix editor-source package contract/test regressions | PASSED in latest focused gate | Optional provenance fields are guarded; a missing CompositionIR CAS URI fails closed; the source-package fixture duration was corrected; the focused gate passed on the latest observed head. |
 | SF-ED-003 | P0 | Bind real generated scene assets into the source package | BLOCKED | For a real quiz job, each visual/audio source resolves to bytes with size, MIME, SHA-256, rights/provenance and stable scene ID. No placeholder `/api/images/...` source is accepted as a package. |
 | SF-ED-004 | P0 | Package canonical F05 TimelineIR plus its assets in CAS | NOT COMPLETE | The exact F05 canonical timeline/fingerprint and all source blobs are portable, immutable, owner/job-bound, digest-verifiable, and linked from F06's persisted job manifest. Test across app instances. |
 | SF-ED-005 | P0 | Preserve source metadata across all render paths | PARTIAL | Standard RenderIntent path has conditional packages; implement and test an accurate adapter for template-specific LocalRenderIntent too, or explicitly exclude that job type from the editor UI. |
@@ -72,41 +72,23 @@ A third concern is **qualification**. On the preceding audited commit (`687b10bc
 
 ## Current CI evidence and interpretation
 
-### Known results on the preceding audited commit
+Latest observed validation run set is for PR head `3d5c822f074b58ace676ae3634f3c707f2b47545` on 16 October 2026.
 
-PR run set was associated with `687b10bc699e88cabc0dd676ab9dfeb6874b6bc2`:
+### Passed
+- **Editor Focused Gate:** [run 38893580229](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580229).
+- **Editor Runtime → F06 → CAS → F07 physical proof:** [run 38893580319](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580319).
+- **Floor 05 pre-training validation:** [run 38893580276](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580276).
+- **Strict TypeCheck + Floor 01 contract tests, Floor 01 Python tests, dependency/security scan and container smoke:** [CI run 38893580220](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580220). Those jobs passed.
+- **Team Change and OKF Governance:** [Team Change run 38893580302](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580302) and [OKF run 38893580238](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580238).
+- F02/F03, F04, F05, F06, Treasury, ReMaker, Compute and other listed validation workflows passed in the observed batch.
 
-- **Passed:** Team Change Gate, OKF Governance Gate, general CI job, Floor 02/03, Floor 04, Floor 05, Floor 06, Treasury Wave 4/5/6 and the True Eight-Floor Production Trajectory.
-- **Failed Editor Focused Gate:** source package TypeScript issues and one test failure because the test's clips/audio totalled two seconds while the fixture canvas declared one second.
-- **Failed TypeScript-dependent workflows:** Editor Runtime F06/F07 Physical Proof, Compute Pool, ReMaker Validation, Context Fabric Architecture and other governance/typecheck workflows, because `EditorSourcePackage.ts` had optional-provenance narrowing errors and a possibly undefined composition CAS URI.
-- **Failed F07 pre-training validation:** four F07 architectural-invariant assertions expected true/READY but observed false/POLICY_STALE. These need an actual root-cause investigation and may reflect stale evidence, not simply editor code.
-- **Failed Lightning physical proof:** the Lightning CLI was not authenticated (`lightning login`). This is a provider test setup blocker until credentials/account setup is fixed.
+### Still failing or unqualified
+- **F07 Pre-Training Validation:** [run 38893580265](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580265) failed 4 of 43 checks in `f07-architectural-invariants.test.ts`: #5 separates upload safety/monetization/advertiser suitability; #6 non-YPP channel upload; #7 expected `READY`, observed `POLICY_STALE`; #12 Shorts duration/policy transition. Investigate the source policy snapshot/digest/cutoff and fixture evidence. Do not weaken these assertions blindly.
+- **Lightning Physical MP4 proof:** [run 38893580274](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580274) failed with `Authentication failed. Please run lightning login.` Fix the CI secret/account/teamspace path or explicitly leave the Lightning provider unqualified. Do not claim a physical proof pass without evidence.
+- **Full informational Vitest suite:** within [CI run 38893580220](https://github.com/Gokul7904231/ShortForge/actions/runs/38893580220), 319 files yielded 62 failing, 254 passing and 3 skipped; 1,547 tests yielded 64 failing, 1,474 passing and 9 skipped. The observed log explicitly shows the editor command contract, source-package, durable-editor history, trim/split and TimelineIR metadata tests passing. Failures in Overseer, Treasury, policy/evidence, reach and other systems need a clean-main baseline comparison; the CI umbrella status is `success` because this suite is marked informational.
 
-### Fixes now committed after that run
-
-- Guard optional provenance `sha256` and `mimeType` before using them.
-- Fail closed when the newly committed composition artifact has no CAS URI.
-- Correct the provenance-order source-package test fixture to declare a two-second composition.
-- These updates are on application-code head `ad9d68e7e42c4061903cb412cbbe9657062b4b13`; the fresh focused gate passed on the later documentation-only validation commit.
-
-### Latest observed validation state
-
-The latest fully enumerated workflow set ran on documentation-only commit `4a87664141558b13941e3b088d9e353c56f7ff18` after application fixes on `ad9d68e`.
-
-**Passed:**
-- Editor Focused Gate — [run 38892910751](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910751)
-- Editor → F06 → CAS → F07 physical proof — [run 38892910771](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910771)
-- Floor 05 validation — [run 38892910763](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910763)
-- TypeCheck & Floor 01 contract tests, Floor 01 Python tests, security/dependency scan and production-container smoke — [CI run 38892910647](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910647); the Web Regression Suite was still informational/in progress at the last check.
-- Team Change — [run 38892910619](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910619); OKF Governance — [run 38892910668](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910668).
-- Floor 02/03, Floor 04, Floor 06, ReMaker validation, Compute Pool, Compute Resilience, Context Fabric, Treasury waves 4/5/6 and Floor Governance Cell final validation.
-
-**Still failing or not fully concluded:**
-- **Floor 07 validation failed** in [run 38892910720](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910720): four failures remain in `f07-architectural-invariants.test.ts`: invariant #5 (separation of upload safety/monetization/advertiser suitability), #6 (non-YPP channel should not block ordinary upload), #7 (expected `READY`, observed `POLICY_STALE`), and #12 (Shorts eligibility boundary). This is a policy/evidence root-cause task; don't weaken expectations blindly.
-- **Lightning physical proof failed** in [run 38892910648](https://github.com/Gokul7904231/ShortForge/actions/runs/38892910648) because CI lacks Lightning login credentials. Keep that provider proof unqualified until credentials/account setup are fixed.
-- The full eight-floor production trajectory was in progress. Refer to [PR #242](https://github.com/Gokul7904231/ShortForge/pull/242) for live results.
-
-The earlier editor type errors/fixture failure are resolved in the observed runset. The PR should remain draft because source packages for the common generation path are incomplete, quiz-semantic commands are not implemented, export is locked, and F07/Lightning qualification remains open.
+### What these results do and do not prove
+The focused editor gate and editor physical-proof workflow are meaningful positive evidence for the tested code paths. They do **not** prove that all normal quiz-generation modes create a complete editable source package, that semantic question editing is implemented, or that a user can export/download an edited Short. The current Security/Dependency scan is not application-level adversarial qualification. Keep the PR in draft and export locked until source truth, quiz semantics, security/E2E and the trusted export gate are proven.
 
 ## Merge/release gate checklist
 
