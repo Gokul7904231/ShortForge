@@ -186,3 +186,27 @@ some agentic tools expect it at repo root, others check `.agents/AGENTS.md`
 given the existing `.agents/skills/` structure. If motion tasks still aren't
 routing through this file's rules, check resolution path first before
 assuming the rules themselves are wrong.
+
+
+## 9. Mandatory Reverse Features routing (ShortForge-wide)
+
+Reverse Features is the governed method for improving existing ShortForge capabilities. When a task investigates an external concept, proposes an architectural upgrade, compares competing implementations, or changes an existing subsystem, route through these skills in order as applicable:
+
+1. `reverse-features` — establish scope, mandatory OKF review, incumbent, dependencies, and workstream.
+2. `reverse-feature-investigation` — inspect existing ShortForge behavior and investigate external alternatives; use REA only for suitable reverse-engineering targets and ordinary source-repository tools for source analysis.
+3. `reverse-feature-challenge` — compare the incumbent and every viable candidate pairwise against common criteria; choose by evidence, not novelty.
+4. `reverse-feature-implementation` — implement only the selected winner, then verify and record the outcome.
+
+Before any non-trivial Reverse Features decision, read the complete current `.okf` corpus as required by `.okf/decision-protocol.md`, run the repository's OKF sweep/inventory, and inspect the relevant `.okf/research/repo-mappings/` entries plus the repository research ledger. Read `.okf/reverse-features/README.md`, `domain-registry.md`, and `evaluation-protocol.md`. A general mapping index is not a substitute for opening the relevant mappings and named implementation paths.
+
+Absolute decision rule: **reverse-engineer the existing concept, challenge the incumbent and all viable alternatives against each other, determine the winner using evidence, and implement only the winner.** Existing designs receive no automatic preference; new designs receive no novelty bonus. A hybrid must be included when it is a plausible candidate. If evidence is insufficient, record UNKNOWN / NEEDS_EVIDENCE and do not claim a winner.
+
+Do not create a new authority layer, bypass Human/Overseer approval, Guardian, Treasurer, F07, existing contracts, or clean-room/license governance to make an experiment easier. Never silently replace or merge overlapping active PR work. Record the incumbent revision, candidate revisions, evidence, pairwise comparison, decision, implementation state, and verification status in the appropriate `.okf/reverse-features/` record.
+
+Update the mandatory task-routing table with these routes:
+
+| Task type | Skill sequence |
+|---|---|
+| Reverse-engineer or improve an existing ShortForge capability | `reverse-features` → `reverse-feature-investigation` → `reverse-feature-challenge` → `reverse-feature-implementation` |
+| Research an external repository concept | `reverse-features` → `factoryos-repo-assimilation` → `reverse-feature-investigation` → `reverse-feature-challenge` |
+| Review a proposed improvement before coding | `reverse-features` → `reverse-feature-challenge`; no implementation until the decision record selects a candidate |
