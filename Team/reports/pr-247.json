@@ -74,7 +74,9 @@
     "services/rendering-engine/tests/test_github_dispatch_claim.py (new): 16 behavioural cases over a mocked transport.",
     "apps/web/factoryos/tests/render-worker-fail-closed.test.ts (new): 18 static invariant checks over both workflows and the claim client.",
     "docs/deployment/render-worker-secrets.md (new): configuration, rotation procedure, fail-closed behaviour table, dispatch-permission limitation, and the backend change needed.",
-    ".okf/decisions.md: decision record for this change."
+    ".okf/decisions.md: decision record for this change.",
+    "services/rendering-engine/worker_daemon.py: removed an orphaned indented return and the now-unused tier assignment left behind when commit 1ce28a3aa1dbc259617c50cbb18b2eb349d73a97 removed the Azure-only non-ADMIN guard during the provider-neutral refactor. The old Azure-only restriction was not restored.",
+    "services/rendering-engine/tests/test_worker_daemon_syntax.py: add an AST-parse regression test so the persistent worker daemon cannot silently regress to an import-blocking syntax error."
   ],
   "verificationResults": {
     "typecheck": "PASS",
@@ -87,12 +89,14 @@
     "unitTestsDetail": "render-worker-fail-closed.test.ts 18/18; test_github_dispatch_claim.py 16/16",
     "repositoryScanForOldLiteral": "PASS",
     "repositoryScanDetail": "No occurrence in .github/workflows. The literal remains only as an intentional detection pattern in apps/web/scripts/check-cloudflare-free.mjs and as a negative assertion in services/rendering-engine/tests/test_drive_delivery.py.",
-    "fullFactoryosSuite": "PRE_EXISTING_FAILURES",
-    "fullFactoryosSuiteDetail": "npm run factoryos:test -> 1443 passed, 75 failed, 9 skipped across 71 files. No failure is attributable to this change: no test imports the workflow YAMLs, and the failing classes are unrelated (missing modules such as lib/rendering/AzureWorkerManager, which does not exist on main; undefined globals; unrelated assertions).",
+    "fullFactoryosSuite": "PRE_EXISTING_FAILURES_AND_DAEMON_FIX_PENDING_REVALIDATION",
+    "fullFactoryosSuiteDetail": "npm run factoryos:test -> 1443 passed, 75 failed, 9 skipped across 71 files. No failure is attributable to this change: no test imports the workflow YAMLs, and the failing classes are unrelated (missing modules such as lib/rendering/AzureWorkerManager, which does not exist on main; undefined globals; unrelated assertions). A later targeted repair removes the orphaned return in worker_daemon.py; rerun the affected Python tests on the updated head before classifying daemon test collection.",
     "liveRenderExecution": "BLOCKED",
     "liveRenderExecutionDetail": "No credentials or runtime available in this environment. No physical MP4, CAS receipt or F07 proof is claimed.",
     "liveClaimAgainstControlPlane": "NOT_RUN",
-    "dispatchActionsWritePermission": "NOT_VERIFIED"
+    "dispatchActionsWritePermission": "NOT_VERIFIED",
+    "workerDaemonSyntax": "PENDING_ON_FINAL_HEAD",
+    "workerDaemonSyntaxDetail": "Fix is based on the actual prior commit diff; the new Python AST-parse regression test and final-head Python test run must pass before this repair is considered verified."
   },
   "pendingReviews": [
     "Repository owner review of PR 247 — required before merge.",
@@ -109,8 +113,8 @@
     "Control plane cannot claim a named job: POST /api/rendering/claim accepts only workerId and workerPool. A job-targeted claim (optional jobId, honouring existing lease/fencing and attempt-monotonicity rules) is a separate control-plane change and is not implemented here.",
     "Live render execution is BLOCKED in this environment (no credentials or runtime). No physical MP4, CAS receipt or F07 proof is claimed.",
     "The compromised RENDER_WORKER_SECRET must be rotated by the operator on both the control plane and repository secrets before the dispatcher can claim at all.",
-    "services/rendering-engine/worker_daemon.py:549 contains a stray return causing IndentationError, so the module cannot be imported and four test modules in services/rendering-engine/tests/ cannot be collected. Deliberately not fixed in this change: the guard condition the orphaned return belonged to cannot be recovered from the current source."
+    "Validate the worker-daemon syntax repair and its new AST regression test on the final PR head; until then, daemon recovery is not counted as verified."
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "The security fix and its regression tests are complete and verified at unit/static level, but the change cannot be qualified as production-complete: live render execution is BLOCKED by absent credentials, the live claim path was tested only against a mocked transport, and the compromised RENDER_WORKER_SECRET must be rotated by the operator before the dispatcher can claim at all. Per .okf security discipline, BLOCKED is not reported as PASS."
+  "dispositionReason": "The dispatcher hardening has focused unit/static evidence, but PR promotion remains blocked by owner review, rotation of the compromised RENDER_WORKER_SECRET, pending/failed exact-head gates, and lack of live physical-render proof. The daemon syntax repair has been added based on verified history but requires final-head test evidence."
 }
