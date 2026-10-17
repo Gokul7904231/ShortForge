@@ -15,7 +15,8 @@
     "Keep F07 fail-closed for an active claim on a Short longer than one minute and remove unsupported playback/revenue inferences.",
     "Refresh the canonical policy snapshot as 2026.10.17 and update regression tests to assert blocking before and after September 24, 2026.",
     "Add this required Team Change Report and require fresh final-head validation rather than relying on the superseded run.",
-    "Fixes physical-proof workflow concurrency by assigning separate concurrency groups to each PR/ref, preventing unrelated PR validations from cancelling one another."
+    "Fixes physical-proof workflow concurrency by assigning separate concurrency groups to each PR/ref, preventing unrelated PR validations from cancelling one another.",
+    "Bound the optional Lightning Studio listing with a 60-second timeout; listing failures are diagnostic-only and no longer prevent the required physical-proof step from running."
   ],
   "okf": {
     "sweepStatus": "INCIDENT_FOLLOWUP",
@@ -70,7 +71,7 @@
     "Final-head Team Change and OKF Governance gates must pass.",
     "The full current .okf human review and authorized disposition are still pending.",
     "Independent human review is required before merge.",
-    "Lightning Physical MP4 → CAS → F07 must complete successfully on the final PR head; cancelled attempts do not qualify physical evidence."
+    "A fresh Lightning Physical MP4 → CAS → F07 run must complete successfully on the updated final head; the previous listing timeout produced no artifact and does not qualify."
   ],
   "evidenceRefs": [
     "https://support.google.com/youtube/answer/15424877",
@@ -78,10 +79,13 @@
     "https://github.com/Gokul7904231/ShortForge/pull/244",
     "https://github.com/Gokul7904231/ShortForge/actions/runs/38888690332",
     "https://github.com/Gokul7904231/ShortForge/actions/runs/38888690421",
-    "https://github.com/Gokul7904231/ShortForge/actions/runs/39016377317"
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39016377317",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39040028007",
+    "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/apps/web/scripts/list-lightning-studios.ts",
+    "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/.github/workflows/lightning-physical-mp4-proof.yml"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "Policy/invariant and governance checks passed on the prior head, but required current-head validation and independent review remain pending. Earlier Lightning physical-proof attempts were cancelled by a shared global concurrency group; the per-PR isolation fix is included and must be verified by a completed proof run.",
+  "dispositionReason": "Policy and governance checks passed on the previous head. The previous Lightning attempt hung in the optional Studio-listing diagnostic before rendering. The diagnostic now has a bounded 60-second timeout and is non-blocking, the workflow has a dedicated step timeout and a 40-minute job budget, and the workflow triggers on edits to its own workflow and listing script. These changes require fresh final-head CI/OKF/F07 checks and a successful physical MP4 → CAS → F07 proof; independent human review and full human OKF review remain pending.",
   "changes": [
     "Removed the unsupported September 24, 2026 transition and separate legacy/current rule records.",
     "Restored one official active Content ID rule effective 2024-10-15: an active claim on a Short over one minute blocks publication.",
@@ -95,6 +99,7 @@
     "Run F07 strict typecheck, physical-truth tests, invariant/receipt suites and policy-refresh tests on the final PR head.",
     "Confirm guardian-level tests show active claims block Shorts over one minute on both 2026-09-23 and 2026-09-24.",
     "Keep disposition BLOCKED until all required human review and final-head verification are complete.",
-    "Verify that concurrent Lightning physical-proof runs on distinct PRs remain isolated and that this PR completes MP4 → CAS → F07 successfully."
+    "Verify that concurrent Lightning physical-proof runs on distinct PRs remain isolated and that this PR completes MP4 → CAS → F07 successfully.",
+    "Re-run the Lightning Physical MP4 → CAS → F07 workflow on this updated head and verify a non-empty MP4, independent media probe, matching SHA-256/byte length, valid CAS integrity, and successful F07 verifier result."
   ]
 }
