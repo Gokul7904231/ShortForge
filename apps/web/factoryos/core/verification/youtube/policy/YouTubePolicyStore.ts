@@ -348,6 +348,28 @@ export class YouTubePolicyStore {
         forbiddenShallowRepairs: ["speedup_video_beyond_normal"],
       },
 
+      // G12: Legacy Content ID block before the 2026-09-24 transition.
+      {
+        ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY",
+        gateId: "G12_SHORTS_ELIGIBILITY",
+        sourceDocumentId: "src_yt_shorts_monetization",
+        title: "Legacy blocking rule for claimed Shorts over one minute",
+        description: "Before 2026-09-24, Shorts longer than one minute with an active Content ID claim are blocked. This rule ceases to apply on the transition date.",
+        severity: "BLOCKING",
+        evaluationMethod: "DETERMINISTIC",
+        appliesBy: "UPLOAD_DATE",
+        policyEffect: "BLOCK_PUBLICATION",
+        effectiveFrom: "2024-10-15",
+        effectiveTo: "2026-09-24",
+        condition: {
+          maxDurationSeconds: 180,
+          contentIdClaimThresholdSeconds: 60,
+        },
+        affectedStagesOnFailure: ["F04", "F05", "F07"],
+        suggestedRemediationAction: "Resolve the Content ID claim, replace the claimed material, or keep the Short at one minute or less.",
+        forbiddenShallowRepairs: ["pitch_shift_audio", "assume_claim_is_revenue_only"],
+      },
+
       // G12: Effective-dated Content ID transition for Shorts over one minute.
       {
         ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE",

@@ -11,7 +11,7 @@
   "classification": "extends existing rule",
   "changeSummary": [
     "Use the official, effective-date-specific Understand three-minute YouTube Shorts source for the 2026-09-24 transition.",
-    "Restore upload-date-aware Content ID handling: legacy claimed Shorts remain blocked before the cutoff; new Shorts over one minute but under three minutes after the cutoff are not automatically blocked by this rule and remain reviewable.",
+    "Represent pre-2026-09-24 blocking and the post-transition warning/review behavior as two non-overlapping upload-date-effective policy rules selected by the actual Guardian path.",
     "Remove the unsupported assumption that the claim transfers monetization revenue to the claimant; explicitly disclaim playback and revenue guarantees.",
     "Update the current policy snapshot to version 2026.10.17 and fix tests that incorrectly requested a superseded 2026.09.15 snapshot or a publication date before the current snapshot.",
     "Add this required Team Change Report and record the previous missing-report and F07 test failures as prior evidence, not as current-head results."
@@ -85,7 +85,7 @@
   "dispositionReason": "The implementation and regression fixes are prepared for final-head verification, but CI has not run on the updated head, the complete current .okf human review is not complete, and authorized independent review remains pending.",
   "changes": [
     "Restored the official effective-date source for the September 24, 2026 Content ID transition.",
-    "Made the current rule distinguish pre-transition blocking from post-transition warning/review for Shorts over one minute but under three minutes.",
+    "Added distinct legacy blocking and post-transition warning/review G12 rules; Guardian executes whichever rule is active for uploadIntentAt.",
     "Removed unconditional REVENUE_IMPACT inference and replaced it with EXTERNAL_REVIEW only for the applicable post-transition case.",
     "Added tests for the effective-date boundary and revised the F07 snapshot/time fixtures."
   ],
@@ -93,6 +93,7 @@
     "Run Team/scripts/validate-team-report.mjs Team/reports/pr-244.json.",
     "Run the OKF lint/sweep-report workflow on the final PR head.",
     "Run CI and Floor 07 Pre-Training Validation; verify the policy-refresh, F07 architectural invariants, evidence-receipt, and remediation suites.",
-    "Confirm the report remains BLOCKED until human review and authorized disposition are actually complete."
+    "Confirm the report remains BLOCKED until human review and authorized disposition are actually complete.",
+    "Confirm guardian-level boundary tests select the legacy rule immediately before 2026-09-24 and the transition rule at the cutoff."
   ]
 }

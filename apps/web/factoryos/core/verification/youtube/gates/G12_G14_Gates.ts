@@ -91,6 +91,91 @@ export class G12_ShortsEligibilityGate {
       };
     }
 
+    // 2a. Historical rule, selected only for upload intents before the transition.
+    if (rule.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY") {
+      const hasClaim = Boolean(video.hasActiveContentIdClaim);
+      if (hasClaim && duration > 60.0) {
+        return {
+          gateId: "G12_SHORTS_ELIGIBILITY",
+          ruleId: rule.ruleId,
+          status: "BLOCKED",
+          severity: "BLOCKING",
+          observedSignal: {
+            duration,
+            hasActiveContentIdClaim: true,
+            playbackEffect: "BLOCKED",
+            uploadIntentAt,
+            effectiveTo: rule.effectiveTo,
+          },
+          explanation:
+            `The upload intent date '${uploadIntentAt}' is governed by the pre-2026-09-24 rule: Shorts over one minute with an active Content ID claim are blocked.`,
+          evidence: [
+            `Measured duration: ${duration.toFixed(1)}s (over 60s)`,
+            "Active Content ID claim: PRESENT",
+            `Legacy rule ends: ${rule.effectiveTo}`,
+          ],
+          evidenceRefs: [
+            EvidenceRefFactory.create({
+              evidenceType: "POLICY_SNAPSHOT",
+              producer: "G12_ShortsEligibilityGate",
+              method: "HTTP_FETCH_VERIFY",
+              confidence: 1.0,
+              metadata: {
+                sourceDocumentId: rule.sourceDocumentId,
+                duration,
+                hasActiveContentIdClaim: true,
+                uploadIntentAt,
+                effectiveTo: rule.effectiveTo,
+              },
+            }),
+          ],
+          affectedStages: ["F04", "F05", "F07"],
+          suggestedRemediation:
+            "Resolve or replace claimed material, or trim the Short to one minute or less before seeking release.",
+          forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
+          evaluationType: "DETERMINISTIC",
+          confidence: 1.0,
+        };
+      }
+
+      return {
+        gateId: "G12_SHORTS_ELIGIBILITY",
+        ruleId: rule.ruleId,
+        status: "PASS",
+        severity: rule.severity,
+        observedSignal: {
+          duration,
+          hasActiveContentIdClaim: hasClaim,
+          uploadIntentAt,
+          contentIdClaimCheck: hasClaim ? "ACTIVE_CLAIM_AT_MOST_60_SECONDS" : "NO_ACTIVE_CLAIM",
+        },
+        explanation: "No over-one-minute active Content ID claim triggers the legacy blocking rule.",
+        evidence: [
+          `Measured duration: ${duration.toFixed(1)}s`,
+          `Active Content ID claim: ${hasClaim ? "PRESENT" : "NONE"}`,
+        ],
+        evidenceRefs: [
+          EvidenceRefFactory.create({
+            evidenceType: "POLICY_SNAPSHOT",
+            producer: "G12_ShortsEligibilityGate",
+            method: "HTTP_FETCH_VERIFY",
+            confidence: 1.0,
+            metadata: {
+              sourceDocumentId: rule.sourceDocumentId,
+              duration,
+              hasActiveContentIdClaim: hasClaim,
+              uploadIntentAt,
+              effectiveTo: rule.effectiveTo,
+            },
+          }),
+        ],
+        affectedStages: [],
+        forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
+        evaluationType: "DETERMINISTIC",
+        confidence: 1.0,
+      };
+    }
+
     // 2. Effective-dated Content ID transition for Shorts over one minute.
     if (rule.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE") {
       const uploadDate = new Date(uploadIntentAt).getTime();

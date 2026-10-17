@@ -13,7 +13,6 @@ import {
 } from "../core/verification/youtube";
 import { ContentGenome } from "../core/creative/ContentGenome";
 import { MediaProbeMeasurements } from "../core/verification/VerificationEngine";
-import { G12_ShortsEligibilityGate } from "../core/verification/youtube/gates/G12_G14_Gates";
 
 describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & Date Proof", () => {
   const policyStore = YouTubePolicyStore.getInstance();
@@ -143,29 +142,41 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     expect(g12?.observedSignal).not.toHaveProperty("revenueEffect");
   });
 
-  it("3. Effective-date boundary — old claimed Shorts block before the transition and become warning-only after", () => {
-    const rule = policyStore.getSnapshot("2026.10.17")!.rules.find(
-      (candidate) => candidate.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
-    )!;
-
-    const beforeTransition = G12_ShortsEligibilityGate.evaluate(
-      claimedLongShort,
-      rule,
-      "2026-09-23T23:59:59Z"
+  it("3. Effective-date boundary — Guardian selects legacy block before cutoff and review-only transition on/after cutoff", () => {
+    const beforeTransition = guardian.evaluate({
+      video: claimedLongShort,
+      channel: sampleChannel,
+      publicationIntentAt: "2026-09-23T23:59:59Z",
+      uploadIntentAt: "2026-09-23T23:59:59Z",
+    });
+    expect(beforeTransition.publishAllowed).toBe(false);
+    expect(beforeTransition.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+    const legacyFinding = beforeTransition.gateFindings.find(
+      (finding) => finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY"
     );
-    expect(beforeTransition.status).toBe("BLOCKED");
-    expect(beforeTransition.severity).toBe("BLOCKING");
-    expect(beforeTransition.observedSignal?.playbackEffect).toBe("BLOCKED");
+    expect(legacyFinding?.status).toBe("BLOCKED");
+    expect(legacyFinding?.severity).toBe("BLOCKING");
+    expect(legacyFinding?.observedSignal?.playbackEffect).toBe("BLOCKED");
 
-    const afterTransition = G12_ShortsEligibilityGate.evaluate(
-      claimedLongShort,
-      rule,
-      "2026-09-24T00:00:00Z"
+    const afterTransition = guardian.evaluate({
+      video: claimedLongShort,
+      channel: sampleChannel,
+      publicationIntentAt: "2026-09-24T00:00:00Z",
+      uploadIntentAt: "2026-09-24T00:00:00Z",
+    });
+    expect(afterTransition.publishAllowed).toBe(true);
+    expect(afterTransition.activePolicyEffects).toContain("EXTERNAL_REVIEW");
+    expect(afterTransition.activePolicyEffects).not.toContain("BLOCK_PUBLICATION");
+    expect(afterTransition.gateFindings.some(
+      (finding) => finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY"
+    )).toBe(false);
+    const currentFinding = afterTransition.gateFindings.find(
+      (finding) => finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
     );
-    expect(afterTransition.status).toBe("PASS");
-    expect(afterTransition.severity).toBe("WARNING");
-    expect(afterTransition.explanation).toContain("may remain playable");
-    expect(afterTransition.observedSignal).not.toHaveProperty("revenueEffect");
+    expect(currentFinding?.status).toBe("PASS");
+    expect(currentFinding?.severity).toBe("WARNING");
+    expect(currentFinding?.explanation).toContain("may remain playable");
+    expect(currentFinding?.observedSignal).not.toHaveProperty("revenueEffect");
   });
 
   it("4. Content ID Claim Replacement — replacing claimed audio with original narration bed passes when claim is resolved", () => {
