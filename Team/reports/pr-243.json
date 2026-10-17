@@ -4,16 +4,16 @@
   "changeId": "PR-243-DAYTONA-SDK-LIFECYCLE-20261017",
   "mission": "Requalify the Daytona adapter lifecycle/download fixes against the current F07 YouTube policy and report exact live evidence.",
   "date": "2026-10-17",
-  "base": "main",
-  "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
+  "base": "fix/f07-policy-refresh-20261016",
+  "baseSha": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
   "headRef": "fix/daytona-sdk-lifecycle-20261016",
   "exactHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
   "classification": "extends existing rule",
-  "requestedOutcome": "Normalize Daytona provider-native lifecycle states, produce/download a physical MP4, verify remote/local integrity and CAS, then pass current F07 policy and signed receipt validation before any qualification claim.",
+  "requestedOutcome": "Normalize Daytona lifecycle/download handling and requalify against the corrected F07 policy from PR #244. Physical qualification is supported by the current-policy proof run; promotion remains gated by fresh checks and independent review.",
   "okf": {
     "sweepStatus": "INCIDENT_FOLLOWUP",
     "machineSweepStatus": "PENDING_ON_REPORT_UPDATED_HEAD",
-    "machineSweepEvidence": "Current-policy physical Daytona proof passed in run 39019612786 on combined test head 0cd86cb8324223fbb15c33804e74d665eb1aa918, artifact 12096581046. This report update needs fresh Team Change/OKF/CI runs on the resulting PR head.",
+    "machineSweepEvidence": "PR #243 is intentionally stacked on PR #244 (base fix/f07-policy-refresh-20261016 at 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8) so F07 checks run against corrected policy. Combined physical proof passed in run 39019612786 on temporary test head 0cd86cb8324223fbb15c33804e74d665eb1aa918, using Daytona application source 4d53b1c357e7251e4e83407f58bf1f30f1a0b108.",
     "humanCorpusReviewStatus": "PARTIAL",
     "reviewedRefs": [
       ".okf/decision-protocol.md",
@@ -29,7 +29,7 @@
     ],
     "pending": [
       "Complete a human review of the full current .okf corpus and relevant repo mappings.",
-      "Run Team Change, OKF Governance Gate, and repository CI on the report-updated PR head.",
+      "Run Team Change, OKF Governance, CI and relevant F07/sandbox validation against the stacked PR head.",
       "Obtain independent human/security review before promotion."
     ]
   },
@@ -97,7 +97,13 @@
     "applicationHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
     "reportParentHead": "248dcc87b1f605f483ce39834072174e23032a96",
     "applicationHeadTested": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
-    "policyHeadTested": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8"
+    "policyHeadTested": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+    "stackedBase": {
+      "pullRequest": 244,
+      "branch": "fix/f07-policy-refresh-20261016",
+      "commit": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+      "reason": "F07 validation on the old main base fails because main has not yet absorbed the current policy; the Daytona adapter must be validated against the corrected policy branch rather than copying policy changes into #243."
+    }
   },
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/243",
@@ -108,11 +114,12 @@
     "https://support.google.com/youtube/answer/12504220"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "Daytona's current-policy physical qualification passed. Repository promotion remains blocked pending fresh checks on the report-updated PR head, full human OKF review, and independent security/human review.",
+  "dispositionReason": "Current-policy physical Daytona proof passed. The PR is stacked on #244 so final F07/CI checks use corrected policy. Merge remains blocked pending final checks and independent human/security review.",
   "verificationPlan": [
     "Pass Team Change Gate, OKF Governance Gate, and CI on the report-updated PR head.",
     "Retain run 39019612786 and artifact 12096581046 as the current-policy physical qualification evidence.",
     "Complete the full current .okf human review and independent security/release review before merging.",
     "Keep productionWorkerEligible=false; physical qualification does not grant F06 production-worker authority."
-  ]
+  ],
+  "stackedOnPr": 244
 }
