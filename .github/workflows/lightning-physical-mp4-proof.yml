@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: shortforge-lightning-physical-proof
+  group: shortforge-lightning-physical-proof-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
 
 jobs:

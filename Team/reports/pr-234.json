@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "okf-control-plane-v2-pr234-current-main-reconciliation",
+  "pullRequest": 234,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/okf-v2-current-main-20261012",
+  "objective": "Reconcile OKF V2 machine coverage, source drift detection, exception authorization/expiry, Team evidence linkage, and deterministic governance tests onto current main without overwriting unrelated architecture.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/manifest.yaml",
+      ".okf/rules/index.json",
+      ".okf/rules/source-digests.json",
+      ".okf/verification/rule-to-test-matrix.md",
+      "Team/contracts/team-change-ir.md",
+      "Team/contracts/team-change-report.schema.json",
+      ".github/workflows/okf-governance.yml"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "V2 remains a governance-only change. Repository ruleset enforcement was independently observed disabled at the current repository settings; protected-main promotion remains blocked until an authorized operator re-enables the rulesets."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added deterministic machine coverage for active CRITICAL/HIGH rules.",
+    "Added source-digest and implementation drift detection.",
+    "Linked Team change reports to the CI-compiled governance sweep.",
+    "Validated exception expiry and authorization fields.",
+    "Added deterministic V2 governance tests and evidence workflow.",
+    "Restored .github/CODEOWNERS to the governed branch content; actual GitHub Code Owner enforcement remains dependent on active repository settings."
+  ],
+  "evidenceRefs": [
+    ".okf/manifest.yaml",
+    ".okf/rules/index.json",
+    ".okf/rules/source-digests.json",
+    ".okf/verification/rule-to-test-matrix.md",
+    "tools/okf/sweep.py",
+    "tools/okf/drift.py",
+    "tools/okf/validate_report.py",
+    "tools/okf/tests/test_control_plane.py",
+    ".github/workflows/okf-governance.yml",
+    ".github/CODEOWNERS"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Run all required checks on this exact reconciled head.",
+    "Verify compiled OKF report linkage and V2 drift/exception tests.",
+    "Require independent reviewer approval.",
+    "Do not promote until the existing main and release-tag rulesets are active."
+  ],
+  "verificationResults": {
+    "okfGovernanceGate": "PENDING_CI",
+    "v2DriftCoverage": "IMPLEMENTED__CI_PENDING",
+    "teamReportMachineLinkage": "IMPLEMENTED__CI_PENDING",
+    "exceptionExpiry": "IMPLEMENTED__CI_PENDING",
+    "githubRepositoryProtection": "DISABLED__PROMOTION_BLOCKED"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canModifyOkf": false,
+    "canPromote": false
+  }
+}

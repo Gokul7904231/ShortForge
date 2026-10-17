@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shortforge://okf/source-digests/v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "algorithm",
+    "files"
+  ],
+  "properties": {
+    "schema": {
+      "const": "shortforge://okf/source-digests/v1"
+    },
+    "algorithm": {
+      "const": "git-blob-sha1"
+    },
+    "generatedFrom": {
+      "type": "string"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{40}$"
+      }
+    }
+  },
+  "additionalProperties": false
+}
