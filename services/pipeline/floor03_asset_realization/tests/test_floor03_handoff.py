@@ -14,6 +14,7 @@ from floors.floor02_scripting.app.domain.handoff import (
 )
 from floors.floor02_scripting.app.domain.script_models import (
     CharacterProfile,
+    NarrativeFormat,
     SceneSpecification,
 )
 from floors.floor03_asset_realization.app.core.exceptions import Floor03ValidationError
@@ -357,3 +358,18 @@ def test_regeneration_updates_scene_plan_prompt(tmp_path):
     )
     assert target_req.scene_plan is not None
     assert "make the product screen glow softly" in target_req.scene_plan.prompt_text
+
+
+def test_editor_composition_type_survives_f02_to_f03_handoff(tmp_path):
+    f02_payload = build_mock_floor02_payload().model_copy(
+        update={"format": NarrativeFormat.QUIZ_SHORTS}
+    )
+    pipeline = Floor03Pipeline(
+        memory_store=AssetMemoryStore(storage_path=str(tmp_path / "editor-format-memory.json"))
+    )
+
+    payload = pipeline.execute(
+        Floor03Input(floor02_payload=f02_payload, request_id="req-editor-format-quiz")
+    )
+
+    assert payload.composition_type == "QUIZ_SHORTS"

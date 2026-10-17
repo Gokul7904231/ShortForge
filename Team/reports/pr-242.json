@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "shortforge-editor-page-20261012",
+  "date": "2026-10-12",
+  "mission": "Build the native ShortForge Editor page and safely connect existing generated Shorts",
+  "pullRequest": 242,
+  "base": "main",
+  "activeFeature": "feat/shortforge-editor-20261012",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "sourceRefs": [
+      ".okf/research/build-shortforge-editor-20261012.md",
+      "apps/web/factoryos/core/timeline/CompositionIR.ts",
+      "apps/web/factoryos/core/editor/EditorRuntime.ts",
+      "apps/web/factoryos/core/editor/DurableEditor.ts",
+      "apps/web/factoryos/core/fabric/RenderFabric.ts",
+      "apps/web/factoryos/core/verification/VerificationEngine.ts"
+    ],
+    "summary": "Architecture and code paths reviewed. Follow-up is required because legacy jobs lack a guaranteed editable source manifest and export is intentionally disabled."
+  },
+  "forgers": [
+    {
+      "name": "product-design",
+      "status": "IMPLEMENTED_WITH_LIMITS",
+      "findings": [
+        "Generation READY panel and Media Library route to a dedicated editor page.",
+        "Legacy flattened imports are clearly labelled and do not claim recovered scene/question layers.",
+        "Native studio adds a scene/clip navigator driven only by clip IDs and explicit scene metadata; legacy flattened videos remain one clip."
+      ]
+    },
+    {
+      "name": "editor-runtime",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "Existing CompositionIR and DurableEditor are reused.",
+        "CAS sources are resolved server-side and actual bytes are hash checked before compilation.",
+        "A regression test covers successful CAS resolution and tamper rejection.",
+        "Studio exposes split-at-playhead and trim-range controls wired to typed SPLIT_CLIP/TRIM_CLIP commands; dedicated tests check source-contiguous split offsets, trim source offsets and edge-split rejection."
+      ]
+    },
+    {
+      "name": "render-security",
+      "status": "FOLLOW_UP_REQUIRED",
+      "findings": [
+        "A dedicated editor playback route now verifies session, job ownership, source binding, byte length and SHA-256.",
+        "No production export endpoint is exposed by this change; export remains locked pending worker input staging, Treasury admission, F06 output and F07 evidence.",
+        "Initial editor open is now bound to the persisted CompositionIR digest; browser input cannot seed revision 0 from a hand-crafted document that merely reuses the job's allowed media hashes.",
+        "Job-manifest writes now load the persisted Firestore record before merging editor source metadata; a cold instance cannot replace owner/status/video fields with default values.",
+        "Source metadata updates fail closed on authoritative-record read/write failures and restore the previous in-memory record instead of exposing a non-durable package.",
+        "Regression tests cover cold-start merge preservation, fail-closed read errors and in-memory rollback on write errors.",
+        "Editor-source persistence now also rejects missing persisted jobs even when a stale in-memory copy exists; no orphan source package can be written against a ghost job."
+      ]
+    },
+    {
+      "name": "timeline-interchange",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "F02 narrative format is propagated into the F03 handoff and F05 canonical TimelineSpec rather than defaulting every timeline to FACTS_SHORTS.",
+        "F05 canonical bridge preserves scene IDs, source versions, source trims, caption scene/position/font-style metadata and transitions.",
+        "TypeScript TimelineIR upgrade maps source trims, scene/source metadata, transitions and caption metadata into CompositionIR.",
+        "Regression tests cover F02-to-F03 quiz format propagation, F05 bridge field preservation, and TimelineIR-to-CompositionIR upgrade."
+      ]
+    },
+    {
+      "name": "source-package",
+      "status": "IMPLEMENTED_BEST_EFFORT_PENDING_CI",
+      "findings": [
+        "Added a bounded EditorSourcePackage builder that stages real source files into CAS, validates signatures, saves CompositionIR as an immutable CAS artifact, and records owner/job/source hashes.",
+        "Floor 05 orchestration attempts package creation from the same RenderIntent used for F06 and persists a successful package in the completed VideoJob manifest.",
+        "The editor source API verifies package schema, job/owner binding, composition hash/length and each source asset's actual CAS digest before opening it.",
+        "Missing placeholder media and template-specific LocalRenderIntent intentionally fall back; the Python canonical F05 TimelineIR is not yet directly packaged for every job.",
+        "CAS source MIME inference now reads the staged artifact metadata rather than requiring a filename extension, with a regression test for already-staged image/audio inputs.",
+        "Flattened imports now persist the exact initial CompositionIR as a CAS artifact; editor open verifies that the submitted document canonicalizes identically to the immutable saved composition.",
+        "Job-manifest persistence now awaits the database write for editor source records and fails closed in production when persistent storage is unavailable or the write fails.",
+        "Caption-to-scene identity is preserved only when explicit sceneId metadata is present; no array-position relationship is invented.",
+        "The normal inspected render-intent path can still produce placeholder image URLs rather than resolved source files, so source-package creation safely declines and the editor falls back to flattened import for those jobs.",
+        "Quiz question editing remains gated until source records establish question-to-scene/caption bindings and whether text is separately rendered or burned into source visuals."
+      ]
+    },
+    {
+      "name": "caption-editing",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "Added a revision-checked UPDATE_CAPTION_TEXT operation to the canonical editor command engine.",
+        "Studio now exposes a caption inspector and Apply caption text action; flattened jobs with no independent caption cues explain the limitation.",
+        "Regression tests cover successful text change, preservation of scene metadata, and rejection of empty/unknown captions.",
+        "Successful editor receipts now expose changedCaptionIds so downstream verification can identify caption-level changes rather than treating them as an empty clip edit.",
+        "Added UPDATE_CAPTION_STYLE with strict server-side allowlisting for font size, six-digit hex colours and supported animation values.",
+        "Editor inspector now supports text, font size, text colour and animation edits; the receipt carries changedCaptionIds for audit and downstream targeted-render planning."
+      ]
+    },
+    {
+      "name": "timeline-controls",
+      "status": "IMPLEMENTED_PENDING_CI",
+      "findings": [
+        "Studio exposes a scene/clip navigator from existing CompositionIR clips and explicit scene metadata.",
+        "Clip range trim and split-at-playhead are wired through TRIM_CLIP and SPLIT_CLIP revision-checked commands.",
+        "Tests assert source time continuity, trim offsets and fail-closed edge splits."
+      ]
+    }
+  ],
+  "security": {
+    "status": "UNPROVEN",
+    "semgrep": "UNPROVEN",
+    "strix": "UNPROVEN",
+    "zap": "UNPROVEN",
+    "evidence": [
+      "apps/web/app/api/editor/source/[jobId]/route.ts",
+      "apps/web/app/api/editor/source/[jobId]/video/route.ts",
+      "apps/web/app/api/editor/runtime/route.ts",
+      "apps/web/factoryos/core/editor/EditorRuntime.ts",
+      "services/pipeline/floor03_asset_realization/app/domain/handoff.py",
+      "services/pipeline/floor03_asset_realization/app/pipeline.py",
+      "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+      "services/pipeline/floor05_timeline_composition/app/workers/composition_worker.py",
+      "services/pipeline/floor05_timeline_composition/app/services/timeline_ir_bridge.py",
+      "apps/web/factoryos/core/timeline/TimelineIR.ts",
+      "apps/web/factoryos/tests/timeline-ir-editor-metadata.test.ts",
+      "apps/web/factoryos/core/editor/EditorSourcePackage.ts",
+      "apps/web/factoryos/tests/editor-source-package.test.ts",
+      "apps/web/factoryos/tests/editor-contracts.test.ts",
+      "apps/web/components/editor/ShortForgeEditorStudio.tsx",
+      "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+      "apps/web/factoryos/core/editor/EditorContracts.ts",
+      "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+      "apps/web/factoryos/core/editor/DurableEditor.ts",
+      "apps/web/factoryos/tests/editor-contracts.test.ts",
+      "apps/web/app/api/editor/runtime/route.ts",
+      "apps/web/app/api/editor/source/[jobId]/route.ts",
+      "apps/web/factoryos/tests/editor-source-package.test.ts",
+      "apps/web/factoryos/tests/editor-trim-split.test.ts",
+      "apps/web/factoryos/tests/jobs-history-editor-source.test.ts",
+      "apps/web/factoryos/tests/editor-trim-split.test.ts",
+      "apps/web/factoryos/tests/jobs-history-editor-source.test.ts"
+    ],
+    "notes": "Code-path controls were added, but automated security scans and browser/API adversarial tests have not yet qualified this feature."
+  },
+  "conflicts": [],
+  "proposedResolutions": [
+    {
+      "id": "editor-export-gate",
+      "proposal": "Keep export disabled until F05 source manifest, worker-side source staging/hash validation, server-authorized Treasury, F06 render, CAS output and F07 receipt are integrated and tested."
+    },
+    {
+      "id": "legacy-flattened-source",
+      "proposal": "Import old completed MP4s as one explicitly labelled clip. Do not invent original scenes, question data, captions, or independent narration."
+    },
+    {
+      "id": "license-boundary",
+      "proposal": "Use external editor repositories as feature/architecture references. Review all licenses before vendoring or adding dependencies."
+    },
+    {
+      "id": "f05-timeline-semantic-loss",
+      "proposal": "Preserve F02 narrative format and F05 scene/asset/trim/transition/caption metadata through the canonical interchange model. Next still requires portable CAS staging and an owner-bound source-manifest link from F06 into the editor job manifest."
+    },
+    {
+      "id": "best-effort-source-package",
+      "proposal": "Persist an owner-bound CAS composition package when every real RenderIntent dependency resolves; reject placeholder or unsupported sources and retain labelled flattened fallback. Follow up by packaging the canonical F05 TimelineIR plus source media for non-template and template execution paths."
+    },
+    {
+      "id": "quiz-source-binding",
+      "proposal": "Do not enable quiz question/options/answer editing until the source package explicitly binds question indices to scene/caption identities and regeneration/preservation invariants prove the changed output reflects the requested field."
+    }
+  ],
+  "acceptedResolutions": [
+    {
+      "id": "editor-page",
+      "resolution": "Reuse CompositionIR, DurableEditor and the existing Studio rather than creating a competing timeline runtime."
+    },
+    {
+      "id": "owner-bound-media",
+      "resolution": "Use an authenticated owner-bound playback endpoint and verify the physical CAS digest before serving source bytes."
+    },
+    {
+      "id": "canonical-timeline-interop",
+      "resolution": "Retain F05 TimelineIR as a canonical source boundary and upgrade it to CompositionIR without discarding supported source scene identities, source trim ranges, caption metadata or transitions."
+    },
+    {
+      "id": "caption-text-command",
+      "resolution": "Edit caption text only through a typed, revision-checked command and preserve existing caption timing, style and scene metadata."
+    },
+    {
+      "id": "timeline-basic-edit-controls",
+      "resolution": "Expose basic trim and split controls through canonical revision-checked commands and test source timing, instead of modifying MP4 bytes directly."
+    },
+    {
+      "id": "editor-source-persisted-parent",
+      "resolution": "A source package or flattened-source binding may be attached only to an existing authoritative persisted job; missing/cold/stale job records fail closed."
+    }
+  ],
+  "disposition": "BLOCKED",
+  "finalDisposition": {
+    "status": "BLOCKED_PENDING_QUALIFICATION",
+    "reason": "The native page, best-effort CAS source package, immutable starting-composition guard, caption text/style editing and timeline semantics are implemented on the draft branch. Current-head CI/browser/security qualification remains pending; source packages for all renderer paths and safe export remain incomplete."
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/242",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197793",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197715",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197787",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38246197741",
+    ".okf/research/build-shortforge-editor-20261012.md",
+    "services/pipeline/floor03_asset_realization/tests/test_floor03_handoff.py",
+    "services/pipeline/floor05_timeline_composition/tests/test_f05_wave3_reconciliation.py",
+    "apps/web/factoryos/tests/editor-source-package.test.ts",
+    "apps/web/factoryos/tests/editor-contracts.test.ts",
+    "apps/web/factoryos/tests/editor-contracts.test.ts",
+    "apps/web/lib/jobs-history.ts",
+    "apps/web/factoryos/core/overseer/OverseerControlPlane.ts",
+    "apps/web/factoryos/core/contracts/RenderIntentContracts.ts"
+  ],
+  "modelMetadata": {
+    "assistant": "GPT-6",
+    "modelVersion": "not applicable to application runtime",
+    "automatedReview": false
+  }
+}

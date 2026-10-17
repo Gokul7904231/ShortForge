@@ -9,6 +9,7 @@ import type { EditorCommandEnvelope } from "../core/editor/EditorContracts";
 
 function composition(): CompositionIR {
   const duration = millisecondsToMediaTime(12_000);
+  const clipDuration = millisecondsToMediaTime(10_000);
   return {
     compositionId: "durable-editor-comp",
     schemaVersion: "2.0.0",
@@ -28,7 +29,7 @@ function composition(): CompositionIR {
         assetId: "asset",
         src: "cas://asset",
         start: 0,
-        duration,
+        duration: clipDuration,
         zIndex: 0,
       }],
     }],
@@ -61,6 +62,23 @@ function moveCommand(sessionId: string, revision: number, commandId: string, sta
 }
 
 describe("Durable editor revision graph", () => {
+  it("rejects a move beyond the canvas without creating a history revision", async () => {
+    const editor = new DurableEditor(new InMemoryEditorRevisionStore());
+    await editor.open({
+      sessionId: "session-bounds",
+      compositionId: "durable-editor-comp",
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "AGENT", id: "ascalon" },
+    }, composition());
+
+    const invalid = await editor.apply(moveCommand("session-bounds", 0, "cmd-out-of-bounds", 3_000));
+    expect(invalid.accepted).toBe(false);
+    expect(invalid.error).toContain("Moved clip exceeds composition duration.");
+    expect((await editor.getDocument("session-bounds")).revision).toBe(0);
+    expect((await editor.listHistory("session-bounds")).map((entry) => entry.kind)).toEqual(["ROOT"]);
+  });
+
   it("persists commands across editor restarts and makes command IDs restart-safe", async () => {
     const dir = mkdtempSync(join(tmpdir(), "shortforge-editor-"));
     try {

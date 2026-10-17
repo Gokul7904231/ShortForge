@@ -5,7 +5,7 @@ import hashlib
 from datetime import datetime, timezone
 from enum import Enum
 from fractions import Fraction
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -175,6 +175,7 @@ class TimelineSpec(BaseModel):
     timeline_id: str = Field(...)
     version: str = Field(default="2.0.0")
     schema_version: str = Field(default="2.0.0")
+    composition_type: Literal["FACTS_SHORTS", "QUIZ_SHORTS", "NARRATIVE_STORY", "VIRAL_HOOK"] = "FACTS_SHORTS"
     timebase: TimelineTimebase = Field(default_factory=TimelineTimebase)
     target_width: int = Field(..., gt=0)
     target_height: int = Field(..., gt=0)
@@ -188,6 +189,8 @@ class TimelineSpec(BaseModel):
 
     @model_validator(mode="after")
     def validate_timeline(self) -> "TimelineSpec":
+        if self.composition_type not in {"FACTS_SHORTS", "QUIZ_SHORTS", "NARRATIVE_STORY", "VIRAL_HOOK"}:
+            raise ValueError("Timeline composition_type is not supported by the editor contract.")
         if abs(self.timebase.fps - self.target_fps) > 1e-9:
             raise ValueError("Timeline target_fps must match the rational timebase.")
 

@@ -33,6 +33,49 @@ def test_canonical_timeline_ir_bridge_is_deterministic(tmp_path):
     assert a["schemaVersion"] == "1.0.0"
 
 
+def test_canonical_editor_ir_preserves_quiz_scene_and_editing_metadata(tmp_path):
+    f04 = build_mock_floor04_payload(tmp_path)
+    f03 = f04.floor03_payload.model_copy(update={"composition_type": "QUIZ_SHORTS"})
+    inp = Floor05Input(
+        floor03_payload=f03,
+        floor04_payload=f04,
+        request_id="req-editor-ir-preservation",
+    )
+    timeline = TimelineCompositionWorker.assemble_timeline(
+        floor03_payload=f03,
+        floor04_payload=f04,
+        target_fps=30,
+    )
+    first_visual = next(clip for clip in timeline.clips if clip.track_type.value == "VISUAL")
+    first_visual.trim_start = 0.25
+    first_visual.trim_end = 1.75
+
+    ir = build_canonical_timeline_ir(timeline, inp.request_id)
+
+    assert ir["compositionType"] == "QUIZ_SHORTS"
+    visual = ir["visualTracks"][0]
+    assert visual["sceneId"] == first_visual.scene_id
+    assert visual["assetId"] == first_visual.source_asset_id
+    assert visual["sourceAssetVersion"] == first_visual.source_asset_version
+    assert visual["trimStartMs"] == 250
+    assert visual["trimEndMs"] == 1750
+
+    audio = next(track for track in ir["audioTracks"] if track["trackType"] == "VOICE")
+    assert audio["sceneId"]
+    assert audio["sourceAssetVersion"]
+    assert "sourceInMs" in audio
+    assert "sourceDurationMs" in audio
+
+    caption = ir["subtitleTracks"][0]
+    assert caption["sceneId"]
+    assert caption["position"]
+    assert caption["fontStyle"]
+
+    assert len(ir["transitions"]) == len(timeline.transitions)
+    assert ir["transitions"][0]["fromSceneId"] == timeline.transitions[0].from_scene_id
+    assert ir["transitions"][0]["toSceneId"] == timeline.transitions[0].to_scene_id
+
+
 def test_timeline_brain_remains_proposal_only(tmp_path):
     f04 = build_mock_floor04_payload(tmp_path)
     proposal = TimelineBrain().propose_composition_plan(

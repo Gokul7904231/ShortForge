@@ -74,6 +74,8 @@ export interface RenderTrackAsset {
 
 export interface RenderCaptionCue {
   readonly text: string;
+  /** Stable source scene identity for editable caption-to-scene linkage. */
+  readonly sceneId?: string;
   readonly startMs: number;
   readonly endMs: number;
   readonly style?: {
@@ -82,6 +84,18 @@ export interface RenderCaptionCue {
     readonly highlightColor?: string;
     readonly animation?: "FADE" | "POP" | "SLIDE" | "NONE";
   };
+}
+
+export interface RenderSourceProvenance {
+  readonly sha256: string;
+  readonly mimeType: string;
+  readonly sourceAssetId: string;
+  readonly provider: string;
+  readonly license: string;
+  readonly author: string;
+  readonly sourceUrl: string;
+  readonly attributionRequired: boolean;
+  readonly provenanceKind: "RETRIEVED" | "GENERATED" | "USER_PROVIDED" | "FALLBACK";
 }
 
 export interface RenderAudioTrack {
@@ -96,6 +110,8 @@ export interface RenderAudioTrack {
   readonly sourceInSeconds?: number;
   readonly sourceDurationSeconds?: number;
   readonly playbackRate?: number;
+  /** Verified physical media provenance; omitted provenance makes source packaging fail closed. */
+  readonly sourceProvenance?: RenderSourceProvenance;
 }
 
 export interface RenderBackground {

@@ -24,7 +24,9 @@ function composition(): CompositionIR {
         assetId: "asset",
         src: "cas://asset",
         start: 0,
-        duration,
+        // Leave room at the end of the canvas so a valid 500ms MOVE_CLIP
+        // exercises actor/idempotency semantics rather than failing bounds validation.
+        duration: millisecondsToMediaTime(10_000),
         zIndex: 0,
       }],
     }],
@@ -42,6 +44,185 @@ function composition(): CompositionIR {
 }
 
 describe("ShortForge editor contract", () => {
+  it("edits a source caption with a validated versioned command", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    const withCaption: CompositionIR = {
+      ...base,
+      captions: [{
+        id: "caption-question",
+        text: "Which city?",
+        start: millisecondsToMediaTime(500),
+        end: millisecondsToMediaTime(2_500),
+        style: {
+          fontFamily: "sans-serif",
+          fontSize: 42,
+          primaryColor: "#FFFFFF",
+          animation: "POP_IN",
+        },
+        metadata: { sceneId: "quiz-question-1" },
+      }],
+    };
+
+    await editor.open({
+      sessionId: "caption-session",
+      compositionId: withCaption.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "caption-editor" },
+    }, withCaption);
+
+    const receipt = await editor.apply({
+      commandId: "caption-update-1",
+      sessionId: "caption-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: {
+        type: "UPDATE_CAPTION_TEXT",
+        captionId: "caption-question",
+        text: "Which city is the capital of Tamil Nadu?",
+      },
+    });
+
+    expect(receipt.accepted).toBe(true);
+    expect(receipt.revision).toBe(1);
+    expect(receipt.changedCaptionIds).toEqual(["caption-question"]);
+    const updated = await editor.getDocument("caption-session");
+    expect(updated.composition.captions[0]?.text).toBe("Which city is the capital of Tamil Nadu?");
+    expect(updated.composition.captions[0]?.metadata?.sceneId).toBe("quiz-question-1");
+  });
+
+  it("updates caption style deterministically and reports the changed caption id", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    const withCaption: CompositionIR = {
+      ...base,
+      captions: [{
+        id: "caption-style",
+        text: "Tamil Nadu quiz",
+        start: 0,
+        end: millisecondsToMediaTime(2_000),
+        style: {
+          fontFamily: "sans-serif",
+          fontSize: 42,
+          primaryColor: "#FFFFFF",
+          animation: "NONE",
+        },
+      }],
+    };
+    await editor.open({
+      sessionId: "caption-style-session",
+      compositionId: base.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "caption-editor" },
+    }, withCaption);
+
+    const receipt = await editor.apply({
+      commandId: "caption-style-update",
+      sessionId: "caption-style-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: {
+        type: "UPDATE_CAPTION_STYLE",
+        captionId: "caption-style",
+        stylePatch: { fontSize: 54, primaryColor: "#FCD34D", animation: "POP_IN" },
+      },
+    });
+    expect(receipt.accepted).toBe(true);
+    expect(receipt.changedCaptionIds).toEqual(["caption-style"]);
+    const updated = await editor.getDocument("caption-style-session");
+    expect(updated.composition.captions[0]?.style.fontSize).toBe(54);
+    expect(updated.composition.captions[0]?.style.primaryColor).toBe("#FCD34D");
+    expect(updated.composition.captions[0]?.style.animation).toBe("POP_IN");
+  });
+
+  it("rejects unsafe caption style values", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    const withCaption: CompositionIR = {
+      ...base,
+      captions: [{
+        id: "caption-safe-style",
+        text: "Safe",
+        start: 0,
+        end: millisecondsToMediaTime(2_000),
+        style: {
+          fontFamily: "sans-serif",
+          fontSize: 42,
+          primaryColor: "#FFFFFF",
+          animation: "NONE",
+        },
+      }],
+    };
+    await editor.open({
+      sessionId: "caption-safe-style-session",
+      compositionId: base.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "caption-editor" },
+    }, withCaption);
+
+    const receipt = await editor.apply({
+      commandId: "caption-style-invalid-color",
+      sessionId: "caption-safe-style-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: {
+        type: "UPDATE_CAPTION_STYLE",
+        captionId: "caption-safe-style",
+        stylePatch: { primaryColor: "red; import malicious-style" },
+      },
+    });
+    expect(receipt.accepted).toBe(false);
+    expect(receipt.error).toContain("EDITOR_CAPTION_COLOR_INVALID");
+  });
+
+  it("rejects empty or unknown caption text updates", async () => {
+    const editor = new InMemoryEditor();
+    const base = composition();
+    const withCaption: CompositionIR = {
+      ...base,
+      captions: [{
+        id: "caption-1",
+        text: "A valid caption",
+        start: 0,
+        end: millisecondsToMediaTime(2_000),
+        style: {
+          fontFamily: "sans-serif",
+          fontSize: 42,
+          primaryColor: "#FFFFFF",
+          animation: "NONE",
+        },
+      }],
+    };
+    await editor.open({
+      sessionId: "caption-invalid-session",
+      compositionId: base.compositionId,
+      revision: 0,
+      mode: "EDIT",
+      actor: { kind: "HUMAN", id: "caption-editor" },
+    }, withCaption);
+
+    const empty = await editor.apply({
+      commandId: "caption-empty",
+      sessionId: "caption-invalid-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: { type: "UPDATE_CAPTION_TEXT", captionId: "caption-1", text: "   " },
+    });
+    expect(empty.accepted).toBe(false);
+
+    const missing = await editor.apply({
+      commandId: "caption-missing",
+      sessionId: "caption-invalid-session",
+      expectedRevision: 0,
+      actor: { kind: "HUMAN", id: "caption-editor" },
+      command: { type: "UPDATE_CAPTION_TEXT", captionId: "unknown-caption", text: "A new caption" },
+    });
+    expect(missing.accepted).toBe(false);
+  });
+
   it("opens and applies a deterministic edit command with cryptographic receipts", async () => {
     const editor = new InMemoryEditor();
     await editor.open({

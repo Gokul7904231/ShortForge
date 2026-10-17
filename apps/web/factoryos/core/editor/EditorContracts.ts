@@ -1,5 +1,6 @@
 import type {
   CompositionIR,
+  CompositionCaption,
   AnimationTrack,
   EffectNode,
   MaskNode,
@@ -49,6 +50,16 @@ export type EditorCommand =
       readonly trackId: string;
       readonly clipId: string;
       readonly duration: MediaTime;
+    }
+  | {
+      readonly type: "UPDATE_CAPTION_TEXT";
+      readonly captionId: string;
+      readonly text: string;
+    }
+  | {
+      readonly type: "UPDATE_CAPTION_STYLE";
+      readonly captionId: string;
+      readonly stylePatch: Partial<Pick<CompositionCaption["style"], "fontSize" | "primaryColor" | "highlightColor" | "animation">>;
     }
   | {
       readonly type: "SET_CLIP_TRANSFORM";
@@ -101,6 +112,7 @@ export interface EditorReceipt {
   readonly revision: number;
   readonly compositionHash: string;
   readonly changedClipIds: readonly string[];
+  readonly changedCaptionIds?: readonly string[];
   readonly commandDigestSha256?: string;
   readonly error?: string;
 }

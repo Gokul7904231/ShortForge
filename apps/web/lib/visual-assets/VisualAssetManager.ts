@@ -1,6 +1,7 @@
 // VisualAssetManager — Unified Asset Pipeline & Concurrent Retrieval (Refreshed)
 import fs from "fs";
 import path from "path";
+import { createHash } from "node:crypto";
 
 function getSharp() {
   try {
@@ -395,6 +396,218 @@ class VisualAssetManagerClass {
 
     this.metrics.totalRetrievalTimeMs += Date.now() - startTime;
     return results;
+  }
+
+  /**
+   * Resolve one visual for one stable editor scene ID.
+   *
+   * Only a validated retrieved/licensed source is accepted. The synthetic
+   * solid-color fallback in VisualPipeline is intentionally rejected here so
+   * the editor source package can never mistake a placeholder for real media.
+   */
+  async getEditorSceneSource(params: {
+    jobId: string;
+    sceneId: string;
+    sceneText: string;
+    imagePrompt?: string;
+    topic: string;
+    style?: string;
+    role?: "hook" | "read" | "reveal" | "outro";
+  }): Promise<{
+    path: string;
+    sha256: string;
+    mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/avif";
+    sourceAssetId: string;
+    provider: string;
+    license: string;
+    author: string;
+    sourceUrl: string;
+    attributionRequired: boolean;
+    provenanceKind: "RETRIEVED";
+  }> {
+    const jobId = params.jobId.trim();
+    const sceneId = params.sceneId.trim();
+    if (!jobId || !sceneId || !params.topic.trim()) {
+      throw new Error("EDITOR_SCENE_SOURCE_IDENTITY_REQUIRED");
+    }
+
+    const topic = params.topic
+      .trim()
+      .slice(0, 120)
+      .replace(/[^a-zA-Z0-9 _-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || "educational";
+    const styleValues = ["quiz", "educational", "news", "story", "travel"] as const;
+    const style = styleValues.includes(params.style as (typeof styleValues)[number])
+      ? params.style as (typeof styleValues)[number]
+      : "quiz";
+    const sceneText = [params.imagePrompt, params.sceneText]
+      .map((value) => typeof value === "string" ? value.trim() : "")
+      .filter(Boolean)
+      .join(". ")
+      .slice(0, 4000);
+    if (!sceneText) throw new Error("EDITOR_SCENE_SOURCE_PROMPT_REQUIRED");
+
+    const context: VisualContext = {
+      jobId: "editor-source-" + createHash("sha256").update(jobId + ":" + sceneId).digest("hex").slice(0, 24),
+      sceneIndex: 0,
+      sceneText,
+      topic,
+      role: params.role || "read",
+      candidates: [],
+      history: {
+        recentAssets: [],
+        recentColors: [],
+        recentProviders: [],
+        recentLayouts: [],
+        recentTopics: [],
+        recentTags: [],
+        recentDhashes: [],
+        recentAuthors: [],
+      },
+      metrics: {},
+      config: {
+        providerPriority: ["wikimedia", "openverse"],
+        styleName: style,
+        weights: {
+          relevance: 0.4,
+          quality: 0.25,
+          portrait: 0.1,
+          license: 0.15,
+          diversity: 0.1,
+          usage: 0,
+        },
+      },
+    };
+
+    const visualPackage = await this.pipeline.run(context);
+    const selected = context.selectedAsset;
+    if (!selected || selected.source === "ai_fallback" || selected.source === "cdn_fallback") {
+      throw new Error("EDITOR_SCENE_SOURCE_NO_VERIFIED_RETRIEVAL");
+    }
+
+    const rawPath = visualPackage.background.path;
+    let sourcePath: string;
+    try {
+      sourcePath = fs.realpathSync(rawPath);
+    } catch {
+      throw new Error("EDITOR_SCENE_SOURCE_FILE_MISSING");
+    }
+    const allowedRoots = [
+      path.resolve(process.cwd(), "data", "visual-assets-cache"),
+      path.resolve(process.cwd(), "data", "visual-assets-store"),
+    ];
+    const contained = allowedRoots.some((root) => {
+      let realRoot = root;
+      try {
+        realRoot = fs.realpathSync(root);
+      } catch {
+        return false;
+      }
+      const relative = path.relative(realRoot, sourcePath);
+      return relative !== "" && !relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative);
+    });
+    if (!contained || !fs.statSync(sourcePath).isFile()) {
+      throw new Error("EDITOR_SCENE_SOURCE_OUTSIDE_APPROVED_STORAGE");
+    }
+
+    const bytes = fs.readFileSync(sourcePath);
+    if (bytes.length === 0) throw new Error("EDITOR_SCENE_SOURCE_EMPTY");
+    let mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/avif";
+    let extension: string;
+    if (bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+      mimeType = "image/png";
+      extension = ".png";
+    } else if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+      mimeType = "image/jpeg";
+      extension = ".jpg";
+    } else if (bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP") {
+      mimeType = "image/webp";
+      extension = ".webp";
+    } else if (bytes.length >= 12 && bytes.toString("ascii", 4, 8) === "ftyp" && /avif|avis/.test(bytes.toString("ascii", 8, 12))) {
+      mimeType = "image/avif";
+      extension = ".avif";
+    } else {
+      throw new Error("EDITOR_SCENE_SOURCE_UNSUPPORTED_IMAGE_SIGNATURE");
+    }
+
+    const actualSha256 = createHash("sha256").update(bytes).digest("hex");
+    if (!/^[a-f0-9]{64}$/i.test(selected.sha256) || selected.sha256.toLowerCase() !== actualSha256) {
+      throw new Error("EDITOR_SCENE_SOURCE_DIGEST_MISMATCH");
+    }
+    const backgroundDigest = visualPackage.background.sha256;
+    if (/^[a-f0-9]{64}$/i.test(backgroundDigest) && backgroundDigest.toLowerCase() !== actualSha256) {
+      throw new Error("EDITOR_SCENE_SOURCE_PACKAGE_DIGEST_MISMATCH");
+    }
+
+    const destinationRoot = path.resolve(process.cwd(), "data", "editor-source-assets", createHash("sha256").update(jobId).digest("hex").slice(0, 24));
+    fs.mkdirSync(destinationRoot, { recursive: true });
+    const destination = path.join(destinationRoot, actualSha256 + extension);
+    if (!fs.existsSync(destination)) {
+      const temporary = destination + "." + createHash("sha256").update(sceneId).digest("hex").slice(0, 10) + ".tmp";
+      try {
+        fs.copyFileSync(sourcePath, temporary, fs.constants.COPYFILE_EXCL);
+        fs.renameSync(temporary, destination);
+      } finally {
+        if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+      }
+    }
+    const copied = fs.readFileSync(destination);
+    const copiedSha256 = createHash("sha256").update(copied).digest("hex");
+    if (copiedSha256 !== actualSha256 || copied.length !== bytes.length) {
+      throw new Error("EDITOR_SCENE_SOURCE_COPY_INTEGRITY_FAILURE");
+    }
+
+    const sourceUrl = typeof selected.sourceUrl === "string" ? selected.sourceUrl.trim() : "";
+    let parsedSourceUrl: URL;
+    try {
+      parsedSourceUrl = new URL(sourceUrl);
+    } catch {
+      throw new Error("EDITOR_SCENE_SOURCE_PROVENANCE_URL_INVALID");
+    }
+    if (
+      parsedSourceUrl.protocol !== "https:" ||
+      !parsedSourceUrl.hostname ||
+      parsedSourceUrl.pathname === "/" ||
+      parsedSourceUrl.username ||
+      parsedSourceUrl.password
+    ) {
+      throw new Error("EDITOR_SCENE_SOURCE_PROVENANCE_URL_UNVERIFIABLE");
+    }
+
+    const license = typeof selected.license === "string" ? selected.license.trim() : "";
+    const author = typeof selected.author === "string" ? selected.author.trim() : "";
+    const unusableLicenseLabels = new Set([
+      "unknown", "unknown license", "license unknown", "public", "default", "n/a", "na",
+    ]);
+    const unusableAuthorLabels = new Set([
+      "unknown", "unknown artist", "unknown creator", "unknown contributor", "anonymous",
+    ]);
+    if (
+      !license ||
+      unusableLicenseLabels.has(license.toLowerCase()) ||
+      !author ||
+      unusableAuthorLabels.has(author.toLowerCase()) ||
+      typeof selected.attributionRequired !== "boolean"
+    ) {
+      throw new Error("EDITOR_SCENE_SOURCE_RIGHTS_METADATA_INCOMPLETE");
+    }
+    if (selected.usagePolicy?.materialization === "PREVIEW_ONLY") {
+      throw new Error("EDITOR_SCENE_SOURCE_NOT_LICENSED_FOR_MATERIALIZATION");
+    }
+
+    return {
+      path: destination,
+      sha256: actualSha256,
+      mimeType,
+      sourceAssetId: selected.id,
+      provider: selected.source,
+      license,
+      author,
+      sourceUrl,
+      attributionRequired: selected.attributionRequired,
+      provenanceKind: "RETRIEVED",
+    };
   }
 
   getMetrics() {

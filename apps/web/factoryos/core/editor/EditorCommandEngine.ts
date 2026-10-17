@@ -37,6 +37,13 @@ function commandDigest(input: EditorCommandEnvelope): string {
   );
 }
 
+export function changedCaptionIds(before: CompositionIR, after: CompositionIR): string[] {
+  const beforeMap = new Map(before.captions.map((caption) => [caption.id, canonicalizeComposition(caption)]));
+  const afterMap = new Map(after.captions.map((caption) => [caption.id, canonicalizeComposition(caption)]));
+  return [...new Set([...beforeMap.keys(), ...afterMap.keys()])]
+    .filter((id) => beforeMap.get(id) !== afterMap.get(id));
+}
+
 export function changedClipIds(before: CompositionIR, after: CompositionIR): string[] {
   const beforeMap = new Map<string, string>();
   const afterMap = new Map<string, string>();
@@ -96,6 +103,50 @@ export function applyEditorCommand(composition: CompositionIR, command: EditorCo
       });
     case "RETIME_CLIP":
       return retimeClip(composition, command.trackId, command.clipId, command.duration);
+    case "UPDATE_CAPTION_TEXT": {
+      if (typeof command.text !== "string" || !command.text.trim()) throw new Error("EDITOR_CAPTION_TEXT_REQUIRED");
+      if (command.text.length > 1000) throw new Error("EDITOR_CAPTION_TEXT_TOO_LONG");
+      if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(command.text)) throw new Error("EDITOR_CAPTION_TEXT_CONTROL_CHAR");
+      let found = false;
+      const captions = composition.captions.map((caption) => {
+        if (caption.id !== command.captionId) return caption;
+        found = true;
+        return { ...caption, text: command.text };
+      });
+      if (!found) throw new Error("EDITOR_CAPTION_NOT_FOUND");
+      return { ...composition, captions };
+    }
+    case "UPDATE_CAPTION_STYLE": {
+      const patch = command.stylePatch;
+      if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+        throw new Error("EDITOR_CAPTION_STYLE_PATCH_INVALID");
+      }
+      const allowedStyleKeys = new Set(["fontSize", "primaryColor", "highlightColor", "animation"]);
+      if (Object.keys(patch).some((key) => !allowedStyleKeys.has(key))) {
+        throw new Error("EDITOR_CAPTION_STYLE_PROPERTY_UNSUPPORTED");
+      }
+      if (patch.animation !== undefined && !["POP_IN", "FADE", "KINETIC_WORD", "NONE"].includes(patch.animation)) {
+        throw new Error("EDITOR_CAPTION_ANIMATION_UNSUPPORTED");
+      }
+      if (patch.fontSize !== undefined && (!Number.isFinite(patch.fontSize) || patch.fontSize < 8 || patch.fontSize > 144)) {
+        throw new Error("EDITOR_CAPTION_FONT_SIZE_OUT_OF_RANGE");
+      }
+      if (patch.primaryColor !== undefined && !/^#[0-9a-f]{6}$/i.test(patch.primaryColor)) {
+        throw new Error("EDITOR_CAPTION_COLOR_INVALID");
+      }
+      if (patch.highlightColor !== undefined && !/^#[0-9a-f]{6}$/i.test(patch.highlightColor)) {
+        throw new Error("EDITOR_CAPTION_HIGHLIGHT_COLOR_INVALID");
+      }
+      if (Object.keys(patch).length === 0) throw new Error("EDITOR_CAPTION_STYLE_PATCH_EMPTY");
+      let found = false;
+      const captions = composition.captions.map((caption) => {
+        if (caption.id !== command.captionId) return caption;
+        found = true;
+        return { ...caption, style: { ...caption.style, ...patch } };
+      });
+      if (!found) throw new Error("EDITOR_CAPTION_NOT_FOUND");
+      return { ...composition, captions };
+    }
     case "SET_CLIP_TRANSFORM":
       return updateClip(composition, command.trackId, command.clipId, (clip) => ({
         ...clip,
@@ -270,12 +321,14 @@ export class InMemoryEditor implements ShortForgeEditorAPI {
       state.composition = next;
       state.session = { ...state.session, revision };
 
+      const captionChanges = changedCaptionIds(before, next);
       const receipt: EditorReceipt = {
         commandId: input.commandId,
         accepted: true,
         revision,
         compositionHash: hashDocument(next),
         changedClipIds: changedClipIds(before, next),
+        ...(captionChanges.length > 0 ? { changedCaptionIds: captionChanges } : {}),
         commandDigestSha256: digest,
       };
 

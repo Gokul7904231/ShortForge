@@ -1,4 +1,5 @@
 import { db } from "./firebase-admin";
+import type { EditorSourcePackageRecord } from "../factoryos/core/editor/EditorSourcePackage";
 
 export interface VideoJob {
   id: string;
@@ -35,6 +36,28 @@ export interface VideoJob {
   updatedAt?: string;
   remoteState?: string;
   artifactSha256?: string;
+  /** Durable owner binding for the media package imported into ShortForge Editor. */
+  editorSource?: {
+    sha256: string;
+    artifactId: string;
+    byteLength: number;
+    sourceKind: "FLATTENED_MP4";
+    ownerId: string;
+    importedAt: string;
+  };
+  /** Immutable per-scene source composition package, when all source assets were resolved into CAS. */
+  editorSourcePackage?: EditorSourcePackageRecord;
+  /** Digest-bound server record for the canonical first composition of a flattened MP4 import. */
+  editorSourceComposition?: {
+    schemaVersion: "shortforge.editor-composition-binding.v1";
+    compositionId: string;
+    sha256: string;
+    artifactId: string;
+    byteLength: number;
+    sourceKind: "FLATTENED_MP4";
+    ownerId: string;
+    createdAt: string;
+  };
 }
 
 const inMemoryJobs = new Map<string, VideoJob>();
@@ -70,7 +93,40 @@ export async function getJobsIndex(userId: string = "anonymous"): Promise<VideoJ
 
 // Replaces writing to individual local JSON sheets
 export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>): Promise<void> {
-  const existing = inMemoryJobs.get(jobId) || {
+  const previousInMemory = inMemoryJobs.get(jobId);
+  const writeContainsEditorSource = Boolean(
+    payload.editorSourcePackage || payload.editorSourceComposition || payload.editorSource,
+  );
+
+  if (!db && writeContainsEditorSource && process.env.NODE_ENV === "production") {
+    throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_UNAVAILABLE");
+  }
+
+  let persistedRecord: VideoJob | undefined;
+  // Only the ownership-critical editor-source write requires a database read-before-merge.
+  // Ordinary job status updates retain the existing low-latency in-memory merge path.
+  if (db && writeContainsEditorSource) {
+    try {
+      const snapshot = await db.collection("videos").doc(jobId).get();
+      if (snapshot.exists) {
+        const data = snapshot.data() || {};
+        persistedRecord = { id: snapshot.id, jobId: snapshot.id, ...data } as VideoJob;
+      } else {
+        // An editor-source artifact must attach to a real persisted job. An
+        // in-memory ghost/stale manifest is never sufficient authorization.
+        throw new Error("EDITOR_SOURCE_JOB_NOT_FOUND");
+      }
+    } catch (err: any) {
+      console.warn("[JobsHistory] Firestore read warning:", err?.message || String(err));
+      // For editor source bindings, a stale in-memory/default record is not enough
+      // to authorize a production write: it could overwrite owner/status fields.
+      if (writeContainsEditorSource) {
+        throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_READ_FAILED");
+      }
+    }
+  }
+
+  const defaults: VideoJob = {
     id: jobId,
     jobId,
     userId: "anonymous",
@@ -82,18 +138,61 @@ export async function saveJobManifest(jobId: string, payload: Partial<VideoJob>)
     createdAt: new Date().toISOString(),
     renderDurationSeconds: 0,
     videoSizeMb: 0,
-  };
-  const updated = { ...existing, ...payload, updatedAt: new Date().toISOString() } as VideoJob;
+  } as VideoJob;
+
+  // For the critical source-binding path, the persisted record wins over a possibly
+  // stale process-local copy. Non-editor job updates preserve the pre-existing memory merge.
+  const existing = writeContainsEditorSource && persistedRecord
+    ? { ...(previousInMemory || {}), ...persistedRecord }
+    : previousInMemory || defaults;
+  const updated = {
+    ...existing,
+    ...payload,
+    id: existing.id || jobId,
+    jobId,
+    updatedAt: new Date().toISOString(),
+  } as VideoJob;
   inMemoryJobs.set(jobId, updated);
 
   if (db) {
     const cleanPayload = JSON.parse(JSON.stringify(updated));
-    db.collection("videos")
-      .doc(jobId)
-      .set(cleanPayload, { merge: true })
-      .catch((err: any) => {
-        console.warn("[JobsHistory] Firestore write warning:", err.message);
-      });
+    try {
+      // Editable source records must be durable before the render worker reports
+      // completion; another app instance cannot rely on this process's memory map.
+      await db.collection("videos").doc(jobId).set(cleanPayload, { merge: true });
+    } catch (err: any) {
+      console.warn("[JobsHistory] Firestore write warning:", err?.message || String(err));
+      if (writeContainsEditorSource) {
+        if (persistedRecord) inMemoryJobs.set(jobId, persistedRecord);
+        else if (previousInMemory) inMemoryJobs.set(jobId, previousInMemory);
+        else inMemoryJobs.delete(jobId);
+        throw new Error("EDITOR_SOURCE_PACKAGE_PERSISTENCE_FAILED");
+      }
+    }
+  }
+}
+
+/**
+ * Read the persisted job record for security-sensitive editor authorization.
+ * Unlike the legacy cache-first reader, this never authorizes from a stale process-local copy
+ * when a database is configured.
+ */
+export async function readJobManifestAuthoritative(jobId: string): Promise<VideoJob | null> {
+  if (!db) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("EDITOR_JOB_MANIFEST_PERSISTENCE_UNAVAILABLE");
+    }
+    return inMemoryJobs.get(jobId) || null;
+  }
+  try {
+    const doc = await db.collection("videos").doc(jobId).get();
+    if (!doc.exists) return null;
+    const data = doc.data() || {};
+    const job = { id: doc.id, jobId: doc.id, ...data } as VideoJob;
+    inMemoryJobs.set(jobId, job);
+    return job;
+  } catch {
+    throw new Error("EDITOR_JOB_MANIFEST_READ_FAILED");
   }
 }
 

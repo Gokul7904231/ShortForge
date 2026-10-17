@@ -206,6 +206,7 @@ class TimelineCompositionWorker:
 
         spec = TimelineSpec(
             timeline_id=timeline_id,
+            composition_type=floor03_payload.composition_type,
             target_width=width,
             target_height=height,
             target_fps=target_fps,

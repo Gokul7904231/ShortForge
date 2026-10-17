@@ -62,6 +62,11 @@ import { DecisionEngine } from "../intelligence/decision/DecisionEngine";
 import { Floor01RuntimeAdapter } from "../bridge/Floor01RuntimeAdapter";
 import { Floor03RuntimeAdapter } from "../bridge/Floor03RuntimeAdapter";
 import { Floor03DurableHandoffStore } from "../bridge/Floor03DurableHandoffStore";
+import {
+  mergeEditorSceneSources,
+  replaceVerifiedEditorSceneSources,
+} from "../editor/EditorSceneSourceBridge";
+import { buildEditorSceneTimings } from "../editor/EditorSceneTiming";
 import { TemplateProductionPipeline } from "../templates/TemplateProductionPipeline";
 import type { FloorClosedLoopReceipt } from "../governance/FloorClosedLoop";
 
@@ -1172,11 +1177,18 @@ export class OverseerControlPlane {
         scope.f03Handoff = canonicalF03; sharedScope.f03Handoff = canonicalF03;
         scope.f03ExecutionReport = f03.executionReport; sharedScope.f03ExecutionReport = f03.executionReport;
         scope.assetPlanIR = canonicalF03.asset_plan_ir; sharedScope.assetPlanIR = canonicalF03.asset_plan_ir;
-        scope.scenes = visualRequirements.map((req: any) => ({
+        // Keep a source locator only when it was already attached to this exact
+        // stable scene ID. F03 creates the canonical plan, not physical media;
+        // a prompt or logical asset ID must never be promoted into a source URL.
+        const previousSceneSources = Array.isArray(scope.scenes) ? scope.scenes : [];
+        const plannedScenes = visualRequirements.map((req: any) => ({
           sceneId: req.scene_id,
           text: f02Handoff.scenes?.find((scene: any) => scene.scene_id === req.scene_id)?.narration_text || "",
-          durationSeconds: req.target_duration_seconds, imagePrompt: req.prompt_text, assetId: req.asset_id,
+          durationSeconds: req.target_duration_seconds,
+          imagePrompt: req.prompt_text,
+          assetId: req.asset_id,
         }));
+        scope.scenes = mergeEditorSceneSources(plannedScenes, previousSceneSources);
         sharedScope.scenes = scope.scenes;
         const assetPayload = { floor03Handoff: canonicalF03, assetPlanIR: canonicalF03.asset_plan_ir, assetManifest: canonicalF03.manifest, scenes: scope.scenes };
         scope.assetPayload = assetPayload; sharedScope.assetPayload = assetPayload;
@@ -1245,6 +1257,145 @@ export class OverseerControlPlane {
         sharedScope.voiceUrl = synthRes.localPath;
         sharedScope.voiceArtifact = synthRes;
 
+        // Floor 04 is the physical-media boundary. Resolve actual licensed visual
+        // bytes for stable scene IDs here, before Floor 05 compiles RenderIntent.
+        // If the provider pipeline can only produce its synthetic solid-color
+        // fallback, keep the scene unresolved so EditorSourcePackage fails closed.
+        let editorVisualSourcesResolved = 0;
+        let editorVisualSourcesUnavailable = 0;
+        const inputSceneRows = Array.isArray(scope.scenes) ? scope.scenes : [];
+        if (inputSceneRows.length > 0) {
+          const [{ VisualAssetManager }, fs, path] = await Promise.all([
+            import("../../../lib/visual-assets/VisualAssetManager"),
+            import("node:fs"),
+            import("node:path"),
+          ]);
+          const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+            value && typeof value === "object" && !Array.isArray(value)
+              ? value as Record<string, unknown>
+              : undefined;
+          const textOrEmpty = (value: unknown): string =>
+            typeof value === "string" ? value.trim() : "";
+          const stableIdOf = (scene: Record<string, unknown>): string =>
+            textOrEmpty(scene.sceneId) || textOrEmpty(scene.scene_id) || textOrEmpty(scene.id);
+          const sourceStringOf = (scene: Record<string, unknown>): string =>
+            textOrEmpty(scene.imageUrl) || textOrEmpty(scene.image_url) || textOrEmpty(scene.sourceUri);
+          const supportedVisualExtension = (value: string): boolean =>
+            [".png", ".jpg", ".jpeg", ".webp", ".avif"].includes(path.extname(value.split(/[?#]/, 1)[0] || value).toLowerCase());
+          const hasSourceProvenance = (scene: Record<string, unknown>): Record<string, unknown> | undefined => {
+            const provenance = asRecord(scene.sourceProvenance) || asRecord(scene.source_provenance);
+            if (
+              !provenance ||
+              typeof provenance.sha256 !== "string" ||
+              !/^[a-f0-9]{64}$/i.test(provenance.sha256) ||
+              typeof provenance.mimeType !== "string" ||
+              !provenance.mimeType.startsWith("image/") ||
+              typeof provenance.sourceAssetId !== "string" || !provenance.sourceAssetId.trim() ||
+              typeof provenance.provider !== "string" || !provenance.provider.trim() ||
+              typeof provenance.license !== "string" || !provenance.license.trim() ||
+              typeof provenance.author !== "string" || !provenance.author.trim() ||
+              typeof provenance.sourceUrl !== "string" || !provenance.sourceUrl.trim() ||
+              typeof provenance.attributionRequired !== "boolean" ||
+              !["RETRIEVED", "GENERATED", "USER_PROVIDED"].includes(String(provenance.provenanceKind))
+            ) return undefined;
+            try {
+              const sourceUrl = new URL(String(provenance.sourceUrl));
+              if (sourceUrl.protocol !== "https:" && sourceUrl.protocol !== "shortforge:") return undefined;
+            } catch {
+              return undefined;
+            }
+            return provenance;
+          };
+          const hasPhysicalSource = (scene: Record<string, unknown>): boolean => {
+            const src = sourceStringOf(scene);
+            if (!src || src.startsWith("/api/") || src.startsWith("http://")) return false;
+            const provenance = hasSourceProvenance(scene);
+            if (!provenance) return false;
+            if (/^cas:\/\/([a-f0-9]{64})$/i.test(src)) {
+              return src.slice("cas://".length).toLowerCase() === String(provenance.sha256).toLowerCase();
+            }
+            if (/^https:\/\//i.test(src)) return supportedVisualExtension(src);
+            try {
+              const localPath = src.startsWith("file://")
+                ? decodeURIComponent(new URL(src).pathname)
+                : src;
+              if (
+                !path.isAbsolute(localPath) ||
+                !supportedVisualExtension(localPath) ||
+                !fs.statSync(localPath).isFile() ||
+                fs.statSync(localPath).size <= 0
+              ) return false;
+              const actualSha256 = createHash("sha256").update(fs.readFileSync(localPath)).digest("hex");
+              return actualSha256 === String(provenance.sha256).toLowerCase();
+            } catch {
+              return false;
+            }
+          };
+          const todo = inputSceneRows.filter((scene: unknown) => {
+            const row = asRecord(scene);
+            return Boolean(row && stableIdOf(row) && !hasPhysicalSource(row));
+          }) as Record<string, unknown>[];
+          const generatedSources: Record<string, unknown>[] = [];
+          let nextSource = 0;
+          const workerCount = Math.min(3, todo.length);
+          await Promise.all(Array.from({ length: workerCount }, async () => {
+            while (nextSource < todo.length) {
+              const index = nextSource++;
+              const scene = todo[index]!;
+              const sceneId = stableIdOf(scene);
+              try {
+                const source = await VisualAssetManager.getEditorSceneSource({
+                  jobId: String(scope.jobId || sharedScope.jobId || missionId || executionId),
+                  sceneId,
+                  sceneText:
+                    textOrEmpty(scene.text) ||
+                    textOrEmpty(scene.narration_text) ||
+                    textOrEmpty(scene.narrative) ||
+                    textOrEmpty(scene.contactText),
+                  imagePrompt:
+                    textOrEmpty(scene.imagePrompt) ||
+                    textOrEmpty(scene.image_prompt) ||
+                    textOrEmpty(scene.prompt_text),
+                  topic: String(scope.topic || sharedScope.topic || "educational shorts"),
+                  style: String(scope.style || sharedScope.style || "quiz"),
+                  role: scene.isHook ? "hook" : scene.isQuestionReveal ? "reveal" : scene.isOutro ? "outro" : "read",
+                });
+                generatedSources.push({
+                  sceneId,
+                  imageUrl: source.path,
+                  mediaType: "IMAGE",
+                  sourceProvenance: {
+                    sha256: source.sha256,
+                    mimeType: source.mimeType,
+                    sourceAssetId: source.sourceAssetId,
+                    provider: source.provider,
+                    license: source.license,
+                    author: source.author,
+                    sourceUrl: source.sourceUrl,
+                    attributionRequired: source.attributionRequired,
+                    provenanceKind: source.provenanceKind,
+                  },
+                });
+                editorVisualSourcesResolved++;
+              } catch (sourceError) {
+                editorVisualSourcesUnavailable++;
+                console.warn(
+                  "[Overseer Floor04] No verified editor source for scene " + sceneId + "; leave it unavailable rather than inventing a media URL:",
+                  sourceError instanceof Error ? sourceError.message : String(sourceError),
+                );
+              }
+            }
+          }));
+
+          // F03 can finish concurrently with F04. Apply verified sources to the
+          // latest canonical rows, only when both source and scene IDs are unique.
+          if (generatedSources.length > 0) {
+            const latestSceneRows = Array.isArray(scope.scenes) ? scope.scenes : inputSceneRows;
+            scope.scenes = replaceVerifiedEditorSceneSources(latestSceneRows, generatedSources);
+            sharedScope.scenes = scope.scenes;
+          }
+        }
+
         const mediaPayload = {
           voice: scope.engineSnapshot?.effectiveConfig?.voice || "neutral",
           estimatedDuration: synthRes.durationSeconds,
@@ -1254,6 +1405,8 @@ export class OverseerControlPlane {
           byteLength: synthRes.byteLength,
           sha256: synthRes.sha256,
           isFallback: synthRes.isFallback,
+          editorVisualSourcesResolved,
+          editorVisualSourcesUnavailable,
         };
 
         if (missionId && this.missionManager) {
@@ -1339,13 +1492,22 @@ export class OverseerControlPlane {
           sharedScope.localRenderIntent = localRenderIntent;
         }
 
+        const voiceArtifactForTimeline = scope.voiceArtifact || sharedScope.voiceArtifact;
+        const measuredVoiceDuration =
+          typeof voiceArtifactForTimeline?.durationSeconds === "number" &&
+          Number.isFinite(voiceArtifactForTimeline.durationSeconds) &&
+          voiceArtifactForTimeline.durationSeconds > 0
+            ? voiceArtifactForTimeline.durationSeconds
+            : undefined;
         const durationSeconds =
-          localRenderIntent?.scenes.reduce((acc, s) => acc + s.duration_seconds, 0) ||
+          localRenderIntent?.scenes.reduce((acc, scene) => acc + scene.duration_seconds, 0) ||
+          measuredVoiceDuration ||
           scope.durationSeconds ||
-          sharedScope.voiceArtifact?.durationSeconds ||
-          scope.voiceArtifact?.durationSeconds ||
+          sharedScope.engineSnapshot?.effectiveConfig?.durationSeconds ||
           scope.engineSnapshot?.effectiveConfig?.durationSeconds ||
           5;
+        const renderSceneRows = Array.isArray(scope.scenes) ? scope.scenes : [];
+        const renderSceneTimings = buildEditorSceneTimings(renderSceneRows, durationSeconds);
         const overseerCommandId = String(
           scope.overseerCommandId || sharedScope.overseerCommandId || "",
         );
@@ -1354,6 +1516,42 @@ export class OverseerControlPlane {
             "[Overseer Floor05] Treasury-gated timeline requires Overseer command identity",
           );
         }
+        const voiceArtifactForSource = voiceArtifactForTimeline;
+        const voiceSourceFormat = String(voiceArtifactForSource?.format || "").toLowerCase();
+        const voiceSourceMime =
+          voiceSourceFormat === "mp3" ? "audio/mpeg" :
+          voiceSourceFormat === "aac" ? "audio/aac" :
+          voiceSourceFormat === "wav" ? "audio/wav" : "";
+        const voiceSourceSha = String(voiceArtifactForSource?.sha256 || "");
+        const voiceIsExplicitFallback = Boolean(voiceArtifactForSource) && (
+          voiceArtifactForSource.isFallback === true ||
+          voiceArtifactForSource.qualityClass === "FALLBACK" ||
+          voiceArtifactForSource.qualityClass === "DEGRADED_FALLBACK"
+        );
+        const voiceIsVerifiedPhysicalArtifact = Boolean(
+          voiceArtifactForSource?.success === true &&
+          voiceArtifactForSource.byteLength > 0 &&
+          /^[a-f0-9]{64}$/i.test(voiceSourceSha) &&
+          voiceSourceMime &&
+          (
+            voiceIsExplicitFallback ||
+            (voiceArtifactForSource.isFallback === false && voiceArtifactForSource.qualityClass === "PRIMARY")
+          )
+        );
+        const voiceSourceProvenance = voiceIsVerifiedPhysicalArtifact
+          ? {
+              sha256: voiceSourceSha.toLowerCase(),
+              mimeType: voiceSourceMime,
+              sourceAssetId: String(voiceArtifactForSource.artifactId || "voice-" + voiceSourceSha.slice(0, 16)),
+              provider: String(voiceArtifactForSource.provider || (voiceIsExplicitFallback ? "VoiceFabricFallback" : "VoiceFabric")),
+              license: voiceIsExplicitFallback ? "ShortForge fallback audio" : "ShortForge-generated audio",
+              author: voiceIsExplicitFallback ? "ShortForge VoiceFabric fallback" : "ShortForge VoiceFabric",
+              sourceUrl: "shortforge://voicefabric/" + encodeURIComponent(String(voiceArtifactForSource.provider || "unknown")),
+              attributionRequired: false,
+              provenanceKind: voiceIsExplicitFallback ? "FALLBACK" as const : "GENERATED" as const,
+            }
+          : undefined;
+
         const renderIntent: RenderIntent = {
           intentId: `intent_${randomUUID().substring(0, 8)}`,
           jobId: targetJobId,
@@ -1363,12 +1561,23 @@ export class OverseerControlPlane {
           fps: 30,
           resolution: { width: 1080, height: 1920 },
           tracks: {
-            visualAssets: (scope.scenes || []).map((s: any, idx: number) => ({
-              id: `asset_${idx}`,
-              type: "IMAGE" as const,
+            visualAssets: renderSceneRows.map((s: any, idx: number) => ({
+              // Bind each visual track to the stable scene identity. The editor
+              // source adapter rejects duplicate/missing IDs instead of relying
+              // on array position to recover scene semantics.
+              id: typeof s.sceneId === "string" && s.sceneId.trim()
+                ? s.sceneId.trim()
+                : typeof s.scene_id === "string" && s.scene_id.trim()
+                  ? s.scene_id.trim()
+                  : typeof s.id === "string" && s.id.trim()
+                    ? s.id.trim()
+                    : `asset_${idx}`,
+              // Carry a declared source media kind when one exists; do not infer
+              // VIDEO from duration or from visual prompt metadata.
+              type: s.mediaType === "VIDEO" ? "VIDEO" as const : "IMAGE" as const,
               src: s.imageUrl || `/api/images/${targetJobId}_${idx}.jpg`,
-              startSeconds: idx * 5,
-              durationSeconds: 5,
+              startSeconds: renderSceneTimings[idx]!.startSeconds,
+              durationSeconds: renderSceneTimings[idx]!.durationSeconds,
               zIndex: 1,
             })),
             audioTracks: [{
@@ -1378,11 +1587,13 @@ export class OverseerControlPlane {
               volume: 1.0,
               startSeconds: 0,
               durationSeconds,
+              ...(voiceSourceProvenance ? { sourceProvenance: voiceSourceProvenance } : {}),
             }],
-            captions: (scope.scenes || []).map((s: any, idx: number) => ({
-              text: s.contactText || s.text || "",
-              startMs: idx * 5000,
-              endMs: (idx + 1) * 5000,
+            captions: renderSceneRows.map((s: any, idx: number) => ({
+              sceneId: typeof s.sceneId === "string" ? s.sceneId : typeof s.scene_id === "string" ? s.scene_id : typeof s.id === "string" ? s.id : undefined,
+              text: s.contactText || s.text || s.narration_text || s.narrative || "",
+              startMs: renderSceneTimings[idx]!.startMs,
+              endMs: renderSceneTimings[idx]!.endMs,
               style: { animation: "POP" as const },
             })),
           },
@@ -1409,6 +1620,40 @@ export class OverseerControlPlane {
           consumedAudioSha256,
           consumedAudioPath: scope.voiceUrl,
         };
+
+        // Persist editable source semantics only when all real media inputs can be
+        // resolved and copied into owner-bound CAS. Missing placeholder/API URLs
+        // intentionally keep the existing flattened-MP4 fallback.
+        try {
+          const [{ buildEditorSourcePackage }, { readJobManifest }] = await Promise.all([
+            import("../editor/EditorSourcePackage"),
+            import("../../../lib/jobs-history"),
+          ]);
+          const sourceJob = await readJobManifest(targetJobId);
+          const sourceOwnerId = typeof sourceJob?.userId === "string" ? sourceJob.userId : "";
+          if (sourceOwnerId && sourceOwnerId !== "anonymous" && !localRenderIntent) {
+            const sourcePackage = await buildEditorSourcePackage({
+              jobId: targetJobId,
+              ownerId: sourceOwnerId,
+              renderIntent,
+              scenes: Array.isArray(scope.scenes) ? scope.scenes : [],
+              quizData: scope.quizData,
+            });
+            if (sourcePackage) {
+              scope.editorSourcePackage = sourcePackage;
+              sharedScope.editorSourcePackage = sourcePackage;
+            }
+          } else if (localRenderIntent) {
+            console.info(
+              "[Overseer Floor05] Template-specific LocalRenderIntent is not yet losslessly lowered into CompositionIR; use the labelled flattened import.",
+            );
+          }
+        } catch (sourcePackageError) {
+          console.warn(
+            "[Overseer Floor05] Editor source package was not produced; flattened import remains available:",
+            sourcePackageError instanceof Error ? sourcePackageError.message : String(sourcePackageError),
+          );
+        }
 
         if (missionId && this.missionManager) {
           await this.missionManager.updateProgress(missionId, 1);
@@ -1579,6 +1824,7 @@ export class OverseerControlPlane {
         const finalVideoUrl = (artifact.location as any).path;
         scope.videoUrl = finalVideoUrl;
         sharedScope.videoUrl = finalVideoUrl;
+        const editorSourcePackage = scope.editorSourcePackage || sharedScope.editorSourcePackage;
 
         const renderOutputMessage =
           `RenderFabric/ComputeRouter produced verified MP4 artifact (${artifact.width}x${artifact.height}, ${artifact.byteLength} bytes, SHA-256: ${artifact.sha256.substring(0, 10)}...)`;
@@ -1595,6 +1841,7 @@ export class OverseerControlPlane {
             videoSizeMb: Number((artifact.byteLength / (1024 * 1024)).toFixed(2)),
             renderDurationSeconds: artifact.duration,
             renderReceipt: renderRes.receipt,
+            ...(editorSourcePackage ? { editorSourcePackage } : {}),
             templateId: scope.templateId,
             templateVersion: scope.templateVersion,
             contentEngine: scope.contentEngine,
@@ -1602,6 +1849,14 @@ export class OverseerControlPlane {
             completedAt: new Date().toISOString(),
           } as any);
         } catch (e: any) {
+          if (editorSourcePackage) {
+            // A source package is a production editing contract, not a best-effort
+            // cache. Never mark this render complete when its ownership binding was
+            // not durably committed with the job manifest.
+            throw new Error(
+              `[Overseer Floor06] Failed to persist editable source package: ${e?.message || "unknown error"}`,
+            );
+          }
           console.warn(`[Overseer Floor06] Manifest note: ${e?.message}`);
         }
 
