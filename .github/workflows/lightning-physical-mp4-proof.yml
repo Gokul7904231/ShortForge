@@ -15,8 +15,10 @@ on:
       - "Team/reports/pr-*.json"
   workflow_dispatch:
 
+# Isolate physical evidence runs by PR. A single global group caused an unrelated
+# PR's proof to cancel this run, leaving required physical evidence unevaluated.
 concurrency:
-  group: shortforge-lightning-physical-proof
+  group: shortforge-lightning-physical-proof-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
