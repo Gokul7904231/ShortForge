@@ -44,7 +44,10 @@
     "findings": [
       "No production runtime adapter or executable feature code was added; changes are agent instructions and documentation.",
       "A full security/production-helper review of the PR has not been performed."
-    ]
+    ],
+    "semgrep": "UNPROVEN",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE"
   },
   "conflicts": [],
   "conflictAssessmentStatus": "PARTIAL",
@@ -61,5 +64,23 @@
     "https://github.com/Gokul7904231/ShortForge/blob/feat/reverse-features-foundation-20261017/.okf/reverse-features/README.md"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "The dedicated process foundation is drafted and the OKF machine sweep completed, but the full human OKF corpus review, Team Change Gate authorized disposition, and remaining CI validation are incomplete."
+  "dispositionReason": "The dedicated process foundation is drafted and the OKF machine sweep completed, but the full human OKF corpus review, Team Change Gate authorized disposition, and remaining CI validation are incomplete.",
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "forgers": [],
+  "changes": [
+    "Created root AGENTS.md to route non-trivial tasks through a full OKF preflight and relevant repository mappings.",
+    "Added reverse-features master skill plus investigation, challenge, and implementation phase skills.",
+    "Added .okf/reverse-features operating contract, RF-00–RF-20 domain registry, evaluation protocol, and decision-record template.",
+    "Added the REA repo mapping and updated .okf index and research ledger.",
+    "Wired Reverse Features into CLAUDE.md, .agents/skills/AGENTS.md, and the canonical development loop.",
+    "Did not change the locked .okf/decision-protocol.md and did not add a production REA adapter."
+  ],
+  "verificationPlan": [
+    "Machine OKF lint/sweep gate passed on the initial PR commit; rerun on latest head after this report update.",
+    "Team Change report schema validation must pass while retaining disposition BLOCKED until full human OKF review and authorized disposition complete.",
+    "Complete the full current .okf corpus review and relevant repo-mapping review.",
+    "Review remaining PR CI checks; run applicable skill/link/consistency checks and address failures.",
+    "Do not merge while any required gate or human review remains blocked/unproven."
+  ]
 }
