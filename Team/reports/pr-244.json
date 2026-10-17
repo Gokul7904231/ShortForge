@@ -14,7 +14,8 @@
     "Remove the unsupported September 24, 2026 exception; represent the official Content ID rule as one active rule effective from October 15, 2024.",
     "Keep F07 fail-closed for an active claim on a Short longer than one minute and remove unsupported playback/revenue inferences.",
     "Refresh the canonical policy snapshot as 2026.10.17 and update regression tests to assert blocking before and after September 24, 2026.",
-    "Add this required Team Change Report and require fresh final-head validation rather than relying on the superseded run."
+    "Add this required Team Change Report and require fresh final-head validation rather than relying on the superseded run.",
+    "Fixes physical-proof workflow concurrency by assigning separate concurrency groups to each PR/ref, preventing unrelated PR validations from cancelling one another."
   ],
   "okf": {
     "sweepStatus": "INCIDENT_FOLLOWUP",
@@ -41,12 +42,14 @@
       "apps/web/factoryos/tests/youtube-evidence-receipt.test.ts",
       "apps/web/factoryos/tests/youtube-remediation.test.ts",
       "https://support.google.com/youtube/answer/15424877 (current official guidance, lines 34-36 and 48-52)",
-      "https://support.google.com/youtube/answer/12504220 (current official guidance, lines 46-48)"
+      "https://support.google.com/youtube/answer/12504220 (current official guidance, lines 46-48)",
+      ".github/workflows/lightning-physical-mp4-proof.yml"
     ],
     "pending": [
       "Complete a human review of the full current .okf corpus and remaining relevant mappings.",
       "Run the OKF machine sweep, Team Change Gate, CI, and F07 policy/invariant suites on the final PR head.",
-      "Review final-head CI evidence and obtain the required independent human review before promotion."
+      "Review final-head CI evidence and obtain the required independent human review before promotion.",
+      "Verify the per-PR concurrency fix on a completed Lightning Physical MP4 → CAS → F07 run; a cancelled job is not proof."
     ]
   },
   "routedForgers": [],
@@ -66,7 +69,8 @@
     "Final-head F07 architectural invariants and policy-refresh tests must pass.",
     "Final-head Team Change and OKF Governance gates must pass.",
     "The full current .okf human review and authorized disposition are still pending.",
-    "Independent human review is required before merge."
+    "Independent human review is required before merge.",
+    "Lightning Physical MP4 → CAS → F07 must complete successfully on the final PR head; cancelled attempts do not qualify physical evidence."
   ],
   "evidenceRefs": [
     "https://support.google.com/youtube/answer/15424877",
@@ -77,18 +81,20 @@
     "https://github.com/Gokul7904231/ShortForge/actions/runs/39016377317"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "The current first-party policy pages contradict the previously encoded September 24 exception. The exception has been removed and fresh final-head CI/F07 checks, full human OKF review, and independent review are required before promotion.",
+  "dispositionReason": "Policy/invariant and governance checks passed on the prior head, but required current-head validation and independent review remain pending. Earlier Lightning physical-proof attempts were cancelled by a shared global concurrency group; the per-PR isolation fix is included and must be verified by a completed proof run.",
   "changes": [
     "Removed the unsupported September 24, 2026 transition and separate legacy/current rule records.",
     "Restored one official active Content ID rule effective 2024-10-15: an active claim on a Short over one minute blocks publication.",
     "Removed the unconditional revenue-impact inference; policy output does not speculate about revenue recipient.",
-    "Added/updated tests asserting the actual Guardian blocks claimed Shorts on both sides of the previously claimed cutoff."
+    "Added/updated tests asserting the actual Guardian blocks claimed Shorts on both sides of the previously claimed cutoff.",
+    "Scoped Lightning Physical MP4 proof concurrency by pull-request number/ref, so unrelated PRs cannot cancel each other's proof runs; same-PR superseded runs may still be cancelled."
   ],
   "verificationPlan": [
     "Run Team/scripts/validate-team-report.mjs Team/reports/pr-244.json.",
     "Run the OKF lint/sweep-report workflow on the final PR head.",
     "Run F07 strict typecheck, physical-truth tests, invariant/receipt suites and policy-refresh tests on the final PR head.",
     "Confirm guardian-level tests show active claims block Shorts over one minute on both 2026-09-23 and 2026-09-24.",
-    "Keep disposition BLOCKED until all required human review and final-head verification are complete."
+    "Keep disposition BLOCKED until all required human review and final-head verification are complete.",
+    "Verify that concurrent Lightning physical-proof runs on distinct PRs remain isolated and that this PR completes MP4 → CAS → F07 successfully."
   ]
 }
