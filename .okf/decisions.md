@@ -1622,3 +1622,45 @@ Validation required:
 - Production promotion requires actual GitHub ruleset/status protection and provenance evidence.
 
 Rollback/rejection: If the machine manifest diverges from canonical textual rules, treat the manifest as invalid and revert the control-plane wave. Existing .okf and source-of-truth hierarchy remain intact.
+
+## Render Worker Fail-Closed Dispatch — 2026-10-17
+
+Classification: extends existing rule
+
+Decision: Make the distributed render-worker dispatch path fail closed, and remove the committed `RENDER_WORKER_SECRET` fallback. This reconciles the implementation with the already-canonical fail-closed rule recorded in `.okf/audits/final-system-acceptance-matrix.md` ("Workflows fail-closed on build, lint, typecheck, or render failures; no `|| true` masking fatal errors"), which the dispatcher did not actually satisfy.
+
+Findings confirmed against `main` before editing (blobs `daaa1a66` / `26721076`):
+
+1. `.github/workflows/factoryos-render-worker.yml` and `.github/workflows/factoryos-basic-render.yml` both defaulted `RENDER_WORKER_SECRET` to a literal committed to public history. That value is compromised and is never to be reused.
+2. The dispatcher read `DISPATCH_JOB_ID` but nothing wired it to the event payload, so the "direct dispatch" branch was unreachable.
+3. `POST /api/rendering/claim` accepts only `workerId` and `workerPool`. It cannot target a named job, so a named-job dispatch would have been satisfied by an unrelated queued job.
+4. `except Exception -> claimed=false` made `401`, `500`, timeouts and malformed responses indistinguishable from an empty queue.
+5. `gh workflow run ... || echo` and a swallowed callback exception both allowed a failed delivery to report success.
+6. `factoryos_render_job` is emitted by no code in the repository; the `repository_dispatch` trigger is unused configuration.
+
+Rules applied:
+- Missing or empty authentication configuration fails before any network access.
+- A named-job dispatch is refused (exit 3) rather than downgraded into a generic claim. No new endpoint was invented.
+- Empty queue remains an ordinary no-work outcome; every other failure fails the workflow.
+- The claim/control-plane contract is the only source of `jobId` and `executionToken`; no secret or token is written to a log sink.
+- The callback continues to authenticate with the configured worker secret. The execution token is *not* substituted: `GitHubActionsRenderManager.generateExecutionToken()` mints a client-side HMAC token distinct from the claim route's `exec_*` token, so the secret remains load-bearing on that path.
+
+Authority invariants preserved: dispatcher concurrency group and single-claim serialisation unchanged; `factoryos-basic-render.yml` `permissions: contents: read` unchanged; `actions: write` for the dispatch step is deliberately not granted and is documented as an owner decision; lease/fencing and attempt monotonicity in `RemoteRenderStateMachine` untouched; RenderFabric/F07 remain the authoritative completion gate. A lost callback is reconciled by `reconcileStaleJobs`, not by fabricated success.
+
+Canonical documents:
+- `docs/deployment/render-worker-secrets.md`
+- `.okf/security/worker-permissions.md` (§13 lease/fencing, §22.8–9)
+- `.github/workflows/factoryos-render-worker.yml`, `.github/workflows/factoryos-basic-render.yml`
+- `services/rendering-engine/scripts/github_dispatch_claim.py`
+
+Validation required:
+- `npm run factoryos:typecheck` passes.
+- `npm run factoryos:test` (includes `apps/web/factoryos/tests/render-worker-fail-closed.test.ts`).
+- `python -m pytest services/rendering-engine/tests/test_github_dispatch_claim.py` passes.
+- Repository scan for the old literal returns no workflow occurrence.
+- Operator must set and rotate `RENDER_WORKER_SECRET` before the dispatcher can claim.
+
+Known blocker recorded, not fixed: `services/rendering-engine/worker_daemon.py:549` contains a stray `return` that raises `IndentationError`, so the module cannot be imported and four test modules in `services/rendering-engine/tests/` cannot be collected — including the existing `test_no_default_secret_string_in_codebase` guard. The original guard condition that the orphaned `return` belonged to cannot be recovered from the current source, so restoring it was deliberately left out of this change rather than guessed.
+
+Rollback/rejection: revert the workflow and script changes; the previous behaviour (silent fallback and swallowed failures) is restored. Do not reintroduce a committed default for `RENDER_WORKER_SECRET` under any rollback.
+
