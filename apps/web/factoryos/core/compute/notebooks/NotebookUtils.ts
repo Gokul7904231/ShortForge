@@ -29,7 +29,7 @@ export async function fileEvidence(filePath: string) {
 export async function runProcess(
   command: string,
   args: string[],
-  options: { cwd?: string; timeoutMs: number; env?: NodeJS.ProcessEnv },
+  options: { cwd?: string; timeoutMs: number; env?: Partial<NodeJS.ProcessEnv> },
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const { spawn } = await import("node:child_process");
   return await new Promise((resolve, reject) => {

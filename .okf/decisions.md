@@ -1622,3 +1622,64 @@ Validation required:
 - Production promotion requires actual GitHub ruleset/status protection and provenance evidence.
 
 Rollback/rejection: If the machine manifest diverges from canonical textual rules, treat the manifest as invalid and revert the control-plane wave. Existing .okf and source-of-truth hierarchy remain intact.
+
+## Botkeep self-hosted Node.js 22 release profile - 2026-10-16
+
+Classification: extends existing rule
+
+Decision: Add an opt-in, CI-built release path that produces a self-hosted Node.js 22 artifact for the Botkeep workload `shortforge-primary`, without changing the canonical Cloudflare/OpenNext deployment or any other build target.
+
+Opt-in mechanism: `SHORTFORGE_BUILD_PROFILE=botkeep` in `apps/web/next.config.mjs` selects `output: 'standalone'`, an `outputFileTracingRoot` pinned to `apps/web`, and a Node-runtime tracing profile. The variable is unset for `npm run build`, `npm run deploy`, `next start`, and the Docker build, so those paths are byte-identical to before.
+
+Existing .okf rules considered:
+- OKF.RELEASE.F07_VERIFIED - production artifacts are releasable only after the F07 verification and release authorization chain. This change adds a build/packaging path; it does not certify or admit any production artifact, and it does not mint ReleaseAuthorization.
+- OKF.SECURITY.LEAST_PRIVILEGE / WORKER_TEN_GATE (§22 worker-permissions.md) - the release grants no worker capability, adds no worker, and ships no credential directory.
+- worker-permissions.md §8 (filesystem) and §22.9 (no secrets in worker working memory unless required and sandboxed) - the archive carries no `.env`, no database, no `.git`, no tests, and no developer knowledge base; the packager refuses them by name and the verifier re-checks the extracted tree.
+- OKF.PROCESS.FULL_SWEEP / decision-protocol §2 (Tier-2 for release changes) and §19.
+- OKF.PROCESS.FULL_SWEEP / decision-protocol §9 (no silent architecture drift) and §10 (current-vs-target tagging).
+- .okf/manifest.yaml provenance: `release_attestation: REQUIRED`, `signing: PLANNED`.
+- hierarchy-map §37-38 rules 18-19 (no component crosses its authority boundary silently; no target may be described as implemented without evidence).
+
+Repo mappings: none applicable; this is packaging of existing application code, not assimilation of an external repository.
+
+Affected hierarchy nodes: none in F00-F07. The change is outside the production-artifact line (hosting/packaging tier).
+
+Affected workers / permissions: none. No capability, lease, or floor boundary is touched. The release is an artifact; the server it contains is not a Guardian-authorized worker.
+
+Affected contracts: none. No WorkerTaskContract, ComputePolicy, or provider capability contract changes.
+
+Contradictions recorded (decision-protocol §9): .okf never locked a hosting path for `apps/web`; the repository already carries three coexisting production entry points (Cloudflare/OpenNext `wrangler deploy`, Vercel cron, Docker `npm start`). This adds a fourth for Botkeep. The existing Cloudflare path is not rewritten or deprecated by this decision; `docs/deployment/botkeep.md` documents the Botkeep path only.
+
+Security impact:
+- The release contains no secrets. Two secret-pattern matches were found in the first packaging run and traced to the packager's own pattern literals in `scripts/botkeep/package-release.mjs` and the Cloudflare-only audit `scripts/check-cloudflare-free.mjs`; both files are excluded from the archive rather than the pattern being weakened, so the scan stays active.
+- A false-positive name rule previously dropped four build-output files under `.next/server/app/api/user/credentials/`. The rule is now filename-scoped. The route was verified to still resolve before and after, so no functional impact was proven; the narrowing removes the class of error.
+- The archive is a workflow artifact only. `dist/` is gitignored; nothing is committed or published.
+- The launcher binds `BIND_HOST` (default 0.0.0.0) and deliberately ignores the container-provided `HOSTNAME`, and reads `SERVER_PORT` before `PORT` with a hard reject on invalid values. No live port is hard-coded.
+
+Performance impact: measured offline on a clean Node 22.23.3 linux-x64 container. Uncompressed 397.70 MiB, compressed 128.5 MiB, 7231 files, against a 1300 MiB budget (902.3 MiB headroom). Extracted `du` footprint 423.64 MiB. For comparison, the same tree's full development `node_modules` is 1870.05 MiB / 83252 files, versus 2049.57 MiB measured on the live Botkeep workload.
+
+Essential-runtime finding (evidence, not a size optimization): the first standalone trace omitted `node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime.so.1.14.0` and the `@xenova/transformers` runtime assets, because the native library is loaded through a runtime-computed path. `verify-release.mjs` now loads `onnxruntime-node` explicitly; it failed with `libonnxruntime.so.1.14.0: cannot open shared object file` before the fix and passes after. The missing files were added to `outputFileTracingIncludes` rather than the feature being dropped.
+
+Verification plan and status:
+- IMPLEMENTED (working tree, uncommitted): `apps/web/scripts/botkeep/{build,start,package-release,verify-release}.mjs` + `lib/zip.mjs`; `apps/web/next.config.mjs` Botkeep profile; `apps/web/package.json` scripts; `.github/workflows/botkeep-release.yml`; `docs/deployment/botkeep.md`; `/dist/` in `.gitignore`.
+- VERIFIED offline (clean Node 22 linux container, commit 204901fb2a98): typecheck gate, build exit 0, package exit 0 with 0 secret-scan findings, archive sha256 sidecar matches, fresh extraction, native modules load, `node start.mjs` binds the requested port, 32/32 HTTP and static-asset checks pass.
+- UNPROVEN: execution on Botkeep itself (not permitted by this task), the GitHub Actions run (workflow not yet dispatched), and any signed release attestation (`signing: PLANNED`). UNPROVEN is not PASS.
+
+Rollback / rejection condition: rejection is unconditional if the Botkeep profile changes the output of any non-Botkeep build; if the release exceeds the budget; if the extracted archive fails the smoke test; or if the packager's exclusions are widened without a measured reason. Rollback is deleting the new files and the `isBotkeepProfile` branch in `next.config.mjs`; no live path, data, or Cloudflare configuration is touched by the change.
+
+Provenance:
+OKF_SWEEP = COMPLETE-FULL
+ROOT_RULES = reviewed
+HIERARCHY = reviewed
+SECURITY = reviewed
+COGNITION = reviewed
+MEMORY = reviewed
+RESEARCH_MAPPINGS = reviewed (none applicable)
+RENDERING = reviewed (unchanged; no rendering contract touched)
+ARTIFACTS = reviewed
+WORKFLOWS = reviewed
+AUDITS = reviewed
+PRODUCTION_HELPER = reviewed (Semgrep/Strix not run: no Docker-in-CI in this session; recorded UNPROVEN, not PASS)
+IMPLEMENTATION = reviewed
+TESTS = reviewed
+CONTRADICTIONS = listed (three pre-existing production entry points; `.okf` silent on hosting; `apps/web/vercel.json` vs AGENTS.md root-path claim; `next build` runs with typescript.ignoreBuildErrors)

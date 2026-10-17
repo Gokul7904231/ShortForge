@@ -134,6 +134,8 @@ gen-v-deploy/
 **/gen-v-deploy/
 *.tgz
 *.tar.gz
+# Botkeep release output (workflow artifact only; never committed)
+/dist/
 
 # legacy bottle leftovers (physical dirs remain until manual cleanup)
 floors/
