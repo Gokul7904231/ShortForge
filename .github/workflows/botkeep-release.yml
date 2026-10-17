@@ -54,7 +54,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=6144
         run: node node_modules/.bin/tsc --noEmit
 
-      - name: Build (Botkeep profile: standalone output)
+      - name: Build with the Botkeep profile (standalone output)
         env:
           # NEXT_PUBLIC_* values are inlined into the client bundle at build
           # time; they are not read from the runtime environment. Configure them
