@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "changeId": "PR-243-DAYTONA-SDK-LIFECYCLE-20261017",
+  "mission": "Requalify the Daytona adapter lifecycle/download fixes against the current F07 YouTube policy and report exact live evidence.",
+  "date": "2026-10-17",
+  "base": "main",
+  "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
+  "headRef": "fix/daytona-sdk-lifecycle-20261016",
+  "exactHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+  "classification": "extends existing rule",
+  "requestedOutcome": "Normalize Daytona provider-native lifecycle states, produce/download a physical MP4, verify remote/local integrity and CAS, then pass current F07 policy and signed receipt validation before any qualification claim.",
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "machineSweepStatus": "PENDING_ON_PR_HEAD",
+    "machineSweepEvidence": "No Team report was present on the prior PR head, and the live physical proof is running on a temporary integration head that combines this Daytona adapter with F07 policy commit 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8. CI/sweep must run on the updated PR head.",
+    "humanCorpusReviewStatus": "PARTIAL",
+    "reviewedRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/compute/sandbox-fabric.md",
+      ".okf/compute/live-provider-activation.md",
+      ".okf/decisions/compute-pool-20261002.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/production-helper.md",
+      ".okf/architecture/authority-registry.json",
+      "apps/web/factoryos/core/compute/sandboxes/DaytonaSandboxAdapter.ts",
+      "apps/web/factoryos/tests/sandbox-fabric.test.ts",
+      "apps/web/factoryos/tests/live-hosted-sandbox.test.ts"
+    ],
+    "pending": [
+      "Complete a human review of the full current .okf corpus and relevant repo mappings.",
+      "Run Team Change, OKF Governance, CI and sandbox/F07 validations on this exact PR head.",
+      "Finish the live Daytona physical proof using the corrected policy and reconcile its evidence.",
+      "Obtain independent human/security review before promotion."
+    ]
+  },
+  "changes": [
+    "Recognize Daytona provider-native states: started, pulling_snapshot, pending_build, stopped, archived and build_failed.",
+    "Wait for readiness/provisioning and only start stopped/paused/archived sandboxes.",
+    "Persist bytes returned by Daytona fs.downloadFile to the requested local path.",
+    "Avoid conflicting ephemeral plus autoDeleteInterval configuration and use a bounded TTL by default.",
+    "Add lifecycle state normalization tests.",
+    "Add the required Team Change Report after the previous Team Change gate failure caused by the missing report."
+  ],
+  "security": {
+    "status": "TRIAGED",
+    "semgrep": "UNPROVEN",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No PR review is currently submitted. The Strix bot says its workspace trial ended, so a complete Strix security review is unavailable.",
+      "Daytona and other hosted sandbox adapters keep productionWorkerEligible=false; this PR does not grant F06 production authority.",
+      "Provider secrets remain in GitHub Actions secrets and are not written to evidence."
+    ]
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "COMPLETE_FOR_SCOPE",
+  "routedForgers": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "verificationResults": {
+    "exactHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+    "policyHead": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+    "previousPhysicalProof": {
+      "runId": 38888809202,
+      "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/38888809202",
+      "result": "PASS_ON_OLDER_POLICY",
+      "artifactId": 12040714888,
+      "note": "The physical render test passed, but the run preceded the corrected F07 policy commit; do not treat it as current-policy qualification."
+    },
+    "currentPolicyPhysicalProof": {
+      "runId": 39019612786,
+      "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786",
+      "head": "0cd86cb8324223fbb15c33804e74d665eb1aa918",
+      "status": "IN_PROGRESS",
+      "composition": "Daytona adapter/test from this PR + current F07 policy commit 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+      "qualification": "PENDING_UNTIL_PHYSICAL_MP4_CAS_F07_AND_SIGNED_RECEIPT_PASS"
+    }
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/243",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38888809202",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786",
+    "https://github.com/Gokul7904231/ShortForge/pull/244",
+    "https://support.google.com/youtube/answer/15424877",
+    "https://support.google.com/youtube/answer/12504220"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "The prior physical pass used an older policy snapshot. The current-policy requalification is running on a temporary combined head and has not yet been accepted; full current-head CI, the full human OKF review, and independent review remain outstanding.",
+  "verificationPlan": [
+    "Run Team/scripts/validate-team-report.mjs Team/reports/pr-243.json.",
+    "Pass OKF Governance and Team Change Gate on the updated PR head.",
+    "Complete physical Daytona render and verify remote/local SHA-256 and byte length.",
+    "Verify the physical artifact in CAS and require F07 publishAllowed=true with current official policy and a verified signed receipt.",
+    "Do not claim physical qualification or enable F06 production authority until all gates and review requirements pass."
+  ]
+}
