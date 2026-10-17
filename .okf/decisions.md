@@ -1683,3 +1683,35 @@ PRODUCTION_HELPER = reviewed (Semgrep/Strix not run: no Docker-in-CI in this ses
 IMPLEMENTATION = reviewed
 TESTS = reviewed
 CONTRADICTIONS = listed (three pre-existing production entry points; `.okf` silent on hosting; `apps/web/vercel.json` vs AGENTS.md root-path claim; `next build` runs with typescript.ignoreBuildErrors)
+
+## Botkeep release promoted to a committed, CI-verified, reproducible path - 2026-10-17
+
+Classification: extends existing rule (the 2026-10-16 Botkeep release profile decision). No existing rule is contradicted.
+
+Decision: the Botkeep self-hosted release is (a) tracked in git on `feat/botkeep-release`, (b) produced from a clean committed SHA by `.github/workflows/botkeep-release.yml` on Node 22 Linux, and (c) triggered by a `botkeep-*` tag until the workflow file reaches the default branch.
+
+Trigger rationale: `workflow_dispatch` is refused while the workflow exists only on a feature branch. GitHub answers `422 Workflow does not have 'workflow_dispatch' trigger` unless the file is present on the default branch. Merging to `main` was not authorised for this task and a production release tag was explicitly out of bounds, so the release uses the workflow's other declared trigger, `push: tags: ["botkeep-*"]`. Verified that no other workflow under `.github/workflows` matches a tag push (every other `push` trigger is branch- or path-filtered), so a release tag starts exactly one workflow, and that workflow only uploads a workflow artifact.
+
+Implementation facts:
+- Release source SHA `f2e730f3e4f227d17ad9782aa8d603ba59d91d5d` on `feat/botkeep-release`; tag `botkeep-20261017`; `dirtyWorkingTree: false`.
+- Workflow run `39011242802` succeeded on every step (`npm ci`, typecheck, build, package, verify, summary, `upload-artifact` with 14-day retention).
+- Artifact `shortforge-botkeep-f2e730f3e4f2.zip`, sha256 `f328cd911a8c6d1be967ed96967f42af7b1d54064c828699fd063cc4214ace66`; `.sha256` sidecar, `release-manifest.json`, and the re-measured file hash all agree.
+- 394.30 MiB uncompressed against the 1,300 MiB budget (`WITHIN_BUDGET`, 905.7 MiB headroom), 7,212 files, 0 secret-scan findings, 32/32 extracted-archive checks.
+- Typecheck gate: the release workflow runs `tsc --noEmit` and is the only authority on types, because `next build` runs with `typescript.ignoreBuildErrors`. It passes on a clean checkout after widening `runProcess`'s `env` option to `Partial<NodeJS.ProcessEnv>` in `factoryos/core/compute/notebooks/NotebookUtils.ts`; the partial env objects that callers already pass were previously rejected. The change is type-only, and the gate itself is its test.
+- Defect fixed en route: the workflow file was unparseable. A step name contained an unquoted `: ` inside a plain YAML scalar, so GitHub created runs with zero jobs that failed immediately. Fixed by renaming the step; confirmed by parsing the committed blob with two independent YAML parsers.
+- Findings recorded rather than silently accepted: (1) the `NEXT_PUBLIC_*` repository Variables are unset, so the verified artifact inlines empty public configuration and is a structure/verification proof, not a configured release; (2) two builds are structurally but not byte-identical — random `BUILD_ID`, minifier identifier mangling, and CRLF staging on Windows; (3) three pre-existing TypeScript errors unrelated to this work remain out of scope.
+
+UNPROVEN, reported as UNPROVEN and not as PASS: deployment to the live `shortforge-primary` workload, which was not connected to, read, or modified. Signed release attestation remains `signing: PLANNED`.
+
+Rollback / rejection: rejection is unconditional if any non-Botkeep build output changes, if the release exceeds the budget, if the extracted archive fails the smoke test, or if packager exclusions widen without a measured reason. The live workload is untouched by this decision; replacement stays an operator action documented in `docs/deployment/botkeep.md`.
+
+Provenance:
+OKF_SWEEP = COMPLETE-FULL (reused from the 2026-10-16 record; no new architectural surface introduced)
+ROOT_RULES = reviewed
+HIERARCHY = reviewed
+WORKFLOWS = reviewed (tag-trigger blast radius verified as exactly one workflow)
+SECURITY = reviewed (0 secret-scan findings; artifact upload only, nothing published)
+PRODUCTION_HELPER = reviewed (Semgrep/Strix not run: recorded UNPROVEN, not PASS)
+IMPLEMENTATION = reviewed
+TESTS = reviewed (typecheck gate + 32 extracted-archive checks)
+CONTRADICTIONS = listed (workflow_dispatch vs non-default branch; `NEXT_PUBLIC_*` Variables unset; build byte-reproducibility)

@@ -63,6 +63,50 @@ Outputs in `dist/botkeep/`: the `.zip`, its `.sha256`, `release-manifest.json`
 (every included path), `release-excluded.json` (exclusion class + reason), and
 `verify-report.json`.
 
+## Verified release
+
+| Field | Value |
+|---|---|
+| Workflow run | `.github/workflows/botkeep-release.yml`, run `39011242802` — **success** |
+| Trigger | `push` of tag `botkeep-20261017` on `feat/botkeep-release` |
+| Source commit | `f2e730f3e4f227d17ad9782aa8d603ba59d91d5d`, `dirtyWorkingTree: false` |
+| Archive | `shortforge-botkeep-f2e730f3e4f2.zip` |
+| SHA-256 | `f328cd911a8c6d1be967ed96967f42af7b1d54064c828699fd063cc4214ace66` |
+| Uncompressed | 394.30 MiB (413,457,083 B) of the 1,300 MiB budget — `WITHIN_BUDGET`, 905.7 MiB headroom |
+| Compressed | 127.91 MiB |
+| Files | 7,212 |
+| Secret scan | 0 findings |
+| Extracted-archive smoke test | 32 passed, 0 failed |
+
+`workflow_dispatch` cannot trigger this workflow while it exists only on a feature
+branch: GitHub only accepts a dispatch event when the workflow file is present on the
+**default branch** (verified — the API answers `422 Workflow does not have
+'workflow_dispatch' trigger`). Until the file reaches `main`, the release is triggered
+by pushing a `botkeep-*` tag, which is the workflow's other documented trigger.
+
+> **The current artifact is a structure/verification proof, not a configured release.**
+> The `NEXT_PUBLIC_*` repository Variables the workflow reads are **not set** on the
+> repository (only `LIGHTNING_TEAMSPACE` and the `OKF_*` keys exist), so this build
+> inlined empty public configuration. Set the `NEXT_PUBLIC_*` Variables listed above and
+> re-run the workflow before using an artifact for a real cutover.
+
+### Reproducibility
+
+The packager itself is deterministic (fixed entry order, fixed timestamps), so the same
+input tree produces the same bytes. Two builds are **not** byte-identical, for reasons
+that are understood rather than assumed:
+
+- Next.js assigns a fresh random `BUILD_ID` per build, which renames
+  `.next/static/<BUILD_ID>/` and the content-hashed client chunks (6 paths differ).
+- Minified identifier mangling varies between runs — 16 server chunks differ by ~8 KiB
+  in total (e.g. `ResponseCookies:()=>m` vs `ResponseCookies:()=>g`).
+- The ZIP is only as reproducible as the tree it is given. Staging the tree on Windows
+  with `core.autocrlf=true` rewrites text files to CRLF, adding exactly one byte per
+  line: measured at 1,254 of 1,270 differing files, with `package-lock.json` differing
+  by exactly its 19,076 line count. Build from a Linux checkout, as the workflow does.
+
+The file set, the manifest, and the 32 verification checks reproduce exactly.
+
 ## Start command
 
 From the extracted release directory:
@@ -132,50 +176,137 @@ The release tree itself is read-only apart from those paths.
 
 Uploading/extracting a release does **not** remove files that are already on the
 workload. Extraction is additive; anything left over from a previous install stays
-until it is explicitly deleted. In particular, extracting over an existing full
-checkout leaves the old `node_modules/`, `.next/`, `data/`, and `src` tree in place,
-and the old files keep consuming the storage quota.
+until it is explicitly deleted, and the old files keep consuming the storage quota.
 
 Where the release is extracted determines what `node start.mjs` serves, so the
 contract is: **the release directory is the application directory.** Either replace
 the application directory's contents wholesale, or point the workload's start
 command at the new release directory.
 
-### Cleanup / replacement checklist
+## What is actually live today (measured 2026-10-17)
 
-Do these on Botkeep, in this order, only after the artifact has passed verification.
-Every step that deletes is marked, and nothing here touches `/data`.
+The live workload does **not** run this release. It is a full source checkout that
+builds itself at startup:
 
-1. [ ] Record the current state first: running commit/version, start command, and the
-       output of the volume audit, so a rollback target exists.
-2. [ ] Back up outside the workload: `/data` (databases, CAS/render state), the
-       Botkeep Environment variable set, and any file the operator added by hand.
-       `/.git` is not needed for a release and is not a backup of `/data`.
-3. [ ] Verify the artifact before upload: `sha256sum -c shortforge-botkeep-<sha12>.zip.sha256`
-       and compare against the `sha256` in `release-manifest.json`.
-4. [ ] Confirm the environment configuration still holds every Runtime variable listed
-       above. Environment settings are Botkeep-managed and are **not** part of the
-       archive, so they should survive untouched — verify rather than assume.
-5. [ ] Keep `/data` exactly as it is. Do not delete, move, or overwrite it, and do not
-       copy the release's (absent) `data/` over it.
-6. [ ] **Delete** the old application tree that the release replaces — the previous
-       `apps/web/node_modules` (≈2.0 GiB on the current workload), the old `.next`,
-       and the old source checkout. This is the step that actually reclaims storage;
-       the upload alone reclaims none.
-7. [ ] **Delete** `/.npm/_cacache` (≈0.57 GiB) — a build cache with no runtime role.
-       Do not run `npm install` on the workload.
-8. [ ] Keep or re-create `.factoryos_render_cache/` only if the checkpoints are wanted;
-       it is safe to remove.
-9. [ ] Set the start command to `node start.mjs` in the release directory and set the
-       Botkeep port. Do not hard-code a port in the archive; it reads `SERVER_PORT`.
-10. [ ] Start, then check `GET /api/health`, `GET /login`, and one static
-        `/_next/static/...` asset. Confirm the log shows no
-        `Cannot find module` / `ERR_MODULE_NOT_FOUND`.
-11. [ ] Re-run the volume audit and compare against the budget below. If storage did
-        not drop, step 6 or 7 did not happen.
+| Fact | Value |
+|---|---|
+| Workload | `shortforge-primary` — one **Application** workload, Node.js 22 |
+| Source | GitHub `Gokul7904231/ShortForge`, branch `deploy/botkeep-primary` |
+| Start command | `npm start` → `node scripts/botkeep-start.mjs` |
+| Storage allocation | 2,048 MiB |
+| Measured usage | ≈ 2,734 MiB (**already ≈ 686 MiB over allocation**) |
+| — `apps/web/node_modules` | ≈ 2,050 MiB |
+| — npm cache (reported as `/.npm`) | ≈ 568 MiB |
+| — `.git` | ≈ 27 MiB |
+| — `apps/web/.next` | ≈ 1.1 MiB |
+| — `/data` | ≈ 0.33 MiB |
+| File access | SFTP only (WinSCP). **No shell, no `sha256sum`, no `unzip` on the box.** |
 
-Do not delete `/data`, `.git` (if it is still a rollback asset the operator wants), or
-any Botkeep-managed configuration as part of a release swap.
+`scripts/botkeep-start.mjs` (root `package.json` + launcher) exists only on
+`deploy/botkeep-primary`, not on the branch this release was built from. It runs
+`npm ci --prefix apps/web` and `npm run build --prefix apps/web` on the workload
+(gated by `.botkeep-runtime/build-state.json`), then `next start` on
+`0.0.0.0:$SERVER_PORT|$PORT|3000`. That on-box install is what produced the 2.6 GiB
+tree this release replaces.
+
+### Transition storage arithmetic
+
+A strict 2,048 MiB quota cannot hold the old tree and the release at once:
+
+| Step | Delta | Running total |
+|---|---|---|
+| Today | — | 2,734 MiB |
+| Delete npm cache + `.git` + old `.next` | −596 MiB | 2,138 MiB |
+| Upload release (134 MiB zip) | +134 MiB | 2,272 MiB |
+| Extract release (397 MiB tree) | +397 MiB | 2,669 MiB |
+
+Reclaiming the cache is not enough. The old `apps/web/node_modules` must go before or
+during the swap. Choose one:
+
+- **Option A — keep rollback, ask Botkeep support to raise the allocation** to ≈
+  3,500 MiB for the window, do the swap, then lower it back. Nothing has to be deleted
+  before the new release is proven.
+- **Option B — no support dependency, accept a rebuild-to-rollback.** Delete the old
+  `node_modules` first (step 6). Rollback then means deleting the release directory,
+  restoring the start command to `npm start`, and letting the old launcher re-run
+  `npm ci` + `next build` on the box (~10–20 min, needs network and ≈2 GiB, which is
+  free again once the release is gone).
+
+Because the workload is already over its allocation, check whether writes are
+actually refused before choosing; if they are not, Option A's headroom is already
+available de facto.
+
+### Replacement checklist
+
+Tags: **[WinSCP]** = safe with the temporary SFTP credentials · **[Botkeep UI]** =
+workload settings in the Botkeep dashboard · **[Local PC]** = operator machine ·
+**[support]** = needs Botkeep support, the UI cannot express it.
+
+**Phase 0 — record and back up**
+
+1. **[Botkeep UI]** Record, verbatim, the current Start command, the Node.js version,
+   the Source (repo + branch), the port/HTTP routing, and every Environment value.
+   Screenshot or paste into an out-of-band note. Keep secrets out of the repo.
+2. **[WinSCP]** Download the **entire `/data` directory** to the operator machine and
+   keep it. This is the only real rollback asset — databases, CAS/render state.
+   `/.git` is not a backup of `/data`.
+3. **[WinSCP]** Confirm writable space with a small test upload, to decide Option A
+   vs Option B above.
+
+**Phase 1 — verify the artifact (before anything touches the workload)**
+
+4. **[Local PC]** `Get-FileHash .\shortforge-botkeep-<sha12>.zip -Algorithm SHA256`
+   and compare it to the `.zip.sha256` sidecar **and** to `archive.sha256` in
+   `release-manifest.json`. All three must match.
+5. **[Local PC]** In `release-manifest.json` confirm `status: WITHIN_BUDGET`,
+   `dirtyWorkingTree: false`, the expected `commit`, `secretScan.findings` empty, and
+   the `verify-report.json` counts (`passed`, `failed: 0`).
+6. **[Local PC]** Extract the zip locally. It must contain `server.js`, `start.mjs`,
+   `node_modules/`, `.next/`, `public/`, `RELEASE-INFO.json`, and must contain **no**
+   `.env`, `data/`, or `.git`.
+
+**Phase 2 — install without losing the old tree (Option A) or after reclaiming (Option B)**
+
+7. **[support]** Confirm the workload's start command can be changed to an arbitrary
+   command **and** that an uploaded directory outside the git checkout survives a
+   restart/redeploy. If either is false, stop — this release path cannot be deployed
+   without a Botkeep change.
+8. **[WinSCP]** Upload the **extracted tree** (7,212 files) to a new directory, e.g.
+   `/apps/release-<sha12>/`. WinSCP cannot unzip remotely, so extract on the local
+   machine first. (Alternative: **[support]** extracts the uploaded zip server-side.)
+   Upload the `.zip`, `.sha256`, and `release-manifest.json` alongside it as the
+   deployment record.
+9. **[WinSCP]** Option B only: **delete** `apps/web/node_modules` (≈2,050 MiB), then
+   optionally the npm cache and `apps/web/.next`. Nothing else. Delete `.git` only if
+   it is not the intended rollback asset.
+
+**Phase 3 — cut over**
+
+10. **[Botkeep UI]** Set the start command to `node start.mjs` with the release
+    directory as the working directory, and set the port via the `SERVER_PORT`
+    environment value. Do not hard-code a port in the archive.
+11. **[Botkeep UI]** Confirm every Runtime variable from the list above is still set.
+    Environment settings are Botkeep-managed and are not part of the archive, so they
+    should survive — verify rather than assume. Restart the workload.
+
+**Phase 4 — post-deployment checks**
+
+12. **[Local PC]** `GET /api/health` → JSON (`status` may be `degraded` while optional
+    providers are unconfigured; that is not a failed boot). `GET /login` → 200 HTML.
+    One `/_next/static/...` asset → 200 with a JS/CSS content type.
+13. **[Botkeep UI]** Console/log output: no `Cannot find module` /
+    `ERR_MODULE_NOT_FOUND`, and the log shows `start.mjs` binding the requested port
+    (`start.mjs` refuses an out-of-range port instead of guessing).
+14. **[Botkeep UI]** Re-run the volume audit. Expect ≈ 650 MiB (release + `/data`), not
+    ≈ 2,700 MiB. If storage did not drop, step 9 did not happen.
+15. **[WinSCP]** Rollback, if any check fails: stop the workload, restore the start
+    command from step 1, restore `/data` from step 2 if it was touched, then either
+    delete the release directory (Option B — the old launcher rebuilds itself) or
+    let the restored tree run (Option A).
+
+**Never delete as part of a release swap:** `/data`, any `.env*` file, the Botkeep
+Environment configuration, the workload's HTTP routing/domain settings, or
+`.botkeep-runtime` while the old launcher is still the rollback path.
 
 ## Verification gates
 
