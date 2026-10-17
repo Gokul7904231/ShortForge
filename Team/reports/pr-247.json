@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "fix/render-worker-fail-closed-20261017",
   "pullRequest": 247,
-  "headSha": "e3de68b313925e9ab6d4065c28ba17784662d5a2",
+  "headSha": "9c15bbca3bf51919d240dc3585f48cc8260a6579",
   "objective": "Remove the committed RENDER_WORKER_SECRET fallback and make the distributed render-worker dispatch path fail closed, so a broken claim, a failed downstream dispatch or a lost callback can no longer be reported as an empty queue or a successful delivery.",
   "classification": "extends existing rule",
   "okf": {
@@ -89,8 +89,8 @@
     "unitTestsDetail": "render-worker-fail-closed.test.ts 18/18; test_github_dispatch_claim.py 16/16",
     "repositoryScanForOldLiteral": "PASS",
     "repositoryScanDetail": "No occurrence in .github/workflows. The literal remains only as an intentional detection pattern in apps/web/scripts/check-cloudflare-free.mjs and as a negative assertion in services/rendering-engine/tests/test_drive_delivery.py.",
-    "fullFactoryosSuite": "PRE_EXISTING_FAILURES_AND_DAEMON_FIX_PENDING_REVALIDATION",
-    "fullFactoryosSuiteDetail": "npm run factoryos:test -> 1443 passed, 75 failed, 9 skipped across 71 files. No failure is attributable to this change: no test imports the workflow YAMLs, and the failing classes are unrelated (missing modules such as lib/rendering/AzureWorkerManager, which does not exist on main; undefined globals; unrelated assertions). A later targeted repair removes the orphaned return in worker_daemon.py; rerun the affected Python tests on the updated head before classifying daemon test collection.",
+    "fullFactoryosSuite": "NOT_RERUN_AFTER_DAEMON_FIX",
+    "fullFactoryosSuiteDetail": "An earlier run on the pre-daemon-fix branch recorded 1443 passed, 75 failed and 9 skipped across 71 files. That result is not final-head evidence after the worker_daemon.py syntax repair; rerun the affected Python tests and relevant application checks against the updated PR head. Do not claim those old results are unaffected by this follow-up.",
     "liveRenderExecution": "BLOCKED",
     "liveRenderExecutionDetail": "No credentials or runtime available in this environment. No physical MP4, CAS receipt or F07 proof is claimed.",
     "liveClaimAgainstControlPlane": "NOT_RUN",
@@ -113,7 +113,7 @@
     "Control plane cannot claim a named job: POST /api/rendering/claim accepts only workerId and workerPool. A job-targeted claim (optional jobId, honouring existing lease/fencing and attempt-monotonicity rules) is a separate control-plane change and is not implemented here.",
     "Live render execution is BLOCKED in this environment (no credentials or runtime). No physical MP4, CAS receipt or F07 proof is claimed.",
     "The compromised RENDER_WORKER_SECRET must be rotated by the operator on both the control plane and repository secrets before the dispatcher can claim at all.",
-    "Validate the worker-daemon syntax repair and its new AST regression test on the final PR head; until then, daemon recovery is not counted as verified."
+    "Rerun the affected Python tests and the new worker-daemon AST syntax regression on the final PR head; a report of old test results is not final-head verification."
   ],
   "disposition": "BLOCKED",
   "dispositionReason": "The dispatcher hardening has focused unit/static evidence, but PR promotion remains blocked by owner review, rotation of the compromised RENDER_WORKER_SECRET, pending/failed exact-head gates, and lack of live physical-render proof. The daemon syntax repair has been added based on verified history but requires final-head test evidence."
