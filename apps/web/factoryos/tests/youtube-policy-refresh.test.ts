@@ -13,6 +13,7 @@ import {
 } from "../core/verification/youtube";
 import { ContentGenome } from "../core/creative/ContentGenome";
 import { MediaProbeMeasurements } from "../core/verification/VerificationEngine";
+import { G12_ShortsEligibilityGate } from "../core/verification/youtube/gates/G12_G14_Gates";
 
 describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & Date Proof", () => {
   const policyStore = YouTubePolicyStore.getInstance();
@@ -96,7 +97,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
   };
 
   it("1. Stale Policy Snapshot Gate (G00) — strictly blocks release if snapshot is marked STALE", () => {
-    const canonical = policyStore.getSnapshot("2026.09.15")!;
+    const canonical = policyStore.getSnapshot("2026.10.17")!;
 
     // Create a stale snapshot
     const staleSnapshot: PolicySnapshot = YouTubePolicySnapshotManager.createSnapshot({
@@ -112,7 +113,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
       video: claimedLongShort,
       channel: sampleChannel,
       snapshot: staleSnapshot,
-      publicationIntentAt: "2026-09-21T00:00:00Z",
+      publicationIntentAt: "2026-10-17T00:00:00Z",
     });
 
     expect(result.overallOutcome).toBe("POLICY_STALE");
@@ -124,38 +125,47 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     expect(g00?.severity).toBe("BLOCKING");
   });
 
-  it("2. Current Content ID Rule — claimed Shorts longer than one minute are blocked", () => {
+  it("2. Current Content ID Rule — post-2026-09-24 claims do not imply automatic blocking or revenue transfer", () => {
     const result = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
-      uploadIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
+      uploadIntentAt: "2026-10-17T12:00:00Z",
     });
 
-    expect(result.publishAllowed).toBe(false);
-    expect(result.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+    expect(result.publishAllowed).toBe(true);
+    expect(result.activePolicyEffects).toContain("EXTERNAL_REVIEW");
+    expect(result.activePolicyEffects).not.toContain("BLOCK_PUBLICATION");
     const g12 = result.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
-    expect(g12?.status).toBe("BLOCKED");
-    expect(g12?.explanation).toContain("blocked globally");
+    expect(g12?.status).toBe("PASS");
+    expect(g12?.severity).toBe("WARNING");
+    expect(g12?.explanation).toContain("may remain playable");
+    expect(g12?.observedSignal).not.toHaveProperty("revenueEffect");
   });
 
-  it("3. Current Policy Boundary — a claimed 110s Short is blocked for a September 25 upload", () => {
-    const result = guardian.evaluate({
-      video: claimedLongShort,
-      channel: sampleChannel,
-      publicationIntentAt: "2026-09-25T08:00:00Z",
-      uploadIntentAt: "2026-09-25T08:00:00Z",
-    });
+  it("3. Effective-date boundary — old claimed Shorts block before the transition and become warning-only after", () => {
+    const rule = policyStore.getSnapshot("2026.10.17")!.rules.find(
+      (candidate) => candidate.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
+    )!;
 
-    expect(result.publishAllowed).toBe(false);
-    expect(result.activePolicyEffects).toContain("BLOCK_PUBLICATION");
-    const g12ContentId = result.gateFindings.find(
-      (f) => f.gateId === "G12_SHORTS_ELIGIBILITY" && f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
+    const beforeTransition = G12_ShortsEligibilityGate.evaluate(
+      claimedLongShort,
+      rule,
+      "2026-09-23T23:59:59Z"
     );
-    expect(g12ContentId).toBeDefined();
-    expect(g12ContentId?.severity).toBe("BLOCKING");
-    expect(g12ContentId?.status).toBe("BLOCKED");
-    expect(g12ContentId?.explanation).toContain("blocked globally");
+    expect(beforeTransition.status).toBe("BLOCKED");
+    expect(beforeTransition.severity).toBe("BLOCKING");
+    expect(beforeTransition.observedSignal?.playbackEffect).toBe("BLOCKED");
+
+    const afterTransition = G12_ShortsEligibilityGate.evaluate(
+      claimedLongShort,
+      rule,
+      "2026-09-24T00:00:00Z"
+    );
+    expect(afterTransition.status).toBe("PASS");
+    expect(afterTransition.severity).toBe("WARNING");
+    expect(afterTransition.explanation).toContain("may remain playable");
+    expect(afterTransition.observedSignal).not.toHaveProperty("revenueEffect");
   });
 
   it("4. Content ID Claim Replacement — replacing claimed audio with original narration bed passes when claim is resolved", () => {
@@ -179,7 +189,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     const resultPostSept24Clean = guardian.evaluate({
       video: cleanLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-25T08:00:00Z",
+      publicationIntentAt: "2026-10-17T08:00:00Z",
     });
 
     expect(resultPostSept24Clean.overallOutcome).toBe("READY");

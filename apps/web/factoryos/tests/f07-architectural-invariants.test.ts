@@ -157,7 +157,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
     return await releaseGuardian.verifyRelease({
       video: sampleVideo,
       channel: sampleChannelMonetizing,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       artifactSha256: "a".repeat(64),
     });
   }
@@ -218,7 +218,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // Invariant #4: UNKNOWN / STALE / MISSING CRITICAL EVIDENCE MUST FAIL CLOSED
   // ───────────────────────────────────────────────────────────────────────────
   it("Invariant #4: UNKNOWN / STALE / MISSING CRITICAL EVIDENCE MUST FAIL CLOSED — Stale snapshot fails closed", () => {
-    const canonical = policyStore.getSnapshot("2026.09.15")!;
+    const canonical = policyStore.getSnapshot("2026.10.17")!;
     const staleSnapshot = YouTubePolicySnapshotManager.createSnapshot({
       policyVersion: "2024.01.01",
       retrievedAt: "2024-01-01T00:00:00Z",
@@ -284,7 +284,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // Invariant #8: POLICY AS DATA (SNAPSHOTS & REFRESH)
   // ───────────────────────────────────────────────────────────────────────────
   it("Invariant #8: POLICY AS DATA — Policy definitions are stored as versioned data, not hardcoded conditionals", () => {
-    const snapshot = policyStore.getSnapshot("2026.09.15");
+    const snapshot = policyStore.getSnapshot("2026.10.17");
     expect(snapshot).toBeDefined();
     expect(snapshot!.rules.length).toBeGreaterThanOrEqual(15);
     for (const rule of snapshot!.rules) {
@@ -299,7 +299,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // Invariant #9: REPRODUCIBLE SNAPSHOT DIGEST
   // ───────────────────────────────────────────────────────────────────────────
   it("Invariant #9: REPRODUCIBLE SNAPSHOT DIGEST — Policy snapshot hash is reproducible and tamper-evident", () => {
-    const snapshot1 = policyStore.getSnapshot("2026.09.15")!;
+    const snapshot1 = policyStore.getSnapshot("2026.10.17")!;
     const computedHash = YouTubePolicySnapshotManager.computeSnapshotHash(
       snapshot1.policyVersion,
       snapshot1.effectiveAt,
@@ -313,7 +313,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // Invariant #10: CANONICAL OFFICIAL DOCUMENT DIGESTS
   // ───────────────────────────────────────────────────────────────────────────
   it("Invariant #10: CANONICAL OFFICIAL DOCUMENT DIGESTS — Registry binds to content SHA-256 rather than URL strings", () => {
-    const snapshot = policyStore.getSnapshot("2026.09.15")!;
+    const snapshot = policyStore.getSnapshot("2026.10.17")!;
     for (const doc of snapshot.sourceDocuments) {
       expect(doc.contentChecksumSha256).toBeDefined();
       expect(doc.contentChecksumSha256).toHaveLength(64);
@@ -339,7 +339,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // ───────────────────────────────────────────────────────────────────────────
   // Invariant #12: G12 SHORTS ELIGIBILITY BOUNDARY
   // ───────────────────────────────────────────────────────────────────────────
-  it("Invariant #12: G12 SHORTS ELIGIBILITY — 0 < d <= 180s and active claims block Shorts over one minute", () => {
+  it("Invariant #12: G12 SHORTS ELIGIBILITY — 0 < d <= 180s and post-transition claims require review, not automatic blocking", () => {
     // 175s clean Short passes
     const longCleanShort = {
       ...sampleVideo,
@@ -358,7 +358,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
     const result181 = guardian.evaluate({ video: over180Short, channel: sampleChannelMonetizing });
     expect(result181.publishAllowed).toBe(false);
 
-    // A 110s Short with an active claim is blocked under the current official rule.
+    // After the effective date, an active claim on a 110s Short is no longer an automatic block.
     const claimedLongShort = {
       ...sampleVideo,
       measurements: { ...baseMeasurements, videoDuration: 110.0, audioDuration: 110.0 },
@@ -368,14 +368,17 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
     const resultClaimedLongShort = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannelMonetizing,
-      publicationIntentAt: "2026-10-16T12:00:00Z",
-      uploadIntentAt: "2026-10-16T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
+      uploadIntentAt: "2026-10-17T12:00:00Z",
     });
-    expect(resultClaimedLongShort.publishAllowed).toBe(false);
-    expect(resultClaimedLongShort.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+    expect(resultClaimedLongShort.publishAllowed).toBe(true);
+    expect(resultClaimedLongShort.activePolicyEffects).toContain("EXTERNAL_REVIEW");
+    expect(resultClaimedLongShort.activePolicyEffects).not.toContain("BLOCK_PUBLICATION");
     const g12 = resultClaimedLongShort.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
-    expect(g12?.status).toBe("BLOCKED");
-    expect(g12?.explanation).toContain("blocked globally");
+    expect(g12?.status).toBe("PASS");
+    expect(g12?.severity).toBe("WARNING");
+    expect(g12?.explanation).toContain("may remain playable");
+    expect(g12?.observedSignal).not.toHaveProperty("revenueEffect");
   });
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -422,7 +425,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
       const receipt = await releaseGuardian.verifyRelease({
         video: sampleVideo,
         channel: sampleChannelMonetizing,
-        publicationIntentAt: "2026-09-21T12:00:00Z",
+        publicationIntentAt: "2026-10-17T12:00:00Z",
         artifactSha256: ref.sha256,
         artifactCasRef: `cas://${ref.sha256}`,
       });
