@@ -91,13 +91,10 @@ export class G12_ShortsEligibilityGate {
       };
     }
 
-    // 2. Current YouTube rule: a Short over one minute with any active
-    // copyright claim is blocked globally and is not eligible for monetization.
+    // 2. Official YouTube Content ID rule for Shorts longer than one minute.
     if (rule.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE") {
       const hasClaim = Boolean(video.hasActiveContentIdClaim);
-      const overOneMinute = duration > 60.0;
-
-      if (hasClaim && overOneMinute) {
+      if (hasClaim && duration > 60.0) {
         return {
           gateId: "G12_SHORTS_ELIGIBILITY",
           ruleId: rule.ruleId,
@@ -106,16 +103,17 @@ export class G12_ShortsEligibilityGate {
           observedSignal: {
             duration,
             hasActiveContentIdClaim: true,
+            playbackEffect: "BLOCKED_GLOBALLY",
             uploadIntentAt,
-            playbackEffect: "BLOCKED",
-            monetizationEligible: false,
+            effectiveFrom: rule.effectiveFrom,
           },
           explanation:
-            "YouTube's current Shorts monetization policy blocks Shorts over one minute with any active copyright claim globally; the Short is not eligible for monetization.",
+            "Official YouTube Help states that a Short over one minute with an active copyright claim of any type is blocked globally and is not eligible for monetization.",
           evidence: [
-            "Measured duration: " + duration.toFixed(1) + "s (greater than 60s)",
-            "Active copyright claim: PRESENT",
-            "Official Shorts policy result: BLOCKED and not eligible for monetization",
+            `Measured duration: ${duration.toFixed(1)}s (over 60s)`,
+            "Active Content ID claim: PRESENT",
+            "Official policy effect: blocked globally; not eligible for monetization until the claim is resolved",
+            `Policy source: ${rule.sourceDocumentId}`,
           ],
           evidenceRefs: [
             EvidenceRefFactory.create({
@@ -128,12 +126,13 @@ export class G12_ShortsEligibilityGate {
                 duration,
                 hasActiveContentIdClaim: true,
                 uploadIntentAt,
+                effectiveFrom: rule.effectiveFrom,
               },
             }),
           ],
           affectedStages: ["F04", "F05", "F07"],
           suggestedRemediation:
-            "Resolve the copyright claim, replace the claimed content, or keep the Short at one minute or less; then rerun rights and physical verification.",
+            "Resolve the claim, remove or replace the claimed material, and rerun F07 before seeking release.",
           forbiddenShallowRepairs: rule.forbiddenShallowRepairs,
           evaluationType: "DETERMINISTIC",
           confidence: 1.0,
@@ -152,10 +151,10 @@ export class G12_ShortsEligibilityGate {
           contentIdClaimCheck: hasClaim ? "ACTIVE_CLAIM_AT_MOST_60_SECONDS" : "NO_ACTIVE_CLAIM",
         },
         explanation:
-          "No active copyright claim blocks this Short under the over-one-minute Content ID rule.",
+          "No active Content ID claim on a Short longer than one minute triggers the blocking rule.",
         evidence: [
-          "Measured duration: " + duration.toFixed(1) + "s",
-          "Active copyright claim: " + (hasClaim ? "PRESENT" : "NONE"),
+          `Measured duration: ${duration.toFixed(1)}s`,
+          `Active Content ID claim: ${hasClaim ? "PRESENT" : "NONE"}`,
         ],
         evidenceRefs: [
           EvidenceRefFactory.create({
@@ -168,6 +167,7 @@ export class G12_ShortsEligibilityGate {
               duration,
               hasActiveContentIdClaim: hasClaim,
               uploadIntentAt,
+              effectiveFrom: rule.effectiveFrom,
             },
           }),
         ],

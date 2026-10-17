@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "changeId": "PR-244-YOUTUBE-POLICY-REFRESH-20261017",
+  "mission": "Repair the date-aware F07 YouTube Shorts Content ID policy refresh and its regression tests.",
+  "date": "2026-10-17",
+  "base": "main",
+  "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
+  "headRef": "fix/f07-policy-refresh-20261016",
+  "requestedOutcome": "Refresh F07 using current official YouTube policy, keep Shorts over one minute with active Content ID claims blocked, remove unsupported transition/revenue claims, and verify the corrected policy and regression tests.",
+  "classification": "extends existing rule",
+  "changeSummary": [
+    "Use the current first-party YouTube Help pages, which both state that Shorts over one minute with an active copyright/Content ID claim are blocked globally and ineligible for monetization.",
+    "Remove the unsupported September 24, 2026 exception; represent the official Content ID rule as one active rule effective from October 15, 2024.",
+    "Keep F07 fail-closed for an active claim on a Short longer than one minute and remove unsupported playback/revenue inferences.",
+    "Refresh the canonical policy snapshot as 2026.10.17 and update regression tests to assert blocking before and after September 24, 2026.",
+    "Add this required Team Change Report and require fresh final-head validation rather than relying on the superseded run."
+  ],
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "machineSweepStatus": "PENDING_ON_FINAL_HEAD",
+    "machineSweepEvidence": "Prior OKF run passed for commit 5d780d57f24303d25813e1d4e695d6875978bcca. This correction changes the policy rule and tests, so the OKF sweep and all affected checks must rerun on the new final head.",
+    "humanCorpusReviewStatus": "PARTIAL",
+    "reviewedRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/decisions.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/engineering-stack.md",
+      ".okf/production-helper.md",
+      ".okf/decisions/floor07-pretraining-hardening-20260927.md",
+      ".okf/research/repo-research-ledger.md",
+      "apps/web/factoryos/core/verification/youtube/YouTubePolicyGuardian.ts",
+      "apps/web/factoryos/core/verification/youtube/policy/YouTubePolicyStore.ts",
+      "apps/web/factoryos/core/verification/youtube/policy/PolicySourceRegistry.ts",
+      "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+      "apps/web/factoryos/core/verification/youtube/gates/EffectAggregator.ts",
+      "apps/web/factoryos/tests/f07-architectural-invariants.test.ts",
+      "apps/web/factoryos/tests/youtube-policy-refresh.test.ts",
+      "apps/web/factoryos/tests/youtube-evidence-receipt.test.ts",
+      "apps/web/factoryos/tests/youtube-remediation.test.ts",
+      "https://support.google.com/youtube/answer/15424877 (current official guidance, lines 34-36 and 48-52)",
+      "https://support.google.com/youtube/answer/12504220 (current official guidance, lines 46-48)"
+    ],
+    "pending": [
+      "Complete a human review of the full current .okf corpus and remaining relevant mappings.",
+      "Run the OKF machine sweep, Team Change Gate, CI, and F07 policy/invariant suites on the final PR head.",
+      "Review final-head CI evidence and obtain the required independent human review before promotion."
+    ]
+  },
+  "routedForgers": [],
+  "forgers": [],
+  "security": {
+    "status": "UNPROVEN",
+    "semgrep": "UNPROVEN",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "findings": [
+      "This change modifies publication policy evaluation; repository-wide security review and dynamic Strix/ZAP evidence have not been performed as part of this repair."
+    ]
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "COMPLETE_FOR_POLICY_CLAIM",
+  "blockingGates": [
+    "Final-head F07 architectural invariants and policy-refresh tests must pass.",
+    "Final-head Team Change and OKF Governance gates must pass.",
+    "The full current .okf human review and authorized disposition are still pending.",
+    "Independent human review is required before merge."
+  ],
+  "evidenceRefs": [
+    "https://support.google.com/youtube/answer/15424877",
+    "https://support.google.com/youtube/answer/12504220",
+    "https://github.com/Gokul7904231/ShortForge/pull/244",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38888690332",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38888690421",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39016377317"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "The current first-party policy pages contradict the previously encoded September 24 exception. The exception has been removed and fresh final-head CI/F07 checks, full human OKF review, and independent review are required before promotion.",
+  "changes": [
+    "Removed the unsupported September 24, 2026 transition and separate legacy/current rule records.",
+    "Restored one official active Content ID rule effective 2024-10-15: an active claim on a Short over one minute blocks publication.",
+    "Removed the unconditional revenue-impact inference; policy output does not speculate about revenue recipient.",
+    "Added/updated tests asserting the actual Guardian blocks claimed Shorts on both sides of the previously claimed cutoff."
+  ],
+  "verificationPlan": [
+    "Run Team/scripts/validate-team-report.mjs Team/reports/pr-244.json.",
+    "Run the OKF lint/sweep-report workflow on the final PR head.",
+    "Run F07 strict typecheck, physical-truth tests, invariant/receipt suites and policy-refresh tests on the final PR head.",
+    "Confirm guardian-level tests show active claims block Shorts over one minute on both 2026-09-23 and 2026-09-24.",
+    "Keep disposition BLOCKED until all required human review and final-head verification are complete."
+  ]
+}

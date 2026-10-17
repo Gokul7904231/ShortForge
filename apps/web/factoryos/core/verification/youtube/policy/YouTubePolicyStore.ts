@@ -14,7 +14,7 @@ import { PolicyEvaluationContext, PolicyEvaluationContextBuilder } from "./Polic
 export class YouTubePolicyStore {
   private static instance: YouTubePolicyStore | null = null;
   private snapshots: Map<string, PolicySnapshot> = new Map();
-  private latestVersion: string = "2026.10.16";
+  private latestVersion: string = "2026.10.17";
 
   private constructor() {
     this.initializeCanonicalSnapshots();
@@ -32,7 +32,7 @@ export class YouTubePolicyStore {
   }
 
   /**
-   * Initializes a date-bounded canonical snapshot refreshed against official YouTube sources on 2026-10-16.
+   * Initializes a date-bounded canonical snapshot refreshed against official YouTube sources on 2026-10-17.
    */
   private initializeCanonicalSnapshots(): void {
     const sources = PolicySourceRegistry.getOfficialSources();
@@ -348,13 +348,13 @@ export class YouTubePolicyStore {
         forbiddenShallowRepairs: ["speedup_video_beyond_normal"],
       },
 
-      // G12: Current Shorts rule for claimed content longer than one minute.
+      // G12: Official Shorts Content ID restriction, with no later exception claimed by current official documentation.
       {
         ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE",
         gateId: "G12_SHORTS_ELIGIBILITY",
         sourceDocumentId: "src_yt_shorts_monetization",
-        title: "Shorts over one minute with claimed content are blocked",
-        description: "YouTube's current Shorts monetization policy says Shorts over one minute with any active copyright claim are blocked globally and are not eligible for monetization.",
+        title: "Shorts over one minute with an active Content ID claim are blocked",
+        description: "Official YouTube Help states that any Short over one minute with an active copyright claim of any type, including manual claims, is blocked globally and is not eligible for monetization. No September 24, 2026 exception is stated on the current official guidance pages.",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
         appliesBy: "UPLOAD_DATE",
@@ -365,8 +365,8 @@ export class YouTubePolicyStore {
           contentIdClaimThresholdSeconds: 60,
         },
         affectedStagesOnFailure: ["F04", "F05", "F07"],
-        suggestedRemediationAction: "Resolve or replace claimed content, or keep the Short at one minute or less; then rerun rights and physical verification.",
-        forbiddenShallowRepairs: ["pitch_shift_audio", "assume_revenue_only_effect"],
+        suggestedRemediationAction: "Resolve the Content ID claim, remove or replace the claimed material, and rerun rights and physical verification before release.",
+        forbiddenShallowRepairs: ["pitch_shift_audio", "assume_claim_is_revenue_only", "assume_playability_is_guaranteed"],
       },
 
       // G13: Channel-Level Repetition
@@ -410,9 +410,9 @@ export class YouTubePolicyStore {
 
     const snapshot = YouTubePolicySnapshotManager.createSnapshot({
       policyVersion: this.latestVersion,
-      retrievedAt: "2026-10-16T10:35:00Z",
-      effectiveAt: "2026-10-16T10:35:00Z",
-      expiresAt: "2026-10-30T10:35:00Z",
+      retrievedAt: "2026-10-17T00:00:00Z",
+      effectiveAt: "2026-10-17T00:00:00Z",
+      expiresAt: "2026-10-31T00:00:00Z",
       policyState: "CURRENT",
       sourceDocuments: sources,
       rules: canonicalRules,
