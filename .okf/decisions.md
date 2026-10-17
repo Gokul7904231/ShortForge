@@ -1657,10 +1657,15 @@ Validation required:
 - `npm run factoryos:typecheck` passes.
 - `npm run factoryos:test` (includes `apps/web/factoryos/tests/render-worker-fail-closed.test.ts`).
 - `python -m pytest services/rendering-engine/tests/test_github_dispatch_claim.py` passes.
+- `python -m py_compile services/rendering-engine/worker_daemon.py` exits 0 and `python -m pytest services/rendering-engine/tests` collects the full suite with no collection errors.
 - Repository scan for the old literal returns no workflow occurrence.
 - Operator must set and rotate `RENDER_WORKER_SECRET` before the dispatcher can claim.
 
-Known blocker recorded, not fixed: `services/rendering-engine/worker_daemon.py:549` contains a stray `return` that raises `IndentationError`, so the module cannot be imported and four test modules in `services/rendering-engine/tests/` cannot be collected — including the existing `test_no_default_secret_string_in_codebase` guard. The original guard condition that the orphaned `return` belonged to cannot be recovered from the current source, so restoring it was deliberately left out of this change rather than guessed.
+Blocker recorded and then resolved inside this same change: `services/rendering-engine/worker_daemon.py` carried a stray indented `return` beneath `tier = job.get("tier", "BASIC")` in `process_single_job()`, which raised `IndentationError` and made the module unimportable. Measured on `main` @ `ed966487`: `python -m py_compile worker_daemon.py` failed at line 549, a suite-wide `python -m pytest tests` aborted collection after 28 of 52 tests, and `tests/test_drive_delivery.py` — 7 tests, including the `test_no_default_secret_string_in_codebase` guard that detects the compromised secret literal — could not be collected at all.
 
-Rollback/rejection: revert the workflow and script changes; the previous behaviour (silent fallback and swallowed failures) is restored. Do not reintroduce a committed default for `RENDER_WORKER_SECRET` under any rollback.
+Origin, confirmed from history rather than guessed: commit `1ce28a3aa1dbc259617c50cbb18b2eb349d73a97` ("make persistent render daemon provider-neutral") deleted both the `if tier != "ADMIN":` test and its `log("Worker", "REJECTED non-admin job...")` line but left the guarded `return` indented in place. That commit also changed `WORKER_POOL` from `azure` to `persistent-worker` and `WORKER_ID` from `azure-vm-admin-01` to `render-worker-01`.
+
+Resolution measured on `3ad2705a`: the orphaned `return` and the now-unused `tier` assignment were removed. The Azure-only `tier != "ADMIN"` rejection is deliberately NOT restored — it would contradict the provider-neutral design that removed it, and no current architecture evidence supports an admin-only worker pool. `services/rendering-engine/tests/test_worker_daemon_syntax.py` now AST-parses the module so an import-blocking syntax error cannot return silently. `py_compile` exits 0, the AST regression test passes, `pytest tests` collects 52 tests with 0 collection errors, and `test_drive_delivery.py` runs 7/7.
+
+Rollback/rejection: revert the workflow and script changes; the previous behaviour (silent fallback and swallowed failures) is restored. Do not reintroduce a committed default for `RENDER_WORKER_SECRET` under any rollback. Reverting the `worker_daemon.py` repair is not a supported rollback: it restores a module that cannot be imported, taking 7 tests and the secret-literal guard with it.
 
