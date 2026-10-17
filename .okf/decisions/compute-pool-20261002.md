@@ -19,7 +19,7 @@ A provider is a render worker only when it has a real execution path that can re
 - LOCAL: LocalComputeProvider
 - API_GPU: AmdComputeProvider
 - NOTEBOOK: KaggleNotebookComputeProvider
-- SANDBOX: HostedSandboxComputeProvider backed by Daytona or InstaVM in the default no-card pool; the existing Modal adapter remains compatibility-only and is excluded from the default ComputePolicy.
+- SANDBOX: HostedSandboxComputeProvider backed by Daytona and InstaVM in the default no-card pool; OpenComputer and Blaxel are hosted alternatives pending physical qualification; Modal remains compatibility-only and excluded from the default ComputePolicy.
 
 ## Decision rule
 
@@ -57,3 +57,7 @@ A provider saying "completed" is not enough. Render completion requires a physic
 5. Golden compute boundary through RenderFabric -> pool -> artifact -> CAS -> F07 is PASS. The full canonical mission remains delivery-credential gated in CI.
 6. Promote GLiDE from shadow/canary only after measured calibration and failover evidence.
 7. Optimize using measured telemetry, not provider marketing estimates.
+
+
+## 2026-10-06 extension
+OpenComputer and Blaxel are now first-class hosted Sandbox Fabric providers behind the same ComputePool/ComputeRouter boundary. They inherit the existing requirements: fail closed when unconfigured, remain outside F06 production-worker eligibility until independent physical/CAS/F07 qualification, and never treat provider completion as artifact truth.

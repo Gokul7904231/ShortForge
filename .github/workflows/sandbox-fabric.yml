@@ -24,6 +24,9 @@ jobs:
       - name: FactoryOS typecheck
         working-directory: apps/web
         run: npm run factoryos:typecheck
+      - name: Validate hosted sandbox provider boundary
+        working-directory: apps/web
+        run: npm run factoryos:verify:sandbox-providers
       - name: Sandbox Fabric contract tests
         working-directory: apps/web
         run: npx vitest run factoryos/tests/sandbox-fabric.test.ts

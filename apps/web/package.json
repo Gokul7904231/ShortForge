@@ -34,7 +34,8 @@
     "factoryos:verify:context-fabric-boundary": "node scripts/verify-context-fabric-boundary.mjs",
     "factoryos:verify:context-fabric-clm-shadow": "node scripts/verify-context-fabric-clm-shadow.mjs",
     "factoryos:test:context-bench": "vitest run factoryos/tests/context/context-bench.test.ts",
-    "factoryos:verify:context-bench": "node scripts/verify-context-bench.mjs"
+    "factoryos:verify:context-bench": "node scripts/verify-context-bench.mjs",
+    "factoryos:verify:sandbox-providers": "node scripts/verify-sandbox-providers.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.14",

@@ -19,7 +19,9 @@ export type ProviderType =
   | "DAYTONA"
   | "PAPERSPACE"
   | "MODAL"
-  | "INSTAVM";
+  | "INSTAVM"
+  | "OPENCOMPUTER"
+  | "BLAXEL";
 
 export type ProviderExecutionModel =
   | "LOCAL_PROCESS"

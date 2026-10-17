@@ -28,6 +28,8 @@ import {
   DaytonaSandboxAdapter,
   InstaVMSandboxAdapter,
   ModalSandboxAdapter,
+  OpenComputerSandboxAdapter,
+  BlaxelSandboxAdapter,
 } from "../sandboxes";
 import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
@@ -96,6 +98,18 @@ export class ComputeGateway {
     this.registerPoolProvider(
       new HostedSandboxComputeProvider({
         adapter: new InstaVMSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
+        adapter: new OpenComputerSandboxAdapter(),
+      }),
+      "SANDBOX",
+    );
+    this.registerPoolProvider(
+      new HostedSandboxComputeProvider({
+        adapter: new BlaxelSandboxAdapter(),
       }),
       "SANDBOX",
     );

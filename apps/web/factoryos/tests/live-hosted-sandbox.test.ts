@@ -22,6 +22,8 @@ import {
   DaytonaSandboxAdapter,
   ModalSandboxAdapter,
   InstaVMSandboxAdapter,
+  OpenComputerSandboxAdapter,
+  BlaxelSandboxAdapter,
 } from "../core/compute/sandboxes";
 
 const LIVE_PROOF_CONFIGURED = Boolean(
@@ -30,6 +32,18 @@ const LIVE_PROOF_CONFIGURED = Boolean(
 );
 
 const describeLiveProof = LIVE_PROOF_CONFIGURED ? describe : describe.skip;
+
+function sanitizeProofDiagnostic(value: unknown): string {
+  let message = String(value ?? "");
+  for (const secret of [
+    process.env.OPENCOMPUTER_API_KEY,
+    process.env.BL_API_KEY,
+    process.env.BL_WORKSPACE,
+  ]) {
+    if (secret) message = message.split(secret).join("[REDACTED]");
+  }
+  return message.replace(/\s+/g, " ").slice(0, 320);
+}
 
 describeLiveProof("live hosted sandbox compute proof", () => {
   it("provisions, executes a physical render, verifies CAS independently, and closes the F07 evidence boundary", async () => {
@@ -40,7 +54,7 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       process.env.SHORTFORGE_LIVE_SANDBOX_EVIDENCE_PATH ||
       path.join(os.tmpdir(), "shortforge", "live-sandbox-f07-evidence.json");
 
-    expect(["DAYTONA", "MODAL", "INSTAVM"]).toContain(provider);
+    expect(["DAYTONA", "MODAL", "INSTAVM", "OPENCOMPUTER", "BLAXEL"]).toContain(provider);
     expect(command).toBeTruthy();
 
     const adapter =
@@ -48,10 +62,18 @@ describeLiveProof("live hosted sandbox compute proof", () => {
         ? new DaytonaSandboxAdapter()
         : provider === "MODAL"
           ? new ModalSandboxAdapter()
-          : new InstaVMSandboxAdapter();
+          : provider === "INSTAVM"
+            ? new InstaVMSandboxAdapter()
+            : provider === "OPENCOMPUTER"
+              ? new OpenComputerSandboxAdapter()
+              : new BlaxelSandboxAdapter();
     const validation = await adapter.validateCredentials();
     expect(validation.configured).toBe(true);
-    expect(validation.authenticated).toBe(true);
+    // Include only a stable, non-secret error code in failures; never print credential values or raw SDK errors.
+    expect(
+      validation.authenticated,
+      `LIVE_SANDBOX_AUTH_FAILED provider=${provider} errorCode=${validation.errorCode || "UNKNOWN"}`,
+    ).toBe(true);
     expect(validation.providerReachable).toBe(true);
 
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "shortforge-live-sandbox-"));
@@ -67,7 +89,11 @@ describeLiveProof("live hosted sandbox compute proof", () => {
             ? process.env.DAYTONA_SANDBOX_IMAGE
             : provider === "MODAL"
               ? process.env.MODAL_SANDBOX_IMAGE
-              : process.env.INSTAVM_SNAPSHOT_ID,
+              : provider === "INSTAVM"
+                ? process.env.INSTAVM_SNAPSHOT_ID
+                : provider === "OPENCOMPUTER"
+                  ? process.env.OPENCOMPUTER_TEMPLATE || "base"
+                  : process.env.BLAXEL_SANDBOX_IMAGE || "blaxel/base-image:latest",
         ttlSeconds: 900,
         metadata: { shortforge_name: proofName },
       });
@@ -76,6 +102,10 @@ describeLiveProof("live hosted sandbox compute proof", () => {
       if (runtime.state !== "RUNNING" && runtime.state !== "READY") {
         runtime = await adapter.waitReady(runtime.resourceId, 120_000);
       }
+      expect(
+        ["RUNNING", "READY"],
+        `LIVE_SANDBOX_NOT_READY provider=${provider} state=${runtime.state}`,
+      ).toContain(runtime.state);
 
       const result = await adapter.execute({
         runtime,
@@ -84,7 +114,10 @@ describeLiveProof("live hosted sandbox compute proof", () => {
         env: { SHORTFORGE_OUTPUT_PATH: outputPath },
       });
 
-      expect(result.status).toBe("SUCCEEDED");
+      expect(
+        result.status,
+        `LIVE_SANDBOX_EXECUTION_FAILED provider=${provider} status=${result.status} exitCode=${result.exitCode ?? "NA"} detail=${sanitizeProofDiagnostic((result as any).limitation ?? result.stderr ?? "")}`,
+      ).toBe("SUCCEEDED");
       expect(result.exitCode).toBe(0);
 
       await fs.mkdir(path.dirname(localOutput), { recursive: true });

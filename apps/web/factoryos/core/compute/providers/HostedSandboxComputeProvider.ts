@@ -82,16 +82,29 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
   validateConfiguration(): ProviderConfigValidationResult {
     const command = process.env[this.renderCommandEnv];
     const outputPath = process.env[this.renderOutputPathEnv];
-    const requiredCredentialKeys =
-      this.type === "DAYTONA"
-        ? ["DAYTONA_API_KEY"]
-        : this.type === "MODAL"
-          ? ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"]
-          : ["INSTAVM_API_KEY"];
+    const requiredCredentialSets: Record<string, string[][]> = {
+      DAYTONA: [["DAYTONA_API_KEY"]],
+      MODAL: [["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"]],
+      INSTAVM: [["INSTAVM_API_KEY"]],
+      OPENCOMPUTER: [["OPENCOMPUTER_API_KEY"]],
+      BLAXEL: [["BL_API_KEY", "BL_WORKSPACE"]],
+    };
+    const requiredCredentialSetsForProvider = requiredCredentialSets[this.type] || [];
+    const hasCredentials = this.credentials
+      ? requiredCredentialSetsForProvider.every((set) =>
+          set.every((key) => Boolean(this.credentials?.[key]))
+        )
+      : requiredCredentialSetsForProvider.some((set) =>
+          set.every((key) => Boolean(process.env[key]))
+        );
 
-    const missingKeys: string[] = requiredCredentialKeys.filter(
-      (key) => !(this.credentials?.[key] || process.env[key]),
-    );
+    const missingKeys: string[] = [];
+    for (const key of requiredCredentialSetsForProvider.flat()) {
+      const present = this.credentials
+        ? Boolean(this.credentials[key])
+        : Boolean(process.env[key]);
+      if (!present) missingKeys.push(key);
+    }
     if (!command) missingKeys.push(this.renderCommandEnv);
     if (!outputPath) missingKeys.push(this.renderOutputPathEnv);
 
@@ -222,12 +235,7 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
       const provision = await this.adapter.provision(
         {
           idempotencyKey: job.jobId + ":" + executionId,
-          template:
-            this.type === "DAYTONA"
-              ? process.env.DAYTONA_SANDBOX_IMAGE
-              : this.type === "MODAL"
-                ? process.env.MODAL_SANDBOX_IMAGE
-                : process.env.INSTAVM_SNAPSHOT_ID,
+          template: this.templateForProvider(),
           ttlSeconds: Math.max(60, Math.ceil(job.timeoutMs / 1000) + 120),
           metadata: {
             shortforge_name: "shortforge-" + executionId,
@@ -378,6 +386,17 @@ export class HostedSandboxComputeProvider extends BaseComputeProvider {
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => undefined);
       this.activeJobs = Math.max(0, this.activeJobs - 1);
     }
+  }
+
+  private templateForProvider(): string | undefined {
+    const envKeyByProvider: Record<string, string> = {
+      DAYTONA: "DAYTONA_SANDBOX_IMAGE",
+      MODAL: "MODAL_SANDBOX_IMAGE",
+      OPENCOMPUTER: "OPENCOMPUTER_TEMPLATE",
+      BLAXEL: "BLAXEL_SANDBOX_IMAGE",
+      INSTAVM: "INSTAVM_SNAPSHOT_ID",
+    };
+    return process.env[envKeyByProvider[this.type]];
   }
 
   private cacheHealth(value: ProviderHealth): ProviderHealth {

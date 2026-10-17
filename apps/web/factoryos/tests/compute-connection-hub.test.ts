@@ -185,6 +185,18 @@ describe("compute connection hub", () => {
     expect(sandboxIds).not.toContain("sandbox_pandastack_hosted");
   });
 
+  it("catalogs OpenComputer and Blaxel with the one-time secret contracts", () => {
+    const openComputer = getComputeProviderDefinition("sandbox_opencomputer");
+    expect(openComputer?.implemented).toBe(true);
+    expect(openComputer?.roles).toEqual(["ADMIN"]);
+    expect(openComputer?.credentialKeys).toEqual(["OPENCOMPUTER_API_KEY"]);
+
+    const blaxel = getComputeProviderDefinition("sandbox_blaxel");
+    expect(blaxel?.implemented).toBe(true);
+    expect(blaxel?.roles).toEqual(["ADMIN"]);
+    expect(blaxel?.credentialKeys).toEqual(["BL_API_KEY", "BL_WORKSPACE"]);
+  });
+
   it("validates a hosted Modal connection without exposing its secret", async () => {
     const connection = await computeConnectionService.create(adminUser, {
       providerId: "sandbox_modal_hosted",

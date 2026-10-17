@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_COMPUTE_POLICY } from "@/factoryos/core/compute/contracts/ComputeContracts";
+import { normalizeDaytonaSandboxState } from "@/factoryos/core/compute/sandboxes/DaytonaSandboxAdapter";
 import {
   DaytonaSandboxAdapter,
   ModalSandboxAdapter,
   InstaVMSandboxAdapter,
+  OpenComputerSandboxAdapter,
+  BlaxelSandboxAdapter,
 } from "@/factoryos/core/compute/sandboxes";
 
 afterEach(() => {
@@ -12,6 +15,17 @@ afterEach(() => {
 });
 
 describe("sandbox fabric", () => {
+  it("normalizes Daytona's documented lifecycle states", () => {
+    expect(normalizeDaytonaSandboxState("started")).toBe("RUNNING");
+    expect(normalizeDaytonaSandboxState("pulling_snapshot")).toBe("PROVISIONING");
+    expect(normalizeDaytonaSandboxState("pending_build")).toBe("PROVISIONING");
+    expect(normalizeDaytonaSandboxState("stopped")).toBe("PAUSED");
+    expect(normalizeDaytonaSandboxState("archived")).toBe("HIBERNATED");
+    expect(normalizeDaytonaSandboxState("build_failed")).toBe("FAILED");
+    expect(normalizeDaytonaSandboxState("destroyed")).toBe("TERMINATED");
+    expect(normalizeDaytonaSandboxState("unknown")).toBe("UNKNOWN");
+  });
+
   it("fails closed when Daytona credentials are missing", async () => {
     const adapter = new DaytonaSandboxAdapter();
     const result = await adapter.validateCredentials({});
@@ -31,6 +45,22 @@ describe("sandbox fabric", () => {
     ]);
   });
 
+  it("fails closed when OpenComputer credentials are missing", async () => {
+    const adapter = new OpenComputerSandboxAdapter();
+    const result = await adapter.validateCredentials({});
+    expect(result.configured).toBe(false);
+    expect(result.authenticated).toBe(false);
+    expect(result.missingKeys).toEqual(["OPENCOMPUTER_API_KEY"]);
+  });
+
+  it("fails closed when Blaxel credentials are missing", async () => {
+    const adapter = new BlaxelSandboxAdapter();
+    const result = await adapter.validateCredentials({});
+    expect(result.configured).toBe(false);
+    expect(result.authenticated).toBe(false);
+    expect(result.missingKeys).toEqual(["BL_API_KEY", "BL_WORKSPACE"]);
+  });
+
   it("fails closed when InstaVM credentials are missing", async () => {
     const adapter = new InstaVMSandboxAdapter();
     const result = await adapter.validateCredentials({});
@@ -38,7 +68,6 @@ describe("sandbox fabric", () => {
     expect(result.authenticated).toBe(false);
     expect(result.missingKeys).toEqual(["INSTAVM_API_KEY"]);
   });
-
 
   it("keeps the no-card default compute policy on approved sandbox providers", () => {
     expect(DEFAULT_COMPUTE_POLICY.allowedProviders).toContain("DAYTONA");
@@ -48,11 +77,15 @@ describe("sandbox fabric", () => {
   });
 
   it("keeps all hosted sandbox adapters outside production worker authority", () => {
-    const daytona = new DaytonaSandboxAdapter();
-    const modal = new ModalSandboxAdapter();
-    const instavm = new InstaVMSandboxAdapter();
-    expect(daytona.metadata.capabilities.productionWorkerEligible).toBe(false);
-    expect(modal.metadata.capabilities.productionWorkerEligible).toBe(false);
-    expect(instavm.metadata.capabilities.productionWorkerEligible).toBe(false);
+    const adapters = [
+      new DaytonaSandboxAdapter(),
+      new ModalSandboxAdapter(),
+      new InstaVMSandboxAdapter(),
+      new OpenComputerSandboxAdapter(),
+      new BlaxelSandboxAdapter(),
+    ];
+    for (const adapter of adapters) {
+      expect(adapter.metadata.capabilities.productionWorkerEligible).toBe(false);
+    }
   });
 });
