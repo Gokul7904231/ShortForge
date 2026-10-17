@@ -12,8 +12,8 @@
   "requestedOutcome": "Normalize Daytona provider-native lifecycle states, produce/download a physical MP4, verify remote/local integrity and CAS, then pass current F07 policy and signed receipt validation before any qualification claim.",
   "okf": {
     "sweepStatus": "INCIDENT_FOLLOWUP",
-    "machineSweepStatus": "PENDING_ON_PR_HEAD",
-    "machineSweepEvidence": "No Team report was present on the prior PR head, and the live physical proof is running on a temporary integration head that combines this Daytona adapter with F07 policy commit 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8. CI/sweep must run on the updated PR head.",
+    "machineSweepStatus": "PENDING_ON_REPORT_UPDATED_HEAD",
+    "machineSweepEvidence": "Current-policy physical Daytona proof passed in run 39019612786 on combined test head 0cd86cb8324223fbb15c33804e74d665eb1aa918, with artifact 12096581046. The report is being reconciled after that run; OKF/Team and CI must still pass on the final PR head.",
     "humanCorpusReviewStatus": "PARTIAL",
     "reviewedRefs": [
       ".okf/decision-protocol.md",
@@ -29,8 +29,7 @@
     ],
     "pending": [
       "Complete a human review of the full current .okf corpus and relevant repo mappings.",
-      "Run Team Change, OKF Governance, CI and sandbox/F07 validations on this exact PR head.",
-      "Finish the live Daytona physical proof using the corrected policy and reconcile its evidence.",
+      "Run OKF Governance, Team Change Gate and CI on this exact report-updated PR head.",
       "Obtain independent human/security review before promotion."
     ]
   },
@@ -40,7 +39,8 @@
     "Persist bytes returned by Daytona fs.downloadFile to the requested local path.",
     "Avoid conflicting ephemeral plus autoDeleteInterval configuration and use a bounded TTL by default.",
     "Add lifecycle state normalization tests.",
-    "Add the required Team Change Report after the previous Team Change gate failure caused by the missing report."
+    "Add the required Team Change Report after the previous Team Change gate failure caused by the missing report.",
+    "Requalified the Daytona adapter against corrected F07 policy on tested combined head 0cd86cb8324223fbb15c33804e74d665eb1aa918."
   ],
   "security": {
     "status": "TRIAGED",
@@ -76,10 +76,25 @@
       "runId": 39019612786,
       "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786",
       "head": "0cd86cb8324223fbb15c33804e74d665eb1aa918",
-      "status": "IN_PROGRESS",
-      "composition": "Daytona adapter/test from this PR + current F07 policy commit 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
-      "qualification": "PENDING_UNTIL_PHYSICAL_MP4_CAS_F07_AND_SIGNED_RECEIPT_PASS"
-    }
+      "status": "PASS",
+      "evidenceArtifactId": 12096581046,
+      "evidenceArtifactUrl": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786/artifacts/12096581046",
+      "evidenceArchiveSha256": "8dd3ab69859c3054c809236b89f9a3167c3bf4dc5b928b028d69fbb5cc4d575d",
+      "composition": "Daytona adapter and tests at application head 4d53b1c357e7251e4e83407f58bf1f30f1a0b108 combined with corrected F07 policy head 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8.",
+      "checksPassed": [
+        "Daytona credentials authenticated and hosted sandbox provisioned.",
+        "Physical FFmpeg MP4 rendered and downloaded.",
+        "Remote/local SHA-256 and byte length matched.",
+        "CAS artifact integrity verified.",
+        "F07 independent physical artifact verification and release evaluation passed under corrected current policy.",
+        "F07 publishAllowed and READY/READY_WITH_EXTERNAL_REVIEW assertion passed.",
+        "Signed verification receipt validated.",
+        "Daytona sandbox cleanup executed."
+      ],
+      "qualification": "CURRENT_POLICY_PHYSICAL_QUALIFICATION_PASS_FOR_DAYTONA_ADAPTER; DOES_NOT_GRANT_F06_PRODUCTION_AUTHORITY"
+    },
+    "applicationHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+    "reportParentHead": "248dcc87b1f605f483ce39834072174e23032a96"
   },
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/243",
@@ -90,12 +105,11 @@
     "https://support.google.com/youtube/answer/12504220"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "The prior physical pass used an older policy snapshot. The current-policy requalification is running on a temporary combined head and has not yet been accepted; full current-head CI, the full human OKF review, and independent review remain outstanding.",
+  "dispositionReason": "The Daytona adapter has now passed the current-policy physical MP4 → remote/local integrity → CAS → F07 → signed receipt proof. Merge/promotion remains blocked pending final PR-head Team/OKF/CI checks, full human OKF review and independent security/human review.",
   "verificationPlan": [
-    "Run Team/scripts/validate-team-report.mjs Team/reports/pr-243.json.",
-    "Pass OKF Governance and Team Change Gate on the updated PR head.",
-    "Complete physical Daytona render and verify remote/local SHA-256 and byte length.",
-    "Verify the physical artifact in CAS and require F07 publishAllowed=true with current official policy and a verified signed receipt.",
-    "Do not claim physical qualification or enable F06 production authority until all gates and review requirements pass."
+    "Pass Team Change Gate, OKF Governance Gate, and CI on the report-updated PR head.",
+    "Record the successful current-policy physical proof run 39019612786 and artifact 12096581046 against the exact tested combined head.",
+    "Complete the full current .okf human review and independent security/release review before merging.",
+    "Keep productionWorkerEligible=false; physical qualification does not promote Daytona into F06 production-worker authority."
   ]
 }
