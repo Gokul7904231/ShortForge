@@ -1,8 +1,23 @@
 name: FactoryOS Render Worker & Queue Dispatcher
 
+# Pulls one queued BASIC job off the control-plane queue and hands it to
+# factoryos-basic-render.yml. Claim handling lives in
+# services/rendering-engine/scripts/github_dispatch_claim.py, where it is tested.
+#
+# Fail-closed rules:
+#  - RENDER_WORKER_SECRET has no default. Missing/empty config fails the job
+#    before any request is made (docs/deployment/render-worker-secrets.md).
+#  - An HTTP error, timeout or malformed response fails the job. It is never
+#    reported as an empty queue.
+#  - A `repository_dispatch` that names a job is refused: /api/rendering/claim
+#    cannot target a named job, so such a dispatch must not become an unrelated
+#    generic claim. The supported immediate path is the control plane calling
+#    GitHubActionsRenderManager.dispatchWorkflowRun() (a workflow_dispatch of
+#    factoryos-basic-render.yml with jobId + executionToken).
+
 on:
   schedule:
-    - cron: "* * * * *"  # every 1 min fallback — primary is immediate dispatch from /api/generate-video (no 5-min wait)
+    - cron: "* * * * *"  # 1-minute fallback sweep; the immediate path is a direct workflow_dispatch
   workflow_dispatch:
   repository_dispatch:
     types: [factoryos_render_job]
@@ -31,43 +46,17 @@ jobs:
         id: claim_job
         env:
           CONTROL_PLANE_URL: ${{ secrets.FACTORYOS_CONTROL_PLANE_URL || 'https://factoryos.app' }}
-          RENDER_WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET || 'factoryos-render-worker-secret-key-2026' }}
-        run: |
-          python3 -c "
-          import urllib.request, json, os
-
-          # Immediate dispatch payload (repository_dispatch from /api/generate-video) — try direct job first
-          import sys
-          direct_job = os.environ.get('DISPATCH_JOB_ID', '')
-          if direct_job:
-              print(f'Direct dispatch for job {direct_job} — will claim via API')
-          url = f\"{os.environ['CONTROL_PLANE_URL'].rstrip('/')}/api/rendering/claim\"
-          headers = {
-              'Content-Type': 'application/json',
-              'Authorization': f\"Bearer {os.environ['RENDER_WORKER_SECRET']}\"
-          }
-          payload = {'workerId': 'gh-dispatcher-runner', 'workerPool': 'github-actions'}
-          req = urllib.request.Request(url, data=json.dumps(payload).encode(), headers=headers, method='POST')
-          try:
-              with urllib.request.urlopen(req, timeout=30) as resp:
-                  data = json.loads(resp.read().decode())
-                  if data.get('claimed') and 'job' in data:
-                      job = data['job']
-                      print(f\"CLAIMED_JOB_ID={job['jobId']}\")
-                      print(f\"EXECUTION_TOKEN={job['executionToken']}\")
-                      with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                          f.write(f\"claimed=true\n\")
-                          f.write(f\"job_id={job['jobId']}\n\")
-                          f.write(f\"execution_token={job['executionToken']}\n\")
-                  else:
-                      print('No queued basic video jobs to process.')
-                      with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                          f.write('claimed=false\n')
-          except Exception as e:
-              print(f'Queue claim status: {e}')
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                  f.write('claimed=false\n')
-          "
+          # Fail closed when unset: `secrets.X` expands to an empty string, which the
+          # claim API rejects. Never add a default here — a committed shared secret
+          # is compromised by definition, and it silently turns an auth failure into
+          # what looks like an empty queue. Rotation: docs/deployment/render-worker-secrets.md
+          RENDER_WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET }}
+          # repository_dispatch payload (the only field an emitter would set).
+          # /api/rendering/claim accepts only workerId + workerPool and cannot target
+          # a named job, so a payload that names one is refused instead of being
+          # downgraded into an unrelated generic queue claim.
+          DISPATCH_JOB_ID: ${{ github.event.client_payload.jobId }}
+        run: python3 services/rendering-engine/scripts/github_dispatch_claim.py
 
       - name: Trigger Basic Video Render Workflow
         if: steps.claim_job.outputs.claimed == 'true'
@@ -76,7 +65,11 @@ jobs:
           JOB_ID: ${{ steps.claim_job.outputs.job_id }}
           EXECUTION_TOKEN: ${{ steps.claim_job.outputs.execution_token }}
         run: |
+          echo "::add-mask::$EXECUTION_TOKEN"
           echo "Dispatching Basic Render Pipeline for Job $JOB_ID..."
+          # No `|| echo` fallback: a failed dispatch must fail this job. Dispatching
+          # needs `actions: write` on GITHUB_TOKEN; if the repository default is
+          # read-only this step now fails loudly instead of appearing to succeed.
           gh workflow run factoryos-basic-render.yml \
             -f jobId="$JOB_ID" \
-            -f executionToken="$EXECUTION_TOKEN" || echo "Workflow dispatch queued locally"
+            -f executionToken="$EXECUTION_TOKEN"

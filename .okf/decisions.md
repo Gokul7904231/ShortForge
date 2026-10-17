@@ -1622,3 +1622,50 @@ Validation required:
 - Production promotion requires actual GitHub ruleset/status protection and provenance evidence.
 
 Rollback/rejection: If the machine manifest diverges from canonical textual rules, treat the manifest as invalid and revert the control-plane wave. Existing .okf and source-of-truth hierarchy remain intact.
+
+## Render Worker Fail-Closed Dispatch — 2026-10-17
+
+Classification: extends existing rule
+
+Decision: Make the distributed render-worker dispatch path fail closed, and remove the committed `RENDER_WORKER_SECRET` fallback. This reconciles the implementation with the already-canonical fail-closed rule recorded in `.okf/audits/final-system-acceptance-matrix.md` ("Workflows fail-closed on build, lint, typecheck, or render failures; no `|| true` masking fatal errors"), which the dispatcher did not actually satisfy.
+
+Findings confirmed against `main` before editing (blobs `daaa1a66` / `26721076`):
+
+1. `.github/workflows/factoryos-render-worker.yml` and `.github/workflows/factoryos-basic-render.yml` both defaulted `RENDER_WORKER_SECRET` to a literal committed to public history. That value is compromised and is never to be reused.
+2. The dispatcher read `DISPATCH_JOB_ID` but nothing wired it to the event payload, so the "direct dispatch" branch was unreachable.
+3. `POST /api/rendering/claim` accepts only `workerId` and `workerPool`. It cannot target a named job, so a named-job dispatch would have been satisfied by an unrelated queued job.
+4. `except Exception -> claimed=false` made `401`, `500`, timeouts and malformed responses indistinguishable from an empty queue.
+5. `gh workflow run ... || echo` and a swallowed callback exception both allowed a failed delivery to report success.
+6. `factoryos_render_job` is emitted by no code in the repository; the `repository_dispatch` trigger is unused configuration.
+
+Rules applied:
+- Missing or empty authentication configuration fails before any network access.
+- A named-job dispatch is refused (exit 3) rather than downgraded into a generic claim. No new endpoint was invented.
+- Empty queue remains an ordinary no-work outcome; every other failure fails the workflow.
+- The claim/control-plane contract is the only source of `jobId` and `executionToken`; no secret or token is written to a log sink.
+- The callback continues to authenticate with the configured worker secret. The execution token is *not* substituted: `GitHubActionsRenderManager.generateExecutionToken()` mints a client-side HMAC token distinct from the claim route's `exec_*` token, so the secret remains load-bearing on that path.
+
+Authority invariants preserved: dispatcher concurrency group and single-claim serialisation unchanged; `factoryos-basic-render.yml` `permissions: contents: read` unchanged; `actions: write` for the dispatch step is deliberately not granted and is documented as an owner decision; lease/fencing and attempt monotonicity in `RemoteRenderStateMachine` untouched; RenderFabric/F07 remain the authoritative completion gate. A lost callback is reconciled by `reconcileStaleJobs`, not by fabricated success.
+
+Canonical documents:
+- `docs/deployment/render-worker-secrets.md`
+- `.okf/security/worker-permissions.md` (§13 lease/fencing, §22.8–9)
+- `.github/workflows/factoryos-render-worker.yml`, `.github/workflows/factoryos-basic-render.yml`
+- `services/rendering-engine/scripts/github_dispatch_claim.py`
+
+Validation required:
+- `npm run factoryos:typecheck` passes.
+- `npm run factoryos:test` (includes `apps/web/factoryos/tests/render-worker-fail-closed.test.ts`).
+- `python -m pytest services/rendering-engine/tests/test_github_dispatch_claim.py` passes.
+- `python -m py_compile services/rendering-engine/worker_daemon.py` exits 0 and `python -m pytest services/rendering-engine/tests` collects the full suite with no collection errors.
+- Repository scan for the old literal returns no workflow occurrence.
+- Operator must set and rotate `RENDER_WORKER_SECRET` before the dispatcher can claim.
+
+Blocker recorded and then resolved inside this same change: `services/rendering-engine/worker_daemon.py` carried a stray indented `return` beneath `tier = job.get("tier", "BASIC")` in `process_single_job()`, which raised `IndentationError` and made the module unimportable. Measured on `main` @ `ed966487`: `python -m py_compile worker_daemon.py` failed at line 549, a suite-wide `python -m pytest tests` aborted collection after 28 of 52 tests, and `tests/test_drive_delivery.py` — 7 tests, including the `test_no_default_secret_string_in_codebase` guard that detects the compromised secret literal — could not be collected at all.
+
+Origin, confirmed from history rather than guessed: commit `1ce28a3aa1dbc259617c50cbb18b2eb349d73a97` ("make persistent render daemon provider-neutral") deleted both the `if tier != "ADMIN":` test and its `log("Worker", "REJECTED non-admin job...")` line but left the guarded `return` indented in place. That commit also changed `WORKER_POOL` from `azure` to `persistent-worker` and `WORKER_ID` from `azure-vm-admin-01` to `render-worker-01`.
+
+Resolution measured on `3ad2705a`: the orphaned `return` and the now-unused `tier` assignment were removed. The Azure-only `tier != "ADMIN"` rejection is deliberately NOT restored — it would contradict the provider-neutral design that removed it, and no current architecture evidence supports an admin-only worker pool. `services/rendering-engine/tests/test_worker_daemon_syntax.py` now AST-parses the module so an import-blocking syntax error cannot return silently. `py_compile` exits 0, the AST regression test passes, `pytest tests` collects 52 tests with 0 collection errors, and `test_drive_delivery.py` runs 7/7.
+
+Rollback/rejection: revert the workflow and script changes; the previous behaviour (silent fallback and swallowed failures) is restored. Do not reintroduce a committed default for `RENDER_WORKER_SECRET` under any rollback. Reverting the `worker_daemon.py` repair is not a supported rollback: it restores a module that cannot be imported, taking 7 tests and the secret-literal guard with it.
+
