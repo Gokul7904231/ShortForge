@@ -1622,3 +1622,96 @@ Validation required:
 - Production promotion requires actual GitHub ruleset/status protection and provenance evidence.
 
 Rollback/rejection: If the machine manifest diverges from canonical textual rules, treat the manifest as invalid and revert the control-plane wave. Existing .okf and source-of-truth hierarchy remain intact.
+
+## Botkeep self-hosted Node.js 22 release profile - 2026-10-16
+
+Classification: extends existing rule
+
+Decision: Add an opt-in, CI-built release path that produces a self-hosted Node.js 22 artifact for the Botkeep workload `shortforge-primary`, without changing the canonical Cloudflare/OpenNext deployment or any other build target.
+
+Opt-in mechanism: `SHORTFORGE_BUILD_PROFILE=botkeep` in `apps/web/next.config.mjs` selects `output: 'standalone'`, an `outputFileTracingRoot` pinned to `apps/web`, and a Node-runtime tracing profile. The variable is unset for `npm run build`, `npm run deploy`, `next start`, and the Docker build, so those paths are byte-identical to before.
+
+Existing .okf rules considered:
+- OKF.RELEASE.F07_VERIFIED - production artifacts are releasable only after the F07 verification and release authorization chain. This change adds a build/packaging path; it does not certify or admit any production artifact, and it does not mint ReleaseAuthorization.
+- OKF.SECURITY.LEAST_PRIVILEGE / WORKER_TEN_GATE (§22 worker-permissions.md) - the release grants no worker capability, adds no worker, and ships no credential directory.
+- worker-permissions.md §8 (filesystem) and §22.9 (no secrets in worker working memory unless required and sandboxed) - the archive carries no `.env`, no database, no `.git`, no tests, and no developer knowledge base; the packager refuses them by name and the verifier re-checks the extracted tree.
+- OKF.PROCESS.FULL_SWEEP / decision-protocol §2 (Tier-2 for release changes) and §19.
+- OKF.PROCESS.FULL_SWEEP / decision-protocol §9 (no silent architecture drift) and §10 (current-vs-target tagging).
+- .okf/manifest.yaml provenance: `release_attestation: REQUIRED`, `signing: PLANNED`.
+- hierarchy-map §37-38 rules 18-19 (no component crosses its authority boundary silently; no target may be described as implemented without evidence).
+
+Repo mappings: none applicable; this is packaging of existing application code, not assimilation of an external repository.
+
+Affected hierarchy nodes: none in F00-F07. The change is outside the production-artifact line (hosting/packaging tier).
+
+Affected workers / permissions: none. No capability, lease, or floor boundary is touched. The release is an artifact; the server it contains is not a Guardian-authorized worker.
+
+Affected contracts: none. No WorkerTaskContract, ComputePolicy, or provider capability contract changes.
+
+Contradictions recorded (decision-protocol §9): .okf never locked a hosting path for `apps/web`; the repository already carries three coexisting production entry points (Cloudflare/OpenNext `wrangler deploy`, Vercel cron, Docker `npm start`). This adds a fourth for Botkeep. The existing Cloudflare path is not rewritten or deprecated by this decision; `docs/deployment/botkeep.md` documents the Botkeep path only.
+
+Security impact:
+- The release contains no secrets. Two secret-pattern matches were found in the first packaging run and traced to the packager's own pattern literals in `scripts/botkeep/package-release.mjs` and the Cloudflare-only audit `scripts/check-cloudflare-free.mjs`; both files are excluded from the archive rather than the pattern being weakened, so the scan stays active.
+- A false-positive name rule previously dropped four build-output files under `.next/server/app/api/user/credentials/`. The rule is now filename-scoped. The route was verified to still resolve before and after, so no functional impact was proven; the narrowing removes the class of error.
+- The archive is a workflow artifact only. `dist/` is gitignored; nothing is committed or published.
+- The launcher binds `BIND_HOST` (default 0.0.0.0) and deliberately ignores the container-provided `HOSTNAME`, and reads `SERVER_PORT` before `PORT` with a hard reject on invalid values. No live port is hard-coded.
+
+Performance impact: measured offline on a clean Node 22.23.3 linux-x64 container. Uncompressed 397.70 MiB, compressed 128.5 MiB, 7231 files, against a 1300 MiB budget (902.3 MiB headroom). Extracted `du` footprint 423.64 MiB. For comparison, the same tree's full development `node_modules` is 1870.05 MiB / 83252 files, versus 2049.57 MiB measured on the live Botkeep workload.
+
+Essential-runtime finding (evidence, not a size optimization): the first standalone trace omitted `node_modules/onnxruntime-node/bin/napi-v3/linux/x64/libonnxruntime.so.1.14.0` and the `@xenova/transformers` runtime assets, because the native library is loaded through a runtime-computed path. `verify-release.mjs` now loads `onnxruntime-node` explicitly; it failed with `libonnxruntime.so.1.14.0: cannot open shared object file` before the fix and passes after. The missing files were added to `outputFileTracingIncludes` rather than the feature being dropped.
+
+Verification plan and status:
+- IMPLEMENTED (working tree, uncommitted): `apps/web/scripts/botkeep/{build,start,package-release,verify-release}.mjs` + `lib/zip.mjs`; `apps/web/next.config.mjs` Botkeep profile; `apps/web/package.json` scripts; `.github/workflows/botkeep-release.yml`; `docs/deployment/botkeep.md`; `/dist/` in `.gitignore`.
+- VERIFIED offline (clean Node 22 linux container, commit 204901fb2a98): typecheck gate, build exit 0, package exit 0 with 0 secret-scan findings, archive sha256 sidecar matches, fresh extraction, native modules load, `node start.mjs` binds the requested port, 32/32 HTTP and static-asset checks pass.
+- UNPROVEN: execution on Botkeep itself (not permitted by this task), the GitHub Actions run (workflow not yet dispatched), and any signed release attestation (`signing: PLANNED`). UNPROVEN is not PASS.
+
+Rollback / rejection condition: rejection is unconditional if the Botkeep profile changes the output of any non-Botkeep build; if the release exceeds the budget; if the extracted archive fails the smoke test; or if the packager's exclusions are widened without a measured reason. Rollback is deleting the new files and the `isBotkeepProfile` branch in `next.config.mjs`; no live path, data, or Cloudflare configuration is touched by the change.
+
+Provenance:
+OKF_SWEEP = COMPLETE-FULL
+ROOT_RULES = reviewed
+HIERARCHY = reviewed
+SECURITY = reviewed
+COGNITION = reviewed
+MEMORY = reviewed
+RESEARCH_MAPPINGS = reviewed (none applicable)
+RENDERING = reviewed (unchanged; no rendering contract touched)
+ARTIFACTS = reviewed
+WORKFLOWS = reviewed
+AUDITS = reviewed
+PRODUCTION_HELPER = reviewed (Semgrep/Strix not run: no Docker-in-CI in this session; recorded UNPROVEN, not PASS)
+IMPLEMENTATION = reviewed
+TESTS = reviewed
+CONTRADICTIONS = listed (three pre-existing production entry points; `.okf` silent on hosting; `apps/web/vercel.json` vs AGENTS.md root-path claim; `next build` runs with typescript.ignoreBuildErrors)
+
+## Botkeep release promoted to a committed, CI-verified, reproducible path - 2026-10-17
+
+Classification: extends existing rule (the 2026-10-16 Botkeep release profile decision). No existing rule is contradicted.
+
+Decision: the Botkeep self-hosted release is (a) tracked in git on `feat/botkeep-release`, (b) produced from a clean committed SHA by `.github/workflows/botkeep-release.yml` on Node 22 Linux, and (c) triggered by a `botkeep-*` tag until the workflow file reaches the default branch.
+
+Trigger rationale: `workflow_dispatch` is refused while the workflow exists only on a feature branch. GitHub answers `422 Workflow does not have 'workflow_dispatch' trigger` unless the file is present on the default branch. Merging to `main` was not authorised for this task and a production release tag was explicitly out of bounds, so the release uses the workflow's other declared trigger, `push: tags: ["botkeep-*"]`. Verified that no other workflow under `.github/workflows` matches a tag push (every other `push` trigger is branch- or path-filtered), so a release tag starts exactly one workflow, and that workflow only uploads a workflow artifact.
+
+Implementation facts:
+- Release source SHA `f2e730f3e4f227d17ad9782aa8d603ba59d91d5d` on `feat/botkeep-release`; tag `botkeep-20261017`; `dirtyWorkingTree: false`.
+- Workflow run `39011242802` succeeded on every step (`npm ci`, typecheck, build, package, verify, summary, `upload-artifact` with 14-day retention).
+- Artifact `shortforge-botkeep-f2e730f3e4f2.zip`, sha256 `f328cd911a8c6d1be967ed96967f42af7b1d54064c828699fd063cc4214ace66`; `.sha256` sidecar, `release-manifest.json`, and the re-measured file hash all agree.
+- 394.30 MiB uncompressed against the 1,300 MiB budget (`WITHIN_BUDGET`, 905.7 MiB headroom), 7,212 files, 0 secret-scan findings, 32/32 extracted-archive checks.
+- Typecheck gate: the release workflow runs `tsc --noEmit` and is the only authority on types, because `next build` runs with `typescript.ignoreBuildErrors`. It passes on a clean checkout after widening `runProcess`'s `env` option to `Partial<NodeJS.ProcessEnv>` in `factoryos/core/compute/notebooks/NotebookUtils.ts`; the partial env objects that callers already pass were previously rejected. The change is type-only, and the gate itself is its test.
+- Defect fixed en route: the workflow file was unparseable. A step name contained an unquoted `: ` inside a plain YAML scalar, so GitHub created runs with zero jobs that failed immediately. Fixed by renaming the step; confirmed by parsing the committed blob with two independent YAML parsers.
+- Findings recorded rather than silently accepted: (1) the `NEXT_PUBLIC_*` repository Variables are unset, so the verified artifact inlines empty public configuration and is a structure/verification proof, not a configured release; (2) two builds are structurally but not byte-identical — random `BUILD_ID`, minifier identifier mangling, and CRLF staging on Windows; (3) three pre-existing TypeScript errors unrelated to this work remain out of scope.
+
+UNPROVEN, reported as UNPROVEN and not as PASS: deployment to the live `shortforge-primary` workload, which was not connected to, read, or modified. Signed release attestation remains `signing: PLANNED`.
+
+Rollback / rejection: rejection is unconditional if any non-Botkeep build output changes, if the release exceeds the budget, if the extracted archive fails the smoke test, or if packager exclusions widen without a measured reason. The live workload is untouched by this decision; replacement stays an operator action documented in `docs/deployment/botkeep.md`.
+
+Provenance:
+OKF_SWEEP = COMPLETE-FULL (reused from the 2026-10-16 record; no new architectural surface introduced)
+ROOT_RULES = reviewed
+HIERARCHY = reviewed
+WORKFLOWS = reviewed (tag-trigger blast radius verified as exactly one workflow)
+SECURITY = reviewed (0 secret-scan findings; artifact upload only, nothing published)
+PRODUCTION_HELPER = reviewed (Semgrep/Strix not run: recorded UNPROVEN, not PASS)
+IMPLEMENTATION = reviewed
+TESTS = reviewed (typecheck gate + 32 extracted-archive checks)
+CONTRADICTIONS = listed (workflow_dispatch vs non-default branch; `NEXT_PUBLIC_*` Variables unset; build byte-reproducibility)

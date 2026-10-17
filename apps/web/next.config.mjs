@@ -1,3 +1,10 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Opt-in release profile for self-hosted Node.js runtimes (Botkeep).
+// Unset => the Cloudflare/OpenNext/Vercel/Docker builds are unchanged.
+const isBotkeepProfile = process.env.SHORTFORGE_BUILD_PROFILE === 'botkeep';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
@@ -96,4 +103,58 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Botkeep profile: Next.js standalone output with a traced, minimal node_modules.
+ *
+ * Differences from the default config (only applied when
+ * SHORTFORGE_BUILD_PROFILE=botkeep):
+ *  - output: 'standalone', tracing root pinned to apps/web (the repo root also
+ *    holds a package-lock.json, which would otherwise nest the output).
+ *  - The Cloudflare-oriented tracing excludes for native modules
+ *    (better-sqlite3, sharp, @img, @xenova, *.node) are NOT applied: a Node
+ *    server needs them at runtime. Only build-time sources and local state
+ *    are excluded.
+ *  - sharp is loaded through require(variable) in several modules, which the
+ *    file tracer cannot follow, so it is included explicitly.
+ */
+function withBotkeepProfile(base) {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  return {
+    ...base,
+    output: 'standalone',
+    outputFileTracingRoot: here,
+    outputFileTracingIncludes: {
+      '*': [
+        './node_modules/@firebase/util/**/*',
+        './node_modules/sharp/**/*',
+        './node_modules/@img/**/*',
+        './node_modules/detect-libc/**/*',
+        './node_modules/semver/**/*',
+        // onnxruntime-node loads libonnxruntime.<so|dylib|dll> through a
+        // runtime-computed path, so the tracer only picks up the .node binding
+        // and the release would fail at inference time. @xenova/transformers
+        // has the same problem with its bundled runtime assets.
+        './node_modules/onnxruntime-node/**/*',
+        './node_modules/@xenova/transformers/**/*',
+      ],
+    },
+    outputFileTracingExcludes: {
+      '*': [
+        // Native add-on build inputs (the compiled .node files are kept).
+        '**/node_modules/better-sqlite3/deps/**/*',
+        '**/node_modules/better-sqlite3/src/**/*',
+        '**/node_modules/sqlite3/deps/**/*',
+        // Local mutable state, python/venv assets and generated output.
+        '**/venv/**/*',
+        '**/.venv/**/*',
+        '**/local-ai/**/*',
+        '**/*.db',
+        '**/*.db-journal',
+        '**/*.db-wal',
+        '**/*.db-shm',
+      ],
+    },
+  };
+}
+
+export default isBotkeepProfile ? withBotkeepProfile(nextConfig) : nextConfig;

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "changeId": "PR-246-BOTKEEP-STANDALONE-RELEASE-20261017",
+  "mission": "Integrate the Botkeep standalone release packaging and verification path without changing the default Cloudflare/OpenNext deployment path.",
+  "date": "2026-10-17",
+  "base": "main",
+  "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
+  "headRef": "feat/botkeep-release",
+  "requestedOutcome": "Add deterministic Botkeep standalone release packaging, archive verification, secret scanning, and deployment documentation while preserving existing default build behavior.",
+  "classification": "extends existing rule",
+  "changeSummary": [
+    "Adds a Botkeep standalone build profile and a manually invoked release workflow.",
+    "Adds deterministic ZIP packaging, manifest and inventory generation, and a secret scan.",
+    "Adds extracted-archive verification and smoke checks.",
+    "Updates deployment documentation and associated package/configuration and OKF decision records.",
+    "Does not publish a release or automatically trigger deployment."
+  ],
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "machineSweepStatus": "PENDING_ON_FINAL_HEAD",
+    "machineSweepEvidence": "On the initial PR merge candidate f42088c4d3c0d84d7b30a5689374367ec2b94c80, OKF_LINT=PASS and the sweep command ran, but the OKF workflow failed because this required Team Change Report was absent. The final-head sweep and report validation must rerun after this report is committed.",
+    "humanCorpusReviewStatus": "PARTIAL",
+    "reviewedRefs": [
+      "apps/web/package.json",
+      "apps/web/next.config.mjs",
+      "apps/web/factoryos/core/compute/notebooks/NotebookUtils.ts",
+      "docs/deployment/botkeep.md",
+      ".okf/decisions.md"
+    ],
+    "pending": [
+      "Complete human review of the full relevant .okf corpus and mappings.",
+      "Inspect the final PR diff for stale/redundant changes and confirm default Cloudflare/OpenNext builds are unchanged.",
+      "Rerun the OKF machine sweep, Team Change Gate, and applicable CI/governance/security checks on the final PR head.",
+      "Obtain independent human review before promotion."
+    ]
+  },
+  "routedForgers": [],
+  "forgers": [],
+  "security": {
+    "status": "UNPROVEN",
+    "findings": [
+      "The existing Botkeep release workflow run is useful source-branch evidence, but does not establish that the current PR merge candidate is safe.",
+      "The required current-head governance/security checks have not all passed.",
+      "No release has been published and no deployment has been triggered by this PR."
+    ],
+    "semgrep": "PENDING_ON_FINAL_HEAD",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE"
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "PARTIAL",
+  "blockingGates": [
+    "Rerun required checks after this report is committed; resolve the current Team Change Gate and OKF report-validation failures.",
+    "Resolve or correctly isolate the current Floor 07 policy/invariant failures; do not waive them or claim success from historical runs.",
+    "Review default-build non-regression, final security evidence, and obtain independent human review."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/246",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39015263377",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019452505",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019452410",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019452418"
+  ],
+  "disposition": "BLOCKED"
+}

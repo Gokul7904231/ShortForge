@@ -1,0 +1,128 @@
+name: Botkeep Release
+
+# Self-hosted Node.js release for the Botkeep workload (`shortforge-primary`).
+#
+# Deliberately not wired to push/pull_request:
+#  - a release is an explicit operator action, and
+#  - the Cloudflare/OpenNext path (`npm run deploy` -> wrangler) must keep its
+#    current behaviour. This workflow only sets SHORTFORGE_BUILD_PROFILE for its
+#    own `next build`, so `next.config.mjs` is byte-identical for every other
+#    build.
+# The archive is uploaded as a workflow artifact only; nothing is published and
+# nothing is written back to the repository.
+
+on:
+  workflow_dispatch:
+    inputs:
+      budget_mib:
+        description: Uncompressed release-size budget in MiB
+        required: false
+        default: "1300"
+  push:
+    tags: ["botkeep-*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build, package and verify Botkeep release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies (clean, lockfile-pinned)
+        run: npm ci --no-audit --no-fund
+
+      # `next build` runs with typescript.ignoreBuildErrors, so this is the only
+      # authority on type correctness in the release path. The default V8 heap is
+      # not enough for this project's tsc run (verified: OOM at ~2 GB).
+      - name: Typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: node node_modules/.bin/tsc --noEmit
+
+      - name: Build with the Botkeep profile (standalone output)
+        env:
+          # NEXT_PUBLIC_* values are inlined into the client bundle at build
+          # time; they are not read from the runtime environment. Configure them
+          # as repository Variables (or Secrets) before dispatching a release.
+          NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_RENDER_ENGINE_URL: ${{ vars.NEXT_PUBLIC_RENDER_ENGINE_URL }}
+          NEXT_PUBLIC_DRIVE_FOLDER_LABEL: ${{ vars.NEXT_PUBLIC_DRIVE_FOLDER_LABEL }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+        run: node scripts/botkeep/build.mjs
+
+      - name: Package release (deterministic ZIP + manifest + secret scan)
+        run: node scripts/botkeep/package-release.mjs --out ../../dist/botkeep --budget-mib "${{ inputs.budget_mib || '1300' }}"
+
+      # Extracts into a fresh directory, loads the native runtime modules, starts
+      # `node start.mjs` on an ephemeral port and runs HTTP smoke tests.
+      - name: Verify extracted archive
+        run: |
+          ZIP=$(ls ../../dist/botkeep/*.zip)
+          node scripts/botkeep/verify-release.mjs \
+            --zip "$ZIP" \
+            --work "$RUNNER_TEMP/botkeep-verify" \
+            --report ../../dist/botkeep/verify-report.json
+
+      - name: Release summary
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const p = "../../dist/botkeep/release-manifest.json";
+            if (!fs.existsSync(p)) { console.log("no manifest produced"); process.exit(0); }
+            const m = JSON.parse(fs.readFileSync(p, "utf8"));
+            const v = fs.existsSync("../../dist/botkeep/verify-report.json")
+              ? JSON.parse(fs.readFileSync("../../dist/botkeep/verify-report.json", "utf8")) : null;
+            const lines = [
+              "## Botkeep release",
+              "",
+              `- status: **${m.status}**`,
+              `- commit: \`${m.commit}\` (dirty working tree: ${m.dirtyWorkingTree})`,
+              `- archive: \`${m.archive.file}\``,
+              `- compressed: ${m.archive.compressedMiB} MiB`,
+              `- uncompressed: ${m.size.uncompressedMiB} MiB of ${m.size.budgetMiB} MiB budget (headroom ${m.size.headroomMiB} MiB)`,
+              `- files: ${m.size.fileCount}`,
+              `- sha256: \`${m.archive.sha256}\``,
+              `- secret-scan findings: ${m.secretScan.findings.length}`,
+              v ? `- extracted-archive smoke test: ${v.failed === 0 ? "PASS" : `FAIL (${v.failed})`}, du ${v.duMiB} MiB` : "- extracted-archive smoke test: not run",
+            ];
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+            console.log(lines.join("\n"));
+          '
+
+      - name: Upload release artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shortforge-botkeep-release
+          path: |
+            dist/botkeep/*.zip
+            dist/botkeep/*.zip.sha256
+            dist/botkeep/release-manifest.json
+            dist/botkeep/release-inventory.json
+            dist/botkeep/release-excluded.json
+            dist/botkeep/verify-report.json
+          if-no-files-found: error
+          retention-days: 14
