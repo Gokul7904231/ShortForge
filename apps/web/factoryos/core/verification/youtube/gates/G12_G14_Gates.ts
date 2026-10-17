@@ -115,7 +115,7 @@ export class G12_ShortsEligibilityGate {
             hasActiveContentIdClaim: true,
             effectiveFrom: rule.effectiveFrom,
             uploadIntentAt,
-            playbackEffect: "BLOCKED_OR_NOT_COVERED_BY_TRANSITION",
+            playbackEffect: boundaryUnclear ? "BLOCKED_OR_NOT_COVERED_BY_TRANSITION" : "BLOCKED",
           },
           explanation: boundaryUnclear
             ? "The 2026-09-24 Content ID transition covers Shorts over one minute but under three minutes; this claimed three-minute-or-longer artifact is outside that exception and remains blocked pending definitive policy evidence."
