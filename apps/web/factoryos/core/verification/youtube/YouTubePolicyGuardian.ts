@@ -159,15 +159,10 @@ export class YouTubePolicyGuardian {
       findings.push(G12_ShortsEligibilityGate.evaluate(params.video, g12Rule, uploadIntentAt));
     }
 
-    // G12: Content ID policy is represented as separate, non-overlapping rules across the 2026-09-24 transition.
-    for (const ruleId of [
-      "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY",
-      "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE",
-    ]) {
-      const contentIdRule = ruleMap.get(ruleId);
-      if (contentIdRule) {
-        findings.push(G12_ShortsEligibilityGate.evaluate(params.video, contentIdRule, uploadIntentAt));
-      }
+    // G12: Official Content ID restriction, evaluated using the upload-date clock.
+    const g12ContentIdRule = ruleMap.get("YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
+    if (g12ContentIdRule) {
+      findings.push(G12_ShortsEligibilityGate.evaluate(params.video, g12ContentIdRule, uploadIntentAt));
     }
 
     // G13: Channel Creative Repetition

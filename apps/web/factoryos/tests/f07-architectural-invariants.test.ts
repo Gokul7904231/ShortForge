@@ -339,7 +339,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
   // ───────────────────────────────────────────────────────────────────────────
   // Invariant #12: G12 SHORTS ELIGIBILITY BOUNDARY
   // ───────────────────────────────────────────────────────────────────────────
-  it("Invariant #12: G12 SHORTS ELIGIBILITY — 0 < d <= 180s and post-transition claims require review, not automatic blocking", () => {
+  it("Invariant #12: G12 SHORTS ELIGIBILITY — 0 < d <= 180s and active claims block Shorts over one minute", () => {
     // 175s clean Short passes
     const longCleanShort = {
       ...sampleVideo,
@@ -358,7 +358,7 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
     const result181 = guardian.evaluate({ video: over180Short, channel: sampleChannelMonetizing });
     expect(result181.publishAllowed).toBe(false);
 
-    // After the effective date, an active claim on a 110s Short is no longer an automatic block.
+    // Official YouTube Help currently states that active claims on Shorts over one minute block them globally.
     const claimedLongShort = {
       ...sampleVideo,
       measurements: { ...baseMeasurements, videoDuration: 110.0, audioDuration: 110.0 },
@@ -371,14 +371,12 @@ describe("F07 YouTube Monetization & Content Integrity Guardian — 28 Architect
       publicationIntentAt: "2026-10-17T12:00:00Z",
       uploadIntentAt: "2026-10-17T12:00:00Z",
     });
-    expect(resultClaimedLongShort.publishAllowed).toBe(true);
-    expect(resultClaimedLongShort.activePolicyEffects).toContain("EXTERNAL_REVIEW");
-    expect(resultClaimedLongShort.activePolicyEffects).not.toContain("BLOCK_PUBLICATION");
+    expect(resultClaimedLongShort.publishAllowed).toBe(false);
+    expect(resultClaimedLongShort.activePolicyEffects).toContain("BLOCK_PUBLICATION");
     const g12 = resultClaimedLongShort.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
-    expect(g12?.status).toBe("PASS");
-    expect(g12?.severity).toBe("WARNING");
-    expect(g12?.explanation).toContain("may remain playable");
-    expect(g12?.observedSignal).not.toHaveProperty("revenueEffect");
+    expect(g12?.status).toBe("BLOCKED");
+    expect(g12?.severity).toBe("BLOCKING");
+    expect(g12?.explanation).toContain("blocked globally");
   });
 
   // ───────────────────────────────────────────────────────────────────────────

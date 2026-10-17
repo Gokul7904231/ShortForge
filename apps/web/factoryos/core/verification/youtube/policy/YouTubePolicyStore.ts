@@ -348,46 +348,24 @@ export class YouTubePolicyStore {
         forbiddenShallowRepairs: ["speedup_video_beyond_normal"],
       },
 
-      // G12: Legacy Content ID block before the 2026-09-24 transition.
+      // G12: Official Shorts Content ID restriction, with no later exception claimed by current official documentation.
       {
-        ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY",
+        ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE",
         gateId: "G12_SHORTS_ELIGIBILITY",
         sourceDocumentId: "src_yt_shorts_monetization",
-        title: "Legacy blocking rule for claimed Shorts over one minute",
-        description: "Before 2026-09-24, Shorts longer than one minute with an active Content ID claim are blocked. This rule ceases to apply on the transition date.",
+        title: "Shorts over one minute with an active Content ID claim are blocked",
+        description: "Official YouTube Help states that any Short over one minute with an active copyright claim of any type, including manual claims, is blocked globally and is not eligible for monetization. No September 24, 2026 exception is stated on the current official guidance pages.",
         severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
         appliesBy: "UPLOAD_DATE",
         policyEffect: "BLOCK_PUBLICATION",
         effectiveFrom: "2024-10-15",
-        effectiveTo: "2026-09-24",
         condition: {
           maxDurationSeconds: 180,
           contentIdClaimThresholdSeconds: 60,
         },
         affectedStagesOnFailure: ["F04", "F05", "F07"],
-        suggestedRemediationAction: "Resolve the Content ID claim, replace the claimed material, or keep the Short at one minute or less.",
-        forbiddenShallowRepairs: ["pitch_shift_audio", "assume_claim_is_revenue_only"],
-      },
-
-      // G12: Effective-dated Content ID transition for Shorts over one minute.
-      {
-        ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE",
-        gateId: "G12_SHORTS_ELIGIBILITY",
-        sourceDocumentId: "src_yt_shorts_monetization",
-        title: "Claimed Shorts over one minute: post-2026-09-24 transition",
-        description: "For new Shorts longer than one minute and under three minutes uploaded on or after 2026-09-24, YouTube says an active Content ID claim no longer automatically blocks playback and the Short may remain playable. This does not guarantee playback or determine revenue.",
-        severity: "WARNING",
-        evaluationMethod: "DETERMINISTIC",
-        appliesBy: "UPLOAD_DATE",
-        policyEffect: "EXTERNAL_REVIEW",
-        effectiveFrom: "2026-09-24",
-        condition: {
-          maxDurationSeconds: 180,
-          contentIdClaimThresholdSeconds: 60,
-        },
-        affectedStagesOnFailure: ["F04", "F05", "F07"],
-        suggestedRemediationAction: "Verify claim status and applicable rights-holder restrictions. Do not represent playback or revenue as guaranteed; resolve or replace claimed material when rights are unclear.",
+        suggestedRemediationAction: "Resolve the Content ID claim, remove or replace the claimed material, and rerun rights and physical verification before release.",
         forbiddenShallowRepairs: ["pitch_shift_audio", "assume_claim_is_revenue_only", "assume_playability_is_guaranteed"],
       },
 

@@ -124,7 +124,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     expect(g00?.severity).toBe("BLOCKING");
   });
 
-  it("2. Current Content ID Rule — post-2026-09-24 claims do not imply automatic blocking or revenue transfer", () => {
+  it("2. Current official Content ID Rule — claimed Shorts over one minute are blocked", () => {
     const result = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
@@ -132,51 +132,38 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
       uploadIntentAt: "2026-10-17T12:00:00Z",
     });
 
-    expect(result.publishAllowed).toBe(true);
-    expect(result.activePolicyEffects).toContain("EXTERNAL_REVIEW");
-    expect(result.activePolicyEffects).not.toContain("BLOCK_PUBLICATION");
+    expect(result.publishAllowed).toBe(false);
+    expect(result.activePolicyEffects).toContain("BLOCK_PUBLICATION");
     const g12 = result.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
-    expect(g12?.status).toBe("PASS");
-    expect(g12?.severity).toBe("WARNING");
-    expect(g12?.explanation).toContain("may remain playable");
-    expect(g12?.observedSignal).not.toHaveProperty("revenueEffect");
+    expect(g12?.status).toBe("BLOCKED");
+    expect(g12?.severity).toBe("BLOCKING");
+    expect(g12?.explanation).toContain("blocked globally");
   });
 
-  it("3. Effective-date boundary — Guardian selects legacy block before cutoff and review-only transition on/after cutoff", () => {
-    const beforeTransition = guardian.evaluate({
+  it("3. No unsupported 2026-09-24 exception — claimed Shorts remain blocked on both dates", () => {
+    const preDate = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-23T23:59:59Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       uploadIntentAt: "2026-09-23T23:59:59Z",
     });
-    expect(beforeTransition.publishAllowed).toBe(false);
-    expect(beforeTransition.activePolicyEffects).toContain("BLOCK_PUBLICATION");
-    const legacyFinding = beforeTransition.gateFindings.find(
-      (finding) => finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY"
-    );
-    expect(legacyFinding?.status).toBe("BLOCKED");
-    expect(legacyFinding?.severity).toBe("BLOCKING");
-    expect(legacyFinding?.observedSignal?.playbackEffect).toBe("BLOCKED");
-
-    const afterTransition = guardian.evaluate({
+    const postDate = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-24T00:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       uploadIntentAt: "2026-09-24T00:00:00Z",
     });
-    expect(afterTransition.publishAllowed).toBe(true);
-    expect(afterTransition.activePolicyEffects).toContain("EXTERNAL_REVIEW");
-    expect(afterTransition.activePolicyEffects).not.toContain("BLOCK_PUBLICATION");
-    expect(afterTransition.gateFindings.some(
-      (finding) => finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY"
-    )).toBe(false);
-    const currentFinding = afterTransition.gateFindings.find(
-      (finding) => finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
-    );
-    expect(currentFinding?.status).toBe("PASS");
-    expect(currentFinding?.severity).toBe("WARNING");
-    expect(currentFinding?.explanation).toContain("may remain playable");
-    expect(currentFinding?.observedSignal).not.toHaveProperty("revenueEffect");
+
+    for (const result of [preDate, postDate]) {
+      expect(result.publishAllowed).toBe(false);
+      expect(result.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+      const g12 = result.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
+      expect(g12?.status).toBe("BLOCKED");
+      expect(g12?.severity).toBe("BLOCKING");
+      expect(g12?.explanation).toContain("blocked globally");
+    }
+    expect(preDate.gateFindings.some((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY")).toBe(false);
+    expect(postDate.gateFindings.some((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY")).toBe(false);
   });
 
   it("4. Content ID Claim Replacement — replacing claimed audio with original narration bed passes when claim is resolved", () => {

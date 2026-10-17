@@ -62,7 +62,7 @@ export class PolicySourceRegistry {
       title: "Understand three-minute YouTube Shorts",
       officialUrl: "https://support.google.com/youtube/answer/15424877",
       authoritativeHost: "support.google.com",
-      summary: "Current effective-dated guidance: from 24 September 2026, new Shorts over one minute but under three minutes with an active Content ID claim are no longer automatically blocked and may remain playable. Playback and monetization are not guaranteed.",
+      summary: "Official YouTube Help guidance states that Shorts over one minute with an active copyright/Content ID claim of any type are blocked globally and are not eligible for monetization; resolving the claim restores eligibility. No September 24, 2026 exception is stated on the current official guidance pages.",
       effectiveDate: "2024-10-15",
       lastVerifiedAt: "2026-10-17T08:30:00Z",
       contentChecksumSha256: computeDocumentDigest({
@@ -70,7 +70,7 @@ export class PolicySourceRegistry {
         url: "https://support.google.com/youtube/answer/15424877",
         title: "Understand three-minute YouTube Shorts",
         effectiveDate: "2024-10-15",
-        summary: "Current effective-dated guidance: from 24 September 2026, new Shorts over one minute but under three minutes with an active Content ID claim are no longer automatically blocked and may remain playable. Playback and monetization are not guaranteed.",
+        summary: "Official YouTube Help guidance states that Shorts over one minute with an active copyright/Content ID claim of any type are blocked globally and are not eligible for monetization; resolving the claim restores eligibility. No September 24, 2026 exception is stated on the current official guidance pages.",
       }),
     },
     {
