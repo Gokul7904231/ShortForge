@@ -24,11 +24,11 @@
     ],
     "machineSweepStatus": "PENDING_ON_REPORT_UPDATED_HEAD",
     "humanCorpusReviewStatus": "PARTIAL",
-    "machineSweepEvidence": "The earlier green integration cohort described by the prior report was on an older application head. Fresh live physical evidence on combined test head 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e confirms Blaxel PASS against current F07 policy but OpenComputer remains blocked on provider HTTP 503; the report-only update requires fresh Team/OKF/CI gates.",
+    "machineSweepEvidence": "Fresh proof tree 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e combined PR #230 source with corrected F07 policy. Blaxel passed the complete physical/CAS/F07/signed receipt path (artifact 12096591213). OpenComputer returned HTTP 503 no cells available with capacity on two attempts before a sandbox was created. This report update needs fresh Team/OKF/CI/provider contract checks.",
     "pending": [
       "Complete a human review of the full current .okf corpus and relevant repo mappings.",
-      "Finish the single OpenComputer retry and reconcile its exact result; no artifact means no physical qualification.",
-      "Run Team Change, OKF Governance Gate, CI, sandbox-fabric and relevant compute connection checks on the report-updated PR head.",
+      "Keep OpenComputer unqualified until provider capacity becomes available and a successful physical artifact/CAS/F07 proof exists.",
+      "Run Team Change, OKF Governance Gate, CI, sandbox-fabric and compute connection checks on the report-updated PR head.",
       "Obtain independent security/human review before promotion."
     ]
   },
@@ -40,7 +40,7 @@
     "zap": "NOT_APPLICABLE",
     "notes": [
       "Both hosted sandbox adapters maintain productionWorkerEligible=false.",
-      "Blaxel has current-policy physical proof. OpenComputer is not qualified because the provider returns HTTP 503 no cells available with capacity.",
+      "Blaxel has current-policy physical qualification evidence; OpenComputer has not qualified because create returned HTTP 503 no cells available with capacity on two attempts.",
       "The Strix bot reported that the workspace trial ended; security review is not a PASS. No submitted PR review is present."
     ]
   },
@@ -69,9 +69,9 @@
     "Blaxel TypeScript SDK documents SandboxInstance lifecycle, process execution, filesystem operations, and BL_WORKSPACE/BL_API_KEY authentication."
   ],
   "verificationPlan": [
-    "Finish the single OpenComputer retry and inspect its actual result. Treat another HTTP 503 as provider capacity blocker, not as adapter pass.",
-    "Retain Blaxel artifact 12096591213 and exact combined test head 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e as current-policy qualification evidence.",
-    "Run OKF/Team/CI and relevant sandbox/connection tests on the report-updated PR head.",
+    "Keep the OpenComputer adapter integrated but unqualified; retry only after provider capacity/configuration changes and require a physical artifact.",
+    "Retain Blaxel artifact 12096591213 and test head 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e as current-policy qualification evidence.",
+    "Run Team Change, OKF Governance, CI and relevant sandbox/compute-connection tests on the report-updated PR head.",
     "Keep both providers productionWorkerEligible=false; provider qualification is not F06 authority promotion."
   ],
   "verificationResults": {
@@ -89,7 +89,7 @@
     "daytonaAdapterFix": "IMPLEMENTED__STATE_STARTED_NORMALIZATION__PROVISIONING_POLLING__SDK_DOWNLOAD_BYTES__BOUNDED_TTL__UNIT_TESTED",
     "daytonaPhysicalProofInitial": "FAIL__RUN_38886493673__DAYTONA_NATIVE_STARTED_MAPPED_TO_UNKNOWN__NO_RENDER",
     "daytonaPhysicalProofCorrected": "FAIL__RUN_38887004324__PHYSICAL_MP4_RENDERED_AND_CAS_INTEGRITY_CHECKED__F07_PUBLISH_ALLOWED_FALSE_DUE_POLICY_STALENESS__NO_ARTIFACT_BECAUSE_TEST_ASSERTED_BEFORE_EVIDENCE_WRITE",
-    "liveOpenComputerF07": "BLOCKED__RUN_39019713209_ATTEMPT_1__HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_ARTIFACT",
+    "liveOpenComputerF07": "BLOCKED_PROVIDER_CAPACITY__RUN_39019713209_ATTEMPT_1_HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_ARTIFACT",
     "liveBlaxelF07": "PASS__RUN_38510539669__ARTIFACT_11868869906__MP4_SHA256_93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7__BYTE_LENGTH_5201__CAS_MATCH__F07_READY__PUBLISH_ALLOWED_TRUE__SIGNED_RECEIPT_VERIFIED",
     "securityReview": "TRIAGED__STRIX_UNAVAILABLE__NO_PR_REVIEW_SUBMITTED",
     "previousValidatedHead": "05512802a7247f7ac44f5e5b3eb0433db153b153",
@@ -100,31 +100,34 @@
     "currentPolicyProviderProof": {
       "runId": 39019713209,
       "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019713209",
+      "attempt": 2,
       "testHead": "35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e",
       "applicationSourceHead": "09c17c3ac25a5e6d9258f0ac461f8a8995319163",
       "policySourceHead": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
       "status": "PARTIAL__BLAXEL_PASS_OPENCOMPUTER_CAPACITY_BLOCKED",
       "qualificationNotes": [
-        "This temporary qualification tree is PR #230 source at applicationSourceHead plus the corrected official F07 policy and a provider-specific physical proof workflow.",
-        "Blaxel passed the physical MP4 → download → remote/local SHA-256 and byte-count match → CAS → F07 → signed receipt assertions on the corrected policy.",
-        "OpenComputer failed at Sandbox.create with HTTP 503 no cells available with capacity before producing an artifact; no physical qualification is claimed."
+        "This temporary qualification tree is PR #230 application source at applicationSourceHead plus the current official F07 policy from PR #244 and a provider-specific live proof workflow.",
+        "Blaxel passed the real physical MP4 render and download, remote/local SHA-256 and byte-length equality, CAS integrity, independent F07 physical verification, publishAllowed acceptance and signed receipt assertions.",
+        "OpenComputer failed at Sandbox.create with HTTP 503 no cells available with capacity on both attempt 1 and one targeted retry. No sandbox was created and no physical evidence artifact was produced."
       ]
     },
-    "liveOpenComputerF07Retry": "IN_PROGRESS__ONLY_FAILED_OPENCOMPUTER_JOB_RERUN",
+    "liveOpenComputerF07Retry": "BLOCKED_PROVIDER_CAPACITY__RUN_39019713209_ATTEMPT_2_HTTP_503_NO_CELLS_AVAILABLE_WITH_CAPACITY__NO_ARTIFACT",
     "liveBlaxelF07CurrentPolicy": {
       "status": "PASS",
       "runId": 39019713209,
+      "attempt": 1,
       "testHead": "35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e",
       "artifactId": 12096591213,
       "artifactUrl": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019713209/artifacts/12096591213",
       "artifactArchiveSha256": "58d84b7a96752a221584f1daea3232500b2b175fda48dbb896fb38973d5d0adf",
       "assertions": [
-        "Provider credential and workspace validation passed.",
-        "Real physical MP4 render and remote download passed.",
+        "Provider credential/workspace validation passed.",
+        "Physical MP4 render and download passed.",
         "Remote/local SHA-256 and byte length equality passed.",
         "CAS integrity and independent F07 physical verification passed.",
-        "F07 publishAllowed and READY receipt acceptance passed.",
-        "Signed receipt verification and persistence passed."
+        "F07 publishAllowed and READY receipt acceptance passed under corrected policy.",
+        "Signed receipt verification and receipt persistence passed.",
+        "Sandbox cleanup completed."
       ],
       "qualification": "CURRENT_POLICY_PHYSICAL_QUALIFICATION_PASS_FOR_BLAXEL_ADAPTER; DOES_NOT_GRANT_F06_PRODUCTION_AUTHORITY"
     }
@@ -142,6 +145,11 @@
     "https://github.com/Gokul7904231/ShortForge/actions/runs/39019713209/artifacts/12096591213",
     "https://github.com/Gokul7904231/ShortForge/pull/244",
     "https://support.google.com/youtube/answer/15424877",
+    "https://support.google.com/youtube/answer/12504220",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019713209",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019713209/artifacts/12096591213",
+    "https://github.com/Gokul7904231/ShortForge/pull/244",
+    "https://support.google.com/youtube/answer/15424877",
     "https://support.google.com/youtube/answer/12504220"
   ],
   "notes": [
@@ -153,8 +161,10 @@
     "Blaxel physical qualification passed in run 38510539669, artifact 11868869906, with 5201-byte MP4, SHA-256 93a2e258eec975e848214c7f0ffec0bea1df86a1936b7f400ceba10ef7aae0d7, matching CAS reference, F07 READY, publishAllowed=true, and receiptSignatureVerified=true.",
     "OpenComputer remains physically unqualified due HTTP 503 'no cells available with capacity' in run 38510539669; no physical artifact was generated.",
     "The main workflow live-hosted-sandbox.yml still only offers Daytona, Modal and InstaVM; OpenComputer/Blaxel proof options are present on PR #230's branch, not main.",
-    "Floor 01 security/dependency scan passed, but Strix remains unavailable due expired workspace trial and no PR reviews are submitted. Security is TRIAGED, not PASS. Keep hosted sandbox productionWorkerEligible=false."
+    "Floor 01 security/dependency scan passed, but Strix remains unavailable due expired workspace trial and no PR reviews are submitted. Security is TRIAGED, not PASS. Keep hosted sandbox productionWorkerEligible=false.",
+    "2026-10-17 refreshed policy cohort: Blaxel succeeded on combined test head 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e with current policy commit 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8; artifact 12096591213, archive SHA-256 58d84b7a96752a221584f1daea3232500b2b175fda48dbb896fb38973d5d0adf.",
+    "OpenComputer failed Sandbox.create with HTTP 503 no cells available with capacity on attempt 1 and one retry; neither attempt produced a sandbox or physical evidence artifact. This is a provider capacity blocker, not successful adapter qualification."
   ],
   "dispositionRationale": "BLOCKED. Blaxel has complete physical MP4/CAS/signed F07 evidence. OpenComputer remains blocked by provider capacity. Daytona's adapter is corrected and the physical output path reached CAS, but the prior F07 publish assertion was blocked by an expired official-policy snapshot; PR #244 refreshes canonical policy and corrects a false Shorts Content ID rule, while the final physical rerun is still queued. Current-head validation/security review is outstanding. Do not merge or activate production-worker authority until the policy, physical-proof and release-review gates pass.",
-  "dispositionReason": "Blaxel passed current-policy physical qualification, but OpenComputer remains unqualified after an HTTP 503 capacity response. The single retry is in progress. Full human OKF review and independent security/human review remain outstanding."
+  "dispositionReason": "Blaxel passed current-policy physical qualification, but OpenComputer remains unqualified after two provider HTTP 503 capacity responses. Full human OKF review, independent security/human review and fresh final-head gates remain outstanding."
 }
