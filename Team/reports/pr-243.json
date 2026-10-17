@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "changeId": "PR-243-DAYTONA-SDK-LIFECYCLE-20261017",
+  "mission": "Requalify the Daytona adapter lifecycle/download fixes against the current F07 YouTube policy and report exact live evidence.",
+  "date": "2026-10-17",
+  "base": "fix/f07-policy-refresh-20261016",
+  "baseSha": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+  "headRef": "fix/daytona-sdk-lifecycle-20261016",
+  "exactHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+  "classification": "extends existing rule",
+  "requestedOutcome": "Normalize Daytona lifecycle/download handling and requalify against the corrected F07 policy from PR #244. Physical qualification is supported by the current-policy proof run; promotion remains gated by fresh checks and independent review.",
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "machineSweepStatus": "PENDING_ON_REPORT_UPDATED_HEAD",
+    "machineSweepEvidence": "PR #243 is intentionally stacked on PR #244 (base fix/f07-policy-refresh-20261016 at 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8) so F07 checks run against corrected policy. Combined physical proof passed in run 39019612786 on temporary test head 0cd86cb8324223fbb15c33804e74d665eb1aa918, using Daytona application source 4d53b1c357e7251e4e83407f58bf1f30f1a0b108.",
+    "humanCorpusReviewStatus": "PARTIAL",
+    "reviewedRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/compute/sandbox-fabric.md",
+      ".okf/compute/live-provider-activation.md",
+      ".okf/decisions/compute-pool-20261002.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/production-helper.md",
+      ".okf/architecture/authority-registry.json",
+      "apps/web/factoryos/core/compute/sandboxes/DaytonaSandboxAdapter.ts",
+      "apps/web/factoryos/tests/sandbox-fabric.test.ts",
+      "apps/web/factoryos/tests/live-hosted-sandbox.test.ts"
+    ],
+    "pending": [
+      "Complete a human review of the full current .okf corpus and relevant repo mappings.",
+      "Run Team Change, OKF Governance, CI and relevant F07/sandbox validation against the stacked PR head.",
+      "Obtain independent human/security review before promotion."
+    ]
+  },
+  "changes": [
+    "Recognize Daytona provider-native states: started, pulling_snapshot, pending_build, stopped, archived and build_failed.",
+    "Wait for readiness/provisioning and only start stopped/paused/archived sandboxes.",
+    "Persist bytes returned by Daytona fs.downloadFile to the requested local path.",
+    "Avoid conflicting ephemeral plus autoDeleteInterval configuration and use a bounded TTL by default.",
+    "Add lifecycle state normalization tests.",
+    "Requalified the Daytona adapter against corrected F07 policy on tested combined head 0cd86cb8324223fbb15c33804e74d665eb1aa918.",
+    "Current-policy physical Daytona proof passed with a verified remote/local checksum and byte length, CAS integrity, F07 acceptance, signed receipt, and sandbox cleanup."
+  ],
+  "security": {
+    "status": "TRIAGED",
+    "semgrep": "UNPROVEN",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "No PR review is currently submitted. The Strix bot says its workspace trial ended, so a complete Strix security review is unavailable.",
+      "Daytona and other hosted sandbox adapters keep productionWorkerEligible=false; this PR does not grant F06 production authority.",
+      "Provider secrets remain in GitHub Actions secrets and are not written to evidence."
+    ]
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "COMPLETE_FOR_SCOPE",
+  "routedForgers": [],
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "verificationResults": {
+    "exactHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+    "policyHead": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+    "previousPhysicalProof": {
+      "runId": 38888809202,
+      "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/38888809202",
+      "result": "PASS_ON_OLDER_POLICY",
+      "artifactId": 12040714888,
+      "note": "The physical render test passed, but the run preceded the corrected F07 policy commit; do not treat it as current-policy qualification."
+    },
+    "currentPolicyPhysicalProof": {
+      "runId": 39019612786,
+      "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786",
+      "combinedTestHead": "0cd86cb8324223fbb15c33804e74d665eb1aa918",
+      "applicationSourceHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+      "policySourceHead": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+      "status": "PASS",
+      "evidenceArtifactId": 12096581046,
+      "evidenceArtifactUrl": "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786/artifacts/12096581046",
+      "evidenceArchiveSha256": "8dd3ab69859c3054c809236b89f9a3167c3bf4dc5b928b028d69fbb5cc4d575d",
+      "assertions": [
+        "Daytona provider credentials validated and sandbox provisioned",
+        "Physical FFmpeg MP4 rendered and downloaded",
+        "Remote/local SHA-256 and byte length matched",
+        "CAS artifact integrity verified",
+        "F07 independently probed CAS-bound bytes",
+        "F07 publishAllowed=true and READY acceptance assertions passed using corrected policy",
+        "Signed verification receipt was verified",
+        "Sandbox termination cleanup completed"
+      ],
+      "qualification": "PHYSICAL_QUALIFICATION_PASS_FOR_DAYTONA_ADAPTER_AND_CURRENT_F07_POLICY; NO_F06_AUTHORITY_GRANT"
+    },
+    "applicationHead": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+    "reportParentHead": "248dcc87b1f605f483ce39834072174e23032a96",
+    "applicationHeadTested": "4d53b1c357e7251e4e83407f58bf1f30f1a0b108",
+    "policyHeadTested": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+    "stackedBase": {
+      "pullRequest": 244,
+      "branch": "fix/f07-policy-refresh-20261016",
+      "commit": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+      "reason": "F07 validation on the old main base fails because main has not yet absorbed the current policy; the Daytona adapter must be validated against the corrected policy branch rather than copying policy changes into #243."
+    }
+  },
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/243",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38888809202",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39019612786",
+    "https://github.com/Gokul7904231/ShortForge/pull/244",
+    "https://support.google.com/youtube/answer/15424877",
+    "https://support.google.com/youtube/answer/12504220"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "Current-policy physical Daytona proof passed. The PR is stacked on #244 so final F07/CI checks use corrected policy. Merge remains blocked pending final checks and independent human/security review.",
+  "verificationPlan": [
+    "Pass Team Change Gate, OKF Governance Gate, and CI on the report-updated PR head.",
+    "Retain run 39019612786 and artifact 12096581046 as the current-policy physical qualification evidence.",
+    "Complete the full current .okf human review and independent security/release review before merging.",
+    "Keep productionWorkerEligible=false; physical qualification does not grant F06 production-worker authority."
+  ],
+  "stackedOnPr": 244
+}
