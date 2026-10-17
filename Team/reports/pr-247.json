@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR247-Render-Worker-Fail-Closed",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/render-worker-fail-closed-20261017",
+  "pullRequest": 247,
+  "headSha": "e3de68b313925e9ab6d4065c28ba17784662d5a2",
+  "objective": "Remove the committed RENDER_WORKER_SECRET fallback and make the distributed render-worker dispatch path fail closed, so a broken claim, a failed downstream dispatch or a lost callback can no longer be reported as an empty queue or a successful delivery.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      ".okf/security/worker-permissions.md §13 — any side-effecting distributed worker operation must respect an active lease, fencing token, current attempt identity and callback authentication; expired or stale workers cannot successfully commit.",
+      ".okf/security/worker-permissions.md §22.8 — no physical success claims without verification.",
+      ".okf/security/worker-permissions.md §22.9 — no secrets in worker working memory unless explicitly required and sandboxed.",
+      ".okf/security/worker-permissions.md §9 — CAP_RENDER_DISPATCH records job identity and waits for the authoritative callback; it does not mark a job complete.",
+      ".okf/audits/final-system-acceptance-matrix.md — \"Workflows fail-closed ..., no `|| true` masking fatal errors\" was recorded as VERIFIED, which the dispatcher did not satisfy.",
+      ".okf/decision-protocol.md — classify before implementing; executable implementation and tests outrank .okf when they conflict."
+    ],
+    "sourceRefs": [
+      ".okf/security/worker-permissions.md",
+      ".okf/audits/final-system-acceptance-matrix.md",
+      ".okf/decision-protocol.md",
+      ".okf/decisions.md"
+    ]
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "A credential committed to public source history ('factoryos-render-worker-secret-key-2026') was removed from both workflows and must be treated as compromised. OPERATOR ACTION: rotate RENDER_WORKER_SECRET on the control plane and in repository secrets.",
+      "No secret value or execution token is written to any log sink; the execution token is masked in the dispatch step and is only published via GITHUB_OUTPUT.",
+      "Failed authentication, HTTP errors, timeouts and malformed responses now fail the workflow instead of producing claimed=false.",
+      "Authentication was not weakened and no default, dummy or fallback credential was introduced. No new API endpoint was invented.",
+      "The dispatcher job's actions:write permission is deliberately not granted; granting it is an owner decision and is out of scope for this change."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "PR247-C1",
+      "originalConflict": ".okf/audits/final-system-acceptance-matrix.md records the CI/CD requirement 'Workflows fail-closed on build, lint, typecheck, or render failures; no `|| true` masking fatal errors' as VERIFIED, while .github/workflows/factoryos-render-worker.yml suppressed a failed `gh workflow run` with `|| echo` and converted every claim exception into claimed=false.",
+      "status": "RESOLVED",
+      "proposedResolution": "Reconcile the implementation with the already-canonical rule: remove the suppressed failure and the blanket exception handling, and fail visibly on every non-empty-queue outcome. The rule is unchanged; the implementation now satisfies it.",
+      "acceptedResolution": "Dispatcher failures and callback failures now fail the workflow. Empty queue remains the only non-failure outcome.",
+      "decisionAuthority": "Repository owner (review required on PR 247)",
+      "canonicalUpdates": [
+        ".okf/decisions.md"
+      ]
+    },
+    {
+      "id": "PR247-C2",
+      "originalConflict": "The dispatcher's repository_dispatch path read DISPATCH_JOB_ID and implied it could act on a specific job, but POST /api/rendering/claim accepts only workerId and workerPool and cannot target a named job.",
+      "status": "RESOLVED",
+      "proposedResolution": "The dispatcher no longer implies authority it does not have: a dispatch that names a job is refused (exit code 3) instead of being silently satisfied by an unrelated queued job, and the required control-plane change is documented in docs/deployment/render-worker-secrets.md §7. No endpoint or request parameter was invented.",
+      "acceptedResolution": "Named-job dispatch is refused; the absence of a job-targeted claim capability is tracked as a remaining blocker and is not implemented speculatively in this change.",
+      "decisionAuthority": "Repository owner"
+    }
+  ],
+  "changes": [
+    ".github/workflows/factoryos-render-worker.yml: removed the committed secret fallback, wired DISPATCH_JOB_ID to github.event.client_payload.jobId, delegated the claim to a tested script, removed the `|| echo` dispatch suppression, and masked the execution token.",
+    ".github/workflows/factoryos-basic-render.yml: removed the committed secret fallback, added a fail-closed preflight before the callback, and made a failed callback fail the run.",
+    "services/rendering-engine/scripts/github_dispatch_claim.py (new): single claim client with exit codes 0 (resolved), 2 (missing configuration, no request made), 3 (named-job dispatch refused), 4 (claim not established).",
+    "services/rendering-engine/tests/test_github_dispatch_claim.py (new): 16 behavioural cases over a mocked transport.",
+    "apps/web/factoryos/tests/render-worker-fail-closed.test.ts (new): 18 static invariant checks over both workflows and the claim client.",
+    "docs/deployment/render-worker-secrets.md (new): configuration, rotation procedure, fail-closed behaviour table, dispatch-permission limitation, and the backend change needed.",
+    ".okf/decisions.md: decision record for this change."
+  ],
+  "verificationResults": {
+    "typecheck": "PASS",
+    "typecheckCommand": "npm run factoryos:typecheck",
+    "authorityRegistry": "PASS",
+    "authorityRegistryDetail": "Authority registry valid: 15 domains",
+    "workflowYamlParse": "PASS",
+    "workflowYamlParseDetail": "factoryos-render-worker.yml and factoryos-basic-render.yml parse; 4 and 12 steps respectively",
+    "unitTests": "PASS",
+    "unitTestsDetail": "render-worker-fail-closed.test.ts 18/18; test_github_dispatch_claim.py 16/16",
+    "repositoryScanForOldLiteral": "PASS",
+    "repositoryScanDetail": "No occurrence in .github/workflows. The literal remains only as an intentional detection pattern in apps/web/scripts/check-cloudflare-free.mjs and as a negative assertion in services/rendering-engine/tests/test_drive_delivery.py.",
+    "fullFactoryosSuite": "PRE_EXISTING_FAILURES",
+    "fullFactoryosSuiteDetail": "npm run factoryos:test -> 1443 passed, 75 failed, 9 skipped across 71 files. No failure is attributable to this change: no test imports the workflow YAMLs, and the failing classes are unrelated (missing modules such as lib/rendering/AzureWorkerManager, which does not exist on main; undefined globals; unrelated assertions).",
+    "liveRenderExecution": "BLOCKED",
+    "liveRenderExecutionDetail": "No credentials or runtime available in this environment. No physical MP4, CAS receipt or F07 proof is claimed.",
+    "liveClaimAgainstControlPlane": "NOT_RUN",
+    "dispatchActionsWritePermission": "NOT_VERIFIED"
+  },
+  "pendingReviews": [
+    "Repository owner review of PR 247 — required before merge.",
+    "Operator confirmation that RENDER_WORKER_SECRET has been rotated on both the control plane and repository secrets.",
+    "Owner decision on whether the dispatcher job receives actions:write."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/247",
+    "services/rendering-engine/tests/test_github_dispatch_claim.py",
+    "apps/web/factoryos/tests/render-worker-fail-closed.test.ts",
+    "docs/deployment/render-worker-secrets.md"
+  ],
+  "remainingBlockers": [
+    "Control plane cannot claim a named job: POST /api/rendering/claim accepts only workerId and workerPool. A job-targeted claim (optional jobId, honouring existing lease/fencing and attempt-monotonicity rules) is a separate control-plane change and is not implemented here.",
+    "Live render execution is BLOCKED in this environment (no credentials or runtime). No physical MP4, CAS receipt or F07 proof is claimed.",
+    "The compromised RENDER_WORKER_SECRET must be rotated by the operator on both the control plane and repository secrets before the dispatcher can claim at all.",
+    "services/rendering-engine/worker_daemon.py:549 contains a stray return causing IndentationError, so the module cannot be imported and four test modules in services/rendering-engine/tests/ cannot be collected. Deliberately not fixed in this change: the guard condition the orphaned return belonged to cannot be recovered from the current source."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "The security fix and its regression tests are complete and verified at unit/static level, but the change cannot be qualified as production-complete: live render execution is BLOCKED by absent credentials, the live claim path was tested only against a mocked transport, and the compromised RENDER_WORKER_SECRET must be rotated by the operator before the dispatcher can claim at all. Per .okf security discipline, BLOCKED is not reported as PASS."
+}
