@@ -111,3 +111,18 @@ Perplexity remains a remote MCP tool surface. Its reasoning model is selected in
 ## Current state
 
 No provider in this qualification wave is automatically promoted to \`QUALIFIED\` by this code change. Provider-by-provider live evidence remains an operational gate.
+
+## Cohort 1 — completed live evidence (2026-10-06)
+
+One real GitHub Actions run qualified all four public, non-metered providers in Cohort 1: [run 37417006052](https://github.com/Gokul7904231/ShortForge/actions/runs/37417006052). The workflow completed with success and uploaded provider-specific evidence artifacts.
+
+| Provider | Job | Artifact | Observed proof |
+|---|---:|---:|---|
+| OpenAlex | 112117722223 | 11391836904 | HTTP 200; 1,073 ms; one normalized result; rate-limit remaining 990/1000 |
+| arXiv | 112117722157 | 11391396405 | HTTP 200; 3 ms; Atom response; entry present; 3,355 bytes |
+| Crossref | 112117721917 | 11392190762 | HTTP 200; 631 ms; normalized works result; Retry-After 0 |
+| Open-Meteo | 112117722080 | 11391261507 | HTTP 200; 480 ms; normalized current-weather object; Retry-After 0 |
+
+These records prove that each adapter performed a live request, returned the expected capability-shaped response, and emitted its evidence artifact. They do not establish that provider content is authoritative truth. Provider-specific request IDs/ratelimit headers are recorded only where the provider returned them.
+
+The Team matrix now records these four providers as `QUALIFIED` with the actual run/job/artifact identities. Issue #184 remains open; this cohort does not qualify the remaining providers or authorize media materialization, metered LLM probes, routing defaults, Treasury, ComputeRouter, F06, CAS, F07, or Overseer authority.
