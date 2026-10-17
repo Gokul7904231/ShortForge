@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "changeId": "ShortForge-PR230-Sandbox-OpenComputer-Blaxel",
   "repository": "Gokul7904231/ShortForge",
-  "baseRef": "main",
+  "baseRef": "fix/f07-policy-refresh-20261016",
   "headRef": "feat/sandbox-opencomputer-blaxel-20261006",
   "objective": "Complete hosted Sandbox Fabric integration for OpenComputer and Blaxel with provider-native lifecycle, connection catalog, ComputePool registration, and live physical CAS/F07 qualification.",
   "classification": "new capability",
@@ -24,11 +24,11 @@
     ],
     "machineSweepStatus": "PENDING_ON_REPORT_UPDATED_HEAD",
     "humanCorpusReviewStatus": "PARTIAL",
-    "machineSweepEvidence": "Fresh proof tree 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e combined PR #230 source with corrected F07 policy. Blaxel passed the complete physical/CAS/F07/signed receipt path (artifact 12096591213). OpenComputer returned HTTP 503 no cells available with capacity on two attempts before a sandbox was created. This report update needs fresh Team/OKF/CI/provider contract checks.",
+    "machineSweepEvidence": "Fresh provider proof tree 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e combined PR #230 application source with corrected F07 policy. Blaxel passed the complete physical/CAS/F07/signed receipt path (artifact 12096591213). OpenComputer returned HTTP 503 no cells available with capacity on two attempts before a sandbox was created. PR #230 is stacked on PR #244 (policy head 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8) to ensure subsequent checks use that corrected policy.",
     "pending": [
       "Complete a human review of the full current .okf corpus and relevant repo mappings.",
       "Keep OpenComputer unqualified until provider capacity becomes available and a successful physical artifact/CAS/F07 proof exists.",
-      "Run Team Change, OKF Governance Gate, CI, sandbox-fabric and compute connection checks on the report-updated PR head.",
+      "Run Team Change, OKF Governance Gate, CI, sandbox-fabric and compute connection checks on the report-updated stacked PR head.",
       "Obtain independent security/human review before promotion."
     ]
   },
@@ -163,8 +163,11 @@
     "The main workflow live-hosted-sandbox.yml still only offers Daytona, Modal and InstaVM; OpenComputer/Blaxel proof options are present on PR #230's branch, not main.",
     "Floor 01 security/dependency scan passed, but Strix remains unavailable due expired workspace trial and no PR reviews are submitted. Security is TRIAGED, not PASS. Keep hosted sandbox productionWorkerEligible=false.",
     "2026-10-17 refreshed policy cohort: Blaxel succeeded on combined test head 35b08fa180e8b6cc6c891a32d1fa4d1c365bf20e with current policy commit 0a90d62b3b29c7d4256d053da1cbf8ce8567afa8; artifact 12096591213, archive SHA-256 58d84b7a96752a221584f1daea3232500b2b175fda48dbb896fb38973d5d0adf.",
-    "OpenComputer failed Sandbox.create with HTTP 503 no cells available with capacity on attempt 1 and one retry; neither attempt produced a sandbox or physical evidence artifact. This is a provider capacity blocker, not successful adapter qualification."
+    "OpenComputer failed Sandbox.create with HTTP 503 no cells available with capacity on attempt 1 and one retry; neither attempt produced a sandbox or physical evidence artifact. This is a provider capacity blocker, not successful adapter qualification.",
+    "PR #230 is stacked on PR #244 so its source diff is validated with the corrected F07 policy and updated F07 regression tests rather than main's superseded policy implementation."
   ],
   "dispositionRationale": "BLOCKED. Blaxel has complete physical MP4/CAS/signed F07 evidence. OpenComputer remains blocked by provider capacity. Daytona's adapter is corrected and the physical output path reached CAS, but the prior F07 publish assertion was blocked by an expired official-policy snapshot; PR #244 refreshes canonical policy and corrects a false Shorts Content ID rule, while the final physical rerun is still queued. Current-head validation/security review is outstanding. Do not merge or activate production-worker authority until the policy, physical-proof and release-review gates pass.",
-  "dispositionReason": "Blaxel passed current-policy physical qualification, but OpenComputer remains unqualified after two provider HTTP 503 capacity responses. Full human OKF review, independent security/human review and fresh final-head gates remain outstanding."
+  "dispositionReason": "Blaxel passed current-policy physical qualification, but OpenComputer remains unqualified after two provider HTTP 503 capacity responses. Full human OKF review, independent security/human review and fresh final-head gates remain outstanding.",
+  "basePolicyHead": "0a90d62b3b29c7d4256d053da1cbf8ce8567afa8",
+  "stackedOnPr": 244
 }
