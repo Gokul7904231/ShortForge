@@ -1,0 +1,65 @@
+{
+  "changeId": "PR-245-REVERSE-FEATURES-FOUNDATION-20261017",
+  "mission": "Reverse Features foundation",
+  "date": "2026-10-17",
+  "base": "main",
+  "baseSha": "9e3d7017f62625cea5258dabee926824cb43ab18",
+  "headRef": "feat/reverse-features-foundation-20261017",
+  "requestedOutcome": "Establish dedicated Reverse Features skills and canonical OKF records requiring incumbent-first reverse engineering, pairwise challenge of viable candidates, evidence-based winner selection, and implementation only after selection.",
+  "classification": "extends existing rule",
+  "changeSummary": [
+    "Adds root AGENTS.md and a master plus three phase skills for agent routing.",
+    "Adds .okf/reverse-features operating contract, 21-domain registry, candidate evaluation protocol and decision-record template.",
+    "Maps upstream REA as a version-pinned investigation tool rather than a source-code import or production authority.",
+    "Wires the process into CLAUDE.md, .agents/skills/AGENTS.md, canonical development loop, .okf index and repository research ledger."
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "machineSweepStatus": "COMPLETE",
+    "machineSweepEvidence": "PR CI OKF / lint-sweep-report run 39016247246 recorded OKF_LINT=PASS and the tools.okf.sweep command completed. The report-validation step then failed because Team/reports/pr-245.json was absent; sweep evidence upload was skipped in that attempt.",
+    "humanCorpusReviewStatus": "PARTIAL",
+    "reviewedRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/principles.md",
+      ".okf/research/repo-research-ledger.md",
+      ".okf/research/external-repository-mappings.md",
+      ".okf/research/repo-mappings/morluto-rea.md (new)",
+      ".okf/schemas/okf-rule.schema.json",
+      ".okf/rules/index.json",
+      ".okf/verification/rule-to-test-matrix.md",
+      ".okf/production-helper.md",
+      ".okf/audits/vision-vs-reality.md"
+    ],
+    "pending": [
+      "Complete human review of the full current .okf corpus and relevant repository mappings.",
+      "Produce and review the full TeamChangeIR/Team Change Gate evidence; this JSON records blocked status and is not evidence of an approved disposition.",
+      "Review the completed PR CI suite and resolve failures before promotion."
+    ]
+  },
+  "routedForgers": [],
+  "security": {
+    "status": "UNPROVEN",
+    "findings": [
+      "No production runtime adapter or executable feature code was added; changes are agent instructions and documentation.",
+      "A full security/production-helper review of the PR has not been performed."
+    ]
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "PARTIAL",
+  "blockingGates": [
+    "Complete current .okf human review before any promotion.",
+    "Team Change Gate review and authorized disposition remain pending.",
+    "PR CI checks must complete; failures must be investigated and resolved."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/245",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39016247246",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39016247312",
+    "https://github.com/Gokul7904231/ShortForge/blob/main/.okf/decision-protocol.md",
+    "https://github.com/Gokul7904231/ShortForge/blob/feat/reverse-features-foundation-20261017/.okf/reverse-features/README.md"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "The dedicated process foundation is drafted and the OKF machine sweep completed, but the full human OKF corpus review, Team Change Gate authorized disposition, and remaining CI validation are incomplete."
+}
