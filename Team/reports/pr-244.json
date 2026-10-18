@@ -3,7 +3,7 @@
   "repository": "Gokul7904231/ShortForge",
   "changeId": "PR-244-YOUTUBE-POLICY-REFRESH-20261017",
   "mission": "Repair the date-aware F07 YouTube Shorts Content ID policy refresh and its regression tests.",
-  "date": "2026-10-17",
+  "date": "2026-10-18",
   "base": "main",
   "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
   "headRef": "fix/f07-policy-refresh-20261016",
@@ -16,7 +16,11 @@
     "Refresh the canonical policy snapshot as 2026.10.17 and update regression tests to assert blocking before and after September 24, 2026.",
     "Add this required Team Change Report and require fresh final-head validation rather than relying on the superseded run.",
     "Fixes physical-proof workflow concurrency by assigning separate concurrency groups to each PR/ref, preventing unrelated PR validations from cancelling one another.",
-    "Bound the optional Lightning Studio listing with a 60-second timeout; listing failures are diagnostic-only and no longer prevent the required physical-proof step from running."
+    "Bound the optional Lightning Studio listing with a 60-second timeout; listing failures are diagnostic-only and no longer prevent the required physical-proof step from running.",
+    "Replace obsolete lightning mmt list --all credential validation probe with a supported, read-only authentication check scoped to the configured teamspace (lightning job list --teamspace <teamspace>).",
+    "Enforce non-interactive execution (LIGHTNING_NON_INTERACTIVE=1) and process deadline (30s) to fail closed on hanging prompts or timeouts.",
+    "Redact credentials (LIGHTNING_API_KEY, LIGHTNING_USER_ID) from diagnostic output, error strings, and evidence.",
+    "Add comprehensive regression test suite in apps/web/factoryos/tests/lightning-credential-validation.test.ts covering missing credentials, valid responses, invalid credentials, timeouts, deprecation warnings, provider errors, and credential non-disclosure."
   ],
   "okf": {
     "sweepStatus": "INCIDENT_FOLLOWUP",
@@ -44,7 +48,8 @@
       "apps/web/factoryos/tests/youtube-remediation.test.ts",
       "https://support.google.com/youtube/answer/15424877 (current official guidance, lines 34-36 and 48-52)",
       "https://support.google.com/youtube/answer/12504220 (current official guidance, lines 46-48)",
-      ".github/workflows/lightning-physical-mp4-proof.yml"
+      ".github/workflows/lightning-physical-mp4-proof.yml",
+      "apps/web/factoryos/tests/lightning-credential-validation.test.ts"
     ],
     "pending": [
       "Complete a human review of the full current .okf corpus and remaining relevant mappings.",
@@ -85,13 +90,17 @@
     "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/.github/workflows/lightning-physical-mp4-proof.yml"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "Policy and governance checks passed on the previous head. The previous Lightning attempt hung in the optional Studio-listing diagnostic before rendering. The diagnostic now has a bounded 60-second timeout and is non-blocking, the workflow has a dedicated step timeout and a 40-minute job budget, and the workflow triggers on edits to its own workflow and listing script. These changes require fresh final-head CI/OKF/F07 checks and a successful physical MP4 → CAS → F07 proof; independent human review and full human OKF review remain pending.",
+  "dispositionReason": "Policy and governance checks passed on the previous head. The previous Lightning attempt reached the end-to-end proof step but failed because `lightning mmt list --all` emitted a deprecation warning and timed out. The credential-validation probe has now been replaced with a supported, read-only authentication check scoped to the configured teamspace (`lightning job list --teamspace <teamspace>`) with an enforced 30s deadline, non-interactive execution, credential redaction, and full regression tests. Fresh final-head validation and physical MP4 proof are required; independent human review and full human OKF review remain pending.",
   "changes": [
     "Removed the unsupported September 24, 2026 transition and separate legacy/current rule records.",
     "Restored one official active Content ID rule effective 2024-10-15: an active claim on a Short over one minute blocks publication.",
     "Removed the unconditional revenue-impact inference; policy output does not speculate about revenue recipient.",
     "Added/updated tests asserting the actual Guardian blocks claimed Shorts on both sides of the previously claimed cutoff.",
-    "Scoped Lightning Physical MP4 proof concurrency by pull-request number/ref, so unrelated PRs cannot cancel each other's proof runs; same-PR superseded runs may still be cancelled."
+    "Scoped Lightning Physical MP4 proof concurrency by pull-request number/ref, so unrelated PRs cannot cancel each other's proof runs; same-PR superseded runs may still be cancelled.",
+    "Replaced deprecated un-scoped lightning mmt list --all probe in LightningNotebookAdapter with read-only lightning job list --teamspace <teamspace>.",
+    "Added process deadline (30s) and non-interactive execution (LIGHTNING_NON_INTERACTIVE=1) to prevent indefinite hangs.",
+    "Implemented credential sanitization to ensure API keys and user IDs are never disclosed in diagnostics or evidence.",
+    "Added 9 regression tests in apps/web/factoryos/tests/lightning-credential-validation.test.ts."
   ],
   "verificationPlan": [
     "Run Team/scripts/validate-team-report.mjs Team/reports/pr-244.json.",
