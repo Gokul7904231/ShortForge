@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "changeId": "PR-248-RENDER-CLAIM-VS-DISPATCH-DISPOSITION-20261018",
+  "date": "2026-10-18",
+  "base": "main",
+  "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
+  "headRef": "feat/job-targeted-render-claims-20261017",
+  "headSha": "6fdce506e95db8d8370ffd3c521009db2c3109b5",
+  "requestedOutcome": "Determine whether a named-job claim API is required, remove dead repository-dispatch paths if the established workflow_dispatch already fulfils the requirement, and document the supported rendering contracts without changing rendering authority.",
+  "classification": "already exists",
+  "changeSummary": [
+    "Verified that named-job rendering is performed through workflow_dispatch with an exact jobId and executionToken, while /api/rendering/claim is intentionally a generic queue-pump contract.",
+    "Removed the repository_dispatch factoryos_render_job triggers from factoryos-basic-render.yml and factoryos-render-worker.yml because no producer was found in the repository.",
+    "Removed the unreachable DISPATCH_JOB_ID branch and the corresponding client_payload fallback.",
+    "Documented render-claim versus direct-dispatch responsibilities and the invariants preserved."
+  ],
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "machineSweepStatus": "PENDING_ON_FINAL_HEAD",
+    "reviewedRefs": [
+      ".github/workflows/factoryos-basic-render.yml",
+      ".github/workflows/factoryos-render-worker.yml",
+      "docs/deployment/render-claim-vs-dispatch.md",
+      "apps/web/app/api/rendering/claim/route.ts"
+    ],
+    "findings": [
+      "The in-repository immediate dispatch path passes an exact jobId and executionToken through workflow_dispatch.",
+      "The generic claim route is used by the cron dispatcher to obtain the oldest eligible job and has no in-repository caller requiring a named-job claim parameter.",
+      "The repository_dispatch factoryos_render_job event had consumers but no producer found by the reported full-repository search. External senders were not investigated."
+    ],
+    "pending": [
+      "Required Team Change Gate, OKF Governance Gate, and CI checks must pass on the final PR head.",
+      "Confirm through repository event history or owner confirmation that no external automation depends on the removed repository_dispatch event.",
+      "Resolve workflow overlap with PR #247 before either overlapping change is merged, preserving both branches' independent fixes.",
+      "Independent human review is required before merge."
+    ]
+  },
+  "forgers": [],
+  "security": {
+    "status": "UNPROVEN",
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_RUN",
+    "zap": "NOT_APPLICABLE",
+    "findings": [
+      "This is a workflow/documentation cleanup; no new endpoint, credential, permission, or worker authority was added.",
+      "No live provider operation or external repository-dispatch sender audit was performed as part of this change."
+    ]
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "PARTIAL",
+  "changes": [
+    ".github/workflows/factoryos-basic-render.yml: removed the dead repository_dispatch factoryos_render_job trigger and client_payload fallback; retained workflow_dispatch validation of the exact jobId and executionToken.",
+    ".github/workflows/factoryos-render-worker.yml: removed the dead repository_dispatch trigger and unreachable DISPATCH_JOB_ID branch; retained the generic claim queue-pump behaviour.",
+    "docs/deployment/render-claim-vs-dispatch.md: documented the supported contracts and preserved invariants."
+  ],
+  "verificationResults": {
+    "yamlValidation": "PASS_REPORTED",
+    "yamlValidationDetail": "OpenCode reports both modified workflow files were revalidated after the change. The CI workflow was still in progress at the time of live review.",
+    "repoProducerSearch": "PASS_WITH_SCOPE_LIMIT",
+    "repoProducerSearchDetail": "OpenCode reports a full-repository search found no producer of repository_dispatch factoryos_render_job. Live GitHub repository event history and out-of-repository senders were not checked.",
+    "teamChangeGate": "FAILED_ON_INITIAL_HEAD_MISSING_REPORT",
+    "teamChangeGateRun": "https://github.com/Gokul7904231/ShortForge/actions/runs/39100222137",
+    "okfGovernanceGate": "FAILED_ON_INITIAL_HEAD_MISSING_REPORT",
+    "okfGovernanceGateRun": "https://github.com/Gokul7904231/ShortForge/actions/runs/39100222117",
+    "ci": "IN_PROGRESS_AT_REVIEW",
+    "ciRun": "https://github.com/Gokul7904231/ShortForge/actions/runs/39100222146"
+  },
+  "blockingGates": [
+    "A Team Change Report must be present at Team/reports/pr-248.json and all required gates must pass on the updated head.",
+    "The two modified workflow files overlap with PR #247. Reconcile commit order and the final combined workflow behaviour before integration; avoid reintroducing removed dead triggers or losing fail-closed render-worker fixes.",
+    "No live repository event history or external sender audit was performed. Confirm there is no out-of-repository producer before merge.",
+    "Independent human review is required."
+  ],
+  "pendingReviews": [
+    "Independent human review of PR #248.",
+    "Confirm no out-of-repository automation uses repository_dispatch type factoryos_render_job."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/248",
+    "https://github.com/Gokul7904231/ShortForge/blob/feat/job-targeted-render-claims-20261017/docs/deployment/render-claim-vs-dispatch.md",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39100222137",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39100222117",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39100222146"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "The documented in-repository architecture supports the conclusion that a new named-job claim API is unnecessary, and the dead event paths were removed. Initial required Team Change and OKF Governance workflows failed because Team/reports/pr-248.json was absent, while CI was still in progress. The workflow files overlap with PR #247 and external repository-dispatch senders have not been ruled out. Keep the PR blocked until the report is validated on the updated head, the affected workflows pass, overlap is reconciled, and independent review is complete."
+}
