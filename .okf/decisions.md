@@ -1669,3 +1669,23 @@ Resolution measured on `3ad2705a`: the orphaned `return` and the now-unused `tie
 
 Rollback/rejection: revert the workflow and script changes; the previous behaviour (silent fallback and swallowed failures) is restored. Do not reintroduce a committed default for `RENDER_WORKER_SECRET` under any rollback. Reverting the `worker_daemon.py` repair is not a supported rollback: it restores a module that cannot be imported, taking 7 tests and the secret-literal guard with it.
 
+## Named-Job Render Dispatch is Direct workflow_dispatch — 2026-10-18
+
+Classification: extends existing rule (reconciles this record with PR 248's disposition)
+
+Decision: A job-targeted ("named") render claim API is NOT required and none is introduced. The contract is:
+
+- **Named jobs** (immediate dispatch after `/api/generate-video`, and manual re-dispatch via `POST /api/rendering/github/dispatch`) travel by `workflow_dispatch` of `factoryos-basic-render.yml` carrying the exact `jobId` and `executionToken` as inputs (`RenderQueueManager.enqueue()` → `GitHubActionsRenderManager.dispatchWorkflowRun()`).
+- **The generic queue pump** `POST /api/rendering/claim` is unchanged: it intentionally claims the oldest eligible queued job and cannot target a named job.
+
+PR 247 preserved this by refusing any named-job downgrade (claim client exit 3). This change completes it by removing the remaining dead configuration:
+
+- `repository_dispatch: [factoryos_render_job]` removed from both workflows. Evidence: a full-repository search found the event name only in the two trigger declarations and zero emitters. External senders cannot be conclusively ruled out from this environment (no GitHub audit log access), but a repo_dispatch was fail-closed on the renderer side regardless and provided no working code path.
+- The `DISPATCH_JOB_ID` env wiring (which PR 247 had wired to `client_payload.jobId` purely to enable the refuse path) is removed with its trigger. The refuse path in `services/rendering-engine/scripts/github_dispatch_claim.py` is retained as a fail-closed guard for direct invocations; its behavioural tests remain valid.
+
+Canonical documents:
+- `docs/deployment/render-claim-vs-dispatch.md` (disposition and evidence table)
+- `docs/deployment/render-worker-secrets.md` §7
+
+Rollback: revert this change's workflow/script edits; the fail-closed guarantees of the 2026-10-17 record above are unaffected by that revert only if the committed-literal secret fallback is not reintroduced (see that record's rollback rule).
+

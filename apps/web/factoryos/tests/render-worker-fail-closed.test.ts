@@ -77,11 +77,33 @@ describe("dispatcher claim path", () => {
     );
   });
 
-  it("wires the repository_dispatch payload from the real event field", () => {
+  it("keeps only the supported triggers: schedule sweep and manual run", () => {
     const dispatcher = read(DISPATCHER);
-    expect(dispatcher).toContain(
-      "DISPATCH_JOB_ID: ${{ github.event.client_payload.jobId }}"
+    expect(dispatcher).toMatch(/schedule:/);
+    expect(dispatcher).toMatch(/workflow_dispatch:/);
+    // Dead configuration: no in-repository code emits factoryos_render_job
+    // (full-repo search evidence); external senders are not verifiable from this
+    // environment, so the trigger must stay removed on both workflows.
+    // Match the definition syntax so the explanatory comment cannot false-positive.
+    expect(dispatcher).not.toMatch(/repository_dispatch\s*:/);
+    expect(dispatcher).not.toContain("DISPATCH_JOB_ID");
+    expect(read(RENDERER)).not.toMatch(/repository_dispatch\s*:/);
+    expect(read(RENDERER)).not.toContain("client_payload");
+  });
+
+  it("resolves named-job inputs only from workflow_dispatch inputs", () => {
+    const renderer = read(RENDERER);
+    expect(renderer).toContain("INPUT_JOB_ID: ${{ github.event.inputs.jobId }}");
+    expect(renderer).toContain(
+      "INPUT_EXEC_TOKEN: ${{ github.event.inputs.executionToken }}"
     );
+  });
+
+  it("keeps the dispatch inputs exact: jobId and executionToken", () => {
+    const dispatcher = read(DISPATCHER);
+    const dispatchStep = dispatcher.slice(dispatcher.indexOf("gh workflow run"));
+    expect(dispatchStep).toContain("-f jobId=");
+    expect(dispatchStep).toContain('-f executionToken="$EXECUTION_TOKEN"');
   });
 
   it("refuses a named-job dispatch instead of claiming an unrelated job", () => {

@@ -18,8 +18,9 @@ Contract derived from `apps/web/app/api/rendering/claim/route.ts`:
     500 server-side RENDER_WORKER_SECRET not configured
 
 That endpoint accepts only `workerId` and `workerPool`; it cannot claim a
-*named* job. A dispatch that names one is therefore refused outright instead of
-being downgraded into an unrelated generic claim.
+*named* job. The workflow-level `repository_dispatch` trigger was removed after
+a producer audit found no in-repository emitter of `factoryos_render_job`; the
+named-job guard below stays as a fail-closed defence for direct invocations.
 
 Exit codes:
     0  claim resolved: either a job was claimed, or the queue was empty

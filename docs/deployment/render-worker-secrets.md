@@ -82,23 +82,27 @@ step now fails loudly where it previously appeared to succeed. Granting
 `actions: write` is a deliberate authority change and is **not** made here — it
 requires an owner decision.
 
-## 7. Backend change needed — job-targeted claims
+## 7. Named-job dispatch — built-in, no backend change needed
 
 `POST /api/rendering/claim` accepts only `workerId` and `workerPool`
 (see the handler in `apps/web/app/api/rendering/claim/route.ts`). It cannot claim
-a **named** job.
+a **named** job — and it does not need to.
 
-Consequence: the dispatcher's `repository_dispatch` (`factoryos_render_job`)
-trigger cannot honour a `jobId` in its payload. Rather than silently claim an
-unrelated queued job, a payload that names a job is now refused with exit code 3.
-
-The supported immediate path is unchanged and does not go through the dispatcher:
-the control plane calls
-`GitHubActionsRenderManager.dispatchWorkflowRun()`, which is a
+The **named-job path already exists** and never touches the claim API: the
+control plane calls `GitHubActionsRenderManager.dispatchWorkflowRun()`, a
 `workflow_dispatch` of `factoryos-basic-render.yml` carrying `jobId` and
-`executionToken` directly.
+`executionToken` as workflow inputs. The runner resolves only that job and fails
+closed on a malformed `jobId` or missing token. Dispatch and claim therefore have
+separate, matching roles — dispatch runs a named job; claim pumps the queue.
 
-If a named-job queue claim is wanted, it needs a control-plane change first —
-for example `POST /api/rendering/claim` accepting an optional `jobId`, scoped to
-the queue, returning the same lease/fencing fields and honouring the existing
-attempt-monotonicity rules. Only then should the dispatcher attempt to claim it.
+The dispatcher's `repository_dispatch` (`factoryos_render_job`) trigger was
+**removed** after a producer audit found no emitter of that event anywhere in
+the repository (external senders are not ruled out from the evidence available
+here). Removing it removes ambiguity rather than capability: a repo_dispatch
+could never honour a payload that names a job — `POST /api/rendering/claim`
+accepts only `workerId`/`workerPool` — so a named-job payload was refused with
+exit code 3 rather than silently satisfied by an unrelated queued job. The
+refuse path remains in `github_dispatch_claim.py` as a defensive guard.
+
+Scope note: this reconciliation does **not** introduce a new named-job claim
+endpoint, new auth, or new GitHub permissions.
