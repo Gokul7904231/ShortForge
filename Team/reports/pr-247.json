@@ -5,7 +5,7 @@
   "baseRef": "main",
   "headRef": "fix/render-worker-fail-closed-20261017",
   "pullRequest": 247,
-  "headSha": "PENDING_FINAL_HEAD",
+  "headSha": "7082575168922d9e856dc0e5cfba34ca9ac0268e",
   "objective": "Remove the committed RENDER_WORKER_SECRET fallback and make the distributed render-worker dispatch path fail closed, so a broken claim, a failed downstream dispatch or a lost callback can no longer be reported as an empty queue or a successful delivery. Updated 2026-10-18: reconciled with PR 248's verified dead-configuration cleanup (repository_dispatch trigger and DISPATCH_JOB_ID wiring removed from both workflows); the report now describes the integrated source.",
   "classification": "extends existing rule",
   "okf": {
