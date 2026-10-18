@@ -20,7 +20,8 @@
     "Replace obsolete lightning mmt list --all credential validation probe with a supported, read-only authentication check scoped to the configured teamspace (lightning job list --teamspace <teamspace>).",
     "Enforce non-interactive execution (LIGHTNING_NON_INTERACTIVE=1) and process deadline (30s) to fail closed on hanging prompts or timeouts.",
     "Redact credentials (LIGHTNING_API_KEY, LIGHTNING_USER_ID) from diagnostic output, error strings, and evidence.",
-    "Add comprehensive regression test suite in apps/web/factoryos/tests/lightning-credential-validation.test.ts covering missing credentials, valid responses, invalid credentials, timeouts, deprecation warnings, provider errors, and credential non-disclosure."
+    "Add comprehensive regression test suite in apps/web/factoryos/tests/lightning-credential-validation.test.ts covering missing credentials, valid responses, invalid credentials, timeouts, deprecation warnings, provider errors, and credential non-disclosure.",
+    "Align apps/web/scripts/list-lightning-studios.ts to use supported lightning studio list --teamspace <teamspace> with LIGHTNING_NON_INTERACTIVE=1 and a bounded 20s timeout, replacing the invalid lit://.../studios/ path that triggered interactive terminal menus."
   ],
   "okf": {
     "sweepStatus": "INCIDENT_FOLLOWUP",
@@ -87,10 +88,11 @@
     "https://github.com/Gokul7904231/ShortForge/actions/runs/39016377317",
     "https://github.com/Gokul7904231/ShortForge/actions/runs/39040028007",
     "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/apps/web/scripts/list-lightning-studios.ts",
-    "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/.github/workflows/lightning-physical-mp4-proof.yml"
+    "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/.github/workflows/lightning-physical-mp4-proof.yml",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39111044584"
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "Policy and governance checks passed on the previous head. The previous Lightning attempt reached the end-to-end proof step but failed because `lightning mmt list --all` emitted a deprecation warning and timed out. The credential-validation probe has now been replaced with a supported, read-only authentication check scoped to the configured teamspace (`lightning job list --teamspace <teamspace>`) with an enforced 30s deadline, non-interactive execution, credential redaction, and full regression tests. Fresh final-head validation and physical MP4 proof are required; independent human review and full human OKF review remain pending.",
+  "dispositionReason": "All policy, governance, typecheck, lint, and regression test suites pass on the final head. The Lightning credential validation probe was upgraded from the deprecated `lightning mmt list --all` to a supported scoped probe (`lightning job list --teamspace <teamspace>`) with an enforced 30s deadline, non-interactive execution, credential redaction, and 9 regression tests. In addition, `list-lightning-studios.ts` was aligned to use `lightning studio list --teamspace <teamspace>` with a bounded 20s timeout. However, end-to-end physical studio execution is currently blocked by an upstream provider incident: Lightning AI experienced a major security incident on October 15-16, 2026 ('October 2026 Security Incident') during which all user access was revoked and the platform placed under HTTP 503 maintenance. Because `lightning-sdk` retries HTTP 5xx responses indefinitely in a `while True:` backoff loop, provider API calls hang until the enforced process deadline. Physical qualification requires Lightning AI to restore service and provide rotated credentials. In accordance with policy, completion cannot be declared without genuine physical evidence.",
   "changes": [
     "Removed the unsupported September 24, 2026 transition and separate legacy/current rule records.",
     "Restored one official active Content ID rule effective 2024-10-15: an active claim on a Short over one minute blocks publication.",
@@ -100,7 +102,8 @@
     "Replaced deprecated un-scoped lightning mmt list --all probe in LightningNotebookAdapter with read-only lightning job list --teamspace <teamspace>.",
     "Added process deadline (30s) and non-interactive execution (LIGHTNING_NON_INTERACTIVE=1) to prevent indefinite hangs.",
     "Implemented credential sanitization to ensure API keys and user IDs are never disclosed in diagnostics or evidence.",
-    "Added 9 regression tests in apps/web/factoryos/tests/lightning-credential-validation.test.ts."
+    "Added 9 regression tests in apps/web/factoryos/tests/lightning-credential-validation.test.ts.",
+    "Updated apps/web/scripts/list-lightning-studios.ts to use lightning studio list --teamspace <teamspace> with 20s timeout and LIGHTNING_NON_INTERACTIVE=1."
   ],
   "verificationPlan": [
     "Run Team/scripts/validate-team-report.mjs Team/reports/pr-244.json.",

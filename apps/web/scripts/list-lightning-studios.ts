@@ -21,14 +21,20 @@ async function main(): Promise<void> {
     return;
   }
 
-  const target = "lit://" + org + "/" + space + "/studios/";
   let result: { exitCode: number; stdout: string; stderr: string };
 
   try {
-    result = await runProcess("lightning", ["ls", target], {
-      timeoutMs: INSPECTION_TIMEOUT_MS,
-      env: process.env,
-    });
+    result = await runProcess(
+      "lightning",
+      ["studio", "list", "--teamspace", teamspace],
+      {
+        timeoutMs: INSPECTION_TIMEOUT_MS,
+        env: {
+          ...process.env,
+          LIGHTNING_NON_INTERACTIVE: "1",
+        },
+      },
+    );
   } catch (error) {
     console.warn(
       "[lightning-inspection] Could not run the optional Studio listing: " +
