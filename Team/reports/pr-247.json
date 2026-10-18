@@ -117,34 +117,42 @@
     }
   },
   "ciResults": {
-    "measuredOnHead": "3ad2705a9b0661ff7eccfa4028f1b86b565d198c",
+    "measuredOnHead": "97590898c21ac12d4a59bc24893440f444adea52",
     "totalWorkflowRuns": 20,
-    "success": 18,
-    "cancelled": 1,
-    "failure": 1,
-    "failingRunId": 39040224898,
-    "cancelledRunId": 39040224977,
-    "notableSuccesses": [
-      "CI — success",
-      "Team Change Gate — success",
-      "OKF Governance Gate — success",
-      "Compute Pool — success",
-      "Compute Golden Mission — success",
-      "True Eight-Floor Production Trajectory — success",
-      "Floor 04 Production Validation — success",
-      "Floor 05 Pre-Training Validation — success",
-      "Floor 06 Pre-Training Validation — success",
-      "ReMaker Validation — success",
-      "Google Drive MCP — success",
-      "Context Fabric Architecture — success",
-      "Treasury Wave 4/5/6 Validation — success",
-      "Obsidian Memory Validation — success",
-      "Floor Governance Cell Final Wave Validation — success",
-      "Selected MCP Fabric Validation — success"
+    "summary": "CI success; Team Change Gate success; OKF Governance Gate success; Floor 07 Pre-Training Validation FAILED (pre-existing, disclosed); Lightning Physical MP4 Render Proof in progress/cancelled-or-failed — owned by Antigravity's PR 244 lane, no result claimed, no artifact from it.",
+    "notableResults": [
+      {
+        "name": "CI",
+        "status": "success",
+        "runId": 39110774957,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774957"
+      },
+      {
+        "name": "Team Change Gate",
+        "status": "success",
+        "runId": 39110774904,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774904"
+      },
+      {
+        "name": "OKF Governance Gate",
+        "status": "success",
+        "runId": 39110774954,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774954"
+      },
+      {
+        "name": "Floor 07 Pre-Training Validation",
+        "status": "failure",
+        "runId": 39110774896,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774896"
+      },
+      {
+        "name": "Lightning Physical MP4 Render Proof",
+        "status": "in_progress_or_restarted_by_its_owner",
+        "runId": 39110775017,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110775017"
+      }
     ],
-    "failureDetail": "Floor 07 Pre-Training Validation failed at step 8, 'Run F07 invariant and receipt suites'. PRE-EXISTING and unrelated. Locally reproduced: the same four invariants (#5 separation of upload safety, monetization readiness and advertiser suitability; #6 non-YPP channel never blocks ordinary upload; #7 never claim YouTube will monetize; #12 G12 shorts eligibility boundary) fail with 39 passed on both this head and a pristine main worktree, and those tests call the F07 Guardian in-process from files this PR does not modify. Repository history agrees: of the last 300 F07 runs (2026-10-09 to 2026-10-17) 95 failed across 94 distinct head commits on unrelated branches. The workflow ran only because this change touches .okf/** and Team/reports/**, both in its pull_request path filter.",
-    "cancelledDetail": "Lightning Physical MP4 Render Proof was cancelled by its own fixed concurrency group (cancel-in-progress: true) when a later commit was pushed to this branch. Cancelled means not evaluated, not passed, and it is not a failure. That run produced no physical MP4 and none is claimed.",
-    "informationalJobDetail": "Inside the successful CI workflow, the job 'Web Regression Suite (Informational)' is red. It is declared continue-on-error: true so it does not gate CI, and its red state is the same pre-existing 71-failure factoryos suite measured above.",
+    "failureDetail": "Floor 07 Pre-Training Validation failed again (run 39110774896) — the same four pre-existing invariants documented on the pre-reconciliation head (#5 upload-safety/monetization separation; #6 non-YPP channels; #7 never claim YouTube will monetize; #12 G12 shorts eligibility boundary) that also fail on pristine main. F07 policy code and its tests were NOT modified in this reconciliation; the gate is not accepted as green and the PR is not called merge-ready on this basis.",
     "note": "A red gate is disclosed as red. Passing local tests is not reported as CI success."
   },
   "pendingReviews": [
@@ -164,19 +172,26 @@
     "apps/web/factoryos/tests/render-worker-fail-closed.test.ts",
     "docs/deployment/render-worker-secrets.md",
     "services/rendering-engine/tests/test_workflow_yaml_contract.py",
-    "docs/deployment/render-claim-vs-dispatch.md"
+    "docs/deployment/render-claim-vs-dispatch.md",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774957",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774904",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774954",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774896",
+    "docs/deployment/staging-e2e-handoff.md"
   ],
   "remainingBlockers": [
     "RESOLVED IN THIS RECONCILIATION — earlier wording said a named-job claim API was still needed. The current contract: named jobs dispatch directly to factoryos-basic-render.yml with exact jobId + executionToken; POST /api/rendering/claim stays the generic queue pump; the dead repository_dispatch trigger was removed. docs/deployment/render-claim-vs-dispatch.md records the disposition. Residual caveat: external senders of factoryos_render_job could not be verified from the evidence available here, but the removed path was fail-closed regardless.",
     "Live render execution is BLOCKED in this environment (no credentials or runtime). No physical MP4, CAS receipt or F07 proof is claimed, and the cancelled Lightning Physical MP4 Render Proof run produced no artifact.",
     "The compromised RENDER_WORKER_SECRET must be rotated by the operator on both the control plane and repository secrets before the dispatcher can claim at all.",
-    "Floor 07 Pre-Training Validation is red on this head. Proven pre-existing: the same four invariants fail on pristine main, in files this PR does not modify, and the check failed on 94 distinct unrelated head commits within the last 300 runs. Whether it is a required status check is not readable from this environment; that is an owner decision.",
     "The dispatcher step still needs actions:write on GITHUB_TOKEN to complete a downstream workflow_dispatch. It is NOT granted here. If the repository default is read-only, the dispatch step now fails loudly where it previously appeared to succeed — which is the intended behaviour, and still an owner decision.",
     "Two rendering-engine tests fail on both the head and pristine main: test_basic_render_api.py::test_health_endpoint (stale expected service name, in a file this PR does not touch) and test_quiz_renderer_parity.py::test_canonical_quiz_render_end_to_end (requires live edge-tts; HTTP 403 from the provider in this environment). Neither is caused by this change and neither was masked.",
-    "The factoryos suite has 71 failing tests on both the head and pristine main. They are not caused by this PR, but they are real and remain unfixed; the informational CI job that reports them stays red."
+    "The factoryos suite has 71 failing tests on both the head and pristine main. They are not caused by this PR, but they are real and remain unfixed; the informational CI job that reports them stays red.",
+    "Floor 07 Pre-Training Validation is red on this head (run 39110774896). Proven pre-existing on pristine main and unchanged by this reconciliation (no F07 file touched). Antigravity's PR 244 owns the F07 policy / physical-proof lane; whether it is a required status check remains an owner decision.",
+    "The cancelled/failed Lightning Physical MP4 Render Proof runs produced no artifact; physical qualification is explicitly NOT claimed and belongs to PR 244's owner.",
+    "Operator actions still open: rotate RENDER_WORKER_SECRET on control plane and repository secrets; owner decision on granting the dispatcher actions:write (not done here)."
   ],
   "disposition": "BLOCKED",
-  "dispositionReason": "Promotion remains blocked on owner review, rotation of the compromised RENDER_WORKER_SECRET, an owner decision on actions:write, an owner decision on the pre-existing red Floor 07 check, and the absence of any live physical-render proof. The dispatcher hardening, the worker-daemon syntax repair, and the PR 248 dead-configuration reconciliation are complete and verified at unit, static, syntax and real-local-render level on the integrated head: typecheck passes; the workflow/claim/YAML tests pass (20/20 TS, 16/16 + 8/8 + 1/1 python); the rendering-engine suite collects 59 tests (57 passed, the same 2 pre-existing failures documented above, none touched by this PR); the pristine-main E2E baseline reproduces identically on the integrated head (real physical 1080x1920 MP4 produced, SHA-256 verified, ffprobe-inspected and accepted by F07's hard gates locally); and real-e2e-mission-run fails only on the same obsolete test-side API call that fails on pristine main. A red gate is disclosed as red. A green local test is not a live distributed render, so BLOCKED is not reported as PASS.",
+  "dispositionReason": "Promotion remains blocked on owner review, rotation of the compromised RENDER_WORKER_SECRET, an owner decision on actions:write, an owner decision on the pre-existing red Floor 07 check, and the absence of any live physical-render proof. The dispatcher hardening, the worker-daemon syntax repair, and the PR 248 dead-configuration reconciliation are complete and verified at unit, static, syntax and real-local-render level on the integrated head: typecheck passes; the workflow/claim/YAML tests pass (20/20 TS, 16/16 + 8/8 + 1/1 python); the rendering-engine suite collects 59 tests (57 passed, the same 2 pre-existing failures documented above, none touched by this PR); the pristine-main E2E baseline reproduces identically on the integrated head (real physical 1080x1920 MP4 produced, SHA-256 verified, ffprobe-inspected and accepted by F07's hard gates locally); and real-e2e-mission-run fails only on the same obsolete test-side API call that fails on pristine main. On final head 97590898: CI, Team Change Gate and OKF Governance Gate are success; Floor 07 Pre-Training Validation is red (pre-existing, owned by PR 244); Lightning physical proof remains unqualified. A red gate is disclosed as red. A green local test is not a live distributed render, so BLOCKED is not reported as PASS.",
   "pr248Reconciliation": {
     "integratedOnHead": true,
     "summary": "PR 248's verified conclusion (named jobs use direct workflow_dispatch with exact jobId + executionToken; /api/rendering/claim remains the generic queue pump; the dead repository_dispatch triggers and DISPATCH_JOB_ID wiring were dead configuration) is applied on top of PR 247's fail-closed versions, not by wholesale file replacement. All PR 247 fail-closed guarantees were re-verified on the integrated head.",
@@ -185,7 +200,8 @@
       "workflow files on the final head of this PR (no repository_dispatch, no DISPATCH_JOB_ID)",
       "apps/web/factoryos/tests/render-worker-fail-closed.test.ts (20/20 on integrated head)",
       "services/rendering-engine/tests/test_workflow_yaml_contract.py (8/8 on integrated head)",
-      "docs/deployment/render-claim-vs-dispatch.md"
+      "docs/deployment/render-claim-vs-dispatch.md",
+      "Team Change Gate + OKF Governance Gate + CI all success on final head 97590898; Floor 07 red pre-existing"
     ]
   }
 }
