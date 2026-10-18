@@ -4,8 +4,6 @@ on:
   schedule:
     - cron: "* * * * *"  # every 1 min fallback — primary is immediate dispatch from /api/generate-video (no 5-min wait)
   workflow_dispatch:
-  repository_dispatch:
-    types: [factoryos_render_job]
 
 # Single dispatcher at a time — prevents double-claim races
 concurrency:
@@ -35,12 +33,6 @@ jobs:
         run: |
           python3 -c "
           import urllib.request, json, os
-
-          # Immediate dispatch payload (repository_dispatch from /api/generate-video) — try direct job first
-          import sys
-          direct_job = os.environ.get('DISPATCH_JOB_ID', '')
-          if direct_job:
-              print(f'Direct dispatch for job {direct_job} — will claim via API')
           url = f\"{os.environ['CONTROL_PLANE_URL'].rstrip('/')}/api/rendering/claim\"
           headers = {
               'Content-Type': 'application/json',

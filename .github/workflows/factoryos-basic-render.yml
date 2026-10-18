@@ -11,8 +11,6 @@ on:
         description: 'Short-lived FactoryOS Execution Token'
         required: true
         type: string
-  repository_dispatch:
-    types: [factoryos_render_job]
 
 jobs:
   render:
@@ -54,8 +52,8 @@ jobs:
       - name: Resolve Job Inputs
         id: resolve_inputs
         env:
-          INPUT_JOB_ID: ${{ github.event.inputs.jobId || github.event.client_payload.jobId }}
-          INPUT_EXEC_TOKEN: ${{ github.event.inputs.executionToken || github.event.client_payload.executionToken }}
+          INPUT_JOB_ID: ${{ github.event.inputs.jobId }}
+          INPUT_EXEC_TOKEN: ${{ github.event.inputs.executionToken }}
         run: |
           JOB_ID="$INPUT_JOB_ID"
           EXEC_TOKEN="$INPUT_EXEC_TOKEN"
