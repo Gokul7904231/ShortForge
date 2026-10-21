@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR250-IntegrationStack244-247-249-CIVerification",
+  "pullRequest": 250,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "test/integration-244-247-249",
+  "objective": "Run the repository's required checks on the exact combined tree of PRs #244, #247 and #249 stacked together (head 157d07b5). Integration verification artifact only; no feature changes beyond the conflict resolution of #249's two workflow deletions against #247's implementations.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".github/workflows/factoryos-basic-render.yml",
+      ".github/workflows/factoryos-render-worker.yml",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.SECURITY.FAIL_CLOSED"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "notes": "No new code introduced beyond resolving the two workflow-file conflicts between PR #249 and PR #247; resolution adopted #247's fail-closed implementations wholesale. Security posture is inherited from the three constituent PRs."
+  },
+  "conflicts": [],
+  "changes": [
+    "Stacked PR #244 (F07 policy refresh, head 78e7172b) + PR #247 (render worker fail-closed, head 3b263822) + PR #249 (fail-closed safety patch, head 0fb19350) into this integration branch.",
+    "Resolved the two merge conflicts in render workflows by adopting PR #247's implementations; all three PRs' workflow secret-fallback deletions remain effective.",
+    "Resolved conflicts: factoryos-basic-render.yml and factoryos-render-worker.yml conflicted between #249's literal-removal commit and #247's fail-closed step rewrites; adopted #247's versions wholesale in commit 157d07b5."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/250",
+    "https://github.com/Gokul7904231/ShortForge/pull/249"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Local full battery on head 157d07b5: F07 battery 4/4 files pass; render-dispatch-fail-closed-security 13/13; failure-injection-campaign 5/5; github-actions-rendering + control-plane-e2e-security pass; npm run typecheck PASS; npm run factoryos:typecheck PASS; github_dispatch_claim.py compiles.",
+    "Merge order recommendation: #244 then #247 then #249; after those merge, #249 merges without residual conflict.",
+    "Do not merge this PR as a delivery; close it once CI verifies the combined state."
+  ],
+  "verificationResults": {
+    "f07BatteryOnStackedHead": "PASS_4_OF_4_FILES",
+    "securitySuitesOnStackedHead": "PASS",
+    "typecheck": "PASS",
+    "factoryosTypecheck": "PASS"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canPromote": false
+  }
+}
