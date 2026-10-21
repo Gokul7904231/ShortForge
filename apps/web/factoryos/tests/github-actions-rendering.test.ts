@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 import { RenderQueueManager } from "../../lib/rendering/RenderQueueManager";
 import { WorkerPoolRegistry } from "../../lib/rendering/WorkerPoolRegistry";
 import { AzureWorkerManager } from "../../lib/rendering/AzureWorkerManager";
@@ -14,6 +14,17 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
     AzureFinOpsGuard.reset();
     BasicRenderingCapacityGuard.reset();
     GitHubActionsRenderManager.reset();
+
+    // Dispatch is fail-closed: tests exercise the real configured path with stubbed credentials.
+    process.env.FACTORYOS_EXECUTION_SECRET = "test_execution_secret";
+    process.env.GITHUB_RENDER_TOKEN = "test_render_token";
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, text: async () => "" })));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.FACTORYOS_EXECUTION_SECRET;
+    delete process.env.GITHUB_RENDER_TOKEN;
   });
 
   test("01: Basic job routes to GitHub Actions cloud renderer", () => {
@@ -110,7 +121,8 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
   });
 
   test("08: GitHub dispatch failure is handled cleanly", async () => {
-    // Simulate invalid token / network failure response
+    // Simulate GitHub API rejection
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 403, text: async () => "Forbidden" })));
     const job = {
       id: "j_fail_dispatch",
       jobId: "j_fail_dispatch",
@@ -134,7 +146,47 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
     };
 
     const res = await GitHubActionsRenderManager.dispatchWorkflowRun(job);
-    expect(res.success).toBe(true); // Mock mode returns success
+    expect(res.success).toBe(false);
+    expect(res.error).toContain("workflow_dispatch failed");
+    expect(GitHubActionsRenderManager.getRunRecord("j_fail_dispatch")?.status).toBe("FAILED");
+  });
+
+  test("08b: Unconfigured dispatch fails closed — dry-run is never DISPATCHED", async () => {
+    delete process.env.GITHUB_RENDER_TOKEN;
+    const job = {
+      id: "j_dry_run",
+      jobId: "j_dry_run",
+      factoryVersion: "v1",
+      contentEngine: "quiz" as const,
+      tenantId: "t_dry",
+      userId: "u_dry",
+      tier: "FREE" as const,
+      aiExecutionMode: "CLOUD" as const,
+      topic: "Dry Run",
+      status: "QUEUED" as const,
+      attempts: 0,
+      maxAttempts: 3,
+      timeline: {},
+      assets: [],
+      audio: [],
+      subtitles: {},
+      output: { format: "mp4" as const, width: 1080, height: 1920, fps: 30 },
+      delivery: { download: true, googleDrive: true },
+      createdAt: new Date().toISOString(),
+    };
+
+    const res = await GitHubActionsRenderManager.dispatchWorkflowRun(job);
+    expect(res.success).toBe(false);
+    expect(res.error).toContain("RENDER_DISPATCH_NOT_CONFIGURED");
+    expect(GitHubActionsRenderManager.getRunRecord("j_dry_run")).toBeUndefined();
+  });
+
+  test("08c: Missing execution secret fails closed for token signing", () => {
+    delete process.env.FACTORYOS_EXECUTION_SECRET;
+    expect(() => GitHubActionsRenderManager.generateExecutionToken("j_nosecret", "t_nosecret")).toThrow("EXECUTION_SECRET_MISSING");
+    // Verification also fails closed without the secret.
+    const token = "j_nosecret:t_nosecret:123:abc";
+    expect(GitHubActionsRenderManager.verifyExecutionToken(token, "j_nosecret", "t_nosecret")).toBe(false);
   });
 
   test("09: Workflow callback updates status and validates execution token", () => {
@@ -220,6 +272,23 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
     });
     expect(checkInvalidHeader.valid).toBe(false);
     expect(checkInvalidHeader.error).toContain("Invalid MP4 container header");
+  });
+
+  test("13b: Artifact verification rejects metadata-only completion (no header bytes)", () => {
+    const checkNoHeader = GitHubActionsRenderManager.verifyArtifactIntegrity("j_art_4", "t_art_4", {
+      sizeBytes: 1540000,
+    });
+    expect(checkNoHeader.valid).toBe(false);
+    expect(checkNoHeader.error).toContain("metadata-only completion is rejected");
+  });
+
+  test("13c: Artifact verification rejects non-MP4 binary that merely starts with zero bytes", () => {
+    const checkLooseHeader = GitHubActionsRenderManager.verifyArtifactIntegrity("j_art_5", "t_art_5", {
+      sizeBytes: 1540000,
+      headerBytesHex: "0000000000000000000", // zeros only — no 'ftyp' signature
+    });
+    expect(checkLooseHeader.valid).toBe(false);
+    expect(checkLooseHeader.error).toContain("Invalid MP4 container header");
   });
 
   test("14: Basic user quota limit (5 Shorts/month) is strictly enforced", () => {

@@ -54,7 +54,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     let ownerUid: string | null = null;
     let jobStatus: string | null = null;
 
-    // 1. Check SQLite queue
+    // 1. Discover ownership across all stores WITHOUT mutating anything.
+    let qJob: any = null;
     try {
       const { ServiceRegistry } = await import("@/lib/core/ServiceRegistry");
       if (!ServiceRegistry.has("renderQueue")) {
@@ -62,11 +63,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
         ServiceRegistry.register("renderQueue", new SQLiteRenderQueue());
       }
       const renderQueue = ServiceRegistry.get("renderQueue") as any;
-      const qJob = await renderQueue.getJob(id);
+      qJob = await renderQueue.getJob(id);
       if (qJob) {
         ownerUid = qJob.payload?.userId ?? qJob.payload?.user_id ?? null;
         jobStatus = qJob.status;
-        await renderQueue.cancel(id);
       }
     } catch {}
 
@@ -75,34 +75,30 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     if (job) {
       ownerUid = ownerUid || job.userId;
       jobStatus = jobStatus || job.status;
-      await saveJobManifest(id, {
-        status: "failed",
-        error: "Cancelled by user",
-        cancelledAt: new Date().toISOString(),
-      } as any);
     }
 
     // 3. Check Firestore
+    let firestoreDoc: { exists: boolean; data?: any } = { exists: false };
     try {
       const { db } = await import("@/lib/firebase-admin");
       if (db) {
         const doc = await db.collection("videos").doc(id).get();
         if (doc.exists) {
           const d: any = doc.data();
+          firestoreDoc = { exists: true, data: d };
           ownerUid = ownerUid || d?.userId;
           jobStatus = jobStatus || d?.status;
-          await db.collection("videos").doc(id).set({
-            status: "cancelled",
-            error: "Cancelled by user",
-            cancelledAt: new Date().toISOString(),
-          }, { merge: true });
         }
       }
     } catch {}
 
-    // 🔒 Enforce Ownership
-    const targetUid = ownerUid || user.uid;
-    const isOwner = targetUid === user.uid;
+    // 🔒 Enforce Ownership BEFORE any mutation. Unknown ownership fails closed —
+    // a job with no resolvable owner is never adopted as the requester's own.
+    if (!ownerUid) {
+      return NextResponse.json({ success: false, error: "Job not found" }, { status: 404 });
+    }
+
+    const isOwner = ownerUid === user.uid;
     const isAdmin = isAdminUser(user.role);
 
     if (!isOwner && !isAdmin) {
@@ -119,6 +115,36 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // 4. Mutations — only after authorization passed.
+    if (qJob) {
+      try {
+        const { ServiceRegistry } = await import("@/lib/core/ServiceRegistry");
+        const renderQueue = ServiceRegistry.get("renderQueue") as any;
+        await renderQueue.cancel(id);
+      } catch {}
+    }
+
+    if (job) {
+      await saveJobManifest(id, {
+        status: "failed",
+        error: "Cancelled by user",
+        cancelledAt: new Date().toISOString(),
+      } as any);
+    }
+
+    if (firestoreDoc.exists) {
+      try {
+        const { db } = await import("@/lib/firebase-admin");
+        if (db) {
+          await db.collection("videos").doc(id).set({
+            status: "cancelled",
+            error: "Cancelled by user",
+            cancelledAt: new Date().toISOString(),
+          }, { merge: true });
+        }
+      } catch {}
+    }
+
     // Treasury-backed jobs release the authoritative entitlement hold.
     const treasuryReservationId = (job as any)?.treasuryQuotaReservationId as string | undefined;
     if (treasuryReservationId) {
@@ -127,13 +153,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
       await treasuryQuotaAdmission.releaseGenerationSlot(
         treasuryReservationId,
-        targetUid,
+        ownerUid,
         String((job as any)?.tier || "BASIC"),
         id,
       );
     } else {
       // Historical jobs may still require a projection-only compatibility release.
-      await releaseLegacyGenerationSlot(targetUid, id);
+      await releaseLegacyGenerationSlot(ownerUid, id);
     }
 
     return NextResponse.json({
