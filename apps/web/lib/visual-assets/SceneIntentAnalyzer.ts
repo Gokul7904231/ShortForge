@@ -15,7 +15,9 @@ export class SceneIntentAnalyzer {
       fs.mkdirSync(dbDir, { recursive: true });
     }
     const dbPath = path.join(dbDir, "shortfactory.db");
-    this.db = getSafeDatabase(dbPath);
+    // Degradation-tolerant cache: losing it only forces recomputation, so the
+    // dev-only mock fallback is acceptable here (never in production).
+    this.db = getSafeDatabase(dbPath, { allowMockFallback: true });
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS scene_intent_cache (
         text_hash TEXT PRIMARY KEY,
