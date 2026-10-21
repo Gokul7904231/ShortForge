@@ -80,7 +80,13 @@
     "failureInjectionCampaign": "PASS_5_OF_5",
     "githubActionsRenderingSuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
     "controlPlaneE2ESecuritySuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
-    "f07GateCause": "IDENTIFIED__FIXED_BY_PR_244_WHICH_PASSES_F07_ON_ITS_HEAD",
+    "f07GateCause": "IDENTIFIED__4_POLICY_INVARIANTS_FIXED_BY_PR_244_CI_GREEN_ON_HEAD_78E7172B__REMAINING_3_WERE_ENV_ONLY_MISSING_BETTER_SQLITE3_BINDING_FIXED_BY_NPM_REBUILD__MOCK_FALLBACK_IN_LIB_SAFE_SQLITE_IS_A_LATENT_FAKE_SUCCESS_RISK_FLAGGED",
+    "integrationStack244_247_249": {
+      "head": "157d07b5",
+      "branch": "test/integration-244-247-249",
+      "conflictsResolved": "factoryos-basic-render.yml + factoryos-render-worker.yml resolved to PR 247 implementations",
+      "localBattery": "F07_4_SUITES_4_OF_4__SECURITY_SUITES_4_FILES_PASS__TYPECHECK2_PASS__PY_COMPILE_PASS"
+    },
     "preExistingFailures": "UNCHANGED_ON_PRISTINE_MAIN",
     "secretRotation": "BLOCKED__OWNER_ACTION_REQUIRED",
     "secretRotationChecklist": "PUBLISHED__docs/deployment/secret-rotation-20261021.md"
