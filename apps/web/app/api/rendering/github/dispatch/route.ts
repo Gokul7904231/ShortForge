@@ -35,9 +35,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Forbidden: You do not have permission to dispatch this job." }, { status: 403 });
     }
 
-    // Azure is ADMIN-ONLY server-side check
+    // No ADMIN render backend exists: admin-tier jobs are rejected on this path.
     if (job.tier === "ADMIN") {
-      return NextResponse.json({ success: false, error: "Admin jobs are processed via Azure compute, not GitHub Actions." }, { status: 400 });
+      return NextResponse.json({ success: false, error: "ADMIN_RENDER_NOT_AVAILABLE: no render backend is available for admin-tier jobs." }, { status: 400 });
     }
 
     const result = await GitHubActionsRenderManager.dispatchWorkflowRun(job);

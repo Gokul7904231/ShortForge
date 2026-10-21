@@ -1,17 +1,13 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 import { RenderQueueManager } from "../../lib/rendering/RenderQueueManager";
 import { WorkerPoolRegistry } from "../../lib/rendering/WorkerPoolRegistry";
-import { AzureWorkerManager } from "../../lib/rendering/AzureWorkerManager";
-import { AzureFinOpsGuard } from "../../lib/rendering/AzureFinOpsGuard";
 import { BasicRenderingCapacityGuard } from "../../lib/rendering/BasicRenderingCapacityGuard";
 import { GitHubActionsRenderManager } from "../../lib/rendering/GitHubActionsRenderManager";
 
-describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architecture Suite", () => {
+describe("FactoryOS — Basic Cloud Rendering Plane Suite", () => {
   beforeEach(() => {
     RenderQueueManager.clear();
     WorkerPoolRegistry.clear();
-    AzureWorkerManager.reset();
-    AzureFinOpsGuard.reset();
     BasicRenderingCapacityGuard.reset();
     GitHubActionsRenderManager.reset();
 
@@ -44,47 +40,7 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
     expect(record?.status).toBe("DISPATCHED");
   });
 
-  test("02: Admin job routes to Azure VM Pool", async () => {
-    const job = RenderQueueManager.enqueue({
-      jobId: "job_admin_01",
-      topic: "Admin Exclusive Short",
-      tenantId: "tenant_admin_1",
-      userId: "user_admin_1",
-      tier: "ADMIN",
-    });
-
-    expect(job.tier).toBe("ADMIN");
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(AzureWorkerManager.getState()).toBe("READY");
-  });
-
-  test("03: Basic job targeting Azure is rejected server-side with RENDER_BACKEND_FORBIDDEN", () => {
-    expect(() => {
-      RenderQueueManager.enqueue({
-        jobId: "job_exploit_01",
-        topic: "Malicious Basic Azure Request",
-        tenantId: "tenant_basic_attacker",
-        userId: "user_basic_attacker",
-        tier: "FREE",
-        requestedWorkerId: "azure-b4ls-01",
-      });
-    }).toThrow("RENDER_BACKEND_FORBIDDEN");
-  });
-
-  test("04: Free job targeting Azure is rejected server-side with RENDER_BACKEND_FORBIDDEN", () => {
-    expect(() => {
-      RenderQueueManager.enqueue({
-        jobId: "job_exploit_02",
-        topic: "Free Azure Target",
-        tenantId: "tenant_free_attacker",
-        userId: "user_free_attacker",
-        tier: "FREE",
-        workerId: "azure-admin-01",
-      });
-    }).toThrow("RENDER_BACKEND_FORBIDDEN");
-  });
-
-  test("05: Pro job returns PRO_RENDERING_NOT_AVAILABLE (No Azure / Basic Fallback)", () => {
+  test("05: Pro job returns PRO_RENDERING_NOT_AVAILABLE (Pro tier not available)", () => {
     const job = RenderQueueManager.enqueue({
       jobId: "job_pro_01",
       topic: "Pro Short",
@@ -95,7 +51,7 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
     expect(job.error).toContain("PRO_RENDERING_NOT_AVAILABLE");
   });
 
-  test("06: Enterprise job returns ENTERPRISE_RENDERING_NOT_AVAILABLE (No Azure / Basic Fallback)", () => {
+  test("06: Enterprise job returns ENTERPRISE_RENDERING_NOT_AVAILABLE (Enterprise tier not available)", () => {
     const job = RenderQueueManager.enqueue({
       jobId: "job_ent_01",
       topic: "Enterprise Short",
@@ -324,123 +280,6 @@ describe("FactoryOS — Basic Cloud Rendering Plane & Admin-Only Azure Architect
         tier: "FREE",
       });
     }).toThrow("BASIC_RENDER_CAPACITY_UNAVAILABLE");
-  });
-
-  test("16: Azure emergency lockdown NEVER causes Basic jobs to use Azure", () => {
-    AzureFinOpsGuard.setEmergencyLockdown(true);
-    BasicRenderingCapacityGuard.reset();
-
-    // Basic job enqueue should succeed for GitHub Actions dispatch, not touching Azure
-    const job = RenderQueueManager.enqueue({
-      jobId: "job_basic_no_azure_touch",
-      topic: "Basic Job Under Lockdown",
-      tenantId: "t_lock_basic",
-      userId: "u_lock_basic",
-      tier: "FREE",
-    });
-
-    expect(job.tier).toBe("FREE");
-    expect(AzureWorkerManager.getState()).toBe("DEALLOCATED"); // Azure VM remains deallocated
-  });
-
-  test("17: WorkerPoolRegistry enforces Azure ADMIN_ONLY isolation server-side", () => {
-    WorkerPoolRegistry.registerWorker({
-      workerId: "azure-prod-vm-01",
-      vendor: "azure",
-      accessTier: "ADMIN_ONLY",
-      name: "Azure Admin Worker",
-      endpoint: "https://azure.internal",
-      tokenHash: "hash_az",
-      capabilities: {
-        vendor: "azure",
-        accessTier: "ADMIN_ONLY",
-        architecture: "x86_64",
-        vCPU: 4,
-        memoryMb: 8192,
-        ffmpegVersion: "6.1",
-        supportsGpu: false,
-        maxConcurrentRenders: 1,
-      },
-      state: "READY",
-      telemetry: {
-        cpuUtilizationPct: 10,
-        ramUtilizationPct: 20,
-        activeRenders: 0,
-        tempStorageFreeMb: 20000,
-        b2Connectivity: true,
-        lastHeartbeatTimestamp: Date.now(),
-      },
-      lastHeartbeat: new Date().toISOString(),
-    });
-
-    const freeJob = {
-      id: "j_free_check",
-      jobId: "j_free_check",
-      factoryVersion: "v1",
-      contentEngine: "quiz" as const,
-      tenantId: "t_free",
-      userId: "u_free",
-      tier: "FREE" as const,
-      aiExecutionMode: "CLOUD" as const,
-      topic: "Free Job",
-      status: "QUEUED" as const,
-      attempts: 0,
-      maxAttempts: 3,
-      timeline: {},
-      assets: [],
-      audio: [],
-      subtitles: {},
-      output: { format: "mp4" as const, width: 1080, height: 1920, fps: 30 },
-      delivery: { download: true, googleDrive: true },
-      createdAt: new Date().toISOString(),
-    };
-
-    const matchedWorker = WorkerPoolRegistry.findAvailableWorker(freeJob);
-    expect(matchedWorker).toBeNull(); // Azure worker rejected for Free job
-  });
-
-  test("18: RenderQueueManager.processNextJob refuses to assign non-admin job to Azure worker", () => {
-    // Manually register ready Azure worker
-    WorkerPoolRegistry.registerWorker({
-      workerId: "azure-b4ls-01",
-      vendor: "azure",
-      accessTier: "ADMIN_ONLY",
-      name: "Azure Admin Worker",
-      endpoint: "https://azure.internal",
-      tokenHash: "hash_az",
-      capabilities: {
-        vendor: "azure",
-        accessTier: "ADMIN_ONLY",
-        architecture: "x86_64",
-        vCPU: 4,
-        memoryMb: 8192,
-        ffmpegVersion: "6.1",
-        supportsGpu: false,
-        maxConcurrentRenders: 1,
-      },
-      state: "READY",
-      telemetry: {
-        cpuUtilizationPct: 10,
-        ramUtilizationPct: 20,
-        activeRenders: 0,
-        tempStorageFreeMb: 20000,
-        b2Connectivity: true,
-        lastHeartbeatTimestamp: Date.now(),
-      },
-      lastHeartbeat: new Date().toISOString(),
-    });
-
-    // Enqueue Basic job
-    RenderQueueManager.enqueue({
-      jobId: "j_free_in_queue",
-      topic: "Free Job In Queue",
-      tenantId: "t_fq",
-      userId: "u_fq",
-      tier: "FREE",
-    });
-
-    const processed = RenderQueueManager.processNextJob("azure-b4ls-01");
-    expect(processed).toBeNull(); // Cannot assign Free job to Azure worker
   });
 
   test("19: Preservation of 10 frozen core files", async () => {

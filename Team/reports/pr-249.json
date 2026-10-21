@@ -55,7 +55,9 @@
     "Non-completed workflow callbacks surface validator failures (401/404) instead of ignoring the result.",
     "Dispatch route requires an authenticated, job-owning (or admin) session before dispatch; unauthorized errors map to 401.",
     "DELETE /api/jobs/[id] resolves ownership read-only across queue, manifest, and Firestore first, fails closed with 404 when no owner is resolvable (never adopts the requester as owner), authorizes, and only then mutates stores and releases quota.",
-    "Added factoryos/tests/render-dispatch-fail-closed-security.test.ts with 12 regression cases; updated github-actions-rendering.test.ts expectations to the fail-closed contract."
+    "Added factoryos/tests/render-dispatch-fail-closed-security.test.ts with 12 regression cases; updated github-actions-rendering.test.ts expectations to the fail-closed contract.",
+    "Removed the nonexistent Azure render lane references entirely: deleted Azure tests/imports from github-actions-rendering.test.ts and control-plane-e2e-security.test.ts (both suites previously un-loadable on main due to missing AzureWorkerManager/AzureFinOpsGuard modules), removed the false 'Admin jobs are processed via Azure compute' dispatch claim (replaced with an honest ADMIN_RENDER_NOT_AVAILABLE rejection), removed stale Azure claims from voice-provider comments, WorkerProtocol, check-cloudflare-free.mjs, the analytics page copy, and renamed DAG-test fixtures. Azure OpenAI remains only in lib/api-config as an unrelated LLM model provider.",
+    "verification follow-ups on the azure removal: github-actions-rendering.test.ts and control-plane-e2e-security.test.ts now load and pass; dag-convergence-architecture DAG-planner failure reproduced identically on pristine main (pre-existing)."
   ],
   "evidenceRefs": [
     "https://github.com/Gokul7904231/ShortForge/pull/249",
@@ -67,7 +69,7 @@
     "Local executed on head fcbf35db: npm run typecheck PASS; npm run factoryos:typecheck PASS; render-dispatch-fail-closed-security 12/12 PASS; failure-injection-campaign 5/5 PASS.",
     "p0-basic-hardening 2 failures reproduced identically on pristine main via git stash; pre-existing, not caused by this change.",
     "github-actions-rendering.test.ts cannot load on pristine main (missing lib/rendering/AzureWorkerManager and AzureFinOpsGuard modules); pre-existing main defect, expectations updated for the fail-closed contract regardless.",
-    "Owner actions required: rotate RENDER_WORKER_SECRET and FACTORYOS_EXECUTION_SECRET; restore or re-scope the broken Azure suite.",
+    "Owner actions required: rotate RENDER_WORKER_SECRET and FACTORYOS_EXECUTION_SECRET.",
     "Do not claim production render verification from this PR; canonical-path disposition remains in PR #247/#248 lanes."
   ],
   "verificationResults": {
@@ -75,6 +77,8 @@
     "factoryosTypecheck": "PASS",
     "newSecuritySuite": "PASS_12_OF_12",
     "failureInjectionCampaign": "PASS_5_OF_5",
+    "githubActionsRenderingSuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
+    "controlPlaneE2ESecuritySuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
     "preExistingFailures": "UNCHANGED_ON_PRISTINE_MAIN",
     "secretRotation": "BLOCKED__OWNER_ACTION_REQUIRED"
   },
