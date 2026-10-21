@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR251-SafeSqliteFailClosedReleaseReconciliation",
+  "pullRequest": 251,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/safe-sqlite-fail-closed-20261021",
+  "objective": "Eliminate the SafeSQLite fake-success risk (missing native binding silently downgraded every SQLite-backed production store to a heuristic in-memory mock that fabricated write results and invented reads), reconcile the #250 integration-stack record, and publish the final release record. Release blockers remain BLOCKED pending owner-authorized live production verification.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      "apps/web/lib/safe-sqlite.ts",
+      "apps/web/lib/health-manager.ts",
+      "apps/web/publishing/authorization/DurableAuthorizationStore.ts",
+      "apps/web/lib/visual-assets/SceneIntentAnalyzer.ts",
+      "apps/web/tests/safe-sqlite-fail-closed.test.ts",
+      "apps/web/tests/sqlite-restart-persistence.test.ts",
+      "apps/web/tests/safe-sqlite-call-site-audit.test.ts"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.SECURITY.FAIL_CLOSED"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "notes": "The change REMOVES a silent downgrade-to-mock security hazard on authorization, queue, checkpoint, audit, and idempotency persistence paths; fail-closed posture consistent with PRs #247/#249. No new external input surface. Repository state: secret literals remain stripped as of #249 (verified absent from runtime code at this head); rotation runbook still pending owner execution."
+  },
+  "conflicts": [],
+  "changes": [
+    "getSafeDatabase() now throws SafeSqliteUnavailableError when the better-sqlite3 native binding cannot load; the in-memory mock is reachable ONLY behind allowMockFallback:true or SAFE_SQLITE_ALLOW_MOCK=1 and never when NODE_ENV=production.",
+    "Call-site classification fixed: 9 production-critical SQLite stores keep the fail-closed default (SQLiteRenderQueue, CheckpointDB, queue-db, audit-logger, voice-benchmark, DurableAuthorizationStore, ProviderApiOperationJournal, NotebookOperationJournal, EpistemicBudgetReservation); only the degradation-tolerant SceneIntentAnalyzer LLM cache opts into the dev-only mock.",
+    "getSqliteHealth() probe added and wired into HealthManager as an explicit sqlite-persistence dependency so missing persistence surfaces in readiness checks instead of being invisible.",
+    "Real persistence bug fixed (found by new restart-persistence test): DurableAuthorizationStore.get() omitted the persisted consumed_at column on read-back, so CONSUMED authorization timestamps were lost across restarts.",
+    "Regression suites added: missing-binding simulation via in-process .node loader break (proves fail-closed construction/import of production stores, mock unreachable in production, non-durability, env-gate semantics, health probe honesty); real-SQLite restart persistence (queue, authorization CAS state, provider idempotency); source-audit test locking the call-site classification.",
+    "Integration-stack reconciliation: simulated the intended merge sequence (#244 -> #247 -> #249) on main; resulting tree is identical to PR #250 head e8f9d10d except the two Team report files (pr-249.json final docs commit 21c79176 and pr-250.json itself). Verified #248 (b238697b) is NOT in the ancestry of #247/#249/#250; the repository_dispatch removal in #250's diff originates from #247's own fail-closed dead-event cleanup, and #248's functional core is a strict subset of #247's diff. Merging #248 after #247 would REVERT ~1,260 lines of fail-closed work (worker daemon guards, github_dispatch_claim.py, tests, docs); #248 must stay closed as NOT REQUIRED after #249 merges."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/251",
+    "https://github.com/Gokul7904231/ShortForge/pull/250"
+  ],
+  "disposition": "BLOCKED",
+  "overallMissionStatus": "IMPLEMENTED_TEST_VERIFIED",
+  "blockingNote": "Code-level requirements are implemented and all local verification suites pass (see verificationPlan item 1); disposition BLOCKED reflects the unproven external security tooling states (strix/semgrep/zap not runnable in the agent environment) and the owner-authorized live acceptance that is still outstanding. Overall mission status: IMPLEMENTED_TEST_VERIFIED - physical production acceptance (Lightning MP4 -> CAS -> F07, post-restart retrieval) and secret rotation require owner action. See verificationPlan items 3-4.",
+  "verificationPlan": [
+    "Task 3 local battery on exact head 06e4807c: npm run typecheck (PASS, no output); npm test -- tests/safe-sqlite-fail-closed.test.ts tests/sqlite-restart-persistence.test.ts tests/safe-sqlite-call-site-audit.test.ts (23/23 PASS); failure-injection-campaign + chaos-recovery + compute-resilience-chaos + stress/chaos + basic-fastapi-idempotency (20/20 PASS); structural-intelligence + auth-security-complete + http-callback-authoritative-gate (24/24 PASS). No assertions suppressed, skipped, or weakened; restart-persistence suite self-skips with an explicit message only if the native binding is genuinely unavailable.",
+    "Task 1 reconciliation evidence: ancestry checks (b238697b not ancestor of any stack head; 3b263822+78e7172b are ancestors of e8f9d10d; only 251-missing commit from #249 in #250 is the docs-only 21c79176), tree-identity diff of simulated merge vs e8f9d10d (empty except the two report files), and byte-identity of #250's render workflows with #247's versions.",
+    "Task 4: Lightning Physical MP4 run 39571211552 failed at the proof step with exit code 1 and zero proof artifacts; the script's preflight credentials() exits 1 when LIGHTNING_API_KEY/LIGHTNING_USER_ID are unset. Classification: missing owner credentials, not an implementation defect. Retrying without adding secrets deterministically fails preflight. Lane remains BLOCKED on owner.",
+    "Owner actions required before any live acceptance: rotate/re-provision secrets per docs/deployment/secret-rotation-20261021.md (RENDER_WORKER_SECRET, FACTORYOS_EXECUTION_SECRET, GITHUB_RENDER_TOKEN, MongoDB, B2/CAS keys, Lightning LIGHTNING_USER_ID/LIGHTNING_API_KEY), replace PAT after re-login, add branch protection with required checks (issue #193), then authorize the physical MP4 -> CAS -> F07 proof and post-restart retrieval."
+  ],
+  "verificationResults": {
+    "typecheckOnHead": "PASS",
+    "failClosedSimulationSuite": "PASS_9_OF_9",
+    "restartPersistenceSuite": "PASS_3_OF_3",
+    "callSiteAuditSuite": "PASS_11_ASSERTIONS",
+    "failureInjectionCampaign": "PASS",
+    "chaosAndIdempotencySuites": "PASS_20_OF_20",
+    "authAndCallbackSuites": "PASS_24_OF_24",
+    "environmentNote": "Executed on Node v24.19.0 with better-sqlite3@12.11.1 native binding rebuilt for Node 24 (binding verified loading). npm ci in the agent workspace posted npm allow-scripts warnings for postinstall scripts of unrelated packages (sharp, esbuild, workerd); better-sqlite3 prebuild installed correctly. These are agent-workspace environment notes only.",
+    "f07PhysicalProof": "BLOCKED_ON_OWNER_CREDENTIALS",
+    "productionRendering": "BLOCKED_ON_OWNER_INFRASTRUCTURE",
+    "branchProtection": "BLOCKED_ON_OWNER_TOKEN_ISSUE_193"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canPromote": false
+  }
+}
