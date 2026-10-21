@@ -1,7 +1,6 @@
 /**
  * FactoryOS YouTube Monetization Guardian — Test Suite 5: Policy Refresh & Date Transition
- * Tests stale policy detection, source failures, effective-date transitions (TODAY vs 2026-09-24),
- * and scheduled publication crossing policy boundary.
+ * Tests stale-policy detection, source failures, current Shorts Content ID blocking, and claim resolution.
  */
 
 import { describe, it, expect } from "vitest";
@@ -97,7 +96,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
   };
 
   it("1. Stale Policy Snapshot Gate (G00) — strictly blocks release if snapshot is marked STALE", () => {
-    const canonical = policyStore.getSnapshot("2026.09.15")!;
+    const canonical = policyStore.getSnapshot("2026.10.17")!;
 
     // Create a stale snapshot
     const staleSnapshot: PolicySnapshot = YouTubePolicySnapshotManager.createSnapshot({
@@ -113,7 +112,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
       video: claimedLongShort,
       channel: sampleChannel,
       snapshot: staleSnapshot,
-      publicationIntentAt: "2026-09-21T00:00:00Z",
+      publicationIntentAt: "2026-10-17T00:00:00Z",
     });
 
     expect(result.overallOutcome).toBe("POLICY_STALE");
@@ -125,46 +124,49 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     expect(g00?.severity).toBe("BLOCKING");
   });
 
-  it("2. Date-Aware Evaluation — TODAY (Sept 21, 2026) allows 110s Short with Content ID under legacy rules", () => {
-    // Current date is 2026-09-21. Content ID rule on > 60s Shorts is effective on 2026-09-24.
-    const resultToday = guardian.evaluate({
+  it("2. Current official Content ID Rule — claimed Shorts over one minute are blocked", () => {
+    const result = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z", // Pre-Sept 24
+      publicationIntentAt: "2026-10-17T12:00:00Z",
+      uploadIntentAt: "2026-10-17T12:00:00Z",
     });
 
-    // Content ID rule is not yet active on Sept 21. Standard 180s duration check passes.
-    expect(resultToday.overallOutcome).toBe("READY");
-    expect(resultToday.publishAllowed).toBe(true);
-
-    const g12Findings = resultToday.gateFindings.filter((f) => f.gateId === "G12_SHORTS_ELIGIBILITY");
-    expect(g12Findings.some((f) => f.status === "PASS")).toBe(true);
-    expect(resultToday.blockingFindings.length).toBe(0);
+    expect(result.publishAllowed).toBe(false);
+    expect(result.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+    const g12 = result.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
+    expect(g12?.status).toBe("BLOCKED");
+    expect(g12?.severity).toBe("BLOCKING");
+    expect(g12?.explanation).toContain("blocked globally");
   });
 
-  it("3. Date Boundary Crossing — Scheduled publication on Sept 25, 2026 applies Content ID revenue rule (may remain playable)", () => {
-    // Same video, but creator schedules publication for Sept 25, 2026 (AFTER effective date 2026-09-24)
-    const resultScheduledPostSept24 = guardian.evaluate({
+  it("3. No unsupported 2026-09-24 exception — claimed Shorts remain blocked on both dates", () => {
+    const preDate = guardian.evaluate({
       video: claimedLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-25T08:00:00Z", // Post-Sept 24 effective date!
-      uploadIntentAt: "2026-09-25T08:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
+      uploadIntentAt: "2026-09-23T23:59:59Z",
+    });
+    const postDate = guardian.evaluate({
+      video: claimedLongShort,
+      channel: sampleChannel,
+      publicationIntentAt: "2026-10-17T12:00:00Z",
+      uploadIntentAt: "2026-09-24T00:00:00Z",
     });
 
-    // Post-Sept 24 transition: may remain playable, but revenue impact active
-    expect(resultScheduledPostSept24.publishAllowed).toBe(true);
-    expect(resultScheduledPostSept24.activePolicyEffects).toContain("REVENUE_IMPACT");
-
-    const g12ContentId = resultScheduledPostSept24.gateFindings.find(
-      (f) => f.gateId === "G12_SHORTS_ELIGIBILITY" && f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE"
-    );
-    expect(g12ContentId).toBeDefined();
-    expect(g12ContentId?.severity).toBe("WARNING");
-    expect(g12ContentId?.explanation).toContain("may remain playable");
-    expect(g12ContentId?.explanation).toContain("Playback and revenue are not guaranteed");
+    for (const result of [preDate, postDate]) {
+      expect(result.publishAllowed).toBe(false);
+      expect(result.activePolicyEffects).toContain("BLOCK_PUBLICATION");
+      const g12 = result.gateFindings.find((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
+      expect(g12?.status).toBe("BLOCKED");
+      expect(g12?.severity).toBe("BLOCKING");
+      expect(g12?.explanation).toContain("blocked globally");
+    }
+    expect(preDate.gateFindings.some((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY")).toBe(false);
+    expect(postDate.gateFindings.some((f) => f.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE_LEGACY")).toBe(false);
   });
 
-  it("4. Content ID Claim Replacement — replacing claimed audio with original narration bed PASSES post-Sept 24", () => {
+  it("4. Content ID Claim Replacement — replacing claimed audio with original narration bed passes when claim is resolved", () => {
     // Creator replaces claimed music bed with royalty-free original audio bed
     const cleanLongShort = {
       ...claimedLongShort,
@@ -185,7 +187,7 @@ describe("YouTube Policy Refresh & Effective-Date Transitions — Stale Gates & 
     const resultPostSept24Clean = guardian.evaluate({
       video: cleanLongShort,
       channel: sampleChannel,
-      publicationIntentAt: "2026-09-25T08:00:00Z",
+      publicationIntentAt: "2026-10-17T08:00:00Z",
     });
 
     expect(resultPostSept24Clean.overallOutcome).toBe("READY");

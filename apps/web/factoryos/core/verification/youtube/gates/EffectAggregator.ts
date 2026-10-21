@@ -42,11 +42,6 @@ export class EffectAggregator {
     const blockReasons: string[] = [];
 
     for (const finding of findings) {
-      if (finding.gateId === "G12_SHORTS_ELIGIBILITY" && finding.ruleId === "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE" && finding.observedSignal?.hasActiveContentIdClaim === true) {
-        activeEffects.add("REVENUE_IMPACT");
-        hasMonetizationReview = true;
-      }
-
       if (finding.status === "PASS") {
         continue;
       }
