@@ -263,6 +263,37 @@ describe("Render dispatch/callback/job-cancellation fail-closed security suite",
     expect(data.job.renderDurationSeconds).toBe(2);
   });
 
+  test("S5b: duplicate COMPLETED callback after the job already completed is rejected, not re-settled", async () => {
+    const job = RenderQueueManager.enqueue({
+      jobId: "job_sec_status_dup",
+      topic: "Duplicate Completion",
+      tenantId: "t_sec",
+      userId: "user_owner",
+      tier: "FREE",
+    });
+    RenderQueueManager.processNextJob("oracle-a1-01");
+    const { token } = GitHubActionsRenderManager.generateExecutionToken(job.id, "t_sec");
+    const body = {
+      jobId: job.id,
+      tenantId: "t_sec",
+      executionToken: token,
+      status: "COMPLETED",
+      artifactUri: "b2://bucket/real.mp4",
+      sizeBytes: 32984,
+      headerBytesHex: FTyp_HEADER_HEX,
+      durationMs: 2000,
+    };
+
+    const first = await statusHandler(jsonRequest("http://localhost/api/rendering/github/status", body));
+    expect(first.status).toBe(200);
+
+    // Second identical callback: the job is no longer active, so it must not succeed twice.
+    const second = await statusHandler(jsonRequest("http://localhost/api/rendering/github/status", body));
+    expect(second.status).toBe(409);
+    const data = await second.json();
+    expect(data.error).toContain("JOB_NOT_ACTIVE");
+  });
+
   test("S5: non-completed callback with an invalid token is rejected, not swallowed", async () => {
     const job = RenderQueueManager.enqueue({
       jobId: "job_sec_status_badtoken",

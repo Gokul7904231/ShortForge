@@ -169,7 +169,7 @@ jobs:
         if: always()
         env:
           CONTROL_PLANE_URL: ${{ secrets.FACTORYOS_CONTROL_PLANE_URL || 'https://factoryos.app' }}
-          WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET || 'factoryos-render-worker-secret-key-2026' }}
+          WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET }}
           RENDER_STATUS: ${{ steps.validate_mp4.outcome == 'success' && 'completed' || 'failed' }}
         run: |
           python3 -c "

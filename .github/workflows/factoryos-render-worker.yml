@@ -31,7 +31,9 @@ jobs:
         id: claim_job
         env:
           CONTROL_PLANE_URL: ${{ secrets.FACTORYOS_CONTROL_PLANE_URL || 'https://factoryos.app' }}
-          RENDER_WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET || 'factoryos-render-worker-secret-key-2026' }}
+          # No fallback literal: missing secret expands to an empty string (see rotation note
+          # in docs/deployment/render-worker-secrets.md; loud guard ships with PR #247).
+          RENDER_WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET }}
         run: |
           python3 -c "
           import urllib.request, json, os

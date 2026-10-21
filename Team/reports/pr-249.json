@@ -55,7 +55,8 @@
     "Non-completed workflow callbacks surface validator failures (401/404) instead of ignoring the result.",
     "Dispatch route requires an authenticated, job-owning (or admin) session before dispatch; unauthorized errors map to 401.",
     "DELETE /api/jobs/[id] resolves ownership read-only across queue, manifest, and Firestore first, fails closed with 404 when no owner is resolvable (never adopts the requester as owner), authorizes, and only then mutates stores and releases quota.",
-    "Added factoryos/tests/render-dispatch-fail-closed-security.test.ts with 12 regression cases; updated github-actions-rendering.test.ts expectations to the fail-closed contract.",
+    "Added factoryos/tests/render-dispatch-fail-closed-security.test.ts with 13 regression cases including duplicate-COMPLETED-callback rejection.",
+    "Removed the remaining committed RENDER_WORKER_SECRET fallback literal from both render workflows on this branch (matching PR #247's deletions byte-for-byte so the PRs auto-merge); added docs/deployment/secret-rotation-20261021.md as the owner rotation runbook (revocation/rotation explicitly NOT performed or verified here).",
     "Removed the nonexistent Azure render lane references entirely: deleted Azure tests/imports from github-actions-rendering.test.ts and control-plane-e2e-security.test.ts (both suites previously un-loadable on main due to missing AzureWorkerManager/AzureFinOpsGuard modules), removed the false 'Admin jobs are processed via Azure compute' dispatch claim (replaced with an honest ADMIN_RENDER_NOT_AVAILABLE rejection), removed stale Azure claims from voice-provider comments, WorkerProtocol, check-cloudflare-free.mjs, the analytics page copy, and renamed DAG-test fixtures. Azure OpenAI remains only in lib/api-config as an unrelated LLM model provider.",
     "verification follow-ups on the azure removal: github-actions-rendering.test.ts and control-plane-e2e-security.test.ts now load and pass; dag-convergence-architecture DAG-planner failure reproduced identically on pristine main (pre-existing)."
   ],
@@ -75,12 +76,14 @@
   "verificationResults": {
     "typecheck": "PASS",
     "factoryosTypecheck": "PASS",
-    "newSecuritySuite": "PASS_12_OF_12",
+    "newSecuritySuite": "PASS_13_OF_13",
     "failureInjectionCampaign": "PASS_5_OF_5",
     "githubActionsRenderingSuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
     "controlPlaneE2ESecuritySuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
+    "f07GateCause": "IDENTIFIED__FIXED_BY_PR_244_WHICH_PASSES_F07_ON_ITS_HEAD",
     "preExistingFailures": "UNCHANGED_ON_PRISTINE_MAIN",
-    "secretRotation": "BLOCKED__OWNER_ACTION_REQUIRED"
+    "secretRotation": "BLOCKED__OWNER_ACTION_REQUIRED",
+    "secretRotationChecklist": "PUBLISHED__docs/deployment/secret-rotation-20261021.md"
   },
   "model": {
     "authority": "ADVISORY_ONLY",
