@@ -180,6 +180,7 @@ export class DurableAuthorizationStore {
       invalidatedAt: row.invalidated_at || undefined,
       invalidatedBy: row.invalidated_by || undefined,
       invalidationReason: row.invalidation_reason || undefined,
+      consumedAt: row.consumed_at || undefined,
       uploadSessionUri: row.upload_session_uri || undefined,
     } as ReleaseAuthorization;
   }

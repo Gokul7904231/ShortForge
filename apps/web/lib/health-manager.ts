@@ -6,6 +6,7 @@
  */
 
 import { VersionRegistry } from "./version-registry";
+import { getSqliteHealth } from "./safe-sqlite";
 
 export interface ServiceHealth {
   service: string;
@@ -72,6 +73,22 @@ export const HealthManager = {
         version: VersionRegistry.get("core"),
         uptime: "100.00%",
       }
+    };
+
+    // Honest probe of the actual persistence layer: every SQLite-backed store
+    // (render queue, checkpoints, authorization, journals) fails closed when
+    // this binding cannot load, so readiness must surface it.
+    const sqlite = getSqliteHealth();
+    dependencies["sqlite-persistence"] = {
+      service: "sqlite-persistence",
+      status: sqlite.available ? "healthy" : "offline",
+      latency: 5,
+      lastCheck: checkedAt,
+      reason: sqlite.available
+        ? "Native better-sqlite3 binding loads"
+        : `Native better-sqlite3 binding unavailable (${sqlite.error}); SQLite-backed stores fail closed`,
+      version: VersionRegistry.get("core"),
+      uptime: "100.00%",
     };
 
     // Determine overall system status

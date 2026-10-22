@@ -1,13 +1,37 @@
 /**
- * Safe SQLite Wrapper & In-Memory Fallback Provider
- * =================================================
- * Provides seamless Better-SQLite3 functionality when native bindings are present.
- * If native C++ binary bindings (.node) are missing on Windows/Node24, transparently
- * falls back to an in-memory / JSON-backed database mock to prevent runtime crashes.
+ * Safe SQLite Wrapper (fail-closed)
+ * =================================
+ * Real better-sqlite3 when the native binding loads; otherwise a mock that is
+ * ONLY reachable behind an explicit test/development opt-in. Production never
+ * gets the mock: missing bindings throw instead of silently fake-succeeding.
  */
 
 import fs from "fs";
 import path from "path";
+
+/** Thrown when native SQLite is required but its binding cannot load. */
+export class SafeSqliteUnavailableError extends Error {
+  constructor(dbFilePath: string, cause: string) {
+    super(
+      `[SafeSQLite] Native better-sqlite3 binding unavailable (${cause}); refusing to open ${dbFilePath} without real persistence. ` +
+        `Fix: npm rebuild better-sqlite3 (Node runtime), or set SAFE_SQLITE_ALLOW_MOCK=1 outside production for explicitly dev-only stores.`
+    );
+    this.name = "SafeSqliteUnavailableError";
+  }
+}
+
+/** Health/readiness probe: can native SQLite actually load in this runtime? */
+export function getSqliteHealth(): { available: boolean; error?: string } {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const BetterSqlite3 = require("better-sqlite3");
+    const probe = new BetterSqlite3(":memory:");
+    probe.close();
+    return { available: true };
+  } catch (err: any) {
+    return { available: false, error: err?.message || String(err) };
+  }
+}
 
 export interface SafeStatement {
   get(...params: any[]): any;
@@ -114,9 +138,19 @@ class MockDatabase implements SafeDatabase {
 
 /**
  * Creates or retrieves a SafeDatabase instance.
- * Automatically tries to load better-sqlite3 native addon; falls back cleanly if unavailable.
+ *
+ * Resolution order:
+ *  1. Native better-sqlite3 — the only mode returned on production paths.
+ *  2. In-memory mock — ONLY when explicitly opted in (allowMockFallback option or
+ *     SAFE_SQLITE_ALLOW_MOCK=1) AND the process is not production. The mock loses
+ *     all data on restart and its UPDATE/DELETE semantics are heuristic; callers
+ *     that need durable or authoritative state must not enable it.
+ *  3. Otherwise: throw SafeSqliteUnavailableError (fail closed).
  */
-export function getSafeDatabase(dbFilePath: string): SafeDatabase {
+export function getSafeDatabase(
+  dbFilePath: string,
+  opts?: { allowMockFallback?: boolean }
+): SafeDatabase {
   const dir = path.dirname(dbFilePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -128,7 +162,15 @@ export function getSafeDatabase(dbFilePath: string): SafeDatabase {
     const db = new BetterSqlite3(dbFilePath);
     return db;
   } catch (err: any) {
-    console.warn(`[SafeSQLite] Native better-sqlite3 binary bindings unavailable (${err.message}). Using resilient in-memory storage fallback for ${path.basename(dbFilePath)}.`);
+    const explicitDevOnly =
+      (opts?.allowMockFallback === true || process.env.SAFE_SQLITE_ALLOW_MOCK === "1") &&
+      process.env.NODE_ENV !== "production";
+    if (!explicitDevOnly) {
+      throw new SafeSqliteUnavailableError(dbFilePath, err.message);
+    }
+    console.warn(
+      `[SafeSQLite] DEV-ONLY in-memory mock active for ${path.basename(dbFilePath)} (native binding missing: ${err.message}). Data is NOT durable and write results are fabricated.`
+    );
     return new MockDatabase(dbFilePath);
   }
 }
