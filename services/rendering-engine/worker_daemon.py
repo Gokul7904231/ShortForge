@@ -544,9 +544,6 @@ def render_with_ffmpeg(job: dict, output_mp4: Path):
 def process_single_job(job: dict):
     job_id = job.get("jobId") or job.get("id")
     execution_token = job.get("executionToken")
-    tier = job.get("tier", "BASIC")
-
-        return
 
     log("Worker", f"claimed job={job_id}")
     log("Render", f"started job={job_id}")

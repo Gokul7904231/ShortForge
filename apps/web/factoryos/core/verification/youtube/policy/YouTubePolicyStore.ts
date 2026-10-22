@@ -14,7 +14,7 @@ import { PolicyEvaluationContext, PolicyEvaluationContextBuilder } from "./Polic
 export class YouTubePolicyStore {
   private static instance: YouTubePolicyStore | null = null;
   private snapshots: Map<string, PolicySnapshot> = new Map();
-  private latestVersion: string = "2026.09.15";
+  private latestVersion: string = "2026.10.17";
 
   private constructor() {
     this.initializeCanonicalSnapshots();
@@ -32,7 +32,7 @@ export class YouTubePolicyStore {
   }
 
   /**
-   * Initializes canonical snapshot covering official YouTube policy up to September 2026.
+   * Initializes a date-bounded canonical snapshot refreshed against official YouTube sources on 2026-10-17.
    */
   private initializeCanonicalSnapshots(): void {
     const sources = PolicySourceRegistry.getOfficialSources();
@@ -348,25 +348,25 @@ export class YouTubePolicyStore {
         forbiddenShallowRepairs: ["speedup_video_beyond_normal"],
       },
 
-      // G12: Shorts Content ID Policy Effective September 24, 2026
+      // G12: Official Shorts Content ID restriction, with no later exception claimed by current official documentation.
       {
         ruleId: "YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE",
         gateId: "G12_SHORTS_ELIGIBILITY",
-        sourceDocumentId: "src_yt_policy_updates",
-        title: "Shorts > 60s Content ID Claim Revenue Rule",
-        description: "Starting September 24, 2026, new Shorts longer than 60s and up to 180s with active Content ID claims may remain playable on YouTube; creator revenue share may be redirected to claimant.",
-        severity: "WARNING",
+        sourceDocumentId: "src_yt_shorts_monetization",
+        title: "Shorts over one minute with an active Content ID claim are blocked",
+        description: "Official YouTube Help states that any Short over one minute with an active copyright claim of any type, including manual claims, is blocked globally and is not eligible for monetization. No September 24, 2026 exception is stated on the current official guidance pages.",
+        severity: "BLOCKING",
         evaluationMethod: "DETERMINISTIC",
         appliesBy: "UPLOAD_DATE",
-        policyEffect: "REVENUE_IMPACT",
-        effectiveFrom: "2026-09-24", // DATE AWARE! Active only on or after this date
+        policyEffect: "BLOCK_PUBLICATION",
+        effectiveFrom: "2024-10-15",
         condition: {
           maxDurationSeconds: 180,
           contentIdClaimThresholdSeconds: 60,
         },
-        affectedStagesOnFailure: ["F04", "F05"],
-        suggestedRemediationAction: "Review claimed audio: claimant may receive monetization revenue.",
-        forbiddenShallowRepairs: ["pitch_shift_audio"],
+        affectedStagesOnFailure: ["F04", "F05", "F07"],
+        suggestedRemediationAction: "Resolve the Content ID claim, remove or replace the claimed material, and rerun rights and physical verification before release.",
+        forbiddenShallowRepairs: ["pitch_shift_audio", "assume_claim_is_revenue_only", "assume_playability_is_guaranteed"],
       },
 
       // G13: Channel-Level Repetition
@@ -410,9 +410,9 @@ export class YouTubePolicyStore {
 
     const snapshot = YouTubePolicySnapshotManager.createSnapshot({
       policyVersion: this.latestVersion,
-      retrievedAt: "2026-09-15T00:00:00Z",
-      effectiveAt: "2026-09-15T00:00:00Z",
-      expiresAt: "2026-10-15T00:00:00Z",
+      retrievedAt: "2026-10-17T00:00:00Z",
+      effectiveAt: "2026-10-17T00:00:00Z",
+      expiresAt: "2026-10-31T00:00:00Z",
       policyState: "CURRENT",
       sourceDocuments: sources,
       rules: canonicalRules,

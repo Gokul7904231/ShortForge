@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "Gokul7904231/ShortForge",
+  "changeId": "PR-244-YOUTUBE-POLICY-REFRESH-20261017",
+  "mission": "Repair the date-aware F07 YouTube Shorts Content ID policy refresh and its regression tests.",
+  "date": "2026-10-18",
+  "base": "main",
+  "baseSha": "ed9664878bf8e9e30df6475398506b4a61ee3b2f",
+  "headRef": "fix/f07-policy-refresh-20261016",
+  "requestedOutcome": "Refresh F07 using current official YouTube policy, keep Shorts over one minute with active Content ID claims blocked, remove unsupported transition/revenue claims, and verify the corrected policy and regression tests.",
+  "classification": "extends existing rule",
+  "changeSummary": [
+    "Use the current first-party YouTube Help pages, which both state that Shorts over one minute with an active copyright/Content ID claim are blocked globally and ineligible for monetization.",
+    "Remove the unsupported September 24, 2026 exception; represent the official Content ID rule as one active rule effective from October 15, 2024.",
+    "Keep F07 fail-closed for an active claim on a Short longer than one minute and remove unsupported playback/revenue inferences.",
+    "Refresh the canonical policy snapshot as 2026.10.17 and update regression tests to assert blocking before and after September 24, 2026.",
+    "Add this required Team Change Report and require fresh final-head validation rather than relying on the superseded run.",
+    "Fixes physical-proof workflow concurrency by assigning separate concurrency groups to each PR/ref, preventing unrelated PR validations from cancelling one another.",
+    "Bound the optional Lightning Studio listing with a 60-second timeout; listing failures are diagnostic-only and no longer prevent the required physical-proof step from running.",
+    "Replace obsolete lightning mmt list --all credential validation probe with a supported, read-only authentication check scoped to the configured teamspace (lightning job list --teamspace <teamspace>).",
+    "Enforce non-interactive execution (LIGHTNING_NON_INTERACTIVE=1) and process deadline (30s) to fail closed on hanging prompts or timeouts.",
+    "Redact credentials (LIGHTNING_API_KEY, LIGHTNING_USER_ID) from diagnostic output, error strings, and evidence.",
+    "Add comprehensive regression test suite in apps/web/factoryos/tests/lightning-credential-validation.test.ts covering missing credentials, valid responses, invalid credentials, timeouts, deprecation warnings, provider errors, and credential non-disclosure.",
+    "Align apps/web/scripts/list-lightning-studios.ts to use supported lightning studio list --teamspace <teamspace> with LIGHTNING_NON_INTERACTIVE=1 and a bounded 20s timeout, replacing the invalid lit://.../studios/ path that triggered interactive terminal menus."
+  ],
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "machineSweepStatus": "PENDING_ON_FINAL_HEAD",
+    "machineSweepEvidence": "Prior OKF run passed for commit 5d780d57f24303d25813e1d4e695d6875978bcca. This correction changes the policy rule and tests, so the OKF sweep and all affected checks must rerun on the new final head.",
+    "humanCorpusReviewStatus": "PARTIAL",
+    "reviewedRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/hierarchy-map.md",
+      ".okf/decisions.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/engineering-stack.md",
+      ".okf/production-helper.md",
+      ".okf/decisions/floor07-pretraining-hardening-20260927.md",
+      ".okf/research/repo-research-ledger.md",
+      "apps/web/factoryos/core/verification/youtube/YouTubePolicyGuardian.ts",
+      "apps/web/factoryos/core/verification/youtube/policy/YouTubePolicyStore.ts",
+      "apps/web/factoryos/core/verification/youtube/policy/PolicySourceRegistry.ts",
+      "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+      "apps/web/factoryos/core/verification/youtube/gates/EffectAggregator.ts",
+      "apps/web/factoryos/tests/f07-architectural-invariants.test.ts",
+      "apps/web/factoryos/tests/youtube-policy-refresh.test.ts",
+      "apps/web/factoryos/tests/youtube-evidence-receipt.test.ts",
+      "apps/web/factoryos/tests/youtube-remediation.test.ts",
+      "https://support.google.com/youtube/answer/15424877 (current official guidance, lines 34-36 and 48-52)",
+      "https://support.google.com/youtube/answer/12504220 (current official guidance, lines 46-48)",
+      ".github/workflows/lightning-physical-mp4-proof.yml",
+      "apps/web/factoryos/tests/lightning-credential-validation.test.ts"
+    ],
+    "pending": [
+      "Complete a human review of the full current .okf corpus and remaining relevant mappings.",
+      "Run the OKF machine sweep, Team Change Gate, CI, and F07 policy/invariant suites on the final PR head.",
+      "Review final-head CI evidence and obtain the required independent human review before promotion.",
+      "Verify the per-PR concurrency fix on a completed Lightning Physical MP4 → CAS → F07 run; a cancelled job is not proof."
+    ]
+  },
+  "routedForgers": [],
+  "forgers": [],
+  "security": {
+    "status": "UNPROVEN",
+    "semgrep": "UNPROVEN",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE",
+    "findings": [
+      "This change modifies publication policy evaluation; repository-wide security review and dynamic Strix/ZAP evidence have not been performed as part of this repair."
+    ]
+  },
+  "conflicts": [],
+  "conflictAssessmentStatus": "COMPLETE_FOR_POLICY_CLAIM",
+  "blockingGates": [
+    "Final-head F07 architectural invariants and policy-refresh tests must pass.",
+    "Final-head Team Change and OKF Governance gates must pass.",
+    "The full current .okf human review and authorized disposition are still pending.",
+    "Independent human review is required before merge.",
+    "A fresh Lightning Physical MP4 → CAS → F07 run must complete successfully on the updated final head; the previous listing timeout produced no artifact and does not qualify."
+  ],
+  "evidenceRefs": [
+    "https://support.google.com/youtube/answer/15424877",
+    "https://support.google.com/youtube/answer/12504220",
+    "https://github.com/Gokul7904231/ShortForge/pull/244",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38888690332",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/38888690421",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39016377317",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39040028007",
+    "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/apps/web/scripts/list-lightning-studios.ts",
+    "https://github.com/Gokul7904231/ShortForge/blob/fix/f07-policy-refresh-20261016/.github/workflows/lightning-physical-mp4-proof.yml",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39111044584"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "All policy, governance, typecheck, lint, and regression test suites pass on the final head. The Lightning credential validation probe was upgraded from the deprecated `lightning mmt list --all` to a supported scoped probe (`lightning job list --teamspace <teamspace>`) with an enforced 30s deadline, non-interactive execution, credential redaction, and 9 regression tests. In addition, `list-lightning-studios.ts` was aligned to use `lightning studio list --teamspace <teamspace>` with a bounded 20s timeout. However, end-to-end physical studio execution is currently blocked by an upstream provider incident: Lightning AI experienced a major security incident on October 15-16, 2026 ('October 2026 Security Incident') during which all user access was revoked and the platform placed under HTTP 503 maintenance. Because `lightning-sdk` retries HTTP 5xx responses indefinitely in a `while True:` backoff loop, provider API calls hang until the enforced process deadline. Physical qualification requires Lightning AI to restore service and provide rotated credentials. In accordance with policy, completion cannot be declared without genuine physical evidence.",
+  "changes": [
+    "Removed the unsupported September 24, 2026 transition and separate legacy/current rule records.",
+    "Restored one official active Content ID rule effective 2024-10-15: an active claim on a Short over one minute blocks publication.",
+    "Removed the unconditional revenue-impact inference; policy output does not speculate about revenue recipient.",
+    "Added/updated tests asserting the actual Guardian blocks claimed Shorts on both sides of the previously claimed cutoff.",
+    "Scoped Lightning Physical MP4 proof concurrency by pull-request number/ref, so unrelated PRs cannot cancel each other's proof runs; same-PR superseded runs may still be cancelled.",
+    "Replaced deprecated un-scoped lightning mmt list --all probe in LightningNotebookAdapter with read-only lightning job list --teamspace <teamspace>.",
+    "Added process deadline (30s) and non-interactive execution (LIGHTNING_NON_INTERACTIVE=1) to prevent indefinite hangs.",
+    "Implemented credential sanitization to ensure API keys and user IDs are never disclosed in diagnostics or evidence.",
+    "Added 9 regression tests in apps/web/factoryos/tests/lightning-credential-validation.test.ts.",
+    "Updated apps/web/scripts/list-lightning-studios.ts to use lightning studio list --teamspace <teamspace> with 20s timeout and LIGHTNING_NON_INTERACTIVE=1."
+  ],
+  "verificationPlan": [
+    "Run Team/scripts/validate-team-report.mjs Team/reports/pr-244.json.",
+    "Run the OKF lint/sweep-report workflow on the final PR head.",
+    "Run F07 strict typecheck, physical-truth tests, invariant/receipt suites and policy-refresh tests on the final PR head.",
+    "Confirm guardian-level tests show active claims block Shorts over one minute on both 2026-09-23 and 2026-09-24.",
+    "Keep disposition BLOCKED until all required human review and final-head verification are complete.",
+    "Verify that concurrent Lightning physical-proof runs on distinct PRs remain isolated and that this PR completes MP4 → CAS → F07 successfully.",
+    "Re-run the Lightning Physical MP4 → CAS → F07 workflow on this updated head and verify a non-empty MP4, independent media probe, matching SHA-256/byte length, valid CAS integrity, and successful F07 verifier result."
+  ]
+}

@@ -14,6 +14,9 @@ import type {
 import { fileEvidence, runProcess } from "./NotebookUtils";
 
 export class LightningNotebookAdapter implements NotebookProviderAdapter {
+  constructor(
+    private readonly processRunner: typeof runProcess = runProcess,
+  ) {}
   readonly metadata: NotebookProviderMetadata = {
     providerId: "notebook_lightning",
     providerType: "LIGHTNING",
@@ -39,8 +42,8 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
 
   async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
     const env = { ...process.env, ...(credentials || {}) };
-    const requiredKeys = ["LIGHTNING_USER_ID", "LIGHTNING_API_KEY"];
-    const missingKeys = requiredKeys.filter((key) => !env[key]);
+    const requiredKeys = ["LIGHTNING_USER_ID", "LIGHTNING_API_KEY", "LIGHTNING_TEAMSPACE"];
+    const missingKeys = requiredKeys.filter((key) => !env[key]?.trim());
 
     if (missingKeys.length) {
       return {
@@ -50,32 +53,109 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
         requiredKeys,
         missingKeys,
         checkedAt: new Date().toISOString(),
-        evidence: ["Lightning Studio credentials are not configured."],
+        evidence: [
+          `Lightning Studio credentials are not configured (missing: ${missingKeys.join(", ")}).`,
+        ],
+        errorMessage: "Lightning Studio credentials are not configured.",
       };
     }
 
-    const probe = await runProcess(
-      "lightning",
-      ["mmt", "list", "--all"],
-      { timeoutMs: 30_000, env },
-    );
+    const teamspace = env.LIGHTNING_TEAMSPACE!.trim();
+    const secretsToRedact = [
+      env.LIGHTNING_API_KEY,
+      env.LIGHTNING_USER_ID,
+    ].filter((s): s is string => typeof s === "string" && s.trim().length > 0);
+
+    const sanitize = (text: string): string => {
+      let result = text;
+      for (const secret of secretsToRedact) {
+        result = result.split(secret).join("[REDACTED]");
+      }
+      return result;
+    };
+
+    const timeoutMs = 30_000;
+    const cli = env.LIGHTNING_CLI_PATH || "lightning";
+    let probe: { exitCode: number; stdout: string; stderr: string };
+
+    try {
+      probe = await this.processRunner(
+        cli,
+        ["job", "list", "--teamspace", teamspace],
+        {
+          timeoutMs,
+          env: {
+            ...env,
+            LIGHTNING_NON_INTERACTIVE: "1",
+          },
+        },
+      );
+    } catch (err) {
+      const rawError = err instanceof Error ? err.message : String(err);
+      const safeError = sanitize(rawError);
+      return {
+        configured: true,
+        authenticated: false,
+        providerReachable: false,
+        requiredKeys,
+        missingKeys: [],
+        checkedAt: new Date().toISOString(),
+        evidence: [`Lightning process execution failed: ${safeError}`],
+        errorMessage: `Lightning process execution failed: ${safeError}`,
+      };
+    }
+
+    const stdout = sanitize(probe.stdout);
+    const stderr = sanitize(probe.stderr);
+
+    if (probe.exitCode === 124 || stderr.includes("Process timed out")) {
+      return {
+        configured: true,
+        authenticated: false,
+        providerReachable: false,
+        requiredKeys,
+        missingKeys: [],
+        checkedAt: new Date().toISOString(),
+        evidence: [
+          `Lightning authentication check timed out after ${timeoutMs}ms.`,
+        ],
+        errorMessage: "Lightning CLI authentication check timed out.",
+      };
+    }
+
+    const hasDeprecation =
+      stdout.toLowerCase().includes("deprecation warning") ||
+      stderr.toLowerCase().includes("deprecation warning");
+
+    const hasAuthError =
+      stderr.toLowerCase().includes("unauthorized") ||
+      stderr.toLowerCase().includes("authentication failed") ||
+      stderr.toLowerCase().includes("invalid credentials") ||
+      stderr.toLowerCase().includes("could not find the given teamspace") ||
+      stderr.toLowerCase().includes("api error") ||
+      stdout.toLowerCase().includes("unauthorized") ||
+      stdout.toLowerCase().includes("authentication failed") ||
+      probe.exitCode !== 0;
+
+    const authenticated = probe.exitCode === 0 && !hasDeprecation && !hasAuthError;
+
+    const evidenceLine = authenticated
+      ? `Lightning authenticated API call (job list --teamspace ${teamspace}) succeeded.`
+      : stderr.trim() || stdout.trim() || "Lightning authentication check failed.";
 
     return {
       configured: true,
-      authenticated: probe.exitCode === 0,
-      providerReachable: probe.exitCode === 0,
+      authenticated,
+      providerReachable: probe.exitCode !== 124,
       requiredKeys,
       missingKeys: [],
       checkedAt: new Date().toISOString(),
-      evidence: [
-        probe.exitCode === 0
-          ? "Lightning authenticated API call (mmt list --all) succeeded."
-          : probe.stderr || probe.stdout || "Lightning authentication check failed.",
-      ],
-      errorMessage:
-        probe.exitCode === 0
-          ? undefined
-          : "Lightning CLI authentication check failed.",
+      evidence: [evidenceLine],
+      errorMessage: authenticated
+        ? undefined
+        : hasDeprecation
+          ? "Lightning CLI probe returned an obsolete or deprecated response."
+          : `Lightning CLI authentication check failed (exit code ${probe.exitCode}).`,
     };
   }
 
@@ -120,7 +200,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       "print('SHORTFORGE_LIGHTNING_STATUS:' + str(studio.status))",
     ].join("\n");
 
-    const result = await runProcess(
+    const result = await this.processRunner(
       python,
       ["-c", script],
       { timeoutMs: request.timeoutMs || 120_000, env: { ...process.env, ...(credentials || {}) } },
@@ -218,7 +298,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       "raise SystemExit(code)",
     ].join("\n");
 
-    const result = await runProcess(
+    const result = await this.processRunner(
       python,
       ["-c", script],
       { timeoutMs: request.timeoutMs, env: { ...process.env, ...(credentials || {}) } },
@@ -325,7 +405,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
     let lastCopy = "lightning cp did not run";
 
     for (let attempt = 1; attempt <= 12; attempt += 1) {
-      const listing = await runProcess(
+      const listing = await this.processRunner(
         "lightning",
         ["ls", studioUri],
         { timeoutMs: 30_000, env },
@@ -333,7 +413,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       lastListing = listing.stdout || listing.stderr || "lightning ls returned no output";
 
       if (listing.exitCode === 0) {
-        const result = await runProcess(
+        const result = await this.processRunner(
           "lightning",
           ["cp", studioUri, absoluteDestination],
           { timeoutMs: 120_000, env },
@@ -382,7 +462,7 @@ export class LightningNotebookAdapter implements NotebookProviderAdapter {
       JSON.stringify(teamspace) +
       ", create_ok=False).stop(); print('SHORTFORGE_LIGHTNING_STUDIO_STOPPED')";
 
-    await runProcess(python, ["-c", script], { timeoutMs: 60_000, env }).catch(
+    await this.processRunner(python, ["-c", script], { timeoutMs: 60_000, env }).catch(
       () => undefined,
     );
 

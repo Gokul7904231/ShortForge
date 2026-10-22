@@ -256,7 +256,7 @@ describe("YouTube ReMaker Remediation & Evidence Invalidation — Targeted Repai
     const receipt1 = await guardian.verifyRelease({
       video: candidateVideo,
       channel: channelWithCloneHistory,
-      publicationIntentAt: "2026-09-21T00:00:00Z",
+      publicationIntentAt: "2026-10-17T00:00:00Z",
       artifactSha256: "e".repeat(64),
     });
 
@@ -287,7 +287,7 @@ describe("YouTube ReMaker Remediation & Evidence Invalidation — Targeted Repai
     const receipt2 = await guardian.verifyRelease({
       video: remediatedVideo,
       channel: channelWithCloneHistory,
-      publicationIntentAt: "2026-09-21T00:00:00Z",
+      publicationIntentAt: "2026-10-17T00:00:00Z",
       artifactSha256: "f".repeat(64),
     });
 
