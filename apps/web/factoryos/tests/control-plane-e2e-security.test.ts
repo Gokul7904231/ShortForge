@@ -7,8 +7,7 @@
  * 3. Per-User Drive OAuth & Zero Admin Fallback Leakage
  * 4. Scheduler Atomic Claim & Deterministic Idempotency
  * 5. Admin Users Directory & User Detail Inspection
- * 6. Truthful Azure Telemetry & Infrastructure Metrics
- * 7. Cross-User Data Isolation & Capability Gating
+ * 6. Cross-User Data Isolation & Capability Gating
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -17,7 +16,6 @@ import { DriveConnectionManager } from "../../lib/drive/DriveConnectionManager";
 import { SchedulerService, ScheduleDefinition } from "../../lib/scheduler/SchedulerService";
 import { can } from "../../lib/auth/capability-policy";
 import { db } from "../../lib/firebase-admin";
-import { AzureWorkerManager } from "../../lib/rendering/AzureWorkerManager";
 
 describe("FactoryOS Control Plane — Full E2E & Security Suite", () => {
   const basicUid = `e2e_basic_${Date.now()}`;
@@ -204,24 +202,9 @@ describe("FactoryOS Control Plane — Full E2E & Security Suite", () => {
   });
 
   // =========================================================================
-  // 5. Azure Observability & Truthful Telemetry
+  // 5. Capability Policy & Direct API Gating
   // =========================================================================
-  it("05: Azure observability reports real VM SKU, region, power state, and truthful credit disclaimer", () => {
-    const vmDetails = AzureWorkerManager.getVmDetails();
-    const workerState = AzureWorkerManager.getState();
-
-    expect(vmDetails.vmName).toBe("factoryos-render-vm");
-    expect(vmDetails.sku).toBe("Standard_B4ls_v2");
-    expect(vmDetails.region).toBe("eastus2");
-    expect(vmDetails.vCPU).toBe(4);
-    expect(vmDetails.memoryMb).toBe(8192);
-    expect(["STANDBY", "ONLINE", "PROVISIONING", "OFFLINE", "DEALLOCATED", "DEALLOCATING"]).toContain(workerState);
-  });
-
-  // =========================================================================
-  // 6. Capability Policy & Direct API Gating
-  // =========================================================================
-  it("06: Capability policy enforces strict role-tier boundaries", () => {
+  it("05: Capability policy enforces strict role-tier boundaries", () => {
     const basicUser = { uid: basicUid, role: "USER" };
     const proUser = { uid: proUid, role: "PRO" };
     const adminUser = { uid: adminUid, role: "ADMIN" };

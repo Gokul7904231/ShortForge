@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR249-RenderDispatchFailClosed-Security-Patch",
+  "pullRequest": 249,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/e2e-safety-patch-20261021",
+  "objective": "Close the P0 security and false-success defects at the generation-to-delivery boundary: committed secret fallbacks, dry-run dispatch reported as DISPATCHED, metadata-only artifact completion, unauthenticated dispatch, and job deletion that mutates stores before the ownership check.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      "apps/web/lib/rendering/GitHubActionsRenderManager.ts",
+      "apps/web/app/api/rendering/github/status/route.ts",
+      "apps/web/app/api/rendering/github/dispatch/route.ts",
+      "apps/web/app/api/jobs/[id]/route.ts",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.SECURITY.FAIL_CLOSED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "notes": "All four defects were confirmed in main source before fixing. Fail-closed behavior is covered by 12 new automated regression tests plus updated invariants. The previously committed execution-secret fallback literal is burned by public history; rotation of RENDER_WORKER_SECRET and FACTORYOS_EXECUTION_SECRET in repository/deployment settings remains a required owner action and was NOT performed here. No secret values are reproduced in this PR."
+  },
+  "conflicts": [],
+  "changes": [
+    "Removed the committed FACTORYOS_EXECUTION_SECRET fallback key from token signing and verification; both fail closed when the env var is absent.",
+    "Unconfigured GITHUB_RENDER_TOKEN dispatch now returns RENDER_DISPATCH_NOT_CONFIGURED instead of a simulated success with a DISPATCHED run record.",
+    "Artifact verification now requires actual MP4 header bytes with the ftyp signature; metadata-only completion and the leading-zeros header bypass are rejected.",
+    "COMPLETED callbacks require real artifactUri and measured durationMs; synthesized b2:// URIs, default sizes, and default durations are removed; completing an inactive job returns 409 instead of success.",
+    "Non-completed workflow callbacks surface validator failures (401/404) instead of ignoring the result.",
+    "Dispatch route requires an authenticated, job-owning (or admin) session before dispatch; unauthorized errors map to 401.",
+    "DELETE /api/jobs/[id] resolves ownership read-only across queue, manifest, and Firestore first, fails closed with 404 when no owner is resolvable (never adopts the requester as owner), authorizes, and only then mutates stores and releases quota.",
+    "Added factoryos/tests/render-dispatch-fail-closed-security.test.ts with 13 regression cases including duplicate-COMPLETED-callback rejection.",
+    "Removed the remaining committed RENDER_WORKER_SECRET fallback literal from both render workflows on this branch (matching PR #247's deletions byte-for-byte so the PRs auto-merge); added docs/deployment/secret-rotation-20261021.md as the owner rotation runbook (revocation/rotation explicitly NOT performed or verified here).",
+    "Removed the nonexistent Azure render lane references entirely: deleted Azure tests/imports from github-actions-rendering.test.ts and control-plane-e2e-security.test.ts (both suites previously un-loadable on main due to missing AzureWorkerManager/AzureFinOpsGuard modules), removed the false 'Admin jobs are processed via Azure compute' dispatch claim (replaced with an honest ADMIN_RENDER_NOT_AVAILABLE rejection), removed stale Azure claims from voice-provider comments, WorkerProtocol, check-cloudflare-free.mjs, the analytics page copy, and renamed DAG-test fixtures. Azure OpenAI remains only in lib/api-config as an unrelated LLM model provider.",
+    "verification follow-ups on the azure removal: github-actions-rendering.test.ts and control-plane-e2e-security.test.ts now load and pass; dag-convergence-architecture DAG-planner failure reproduced identically on pristine main (pre-existing)."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/249",
+    "apps/web/factoryos/tests/render-dispatch-fail-closed-security.test.ts",
+    "apps/web/factoryos/tests/github-actions-rendering.test.ts"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Local executed on head fcbf35db: npm run typecheck PASS; npm run factoryos:typecheck PASS; render-dispatch-fail-closed-security 12/12 PASS; failure-injection-campaign 5/5 PASS.",
+    "p0-basic-hardening 2 failures reproduced identically on pristine main via git stash; pre-existing, not caused by this change.",
+    "github-actions-rendering.test.ts cannot load on pristine main (missing lib/rendering/AzureWorkerManager and AzureFinOpsGuard modules); pre-existing main defect, expectations updated for the fail-closed contract regardless.",
+    "Owner actions required: rotate RENDER_WORKER_SECRET and FACTORYOS_EXECUTION_SECRET.",
+    "Do not claim production render verification from this PR; canonical-path disposition remains in PR #247/#248 lanes."
+  ],
+  "verificationResults": {
+    "typecheck": "PASS",
+    "factoryosTypecheck": "PASS",
+    "newSecuritySuite": "PASS_13_OF_13",
+    "failureInjectionCampaign": "PASS_5_OF_5",
+    "githubActionsRenderingSuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
+    "controlPlaneE2ESecuritySuite": "PASS_AFTER_AZURE_REMOVAL_PREVIOUSLY_UNLOADABLE",
+    "f07GateCause": "IDENTIFIED__4_POLICY_INVARIANTS_FIXED_BY_PR_244_CI_GREEN_ON_HEAD_78E7172B__REMAINING_3_WERE_ENV_ONLY_MISSING_BETTER_SQLITE3_BINDING_FIXED_BY_NPM_REBUILD__MOCK_FALLBACK_IN_LIB_SAFE_SQLITE_IS_A_LATENT_FAKE_SUCCESS_RISK_FLAGGED",
+    "integrationStack244_247_249": {
+      "head": "157d07b5",
+      "branch": "test/integration-244-247-249",
+      "conflictsResolved": "factoryos-basic-render.yml + factoryos-render-worker.yml resolved to PR 247 implementations",
+      "localBattery": "F07_4_SUITES_4_OF_4__SECURITY_SUITES_4_FILES_PASS__TYPECHECK2_PASS__PY_COMPILE_PASS"
+    },
+    "preExistingFailures": "UNCHANGED_ON_PRISTINE_MAIN",
+    "secretRotation": "BLOCKED__OWNER_ACTION_REQUIRED",
+    "secretRotationChecklist": "PUBLISHED__docs/deployment/secret-rotation-20261021.md"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canPromote": false
+  }
+}

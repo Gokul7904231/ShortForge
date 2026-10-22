@@ -3,7 +3,7 @@ import { VoiceProvider } from "../voice-provider";
 /**
  * Creates a valid PCM WAV buffer in memory for local workflow calculation,
  * timing validation, and test synthesis, avoiding all external Node.js WebSockets
- * and CLI processes. Production neural speech rendering is executed worker-side on Azure.
+ * and CLI processes. Production neural speech rendering is executed worker-side.
  */
 function createSyntheticWavBuffer(durationSeconds: number, sampleRate = 24000): Buffer {
   const numChannels = 1;
@@ -71,7 +71,7 @@ export class EdgeProvider implements VoiceProvider {
 
   async health(): Promise<{ online: boolean; latencyMs: number; error?: string; cpu?: number; memory?: number }> {
     // Control Plane health check is always online and instant because voice synthesis
-    // is delegated to Azure Rendering Workers running Python edge-tts.
+    // is delegated to rendering workers running Python edge-tts.
     return {
       online: true,
       latencyMs: 1,

@@ -2,7 +2,7 @@
  * FactoryOS Distributed Compute Fabric — Provider-Independent Worker Protocol
  *
  * Defines the canonical protocol for all rendering workers (Kaggle, RunPod,
- * Vast, Modal, Azure, Local) decoupling compute execution from physical hosting.
+ * Vast, Modal, Local) decoupling compute execution from physical hosting.
  */
 
 import { GpuVendor, RenderJob, WorkerCapability, WorkerState } from "../contracts/RenderFabricContracts";
