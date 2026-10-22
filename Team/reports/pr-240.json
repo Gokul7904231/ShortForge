@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR240-External-API-Public-Cohort1-Live-Evidence",
+  "pullRequest": 240,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "chore/external-api-cohort1-evidence-20261012",
+  "objective": "Reconcile the actual successful Cohort 1 live workflow evidence into the canonical provider qualification matrix and OKF ledger without promoting unproven providers.",
+  "classification": "extends existing rule",
+  "linkedIssues": [
+    184,
+    197
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/integrations/external-api-qualification.md",
+      ".okf/integrations/external-api-fabric.md",
+      "Team/reports/external-api-qualification-matrix.json",
+      "Team/workflow/change-gate.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.AUTH.MODEL_NON_SOVEREIGN",
+        "OKF.EVIDENCE.UNPROVEN_NOT_PASS",
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.BOUNDED_REPAIR",
+        "OKF.PRINCIPLE.CAPABILITY_PROVIDER_NEUTRAL",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.PRINCIPLE.CONTROL_PIPELINE_SEPARATION",
+        "OKF.PRINCIPLE.LEAST_PRIVILEGE",
+        "OKF.PRINCIPLE.REPLAY_FENCING",
+        "OKF.PRINCIPLE.SCHEDULE_DERIVED",
+        "OKF.PRINCIPLE.SINGLE_SOURCE_OF_TRUTH",
+        "OKF.PRINCIPLE.TELEMETRY_ERROR_HONESTY",
+        "OKF.PRINCIPLE.TYPED_MEMORY",
+        "OKF.PROCESS.FULL_SWEEP",
+        "OKF.RELEASE.F07_VERIFIED",
+        "OKF.SECURITY.LEAST_PRIVILEGE"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNPROVEN",
+    "zap": "NOT_APPLICABLE_NON_RUNTIME_CHANGE",
+    "notes": "The cohort makes four public read-only requests with metered/destructive probes disabled. Credential-bearing and metered providers remain pending; no raw provider bodies or secrets are added to evidence."
+  },
+  "conflicts": [],
+  "changes": [
+    "Updated OpenAlex, arXiv, Crossref and Open-Meteo from stale PENDING entries to QUALIFIED using their successful real live run records.",
+    "Recorded actual workflow run, per-provider job and evidence artifact IDs.",
+    "Recorded observed HTTP status, duration, normalized capability output and available rate-limit signals.",
+    "Documented the Cohort 1 result in the canonical OKF qualification ledger.",
+    "Kept all other provider dispositions unchanged and preserved the no-authority boundary."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37417006052",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37417006052/artifacts/11391836904",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37417006052/artifacts/11391396405",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37417006052/artifacts/11392190762",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/37417006052/artifacts/11391261507",
+    ".okf/integrations/external-api-qualification.md",
+    "Team/reports/external-api-qualification-matrix.json"
+  ],
+  "disposition": "BLOCKED",
+  "verificationPlan": [
+    "Validate Team report against the machine-compiled OKF sweep.",
+    "Run current-head required CI, external-provider contract tests and Team/OKF governance gates.",
+    "Keep issue #184 open until every provider is explicitly QUALIFIED, CONFIGURED-BUT-NOT-QUALIFIED, or NOT-APPLICABLE with evidence.",
+    "Do not infer qualification of providers not covered by this live run."
+  ],
+  "verificationResults": {
+    "openalex": "QUALIFIED__RUN_37417006052_JOB_112117722223_ARTIFACT_11391836904",
+    "arxiv": "QUALIFIED__RUN_37417006052_JOB_112117722157_ARTIFACT_11391396405",
+    "crossref": "QUALIFIED__RUN_37417006052_JOB_112117721917_ARTIFACT_11392190762",
+    "openMeteo": "QUALIFIED__RUN_37417006052_JOB_112117722080_ARTIFACT_11391261507",
+    "cohort1": "PASS__FOUR_PROVIDER_SPECIFIC_ARTIFACTS",
+    "fullProviderMatrix": "BLOCKED__REMAINING_PROVIDER_DISPOSITIONS_PENDING",
+    "authorityBoundary": "PRESERVED__NO_PROVIDER_AUTHORITY_PROMOTION"
+  },
+  "model": {
+    "authority": "ADVISORY_ONLY",
+    "canPromote": false
+  }
+}
