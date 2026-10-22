@@ -159,7 +159,7 @@ export class YouTubePolicyGuardian {
       findings.push(G12_ShortsEligibilityGate.evaluate(params.video, g12Rule, uploadIntentAt));
     }
 
-    // G12: Shorts Content ID Rule (evaluated against uploadIntentAt clock)
+    // G12: Official Content ID restriction, evaluated using the upload-date clock.
     const g12ContentIdRule = ruleMap.get("YT.SHORTS.CONTENT_ID_OVER_ONE_MINUTE");
     if (g12ContentIdRule) {
       findings.push(G12_ShortsEligibilityGate.evaluate(params.video, g12ContentIdRule, uploadIntentAt));

@@ -12,18 +12,22 @@ on:
       - "apps/web/factoryos/core/compute/cas/**"
       - "apps/web/factoryos/core/verification/**"
       - "apps/web/scripts/verify-lightning-physical-mp4.ts"
+      - "apps/web/scripts/list-lightning-studios.ts"
+      - ".github/workflows/lightning-physical-mp4-proof.yml"
       - "Team/reports/pr-*.json"
   workflow_dispatch:
 
+# Isolate physical evidence runs by PR. A single global group caused an unrelated
+# PR's proof to cancel this run, leaving required physical evidence unevaluated.
 concurrency:
-  group: shortforge-lightning-physical-proof
+  group: shortforge-lightning-physical-proof-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   lightning-physical-proof:
     name: Lightning Physical MP4 → CAS → F07
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: apps/web
@@ -60,7 +64,8 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Typecheck
         run: npm run typecheck
-      - name: Inspect existing Lightning Studios
+      - name: Inspect existing Lightning Studios (bounded diagnostic)
+        timeout-minutes: 3
         run: npx tsx scripts/list-lightning-studios.ts
       - name: Execute end-to-end Lightning physical proof
         run: npx tsx scripts/verify-lightning-physical-mp4.ts
