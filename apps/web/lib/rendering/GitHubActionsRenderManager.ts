@@ -35,7 +35,11 @@ export class GitHubActionsRenderManagerClass {
    */
   public generateExecutionToken(jobId: string, tenantId: string): { token: string; expiresAt: number } {
     const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes TTL
-    const secret = process.env.FACTORYOS_EXECUTION_SECRET || "factoryos_execution_token_secret_key_88192";
+    // Fail closed: signing with a committed fallback key would forge verifiable tokens.
+    const secret = process.env.FACTORYOS_EXECUTION_SECRET;
+    if (!secret) {
+      throw new Error("EXECUTION_SECRET_MISSING: FACTORYOS_EXECUTION_SECRET is required to sign execution tokens.");
+    }
     const payload = `${jobId}:${tenantId}:${expiresAt}`;
     const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
     const token = `${payload}:${signature}`;
@@ -55,7 +59,9 @@ export class GitHubActionsRenderManagerClass {
       const expiresAt = parseInt(tExpiresAtStr, 10);
       if (Date.now() > expiresAt) return false;
 
-      const secret = process.env.FACTORYOS_EXECUTION_SECRET || "factoryos_execution_token_secret_key_88192";
+      // Fail closed: never verify against a fallback key.
+      const secret = process.env.FACTORYOS_EXECUTION_SECRET;
+      if (!secret) return false;
       const expectedPayload = `${tJobId}:${tTenantId}:${tExpiresAtStr}`;
       const expectedSignature = crypto.createHmac("sha256", secret).update(expectedPayload).digest("hex");
 
@@ -75,6 +81,16 @@ export class GitHubActionsRenderManagerClass {
       return { success: false, error: guardCheck.reason };
     }
 
+    // Fail closed: an unconfigured dispatch must never be reported as DISPATCHED —
+    // dry-run simulation is not production dispatch.
+    if (!process.env.FACTORYOS_EXECUTION_SECRET) {
+      return { success: false, error: "EXECUTION_SECRET_MISSING: FACTORYOS_EXECUTION_SECRET is required to sign execution tokens." };
+    }
+    const githubToken = process.env.GITHUB_RENDER_TOKEN;
+    if (!githubToken || githubToken === "mock_github_token") {
+      return { success: false, error: "RENDER_DISPATCH_NOT_CONFIGURED: GITHUB_RENDER_TOKEN is missing; refusing to simulate dispatch." };
+    }
+
     const { token, expiresAt } = this.generateExecutionToken(job.id, job.tenantId);
 
     const runRecord: WorkflowRunRecord = {
@@ -89,41 +105,35 @@ export class GitHubActionsRenderManagerClass {
 
     this.activeRuns.set(job.id, runRecord);
 
-    const githubToken = process.env.GITHUB_RENDER_TOKEN;
-    if (githubToken && githubToken !== "mock_github_token") {
-      try {
-        const response = await fetch(`https://api.github.com/repos/${this.repository}/actions/workflows/${this.workflowFile}/dispatches`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${githubToken}`,
-            Accept: "application/vnd.github+json",
-            "Content-Type": "application/json",
-            "User-Agent": "FactoryOS-Control-Plane",
+    try {
+      const response = await fetch(`https://api.github.com/repos/${this.repository}/actions/workflows/${this.workflowFile}/dispatches`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json",
+          "User-Agent": "FactoryOS-Control-Plane",
+        },
+        body: JSON.stringify({
+          ref: this.ref,
+          inputs: {
+            jobId: job.id,
+            executionToken: token,
           },
-          body: JSON.stringify({
-            ref: this.ref,
-            inputs: {
-              jobId: job.id,
-              executionToken: token,
-            },
-          }),
-        });
+        }),
+      });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          runRecord.status = "FAILED";
-          runRecord.error = `GitHub API workflow_dispatch failed (${response.status}): ${errText}`;
-          return { success: false, error: runRecord.error };
-        }
-      } catch (err: any) {
+      if (!response.ok) {
+        const errText = await response.text();
+        runRecord.status = "FAILED";
+        runRecord.error = `GitHub API workflow_dispatch failed (${response.status}): ${errText}`;
+        return { success: false, error: runRecord.error };
+      }
+    } catch (err: any) {
         runRecord.status = "FAILED";
         runRecord.error = `GitHub dispatch network error: ${err.message}`;
         return { success: false, error: runRecord.error };
       }
-    } else {
-      // Dry-run / development simulation
-      console.log(`[GitHubActionsRenderManager] Dry-run workflow_dispatch for Job ${job.id} on ${this.repository}`);
-    }
 
     return { success: true, runRecord };
   }
@@ -163,17 +173,19 @@ export class GitHubActionsRenderManagerClass {
     tenantId: string,
     artifactMeta: { sizeBytes: number; headerBytesHex?: string }
   ): { valid: boolean; error?: string } {
-    if (!artifactMeta || artifactMeta.sizeBytes <= 0) {
+    if (!artifactMeta || !Number.isFinite(artifactMeta.sizeBytes) || artifactMeta.sizeBytes <= 0) {
       return { valid: false, error: "ARTIFACT_INVALID: Output MP4 size is 0 bytes or missing." };
     }
 
-    // MP4 header check ('ftyp' box signature check if hex provided)
-    if (artifactMeta.headerBytesHex) {
-      const headerHex = artifactMeta.headerBytesHex.toLowerCase();
-      // 'ftyp' in ASCII is 66747970
-      if (!headerHex.includes("66747970") && !headerHex.startsWith("000000")) {
-        return { valid: false, error: "ARTIFACT_INVALID: Invalid MP4 container header." };
-      }
+    // Physical-evidence invariant: completion requires actual artifact bytes, not metadata alone.
+    if (!artifactMeta.headerBytesHex) {
+      return { valid: false, error: "ARTIFACT_INVALID: Missing MP4 header bytes; metadata-only completion is rejected." };
+    }
+
+    const headerHex = artifactMeta.headerBytesHex.toLowerCase();
+    // 'ftyp' in ASCII is 66747970
+    if (!headerHex.includes("66747970")) {
+      return { valid: false, error: "ARTIFACT_INVALID: Invalid MP4 container header." };
     }
 
     return { valid: true };

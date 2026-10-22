@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
                   System & Renderer Telemetry Analytics
                 </h1>
                 <p className="text-xs font-medium text-zinc-400 mt-0.5">
-                  Real-time compute breakdown across Azure Admin, Basic Cloud, and BYOR rendering planes
+                  Real-time compute breakdown across Basic Cloud and BYOR rendering planes
                 </p>
               </div>
             </div>

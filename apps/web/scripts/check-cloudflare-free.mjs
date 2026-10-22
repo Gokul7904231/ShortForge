@@ -43,7 +43,7 @@ const WARN_ASSET_BYTES          = 20 * 1024 * 1024;
 const BANNED_SERVER_EXTENSIONS = new Set([
   ".mp4", ".mov", ".avi", ".mkv", ".flv", ".wav",  // media files
   ".node",                                           // native addons
-  ".py",                                             // Python scripts (Azure VM only)
+  ".py",                                             // Python scripts (render worker only)
   ".db", ".sqlite", ".sqlite3",                      // SQLite databases
   ".c", ".h",                                        // C source (sqlite3 deps)
 ]);

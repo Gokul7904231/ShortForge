@@ -280,9 +280,9 @@ describe("ShortForge / FactoryOS — Architectural Convergence & Production DAG"
   describe("6. FactoryProjectionService", () => {
     it("produces a real state projection from WorldStateEngine and DurableEventBus", async () => {
       worldState.updateFloorStatus("floor01_strategy", "ONLINE", "Topic Strategy");
-      worldState.updateFloorStatus("floor06_rendering", "ONLINE", "Azure Render Orchestration");
+      worldState.updateFloorStatus("floor06_rendering", "ONLINE", "Remote Render Orchestration");
       worldState.registerWorker({
-        workerId: "azure_worker_01",
+        workerId: "render_worker_01",
         role: "WORKER",
         specialization: "RENDERING",
         status: "HEALTHY",

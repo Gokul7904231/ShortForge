@@ -110,7 +110,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     const receipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       artifactSha256: artifactSha,
     });
 
@@ -118,7 +118,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     expect(receipt.artifactId).toBe("vid_psych_pratfall_01");
     expect(receipt.artifactSha256).toBe(artifactSha);
     expect(receipt.contentGenomeHash).toHaveLength(64);
-    expect(receipt.policyVersion).toBe("2026.09.15");
+    expect(receipt.policyVersion).toBe("2026.10.17");
     expect(receipt.policySnapshotHash).toHaveLength(64);
     expect(receipt.receiptSignatureSha256).toHaveLength(64);
 
@@ -138,7 +138,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     const receipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       artifactSha256: artifactSha,
     });
 
@@ -177,7 +177,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     const receipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       artifactSha256: "c".repeat(64),
     });
 
@@ -192,7 +192,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     const receipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       artifactSha256: "d".repeat(64),
     });
 
@@ -217,7 +217,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     const receipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       // artifactSha256 deliberately omitted and no localMediaPath provided
     });
 
@@ -243,7 +243,7 @@ describe("YouTube Evidence Receipt & Release Decision — Truth Boundary Proof",
     const validReceipt = await guardian.verifyRelease({
       video: candidateVideo,
       channel: cleanChannel,
-      publicationIntentAt: "2026-09-21T12:00:00Z",
+      publicationIntentAt: "2026-10-17T12:00:00Z",
       artifactSha256: "d".repeat(64),
     });
     const auth = authService.issueAuthorization({

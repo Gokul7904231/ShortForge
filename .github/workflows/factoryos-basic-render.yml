@@ -11,8 +11,6 @@ on:
         description: 'Short-lived FactoryOS Execution Token'
         required: true
         type: string
-  repository_dispatch:
-    types: [factoryos_render_job]
 
 jobs:
   render:
@@ -54,8 +52,10 @@ jobs:
       - name: Resolve Job Inputs
         id: resolve_inputs
         env:
-          INPUT_JOB_ID: ${{ github.event.inputs.jobId || github.event.client_payload.jobId }}
-          INPUT_EXEC_TOKEN: ${{ github.event.inputs.executionToken || github.event.client_payload.executionToken }}
+          # workflow_dispatch is the only trigger: jobId + executionToken arrive in the
+          # dispatch payload and are validated fail-closed below.
+          INPUT_JOB_ID: ${{ github.event.inputs.jobId }}
+          INPUT_EXEC_TOKEN: ${{ github.event.inputs.executionToken }}
         run: |
           JOB_ID="$INPUT_JOB_ID"
           EXEC_TOKEN="$INPUT_EXEC_TOKEN"
@@ -169,11 +169,18 @@ jobs:
         if: always()
         env:
           CONTROL_PLANE_URL: ${{ secrets.FACTORYOS_CONTROL_PLANE_URL || 'https://factoryos.app' }}
-          WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET || 'factoryos-render-worker-secret-key-2026' }}
+          # No default: a committed shared secret is compromised by definition.
+          # Rotation: docs/deployment/render-worker-secrets.md
+          WORKER_SECRET: ${{ secrets.RENDER_WORKER_SECRET }}
           RENDER_STATUS: ${{ steps.validate_mp4.outcome == 'success' && 'completed' || 'failed' }}
         run: |
           python3 -c "
-          import urllib.request, json, os, pathlib
+          import urllib.request, json, os, pathlib, sys
+          # Fail closed before any request: an unconfigured secret used to fall back
+          # to a committed literal, and the resulting 401 was swallowed.
+          if not os.environ.get('WORKER_SECRET') or not os.environ.get('CONTROL_PLANE_URL'):
+              print('::error::RENDER_WORKER_SECRET (or CONTROL_PLANE_URL) is not configured; refusing to call back.')
+              sys.exit(1)
           url = f\"{os.environ['CONTROL_PLANE_URL'].rstrip('/')}/api/rendering/callback\"
           status = os.environ.get('RENDER_STATUS','failed')
           job_id = os.environ['JOB_ID']
@@ -209,7 +216,10 @@ jobs:
               with urllib.request.urlopen(req, timeout=30) as resp:
                   print(f'Callback {resp.status}: {resp.read().decode()[:500]}')
           except Exception as e:
-              print(f'Callback notice: {e}')
+              # A swallowed error here made a lost callback look like a delivered job.
+              print(f'::error::Callback failed for job {job_id}: {e}')
+              print('::error::A lost completion callback is reconciled by RemoteRenderStateMachine.reconcileStaleJobs (RECOVERED_FROM_LOST_CALLBACK); reporting failure rather than silent success.')
+              sys.exit(1)
           "
 
       - name: Clean Local Workspace
