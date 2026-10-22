@@ -1,0 +1,207 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR247-Render-Worker-Fail-Closed",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/render-worker-fail-closed-20261017",
+  "pullRequest": 247,
+  "headSha": "7082575168922d9e856dc0e5cfba34ca9ac0268e",
+  "objective": "Remove the committed RENDER_WORKER_SECRET fallback and make the distributed render-worker dispatch path fail closed, so a broken claim, a failed downstream dispatch or a lost callback can no longer be reported as an empty queue or a successful delivery. Updated 2026-10-18: reconciled with PR 248's verified dead-configuration cleanup (repository_dispatch trigger and DISPATCH_JOB_ID wiring removed from both workflows); the report now describes the integrated source.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      ".okf/security/worker-permissions.md §13 — any side-effecting distributed worker operation must respect an active lease, fencing token, current attempt identity and callback authentication; expired or stale workers cannot successfully commit.",
+      ".okf/security/worker-permissions.md §22.8 — no physical success claims without verification.",
+      ".okf/security/worker-permissions.md §22.9 — no secrets in worker working memory unless explicitly required and sandboxed.",
+      ".okf/security/worker-permissions.md §9 — CAP_RENDER_DISPATCH records job identity and waits for the authoritative callback; it does not mark a job complete.",
+      ".okf/audits/final-system-acceptance-matrix.md — \"Workflows fail-closed ..., no `|| true` masking fatal errors\" was recorded as VERIFIED, which the dispatcher did not satisfy.",
+      ".okf/decision-protocol.md — classify before implementing; executable implementation and tests outrank .okf when they conflict."
+    ],
+    "sourceRefs": [
+      ".okf/security/worker-permissions.md",
+      ".okf/audits/final-system-acceptance-matrix.md",
+      ".okf/decision-protocol.md",
+      ".okf/decisions.md"
+    ]
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNAVAILABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": [
+      "A credential committed to public source history ('factoryos-render-worker-secret-key-2026') was removed from both workflows and must be treated as compromised. OPERATOR ACTION: rotate RENDER_WORKER_SECRET on the control plane and in repository secrets.",
+      "No secret value or execution token is written to any log sink; the execution token is masked in the dispatch step and is only published via GITHUB_OUTPUT.",
+      "Failed authentication, HTTP errors, timeouts and malformed responses now fail the workflow instead of producing claimed=false.",
+      "Authentication was not weakened and no default, dummy or fallback credential was introduced. No new API endpoint was invented.",
+      "The dispatcher job's actions:write permission is deliberately not granted; granting it is an owner decision and is out of scope for this change.",
+      "Separate operator action: a personal access token was exposed in plaintext in an unrelated terminal log. Its owner must revoke it. No token value is recorded in this report and it was neither used nor tested."
+    ]
+  },
+  "conflicts": [
+    {
+      "id": "PR247-C1",
+      "originalConflict": ".okf/audits/final-system-acceptance-matrix.md records the CI/CD requirement 'Workflows fail-closed on build, lint, typecheck, or render failures; no `|| true` masking fatal errors' as VERIFIED, while .github/workflows/factoryos-render-worker.yml suppressed a failed `gh workflow run` with `|| echo` and converted every claim exception into claimed=false.",
+      "status": "RESOLVED",
+      "proposedResolution": "Reconcile the implementation with the already-canonical rule: remove the suppressed failure and the blanket exception handling, and fail visibly on every non-empty-queue outcome. The rule is unchanged; the implementation now satisfies it.",
+      "acceptedResolution": "Dispatcher failures and callback failures now fail the workflow. Empty queue remains the only non-failure outcome.",
+      "decisionAuthority": "Repository owner (review required on PR 247)",
+      "canonicalUpdates": [
+        ".okf/decisions.md"
+      ]
+    },
+    {
+      "id": "PR247-C2",
+      "originalConflict": "The dispatcher's repository_dispatch path read DISPATCH_JOB_ID and implied it could act on a specific job, but POST /api/rendering/claim accepts only workerId and workerPool and cannot target a named job.",
+      "status": "RESOLVED",
+      "proposedResolution": "The dispatcher no longer implies authority it does not have: a dispatch that names a job is refused (exit code 3) instead of being silently satisfied by an unrelated queued job, and the required control-plane change is documented in docs/deployment/render-worker-secrets.md §7. No endpoint or request parameter was invented.",
+      "acceptedResolution": "Resolved in full on the integrated head: the repository_dispatch trigger and the DISPATCH_JOB_ID wiring have been removed entirely (no producer exists in the repository); the named-job path is direct workflow_dispatch with exact jobId + executionToken; /api/rendering/claim remains the generic queue pump; no new named-job claim endpoint, parameter or API was added. See docs/deployment/render-claim-vs-dispatch.md.",
+      "decisionAuthority": "Repository owner"
+    }
+  ],
+  "changes": [
+    ".github/workflows/factoryos-render-worker.yml: removed the committed secret fallback, wired DISPATCH_JOB_ID to github.event.client_payload.jobId, delegated the claim to a tested script, removed the `|| echo` dispatch suppression, and masked the execution token. Reconciliation (2026-10-18): removed the dead repository_dispatch: [factoryos_render_job] trigger and the DISPATCH_JOB_ID payload wiring (no producer exists in the repository); the schedule sweep and manual workflow_dispatch remain the only triggers.",
+    ".github/workflows/factoryos-basic-render.yml: removed the committed secret fallback, added a fail-closed preflight before the callback, and made a failed callback fail the run. Reconciliation (2026-10-18): removed the dead repository_dispatch trigger; the workflow is now workflow_dispatch-only and resolves named-job inputs from github.event.inputs directly.",
+    "services/rendering-engine/scripts/github_dispatch_claim.py (new): single claim client with exit codes 0 (resolved), 2 (missing configuration, no request made), 3 (named-job dispatch refused), 4 (claim not established). The named-job refuse path remains as a defensive guard for direct invocations after the workflow trigger removal.",
+    "services/rendering-engine/tests/test_github_dispatch_claim.py (new): 16 behavioural cases over a mocked transport.",
+    "apps/web/factoryos/tests/render-worker-fail-closed.test.ts (new): 20 static invariant checks over both workflows and the claim client, including the reconciliation guards (no repository_dispatch definition, no client_payload fallback, no DISPATCH_JOB_ID wiring, exact named-job dispatch inputs preserved).",
+    "docs/deployment/render-worker-secrets.md (new): configuration, rotation procedure, fail-closed behaviour table, dispatch-permission limitation, and the backend change needed. §7 updated: no backend change needed; disposition in docs/deployment/render-claim-vs-dispatch.md.",
+    ".okf/decisions.md: decision record for this change, now including the measured worker-daemon syntax repair and why the removed Azure-only ADMIN guard is deliberately not restored.",
+    "services/rendering-engine/worker_daemon.py: removed an orphaned indented return and the now-unused tier assignment left behind when commit 1ce28a3aa1dbc259617c50cbb18b2eb349d73a97 removed the Azure-only non-ADMIN guard during the provider-neutral refactor. The old Azure-only restriction was not restored.",
+    "services/rendering-engine/tests/test_worker_daemon_syntax.py: add an AST-parse regression test so the persistent worker daemon cannot silently regress to an import-blocking syntax error.",
+    "services/rendering-engine/tests/test_workflow_yaml_contract.py (new): 8 checks — both workflows parse as YAML, no repository_dispatch trigger remains, no secret fallback reintroduced, failed dispatch is unmasked, an empty queue resolves as a valid no-work outcome (exit 0, claimed=false), and a missing secret fails closed before any request. PyYAML is optional (pytest.importorskip).",
+    ".okf/decisions.md: new locked decision 'Named-Job Render Dispatch is Direct workflow_dispatch — 2026-10-18' recording the reconciliation and the producer-audit evidence.",
+    "docs/deployment/render-claim-vs-dispatch.md (new): disposition carried from PR 248, updated for the integrated PR 247 branch."
+  ],
+  "verificationResults": {
+    "typecheck": "PASS",
+    "typecheckCommand": "npm run factoryos:typecheck",
+    "authorityRegistry": "PASS",
+    "authorityRegistryDetail": "Authority registry valid: 15 domains",
+    "workflowYamlParse": "PASS",
+    "workflowYamlParseDetail": "factoryos-render-worker.yml and factoryos-basic-render.yml parse; 4 and 12 steps respectively",
+    "unitTests": "PASS",
+    "unitTestsDetail": "Integrated head re-measured: render-worker-fail-closed.test.ts 20/20; test_github_dispatch_claim.py 16/16; test_workflow_yaml_contract.py (new) 8/8; test_worker_daemon_syntax.py 1/1.",
+    "repositoryScanForOldLiteral": "PASS",
+    "repositoryScanDetail": "No occurrence in .github/workflows. The literal remains only as an intentional detection pattern in apps/web/scripts/check-cloudflare-free.mjs and as a negative assertion in services/rendering-engine/tests/test_drive_delivery.py.",
+    "fullFactoryosSuite": "PRE_EXISTING_FAILURES_REPRODUCED",
+    "fullFactoryosSuiteDetail": "Final head 3ad2705a: 67 files failed | 242 passed | 3 skipped (312); 71 tests failed | 1447 passed | 9 skipped (1527). Pristine main ed966487 on the same machine: 67 failed | 241 passed | 3 skipped (311); 71 failed | 1429 passed | 9 skipped (1509). The delta is exactly the 18 new checks in render-worker-fail-closed.test.ts, and the failing-test count is identical (71) on both trees, so no existing test changes status because of this PR. Five files fail on the head only and five on main only; those ten were re-run in isolation and interleaved A/B on both trees, and both commits fail them under this machine's ambient load (29 node processes, including the operator's own dev servers), so they are load-dependent rather than regressions. No TypeScript or JavaScript source is modified by this PR.",
+    "workerDaemonSyntax": "PASS",
+    "workerDaemonSyntaxDetail": "Final head 3ad2705a. `python -m py_compile worker_daemon.py` exits 0; an AST parse of the file succeeds (664 lines); `pytest tests/test_worker_daemon_syntax.py` reports 1 passed. Pristine main ed966487 fails `py_compile` at line 549 with IndentationError, so this is the exact repair and not a cosmetic change.",
+    "workerDaemonPySuite": "PASS_WITH_TWO_PRE_EXISTING_FAILURES",
+    "workerDaemonPySuiteDetail": "Integrated head re-measured on this machine (Python 3.13.3): `python -m pytest tests -q` collects 59 tests with 0 collection errors and reports 57 passed, 2 failed. The 2 failures are the same pre-existing ones documented earlier (test_basic_render_api.py::test_health_endpoint asserts a stale service name in a file this PR does not touch; test_quiz_renderer_parity.py::test_canonical_quiz_render_end_to_end requires live edge-tts and receives HTTP 403). No test changed status because of the reconciliation.",
+    "liveRenderExecution": "BLOCKED",
+    "liveRenderExecutionDetail": "No credentials or runtime available in this environment. No physical MP4, CAS receipt or F07 proof is claimed.",
+    "liveClaimAgainstControlPlane": "NOT_RUN",
+    "liveClaimAgainstControlPlaneDetail": "The claim client is exercised only against a mocked transport in test_github_dispatch_claim.py. No request was made to a live control plane.",
+    "dispatchActionsWritePermission": "NOT_VERIFIED",
+    "productionDispatcherEvidence": "SILENT_FAILURE_CONFIRMED_IN_PRODUCTION",
+    "productionDispatcherEvidenceDetail": "Workflow 338320444 (FactoryOS Render Worker & Queue Dispatcher): 588 runs, the most recent 100 all 'success', newest a schedule run on main at ed966487. Workflow 330390996 (FactoryOS Basic Cloud Rendering Pipeline): total_count 0 since it was created on 2026-08-09 — it has never run. A dispatcher that reports success every minute while the workflow it is supposed to dispatch has never executed cannot distinguish an empty queue from a failing claim, which is precisely the defect this PR removes. Scheduled runs execute from the default branch, so production behaviour does not change until this branch is merged.",
+    "e2eBaselineVerification": "PASS_WITH_ONE_PRE_EXISTING_FAILURE",
+    "e2eBaselineDetail": "Measured on pristine main ed9664878 and re-measured identically on the integrated head: npm run factoryos:typecheck PASS; factoryos/tests/real-artifact-pipeline.test.ts 9/9 (real local FFmpeg subprocess produced a physical 1080x1920 MP4, SHA-256 verified, ffprobe-inspected, and Floor 07 independently probed the real MP4 and passed all hard gates); factoryos/tests/http-callback-authoritative-gate.test.ts 3/3; real-e2e-mission-run.test.ts fails 1/14 identically on both trees — the test calls FFmpegRenderCompiler.execute(), an API that no longer exists (factoryos/core/fabric/RenderFabric.ts exposes compile()/executeRender()); it is an obsolete test expectation, pre-existing on main and touched by nothing in this PR. The requested file e2e-factoryos-production-execution.test.ts does not exist in the repository.",
+    "physicalArtifactEvidence": {
+      "file": "apps/web/data/cas_storage/49/492ba65e0f4e474eb9989347a1615eaa065a1fd145a01f4886046ab184c30856.mp4",
+      "probe": "ffprobe: h264 1080x1920 r_frame_rate=30/1; audio aac; format mov,mp4; duration 2.000000",
+      "sha256": "492ba65e0f4e474eb9989347a1615eaa065a1fd145a01f4886046ab184c30856",
+      "bytes": 32984,
+      "note": "Produced by the real-artifact-pipeline test on the integrated head; independently inspected with ffprobe and SHA-256 re-hashed outside the test. The SHA-256 equals the CAS content address by construction. This is a real local render, not a fixture. It is NOT a distributed/production render; no Cloudinary upload, CAS delivery or Lightning proof is claimed."
+    }
+  },
+  "ciResults": {
+    "measuredOnHead": "97590898c21ac12d4a59bc24893440f444adea52",
+    "totalWorkflowRuns": 20,
+    "summary": "CI success; Team Change Gate success; OKF Governance Gate success; Floor 07 Pre-Training Validation FAILED (pre-existing, disclosed); Lightning Physical MP4 Render Proof in progress/cancelled-or-failed — owned by Antigravity's PR 244 lane, no result claimed, no artifact from it.",
+    "notableResults": [
+      {
+        "name": "CI",
+        "status": "success",
+        "runId": 39110774957,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774957"
+      },
+      {
+        "name": "Team Change Gate",
+        "status": "success",
+        "runId": 39110774904,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774904"
+      },
+      {
+        "name": "OKF Governance Gate",
+        "status": "success",
+        "runId": 39110774954,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774954"
+      },
+      {
+        "name": "Floor 07 Pre-Training Validation",
+        "status": "failure",
+        "runId": 39110774896,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774896"
+      },
+      {
+        "name": "Lightning Physical MP4 Render Proof",
+        "status": "in_progress_or_restarted_by_its_owner",
+        "runId": 39110775017,
+        "url": "https://github.com/Gokul7904231/ShortForge/actions/runs/39110775017"
+      }
+    ],
+    "failureDetail": "Floor 07 Pre-Training Validation failed again (run 39110774896) — the same four pre-existing invariants documented on the pre-reconciliation head (#5 upload-safety/monetization separation; #6 non-YPP channels; #7 never claim YouTube will monetize; #12 G12 shorts eligibility boundary) that also fail on pristine main. F07 policy code and its tests were NOT modified in this reconciliation; the gate is not accepted as green and the PR is not called merge-ready on this basis.",
+    "note": "A red gate is disclosed as red. Passing local tests is not reported as CI success."
+  },
+  "pendingReviews": [
+    "Repository owner review of PR 247 — required before merge.",
+    "Operator confirmation that RENDER_WORKER_SECRET has been rotated on both the control plane and repository secrets.",
+    "Owner decision on whether the dispatcher job receives actions:write.",
+    "Owner decision on the pre-existing red Floor 07 Pre-Training Validation check: whether it is a required status check, and whether to repair the four failing F07 invariants separately or exempt them. This PR does not touch them.",
+    "Security owner action unrelated to this change: revoke the personal access token that was exposed in plaintext in a terminal log."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/247",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39040224898 (Floor 07 failure, step 8)",
+    "https://github.com/Gokul7904231/ShortForge/actions/workflows/338320444 (dispatcher: 588 runs, newest 100 all success)",
+    "https://github.com/Gokul7904231/ShortForge/actions/workflows/330390996 (renderer: 0 runs since creation on 2026-08-09)",
+    "services/rendering-engine/tests/test_github_dispatch_claim.py",
+    "services/rendering-engine/tests/test_worker_daemon_syntax.py",
+    "apps/web/factoryos/tests/render-worker-fail-closed.test.ts",
+    "docs/deployment/render-worker-secrets.md",
+    "services/rendering-engine/tests/test_workflow_yaml_contract.py",
+    "docs/deployment/render-claim-vs-dispatch.md",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774957",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774904",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774954",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39110774896",
+    "docs/deployment/staging-e2e-handoff.md"
+  ],
+  "remainingBlockers": [
+    "RESOLVED IN THIS RECONCILIATION — earlier wording said a named-job claim API was still needed. The current contract: named jobs dispatch directly to factoryos-basic-render.yml with exact jobId + executionToken; POST /api/rendering/claim stays the generic queue pump; the dead repository_dispatch trigger was removed. docs/deployment/render-claim-vs-dispatch.md records the disposition. Residual caveat: external senders of factoryos_render_job could not be verified from the evidence available here, but the removed path was fail-closed regardless.",
+    "Live render execution is BLOCKED in this environment (no credentials or runtime). No physical MP4, CAS receipt or F07 proof is claimed, and the cancelled Lightning Physical MP4 Render Proof run produced no artifact.",
+    "The compromised RENDER_WORKER_SECRET must be rotated by the operator on both the control plane and repository secrets before the dispatcher can claim at all.",
+    "The dispatcher step still needs actions:write on GITHUB_TOKEN to complete a downstream workflow_dispatch. It is NOT granted here. If the repository default is read-only, the dispatch step now fails loudly where it previously appeared to succeed — which is the intended behaviour, and still an owner decision.",
+    "Two rendering-engine tests fail on both the head and pristine main: test_basic_render_api.py::test_health_endpoint (stale expected service name, in a file this PR does not touch) and test_quiz_renderer_parity.py::test_canonical_quiz_render_end_to_end (requires live edge-tts; HTTP 403 from the provider in this environment). Neither is caused by this change and neither was masked.",
+    "The factoryos suite has 71 failing tests on both the head and pristine main. They are not caused by this PR, but they are real and remain unfixed; the informational CI job that reports them stays red.",
+    "Floor 07 Pre-Training Validation is red on this head (run 39110774896). Proven pre-existing on pristine main and unchanged by this reconciliation (no F07 file touched). Antigravity's PR 244 owns the F07 policy / physical-proof lane; whether it is a required status check remains an owner decision.",
+    "The cancelled/failed Lightning Physical MP4 Render Proof runs produced no artifact; physical qualification is explicitly NOT claimed and belongs to PR 244's owner.",
+    "Operator actions still open: rotate RENDER_WORKER_SECRET on control plane and repository secrets; owner decision on granting the dispatcher actions:write (not done here)."
+  ],
+  "disposition": "BLOCKED",
+  "dispositionReason": "Promotion remains blocked on owner review, rotation of the compromised RENDER_WORKER_SECRET, an owner decision on actions:write, an owner decision on the pre-existing red Floor 07 check, and the absence of any live physical-render proof. The dispatcher hardening, the worker-daemon syntax repair, and the PR 248 dead-configuration reconciliation are complete and verified at unit, static, syntax and real-local-render level on the integrated head: typecheck passes; the workflow/claim/YAML tests pass (20/20 TS, 16/16 + 8/8 + 1/1 python); the rendering-engine suite collects 59 tests (57 passed, the same 2 pre-existing failures documented above, none touched by this PR); the pristine-main E2E baseline reproduces identically on the integrated head (real physical 1080x1920 MP4 produced, SHA-256 verified, ffprobe-inspected and accepted by F07's hard gates locally); and real-e2e-mission-run fails only on the same obsolete test-side API call that fails on pristine main. On final head 97590898: CI, Team Change Gate and OKF Governance Gate are success; Floor 07 Pre-Training Validation is red (pre-existing, owned by PR 244); Lightning physical proof remains unqualified. A red gate is disclosed as red. A green local test is not a live distributed render, so BLOCKED is not reported as PASS.",
+  "pr248Reconciliation": {
+    "integratedOnHead": true,
+    "summary": "PR 248's verified conclusion (named jobs use direct workflow_dispatch with exact jobId + executionToken; /api/rendering/claim remains the generic queue pump; the dead repository_dispatch triggers and DISPATCH_JOB_ID wiring were dead configuration) is applied on top of PR 247's fail-closed versions, not by wholesale file replacement. All PR 247 fail-closed guarantees were re-verified on the integrated head.",
+    "pr248Redundancy": "If this PR merges, PR 248's workflow cleanup (commit 6fdce506) is redundant — its disposition document is carried on this branch as docs/deployment/render-claim-vs-dispatch.md. PR 248's latest commit b238697b adds only Team/reports/pr-248.json. The owner may close #248 without losing any capability or documentation.",
+    "evidence": [
+      "workflow files on the final head of this PR (no repository_dispatch, no DISPATCH_JOB_ID)",
+      "apps/web/factoryos/tests/render-worker-fail-closed.test.ts (20/20 on integrated head)",
+      "services/rendering-engine/tests/test_workflow_yaml_contract.py (8/8 on integrated head)",
+      "docs/deployment/render-claim-vs-dispatch.md",
+      "Team Change Gate + OKF Governance Gate + CI all success on final head 97590898; Floor 07 red pre-existing"
+    ]
+  }
+}
