@@ -29,6 +29,11 @@ jobs:
     name: Claim Queued Video & Dispatch Render Pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    # Bring-up gate: the scheduled sweep stays paused until the owner enables
+    # repo variable RENDER_WORKER_SCHEDULER_ENABLED=1 (after credentials,
+    # provider, queue and storage are verified). workflow_dispatch is always
+    # allowed so bring-up can be driven one job at a time.
+    if: github.event_name == 'workflow_dispatch' || vars.RENDER_WORKER_SCHEDULER_ENABLED == '1'
 
     steps:
       - name: Checkout FactoryOS Dispatcher Tools
