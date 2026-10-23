@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR252-RenderWorkerSchedulerBringUpGate",
+  "pullRequest": 252,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/scheduler-bringup-gate-20261023",
+  "objective": "Prevent unintended queue consumption during production bring-up: the scheduled claim sweep (cron '* * * * *' on .github/workflows/factoryos-render-worker.yml) is now gated behind a non-secret repo variable RENDER_WORKER_SCHEDULER_ENABLED=1, while workflow_dispatch stays always-allowed so the owner can validate the credential handshake one controlled job at a time. Root cause of the current scheduled failures was verified from the workflow's own annotation, not inferred: 'RENDER_WORKER_SECRET is not configured; refusing to claim a job.' (fail-closed guard from PR #247, run 39913423934).",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "sourceRefs": [
+    ".github/workflows/factoryos-render-worker.yml",
+    "services/rendering-engine/scripts/github_dispatch_claim.py",
+    "apps/web/app/api/rendering/claim/route.ts",
+    "apps/web/app/api/rendering/callback/route.ts",
+    "docs/deployment/owner-actions-checklist-20261022.md"
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.SECURITY.FAIL_CLOSED",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.GOVERNANCE.TEAM_GATE"
+      ]
+    },
+    "sourceRefs": [
+      ".github/workflows/factoryos-render-worker.yml",
+      "services/rendering-engine/scripts/github_dispatch_claim.py"
+    ]
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "notes": "Change is a job-level scheduling gate only: no new input surfaces, no trigger added, no secret logic touched; claim/callback fail-closed behavior unchanged. The gate reduces risk (prevents auto-claim of queued jobs before provider/storage verification). No secrets printed or committed."
+  },
+  "conflicts": [],
+  "evidence": [
+    "Scheduled run 39913423934 (run 625, 2026-10-23T06:45:11Z) job 120281409503 failed at step 'Claim Queued Basic Job from FactoryOS Control Plane' with annotation 'RENDER_WORKER_SECRET is not configured; refusing to claim a job. The repository secret must be set (and rotated) by the operator.', exit code 2.",
+    "main is at expected sha ac3e474e; required checks OKF / lint-sweep-report, Validate Team change report, Floor 07 release truth green on final main.",
+    "First five scheduled runs of factoryos-render-worker.yml on main (39872918128, 39886567479, 39913423934) all failed on the same claim step; no claim request is emitted before the credential guard (github_dispatch_claim.py exits 2 pre-request)."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/39913423934"
+  ],
+  "verification": {
+    "typecheck": "N/A (workflow YAML only)",
+    "tests": "Existing claim-script unit tests unaffected: gate is job-level 'if', none of the tested claim semantics changed (github-actions-rendering.test.ts and render-dispatch-fail-closed-security.test.ts cover the payload/claim layer).",
+    "criterion": "Scheduled sweep skips unless RENDER_WORKER_SCHEDULER_ENABLED=1; workflow_dispatch path runs the claim handshake exactly as before."
+  },
+  "disposition": "BLOCKED",
+  "blockedReason": "Live production acceptance requires owner-only actions: revoke the exposed PAT; rotate RENDER_WORKER_SECRET and FACTORYOS_EXECUTION_SECRET; configure GITHUB_RENDER_TOKEN; supply LIGHTNING_API_KEY/LIGHTNING_USER_ID and provider credentials; confirm MongoDB and durable CAS/storage; choose a Node runtime lane for the SQLite-backed stores. Queue contents cannot be inspected read-only (claim-only API by contract); no queue request is emitted while the secret is unconfigured, so no unintended work can start during bring-up preparation."
+}
