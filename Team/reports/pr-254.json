@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR254-ThreeAgentProductionSpeedrun",
+  "pullRequest": 254,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "docs/three-agent-production-speedrun-20261029",
+  "objective": "Publish a bounded three-agent SDLC execution plan for production readiness and genuine distributed render→CAS/F07→Google Drive acceptance, with Spec Kit and Anti-Slop mandatory in each actual coding-agent environment.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "sourceRefs": [
+    "docs/release/three-agent-speedrun.md",
+    "docs/release/agent-packets/agent-1-release-captain.md",
+    "docs/release/agent-packets/agent-2-distributed-render.md",
+    "docs/release/agent-packets/agent-3-product-qa.md",
+    ".okf/decision-protocol.md",
+    ".okf/index.md",
+    ".okf/principles.md",
+    ".okf/decisions.md",
+    "Team/workflow/change-gate.md"
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/decisions.md"
+    ],
+    "notes": "Plan only. It preserves .okf hierarchy and release-evidence rules. Full repo-wide sweep must be performed by Agent 1 before implementation changes; this report does not claim coding-agent skill installation or live acceptance."
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_FOR_DOCS_ONLY",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_FOR_DOCS_ONLY",
+    "notes": "Documentation-only coordination plan. No secrets, application runtime, workflows, auth or production settings changed. Required skills must be installed/verified in the three real agent environments."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added three-agent speedrun and release acceptance matrix.",
+    "Added distinct agent packets for release captain/governance, distributed render/persistence/CAS/F07/Drive, and product/UX/QA.",
+    "Bounded scope to one controlled staging render, preserved existing Render deployment, and prohibited cron queue draining or external publishing without owner-approved scope."
+  ],
+  "evidence": [
+    "Verified official Spec Kit repository describes spec-driven development with specify/plan/tasks/implement/converge and separate bug-fixing process.",
+    "Verified Anti-Slop repository documents core and additive skills plus mandatory Delivery Gate; each agent still needs local installation and load evidence.",
+    "Live Render health report returned HTTP 200 while application status was degraded; scheduled worker dispatcher remains skipped/gated.",
+    "Lightning physical MP4→CAS→F07 run 40824025739 failed with exit code 1 and no proof artifacts."
+  ],
+  "evidenceRefs": [
+    "https://github.com/github/spec-kit",
+    "https://github.com/miqdadbadjuber/anti-slop",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/40804889047",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/40824025739"
+  ],
+  "verification": {
+    "typecheck": "N/A_DOCS_ONLY",
+    "tests": "Team report validation and OKF governance required on PR",
+    "criterion": "Change gate passes, report is truthful, docs reviewed; production acceptance remains a separate gate."
+  },
+  "disposition": "BLOCKED",
+  "blockedReason": "This PR establishes coordination only. The three agent-local skill installations are not yet evidenced, production remains unaccepted, and the live distributed render plus CAS/F07/Drive metadata/restart evidence is missing."
+}
