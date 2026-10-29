@@ -80,7 +80,7 @@ This specification establishes the authoritative SDLC governance, acceptance mat
 | **Health Probe** | `render-keepalive.yml` JSON validation | PR #253 enforces `status == "healthy"` | **PASS (Static)** |
 | **Live Render SHA**| Render deployed SHA & readiness | Commit `cf4cc2c9`, HTTP 200, status `degraded` | **DEGRADED / BLOCKED** |
 | **Physical Proof** | Lightning MP4 → CAS → F07 | Run 40824025739 failed (exit code 1, auth error) | **FAIL / BLOCKED** |
-| **Team Report** | `Team/reports/pr-255.json` | Created for this PR; automated validation pending | **PENDING (BLOCKED)** |
+| **Team Report** | `Team/reports/pr-255.json` | Team Gate passed on candidate SHA `2ea23dfef6d3538f4f577e050348761acfd0ce9c`; final-head rerun required | **PASS ON PRIOR CANDIDATE / BLOCKED RELEASE** |
 | **Merge Gate** | Authorize PR #253 merge to main | Blocked pending controlled real render & secrets | **BLOCKED** |
 
 ---

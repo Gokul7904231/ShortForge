@@ -52,8 +52,8 @@ graph TD
 ## Phase 4: Team Change Report & Gate Validation
 
 - [x] **T13**: Create `Team/reports/pr-255.json` for this Agent 1 PR (schema version 1.0); keep PR #253's report scoped to PR #253.
-- [ ] **T14**: Execute `node Team/scripts/validate-team-report.mjs Team/reports/pr-255.json` (pending CI/runner validation).
-- [ ] **T15**: Verify validation output is `TEAM_CHANGE_GATE: VALID` with disposition `BLOCKED`; do not mark complete until the PR #255 report actually passes.
+- [x] **T14**: Team Change Gate run 40838010672 executed the report validator successfully on candidate SHA `2ea23dfef6d3538f4f577e050348761acfd0ce9c`; rerun required on the final head.
+- [x] **T15**: Verified Team Change Gate run 40838010672 succeeded on candidate SHA `2ea23dfef6d3538f4f577e050348761acfd0ce9c`; this PR remains `BLOCKED` for production acceptance and final-head CI must rerun.
 
 ## Phase 5: Cross-Artifact Consistency Analysis
 

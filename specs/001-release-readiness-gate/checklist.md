@@ -39,7 +39,7 @@
 
 ## 6. Team Change Report & Gate Checklist
 - [x] Agent 1 PR report added at `Team/reports/pr-255.json`
-- [ ] Validate with `node Team/scripts/validate-team-report.mjs Team/reports/pr-255.json` (automated validation pending)
+- [x] Team Change Gate run 40838010672 validated the report successfully on candidate SHA `2ea23dfef6d3538f4f577e050348761acfd0ce9c` (https://github.com/Gokul7904231/ShortForge/actions/runs/40838010672); rerun required for the final head.
 - [x] Validation outcome: `TEAM_CHANGE_GATE: VALID`
 - [x] Truthful disposition: `BLOCKED`
 - [x] Merge recommendation: Merge blocked until controlled real-render acceptance and credentials verified
