@@ -4,6 +4,7 @@
 **Role:** Distributed rendering, worker dispatch, callback, persistence/CAS, F07 and Google Drive verification  
 **Response file:** docs/release/agent-packets/agent-2-response.md  
 **Coordination branch:** docs/three-agent-production-speedrun-20261029
+**Required skill:** [Looping Skill](https://github.com/Gokul7904231/ShortForge/blob/docs/three-agent-production-speedrun-20261029/.agents/skills/looping-skill/SKILL.md) — read and follow it for every iteration.
 
 ## Activation and trigger
 
@@ -49,3 +50,15 @@ Advance the real distributed-render critical path while investigating the known 
 Publish the final response with the actual branch/PR/head SHA, changed files, tests and workflow links, exact render-evidence table, observed blockers, owner-only secret/permission actions with acquisition/configuration guidance, and response commit SHA. Distinguish CODE TEST PASS from PHYSICAL ACCEPTANCE PASS.
 
 **Activation prompt:** “ACTIVATE AGENT 2 — Claude Code. Follow docs/release/agent-packets/agent-2-instruction.md from the coordination branch. Investigate/fix the real distributed-render blocker, start and finish by overwriting agent-2-response.md on that branch, and push the response update. Never expose credential values or claim physical acceptance without physical evidence.”
+
+
+## Current Iteration — Coordinator Handoff
+
+**Iteration:** 1  
+**Status:** READY FOR OWNER ACTIVATION  
+**Objective:** Verify the current Agent 2 implementation branch/PR and inspect the newest Lightning physical-proof failure on the exact current head. Diagnose credential wiring/account/teamspace or code defects using logs and source without exposing values; fix verified defects within worker/pipeline ownership and run focused checks.  
+**Deliverable:** Update/open the correct implementation PR only after checking existing PRs. Overwrite `agent-2-response.md` with exact branch/head SHA, PR link, changed files, tests, actual workflow results, physical acceptance evidence achieved, and any verified credential/permission blocker. Push and verify the response file.  
+**Acceptance:** Current code and run are inspected; actual outcomes are reported accurately; no physical proof is claimed without a genuine MP4 and its required lineage; response is on the remote coordination branch.  
+**Credential stop gate:** If credentials are missing/rejected, report exact names, verified purpose, official acquisition URL, destination, minimum scope and safe validation. Stop and wait for owner/coordinator verification before credential changes or reruns requiring them. Never expose values.  
+**Safety stop conditions:** No production dispatch, paid compute, credential rotation, external publication, merge, or main push. Keep dispatcher gated while acceptance is incomplete.  
+**Coordinator ownership:** The coordinator will replace this section for each subsequent iteration after reviewing your response. Do not edit this instruction file.
