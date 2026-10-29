@@ -84,6 +84,7 @@ export default function VideoDetailPage() {
           status: video.status,
           deliveryMethod: video.deliveryMethod,
           verified: video.deliveryVerified,
+          deliveryStatus: video.deliveryStatus,
           driveFileId: video.driveFileId,
           driveUrl: video.driveUrl,
         });

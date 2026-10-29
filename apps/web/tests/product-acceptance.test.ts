@@ -39,6 +39,17 @@ describe("describeDelivery", () => {
     ).toBe("DELIVERY_FAILED");
   });
 
+  it("reports an unconfirmed local delivery as pending, not failed", () => {
+    expect(
+      describeDelivery({
+        status: "completed",
+        deliveryMethod: "LOCAL_OUTBOX",
+        verified: false,
+        deliveryStatus: "PENDING",
+      }).state
+    ).toBe("DELIVERY_PENDING");
+  });
+
   it("treats a missing receipt as not recorded instead of delivered", () => {
     expect(describeDelivery({ status: "completed" }).state).toBe("NOT_RECORDED");
   });

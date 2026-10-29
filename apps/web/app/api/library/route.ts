@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { db } from "@/lib/firebase-admin";
-import { readDeliveryReceipt } from "@/lib/delivery/outbox-record";
+import { resolveDeliveryFacts } from "@/lib/delivery/delivery-facts";
 import { describeDelivery } from "@/lib/presentation/JobStatusProjection";
 
 export const dynamic = "force-dynamic";
@@ -68,14 +68,15 @@ export async function GET(req: Request) {
         return;
       }
 
-      const driveFileId = d.driveFileId || d.deliveryArtifact?.driveFileId;
+      const facts = resolveDeliveryFacts(videoId, d);
+      const driveFileId = facts.driveFileId;
       const driveUrl = d.driveUrl || (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : undefined);
 
-      const receipt = readDeliveryReceipt(videoId);
       const delivery = describeDelivery({
         status: d.status,
-        deliveryMethod: receipt?.deliveryMethod ?? d.deliveryArtifact?.deliveryMethod,
-        verified: receipt?.verified ?? d.deliveryArtifact?.verified,
+        deliveryMethod: facts.deliveryMethod,
+        verified: facts.verified,
+        deliveryStatus: facts.deliveryStatus,
         driveFileId,
         driveUrl,
       });
@@ -83,7 +84,7 @@ export async function GET(req: Request) {
       const deliveryStatus: VideoLibraryItem["deliveryStatus"] =
         delivery.state === "DRIVE_DELIVERED"
           ? "DELIVERED"
-          : delivery.state === "DRIVE_PENDING"
+          : delivery.state === "DRIVE_PENDING" || delivery.state === "DELIVERY_PENDING"
           ? "PENDING_UPLOAD"
           : delivery.state === "OUTBOX_ONLY"
           ? "LOCAL_OUTBOX"
@@ -105,7 +106,7 @@ export async function GET(req: Request) {
         videoUrl: d.videoUrl || `/api/media/video/${videoId}`,
         driveUrl: delivery.state === "DRIVE_DELIVERED" ? delivery.linkUrl : undefined,
         driveFileId,
-        deliveryTarget: d.deliveryTarget || receipt?.deliveryMethod || (driveUrl ? "GOOGLE_DRIVE" : undefined),
+        deliveryTarget: d.deliveryTarget || facts.deliveryMethod || (driveUrl ? "GOOGLE_DRIVE" : undefined),
         deliveryStatus,
         isScheduled,
         scheduleId: d.scheduleId,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { db } from "@/lib/firebase-admin";
-import { readDeliveryReceipt } from "@/lib/delivery/outbox-record";
+import { resolveDeliveryFacts } from "@/lib/delivery/delivery-facts";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +31,9 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const driveFileId = d.driveFileId || d.deliveryArtifact?.driveFileId;
+    const facts = resolveDeliveryFacts(doc.id, d);
+    const driveFileId = facts.driveFileId;
     const driveUrl = d.driveUrl || (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : undefined);
-    const receipt = readDeliveryReceipt(doc.id);
 
     return NextResponse.json({
       success: true,
@@ -49,9 +49,11 @@ export async function GET(
         videoUrl: d.videoUrl || `/api/media/video/${doc.id}`,
         driveUrl,
         driveFileId,
-        deliveryTarget: d.deliveryTarget || receipt?.deliveryMethod || (driveUrl ? "GOOGLE_DRIVE" : undefined),
-        deliveryMethod: receipt?.deliveryMethod ?? d.deliveryArtifact?.deliveryMethod ?? null,
-        deliveryVerified: receipt?.verified ?? d.deliveryArtifact?.verified ?? null,
+        deliveryTarget: d.deliveryTarget || facts.deliveryMethod || (driveUrl ? "GOOGLE_DRIVE" : undefined),
+        deliveryMethod: facts.deliveryMethod ?? null,
+        deliveryVerified: facts.verified ?? null,
+        deliveryStatus: facts.deliveryStatus ?? null,
+        deliverySource: facts.source,
         isScheduled: Boolean(d.scheduleId || d.isScheduled),
         scheduleId: d.scheduleId,
         durationSeconds: d.durationSeconds ?? d.renderDurationSeconds ?? null,

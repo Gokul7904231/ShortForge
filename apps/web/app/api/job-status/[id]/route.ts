@@ -3,19 +3,18 @@ import { db } from "../../../../lib/firebase-admin";
 import { ServiceRegistry } from "../../../../lib/core/ServiceRegistry";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
-import { readDeliveryReceipt, type PersistedDelivery } from "@/lib/delivery/outbox-record";
+import { resolveDeliveryFacts } from "@/lib/delivery/delivery-facts";
 
 function deliveryFields(jobId: string, job: any) {
-  const receipt: PersistedDelivery | null = readDeliveryReceipt(jobId);
-  const artifact = job?.deliveryArtifact;
-  const deliveryMethod = receipt?.deliveryMethod ?? artifact?.deliveryMethod ?? null;
-  const deliveryVerified = receipt?.verified ?? artifact?.verified ?? null;
-  const driveFileId = job?.driveFileId ?? receipt?.driveFileId ?? artifact?.driveFileId ?? null;
+  const facts = resolveDeliveryFacts(jobId, job);
+  const driveFileId = facts.driveFileId ?? null;
 
   return {
     deliveryTarget: job?.deliveryTarget ?? null,
-    deliveryMethod,
-    deliveryVerified,
+    deliveryMethod: facts.deliveryMethod ?? null,
+    deliveryVerified: facts.verified ?? null,
+    deliveryStatus: facts.deliveryStatus ?? null,
+    deliverySource: facts.source,
     driveFileId,
     driveUrl: job?.driveUrl ?? (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : null),
   };

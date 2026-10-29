@@ -805,6 +805,7 @@ export default function QuickGenerateOverlay() {
     status: jobStatus?.status,
     deliveryMethod: jobStatus?.deliveryMethod,
     verified: jobStatus?.deliveryVerified,
+    deliveryStatus: jobStatus?.deliveryStatus,
     driveFileId: jobStatus?.driveFileId,
     driveUrl: jobStatus?.driveUrl,
   });
@@ -814,7 +815,7 @@ export default function QuickGenerateOverlay() {
       ? "border-[#19C37D]/30 bg-[#19C37D]/10 text-[#0F7A50] dark:text-[#19C37D]"
       : delivery.state === "DELIVERY_FAILED"
       ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
-      : delivery.state === "DRIVE_PENDING"
+      : delivery.state === "DRIVE_PENDING" || delivery.state === "DELIVERY_PENDING"
       ? "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
       : "border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.03] text-[#667085] dark:text-[#A8B2C1]";
 

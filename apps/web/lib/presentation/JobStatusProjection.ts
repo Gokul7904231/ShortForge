@@ -29,6 +29,7 @@ export interface CreatorJobProjection {
 export type DeliveryState =
   | "DRIVE_DELIVERED"
   | "DRIVE_PENDING"
+  | "DELIVERY_PENDING"
   | "OUTBOX_ONLY"
   | "DELIVERY_FAILED"
   | "NOT_RECORDED"
@@ -45,6 +46,7 @@ export interface DeliveryFacts {
   status?: string;
   deliveryTarget?: string;
   deliveryMethod?: string;
+  deliveryStatus?: string;
   verified?: boolean;
   driveFileId?: string;
   driveUrl?: string;
@@ -90,6 +92,13 @@ export function describeDelivery(facts: DeliveryFacts): DeliveryProjection {
         state: "OUTBOX_ONLY",
         label: "Saved to the local delivery outbox",
         detail: "The file is stored on the ShortForge server, not in Google Drive.",
+      };
+    }
+    if (facts.deliveryStatus === "PENDING" || facts.deliveryStatus === "UPLOADING") {
+      return {
+        state: "DELIVERY_PENDING",
+        label: "Delivery pending",
+        detail: "The video is rendered, but no delivery has been confirmed yet. No upload is claimed.",
       };
     }
     return {

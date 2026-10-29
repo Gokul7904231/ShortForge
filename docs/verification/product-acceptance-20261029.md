@@ -1,7 +1,7 @@
 # Product Acceptance — Creator Journey (2026-10-29)
 
 Agent 3: Product Design, UX and Acceptance QA. Branch `feat/product-acceptance-20261029`, based on `cf4cc2c9`.
-No commit to `main`, no push, no production job, no external publication. Work was done in the existing tree so
+No commit to `main`, no production job, no external publication. Work was done in the existing tree so
 `node_modules` and `.env` could be reused; pre-existing uncommitted Agent 1/2 files were left untouched and uncommitted.
 
 ## 1. Method and evidence
@@ -10,6 +10,7 @@ No commit to `main`, no push, no production job, no external publication. Work w
 |---|---|
 | Spec Kit | `speckit-specify` loaded. No `.specify/` or `specs/` scaffolding exists in this repo, so artifacts are plain markdown under `docs/verification/`. Recorded as a limitation, not a pass. |
 | Anti-Slop | Session override `during`. Core `antislop` + `antislop-ui` + `antislop-human` + `antislop-layoutmobile` + `antislop-copywriting` loaded before edits. |
+| EGM | Installed as the full plugin at `~/.agents/plugins/elephant-goldfish-model` (a skills-only copy breaks `agents/`, `docs/`, `resources/`). A general subagent read `agents/comprehension.md`, returned `egm-comprehension`, and could not see a parent-only marker, so persona dispatch and fresh-context isolation are real. Reviews were still run as governed QA, not as Goldfish findings. |
 | Design direction | No `DESIGN.md`. Direction was read from the existing UI: `#1677FF` primary, `#19C37D` success, zinc dark surfaces, `rounded-3xl` cards, light/dark pairs. No new palette, no redesign. |
 | Runtime under test | `next dev` on `:3100`, local `.env`/`.env.local`, signed dev cookie for pages, `INTERNAL_API_SECRET_KEY` bearer for APIs. |
 | Real render job | Not started. Starting one would enqueue a real job and needs owner approval. Marked BLOCKED wherever it applies. |
@@ -30,6 +31,13 @@ No commit to `main`, no push, no production job, no external publication. Work w
 | File | Change |
 |---|---|
 | `apps/web/lib/delivery/outbox-record.ts` | New read-only receipt reader for `data/outbox/<jobId>_outbox.json`, jobId guarded by `^[a-zA-Z0-9_-]{8,64}$`. Absence means "not recorded", never "delivered". |
+| `apps/web/lib/delivery/delivery-facts.ts` | Resolves delivery from the durable job document first and the worker outbox second, so a worker restart or container replacement does not erase a recorded upload. |
+| `apps/web/lib/delivery/durable-delivery.ts` | Writes every delivery outcome (Drive, local outbox, failure, pending) into the job manifest. |
+| `apps/web/lib/auth/job-access.ts` | Owner decision for job-scoped media: job manifest owner, or the jobs that reference a content-address hash. Unknown ownership fails closed for non-admins. |
+| `apps/web/app/api/media/video/[jobId]/route.ts`, `apps/web/app/api/media/thumb/[jobId]/route.ts` | jobId boundary check plus owner authorization before any filesystem read. |
+| `apps/web/factoryos/core/adapters/DriveDeliveryAdapter.ts` | Persists each delivery outcome into the job document; the outbox file remains a fallback. |
+| `apps/web/lib/jobs-history.ts` | Job manifest type carries delivery method, verification, status, file id and artifact. |
+| `apps/web/tests/media-video-ownership.test.ts`, `apps/web/tests/delivery-recovery.test.ts` | New evidence for media ownership and durable-receipt recovery. |
 | `apps/web/lib/presentation/JobStatusProjection.ts` | Added `describeDelivery` with `DRIVE_DELIVERED / DRIVE_PENDING / OUTBOX_ONLY / DELIVERY_FAILED / NOT_RECORDED / NOT_READY`. |
 | `apps/web/app/api/job-status/[id]/route.ts` | Returns `deliveryTarget`, `deliveryMethod`, `deliveryVerified`, `driveFileId`, `driveUrl`; progress fallback is `null`, not 50. |
 | `apps/web/app/api/library/route.ts` | Removed fabricated `sizeMb 4.5`, `fps 60`, resolution, duration 45, `guardianPassed: true`, `groundingScore: 1.0`. Added `LOCAL_OUTBOX` delivery status. |
@@ -81,11 +89,12 @@ Commands were run against `http://localhost:3100` with `.env` loaded. `$SECRET` 
 
 | Command | Result |
 |---|---|
-| `npx vitest run tests/product-acceptance.test.ts factoryos/tests/auth.test.ts factoryos/tests/user-drive-connection.test.ts --config vitest.config.ts` | 3 files, **37 tests passed** |
+| `npx vitest run tests/product-acceptance.test.ts factoryos/tests/auth.test.ts factoryos/tests/user-drive-connection.test.ts --config vitest.config.ts` | 3 files, **37 tests passed** on the first commit; `product-acceptance` has since grown to 12 |
+| `npx vitest run tests/media-video-ownership.test.ts tests/delivery-recovery.test.ts tests/product-acceptance.test.ts --config vitest.config.ts` | 3 files, **24 tests passed** (ownership video + thumb, durable receipt recovery, delivery projection, health readiness) |
 | `npx vitest run render-dispatch-fail-closed-security render-worker-fail-closed http-callback-authoritative-gate basic-fastapi-idempotency basic-fastapi-security f07-physical-truth f07-architectural-invariants real-artifact-pipeline` | 8 files, **82 tests passed** |
 | `npx vitest run creator-flow user-drive-connection delivery-fabric chaos-recovery product-acceptance` | 5 files, **35 tests passed** (`product-acceptance` has since grown to 11) |
 | `npm run factoryos:typecheck` | pass (strict) |
-| `npx tsc --noEmit` | 2 errors, both pre-existing in `factoryos/core/compute/notebooks/ColabNotebookAdapter.ts` (`NODE_ENV` on `ProcessEnv`, lines 739 and 754). None in touched files. |
+| `npx tsc --noEmit` | 3 errors, all pre-existing: 2 in `factoryos/core/compute/notebooks/ColabNotebookAdapter.ts` (`NODE_ENV` on `ProcessEnv`, lines 739 and 754) and 1 in `.next/types/validator.ts` for `app/(os)/factory/editor/page.tsx`, which commit `061b4d06a` on `main` truncated to 22 lines with no default export. None in touched files. |
 | `npx eslint <touched files>` | 0 errors; 1 pre-existing `react-hooks/exhaustive-deps` warning on `loadLibrary`. |
 
 Mocked or fail-closed suites prove contracts, not a live render. They are labelled as such.
@@ -119,8 +128,8 @@ Still open / not verified:
 ## 8. Top 3 blockers
 
 1. **No proven end-to-end generation in a production configuration.** Dispatch is not configured and a real job needs owner approval, so the render, F07 and delivery chain is only proven by local fail-closed suites. The creator journey cannot be signed off as working in production from this branch.
-2. **Per-user Drive delivery is still unproven, and the receipt does not survive a Worker deployment.** Connecting Drive requires Pro capability plus owner OAuth consent, so a genuine upload was not executed. Delivery state is read from `data/outbox/<jobId>_outbox.json`; on a Cloudflare Worker that file does not exist, so production would show "Delivery not recorded" even after a successful upload. Persisting delivery into the job document (or manifest) at completion is the real fix.
-3. **Cross-tenant video read.** `GET /api/media/video/[jobId]` has no ownership check. Any signed-in user who knows a job id can fetch another creator's artifact. It needs the manifest/userId ownership contract before launch.
+2. **Per-user Drive delivery is still unproven.** Connecting Drive requires Pro capability plus owner OAuth consent, so a genuine upload was not executed. The receipt is now persisted into the job document (with the outbox file as fallback), which removes the worker-restart failure mode, but durable Firestore writes need real Firebase credentials to be proven. `saveJobManifest` falls back to the in-process store when Firebase is absent.
+3. **Resolved in this branch:** the cross-tenant media read. `GET /api/media/video/[jobId]` and `/api/media/thumb/[jobId]` now check ownership (manifest owner, or jobs referencing a content hash) and fail closed for unowned artifacts; covered by `tests/media-video-ownership.test.ts`.
 
 ## 9. Residual risks
 
@@ -128,9 +137,11 @@ Still open / not verified:
 - `/api/delivery` and `DeliveryManager` still fabricate `gdrive_file_*` IDs and `signed_auth_token_*` URLs on a legacy path. The creator UI no longer uses them, but the contract is still fake. Owner decision needed.
 - Quick Generate still sends `delivery: { target: "GOOGLE_DRIVE", allowFallback: false }`, which the server schema ignores. Harmless today, misleading to the next reader.
 - Health checks configuration and SQLite only. External reachability is explicitly not probed; `/api/render-engine-health` remains the live probe.
-- The outbox receipt reader assumes a local filesystem. Same deployment constraint as blocker 2.
+- The outbox receipt reader assumes a local filesystem. The job document is now read first, so this is a fallback only.
+- `app/(os)/factory/editor/page.tsx` is truncated on `main` (commit `061b4d06a`, 897 bytes, no default export), so `tsc --noEmit` and the CI typecheck fail before this branch's changes. Out of scope here; needs an owner decision to restore the page.
+- Full `factoryos:test` was not rerun in this iteration; the targeted acceptance suites above are the evidence. A prior full run had 113 failures, mostly outside the touched surfaces.
 - No screenshot or device evidence because the desktop browser tool timed out.
-- Not run: `next build` (full 109-route build), full `factoryos:test` suite.
+- `next build` passed on `9f64f664a` (109 routes) but was not rerun after the durable-delivery additions. Full `factoryos:test` was not run this iteration.
 
 ## 10. Safe repro
 
