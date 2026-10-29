@@ -74,6 +74,12 @@ Don't treat these as a flat list — they exist at different layers.
   report → independent review → next instruction → reactivation. See
   `.agents/skills/looping-skill/SKILL.md`; this protocol does not auto-launch
   sessions or override `.okf` or release gates.
+- **`elephant-goldfish-model (EGM)`** — Optional spec/design and isolated-review
+  workflow for substantial or ambiguous changes. Use only when installed and
+  the current harness proves the relevant commands and fresh-context reviewer
+  dispatch work; do not force it for narrow bug fixes. It supplements Spec Kit,
+  Anti-Slop, Looping Skill and .okf; it is not production acceptance evidence.
+  Read `.agents/skills/looping-skill/SKILL.md#optional-egm-integration--design-quality-not-a-mandatory-runtime-dependency`.
 
 ---
 
