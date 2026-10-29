@@ -23,7 +23,7 @@ describe("Floor03RuntimeAdapter", () => {
         JSON.stringify({
           handoff_payload: {
             floor_id: "floor03_asset_realization",
-            floor_version: "2.3.0",
+            floor_version: "2.3.1",
             handoff_status: "VALIDATED",
             asset_plan_id: "plan-1",
             asset_plan_version: 1,
