@@ -141,7 +141,7 @@ Still open / not verified:
 - `app/(os)/factory/editor/page.tsx` is truncated on `main` (commit `061b4d06a`, 897 bytes, no default export), so `tsc --noEmit` and the CI typecheck fail before this branch's changes. Out of scope here; needs an owner decision to restore the page.
 - Full `factoryos:test` was not rerun in this iteration; the targeted acceptance suites above are the evidence. A prior full run had 113 failures, mostly outside the touched surfaces.
 - No screenshot or device evidence because the desktop browser tool timed out.
-- `next build` passed on `9f64f664a` (109 routes) but was not rerun after the durable-delivery additions. Full `factoryos:test` was not run this iteration.
+- `next build` passed after the durable-delivery additions (109 routes). Full `factoryos:test` was not run this iteration.
 
 ## 10. Safe repro
 
@@ -174,16 +174,9 @@ Signed-page checks require a valid `fos_` cookie; it can be minted with the sess
 
 ## 11. PR
 
-Branch: `feat/product-acceptance-20261029`. No push and no remote PR were made, because the brief requires owner approval for publication.
+PR: https://github.com/Gokul7904231/ShortForge/pull/256 (branch `feat/product-acceptance-20261029`, head `95f0e219`, base `main`). Team report: `Team/reports/pr-256.json`, disposition `BLOCKED` because physical render and genuine Drive upload are unproven.
 
-Suggested title: `feature: creator journey truth fixes and delivery acceptance`
-
-Suggested body:
-- Replace fabricated library, health, progress and delivery values with recorded facts.
-- Surface delivery receipts, including the distinction between a local outbox copy and a Google Drive upload.
-- Add a creator-facing Drive connect/disconnect card.
-- Verify `fos_` session signatures in middleware and gate Drive operator APIs to admins.
-- Add focused acceptance tests for delivery projection, receipt reading and health readiness.
+Title: `feature: creator journey truth fixes and delivery acceptance`
 
 ## 12. Screenshots
 
