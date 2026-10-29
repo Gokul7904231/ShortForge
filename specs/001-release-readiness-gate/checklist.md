@@ -38,8 +38,8 @@
 - [x] Agent 3 UI branch planned: `feat/ui-readiness-dashboard-20261029`
 
 ## 6. Team Change Report & Gate Checklist
-- [x] Report located at `Team/reports/pr-253.json`
-- [x] Validated with `node Team/scripts/validate-team-report.mjs Team/reports/pr-253.json`
+- [x] Agent 1 PR report added at `Team/reports/pr-255.json`
+- [ ] Validate with `node Team/scripts/validate-team-report.mjs Team/reports/pr-255.json` (automated validation pending)
 - [x] Validation outcome: `TEAM_CHANGE_GATE: VALID`
 - [x] Truthful disposition: `BLOCKED`
 - [x] Merge recommendation: Merge blocked until controlled real-render acceptance and credentials verified
