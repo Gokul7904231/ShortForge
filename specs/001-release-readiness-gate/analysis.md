@@ -22,7 +22,7 @@
 | **FR-05**: PR #253 & CI Forensic Analysis | Phase 3 | T06, T07 | Section 3, Items 1-6 | **ALIGNED** |
 | **FR-06**: Live Render Deployment Status | Phase 4 | T08, T09 | Section 4, Items 1-7 | **ALIGNED** |
 | **FR-07**: Agent Isolation & Boundaries | Phase 5 | T01, T11 | Section 5, Items 1-5 | **ALIGNED** |
-| **FR-08**: Team Report Validation | Phase 6 | T13, T14, T15 | Section 6, Items 1-5 | **ALIGNED** |
+| **FR-08**: Team Report Validation for PR #255 | Phase 6 | T13, T14, T15 | Section 6, Items 1-5 | **PARTIAL — report added, automated validation pending** |
 
 ---
 
@@ -30,5 +30,5 @@
 
 - **Agent 1 Boundary**: No changes were made to Agent 2 worker code (`services/rendering-engine/**`) or Agent 3 UI code (`apps/web/components/**`, `apps/web/app/**`).
 - **Main Branch Protection**: All work performed on dedicated worktree `ShortForge-agent1-sdlc` on branch `feat/release-sdlc-spec-kit-20261029`. Zero direct pushes to `main`.
-- **Truth in Reporting**: `Team/reports/pr-253.json` truthfully states `disposition: "BLOCKED"` due to failing Lightning physical proof (exit code 1) and degraded live Render service readiness.
+- **Truth in Reporting**: PR #253's historical acceptance findings are retained as evidence; this PR's authoritative report is `Team/reports/pr-255.json` with `disposition: "BLOCKED"`. Its automated validator run remains pending and must not be described as passed.
 - **Result**: **NO INCONSISTENCIES FOUND. ALL ARTIFACTS MUTUALLY REINFORCING.**
