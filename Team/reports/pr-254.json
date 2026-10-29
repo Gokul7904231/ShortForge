@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "agent2-distributed-render-20261029",
+  "pullRequest": {
+    "number": 254,
+    "branch": "agent2/distributed-render-20261029",
+    "baseRef": "main",
+    "title": "bug(tests): align stale F06 render and F03 handoff tests to canonical paths"
+  },
+  "repository": {
+    "primary": "https://github.com/Gokul7904231/ShortForge.git",
+    "upstreamMirror": "https://github.com/Gokul7904231/AI-Shorts-Maker"
+  },
+  "objective": {
+    "agent": "Agent 2",
+    "mission": "Distributed Rendering, Durability, CAS/F07 and Drive",
+    "scope": "Server/worker distributed rendering verification path; commit stale-test fixes; open PR; produce Team report."
+  },
+  "classification": "already exists",
+  "classificationRationale": "Both defects and their canonical fixes already exist in the .okf corpus and live implementation: (1) F06 physical render is exclusively through RenderFabric.executeRender (render-fabric.md) - the FFmpegRenderCompiler.execute removal in commit 72842947c left a stale test; (2) Floor 03 handoff requires floor_version 2.3.1 (Floor03RuntimeAdapter.ts:101 + Python identity) - the fixture used 2.3.0. No new abstraction, worker capability, renderer, model, or security behavior introduced.",
+  "linkedIssues": [],
+  "sourceRefs": [
+    "apps/web/factoryos/tests/real-e2e-mission-run.test.ts:192-198",
+    "apps/web/factoryos/tests/floor03-runtime-adapter.test.ts:26",
+    "apps/web/factoryos/core/fabric/RenderFabric.ts:200-414",
+    "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts:101",
+    "commit 72842947c (RenderFabric.executeRender canonicalization)"
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "decisionProtocolFollowed": true,
+    "machineSweep": {
+      "artifact": "inline-review",
+      "bindingMode": "IN_AGENT_SWEEP",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.RENDERING.RENDER_FABRIC_CANONICAL",
+        "OKF.RENDERING.RENDER_COMPILER",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE",
+        "OKF.GOVERNANCE.TEAM_GATE"
+      ],
+      "findings": "render-fabric.md confirms RenderFabric.executeRender is the sole F06 physical-render entry point. render-compiler.md confirms FFmpegRenderCompiler.compile is canonical. Floor03RuntimeAdapter floor_version check requires 2.3.1 per Python identity.py."
+    },
+    "sourceRefs": [
+      ".okf/rendering/render-fabric.md",
+      ".okf/rendering/render-compiler.md",
+      ".okf/rendering/compute-policy.md",
+      ".okf/rendering/workers.md"
+    ]
+  },
+  "forgers": [
+    {
+      "agent": "Agent 2",
+      "role": "primary",
+      "commitSha": "e7105f67475c4b46e00a29a6fb103bffcd887555"
+    }
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "secretsExposed": false,
+    "notes": "Change is test-only: two stale test fixtures aligned to canonical implementation contracts. No new input surfaces, no trigger added, no secret logic, no worker permission or rendering behavior changed. No credential values printed or committed. Owner-credential presence checked by name only."
+  },
+  "conflicts": [],
+  "evidence": {
+    "verification": {
+      "factoryosTypecheck": "PASS",
+      "webTypecheck": "PASS (clean worktree HEAD)",
+      "focusedTests": "46/46 TS tests pass across 7 focused files",
+      "pythonCompile": "PASS (py_compile + 34 focused pytest pass)",
+      "sqliteRestart": "PASS (tests/sqlite-restart-persistence.test.ts)",
+      "realE2e": "PASS - canonical RenderFabric produces 1080x1920 h264/aac MP4; F07 hard gates all true",
+      "floor03Adapter": "PASS - fixture floor_version aligned to 2.3.1"
+    },
+    "liveStagingJob": {
+      "status": "BLOCKED",
+      "blockedReason": "Missing owner credentials. Live staging job (single inexpensive topic) cannot be submitted. Per user selection: report as blocked."
+    },
+    "mp4Probe": "N/A (live render not executed - blocked on credentials)",
+    "sha256": "N/A (live render not executed)",
+    "callbackResult": "N/A (live callback not executed)",
+    "casRef": "N/A (live dispatch not executed)",
+    "f07Receipt": "N/A for live - focused e2e F07 gates pass on locally-rendered artifact",
+    "driveId": "N/A (Drive upload not executed - credentials absent)",
+    "restartResult": "N/A (live restart not tested); disk persistence unit tests PASS"
+  },
+  "evidenceRefs": [
+    "apps/web/factoryos/tests/real-e2e-mission-run.test.ts",
+    "apps/web/factoryos/tests/floor03-runtime-adapter.test.ts"
+  ],
+  "disposition": "BLOCKED",
+  "blockedReason": "Owner credentials for live staging are not available: GITHUB_RENDER_TOKEN, FACTORYOS_EXECUTION_SECRET, RENDER_WORKER_SECRET, FACTORYOS_CONTROL_PLANE_URL, and Drive provider credentials are absent (verified by name only, values never read). All credential-gated live suites (amd-live-smoke, live-hosted-sandbox) skip. Therefore the controlled staging job cannot be submitted: no workflow_dispatch, no live MP4 probe, no real callback capture, no CAS ref / F07 receipt, no Drive file ID, no live restart test. The code/test fixes themselves are complete and verified in isolation."
+}
