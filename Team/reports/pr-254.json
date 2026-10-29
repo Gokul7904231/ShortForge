@@ -5,14 +5,19 @@
   "repository": "Gokul7904231/ShortForge",
   "baseRef": "main",
   "headRef": "docs/three-agent-production-speedrun-20261029",
-  "objective": "Publish a bounded three-agent SDLC execution plan for production readiness and genuine distributed render→CAS/F07→Google Drive acceptance, with Spec Kit and Anti-Slop mandatory in each actual coding-agent environment.",
+  "objective": "Publish the three-agent production-readiness plan and Looping Skill: coordinator-owned instructions, agent-owned overwrite-only response reports, independent evidence review between iterations, and human-approved credential setup.",
   "classification": "extends existing rule",
   "linkedIssues": [],
   "sourceRefs": [
     "docs/release/three-agent-speedrun.md",
-    "docs/release/agent-packets/agent-1-release-captain.md",
-    "docs/release/agent-packets/agent-2-distributed-render.md",
-    "docs/release/agent-packets/agent-3-product-qa.md",
+    "docs/release/agent-packets/agent-1-instruction.md",
+    "docs/release/agent-packets/agent-1-response.md",
+    "docs/release/agent-packets/agent-2-instruction.md",
+    "docs/release/agent-packets/agent-2-response.md",
+    "docs/release/agent-packets/agent-3-instruction.md",
+    "docs/release/agent-packets/agent-3-response.md",
+    ".agents/skills/looping-skill/SKILL.md",
+    ".agents/skills/AGENTS.md",
     ".okf/decision-protocol.md",
     ".okf/index.md",
     ".okf/principles.md",
@@ -46,13 +51,18 @@
   "conflicts": [],
   "changes": [
     "Added three-agent speedrun and release acceptance matrix.",
-    "Added distinct agent packets for release captain/governance, distributed render/persistence/CAS/F07/Drive, and product/UX/QA.",
-    "Bounded scope to one controlled staging render, preserved existing Render deployment, and prohibited cron queue draining or external publishing without owner-approved scope."
+    "Replaced three role-only agent packet files with exactly six paired instruction/response files and removed the superseded packet files.",
+    "Added .agents/skills/looping-skill/SKILL.md and registered it in .agents/skills/AGENTS.md.",
+    "Defined manual activation, per-agent IN_PROGRESS/final response overwrites, isolated response-only commits, independent GitHub evidence review, and coordinator-owned next-iteration handoffs.",
+    "Added a human-in-the-loop credential gate that forbids secret values in chat/reports and requires owner configuration/confirmation.",
+    "Kept production acceptance blocked pending controlled physical render, MP4/ffprobe, CAS/F07, Drive metadata/download identity, and post-restart retrieval."
   ],
   "evidence": [
-    "Verified official Spec Kit repository describes spec-driven development with specify/plan/tasks/implement/converge and separate bug-fixing process.",
-    "Verified Anti-Slop repository documents core and additive skills plus mandatory Delivery Gate; each agent still needs local installation and load evidence.",
-    "Live Render health report returned HTTP 200 while application status was degraded; scheduled worker dispatcher remains skipped/gated.",
+    "The Looping Skill is present on this PR's coordination branch at .agents/skills/looping-skill/SKILL.md and registered in .agents/skills/AGENTS.md; this is repository documentation, not proof the skill has been merged or loaded in any agent's local session.",
+    "The agent-packets directory was verified on the coordination branch to contain exactly the six intended instruction/response files.",
+    "The updated protocol explicitly requires the owner to manually activate/reactivate each separate agent session; file changes do not auto-launch agents.",
+    "Each coding agent must independently verify skill load in its own actual environment before claiming that prerequisite is satisfied.",
+    "Previous live Render health evidence returned HTTP 200 while the application status was degraded; the scheduled worker dispatcher remains gated.",
     "Lightning physical MP4→CAS→F07 run 40824025739 failed with exit code 1 and no proof artifacts."
   ],
   "evidenceRefs": [
@@ -63,9 +73,9 @@
   ],
   "verification": {
     "typecheck": "N/A_DOCS_ONLY",
-    "tests": "Team report validation and OKF governance required on PR",
-    "criterion": "Change gate passes, report is truthful, docs reviewed; production acceptance remains a separate gate."
+    "tests": "Current-head Team Change Gate, OKF Governance Gate and CI are required; inspect final results after the last report/skill/doc changes.",
+    "criterion": "The handoff protocol and six-file limit are accurately documented; this PR does not establish agent execution or production acceptance."
   },
   "disposition": "BLOCKED",
-  "blockedReason": "This PR establishes coordination only. The three agent-local skill installations are not yet evidenced, production remains unaccepted, and the live distributed render plus CAS/F07/Drive metadata/restart evidence is missing."
+  "blockedReason": "This PR establishes coordination and a reusable Looping Skill only. Actual agents have not yet demonstrated successful looping runs from their response files. Production remains unaccepted until a genuine staging render and physical MP4/ffprobe, CAS/F07, Google Drive metadata/download identity, and retrieval-after-restart evidence pass."
 }
