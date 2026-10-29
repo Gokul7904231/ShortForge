@@ -21,7 +21,7 @@ graph TD
     T08 --> T09[T09: Document Rollback Baseline]
     T09 --> T10[T10: Compile Acceptance Matrix]
     T10 --> T11[T11: Define Agent 2/3 Non-Overlapping Boundaries]
-    T11 --> T12[T12: Generate/Validate Team Report pr-253.json]
+    T11 --> T12[T12: Generate/Validate Team Report pr-255.json]
     T12 --> T13[T13: Enforce Honest BLOCKED Disposition]
     T13 --> T14[T14: Cross-Artifact Spec Kit Analysis]
 ```
@@ -51,9 +51,9 @@ graph TD
 
 ## Phase 4: Team Change Report & Gate Validation
 
-- [x] **T13**: Ensure `Team/reports/pr-253.json` exists in worktree and matches schema version 1.0.
-- [x] **T14**: Execute `node Team/scripts/validate-team-report.mjs Team/reports/pr-253.json`.
-- [x] **T15**: Verify validation output is `TEAM_CHANGE_GATE: VALID` with disposition `BLOCKED`.
+- [x] **T13**: Create `Team/reports/pr-255.json` for this Agent 1 PR (schema version 1.0); keep PR #253's report scoped to PR #253.
+- [ ] **T14**: Execute `node Team/scripts/validate-team-report.mjs Team/reports/pr-255.json` (pending CI/runner validation).
+- [ ] **T15**: Verify validation output is `TEAM_CHANGE_GATE: VALID` with disposition `BLOCKED`; do not mark complete until the PR #255 report actually passes.
 
 ## Phase 5: Cross-Artifact Consistency Analysis
 
