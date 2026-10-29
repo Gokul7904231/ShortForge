@@ -4,6 +4,7 @@
 **Role:** UI/product acceptance, truthful user-facing states, accessibility and focused QA  
 **Response file:** docs/release/agent-packets/agent-3-response.md  
 **Coordination branch:** docs/three-agent-production-speedrun-20261029
+**Required skill:** [Looping Skill](https://github.com/Gokul7904231/ShortForge/blob/docs/three-agent-production-speedrun-20261029/.agents/skills/looping-skill/SKILL.md) — read and follow it for every iteration.
 
 ## Activation and trigger
 
@@ -39,3 +40,15 @@ Static UI/typecheck/unit work should not require production credentials. If a li
 The final response must state the actual implementation PR/URL and head SHA, files changed, exact tests with PASS/FAIL/SKIPPED/BLOCKED results, UI acceptance findings, residual risks, any owner-only credential/permission steps, and the response commit SHA. Do not describe the product as fully accepted if physical rendering/Drive durability remains unproven.
 
 **Activation prompt:** “ACTIVATE AGENT 3 — OpenCode via the ChatGPT handoff. Follow docs/release/agent-packets/agent-3-instruction.md from the coordination branch. Verify and finish the existing product-acceptance work, push the same implementation branch and open/update its PR if needed, then overwrite agent-3-response.md on the coordination branch and push that response update. Do not recreate inaccessible work, expose secrets, or overstate acceptance.”
+
+
+## Current Iteration — Coordinator Handoff
+
+**Iteration:** 1  
+**Status:** READY FOR OWNER ACTIVATION  
+**Objective:** Inspect the actual local worktree and remote state for `feat/product-acceptance-20261029`, preserve the existing commit/work, validate truth-fix UI changes and run focused tests. Push the same implementation branch and open/update its PR only after checking current PR state.  
+**Deliverable:** Overwrite `agent-3-response.md` with verified local/remote branch and HEAD state, exact PR link if any, changed files, test commands/results, product-acceptance findings, blocked/skipped live checks, and owner-only credential needs. Push and verify the remote response file.  
+**Acceptance:** Existing work is preserved; no unsupported file-size/FPS/resolution/health/delivery claims remain in changed UI; test results distinguish mocks from real external verification; response file is remotely updated.  
+**Credential stop gate:** Do not require production credentials for static QA unless a live check genuinely needs them. If so, report exact names, purpose, official source, configuration destination, minimum scope and safe validation, without values; wait for owner/coordinator verification before proceeding.  
+**Safety stop conditions:** No worker/pipeline/CAS/F07 policy edits, no main push, no merge/deployment, no production jobs, paid compute or external publication.  
+**Coordinator ownership:** The coordinator will replace this section for each subsequent iteration after reviewing your response. Do not edit this instruction file.
