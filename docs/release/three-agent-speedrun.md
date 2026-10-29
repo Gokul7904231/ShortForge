@@ -34,6 +34,19 @@ Make the currently hosted application production-ready with the smallest control
 - Anti-Slop: core skill for all three agents. During-mode for new work; mandatory Delivery Gate before ship. Add code/UI/human/layout/copywriting subskills only when relevant. Record agent, version, skill path and evidence it actually loaded.
 - These tools supplement; they do not override `.okf`, Team change gate, F07, Guardian/Slayer/Healer, leases/fencing, Treasury, CAS or release authority.
 
+## Looping Skill — report, review, next instruction
+
+Use `.agents/skills/looping-skill/SKILL.md` as the canonical method for repeated agent work. The packet folder `docs/release/agent-packets/` must contain exactly six files: one coordinator-owned instruction and one agent-owned response for each of Agents 1, 2 and 3.
+
+- The owner manually activates each separate coding-agent chat. Markdown does not auto-launch another session.
+- At activation, an agent reads its latest instruction and immediately overwrites its own response file with `IN_PROGRESS`.
+- At completion or blocker, it overwrites that response file with its full current evidence-backed report, pushes the response-file-only commit to this coordination branch, verifies the remote file, and tells the owner the report is uploaded.
+- The owner returns to the coordinating ChatGPT conversation. The coordinator reads the latest response and independently checks the real branch, PR, changed files, exact HEAD SHA and workflow results.
+- The coordinator then updates only the relevant instruction file's **Current Iteration — Coordinator Handoff** section with the next bounded iteration, evidence criteria and stop conditions. The owner manually reactivates that agent. Agents must never modify their own instruction files or put next-step instructions in response reports.
+- If credentials or permissions are needed, the agent reports names, purpose, official acquisition path, configuration destination, minimum scope and safe validation only. No secret values may enter chat, GitHub, reports or logs. The coordinator verifies the request and gives a setup checklist; the owner configures the secret privately and explicitly confirms before credential-dependent work resumes.
+
+This handoff protocol improves coordination; it does not count as implementation evidence or production acceptance.
+
 ## Integration / release order
 1. Verify skill loads in each agent; Agent 1 publishes acceptance spec/evidence matrix.
 2. Agents 2 and 3 work in isolated branches/worktrees; coordinate by PR/report IDs.
