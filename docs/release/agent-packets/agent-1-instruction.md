@@ -4,6 +4,7 @@
 **Role:** Release Captain, SDLC, integration order and release decision  
 **Response file:** docs/release/agent-packets/agent-1-response.md  
 **Coordination branch:** docs/three-agent-production-speedrun-20261029
+**Required skill:** [Looping Skill](https://github.com/Gokul7904231/ShortForge/blob/docs/three-agent-production-speedrun-20261029/.agents/skills/looping-skill/SKILL.md) — read and follow it for every iteration.
 
 ## Activation and trigger
 
@@ -52,3 +53,14 @@ No new secret should be needed to perform this coordination task. If a current d
 The response must contain current PR/branch/head information, checks actually inspected, an honest release disposition, evidence gaps, ordered next actions, owner-only permissions/secrets if any, and the exact commit SHA that published the response. Clearly separate VERIFIED, REPORTED, BLOCKED, SKIPPED and UNPROVEN.
 
 **Activation prompt:** “ACTIVATE AGENT 1 — Antigravity. Follow docs/release/agent-packets/agent-1-instruction.md from the coordination branch, refresh the live state, start and finish by overwriting agent-1-response.md on that branch, and push the response update. Do not merge or claim acceptance without evidence.”
+
+
+## Current Iteration — Coordinator Handoff
+
+**Iteration:** 1  
+**Status:** READY FOR OWNER ACTIVATION  
+**Objective:** Refresh current live GitHub/release state and publish an evidence-backed baseline report. Verify PR #253, #254, #255, actual Agent 2/3 branch and PR state, latest workflow results on exact current heads, and the remaining physical acceptance gaps. Do not edit worker or UI source.  
+**Deliverable:** Overwrite `agent-1-response.md` with the current verified state, release disposition, and ordered next actions; push and verify the remote response file.  
+**Acceptance:** Current HEAD SHAs and PR states are verified; evidence is linked; PASS is not claimed for unproven physical acceptance; response update reaches the remote coordination branch.  
+**Stop conditions:** Missing permissions, stale evidence, credential needs, or production state that cannot be inspected must be recorded as BLOCKED/UNPROVEN. No merges, production configuration changes, or main pushes.  
+**Coordinator ownership:** The coordinator will replace this section for each subsequent iteration after reviewing your response. Do not edit this instruction file.
