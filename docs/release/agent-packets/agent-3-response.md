@@ -1,7 +1,10 @@
 # Agent 3 — Response
 
 **Runtime:** OpenCode / ChatGPT handoff  
-**Status:** NOT_STARTED  
+**Status:** NOT_STARTED
+**Iteration:** 1
+**Instruction revision:** Initial coordinator handoff
+**Last updated (UTC):** NOT_STARTED  
 **Updated at (UTC):** NOT_STARTED  
 **Coordination branch:** docs/three-agent-production-speedrun-20261029
 
@@ -55,8 +58,27 @@ State NONE unless evidence proves a specific item is required. For each required
 2. NOT_STARTED
 3. NOT_STARTED
 
+## Credential / permission gate
+
+- Status: NONE / OWNER VERIFICATION REQUIRED / BLOCKED
+- Exact variable or permission names only:
+- Verified purpose and source:
+- Official acquisition/documentation URL:
+- Where the owner should configure it:
+- Minimum required scope:
+- Safe validation that never prints values:
+- Wait for owner/coordinator approval before credential-dependent actions: YES / NOT REQUIRED
+
+## Coordinator handoff
+
+- What the coordinator should independently verify:
+- Recommended next action (recommendation only; not permission to expand scope):
+- Remaining acceptance gaps:
+- Next iteration can proceed without owner action: YES / NO
+
 ## Publication proof
 
-- Response commit SHA:
-- Remote response file verified:
+- Response file pushed to coordination branch: YES / NO
+- Remote response file verified after push: YES / NO
+- Response commit SHA (report in the final agent chat message; do not embed this self-referential SHA here):
 - Implementation PR / branch:
