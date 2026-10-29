@@ -23,7 +23,7 @@ The `IN_PROGRESS` response was published at the start as commit `2a7ffecf`.
 | Commits | `9f64f664` creator journey truth fixes · `95f0e219` durable delivery receipts and media ownership · `285e8b43` Team report and doc |
 | PR | https://github.com/Gokul7904231/ShortForge/pull/256 |
 | Team report | `Team/reports/pr-256.json`, validator `TEAM_CHANGE_GATE: VALID`, disposition `BLOCKED` |
-| CI at publication | "Validate Team change report" **success**; 16 other checks **in progress** (not waited on) |
+| CI observed | "Validate Team change report" **success**; "TypeCheck & Floor 01 Contract Tests" **success**; "Lightning Physical MP4 → CAS → F07" **failure**; 2 checks still pending. The failing job exercises worker/CAS/F07 paths this PR does not touch; it was not investigated further. |
 
 No push to `main`, no merge, no deploy, no production job, no paid compute, no external publication.
 
@@ -102,7 +102,7 @@ No secret values are included here; nothing was requested in chat.
 - `/api/delivery` and `DeliveryManager` still fabricate `gdrive_file_*` IDs on a legacy path; the creator UI no longer uses them.
 - `QuickGenerateOverlay` still sends `delivery.target: "GOOGLE_DRIVE"`, which the server schema ignores.
 - Legacy library rows with absolute Windows paths still will not play, although the UI no longer invents metadata for them.
-- CI checks other than the Team report were still running when this report was published; their outcome is not claimed.
+- CI checks other than the Team report were still running when this report was first published; two remained pending and "Lightning Physical MP4 → CAS → F07" failed. That job's paths are untouched by this PR, but its failure is not explained here.
 
 ## Response publication
 
