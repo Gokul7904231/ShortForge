@@ -44,10 +44,10 @@ This specification establishes the authoritative SDLC governance, acceptance mat
 
 ### User Story 4 (Priority: P2) — Team Change Report & Automated Gate Validation
 - **As a**: Release Captain
-- **I want**: A validated machine-readable change report at `Team/reports/pr-253.json` evaluated against `Team/scripts/validate-team-report.mjs`.
+- **I want**: A validated machine-readable change report for this SDLC PR at `Team/reports/pr-255.json`, evaluated against `Team/scripts/validate-team-report.mjs`; PR #253's own report remains scoped to PR #253.
 - **So that**: CI gates and human reviewers can deterministically inspect change classification, .okf sweep status, security posture, conflict records, and disposition.
 - **Acceptance Criteria**:
-  - `node Team/scripts/validate-team-report.mjs Team/reports/pr-253.json` exits with code 0 (`TEAM_CHANGE_GATE: VALID`).
+  - `node Team/scripts/validate-team-report.mjs Team/reports/pr-255.json` exits with code 0 (`TEAM_CHANGE_GATE: VALID`) before merge; CI validation is required.
   - Disposition is truthfully set to `BLOCKED`.
   - Blocked reasons cite missing physical render proof, missing owner credentials, and required staging verification.
 
@@ -80,7 +80,7 @@ This specification establishes the authoritative SDLC governance, acceptance mat
 | **Health Probe** | `render-keepalive.yml` JSON validation | PR #253 enforces `status == "healthy"` | **PASS (Static)** |
 | **Live Render SHA**| Render deployed SHA & readiness | Commit `cf4cc2c9`, HTTP 200, status `degraded` | **DEGRADED / BLOCKED** |
 | **Physical Proof** | Lightning MP4 → CAS → F07 | Run 40824025739 failed (exit code 1, auth error) | **FAIL / BLOCKED** |
-| **Team Report** | `Team/reports/pr-253.json` | Validated with `validate-team-report.mjs` | **VALID (BLOCKED)** |
+| **Team Report** | `Team/reports/pr-255.json` | Created for this PR; automated validation pending | **PENDING (BLOCKED)** |
 | **Merge Gate** | Authorize PR #253 merge to main | Blocked pending controlled real render & secrets | **BLOCKED** |
 
 ---
