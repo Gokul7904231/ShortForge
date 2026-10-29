@@ -35,6 +35,7 @@ import { useOSStore } from "@/lib/os-store";
 import { useAuth } from "@/lib/auth/hooks";
 import BrandIcon from "@/components/BrandIcon";
 import { mapValidationError } from "@/lib/creator/error-map";
+import { describeDelivery } from "@/lib/presentation/JobStatusProjection";
 import { QuizOrchestrator } from "@/lib/quiz/QuizOrchestrator";
 
 const SAMPLE_TOPICS = [
@@ -96,10 +97,6 @@ function humanStageLabel(status?: string, detailedStatus?: string): string {
   if (s.includes("retry")) return "Retrying";
   if (s.includes("failed")) return "Failed — retryable";
   return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Queued";
-}
-
-function isDriveDelivered(job: any): boolean {
-  return Boolean(job?.driveFileId && job?.driveUrl && job?.deliveryTarget === "GOOGLE_DRIVE");
 }
 
 export default function QuickGenerateOverlay() {
@@ -792,11 +789,45 @@ export default function QuickGenerateOverlay() {
     setOpen(false);
   };
 
+  // Escape closes the dialog. Focus trapping is not implemented yet.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      pollingRef.current = false;
+      setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, setOpen]);
+
+  const delivery = describeDelivery({
+    status: jobStatus?.status,
+    deliveryMethod: jobStatus?.deliveryMethod,
+    verified: jobStatus?.deliveryVerified,
+    driveFileId: jobStatus?.driveFileId,
+    driveUrl: jobStatus?.driveUrl,
+  });
+
+  const deliveryTone =
+    delivery.state === "DRIVE_DELIVERED"
+      ? "border-[#19C37D]/30 bg-[#19C37D]/10 text-[#0F7A50] dark:text-[#19C37D]"
+      : delivery.state === "DELIVERY_FAILED"
+      ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+      : delivery.state === "DRIVE_PENDING"
+      ? "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+      : "border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.03] text-[#667085] dark:text-[#A8B2C1]";
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-[#070D18] border border-black/[0.08] dark:border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quick-generate-title"
+        className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-[#070D18] border border-black/[0.08] dark:border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+      >
         {/* Top Header & Quota Bar */}
         <div className="px-6 py-4 border-b border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between bg-black/[0.02] dark:bg-[#0E1728]">
           <div className="flex items-center gap-3">
@@ -804,7 +835,7 @@ export default function QuickGenerateOverlay() {
               <BrandIcon className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#111827] dark:text-[#F5F7FA]">Create Video</h3>
+              <h3 id="quick-generate-title" className="text-sm font-bold text-[#111827] dark:text-[#F5F7FA]">Create Video</h3>
               <p className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">Fast autonomous creation pipeline</p>
             </div>
           </div>
@@ -816,7 +847,9 @@ export default function QuickGenerateOverlay() {
               </span>
             )}
             <button
+              type="button"
               onClick={handleClose}
+              aria-label="Close create video dialog"
               className="p-1.5 rounded-xl hover:bg-black/[0.05] dark:hover:bg-white/[0.05] text-[#667085] hover:text-[#111827] dark:hover:text-white transition-colors"
             >
               <X className="w-4 h-4" />
@@ -1711,7 +1744,7 @@ export default function QuickGenerateOverlay() {
                   <div>
                     <h3 className="text-base font-bold text-[#111827] dark:text-[#F5F7FA]">Video Ready!</h3>
                     <p className="text-xs text-[#667085] dark:text-[#A8B2C1] mt-1">
-                      Your video has been rendered and queued for delivery.
+                      Your video is rendered. Delivery is reported separately below.
                     </p>
                   </div>
 
@@ -1737,16 +1770,18 @@ export default function QuickGenerateOverlay() {
                       </Link>
                     )}
                   </div>
-                  <div className="pt-2">
-                    {isDriveDelivered(jobStatus) ? (
-                      <a href={jobStatus.driveUrl} target="_blank" rel="noreferrer" className="inline-flex px-5 py-2.5 rounded-xl bg-[#19C37D] text-white text-xs font-bold items-center gap-2">
-                        <HardDrive className="w-3.5 h-3.5" /> Open in Google Drive
-                      </a>
-                    ) : (
-                      <p className="text-[11px] rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-300">
-                        {jobStatus?.deliveryTarget === "GOOGLE_DRIVE" && !isDriveDelivered(jobStatus) ? "Google Drive delivery pending — your video will appear in Drive once the worker finishes uploading." : "Not delivered to Drive for this render."}
+                  <div className="pt-2 w-full">
+                    <div className={`rounded-xl border px-3 py-2 ${deliveryTone}`}>
+                      <p className="text-xs font-bold flex items-center gap-1.5">
+                        <HardDrive className="w-3.5 h-3.5" /> {delivery.label}
                       </p>
-                    )}
+                      <p className="text-[11px] mt-0.5">{delivery.detail}</p>
+                      {delivery.linkUrl && (
+                        <a href={delivery.linkUrl} target="_blank" rel="noreferrer" className="inline-flex mt-1.5 text-[11px] font-bold underline">
+                          Open in Google Drive
+                        </a>
+                      )}
+                    </div>
                   </div>
                   <button type="button" onClick={clearDraft} className="mt-2 px-5 py-2.5 rounded-xl border border-black/[0.08] dark:border-white/[0.08] text-xs font-bold text-[#667085] cursor-pointer">Create Another</button>
                 </>

@@ -26,6 +26,86 @@ export interface CreatorJobProjection {
   isError: boolean;
 }
 
+export type DeliveryState =
+  | "DRIVE_DELIVERED"
+  | "DRIVE_PENDING"
+  | "OUTBOX_ONLY"
+  | "DELIVERY_FAILED"
+  | "NOT_RECORDED"
+  | "NOT_READY";
+
+export interface DeliveryProjection {
+  state: DeliveryState;
+  label: string;
+  detail: string;
+  linkUrl?: string;
+}
+
+export interface DeliveryFacts {
+  status?: string;
+  deliveryTarget?: string;
+  deliveryMethod?: string;
+  verified?: boolean;
+  driveFileId?: string;
+  driveUrl?: string;
+}
+
+/**
+ * Turns recorded delivery facts into creator copy.
+ * It never upgrades a local outbox copy or a missing receipt into a Drive delivery.
+ */
+export function describeDelivery(facts: DeliveryFacts): DeliveryProjection {
+  const status = (facts.status || "").toLowerCase();
+  const method = facts.deliveryMethod;
+  const driveFileId = facts.driveFileId;
+  const driveUrl = facts.driveUrl || (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : undefined);
+
+  if (status && status !== "completed" && status !== "ready") {
+    return {
+      state: "NOT_READY",
+      label: "Delivery not started",
+      detail: "Delivery is attempted after the video is rendered and verified.",
+    };
+  }
+
+  if (method === "GOOGLE_DRIVE") {
+    if (driveFileId) {
+      return {
+        state: "DRIVE_DELIVERED",
+        label: "Delivered to Google Drive",
+        detail: "The worker recorded a verified upload to the connected Drive account.",
+        linkUrl: driveUrl,
+      };
+    }
+    return {
+      state: "DRIVE_PENDING",
+      label: "Google Drive upload not confirmed",
+      detail: "A Drive delivery was attempted, but no file ID was recorded yet. This is not proof of delivery.",
+    };
+  }
+
+  if (method === "LOCAL_OUTBOX") {
+    if (facts.verified) {
+      return {
+        state: "OUTBOX_ONLY",
+        label: "Saved to the local delivery outbox",
+        detail: "The file is stored on the ShortForge server, not in Google Drive.",
+      };
+    }
+    return {
+      state: "DELIVERY_FAILED",
+      label: "Delivery failed",
+      detail: "The Drive upload failed and the file was not committed to the outbox.",
+    };
+  }
+
+  return {
+    state: "NOT_RECORDED",
+    label: "Delivery not recorded",
+    detail: "No delivery receipt exists for this job, so it is not evidence of a Drive upload.",
+  };
+}
+
 export function projectCreatorJobStatus(rawStatus?: string, rawStep?: string): CreatorJobProjection {
   const status = (rawStatus || "").toLowerCase().trim();
   const step = (rawStep || "").toLowerCase().trim();
