@@ -81,6 +81,22 @@ Repeat phases A–C as needed. Each iteration should reduce a named blocker or p
 
 Declare an implementation task complete when its agreed acceptance criteria are met. Declare production acceptance only when every required release criterion is independently verified on the exact candidate/deployed SHA. Otherwise maintain `BLOCKED` or `UNPROVEN`, and keep production dispatch disabled.
 
+## Optional EGM integration — design quality, not a mandatory runtime dependency
+
+EGM is the Google-authored open-source Elephant-Goldfish Model plugin at https://github.com/google/elephant-goldfish-model. It structures deep-context design/specification work and isolated fresh-context reviews. Use it selectively for changes with meaningful design choices, unclear requirements, cross-boundary architecture, or high risk. For a narrow and well-understood bug fix, do not force brainstorming/specification ceremonies.
+
+EGM supplements rather than replaces this Looping Skill. It does not automatically publish agent response files, activate a separate chat, perform the coordinator's independent verification, satisfy required tests, or prove production acceptance. A successful Goldfish review is review evidence, not proof a feature works.
+
+Before using EGM, each agent must verify it is installed and its relevant skills/commands load in the actual runtime. For review commands requiring fresh-context subagents, verify the host exposes a real fresh-context dispatch mechanism. Never simulate a zero-context reviewer in the parent context. Record EGM state as one of: REPOSITORY_LINK_ONLY, INSTALLED, SKILLS_DISCOVERED, WORKFLOW_SMOKE_VERIFIED, or BLOCKED, with exact evidence.
+
+Harness-specific cautions:
+- Antigravity: upstream documents `agy plugin install https://github.com/google/elephant-goldfish-model`; verify installed plugin/command discovery in a fresh session.
+- Claude Code: upstream documents `claude plugin marketplace add google/elephant-goldfish-model` then `claude plugin install egm@egm`; start a fresh session and verify commands work.
+- OpenCode: upstream support remains experimental in upstream PR #165, with a follow-up for OpenCode V2 subagent dispatch in PR #189. Do not assume it works because the repository URL was added. Verify plugin/skills discovery and actual `subagent` (V2) or supported `task` (V1) dispatch for that runtime, including successful persona reads and child completion. If any requirement fails, report EGM BLOCKED and proceed with the existing governed workflow for bounded tasks.
+- Other ChatGPT conversations are separate sessions. An EGM plugin install or skill mention in one conversation is not evidence that it is installed in another. The owner still manually activates each chat.
+
+For any EGM result, preserve the draft/review artifact links and the actual child-run/verification output. The coordinator independently checks those artifacts and decides whether the findings affect the next Looping Skill iteration.
+
 ## Credential and permission gate — human-in-the-loop
 
 Credentials are an explicit pause point, not an excuse to guess.
