@@ -1,0 +1,141 @@
+{
+  "verification": {
+    "source": "CAS",
+    "physicalPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-production-acceptance\\apps\\web\\data\\cas_storage\\ce\\cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0.mp4",
+    "expectedSha256": "cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
+    "actualSha256": "cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
+    "sha256MatchesExpected": true,
+    "casBound": true,
+    "casRef": "cas://cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
+    "byteLength": 406976,
+    "casByteLength": 406976,
+    "measurements": {
+      "fileExists": true,
+      "byteLength": 406976,
+      "hasFtypBox": true,
+      "decodeSmokePassed": true,
+      "width": 1080,
+      "height": 1920,
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "videoDuration": 26.066667,
+      "audioDuration": 26.121905,
+      "syncDriftMs": 55.238000000002785,
+      "pixelFormat": "yuv420p",
+      "fps": 30,
+      "bitrateKbps": 125,
+      "streamCount": 2,
+      "audioSampleRate": 22050,
+      "audioChannels": 1
+    }
+  },
+  "audit": {
+    "verified": true,
+    "passed": true,
+    "overallStatus": "PASSED",
+    "overallScore": 96,
+    "scores": {
+      "technicalQuality": 90,
+      "contentQuality": 95,
+      "policy": 100,
+      "deliveryReadiness": 100
+    },
+    "evidence": [
+      "Artifact exists: true",
+      "Valid container: true",
+      "Geometry 9:16: true",
+      "Decode smoke test: true",
+      "Technical quality: 90/100"
+    ],
+    "jobId": "job_prod_accept_mvuzvdjt",
+    "hardGates": {
+      "artifactExists": true,
+      "validContainer": true,
+      "videoStreamPresent": true,
+      "audioStreamPresent": true,
+      "exact9x16Geometry": true,
+      "compliantCodecs": true,
+      "durationWithinBounds": true,
+      "audioVideoSyncValid": true,
+      "decodeSmokePassed": true
+    },
+    "measurements": {
+      "fileExists": true,
+      "byteLength": 406976,
+      "hasFtypBox": true,
+      "decodeSmokePassed": true,
+      "width": 1080,
+      "height": 1920,
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "videoDuration": 26.066667,
+      "audioDuration": 26.121905,
+      "syncDriftMs": 55.238000000002785,
+      "pixelFormat": "yuv420p",
+      "fps": 30,
+      "bitrateKbps": 125,
+      "streamCount": 2,
+      "audioSampleRate": 22050,
+      "audioChannels": 1
+    },
+    "layers": {
+      "layer1PhysicalForensics": {
+        "passed": true,
+        "measurements": {
+          "fileExists": true,
+          "byteLength": 406976,
+          "hasFtypBox": true,
+          "decodeSmokePassed": true,
+          "width": 1080,
+          "height": 1920,
+          "videoCodec": "h264",
+          "audioCodec": "aac",
+          "videoDuration": 26.066667,
+          "audioDuration": 26.121905,
+          "syncDriftMs": 55.238000000002785,
+          "pixelFormat": "yuv420p",
+          "fps": 30,
+          "bitrateKbps": 125,
+          "streamCount": 2,
+          "audioSampleRate": 22050,
+          "audioChannels": 1
+        },
+        "hardGates": {
+          "artifactExists": true,
+          "validContainer": true,
+          "videoStreamPresent": true,
+          "audioStreamPresent": true,
+          "exact9x16Geometry": true,
+          "compliantCodecs": true,
+          "durationWithinBounds": true,
+          "audioVideoSyncValid": true,
+          "decodeSmokePassed": true
+        },
+        "evidenceType": "PHYSICAL_MEASUREMENT"
+      },
+      "layer2ContentEvidence": {
+        "passed": true,
+        "scriptDetected": true,
+        "sceneCount": 4,
+        "score": 95,
+        "evidenceType": "CONTENT_EVIDENCE"
+      },
+      "layer3HeuristicQuality": {
+        "score": 93,
+        "evidenceType": "HEURISTIC"
+      }
+    },
+    "dimensionScores": {
+      "technicalQuality": 90,
+      "contentQuality": 95,
+      "policyCompliance": 100,
+      "deliveryReadiness": 100,
+      "overall": 96
+    },
+    "qualityScore": 96,
+    "confidence": 0.98,
+    "failures": [],
+    "warnings": [],
+    "timestamp": "2026-10-30T13:15:28.495Z"
+  }
+}

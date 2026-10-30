@@ -1,0 +1,44 @@
+{
+  "runId": "prod_accept_run_1793366098265",
+  "missionId": "mis_prod_accept_mvuzvdjt",
+  "jobId": "job_prod_accept_mvuzvdjt",
+  "timestamp": "2026-10-30T13:15:53.495Z",
+  "totalElapsedMs": 55232,
+  "topic": "Mariana Trench: The Ocean's Deepest Abyss",
+  "researchPassportId": "pass_d7e0cc8f",
+  "provider": {
+    "id": "provider_local_render",
+    "type": "LOCAL",
+    "model": "LOCAL_PROCESS",
+    "hardwareAcceleration": "GeForce RTX 3050 Laptop GPU (h264_nvenc)"
+  },
+  "artifact": {
+    "fileName": "shortforge-production-job_prod_accept_mvuzvdjt.mp4",
+    "localPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-production-acceptance\\artifacts\\production-demo\\shortforge-production-job_prod_accept_mvuzvdjt.mp4",
+    "sha256": "cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
+    "byteLength": 406976,
+    "durationSeconds": 26.075465,
+    "dimensions": "1080x1920",
+    "fps": 30,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "casUri": "cas://cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0"
+  },
+  "googleDrive": {
+    "fileId": "1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV",
+    "url": "https://drive.google.com/file/d/1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV/view?usp=drivesdk",
+    "downloadLink": "https://drive.google.com/uc?id=1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV&export=download",
+    "folderId": "1H1SQk1H912ZXo-Hn7nJfi3yGQRuqvHm6",
+    "byteIdentityVerified": true
+  },
+  "f07Verification": {
+    "overallStatus": "PASSED",
+    "overallScore": 96,
+    "hardGatesPassed": true
+  },
+  "durableRecovery": {
+    "tested": true,
+    "recoveredState": "DRIVE_DELIVERED",
+    "recoveredLink": "https://drive.google.com/file/d/1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV/view"
+  }
+}

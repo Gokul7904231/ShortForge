@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-Non-Lightning-Production-Acceptance-20261030",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/non-lightning-production-acceptance-20261030",
+  "objective": "Execute genuine ShortForge end-to-end rendering pipeline through a qualified non-Lightning provider, persist physical MP4 into CAS, verify via Floor 07, deliver to Google Drive, verify live download byte identity, verify backend restart recovery via Firestore, and publish forensic acceptance evidence.",
+  "rules": [
+    "Lightning AI is excluded as an external provider failure (EXCLUDED_EXTERNAL_PROVIDER_FAILURE).",
+    "Physical MP4 container must be independently probed and decoded with zero errors.",
+    "Cryptographic SHA-256 and byte length must match identically across Local Disk, CAS, and Google Drive Download.",
+    "Floor 07 media verification hard gates must pass unconditionally.",
+    "Delivery receipt must persist durably in Firestore and survive simulated process restart.",
+    "Zero secret values or credentials exposed in code, logs, or commits."
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/hierarchy-map.md",
+      ".okf/security/worker-permissions.md",
+      ".okf/engineering-stack.md",
+      ".okf/production-helper.md",
+      ".okf/principles.md",
+      ".okf/decisions.md",
+      "AGENTS.md"
+    ],
+    "rulesConsidered": [
+      "The .okf corpus is the first architectural reasoning context; executable implementation and physical tests decide conflicts.",
+      "RenderFabric is the canonical F06 physical-render entry point.",
+      "Claims must equal verified physical evidence; never infer downstream success from upstream steps.",
+      "External provider outages (Lightning) do not invalidate ShortForge's canonical rendering architecture."
+    ]
+  },
+  "classification": "new capability",
+  "forgers": [
+    {
+      "role": "Release Captain & Senior Production Engineer",
+      "agent": "Antigravity Release Captain",
+      "evidence": "Executed staging mission mis_prod_accept_mvuzvdjt, produced physical MP4, verified triple SHA-256 match, verified F07 score 96/100, verified Drive upload 1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV, verified Firestore recovery."
+    }
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "PASS",
+    "strix": "PASS",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Verified zero secret exposure. Input validation and path boundaries enforced. Fail-closed error handling preserved across all stages."
+  },
+  "conflicts": [],
+  "validation": {
+    "status": "PASS",
+    "jobId": "job_prod_accept_mvuzvdjt",
+    "missionId": "mis_prod_accept_mvuzvdjt",
+    "provider": "provider_local_render (LOCAL)",
+    "videoDurationSeconds": 26.122,
+    "byteLength": 406976,
+    "sha256": "cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
+    "casRef": "cas://cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
+    "f07Score": 96.0,
+    "f07HardGatesPassed": true,
+    "googleDriveFileId": "1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV",
+    "googleDriveUrl": "https://drive.google.com/file/d/1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV/view?usp=drivesdk",
+    "tripleByteIdentityVerified": true,
+    "restartRecoveryVerified": true
+  },
+  "evidenceRefs": [
+    "docs/verification/production/SHORTFORGE_NON_LIGHTNING_PRODUCTION_ACCEPTANCE_20261030.md",
+    "artifacts/production-demo/shortforge-production-job_prod_accept_mvuzvdjt.mp4",
+    "artifacts/production-demo/ffprobe.json",
+    "artifacts/production-demo/decode-result.txt",
+    "artifacts/production-demo/sha256.txt",
+    "artifacts/production-demo/byte-length.txt",
+    "artifacts/production-demo/cas-verification.json",
+    "artifacts/production-demo/f07-receipt.json",
+    "artifacts/production-demo/drive-metadata.json",
+    "artifacts/production-demo/drive-download-verification.json",
+    "artifacts/production-demo/restart-recovery.json",
+    "artifacts/production-demo/full-mission-evidence.json"
+  ],
+  "disposition": "PASS",
+  "dispositionRationale": "All physical production acceptance gates have passed with genuine evidence: physical 26.1s MP4 rendered, zero-error decoder smoke test, CAS immutability bound, F07 verified score 96/100, real Google Drive upload, triple SHA-256 identity verified, and Firestore durable recovery confirmed across process restart.",
+  "validatedHead": "feat/non-lightning-production-acceptance-20261030",
+  "model": {
+    "runtime": "Antigravity",
+    "agent": "Release Captain"
+  }
+}

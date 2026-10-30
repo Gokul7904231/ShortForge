@@ -1,0 +1,3 @@
+FFmpeg decode smoke check passed with 0 errors.
+Command: ffmpeg -v error -i <video> -f null -
+Exit code: 0
