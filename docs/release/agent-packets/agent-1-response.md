@@ -2,24 +2,30 @@
 
 **Runtime:** Antigravity  
 **Role:** Release Captain, SDLC, integration order and release decision  
-**Status:** COMPLETE (iteration 2) — production acceptance remains strictly BLOCKED  
+**Status:** COMPLETE (iteration 2 corrected) — production acceptance remains strictly BLOCKED  
 **Iteration:** 2 (Reconciled & Corrected Release Report)  
-**Instruction revision:** `docs/three-agent-production-speedrun-20261029` @ `4b547f234`  
-**Last updated (UTC):** 2026-10-30T07:35:00Z  
+**Instruction revision:** `docs/three-agent-production-speedrun-20261029` @ `c1c8d6290`  
+**Last updated (UTC):** 2026-10-30T07:55:00Z  
 **Coordination branch:** docs/three-agent-production-speedrun-20261029  
 
 ---
 
 ## Executive Result & Release Disposition
 
-Iteration 2 release coordination is complete. All discrepancies identified in Iteration 1 have been reconciled with concrete evidence:
+Iteration 2 release coordination has been updated and corrected with exact evidence. All factual discrepancies have been resolved:
 
-1. **PR #254 Head & CI Refreshed:** PR #254's head SHA is updated to [`4b547f234d66fa1b3cd1189eda723341306b23ea`](https://github.com/Gokul7904231/ShortForge/commit/4b547f234d66fa1b3cd1189eda723341306b23ea) following Agent 1's Iteration 1 publication. All CI workflows on this head have finished; no in-progress check is reported as PASS.
-2. **Agent 2 Kaggle Live Pass Reconciled:** The claimed Kaggle live pass is verified in GitHub Actions run [`40858883771`](https://github.com/Gokul7904231/ShortForge/actions/runs/40858883771) (job `live (KAGGLE)`), which generated artifact `shortforge-kaggle-live-mp4` (1,395 bytes). This proves **isolated Kaggle Notebook Adapter execution**, which is completely consistent with Agent 2's Team report marking full staging DAG, CAS, and Drive evidence as `BLOCKED / N/A` (no end-to-end production staging render was submitted).
-3. **Agent 2 Team Report Number Collision Flagged:** Agent 2's branch contains `Team/reports/pr-254.json`, colliding with PR #254 (which belongs exclusively to the coordination branch). Agent 2 must rename and update its report number before opening its implementation PR.
-4. **Drive & Durability Owner Actions Corrected:** The owner already possesses valid Google Drive OAuth and Firebase credentials in local `apps/web/.env`. Four distinct operational layers are now explicitly separated (local `.env`, deployed Render environment, per-user interactive OAuth, and Firebase Firestore durability).
-5. **PR #256 TypeScript & Delivery Reconciled:** The full `tsc --noEmit` failure is isolated to pre-existing defects on `main` (truncated `editor/page.tsx` from `061b4d06a` and `ColabNotebookAdapter.ts`); zero type errors exist in PR #256 files, and `npm run build` passes all 109 routes. PR #256 is **READY FOR CODE REVIEW** as a truthfulness/security enhancement, while the overall release gate remains **BLOCKED** pending physical render and live delivery execution.
-6. **Definitive Merge Order Preserved:** PR #254 $\rightarrow$ PR #255 $\rightarrow$ PR #253 $\rightarrow$ PR #256 $\rightarrow$ Agent 2 PR.
+1. **PR #254 Current Head Refreshed:** PR #254's exact head SHA is [`c1c8d6290299141a29bb872478d5977719cb2a3d`](https://github.com/Gokul7904231/ShortForge/commit/c1c8d6290299141a29bb872478d5977719cb2a3d).
+2. **Separation of Commit Verification Evidence:** Checks are strictly partitioned between prior head `4b547f2` and current head `c1c8d629`. No pass status is carried forward across commit boundaries without explicit evidence.
+3. **Kaggle Live Smoke Evidence Corrected:**
+   - Workflow Run: [`notebook-fabric` Run 40858883771](https://github.com/Gokul7904231/ShortForge/actions/runs/40858883771)
+   - Verified Job ID: `123396783405` (`live (KAGGLE)`)
+   - Verified Artifact ID: `12891190407` (`shortforge-kaggle-live-mp4`)
+   - Distinguishing Artifact Dimensions: Compressed zip archive size is **1,395 bytes**; uncompressed probe video (`shortforge-live-notebook-probe.mp4`) size is **2,296 bytes**.
+   - Probe Characteristics: The probe executed `ffmpeg -f lavfi -i color=c=black:s=320x180:d=1 -an -c:v libx264 -pix_fmt yuv420p`, generating an ephemeral **1-second 320x180 black video with no audio**.
+   - Worker Eligibility: Per `KaggleNotebookAdapter.ts:46`, `productionWorkerEligible: false` ("Ephemeral notebook runtime; production worker admission remains a separate F06 gate").
+4. **Agent 2 Team Report Number Collision Flagged:** Agent 2's implementation branch contains `Team/reports/pr-254.json`, colliding with PR #254 on the coordination branch. Agent 2 must rename and correct the report number before opening its PR.
+5. **Firebase & Drive Architecture (Names Only):** Verified by variable names only that `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_STORAGE_BUCKET`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, and `GOOGLE_DRIVE_REFRESH_TOKEN` are present in local `apps/web/.env`. No secrets or values are printed.
+6. **Production Acceptance STRICTLY BLOCKED:** No PR claims production acceptance; all Team reports record disposition `BLOCKED`. Scheduled production worker dispatch (`RENDER_WORKER_SCHEDULER_ENABLED`) remains disabled.
 
 ---
 
@@ -27,136 +33,140 @@ Iteration 2 release coordination is complete. All discrepancies identified in It
 
 | PR | Title | Branch | Exact Head SHA | Base SHA | State | Governance / CI Status | Disposition |
 |---|---|---|---|---|---|---|---|
-| **#254** | `docs(release): coordinate three-agent production speedrun` | `docs/three-agent-production-speedrun-20261029` | `4b547f234d66fa1b3cd1189eda723341306b23ea` | `cf4cc2c9` | OPEN | 10 Workflows PASS; Team Gate PASS; OKF PASS; CI PASS; Lightning Proof FAIL (external); Web Regression FAIL (Info) | **READY FOR REVIEW**<br>(Release BLOCKED) |
+| **#254** | `docs(release): coordinate three-agent production speedrun` | `docs/three-agent-production-speedrun-20261029` | `c1c8d6290299141a29bb872478d5977719cb2a3d` | `cf4cc2c9` | OPEN | 10 Workflows PASS on `c1c8d629`; Lightning Proof FAIL (external); Web Regression FAIL (Info) | **READY FOR REVIEW**<br>(Release BLOCKED) |
 | **#255** | `feat(sdlc): add Spec Kit release governance and readiness gate` | `feat/release-sdlc-spec-kit-20261029` | `d027733598b1320c9bae8265b91831a6be828d64` | `cf4cc2c9` | OPEN | Team Gate PASS; OKF PASS; CI PASS; Lightning Proof FAIL (external); Web Regression FAIL (Info) | **READY FOR REVIEW**<br>(Release BLOCKED) |
 | **#253** | `fix(deploy): align Node runtime and readiness smoke gate` | `fix/production-readiness-smoke-gates-20261029` | `0e733960dc034a4b07c2e94c6c0a1f08bd2ded67` | `cf4cc2c9` | OPEN | Team Gate PASS; OKF PASS; 14 CI checks PASS; Lightning Proof FAIL (external); Web Regression FAIL (Info) | **READY FOR REVIEW**<br>(Release BLOCKED) |
 | **#256** | `feature: creator journey truth fixes and delivery acceptance` | `feat/product-acceptance-20261029` | `285e8b43677f68a1913d0933d2bcc23ea6181776` | `cf4cc2c9` | OPEN | Team Gate PASS; OKF PASS; 20 Workflows PASS; Targeted tests 24/24 PASS; Build 109 routes PASS; Lightning Proof FAIL (external) | **READY FOR REVIEW**<br>(Release BLOCKED) |
 
-### Refreshed Check Analysis for PR #254 (Head `4b547f23`)
+---
 
-Following Agent 1's publication commit `4b547f234d66fa1b3cd1189eda723341306b23ea`, all 12 triggered GitHub Actions runs have finished:
-- [Team Change Gate (Run 41019089984)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019089984): **completed / success**
-- [OKF Governance Gate (Run 41019090046)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090046): **completed / success**
-- [CI (Run 41019089979)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019089979): **completed / success**
-- [Floor Governance Cell Final Wave Validation (Run 41019090099)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090099): **completed / success**
-- [Floor 07 Pre-Training Validation (Run 41019089971)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019089971): **completed / success**
-- [Floor 06 Pre-Training Validation (Run 41019089991)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019089991): **completed / success**
-- [Floor 05 Pre-Training Validation (Run 41019090081)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090081): **completed / success**
-- [Floor 04 Production Validation (Run 41019090073)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090073): **completed / success**
-- [True Eight-Floor Production Trajectory (Run 41019090192)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090192): **completed / success**
-- [Context Fabric Architecture (Run 41019089972)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019089972): **completed / success**
-- [Treasury Wave 6 Validation (Run 41019090129)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090129): **completed / success**
-- [Lightning Physical MP4 Render Proof (Run 41019090084)](https://github.com/Gokul7904231/ShortForge/actions/runs/41019090084): **completed / failure** (fails at step 11 executing `verify-lightning-physical-mp4.ts` due to external Lightning outage/credentials)
-- Check run `Web Regression Suite (Informational)`: **completed / failure** (marked informational, non-blocking)
+## Detailed Check Verification: Prior Head `4b547f2` vs. Current Head `c1c8d629`
 
-No check is in progress; all statuses are finalized.
+Evidence is verified independently per commit head to ensure no status is carried forward without proof:
+
+### Checks Verified on Current Head `c1c8d6290299141a29bb872478d5977719cb2a3d` (PR #254)
+
+All 12 triggered workflow runs on `c1c8d629` were queried directly from the GitHub Actions API and have completed:
+
+| Workflow Name | Run ID | Status | Conclusion | URL |
+|---|---|---|---|---|
+| Team Change Gate | `41020366999` | completed | **success** | [Run 41020366999](https://github.com/Gokul7904231/ShortForge/actions/runs/41020366999) |
+| OKF Governance Gate | `41020367409` | completed | **success** | [Run 41020367409](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367409) |
+| CI (Next.js & Contracts) | `41020367050` | completed | **success** | [Run 41020367050](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367050) |
+| True Eight-Floor Production Trajectory | `41020367103` | completed | **success** | [Run 41020367103](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367103) |
+| Context Fabric Architecture | `41020367106` | completed | **success** | [Run 41020367106](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367106) |
+| Floor Governance Cell Final Wave Validation | `41020366997` | completed | **success** | [Run 41020366997](https://github.com/Gokul7904231/ShortForge/actions/runs/41020366997) |
+| Floor 04 Production Validation | `41020367145` | completed | **success** | [Run 41020367145](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367145) |
+| Floor 05 Pre-Training Validation | `41020367151` | completed | **success** | [Run 41020367151](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367151) |
+| Floor 06 Pre-Training Validation | `41020367246` | completed | **success** | [Run 41020367246](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367246) |
+| Floor 07 Pre-Training Validation | `41020367054` | completed | **success** | [Run 41020367054](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367054) |
+| Treasury Wave 6 Validation | `41020367072` | completed | **success** | [Run 41020367072](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367072) |
+| Lightning Physical MP4 Render Proof | `41020367124` | completed | **failure** | [Run 41020367124](https://github.com/Gokul7904231/ShortForge/actions/runs/41020367124) |
+| *Check Run: Web Regression Suite (Informational)* | N/A | completed | **failure** | Informational regression suite |
+
+### Checks Verified on Prior Head `4b547f234d66fa1b3cd1189eda723341306b23ea` (Historical Record)
+- Team Change Gate: Run `41019089984` (success)
+- OKF Governance Gate: Run `41019090046` (success)
+- CI: Run `41019089979` (success)
+- Lightning Physical MP4 Proof: Run `41019090084` (failure)
 
 ---
 
-## Reconciliation of Agent 2: Kaggle Live Pass vs. Staging Gate
+## Agent 2 Kaggle Live Smoke vs. Staging Gate Reconciliation
 
-### Verified Evidence for Kaggle Live Smoke
+### Verified Forensic Evidence for Kaggle Live Run
 - **Workflow Run:** [`notebook-fabric` Run 40858883771](https://github.com/Gokul7904231/ShortForge/actions/runs/40858883771)
 - **Commit SHA:** `dd4f28494f041060c502dbc4c383e435ffe04f06` on branch `agent2/distributed-render-20261029`
-- **Job:** `live (KAGGLE)` (Job ID: `123395029315`) — **Status:** completed / success
-- **Step Executed:** `Provider live smoke` (`npm run factoryos:verify:notebooks`)
-- **Artifact Uploaded:** `shortforge-kaggle-live-mp4` (Size: 1,395 bytes; [Artifact Download URL](https://api.github.com/repos/Gokul7904231/ShortForge/actions/artifacts/4233760455/zip))
+- **Exact Job ID:** `123396783405` (`live (KAGGLE)`) — **Status:** completed / success
+- **Exact Artifact ID:** `12891190407` (`shortforge-kaggle-live-mp4`)
+- **Byte Lengths Disambiguated:**
+  - Artifact ZIP archive download: **1,395 bytes**
+  - Physical `.mp4` video inside archive: **2,296 bytes**
+- **Probe Command & Output:**
+  ```bash
+  ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=320x180:d=1 -an -c:v libx264 -pix_fmt yuv420p /kaggle/working/shortforge-live-notebook-probe.mp4
+  ```
+  The probe produced a **1-second 320x180 black video with no audio** (`-an`).
+- **Worker Eligibility Contract:**
+  In `KaggleNotebookAdapter.ts` (lines 43–49):
+  ```typescript
+  supportsGpu: true,
+  supportsPersistence: false,
+  productionWorkerEligible: false,
+  note: "Ephemeral notebook runtime; production worker admission remains a separate F06 gate.",
+  ```
+  Kaggle is explicitly flagged as `productionWorkerEligible: false`.
 
-### Reconciling the Apparent Contradiction
+### Reconciling the Apparent Contradiction with Agent 2's Team Report
 Agent 2's Team report `Team/reports/pr-254.json` records:
-- `liveStagingJob`: **BLOCKED** ("Missing owner credentials. Live staging job cannot be submitted.")
+- `liveStagingJob`: **BLOCKED**
 - `mp4Probe`, `sha256`, `casRef`, `f07Receipt`, `driveId`: **N/A**
 - `disposition`: **BLOCKED**
 
-**Resolution:** There is no contradiction.
-1. `notebook-fabric` (Run `40858883771`) verified the **Kaggle Notebook Adapter capability** via kernel verification scripts (`verify-notebooks.ts`), executing remote Python code on Kaggle and pulling down a probe video.
-2. In contrast, the **full production staging pipeline** (dispatching an actual creator script across Floors 00 through 07, rendering a full 1080x1920 short via canonical `RenderFabric.executeRender`, indexing into physical CAS, submitting to F07 compliance verifier, and uploading to Google Drive) requires live staging credentials (`GITHUB_RENDER_TOKEN`, `FACTORYOS_EXECUTION_SECRET`, `RENDER_WORKER_SECRET`, etc.).
-3. Because those staging credentials were not supplied for a live production job, Agent 2 accurately reported full live staging as `BLOCKED` and the corresponding physical pipeline fields as `N/A`. The notebook adapter capability is proven; end-to-end production staging remains blocked.
+**Resolution:**
+1. Job `123396783405` verified **Notebook Provider Adapter execution** (remote Kaggle API provisioning, script transfer, ffmpeg test pattern compilation, and artifact retrieval).
+2. It did **not** execute the **production staging pipeline** (F00 $\rightarrow$ F07 DAG, full 1080x1920 video compilation via `RenderFabric.executeRender`, physical CAS indexing, F07 compliance verifier check, or Google Drive upload).
+3. Production staging credentials (`GITHUB_RENDER_TOKEN`, `FACTORYOS_EXECUTION_SECRET`, `RENDER_WORKER_SECRET`) were not provided for a staging mission.
+4. Therefore, Kaggle notebook adapter capability is proven, but full production staging remains accurately marked **BLOCKED** with physical evidence **N/A**.
 
 ---
 
 ## Agent 2 Team Report Number Collision
 
-- **Defect Identified:** Agent 2's implementation branch (`agent2/distributed-render-20261029`) committed a file named `Team/reports/pr-254.json` declaring `"pullRequest": { "number": 254, ... }`.
-- **Conflict:** PR **#254** is already registered and open on GitHub for `docs(release): coordinate three-agent production speedrun` on branch `docs/three-agent-production-speedrun-20261029`.
-- **Mandatory Pre-PR Action:** Before Agent 2 opens its PR, it must remove or rename `Team/reports/pr-254.json` (for example, staging as `Team/reports/pr-agent2.json` or waiting to write the file with the sequential PR number assigned by GitHub upon PR creation). Having two different branches claim PR #254 violates repository governance and will cause report validation failures upon merge.
+- **Defect Identified:** Agent 2's implementation branch (`agent2/distributed-render-20261029`) contains `Team/reports/pr-254.json`, with field `"pullRequest": { "number": 254, ... }`.
+- **Conflict:** PR **#254** is already assigned to `docs(release): coordinate three-agent production speedrun` on the coordination branch.
+- **Mandatory Action Before Opening PR:** Agent 2 must rename and update its report (e.g. `Team/reports/pr-agent2.json` or to the next sequential PR number assigned upon creation). Dual claiming of PR #254 violates repository governance.
 
 ---
 
-## Corrected Google Drive & Durability Owner Action Architecture
+## Google Drive & Firebase Persistence Architecture (Names Only)
 
-The owner already has valid Google Drive OAuth client credentials and Firebase service account credentials configured in local `apps/web/.env`. A second credential set must not be requested. Instead, the operational requirements are cleanly separated across four distinct layers:
+Local workspace configuration has been verified **by variable names only** in `apps/web/.env`. No values, keys, or secret tokens are printed:
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                            OPERATIONAL LAYERS                                │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 1. Local Workspace (.env)                                                    │
-│    - Status: CONFIGURED                                                      │
-│    - Contains GOOGLE_DRIVE_CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, FOLDER_ID│
-│    - Contains FIREBASE_PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY                 │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 2. Deployed Environment (Render / Cloud Platform)                            │
-│    - Status: REQUIRES OWNER SYNC                                             │
-│    - System fallback credentials from local .env must be synced to the       │
-│      deployed service environment variables so server tasks have Drive/CAS   │
-│      access in production.                                                   │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 3. Per-User OAuth Interactive Connection (Creator UI)                        │
-│    - Status: USER-INITIATED BROWSER FLOW                                     │
-│    - The creator UI uses DriveConnectionManager for user-authenticated Drive │
-│      personal sync. This is an interactive browser OAuth consent flow        │
-│      (Pro-gated), distinct from backend system fallback tokens.              │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ 4. Firebase Firestore Durability Persistence                                 │
-│    - Status: ACTIVE LOCALLY; MUST BE ACTIVE ON DEPLOYED HOST                 │
-│    - Validates that JobManifests and DeliveryReceipts persist across server  │
-│      restarts rather than using in-memory fallbacks.                         │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
+### Confirmed Present Environment Variable Names
+- **Google Drive Integration:**
+  - `GOOGLE_DRIVE_CLIENT_ID`
+  - `GOOGLE_DRIVE_CLIENT_SECRET`
+  - `GOOGLE_DRIVE_REFRESH_TOKEN`
+  - `GOOGLE_DRIVE_ROOT_FOLDER_ID`
+  - `GOOGLE_DRIVE_FOLDER_ID`
+  - `GOOGLE_DRIVE_DELETE_AFTER_HOURS`
+- **Firebase Firestore Persistence:**
+  - `FIREBASE_PROJECT_ID`
+  - `FIREBASE_CLIENT_EMAIL`
+  - `FIREBASE_PRIVATE_KEY`
+  - `FIREBASE_STORAGE_BUCKET`
+  - `NEXT_PUBLIC_FIREBASE_API_KEY`
+  - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+  - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+  - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+  - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+  - `NEXT_PUBLIC_FIREBASE_APP_ID`
 
-**Required Owner Actions:**
-- Sync existing local `.env` keys to the deployed cloud platform (Render/Cloudflare) settings.
-- Conduct one manual browser session through the Creator UI Drive connect flow to verify per-user OAuth tokens.
+### Distinct Architectural Operational Layers
+1. **Local Workspace (`apps/web/.env`):** Configuration present for local test harnesses and development.
+2. **Deployed Host (Render / Cloud Platform):** The names listed above must be synchronized to the deployed host environment variables so deployed server workers do not fall back to memory.
+3. **Per-User Interactive OAuth Connection:** The Creator UI (`DriveConnectionManager`) provides per-user personal Drive syncing via an interactive browser OAuth consent flow (Pro-gated), distinct from system fallback tokens.
+4. **Firebase Firestore Durability Persistence:** Active locally; requires active host credentials on deployed instances to ensure `JobManifest` and `DeliveryReceipt` records persist across reboots without falling back to memory.
 
 ---
 
 ## Reconciliation of PR #256 Readiness Assessment
 
-### 1. Full TypeScript (`tsc --noEmit`) Failure Analysis
-- `npx tsc --noEmit` fails on `main` and on PR branches with 3 pre-existing errors:
-  1. `apps/web/factoryos/core/compute/notebooks/ColabNotebookAdapter.ts` (2 errors indexing `process.env`)
-  2. `apps/web/.next/types/validator.ts` (1 error caused by `app/(os)/factory/editor/page.tsx` being truncated to 22 lines on `main` in commit `061b4d06a` with no default export).
-- **Scope Isolation:** PR #256 touches 29 files, **none of which introduce any TypeScript errors**.
-- **FactoryOS TypeCheck:** `npm run factoryos:typecheck` **PASSES**.
-- **Next.js Production Build:** `npm run build` **PASSES** across all 109 routes.
-
-### 2. Live Drive & Firestore Blocker vs. PR #256 Review Readiness
-- **PR #256 Stated Objective:** Secure media endpoints (`/api/media/video/*`, `/api/media/thumb/*`), introduce durable delivery receipts, and eliminate hallucinated/synthetic UI metrics (replacing fake 60 FPS, fake sizes, and fake uptime with `Not recorded` and `LOCAL_OUTBOX`).
-- **Targeted Evidence:** PR #256 passes all 24 targeted tests in `tests/media-video-ownership.test.ts`, `tests/delivery-recovery.test.ts`, and `tests/product-acceptance.test.ts`.
-- **Readiness Conclusion:** PR #256 is **READY FOR CODE REVIEW AND MERGE TO MAIN**. It solves critical authorization vulnerabilities and UI truthfulness issues. Merging PR #256 does not require live physical Drive uploads or live Firestore reboots, because PR #256 does not claim physical production acceptance—its Team report correctly maintains disposition `BLOCKED`.
+1. **TypeScript TypeCheck:** `npx tsc --noEmit` fails on `main` and on PR branches due to 3 pre-existing errors in `main` (2 in `ColabNotebookAdapter.ts` and 1 in `.next/types/validator.ts` from `061b4d06a` truncating `editor/page.tsx`). Zero type errors exist in any of PR #256's 29 touched files. `npm run factoryos:typecheck` and Next.js `npm run build` (all 109 routes) pass cleanly.
+2. **Review Readiness vs. Production Gate:** PR #256 enforces media route access control (`api/media/*`), records durable delivery receipts, and eliminates hallucinated UI metrics. All 24 targeted tests pass. It does not claim live physical Drive delivery or live Firestore reboot proofs; its Team report maintains disposition `BLOCKED`. PR #256 is **READY FOR CODE REVIEW AND MERGE TO MAIN**.
 
 ---
 
 ## Definitive Integration Order
 
-The integration order established in Iteration 1 remains optimal and is preserved:
-
+The sequential merge order is preserved:
 ```
-[PR #254] docs(release): coordinate three-agent production speedrun
-   │      - Non-runtime governance, agent packets, Looping Skill
-   ▼
-[PR #255] feat(sdlc): add Spec Kit release governance and readiness gate
-   │      - Specification framework, checklists, acceptance ledger
-   ▼
-[PR #253] fix(deploy): align Node runtime and readiness smoke gate
-   │      - Node 22 Alpine Docker alignment, fail-closed health probes
-   ▼
-[PR #256] feature: creator journey truth fixes and delivery acceptance
-   │      - Control plane media authorization, delivery receipts, UI truth
-   ▼
-[Agent 2 PR] Distributed Render & Worker Alignment (Pending opening)
-          - Corrected Team report number, worker/pipeline canonical tests
+1. [PR #254] docs(release): coordinate three-agent production speedrun (Docs/Coordination)
+2. [PR #255] feat(sdlc): add Spec Kit release governance and readiness gate (SDLC Scaffolding)
+3. [PR #253] fix(deploy): align Node runtime and readiness smoke gate (Infra Hygiene)
+4. [PR #256] feature: creator journey truth fixes and delivery acceptance (Control Plane Security & UI Truth)
+5. [Agent 2 PR] Distributed Render & Worker Alignment (Compute Fabric, once report number is fixed & PR opened)
 ```
 
 ---
@@ -164,27 +174,9 @@ The integration order established in Iteration 1 remains optimal and is preserve
 ## Recommendation on PR #256 and the Lightning Outage
 
 **PR #256 MUST PROCEED INDEPENDENTLY OF THE LIGHTNING OUTAGE.**
-
-1. **Complete Architectural Decoupling:** PR #256 is confined to the Control Plane (`apps/web/`). It has no runtime connection to `LightningNotebookAdapter`.
-2. **False CI Association:** The failure of `Lightning Physical MP4 Render Proof` on PR #256 was triggered by GitHub Actions path matching on `Team/reports/pr-*.json`, exactly as occurred on PR #253, #254, and #255.
-3. **High Security & Truthfulness Value:** PR #256 prevents unauthorized access to video and thumbnail endpoints by enforcing session ownership, while eliminating misleading synthetic success metrics in the creator experience.
-
----
-
-## Corrected Evidence Matrix
-
-| Gate | Status | Evidence Link / Run ID | Notes |
-|---|---|---|---|
-| CI / Team / OKF | **PASS** | Runs `41019089984`, `41019090046`, `41019089979` | All PRs pass required Team Change & OKF gates |
-| Live Readiness & Health | **REPORTED (Degraded)** | Deployed health endpoint | Returns 200 with `status: degraded` due to unconfigured external API tokens; PR #253 hardens probe |
-| Targeted Test Suites | **PASS** | 24/24 tests in PR #256 | Ownership, recovery, and UI truthfulness verified |
-| Full Next.js Build | **PASS** | PR #256 `npm run build` | 109 routes build cleanly |
-| Kaggle Notebook Adapter Smoke | **PASS** | Run [`40858883771`](https://github.com/Gokul7904231/ShortForge/actions/runs/40858883771) | Artifact `shortforge-kaggle-live-mp4` (1,395 B) |
-| Physical Production Render | **UNPROVEN** | Staging render | No end-to-end production staging DAG executed |
-| CAS Storage Proof | **UNPROVEN** | ContentAddressedStore | Awaiting full staging render execution |
-| F07 Compliance Receipt | **UNPROVEN** | F07PhysicalArtifactVerifier | Awaiting staging artifact verification |
-| Genuine Drive Delivery | **BLOCKED** | Google Cloud OAuth | Local credentials exist; pending deployed sync & interactive user consent |
-| Post-Restart Durability | **UNPROVEN** | Firestore / SafeSQLite | Local credentials exist; pending live deployed persistence verification |
+- **Architectural Decoupling:** PR #256 is strictly in the Control Plane (`apps/web/`). It touches no worker compute code.
+- **CI Trigger Artifact:** The `Lightning Physical MP4 Render Proof` failure on PR #256 was triggered by path-matching on `Team/reports/pr-*.json`, identical to failures on #253, #254, and #255.
+- **Security & Integrity Value:** PR #256 secures endpoints against unauthorized media access and eliminates synthetic UI metrics.
 
 ---
 
@@ -193,4 +185,5 @@ The integration order established in Iteration 1 remains optimal and is preserve
 - **File Path:** `docs/release/agent-packets/agent-1-response.md`
 - **Coordination Branch:** `docs/three-agent-production-speedrun-20261029`
 - **Publication Worktree:** `C:\Users\ASUS\AppData\Local\Temp\opencode\agent3-coord`
-- **Published Commit SHA:** (Recorded upon remote push)
+- **Current Head SHA:** `c1c8d6290299141a29bb872478d5977719cb2a3d`
+- **Correction Commit SHA:** (Recorded upon remote push)
