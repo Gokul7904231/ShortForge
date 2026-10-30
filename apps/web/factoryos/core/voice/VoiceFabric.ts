@@ -824,6 +824,101 @@ export interface VoiceSynthesisOptions {
   outputDir?: string;
 }
 
+
+export class SystemVoiceEngine implements IVoiceEngine {
+  readonly id = "SYSTEM";
+  readonly name = "Host System Speech TTS";
+  readonly isProductionReady = true;
+  readonly isPrimaryRoutable = true;
+  readonly isEmergencyFallback = false;
+
+  getCredentialState(): CredentialState {
+    return "PRESENT";
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return true;
+  }
+
+  async synthesize(text: string, profile: VoiceProfile, outputDir?: string): Promise<VoiceArtifact> {
+    const startTime = Date.now();
+    const dir = outputDir || path.join(process.cwd(), "data", "audio");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    const baseName = `voice_system_${randomUUID().substring(0, 8)}`;
+    const tempWav = path.join(dir, `${baseName}_raw.wav`);
+
+    const candidateScripts = [
+      path.resolve(__dirname, "../../../../scripts/synthesize_speech.py"),
+      path.resolve(process.cwd(), "scripts", "synthesize_speech.py"),
+      path.resolve(process.cwd(), "apps", "web", "scripts", "synthesize_speech.py"),
+    ];
+    const scriptPath = candidateScripts.find((p) => fs.existsSync(p));
+
+    const spawn = VoiceFabric._spawnFn || (await import("node:child_process")).spawn;
+    if (scriptPath) {
+      const rateArg = profile.speed ? Math.round((profile.speed - 1.0) * 5).toString() : "0";
+      await new Promise<void>((resolve, reject) => {
+        const proc = spawn("python", [
+          scriptPath,
+          "--text",
+          text,
+          "--output",
+          tempWav,
+          "--rate",
+          rateArg,
+        ]);
+        let stderr = "";
+        proc.stderr.on("data", (d: any) => (stderr += d.toString()));
+        proc.on("close", (code: any) => {
+          if (code === 0 && fs.existsSync(tempWav) && fs.statSync(tempWav).size > 0) {
+            resolve();
+          } else {
+            reject(new Error(`SystemVoiceEngine failed (code ${code}): ${stderr}`));
+          }
+        });
+        proc.on("error", reject);
+      });
+    } else if (process.platform === "win32") {
+      const escapedText = text.replace(/"/g, '`"');
+      const psScript = `Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.SetOutputToWaveFile('${tempWav.replace(/\\/g, "\\\\")}'); $s.Speak('${escapedText}'); $s.Dispose()`;
+      await new Promise<void>((resolve, reject) => {
+        const proc = spawn("powershell", ["-NoProfile", "-Command", psScript]);
+        let stderr = "";
+        proc.stderr.on("data", (d: any) => (stderr += d.toString()));
+        proc.on("close", (code: any) => {
+          if (code === 0 && fs.existsSync(tempWav) && fs.statSync(tempWav).size > 0) {
+            resolve();
+          } else {
+            reject(new Error(`PowerShell SAPI TTS failed (code ${code}): ${stderr}`));
+          }
+        });
+        proc.on("error", reject);
+      });
+    } else {
+      throw new Error("[SystemVoiceEngine] No host speech synthesizer available on platform: " + process.platform);
+    }
+
+    if (!fs.existsSync(tempWav) || fs.statSync(tempWav).size === 0) {
+      throw new Error(`[SystemVoiceEngine] Synthesis produced 0 bytes at ${tempWav}`);
+    }
+
+    const buffer = fs.readFileSync(tempWav);
+    try {
+      fs.unlinkSync(tempWav);
+    } catch {}
+
+    const latency = Date.now() - startTime;
+    return verifyAndPublishAudioArtifact(buffer, dir, baseName, {
+      provider: "SYSTEM",
+      expectedFormat: "wav",
+      qualityClass: "PRIMARY",
+      providerRequestId: undefined,
+      synthesisLatencyMs: latency,
+    });
+  }
+}
+
 export class VoiceFabric {
   static _spawnFn: any = null;
   private engines: Map<string, IVoiceEngine> = new Map();
@@ -835,8 +930,19 @@ export class VoiceFabric {
     this.engines.set("EDGE", new EdgeVoiceEngine());
     this.engines.set("IBM_TTS", new IBMWatsonTTSVoiceEngine());
     this.engines.set("AUDEXUM", new AudexumTTSVoiceEngine());
+    this.engines.set("SYSTEM", new SystemVoiceEngine());
     this.engines.set("SILENT_WAV_FALLBACK", new SilentWavVoiceEngine());
 
+    this.registerProfile({
+      profileId: "profile_host_narrator",
+      name: "Host System Narrator",
+      gender: "MALE",
+      language: "en-US",
+      pitch: 0.0,
+      speed: 1.0,
+      tone: "AUTHORITATIVE",
+      preferredEngine: "SYSTEM",
+    });
     this.registerDefaultProfiles();
   }
 

@@ -160,6 +160,20 @@ class FFmpegBackend:
         labels: List[str] = []
         for offset, track in enumerate(valid_tracks, start=1):
             source_in = max(0.0, float(track.get("source_in_seconds") or 0.0))
+            start_seconds = max(0.0, float(track.get("start_seconds") or 0.0))
+
+            # Semantics Contract & Silence Prevention:
+            # - `source_in_seconds`: seek offset into source audio asset (-ss).
+            # - `start_seconds`: scene-local delay relative to this scene's start.
+            # If start_seconds >= duration_seconds and source_in == 0:
+            # The caller passed cumulative timeline offset as start_seconds.
+            # Applying adelay >= scene_duration guarantees 100% digital silence.
+            # We defensively correct: treat start_seconds as source_in seek offset,
+            # and reset scene-local start_seconds to 0.0.
+            if start_seconds >= duration_seconds and source_in == 0.0:
+                source_in = start_seconds
+                start_seconds = 0.0
+
             if source_in > 0:
                 cmd.extend(["-ss", f"{source_in:.6f}"])
             cmd.extend(["-i", str(track["audio_path"])])
@@ -198,9 +212,9 @@ class FFmpegBackend:
                     f"afade=t=out:st={fade_start:.6f}:d={min(fade_out, timeline_duration):.6f}"
                 )
 
-            start_seconds = max(0.0, float(track.get("start_seconds") or 0.0))
-            if start_seconds > 0:
+            if start_seconds > 0 and start_seconds < duration_seconds:
                 chain.append(f"adelay={int(round(start_seconds * 1000))}:all=1")
+            chain.append("apad")
             filters.append(",".join(chain) + f"[{label}]")
 
         if len(labels) == 1:

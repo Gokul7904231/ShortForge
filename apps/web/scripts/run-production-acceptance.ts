@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
-import { execSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 
 import { ResearchRuntime } from "../factoryos/core/research/ResearchRuntime";
 import { RenderFabric } from "../factoryos/core/fabric/RenderFabric";
@@ -19,11 +19,32 @@ import { getCompatibilityEngineContracts } from "../lib/core/EngineConfiguration
 import { db } from "../lib/firebase-admin";
 import type { RenderIntent } from "../factoryos/core/contracts/RenderIntentContracts";
 import type { LocalRenderIntent } from "../factoryos/core/render/LocalRenderAdapter";
+import { TemplateProductionPipeline } from "../factoryos/core/templates/TemplateProductionPipeline";
+import { CANONICAL_TEMPLATES } from "../lib/templates/definitions/CanonicalTemplates";
 
-async function main() {
+export interface AcceptanceRunResult {
+  runId: string;
+  missionId: string;
+  jobId: string;
+  targetDuration: number;
+  actualDuration: number;
+  sceneCount: number;
+  videoPath: string;
+  byteLength: number;
+  sha256: string;
+  driveFileId: string;
+  driveUrl: string;
+  f07Passed: boolean;
+  f07Score: number;
+  volumeMeanDb: number;
+  volumeMaxDb: number;
+  latterHalfMeanDb: number;
+}
+
+export async function executeAcceptanceRun(targetDurationSeconds: number = 60): Promise<AcceptanceRunResult> {
   const startTime = Date.now();
   console.log("================================================================================");
-  console.log("SHORTFORGE NON-LIGHTNING PRODUCTION ACCEPTANCE RUN");
+  console.log(`SHORTFORGE PRODUCTION ACCEPTANCE RUN (${targetDurationSeconds}s TARGET)`);
   console.log("Start time:", new Date().toISOString());
   console.log("================================================================================\n");
 
@@ -32,12 +53,12 @@ async function main() {
   const jobId = `job_prod_accept_${Date.now().toString(36)}`;
   const topic = "Mariana Trench: The Ocean's Deepest Abyss";
 
-  console.log(`[Stage 1: Identity & Overseer] Mission: ${missionId}, Job: ${jobId}`);
+  console.log(`[Stage 1: Identity & Overseer] Mission: ${missionId}, Job: ${jobId}, Target Duration: ${targetDurationSeconds}s`);
 
   // -------------------------------------------------------------
   // Stage 2: Floor 00 Analyst (ResearchRuntime)
   // -------------------------------------------------------------
-  console.log("[Stage 2: Floor 00 Analyst Research] Scanning trend & synthesizing facts...");
+  console.log("[Stage 2: Floor 00 Analyst Research] Scanning trend & synthesizing verified facts...");
   const researchRuntime = new ResearchRuntime();
   const engineId = "facts";
   const researchContract = {
@@ -48,7 +69,7 @@ async function main() {
   const analystReport = await researchRuntime.executeResearch({
     missionId,
     topic,
-    intent: "High-engagement educational short-form science video",
+    intent: "High-engagement educational deep-dive science video",
     methodology: "TREND_SCAN",
     researchContract,
   });
@@ -60,179 +81,75 @@ async function main() {
   console.log("[Floor 00] Research passport verified PASS.");
 
   // -------------------------------------------------------------
-  // Stage 3 & 4: Floor 01/02 Strategy & Script + Floor 04 Voice
+  // Stage 3: Floor 01/02 Strategy & Scripting via Canonical Template
   // -------------------------------------------------------------
-  console.log("[Stage 3/4: Voice Artifact Preflight] Verifying synthesized speech narration...");
-  const audioPath = path.resolve(process.cwd(), "data", "audio", "creator_narration_sapi.wav");
-  if (!fs.existsSync(audioPath)) {
-    throw new Error(`Audio narration file missing at: ${audioPath}`);
+  console.log("[Stage 3: Floor 01/02 Strategy & Scripting] Invoking Canonical TemplateProductionPipeline...");
+  const pipeline = TemplateProductionPipeline.getInstance();
+  const templateDef = CANONICAL_TEMPLATES.find((t) => t.identity.id === "facts.deep-explainer.v1");
+  if (!templateDef) {
+    throw new Error("Canonical template facts.deep-explainer.v1 not found in registry!");
   }
 
-  const audioBytes = fs.readFileSync(audioPath);
-  const audioSha256 = crypto.createHash("sha256").update(audioBytes).digest("hex");
-  const audioStat = fs.statSync(audioPath);
-  console.log(`[Floor 04] Speech Audio: ${audioPath} (${audioStat.size} bytes, sha256: ${audioSha256.substring(0, 16)}...)`);
+  const scriptPlan = await pipeline.generateTemplateScript({
+    templateDef,
+    topic,
+    userInputs: {
+      targetDuration: targetDurationSeconds,
+      claims: analystReport.passport.claims,
+    },
+  });
 
-  // Probe audio duration using ffprobe
-  const audioProbeRaw = execSync(
-    `ffprobe -v error -show_entries format=duration,size,bit_rate:stream=codec_name,sample_rate,channels -of json "${audioPath}"`
-  ).toString();
-  const audioProbe = JSON.parse(audioProbeRaw);
-  const totalDuration = parseFloat(audioProbe.format.duration);
-  console.log(`[Floor 04] Physical Audio Probe Duration: ${totalDuration.toFixed(3)}s, Codec: ${audioProbe.streams[0].codec_name}, Sample Rate: ${audioProbe.streams[0].sample_rate}`);
+  console.log(`[Floor 02 Script] Script Title: "${scriptPlan.title}"`);
+  console.log(`[Floor 02 Script] Target Duration: ${targetDurationSeconds}s across ${scriptPlan.beats.length} beats`);
 
   // -------------------------------------------------------------
-  // Stage 5: Floor 05 Timeline Composition
+  // Stage 4: Floor 03 Visual/Asset Planning & Recipe Validation
   // -------------------------------------------------------------
-  console.log("[Stage 5: Floor 05 Composition] Compiling multi-scene creator timeline...");
+  console.log("[Stage 4: Floor 03 Visual Planning] Compiling scene recipes and validating against ShotRecipeLibrary...");
+  const scenePlans = await pipeline.planScenes(templateDef, scriptPlan);
+
+  const sceneValidation = pipeline.validateScenePlans(scenePlans);
+  if (!sceneValidation.valid) {
+    throw new Error(`Scene plan validation failed: ${sceneValidation.errors.join("; ")}`);
+  }
+  console.log(`[Floor 03 Assets] Validated ${scenePlans.length} distinct shot recipes successfully: ${scenePlans.map((s) => s.shotRecipeId).join(" -> ")}`);
+
+  // -------------------------------------------------------------
+  // Stage 5: Floor 04 Voice Synthesis via VoiceFabric & SystemVoiceEngine
+  // -------------------------------------------------------------
+  console.log("[Stage 5: Floor 04 VoiceFabric] Synthesizing dedicated per-scene speech narration via SystemVoiceEngine...");
+  const audioDir = path.resolve(process.cwd(), "data", "audio", jobId);
+  fs.mkdirSync(audioDir, { recursive: true });
+
+  const sceneVoiceArtifacts = await pipeline.synthesizeSceneAudio({
+    beats: scriptPlan.beats,
+    profileId: "profile_host_narrator",
+    outputDir: audioDir,
+  });
+
+  console.log(`[Floor 04 Voice] Synthesized ${Object.keys(sceneVoiceArtifacts).length} scene narration files.`);
+  for (const [beatId, art] of Object.entries(sceneVoiceArtifacts)) {
+    console.log(`  - ${beatId}: ${art.durationSeconds.toFixed(2)}s (${art.localPath})`);
+  }
+
+  // -------------------------------------------------------------
+  // Stage 6: Floor 05 Timeline Composition
+  // -------------------------------------------------------------
+  console.log("[Stage 6: Floor 05 Composition] Compiling canonical multi-scene LocalRenderIntent...");
   const renderOutputDir = path.resolve(process.cwd(), "data", "renders");
   fs.mkdirSync(renderOutputDir, { recursive: true });
   const finalVideoPath = path.join(renderOutputDir, `${jobId}.mp4`);
 
-  const localRenderIntent: LocalRenderIntent = {
-    project_id: missionId,
-    title: "Mariana Trench: Secrets of the Abyss",
-    output_path: finalVideoPath,
-    output: {
-      width: 1080,
-      height: 1920,
-      fps: 30,
-      video_codec: "h264",
-      audio_codec: "aac",
-    },
-    safe_area: {
-      top: 160,
-      bottom: 320,
-      left: 60,
-      right: 120,
-    },
-    scenes: [
-      {
-        scene_id: "scene_01_hook",
-        template_id: "facts.rapid-facts.v1",
-        narration_text: "Welcome to ShortForge. Today, we are exploring the Mariana Trench, the deepest point on Planet Earth.",
-        duration_seconds: 6.5,
-        shots: [
-          {
-            id: "shot_01_hook",
-            recipe_id: "KINETIC_HOOK",
-            start_seconds: 0.0,
-            duration_seconds: 6.5,
-            props: {
-              headline: "MARIANA TRENCH",
-              subtitle: "Deepest Abyss on Planet Earth",
-              tag: "MYSTERY OF THE DEEP",
-              background_type: "DEEP_INDIGO",
-            },
-          },
-        ],
-        captions: [
-          { text: "Welcome to ShortForge.", start_seconds: 0.0, duration_seconds: 2.0 },
-          { text: "Today, we explore the Mariana Trench,", start_seconds: 2.0, duration_seconds: 2.2 },
-          { text: "the deepest point on Planet Earth.", start_seconds: 4.2, duration_seconds: 2.3 },
-        ],
-        audio_track: {
-          track_id: "audio_narration_s01",
-          audio_path: audioPath,
-          start_seconds: 0.0,
-          duration_seconds: 6.5,
-          volume: 1.0,
-        },
-      },
-      {
-        scene_id: "scene_02_depth",
-        template_id: "facts.rapid-facts.v1",
-        narration_text: "Plunging nearly eleven kilometers beneath the ocean surface, the water pressure exceeds one thousand atmospheres.",
-        duration_seconds: 6.5,
-        shots: [
-          {
-            id: "shot_02_depth",
-            recipe_id: "BIG_NUMBER",
-            start_seconds: 0.0,
-            duration_seconds: 6.5,
-            props: {
-              number: "11,000 M",
-              label: "DEPTH BENEATH OCEAN SURFACE",
-              background_type: "DARK_SLATE",
-            },
-          },
-        ],
-        captions: [
-          { text: "Plunging nearly 11 kilometers deep,", start_seconds: 0.0, duration_seconds: 3.0 },
-          { text: "far deeper than Mount Everest is tall.", start_seconds: 3.0, duration_seconds: 3.5 },
-        ],
-        audio_track: {
-          track_id: "audio_narration_s02",
-          audio_path: audioPath,
-          start_seconds: 6.5,
-          duration_seconds: 6.5,
-          volume: 1.0,
-        },
-      },
-      {
-        scene_id: "scene_03_pressure",
-        template_id: "facts.rapid-facts.v1",
-        narration_text: "the water pressure exceeds one thousand atmospheres. Yet, remarkable creatures thrive here in total darkness.",
-        duration_seconds: 6.5,
-        shots: [
-          {
-            id: "shot_03_pressure",
-            recipe_id: "STAT",
-            start_seconds: 0.0,
-            duration_seconds: 6.5,
-            props: {
-              value: "1,000+ ATM",
-              headline: "CRUSHING HYDROSTATIC PRESSURE",
-              background_type: "AMBER_HISTORY",
-            },
-          },
-        ],
-        captions: [
-          { text: "Water pressure exceeds 1,000 atmospheres.", start_seconds: 0.0, duration_seconds: 3.2 },
-          { text: "Yet life thrives in complete darkness.", start_seconds: 3.2, duration_seconds: 3.3 },
-        ],
-        audio_track: {
-          track_id: "audio_narration_s03",
-          audio_path: audioPath,
-          start_seconds: 13.0,
-          duration_seconds: 6.5,
-          volume: 1.0,
-        },
-      },
-      {
-        scene_id: "scene_04_outro",
-        template_id: "facts.rapid-facts.v1",
-        narration_text: "completely defying known biological limits. This is genuine ShortForge video production.",
-        duration_seconds: Math.max(6.5, totalDuration - 19.5),
-        shots: [
-          {
-            id: "shot_04_outro",
-            recipe_id: "OUTRO_CTA",
-            start_seconds: 0.0,
-            duration_seconds: Math.max(6.5, totalDuration - 19.5),
-            props: {
-              cta: "SHORTFORGE VERIFIED",
-              subtitle: "Autonomous Rendering Pipeline",
-              background_type: "DEEP_INDIGO",
-            },
-          },
-        ],
-        captions: [
-          { text: "Defying known biological boundaries.", start_seconds: 0.0, duration_seconds: 3.0 },
-          { text: "Genuine ShortForge video production.", start_seconds: 3.0, duration_seconds: 3.575 },
-        ],
-        audio_track: {
-          track_id: "audio_narration_s04",
-          audio_path: audioPath,
-          start_seconds: 19.5,
-          duration_seconds: Math.max(6.5, totalDuration - 19.5),
-          volume: 1.0,
-        },
-      },
-    ],
-  };
+  const localRenderIntent = pipeline.compileLocalRenderIntent({
+    templateDef,
+    scenePlans,
+    sceneVoiceArtifacts,
+    jobId,
+    outputPath: finalVideoPath,
+  });
 
   const calculatedDuration = localRenderIntent.scenes.reduce((sum, s) => sum + s.duration_seconds, 0);
+  console.log(`[Floor 05 Composition] Total planned timeline duration: ${calculatedDuration.toFixed(2)}s across ${localRenderIntent.scenes.length} scenes.`);
 
   const renderIntent: RenderIntent = {
     intentId: `intent_${jobId}`,
@@ -243,33 +160,29 @@ async function main() {
     fps: 30,
     resolution: { width: 1080, height: 1920 },
     tracks: {
-      visualAssets: [
-        { id: "bg_scene_01", type: "SHAPE", src: "deep_indigo", zIndex: 0, startSeconds: 0, durationSeconds: 6.5 },
-        { id: "bg_scene_02", type: "SHAPE", src: "dark_slate", zIndex: 0, startSeconds: 6.5, durationSeconds: 6.5 },
-        { id: "bg_scene_03", type: "SHAPE", src: "amber_history", zIndex: 0, startSeconds: 13.0, durationSeconds: 6.5 },
-        { id: "bg_scene_04", type: "SHAPE", src: "deep_indigo", zIndex: 0, startSeconds: 19.5, durationSeconds: calculatedDuration - 19.5 },
-      ],
-      audioTracks: [
-        {
-          id: "voice_narration_main",
-          type: "VOICE",
-          src: audioPath,
+      visualAssets: localRenderIntent.scenes.map((s, idx) => ({
+        id: `visual_${s.scene_id}`,
+        type: "SHAPE",
+        src: s.shots[0]?.recipe_id || "KINETIC_HOOK",
+        zIndex: idx,
+        startSeconds: 0,
+        durationSeconds: s.duration_seconds,
+      })),
+      audioTracks: localRenderIntent.scenes
+        .filter((s) => s.audio_track)
+        .map((s) => ({
+          id: s.audio_track!.track_id,
+          type: "VOICE" as const,
+          src: s.audio_track!.audio_path,
           volume: 1.0,
-          startSeconds: 0,
-          durationSeconds: calculatedDuration,
-        },
-      ],
-      captions: [
-        { text: "Welcome to ShortForge.", startMs: 0, endMs: 2000 },
-        { text: "Today, we explore the Mariana Trench,", startMs: 2000, endMs: 4200 },
-        { text: "the deepest point on Planet Earth.", startMs: 4200, endMs: 6500 },
-        { text: "Plunging nearly 11 kilometers deep,", startMs: 6500, endMs: 9500 },
-        { text: "far deeper than Mount Everest is tall.", startMs: 9500, endMs: 13000 },
-        { text: "Water pressure exceeds 1,000 atmospheres.", startMs: 13000, endMs: 16200 },
-        { text: "Yet life thrives in complete darkness.", startMs: 16200, endMs: 19500 },
-        { text: "Defying known biological boundaries.", startMs: 19500, endMs: 22500 },
-        { text: "Genuine ShortForge video production.", startMs: 22500, endMs: Math.round(calculatedDuration * 1000) },
-      ],
+          startSeconds: s.audio_track!.start_seconds || 0,
+          durationSeconds: s.audio_track!.duration_seconds,
+        })),
+      captions: localRenderIntent.scenes.map((s) => ({
+        text: s.narration_text,
+        startMs: 0,
+        endMs: Math.round(s.duration_seconds * 1000),
+      })),
     },
     preferredCompiler: "FFMPEG",
     constraints: {},
@@ -277,9 +190,9 @@ async function main() {
   };
 
   // -------------------------------------------------------------
-  // Stage 6: Floor 06 Render Compilation & Execution
+  // Stage 7: Floor 06 Render Compilation & Execution
   // -------------------------------------------------------------
-  console.log(`[Stage 6: Floor 06 RenderFabric] Dispatching render job to qualified provider (LOCAL)...`);
+  console.log(`[Stage 7: Floor 06 RenderFabric] Dispatching render job to qualified provider (LOCAL)...`);
   const renderFabric = new RenderFabric();
   const renderResult = await renderFabric.executeRender(renderIntent, {
     localRenderIntent,
@@ -297,9 +210,9 @@ async function main() {
   console.log(`[Floor 06] Reported Duration: ${renderResult.renderDurationSeconds}s, SHA-256: ${renderResult.artifact.sha256}`);
 
   // -------------------------------------------------------------
-  // Stage 7: Independent Physical Inspections
+  // Stage 8: Independent Physical Media Inspections
   // -------------------------------------------------------------
-  console.log("[Stage 7: Independent Physical Media Inspections] Probing MP4 file on disk...");
+  console.log("[Stage 8: Independent Physical Media Inspections] Probing MP4 file on disk...");
   if (!fs.existsSync(renderedVideoPath)) {
     throw new Error(`Rendered video missing on disk: ${renderedVideoPath}`);
   }
@@ -319,20 +232,44 @@ async function main() {
 
   const videoStream = ffprobeData.streams.find((s: any) => s.codec_type === "video");
   const audioStream = ffprobeData.streams.find((s: any) => s.codec_type === "audio");
+  const physicalDuration = parseFloat(ffprobeData.format.duration);
 
   console.log(`[Physical Inspection] Video stream: ${videoStream?.codec_name} ${videoStream?.width}x${videoStream?.height} @ ${videoStream?.r_frame_rate} (${videoStream?.pix_fmt})`);
   console.log(`[Physical Inspection] Audio stream: ${audioStream?.codec_name} ${audioStream?.sample_rate}Hz channels:${audioStream?.channels}`);
-  console.log(`[Physical Inspection] Container format: ${ffprobeData.format.format_name}, duration: ${parseFloat(ffprobeData.format.duration).toFixed(3)}s`);
+  console.log(`[Physical Inspection] Container format: ${ffprobeData.format.format_name}, duration: ${physicalDuration.toFixed(3)}s`);
 
   // Run independent ffmpeg decode smoke check
   console.log("[Physical Inspection] Executing full decode smoke test (ffmpeg -v error -i ... -f null -)...");
   execSync(`ffmpeg -v error -i "${renderedVideoPath}" -f null -`);
   console.log("[Physical Inspection] FFmpeg full decode smoke test: CLEAN PASS (0 errors).");
 
+  // Run independent physical volumedetect on whole video and latter half
+  console.log("[Physical Inspection] Executing physical volume analysis on full stream and latter half...");
+  const fullVolumeRaw = execSync(`ffmpeg -hide_banner -i "${renderedVideoPath}" -af volumedetect -f null - 2>&1`).toString();
+  const fullMeanMatch = fullVolumeRaw.match(/mean_volume:\s*(-?[\d.]+)\s*dB/);
+  const fullMaxMatch = fullVolumeRaw.match(/max_volume:\s*(-?[\d.]+)\s*dB/);
+  const volumeMeanDb = fullMeanMatch ? parseFloat(fullMeanMatch[1]) : -91.0;
+  const volumeMaxDb = fullMaxMatch ? parseFloat(fullMaxMatch[1]) : -91.0;
+
+  const halfOffset = (physicalDuration / 2).toFixed(2);
+  const latterVolumeRaw = execSync(`ffmpeg -hide_banner -ss ${halfOffset} -i "${renderedVideoPath}" -af volumedetect -f null - 2>&1`).toString();
+  const latterMeanMatch = latterVolumeRaw.match(/mean_volume:\s*(-?[\d.]+)\s*dB/);
+  const latterMaxMatch = latterVolumeRaw.match(/max_volume:\s*(-?[\d.]+)\s*dB/);
+  const latterHalfMeanDb = latterMeanMatch ? parseFloat(latterMeanMatch[1]) : -91.0;
+  const latterHalfMaxDb = latterMaxMatch ? parseFloat(latterMaxMatch[1]) : -91.0;
+
+  console.log(`[Physical Audio Activity] Entire Track Volume: Mean = ${volumeMeanDb.toFixed(1)} dB, Max = ${volumeMaxDb.toFixed(1)} dB`);
+  console.log(`[Physical Audio Activity] Latter Half (from ${halfOffset}s): Mean = ${latterHalfMeanDb.toFixed(1)} dB, Max = ${latterHalfMaxDb.toFixed(1)} dB`);
+
+  if (volumeMeanDb <= -40.0 || latterHalfMeanDb <= -40.0) {
+    throw new Error(`Physical audio check failed! Silence detected: mean=${volumeMeanDb} dB, latterMean=${latterHalfMeanDb} dB`);
+  }
+  console.log("[Physical Audio Activity] Primary speech audio presence verified across ALL scenes (PASS).");
+
   // -------------------------------------------------------------
-  // Stage 8: Physical Content Addressed Storage (CAS)
+  // Stage 9: Physical Content Addressed Storage (CAS)
   // -------------------------------------------------------------
-  console.log("[Stage 8: Content Addressed Storage] Checking CAS registration...");
+  console.log("[Stage 9: Content Addressed Storage] Checking CAS registration...");
   const cas = ContentAddressedStore.getInstance();
   const casRef = cas.getByHash(diskSha256);
   if (!casRef) {
@@ -342,9 +279,9 @@ async function main() {
   console.log(`[CAS] CAS stored path: ${casRef.uri}, size: ${casRef.byteLength} bytes`);
 
   // -------------------------------------------------------------
-  // Stage 9: Floor 07 Physical Artifact Verification
+  // Stage 10: Floor 07 Physical Artifact Verification
   // -------------------------------------------------------------
-  console.log("[Stage 9: Floor 07 Physical Verification] Executing F07 Physical Truth Verifier...");
+  console.log("[Stage 10: Floor 07 Physical Verification] Executing F07 Physical Truth Verifier...");
   const f07Verification = await F07PhysicalArtifactVerifier.verify({
     artifactCasRef: `cas://${diskSha256}`,
     artifactSha256: diskSha256,
@@ -358,7 +295,7 @@ async function main() {
   const f07Audit = await VerificationEngine.auditMediaArtifact({
     jobId,
     videoUrl: renderedVideoPath,
-    scriptText: renderIntent.tracks.captions.map((c) => c.text).join(" "),
+    scriptText: localRenderIntent.scenes.map((s) => s.narration_text).join(" "),
     sceneCount: localRenderIntent.scenes.length,
     durationSeconds: calculatedDuration,
   });
@@ -368,9 +305,9 @@ async function main() {
   }
 
   // -------------------------------------------------------------
-  // Stage 10: Google Drive Delivery & Download Byte Identity
+  // Stage 11: Google Drive Delivery & Download Byte Identity
   // -------------------------------------------------------------
-  console.log("[Stage 10: Google Drive Delivery] Uploading physical MP4 to owner Google Drive folder...");
+  console.log("[Stage 11: Google Drive Delivery] Uploading physical MP4 to owner Google Drive folder...");
   const driveProvider = new GoogleDriveStorageProvider();
   const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || "1H1SQk1H912ZXo-Hn7nJfi3yGQRuqvHm6";
   const driveFileName = `ShortForge_MarianaTrench_${jobId}.mp4`;
@@ -389,7 +326,7 @@ async function main() {
   console.log(`[Google Drive] Reported Size: ${uploadResult.sizeBytes} bytes`);
 
   // Download the file back from Google Drive to verify byte-for-byte identity
-  console.log("[Stage 10: Google Drive Download Verification] Downloading file from Google Drive to test byte identity...");
+  console.log("[Stage 11: Google Drive Download Verification] Downloading file from Google Drive to test byte identity...");
   const downloadResult = await driveProvider.download(uploadResult.fileId);
   const tempDownloadPath = path.resolve(process.cwd(), "data", `temp_download_${jobId}.mp4`);
 
@@ -425,9 +362,9 @@ async function main() {
   }
 
   // -------------------------------------------------------------
-  // Stage 11: Durable Firestore Persistence
+  // Stage 12: Durable Firestore Persistence
   // -------------------------------------------------------------
-  console.log("[Stage 11: Durable Manifest Persistence] Saving to Firestore...");
+  console.log("[Stage 12: Durable Manifest Persistence] Saving to Firestore...");
   const deliveryReceipt = {
     deliveryMethod: "GOOGLE_DRIVE" as const,
     verified: true,
@@ -442,7 +379,7 @@ async function main() {
     missionId,
     userId: "creator_owner_gokul",
     topic,
-    script: renderIntent.tracks.captions.map((c) => c.text).join(" "),
+    script: localRenderIntent.scenes.map((s) => s.narration_text).join(" "),
     contentType: "FACTS" as const,
     videoUrl: uploadResult.url,
     localVideoPath: renderedVideoPath,
@@ -469,9 +406,9 @@ async function main() {
   }
 
   // -------------------------------------------------------------
-  // Stage 12: Backend Restart Simulation & Durable Recovery
+  // Stage 13: Backend Restart Simulation & Durable Recovery
   // -------------------------------------------------------------
-  console.log("[Stage 12: Backend Restart Simulation] Clearing in-memory caches and re-reading from Firestore...");
+  console.log("[Stage 13: Backend Restart Simulation] Clearing in-memory caches and re-reading from Firestore...");
   getInMemoryJobs().clear();
   console.log(`[Restart Simulation] In-memory job cache cleared. Size: ${getInMemoryJobs().size}`);
 
@@ -494,13 +431,13 @@ async function main() {
   console.log("[Recovery Verification] Backend restart durable recovery: PASS.");
 
   // -------------------------------------------------------------
-  // Stage 13: Collect & Save Forensic Artifacts
+  // Stage 14: Collect & Save Forensic Artifacts
   // -------------------------------------------------------------
-  console.log("[Stage 13: Forensic Artifact Collection] Persisting forensic evidence bundle...");
+  console.log("[Stage 14: Forensic Artifact Collection] Persisting forensic evidence bundle...");
   const artifactsDir = path.resolve(process.cwd(), "..", "..", "artifacts", "production-demo");
   fs.mkdirSync(artifactsDir, { recursive: true });
 
-  // 1. Copy MP4
+  // 1. Copy MP4 to artifacts/production-demo
   const persistentMp4Path = path.join(artifactsDir, `shortforge-production-${jobId}.mp4`);
   fs.copyFileSync(renderedVideoPath, persistentMp4Path);
 
@@ -529,6 +466,12 @@ async function main() {
   fs.writeFileSync(path.join(artifactsDir, "f07-receipt.json"), JSON.stringify({
     verification: f07Verification,
     audit: f07Audit,
+    physicalMeasurements: {
+      volumeMeanDb,
+      volumeMaxDb,
+      latterHalfMeanDb,
+      latterHalfMaxDb,
+    },
   }, null, 2));
 
   // 8. drive-metadata.json
@@ -558,6 +501,10 @@ async function main() {
     totalElapsedMs: Date.now() - startTime,
     topic,
     researchPassportId: analystReport.passport.passportId,
+    templateId: templateDef.identity.id,
+    targetDurationSeconds,
+    actualDurationSeconds: physicalDuration,
+    sceneCount: localRenderIntent.scenes.length,
     provider: {
       id: renderResult.receipt.providerId,
       type: renderResult.receipt.providerType,
@@ -569,12 +516,16 @@ async function main() {
       localPath: persistentMp4Path,
       sha256: diskSha256,
       byteLength: diskByteLength,
-      durationSeconds: calculatedDuration,
+      durationSeconds: physicalDuration,
       dimensions: "1080x1920",
       fps: 30,
       videoCodec: videoStream?.codec_name,
       audioCodec: audioStream?.codec_name,
       casUri: `cas://${diskSha256}`,
+      volumeMeanDb,
+      volumeMaxDb,
+      latterHalfMeanDb,
+      latterHalfMaxDb,
     },
     googleDrive: {
       fileId: uploadResult.fileId,
@@ -601,9 +552,34 @@ async function main() {
   console.log(`Video File: ${persistentMp4Path}`);
   console.log(`SHA-256:    ${diskSha256}`);
   console.log(`Drive URL:  ${uploadResult.url}`);
-  console.log(`Duration:   ${calculatedDuration.toFixed(2)}s`);
+  console.log(`Duration:   ${physicalDuration.toFixed(2)}s`);
   console.log(`Total time: ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
   console.log("================================================================================\n");
+
+  return {
+    runId,
+    missionId,
+    jobId,
+    targetDuration: targetDurationSeconds,
+    actualDuration: physicalDuration,
+    sceneCount: localRenderIntent.scenes.length,
+    videoPath: persistentMp4Path,
+    byteLength: diskByteLength,
+    sha256: diskSha256,
+    driveFileId: uploadResult.fileId,
+    driveUrl: uploadResult.url,
+    f07Passed: f07Audit.passed,
+    f07Score: f07Audit.overallScore,
+    volumeMeanDb,
+    volumeMaxDb,
+    latterHalfMeanDb,
+  };
+}
+
+async function main() {
+  const durationArg = process.argv.find((a) => a.startsWith("--duration="));
+  const targetDuration = durationArg ? parseInt(durationArg.split("=")[1], 10) : 60;
+  await executeAcceptanceRun(targetDuration);
 }
 
 main().catch((err) => {

@@ -1,16 +1,16 @@
 {
-  "casRef": "cas://cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
-  "sha256": "cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0",
-  "byteLength": 406976,
-  "uri": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-production-acceptance\\apps\\web\\data\\cas_storage\\ce\\cec8cfe6311c52249a5059cb77052a8a988fd6af320d94e69ea6213452d8a6c0.mp4",
+  "casRef": "cas://137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e",
+  "sha256": "137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e",
+  "byteLength": 3742786,
+  "uri": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-production-acceptance\\apps\\web\\data\\cas_storage\\13\\137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e.mp4",
   "metadata": {
-    "originalFilename": "job_prod_accept_mvuzvdjt.mp4",
-    "storedAt": "2026-10-30T13:15:25.589Z",
-    "jobId": "job_prod_accept_mvuzvdjt",
-    "executionId": "exec_local_job_prod_accept_mvuzvdjt_1793366118640",
+    "originalFilename": "job_prod_accept_mvvc6hfo.mp4",
+    "storedAt": "2026-10-30T19:01:01.588Z",
+    "jobId": "job_prod_accept_mvvc6hfo",
+    "executionId": "exec_local_job_prod_accept_mvvc6hfo_1793386813710",
     "width": 1080,
     "height": 1920,
-    "duration": 26.12,
+    "duration": 180.05,
     "rendererVersion": "0.1.0",
     "ffmpegVersion": "ffmpeg version 8.1.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers"
   }

@@ -1,17 +1,17 @@
 {
-  "recoveredJobId": "job_prod_accept_mvuzvdjt",
+  "recoveredJobId": "job_prod_accept_mvvc6hfo",
   "deliveryFacts": {
     "deliveryMethod": "GOOGLE_DRIVE",
     "verified": true,
-    "driveFileId": "1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV",
+    "driveFileId": "1RQsZJscbiY26WaR4VTrgi5sNpinkCqHT",
     "deliveryStatus": "UPLOADED",
-    "uploadedAt": "2026-10-30T13:15:44.680Z",
+    "uploadedAt": "2026-10-30T19:03:42.304Z",
     "source": "job-document"
   },
   "deliveryProjection": {
     "state": "DRIVE_DELIVERED",
     "label": "Delivered to Google Drive",
     "detail": "The worker recorded a verified upload to the connected Drive account.",
-    "linkUrl": "https://drive.google.com/file/d/1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV/view"
+    "linkUrl": "https://drive.google.com/file/d/1RQsZJscbiY26WaR4VTrgi5sNpinkCqHT/view"
   }
 }
