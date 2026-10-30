@@ -10,3 +10,4 @@ $scriptText = "Welcome to ShortForge. Today, we are exploring the Mariana Trench
 $synth.Speak($scriptText)
 $synth.Dispose()
 Write-Host "Audio synthesized successfully: $wavFile"
+

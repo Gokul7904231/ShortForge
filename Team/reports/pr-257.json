@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1.0",
-  "changeId": "ShortForge-Non-Lightning-Production-Acceptance-20261030",
+  "changeId": "ShortForge-PR257-Production-Acceptance-Evidence",
   "repository": "Gokul7904231/ShortForge",
   "baseRef": "main",
   "headRef": "feat/non-lightning-production-acceptance-20261030",
-  "objective": "Execute genuine ShortForge end-to-end rendering pipeline through a qualified non-Lightning provider, persist physical MP4 into CAS, verify via Floor 07, deliver to Google Drive, verify live download byte identity, verify backend restart recovery via Firestore, and publish forensic acceptance evidence.",
+  "objective": "Execute genuine ShortForge rendering pipeline through local RenderFabric on NVIDIA RTX 3050 NVENC, persist physical MP4 into CAS, verify via Floor 07 media audit, deliver to Google Drive, verify live download byte identity, verify real Firestore persistence in fresh process, and publish physical MP4 and forensic acceptance evidence.",
   "rules": [
     "Lightning AI is excluded as an external provider failure (EXCLUDED_EXTERNAL_PROVIDER_FAILURE).",
     "Physical MP4 container must be independently probed and decoded with zero errors.",
@@ -37,7 +37,7 @@
     {
       "role": "Release Captain & Senior Production Engineer",
       "agent": "Antigravity Release Captain",
-      "evidence": "Executed staging mission mis_prod_accept_mvuzvdjt, produced physical MP4, verified triple SHA-256 match, verified F07 score 96/100, verified Drive upload 1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV, verified Firestore recovery."
+      "evidence": "Executed staging mission mis_prod_accept_mvuzvdjt, produced physical MP4 (406,976 bytes), verified triple SHA-256 match, verified F07 score 96/100, verified Drive upload 1LgiwyVwwXQfD-_rJeOmclX3rhGDrUlAV, verified fresh-process Firestore recovery."
     }
   ],
   "security": {
@@ -79,8 +79,8 @@
     "artifacts/production-demo/full-mission-evidence.json"
   ],
   "disposition": "PASS",
-  "dispositionRationale": "All physical production acceptance gates have passed with genuine evidence: physical 26.1s MP4 rendered, zero-error decoder smoke test, CAS immutability bound, F07 verified score 96/100, real Google Drive upload, triple SHA-256 identity verified, and Firestore durable recovery confirmed across process restart.",
-  "validatedHead": "feat/non-lightning-production-acceptance-20261030",
+  "dispositionRationale": "All physical production acceptance gates have passed with genuine evidence: physical 26.1s MP4 rendered, zero-error decoder smoke test, CAS immutability bound, F07 verified score 96/100, real Google Drive upload, triple SHA-256 identity verified, and Firestore durable recovery confirmed across fresh-process restart.",
+  "validatedHead": "a23a1ec986793e43dea28ebdc641955239d225d4",
   "model": {
     "runtime": "Antigravity",
     "agent": "Release Captain"

@@ -55,7 +55,7 @@ async function main() {
   console.log(`[Floor 00] Passport: ${analystReport.passport.passportId}, Confidence: ${analystReport.passport.confidence}, Claims: ${analystReport.passport.claims.length}`);
   const passportVerification = ResearchRuntime.verifyResearchPassport(analystReport.passport);
   if (!passportVerification.valid) {
-    throw new Error(`Research passport verification failed: ${passportVerification.errors.join("; ")}`);
+    throw new Error(`Research passport verification failed: ${passportVerification.reason || "unknown error"}`);
   }
   console.log("[Floor 00] Research passport verified PASS.");
 
@@ -352,7 +352,7 @@ async function main() {
 
   console.log(`[Floor 07] CAS bound: ${f07Verification.casBound}`);
   console.log(`[Floor 07] SHA-256 match: ${f07Verification.sha256MatchesExpected}`);
-  console.log(`[Floor 07] Exact 9:16 geometry: ${f07Verification.measurements.exact9x16Geometry}`);
+  console.log(`[Floor 07] Dimensions: ${f07Verification.measurements.width}x${f07Verification.measurements.height}`);
   console.log(`[Floor 07] Decode smoke passed: ${f07Verification.measurements.decodeSmokePassed}`);
 
   const f07Audit = await VerificationEngine.auditMediaArtifact({
@@ -522,7 +522,6 @@ async function main() {
     sha256: casRef.sha256,
     byteLength: casRef.byteLength,
     uri: casRef.uri,
-    createdAt: casRef.createdAt,
     metadata: casRef.metadata,
   }, null, 2));
 
