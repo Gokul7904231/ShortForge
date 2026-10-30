@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Film,
   Play,
@@ -17,14 +17,131 @@ import {
 import Link from "next/link";
 import { VideoLibraryItem } from "@/app/api/library/route";
 
-export default function MediaLibraryPage() {
-  const [items, setItems] = useState<VideoLibraryItem[]>([]);
+interface DriveConnectionState {
+  connected: boolean;
+  status: string;
+  googleEmail?: string;
+}
+
+function DriveDeliveryCard() {
+  const [connection, setConnection] = useState<DriveConnectionState | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  const loadConnection = useCallback(async () => {
+    try {
+      const res = await fetch("/api/drive/connection");
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setConnection(json.connection);
+        setMessage(null);
+      } else {
+        setMessage(json.error || "Drive connection status is unavailable.");
+      }
+    } catch {
+      setMessage("Drive connection status is unavailable.");
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadConnection();
+  }, [loadConnection]);
+
+  const startConnect = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/drive/connect");
+      const json = await res.json();
+      if (!res.ok || !json.authUrl) {
+        setMessage(json.error || "Could not start the Google Drive connection.");
+        return;
+      }
+      window.location.href = json.authUrl;
+    } catch {
+      setMessage("Could not start the Google Drive connection.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disconnect = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/drive/connection", { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok) {
+        setMessage(json.error || "Could not disconnect Google Drive.");
+        return;
+      }
+      await loadConnection();
+    } catch {
+      setMessage("Could not disconnect Google Drive.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#070D18] p-5 space-y-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#667085] dark:text-[#A8B2C1] flex items-center gap-2">
+            <HardDrive className="w-4 h-4 text-[#1677FF]" /> Google Drive delivery
+          </h2>
+          {checking ? (
+            <p className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">Checking your Drive connection...</p>
+          ) : connection?.connected ? (
+            <p className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">
+              Connected{connection.googleEmail ? ` as ${connection.googleEmail}` : ""}. Rendered videos are delivered here when the Drive upload succeeds.
+            </p>
+          ) : (
+            <p className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">
+              Not connected. Rendered videos stay in the local delivery outbox until you connect Drive.
+            </p>
+          )}
+        </div>
+
+        {!checking && connection && (
+          connection.connected ? (
+            <button
+              type="button"
+              onClick={disconnect}
+              disabled={busy}
+              className="self-start sm:self-auto px-3.5 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {busy ? "Disconnecting..." : "Disconnect Drive"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={startConnect}
+              disabled={busy}
+              className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-[#1677FF] hover:bg-[#0F63D8] text-white text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {busy ? "Opening Google..." : "Connect Google Drive (Pro)"}
+            </button>
+          )
+        )}
+      </div>
+      <p aria-live="polite" className="text-[11px] text-amber-600 dark:text-amber-400">{message}</p>
+    </div>
+  );
+}
+
+export default function MediaLibraryPage() {  const [items, setItems] = useState<VideoLibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [engineFilter, setEngineFilter] = useState("all");
 
   const loadLibrary = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (search.trim()) params.set("search", search.trim());
@@ -32,11 +149,16 @@ export default function MediaLibraryPage() {
 
       const res = await fetch(`/api/library?${params.toString()}`);
       const data = await res.json();
-      if (data.success && Array.isArray(data.items)) {
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "The library could not be loaded.");
+      }
+      if (Array.isArray(data.items)) {
         setItems(data.items);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("[Library Load Error]:", err);
+      setItems([]);
+      setError(err?.message || "The library could not be loaded.");
     } finally {
       setLoading(false);
     }
@@ -71,6 +193,8 @@ export default function MediaLibraryPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
+
+      <DriveDeliveryCard />
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-[#070D18] p-3 rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
@@ -107,6 +231,18 @@ export default function MediaLibraryPage() {
           <RefreshCw className="w-6 h-6 animate-spin text-[#1677FF]" />
           <span>Loading video library...</span>
         </div>
+      ) : error ? (
+        <div className="py-16 px-6 text-center text-xs rounded-3xl bg-red-500/10 border border-red-500/20 space-y-3">
+          <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
+          <p className="font-semibold text-sm text-red-600 dark:text-red-400">Library unavailable</p>
+          <p className="max-w-md mx-auto text-red-600/80 dark:text-red-400/80">{error}</p>
+          <button
+            onClick={loadLibrary}
+            className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-300 font-bold transition-colors cursor-pointer"
+          >
+            Try again
+          </button>
+        </div>
       ) : items.length === 0 ? (
         <div className="py-16 text-center text-xs text-[#667085] bg-white dark:bg-[#070D18] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] space-y-3">
           <Film className="w-10 h-10 text-[#667085]/40 mx-auto" />
@@ -141,12 +277,20 @@ export default function MediaLibraryPage() {
                         <CheckCircle2 className="w-3 h-3" /> Google Drive
                       </span>
                     ) : item.deliveryStatus === "PENDING_UPLOAD" ? (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-mono font-bold">
-                        Pending Upload
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold">
+                        Upload not confirmed
+                      </span>
+                    ) : item.deliveryStatus === "LOCAL_OUTBOX" ? (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-black/[0.05] dark:bg-white/[0.08] text-[#667085] font-mono font-bold">
+                        Local outbox
+                      </span>
+                    ) : item.deliveryStatus === "DELIVERY_FAILED" ? (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 font-mono font-bold">
+                        Delivery failed
                       </span>
                     ) : (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-black/[0.05] text-[#667085] font-mono">
-                        Local Outbox
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-black/[0.05] dark:bg-white/[0.08] text-[#667085] font-mono">
+                        Not delivered
                       </span>
                     )}
                   </div>
@@ -157,7 +301,7 @@ export default function MediaLibraryPage() {
                   <h3 className="text-sm font-bold text-[#111827] dark:text-[#F5F7FA] line-clamp-2">{item.title}</h3>
                   <p className="text-[11px] text-[#667085] dark:text-[#A8B2C1] mt-1 flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {item.durationSeconds}s
+                      <Clock className="w-3 h-3" /> {item.durationSeconds != null ? `${item.durationSeconds}s` : "Duration not recorded"}
                     </span>
                     <span>•</span>
                     <span>{new Date(item.createdAt).toLocaleDateString()}</span>

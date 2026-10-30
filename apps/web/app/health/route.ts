@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const report = await HealthManager.check();
-    return NextResponse.json({ success: true, ...report });
+    return NextResponse.json(
+      { success: true, ...report },
+      { status: report.ready ? 200 : 503 }
+    );
   } catch (err: any) {
     return NextResponse.json(
       {
