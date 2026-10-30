@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR254-ThreeAgentProductionSpeedrun",
+  "pullRequest": 254,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "docs/three-agent-production-speedrun-20261029",
+  "objective": "Publish the three-agent production-readiness plan and Looping Skill: coordinator-owned instructions, agent-owned overwrite-only response reports, independent evidence review between iterations, and human-approved credential setup.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "sourceRefs": [
+    "docs/release/three-agent-speedrun.md",
+    "docs/release/agent-packets/agent-1-instruction.md",
+    "docs/release/agent-packets/agent-1-response.md",
+    "docs/release/agent-packets/agent-2-instruction.md",
+    "docs/release/agent-packets/agent-2-response.md",
+    "docs/release/agent-packets/agent-3-instruction.md",
+    "docs/release/agent-packets/agent-3-response.md",
+    ".agents/skills/looping-skill/SKILL.md",
+    ".agents/skills/AGENTS.md",
+    ".okf/decision-protocol.md",
+    ".okf/index.md",
+    ".okf/principles.md",
+    ".okf/decisions.md",
+    "Team/workflow/change-gate.md"
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/decisions.md"
+    ],
+    "notes": "Plan only. It preserves .okf hierarchy and release-evidence rules. Full repo-wide sweep must be performed by Agent 1 before implementation changes; this report does not claim coding-agent skill installation or live acceptance."
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_FOR_DOCS_ONLY",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_FOR_DOCS_ONLY",
+    "notes": "Documentation-only coordination plan. No secrets, application runtime, workflows, auth or production settings changed. Required skills must be installed/verified in the three real agent environments."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added three-agent speedrun and release acceptance matrix.",
+    "Replaced three role-only agent packet files with exactly six paired instruction/response files and removed the superseded packet files.",
+    "Added .agents/skills/looping-skill/SKILL.md and registered it in .agents/skills/AGENTS.md.",
+    "Defined manual activation, per-agent IN_PROGRESS/final response overwrites, isolated response-only commits, independent GitHub evidence review, and coordinator-owned next-iteration handoffs.",
+    "Added a human-in-the-loop credential gate that forbids secret values in chat/reports and requires owner configuration/confirmation.",
+    "Kept production acceptance blocked pending controlled physical render, MP4/ffprobe, CAS/F07, Drive metadata/download identity, and post-restart retrieval."
+  ],
+  "evidence": [
+    "The Looping Skill is present on this PR's coordination branch at .agents/skills/looping-skill/SKILL.md and registered in .agents/skills/AGENTS.md; this is repository documentation, not proof the skill has been merged or loaded in any agent's local session.",
+    "The agent-packets directory was verified on the coordination branch to contain exactly the six intended instruction/response files.",
+    "The updated protocol explicitly requires the owner to manually activate/reactivate each separate agent session; file changes do not auto-launch agents.",
+    "Each coding agent must independently verify skill load in its own actual environment before claiming that prerequisite is satisfied.",
+    "Previous live Render health evidence returned HTTP 200 while the application status was degraded; the scheduled worker dispatcher remains gated.",
+    "Lightning physical MP4→CAS→F07 run 40824025739 failed with exit code 1 and no proof artifacts."
+  ],
+  "evidenceRefs": [
+    "https://github.com/github/spec-kit",
+    "https://github.com/miqdadbadjuber/anti-slop",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/40804889047",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/40824025739"
+  ],
+  "verification": {
+    "typecheck": "N/A_DOCS_ONLY",
+    "tests": "Current-head Team Change Gate, OKF Governance Gate and CI are required; inspect final results after the last report/skill/doc changes.",
+    "criterion": "The handoff protocol and six-file limit are accurately documented; this PR does not establish agent execution or production acceptance."
+  },
+  "disposition": "BLOCKED",
+  "blockedReason": "This PR establishes coordination and a reusable Looping Skill only. Actual agents have not yet demonstrated successful looping runs from their response files. Production remains unaccepted until a genuine staging render and physical MP4/ffprobe, CAS/F07, Google Drive metadata/download identity, and retrieval-after-restart evidence pass."
+}
