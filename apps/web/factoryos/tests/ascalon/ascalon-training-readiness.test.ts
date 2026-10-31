@@ -349,10 +349,110 @@ describe("Project Ascalon: Trajectory Validation & Exporter Tests", () => {
     }
   });
 
-  it("20. verifies dataset export splits without cross-family leakage", () => {
-    const result = AscalonTrajectoryExporter.exportDataset(golden);
-    expect(result.splitManifest.totalExported).toBe(golden.length);
-    expect(result.rejected).toHaveLength(0);
-    expect(result.train.length).toBeGreaterThan(0);
+  it("20. keeps synthetic curriculum separate from verified operational admission", () => {
+    const emptyEvidence = {
+      verifiedOutcomeEvidenceIds: new Set<string>(),
+      humanReviewRefs: new Set<string>(),
+      deterministicTeacherAttestationRefs: new Set<string>(),
+    };
+    const operational = AscalonTrajectoryExporter.exportDataset(golden, emptyEvidence);
+    expect(operational.lane).toBe("VERIFIED_OPERATIONAL");
+    expect(operational.train).toHaveLength(0);
+    expect(operational.validation).toHaveLength(0);
+    expect(operational.test).toHaveLength(0);
+    expect(operational.rejected).toHaveLength(golden.length);
+    expect(
+      operational.rejected.every(({ reasons }) =>
+        reasons.includes("SYNTHETIC_NOT_ALLOWED_IN_OPERATIONAL_LANE"),
+      ),
+    ).toBe(true);
+
+    const curriculum = AscalonTrajectoryExporter.exportCurriculumDataset(golden);
+    expect(curriculum.lane).toBe("SYNTHETIC_CURRICULUM");
+    expect(curriculum.splitManifest.totalExported).toBe(golden.length);
+    expect(curriculum.rejected).toHaveLength(0);
+  });
+
+  it("21. requires an independently attested receipt for operational success", () => {
+    const receiptId = "receipt-independent-verified-001";
+    const operationalCandidate = {
+      ...golden[0],
+      environment: { ...golden[0].environment, environmentType: "REAL" },
+      observation: { ...golden[0].observation, environmentType: "REAL" },
+      outcome: {
+        ...golden[0].outcome,
+        status: "SUCCESS",
+        verified: true,
+        verificationEvidenceId: receiptId,
+      },
+      provenance: {
+        ...golden[0].provenance,
+        labelSource: "VERIFIED_OUTCOME",
+        trainingEligible: true,
+        humanReviewed: false,
+        simulation: false,
+        synthetic: false,
+      },
+    };
+    const noReceipt = AscalonTrajectoryExporter.exportDataset(
+      [operationalCandidate],
+      {
+        verifiedOutcomeEvidenceIds: new Set<string>(),
+        humanReviewRefs: new Set<string>(),
+        deterministicTeacherAttestationRefs: new Set<string>(),
+      },
+    );
+    expect(noReceipt.splitManifest.totalExported).toBe(0);
+    expect(noReceipt.rejected[0].reasons).toContain("VERIFIED_OUTCOME_RECEIPT_NOT_ATTESTED");
+
+    const attested = AscalonTrajectoryExporter.exportDataset([operationalCandidate], {
+      verifiedOutcomeEvidenceIds: new Set([receiptId]),
+      humanReviewRefs: new Set<string>(),
+      deterministicTeacherAttestationRefs: new Set<string>(),
+    });
+    expect(attested.splitManifest.totalExported).toBe(1);
+    expect(attested.rejected).toHaveLength(0);
+  });
+
+  it("22. assigns whole mission families deterministically without split leakage", () => {
+    const corpus = Array.from({ length: 100 }, (_, index) => {
+      const family = "heldout-family-" + index;
+      return [0, 1].map((copy) => ({
+        ...golden[0],
+        trajectoryId: family + "-trajectory-" + copy,
+        episode: {
+          ...golden[0].episode,
+          missionId: "mission-" + family,
+          missionFamily: family,
+          caseId: undefined,
+        },
+      }));
+    }).flat();
+
+    const first = AscalonTrajectoryExporter.exportCurriculumDataset(corpus);
+    const second = AscalonTrajectoryExporter.exportCurriculumDataset(corpus);
+    const splitOf = (trajectoryId: string, result: typeof first) => {
+      if (result.train.some((item) => item.trajectoryId === trajectoryId)) return "train";
+      if (result.validation.some((item) => item.trajectoryId === trajectoryId)) return "validation";
+      if (result.test.some((item) => item.trajectoryId === trajectoryId)) return "test";
+      return "rejected";
+    };
+
+    for (let index = 0; index < 100; index += 1) {
+      const family = "heldout-family-" + index;
+      const left = splitOf(family + "-trajectory-0", first);
+      const right = splitOf(family + "-trajectory-1", first);
+      expect(left).not.toBe("rejected");
+      expect(right).toBe(left);
+    }
+    expect(first.train.map((item) => item.trajectoryId)).toEqual(
+      second.train.map((item) => item.trajectoryId),
+    );
+    expect(first.validation.map((item) => item.trajectoryId)).toEqual(
+      second.validation.map((item) => item.trajectoryId),
+    );
+    expect(first.test.map((item) => item.trajectoryId)).toEqual(
+      second.test.map((item) => item.trajectoryId),
+    );
   });
 });
