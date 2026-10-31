@@ -1,13 +1,14 @@
 /**
- * Project Ascalon — Replayable Experience Engine
+ * Project Ascalon — Replay admission placeholder.
  *
- * Verifies that recorded operational trajectories can be deterministically replayed
- * in an isolated environment without side-effects, verifying that the reconstructed
- * decision matches the original execution.
+ * The previous implementation echoed the recorded action as the replayed
+ * action without reconstructing state or executing an isolated transition.
+ * That is not replay evidence. Until a real replay adapter is injected,
+ * this helper fails closed and reports NOT_EXECUTED.
  */
-
 export interface ReplayResult {
   readonly trajectoryId: string;
+  readonly replayExecuted: boolean;
   readonly replayEquivalent: boolean;
   readonly originalDecision: string;
   readonly replayedDecision: string;
@@ -22,39 +23,14 @@ export class AscalonReplayEngine {
       trajectory.decision?.selectedAction?.capabilityId ||
       "UNKNOWN";
 
-    // Simulate isolated replay from the recorded observation and constraints
-    const obs = trajectory.observation;
-    if (!obs) {
-      return {
-        trajectoryId: trajectory.trajectoryId,
-        replayEquivalent: false,
-        originalDecision,
-        replayedDecision: "ERROR_NO_OBSERVATION",
-        divergenceReason: "Trajectory missing observation state for replay reconstruction.",
-        replayedAt: new Date().toISOString(),
-      };
-    }
-
-    // Reconstruct decision environment
-    let replayedDecision = originalDecision;
-    let replayEquivalent = true;
-    let divergenceReason: string | undefined;
-
-    // Check invariant consistency
-    if (trajectory.outcome?.status === "FAILED" && trajectory.outcome?.verified === false) {
-      if (trajectory.decision?.uncertainty?.epistemicConfidence > 0.9) {
-        // High confidence on unverified failure is a divergence indicator
-        replayEquivalent = false;
-        divergenceReason = "Recorded high confidence contradicts verified failure outcome.";
-      }
-    }
-
     return {
-      trajectoryId: trajectory.trajectoryId,
-      replayEquivalent,
+      trajectoryId: trajectory.trajectoryId ?? "UNKNOWN",
+      replayExecuted: false,
+      replayEquivalent: false,
       originalDecision,
-      replayedDecision,
-      divergenceReason,
+      replayedDecision: "NOT_EXECUTED",
+      divergenceReason:
+        "NO_INDEPENDENT_REPLAY_ADAPTER: recorded actions were not re-executed against reconstructed state.",
       replayedAt: new Date().toISOString(),
     };
   }

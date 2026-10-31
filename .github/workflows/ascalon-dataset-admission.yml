@@ -1,0 +1,40 @@
+name: Ascalon Dataset Admission
+
+on:
+  pull_request:
+    paths:
+      - "training/ascalon/**"
+      - "apps/web/factoryos/tests/ascalon/**"
+      - "docs/ascalon/dataset-lane-admission.md"
+      - ".github/workflows/ascalon-dataset-admission.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dataset-admission:
+    name: Ascalon dataset admission tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: FactoryOS strict typecheck
+        working-directory: apps/web
+        run: npm run typecheck
+
+      - name: Ascalon training-readiness and dataset-admission tests
+        working-directory: apps/web
+        run: npx vitest run factoryos/tests/ascalon/ascalon-training-readiness.test.ts
