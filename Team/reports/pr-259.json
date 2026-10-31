@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR259-AER-Shadow-Evidence-Admission",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/aer-shadow-evidence-20261031",
+  "objective": "Harden AER shadow evidence admission, prevent unverified outcome claims from affecting calibration or replay, expose local telemetry durability health, and strengthen policy-promotion evidence requirements.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/intelligence/aer.md",
+      ".okf/intelligence/training.md",
+      ".okf/hierarchy/overseer-operational-contract.md",
+      "docs/ascalon/epistemic-runtime.md"
+    ],
+    "rulesConsidered": [
+      "AER is shadow/advisory only until validation and governance promotion.",
+      "Evidence references must be resolved against an authoritative source; non-empty strings are not proof.",
+      "Model confidence and inference cannot authoritatively resolve operational uncertainty.",
+      "Observability records process evidence but does not grant execution or routing authority.",
+      "Policy promotion requires held-out replay and calibrated outcome evidence."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE_TO_LOCAL_SHADOW_TELEMETRY",
+    "notes": [
+      "Telemetry is metadata-only and does not persist prompts, credentials, raw model content, or chain-of-thought.",
+      "Local JSONL file permissions are restricted to owner access where supported; local persistence is not treated as distributed production evidence.",
+      "No routing authority or model execution privileges are added."
+    ]
+  },
+  "changes": [
+    "Added AEROutcomeEvidenceVerifier as a trusted adapter boundary for authoritative receipt verification.",
+    "Changed AERMetricsRecorder so missing, rejected, or failing verification does not update calibration or resolution counts.",
+    "Added explicit UNVERIFIED_NOT_ADMITTED telemetry for rejected outcome claims.",
+    "Required independent outcome verification before shadow replay episodes affect policy comparisons or necessity coverage.",
+    "Added unverifiedEpisodeCount and controlledNecessityCoverageRate to shadow replay reports.",
+    "Extended AERPolicyPromotionGate to require controlled-necessity coverage and bound missed necessary escalations.",
+    "Upgraded JsonlAEREpisodeTelemetrySink to serialized asynchronous appends, fdatasync, restrictive file permissions, and visible health counters.",
+    "Added an explicit Node-side AER shadow composition factory that requires a trusted verifier and is not wired to production routing.",
+    "Added tests for missing outcome verifier, verified calibration/replay fixtures, telemetry durability, and promotion without necessity evidence.",
+    "Documented AER shadow evidence boundaries and outstanding qualification work."
+  ],
+  "evidenceRefs": [
+    "apps/web/factoryos/core/intelligence/epistemic/AEROutcomeEvidence.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERMetrics.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERShadowReplay.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERPolicyPromotionGate.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AEREpisodeTelemetry.ts",
+    "apps/web/factoryos/core/intelligence/epistemic/AERShadowRuntimeFactory.ts",
+    "apps/web/factoryos/tests/epistemic/aer.test.ts",
+    "apps/web/factoryos/tests/epistemic/aer-remediation.test.ts",
+    "docs/ascalon/aer-shadow-evidence.md",
+    "Team/reports/pr-259.json"
+  ],
+  "verificationPlan": [
+    "Run AER core and auxiliary Vitest suites.",
+    "Run AER remediation tests including the new verifier, replay, promotion-gate, and telemetry-sink cases.",
+    "Run FactoryOS typecheck and repository CI.",
+    "Verify missing or failing evidence verifier never contributes to outcome calibration or shadow replay.",
+    "Verify local telemetry append failures are visible through sink health and do not affect routing decisions.",
+    "Verify the shadow factory is not connected to live production routing and does not alter policy authority.",
+    "Keep AER SHADOW / ADVISORY ONLY pending real evidence and governance review."
+  ],
+  "verificationResults": {
+    "localExecution": {
+      "status": "NOT_RUN",
+      "note": "No repository runtime/test environment was available through the GitHub file interface; local clone access failed because this execution environment could not resolve github.com."
+    },
+    "pullRequestCI": {
+      "status": "PENDING",
+      "pullRequest": 259,
+      "headSha": "533f398a6e666f909e68804a41daf8e4de9865e7"
+    }
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "IN_PROGRESS",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_REVIEW"
+  },
+  "conflicts": [],
+  "readiness": {
+    "outcomeEvidenceVerifier": "INTERFACE_REQUIRED; AUTHORITATIVE IMPLEMENTATION PENDING",
+    "telemetrySink": "LOCAL_APPEND_ONLY_ASYNC; DISTRIBUTED_STORE_NOT_IMPLEMENTED",
+    "shadowReplay": "VERIFIED_OUTCOME_INPUTS_REQUIRED",
+    "policyPromotion": "CONTROLLED_NECESSITY_COVERAGE_REQUIRED",
+    "runtimeWiring": "SHADOW_FACTORY_ADDED_NOT_CONNECTED_TO_PRODUCTION",
+    "liveShadowEvidence": "NOT_COLLECTED",
+    "ascalonCheckpoint": "NOT_INVOKED",
+    "canaryOrPromotion": "NOT_AUTHORIZED"
+  },
+  "notes": [
+    "The evidence verifier is an explicit integration contract; no production evidence-store adapter has been implemented by this PR.",
+    "The local JSONL sink is crash-durable for its local append but is not replicated, shared across workers, or an authoritative evidence store.",
+    "The new factory is a composition helper only. No production runtime currently uses it as a live router.",
+    "AER stays shadow-only. The change does not alter CognitiveRouter authority, Guardian, Slayer, Healer, leases, fencing, or F07.",
+    "No Ascalon model weights were changed and no fine-tuning job was dispatched.",
+    "Promotion still requires real staging shadow episodes, held-out comparisons, calibration, security validation, and explicit human/governance approval."
+  ],
+  "disposition": "PASS"
+}
