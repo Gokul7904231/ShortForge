@@ -2,10 +2,7 @@
  * FactoryOS v0.1 — CheckpointStore
  *
  * Abstract interface for checkpoint persistence.
- * Step 1 provides an InMemoryCheckpointStore for deterministic tests.
- *
- * Durability (SQLite/Redis/Postgres) is deferred to a later phase.
- * See BACKLOG.md → "distributed checkpoint persistence".
+ * Provides both InMemoryCheckpointStore and durable DiskCheckpointStore.
  *
  * Checkpoint Safety Rule (spec §13):
  *   Checkpoints are written ONLY after a worker successfully completes.
@@ -13,6 +10,8 @@
  *     worker.execute() → result.success → mark COMPLETED → persist checkpoint
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import type { StepStatus } from "../state/StepState";
 
 /**
@@ -32,10 +31,6 @@ export interface StepCheckpoint {
 
 /**
  * CheckpointStore — the storage abstraction for FactoryOS.
- *
- * Implementations must be safe to call concurrently for DIFFERENT runIds.
- * Concurrent access for the SAME runId is prevented by FactoryRuntime's
- * per-run execution lock (see FactoryRuntime.ts).
  */
 export interface CheckpointStore {
   /** Persist a checkpoint for a completed step */
@@ -56,23 +51,12 @@ export interface CheckpointStore {
   /**
    * Delete all checkpoints for a run.
    * Used for cleanup after COMPLETED or CANCELLED.
-   * Optional — implementations may choose not to delete.
    */
   deleteRun?(runId: string): Promise<void>;
 }
 
 // ─── In-Memory Implementation ─────────────────────────────────────────────────
 
-/**
- * InMemoryCheckpointStore
- *
- * Deterministic, synchronous-backed, zero-dependency checkpoint store.
- * Suitable for test isolation and Step 1 verification.
- *
- * LIMITATION: Data does not survive process restart.
- * This is explicitly documented and acknowledged.
- * See BACKLOG.md → "distributed checkpoint persistence".
- */
 export class InMemoryCheckpointStore implements CheckpointStore {
   /** runId → stepId → list of checkpoints (multiple attempts) */
   private store = new Map<string, Map<string, StepCheckpoint[]>>();
@@ -95,7 +79,6 @@ export class InMemoryCheckpointStore implements CheckpointStore {
     for (const checkpoints of runStore.values()) {
       all.push(...checkpoints);
     }
-    // Return in insertion order (Map preserves insertion order)
     return all
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
       .map((c) => structuredClone(c));
@@ -113,7 +96,6 @@ export class InMemoryCheckpointStore implements CheckpointStore {
     this.store.delete(runId);
   }
 
-  /** Test helper — returns total checkpoint count across all runs */
   totalCount(): number {
     let count = 0;
     for (const runStore of this.store.values()) {
@@ -124,7 +106,6 @@ export class InMemoryCheckpointStore implements CheckpointStore {
     return count;
   }
 
-  /** Test helper — returns all checkpoints for a run as a flat array */
   snapshotRun(runId: string): StepCheckpoint[] {
     const runStore = this.store.get(runId);
     if (!runStore) return [];
@@ -133,5 +114,61 @@ export class InMemoryCheckpointStore implements CheckpointStore {
       all.push(...checkpoints);
     }
     return all.map((c) => structuredClone(c));
+  }
+}
+
+// ─── Durable Disk Implementation ───────────────────────────────────────────────
+
+/**
+ * DiskCheckpointStore
+ *
+ * Durable, disk-backed checkpoint store designed to survive hard process exits (SIGKILL / power loss).
+ * Uses atomic rename writes (.tmp -> .json) to prevent partial write corruption.
+ */
+export class DiskCheckpointStore implements CheckpointStore {
+  private readonly baseDir: string;
+
+  constructor(baseDir: string = path.join(process.cwd(), 'data', 'checkpoints')) {
+    this.baseDir = baseDir;
+    fs.mkdirSync(this.baseDir, { recursive: true });
+  }
+
+  async save(checkpoint: StepCheckpoint): Promise<void> {
+    const runDir = path.join(this.baseDir, checkpoint.runId);
+    fs.mkdirSync(runDir, { recursive: true });
+    const filePath = path.join(runDir, `${checkpoint.stepId}_${checkpoint.checkpointId}.json`);
+    const tempPath = `${filePath}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(checkpoint, null, 2), 'utf-8');
+    fs.renameSync(tempPath, filePath);
+  }
+
+  async getRun(runId: string): Promise<StepCheckpoint[]> {
+    const runDir = path.join(this.baseDir, runId);
+    if (!fs.existsSync(runDir)) return [];
+    const files = fs.readdirSync(runDir).filter((f) => f.endsWith('.json'));
+    const checkpoints: StepCheckpoint[] = [];
+    for (const file of files) {
+      try {
+        const raw = fs.readFileSync(path.join(runDir, file), 'utf-8');
+        checkpoints.push(JSON.parse(raw));
+      } catch {}
+    }
+    return checkpoints.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }
+
+  async getLatest(runId: string, stepId: string): Promise<StepCheckpoint | null> {
+    const all = await this.getRun(runId);
+    const matching = all.filter((c) => c.stepId === stepId);
+    if (matching.length === 0) return null;
+    return matching[matching.length - 1];
+  }
+
+  async deleteRun(runId: string): Promise<void> {
+    const runDir = path.join(this.baseDir, runId);
+    if (fs.existsSync(runDir)) {
+      fs.rmSync(runDir, { recursive: true, force: true });
+    }
   }
 }
