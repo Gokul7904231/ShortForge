@@ -44,7 +44,7 @@
     "Added tests for lane isolation, independent receipt admission, deterministic reruns, and family split isolation.",
     "Documented the dataset-lane contract and remaining production-admission requirements.",
     "Changed the placeholder replay helper to return NOT_EXECUTED until an independent replay adapter exists; updated the readiness test to reject echo-based replay claims.",
-    "Added the focused Ascalon training-readiness/dataset-admission suite to the blocking CI verify job."
+    "Added a dedicated path-filtered Ascalon Dataset Admission workflow that runs strict typecheck and the training-readiness suite."
   ],
   "evidenceRefs": [
     "training/ascalon/exporters/AscalonTrajectoryExporter.ts",
@@ -56,7 +56,7 @@
     "docs/ascalon/dataset-policy.md",
     "docs/ascalon/overseer-dataset-spec.md",
     "training/ascalon/generation/trajectory_generator/AscalonReplayEngine.ts",
-    ".github/workflows/ci.yml"
+    ".github/workflows/ascalon-dataset-admission.yml"
   ],
   "verificationPlan": [
     "Run the dedicated Ascalon training-readiness Vitest suite.",
@@ -66,7 +66,7 @@
     "Verify VERIFIED_OUTCOME is rejected unless the referenced receipt is present in an independently produced evidence manifest.",
     "Keep model-weight training and Ascalon/AER production promotion blocked.",
     "Verify no Ascalon test treats echoing a recorded decision as deterministic replay evidence.",
-    "Confirm the dedicated Ascalon test suite runs in the blocking repository CI job."
+    "Confirm the dedicated Ascalon Dataset Admission workflow runs strict typecheck and the focused Vitest suite."
   ],
   "verificationResults": {
     "localExecution": {
