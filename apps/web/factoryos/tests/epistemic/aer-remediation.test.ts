@@ -511,6 +511,8 @@ describe("AER remediation — economics, reservations, execution loop", () => {
       costUsdPerResolvedUncertainty: 0.10,
       p95LatencyMs: 1000,
       authorityViolationCount: 0,
+      controlledNecessityCoverageRate: 1,
+      missedNecessaryEscalationCount: 0,
     };
     const candidate = {
       ...baseline,
@@ -528,11 +530,50 @@ describe("AER remediation — economics, reservations, execution loop", () => {
         maxLatencyRegressionMs: 100,
         minCostSavingsUsd: 0.001,
         maxResolutionLowerBoundRegression: 0.01,
+        minControlledNecessityCoverageRate: 0.95,
+        maxMissedNecessaryEscalations: 0,
       },
     });
 
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain("candidate_sample_size_insufficient");
+  });
+
+
+  it("blocks shadow promotion when controlled necessity replay evidence is missing", () => {
+    const gate = new AERPolicyPromotionGate();
+    const baseline = {
+      policyVersion: "baseline-v1",
+      sampleCount: 100,
+      resolvedRateLower95: 0.70,
+      resolvedRateUpper95: 0.82,
+      falseReassuranceRateUpper95: 0.01,
+      costUsdPerResolvedUncertainty: 0.10,
+      p95LatencyMs: 1000,
+      authorityViolationCount: 0,
+      controlledNecessityCoverageRate: 1,
+      missedNecessaryEscalationCount: 0,
+    };
+    const candidate = {
+      ...baseline,
+      policyVersion: "candidate-no-replay",
+      controlledNecessityCoverageRate: null,
+    };
+    const result = gate.evaluate({
+      baseline,
+      candidate,
+      criteria: {
+        minSamples: 50,
+        maxFalseReassuranceUpper95: 0.02,
+        maxLatencyRegressionMs: 100,
+        minCostSavingsUsd: 0.001,
+        maxResolutionLowerBoundRegression: 0.01,
+        minControlledNecessityCoverageRate: 0.95,
+        maxMissedNecessaryEscalations: 0,
+      },
+    });
+    expect(result.eligible).toBe(false);
+    expect(result.reasons).toContain("candidate_controlled_necessity_evidence_missing");
   });
 
   it("does not admit outcome claims into calibration without an independent verifier", () => {
