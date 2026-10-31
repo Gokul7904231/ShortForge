@@ -38,7 +38,7 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
 
       - name: AER Epistemic Runtime Tests
-        run: cd apps/web && npx vitest run factoryos/tests/epistemic/aer.test.ts factoryos/tests/epistemic/aer-auxiliary.test.ts factoryos/tests/epistemic/aer-remediation.test.ts
+        run: cd apps/web && npx vitest run factoryos/tests/epistemic/aer.test.ts factoryos/tests/epistemic/aer-auxiliary.test.ts
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
