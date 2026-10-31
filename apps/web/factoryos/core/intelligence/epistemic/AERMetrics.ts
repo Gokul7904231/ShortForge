@@ -12,7 +12,12 @@ import type {
 import type {
   AEREpisodeTelemetrySink,
   AEREpisodeEventName,
+  AEREpisodeTelemetryHealth,
 } from "./AEREpisodeTelemetry";
+import type {
+  AEROutcomeAdmissionResult,
+  AEROutcomeEvidenceVerifier,
+} from "./AEROutcomeEvidence";
 
 export interface AEREpisodeRecord {
   readonly episodeId: string;
@@ -134,9 +139,30 @@ function ratio(numerator: number, denominator: number): number {
 export class AERMetricsRecorder {
   private readonly episodes = new Map<string, MutableAEREpisodeRecord>();
 
+  private telemetryWriteFailureCount = 0;
+
   public constructor(
     private readonly telemetrySink?: AEREpisodeTelemetrySink,
+    private readonly outcomeEvidenceVerifier?: AEROutcomeEvidenceVerifier,
   ) {}
+
+  public telemetryHealth(): {
+    readonly configured: boolean;
+    readonly asyncFailureCount: number;
+    readonly sink: AEREpisodeTelemetryHealth | null;
+  } {
+    let sink: AEREpisodeTelemetryHealth | null = null;
+    try {
+      sink = this.telemetrySink?.health?.() ?? null;
+    } catch {
+      this.telemetryWriteFailureCount += 1;
+    }
+    return {
+      configured: this.telemetrySink !== undefined,
+      asyncFailureCount: this.telemetryWriteFailureCount,
+      sink,
+    };
+  }
 
   private emit(
     episodeId: string,
@@ -160,9 +186,12 @@ export class AERMetricsRecorder {
         policyVersion,
         attributes,
       });
-      void Promise.resolve(result).catch(() => undefined);
+      void Promise.resolve(result).catch(() => {
+        this.telemetryWriteFailureCount += 1;
+      });
     } catch {
-      // Telemetry failures must never alter runtime decisions.
+      // Telemetry failures never alter runtime decisions, but remain observable.
+      this.telemetryWriteFailureCount += 1;
     }
   }
   private readonly modelUsageIds = new Set<string>();
@@ -358,7 +387,7 @@ export class AERMetricsRecorder {
     });
   }
 
-  public recordOutcome(receipt: AEROutcomeReceipt): void {
+  public recordOutcome(receipt: AEROutcomeReceipt): AEROutcomeAdmissionResult {
     if (!receipt.outcomeId.trim() || !receipt.episodeId.trim()) {
       throw new Error("[AER metrics] outcome identity is required");
     }
@@ -375,30 +404,47 @@ export class AERMetricsRecorder {
       throw new Error("[AER metrics] resolved outcome requires evidenceRefs");
     }
 
-    const episode = this.requireEpisode(receipt.episodeId);
-    episode.outcomeMode = episode.routedMode;
+    const necessity = receipt.necessityAssessment;
+    if (necessity && necessity.verdict !== "INCONCLUSIVE" && necessity.evidenceRefs.length === 0) {
+      throw new Error("[AER metrics] necessity verdict requires evidenceRefs");
+    }
 
+    const episode = this.requireEpisode(receipt.episodeId);
+    let independentlyVerified = false;
+    try {
+      independentlyVerified =
+        this.outcomeEvidenceVerifier?.verifyOutcome(receipt) === true;
+    } catch {
+      independentlyVerified = false;
+    }
+
+    if (!independentlyVerified) {
+      this.emit(receipt.episodeId, "aer.outcome", {
+        status: receipt.status,
+        authoritative_source: receipt.authoritativeSource,
+        evidence_count: receipt.evidenceRefs.length,
+        verification_ref: receipt.verificationRef,
+        verification_status: "UNVERIFIED_NOT_ADMITTED",
+        ascalon_claimed_resolved: receipt.ascalonClaimedResolved ?? false,
+      });
+      return {
+        admitted: false,
+        reason: "INDEPENDENT_OUTCOME_EVIDENCE_VERIFICATION_REQUIRED",
+      };
+    }
+
+    episode.outcomeMode = episode.routedMode;
     const resolved =
       receipt.status === "RESOLVED" &&
       receipt.evidenceRefs.length > 0 &&
       receipt.authoritativeSource !== "MODEL_INFERENCE";
-
     episode.resolvedUncertainty = resolved;
 
-    if (
-      receipt.ascalonClaimedResolved === true &&
-      !resolved
-    ) {
-      episode.falseReassurance = true;
-    } else if (receipt.ascalonClaimedResolved === true) {
-      episode.falseReassurance = false;
+    if (receipt.ascalonClaimedResolved === true) {
+      episode.falseReassurance = !resolved;
     }
 
-    const necessity = receipt.necessityAssessment;
     if (necessity && necessity.verdict !== "INCONCLUSIVE") {
-      if (necessity.evidenceRefs.length === 0) {
-        throw new Error("[AER metrics] necessity verdict requires evidenceRefs");
-      }
       episode.ascalonWasNecessary = necessity.verdict === "NECESSARY";
     }
 
@@ -407,8 +453,10 @@ export class AERMetricsRecorder {
       authoritative_source: receipt.authoritativeSource,
       evidence_count: receipt.evidenceRefs.length,
       verification_ref: receipt.verificationRef,
+      verification_status: "INDEPENDENTLY_VERIFIED",
       ascalon_claimed_resolved: receipt.ascalonClaimedResolved ?? false,
     });
+    return { admitted: true };
   }
 
   public snapshot(): AERMetricSnapshot {
