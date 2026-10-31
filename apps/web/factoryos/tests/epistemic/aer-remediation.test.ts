@@ -123,7 +123,8 @@ describe("AER remediation — economics, reservations, execution loop", () => {
 
     const request = {
       scopeKey: "mission-01",
-      budget,
+      // One deep call is the shared limit; the second simultaneous reservation must fail.
+      budget: { ...budget, maxDeepCalls: 1 },
       usage: {
         elapsedMs: 0,
         deepCalls: 0,
