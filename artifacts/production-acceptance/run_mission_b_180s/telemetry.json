@@ -1,0 +1,44 @@
+{
+  "runId": "run_mission_b_180s",
+  "traceContext": {
+    "traceId": "aa6cf3aa9a9b29b26eed0fb59ccfe747",
+    "spanId": "69122dc551951c4f",
+    "traceFlags": "01",
+    "traceparent": "00-aa6cf3aa9a9b29b26eed0fb59ccfe747-69122dc551951c4f-01"
+  },
+  "spans": [
+    {
+      "floor": "F00_ANALYST",
+      "status": "OK"
+    },
+    {
+      "floor": "F01_STRATEGY",
+      "status": "OK"
+    },
+    {
+      "floor": "F02_SCRIPTING",
+      "status": "OK"
+    },
+    {
+      "floor": "F03_ASSET_REALIZATION",
+      "status": "OK"
+    },
+    {
+      "floor": "F04_MEDIA_SYNTHESIS",
+      "status": "OK"
+    },
+    {
+      "floor": "F05_TIMELINE_COMPOSITION",
+      "status": "OK"
+    },
+    {
+      "floor": "F06_RENDERING",
+      "status": "OK"
+    },
+    {
+      "floor": "F07_COMPLIANCE",
+      "status": "OK"
+    }
+  ],
+  "createdAt": "2026-10-31T06:11:08.577Z"
+}

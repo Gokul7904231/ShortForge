@@ -1,0 +1,41 @@
+{
+  "_type": "https://in-toto.io/Statement/v0.1",
+  "subject": [
+    {
+      "name": "shortforge-production-job_prod_accept_mvw01pma.mp4",
+      "digest": {
+        "sha256": "e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v0.2",
+  "predicate": {
+    "builder": {
+      "id": "shortforge://verification-fabric/v2026.1-p0"
+    },
+    "buildType": "https://shortforge.ai/build/canonical-production/v1",
+    "invocation": {
+      "configSource": {
+        "uri": "git+https://github.com/Gokul7904231/ShortForge",
+        "digest": {
+          "sha1": "a41d7993"
+        },
+        "entryPoint": "factoryos-render"
+      },
+      "parameters": {
+        "runId": "run_mission_b_180s",
+        "jobId": "job_prod_accept_mvw01pma",
+        "targetDurationSeconds": 180
+      }
+    },
+    "metadata": {
+      "buildInvocationId": "run_mission_b_180s",
+      "completeness": {
+        "parameters": true,
+        "environment": true,
+        "materials": true
+      },
+      "reproducible": true
+    }
+  }
+}

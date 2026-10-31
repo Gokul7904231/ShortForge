@@ -12,6 +12,7 @@ import { Artifact } from "../contracts/ArtifactContracts";
 import { MissionEvidence } from "../contracts/EvidenceContracts";
 import type { RenderArtifact } from "../contracts/RenderIntentContracts";
 import { ArtifactResolver, ResolvedArtifact } from "../rendering/ArtifactResolver";
+import { DurationEngine, DurationContract } from "../contracts/DurationContract";
 
 export interface MediaProbeMeasurements {
   readonly fileExists: boolean;
@@ -31,6 +32,10 @@ export interface MediaProbeMeasurements {
   readonly streamCount: number;
   readonly audioSampleRate: number;
   readonly audioChannels: number;
+  readonly audioMeanVolumeDb?: number;
+  readonly audioMaxVolumeDb?: number;
+  readonly audioSilenceDetected?: boolean;
+  readonly audioProlongedSilenceDetected?: boolean;
 }
 
 export interface VerificationReport {
@@ -98,6 +103,7 @@ export interface VerificationReport {
   readonly confidence: number;
   readonly failures: string[];
   readonly warnings: string[];
+  readonly durationContract?: DurationContract;
   readonly timestamp: string;
 }
 
@@ -225,6 +231,10 @@ export class VerificationEngine {
         streamCount: 0,
         audioSampleRate: 0,
         audioChannels: 0,
+        audioMeanVolumeDb: -91.0,
+        audioMaxVolumeDb: -91.0,
+        audioSilenceDetected: true,
+        audioProlongedSilenceDetected: true,
       };
     }
 
@@ -248,6 +258,10 @@ export class VerificationEngine {
         streamCount: 0,
         audioSampleRate: 0,
         audioChannels: 0,
+        audioMeanVolumeDb: -91.0,
+        audioMaxVolumeDb: -91.0,
+        audioSilenceDetected: true,
+        audioProlongedSilenceDetected: true,
       };
     }
 
@@ -307,6 +321,10 @@ export class VerificationEngine {
         streamCount: 0,
         audioSampleRate: 0,
         audioChannels: 0,
+        audioMeanVolumeDb: -91.0,
+        audioMaxVolumeDb: -91.0,
+        audioSilenceDetected: true,
+        audioProlongedSilenceDetected: true,
       };
     }
 
@@ -336,6 +354,59 @@ export class VerificationEngine {
       decodeSmokePassed = false;
     }
 
+    // 4. Physical audio activity and silence detection via ffmpeg volumedetect
+    let audioMeanVolumeDb = -91.0;
+    let audioMaxVolumeDb = -91.0;
+    let audioSilenceDetected = false;
+    let audioProlongedSilenceDetected = false;
+
+    if (audioStream) {
+      try {
+        const volumeOutput = await new Promise<string>((resolve, reject) => {
+          const proc = spawn("ffmpeg", ["-i", filePath, "-af", "volumedetect", "-f", "null", "-"]);
+          let stderr = "";
+          proc.stderr.on("data", (d) => (stderr += d.toString()));
+          proc.on("close", () => resolve(stderr));
+          proc.on("error", reject);
+        });
+
+        const meanMatch = volumeOutput.match(/mean_volume:\s*(-?[\d.]+)\s*dB/);
+        const maxMatch = volumeOutput.match(/max_volume:\s*(-?[\d.]+)\s*dB/);
+        if (meanMatch) audioMeanVolumeDb = parseFloat(meanMatch[1]);
+        if (maxMatch) audioMaxVolumeDb = parseFloat(maxMatch[1]);
+
+        if (audioMeanVolumeDb <= -50.0 || audioMaxVolumeDb <= -40.0) {
+          audioSilenceDetected = true;
+        }
+
+        // Check latter half if duration >= 6.0s for prolonged dropout
+        if (audioDuration >= 6.0) {
+          const halfOffset = (audioDuration / 2).toFixed(2);
+          const latterOutput = await new Promise<string>((resolve, reject) => {
+            const proc = spawn("ffmpeg", ["-ss", halfOffset, "-i", filePath, "-af", "volumedetect", "-f", "null", "-"]);
+            let stderr = "";
+            proc.stderr.on("data", (d) => (stderr += d.toString()));
+            proc.on("close", () => resolve(stderr));
+            proc.on("error", reject);
+          });
+          const latterMax = latterOutput.match(/max_volume:\s*(-?[\d.]+)\s*dB/);
+          const latterMean = latterOutput.match(/mean_volume:\s*(-?[\d.]+)\s*dB/);
+          if (latterMax && parseFloat(latterMax[1]) <= -40.0) {
+            audioProlongedSilenceDetected = true;
+            audioSilenceDetected = true;
+          }
+          if (latterMean && parseFloat(latterMean[1]) <= -50.0) {
+            audioProlongedSilenceDetected = true;
+            audioSilenceDetected = true;
+          }
+        }
+      } catch {
+        audioSilenceDetected = true;
+      }
+    } else {
+      audioSilenceDetected = true;
+    }
+
     return {
       fileExists: true,
       byteLength: stat.size,
@@ -354,6 +425,10 @@ export class VerificationEngine {
       streamCount: probeJson.streams.length,
       audioSampleRate: parseInt(audioStream?.sample_rate || "0", 10),
       audioChannels: parseInt(audioStream?.channels || "0", 10),
+      audioMeanVolumeDb,
+      audioMaxVolumeDb,
+      audioSilenceDetected,
+      audioProlongedSilenceDetected,
     };
   }
 
@@ -373,6 +448,8 @@ export class VerificationEngine {
     scriptText?: string;
     sceneCount?: number;
     policyViolations?: string[];
+    requireAudibleSpeech?: boolean;
+    requireVisualDiversity?: boolean;
   }): Promise<VerificationReport> {
     const effectiveJobId = params.jobId || params.targetId || "unknown_job";
     const failures: string[] = [];
@@ -415,18 +492,77 @@ export class VerificationEngine {
     const audioStreamPresent = m.audioCodec === "aac" || m.audioCodec === "mp3";
     const exact9x16Geometry = m.width === 1080 && m.height === 1920;
     const compliantCodecs = (m.videoCodec === "h264" || m.videoCodec === "hevc") && m.audioCodec === "aac";
-    const durationWithinBounds = m.videoDuration >= 1.0 && m.videoDuration <= 180.0;
+    let durationContract: DurationContract | undefined;
+    if (params.durationSeconds && params.durationSeconds > 0) {
+      const contract = DurationEngine.createContract(params.durationSeconds);
+      durationContract = DurationEngine.evaluateContract(contract, m.videoDuration);
+    }
+    const durationWithinBounds = durationContract
+      ? (durationContract.passed === true)
+      : (m.videoDuration >= 1.0 && m.videoDuration <= 180.0);
     const audioVideoSyncValid = m.syncDriftMs <= 1000;
     const decodeSmokePassed = m.decodeSmokePassed;
+
+    // Strict physical speech and silence verification
+    const requireAudibleSpeech = params.requireAudibleSpeech ?? (Boolean(params.scriptText) || (params.sceneCount !== undefined && params.sceneCount > 1));
+    const audioNotSilent = !m.audioSilenceDetected && (m.audioMaxVolumeDb ?? -91.0) > -40.0;
+
+    // Visual Frame Diversity Check
+    let visualFramesDiverse = true;
+    if (params.requireVisualDiversity && m.videoDuration >= 4.0 && m.fileExists) {
+      try {
+        const sampleTimes = [
+          Math.max(0.5, m.videoDuration * 0.2),
+          Math.max(1.0, m.videoDuration * 0.5),
+          Math.max(1.5, m.videoDuration * 0.8),
+        ];
+        const hashes: string[] = [];
+        for (const t of sampleTimes) {
+          const frameBuf = await new Promise<Buffer>((resolve, reject) => {
+            const proc = spawn("ffmpeg", [
+              "-ss", t.toFixed(2),
+              "-i", localFilePath,
+              "-frames:v", "1",
+              "-f", "image2pipe",
+              "-vcodec", "ppm",
+              "-",
+            ]);
+            const chunks: Buffer[] = [];
+            proc.stdout.on("data", (d) => chunks.push(d));
+            proc.on("close", (code) => (code === 0 ? resolve(Buffer.concat(chunks)) : resolve(Buffer.alloc(0))));
+            proc.on("error", reject);
+          });
+          if (frameBuf.length > 0) {
+            hashes.push(require("crypto").createHash("md5").update(frameBuf).digest("hex"));
+          }
+        }
+        if (hashes.length >= 2 && new Set(hashes).size === 1) {
+          visualFramesDiverse = false;
+        }
+      } catch {}
+    }
 
     if (!artifactExists) failures.push(`Artifact does not exist or has 0 bytes: ${localFilePath || "none"}`);
     if (!validContainer) failures.push(`Invalid MP4 container structure (missing ftyp box or unsupported video codec)`);
     if (!videoStreamPresent) failures.push(`No valid video stream detected`);
     if (!exact9x16Geometry) failures.push(`Geometry mismatch: observed ${m.width}x${m.height}, expected 1080x1920 (9:16)`);
     if (!compliantCodecs) failures.push(`Codec non-compliance: observed video=${m.videoCodec}, audio=${m.audioCodec}`);
-    if (!durationWithinBounds) failures.push(`Video duration out of bounds: ${m.videoDuration.toFixed(2)}s`);
+    if (!durationWithinBounds) {
+      if (durationContract && durationContract.failureReason) {
+        failures.push(durationContract.failureReason);
+      } else {
+        failures.push(`Video duration out of bounds: ${m.videoDuration.toFixed(2)}s`);
+      }
+    }
     if (!audioVideoSyncValid) failures.push(`Audio/video desync exceeds threshold: ${m.syncDriftMs.toFixed(0)}ms drift`);
     if (!decodeSmokePassed) failures.push(`FFmpeg decode smoke test failed on artifact`);
+
+    if (requireAudibleSpeech && !audioNotSilent) {
+      failures.push(`NARRATION_AUDIO_SILENT: Audio stream has prolonged digital silence or inaudible levels (mean=${(m.audioMeanVolumeDb ?? -91.0).toFixed(1)}dB, max=${(m.audioMaxVolumeDb ?? -91.0).toFixed(1)}dB)`);
+    }
+    if (!visualFramesDiverse) {
+      failures.push(`VISUAL_FRAMES_IDENTICAL: Video contains static frozen frames across scene intervals`);
+    }
 
     const allHardGatesPassed =
       artifactExists &&
@@ -437,7 +573,9 @@ export class VerificationEngine {
       compliantCodecs &&
       durationWithinBounds &&
       audioVideoSyncValid &&
-      decodeSmokePassed;
+      decodeSmokePassed &&
+      (requireAudibleSpeech ? audioNotSilent : true) &&
+      visualFramesDiverse;
 
     // 4. Dimensional Verification
     // Technical Quality (Layer 1 Physical Forensics Gate)
@@ -563,6 +701,7 @@ export class VerificationEngine {
       confidence: allHardGatesPassed ? 0.98 : 0.0,
       failures,
       warnings,
+      durationContract,
       timestamp: new Date().toISOString(),
     };
   }

@@ -1,0 +1,128 @@
+{
+  "verified": true,
+  "passed": true,
+  "overallStatus": "PASSED",
+  "overallScore": 96,
+  "scores": {
+    "technicalQuality": 90,
+    "contentQuality": 95,
+    "policy": 100,
+    "deliveryReadiness": 100
+  },
+  "evidence": [
+    "Artifact exists: true",
+    "Valid container: true",
+    "Geometry 9:16: true",
+    "Decode smoke test: true",
+    "Technical quality: 90/100"
+  ],
+  "jobId": "job_prod_accept_mvw01pma",
+  "hardGates": {
+    "artifactExists": true,
+    "validContainer": true,
+    "videoStreamPresent": true,
+    "audioStreamPresent": true,
+    "exact9x16Geometry": true,
+    "compliantCodecs": true,
+    "durationWithinBounds": true,
+    "audioVideoSyncValid": true,
+    "decodeSmokePassed": true
+  },
+  "measurements": {
+    "fileExists": true,
+    "byteLength": 4161933,
+    "hasFtypBox": true,
+    "decodeSmokePassed": true,
+    "width": 1080,
+    "height": 1920,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "videoDuration": 180,
+    "audioDuration": 180.04644,
+    "syncDriftMs": 46.43999999998982,
+    "pixelFormat": "yuv420p",
+    "fps": 30,
+    "bitrateKbps": 185,
+    "streamCount": 2,
+    "audioSampleRate": 22050,
+    "audioChannels": 1,
+    "audioMeanVolumeDb": -22.6,
+    "audioMaxVolumeDb": -0.3,
+    "audioSilenceDetected": false,
+    "audioProlongedSilenceDetected": false
+  },
+  "layers": {
+    "layer1PhysicalForensics": {
+      "passed": true,
+      "measurements": {
+        "fileExists": true,
+        "byteLength": 4161933,
+        "hasFtypBox": true,
+        "decodeSmokePassed": true,
+        "width": 1080,
+        "height": 1920,
+        "videoCodec": "h264",
+        "audioCodec": "aac",
+        "videoDuration": 180,
+        "audioDuration": 180.04644,
+        "syncDriftMs": 46.43999999998982,
+        "pixelFormat": "yuv420p",
+        "fps": 30,
+        "bitrateKbps": 185,
+        "streamCount": 2,
+        "audioSampleRate": 22050,
+        "audioChannels": 1,
+        "audioMeanVolumeDb": -22.6,
+        "audioMaxVolumeDb": -0.3,
+        "audioSilenceDetected": false,
+        "audioProlongedSilenceDetected": false
+      },
+      "hardGates": {
+        "artifactExists": true,
+        "validContainer": true,
+        "videoStreamPresent": true,
+        "audioStreamPresent": true,
+        "exact9x16Geometry": true,
+        "compliantCodecs": true,
+        "durationWithinBounds": true,
+        "audioVideoSyncValid": true,
+        "decodeSmokePassed": true
+      },
+      "evidenceType": "PHYSICAL_MEASUREMENT"
+    },
+    "layer2ContentEvidence": {
+      "passed": true,
+      "scriptDetected": true,
+      "sceneCount": 9,
+      "score": 95,
+      "evidenceType": "CONTENT_EVIDENCE"
+    },
+    "layer3HeuristicQuality": {
+      "score": 93,
+      "evidenceType": "HEURISTIC"
+    }
+  },
+  "dimensionScores": {
+    "technicalQuality": 90,
+    "contentQuality": 95,
+    "policyCompliance": 100,
+    "deliveryReadiness": 100,
+    "overall": 96
+  },
+  "qualityScore": 96,
+  "confidence": 0.98,
+  "failures": [],
+  "warnings": [],
+  "durationContract": {
+    "targetDurationSeconds": 180,
+    "toleranceSeconds": 9,
+    "tolerancePercent": 5,
+    "minDurationSeconds": 171,
+    "maxDurationSeconds": 189,
+    "plannedDurationSeconds": 180,
+    "durationPolicyVersion": "2026.1-p0",
+    "physicalDurationSeconds": 180,
+    "passed": true
+  },
+  "timestamp": "2026-10-31T06:09:41.785Z"
+}

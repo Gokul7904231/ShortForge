@@ -68,7 +68,7 @@ export class DriveConnectionManager {
           refreshToken,
           folderId: folderId || undefined,
           folderName: "ShortFactory (Admin)",
-          googleEmail: "gokul32499@gmail.com",
+          googleEmail: process.env.GOOGLE_DRIVE_ACCOUNT_EMAIL,
         };
       }
 
@@ -146,7 +146,7 @@ export class DriveConnectionManager {
         const data = doc.data() || {};
         return {
           connected: data.status === "CONNECTED",
-          status: data.status || "CONNECTED",
+          status: data.status || "NOT_CONNECTED",
           googleEmail: data.googleEmail,
           selectedFolderId: data.selectedFolderId,
           selectedFolderName: data.selectedFolderName || "AI Shorts",
@@ -159,10 +159,8 @@ export class DriveConnectionManager {
         return {
           connected: true,
           status: "CONNECTED",
-          googleEmail: "gokul32499@gmail.com",
+          googleEmail: process.env.GOOGLE_DRIVE_ACCOUNT_EMAIL,
           selectedFolderName: "ShortFactory (Admin Default)",
-          connectedAt: new Date(0).toISOString(),
-          lastValidatedAt: new Date().toISOString(),
         };
       }
 

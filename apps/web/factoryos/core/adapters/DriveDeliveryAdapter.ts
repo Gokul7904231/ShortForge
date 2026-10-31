@@ -70,10 +70,12 @@ export class DriveDeliveryAdapter {
       console.warn(`[DriveDeliveryAdapter] Network is OFFLINE. Job ${job.id} retained in DELIVERY_PENDING outbox.`);
       record.status = "PENDING";
       this._saveOutboxToDisk(record);
-      return {
+      const artifact: DeliveryArtifact = {
         deliveryMethod: "LOCAL_OUTBOX",
         verified: false,
       };
+      await this._persistDurable(job.id, artifact, record.status);
+      return artifact;
     }
 
     // 2. Resolve Drive Connection (per-user OAuth, with admin SYSTEM fallback for autonomous/system jobs)
@@ -115,6 +117,7 @@ export class DriveDeliveryAdapter {
         record.status = "UPLOADED";
         record.deliveryArtifact = artifact;
         this._saveOutboxToDisk(record);
+        await this._persistDurable(job.id, artifact, record.status);
         return artifact;
       }
     }
@@ -143,6 +146,7 @@ export class DriveDeliveryAdapter {
       record.status = "UPLOADED";
       record.deliveryArtifact = artifact;
       this._saveOutboxToDisk(record);
+      await this._persistDurable(job.id, artifact, record.status);
       console.log(`[DriveDeliveryAdapter] Job ${job.id} successfully uploaded to Google Drive. File ID: ${driveRes.fileId}`);
 
       return artifact;
@@ -150,15 +154,26 @@ export class DriveDeliveryAdapter {
       console.error(`[DriveDeliveryAdapter] Real Google Drive upload failed:`, err?.message ?? err);
       record.status = "FAILED";
       this._saveOutboxToDisk(record);
-      return {
+      const artifact: DeliveryArtifact = {
         deliveryMethod: "LOCAL_OUTBOX",
         verified: false,
       };
+      await this._persistDurable(job.id, artifact, record.status);
+      return artifact;
     }
   }
 
   getOutboxRecord(jobId: string): OutboxRecord | undefined {
     return this.outboxRecords.get(jobId);
+  }
+
+  private async _persistDurable(
+    jobId: string,
+    artifact: DeliveryArtifact,
+    status: OutboxRecord["status"]
+  ): Promise<void> {
+    const { persistDeliveryReceipt } = await import("../../../lib/delivery/durable-delivery");
+    await persistDeliveryReceipt(jobId, artifact, status);
   }
 
   private _saveOutboxToDisk(record: OutboxRecord): void {

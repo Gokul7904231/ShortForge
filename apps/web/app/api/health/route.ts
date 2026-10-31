@@ -11,7 +11,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const report = await HealthManager.check();
-    return NextResponse.json({ success: true, ...report });
+    // 200 means reachable and ready. A reachable but unready process answers 503 so
+    // monitors cannot mistake an HTTP ping for a working app.
+    return NextResponse.json(
+      { success: true, ...report },
+      { status: report.ready ? 200 : 503 }
+    );
   } catch (err: any) {
     console.error("[/api/health] Check crashed:", err.message);
     return NextResponse.json(

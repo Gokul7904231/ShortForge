@@ -65,6 +65,73 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
     statusReason: 'Production qualified with full native render and Wikimedia provider.'
   },
 
+  
+  // 1b. Facts - Deep Explainer Documentary (60 - 180s)
+  {
+    identity: {
+      id: 'facts.deep-explainer.v1',
+      version: '1.0.0',
+      name: 'Deep Explainer Documentary',
+      slug: 'deep-explainer',
+      author: 'FactoryOS Core',
+      isSystem: true
+    },
+    category: 'FACTS',
+    formatFamily: 'Deep Explainer Documentary',
+    description: 'Long-form structured educational documentary (60–180s) with multi-scene progression: hook, geographic/physical context, mechanical breakdown, data & measurements, real-world impact, current frontiers, and conclusion',
+    tags: ['facts', 'educational', 'explainer', 'documentary', 'in-depth', 'long-form'],
+    storyStructure: [
+      { stepName: 'Hook', purpose: 'Provocative question or striking hook', shotRecipeId: 'KINETIC_HOOK', recommendedDurationSeconds: 6.0 },
+      { stepName: 'Physical Context', purpose: 'Establish geographic and physical setting', shotRecipeId: 'SOURCE_CARD', recommendedDurationSeconds: 8.0 },
+      { stepName: 'Core Mechanics', purpose: 'In-depth mechanical and scientific breakdown', shotRecipeId: 'IMAGE_WITH_CAPTION', recommendedDurationSeconds: 9.0 },
+      { stepName: 'Key Measurement', purpose: 'Primary statistical and numerical metric comparison', shotRecipeId: 'BIG_NUMBER', recommendedDurationSeconds: 8.0 },
+      { stepName: 'Comparative Analysis', purpose: 'Comparative scale against benchmark phenomena', shotRecipeId: 'STAT', recommendedDurationSeconds: 8.0 },
+      { stepName: 'Chronological Evolution', purpose: 'Discovery milestone or timeline build', shotRecipeId: 'TIMELINE_BUILD', recommendedDurationSeconds: 8.0 },
+      { stepName: 'Primary Evidence', purpose: 'Direct quote or observational report', shotRecipeId: 'QUOTE_CARD', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Frontier Breakthrough', purpose: 'Current scientific frontier and future research', shotRecipeId: 'FULL_BLEED_IMAGE', recommendedDurationSeconds: 9.0 },
+      { stepName: 'Synthesis & Outro', purpose: 'Summary and engagement call to action', shotRecipeId: 'OUTRO_CTA', recommendedDurationSeconds: 7.0 }
+    ],
+    inputContract: {
+      variables: [
+        { name: 'topic', type: 'string', label: 'Topic / Subject', required: true, description: 'Educational subject of the documentary' },
+        { name: 'targetDuration', type: 'number', label: 'Target Duration Seconds', required: false, default: 60, description: 'Duration between 60 and 180 seconds' }
+      ],
+      promptSeed: 'Construct a comprehensive 60-180 second deep-explainer documentary analyzing {topic} with rigorous scientific context, primary data, and structured visual story progression.'
+    },
+    visualPolicy: {
+      colorPalette: ['#090A0F', '#1E1B4B', '#38BDF8', '#6366F1', '#F8FAFC'],
+      typography: { headerFont: 'Inter-Black', bodyFont: 'Inter-SemiBold', accentColor: '#38BDF8' },
+      motionIntensity: 'MEDIUM'
+    },
+    captionPolicy: {
+      style: 'TiktokBouncy',
+      defaultPosition: 'LOWER_THIRD',
+      maxWordsPerLine: 4,
+      highlightColor: '#38BDF8'
+    },
+    voicePolicy: {
+      paceMultiplier: 1.0,
+      tone: 'calm, authoritative, documentary cadence',
+      suggestedVoices: ['en-US-Neural2-D', 'en-US-Journey-D']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.9, maxRateMultiplier: 1.1, pausePolicy: 'CONTROLLED' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
+    },
+    outputPolicy: {
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      targetDurationRange: [60, 180]
+    },
+    capabilityStatus: 'READY',
+    statusReason: 'Production qualified with full native multi-scene render and SAPI/VoiceFabric audio.'
+  },
+
   // 2. History - Timeline Documentary
   {
     identity: {

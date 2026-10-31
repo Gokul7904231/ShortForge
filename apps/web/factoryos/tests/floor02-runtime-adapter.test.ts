@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { Floor02RuntimeAdapter } from "../factoryos/core/adapters/Floor02RuntimeAdapter";
+import { Floor02RuntimeAdapter } from "../core/adapters/Floor02RuntimeAdapter";
 
 describe("Floor02RuntimeAdapter", () => {
   const originalFetch = global.fetch;
@@ -47,9 +47,17 @@ describe("Floor02RuntimeAdapter", () => {
         platform: "youtube_shorts",
         recommendedHook: "Most people misunderstand decorators.",
       },
+      correlation: {
+        missionId: "mission_wave3_01",
+        runId: "run_wave3_01",
+        jobId: "job_wave3_01",
+        traceId: "trace_wave3_01",
+      },
     });
 
     expect(result.handoffPayload.floor_id).toBe("floor02_scripting");
+    expect(result.correlationReceipt?.missionId).toBe("mission_wave3_01");
+    expect(result.correlationReceipt?.jobId).toBe("job_wave3_01");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -89,5 +97,55 @@ describe("Floor02RuntimeAdapter", () => {
         strategy: {},
       })
     ).rejects.toThrow("invalid or unvalidated handoff");
+  });
+
+  it("reports BLOCKED qualification status when endpoints and keys are missing", () => {
+    const prevUrl = process.env.FLOOR02_RUNTIME_URL;
+    const prevKey = process.env.FLOOR02_SERVICE_API_KEY;
+    const prevGemini = process.env.GEMINI_API_KEY;
+    delete process.env.FLOOR02_RUNTIME_URL;
+    delete process.env.FLOOR02_SERVICE_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+
+    try {
+      const unconfiguredAdapter = new Floor02RuntimeAdapter("", "");
+      const qual = unconfiguredAdapter.getQualificationStatus();
+      expect(qual.configured).toBe(false);
+      expect(qual.status).toBe("BLOCKED");
+      expect(qual.missingEnvVars).toContain("FLOOR02_RUNTIME_URL");
+      expect(qual.missingEnvVars).toContain("FLOOR02_SERVICE_API_KEY");
+    } finally {
+      if (prevUrl) process.env.FLOOR02_RUNTIME_URL = prevUrl;
+      if (prevKey) process.env.FLOOR02_SERVICE_API_KEY = prevKey;
+      if (prevGemini) process.env.GEMINI_API_KEY = prevGemini;
+    }
+  });
+
+  it("supports deterministic offline fallback with correlated receipts when enabled", async () => {
+    const unconfiguredAdapter = new Floor02RuntimeAdapter("", "");
+
+    const result = await unconfiguredAdapter.plan({
+      requestId: "offline_f02_test",
+      topic: "Quantum Entanglement",
+      targetDurationSeconds: 60,
+      strategy: {
+        templateId: "facts.deep-explainer.v1",
+        targetAudience: "curious_minds",
+      },
+      correlation: {
+        missionId: "mission_offline_001",
+        runId: "run_offline_001",
+        jobId: "job_offline_001",
+        traceId: "trace_offline_001",
+      },
+      offlineFallbackAllowed: true,
+    });
+
+    expect(result.handoffPayload.floor_id).toBe("floor02_scripting");
+    expect(result.handoffPayload.handoff_status).toBe("VALIDATED");
+    expect(result.handoffPayload.quality_report.accepted).toBe(true);
+    expect(result.handoffPayload.script_ir.scenes.length).toBeGreaterThanOrEqual(4);
+    expect(result.correlationReceipt?.missionId).toBe("mission_offline_001");
+    expect(result.correlationReceipt?.traceId).toBe("trace_offline_001");
   });
 });

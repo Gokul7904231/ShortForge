@@ -46,6 +46,9 @@ export interface LocalRenderSceneIntent {
     start_seconds?: number;
     duration_seconds?: number;
     volume?: number;
+    is_narration?: boolean;
+    source_in_seconds?: number;
+    source_duration_seconds?: number;
   };
   audio_tracks?: readonly {
     track_id: string;

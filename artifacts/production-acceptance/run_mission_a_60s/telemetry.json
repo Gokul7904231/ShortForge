@@ -1,0 +1,44 @@
+{
+  "runId": "run_mission_a_60s",
+  "traceContext": {
+    "traceId": "96f1952a413216ed700a1114f69bf872",
+    "spanId": "15dd21d79ab868a4",
+    "traceFlags": "01",
+    "traceparent": "00-96f1952a413216ed700a1114f69bf872-15dd21d79ab868a4-01"
+  },
+  "spans": [
+    {
+      "floor": "F00_ANALYST",
+      "status": "OK"
+    },
+    {
+      "floor": "F01_STRATEGY",
+      "status": "OK"
+    },
+    {
+      "floor": "F02_SCRIPTING",
+      "status": "OK"
+    },
+    {
+      "floor": "F03_ASSET_REALIZATION",
+      "status": "OK"
+    },
+    {
+      "floor": "F04_MEDIA_SYNTHESIS",
+      "status": "OK"
+    },
+    {
+      "floor": "F05_TIMELINE_COMPOSITION",
+      "status": "OK"
+    },
+    {
+      "floor": "F06_RENDERING",
+      "status": "OK"
+    },
+    {
+      "floor": "F07_COMPLIANCE",
+      "status": "OK"
+    }
+  ],
+  "createdAt": "2026-10-31T06:05:44.122Z"
+}
