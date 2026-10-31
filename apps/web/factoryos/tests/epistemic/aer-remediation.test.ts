@@ -598,12 +598,12 @@ describe("AER remediation — economics, reservations, execution loop", () => {
     expect(metrics.getModeCalibration("MICRO").sampleCount).toBe(0);
   });
 
-  it("durably appends metadata-only shadow telemetry and exposes sink health", () => {
+  it("durably appends metadata-only shadow telemetry and exposes sink health", async () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aer-telemetry-"));
     const filePath = path.join(directory, "episodes.jsonl");
     try {
       const sink = new JsonlAEREpisodeTelemetrySink(filePath);
-      sink.append({
+      await sink.append({
         eventId: "event-1",
         episodeId: "episode-1",
         eventName: "aer.assessment",
