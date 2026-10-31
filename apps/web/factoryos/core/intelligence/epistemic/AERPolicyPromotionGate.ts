@@ -118,7 +118,7 @@ export class AERPolicyPromotionGate {
   ): AERPolicyEvaluationEvidence {
     return {
       policyVersion: input.policyVersion,
-      sampleCount: snapshot.uncertaintyEpisodeCount,
+      sampleCount: snapshot.verifiedOutcomeCount,
       resolvedRateLower95: input.resolvedRateLower95,
       resolvedRateUpper95: input.resolvedRateUpper95,
       falseReassuranceRateUpper95: input.falseReassuranceRateUpper95,
