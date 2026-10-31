@@ -45,7 +45,8 @@
     "Upgraded JsonlAEREpisodeTelemetrySink to serialized asynchronous appends, fdatasync, restrictive file permissions, and visible health counters.",
     "Added an explicit Node-side AER shadow composition factory that requires a trusted verifier and is not wired to production routing.",
     "Added tests for missing outcome verifier, verified calibration/replay fixtures, telemetry durability, and promotion without necessity evidence.",
-    "Documented AER shadow evidence boundaries and outstanding qualification work."
+    "Documented AER shadow evidence boundaries and outstanding qualification work.",
+    "Added aer-remediation.test.ts (evidence-verifier, telemetry durability, shadow replay, promotion gate) to the blocking CI AER test command."
   ],
   "evidenceRefs": [
     "apps/web/factoryos/core/intelligence/epistemic/AEROutcomeEvidence.ts",
@@ -57,7 +58,8 @@
     "apps/web/factoryos/tests/epistemic/aer.test.ts",
     "apps/web/factoryos/tests/epistemic/aer-remediation.test.ts",
     "docs/ascalon/aer-shadow-evidence.md",
-    "Team/reports/pr-259.json"
+    "Team/reports/pr-259.json",
+    ".github/workflows/ci.yml"
   ],
   "verificationPlan": [
     "Run AER core and auxiliary Vitest suites.",
@@ -66,7 +68,8 @@
     "Verify missing or failing evidence verifier never contributes to outcome calibration or shadow replay.",
     "Verify local telemetry append failures are visible through sink health and do not affect routing decisions.",
     "Verify the shadow factory is not connected to live production routing and does not alter policy authority.",
-    "Keep AER SHADOW / ADVISORY ONLY pending real evidence and governance review."
+    "Keep AER SHADOW / ADVISORY ONLY pending real evidence and governance review.",
+    "Confirm aer-remediation.test.ts runs in the blocking repository CI job."
   ],
   "verificationResults": {
     "localExecution": {
@@ -75,8 +78,7 @@
     },
     "pullRequestCI": {
       "status": "PENDING",
-      "pullRequest": 259,
-      "headSha": "533f398a6e666f909e68804a41daf8e4de9865e7"
+      "pullRequest": 259
     }
   },
   "forgers": {
