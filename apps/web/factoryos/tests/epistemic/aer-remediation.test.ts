@@ -596,6 +596,17 @@ describe("AER remediation — economics, reservations, execution loop", () => {
     });
     expect(result.admitted).toBe(false);
     expect(metrics.getModeCalibration("MICRO").sampleCount).toBe(0);
+    const gateEvidence = AERPolicyPromotionGate.fromSnapshot(metrics.snapshot(), {
+      policyVersion: "candidate-without-verified-outcomes",
+      resolvedRateLower95: 0,
+      resolvedRateUpper95: 0,
+      falseReassuranceRateUpper95: 1,
+      controlledNecessityCoverageRate: null,
+      missedNecessaryEscalationCount: 0,
+    });
+    expect(gateEvidence.sampleCount).toBe(0);
+    expect(metrics.snapshot().uncertaintyEpisodeCount).toBe(1);
+    expect(metrics.snapshot().verifiedOutcomeCount).toBe(0);
   });
 
   it("durably appends metadata-only shadow telemetry and exposes sink health", async () => {
