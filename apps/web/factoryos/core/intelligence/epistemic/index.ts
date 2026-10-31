@@ -11,6 +11,7 @@ export * from "./EpistemicLedger";
 export * from "./EpistemicTrigger";
 export * from "./HypothesisManager";
 export * from "./AERMetrics";
+export * from "./AERRoutingPolicyLearner";
 export * from "./AEROutcomeEvidence";
 export * from "./AscalonInvocationGate";
 export * from "./AERValueModel";
