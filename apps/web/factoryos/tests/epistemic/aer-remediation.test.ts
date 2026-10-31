@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { AgentExecutionRouter } from "../../core/agent/execution/AgentExecutionRouter";
 import { InMemoryAgentExecutionStateStore } from "../../core/agent/execution/AgentExecutionStateStore";
 import { ScopedToolExecutor } from "../../core/agent/execution/ScopedToolExecutor";
@@ -9,6 +12,7 @@ import {
   AEREngine,
   AERInvestigationLoop,
   AERMetricsRecorder,
+  JsonlAEREpisodeTelemetrySink,
   AERRoutingPolicyLearner,
   AERPolicyPromotionGate,
   AERShadowReplayEvaluator,
@@ -266,7 +270,12 @@ describe("AER remediation — economics, reservations, execution loop", () => {
   });
 
   it("produces an observed-calibration policy only after enough outcome evidence", () => {
-    const metrics = new AERMetricsRecorder();
+    const metrics = new AERMetricsRecorder(undefined, {
+      verifyOutcome: (receipt) =>
+        receipt.authoritativeSource === "VERIFIED_SYSTEM" &&
+        receipt.verificationRef.startsWith("validator:") &&
+        receipt.evidenceRefs.includes(receipt.verificationRef),
+    });
 
     for (let i = 0; i < 30; i += 1) {
       metrics.recordAssessment({
@@ -450,7 +459,12 @@ describe("AER remediation — economics, reservations, execution loop", () => {
       routing: { deepAvailable: true },
     }).context;
 
-    const replay = new AERShadowReplayEvaluator();
+    const replay = new AERShadowReplayEvaluator({
+      verifyOutcome: (receipt) =>
+        receipt.verificationRef === "validator:1" &&
+        receipt.evidenceRefs.includes("validator:1") &&
+        (receipt.necessityAssessment?.evidenceRefs.includes("baseline:1") ?? false),
+    });
     const report = replay.evaluate(
       [
         {
@@ -480,6 +494,8 @@ describe("AER remediation — economics, reservations, execution loop", () => {
     );
 
     expect(report.replayedCount).toBe(1);
+    expect(report.unverifiedEpisodeCount).toBe(0);
+    expect(report.controlledNecessityCoverageRate).toBe(1);
     expect(report.wouldMissNecessaryEscalation).toBe(1);
     expect(report.wouldEscalateUnnecessarily).toBe(0);
   });
@@ -517,6 +533,52 @@ describe("AER remediation — economics, reservations, execution loop", () => {
 
     expect(result.eligible).toBe(false);
     expect(result.reasons).toContain("candidate_sample_size_insufficient");
+  });
+
+  it("does not admit outcome claims into calibration without an independent verifier", () => {
+    const metrics = new AERMetricsRecorder();
+    metrics.recordAssessment({
+      episodeId: "unverified-episode",
+      uncertaintyEncountered: true,
+      ascalonEscalationRecommended: false,
+      routedMode: "MICRO",
+      aerLatencyMs: 4,
+    });
+    const result = metrics.recordOutcome({
+      outcomeId: "unverified-outcome",
+      episodeId: "unverified-episode",
+      status: "RESOLVED",
+      evidenceRefs: ["receipt:only-a-string"],
+      authoritativeSource: "VERIFIED_SYSTEM",
+      verificationRef: "receipt:only-a-string",
+      observedAt: "2026-09-29T00:00:00.000Z",
+    });
+    expect(result.admitted).toBe(false);
+    expect(metrics.getModeCalibration("MICRO").sampleCount).toBe(0);
+  });
+
+  it("durably appends metadata-only shadow telemetry and exposes sink health", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "aer-telemetry-"));
+    const filePath = path.join(directory, "episodes.jsonl");
+    try {
+      const sink = new JsonlAEREpisodeTelemetrySink(filePath);
+      sink.append({
+        eventId: "event-1",
+        episodeId: "episode-1",
+        eventName: "aer.assessment",
+        timestamp: "2026-10-31T00:00:00.000Z",
+        policyVersion: "aer-shadow-v1",
+        attributes: { route: "MICRO" },
+      });
+      const health = sink.health();
+      expect(health.appendCount).toBe(1);
+      expect(health.failureCount).toBe(0);
+      const lines = fs.readFileSync(filePath, "utf8").trim().split("\n");
+      expect(lines).toHaveLength(1);
+      expect(JSON.parse(lines[0]).episodeId).toBe("episode-1");
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   });
 
 });
