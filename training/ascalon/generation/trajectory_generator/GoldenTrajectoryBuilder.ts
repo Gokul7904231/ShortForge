@@ -301,6 +301,27 @@ export class GoldenTrajectoryBuilder {
       },
     });
 
-    return trajectories;
+    // Historical "golden" fixtures contain illustrative evidence IDs and outcomes.
+    // Make their synthetic nature explicit so they cannot enter the operational lane.
+    return trajectories.map((trajectory) => ({
+      ...trajectory,
+      environment: {
+        ...trajectory.environment,
+        environmentType: "SIMULATION",
+      },
+      observation: {
+        ...trajectory.observation,
+        environmentType: "SIMULATION",
+      },
+      provenance: {
+        ...trajectory.provenance,
+        labelSource: "SIMULATION_PSEUDO",
+        trainingEligible: true,
+        humanReviewed: false,
+        simulation: true,
+        synthetic: true,
+      },
+    }));
+
   }
 }
