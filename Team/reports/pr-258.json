@@ -42,7 +42,8 @@
     "Replaced positional split assignment with stable SHA-256 mission-family hashing and explicit target-band semantics.",
     "Replaced hardcoded success metrics with validator-derived quality metrics and an explicit NOT_EVALUATED replay status.",
     "Added tests for lane isolation, independent receipt admission, deterministic reruns, and family split isolation.",
-    "Documented the dataset-lane contract and remaining production-admission requirements."
+    "Documented the dataset-lane contract and remaining production-admission requirements.",
+    "Changed the placeholder replay helper to return NOT_EXECUTED until an independent replay adapter exists; updated the readiness test to reject echo-based replay claims."
   ],
   "evidenceRefs": [
     "training/ascalon/exporters/AscalonTrajectoryExporter.ts",
@@ -52,7 +53,8 @@
     "docs/ascalon/dataset-lane-admission.md",
     "Team/reports/pr-258.json",
     "docs/ascalon/dataset-policy.md",
-    "docs/ascalon/overseer-dataset-spec.md"
+    "docs/ascalon/overseer-dataset-spec.md",
+    "training/ascalon/generation/trajectory_generator/AscalonReplayEngine.ts"
   ],
   "verificationPlan": [
     "Run the dedicated Ascalon training-readiness Vitest suite.",
@@ -60,7 +62,8 @@
     "Execute generate_datasets.ts and inspect curriculum lane, family splits, provenance counts, and computed metrics.",
     "Verify synthetic records cannot enter VERIFIED_OPERATIONAL exports.",
     "Verify VERIFIED_OUTCOME is rejected unless the referenced receipt is present in an independently produced evidence manifest.",
-    "Keep model-weight training and Ascalon/AER production promotion blocked."
+    "Keep model-weight training and Ascalon/AER production promotion blocked.",
+    "Verify no Ascalon test treats echoing a recorded decision as deterministic replay evidence."
   ],
   "verificationResults": {
     "localExecution": {
@@ -70,7 +73,7 @@
     "pullRequestCI": {
       "status": "PENDING",
       "pullRequest": 258,
-      "headSha": "e0f7be64e3c16dd73429f4acfda4b053f45be012"
+      "headSha": "PENDING_BRANCH_UPDATE"
     }
   },
   "forgers": {
@@ -95,7 +98,8 @@
     "The current Ascalon replay helper does not independently re-execute the recorded decision; the quality report now states NOT_EVALUATED rather than reporting a fabricated 100% replay rate.",
     "The dataset split is deterministic by family. Exact 70/15/15 row counts are not promised for small or skewed sets.",
     "No model weights were modified and no training job was dispatched.",
-    "No Guardian, Slayer, Healer, lease/fencing, F07, release, or production execution authority was changed."
+    "No Guardian, Slayer, Healer, lease/fencing, F07, release, or production execution authority was changed.",
+    "The old replay helper returned the recorded decision as its own replay result without re-execution; the branch now fails closed and reports replay as not executed."
   ],
   "disposition": "PASS"
 }
