@@ -95,3 +95,4 @@ describe('Wave 5 — Multi-Process OS Crash Recovery & Lease Fencing Harness', (
     expect((latest?.output as any).fencingToken).toBe(2);
   });
 });
+

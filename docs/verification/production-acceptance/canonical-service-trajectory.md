@@ -78,3 +78,4 @@ Ran `npx vitest run factoryos/tests/canonical-service-trajectory.test.ts`:
 Test Files  1 passed (1)
 Tests       2 passed (2)
 ```
+

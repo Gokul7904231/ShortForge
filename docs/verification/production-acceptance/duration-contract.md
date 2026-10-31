@@ -97,3 +97,4 @@ Ran `npx vitest run factoryos/tests/duration-contract.test.ts`:
 Test Files  1 passed (1)
 Tests       17 passed (17)
 ```
+

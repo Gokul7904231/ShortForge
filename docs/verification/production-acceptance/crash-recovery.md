@@ -62,3 +62,4 @@ Ran `npx vitest run factoryos/tests/multiprocess-crash-recovery.test.ts`:
 Test Files  1 passed (1)
 Tests       1 passed (1)
 ```
+

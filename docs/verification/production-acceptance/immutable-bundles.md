@@ -59,3 +59,4 @@ Ran `npx vitest run factoryos/tests/run-bundle-attestation.test.ts`:
 Test Files  1 passed (1)
 Tests       1 passed (1)
 ```
+

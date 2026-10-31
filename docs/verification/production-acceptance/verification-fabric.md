@@ -78,3 +78,4 @@ Ran `npx vitest run factoryos/tests/verification-fabric.test.ts`:
 Test Files  1 passed (1)
 Tests       10 passed (10)
 ```
+

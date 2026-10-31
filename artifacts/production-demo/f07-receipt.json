@@ -1,17 +1,17 @@
 {
   "verification": {
     "source": "CAS",
-    "physicalPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-production-acceptance\\apps\\web\\data\\cas_storage\\13\\137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e.mp4",
-    "expectedSha256": "137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e",
-    "actualSha256": "137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e",
+    "physicalPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-verification-fabric\\apps\\web\\data\\cas_storage\\e2\\e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b.mp4",
+    "expectedSha256": "e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b",
+    "actualSha256": "e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b",
     "sha256MatchesExpected": true,
     "casBound": true,
-    "casRef": "cas://137cfad944b302930ed8c9fc38254e40df1bfcc797bf8eedbede2014bcb85e6e",
-    "byteLength": 3742786,
-    "casByteLength": 3742786,
+    "casRef": "cas://e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b",
+    "byteLength": 4161933,
+    "casByteLength": 4161933,
     "measurements": {
       "fileExists": true,
-      "byteLength": 3742786,
+      "byteLength": 4161933,
       "hasFtypBox": true,
       "decodeSmokePassed": true,
       "width": 1080,
@@ -23,12 +23,12 @@
       "syncDriftMs": 46.43999999998982,
       "pixelFormat": "yuv420p",
       "fps": 30,
-      "bitrateKbps": 166,
+      "bitrateKbps": 185,
       "streamCount": 2,
       "audioSampleRate": 22050,
       "audioChannels": 1,
-      "audioMeanVolumeDb": -23.3,
-      "audioMaxVolumeDb": -0.4,
+      "audioMeanVolumeDb": -22.6,
+      "audioMaxVolumeDb": -0.3,
       "audioSilenceDetected": false,
       "audioProlongedSilenceDetected": false
     }
@@ -51,7 +51,7 @@
       "Decode smoke test: true",
       "Technical quality: 90/100"
     ],
-    "jobId": "job_prod_accept_mvvc6hfo",
+    "jobId": "job_prod_accept_mvw01pma",
     "hardGates": {
       "artifactExists": true,
       "validContainer": true,
@@ -65,7 +65,7 @@
     },
     "measurements": {
       "fileExists": true,
-      "byteLength": 3742786,
+      "byteLength": 4161933,
       "hasFtypBox": true,
       "decodeSmokePassed": true,
       "width": 1080,
@@ -77,12 +77,12 @@
       "syncDriftMs": 46.43999999998982,
       "pixelFormat": "yuv420p",
       "fps": 30,
-      "bitrateKbps": 166,
+      "bitrateKbps": 185,
       "streamCount": 2,
       "audioSampleRate": 22050,
       "audioChannels": 1,
-      "audioMeanVolumeDb": -23.3,
-      "audioMaxVolumeDb": -0.4,
+      "audioMeanVolumeDb": -22.6,
+      "audioMaxVolumeDb": -0.3,
       "audioSilenceDetected": false,
       "audioProlongedSilenceDetected": false
     },
@@ -91,7 +91,7 @@
         "passed": true,
         "measurements": {
           "fileExists": true,
-          "byteLength": 3742786,
+          "byteLength": 4161933,
           "hasFtypBox": true,
           "decodeSmokePassed": true,
           "width": 1080,
@@ -103,12 +103,12 @@
           "syncDriftMs": 46.43999999998982,
           "pixelFormat": "yuv420p",
           "fps": 30,
-          "bitrateKbps": 166,
+          "bitrateKbps": 185,
           "streamCount": 2,
           "audioSampleRate": 22050,
           "audioChannels": 1,
-          "audioMeanVolumeDb": -23.3,
-          "audioMaxVolumeDb": -0.4,
+          "audioMeanVolumeDb": -22.6,
+          "audioMaxVolumeDb": -0.3,
           "audioSilenceDetected": false,
           "audioProlongedSilenceDetected": false
         },
@@ -148,12 +148,23 @@
     "confidence": 0.98,
     "failures": [],
     "warnings": [],
-    "timestamp": "2026-10-30T19:01:55.858Z"
+    "durationContract": {
+      "targetDurationSeconds": 180,
+      "toleranceSeconds": 9,
+      "tolerancePercent": 5,
+      "minDurationSeconds": 171,
+      "maxDurationSeconds": 189,
+      "plannedDurationSeconds": 180,
+      "durationPolicyVersion": "2026.1-p0",
+      "physicalDurationSeconds": 180,
+      "passed": true
+    },
+    "timestamp": "2026-10-31T06:09:41.785Z"
   },
   "physicalMeasurements": {
-    "volumeMeanDb": -23.3,
-    "volumeMaxDb": -0.4,
-    "latterHalfMeanDb": -24.7,
+    "volumeMeanDb": -22.6,
+    "volumeMaxDb": -0.3,
+    "latterHalfMeanDb": -23.6,
     "latterHalfMaxDb": -0.4
   }
 }
