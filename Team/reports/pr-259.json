@@ -46,7 +46,7 @@
     "Added an explicit Node-side AER shadow composition factory that requires a trusted verifier and is not wired to production routing.",
     "Added tests for missing outcome verifier, verified calibration/replay fixtures, telemetry durability, and promotion without necessity evidence.",
     "Documented AER shadow evidence boundaries and outstanding qualification work.",
-    "Added aer-remediation.test.ts (evidence-verifier, telemetry durability, shadow replay, promotion gate) to the blocking CI AER test command.",
+    "Added a dedicated path-filtered AER Shadow Evidence workflow that runs strict typecheck and the AER core/auxiliary/remediation tests.",
     "Added verifiedOutcomeCount to the AER metric snapshot and made policy-gate sample size depend only on verified uncertainty outcomes.",
     "Fixed the existing AER remediation reservation fixture so its shared budget permits exactly one deep reservation, and exported AERRoutingPolicyLearner from the public epistemic barrel."
   ],
@@ -61,10 +61,10 @@
     "apps/web/factoryos/tests/epistemic/aer-remediation.test.ts",
     "docs/ascalon/aer-shadow-evidence.md",
     "Team/reports/pr-259.json",
-    ".github/workflows/ci.yml",
     "apps/web/factoryos/core/intelligence/epistemic/AERMetrics.ts",
     "apps/web/factoryos/core/intelligence/epistemic/AERPolicyPromotionGate.ts",
-    "apps/web/factoryos/core/intelligence/epistemic/index.ts"
+    "apps/web/factoryos/core/intelligence/epistemic/index.ts",
+    ".github/workflows/aer-shadow-evidence.yml"
   ],
   "verificationPlan": [
     "Run AER core and auxiliary Vitest suites.",
@@ -74,7 +74,7 @@
     "Verify local telemetry append failures are visible through sink health and do not affect routing decisions.",
     "Verify the shadow factory is not connected to live production routing and does not alter policy authority.",
     "Keep AER SHADOW / ADVISORY ONLY pending real evidence and governance review.",
-    "Confirm aer-remediation.test.ts runs in the blocking repository CI job.",
+    "Confirm the dedicated AER Shadow Evidence workflow runs strict typecheck and all AER focused tests.",
     "Verify unverified uncertainty episodes cannot inflate promotion-gate sample size.",
     "Run the complete AER remediation test file, including shared budget reservation and routing learner coverage."
   ],
@@ -114,7 +114,8 @@
     "No Ascalon model weights were changed and no fine-tuning job was dispatched.",
     "Promotion still requires real staging shadow episodes, held-out comparisons, calibration, security validation, and explicit human/governance approval.",
     "The promotion sample count is now verifiedOutcomeCount, not total uncertainty episode count; unverified records cannot satisfy minSamples.",
-    "An earlier CI run exposed an over-permissive test budget (it allowed two deep calls) and a missing public export for AERRoutingPolicyLearner. Both were corrected before rerun."
+    "An earlier CI run exposed an over-permissive test budget (it allowed two deep calls) and a missing public export for AERRoutingPolicyLearner. Both were corrected before rerun.",
+    "AER and Ascalon use independent path-filtered workflow files, avoiding edits to the shared repository CI workflow and reducing cross-PR merge conflicts."
   ],
   "disposition": "PASS"
 }
