@@ -9,6 +9,8 @@ export interface AERPolicyEvaluationEvidence {
   readonly costUsdPerResolvedUncertainty: number | null;
   readonly p95LatencyMs: number;
   readonly authorityViolationCount: number;
+  readonly controlledNecessityCoverageRate: number | null;
+  readonly missedNecessaryEscalationCount: number;
 }
 
 export interface AERPolicyPromotionCriteria {
@@ -17,6 +19,8 @@ export interface AERPolicyPromotionCriteria {
   readonly maxLatencyRegressionMs: number;
   readonly minCostSavingsUsd: number;
   readonly maxResolutionLowerBoundRegression: number;
+  readonly minControlledNecessityCoverageRate: number;
+  readonly maxMissedNecessaryEscalations: number;
 }
 
 /**
@@ -45,6 +49,20 @@ export class AERPolicyPromotionGate {
     }
     if (candidate.authorityViolationCount > 0) {
       reasons.push("candidate_authority_violations_present");
+    }
+    if (candidate.controlledNecessityCoverageRate === null) {
+      reasons.push("candidate_controlled_necessity_evidence_missing");
+    } else if (
+      candidate.controlledNecessityCoverageRate <
+      criteria.minControlledNecessityCoverageRate
+    ) {
+      reasons.push("candidate_controlled_necessity_coverage_insufficient");
+    }
+    if (
+      candidate.missedNecessaryEscalationCount >
+      criteria.maxMissedNecessaryEscalations
+    ) {
+      reasons.push("candidate_missed_necessary_escalations_exceed_limit");
     }
     if (
       candidate.falseReassuranceRateUpper95 >
@@ -94,6 +112,8 @@ export class AERPolicyPromotionGate {
       readonly resolvedRateUpper95: number;
       readonly falseReassuranceRateUpper95: number;
       readonly authorityViolationCount?: number;
+      readonly controlledNecessityCoverageRate: number | null;
+      readonly missedNecessaryEscalationCount: number;
     },
   ): AERPolicyEvaluationEvidence {
     return {
@@ -108,6 +128,11 @@ export class AERPolicyPromotionGate {
       authorityViolationCount: Math.max(
         0,
         input.authorityViolationCount ?? 0,
+      ),
+      controlledNecessityCoverageRate: input.controlledNecessityCoverageRate,
+      missedNecessaryEscalationCount: Math.max(
+        0,
+        input.missedNecessaryEscalationCount,
       ),
     };
   }
