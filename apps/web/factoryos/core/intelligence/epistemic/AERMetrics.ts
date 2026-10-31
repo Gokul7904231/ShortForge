@@ -92,6 +92,7 @@ interface MutableAEREpisodeRecord {
 export interface AERMetricSnapshot {
   readonly episodeCount: number;
   readonly uncertaintyEpisodeCount: number;
+  readonly verifiedOutcomeCount: number;
   readonly aerInvocationCount: number;
   readonly ascalonEscalationCount: number;
   readonly ascalonInvocationCount: number;
@@ -464,6 +465,7 @@ export class AERMetricsRecorder {
     const uncertaintyRecords = records.filter((record) => record.uncertaintyEncountered);
     const aerRecords = records.filter((record) => record.aerInvoked);
     const ascalonRecords = records.filter((record) => record.ascalonInvoked);
+    const verifiedOutcomeRecords = uncertaintyRecords.filter((record) => record.resolvedUncertainty !== undefined);
     const resolvedRecords = uncertaintyRecords.filter((record) => record.resolvedUncertainty === true);
     const reassuranceOutcomes = records.filter((record) => record.falseReassurance !== undefined);
     const ascalonOutcomes = ascalonRecords.filter((record) => record.ascalonWasNecessary !== undefined);
@@ -496,6 +498,7 @@ export class AERMetricsRecorder {
     return {
       episodeCount: records.length,
       uncertaintyEpisodeCount: uncertaintyRecords.length,
+      verifiedOutcomeCount: verifiedOutcomeRecords.length,
       aerInvocationCount: aerRecords.length,
       ascalonEscalationCount: aerRecords.filter((record) => record.ascalonEscalationRecommended).length,
       ascalonInvocationCount: ascalonRecords.length,
