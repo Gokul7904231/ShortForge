@@ -42,6 +42,11 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
+      - name: Ascalon training-readiness and dataset-admission tests
+        run: cd apps/web && npx vitest run factoryos/tests/ascalon/ascalon-training-readiness.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
   web-regression-informational:
     name: Web Regression Suite (Informational)
     runs-on: ubuntu-latest
