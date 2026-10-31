@@ -341,11 +341,13 @@ describe("Project Ascalon: Trajectory Validation & Exporter Tests", () => {
     expect(report.issues.some((i) => i.code === "HALLUCINATED_TOOL")).toBe(true);
   });
 
-  it("19. verifies deterministic replay equivalence using AscalonReplayEngine", () => {
+  it("19. refuses to claim replay equivalence without an independent replay adapter", () => {
     for (const traj of golden) {
       const replay = AscalonReplayEngine.replayTrajectory(traj);
-      expect(replay.replayEquivalent).toBe(true);
-      expect(replay.originalDecision).toBe(replay.replayedDecision);
+      expect(replay.replayExecuted).toBe(false);
+      expect(replay.replayEquivalent).toBe(false);
+      expect(replay.replayedDecision).toBe("NOT_EXECUTED");
+      expect(replay.divergenceReason).toContain("NO_INDEPENDENT_REPLAY_ADAPTER");
     }
   });
 
