@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import { open } from "node:fs/promises";
 import * as path from "node:path";
 
 export type AEREpisodeEventName =
@@ -44,6 +45,7 @@ export class JsonlAEREpisodeTelemetrySink implements AEREpisodeTelemetrySink {
   private appendCount = 0;
   private failureCount = 0;
   private lastFailureCode: string | null = null;
+  private writeTail: Promise<void> = Promise.resolve();
 
   public constructor(filePath?: string) {
     this.filePath =
@@ -58,29 +60,33 @@ export class JsonlAEREpisodeTelemetrySink implements AEREpisodeTelemetrySink {
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true, mode: 0o700 });
   }
 
-  public append(event: AEREpisodeTelemetryEvent): void {
-    let fd: number | null = null;
-    try {
-      fd = fs.openSync(this.filePath, "a", 0o600);
-      fs.chmodSync(this.filePath, 0o600);
-      const payload = Buffer.from(JSON.stringify(event) + "\n", "utf8");
-      fs.writeSync(fd, payload, 0, payload.length);
-      fs.fdatasyncSync(fd);
-      this.appendCount += 1;
-      this.lastFailureCode = null;
-    } catch (error) {
-      this.failureCount += 1;
-      this.lastFailureCode = error instanceof Error ? error.name : "UNKNOWN_WRITE_FAILURE";
-    } finally {
-      if (fd !== null) {
-        try {
-          fs.closeSync(fd);
-        } catch {
-          this.failureCount += 1;
-          this.lastFailureCode = "FILE_CLOSE_FAILURE";
+  public append(event: AEREpisodeTelemetryEvent): Promise<void> {
+    const operation = this.writeTail.then(async () => {
+      let handle: Awaited<ReturnType<typeof open>> | null = null;
+      try {
+        handle = await open(this.filePath, "a", 0o600);
+        await handle.chmod(0o600);
+        await handle.writeFile(JSON.stringify(event) + "\n", "utf8");
+        await handle.datasync();
+        this.appendCount += 1;
+        this.lastFailureCode = null;
+      } catch (error) {
+        this.failureCount += 1;
+        this.lastFailureCode =
+          error instanceof Error ? error.name : "UNKNOWN_WRITE_FAILURE";
+      } finally {
+        if (handle) {
+          try {
+            await handle.close();
+          } catch {
+            this.failureCount += 1;
+            this.lastFailureCode = "FILE_CLOSE_FAILURE";
+          }
         }
       }
-    }
+    });
+    this.writeTail = operation.catch(() => undefined);
+    return operation;
   }
 
   public health(): AEREpisodeTelemetryHealth {
