@@ -74,8 +74,24 @@
       "note": "No repository runtime/test environment was available through the GitHub file interface."
     },
     "pullRequestCI": {
-      "status": "PENDING",
-      "pullRequest": 258
+      "status": "PASSED",
+      "pullRequest": 258,
+      "headSha": "66352428faef349667edcc90c40bf4d1ebda2df6",
+      "blockingJobs": {
+        "strictTypecheck": "PASSED",
+        "floor01Contracts": "PASSED",
+        "notebookFabricContracts": "PASSED",
+        "aerCoreTests": "PASSED",
+        "ascalonDatasetAdmissionTests": "PASSED"
+      }
+    },
+    "teamChangeGate": {
+      "status": "PASSED",
+      "run": 2357
+    },
+    "okfGovernanceGate": {
+      "status": "PASSED",
+      "run": 621
     }
   },
   "forgers": {
@@ -101,7 +117,8 @@
     "The dataset split is deterministic by family. Exact 70/15/15 row counts are not promised for small or skewed sets.",
     "No model weights were modified and no training job was dispatched.",
     "No Guardian, Slayer, Healer, lease/fencing, F07, release, or production execution authority was changed.",
-    "The old replay helper returned the recorded decision as its own replay result without re-execution; the branch now fails closed and reports replay as not executed."
+    "The old replay helper returned the recorded decision as its own replay result without re-execution; the branch now fails closed and reports replay as not executed.",
+    "Focused Ascalon CI, strict TypeScript, AER core tests, Team Change Gate, and OKF Governance Gate passed on the reviewed branch head. The full web regression suite is informational and is not treated as a blocking proof."
   ],
   "disposition": "PASS"
 }
