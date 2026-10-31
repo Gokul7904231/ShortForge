@@ -66,11 +66,13 @@ export type DurationSource =
 export interface VoiceArtifact {
   readonly artifactId: string;
   readonly localPath: string;
+  readonly audioPath?: string;
+  readonly sceneId?: string;
   readonly audioUrl: string;
   readonly format: string;
   readonly success: boolean;
   readonly storageUri?: string;
-  readonly qualityClass: "PRIMARY" | "FALLBACK" | "DEGRADED_FALLBACK" | "PROTOTYPE";
+  readonly qualityClass: "PRIMARY" | "DEGRADED" | "SILENT" | "FALLBACK" | "DEGRADED_FALLBACK" | "PROTOTYPE";
   readonly provider: string;
   readonly factoryExecutionId?: string;
   readonly providerRequestId?: string;
@@ -80,11 +82,73 @@ export interface VoiceArtifact {
   readonly sampleRate: number;
   readonly channels: number;
   readonly durationSeconds: number;
+  readonly physicalDurationSeconds?: number;
   readonly durationSource: DurationSource;
   readonly isFallback: boolean;
+  readonly fallbackUsed?: boolean;
+  readonly narrationRequired?: boolean;
+  readonly scriptText?: string;
   readonly fallbackReason?: string;
   readonly sha256: string;
   readonly producedAt: string;
+}
+
+/**
+ * Enforces fail-closed validation on mandatory narration artifacts.
+ * Rejects silent audio, missing files, empty files, missing hashes, and unapproved degraded fallbacks.
+ */
+export function validateMandatoryNarration(
+  artifact: VoiceArtifact,
+  options?: { allowDegraded?: boolean }
+): { valid: boolean; failureReason?: string } {
+  if (artifact.narrationRequired !== false) {
+    if (artifact.qualityClass === "SILENT") {
+      return {
+        valid: false,
+        failureReason: "VOICE_SILENT_DISALLOWED: Mandatory narration cannot be satisfied by silent audio.",
+      };
+    }
+    if (
+      (artifact.qualityClass === "DEGRADED" || artifact.qualityClass === "DEGRADED_FALLBACK") &&
+      !options?.allowDegraded
+    ) {
+      return {
+        valid: false,
+        failureReason: `VOICE_DEGRADED_REJECTED: Degraded voice fallback rejected for mandatory narration: ${
+          artifact.fallbackReason || "degraded quality class"
+        }`,
+      };
+    }
+    const filePath = artifact.audioPath || artifact.localPath;
+    if (!filePath || !fs.existsSync(filePath)) {
+      return {
+        valid: false,
+        failureReason: `AUDIO_FILE_MISSING: Physical audio file does not exist at ${filePath || "undefined"}`,
+      };
+    }
+    const stat = fs.statSync(filePath);
+    if (stat.size === 0) {
+      return {
+        valid: false,
+        failureReason: "AUDIO_FILE_EMPTY: Physical audio file has 0 bytes.",
+      };
+    }
+    if (!artifact.sha256 || artifact.sha256.trim() === "") {
+      return {
+        valid: false,
+        failureReason: "AUDIO_HASH_MISSING: Voice artifact lacks cryptographic SHA-256 digest.",
+      };
+    }
+    const fileBytes = fs.readFileSync(filePath);
+    const computedHash = crypto.createHash("sha256").update(fileBytes).digest("hex");
+    if (computedHash !== artifact.sha256) {
+      return {
+        valid: false,
+        failureReason: `AUDIO_HASH_MISMATCH: Physical file digest (${computedHash}) does not match declared artifact digest (${artifact.sha256}).`,
+      };
+    }
+  }
+  return { valid: true };
 }
 
 export class ArtifactProbeError extends Error {

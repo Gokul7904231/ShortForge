@@ -17,6 +17,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { TemplateDefinition, ContentCategory } from '../../../lib/templates/schemas/TemplateSchema';
+import { DurationEngine, DurationContract } from '../contracts/DurationContract';
 import { SHOT_RECIPES } from '../../../lib/templates/shots/ShotRecipeLibrary';
 import { TemporalCompiler } from '../../../lib/templates/temporal/TemporalCompiler';
 import type { TemporalPlanIR } from '../../../lib/templates/temporal/TemporalContracts';
@@ -267,98 +268,144 @@ export class TemplateProductionPipeline {
       const claim3 = rawClaims[2]?.statement || `Specialized extremophile organisms synthesize unique cellular proteins allowing biochemical metabolism in extreme cold and dark.`;
       const claim4 = rawClaims[3]?.statement || `Continuous tectonic subduction drives immense energy transfer between deep planetary mantles and the ocean basins.`;
 
-      // 9-scene narrative progression designed for 60s - 180s pacing
-      const sceneDuration = Number((targetSec / 9).toFixed(1));
+            // 9-scene narrative progression governed by authoritative DurationContract
+      const beatDefinitions = [
+        { beatId: 'beat_01_hook', type: 'HOOK', weight: 1.0 },
+        { beatId: 'beat_02_context', type: 'CONTEXT', weight: 1.0 },
+        { beatId: 'beat_03_mechanics', type: 'MECHANICS', weight: 1.0 },
+        { beatId: 'beat_04_bignum', type: 'MEASUREMENT', weight: 1.0 },
+        { beatId: 'beat_05_compstat', type: 'COMPARATIVE', weight: 1.0 },
+        { beatId: 'beat_06_timeline', type: 'CHRONOLOGY', weight: 1.0 },
+        { beatId: 'beat_07_quote', type: 'EVIDENCE', weight: 1.0 },
+        { beatId: 'beat_08_frontier', type: 'FRONTIER', weight: 1.0 },
+        { beatId: 'beat_09_outro', type: 'CTA', weight: 1.0 },
+      ];
+      const budgets = DurationEngine.allocateBeatBudgets(targetSec, beatDefinitions);
+      const budgetMap = new Map(budgets.map((b) => [b.beatId, b]));
 
-      beats.push({
-        beatId: 'beat_01_hook',
-        type: 'HOOK',
-        narration: `${hook} Today, we explore the definitive evidence.`,
-        visualIntent: 'Kinetic provocative title sequence with deep glowing typography',
-        shotRecipeId: 'KINETIC_HOOK',
-        durationSeconds: sceneDuration,
-        props: { headline: topic, subtitle: hook, highlightWord: 'EXTREMES', tag: 'DEEP EXPLAINER' }
-      });
+      const rawNarrations: Record<string, string> = {
+        beat_01_hook: `${hook} Today, we explore the definitive evidence.`,
+        beat_02_context: targetSec >= 120
+          ? `To comprehend ${topic}, we must first examine the physical setting. Descending beneath the planetary threshold, ${topic} creates an environment where sunlight disappears completely, plunging the hadal zone into perpetual freezing darkness.`
+          : `To comprehend ${topic}, we must examine the setting. Sunlight disappears completely here.`,
+        beat_03_mechanics: targetSec >= 120
+          ? `The fundamental mechanics govern how energy and matter interact here. Hydrostatic pressure reaches crushing levels exceeding one thousand atmospheres, warping metal alloys and compressing molecular structures.`
+          : `Fundamental mechanics govern how energy interacts here. Pressure reaches over one thousand atmospheres.`,
+        beat_04_bignum: targetSec >= 120
+          ? `The primary metric defining this domain is sheer vertical scale: nearly eleven thousand meters beneath the ocean surface, deeper than Mount Everest is tall.`
+          : `The primary metric is sheer scale: nearly eleven thousand meters beneath the surface.`,
+        beat_05_compstat: targetSec >= 120
+          ? `At over one thousand atmospheres, this hydrostatic load exerts more force than the weight of fifty jumbo jets concentrated on a single square inch.`
+          : `At over one thousand atmospheres, this load exerts crushing force across every square inch.`,
+        beat_06_timeline: targetSec >= 120
+          ? `From pioneering bathyscaphe expeditions in the nineteen-sixties to modern autonomous robotic probes, each successive exploration epoch unveiled unexpected physical discoveries.`
+          : `From pioneering bathyscaphes to modern autonomous robotic probes, each epoch unveiled new discoveries.`,
+        beat_07_quote: targetSec >= 120
+          ? `Chief deep-sea researchers recorded: "The abyssal zone is not a barren desert; it is an active alien ecosystem thriving on our own home planet."`
+          : `Chief researchers recorded: "The abyssal zone is an active alien ecosystem on our planet."`,
+        beat_08_frontier: targetSec >= 120
+          ? `Modern genomic sequencing of organisms from ${topic} continues to yield novel enzymatic pathways for medicine, bioscience, and metabolic engineering.`
+          : `Genomic sequencing of organisms from ${topic} yields novel enzymatic pathways for bioscience.`,
+        beat_09_outro: cta,
+      };
 
-      beats.push({
-        beatId: 'beat_02_context',
-        type: 'CONTEXT',
-        narration: `To comprehend ${topic}, we must first examine the physical and geographic setting. ${claim1}`,
-        visualIntent: 'Verified geographic source evidence card',
-        shotRecipeId: 'SOURCE_CARD',
-        durationSeconds: sceneDuration,
-        props: { source: 'National Oceanic and Atmospheric Survey', claim: claim1, headline: 'PHYSICAL SETTING' }
-      });
+      for (const def of beatDefinitions) {
+        const budget = budgetMap.get(def.beatId)!;
+        const rawText = rawNarrations[def.beatId] || '';
+        const narration = DurationEngine.fitNarrationToBudget(rawText, budget.maxWords);
 
-      beats.push({
-        beatId: 'beat_03_mechanics',
-        type: 'MECHANICS',
-        narration: `The fundamental mechanics govern how energy and matter interact here. ${claim2}`,
-        visualIntent: 'Scientific breakdown card with visual schematic description',
-        shotRecipeId: 'IMAGE_WITH_CAPTION',
-        durationSeconds: sceneDuration,
-        props: { caption: 'Hydrodynamic and Pressure Mechanics', headline: 'CORE MECHANICS' }
-      });
-
-      beats.push({
-        beatId: 'beat_04_bignum',
-        type: 'MEASUREMENT',
-        narration: `The primary metric defining this domain is sheer scale: nearly eleven thousand meters beneath the ocean surface.`,
-        visualIntent: 'Massive numerical stat highlight',
-        shotRecipeId: 'BIG_NUMBER',
-        durationSeconds: sceneDuration,
-        props: { number: '11,000 M', label: 'DEPTH BELOW SEA LEVEL', headline: 'RECORD SCALE' }
-      });
-
-      beats.push({
-        beatId: 'beat_05_compstat',
-        type: 'COMPARATIVE',
-        narration: `At over one thousand atmospheres, this hydrostatic load exerts more force than the weight of fifty jumbo jets.`,
-        visualIntent: 'Comparative statistical benchmark card',
-        shotRecipeId: 'STAT',
-        durationSeconds: sceneDuration,
-        props: { value: '1,000+ ATM', headline: 'CRUSHING HYDROSTATIC FORCE' }
-      });
-
-      beats.push({
-        beatId: 'beat_06_timeline',
-        type: 'CHRONOLOGY',
-        narration: `From pioneering bathyscaphe expeditions to modern autonomous robotic probes, each epoch unveiled new secrets.`,
-        visualIntent: 'Chronological timeline build card',
-        shotRecipeId: 'TIMELINE_BUILD',
-        durationSeconds: sceneDuration,
-        props: { year: '1960 — 2026', title: 'Exploration Timeline', description: 'Evolution of autonomous deep-sea submersible technology' }
-      });
-
-      beats.push({
-        beatId: 'beat_07_quote',
-        type: 'EVIDENCE',
-        narration: `Chief deep-sea researchers recorded: "The abyssal zone is not barren; it is an active alien ecosystem on our own planet."`,
-        visualIntent: 'Direct primary source quote card',
-        shotRecipeId: 'QUOTE_CARD',
-        durationSeconds: sceneDuration,
-        props: { quote: 'The abyssal zone is an active alien ecosystem on our own planet.', author: 'Deep Ocean Exploration Lead' }
-      });
-
-      beats.push({
-        beatId: 'beat_08_frontier',
-        type: 'FRONTIER',
-        narration: `Modern genomic sequencing of organisms from ${topic} continues to yield novel enzymatic pathways for bioscience.`,
-        visualIntent: 'Full bleed high impact discovery imagery',
-        shotRecipeId: 'FULL_BLEED_IMAGE',
-        durationSeconds: sceneDuration,
-        props: { caption: 'Next-Generation Deep Bioscience', headline: 'SCIENTIFIC FRONTIER' }
-      });
-
-      beats.push({
-        beatId: 'beat_09_outro',
-        type: 'CTA',
-        narration: cta,
-        visualIntent: 'Final outro call to action and subscription card',
-        shotRecipeId: 'OUTRO_CTA',
-        durationSeconds: sceneDuration,
-        props: { cta: 'SHORTFORGE DOCUMENTARY', subtitle: cta }
-      });
+        if (def.beatId === 'beat_01_hook') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Kinetic provocative title sequence with deep glowing typography',
+            shotRecipeId: 'KINETIC_HOOK',
+            durationSeconds: budget.targetSeconds,
+            props: { headline: topic, subtitle: hook, highlightWord: 'EXTREMES', tag: 'DEEP EXPLAINER' }
+          });
+        } else if (def.beatId === 'beat_02_context') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Verified geographic source evidence card',
+            shotRecipeId: 'SOURCE_CARD',
+            durationSeconds: budget.targetSeconds,
+            props: { source: 'National Oceanic and Atmospheric Survey', claim: claim1, headline: 'PHYSICAL SETTING' }
+          });
+        } else if (def.beatId === 'beat_03_mechanics') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Scientific breakdown card with visual schematic description',
+            shotRecipeId: 'IMAGE_WITH_CAPTION',
+            durationSeconds: budget.targetSeconds,
+            props: { caption: 'Hydrodynamic and Pressure Mechanics', headline: 'CORE MECHANICS' }
+          });
+        } else if (def.beatId === 'beat_04_bignum') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Massive numerical stat highlight',
+            shotRecipeId: 'BIG_NUMBER',
+            durationSeconds: budget.targetSeconds,
+            props: { number: '11,000 M', label: 'DEPTH BELOW SEA LEVEL', headline: 'RECORD SCALE' }
+          });
+        } else if (def.beatId === 'beat_05_compstat') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Comparative statistical benchmark card',
+            shotRecipeId: 'STAT',
+            durationSeconds: budget.targetSeconds,
+            props: { value: '1,000+ ATM', headline: 'CRUSHING HYDROSTATIC FORCE' }
+          });
+        } else if (def.beatId === 'beat_06_timeline') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Chronological timeline build card',
+            shotRecipeId: 'TIMELINE_BUILD',
+            durationSeconds: budget.targetSeconds,
+            props: { year: '1960 — 2026', title: 'Exploration Timeline', description: 'Evolution of autonomous deep-sea submersible technology' }
+          });
+        } else if (def.beatId === 'beat_07_quote') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Direct primary source quote card',
+            shotRecipeId: 'QUOTE_CARD',
+            durationSeconds: budget.targetSeconds,
+            props: { quote: 'The abyssal zone is an active alien ecosystem on our own planet.', author: 'Deep Ocean Exploration Lead' }
+          });
+        } else if (def.beatId === 'beat_08_frontier') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Full bleed high impact discovery imagery',
+            shotRecipeId: 'FULL_BLEED_IMAGE',
+            durationSeconds: budget.targetSeconds,
+            props: { caption: 'Next-Generation Deep Bioscience', headline: 'SCIENTIFIC FRONTIER' }
+          });
+        } else if (def.beatId === 'beat_09_outro') {
+          beats.push({
+            beatId: def.beatId,
+            type: def.type,
+            narration,
+            visualIntent: 'Final outro call to action and subscription card',
+            shotRecipeId: 'OUTRO_CTA',
+            durationSeconds: budget.targetSeconds,
+            props: { cta: 'SHORTFORGE DOCUMENTARY', subtitle: cta }
+          });
+        }
+      }
     } else if (templateId === 'history.timeline.v1') {
       const year = userInputs.keyYear || '1453';
       title = `${topic}: The Decisive Chronology (${year})`;

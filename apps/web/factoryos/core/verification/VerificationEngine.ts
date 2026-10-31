@@ -12,6 +12,7 @@ import { Artifact } from "../contracts/ArtifactContracts";
 import { MissionEvidence } from "../contracts/EvidenceContracts";
 import type { RenderArtifact } from "../contracts/RenderIntentContracts";
 import { ArtifactResolver, ResolvedArtifact } from "../rendering/ArtifactResolver";
+import { DurationEngine, DurationContract } from "../contracts/DurationContract";
 
 export interface MediaProbeMeasurements {
   readonly fileExists: boolean;
@@ -102,6 +103,7 @@ export interface VerificationReport {
   readonly confidence: number;
   readonly failures: string[];
   readonly warnings: string[];
+  readonly durationContract?: DurationContract;
   readonly timestamp: string;
 }
 
@@ -490,7 +492,14 @@ export class VerificationEngine {
     const audioStreamPresent = m.audioCodec === "aac" || m.audioCodec === "mp3";
     const exact9x16Geometry = m.width === 1080 && m.height === 1920;
     const compliantCodecs = (m.videoCodec === "h264" || m.videoCodec === "hevc") && m.audioCodec === "aac";
-    const durationWithinBounds = m.videoDuration >= 1.0 && m.videoDuration <= 180.0;
+    let durationContract: DurationContract | undefined;
+    if (params.durationSeconds && params.durationSeconds > 0) {
+      const contract = DurationEngine.createContract(params.durationSeconds);
+      durationContract = DurationEngine.evaluateContract(contract, m.videoDuration);
+    }
+    const durationWithinBounds = durationContract
+      ? (durationContract.passed === true)
+      : (m.videoDuration >= 1.0 && m.videoDuration <= 180.0);
     const audioVideoSyncValid = m.syncDriftMs <= 1000;
     const decodeSmokePassed = m.decodeSmokePassed;
 
@@ -538,7 +547,13 @@ export class VerificationEngine {
     if (!videoStreamPresent) failures.push(`No valid video stream detected`);
     if (!exact9x16Geometry) failures.push(`Geometry mismatch: observed ${m.width}x${m.height}, expected 1080x1920 (9:16)`);
     if (!compliantCodecs) failures.push(`Codec non-compliance: observed video=${m.videoCodec}, audio=${m.audioCodec}`);
-    if (!durationWithinBounds) failures.push(`Video duration out of bounds: ${m.videoDuration.toFixed(2)}s`);
+    if (!durationWithinBounds) {
+      if (durationContract && durationContract.failureReason) {
+        failures.push(durationContract.failureReason);
+      } else {
+        failures.push(`Video duration out of bounds: ${m.videoDuration.toFixed(2)}s`);
+      }
+    }
     if (!audioVideoSyncValid) failures.push(`Audio/video desync exceeds threshold: ${m.syncDriftMs.toFixed(0)}ms drift`);
     if (!decodeSmokePassed) failures.push(`FFmpeg decode smoke test failed on artifact`);
 
@@ -686,6 +701,7 @@ export class VerificationEngine {
       confidence: allHardGatesPassed ? 0.98 : 0.0,
       failures,
       warnings,
+      durationContract,
       timestamp: new Date().toISOString(),
     };
   }
