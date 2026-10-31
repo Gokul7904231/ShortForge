@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR258-Ascalon-Dataset-Lane-Admission",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/ascalon-dataset-admission-20261031",
+  "objective": "Separate Ascalon synthetic curriculum from verified operational training exports, require independently attested provenance for operational admission, make family splits deterministic, and compute honest dataset quality/manifests.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/index.md",
+      ".okf/intelligence/training.md",
+      ".okf/intelligence/ascalon-model.md",
+      ".okf/hierarchy/overseer-finetune-contract.md",
+      "docs/ascalon/dataset-policy.md",
+      "docs/ascalon/overseer-dataset-spec.md"
+    ],
+    "rulesConsidered": [
+      "Unverified, synthetic, or partial trajectories are not operational Ascalon ground truth.",
+      "A model proposal is not authorization; Guardian, lease/fencing, runtime, and F07 authority remain external.",
+      "Training admission requires evidence-backed provenance and Claim <= Evidence.",
+      "Train/validation/test partitions must not leak mission or scenario families."
+    ]
+  },
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "PENDING_CI",
+    "strix": "NOT_RUN_IN_AGENT_ENVIRONMENT",
+    "zap": "NOT_APPLICABLE_TO_DATASET_EXPORTER",
+    "notes": [
+      "The change adds no credentials, model weights, production execution privileges, or new runtime authority.",
+      "Operational export now requires an upstream evidence-admission manifest; tests exercise rejection when the independent receipt is absent."
+    ]
+  },
+  "changes": [
+    "Introduced separate VERIFIED_OPERATIONAL and SYNTHETIC_CURRICULUM exporter lanes.",
+    "Required verified receipt, human-review, or deterministic-teacher attestations for operational admission.",
+    "Marked historical GoldenTrajectoryBuilder records as SIMULATION_PSEUDO fixtures rather than production ground truth.",
+    "Moved generated synthetic curriculum shards and manifest into training/ascalon/data/curriculum/.",
+    "Replaced positional split assignment with stable SHA-256 mission-family hashing and explicit target-band semantics.",
+    "Replaced hardcoded success metrics with validator-derived quality metrics and an explicit NOT_EVALUATED replay status.",
+    "Added tests for lane isolation, independent receipt admission, deterministic reruns, and family split isolation.",
+    "Documented the dataset-lane contract and remaining production-admission requirements."
+  ],
+  "evidenceRefs": [
+    "training/ascalon/exporters/AscalonTrajectoryExporter.ts",
+    "training/ascalon/exporters/generate_datasets.ts",
+    "training/ascalon/generation/trajectory_generator/GoldenTrajectoryBuilder.ts",
+    "apps/web/factoryos/tests/ascalon/ascalon-training-readiness.test.ts",
+    "docs/ascalon/dataset-lane-admission.md",
+    "Team/reports/pr-258.json",
+    "docs/ascalon/dataset-policy.md",
+    "docs/ascalon/overseer-dataset-spec.md"
+  ],
+  "verificationPlan": [
+    "Run the dedicated Ascalon training-readiness Vitest suite.",
+    "Run FactoryOS typecheck and repository-required checks.",
+    "Execute generate_datasets.ts and inspect curriculum lane, family splits, provenance counts, and computed metrics.",
+    "Verify synthetic records cannot enter VERIFIED_OPERATIONAL exports.",
+    "Verify VERIFIED_OUTCOME is rejected unless the referenced receipt is present in an independently produced evidence manifest.",
+    "Keep model-weight training and Ascalon/AER production promotion blocked."
+  ],
+  "verificationResults": {
+    "localExecution": {
+      "status": "NOT_RUN",
+      "note": "No repository runtime/test environment was available through the GitHub file interface."
+    },
+    "pullRequestCI": {
+      "status": "PENDING",
+      "pullRequest": 258,
+      "headSha": "e0f7be64e3c16dd73429f4acfda4b053f45be012"
+    }
+  },
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "IN_PROGRESS",
+    "Forge Evaluator": "PENDING_CI",
+    "Forge Release": "PENDING_REVIEW"
+  },
+  "conflicts": [],
+  "trainingReadiness": {
+    "syntheticCurriculum": "SEPARATE_LANE_IMPLEMENTED_CI_PENDING",
+    "verifiedOperationalCorpus": "NOT_ADMITTED",
+    "evidenceManifestResolver": "NOT_IMPLEMENTED",
+    "replay": "NOT_EVALUATED",
+    "baseCheckpoint": "NOT_PINNED",
+    "modelWeights": "NOT_TRAINED",
+    "trainingJob": "NOT_DISPATCHED"
+  },
+  "notes": [
+    "The evidence-manifest sets are only trustworthy when produced by an independent upstream resolver. They must not be assembled from the trajectory's own evidence IDs.",
+    "The current Ascalon replay helper does not independently re-execute the recorded decision; the quality report now states NOT_EVALUATED rather than reporting a fabricated 100% replay rate.",
+    "The dataset split is deterministic by family. Exact 70/15/15 row counts are not promised for small or skewed sets.",
+    "No model weights were modified and no training job was dispatched.",
+    "No Guardian, Slayer, Healer, lease/fencing, F07, release, or production execution authority was changed."
+  ],
+  "disposition": "PASS"
+}
