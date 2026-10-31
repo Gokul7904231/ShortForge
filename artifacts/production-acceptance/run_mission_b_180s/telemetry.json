@@ -1,10 +1,10 @@
 {
   "runId": "run_mission_b_180s",
   "traceContext": {
-    "traceId": "aa6cf3aa9a9b29b26eed0fb59ccfe747",
-    "spanId": "69122dc551951c4f",
+    "traceId": "342eb644d0f9239ad9258ade0ea7d477",
+    "spanId": "15aae80a31b64f3b",
     "traceFlags": "01",
-    "traceparent": "00-aa6cf3aa9a9b29b26eed0fb59ccfe747-69122dc551951c4f-01"
+    "traceparent": "00-342eb644d0f9239ad9258ade0ea7d477-15aae80a31b64f3b-01"
   },
   "spans": [
     {
@@ -40,5 +40,5 @@
       "status": "OK"
     }
   ],
-  "createdAt": "2026-10-31T06:11:08.577Z"
+  "createdAt": "2026-10-31T08:55:08.365Z"
 }

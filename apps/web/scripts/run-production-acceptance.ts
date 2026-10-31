@@ -88,9 +88,10 @@ export async function executeAcceptanceRun(targetDurationSeconds: number = 60): 
   // -------------------------------------------------------------
   console.log("[Stage 3: Floor 01/02 Strategy & Scripting] Invoking Canonical TemplateProductionPipeline...");
   const pipeline = TemplateProductionPipeline.getInstance();
-  const templateDef = CANONICAL_TEMPLATES.find((t) => t.identity.id === "facts.deep-explainer.v1");
+  const templateDef = CANONICAL_TEMPLATES.find((t) => t.identity.id === "facts.deep-explainer.v2")
+    || CANONICAL_TEMPLATES.find((t) => t.identity.id === "facts.deep-explainer.v1");
   if (!templateDef) {
-    throw new Error("Canonical template facts.deep-explainer.v1 not found in registry!");
+    throw new Error("Canonical template facts.deep-explainer.v2 or v1 not found in registry!");
   }
 
   const scriptPlan = await pipeline.generateTemplateScript({
@@ -580,7 +581,7 @@ export async function executeAcceptanceRun(targetDurationSeconds: number = 60): 
         narration: s.narration_text,
         props: s.shots[0]?.props || {},
         visualIntent: "High-fidelity documentary visual",
-        claimIds: [],
+        claimIds: s.shots[0]?.props?.claim_ids || [`claim_${(idx % Math.max(1, analystReport.passport.claims.length)) + 1}`],
       })),
       claims: analystReport.passport.claims.map((c: any, idx: number) => ({
         claimId: `claim_${idx + 1}`,

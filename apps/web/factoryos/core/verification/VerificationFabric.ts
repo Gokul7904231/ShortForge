@@ -77,8 +77,8 @@ export class SileroVADAdapter {
     audioPath: string,
     options?: { minOccupancyRatio?: number; maxAllowedSilenceMs?: number }
   ): Promise<VADReport> {
-    const minOccupancy = options?.minOccupancyRatio ?? 0.60; // Require at least 60% speech occupancy
-    const maxSilence = options?.maxAllowedSilenceMs ?? 3000; // Flag silence gaps > 3.0 seconds
+    const minOccupancy = options?.minOccupancyRatio ?? 0.70; // Require at least 70% speech occupancy (Wave 7.1)
+    const maxSilence = options?.maxAllowedSilenceMs ?? 1500; // Hard limit: max silence gap <= 1.5 seconds
 
     if (!fs.existsSync(audioPath)) {
       return {
@@ -129,6 +129,11 @@ export class SileroVADAdapter {
           silenceEnds.push(parseFloat(match[1]));
         }
 
+        // If video ends during silence, ffmpeg does not log silence_end. Count trailing silence:
+        if (silenceStarts.length > silenceEnds.length && totalDurationSec > 0) {
+          silenceEnds.push(totalDurationSec);
+        }
+
         let totalSilenceSec = 0;
         let maxSilenceSec = 0;
         for (let i = 0; i < silenceEnds.length; i++) {
@@ -167,15 +172,15 @@ export class SileroVADAdapter {
         });
       });
 
-      proc.on('error', () => {
-        // Fallback for mock/test runs without ffmpeg
+      proc.on('error', (err) => {
         resolve({
-          passed: true,
-          speechDurationMs: 5000,
-          totalDurationMs: 6000,
-          speechOccupancyRatio: 0.833,
-          maxConsecutiveSilenceMs: 800,
-          speechIntervals: [{ startMs: 0, endMs: 5000, durationMs: 5000 }],
+          passed: false,
+          speechDurationMs: 0,
+          totalDurationMs: 0,
+          speechOccupancyRatio: 0,
+          maxConsecutiveSilenceMs: 0,
+          speechIntervals: [],
+          failureReason: `VAD_EXECUTION_ERROR: ffmpeg failed to execute: ${err.message}`,
         });
       });
     });
@@ -316,15 +321,16 @@ export class PySceneDetectAdapter {
         });
       });
 
-      proc.on('error', () => {
+      proc.on('error', (err) => {
         resolve({
-          passed: true,
-          detectedCuts: options?.expectedScenes ?? 4,
-          expectedScenes: options?.expectedScenes ?? 4,
-          cutTimestamps: [0, 6.7, 13.4, 20.1],
-          blackFrameDetected: false,
-          frozenFrameDetected: false,
-          visualDiversityScore: 0.95,
+          passed: false,
+          detectedCuts: 0,
+          expectedScenes: options?.expectedScenes ?? 1,
+          cutTimestamps: [],
+          blackFrameDetected: true,
+          frozenFrameDetected: true,
+          visualDiversityScore: 0.0,
+          failureReason: `SCENEDETECT_EXECUTION_ERROR: ffmpeg failed to execute: ${err.message}`,
         });
       });
     });

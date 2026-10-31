@@ -2,9 +2,9 @@
   "_type": "https://in-toto.io/Statement/v0.1",
   "subject": [
     {
-      "name": "shortforge-production-job_prod_accept_mvw01pma.mp4",
+      "name": "shortforge-production-job_prod_accept_mvw5wrsu.mp4",
       "digest": {
-        "sha256": "e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b"
+        "sha256": "d373a45063280b8f10b4c66278a19fc0615e1e89dcef95762ba1a2a6a8acf2be"
       }
     }
   ],
@@ -24,7 +24,7 @@
       },
       "parameters": {
         "runId": "run_mission_b_180s",
-        "jobId": "job_prod_accept_mvw01pma",
+        "jobId": "job_prod_accept_mvw5wrsu",
         "targetDurationSeconds": 180
       }
     },

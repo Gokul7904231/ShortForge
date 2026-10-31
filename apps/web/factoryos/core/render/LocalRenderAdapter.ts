@@ -275,6 +275,8 @@ export class LocalRenderAdapter {
         env: {
           ...process.env,
           PYTHONPATH: pythonPath,
+          PYTHONUTF8: '1',
+          PYTHONIOENCODING: 'utf-8',
         },
       });
 

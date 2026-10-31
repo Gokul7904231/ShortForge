@@ -132,6 +132,73 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
     statusReason: 'Production qualified with full native multi-scene render and SAPI/VoiceFabric audio.'
   },
 
+
+  // 1c. Facts - Deep Explainer Documentary V2 (Wave 7.1 Enhanced)
+  {
+    identity: {
+      id: 'facts.deep-explainer.v2',
+      version: '2.0.0',
+      name: 'Deep Explainer Documentary V2',
+      slug: 'deep-explainer-v2',
+      author: 'FactoryOS Core',
+      isSystem: true
+    },
+    category: 'FACTS',
+    formatFamily: 'Deep Explainer Documentary',
+    description: 'Wave 7.1 cinematic vertical documentary (60–180s) with audio-first narration pacing, full-bleed verified photography, safe-area typography, and zero dead-air gaps.',
+    tags: ['facts', 'educational', 'explainer', 'documentary', 'in-depth', 'long-form', 'wave7.1'],
+    storyStructure: [
+      { stepName: 'Hook', purpose: 'Provocative question or striking hook', shotRecipeId: 'KINETIC_HOOK', recommendedDurationSeconds: 10.0 },
+      { stepName: 'Physical Setting', purpose: 'Establish geographic and physical setting with verified imagery', shotRecipeId: 'SOURCE_CARD', recommendedDurationSeconds: 18.0 },
+      { stepName: 'Core Mechanics', purpose: 'In-depth mechanical and scientific breakdown', shotRecipeId: 'IMAGE_WITH_CAPTION', recommendedDurationSeconds: 19.0 },
+      { stepName: 'Record Scale', purpose: 'Primary statistical and numerical metric comparison', shotRecipeId: 'BIG_NUMBER', recommendedDurationSeconds: 17.0 },
+      { stepName: 'Comparative Analysis', purpose: 'Comparative scale against benchmark phenomena', shotRecipeId: 'STAT', recommendedDurationSeconds: 17.0 },
+      { stepName: 'Exploration Chronology', purpose: 'Discovery milestone or timeline build', shotRecipeId: 'TIMELINE_BUILD', recommendedDurationSeconds: 18.0 },
+      { stepName: 'Evidence & Citation', purpose: 'Direct observational quote and research citation', shotRecipeId: 'QUOTE_CARD', recommendedDurationSeconds: 17.0 },
+      { stepName: 'Scientific Frontier', purpose: 'Current scientific frontier and hadal organism discovery', shotRecipeId: 'FULL_BLEED_IMAGE', recommendedDurationSeconds: 18.0 },
+      { stepName: 'Synthesis & Outro', purpose: 'Summary and engagement call to action', shotRecipeId: 'OUTRO_CTA', recommendedDurationSeconds: 10.0 }
+    ],
+    inputContract: {
+      variables: [
+        { name: 'topic', type: 'string', label: 'Topic / Subject', required: true, description: 'Educational subject of the documentary' },
+        { name: 'targetDuration', type: 'number', label: 'Target Duration Seconds', required: false, default: 180, description: 'Duration between 60 and 180 seconds' }
+      ],
+      promptSeed: 'Construct a comprehensive 60-180 second deep-explainer documentary analyzing {topic} with continuous narration, full-bleed imagery, and rigorous scientific claims.'
+    },
+    visualPolicy: {
+      colorPalette: ['#0A0E1A', '#131B2E', '#38BDF8', '#6366F1', '#F8FAFC'],
+      typography: { headerFont: 'Inter-Black', bodyFont: 'Inter-SemiBold', accentColor: '#38BDF8' },
+      motionIntensity: 'MEDIUM'
+    },
+    captionPolicy: {
+      style: 'CinematicSubtitles',
+      defaultPosition: 'LOWER_THIRD',
+      maxWordsPerLine: 5,
+      highlightColor: '#38BDF8'
+    },
+    voicePolicy: {
+      paceMultiplier: 1.0,
+      tone: 'calm, authoritative, documentary cadence',
+      suggestedVoices: ['en-US-Neural2-D', 'en-US-Journey-D']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.9, maxRateMultiplier: 1.1, pausePolicy: 'CONTROLLED' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
+    },
+    outputPolicy: {
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      targetDurationRange: [60, 180]
+    },
+    capabilityStatus: 'READY',
+    statusReason: 'Production qualified Wave 7.1 with audio-first timeline and full-bleed image rendering.'
+  },
+
   // 2. History - Timeline Documentary
   {
     identity: {

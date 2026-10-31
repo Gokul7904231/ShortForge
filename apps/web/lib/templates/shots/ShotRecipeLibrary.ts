@@ -59,7 +59,15 @@ export const SHOT_RECIPES: Record<ShotRecipeId, ShotRecipeContract> = {
       textAnimation: 'COUNT_UP',
       cameraMotion: 'NONE'
     },
-    assetRequirements: [],
+    assetRequirements: [
+      {
+        role: 'primaryBackground',
+        type: 'IMAGE',
+        optional: false,
+        queryTemplate: '{headline} {label}',
+        semanticFallback: 'dark_gradient'
+      }
+    ],
     captionBehavior: { mode: 'MINIMAL', position: 'LOWER_THIRD' },
     fallbackRecipeId: 'STAT'
   },
@@ -214,7 +222,15 @@ export const SHOT_RECIPES: Record<ShotRecipeId, ShotRecipeContract> = {
       exitTransition: 'SLIDE_RIGHT',
       textAnimation: 'FADE_IN'
     },
-    assetRequirements: [],
+    assetRequirements: [
+      {
+        role: 'primaryBackground',
+        type: 'IMAGE',
+        optional: false,
+        queryTemplate: '{headline}',
+        semanticFallback: 'dark_gradient'
+      }
+    ],
     captionBehavior: { mode: 'WORD_HIGHLIGHT', position: 'LOWER_THIRD' }
   },
 
@@ -394,7 +410,15 @@ export const SHOT_RECIPES: Record<ShotRecipeId, ShotRecipeContract> = {
       enterTransition: 'FADE_IN',
       exitTransition: 'FADE_OUT'
     },
-    assetRequirements: [],
+    assetRequirements: [
+      {
+        role: 'primaryBackground',
+        type: 'IMAGE',
+        optional: false,
+        queryTemplate: '{headline} ocean research',
+        semanticFallback: 'dark_gradient'
+      }
+    ],
     captionBehavior: { mode: 'MINIMAL', position: 'LOWER_THIRD' }
   },
 
@@ -690,7 +714,15 @@ export const SHOT_RECIPES: Record<ShotRecipeId, ShotRecipeContract> = {
       exitTransition: 'FADE_OUT',
       textAnimation: 'PULSE_GLOW'
     },
-    assetRequirements: [],
+    assetRequirements: [
+      {
+        role: 'primaryBackground',
+        type: 'IMAGE',
+        optional: false,
+        queryTemplate: 'deep ocean abyss darkness',
+        semanticFallback: 'dark_gradient'
+      }
+    ],
     captionBehavior: { mode: 'MINIMAL', position: 'LOWER_THIRD' }
   }
 };

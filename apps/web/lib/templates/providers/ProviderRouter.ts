@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { ProviderType, AssetRequirement } from '../schemas/TemplateSchema';
 import * as crypto from 'crypto';
 
@@ -56,19 +58,32 @@ export class WikimediaAdapter implements IProviderAdapter {
       ? requirement.queryTemplate.replace(/\{(\w+)\}/g, (_, k) => context[k] || '')
       : (context.topic || context.headline || 'nature');
 
-    const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(query)}&gsrlimit=1&prop=imageinfo&iiprop=url|size|extmetadata`;
+    const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(query + ' filetype:bitmap')}&gsrlimit=5&prop=imageinfo&iiprop=url|size|extmetadata`;
 
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'ShortForge/2.0 (https://shortforge.ai; contact@shortforge.ai)' },
+        signal: AbortSignal.timeout(4000)
+      });
       if (!res.ok) return null;
       const data = await res.json();
       const pages = data?.query?.pages || {};
-      const firstKey = Object.keys(pages)[0];
-      if (!firstKey || firstKey === '-1') return null;
-
-      const page = pages[firstKey];
-      const info = page?.imageinfo?.[0];
-      if (!info?.url) return null;
+      
+      let page: any = null;
+      let info: any = null;
+      for (const k of Object.keys(pages)) {
+        const candPage = pages[k];
+        const candInfo = candPage?.imageinfo?.[0];
+        if (candInfo?.url) {
+          const lower = candInfo.url.toLowerCase();
+          if (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp')) {
+            page = candPage;
+            info = candInfo;
+            break;
+          }
+        }
+      }
+      if (!page || !info) return null;
 
       const ext = info.extmetadata || {};
       const artist = (ext.Artist?.value || 'Wikimedia Commons Contributor').replace(/<[^>]*>/g, '').trim();
@@ -115,6 +130,86 @@ export class WikimediaAdapter implements IProviderAdapter {
  * 2. FlagCDN Adapter (FREE_NO_KEY, OPEN_SOURCE)
  * Canonical ISO-3166 high-res country flags
  */
+
+/**
+ * 1b. Openverse Adapter (FREE_NO_KEY, OPEN_SOURCE)
+ * Searches Creative Commons & Openverse indexed media
+ */
+export class OpenverseAdapter implements IProviderAdapter {
+  id = 'openverse';
+  name = 'Openverse Creative Commons';
+  supportedTypes: ProviderType[] = ['IMAGE'];
+  capabilityTier: ProviderCapabilityTier = 'FREE_NO_KEY';
+
+  async resolve(requirement: AssetRequirement, context: Record<string, any>): Promise<ResolvedAsset | null> {
+    const query = requirement.queryTemplate 
+      ? requirement.queryTemplate.replace(/\{(\w+)\}/g, (_, k) => context[k] || '')
+      : (context.topic || context.headline || 'ocean underwater');
+
+    const url = `https://api.openverse.engineering/v1/images/?q=${encodeURIComponent(query)}&page_size=1`;
+
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': 'ShortForge/1.0 (video-production)' } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const item = data?.results?.[0];
+      if (!item?.url) return null;
+
+      let localPath = item.url;
+      let physicalSha256 = crypto.createHash('sha256').update(item.url).digest('hex');
+
+      try {
+        const imgRes = await fetch(item.url, { headers: { 'User-Agent': 'ShortForge/1.0' } });
+        if (imgRes.ok) {
+          const buffer = Buffer.from(await imgRes.arrayBuffer());
+          if (buffer.length > 500) {
+            physicalSha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+            const cacheDir = path.resolve(process.cwd(), 'data', 'visual-assets-cache');
+            if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+            const ext = item.url.toLowerCase().includes('.png') ? '.png' : '.jpg';
+            localPath = path.join(cacheDir, `${physicalSha256}${ext}`);
+            fs.writeFileSync(localPath, buffer);
+          }
+        }
+      } catch (err) {
+        console.warn('[OpenverseAdapter] Download buffer error:', err);
+      }
+
+      const license = item.license ? String(item.license).toUpperCase() : 'CC-BY';
+      return {
+        assetId: `openverse_${item.id || physicalSha256.slice(0, 8)}`,
+        role: requirement.role,
+        type: 'IMAGE',
+        uri: localPath,
+        provenance: {
+          provider: this.id,
+          providerAssetId: String(item.id || 'unknown'),
+          sourceUrl: item.foreign_landing_url || 'https://openverse.org',
+          creator: item.creator || 'Openverse Contributor',
+          license: license,
+          rightsStatus: ['CC0', 'PDM', 'PUBLIC DOMAIN'].includes(license) ? 'PUBLIC_DOMAIN' : 'CREATIVE_COMMONS',
+          retrievedAt: new Date().toISOString(),
+          sha256: physicalSha256,
+          mimeType: 'image/jpeg',
+          dimensions: { width: item.width || 1080, height: item.height || 1920 }
+        },
+        isFallback: false
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async health(): Promise<{ healthy: boolean; details?: string }> {
+    try {
+      const res = await fetch('https://api.openverse.engineering/v1/', { method: 'HEAD' });
+      return { healthy: res.ok, details: res.ok ? 'Openverse API reachable' : 'HTTP error' };
+    } catch (e: any) {
+      return { healthy: false, details: e?.message || 'Network unreachable' };
+    }
+  }
+}
+
 export class FlagCdnAdapter implements IProviderAdapter {
   id = 'flagcdn';
   name = 'FlagCDN Canonical Flags';
@@ -376,6 +471,7 @@ export class ProviderRouter {
 
   private constructor() {
     this.registerAdapter(new WikimediaAdapter());
+    this.registerAdapter(new OpenverseAdapter());
     this.registerAdapter(new FlagCdnAdapter());
     this.registerAdapter(new SimpleIconsAdapter());
     this.registerAdapter(new DeterministicCodeAdapter());

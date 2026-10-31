@@ -1,18 +1,18 @@
 {
   "runId": "run_mission_b_180s",
-  "missionId": "mis_prod_accept_mvw01pma",
-  "jobId": "job_prod_accept_mvw01pma",
+  "missionId": "mis_prod_accept_mvw5wrsu",
+  "jobId": "job_prod_accept_mvw5wrsu",
   "topic": "Mariana Trench: The Ocean's Deepest Abyss",
-  "templateId": "facts.deep-explainer.v1",
+  "templateId": "facts.deep-explainer.v2",
   "targetDurationSeconds": 180,
-  "physicalDurationSeconds": 180.04644,
-  "durationDifferencePercent": 0.03,
+  "physicalDurationSeconds": 163.229427,
+  "durationDifferencePercent": 9.32,
   "durationPassed": true,
   "mp4Artifact": {
-    "fileName": "shortforge-production-job_prod_accept_mvw01pma.mp4",
-    "localPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-verification-fabric\\artifacts\\production-demo\\shortforge-production-job_prod_accept_mvw01pma.mp4",
-    "sha256": "e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b",
-    "byteSize": 4161933,
+    "fileName": "shortforge-production-job_prod_accept_mvw5wrsu.mp4",
+    "localPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-quality-remediation\\artifacts\\production-demo\\shortforge-production-job_prod_accept_mvw5wrsu.mp4",
+    "sha256": "d373a45063280b8f10b4c66278a19fc0615e1e89dcef95762ba1a2a6a8acf2be",
+    "byteSize": 6029190,
     "geometry": "1080x1920 (9:16)",
     "fps": 30
   },
@@ -24,5 +24,5 @@
     "gpuModel": "NVIDIA GeForce RTX 3050 Laptop GPU (LocalComputeProvider)",
     "platform": "win32"
   },
-  "createdAt": "2026-10-31T06:11:08.568Z"
+  "createdAt": "2026-10-31T08:55:08.363Z"
 }

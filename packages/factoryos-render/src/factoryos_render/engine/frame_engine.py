@@ -106,6 +106,7 @@ class FrameEngine:
                 "narration_text": scene.narration_text,
                 "background": scene.background,
                 "transparent": transparent,
+                "image_path": getattr(scene, "image_path", None) or getattr(scene, "assetPath", None),
             },
             shot_recipe=shot.recipe_id,
             shot_props=props,

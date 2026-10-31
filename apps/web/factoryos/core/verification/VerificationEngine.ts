@@ -13,6 +13,7 @@ import { MissionEvidence } from "../contracts/EvidenceContracts";
 import type { RenderArtifact } from "../contracts/RenderIntentContracts";
 import { ArtifactResolver, ResolvedArtifact } from "../rendering/ArtifactResolver";
 import { DurationEngine, DurationContract } from "../contracts/DurationContract";
+import { SileroVADAdapter } from "./VerificationFabric";
 
 export interface MediaProbeMeasurements {
   readonly fileExists: boolean;
@@ -503,9 +504,27 @@ export class VerificationEngine {
     const audioVideoSyncValid = m.syncDriftMs <= 1000;
     const decodeSmokePassed = m.decodeSmokePassed;
 
-    // Strict physical speech and silence verification
+    // Strict physical speech and silence verification (SileroVAD & Volume)
     const requireAudibleSpeech = params.requireAudibleSpeech ?? (Boolean(params.scriptText) || (params.sceneCount !== undefined && params.sceneCount > 1));
     const audioNotSilent = !m.audioSilenceDetected && (m.audioMaxVolumeDb ?? -91.0) > -40.0;
+
+    let vadReport: any = null;
+    let vadCheckPassed = true;
+    if (m.fileExists && audioStreamPresent && requireAudibleSpeech) {
+      try {
+        vadReport = await SileroVADAdapter.analyzeVoiceActivity(localFilePath, {
+          minOccupancyRatio: 0.70,
+          maxAllowedSilenceMs: 3000,
+        });
+        if (!vadReport.passed) {
+          vadCheckPassed = false;
+          failures.push(vadReport.failureReason || "VAD_SPEECH_OCCUPANCY_OR_SILENCE_FAILED");
+        }
+      } catch (err: any) {
+        vadCheckPassed = false;
+        failures.push(`VAD analysis execution failed: ${err.message}`);
+      }
+    }
 
     // Visual Frame Diversity Check
     let visualFramesDiverse = true;
@@ -574,7 +593,7 @@ export class VerificationEngine {
       durationWithinBounds &&
       audioVideoSyncValid &&
       decodeSmokePassed &&
-      (requireAudibleSpeech ? audioNotSilent : true) &&
+      (requireAudibleSpeech ? (audioNotSilent && vadCheckPassed) : true) &&
       visualFramesDiverse;
 
     // 4. Dimensional Verification
@@ -646,6 +665,9 @@ export class VerificationEngine {
       durationWithinBounds,
       audioVideoSyncValid,
       decodeSmokePassed,
+      vadSpeechContinuity: vadCheckPassed,
+      maxConsecutiveSilenceMs: vadReport?.maxConsecutiveSilenceMs ?? 0,
+      speechOccupancyRatio: vadReport?.speechOccupancyRatio ?? 0,
     };
 
     const layers = {

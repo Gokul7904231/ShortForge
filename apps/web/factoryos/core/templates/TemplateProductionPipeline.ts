@@ -137,9 +137,12 @@ export class TemplateProductionPipeline {
     // Explicit Creator Target > Strategy > Template Default.
     // Requests >= 60s for rapid-facts are automatically routed to facts.deep-explainer.v1.
     const requestedTargetDuration = Number(userInputs.targetDuration || userInputs.duration || 0);
-    const resolvedTemplateId = (templateId === 'facts.rapid-facts.v1' && requestedTargetDuration >= 60)
-      ? 'facts.deep-explainer.v1'
-      : templateId;
+    let resolvedTemplateId = templateId;
+    if (templateId === 'facts.rapid-facts.v1' && requestedTargetDuration >= 60) {
+      resolvedTemplateId = 'facts.deep-explainer.v2';
+    } else if (templateId === 'facts.deep-explainer.v1') {
+      resolvedTemplateId = 'facts.deep-explainer.v2';
+    }
 
     if (resolvedTemplateId === 'facts.rapid-facts.v1') {
       const factCount = Math.max(3, Math.min(5, Number(userInputs.factCount || 3)));
@@ -256,7 +259,7 @@ export class TemplateProductionPipeline {
         durationSeconds: 3.0,
         props: { cta: 'DROP YOUR THOUGHTS', subtitle: cta }
       });
-    } else if (resolvedTemplateId === 'facts.deep-explainer.v1') {
+    } else if (resolvedTemplateId === 'facts.deep-explainer.v2' || resolvedTemplateId === 'facts.deep-explainer.v1') {
       const targetSec = Math.max(60, Math.min(180, requestedTargetDuration || 60));
       title = `${topic}: The Deep Scientific Explainer`;
       hook = `What lies at the absolute extremes of ${topic}?`;
@@ -284,29 +287,33 @@ export class TemplateProductionPipeline {
       const budgetMap = new Map(budgets.map((b) => [b.beatId, b]));
 
       const rawNarrations: Record<string, string> = {
-        beat_01_hook: `${hook} Today, we explore the definitive evidence.`,
+        beat_01_hook: targetSec >= 120
+          ? `What lies at the absolute extremes of ${topic}? Beneath eleven kilometers of crushing black ocean water rests the most extreme geological frontier on our planet. Today, we examine the definitive scientific evidence that reshapes our understanding of life.`
+          : `What lies at the absolute extremes of ${topic}? Beneath eleven kilometers of crushing ocean water rests Earth's deepest unexplored frontier. Today, we examine the definitive evidence.`,
         beat_02_context: targetSec >= 120
-          ? `To comprehend ${topic}, we must first examine the physical setting. Descending beneath the planetary threshold, ${topic} creates an environment where sunlight disappears completely, plunging the hadal zone into perpetual freezing darkness.`
-          : `To comprehend ${topic}, we must examine the setting. Sunlight disappears completely here.`,
+          ? `To comprehend ${topic}, we must first map its planetary scale. Stretching across twenty-five hundred kilometers in the western North Pacific, this crescent-shaped oceanic scar plunges past the twilight and abyssal zones straight into the perpetual freezing darkness of the hadal realm.`
+          : `To comprehend ${topic}, we map its planetary scale. Stretching across twenty-five hundred kilometers, this massive oceanic chasm plunges straight into the perpetual freezing darkness of the hadal realm.`,
         beat_03_mechanics: targetSec >= 120
-          ? `The fundamental mechanics govern how energy and matter interact here. Hydrostatic pressure reaches crushing levels exceeding one thousand atmospheres, warping metal alloys and compressing molecular structures.`
-          : `Fundamental mechanics govern how energy interacts here. Pressure reaches over one thousand atmospheres.`,
+          ? `Fundamental plate tectonics dictate the extraordinary physics here. The dense, ancient Pacific Plate subducts relentlessly beneath the smaller Mariana Plate, dragging the seabed downward into the Earth's mantle and driving immense geothermal and gravitational energy transfer across the ocean floor.`
+          : `Fundamental plate tectonics dictate the physics here. The dense Pacific Plate subducts beneath the Mariana Plate, dragging the seabed down and driving immense energy transfer.`,
         beat_04_bignum: targetSec >= 120
-          ? `The primary metric defining this domain is sheer vertical scale: nearly eleven thousand meters beneath the ocean surface, deeper than Mount Everest is tall.`
-          : `The primary metric is sheer scale: nearly eleven thousand meters beneath the surface.`,
+          ? `The defining measurement of this abyss is its unfathomable vertical scale. At Challenger Deep, the seafloor drops nearly eleven thousand meters below the surface. If Mount Everest were set inside this chasm, its highest summit would remain submerged beneath more than two kilometers of seawater.`
+          : `The defining measurement is vertical scale: nearly eleven thousand meters below the surface. If Mount Everest were placed inside, its summit would sit submerged beneath two kilometers of water.`,
         beat_05_compstat: targetSec >= 120
-          ? `At over one thousand atmospheres, this hydrostatic load exerts more force than the weight of fifty jumbo jets concentrated on a single square inch.`
-          : `At over one thousand atmospheres, this load exerts crushing force across every square inch.`,
+          ? `At eleven thousand meters, hydrostatic pressure exceeds one thousand atmospheres, or more than eight tons per square inch. This colossal force is equivalent to fifty jumbo aircraft stacked upon an individual human body, yet specialized deep-sea organisms endure it effortlessly without collapsing.`
+          : `At eleven thousand meters, hydrostatic pressure exceeds one thousand atmospheres. That crushing force equals fifty jumbo aircraft resting upon an individual human body.`,
         beat_06_timeline: targetSec >= 120
-          ? `From pioneering bathyscaphe expeditions in the nineteen-sixties to modern autonomous robotic probes, each successive exploration epoch unveiled unexpected physical discoveries.`
-          : `From pioneering bathyscaphes to modern autonomous robotic probes, each epoch unveiled new discoveries.`,
+          ? `Humanity's journey to this abyss spans decades of pioneering engineering courage. From Jacques Piccard and Don Walsh descending in the bathyscaphe Trieste in nineteen sixty, to modern autonomous submersibles, each historic expedition reveals unexpected geologic and hydrothermal activity.`
+          : `Humanity's journey spans decades of engineering courage. From the bathyscaphe Trieste in nineteen sixty to modern autonomous submersibles, each mission reveals new physical discoveries.`,
         beat_07_quote: targetSec >= 120
-          ? `Chief deep-sea researchers recorded: "The abyssal zone is not a barren desert; it is an active alien ecosystem thriving on our own home planet."`
-          : `Chief researchers recorded: "The abyssal zone is an active alien ecosystem on our planet."`,
+          ? `Deep-sea oceanographers documented astonishing biological discoveries: the abyssal depths do not represent a barren desert, but a thriving biological biosphere sustained by barophilic bacteria, chemotrophic nutrients, and previously unknown piezolyte cellular adaptations that protect fragile proteins.`
+          : `Marine researchers recorded that the abyssal depths are not a barren desert, but an active alien biosphere sustained by barophilic organisms and pressure-adapted enzymes.`,
         beat_08_frontier: targetSec >= 120
-          ? `Modern genomic sequencing of organisms from ${topic} continues to yield novel enzymatic pathways for medicine, bioscience, and metabolic engineering.`
-          : `Genomic sequencing of organisms from ${topic} yields novel enzymatic pathways for bioscience.`,
-        beat_09_outro: cta,
+          ? `Today, advanced genetic sequencing of hadal amphipods and Mariana snailfish is unlocking entirely new frontiers in molecular biology. Enzymes stabilized by trimethylamine oxide offer revolutionary pathways for pharmaceutical development, cellular longevity, and industrial biocatalysis under extreme stress.`
+          : `Genetic sequencing of hadal organisms unlocks revolutionary frontiers in molecular biology. Unique piezolyte enzymes offer promising pathways for medicine and industrial biocatalysis.`,
+        beat_09_outro: targetSec >= 120
+          ? `${topic} reminds us that the greatest unexplored frontiers lie right here on Earth. Follow ShortForge for rigorous, evidence-backed scientific documentaries delivered daily to your feed.`
+          : `The greatest unexplored frontiers lie hidden in the deep ocean. Subscribe to ShortForge for rigorous, evidence-backed scientific documentaries delivered daily to your feed.`,
       };
 
       for (const def of beatDefinitions) {
@@ -839,11 +846,34 @@ export class TemplateProductionPipeline {
         background_type: this.resolveBackgroundPalette(templateDef.category),
       };
 
-      // If an asset was resolved, attach its physical path to props
+      // If an asset was resolved, attach its physical path to props (downloading remote URLs if necessary)
       if (resolvedAssets.length > 0) {
         const primary = resolvedAssets[0];
         if (primary.uri && fs.existsSync(primary.uri)) {
           props.image_path = primary.uri;
+        } else if (primary.uri && (primary.uri.startsWith('http://') || primary.uri.startsWith('https://'))) {
+          try {
+            const cacheDir = path.resolve(process.cwd(), 'data', 'visual-assets-cache');
+            if (!fs.existsSync(cacheDir)) {
+              fs.mkdirSync(cacheDir, { recursive: true });
+            }
+            const res = await fetch(primary.uri, {
+              headers: { 'User-Agent': 'ShortForge/2.0 (https://shortforge.ai; contact@shortforge.ai)' },
+              signal: AbortSignal.timeout(4000),
+            });
+            if (res.ok) {
+              const buf = Buffer.from(await res.arrayBuffer());
+              const sha = crypto.createHash('sha256').update(buf).digest('hex');
+              const ext = primary.uri.includes('.png') ? 'png' : 'jpg';
+              const localPath = path.join(cacheDir, `${sha}.${ext}`);
+              if (!fs.existsSync(localPath)) {
+                fs.writeFileSync(localPath, buf);
+              }
+              props.image_path = localPath;
+            }
+          } catch (dlErr) {
+            console.warn(`[planScenes] Image download failed for ${primary.uri}:`, dlErr);
+          }
         } else if (primary.content) {
           const tempAssetDir = path.resolve(process.cwd(), 'data', 'temp_assets');
           if (!fs.existsSync(tempAssetDir)) {
@@ -965,31 +995,65 @@ export class TemplateProductionPipeline {
     const outPath = outputPath || path.join(process.cwd(), 'data', 'renders', `${jobId}.mp4`);
     const totalScenes = scenePlans.length;
 
-    // Physical audio duration truth: if voiceArtifact duration is provided, distribute scene durations proportionally
-    const voiceDuration = voiceArtifact?.durationSeconds;
-    let distributedDurations: number[] = [];
+    // Audio-First timeline calculation
+    // When sceneVoiceArtifacts are provided, each scene's duration is determined by its voice duration + natural transition gap (0.35s)
+    const transitionGap = 0.35;
+    const sceneDurations: number[] = [];
+    const hasSceneVoices = Boolean(
+      params.sceneVoiceArtifacts && Object.keys(params.sceneVoiceArtifacts).length > 0
+    );
 
-    if (voiceDuration && voiceDuration > 0) {
+    if (hasSceneVoices) {
+      // 1. Raw speech duration + transition gap per scene
+      const rawDurations = scenePlans.map((scene) => {
+        const sceneVoice = params.sceneVoiceArtifacts?.[scene.sceneId] || params.sceneVoiceArtifacts?.[scene.beatId];
+        const vDur = sceneVoice && sceneVoice.durationSeconds > 0 ? sceneVoice.durationSeconds : scene.durationIntent.target;
+        return Number((vDur + transitionGap).toFixed(2));
+      });
+
+      const totalSpeechPlusGap = rawDurations.reduce((a, b) => a + b, 0);
+      const targetSec = scenePlans.reduce((sum, s) => sum + s.durationIntent.target, 0);
+
+      // If speech duration is within 25% of targetSec, distribute delta evenly as subtle visual holds (capped at 1.0s)
+      const remainingDelta = targetSec > totalSpeechPlusGap ? (targetSec - totalSpeechPlusGap) : 0;
+      const maxDeltaPerScene = 1.0;
+      const perSceneDelta = remainingDelta > 0
+        ? Math.min(maxDeltaPerScene, remainingDelta / totalScenes)
+        : 0;
+
+      for (let i = 0; i < totalScenes; i++) {
+        sceneDurations.push(Number((rawDurations[i] + perSceneDelta).toFixed(2)));
+      }
+
+      // Reconcile rounding difference across middle scenes so no single scene gets bloated
+      const currentSum = sceneDurations.reduce((a, b) => a + b, 0);
+      let residual = Number((targetSec - currentSum).toFixed(2));
+      if (residual > 0 && sceneDurations.length > 2) {
+        for (let i = 1; i < sceneDurations.length - 1 && residual > 0.04; i++) {
+          const step = Math.min(0.1, residual);
+          sceneDurations[i] = Number((sceneDurations[i] + step).toFixed(2));
+          residual = Number((residual - step).toFixed(2));
+        }
+      }
+    } else if (voiceArtifact?.durationSeconds && voiceArtifact.durationSeconds > 0) {
+      const voiceDuration = voiceArtifact.durationSeconds;
       const sumTargets = scenePlans.reduce((acc, s) => acc + s.durationIntent.target, 0);
       const ratio = voiceDuration / Math.max(1, sumTargets);
-      distributedDurations = scenePlans.map((s) => Number((s.durationIntent.target * ratio).toFixed(2)));
-      // Ensure sum matches voiceDuration exactly
-      const sumDist = distributedDurations.reduce((a, b) => a + b, 0);
+      const dist = scenePlans.map((s) => Number((s.durationIntent.target * ratio).toFixed(2)));
+      const sumDist = dist.reduce((a, b) => a + b, 0);
       const diff = Number((voiceDuration - sumDist).toFixed(2));
-      if (distributedDurations.length > 0) {
-        distributedDurations[distributedDurations.length - 1] += diff;
+      if (dist.length > 0) {
+        dist[dist.length - 1] += diff;
       }
+      sceneDurations.push(...dist);
     } else {
-      distributedDurations = scenePlans.map((s) => s.durationIntent.target);
+      sceneDurations.push(...scenePlans.map((s) => s.durationIntent.target));
     }
 
     let currentOffset = 0;
     const localScenes: LocalRenderSceneIntent[] = scenePlans.map((scene, idx) => {
-      let dur = Math.max(1.0, distributedDurations[idx] || 3.0);
+      const dur = Math.max(1.0, sceneDurations[idx] || 3.0);
       const sceneVoice = params.sceneVoiceArtifacts?.[scene.sceneId] || params.sceneVoiceArtifacts?.[scene.beatId];
-      if (sceneVoice && sceneVoice.durationSeconds > 0) {
-        dur = Math.max(dur, Number((sceneVoice.durationSeconds + 0.4).toFixed(2)));
-      }
       const startSec = currentOffset;
       currentOffset += dur;
 

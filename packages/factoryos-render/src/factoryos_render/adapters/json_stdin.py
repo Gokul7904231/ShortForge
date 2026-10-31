@@ -14,6 +14,13 @@ from ..diagnostics.doctor import SystemDoctor
 class JsonAdapter:
     def __init__(self, renderer: Renderer):
         self.renderer = renderer
+        if hasattr(sys.stdin, "reconfigure"):
+            try:
+                sys.stdin.reconfigure(encoding="utf-8")
+                sys.stdout.reconfigure(encoding="utf-8")
+                sys.stderr.reconfigure(encoding="utf-8")
+            except Exception:
+                pass
 
     def process_stdin(self) -> None:
         try:
@@ -77,7 +84,7 @@ class JsonAdapter:
             "status": "COMPLETED",
             **data
         }
-        sys.stdout.write(json.dumps(payload) + "\n")
+        sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
         sys.stdout.flush()
 
     def _send_error(self, code: str, message: str, request_id: str = "req_unknown") -> None:
@@ -91,5 +98,5 @@ class JsonAdapter:
                 "retryable": False
             }
         }
-        sys.stdout.write(json.dumps(payload) + "\n")
+        sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
         sys.stdout.flush()
