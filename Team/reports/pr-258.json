@@ -72,8 +72,7 @@
     },
     "pullRequestCI": {
       "status": "PENDING",
-      "pullRequest": 258,
-      "headSha": "PENDING_BRANCH_UPDATE"
+      "pullRequest": 258
     }
   },
   "forgers": {
