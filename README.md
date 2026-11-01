@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="assets/branding/logo.png">
+  <a href="https://shortforge.gokul.software/">
     <img src="assets/branding/logo.png" alt="ShortForge Logo" width="96" />
   </a>
 </p>
