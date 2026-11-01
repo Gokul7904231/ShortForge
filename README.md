@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://shortforge.gokul.software/">
+  <a href="https://kommodo.ai/i/WCF405NiQ1FyxzBdLT39">
     <img src="https://kommodo.ai/i/WCF405NiQ1FyxzBdLT39" alt="ShortForge Logo" width="96" />
   </a>
 </p>
