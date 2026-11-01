@@ -41,7 +41,7 @@ ShortForge treats video production as a **manufacturing plant, not an API wrappe
 - **Fault isolation and bounded repair** — broken stages heal locally with bounded budgets; the last-known-good baseline is never overwritten by an unverified candidate.
 - **Economic governance** — every stage is admitted against a token economy so autonomous generation cannot run away with compute spend.
 
-ShortForge is still actively improving — every day brings new floors, gates, adapters, and verified evidence.
+ShortForge is still actively improving — every day brings new Reliable systems, gates, adapters, verified evidence and Improving along with the world.
 
 ---
 
