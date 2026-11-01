@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR261-ReadmeRewrite",
+  "pullRequest": 261,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "readme-rewrite",
+  "objective": "Rewrite ShortForge README as detailed, production-grade project documentation covering architecture, 7 floors, F07 gates, stack matrix, quickstart, and STRIDE security model.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      "README.md"
+    ],
+    "machineSweep": {
+      "artifact": "okf-sweep.json",
+      "bindingMode": "CI_COMPILED_ARTIFACT",
+      "sweepStatus": "COMPLETE",
+      "relevantRules": [
+        "OKF.GOVERNANCE.TEAM_GATE",
+        "OKF.PRINCIPLE.CLAIM_EVIDENCE"
+      ]
+    }
+  },
+  "forgers": [
+    "Forge Architect",
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Evaluator",
+    "Forge Release"
+  ],
+  "security": {
+    "required": false,
+    "status": "TRIAGED",
+    "notes": "Documentation-only update to README.md. No runtime or executable code modified."
+  },
+  "conflicts": [],
+  "changes": [
+    "Rewrote README.md as detailed professional project documentation with executive summary, 7-floor assembly line, F07 release gates, compute fabric, quickstart guides, and STRIDE security threat model."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/pull/261"
+  ],
+  "disposition": "PASS",
+  "overallMissionStatus": "IMPLEMENTED_TEST_VERIFIED",
+  "verificationPlan": [
+    "Markdown formatting and relative link checks pass."
+  ]
+}
