@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://drive.google.com/file/d/10BDXGDvHJ76A06qoTD4JKTYoRIAOFzwh/view?usp=sharing">
-    <img src="https://drive.google.com/file/d/10BDXGDvHJ76A06qoTD4JKTYoRIAOFzwh/view?usp=sharing" alt="ShortForge Logo" width="96" />
+  <a href="assets/branding/logo.png">
+    <img src="assets/branding/logo.png" alt="ShortForge Logo" width="96" />
   </a>
 </p>
 <p align="center">
