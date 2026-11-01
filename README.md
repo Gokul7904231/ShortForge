@@ -343,5 +343,5 @@ ShortForge is MIT licensed — see [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  <b>ShortForge</b> — engineered with Evolving future of AI.
+  <b>ShortForge</b> — engineering with Evolving future of AI.
 </p>
