@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://shortforge.gokul.software/">
-    <img src="assets/branding/logo.png" alt="ShortForge Logo" width="96" />
+    <img src="https://raw.githubusercontent.com/Gokul7904231/ShortForge/main/apps/web/public/favicon-white.png" alt="ShortForge Logo" width="96" />
   </a>
 </p>
 <p align="center">
