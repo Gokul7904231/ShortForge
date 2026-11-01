@@ -6,7 +6,7 @@
   "baseRef": "main",
   "headRef": "readme-rewrite",
   "objective": "Rewrite ShortForge README as detailed, production-grade project documentation covering architecture, 7 floors, F07 gates, stack matrix, quickstart, and STRIDE security model.",
-  "classification": "documentation",
+  "classification": "extends existing rule",
   "linkedIssues": [],
   "okf": {
     "sweepStatus": "COMPLETE",
