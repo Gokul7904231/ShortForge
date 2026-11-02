@@ -84,6 +84,7 @@ temp/
 !**/public/*.jpg
 !**/public/*.svg
 !**/public/avatars/*.png
+!assets/**
 
 # generated test databases & renders
 data/renders/
@@ -151,3 +152,12 @@ controller-output/
 services/pipeline/floor01_strategy/data/*.json
 services/pipeline/floor01_strategy/data/*.lock
 services/pipeline/floor01_strategy/used_artifact/
+
+# vendored external template repositories (nested git checkouts)
+vendor/
+
+# local tooling virtualenv
+production-helper/.venv/
+
+# runtime lock for the floor03 asset memory store
+**/asset_memory.lock
