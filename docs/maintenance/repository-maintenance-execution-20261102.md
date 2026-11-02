@@ -100,7 +100,8 @@ No broad pattern hides source code.
 
 `docs/maintenance/branch-inventory.md`, `pr-inventory.md`,
 `github-integration-ledger.md`, `duplicate-work-analysis.md`,
-`branch-cleanup-candidates.md`, `pr-merge-readiness.md`.
+`branch-cleanup-candidates.md`, `pr-merge-readiness.md`
+(committed locally as `37fd9c27`).
 All built from live PR/check data; protection policy is recorded as unverified.
 
 ## 8. Duplicate PR findings

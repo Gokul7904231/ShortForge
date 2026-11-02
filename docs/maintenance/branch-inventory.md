@@ -20,7 +20,7 @@ performed in this phase, so remote-tracking dates reflect the last fetch (2026-1
 
 | Branch | Ahead/Behind `main` | Last commit | Association | Status | Action |
 |---|---|---|---|---|---|
-| `maintenance/repository-hygiene-20261102` | 5 / 1 | 2026-11-02 | cleanup commit + 4 `readme-rewrite` commits | ACTIVE | Keep; review cleanup commit |
+| `maintenance/repository-hygiene-20261102` | 6 / 1 | 2026-11-02 | cleanup + governance commits + 4 `readme-rewrite` commits | ACTIVE | Keep; review local commits |
 | `pr-262` | 1 / 0 | 2026-11-01 | PR #262 head | OPEN_PR | Keep |
 | `main` | 0 / 0 | 2026-11-01 | default | PRESERVE | Never delete |
 | `readme-rewrite` | 4 / 1 | 2026-11-01 | PR #261 (merged); holds 111-line uncommitted WIP | ACTIVE_WORK | Keep; protect WIP |
