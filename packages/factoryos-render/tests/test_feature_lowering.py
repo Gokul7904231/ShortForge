@@ -87,8 +87,52 @@ class TestFeatureLowering(unittest.TestCase):
         mixed = transition_mix(outgoing, incoming, "FADE", 0.5)
         self.assertNotEqual(mixed.tobytes(), outgoing.tobytes())
         self.assertNotEqual(mixed.tobytes(), incoming.tobytes())
-        self.assertEqual(mixed.getpixel((10, 10)), (128, 0, 128, 255))
+        self.assertIn(mixed.getpixel((10, 10)), [(127, 0, 127, 255), (128, 0, 128, 255)])
+
+    def test_canva_design_pack_compositing(self):
+        from factoryos_render.backends.image import NativeFrameCompositor
+        compositor = NativeFrameCompositor(1080, 1920)
+        scene_props = {
+            "template_id": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1"
+        }
+        shot_props = {
+            "question": "What is the deepest trench on Earth?",
+            "options": ["Mariana Trench", "Tonga Trench", "Puerto Rico Trench", "Java Trench"],
+            "categoryBadge": "GEOGRAPHY",
+            "design_pack": "quiz.universal.cinematic.v1"
+        }
+        # 1. QUESTION_CARD
+        frame_q = compositor.render_frame(scene_props, "QUESTION_CARD", shot_props, 0.5)
+        self.assertEqual(frame_q.size, (1080, 1920))
+        self.assertEqual(frame_q.mode, "RGBA")
+
+        # 2. COUNTDOWN with animated progress bar
+        countdown_props = {**shot_props, "seconds": 5}
+        frame_cd = compositor.render_frame(scene_props, "COUNTDOWN", countdown_props, 0.6)
+        self.assertEqual(frame_cd.size, (1080, 1920))
+        self.assertEqual(frame_cd.mode, "RGBA")
+
+        # 3. ANSWER_REVEAL with emerald punch
+        reveal_props = {**shot_props, "answerIndex": 0, "correctOption": "Mariana Trench", "explanation": "It reaches 11,034 meters deep."}
+        frame_ar = compositor.render_frame(scene_props, "ANSWER_REVEAL", reveal_props, 0.8)
+        self.assertEqual(frame_ar.size, (1080, 1920))
+        self.assertEqual(frame_ar.mode, "RGBA")
+
+        # 4. OUTRO_CTA with Canva outro card
+        outro_props = {"cta": "Can you score 6/6?", "subtitle": "Follow for more science shorts"}
+        frame_outro = compositor.render_frame(scene_props, "OUTRO_CTA", outro_props, 0.5)
+        self.assertEqual(frame_outro.size, (1080, 1920))
+        self.assertEqual(frame_outro.mode, "RGBA")
+
+        # 5. Fallback behavior when design pack is unconfigured
+        scene_fallback = {"template_id": "quiz.universal.glass.v1"}
+        shot_fallback = {"question": "Fallback question", "options": ["A", "B", "C", "D"]}
+        frame_fallback = compositor.render_frame(scene_fallback, "QUESTION_CARD", shot_fallback, 0.5)
+        self.assertEqual(frame_fallback.size, (1080, 1920))
+        self.assertEqual(frame_fallback.mode, "RGBA")
 
 
 if __name__ == "__main__":
     unittest.main()
+

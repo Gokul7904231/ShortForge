@@ -13,6 +13,7 @@ const PUBLIC_PREFIXES = [
   "/api/health",
   "/health",
   "/api/auth",
+  "/api/canva",
   "/api/render-workers/pair",
   "/api/render-workers/heartbeat",
   "/api/rendering",

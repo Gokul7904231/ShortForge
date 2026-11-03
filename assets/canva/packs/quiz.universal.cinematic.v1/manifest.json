@@ -1,0 +1,126 @@
+{
+  "manifestVersion": "1.0.0",
+  "packId": "quiz.universal.cinematic.v1",
+  "version": "1.0.0",
+  "provider": "canva",
+  "sourceDesignId": "DAG_CANVA_MASTER_V1",
+  "templateDisplayName": "Canva Universal Cinematic Glass Design Pack v1.0",
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "aspectRatio": "9:16"
+  },
+  "assets": {
+    "glass_card_frame": {
+      "role": "glass_card_frame",
+      "fileName": "glass_card_frame.png",
+      "storageKey": "shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/glass_card_frame.png",
+      "b2Uri": "b2://shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/glass_card_frame.png",
+      "localPath": "assets/canva/packs/quiz.universal.cinematic.v1/glass_card_frame.png",
+      "sha256": "55911104220816e44131b87d18e6003353335589177c5060f8eb245698defca8",
+      "format": "png",
+      "width": 1080,
+      "height": 1920,
+      "fileSizeBytes": 15842
+    },
+    "category_badge": {
+      "role": "category_badge",
+      "fileName": "category_badge.png",
+      "storageKey": "shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/category_badge.png",
+      "b2Uri": "b2://shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/category_badge.png",
+      "localPath": "assets/canva/packs/quiz.universal.cinematic.v1/category_badge.png",
+      "sha256": "1fbcac3b573261f0640a51461014cb8c65e9ae7d7f1cebe39309e149f7f99a0e",
+      "format": "png",
+      "width": 1080,
+      "height": 1920,
+      "fileSizeBytes": 16061
+    },
+    "progress_track": {
+      "role": "progress_track",
+      "fileName": "progress_track.png",
+      "storageKey": "shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/progress_track.png",
+      "b2Uri": "b2://shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/progress_track.png",
+      "localPath": "assets/canva/packs/quiz.universal.cinematic.v1/progress_track.png",
+      "sha256": "f30743b7cf8ba5208839d9722dd7443535d24f3c75572223e65a96c4f2eac668",
+      "format": "png",
+      "width": 1080,
+      "height": 1920,
+      "fileSizeBytes": 8248
+    },
+    "reveal_punch": {
+      "role": "reveal_punch",
+      "fileName": "reveal_punch.png",
+      "storageKey": "shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/reveal_punch.png",
+      "b2Uri": "b2://shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/reveal_punch.png",
+      "localPath": "assets/canva/packs/quiz.universal.cinematic.v1/reveal_punch.png",
+      "sha256": "b480d9fd382224d1a8395c012039877133158973f1eff26da2d9bd9be8d41247",
+      "format": "png",
+      "width": 1080,
+      "height": 1920,
+      "fileSizeBytes": 20205
+    },
+    "explanation_card": {
+      "role": "explanation_card",
+      "fileName": "explanation_card.png",
+      "storageKey": "shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/explanation_card.png",
+      "b2Uri": "b2://shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/explanation_card.png",
+      "localPath": "assets/canva/packs/quiz.universal.cinematic.v1/explanation_card.png",
+      "sha256": "9cfe5307892f375dbda5c9870b4d540ab3bab6a548ea82a0baea63c335d76954",
+      "format": "png",
+      "width": 1080,
+      "height": 1920,
+      "fileSizeBytes": 8548
+    },
+    "outro_card": {
+      "role": "outro_card",
+      "fileName": "outro_card.png",
+      "storageKey": "shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/outro_card.png",
+      "b2Uri": "b2://shortsfactory-assets/canva-packs/quiz.universal.cinematic.v1/outro_card.png",
+      "localPath": "assets/canva/packs/quiz.universal.cinematic.v1/outro_card.png",
+      "sha256": "82709a2c249a2a4466c26db7331653a5115b9fcadeb242dd7ad4a2fe583e1bb6",
+      "format": "png",
+      "width": 1080,
+      "height": 1920,
+      "fileSizeBytes": 26097
+    }
+  },
+  "fontMappings": {
+    "titleFont": "Segoe UI, Arial, sans-serif",
+    "questionFont": "Segoe UI, Arial, sans-serif",
+    "optionFont": "Segoe UI Semibold, Arial, sans-serif",
+    "captionFont": "Segoe UI Bold, Arial, sans-serif"
+  },
+  "designTokens": {
+    "accentColorGeography": [
+      6,
+      182,
+      212
+    ],
+    "accentColorScience": [
+      139,
+      92,
+      246
+    ],
+    "cardFill": [
+      11,
+      18,
+      32,
+      248
+    ],
+    "cardRadius": 26,
+    "timerWarningColor": [
+      245,
+      158,
+      11
+    ],
+    "emeraldRevealColor": [
+      34,
+      197,
+      94
+    ]
+  },
+  "licensingProvenance": "Canva Pro Lite Commercial Design License \u2014 Universal Visual Pack",
+  "ownerApprovalStatus": "APPROVED",
+  "exportTimestamp": "2026-11-03T00:00:00.000Z",
+  "manifestSha256": "d7884d6378986d8d65f9ef63b68c5944f6382aa877dec38121b845c0d08517ab"
+}

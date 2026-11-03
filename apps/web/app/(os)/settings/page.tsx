@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useThemeStore } from "@/lib/theme-store";
 import { useMounted } from "@/lib/useMounted";
+import { CanvaIntegrationCard } from "./CanvaIntegrationCard";
 
 export default function SettingsPage() {
   const mounted = useMounted();
@@ -151,6 +152,9 @@ export default function SettingsPage() {
           <span>{error}</span>
         </div>
       )}
+
+      {/* SECTION 0: CANVA HYBRID VISUAL DESIGN INTEGRATION */}
+      <CanvaIntegrationCard />
 
       {/* SECTION 1: RENDERING PLANES & BYOR WORKERS */}
       <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 space-y-6">
