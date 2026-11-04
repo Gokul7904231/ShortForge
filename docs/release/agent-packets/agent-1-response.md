@@ -2,27 +2,33 @@
 
 **Runtime:** Antigravity  
 **Role:** Release Captain, SDLC, integration order and release decision  
-**Status:** IN_PROGRESS (Iteration 2 — Contracts, Schemas & Deterministic Tests Verified)  
+**Status:** IN_PROGRESS (Iteration 2 — Isolated Worktree, Profile Compatibility & 13/13 Contract Tests Verified)  
 **Iteration:** 2 — Component Library + Intelligent Visual Director  
 **Instruction revision:** `docs/three-agent-production-speedrun-20261029` @ `03998157`  
-**Last updated (UTC):** 2026-11-04T14:25:00Z  
+**Last updated (UTC):** 2026-11-04T15:00:00Z  
 **Coordination branch:** `docs/three-agent-production-speedrun-20261029`  
+**Implementation branch:** `feat/visual-director-iteration2` (Local Commit: `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`, unpushed awaiting owner push authorization)  
+**Implementation base:** `main` (`566c16fe9a73ef16fcb675c83b0a62b5d0035157`)  
 
 ---
 
 ## 1. Executive Summary & Verification Evidence
 
-Agent 1 has executed the governance reconciliations and delivered the isolated contract, schema, and research deliverables for Iteration 2:
+Agent 1 has executed the required Iteration 2 workspace isolation and Track C/D contract and test refinements:
 
-1. **PR #257 Identity & Head Reconciliation Completed:** Reconciled PR #257's actual branch name (`feat/non-lightning-production-acceptance-20261030`) and identified that `Team/reports/pr-257.json` records stale `validatedHead: "86603f3debeede2adb92be4498a65cf558f4fd1e"`, whereas the current PR head has advanced to `2d453fe2b82059505d2995c529db1039603fc383`. No files in PR #257 were modified.
-2. **Publication Status Clarified:** Explicitly partitioned deliverables into locally created vs. remotely published. Verified that all research, contracts, source locks, and manifests reside locally and are not yet pushed to any remote branch. Machine-specific links were completely removed in favor of repository-relative paths.
-3. **Scoped Renderer Decision Proposal Formulated:** Drafted proposal `DEC-20261104-SHORTS-NATIVE-RENDER-ADAPTER` in `docs/architecture/short-maker-visual-director.md`. Preserves `TimelineIR`, `RenderFabric` (F06), `F07`, and Remotion's existing architectural role under `.okf`, while authorizing `factoryos-render` (Pillow `image.py` + FFmpeg `ffmpeg.py`) as a qualified execution backend under `RenderFabric` for 9:16 vertical Shorts.
-4. **Dedicated Implementation Branch Proposal:** Proposed `feat/visual-director-iteration2` based on `main` (`cf4cc2c9eae81e4e835a1c6ee8d7bc579868a6af`). PR #255 (`feat/release-sdlc-spec-kit-20261029`) remains 100% clean and reserved for SDLC governance. Zero implementation commits will be pushed without owner authorization.
-5. **Isolated Contracts & Schemas Implemented & Tested:**
-   - Contracts: `Storybeat.ts`, `VisualBrief.ts`, `MediaCandidate.ts`, `ComponentSelection.ts`, `VisualJudgeResult.ts`, `ComponentRegistry.ts`.
-   - Schemas & Manifests: `component-schema.json`, `card-glass-panel.json`, `badge-category-pill.json`, `progress-timer-bar.json`, `answer-emerald-punch.json`.
-   - Unit Tests: `apps/web/factoryos/tests/visual-director-contracts.test.ts` passed **9/9 tests (100%)** in 779ms.
-   - Zero modifications to shared rendering pipeline files, `VoiceFabric`, `RenderFabric`, `LocalRenderAdapter`, `image.py`, or `F07`.
+1. **Dedicated Implementation Workspace Established:** Created dedicated Git worktree `ShortForge-visual-director-iteration2` on branch `feat/visual-director-iteration2` branched cleanly from latest `main` (`566c16fe9a73ef16fcb675c83b0a62b5d0035157`). Original worktree `ShortForge-agent1-sdlc` remains 100% clean and intact on PR #255 (`feat/release-sdlc-spec-kit-20261029`).
+2. **Renderer-Profile Compatibility Implemented:** Replaced global Remotion rejection with multi-profile compatibility model supporting `"shorts-native"`, `"remotion"`, and `"reference-only"`. The native Shorts profile strictly filters and executes native-compatible components without altering `.okf` global authority or prohibiting Remotion for horizontal/general compositions.
+3. **Component Qualification Corrected:** All 4 initial component manifests (`card-glass-panel.json`, `badge-category-pill.json`, `progress-timer-bar.json`, `answer-emerald-punch.json`) and the schema are set to `qualificationStatus: "CONTRACT_TESTED"`, reserving `QUALIFIED` until physical rendering previews, input constraints, and visual inspections pass.
+4. **Deterministic Unit Test Suite Expanded & 100% Passing:** Expanded `visual-director-contracts.test.ts` from 9 to **13 deterministic tests** (all 13 passing in 409ms):
+   - Storybeat 30fps frame ceiling math and boundary conditions (zero duration minimum 1 frame, fractional start offsets).
+   - VisualBrief safe areas (X=80, Y=260, W=860, H=1280) avoiding YouTube Shorts UI hazards.
+   - MediaCandidate multi-signal ranking and hard commercial licensing gate (1.0/1.0 relevance rejected if `isCommercialAllowed: false`).
+   - ComponentSelection timing and semantic justification.
+   - VisualJudge automated quality checks and bounded repair (max 2 attempts).
+   - ComponentRegistry profile filtering, duplicate-ID rejection, and invalid-input error handling.
+   - JSON Schema validation proving all 4 initial component manifests strictly conform to `component-schema.json`.
+5. **Implementation Staged & Committed Locally:** Committed 26 files locally to `feat/visual-director-iteration2` (`64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`). Zero implementation changes pushed to remote, strictly adhering to the owner authorization requirement.
+6. **Strict Zero-Touch Boundary Enforced:** **Zero modifications** to the 8 shared integration files (`TemplateProductionPipeline.ts`, `VoiceFabric.ts`, `LocalRenderAdapter.ts`, `RenderFabric.ts`, `DurationContract.ts`, `VerificationEngine.ts`, `image.py`, `ffmpeg.py`), PR #257, or F07 contracts.
 
 ---
 
@@ -53,81 +59,77 @@ To resolve the architectural tension between `.okf/engineering-stack.md` (which 
   - Remotion remains the primary programmatic composition foundation under `.okf/engineering-stack.md` for horizontal and multi-layered video compositions.
 - **Scoped Adaptation for Vertical Shorts:**
   - For mobile 9:16 vertical Shorts (1080×1920 @ 30fps), `factoryos-render` (Pillow `image.py` + FFmpeg `ffmpeg.py`) is designated as a **qualified local execution backend under RenderFabric** (via `LocalRenderAdapter`).
-  - Prohibits bundling Remotion npm packages into production container images for Shorts generation, avoiding commercial licensing friction and heavy Node.js rendering memory footprint.
+  - `ComponentRegistry` explicitly supports profiles: `"shorts-native"`, `"remotion"`, and `"reference-only"`. Native Shorts profiles filter out components requiring Remotion runtime while allowing full component asset governance.
 - **Formal Status:** Documented in `docs/architecture/short-maker-visual-director.md` as a formal proposal awaiting owner ratification.
 
 ---
 
-## 4. Multi-Agent File Ownership & Dedicated Branch Proposal
+## 4. Multi-Agent Workspaces & Branch Status
 
-### 4.1 PR #255 Scope Boundary
-PR #255 (`feat/release-sdlc-spec-kit-20261029` @ `d0277335`) is exclusively reserved for the SDLC / Spec Kit release governance gate. Zero Iteration 2 implementation changes have been staged or committed to PR #255.
-
-### 4.2 Dedicated Branch Proposal
-- **Proposed Branch:** `feat/visual-director-iteration2`
-- **Intended Base:** `main` (`cf4cc2c9eae81e4e835a1c6ee8d7bc579868a6af`)
-- **Justification:** Branching directly off `main` guarantees that Iteration 2 visual director development is completely decoupled from open PRs #253, #254, #255, #256, and #257. Once PR #257 is merged into `main`, `feat/visual-director-iteration2` can rebase cleanly onto the post-PR #257 integration base.
-- **Attestation:** Zero branches have been created or pushed to remote. Awaiting owner authorization.
+| Workspace / Branch | Base Commit | Head Commit | Worktree Status | Scope / Role |
+| :--- | :--- | :--- | :--- | :--- |
+| `ShortForge-agent1-sdlc` (`feat/release-sdlc-spec-kit-20261029`) | `cf4cc2c9` | `d0277335` | Clean (all deliverables preserved locally) | PR #255: SDLC / Spec Kit Release Gate |
+| `ShortForge-visual-director-iteration2` (`feat/visual-director-iteration2`) | `566c16fe` (main) | `64a332fc` (Local) | Clean (committed locally, unpushed) | Iteration 2: Contracts, Registry & Manifests |
+| `agent3-coord` (`docs/three-agent-production-speedrun-20261029`) | `03998157` | `7f45b21d` | Active | Cross-Agent Speedrun Coordination |
 
 ---
 
 ## 5. Deliverables & Publication Status
 
-| Deliverable | Created Locally | Staged Locally | Committed | Pushed | Remotely Verified |
+| Deliverable | Created Locally | Staged Locally | Committed Locally | Pushed to Remote | Remotely Verified |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| `docs/research/short-maker-intelligence-baseline.md` | **YES** | NO | NO | NO | NO (Local only) |
-| `docs/research/short-maker-intelligence-research.md` | **YES** | NO | NO | NO | NO (Local only) |
-| `docs/architecture/short-maker-visual-director.md` | **YES** | NO | NO | NO | NO (Local only) |
-| `assets/component-sources/SOURCES.lock.json` | **YES** | NO | NO | NO | NO (Local only) |
-| Reference Source Licenses (`rendercomp`, `dotlottie`, `lucide`) | **YES** | NO | NO | NO | NO (Local only) |
-| `assets/component-manifests/component-schema.json` | **YES** | NO | NO | NO | NO (Local only) |
-| Qualified Component Manifests (4 manifests) | **YES** | NO | NO | NO | NO (Local only) |
-| Visual Director Contracts (`apps/web/.../visual-director/*`) | **YES** | NO | NO | NO | NO (Local only) |
-| Contract Unit Tests (`visual-director-contracts.test.ts`) | **YES** | NO | NO | NO | NO (Local only) |
+| `docs/research/short-maker-intelligence-baseline.md` | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| `docs/research/short-maker-intelligence-research.md` | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| `docs/architecture/short-maker-visual-director.md` | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| `assets/component-sources/SOURCES.lock.json` | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| Reference Source Notices (`rendercomp`, `dotlottie`, `lucide`) | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| `assets/component-manifests/component-schema.json` | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| Component Manifests (`card-glass-panel`, `badge-category-pill`, `progress-timer-bar`, `answer-emerald-punch`) | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| Visual Director Contracts (`apps/web/factoryos/core/visual-director/*`) | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
+| Contract Unit Tests (`apps/web/factoryos/tests/visual-director-contracts.test.ts`) | **YES** | **YES** | **YES** (`64a332fc`) | NO (Awaiting owner push authorization) | NO |
 | `docs/release/agent-packets/agent-1-response.md` | **YES** | **YES** | **YES** | **YES** | **YES** (Coordination branch) |
 
-### Exact `git status --short` in Implementation Worktree:
+### Worktree Status:
 ```text
-$ cd C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc
-$ git status --short
-?? apps/web/factoryos/core/visual-director/
-?? apps/web/factoryos/tests/visual-director-contracts.test.ts
-?? assets/
-?? docs/architecture/short-maker-visual-director.md
-?? docs/research/short-maker-intelligence-baseline.md
-?? docs/research/short-maker-intelligence-research.md
+$ cd C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-visual-director-iteration2
+$ git status
+On branch feat/visual-director-iteration2
+nothing to commit, working tree clean
 ```
-*Attestation: Zero changes staged or committed on `feat/release-sdlc-spec-kit-20261029`. All newly authored deliverables remain untracked locally.*
 
 ---
 
 ## 6. Deterministic Contract Verification Results
 
-Test execution of `apps/web/factoryos/tests/visual-director-contracts.test.ts`:
+Execution in `ShortForge-visual-director-iteration2`:
 ```text
- RUN  v4.1.10 C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc/apps/web
+ RUN  v4.1.10 C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-visual-director-iteration2/apps/web
 
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > Storybeat Contract & Timing Mathematics > snaps physical audio duration to frame ceiling at 30 fps (3ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > VisualBrief Contract & Safe-Area Bounds > generates multi-route search queries and defaults to vertical Shorts safe area (2ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > MediaCandidate Multi-Signal Ranking & Licensing Gate > calculates multi-signal score and admits high-quality commercial assets (1ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > MediaCandidate Multi-Signal Ranking & Licensing Gate > fails closed and rejects assets with non-commercial licenses (0ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > ComponentSelection Contract > binds storybeats to component IDs with explicit timing and justification (0ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > VisualJudge Automated Quality & Bounded Repair > passes when all visual quality checks meet criteria (1ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > VisualJudge Automated Quality & Bounded Repair > triggers bounded repair when contrast or entity relevance fails, capped at 2 attempts (0ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > ComponentRegistry Enforcements & Invariants > registers qualified native components and queries by category (0ms)
- ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry > ComponentRegistry Enforcements & Invariants > throws and rejects components attempting to introduce Remotion runtime in production (1ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > Storybeat Contract & Timing Mathematics > snaps physical audio duration to frame ceiling at 30 fps (2ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > Storybeat Contract & Timing Mathematics > handles boundary condition: zero duration or silence scene enforces minimum 1 frame (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > Storybeat Contract & Timing Mathematics > correctly calculates fractional start offsets and end frames (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > VisualBrief Contract & Safe-Area Bounds > generates multi-route search queries and defaults to vertical Shorts safe area (1ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > MediaCandidate Multi-Signal Ranking & Licensing Hard Gate > calculates multi-signal score and admits high-quality commercial assets (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > MediaCandidate Multi-Signal Ranking & Licensing Hard Gate > proves licensing is a hard gate: rejects asset with perfect 1.0 relevance when commercial use is disallowed (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > ComponentSelection Contract > binds storybeats to component IDs with explicit timing and justification (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > VisualJudge Automated Quality & Bounded Repair > passes when all visual quality checks meet criteria (1ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > VisualJudge Automated Quality & Bounded Repair > triggers bounded repair when contrast or entity relevance fails, capped at 2 attempts (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > ComponentRegistry Renderer-Profile Compatibility & Invariants > registers components and filters by renderer profile (1ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > ComponentRegistry Renderer-Profile Compatibility & Invariants > throws and rejects duplicate component registrations (1ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > ComponentRegistry Renderer-Profile Compatibility & Invariants > throws on invalid input: missing required metadata, dimensions, or profiles (0ms)
+ ✓ factoryos/tests/visual-director-contracts.test.ts > ShortForge Visual Director Contracts & Component Registry (Iteration 2 Refinements) > JSON Schema Validation for Manifests > validates all four initial component manifests conform to component-schema.json (6ms)
 
  Test Files  1 passed (1)
-      Tests  9 passed (9)
-   Duration  779ms
+      Tests  13 passed (13)
+   Duration  409ms
 ```
 
 ---
 
 ## 7. Immediate Next Actions
 
-1. Awaiting owner review and ratification of the scoped renderer decision draft (`DEC-20261104-SHORTS-NATIVE-RENDER-ADAPTER`).
-2. Awaiting owner authorization to create and switch to dedicated implementation branch `feat/visual-director-iteration2` based on `main` (`cf4cc2c9`).
-3. Upon branch authorization, stage the isolated visual director contracts, component manifests, research docs, and tests without touching the 8 shared integration files.
+1. **Awaiting Owner Push Authorization:** Branch `feat/visual-director-iteration2` is cleanly committed locally at `64a332fc`. Ready to push to `origin` once owner approval is granted.
+2. **Awaiting Scoped Renderer Decision Ratification:** Proposal `DEC-20261104-SHORTS-NATIVE-RENDER-ADAPTER` is documented in `docs/architecture/short-maker-visual-director.md`.
+3. **Track E & F Sequencing:** Once PR #257 is integrated and owner approves lowering, begin Track E (lowering selections to `TemplateProductionPipeline.ts` & `image.py`) and Track F (physical MP4 generation).
 
 Status remains **`IN_PROGRESS`**.
