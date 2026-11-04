@@ -35,6 +35,19 @@ export interface VideoJob {
   updatedAt?: string;
   remoteState?: string;
   artifactSha256?: string;
+  deliveryMethod?: "GOOGLE_DRIVE" | "LOCAL_OUTBOX";
+  deliveryVerified?: boolean;
+  deliveryStatus?: "PENDING" | "UPLOADING" | "UPLOADED" | "FAILED";
+  driveFileId?: string;
+  deliveredAt?: string;
+  deliveryArtifact?: {
+    deliveryMethod: "GOOGLE_DRIVE" | "LOCAL_OUTBOX";
+    verified: boolean;
+    driveFileId?: string;
+    uploadedAt?: string;
+    sha256?: string;
+    storageUrl?: string;
+  };
 }
 
 const inMemoryJobs = new Map<string, VideoJob>();

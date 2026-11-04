@@ -3,6 +3,22 @@ import { db } from "../../../../lib/firebase-admin";
 import { ServiceRegistry } from "../../../../lib/core/ServiceRegistry";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
+import { resolveDeliveryFacts } from "@/lib/delivery/delivery-facts";
+
+function deliveryFields(jobId: string, job: any) {
+  const facts = resolveDeliveryFacts(jobId, job);
+  const driveFileId = facts.driveFileId ?? null;
+
+  return {
+    deliveryTarget: job?.deliveryTarget ?? null,
+    deliveryMethod: facts.deliveryMethod ?? null,
+    deliveryVerified: facts.verified ?? null,
+    deliveryStatus: facts.deliveryStatus ?? null,
+    deliverySource: facts.source,
+    driveFileId,
+    driveUrl: job?.driveUrl ?? (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : null),
+  };
+}
 // ServiceRegistryInit pulls sharp transitively — load lazily inside GET so build collection doesn't DLOPEN the native binary
 
 export async function GET(
@@ -46,10 +62,12 @@ export async function GET(
           id: doc.id,
           videoId: doc.id,
           status: job.status || "processing",
-          progress: job.progress ?? (job.status === "completed" ? 100 : 50),
+          // Never invent a mid-flight percentage: unknown progress stays null.
+          progress: job.progress ?? (job.status === "completed" ? 100 : null),
           error: job.error,
           videoUrl: job.videoUrl || (job.status === "completed" ? `/api/media/video/${doc.id}` : null),
-          output: job.videoUrl ? { videoUrl: job.videoUrl } : null
+          output: job.videoUrl ? { videoUrl: job.videoUrl } : null,
+          ...deliveryFields(doc.id, job),
         });
       }
     }
@@ -82,7 +100,8 @@ export async function GET(
           attempts: qJob.attempts,
           error: qJob.lastError,
           videoUrl: qJob.status === "completed" ? `/api/media/video/${qJob.jobId}` : null,
-          output: qJob.status === "completed" ? { videoUrl: `/api/media/video/${qJob.jobId}` } : null
+          output: qJob.status === "completed" ? { videoUrl: `/api/media/video/${qJob.jobId}` } : null,
+          ...deliveryFields(qJob.jobId, (qJob as any).payload ?? {}),
         });
       }
     }

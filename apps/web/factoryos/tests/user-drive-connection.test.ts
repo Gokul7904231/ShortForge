@@ -73,6 +73,8 @@ describe("Google Drive Per-User Connection & Admin Fallback", () => {
     process.env.GOOGLE_DRIVE_CLIENT_ID = "env_client_id";
     process.env.GOOGLE_DRIVE_CLIENT_SECRET = "env_client_secret";
     process.env.GOOGLE_DRIVE_REFRESH_TOKEN = "env_refresh_token";
+    // The account email is configuration, never a hardcoded identity.
+    process.env.GOOGLE_DRIVE_ACCOUNT_EMAIL = "ops@shortforge.test";
 
     const res = await DriveConnectionManager.resolveDriveConnection({
       purpose: "SYSTEM_JOB",
@@ -81,6 +83,6 @@ describe("Google Drive Per-User Connection & Admin Fallback", () => {
     expect(res.type).toBe("ADMIN_CONNECTION");
     expect(res.status).toBe("CONNECTED");
     expect(res.refreshToken).toBe("env_refresh_token");
-    expect(res.googleEmail).toBe("gokul32499@gmail.com");
+    expect(res.googleEmail).toBe("ops@shortforge.test");
   });
 });

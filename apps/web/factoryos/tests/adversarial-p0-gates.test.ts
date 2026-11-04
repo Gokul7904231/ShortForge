@@ -45,6 +45,12 @@ function generateLandscapeVideo(outputPath: string, width = 1920, height = 1080,
   );
 }
 
+const TEST_ENGINE_ID = "quiz";
+const TEST_RESEARCH_CONTRACT = {
+  engineId: TEST_ENGINE_ID,
+  ...getCompatibilityEngineContracts(TEST_ENGINE_ID).research!,
+};
+
 describe("FactoryOS P0-H Adversarial Failure-Injection Gates (H1 - H15)", () => {
   // -------------------------------------------------------------
   // H1: Gemini credentials missing -> safe configuration failure

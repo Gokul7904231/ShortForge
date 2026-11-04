@@ -1,0 +1,28 @@
+{
+  "runId": "run_mission_a_60s",
+  "missionId": "mis_prod_accept_mvvzvubt",
+  "jobId": "job_prod_accept_mvvzvubt",
+  "topic": "Mariana Trench: The Ocean's Deepest Abyss",
+  "templateId": "facts.deep-explainer.v1",
+  "targetDurationSeconds": 60,
+  "physicalDurationSeconds": 62.176599,
+  "durationDifferencePercent": 3.63,
+  "durationPassed": true,
+  "mp4Artifact": {
+    "fileName": "shortforge-production-job_prod_accept_mvvzvubt.mp4",
+    "localPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-verification-fabric\\artifacts\\production-demo\\shortforge-production-job_prod_accept_mvvzvubt.mp4",
+    "sha256": "a1be57ccf0d5186f8c86af36255878f446228b4349f46a30a2818d2107e5657c",
+    "byteSize": 1349704,
+    "geometry": "1080x1920 (9:16)",
+    "fps": 30
+  },
+  "git": {
+    "commitSha": "a41d7993",
+    "branch": "feat/production-acceptance-verification-fabric-20261031"
+  },
+  "hardware": {
+    "gpuModel": "NVIDIA GeForce RTX 3050 Laptop GPU (LocalComputeProvider)",
+    "platform": "win32"
+  },
+  "createdAt": "2026-10-31T06:05:44.119Z"
+}

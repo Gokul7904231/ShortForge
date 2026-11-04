@@ -1,0 +1,17 @@
+{
+  "recoveredJobId": "job_prod_accept_mvw01pma",
+  "deliveryFacts": {
+    "deliveryMethod": "GOOGLE_DRIVE",
+    "verified": true,
+    "driveFileId": "159C-c3ZvA5ZPK4f9n81pagQGAHtxTEXh",
+    "deliveryStatus": "UPLOADED",
+    "uploadedAt": "2026-10-31T06:11:02.717Z",
+    "source": "job-document"
+  },
+  "deliveryProjection": {
+    "state": "DRIVE_DELIVERED",
+    "label": "Delivered to Google Drive",
+    "detail": "The worker recorded a verified upload to the connected Drive account.",
+    "linkUrl": "https://drive.google.com/file/d/159C-c3ZvA5ZPK4f9n81pagQGAHtxTEXh/view"
+  }
+}

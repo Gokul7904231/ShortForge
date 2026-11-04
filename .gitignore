@@ -80,6 +80,8 @@ temp/
 !**/apps/web/public/demo-short.mp4
 !apps/web/public/german-quiz.mp4
 !**/apps/web/public/german-quiz.mp4
+!artifacts/production-demo/*.mp4
+!artifacts/production-demo/**
 !**/public/*.png
 !**/public/*.jpg
 !**/public/*.svg

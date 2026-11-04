@@ -258,6 +258,13 @@ export const FACTORYOS_INTERNAL_EXACT_ROUTES = new Set<string>([
   "/media/drive",
   "/media/cloudinary",
   "/publishing/drive",
+  // Drive operator APIs read and mutate the shared service account, not a creator's Drive.
+  "/api/drive/list",
+  "/api/drive/status",
+  "/api/drive/delete",
+  "/api/drive/cleanup",
+  "/api/drive/folders",
+  "/api/drive/upload",
 ]);
 
 /**

@@ -17,6 +17,7 @@ import {
   Download,
 } from "lucide-react";
 import Link from "next/link";
+import { describeDelivery } from "@/lib/presentation/JobStatusProjection";
 
 export default function VideoDetailPage() {
   const params = useParams();
@@ -78,6 +79,20 @@ export default function VideoDetailPage() {
         <ChevronLeft className="w-4 h-4" /> Back to Media Library
       </Link>
 
+      {(() => {
+        const delivery = describeDelivery({
+          status: video.status,
+          deliveryMethod: video.deliveryMethod,
+          verified: video.deliveryVerified,
+          deliveryStatus: video.deliveryStatus,
+          driveFileId: video.driveFileId,
+          driveUrl: video.driveUrl,
+        });
+        const guardian = video.verificationSummary;
+
+        return (
+          <>
+
       {/* Main Grid: Video Player + Metadata */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Video Preview */}
@@ -124,6 +139,20 @@ export default function VideoDetailPage() {
             </p>
           </div>
 
+          {/* Delivery Truth */}
+          <div className="bg-white dark:bg-[#070D18] border border-black/[0.06] dark:border-white/[0.08] rounded-3xl p-6 space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#667085] dark:text-[#A8B2C1] flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-[#1677FF]" /> Delivery
+            </h3>
+            <p className="text-xs font-bold text-[#111827] dark:text-[#F5F7FA]">{delivery.label}</p>
+            <p className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">{delivery.detail}</p>
+            {delivery.linkUrl && (
+              <a href={delivery.linkUrl} target="_blank" rel="noreferrer" className="inline-flex text-[11px] font-bold text-[#19C37D] hover:underline">
+                Open the delivered Drive file
+              </a>
+            )}
+          </div>
+
           {/* Technical Specs */}
           <div className="bg-white dark:bg-[#070D18] border border-black/[0.06] dark:border-white/[0.08] rounded-3xl p-6 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#667085] dark:text-[#A8B2C1] flex items-center gap-2">
@@ -133,19 +162,25 @@ export default function VideoDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-[#0E1728] border border-black/[0.04] dark:border-white/[0.04]">
                 <span className="text-[10px] text-[#667085] block uppercase">Duration</span>
-                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">{video.durationSeconds}s</span>
+                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">
+                  {video.durationSeconds != null ? `${video.durationSeconds}s` : "Not recorded"}
+                </span>
               </div>
               <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-[#0E1728] border border-black/[0.04] dark:border-white/[0.04]">
                 <span className="text-[10px] text-[#667085] block uppercase">Resolution</span>
-                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">{video.resolution}</span>
+                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">{video.resolution ?? "Not recorded"}</span>
               </div>
               <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-[#0E1728] border border-black/[0.04] dark:border-white/[0.04]">
                 <span className="text-[10px] text-[#667085] block uppercase">Framerate</span>
-                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">{video.fps} FPS</span>
+                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">
+                  {video.fps != null ? `${video.fps} FPS` : "Not recorded"}
+                </span>
               </div>
               <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-[#0E1728] border border-black/[0.04] dark:border-white/[0.04]">
                 <span className="text-[10px] text-[#667085] block uppercase">File Size</span>
-                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">{video.sizeMb} MB</span>
+                <span className="font-bold text-[#111827] dark:text-[#F5F7FA] font-mono">
+                  {video.sizeMb != null ? `${video.sizeMb} MB` : "Not recorded"}
+                </span>
               </div>
             </div>
 
@@ -161,16 +196,37 @@ export default function VideoDetailPage() {
               <ShieldCheck className="w-4 h-4 text-[#19C37D]" /> AI Quality & Verification Report
             </h3>
 
-            <div className="p-4 rounded-2xl bg-[#19C37D]/10 border border-[#19C37D]/20 text-xs text-[#19C37D] flex items-center justify-between">
-              <div>
-                <span className="font-bold block">Quiz Guardian Status: PASSED</span>
-                <span className="text-[11px] opacity-90">Grounding Score: 100% (Authoritative External Evidence RAG)</span>
-              </div>
-              <span className="text-sm font-bold font-mono">PASS</span>
+            <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-[#0E1728] border border-black/[0.04] dark:border-white/[0.04] text-xs flex items-center justify-between">
+              {guardian ? (
+                <>
+                  <div className="space-y-1">
+                    <span className={`font-bold block ${guardian.guardianPassed ? "text-[#19C37D]" : "text-red-500"}`}>
+                      Quiz Guardian Status: {guardian.guardianPassed ? "PASSED" : "FAILED"}
+                    </span>
+                    <span className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">
+                      Grounding Score: {Math.round((guardian.groundingScore ?? 0) * 100)}%
+                      {guardian.totalQuestions ? ` (${guardian.verifiedQuestions}/${guardian.totalQuestions} questions verified)` : ""}
+                    </span>
+                  </div>
+                  <span className={`text-sm font-bold font-mono ${guardian.guardianPassed ? "text-[#19C37D]" : "text-red-500"}`}>
+                    {guardian.guardianPassed ? "PASS" : "FAIL"}
+                  </span>
+                </>
+              ) : (
+                <div className="space-y-1">
+                  <span className="font-bold block text-[#667085] dark:text-[#A8B2C1]">Verification not recorded</span>
+                  <span className="text-[11px] text-[#667085] dark:text-[#A8B2C1]">
+                    This video has no F07 verification summary, so no quality result is claimed.
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+          </>
+        );
+      })()}
     </div>
   );
 }

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import path from "path";
 
 import fs from "fs";
+import { authorizeJobRequest } from "@/lib/auth/job-access";
+
+// jobId is used in filesystem paths and in ownership lookups.
+const JOB_ID_PATTERN = /^[a-zA-Z0-9_-]{1,80}$/;
 
 function getThumbPath(jobId: string) {
   const root = process.cwd();
@@ -61,6 +65,14 @@ export async function GET(
 ) {
   const { jobId } = await params;
   if (!jobId) return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
+  if (!JOB_ID_PATTERN.test(jobId)) {
+    return NextResponse.json({ error: "Thumbnail not found", jobId }, { status: 404 });
+  }
+
+  const access = await authorizeJobRequest(_req, jobId);
+  if (access.status !== 200) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
+  }
 
   const thumbPath = getThumbPath(jobId);
 

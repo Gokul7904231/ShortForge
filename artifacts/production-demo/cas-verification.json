@@ -1,0 +1,17 @@
+{
+  "casRef": "cas://e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b",
+  "sha256": "e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b",
+  "byteLength": 4161933,
+  "uri": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\ShortForge-verification-fabric\\apps\\web\\data\\cas_storage\\e2\\e2a99de2006b1001b1ffdecb3750da2953e95be89b17328271fbe01ac9c4553b.mp4",
+  "metadata": {
+    "originalFilename": "job_prod_accept_mvw01pma.mp4",
+    "storedAt": "2026-10-31T06:08:57.010Z",
+    "jobId": "job_prod_accept_mvw01pma",
+    "executionId": "exec_local_job_prod_accept_mvw01pma_1793426892558",
+    "width": 1080,
+    "height": 1920,
+    "duration": 180.05,
+    "rendererVersion": "0.1.0",
+    "ffmpegVersion": "ffmpeg version 8.1.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers"
+  }
+}

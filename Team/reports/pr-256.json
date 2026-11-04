@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR256-Product-Acceptance-Truth",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/product-acceptance-20261029",
+  "objective": "Make creator-facing delivery, health, artifact metadata and media access report only recorded facts, and add durable delivery receipts with owner authorization for job media.",
+  "rules": [
+    "LOCAL_OUTBOX is never presented as Google Drive delivery.",
+    "HTTP 200 is reachability, not application readiness.",
+    "Unknown artifact size, FPS, resolution or progress is shown as not recorded, never invented.",
+    "Delivery facts prefer the durable job document and fall back to the worker outbox.",
+    "Job-scoped media requires owner authorization and fails closed for unowned artifacts.",
+    "No worker, rendering, CAS, F07 or release-governance policy is changed."
+  ],
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "sourceRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/decisions.md",
+      "AGENTS.md"
+    ],
+    "rulesConsidered": [
+      "The .okf corpus is the first architectural reasoning context; executable code and tests decide conflicts.",
+      "Claims must equal evidence; physical render truth remains downstream of F05/F06.",
+      "Rendering, worker permissions and F07 verification stay out of scope for this change.",
+      "Unmet capacity and missing measurements are reported, never synthesized."
+    ]
+  },
+  "classification": "extends existing rule",
+  "forgers": [
+    {
+      "role": "UI/product acceptance",
+      "agent": "Agent 3 (OpenCode)",
+      "evidence": "Truthfulness review of library, detail, drive, health and Quick Generate surfaces; targeted acceptance tests."
+    }
+  ],
+  "security": {
+    "required": true,
+    "semgrep": "NOT_RUN",
+    "strix": "NOT_RUN",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Changed routes add a jobId boundary and owner authorization for /api/media/video and /api/media/thumb. No secrets, credentials or production configuration are included. Scanners were not run in this iteration, so they are not claimed as PASS."
+  },
+  "conflicts": [],
+  "validation": {
+    "status": "PARTIAL",
+    "targetedTests": "PASS - 3 files, 24 tests passed",
+    "build": "PASS - npm run build, 109 routes",
+    "typecheck": "3 pre-existing errors, none in changed files (2 in ColabNotebookAdapter.ts, 1 in .next/types/validator.ts for the truncated app/(os)/factory/editor/page.tsx on main)",
+    "fullSuite": "NOT_RUN this iteration",
+    "physicalRender": "BLOCKED - no production job or paid compute triggered",
+    "driveUpload": "BLOCKED - no per-user Drive OAuth consent or connected account"
+  },
+  "evidenceRefs": [
+    "docs/verification/product-acceptance-20261029.md",
+    "apps/web/tests/media-video-ownership.test.ts",
+    "apps/web/tests/delivery-recovery.test.ts",
+    "apps/web/tests/product-acceptance.test.ts"
+  ],
+  "disposition": "BLOCKED",
+  "dispositionRationale": "UI truth fixes and targeted tests pass, but physical render, durable Firestore delivery persistence and a genuine per-user Drive upload remain unproven, and security scanners were not run.",
+  "validatedHead": "95f0e219fd85265e8581115e283fa03d235d8312",
+  "model": {
+    "runtime": "OpenCode / ChatGPT handoff",
+    "agent": "Agent 3"
+  }
+}

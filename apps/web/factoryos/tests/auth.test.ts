@@ -179,45 +179,56 @@ describe("FactoryOS v1 — Production Authentication & Authorization Suite", () 
 
   // 5. Middleware Protection Rules
   describe("Next.js Middleware Protection Rules", () => {
-    it("allows public endpoints without authentication", () => {
+    it("allows public endpoints without authentication", async () => {
       const publicPaths = ["/", "/login", "/api/health", "/api/published-video"];
 
       for (const path of publicPaths) {
         const req = new NextRequest(`http://localhost:3000${path}`);
-        const res = middleware(req);
+        const res = await middleware(req);
         expect(res.status).toBe(200);
       }
     });
 
-    it("redirects unauthenticated UI requests to /login", () => {
+    it("redirects unauthenticated UI requests to /login", async () => {
       const protectedPaths = ["/dashboard", "/factory/scheduler", "/media/drive"];
 
       for (const path of protectedPaths) {
         const req = new NextRequest(`http://localhost:3000${path}`);
-        const res = middleware(req);
+        const res = await middleware(req);
         expect(res.status).toBe(307); // Next.js Temporary Redirect status
         expect(res.headers.get("location")).toContain("/login?redirect=");
       }
     });
 
-    it("returns 401 Unauthorized for unauthenticated API requests", () => {
+    it("returns 401 Unauthorized for unauthenticated API requests", async () => {
       const protectedApiPaths = ["/api/jobs", "/api/engines/create", "/api/media/upload"];
 
       for (const path of protectedApiPaths) {
         const req = new NextRequest(`http://localhost:3000${path}`);
-        const res = middleware(req);
+        const res = await middleware(req);
         expect(res.status).toBe(401);
       }
     });
 
-    it("allows authenticated API requests with session cookie", () => {
+    it("allows authenticated API requests with session cookie", async () => {
       const req = new NextRequest("http://localhost:3000/api/jobs", {
         headers: {
           cookie: `${SESSION_COOKIE_NAME}=mock_session_cookie_123`,
         },
       });
-      const res = middleware(req);
+      const res = await middleware(req);
       expect(res.status).toBe(200);
+    });
+
+    it("rejects a forged signed-session token with an invalid signature", async () => {
+      const payload = Buffer.from(
+        JSON.stringify({ uid: "attacker", role: "OWNER", exp: Date.now() + 3_600_000 })
+      ).toString("base64url");
+      const req = new NextRequest("http://localhost:3000/factory/scheduler", {
+        headers: { cookie: `${SESSION_COOKIE_NAME}=fos_${payload}.deadbeef` },
+      });
+      const res = await middleware(req);
+      expect(res.status).toBe(307);
     });
   });
 

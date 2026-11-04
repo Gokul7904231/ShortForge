@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { db } from "@/lib/firebase-admin";
+import { resolveDeliveryFacts } from "@/lib/delivery/delivery-facts";
+import { describeDelivery } from "@/lib/presentation/JobStatusProjection";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +20,13 @@ export interface VideoLibraryItem {
   driveUrl?: string;
   driveFileId?: string;
   deliveryTarget?: "GOOGLE_DRIVE" | "CLOUDINARY" | "LOCAL_OUTBOX";
-  deliveryStatus: "DELIVERED" | "PENDING_UPLOAD" | "DELIVERY_FAILED" | "NOT_CONFIGURED";
+  deliveryStatus: "DELIVERED" | "PENDING_UPLOAD" | "LOCAL_OUTBOX" | "DELIVERY_FAILED" | "NOT_CONFIGURED";
   isScheduled: boolean;
   scheduleId?: string;
-  durationSeconds: number;
-  sizeMb: number;
-  resolution: string;
-  fps: number;
+  durationSeconds: number | null;
+  sizeMb: number | null;
+  resolution: string | null;
+  fps: number | null;
   createdAt: string;
   verificationSummary?: {
     guardianPassed: boolean;
@@ -66,17 +68,29 @@ export async function GET(req: Request) {
         return;
       }
 
-      const driveFileId = d.driveFileId || d.deliveryArtifact?.driveFileId;
+      const facts = resolveDeliveryFacts(videoId, d);
+      const driveFileId = facts.driveFileId;
       const driveUrl = d.driveUrl || (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : undefined);
-      
-      let deliveryStatus: VideoLibraryItem["deliveryStatus"] = "NOT_CONFIGURED";
-      if (driveUrl) {
-        deliveryStatus = "DELIVERED";
-      } else if (d.status === "completed" && d.deliveryTarget === "GOOGLE_DRIVE") {
-        deliveryStatus = "PENDING_UPLOAD";
-      } else if (d.status === "failed") {
-        deliveryStatus = "DELIVERY_FAILED";
-      }
+
+      const delivery = describeDelivery({
+        status: d.status,
+        deliveryMethod: facts.deliveryMethod,
+        verified: facts.verified,
+        deliveryStatus: facts.deliveryStatus,
+        driveFileId,
+        driveUrl,
+      });
+
+      const deliveryStatus: VideoLibraryItem["deliveryStatus"] =
+        delivery.state === "DRIVE_DELIVERED"
+          ? "DELIVERED"
+          : delivery.state === "DRIVE_PENDING" || delivery.state === "DELIVERY_PENDING"
+          ? "PENDING_UPLOAD"
+          : delivery.state === "OUTBOX_ONLY"
+          ? "LOCAL_OUTBOX"
+          : delivery.state === "DELIVERY_FAILED"
+          ? "DELIVERY_FAILED"
+          : "NOT_CONFIGURED";
 
       const isScheduled = Boolean(d.scheduleId || d.isScheduled);
 
@@ -90,23 +104,18 @@ export async function GET(req: Request) {
         engineMode: d.quizContext?.quizMode || d.engineMode || "geo",
         status: d.status || "completed",
         videoUrl: d.videoUrl || `/api/media/video/${videoId}`,
-        driveUrl,
+        driveUrl: delivery.state === "DRIVE_DELIVERED" ? delivery.linkUrl : undefined,
         driveFileId,
-        deliveryTarget: d.deliveryTarget || (driveUrl ? "GOOGLE_DRIVE" : "LOCAL_OUTBOX"),
+        deliveryTarget: d.deliveryTarget || facts.deliveryMethod || (driveUrl ? "GOOGLE_DRIVE" : undefined),
         deliveryStatus,
         isScheduled,
         scheduleId: d.scheduleId,
-        durationSeconds: d.durationSeconds || d.renderDurationSeconds || 45,
-        sizeMb: d.videoSizeMb || 4.5,
-        resolution: d.resolution || "1080x1920 (9:16)",
-        fps: d.fps || 60,
+        durationSeconds: d.durationSeconds ?? d.renderDurationSeconds ?? null,
+        sizeMb: d.videoSizeMb ?? null,
+        resolution: d.resolution ?? null,
+        fps: d.fps ?? null,
         createdAt: d.createdAt || new Date().toISOString(),
-        verificationSummary: d.verificationSummary || {
-          guardianPassed: true,
-          groundingScore: 1.0,
-          totalQuestions: d.quizData?.questions?.length || 6,
-          verifiedQuestions: d.quizData?.questions?.length || 6,
-        },
+        verificationSummary: d.verificationSummary,
       });
     });
 

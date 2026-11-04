@@ -17,9 +17,10 @@ import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
+import * as os from "node:os";
 import { ResearchRuntime } from "../core/research/ResearchRuntime";
 import { VoiceFabric } from "../core/voice/VoiceFabric";
-import { FFmpegRenderCompiler } from "../core/fabric/RenderFabric";
+import { RenderFabric } from "../core/fabric/RenderFabric";
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import { ArtifactResolver } from "../core/rendering/ArtifactResolver";
 import { RenderIntent } from "../core/contracts/RenderIntentContracts";
@@ -188,8 +189,13 @@ const TEST_RESEARCH_CONTRACT = {
     // -------------------------------------------------------------
     // Stage 6: Floor 06 Render Compilation (Real FFmpeg Execution)
     // -------------------------------------------------------------
-    const renderCompiler = new FFmpegRenderCompiler();
-    const renderArtifact = await renderCompiler.execute(renderIntent);
+    const renderFabric = new RenderFabric();
+    const renderResult = await renderFabric.executeRender(renderIntent, {
+      preferredProviderType: "LOCAL",
+      outputDir: fs.mkdtempSync(path.join(os.tmpdir(), "factoryos-f06-e2e-")),
+    });
+    const renderArtifact = renderResult.artifact;
+    if (!renderArtifact) throw new Error("Canonical RenderFabric did not return an artifact");
 
     expect(renderArtifact).toBeDefined();
     expect(renderArtifact.jobId).toBe(jobId);

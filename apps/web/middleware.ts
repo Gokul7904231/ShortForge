@@ -26,33 +26,57 @@ const PUBLIC_PREFIXES = [
 ];
 
 /**
- * Edge-compatible payload decoder for FactoryOS signed sessions.
+ * Edge-compatible verifier for FactoryOS signed sessions.
+ * The signature is HMAC-SHA256 over the base64url payload (see lib/auth/jwt-session.ts).
  */
-function decodeEdgeSessionRole(token: string): UserRole | null {
+function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0)) as Uint8Array<ArrayBuffer>;
+}
+
+async function verifyEdgeSessionToken(token: string): Promise<{ role?: UserRole } | null> {
   if (!token || !token.startsWith("fos_")) return null;
   try {
-    const withoutPrefix = token.substring(4);
-    const parts = withoutPrefix.split(".");
+    const parts = token.substring(4).split(".");
     if (parts.length !== 2) return null;
-    const [payloadB64] = parts;
-    const jsonStr = typeof Buffer !== "undefined"
-      ? Buffer.from(payloadB64, "base64url").toString("utf8")
-      : atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
-    const payload = JSON.parse(jsonStr);
+
+    const [payloadB64, signature] = parts;
+    const secret = process.env.INTERNAL_API_SECRET_KEY;
+    if (!secret) return null;
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+    const signatureValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      base64UrlToBytes(signature),
+      new TextEncoder().encode(payloadB64)
+    );
+    if (!signatureValid) return null;
+
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
     if (payload.exp && Date.now() > payload.exp) return null;
-    return payload.role || null;
+    return payload.role ? payload : null;
   } catch {
     return null;
   }
 }
 
+
 /**
  * Extracts and verifies the role from the session cookie or internal secret key.
  */
-function resolveSessionRole(
+async function resolveSessionRole(
   sessionCookie: string | undefined,
   isSecretKeyValid: boolean
-): UserRole | null {
+): Promise<UserRole | null> {
   if (isSecretKeyValid) {
     return "OWNER";
   }
@@ -61,10 +85,10 @@ function resolveSessionRole(
     return null;
   }
 
-  // 1. Check FactoryOS cryptographically signed session token (Edge-compatible decode)
-  const role = decodeEdgeSessionRole(sessionCookie);
-  if (role) {
-    return role;
+  // 1. Check FactoryOS cryptographically signed session token (signature verified)
+  const payload = await verifyEdgeSessionToken(sessionCookie);
+  if (payload?.role) {
+    return payload.role;
   }
 
   // 2. Dev / Test Mode Mock Session
@@ -78,7 +102,7 @@ function resolveSessionRole(
   return null;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Allow Exact Root Public Landing Page (/) or Redirect Authenticated Users
@@ -138,7 +162,7 @@ export function middleware(request: NextRequest) {
     !!secretKey && (authHeader === `Bearer ${secretKey}` || authHeader === secretKey || queryKey === secretKey);
 
   const isAuthenticated = !!sessionCookie || isSecretKeyValid;
-  const sessionRole = resolveSessionRole(sessionCookie, isSecretKeyValid);
+  const sessionRole = await resolveSessionRole(sessionCookie, isSecretKeyValid);
 
   // 4. HARD PRODUCT BOUNDARY: Server-side Gate for Internal FactoryOS Operator Surfaces
   // Enforces that BASIC creators cannot access workflows, DAGs, models, benchmarks, runtime, SRE, or operator controls.

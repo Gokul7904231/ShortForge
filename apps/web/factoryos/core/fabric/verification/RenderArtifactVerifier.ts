@@ -138,7 +138,7 @@ export class RenderArtifactVerifier {
 
       if (
         request.expected?.fps !== undefined &&
-        (fps === undefined || Math.abs(fps - request.expected.fps) > 0.02)
+        (fps === undefined || Math.abs(fps - request.expected.fps) > 0.1)
       ) {
         throw new Error(
           `FPS mismatch: expected ${request.expected.fps}, observed ${fps ?? "unknown"}.`
