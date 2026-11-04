@@ -68,31 +68,60 @@ export function rankMediaCandidate(params: {
   semanticMatchScore: number;
   entityMatchScore: number;
 }): MediaCandidate {
-  // Reject non-commercial or ambiguous licenses immediately
-  if (!params.license.isCommercialAllowed) {
-    return {
-      id: params.id,
-      provider: params.provider,
-      assetUri: params.assetUri,
-      mediaType: params.mediaType,
-      dimensions: {
-        width: params.width,
-        height: params.height,
-        aspectRatio: `${params.width}:${params.height}`,
-      },
-      sha256: params.sha256,
-      fileSizeBytes: params.fileSizeBytes,
-      license: params.license,
-      rankingSignals: {
-        semanticMatchScore: params.semanticMatchScore,
-        entityMatchScore: params.entityMatchScore,
-        resolutionScore: 0,
-        licenseConfidence: 0,
-        compositeScore: 0,
-      },
-      isAdmitted: false,
-      rejectionReason: `Commercial use disallowed by license terms: ${params.license.spdxId}`,
-    };
+  // Score range and dimension validation
+  if (!Number.isFinite(params.semanticMatchScore) || params.semanticMatchScore < 0 || params.semanticMatchScore > 1) {
+    throw new Error(`[MediaCandidate] Invalid semanticMatchScore: ${params.semanticMatchScore}. Must be between 0.0 and 1.0.`);
+  }
+
+  if (!Number.isFinite(params.entityMatchScore) || params.entityMatchScore < 0 || params.entityMatchScore > 1) {
+    throw new Error(`[MediaCandidate] Invalid entityMatchScore: ${params.entityMatchScore}. Must be between 0.0 and 1.0.`);
+  }
+
+  if (!Number.isFinite(params.width) || params.width <= 0 || !Number.isFinite(params.height) || params.height <= 0) {
+    throw new Error(`[MediaCandidate] Dimensions must be positive finite numbers (${params.width}x${params.height}).`);
+  }
+
+  const dimensions = {
+    width: params.width,
+    height: params.height,
+    aspectRatio: `${params.width}:${params.height}`,
+  };
+
+  const createRejectedCandidate = (reason: string): MediaCandidate => ({
+    id: params.id,
+    provider: params.provider,
+    assetUri: params.assetUri,
+    mediaType: params.mediaType,
+    dimensions,
+    sha256: params.sha256,
+    fileSizeBytes: params.fileSizeBytes,
+    license: params.license,
+    rankingSignals: {
+      semanticMatchScore: params.semanticMatchScore,
+      entityMatchScore: params.entityMatchScore,
+      resolutionScore: 0,
+      licenseConfidence: 0,
+      compositeScore: 0,
+    },
+    isAdmitted: false,
+    rejectionReason: reason,
+  });
+
+  // Priority 1: Fail closed on missing, ambiguous, or unverified licensing & provenance
+  if (!params.license) {
+    return createRejectedCandidate("Missing license metadata");
+  }
+
+  if (typeof params.license.isCommercialAllowed !== "boolean" || !params.license.isCommercialAllowed) {
+    return createRejectedCandidate(`Commercial use disallowed or ambiguous rights: ${params.license.spdxId || "UNKNOWN"}`);
+  }
+
+  if (!params.license.spdxId || typeof params.license.spdxId !== "string" || params.license.spdxId.trim() === "" || params.license.spdxId.toUpperCase() === "UNKNOWN") {
+    return createRejectedCandidate("Missing or invalid SPDX license identifier");
+  }
+
+  if (!params.license.sourceUrl || typeof params.license.sourceUrl !== "string" || params.license.sourceUrl.trim() === "") {
+    return createRejectedCandidate("Missing license provenance source URL");
   }
 
   // Calculate resolution score: ideal is >= 1080x1920 (portrait) or >= 1920x1080 (landscape cropped)
@@ -107,7 +136,7 @@ export function rankMediaCandidate(params: {
     resolutionScore = 0.3;
   }
 
-  const licenseConfidence = params.license.sourceUrl && params.license.spdxId ? 1.0 : 0.6;
+  const licenseConfidence = 1.0; // Provenance verified with valid sourceUrl and spdxId
 
   // Composite multi-signal score:
   // 35% semantic relevance + 25% entity match + 15% resolution + 25% license confidence
@@ -127,11 +156,7 @@ export function rankMediaCandidate(params: {
     provider: params.provider,
     assetUri: params.assetUri,
     mediaType: params.mediaType,
-    dimensions: {
-      width: params.width,
-      height: params.height,
-      aspectRatio: `${params.width}:${params.height}`,
-    },
+    dimensions,
     sha256: params.sha256,
     fileSizeBytes: params.fileSizeBytes,
     license: params.license,

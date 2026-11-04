@@ -5,7 +5,7 @@
 **Author:** Agent 1 (Antigravity / Release Captain & SDLC Lead)  
 **Governing Directive:** `docs/release/agent-packets/agent-1-instruction.md` (Iteration 2 — Section D)  
 **Coordination Branch:** `docs/three-agent-production-speedrun-20261029`  
-**Integrity Mode:** Clean-Room Architected (Deterministic Lowering, Zero Remotion Runtime in Production)  
+**Integrity Mode:** Clean-Room Architected (Deterministic Lowering, Renderer Profile Isolation)  
 
 ---
 
@@ -16,7 +16,7 @@ The ShortForge **Intelligent Visual Director** is the editorial and visual orche
 ### Core Architecture Laws:
 1. **Audio-Anchored Timeline Authority:** The visual layout is bound strictly to physical audio narration produced by `VoiceFabric.ts`. Scene duration is calculated from the frame ceiling at 30 fps; video never drifts from speech.
 2. **Deterministic Native Lowering:** Visual Director plans are compiled into `TimelineIR` and lowered through `CompositionIR/F05` to `RenderFabric/F06` and the native Pillow compositor (`image.py`), muxed uniformly by `ffmpeg.py`.
-3. **No Remotion Production Dependencies:** External Remotion templates (such as RenderComp) remain strictly design/timing references; zero Remotion runtime code or packages are admitted into production builds.
+3. **Renderer Profile Isolation:** External Remotion templates (such as RenderComp) remain strictly design/timing references (`REFERENCE_ONLY`). Remotion compositions for general/horizontal surfaces remain supported under `.okf` foundations via profile filtering (`remotion`), while mobile Shorts production utilizes the proposed native profile (`shorts-native`). Zero RenderComp runtime dependencies are admitted into production builds.
 4. **Bounded Visual Repair:** Scene evaluation failures (e.g. text clipping, low contrast, entity mismatch) trigger targeted asset substitution or layout adjustments capped at **2 attempts**.
 
 ---
@@ -96,7 +96,7 @@ The visual director contracts are established in `apps/web/factoryos/core/visual
 3. **`MediaCandidate.ts`**: Manages candidate media assets with visible multi-signal ranking (semantic match $0.35$, entity match $0.25$, resolution $0.15$, license confidence $0.25$) and fail-closed commercial rights filtering.
 4. **`ComponentSelection.ts`**: Binds storybeats to qualified UI components from the registry with frame-level timing windows and editorial justification.
 5. **`VisualJudgeResult.ts`**: Encapsulates automated post-render checks (text clipping, contrast ratio, visual-audio alignment, safe-area compliance) with bounded repair actions capped at 2 attempts.
-6. **`ComponentRegistry.ts`**: Implements the canonical catalogue of qualified native components (`container.glass.panel.v1`, `badge.category.pill.v1`, `progress.timer.bar.v1`, `reveal.emerald.punch.v1`), rejecting any component attempting to introduce Remotion into production.
+6. **`ComponentRegistry.ts`**: Implements the canonical catalogue of UI components supporting explicit renderer profiles (`shorts-native`, `remotion`, `reference-only`), with strict qualification gating and FPS verification.
 
 ---
 
@@ -107,7 +107,7 @@ To formally resolve the architectural tension between `.okf` historical Remotion
 ```markdown
 # DEC-20261104-SHORTS-NATIVE-RENDER-ADAPTER
 
-**Status:** PROPOSED FOR OWNER RATIFICATION  
+**Status:** PROPOSED AND UNRATIFIED (AWAITING OWNER DECISION)  
 **Scope:** FactoryOS Mobile Shorts Production (9:16 portrait @ 1080x1920 30fps)  
 **Governing Documents Affected:** `.okf/engineering-stack.md`, `.okf/decisions.md` (decision 526)  
 

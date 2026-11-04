@@ -35,6 +35,15 @@ export type QualificationStatus =
   | "DEPRECATED"
   | "REJECTED";
 
+export type RegistryQueryMode = "production" | "test" | "preview";
+
+export interface ComponentQueryFilters {
+  category?: ComponentCategory;
+  qualificationStatus?: QualificationStatus;
+  profile?: RendererProfile;
+  mode?: RegistryQueryMode;
+}
+
 export interface ComponentDimension {
   width: number;
   height: number;
@@ -112,39 +121,79 @@ export class ComponentRegistry {
     return this.components.get(id);
   }
 
-  public isCompatibleWithProfile(componentId: string, profile: RendererProfile): boolean {
+  public isCompatibleWithProfile(
+    componentId: string,
+    profile: RendererProfile,
+    mode: RegistryQueryMode = "production"
+  ): boolean {
     const comp = this.get(componentId);
     if (!comp) return false;
+    if (mode === "production" && profile === "reference-only") return false;
     return comp.supportedRendererProfiles.includes(profile);
   }
 
-  public list(filters?: {
-    category?: ComponentCategory;
-    qualificationStatus?: QualificationStatus;
-    profile?: RendererProfile;
-  }): ComponentDefinition[] {
+  public list(filters?: ComponentQueryFilters): ComponentDefinition[] {
     let result = Array.from(this.components.values());
+    const mode = filters?.mode ?? "production";
+
     if (filters?.category) {
       result = result.filter(c => c.category === filters.category);
     }
-    if (filters?.qualificationStatus) {
-      result = result.filter(c => c.qualificationStatus === filters.qualificationStatus);
-    }
+
     if (filters?.profile) {
+      if (mode === "production" && filters.profile === "reference-only") {
+        throw new Error(
+          `[ComponentRegistry] 'reference-only' components cannot be queried for executable production pipelines.`
+        );
+      }
       result = result.filter(c => c.supportedRendererProfiles.includes(filters.profile!));
     }
+
+    if (filters?.qualificationStatus) {
+      result = result.filter(c => c.qualificationStatus === filters.qualificationStatus);
+    } else {
+      // Automatic qualification gate based on execution mode
+      if (mode === "production") {
+        // In production, strictly reject CANDIDATE, CONTRACT_TESTED, DEPRECATED, and REJECTED
+        result = result.filter(c => c.qualificationStatus === "QUALIFIED");
+      } else {
+        // In test or preview mode, admit QUALIFIED, CONTRACT_TESTED, and CANDIDATE
+        result = result.filter(c => c.qualificationStatus !== "DEPRECATED" && c.qualificationStatus !== "REJECTED");
+      }
+    }
+
     return result;
   }
 
+  /**
+   * findBestMatch — Finds the best qualified component for a category, profile, and canvas format.
+   * 
+   * Strict Guarantees:
+   * 1. Dimensions (width, height, and FPS) must all strictly match the target.
+   * 2. In 'production' mode (default), ONLY components with qualificationStatus === 'QUALIFIED' are returned.
+   * 3. CANDIDATE and CONTRACT_TESTED components are returned ONLY when mode === 'preview' or 'test'.
+   * 4. Throws if profile is 'reference-only' in production mode (reference-only components are never executable).
+   * 5. Returns undefined if no compatible, qualified component is registered.
+   */
   public findBestMatch(
     category: ComponentCategory,
     targetWidth = 1080,
     targetHeight = 1920,
-    profile: RendererProfile = "shorts-native"
+    targetFps = 30,
+    profile: RendererProfile = "shorts-native",
+    mode: RegistryQueryMode = "production"
   ): ComponentDefinition | undefined {
-    const candidates = this.list({ category, profile });
+    if (mode === "production" && profile === "reference-only") {
+      throw new Error(
+        `[ComponentRegistry] Profile 'reference-only' cannot be selected for executable production rendering.`
+      );
+    }
+
+    const candidates = this.list({ category, profile, mode });
     return candidates.find(c =>
-      c.supportedDimensions.some(d => d.width === targetWidth && d.height === targetHeight)
+      c.supportedDimensions.some(
+        d => d.width === targetWidth && d.height === targetHeight && d.fps === targetFps
+      )
     );
   }
 

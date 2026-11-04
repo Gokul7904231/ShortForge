@@ -4,8 +4,8 @@
   "governingDirective": "ShortForge Intelligent Visual Director & Component Library Iteration 2",
   "policy": {
     "cleanRoomEnforced": true,
-    "productionRemotionProhibited": true,
-    "runtimeAuthority": "ShortForge Native Renderer (image.py + ffmpeg.py)",
+    "renderCompRemotionProhibitedInProduction": true,
+    "runtimeAuthority": "RenderFabric (F06) Multi-Profile / ShortForge Native Shorts Renderer",
     "commercialUseAllowedOnly": true
   },
   "sources": {
@@ -17,7 +17,7 @@
       "licenseFile": "assets/component-sources/rendercomp-free-remotion-templates/LICENSE",
       "licenseSha256": "5087261ea0f98e6bc9dbd768fab7e3422de493d901b8a614de6f31f8afcf43db",
       "usageBoundary": "REFERENCE_ONLY",
-      "notes": "React/Remotion motion recipes used strictly as visual timing references. Zero Remotion code or runtime dependencies may be included in production builds."
+      "notes": "React/Remotion motion recipes used strictly as visual timing and motion design references (REFERENCE_ONLY). Zero RenderComp code or runtime dependencies may be admitted into production builds."
     },
     "dotlottie-web": {
       "upstreamUrl": "https://github.com/LottieFiles/dotlottie-web",

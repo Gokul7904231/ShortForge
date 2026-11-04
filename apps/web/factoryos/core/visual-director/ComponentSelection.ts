@@ -36,6 +36,26 @@ export function createComponentSelection(params: {
   parameters?: Record<string, any>;
   justification: string;
 }): ComponentSelection {
+  if (!params.id || !params.storybeatId || !params.componentId) {
+    throw new Error("[ComponentSelection] Missing required identification tokens (id, storybeatId, componentId).");
+  }
+
+  if (!Number.isInteger(params.startFrame) || params.startFrame < 0) {
+    throw new Error(`[ComponentSelection] Invalid startFrame: ${params.startFrame}. Must be a non-negative integer.`);
+  }
+
+  if (!Number.isInteger(params.endFrame) || params.endFrame < params.startFrame) {
+    throw new Error(`[ComponentSelection] Invalid endFrame: ${params.endFrame}. Must be an integer >= startFrame (${params.startFrame}).`);
+  }
+
+  if (!Number.isInteger(params.layerIndex) || params.layerIndex < 0) {
+    throw new Error(`[ComponentSelection] Invalid layerIndex: ${params.layerIndex}. Must be a non-negative integer.`);
+  }
+
+  if (!params.justification || params.justification.trim().length === 0) {
+    throw new Error("[ComponentSelection] ComponentSelection requires a non-empty editorial justification.");
+  }
+
   return {
     id: params.id,
     storybeatId: params.storybeatId,

@@ -64,9 +64,21 @@ export function createStorybeat(params: {
   visualIntent?: string;
   fps?: number;
 }): Storybeat {
-  const fps = params.fps || 30;
+  const fps = params.fps ?? 30;
+  if (!Number.isFinite(fps) || fps <= 0) {
+    throw new Error(`[Storybeat] Invalid fps: ${fps}. Must be a finite, positive number.`);
+  }
+
   const startSeconds = params.startSeconds;
+  if (!Number.isFinite(startSeconds) || startSeconds < 0) {
+    throw new Error(`[Storybeat] Invalid startSeconds: ${startSeconds}. Must be a finite, non-negative number.`);
+  }
+
   const durationSeconds = params.durationSeconds;
+  if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
+    throw new Error(`[Storybeat] Invalid durationSeconds: ${durationSeconds}. Must be a finite, non-negative number.`);
+  }
+
   const endSeconds = startSeconds + durationSeconds;
 
   const startFrame = Math.round(startSeconds * fps);

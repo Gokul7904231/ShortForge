@@ -22,8 +22,16 @@ export interface AudioVisualAlignmentCheck extends VisualCheckItem {
   toleranceMs: number;
 }
 
+export type BoundedRepairType =
+  | "SUBSTITUTE_ASSET"
+  | "REWRAP_TEXT"
+  | "ADJUST_TIMING"
+  | "RESELECT_COMPONENT"
+  | "ADJUST_CONTRAST"
+  | "REPOSITION_SAFE_AREA";
+
 export interface BoundedRepairAction {
-  type: "SUBSTITUTE_ASSET" | "REWRAP_TEXT" | "ADJUST_TIMING" | "RESELECT_COMPONENT";
+  type: BoundedRepairType;
   description: string;
   attemptIndex: number;
   maxAttempts: number; // Locked ceiling: 2
@@ -54,9 +62,14 @@ export function evaluateVisualJudge(params: {
   safeAreaPassed: boolean;
   entityRelevanceScore: number;
   currentAttempt?: number;
+  evaluatedAt?: string;
 }): VisualJudgeResult {
-  const currentAttempt = params.currentAttempt || 1;
+  const currentAttempt = params.currentAttempt ?? 1;
   const maxAttempts = 2;
+
+  if (!Number.isInteger(currentAttempt) || currentAttempt < 1) {
+    throw new Error(`[VisualJudge] Invalid currentAttempt: ${currentAttempt}. Must be an integer >= 1.`);
+  }
 
   const textClipping: VisualCheckItem = {
     passed: params.textClippingPassed,
@@ -100,6 +113,7 @@ export function evaluateVisualJudge(params: {
 
   if (!allPassed) {
     overallStatus = "FAIL";
+    // Only propose repair action if attempt budget has not been exhausted
     if (currentAttempt < maxAttempts) {
       if (!entityRelevance.passed) {
         repairAction = {
@@ -112,18 +126,34 @@ export function evaluateVisualJudge(params: {
       } else if (!textClipping.passed) {
         repairAction = {
           type: "REWRAP_TEXT",
-          description: "Reduce font size by 15% and re-wrap text box",
+          description: "Reduce font size by 15% and re-wrap text container",
           attemptIndex: currentAttempt + 1,
           maxAttempts,
           proposedParameters: { fontSizeScale: 0.85 },
         };
-      } else {
+      } else if (!contrast.passed) {
         repairAction = {
-          type: "ADJUST_TIMING",
-          description: "Re-snap scene duration to decoded audio duration",
+          type: "ADJUST_CONTRAST",
+          description: "Increase backdrop scrim opacity or adjust text color to achieve WCAG AAA contrast",
           attemptIndex: currentAttempt + 1,
           maxAttempts,
-          proposedParameters: { snapAudioCeiling: true },
+          proposedParameters: { scrimOpacityDelta: 0.25, targetRatio: 7.0 },
+        };
+      } else if (!safeArea.passed) {
+        repairAction = {
+          type: "REPOSITION_SAFE_AREA",
+          description: "Pad and clamp visual container inside safe area bounds [80, 260, 860, 1280]",
+          attemptIndex: currentAttempt + 1,
+          maxAttempts,
+          proposedParameters: { safePaddingInsetPx: 32 },
+        };
+      } else if (!alignment.passed) {
+        repairAction = {
+          type: "ADJUST_TIMING",
+          description: "Re-snap scene duration frame ceiling to physical audio duration",
+          attemptIndex: currentAttempt + 1,
+          maxAttempts,
+          proposedParameters: { snapAudioCeiling: true, driftMs: params.alignmentDriftMs },
         };
       }
     }
@@ -132,7 +162,7 @@ export function evaluateVisualJudge(params: {
   return {
     id: params.id,
     storybeatId: params.storybeatId,
-    evaluatedAt: new Date().toISOString(),
+    evaluatedAt: params.evaluatedAt ?? new Date().toISOString(),
     overallStatus,
     checks: {
       textClipping,
