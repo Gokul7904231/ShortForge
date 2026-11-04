@@ -2,10 +2,10 @@
 
 **Runtime:** Antigravity  
 **Role:** Release Captain, SDLC, integration order and release decision  
-**Status:** IN_PROGRESS (Iteration 2 — Review Corrections & Governance Re-alignment)  
+**Status:** IN_PROGRESS (Iteration 2 — Research & Governance Alignment Complete)  
 **Iteration:** 2 — Component Library + Intelligent Visual Director  
 **Instruction revision:** `docs/three-agent-production-speedrun-20261029` @ `03998157`  
-**Last updated (UTC):** 2026-11-04T08:45:00Z  
+**Last updated (UTC):** 2026-11-04T08:50:00Z  
 **Coordination branch:** `docs/three-agent-production-speedrun-20261029`  
 
 ---
@@ -17,8 +17,9 @@ In response to the Iteration 2 Review Correction, Agent 1 has audited live repos
 1. **Renderer Architecture Contradiction Recorded:** Formally classified as `CONTRADICTS LOCKED RULE` under `.okf/decision-protocol.md`. Documented the conflict between `.okf` Remotion selection and Iteration 2 native renderer mandates, presenting Alternatives A and B for owner decision.
 2. **Rebuilt File-Ownership Matrix Including PR #257:** Inspected `origin/pr/257` (`feat/production-acceptance-verification-fabric-20261031` @ `2d453fe2`). Identified 8 critical shared integration files and established a strict boundary isolating Agent 1 from these surfaces.
 3. **PR #255 Scope Preserved:** Confirmed PR #255 is exclusively reserved for SDLC / Spec Kit governance. Proposed dedicated branch `feat/visual-director-iteration2` for Iteration 2 implementation upon owner authorization.
-4. **Honest Local vs. Remote Publication Attestation:** Eliminated premature claims of a "clean" worktree. Published exact `git status --short` output. Replaced machine-specific `file:///C:/...` links with repository-relative paths (`docs/...`, `assets/...`).
+4. **Honest Local vs. Remote Publication Attestation:** Eliminated premature claims of a "clean" worktree. Published exact `git status --short` output. Replaced machine-specific links with repository-relative paths (`docs/...`, `assets/...`).
 5. **Asset-Tracking & Licensing Audit Completed:** Probed `.gitignore` with `git check-ignore -v`, proving that `*.png`, `*.jpg`, and `*.mp4` are globally ignored, while `*.svg` and `*.json` are tracked. Partitioned licenses for RenderComp vs. Remotion, dotLottie vs. animation assets, and preserved Lucide ISC terms.
+6. **Research Deliverable Published:** Completed and published [`docs/research/short-maker-intelligence-research.md`](docs/research/short-maker-intelligence-research.md) covering WeVisCut, VideoDirectorGPT, VBench quality dimensions, and the 10-dimension research decision matrix.
 
 ---
 
@@ -81,9 +82,10 @@ To ensure complete transparency, deliverables are partitioned by publication tie
 | Deliverable | Created Locally | Staged Locally | Committed | Pushed | Remotely Verified |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | `docs/research/short-maker-intelligence-baseline.md` | **YES** | NO | NO | NO | NO (Pending branch creation) |
+| `docs/research/short-maker-intelligence-research.md` | **YES** | NO | NO | NO | NO (Pending branch creation) |
 | `assets/component-sources/SOURCES.lock.json` | **YES** | NO | NO | NO | NO (Pending branch creation) |
 | Reference Source Licenses (`rendercomp`, `dotlottie`, `lucide`) | **YES** | NO | NO | NO | NO (Pending branch creation) |
-| `docs/release/agent-packets/agent-1-response.md` | **YES** | **YES** | **YES** | **YES** | **YES** (Commit `49fd7480` on coordination branch) |
+| `docs/release/agent-packets/agent-1-response.md` | **YES** | **YES** | **YES** | **YES** | **YES** (Coordination branch) |
 
 ### 4.2 Exact `git status --short` in Implementation Worktree
 ```text
@@ -91,6 +93,7 @@ $ cd C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc
 $ git status --short
 ?? assets/
 ?? docs/research/short-maker-intelligence-baseline.md
+?? docs/research/short-maker-intelligence-research.md
 ```
 *Attestation: Zero changes are staged or committed on `feat/release-sdlc-spec-kit-20261029`. PR #255 remains clean at head `d0277335`.*
 
@@ -116,14 +119,15 @@ Using `git check-ignore -v` on `ShortForge-agent1-sdlc`:
 
 ---
 
-## 6. Safe Next Implementation Boundary
+## 6. Safe Next Implementation Boundary & Immediate Recommendation
 
-Agent 1 will operate strictly within this isolated perimeter:
-1. **Research Deliverable:** Author `docs/research/short-maker-intelligence-research.md` (WeVisCut, VideoDirectorGPT, VBench, multimodal scoring).
-2. **Architecture Spec:** Author `docs/architecture/short-maker-visual-director.md` (5-stage Visual Director specification).
-3. **Standalone Typed Contracts:** Implement TypeScript interfaces in `apps/web/factoryos/core/visual-director/` (`VisualBrief.ts`, `Storybeat.ts`, `ComponentSelection.ts`, `MediaCandidate.ts`, `VisualJudgeResult.ts`).
-4. **Component Registry Schemas:** Author JSON schemas and initial qualified manifests in `assets/component-manifests/`.
-5. **Zero Shared Pipeline Edits:** Zero modifications to `TemplateProductionPipeline.ts`, `VoiceFabric.ts`, `LocalRenderAdapter.ts`, `RenderFabric.ts`, `VerificationEngine.ts`, or `image.py`.
-6. **Proposed Implementation Branch:** Awaiting owner approval to branch `feat/visual-director-iteration2` from the reconciled integration base.
+Agent 1 will continue strictly within this isolated perimeter:
+1. **Architecture Spec:** Author `docs/architecture/short-maker-visual-director.md` (formalizing the 5-stage Visual Director specification).
+2. **Standalone Typed Contracts:** Implement TypeScript interfaces in `apps/web/factoryos/core/visual-director/` (`VisualBrief.ts`, `Storybeat.ts`, `ComponentSelection.ts`, `MediaCandidate.ts`, `VisualJudgeResult.ts`).
+3. **Component Registry Schemas:** Author JSON schemas and initial qualified manifests in `assets/component-manifests/`.
+4. **Zero Shared Pipeline Edits:** Zero modifications to `TemplateProductionPipeline.ts`, `VoiceFabric.ts`, `LocalRenderAdapter.ts`, `RenderFabric.ts`, `VerificationEngine.ts`, or `image.py`.
+5. **Immediate Recommendation for Owner:**
+   - Authorize creating the dedicated implementation branch `feat/visual-director-iteration2` branched from `main` or post-PR #257 integration base.
+   - Ratify `.okf` decision between Alternative A (amend `.okf` for native renderer) and Alternative B (Remotion as reference only).
 
 Status remains **`IN_PROGRESS`**.
