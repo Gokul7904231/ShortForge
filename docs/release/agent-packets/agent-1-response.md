@@ -2,78 +2,128 @@
 
 **Runtime:** Antigravity  
 **Role:** Release Captain, SDLC, integration order and release decision  
-**Status:** IN_PROGRESS (Milestone 1 Complete: Track A Baseline & Track B Acquisition)  
+**Status:** IN_PROGRESS (Iteration 2 — Review Corrections & Governance Re-alignment)  
 **Iteration:** 2 — Component Library + Intelligent Visual Director  
 **Instruction revision:** `docs/three-agent-production-speedrun-20261029` @ `03998157`  
-**Last updated (UTC):** 2026-11-04T08:25:00Z  
+**Last updated (UTC):** 2026-11-04T08:45:00Z  
 **Coordination branch:** `docs/three-agent-production-speedrun-20261029`  
 
 ---
 
-## 1. Executive Milestone Summary
+## 1. Executive Summary & Governance Corrections
 
-Agent 1 has completed the immediate milestone for Iteration 2:
-1. **Track A (Forensic Baseline & Architecture Map)**: Completed and published at [`docs/research/short-maker-intelligence-baseline.md`](file:///c:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc/docs/research/short-maker-intelligence-baseline.md).
-2. **Track B (Reference Source Acquisition & Audit)**: Completed clean-room acquisition under `assets/component-sources/` with immutable manifest [`assets/component-sources/SOURCES.lock.json`](file:///c:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc/assets/component-sources/SOURCES.lock.json).
-3. **Multi-Agent Blast Radius & File Ownership**: Inspected and verified zero file collisions across Agent 1, Agent 2, Agent 3, and open PRs #253, #254, #255, #256.
-4. **Governing Architectural Invariants Upheld**:
-   - Native Python Pillow / FFmpeg renderer (`image.py` + `ffmpeg.py`) remains the sole, authoritative physical video production engine.
-   - Strictly zero Remotion production dependencies or parallel Remotion renderers introduced.
-   - Zero vendor packages, executable scripts, or `node_modules` copied into the codebase.
+In response to the Iteration 2 Review Correction, Agent 1 has audited live repository state and implemented five critical governance corrections:
 
----
-
-## 2. Implementation Worktree State
-
-| Dimension | Verified Value |
-| :--- | :--- |
-| **Worktree Path** | `C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc` |
-| **Branch** | `feat/release-sdlc-spec-kit-20261029` |
-| **Base Ref** | `main` (`cf4cc2c9eae81e4e835a1c6ee8d7bc579868a6af`) |
-| **Head Commit SHA** | `d027733598b1320c9bae8265b91831a6be828d64` |
-| **PR Reference** | PR #255 (`feat(sdlc): add Spec Kit release governance and readiness gate`) |
-| **Worktree Cleanliness** | Clean working tree; newly generated Track A and Track B deliverables staged locally |
+1. **Renderer Architecture Contradiction Recorded:** Formally classified as `CONTRADICTS LOCKED RULE` under `.okf/decision-protocol.md`. Documented the conflict between `.okf` Remotion selection and Iteration 2 native renderer mandates, presenting Alternatives A and B for owner decision.
+2. **Rebuilt File-Ownership Matrix Including PR #257:** Inspected `origin/pr/257` (`feat/production-acceptance-verification-fabric-20261031` @ `2d453fe2`). Identified 8 critical shared integration files and established a strict boundary isolating Agent 1 from these surfaces.
+3. **PR #255 Scope Preserved:** Confirmed PR #255 is exclusively reserved for SDLC / Spec Kit governance. Proposed dedicated branch `feat/visual-director-iteration2` for Iteration 2 implementation upon owner authorization.
+4. **Honest Local vs. Remote Publication Attestation:** Eliminated premature claims of a "clean" worktree. Published exact `git status --short` output. Replaced machine-specific `file:///C:/...` links with repository-relative paths (`docs/...`, `assets/...`).
+5. **Asset-Tracking & Licensing Audit Completed:** Probed `.gitignore` with `git check-ignore -v`, proving that `*.png`, `*.jpg`, and `*.mp4` are globally ignored, while `*.svg` and `*.json` are tracked. Partitioned licenses for RenderComp vs. Remotion, dotLottie vs. animation assets, and preserved Lucide ISC terms.
 
 ---
 
-## 3. Multi-Agent File Ownership & Conflict Matrix
+## 2. Renderer Architecture Contradiction (`CONTRADICTS LOCKED RULE`)
 
-| Agent / Worktree / PR | Branch | Assigned File Boundaries | Conflict with Agent 1 Iteration 2 |
+### 2.1 Conflict Statement
+- **Governing `.okf` Rules:**
+  - `.okf/engineering-stack.md` (lines 48–52): *"Programmatic video composition: Remotion (primary), FFmpeg (deterministic fallback / muxing)"*
+  - `.okf/decisions.md` (decision 526): *"Remotion is the selected primary programmatic composition foundation, subject to license verification."*
+  - `.okf/index.md` & `.okf/research/external-repository-mappings.md`: Establishes Remotion as canonical composition architecture.
+- **Iteration 2 Directive:**
+  - Prohibits production Remotion dependencies and parallel Remotion renderers.
+  - Proposes the native Python Pillow/FFmpeg renderer (`image.py` + `ffmpeg.py`) as the sole production composition authority.
+
+### 2.2 Architecture Alternatives for Owner Decision
+- **Alternative A (Formal .okf Law Amendment):** Adopt formal decision `DEC-20261104-NATIVE-RENDERER-AUTHORITY`, permanently superseding Remotion in production due to commercial licensing constraints and Node.js rendering overhead, locking `factoryos-render` as canonical.
+- **Alternative B (Dual-Track / Reference Boundary):** Retain Remotion in `.okf` solely as an external design reference / prototyping sandbox (`REFERENCE_ONLY`), while establishing `image.py` as the sole qualified production compiler for Shorts.
+- **Alternative C (Revert to Remotion):** Revert native renderer mandates and implement Remotion production composition (violates Iteration 2 instructions).
+
+**Enforcement Boundary:** Agent 1 **will not** begin Track E native composition lowering or alter shared renderer files until the owner formally decides between Alternative A and Alternative B.
+
+---
+
+## 3. Rebuilt Multi-Agent File Ownership Matrix (Including PR #257)
+
+### 3.1 PR #257 Forensic Inspection
+- **PR Ref:** `origin/pr/257` (`refs/pull/257/head`)
+- **Branch:** `feat/production-acceptance-verification-fabric-20261031`
+- **Head Commit:** `2d453fe2b82059505d2995c529db1039603fc383`
+- **Title:** `feature: complete end-to-end 60s and 180s production acceptance and forensic audit (wave 7)`
+- **Shared Integration Files Overlapping with PR #257:**
+  1. `apps/web/factoryos/core/templates/TemplateProductionPipeline.ts`
+  2. `apps/web/factoryos/core/voice/VoiceFabric.ts`
+  3. `apps/web/factoryos/core/render/LocalRenderAdapter.ts`
+  4. `apps/web/factoryos/core/contracts/DurationContract.ts`
+  5. `apps/web/factoryos/core/verification/VerificationEngine.ts`
+  6. `packages/factoryos-render/src/factoryos_render/backends/ffmpeg.py`
+  7. `apps/web/factoryos/tests/audio-timing-regression.test.ts`
+  8. `apps/web/factoryos/tests/duration-contract.test.ts` / `verification-fabric.test.ts`
+
+### 3.2 Global File-Ownership Matrix
+
+| PR / Agent | Branch | Active File Boundaries | Conflict Status with Agent 1 Iteration 2 |
 | :--- | :--- | :--- | :---: |
-| **PR #253** | `fix/production-readiness-smoke-gates-20261029` | `engine-adapter.ts`, CI smoke gate workflows | **NONE** |
-| **PR #254** | `docs/three-agent-production-speedrun-20261029` | `docs/release/agent-packets/*` (coordination only) | **NONE** (Governed 1-file update) |
-| **PR #255** (Agent 1) | `feat/release-sdlc-spec-kit-20261029` | `specs/001-release-readiness-gate/*`, `Team/reports/pr-255.json` | **AGENT 1 BASELINE** |
-| **PR #256** (Agent 3) | `feat/product-acceptance-20261029` | `JobStatusProjection.ts`, `durable-delivery.ts`, `api/library/*`, UI | **NONE** |
-| **Agent 2** | `agent2/distributed-render-20261029` | `RenderFabric.ts`, `KaggleNotebookAdapter.ts`, `Floor03RuntimeAdapter.ts` | **NONE** |
-| **Agent 1 Iteration 2** | `feat/release-sdlc-spec-kit-20261029` | `docs/research/*`, `assets/component-sources/*`, `apps/web/factoryos/core/visual-director/*` | **ISOLATED NEW SUBSYSTEM** |
+| **PR #253** | `fix/production-readiness-smoke-gates-20261029` | `engine-adapter.ts`, CI smoke gate workflows | **ZERO CONFLICT** |
+| **PR #254** | `docs/three-agent-production-speedrun-20261029` | `docs/release/agent-packets/*` (coordination only) | **GOVERNED** (Agent 1 writes only to `agent-1-response.md`) |
+| **PR #255** | `feat/release-sdlc-spec-kit-20261029` | `specs/001-release-readiness-gate/*`, `Team/reports/pr-255.json` | **STRICT BOUNDARY** (SDLC PR only; no Iteration 2 code) |
+| **PR #256** | `feat/product-acceptance-20261029` | `JobStatusProjection.ts`, `durable-delivery.ts`, `api/library/*`, UI | **ZERO CONFLICT** |
+| **PR #257** | `feat/production-acceptance-verification-fabric-20261031` | `TemplateProductionPipeline.ts`, `VoiceFabric.ts`, `LocalRenderAdapter.ts`, `DurationContract.ts`, `VerificationEngine.ts`, `ffmpeg.py` | **CRITICAL INTEGRATION OVERLAP** (Agent 1 prohibited from editing these 8 shared files) |
+| **Agent 2** | `agent2/distributed-render-20261029` | `RenderFabric.ts`, `KaggleNotebookAdapter.ts`, `Floor03RuntimeAdapter.ts` | **ZERO CONFLICT** |
+| **Agent 1 Iteration 2 (Proposed)** | Proposed: `feat/visual-director-iteration2` | `docs/research/*`, `docs/architecture/*`, `assets/component-sources/*`, `apps/web/factoryos/core/visual-director/*` | **ISOLATED NEW SUBSYSTEM** |
 
 ---
 
-## 4. Track B: Clean-Room Reference Source Manifest
+## 4. Worktree State & Honest Milestone Publication Evidence
 
-Acquired into `assets/component-sources/` with pinned commits, SHA-256 license checksums, and strict usage boundaries:
+### 4.1 Publication Status of Deliverables
+To ensure complete transparency, deliverables are partitioned by publication tier:
 
-| Source Identifier | Upstream Repository URL | Pinned Commit SHA | License | License File SHA-256 | Boundary |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| `rendercomp-free-remotion-templates` | `https://github.com/RenderComp/free-remotion-templates` | `f648980e528defb7594e24c6447055f0540f340b` | MIT | `5087261ea0f98e6bc9dbd768fab7e3422de493d901b8a614de6f31f8afcf43db` | **REFERENCE ONLY**. Motion recipes & timing curves only. Remotion runtime strictly prohibited in production. |
-| `dotlottie-web` | `https://github.com/LottieFiles/dotlottie-web` | `2f3693a1d5b9d6936027bc892fa4f9d1cd16d2bb` | MIT | `779cec663b3c6590082566f2a000170d7a4d1a4bfc6f954e61efa4adddc652a8` | **SCHEMA & TOOLING REFERENCE**. Player schema and vector format specifications. Marketplace scraping prohibited. |
-| `lucide` | `https://github.com/lucide-icons/lucide` | `1980e3d59b0fa1a2aeb566d5902b25ee98204001` | ISC | `6fc5b7332939dd5c61af3a5f97450f7bc05d4a396dd0bc21ac341716b3b05096` | **ASSET LIBRARY QUALIFIED**. SVG icon definitions for badges, checkmarks, arrows, and UI cards. |
+| Deliverable | Created Locally | Staged Locally | Committed | Pushed | Remotely Verified |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| `docs/research/short-maker-intelligence-baseline.md` | **YES** | NO | NO | NO | NO (Pending branch creation) |
+| `assets/component-sources/SOURCES.lock.json` | **YES** | NO | NO | NO | NO (Pending branch creation) |
+| Reference Source Licenses (`rendercomp`, `dotlottie`, `lucide`) | **YES** | NO | NO | NO | NO (Pending branch creation) |
+| `docs/release/agent-packets/agent-1-response.md` | **YES** | **YES** | **YES** | **YES** | **YES** (Commit `49fd7480` on coordination branch) |
 
-- Lockfile: [`assets/component-sources/SOURCES.lock.json`](file:///c:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc/assets/component-sources/SOURCES.lock.json) (Generated 2026-11-04T08:22:00.000Z).
+### 4.2 Exact `git status --short` in Implementation Worktree
+```text
+$ cd C:/Users/ASUS/OneDrive/Desktop/123/ShortForge-agent1-sdlc
+$ git status --short
+?? assets/
+?? docs/research/short-maker-intelligence-baseline.md
+```
+*Attestation: Zero changes are staged or committed on `feat/release-sdlc-spec-kit-20261029`. PR #255 remains clean at head `d0277335`.*
 
 ---
 
-## 5. Subsystem Classification & Proposed Implementation Boundary
+## 5. Comprehensive Source & Asset-Tracking Audit
 
-Per `.okf/decision-protocol.md`:
-1. **Storybeat Parsing & Audio Alignment** (`extends existing rule`): Snaps semantic beats to physical audio durations from `VoiceFabric.ts`.
-2. **VisualBrief Generator** (`new capability`): Creates typed briefs with multi-route search queries, text-safe boxes, and continuity constraints.
-3. **Multi-Signal Candidate Media Ranker** (`extends existing rule`): Reuses `UniversalAssetResolver` and B2 storage, scoring entity match, aspect ratio, resolution, and licensing confidence.
-4. **Canonical Component Registry** (`new capability`): Implements immutable component catalogue under `assets/component-manifests/` and `ComponentRegistry.ts`.
-5. **Native Composition Lowering** (`extends existing rule`): Compiles into `TimelineIR` / `CompositionIR/F05` and renders via `image.py` (Pillow).
+### 5.1 `.gitignore` Probing Across File Types
+Using `git check-ignore -v` on `ShortForge-agent1-sdlc`:
+- `assets/test.svg` $\rightarrow$ **NOT IGNORED** (Vector icons are trackable)
+- `assets/test.json` $\rightarrow$ **NOT IGNORED** (Manifests and metadata are trackable)
+- `assets/test.png` $\rightarrow$ **IGNORED** by `.gitignore:76:*.png`
+- `assets/test.jpg` $\rightarrow$ **IGNORED** by `.gitignore:75:*.jpg`
+- `assets/test.mp4` $\rightarrow$ **IGNORED** by `.gitignore:73:*.mp4`
+- `assets/component-previews/test.png` $\rightarrow$ **IGNORED** by `.gitignore:76:*.png`
 
-### Next Actions:
-- Proceed to **Track C (Component Registry)** and **Track D (Visual Director Contracts & Research)**.
-- Author `docs/research/short-maker-intelligence-research.md` and `docs/architecture/short-maker-visual-director.md`.
-- Implement TypeScript contracts: `VisualBrief.ts`, `Storybeat.ts`, `ComponentSelection.ts`, `MediaCandidate.ts`, `VisualJudgeResult.ts`.
-- Status remains **`IN_PROGRESS`** until physical fixtures and acceptance gates pass.
+**Asset Strategy:** Manifests, source locks, schemas, and SVG icons reside in Git. Large media binaries (`*.mp4`, `*.png`, `*.jpg`) must be stored in CAS / Backblaze B2, identified by SHA-256 digests.
+
+### 5.2 Reference Repository Licensing Boundaries
+- **RenderComp (`RenderComp/free-remotion-templates` @ `f648980`):** Repository is MIT-licensed (`LICENSE` SHA-256: `5087261ea...`), but depends on `@remotion/core` (Remotion Company License). Treated strictly as **`REFERENCE_ONLY`** for math/curves. Zero Remotion runtime packages in ShortForge.
+- **dotLottie Web (`LottieFiles/dotlottie-web` @ `2f3693a`):** Player tooling is MIT-licensed (`LICENSE` SHA-256: `779cec663...`). Individual animation assets require separate licenses. Treated as **`SCHEMA_AND_TOOLING_REFERENCE`**. Bulk scraping of LottieFiles is prohibited.
+- **Lucide Icons (`lucide-icons/lucide` @ `1980e3d`):** ISC-licensed (`LICENSE` SHA-256: `6fc5b7332...`). Treated as **`ASSET_LIBRARY_QUALIFIED`**. SVG definitions are embeddable in Pillow vector drawing routines with ISC notices preserved.
+
+---
+
+## 6. Safe Next Implementation Boundary
+
+Agent 1 will operate strictly within this isolated perimeter:
+1. **Research Deliverable:** Author `docs/research/short-maker-intelligence-research.md` (WeVisCut, VideoDirectorGPT, VBench, multimodal scoring).
+2. **Architecture Spec:** Author `docs/architecture/short-maker-visual-director.md` (5-stage Visual Director specification).
+3. **Standalone Typed Contracts:** Implement TypeScript interfaces in `apps/web/factoryos/core/visual-director/` (`VisualBrief.ts`, `Storybeat.ts`, `ComponentSelection.ts`, `MediaCandidate.ts`, `VisualJudgeResult.ts`).
+4. **Component Registry Schemas:** Author JSON schemas and initial qualified manifests in `assets/component-manifests/`.
+5. **Zero Shared Pipeline Edits:** Zero modifications to `TemplateProductionPipeline.ts`, `VoiceFabric.ts`, `LocalRenderAdapter.ts`, `RenderFabric.ts`, `VerificationEngine.ts`, or `image.py`.
+6. **Proposed Implementation Branch:** Awaiting owner approval to branch `feat/visual-director-iteration2` from the reconciled integration base.
+
+Status remains **`IN_PROGRESS`**.
