@@ -1,0 +1,44 @@
+{
+  "lockVersion": "1.0.0",
+  "generatedAt": "2026-11-04T08:22:00.000Z",
+  "governingDirective": "ShortForge Intelligent Visual Director & Component Library Iteration 2",
+  "policy": {
+    "cleanRoomEnforced": true,
+    "productionRemotionProhibited": true,
+    "runtimeAuthority": "ShortForge Native Renderer (image.py + ffmpeg.py)",
+    "commercialUseAllowedOnly": true
+  },
+  "sources": {
+    "rendercomp-free-remotion-templates": {
+      "upstreamUrl": "https://github.com/RenderComp/free-remotion-templates",
+      "pinnedCommit": "f648980e528defb7594e24c6447055f0540f340b",
+      "acquiredAt": "2026-11-04T08:18:51.000Z",
+      "license": "MIT",
+      "licenseFile": "assets/component-sources/rendercomp-free-remotion-templates/LICENSE",
+      "licenseSha256": "5087261ea0f98e6bc9dbd768fab7e3422de493d901b8a614de6f31f8afcf43db",
+      "usageBoundary": "REFERENCE_ONLY",
+      "notes": "React/Remotion motion recipes used strictly as visual timing references. Zero Remotion code or runtime dependencies may be included in production builds."
+    },
+    "dotlottie-web": {
+      "upstreamUrl": "https://github.com/LottieFiles/dotlottie-web",
+      "pinnedCommit": "2f3693a1d5b9d6936027bc892fa4f9d1cd16d2bb",
+      "acquiredAt": "2026-11-04T08:19:42.000Z",
+      "license": "MIT",
+      "licenseFile": "assets/component-sources/dotlottie-web/LICENSE",
+      "licenseSha256": "779cec663b3c6590082566f2a000170d7a4d1a4bfc6f954e61efa4adddc652a8",
+      "usageBoundary": "SCHEMA_AND_TOOLING_REFERENCE",
+      "notes": "Player and tooling specification reference. Individual animation assets must possess verified provenance and commercial licenses; bulk scraping of the LottieFiles marketplace is strictly prohibited."
+    },
+    "lucide": {
+      "upstreamUrl": "https://github.com/lucide-icons/lucide",
+      "pinnedCommit": "1980e3d59b0fa1a2aeb566d5902b25ee98204001",
+      "acquiredAt": "2026-11-04T08:20:41.000Z",
+      "license": "ISC",
+      "licenseFile": "assets/component-sources/lucide/LICENSE",
+      "licenseSha256": "6fc5b7332939dd5c61af3a5f97450f7bc05d4a396dd0bc21ac341716b3b05096",
+      "usageBoundary": "ASSET_LIBRARY_QUALIFIED",
+      "notes": "Individual SVG icons may be compiled into vector/raster badges with attribution retained under ISC terms."
+    }
+  }
+}
+

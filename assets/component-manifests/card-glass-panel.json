@@ -1,0 +1,31 @@
+{
+  "id": "container.glass.panel.v1",
+  "name": "Cinematic Glass Container Panel",
+  "category": "container",
+  "version": "1.0.0",
+  "contentHash": "8f4a1c9b2e7d3f5a6b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a",
+  "type": "native_pillow",
+  "supportedDimensions": [
+    { "width": 1080, "height": 1920, "fps": 30 }
+  ],
+  "inputSchema": {
+    "fillColor": { "type": "array", "items": { "type": "integer" }, "default": [11, 18, 32, 240] },
+    "borderColor": { "type": "array", "items": { "type": "integer" }, "default": [255, 255, 255, 30] },
+    "borderRadius": { "type": "integer", "default": 24 },
+    "padding": { "type": "integer", "default": 40 }
+  },
+  "timingBehavior": {
+    "allowsTransition": true,
+    "defaultDurationFrames": 150
+  },
+  "supportedRendererProfiles": [
+    "shorts-native"
+  ],
+  "license": {
+    "spdxId": "Apache-2.0",
+    "author": "ShortForge Core Engineering",
+    "isCommercialAllowed": true,
+    "attributionText": "ShortForge Native UI Component Library"
+  },
+  "qualificationStatus": "CONTRACT_TESTED"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "reveal.emerald.punch.v1",
+  "name": "Emerald Answer Reveal Punch Indicator",
+  "category": "reveal",
+  "version": "1.0.0",
+  "contentHash": "5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
+  "type": "native_pillow",
+  "supportedDimensions": [
+    { "width": 1080, "height": 1920, "fps": 30 }
+  ],
+  "inputSchema": {
+    "correctLetter": { "type": "string", "enum": ["A", "B", "C", "D"] },
+    "glowColorRgb": { "type": "array", "items": { "type": "integer" }, "default": [34, 197, 94] },
+    "pulseScale": { "type": "number", "default": 1.05 }
+  },
+  "timingBehavior": {
+    "allowsTransition": true,
+    "defaultDurationFrames": 60
+  },
+  "supportedRendererProfiles": [
+    "shorts-native"
+  ],
+  "license": {
+    "spdxId": "Apache-2.0",
+    "author": "ShortForge Core Engineering",
+    "isCommercialAllowed": true
+  },
+  "qualificationStatus": "CONTRACT_TESTED"
+}

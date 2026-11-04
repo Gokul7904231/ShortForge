@@ -1,0 +1,30 @@
+{
+  "id": "progress.timer.bar.v1",
+  "name": "Five-Second Countdown Progress Bar",
+  "category": "progress",
+  "version": "1.0.0",
+  "contentHash": "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d",
+  "type": "native_pillow",
+  "supportedDimensions": [
+    { "width": 1080, "height": 1920, "fps": 30 }
+  ],
+  "inputSchema": {
+    "totalFrames": { "type": "integer", "default": 150 },
+    "trackColor": { "type": "array", "items": { "type": "integer" }, "default": [255, 255, 255, 30] },
+    "barColor": { "type": "array", "items": { "type": "integer" }, "default": [6, 182, 212] },
+    "warningColor": { "type": "array", "items": { "type": "integer" }, "default": [245, 158, 11] }
+  },
+  "timingBehavior": {
+    "allowsTransition": false,
+    "defaultDurationFrames": 150
+  },
+  "supportedRendererProfiles": [
+    "shorts-native"
+  ],
+  "license": {
+    "spdxId": "Apache-2.0",
+    "author": "ShortForge Core Engineering",
+    "isCommercialAllowed": true
+  },
+  "qualificationStatus": "CONTRACT_TESTED"
+}
