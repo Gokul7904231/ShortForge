@@ -2,39 +2,95 @@
 
 **Runtime:** Antigravity  
 **Role:** Release Captain, SDLC, integration order and release decision  
-**Status:** READY_FOR_DRAFT_PR  
-**Iteration:** 2 — Component Library + Intelligent Visual Director (Corrections Applied)  
+**Status:** CORRECTIONS_PUSHED_AWAITING_FINAL_REVIEW  
+**Iteration:** 2 — Component Library + Intelligent Visual Director (Correction Commit Pushed)  
 **Instruction revision:** `docs/three-agent-production-speedrun-20261029` @ `03998157`  
-**Last updated (UTC):** 2026-11-04T17:35:00Z  
+**Last updated (UTC):** 2026-11-05T05:00:00Z  
 **Coordination branch:** `docs/three-agent-production-speedrun-20261029`  
 **Implementation branch:** `feat/visual-director-iteration2`  
 **Remote branch URL:** [https://github.com/Gokul7904231/ShortForge/tree/feat/visual-director-iteration2](https://github.com/Gokul7904231/ShortForge/tree/feat/visual-director-iteration2)  
-**Pushed HEAD SHA:** `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`  
-**New Local Commit SHA:** `debbf79ab8c550467373806fa0644dc2a0c446a8` (Unpushed awaiting owner push authorization)  
-**Local Commit Parent:** `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`  
+**Remote HEAD SHA:** `debbf79ab8c550467373806fa0644dc2a0c446a8`  
+**Remote Parent SHA:** `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`  
 **Root Base Commit:** `566c16fe9a73ef16fcb675c83b0a62b5d0035157` (`main`)  
 
 ---
 
-## 1. Executive Summary & Verification Evidence
+## 1. Executive Summary & Push Verification Evidence
 
-All 6 review findings identified during owner inspection have been resolved in new local commit `debbf79a` on `feat/visual-director-iteration2`:
+Per owner authorization, the existing correction commit `debbf79a` was pushed directly to `origin/feat/visual-director-iteration2` without amending or rewriting:
 
-1. **Commercial Licensing Fail-Closed Hardening (`MediaCandidate.ts`):** Enforced fail-closed rejection whenever commercial rights or license provenance are missing, unverified, or ambiguous (empty/invalid SPDX identifier, "UNKNOWN" SPDX, missing source URL). High semantic relevance is prevented from compensating for missing license evidence. Added boundary checks throwing on invalid scores ($<0, >1, \text{NaN}$) and non-positive dimensions.
-2. **VisualJudge Correctness & Category-Specific Remediation (`VisualJudgeResult.ts`):** Mapped each failure dimension strictly to its dedicated repair action:
+1. **Remote Push Completed:** Pushed commit `debbf79a` to `origin/feat/visual-director-iteration2`.
+2. **Remote HEAD Verified:** `git ls-remote origin feat/visual-director-iteration2` confirms remote HEAD is exactly `debbf79ab8c550467373806fa0644dc2a0c446a8`.
+3. **Remote Parent Verified:** `git rev-parse origin/feat/visual-director-iteration2~1` confirms remote parent is exactly `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`. Original commit `64a332fc` is preserved intact with its full 26-file scope.
+4. **Correction File Scope Preserved:** `git diff-tree --no-commit-id --name-only -r origin/feat/visual-director-iteration2` confirms exactly the intended 8 files changed in this correction commit.
+5. **PR & Shared Core Invariants Maintained:**
+   - PR #255 (`feat/release-sdlc-spec-kit-20261029` @ `d0277335`) remains untouched and clean.
+   - PR #257 (`feat/non-lightning-production-acceptance-20261030` @ `2d453fe2`) remains untouched.
+   - Zero changes to shared rendering integration files (`TemplateProductionPipeline.ts`, `VoiceFabric.ts`, `LocalRenderAdapter.ts`, `RenderFabric.ts`, `DurationContract.ts`, `VerificationEngine.ts`, `image.py`, `ffmpeg.py`, F07 contracts).
+6. **No PR / No Merge:** As instructed, **no pull request was opened and no merge was performed**.
+
+---
+
+## 2. Remote Verification Outputs
+
+### 2.1 Remote Branch HEAD Verification
+```text
+$ git ls-remote origin feat/visual-director-iteration2
+debbf79ab8c550467373806fa0644dc2a0c446a8	refs/heads/feat/visual-director-iteration2
+```
+
+### 2.2 Remote Commit Parent Verification
+```text
+$ git rev-parse origin/feat/visual-director-iteration2~1
+64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e
+```
+
+### 2.3 Remote Changed Files in Correction Commit `debbf79a` (Exact 8 Files):
+```text
+$ git diff-tree --no-commit-id --name-only -r origin/feat/visual-director-iteration2
+apps/web/factoryos/core/visual-director/ComponentRegistry.ts
+apps/web/factoryos/core/visual-director/ComponentSelection.ts
+apps/web/factoryos/core/visual-director/MediaCandidate.ts
+apps/web/factoryos/core/visual-director/Storybeat.ts
+apps/web/factoryos/core/visual-director/VisualJudgeResult.ts
+apps/web/factoryos/tests/visual-director-contracts.test.ts
+assets/component-sources/SOURCES.lock.json
+docs/architecture/short-maker-visual-director.md
+```
+
+### 2.4 Preserved Parent Commit `64a332fc` Scope (Exact 26 Files):
+```text
+$ git diff-tree --no-commit-id --name-only -r 64a332fc | wc -l
+26
+```
+
+---
+
+## 3. Review Findings Fixed in Commit `debbf79a`
+
+1. **Commercial Licensing Fail-Closed Hardening (`MediaCandidate.ts`):**
+   - Rejects candidate assets when `license.sourceUrl` is missing or empty.
+   - Rejects candidate assets when `license.spdxId` is missing, empty, or set to `"UNKNOWN"`.
+   - Rejects candidate assets when `license.isCommercialAllowed !== true` (disallowed or ambiguous rights).
+   - High semantic relevance is prevented from compensating for missing license provenance.
+   - Added boundary validation throwing on invalid scores ($<0, >1, \text{NaN}$) and non-positive dimensions.
+2. **VisualJudge Correctness & Category-Specific Remediation (`VisualJudgeResult.ts`):**
    - Contrast failure $\rightarrow$ `ADJUST_CONTRAST` (never timing).
    - Text clipping failure $\rightarrow$ `REWRAP_TEXT` (never timing).
-   - Safe-area failure $\rightarrow$ `REPOSITION_SAFE_AREA` (never timing).
+   - Safe-area incursion $\rightarrow$ `REPOSITION_SAFE_AREA` (never timing).
    - Entity relevance failure $\rightarrow$ `SUBSTITUTE_ASSET`.
-   - Timing adjustments are **strictly restricted** to audio-visual alignment drift.
-   - Enforced 2-attempt budget ceiling: attempt 2 failure yields `undefined` repair action (budget exhausted). Added `currentAttempt` validation and injectable timestamps.
+   - Audio-visual drift $\rightarrow$ `ADJUST_TIMING` **strictly and only** when `alignment.passed === false`.
+   - Enforces 2-attempt budget ceiling: attempt 2 failure yields `undefined` repair action (budget exhausted).
+   - Validates `currentAttempt` (throws if $<1$ or non-integer) and supports injectable timestamps.
 3. **Registry Qualification Gating & Safety (`ComponentRegistry.ts`):**
-   - In production mode (default), `list()` and `findBestMatch()` strictly exclude `CANDIDATE`, `CONTRACT_TESTED`, `DEPRECATED`, and `REJECTED` components.
+   - In `production` mode (default), `list()` and `findBestMatch()` strictly exclude `CANDIDATE`, `CONTRACT_TESTED`, `DEPRECATED`, and `REJECTED` components.
    - In `test` or `preview` mode, `CONTRACT_TESTED` and `CANDIDATE` components are admitted.
-   - `findBestMatch` verifies exact FPS alongside width and height ($1080\times1920 @ 30\text{fps}$).
+   - `findBestMatch` verifies exact FPS ($30\text{fps}$) alongside width and height.
    - Queries for `reference-only` profile throw in production mode, preventing external reference assets from entering executable pipelines.
    - All 4 initial component manifests remain strictly `CONTRACT_TESTED`.
-4. **Exhaustive Draft-07 JSON Schema Validation with Ajv (`visual-director-contracts.test.ts`):** Integrated Ajv Draft-07 validator into the test suite. Exhaustively compiles `component-schema.json` and validates all 4 manifests against the complete schema, verifying zero validation errors. Validated that invalid schemas fail Ajv compilation.
+4. **Exhaustive Draft-07 JSON Schema Validation with Ajv (`visual-director-contracts.test.ts`):**
+   - Integrated Ajv Draft-07 validator into the test suite.
+   - Exhaustively compiles `component-schema.json` and validates all 4 manifests against the complete schema, verifying zero validation errors. Validated that invalid payloads fail Ajv compilation.
 5. **`.okf` Policy Alignment & Scoped Invariants:**
    - Updated `SOURCES.lock.json` policy from global `productionRemotionProhibited` to precisely scoped `renderCompRemotionProhibitedInProduction: true`.
    - Clarified that RenderComp is reference-only.
@@ -44,13 +100,11 @@ All 6 review findings identified during owner inspection have been resolved in n
    - `Storybeat.ts`: Throws on negative startSeconds, negative durationSeconds, or non-positive/non-finite FPS.
    - `ComponentSelection.ts`: Throws on negative startFrame, endFrame $<$ startFrame, negative layerIndex, or empty justification.
    - Cryptographic test: Computes physical SHA-256 hashes of all 3 reference source licenses (`rendercomp`, `dotlottie`, `lucide`) and asserts exact match against `SOURCES.lock.json`.
-7. **Expanded Deterministic Test Suite (31/31 Passing):** Test suite expanded from 13 to **31 deterministic unit tests** (all passing in 1.07s).
 
 ---
 
-## 2. Verification Command Outputs
+## 4. Test Verification Suite: 31/31 Tests Passing (1.07s)
 
-### 2.1 Vitest Contract Test Suite (31/31 Passed):
 ```text
 $ vitest run factoryos/tests/visual-director-contracts.test.ts --config vitest.config.ts
 
@@ -93,76 +147,30 @@ $ vitest run factoryos/tests/visual-director-contracts.test.ts --config vitest.c
    Duration  1.07s
 ```
 
-### 2.2 Canonical TypeScript Typecheck:
-```text
-$ npm run factoryos:typecheck
-> web@0.1.0 factoryos:typecheck
-> tsc --project tsconfig.factoryos.json --noEmit
-Exit code: 0 (0 diagnostics)
+---
 
-$ npm run typecheck
-> web@0.1.0 typecheck
-> tsc --noEmit
-Exit code: 0 (0 diagnostics)
-```
+## 5. Build, Typecheck, and Governance Verification
 
-### 2.3 `.okf` Lint:
-```text
-$ python -m tools.okf.lint
-OKF_LINT=PASS
-Exit code: 0
-```
+- `npm run factoryos:typecheck` $\rightarrow$ Exit code 0 (0 diagnostics)
+- `npm run typecheck` $\rightarrow$ Exit code 0 (0 diagnostics)
+- `python -m tools.okf.lint` $\rightarrow$ `OKF_LINT=PASS` (Exit code 0)
 
 ---
 
-## 3. Commit Integrity & Updated File List
+## 6. Worktree & PR Isolation Matrix
 
-- **New Commit SHA:** `debbf79ab8c550467373806fa0644dc2a0c446a8`
-- **Parent Commit SHA:** `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e`
-- **Remote Pushed SHA:** `64a332fc6cc8e6dda84e66e8b73aac1fb5461c8e` (Commit `debbf79a` is local and unpushed awaiting owner authorization)
-- **Worktree State:** Clean (`git status` reports nothing to commit, working tree clean).
-
-### Modified Files in Commit `debbf79a` (8 files):
-1. `apps/web/factoryos/core/visual-director/ComponentRegistry.ts` — Qualification mode gating, FPS verification, reference-only safety.
-2. `apps/web/factoryos/core/visual-director/ComponentSelection.ts` — Boundary validation for frame ranges, layer index, and non-empty justification.
-3. `apps/web/factoryos/core/visual-director/MediaCandidate.ts` — Fail-closed licensing gates (sourceUrl, valid SPDX, commercial rights) and score range validation.
-4. `apps/web/factoryos/core/visual-director/Storybeat.ts` — Non-negative boundary validation for times and positive FPS check.
-5. `apps/web/factoryos/core/visual-director/VisualJudgeResult.ts` — Specific failure-to-repair mappings, 2-attempt bound enforcement, attempt validation, injectable timestamp.
-6. `apps/web/factoryos/tests/visual-director-contracts.test.ts` — 31 tests covering Ajv Draft-07 schema validation, licensing fail-closed, repair specificity, and license hash checks.
-7. `assets/component-sources/SOURCES.lock.json` — Scoped `renderCompRemotionProhibitedInProduction: true` and clarified reference-only notes.
-8. `docs/architecture/short-maker-visual-director.md` — Harmonized renderer profile isolation and kept proposal explicitly unratified.
+| Branch / PR | Local Worktree | Remote Head SHA | Status / Scope |
+| :--- | :--- | :--- | :--- |
+| `feat/visual-director-iteration2` | `ShortForge-visual-director-iteration2` | `debbf79ab8c550467373806fa0644dc2a0c446a8` | **PUSHED** (Parent `64a332fc`, 8 files changed) |
+| `feat/release-sdlc-spec-kit-20261029` (PR #255) | `ShortForge-agent1-sdlc` | `d0277335` | **UNTOUCHED** (Clean, SDLC gate preserved) |
+| `feat/non-lightning-production-acceptance-20261030` (PR #257) | `ShortForge-verification-fabric` | `2d453fe2b82059505d2995c529db1039603fc383` | **UNTOUCHED** (Zero overlap with PR #257) |
+| `docs/three-agent-production-speedrun-20261029` | `agent3-coord` | Active | **COORDINATION ONLY** |
 
 ---
 
-## 4. Blast Radius & Governance Compliance
+## 7. Next Steps
 
-| Invariant / Scope | Status | Notes |
-| :--- | :---: | :--- |
-| `TemplateProductionPipeline.ts` | **UNTOUCHED** | Zero changes |
-| `VoiceFabric.ts` | **UNTOUCHED** | Zero changes |
-| `LocalRenderAdapter.ts` | **UNTOUCHED** | Zero changes |
-| `RenderFabric.ts` | **UNTOUCHED** | Zero changes |
-| `DurationContract.ts` | **UNTOUCHED** | Zero changes |
-| `VerificationEngine.ts` | **UNTOUCHED** | Zero changes |
-| `image.py` & `ffmpeg.py` | **UNTOUCHED** | Zero changes |
-| F07 Contracts | **UNTOUCHED** | Zero changes |
-| PR #255 (`feat/release-sdlc-spec-kit-20261029`) | **UNTOUCHED** | Clean at `d0277335` |
-| PR #257 (`feat/non-lightning-production-acceptance-20261030`) | **UNTOUCHED** | Clean at `2d453fe2` |
-| 4 Component Manifests | **CONTRACT_TESTED** | Kept strictly at `CONTRACT_TESTED` |
+Awaiting owner final review.
+No PR has been opened. No merge has been performed.
 
----
-
-## 5. Remaining Limitations
-
-1. **Lowering to Physical Renderers (Track E):** Timeline lowering into `TemplateProductionPipeline.ts`, `RenderFabric.ts`, and `LocalRenderAdapter.ts` is intentionally deferred pending owner ratification of `DEC-20261104-SHORTS-NATIVE-RENDER-ADAPTER` and resolution of the PR #257 integration base.
-2. **Physical Visual Frame Inspection (Track F):** Automated metric generation (measuring pixel contrast and OCR from rendered PNG contact sheets) is planned for Track F once physical renderers are lowerable.
-
----
-
-## 6. Publication Status
-
-- Commit `debbf79a` is staged and committed locally on branch `feat/visual-director-iteration2`.
-- Zero force-pushes or commit rewrites were performed.
-- Awaiting owner push authorization before pushing `debbf79a` to `origin/feat/visual-director-iteration2`.
-
-Status is **`READY_FOR_DRAFT_PR`**.
+Status is **`CORRECTIONS_PUSHED_AWAITING_FINAL_REVIEW`**.
