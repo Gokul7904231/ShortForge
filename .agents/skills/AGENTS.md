@@ -67,6 +67,19 @@ Don't treat these as a flat list — they exist at different layers.
   snappy", "more premium") into precise technical instructions the agent can
   execute correctly on the first attempt. Use this mentally when a request
   is vague — restate it in this vocabulary before acting.
+- **`looping-skill`** — Coordinates coding agents operating in separate
+  ChatGPT/IDE sessions using coordinator-owned instruction files, agent-owned
+  response reports, evidence-based review between iterations, and an explicit
+  human credential-approval gate. Use for multi-agent tasks that repeat
+  report → independent review → next instruction → reactivation. See
+  `.agents/skills/looping-skill/SKILL.md`; this protocol does not auto-launch
+  sessions or override `.okf` or release gates.
+- **`elephant-goldfish-model (EGM)`** — Optional spec/design and isolated-review
+  workflow for substantial or ambiguous changes. Use only when installed and
+  the current harness proves the relevant commands and fresh-context reviewer
+  dispatch work; do not force it for narrow bug fixes. It supplements Spec Kit,
+  Anti-Slop, Looping Skill and .okf; it is not production acceptance evidence.
+  Read `.agents/skills/looping-skill/SKILL.md#optional-egm-integration--design-quality-not-a-mandatory-runtime-dependency`.
 
 ---
 
@@ -79,6 +92,7 @@ Don't treat these as a flat list — they exist at different layers.
 | "This feels off / janky" | `animation-vocabulary` (clarify) → `review-animations` (diagnose) → `animate` (fix) |
 | Full page/dashboard polish pass | `find-animation-opportunities` → `apple-design` → `animate` (per item) → `review-animations` |
 | Periodic codebase health check | `improve-animations` |
+| Multi-agent work across separate sessions | `looping-skill` → response report → independent evidence review → next instruction → manual reactivation |
 | New interaction pattern, unsure of feel | `prototype` → `apple-design` → `animate` |
 | Building a new shared component | `emil-design-eng` → `pick-ui-library` → `apple-design` |
 
