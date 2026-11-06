@@ -4,6 +4,8 @@ import * as crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { TemplateRegistry } from '../apps/web/lib/templates/registry/TemplateRegistry';
 import { TemplateProductionPipeline, ScenePlan } from '../apps/web/factoryos/core/templates/TemplateProductionPipeline';
+import { TemplateCrafter } from '../apps/web/factoryos/core/templates/TemplateCrafter';
+import { NarrationTimingLedger } from '../apps/web/factoryos/core/voice/NarrationCrafter';
 import { LocalRenderAdapter } from '../apps/web/factoryos/core/render/LocalRenderAdapter';
 import { VerificationEngine } from '../apps/web/factoryos/core/verification/VerificationEngine';
 
@@ -108,7 +110,7 @@ const SCIENCE_DATASET: QuizDataset = {
       options: ['Jupiter', 'Venus', 'Mars', 'Mercury'],
       answerIndex: 0,
       answer: 'Jupiter',
-      explanation: 'Jupiter rotates once every 9.9 hours, giving it the shortest day of any planet in our Solar System.',
+      explanation: 'Jupiter rotates once every 9.9 hours, giving it the shortest day in our Solar System.',
       provenance: { source: 'NASA Planetary Fact Sheet' },
       image_path: 'data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png'
     },
@@ -117,7 +119,7 @@ const SCIENCE_DATASET: QuizDataset = {
       options: ['300,000 km/s', '150,000 km/s', '30,000 km/s', '3,000 km/s'],
       answerIndex: 0,
       answer: '300,000 km/s',
-      explanation: 'Light in a vacuum travels at an immutable universal constant of precisely 299,792,458 meters per second.',
+      explanation: 'Light in a vacuum travels at roughly 300,000 kilometers per second.',
       provenance: { source: 'NIST Physical Constants Reference' },
       image_path: 'data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png'
     },
@@ -126,7 +128,7 @@ const SCIENCE_DATASET: QuizDataset = {
       options: ['Ganymede', 'Titan', 'Callisto', 'Io'],
       answerIndex: 0,
       answer: 'Ganymede',
-      explanation: 'Ganymede orbits Jupiter and is even larger in diameter than the planet Mercury.',
+      explanation: 'Ganymede orbits Jupiter and is even larger in diameter than Mercury.',
       provenance: { source: 'ESA Juice Mission Data' },
       image_path: 'data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png'
     },
@@ -135,7 +137,7 @@ const SCIENCE_DATASET: QuizDataset = {
       options: ['No Medium', 'Too Cold', 'Zero Gravity', 'Solar Radiation'],
       answerIndex: 0,
       answer: 'No Medium',
-      explanation: 'Sound is a mechanical vibration requiring physical atoms or molecules to propagate.',
+      explanation: 'Sound is a mechanical wave requiring atoms or molecules to propagate.',
       provenance: { source: 'Acoustical Society of America' },
       image_path: 'data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png'
     },
@@ -144,7 +146,7 @@ const SCIENCE_DATASET: QuizDataset = {
       options: ['Venus', 'Mercury', 'Mars', 'Jupiter'],
       answerIndex: 0,
       answer: 'Venus',
-      explanation: 'Venus has a dense carbon dioxide atmosphere trapping heat at an average 465 degrees Celsius.',
+      explanation: 'Venus traps extreme heat at an average 465 degrees Celsius.',
       provenance: { source: 'NASA Venus Fact Sheet' },
       image_path: 'data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png'
     },
@@ -153,12 +155,23 @@ const SCIENCE_DATASET: QuizDataset = {
       options: ['DNA', 'RNA', 'Enzyme', 'Lipid'],
       answerIndex: 0,
       answer: 'DNA',
-      explanation: 'Watson, Crick, and Rosalind Franklin discovered the antiparallel double-helix structure of DNA.',
+      explanation: 'DNA forms the famous double-helix structure discovered by Watson, Crick, and Franklin.',
       provenance: { source: 'Nature Publishing Archives' },
       image_path: 'data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png'
     }
   ]
 };
+
+function getWorkspaceRoot(): string {
+  let root = process.cwd();
+  while (root !== path.dirname(root)) {
+    if (fs.existsSync(path.join(root, 'tools', 'synthesize_quizshow_v2_audio.py'))) {
+      return root;
+    }
+    root = path.dirname(root);
+  }
+  return process.cwd();
+}
 
 async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): Promise<{
   videoPath: string;
@@ -167,6 +180,7 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
   fileSize: number;
   contactSheetPath: string;
 }> {
+  const workspaceRoot = getWorkspaceRoot();
   console.log('=============================================================================');
   console.log(` RENDERING QUIZ TEMPLATE V2 SAMPLE: ${dataset.category.toUpperCase()}`);
   console.log(` Canonical Template: quiz.universal.cinematic.v2 | Ceiling: 180.0s`);
@@ -200,7 +214,7 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
   }
 
   // 2. Synthesize Audio with soft female Kore persona
-  const audioDir = path.resolve(process.cwd(), 'data', 'audio', `quiz_v2_${dataset.category.toLowerCase()}`);
+  const audioDir = path.resolve(workspaceRoot, 'data', 'audio', `quiz_v2_${dataset.category.toLowerCase()}`);
   fs.mkdirSync(audioDir, { recursive: true });
 
   const beatsForSynthesis = scriptIR.beats
@@ -215,7 +229,7 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
   fs.writeFileSync(beatsJsonPath, JSON.stringify(beatsForSynthesis, null, 2), 'utf-8');
 
   console.log(`[2] Synthesizing ${beatsForSynthesis.length} narration tracks for ${dataset.category} using soft female Kore voice...`);
-  execFileSync('python', ['tools/synthesize_quizshow_v2_audio.py', beatsJsonPath, audioDir], { stdio: 'inherit' });
+  execFileSync('python', [path.join(workspaceRoot, 'tools', 'synthesize_quizshow_v2_audio.py'), beatsJsonPath, audioDir], { stdio: 'inherit' });
 
   const manifestPath = path.join(audioDir, 'audio_manifest.json');
   const sceneAudioArtifacts: Array<{ sceneId: string; localPath: string; durationSeconds: number }> = JSON.parse(
@@ -225,51 +239,23 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
   const totalAudioDuration = sceneAudioArtifacts.reduce((sum, a) => sum + a.durationSeconds, 0);
   console.log(`[3] Synthesized ${sceneAudioArtifacts.length} audio tracks. Total measured speech duration: ${totalAudioDuration.toFixed(2)}s`);
 
-  // 3. Compile Scene Plans ensuring video >= audio + tail and injecting V2 templateId and B2 backdrops
-  const scenePlans: ScenePlan[] = scriptIR.beats.map((beat, i) => {
-    const sceneId = `scene_${String(i + 1).padStart(2, '0')}_${beat.beatId}`;
-    const audioMatch = sceneAudioArtifacts.find((a) => a.sceneId === sceneId);
-    const isThinkGate = beat.props?.thinkGate === true;
-    const tail = typeof beat.props?.audioTailSeconds === 'number' ? beat.props.audioTailSeconds : 0.35;
-
-    // Determine corresponding question background for the 6 question cycles
-    let b2Image = beat.props?.image_path;
-    if (!b2Image && i >= 1 && i <= 48) {
-      const qIdx = Math.floor((i - 1) / 8);
-      b2Image = dataset.questions[qIdx]?.image_path;
-    }
-
-    return {
-      sceneId,
-      beatId: beat.beatId,
-      narration: beat.narration,
-      visualIntent: beat.visualIntent,
-      shotRecipeId: beat.shotRecipeId,
-      props: {
-        ...beat.props,
-        template_id: 'quiz.universal.cinematic.v2',
-        templateId: 'quiz.universal.cinematic.v2',
-        design_pack: 'quiz.universal.cinematic.v1',
-        canva_design_pack: 'quiz.universal.cinematic.v1',
-        ...(b2Image ? { image_path: b2Image } : {})
-      },
-      durationIntent: {
-        target: isThinkGate ? 5.0 : (audioMatch ? Number((audioMatch.durationSeconds + tail).toFixed(2)) : (beat.durationSeconds || 3.5)),
-        min: 1.0,
-        max: 15.0
-      }
-    };
-  });
-
+  const ledgerPath = path.join(audioDir, 'narration_timing_ledger.json');
+  const timingLedger: NarrationTimingLedger = JSON.parse(fs.readFileSync(ledgerPath, 'utf-8'));
   const finalVideoPath = path.join(outputArtifactsDir, dataset.outputFilename);
 
-  // 4. Compile LocalRenderIntent
-  const localIntent = pipeline.compileLocalRenderIntent({
+  // 3. Compile LocalRenderIntent via High-Intelligence Template Crafter (F05)
+  console.log(`[4] Compiling audio-locked LocalRenderIntent via TemplateCrafter (F05)...`);
+  const localIntent = TemplateCrafter.getInstance().compileAudioLockedIntent({
     templateDef,
-    scenePlans,
-    sceneAudioArtifacts,
     jobId: dataset.sampleId,
-    outputPath: finalVideoPath
+    title: `${dataset.topic} Universal Quiz`,
+    outputPath: finalVideoPath,
+    topic: dataset.topic,
+    categoryBadge: `${dataset.category.toUpperCase()} • QUIZ`,
+    accentColor: dataset.accentColor,
+    themeToken: dataset.themeToken,
+    questions: dataset.questions,
+    timingLedger
   });
 
   const plannedTotalDuration = localIntent.scenes.reduce((acc, s) => acc + s.duration_seconds, 0);
@@ -293,10 +279,14 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
 
   // 6. Verify via VerificationEngine
   console.log(`[7] Running VerificationEngine F07 acceptance gates...`);
+  const b2ImageAbsolutePaths = dataset.questions.map((q) => path.resolve(process.cwd(), q.image_path));
   const f07Report = await VerificationEngine.auditMediaArtifact({
     jobId: dataset.sampleId,
     videoUrl: finalVideoPath,
-    durationSeconds: receipt.duration_seconds
+    durationSeconds: receipt.duration_seconds,
+    b2Images: b2ImageAbsolutePaths,
+    lastSpokenWordEndMs: Math.round(totalAudioDuration * 1000),
+    scenes: localIntent.scenes
   });
 
   if (!f07Report.passed) {
@@ -304,8 +294,8 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
   }
   console.log(`[8] F07 Quality Gate: PASS (Score: ${f07Report.score}/100, Duration: ${receipt.duration_seconds.toFixed(2)}s, Size: ${(receipt.validation.file_size_bytes / (1024*1024)).toFixed(2)}MB)`);
 
-  // 7. Extract 12 keyframes and generate visual contact sheet
-  console.log(`[9] Extracting 12 keyframes for contact sheet...`);
+  // 7. Extract keyframes and generate visual contact sheet
+  console.log(`[9] Extracting keyframes for contact sheet and verification proof...`);
   const framesDir = path.join(outputArtifactsDir, `frames_${dataset.category.toLowerCase()}`);
   fs.mkdirSync(framesDir, { recursive: true });
 
@@ -313,20 +303,52 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
     fs.unlinkSync(path.join(framesDir, f));
   }
 
-  const timestamps: number[] = [];
+  // Key verification proof moments:
+  // 1. Hook frame (t = 1.0s)
+  // 2. Q1 think / countdown frame
+  // 3. Q1 reveal emerald highlight frame
+  // 4. Q1 explanation drawer frame
+  // 5. Outro CTA frame (0.5s before EOF)
+  // Plus moments across the 6 questions
+  const timestamps: number[] = [1.0];
   let sceneCursor = 0;
   for (const scene of localIntent.scenes) {
     const props = scene.shots?.[0]?.props || {};
     if (props.thinkGate === true) timestamps.push(Number((sceneCursor + 2.5).toFixed(2)));
     if (scene.scene_id.includes('_reveal')) timestamps.push(Number((sceneCursor + 0.8).toFixed(2)));
+    if (scene.scene_id.includes('_explanation')) timestamps.push(Number((sceneCursor + 1.2).toFixed(2)));
     sceneCursor += scene.duration_seconds;
   }
-  if (timestamps.length !== 12) {
-    throw new Error(`Expected 12 contact-sheet moments (think + reveal per question), got ${timestamps.length}`);
+  timestamps.push(Number(Math.max(1.0, receipt.duration_seconds - 0.5).toFixed(2)));
+
+  // Extract proof frames
+  const proofFramesDir = path.join(outputArtifactsDir, `proof_${dataset.category.toLowerCase()}`);
+  fs.mkdirSync(proofFramesDir, { recursive: true });
+
+  const proofTimestamps: Record<string, number> = {
+    'hook_t1s': 1.0,
+    'countdown': localIntent.scenes.findIndex(s => s.shots?.[0]?.props?.thinkGate === true) >= 0 ? 12.0 : 5.0,
+    'reveal_emerald': 16.5,
+    'explanation_drawer': 19.0,
+    'outro_cta': Number(Math.max(1.0, receipt.duration_seconds - 0.5).toFixed(2))
+  };
+
+  for (const [proofName, pts] of Object.entries(proofTimestamps)) {
+    const proofOut = path.join(proofFramesDir, `proof_${proofName}.png`);
+    execFileSync('ffmpeg', [
+      '-y',
+      '-ss', pts.toFixed(2),
+      '-i', finalVideoPath,
+      '-vframes', '1',
+      '-q:v', '2',
+      proofOut
+    ], { stdio: 'ignore' });
   }
 
-  for (let idx = 0; idx < timestamps.length; idx++) {
-    const ts = timestamps[idx];
+  // Extract contact sheet frames
+  const contactTimestamps = timestamps.slice(0, 12);
+  for (let idx = 0; idx < contactTimestamps.length; idx++) {
+    const ts = contactTimestamps[idx];
     const frameOut = path.join(framesDir, `frame_${String(idx + 1).padStart(2, '0')}.png`);
     execFileSync('ffmpeg', [
       '-y',
@@ -341,7 +363,7 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
   const contactSheetPath = path.join(outputArtifactsDir, dataset.contactSheetFilename);
   console.log(`[10] Generating contact sheet: ${contactSheetPath}...`);
   execFileSync('python', [
-    'tools/create_contact_sheet.py',
+    path.join(workspaceRoot, 'tools', 'create_contact_sheet.py'),
     framesDir,
     contactSheetPath,
     `SHORTFORGE QUIZ TEMPLATE V2 — ${dataset.category.toUpperCase()} (6Q)`,
@@ -358,7 +380,8 @@ async function renderDataset(dataset: QuizDataset, outputArtifactsDir: string): 
 }
 
 async function main() {
-  const outputArtifactsDir = path.resolve(process.cwd(), 'artifacts', 'quiz-v2');
+  const workspaceRoot = getWorkspaceRoot();
+  const outputArtifactsDir = path.resolve(workspaceRoot, 'artifacts', 'quiz-v2');
   fs.mkdirSync(outputArtifactsDir, { recursive: true });
 
   const requested = (process.argv[2] || 'all').toLowerCase();

@@ -7,6 +7,7 @@ Respects 9:16 safe areas and renders typography, shapes, cards, and captions.
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from typing import Dict, Any, List, Optional, Tuple
 import math
+from factoryos_render.components.registry import calculate_auto_font_size
 
 class NativeFrameCompositor:
     def __init__(self, width: int = 1080, height: int = 1920):
@@ -57,7 +58,7 @@ class NativeFrameCompositor:
                     raw = Image.open(c).convert('RGBA')
                     resized = raw.resize((88, 88), Image.Resampling.LANCZOS)
                     r, g, b, a = resized.split()
-                    a = a.point(lambda p: int(p * 0.75))
+                    a = a.point(lambda p: int(p * 0.85))
                     self._watermark_cache = Image.merge('RGBA', (r, g, b, a))
                     return self._watermark_cache
                 except Exception:
@@ -234,7 +235,7 @@ class NativeFrameCompositor:
 
         draw = ImageDraw.Draw(img)
 
-        # Atmospheric Photographic Subject Backdrop Layer (Defect 10 fix)
+        # Atmospheric Photographic Subject Backdrop Layer (Exclusive sf.stage.semantic_b2_bg)
         img_path = shot_props.get("image_path") or shot_props.get("imageRef") or scene_props.get("image_url")
         clean_p = self._clean_image_path(img_path)
         if clean_p:
@@ -243,9 +244,17 @@ class NativeFrameCompositor:
                 try:
                     from PIL import ImageFilter, ImageOps
                     src_raw = Image.open(clean_p).convert("RGBA")
-                    bg_fitted = ImageOps.fit(src_raw, (self.width, self.height), Image.Resampling.LANCZOS)
-                    blurred_bg = bg_fitted.filter(ImageFilter.GaussianBlur(radius=18))
-                    scrim = Image.new("RGBA", (self.width, self.height), (6, 12, 24, 195))
+                    # Ken Burns subtle dynamic zoom (1.00 -> 1.05)
+                    scale = 1.0 + 0.05 * max(0.0, min(1.0, progress))
+                    scaled_w = int(self.width * scale)
+                    scaled_h = int(self.height * scale)
+                    bg_scaled = ImageOps.fit(src_raw, (scaled_w, scaled_h), Image.Resampling.LANCZOS)
+                    cx = (scaled_w - self.width) // 2
+                    cy = (scaled_h - self.height) // 2
+                    bg_cropped = bg_scaled.crop((cx, cy, cx + self.width, cy + self.height))
+                    blurred_bg = bg_cropped.filter(ImageFilter.GaussianBlur(radius=18))
+                    # Mandatory dark navy contrast scrim (#0B1220CC -> 11, 18, 32, 204) for WCAG >= 7:1
+                    scrim = Image.new("RGBA", (self.width, self.height), (11, 18, 32, 204))
                     blurred_bg.alpha_composite(scrim)
                     img.paste(blurred_bg, (0, 0))
                     draw = ImageDraw.Draw(img)
@@ -439,8 +448,9 @@ class NativeFrameCompositor:
             font_cat = self._get_font(28)
             draw.text((self.width // 2, card_top - 1), category, fill=(255, 255, 255, 255), font=font_cat, anchor="mm")
 
-            # Question Text - Crisp pure white sitting directly on card canvas (no nested box!)
-            font_q = self._get_font(38)
+            # Question Text - Crisp pure white sitting directly on card canvas (sf.quiz.question_glass_card auto-scaling)
+            font_size_q = calculate_auto_font_size(q_text)
+            font_q = self._get_font(font_size_q)
             self._draw_wrapped_text(draw, q_text, self.width // 2, card_top + 95, content_width - 80, font_q, (255, 255, 255, 255), "mm")
 
             # Divider / Track
@@ -497,8 +507,9 @@ class NativeFrameCompositor:
             font_timer = self._get_font(34)
             draw.text((self.width // 2, card_top - 1), f"⏱️ {rem_secs}s", fill=timer_color, font=font_timer, anchor="mm")
 
-            # Question Text - Crisp pure white
-            font_q = self._get_font(38)
+            # Question Text - Crisp pure white (sf.quiz.question_glass_card auto-scaling)
+            font_size_q = calculate_auto_font_size(q_text)
+            font_q = self._get_font(font_size_q)
             self._draw_wrapped_text(draw, q_text, self.width // 2, card_top + 95, content_width - 80, font_q, (255, 255, 255, 255), "mm")
 
             # Divider & Track
@@ -576,7 +587,8 @@ class NativeFrameCompositor:
 
             # Question text
             if q_text:
-                font_q = self._get_font(38)
+                font_size_q = calculate_auto_font_size(q_text)
+                font_q = self._get_font(font_size_q)
                 self._draw_wrapped_text(draw, q_text, self.width // 2, card_top + 95, content_width - 80, font_q, (255, 255, 255, 255), "mm")
 
             # Divider
@@ -594,10 +606,17 @@ class NativeFrameCompositor:
             if is_v2:
                 for oidx in range(min(4, len(options))):
                     opt_y = divider_y + 20 + oidx * 125
-                    box = [left_margin + 25, opt_y, right_margin - 25, opt_y + 105]
+                    base_box = [left_margin + 25, opt_y, right_margin - 25, opt_y + 105]
                     is_correct = (oidx == correct_idx)
 
                     if is_correct:
+                        # 1.04x scale pop around box center
+                        bcx = (base_box[0] + base_box[2]) / 2.0
+                        bcy = (base_box[1] + base_box[3]) / 2.0
+                        half_w = (base_box[2] - base_box[0]) * 1.04 / 2.0
+                        half_h = (base_box[3] - base_box[1]) * 1.04 / 2.0
+                        box = [bcx - half_w, bcy - half_h, bcx + half_w, bcy + half_h]
+
                         # Vibrant Emerald Green fill + crisp white bold text + active indicator bar
                         draw.rounded_rectangle(box, radius=18, fill=(16, 95, 48, 245), outline=(52, 211, 153, 255), width=3)
                         draw.rounded_rectangle([box[0], box[1], box[0] + 10, box[3]], radius=5, fill=(52, 211, 153, 255))
@@ -607,13 +626,13 @@ class NativeFrameCompositor:
                         opt_str = str(options[oidx])
                         draw.text((left_margin + 135, by), opt_str, fill=(255, 255, 255, 255), font=font_opt, anchor="lm")
                     else:
-                        # Softly dim unselected incorrect options in V2
-                        draw.rounded_rectangle(box, radius=18, fill=(13, 20, 36, 140), outline=(51, 65, 85, 70), width=1)
+                        # Dim unselected incorrect options to opacity 0.35 (alpha ~89)
+                        draw.rounded_rectangle(base_box, radius=18, fill=(13, 20, 36, 89), outline=(51, 65, 85, 45), width=1)
                         bx, by = left_margin + 85, opt_y + 52
-                        draw.ellipse([bx - 26, by - 26, bx + 26, by + 26], fill=(255, 255, 255, 10), outline=(255, 255, 255, 30), width=1)
-                        draw.text((bx, by), opt_labels[oidx], fill=(100, 116, 139, 200), font=font_badge, anchor="mm")
+                        draw.ellipse([bx - 26, by - 26, bx + 26, by + 26], fill=(255, 255, 255, 10), outline=(255, 255, 255, 25), width=1)
+                        draw.text((bx, by), opt_labels[oidx], fill=(100, 116, 139, 89), font=font_badge, anchor="mm")
                         opt_str = str(options[oidx])
-                        draw.text((left_margin + 135, by), opt_str, fill=(100, 116, 139, 200), font=font_opt, anchor="lm")
+                        draw.text((left_margin + 135, by), opt_str, fill=(100, 116, 139, 89), font=font_opt, anchor="lm")
             else:
                 for oidx in range(min(4, len(options))):
                     opt_y = divider_y + 20 + oidx * 125

@@ -1,0 +1,49 @@
+{
+  "version": "2.0",
+  "canonicalTemplateId": "quiz.universal.cinematic.v2",
+  "v1BaselineTemplateId": "quiz.universal.glass.v1",
+  "narrator": "Kore profile (Windows SAPI Zira female + warmth filter chain)",
+  "storageTier": "Backblaze B2 (shortsfactory-assets/quiz-v2/)",
+  "timingContract": "Per question: question -> options A-D narration -> 150-frame silent think gate -> answer visual/narration -> explanation narration",
+  "timestamp": "2026-11-06T16:55:13.983Z",
+  "samples": [
+    {
+      "category": "Science",
+      "topic": "Cosmic Science & Physics Challenge",
+      "questionCount": 6,
+      "beats": 50,
+      "videoPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-science-6q.mp4",
+      "sha256": "62b3077c014ae88a5c51635529e9a736672f7e011728896f767c73f1368b842f",
+      "durationSeconds": 116.39,
+      "fileSizeBytes": 4703746,
+      "contactSheetPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\science-contact-sheet.png",
+      "b2Assets": [
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png"
+      ]
+    },
+    {
+      "category": "Geography",
+      "topic": "World Geography Challenge",
+      "questionCount": 6,
+      "beats": 50,
+      "videoPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-geography-6q.mp4",
+      "sha256": "a2cd8000ffd1808a49328b43a5367631db6d76196dc21f7839998f94006a1771",
+      "durationSeconds": 119.92,
+      "fileSizeBytes": 4895550,
+      "contactSheetPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\geography-contact-sheet.png",
+      "b2Assets": [
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mariana_trench.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/freshwater_lakes.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mount_everest_himalayas.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/amazon_rainforest_basin.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/sahara_desert_dunes.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/tokyo_megacity_urban.png"
+      ]
+    }
+  ]
+}
