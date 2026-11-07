@@ -1,0 +1,68 @@
+{
+  "version": "2.0",
+  "canonicalTemplateId": "quiz.universal.cinematic.v2",
+  "v1BaselineTemplateId": "quiz.universal.glass.v1",
+  "narrator": "Kore profile (Windows SAPI Zira female + warmth filter chain)",
+  "storageTier": "Backblaze B2 (shortsfactory-assets/quiz-v2/)",
+  "timingContract": "Per question: question -> options A-D narration -> 150-frame silent think gate -> answer visual/narration -> explanation narration",
+  "timestamp": "2026-11-07T08:50:46.776Z",
+  "samples": [
+    {
+      "category": "Science",
+      "topic": "Cosmic Science & Physics Challenge",
+      "questionCount": 6,
+      "beats": 26,
+      "videoPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-science-6q.mp4",
+      "sha256": "7aa380d7e4471625a0e2f0f73f50fe637c96c86ab4052297ca0b4299501a8c5f",
+      "durationSeconds": 78.76,
+      "fileSizeBytes": 2465647,
+      "contactSheetPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\science-contact-sheet.png",
+      "b2Assets": [
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png"
+      ]
+    },
+    {
+      "category": "Geography",
+      "topic": "World Geography Challenge",
+      "questionCount": 6,
+      "beats": 26,
+      "videoPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-geography-6q.mp4",
+      "sha256": "fd2b8bb22058105acea1e9c00e570eed7df5c00588bc65bccbda7505773634bf",
+      "durationSeconds": 82.49,
+      "fileSizeBytes": 2653334,
+      "contactSheetPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\geography-contact-sheet.png",
+      "b2Assets": [
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mariana_trench.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/freshwater_lakes.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mount_everest_himalayas.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/amazon_rainforest_basin.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/sahara_desert_dunes.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/tokyo_megacity_urban.png"
+      ]
+    },
+    {
+      "category": "India",
+      "topic": "India Geography Challenge",
+      "questionCount": 6,
+      "beats": 26,
+      "videoPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-india-geography-6q.mp4",
+      "sha256": "428d1fd6c98c69ae2ab0b59d2a4441b585551c2198f0158f98e012c4f3b1d760",
+      "durationSeconds": 138.92000000000002,
+      "fileSizeBytes": 11216592,
+      "contactSheetPath": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\india-geography-contact-sheet.png",
+      "b2Assets": [
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/india_kanchenjunga_himalayas.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/india_ganga_river_varanasi.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/india_wular_lake_kashmir.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/india_indira_point_nicobar.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/india_barren_island_volcano.png",
+        "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/india_thar_desert_dunes.png"
+      ]
+    }
+  ]
+}

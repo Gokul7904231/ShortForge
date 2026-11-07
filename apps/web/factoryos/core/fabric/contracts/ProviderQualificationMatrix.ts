@@ -2,7 +2,7 @@
  * FactoryOS Distributed Compute Fabric — Provider Qualification Matrix (Levels 1–8)
  *
  * Defines the strict 8-level qualification gate that every compute provider
- * (Local, Kaggle, RunPod, Vast, AMD, etc.) must pass before entering production routing.
+ * (Local, Kaggle, Daytona, GitHub Actions, etc.) must pass before entering production routing.
  */
 
 import { IComputeProviderV2, ComputeJob, ArtifactRef, ComputeInstanceSpec } from "../../compute/contracts/ComputeContracts";

@@ -4,7 +4,6 @@ import {
   KaggleNotebookAdapter,
   LightningNotebookAdapter,
   NotebookRegistry,
-  PaperspaceNotebookAdapter,
   type NotebookCredentialBundle,
   type NotebookProviderType,
   type NotebookCredentialValidation,
@@ -15,14 +14,12 @@ import { computeConnectionStore } from "./ComputeConnectionStore";
 const adapters = new NotebookRegistry();
 adapters.register(new KaggleNotebookAdapter());
 adapters.register(new ColabNotebookAdapter());
-adapters.register(new PaperspaceNotebookAdapter());
 adapters.register(new LightningNotebookAdapter());
 adapters.register(new HuggingFaceZeroGPUAdapter());
 
 const PROVIDER_TYPE_BY_ID: Record<string, NotebookProviderType> = {
   notebook_kaggle: "KAGGLE",
   notebook_colab: "COLAB",
-  notebook_paperspace: "PAPERSPACE",
   notebook_lightning: "LIGHTNING",
   notebook_hf_zerogpu: "HF_ZEROGPU",
 };

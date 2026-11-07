@@ -29,9 +29,9 @@ export type WorkerState =
   | "EXPIRED"
   | "OFFLINE";
 
-export type GpuVendor = "NVIDIA" | "AMD" | "INTEL" | "APPLE" | "NONE";
+export type GpuVendor = "NVIDIA" | "INTEL" | "APPLE" | "NONE";
 
-export type FabricProviderType = "LOCAL" | "AMD" | "KAGGLE" | "LIGHTNING" | "GITHUB_ACTIONS" | "RUNPOD" | "VAST";
+export type FabricProviderType = "LOCAL" | "KAGGLE" | "LIGHTNING" | "GITHUB_ACTIONS";
 
 export interface WorkerCapability {
   readonly workerId: string;

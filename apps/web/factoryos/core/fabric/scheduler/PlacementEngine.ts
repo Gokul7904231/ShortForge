@@ -71,7 +71,7 @@ export class PlacementEngine {
       const vramMb = cap.vramMb || 0;
       score += Math.min(50, Math.floor(vramMb / 256));
 
-      // Provider preference (e.g. prefer local or AMD when available)
+      // Provider preference (e.g. prefer local when available)
       if (req.preferredGpuVendor && cap.gpuVendor === req.preferredGpuVendor) {
         score += 30;
       }

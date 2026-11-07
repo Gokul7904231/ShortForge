@@ -42,9 +42,9 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}));
     const engineId = String(body.engineId || body.engine || "quiz").trim();
-    const quizMode = String(body.quizMode || body.engineMode || (body.countryCode ? "geo" : "custom")).trim();
+    const quizMode = String(body.quizMode || body.engineMode || (body.template === "quizshow" ? "quizshow" : body.countryCode ? "geo" : "custom")).trim();
     const style = String(body.style || body.difficulty || "medium").trim();
-    const durationSeconds = Number(body.durationSeconds || 45);
+    const durationSeconds = Number(body.durationSeconds || (quizMode === "quizshow" ? 175 : 45));
 
     let treasuryModel:
       Awaited<ReturnType<typeof prepareTreasuryModelContext>> | undefined;
@@ -190,7 +190,7 @@ export async function POST(req: Request) {
     // ─── 2. CUSTOM QUIZ GENERATION PATH (SINGLE OR MULTI TOPIC) ─────────────
     const customQuiz = body.customQuiz || {};
     const mode = customQuiz.mode || (Array.isArray(customQuiz.topics) && customQuiz.topics.length > 1 ? "multiple" : "single");
-    const totalQuestions = Number(customQuiz.totalQuestions || body.totalQuestions || 6);
+    const totalQuestions = Number(customQuiz.totalQuestions || body.totalQuestions || (quizMode === "quizshow" ? 8 : 6));
 
     let topicList: string[] = [];
     if (mode === "multiple" && Array.isArray(customQuiz.topics)) {
@@ -216,7 +216,7 @@ export async function POST(req: Request) {
       durationSeconds,
       style,
       contentType: "QUIZ_SHORTS",
-      renderProfile: "FAST_QUIZ",
+      renderProfile: quizMode === "quizshow" ? "QUIZSHOW" : "FAST_QUIZ",
       topics: allocations,
       treasuryContext: (await ensureTreasuryModelContext()).context,
     });
@@ -259,8 +259,14 @@ export async function POST(req: Request) {
       description: draft.description || `Test your knowledge on ${combinedTopicTitle}!`,
       hashtags: draft.hashtags || ["#shorts", "#quiz", "#trivia"],
       questions: normalizedQuestions,
-      renderProfile: "FAST_QUIZ",
-      durationSeconds,
+      renderProfile: quizMode === "quizshow" ? "QUIZSHOW" : "FAST_QUIZ",
+      templateId: body.templateId === "quiz.universal.cinematic.v2"
+        ? "quiz.universal.cinematic.v2"
+        : body.templateId === "quiz.universal.glass.v1"
+          ? "quiz.universal.glass.v1"
+          : quizMode === "quizshow"
+            ? "quiz.quizshow.v1"
+            : "quiz.trivia-challenge.v1",
     });
   } catch (err: any) {
     console.error("[Quiz Draft API Error]:", err.message);

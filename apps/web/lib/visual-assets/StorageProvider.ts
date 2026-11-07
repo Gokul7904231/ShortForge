@@ -110,15 +110,18 @@ export class BackblazeB2StorageProvider implements StorageProvider {
       const apiUrl = authData.apiUrl;
       const authorizationToken = authData.authorizationToken;
 
-      const bucketsRes = await fetch(`${apiUrl}/b2api/v2/b2_list_buckets`, {
-        method: "POST",
-        headers: { Authorization: authorizationToken },
-        body: JSON.stringify({ accountId: authData.accountId }),
-      });
-      const bucketsData = await bucketsRes.json();
-      const bucket = bucketsData.buckets.find((b: any) => b.bucketName === this.bucketName);
-      if (!bucket) throw new Error(`Bucket not found: ${this.bucketName}`);
-      const bucketId = bucket.bucketId;
+      let bucketId = authData.allowed?.bucketId;
+      if (!bucketId) {
+        const bucketsRes = await fetch(`${apiUrl}/b2api/v2/b2_list_buckets`, {
+          method: "POST",
+          headers: { Authorization: authorizationToken },
+          body: JSON.stringify({ accountId: authData.accountId }),
+        });
+        const bucketsData = await bucketsRes.json();
+        const bucket = bucketsData.buckets?.find((b: any) => b.bucketName === this.bucketName);
+        if (!bucket) throw new Error(`Bucket not found: ${this.bucketName}`);
+        bucketId = bucket.bucketId;
+      }
 
       const uploadUrlRes = await fetch(`${apiUrl}/b2api/v2/b2_get_upload_url`, {
         method: "POST",
@@ -231,11 +234,24 @@ export class BackblazeB2StorageProvider implements StorageProvider {
       const apiUrl = authData.apiUrl;
       const authorizationToken = authData.authorizationToken;
 
+      let bucketId = authData.allowed?.bucketId;
+      if (!bucketId) {
+        const bucketsRes = await fetch(`${apiUrl}/b2api/v2/b2_list_buckets`, {
+          method: "POST",
+          headers: { Authorization: authorizationToken },
+          body: JSON.stringify({ accountId: authData.accountId }),
+        });
+        const bucketsData = await bucketsRes.json();
+        const bucket = bucketsData.buckets?.find((b: any) => b.bucketName === this.bucketName);
+        if (!bucket) return;
+        bucketId = bucket.bucketId;
+      }
+
       const listRes = await fetch(`${apiUrl}/b2api/v2/b2_list_file_names`, {
         method: "POST",
         headers: { Authorization: authorizationToken },
         body: JSON.stringify({
-          bucketId: authData.accountId,
+          bucketId,
           prefix: cleaned,
           maxFileCount: 1,
         }),

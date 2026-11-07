@@ -9,7 +9,7 @@ import type {
   ProviderConfigValidationResult,
   ProviderHealth,
 } from "../contracts/ComputeContracts";
-import { KaggleNotebookAdapter } from "../notebooks/KaggleNotebookAdapter";
+import { KaggleNotebookAdapter, kaggleCredentialKeys } from "../notebooks/KaggleNotebookAdapter";
 import type { NotebookCredentialBundle } from "../notebooks/NotebookContracts";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 
@@ -39,13 +39,13 @@ export class KaggleNotebookComputeProvider extends BaseComputeProvider {
       Number(process.env.KAGGLE_WORKER_MAX_CONCURRENCY || 1);
   }
 
+  private resolvedEnv(): Record<string, string | undefined> {
+    return { ...process.env, ...(this.credentials || {}) };
+  }
+
   validateConfiguration(): ProviderConfigValidationResult {
-    const env = { ...process.env, ...(this.credentials || {}) };
-    const requiredKeys = [
-      "KAGGLE_USERNAME",
-      "KAGGLE_KEY",
-      "KAGGLE_RENDER_COMMAND",
-    ];
+    const env = this.resolvedEnv();
+    const requiredKeys = [...kaggleCredentialKeys(env), "KAGGLE_RENDER_COMMAND"];
     const missingKeys = requiredKeys.filter((key) => !env[key]);
     return {
       isConfigured: missingKeys.length === 0,
@@ -58,17 +58,24 @@ export class KaggleNotebookComputeProvider extends BaseComputeProvider {
   }
 
   async getCapability(): Promise<ProviderCapability> {
-    const configured = this.validateConfiguration().isConfigured;
+    const env = this.resolvedEnv();
+    const credentialsConfigured = kaggleCredentialKeys(env).every((key) =>
+      Boolean(env[key]),
+    );
+    // A missing render command must not be reported as "no GPU and no workloads".
+    const workloadsReady =
+      credentialsConfigured && Boolean(env.KAGGLE_RENDER_COMMAND);
+
     return {
       providerId: this.id,
       providerType: this.type,
       executionModel: this.executionModel,
       cpuCores: 4,
       memoryMb: 16_384,
-      gpuAvailable: configured,
+      gpuAvailable: true,
       gpuType: process.env.KAGGLE_RENDER_GPU_TYPE || "NVIDIA Tesla T4",
       operatingSystem: "Kaggle hosted notebook runtime",
-      supportedWorkloads: configured ? ["RENDER", "INFERENCE"] : [],
+      supportedWorkloads: workloadsReady ? ["RENDER", "INFERENCE"] : [],
       estimatedStartupSeconds: Number(
         process.env.KAGGLE_WORKER_STARTUP_SECONDS || 35,
       ),
@@ -77,7 +84,7 @@ export class KaggleNotebookComputeProvider extends BaseComputeProvider {
       ),
       maxConcurrency: this.maxConcurrency,
       maxJobDurationSeconds: 43_200,
-      isCredentialConfigured: configured,
+      isCredentialConfigured: credentialsConfigured,
     };
   }
 

@@ -9,6 +9,7 @@ import {
   AlertTriangle, ShieldAlert, Sparkles, Layers, Video, Clock
 } from "lucide-react";
 import NewTemplateForm from "@/components/NewTemplateForm";
+import ImportDesignPackModal from "@/components/templates/ImportDesignPackModal";
 import WebsiteModal from "@/components/WebsiteModal";
 import { useAuth } from "@/lib/auth/hooks";
 import { isAdminUser } from "@/lib/auth/roles";
@@ -48,6 +49,7 @@ export default function TemplatesPage() {
   const { user } = useAuth();
   const isAdmin = isAdminUser(user?.role);
   const [showNewTemplateModal, setShowNewTemplateModal] = useState(false);
+  const [showImportPackModal, setShowImportPackModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"official" | "my" | "community">("official");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [search, setSearch] = useState("");
@@ -251,12 +253,20 @@ export default function TemplatesPage() {
           </p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => setShowNewTemplateModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors shrink-0 shadow-lg shadow-indigo-600/20"
-          >
-            <Plus className="w-3.5 h-3.5" /> Custom Template Builder
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImportPackModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold rounded-lg transition-colors shrink-0 border border-zinc-700 shadow-sm cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5 text-indigo-400" /> Import Design Pack
+            </button>
+            <button
+              onClick={() => setShowNewTemplateModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors shrink-0 shadow-lg shadow-indigo-600/20 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Custom Template Builder
+            </button>
+          </div>
         )}
       </div>
 
@@ -582,6 +592,10 @@ export default function TemplatesPage() {
 
       {showNewTemplateModal && (
         <NewTemplateForm isModal={true} onDismiss={() => setShowNewTemplateModal(false)} />
+      )}
+
+      {showImportPackModal && (
+        <ImportDesignPackModal isOpen={showImportPackModal} onClose={() => setShowImportPackModal(false)} />
       )}
 
       <WebsiteModal

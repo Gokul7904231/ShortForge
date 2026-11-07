@@ -48,6 +48,16 @@ class SceneEngine:
         is_static = True
         for shot in scene.shots:
             if (
+                shot.recipe_id in ("COUNTDOWN", "TIMER")
+                or (shot.props and (
+                    shot.props.get("recipe_id") in ("COUNTDOWN", "TIMER")
+                    or shot.props.get("thinkGate") is True
+                    or shot.props.get("animated") is True
+                ))
+            ):
+                is_static = False
+                break
+            if (
                 shot.motion
                 and (shot.motion.get("animated") is True or shot.motion.get("type") == "DYNAMIC")
             ) or any(

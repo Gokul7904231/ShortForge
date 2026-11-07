@@ -38,6 +38,7 @@ export interface VerificationReport {
   readonly passed: boolean;
   readonly overallStatus: "PASSED" | "FAILED";
   readonly overallScore: number;
+  readonly score?: number;
   readonly scores: {
     readonly technicalQuality: number;
     readonly contentQuality: number;
@@ -373,6 +374,11 @@ export class VerificationEngine {
     scriptText?: string;
     sceneCount?: number;
     policyViolations?: string[];
+    timingLedger?: any;
+    b2Images?: string[];
+    lastSpokenWordEndMs?: number;
+    scenes?: any[];
+    watermarkVerified?: boolean;
   }): Promise<VerificationReport> {
     const effectiveJobId = params.jobId || params.targetId || "unknown_job";
     const failures: string[] = [];
@@ -415,7 +421,10 @@ export class VerificationEngine {
     const audioStreamPresent = m.audioCodec === "aac" || m.audioCodec === "mp3";
     const exact9x16Geometry = m.width === 1080 && m.height === 1920;
     const compliantCodecs = (m.videoCodec === "h264" || m.videoCodec === "hevc") && m.audioCodec === "aac";
-    const durationWithinBounds = m.videoDuration >= 1.0 && m.videoDuration <= 180.0;
+    const isUniversalQuiz = (params.jobId && params.jobId.toLowerCase().includes('universal')) || (params.videoUrl && params.videoUrl.toLowerCase().includes('universal')) || (params.jobId && params.jobId.toLowerCase().includes('v1.2')) || (params.videoUrl && params.videoUrl.toLowerCase().includes('v1.2'));
+    const isQuizShow = (params.jobId && params.jobId.toLowerCase().includes('quizshow')) || (params.videoUrl && params.videoUrl.toLowerCase().includes('quizshow'));
+    const maxDurCeiling = isUniversalQuiz ? 180.0 : (isQuizShow ? 175.0 : 180.0);
+    const durationWithinBounds = m.videoDuration >= 1.0 && m.videoDuration <= maxDurCeiling;
     const audioVideoSyncValid = m.syncDriftMs <= 1000;
     const decodeSmokePassed = m.decodeSmokePassed;
 
@@ -428,6 +437,87 @@ export class VerificationEngine {
     if (!audioVideoSyncValid) failures.push(`Audio/video desync exceeds threshold: ${m.syncDriftMs.toFixed(0)}ms drift`);
     if (!decodeSmokePassed) failures.push(`FFmpeg decode smoke test failed on artifact`);
 
+    // Upgraded F07 Hard Gates
+    let startEndCompletenessPassed = true;
+    if (typeof params.lastSpokenWordEndMs === 'number') {
+      const requiredDuration = (params.lastSpokenWordEndMs + 400) / 1000;
+      if (m.videoDuration < requiredDuration) {
+        startEndCompletenessPassed = false;
+        failures.push(`Start & End Completeness Gate failed: video duration ${m.videoDuration.toFixed(2)}s < required ${requiredDuration.toFixed(2)}s (last spoken word + 400ms buffer).`);
+      }
+    }
+
+    if (Array.isArray(params.scenes) && params.scenes.length > 0) {
+      const firstScene = params.scenes[0];
+      const lastScene = params.scenes[params.scenes.length - 1];
+      if (typeof firstScene.duration_seconds === 'number' && firstScene.duration_seconds < 0.5) {
+        startEndCompletenessPassed = false;
+        failures.push(`Start & End Completeness Gate failed: Scene 0 duration ${firstScene.duration_seconds}s must cover t = 0.5s.`);
+      }
+      if (typeof lastScene.duration_seconds === 'number' && lastScene.duration_seconds < 1.5) {
+        startEndCompletenessPassed = false;
+        failures.push(`Start & End Completeness Gate failed: Final scene duration ${lastScene.duration_seconds}s must cover the final 1.5s.`);
+      }
+    }
+
+    let zeroCutOffAuditPassed = true;
+    if (Array.isArray(params.scenes)) {
+      for (const scene of params.scenes) {
+        if (scene.audio_track && typeof scene.audio_track.duration_seconds === 'number') {
+          if (scene.duration_seconds < scene.audio_track.duration_seconds - 0.005) {
+            zeroCutOffAuditPassed = false;
+            failures.push(`Zero Cut-Off Audit failed: Scene ${scene.scene_id} duration ${scene.duration_seconds}s truncates audio track (${scene.audio_track.duration_seconds}s).`);
+          }
+        }
+      }
+    }
+
+    let b2AssetsAuditPassed = true;
+    if (Array.isArray(params.b2Images)) {
+      if (params.b2Images.length !== 6 || new Set(params.b2Images).size !== 6) {
+        b2AssetsAuditPassed = false;
+        failures.push(`Visual & B2 Audit failed: expected 6 distinct B2 background images, observed ${new Set(params.b2Images).size}.`);
+      }
+      for (const imgPath of params.b2Images) {
+        if (!fs.existsSync(imgPath)) {
+          b2AssetsAuditPassed = false;
+          failures.push(`Visual & B2 Audit failed: background image not found on disk: ${imgPath}`);
+        } else {
+          try {
+            const stat = fs.statSync(imgPath);
+            if (stat.size < 1024) {
+              b2AssetsAuditPassed = false;
+              failures.push(`Visual & B2 Audit failed: blank background image detected (${stat.size} bytes): ${imgPath}`);
+            }
+          } catch {}
+        }
+      }
+    }
+
+    let visualIntegrityAuditPassed = true;
+    if (Array.isArray(params.scenes)) {
+      for (const scene of params.scenes) {
+        const questionCards = (scene.shots || []).filter(
+          (s: any) => s?.props?.component_id === 'sf.quiz.question_glass_card' || s?.recipe_id === 'QUESTION_CARD'
+        );
+        if (questionCards.length > 1) {
+          visualIntegrityAuditPassed = false;
+          failures.push(`Visual Integrity Audit failed: multiple question cards detected in scene ${scene.scene_id}.`);
+        }
+      }
+    }
+
+    let watermarkAuditPassed = true;
+    const watermarkCandidates = [
+      path.resolve(process.cwd(), 'assets', 'branding', 'shortforge-watermark.png'),
+      path.resolve(process.cwd(), 'apps', 'web', 'public', 'shortforge-watermark.png'),
+      path.resolve(process.cwd(), 'public', 'shortforge-watermark.png')
+    ];
+    if (!watermarkCandidates.some((p) => fs.existsSync(p))) {
+      watermarkAuditPassed = false;
+      failures.push('Visual Integrity Audit failed: ShortForge brand watermark asset missing from repository.');
+    }
+
     const allHardGatesPassed =
       artifactExists &&
       validContainer &&
@@ -437,7 +527,12 @@ export class VerificationEngine {
       compliantCodecs &&
       durationWithinBounds &&
       audioVideoSyncValid &&
-      decodeSmokePassed;
+      decodeSmokePassed &&
+      startEndCompletenessPassed &&
+      zeroCutOffAuditPassed &&
+      b2AssetsAuditPassed &&
+      visualIntegrityAuditPassed &&
+      watermarkAuditPassed;
 
     // 4. Dimensional Verification
     // Technical Quality (Layer 1 Physical Forensics Gate)
@@ -535,6 +630,7 @@ export class VerificationEngine {
       passed: verified,
       overallStatus: verified ? "PASSED" : "FAILED",
       overallScore: overall,
+      score: overall,
       scores: {
         technicalQuality,
         contentQuality,

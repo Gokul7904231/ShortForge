@@ -1,0 +1,1241 @@
+{
+  "project_id": "SF-QUIZ-V2-SCI-6Q",
+  "title": "Cosmic Science & Physics Challenge Universal Quiz",
+  "output_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-science-6q.mp4",
+  "scenes": [
+    {
+      "scene_id": "scene_01_beat_01_hook",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Only three percent of people get all 6 questions right. Can you ace this ultimate Cosmic Science & Physics Challenge challenge?",
+      "duration_seconds": 3.66,
+      "audio_track": {
+        "track_id": "track_hook",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_01_beat_01_hook.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 3.407,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_hook",
+          "recipe_id": "KINETIC_HOOK",
+          "start_seconds": 0,
+          "duration_seconds": 3.66,
+          "props": {
+            "component_id": "sf.hook.kinetic_stack",
+            "headline": "COSMIC SCIENCE & PHYSICS CHALLENGE",
+            "subtitle": "Only three percent of people get all 6 questions right. Can you ace this ultimate Cosmic Science & Physics Challenge challenge?",
+            "highlightWord": "QUIZ",
+            "tag": "6-QUESTION SHOW",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_02_beat_q1_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 1: Which planet in our solar system has the shortest day?",
+      "duration_seconds": 1.34,
+      "audio_track": {
+        "track_id": "track_q1_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_02_beat_q1_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.19,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q1_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.34,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which planet in our solar system has the shortest day?",
+            "options": [
+              "Jupiter",
+              "Venus",
+              "Mars",
+              "Mercury"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_03_beat_q1_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q1_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which planet in our solar system has the shortest day?",
+            "options": [
+              "Jupiter",
+              "Venus",
+              "Mars",
+              "Mercury"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_04_beat_q1_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Jupiter!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q1_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_04_beat_q1_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.984,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q1_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which planet in our solar system has the shortest day?",
+            "options": [
+              "Jupiter",
+              "Venus",
+              "Mars",
+              "Mercury"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Jupiter",
+            "explanation": "Jupiter rotates once every 9.9 hours, giving it the shortest day in our Solar System.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_05_beat_q1_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Jupiter rotates once every 9.9 hours, giving it the shortest day in our Solar System.",
+      "duration_seconds": 3.44,
+      "audio_track": {
+        "track_id": "track_q1_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_05_beat_q1_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 3.139,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q1_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 3.44,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which planet in our solar system has the shortest day?",
+            "options": [
+              "Jupiter",
+              "Venus",
+              "Mars",
+              "Mercury"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Jupiter",
+            "explanation": "Jupiter rotates once every 9.9 hours, giving it the shortest day in our Solar System.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/jupiter_rotation.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_06_beat_q2_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 2: What is the approximate speed of light propagating through a physical vacuum?",
+      "duration_seconds": 1.32,
+      "audio_track": {
+        "track_id": "track_q2_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_06_beat_q2_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.172,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q2_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.32,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "What is the approximate speed of light propagating through a physical vacuum?",
+            "options": [
+              "300,000 km/s",
+              "150,000 km/s",
+              "30,000 km/s",
+              "3,000 km/s"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_07_beat_q2_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q2_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "What is the approximate speed of light propagating through a physical vacuum?",
+            "options": [
+              "300,000 km/s",
+              "150,000 km/s",
+              "30,000 km/s",
+              "3,000 km/s"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_08_beat_q2_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: 300,000 km/s!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q2_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_08_beat_q2_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.981,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q2_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "What is the approximate speed of light propagating through a physical vacuum?",
+            "options": [
+              "300,000 km/s",
+              "150,000 km/s",
+              "30,000 km/s",
+              "3,000 km/s"
+            ],
+            "answerIndex": 0,
+            "correctOption": "300,000 km/s",
+            "explanation": "Light in a vacuum travels at roughly 300,000 kilometers per second.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_09_beat_q2_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Light in a vacuum travels at roughly 300,000 kilometers per second.",
+      "duration_seconds": 4.82,
+      "audio_track": {
+        "track_id": "track_q2_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_09_beat_q2_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 4.52,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q2_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 4.82,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "What is the approximate speed of light propagating through a physical vacuum?",
+            "options": [
+              "300,000 km/s",
+              "150,000 km/s",
+              "30,000 km/s",
+              "3,000 km/s"
+            ],
+            "answerIndex": 0,
+            "correctOption": "300,000 km/s",
+            "explanation": "Light in a vacuum travels at roughly 300,000 kilometers per second.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/speed_of_light.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_10_beat_q3_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 3: Which moon is the largest natural satellite in our Solar System?",
+      "duration_seconds": 1.39,
+      "audio_track": {
+        "track_id": "track_q3_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_10_beat_q3_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.243,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q3_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.39,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which moon is the largest natural satellite in our Solar System?",
+            "options": [
+              "Ganymede",
+              "Titan",
+              "Callisto",
+              "Io"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_11_beat_q3_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q3_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which moon is the largest natural satellite in our Solar System?",
+            "options": [
+              "Ganymede",
+              "Titan",
+              "Callisto",
+              "Io"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_12_beat_q3_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Ganymede!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q3_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_12_beat_q3_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.984,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q3_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which moon is the largest natural satellite in our Solar System?",
+            "options": [
+              "Ganymede",
+              "Titan",
+              "Callisto",
+              "Io"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Ganymede",
+            "explanation": "Ganymede orbits Jupiter and is even larger in diameter than Mercury.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_13_beat_q3_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Ganymede orbits Jupiter and is even larger in diameter than Mercury.",
+      "duration_seconds": 4.31,
+      "audio_track": {
+        "track_id": "track_q3_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_13_beat_q3_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 4.007,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q3_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 4.31,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which moon is the largest natural satellite in our Solar System?",
+            "options": [
+              "Ganymede",
+              "Titan",
+              "Callisto",
+              "Io"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Ganymede",
+            "explanation": "Ganymede orbits Jupiter and is even larger in diameter than Mercury.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/ganymede_internal_ocean.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_14_beat_q4_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 4: Why can acoustic sound waves not travel through the vacuum of outer space?",
+      "duration_seconds": 1.39,
+      "audio_track": {
+        "track_id": "track_q4_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_14_beat_q4_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.241,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q4_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.39,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Why can acoustic sound waves not travel through the vacuum of outer space?",
+            "options": [
+              "No Medium",
+              "Too Cold",
+              "Zero Gravity",
+              "Solar Radiation"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_15_beat_q4_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q4_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Why can acoustic sound waves not travel through the vacuum of outer space?",
+            "options": [
+              "No Medium",
+              "Too Cold",
+              "Zero Gravity",
+              "Solar Radiation"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_16_beat_q4_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: No Medium!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q4_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_16_beat_q4_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.981,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q4_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Why can acoustic sound waves not travel through the vacuum of outer space?",
+            "options": [
+              "No Medium",
+              "Too Cold",
+              "Zero Gravity",
+              "Solar Radiation"
+            ],
+            "answerIndex": 0,
+            "correctOption": "No Medium",
+            "explanation": "Sound is a mechanical wave requiring atoms or molecules to propagate.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_17_beat_q4_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Sound is a mechanical wave requiring atoms or molecules to propagate.",
+      "duration_seconds": 4.41,
+      "audio_track": {
+        "track_id": "track_q4_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_17_beat_q4_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 4.107,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q4_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 4.41,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Why can acoustic sound waves not travel through the vacuum of outer space?",
+            "options": [
+              "No Medium",
+              "Too Cold",
+              "Zero Gravity",
+              "Solar Radiation"
+            ],
+            "answerIndex": 0,
+            "correctOption": "No Medium",
+            "explanation": "Sound is a mechanical wave requiring atoms or molecules to propagate.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/vacuum_sound_wave.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_18_beat_q5_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 5: Which planet is the hottest in our Solar System due to runaway greenhouse effect?",
+      "duration_seconds": 1.39,
+      "audio_track": {
+        "track_id": "track_q5_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_18_beat_q5_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.24,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q5_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.39,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which planet is the hottest in our Solar System due to runaway greenhouse effect?",
+            "options": [
+              "Venus",
+              "Mercury",
+              "Mars",
+              "Jupiter"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_19_beat_q5_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q5_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which planet is the hottest in our Solar System due to runaway greenhouse effect?",
+            "options": [
+              "Venus",
+              "Mercury",
+              "Mars",
+              "Jupiter"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_20_beat_q5_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Venus!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q5_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_20_beat_q5_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.975,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q5_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which planet is the hottest in our Solar System due to runaway greenhouse effect?",
+            "options": [
+              "Venus",
+              "Mercury",
+              "Mars",
+              "Jupiter"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Venus",
+            "explanation": "Venus traps extreme heat at an average 465 degrees Celsius.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_21_beat_q5_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Venus traps extreme heat at an average 465 degrees Celsius.",
+      "duration_seconds": 5.26,
+      "audio_track": {
+        "track_id": "track_q5_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_21_beat_q5_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 4.962,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q5_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 5.26,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which planet is the hottest in our Solar System due to runaway greenhouse effect?",
+            "options": [
+              "Venus",
+              "Mercury",
+              "Mars",
+              "Jupiter"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Venus",
+            "explanation": "Venus traps extreme heat at an average 465 degrees Celsius.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/venus_atmosphere_diagram.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_22_beat_q6_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 6: What molecular structure forms the double helix of genetic code in living cells?",
+      "duration_seconds": 1.43,
+      "audio_track": {
+        "track_id": "track_q6_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_22_beat_q6_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.282,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q6_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.43,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "What molecular structure forms the double helix of genetic code in living cells?",
+            "options": [
+              "DNA",
+              "RNA",
+              "Enzyme",
+              "Lipid"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_23_beat_q6_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q6_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "What molecular structure forms the double helix of genetic code in living cells?",
+            "options": [
+              "DNA",
+              "RNA",
+              "Enzyme",
+              "Lipid"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_24_beat_q6_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: DNA!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q6_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_24_beat_q6_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.984,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q6_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "What molecular structure forms the double helix of genetic code in living cells?",
+            "options": [
+              "DNA",
+              "RNA",
+              "Enzyme",
+              "Lipid"
+            ],
+            "answerIndex": 0,
+            "correctOption": "DNA",
+            "explanation": "DNA forms the famous double-helix structure discovered by Watson, Crick, and Franklin.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_25_beat_q6_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "DNA forms the famous double-helix structure discovered by Watson, Crick, and Franklin.",
+      "duration_seconds": 4.29,
+      "audio_track": {
+        "track_id": "track_q6_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_25_beat_q6_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 3.986,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q6_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 4.29,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "What molecular structure forms the double helix of genetic code in living cells?",
+            "options": [
+              "DNA",
+              "RNA",
+              "Enzyme",
+              "Lipid"
+            ],
+            "answerIndex": 0,
+            "correctOption": "DNA",
+            "explanation": "DNA forms the famous double-helix structure discovered by Watson, Crick, and Franklin.",
+            "categoryBadge": "SCIENCE | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "Cosmic Science & Physics Challenge",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/dna_double_helix_structure.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_26_beat_outro_cta",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "How many did you get right out of 6? Comment your score below and subscribe!",
+      "duration_seconds": 2.78,
+      "audio_track": {
+        "track_id": "track_outro_cta",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_science\\scene_26_beat_outro_cta.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 2.278,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_outro_cta",
+          "recipe_id": "OUTRO_CTA",
+          "start_seconds": 0,
+          "duration_seconds": 2.78,
+          "props": {
+            "component_id": "sf.outro.scoreboard_cta",
+            "cta": "SCOREBOARD",
+            "subtitle": "How many did you get right out of 6? Comment your score below and subscribe!",
+            "accentColor": [
+              139,
+              92,
+              246
+            ],
+            "themeToken": "QUIZ_SCIENCE",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1"
+          }
+        }
+      ]
+    }
+  ],
+  "output": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "video_codec": "libx264",
+    "audio_codec": "aac"
+  },
+  "metadata": {
+    "templateId": "quiz.universal.cinematic.v2",
+    "totalDurationSeconds": 78.61000000000001,
+    "timingLedgerSignature": "cb848173c24634977e5f1d77ca815e43625b6e412a8fa99dfa8264f4a57ad11a"
+  }
+}

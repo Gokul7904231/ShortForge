@@ -18,7 +18,6 @@ import {
   LocalComputeProvider,
   KaggleComputeProvider,
   LightningComputeProvider,
-  GitHubActionsComputeProvider,
   PersistentWorkerComputeProvider,
   ComputeJob,
   DEFAULT_COMPUTE_POLICY,
@@ -35,11 +34,10 @@ describe('FactoryOS Distributed Compute Fabric: Provider Qualification', () => {
   });
 
   describe('1. Provider Activation Boundaries & Config Validation', () => {
-    it('validates configuration requirements for all 5 canonical providers', () => {
+    it('validates configuration requirements for all 4 canonical providers', () => {
       const local = new LocalComputeProvider();
       const kaggle = new KaggleComputeProvider();
       const lightning = new LightningComputeProvider();
-      const gha = new GitHubActionsComputeProvider();
       const persistent = new PersistentWorkerComputeProvider();
 
       // Local provider: ready by default
@@ -58,12 +56,6 @@ describe('FactoryOS Distributed Compute Fabric: Provider Qualification', () => {
       expect(lightningVal.isConfigured).toBe(false);
       expect(lightningVal.missingKeys).toContain('LIGHTNING_API_KEY');
 
-      // GitHub Actions: blocked when unconfigured
-      const ghaVal = gha.validateConfiguration();
-      expect(ghaVal.isConfigured).toBe(false);
-      expect(ghaVal.missingKeys).toContain('GITHUB_TOKEN');
-      expect(ghaVal.missingKeys).toContain('GITHUB_REPOSITORY');
-
       // Persistent Worker: blocked when unconfigured
       const persistentVal = persistent.validateConfiguration();
       expect(persistentVal.isConfigured).toBe(false);
@@ -73,7 +65,6 @@ describe('FactoryOS Distributed Compute Fabric: Provider Qualification', () => {
     it('guarantees uncredentialed remote providers return FAILED code 126 and zero synthetic artifacts', async () => {
       const kaggle = new KaggleComputeProvider();
       const lightning = new LightningComputeProvider();
-      const gha = new GitHubActionsComputeProvider();
 
       const testJob: ComputeJob = {
         jobId: 'job_dry_run_01',
@@ -87,10 +78,9 @@ describe('FactoryOS Distributed Compute Fabric: Provider Qualification', () => {
         createdAt: new Date().toISOString(),
       };
 
-      const [resKaggle, resLightning, resGha] = await Promise.all([
+      const [resKaggle, resLightning] = await Promise.all([
         kaggle.executeJob(testJob),
         lightning.executeJob(testJob),
-        gha.executeJob(testJob),
       ]);
 
       expect(resKaggle.status).toBe('FAILED');
@@ -101,10 +91,6 @@ describe('FactoryOS Distributed Compute Fabric: Provider Qualification', () => {
       expect(resLightning.status).toBe('FAILED');
       expect(resLightning.exitCode).toBe(126);
       expect(resLightning.outputArtifacts).toHaveLength(0);
-
-      expect(resGha.status).toBe('FAILED');
-      expect(resGha.exitCode).toBe(126);
-      expect(resGha.outputArtifacts).toHaveLength(0);
     });
   });
 

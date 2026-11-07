@@ -15,6 +15,7 @@
 ShortForge is an enterprise-grade, autonomous short-form video generation factory. It turns a creative brief into a 9:16 vertical video (YouTube Shorts / Instagram Reels / TikTok) through a mathematically governed, seven-floor assembly line — with deterministic control planes, a multi-agent cognitive hierarchy, heterogeneous distributed GPU compute, and cryptographic release verification.
 
 - **Status**: Production-active and improving daily. Deployed and running at [**https://shortforge.gokul.software/**](https://shortforge.gokul.software/).
+- **Engineered**: by AI Architects, LLM Engineers, and Distributed Systems Researchers.
 - **Operating standard**: `CLAIM <= EVIDENCE` — no stage asserts success without tangible, verifiable proof.
 
 ---

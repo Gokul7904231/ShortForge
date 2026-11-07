@@ -1689,3 +1689,29 @@ Canonical documents:
 
 Rollback: revert this change's workflow/script edits; the fail-closed guarantees of the 2026-10-17 record above are unaffected by that revert only if the committed-literal secret fallback is not reintroduced (see that record's rollback rule).
 
+## Dead Provider Purge & Working Free Fleet Lock — 2026-11-07
+
+**Classification:** contradicts existing rule (removes providers other records still reference) + extends existing rule (qualification gate unchanged)
+
+**Decision:** Six providers are hard-removed from the compute fabric, not deprecated: AMD/MI300X, OpenComputer, Vast.ai, RunPod v2, Modal, and Paperspace. Colab is excluded from production worker routing. No stub, commented-out branch, or orphaned enum key remains.
+
+Removed surface, verified by repository scan of `apps/web/factoryos/core/compute/` returning zero matches for `vast|runpod|paperspace|opencomputer|mi300x|modal`:
+
+- `ProviderType` no longer carries `MODAL`; `ApiProviderType` is now `"DAYTONA"` alone; `SandboxProviderType` is `DAYTONA | INSTAVM | GITHUB_CODESAPCES | CODESANDBOX`.
+- Deleted adapters: `AmdComputeProvider`, `AmdRenderWorkerAdapter`, `RunPodComputeProvider`, `VastComputeProvider`, `ModalSandboxAdapter`, `ModalProviderControl`, `PaperspaceProviderControl`, `RunPodV2ProviderControl`, `VastProviderControl`, `PaperspaceNotebookAdapter`.
+- `HostedSandboxComputeProvider` lost its MODAL credential and image branches; `LocalComputeProvider` no longer hardcodes an RTX 3050 and now reports the host GPU from `nvidia-smi`, failing closed to `gpuAvailable: false` when absent.
+
+Surviving fleet, as locked by `DEFAULT_COMPUTE_POLICY` (`allowedProviders: LOCAL, KAGGLE, DAYTONA, INSTAVM`; `preferredOrder: LOCAL, DAYTONA, INSTAVM, KAGGLE`) and the `ComputeGateway` pool bindings (LOCAL, NOTEBOOK, SANDBOX): LOCAL, LIGHTNING, GITHUB_ACTIONS, KAGGLE, DAYTONA, INSTAVM. `LIGHTNING`, `GITHUB_ACTIONS`, and `PERSISTENT_WORKER` stay registered on the router but unbound from the pool, so they cannot become render candidates.
+
+**Qualification evidence is the only promotion path.** Daytona (GA run 37205564715) and InstaVM (GA run 37893345664) hold physical-artifact + CAS + F07 evidence and are `implemented: true`. Kaggle and Daytona remain gated on live credential plus physical MP4 verification. Sandbox adapters keep `productionWorkerEligible: false`; a sandbox connection never grants F06 render authority.
+
+**Rejected on evidence, not preference:** the originating proposal asked to promote Blaxel to `implemented: true`. That promotion is refused. No Blaxel adapter exists anywhere in the repository, `SandboxConnectionService` has no provider-type mapping for it, `.okf` records no qualification run for it, and `factoryos/tests/compute-connection-hub.test.ts` asserts the opposite in two places (catalog `implemented` is `false`, and creation throws `COMPUTE_PROVIDER_NOT_IMPLEMENTED:sandbox_blaxel`). Flipping the flag would declare a provider live with no adapter — the fabrication this codebase's own boundary rules forbid. Blaxel stays `implemented: false` until a real adapter and a live physical proof exist.
+
+GitHub Codespaces and CodeSandbox/VibEngine were added as qualification-gated slots (`implemented: true` adapters that fail closed without credentials), joining the catalog alongside the untouched unqualified slots (Vibengine, Leap0, Blaxel, Freestyle, Runloop, Temps).
+
+**Canonical documents:** `.okf/compute/live-provider-activation.md` (provider table), `.okf/compute/notebook-fabric.md`, `.okf/security/worker-permissions.md`.
+
+**Validation:** `npm run factoryos:typecheck` passes; `npm run factoryos:test` shows no failure attributable to this change — the failures present are pre-existing (verified by running the unmodified test file against the modified source, which fails identically).
+
+**Rollback:** revert the deletion commit; nothing in the surviving fleet depends on the removed types, so the revert is mechanical. Do not reintroduce a provider without qualification evidence.
+

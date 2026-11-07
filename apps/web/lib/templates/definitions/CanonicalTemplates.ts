@@ -585,6 +585,244 @@ export const CANONICAL_TEMPLATES: TemplateDefinition[] = [
     statusReason: 'Production qualified with deterministic question card layout and countdown timer.'
   },
 
+  // 10b. Universal Interactive Quiz (QuizShow Glass v1.2) - Canonical 6-Question Universal Template
+  {
+    identity: {
+      id: 'quiz.universal.glass.v1',
+      version: '1.2.0',
+      name: 'Universal Interactive Quiz (QuizShow Glass v1.2)',
+      slug: 'quiz-universal-glass',
+      author: 'FactoryOS Core',
+      isSystem: true
+    },
+    category: 'QUIZ',
+    formatFamily: 'Universal Interactive Quiz',
+    description: 'Authoritative universal category-agnostic interactive quiz template with translucent glass panel, dynamic countdown, and verified explanations.',
+    tags: ['quiz', 'trivia', 'game-show', 'challenge', 'interactive', 'universal', 'glass'],
+    storyStructure: [
+      { stepName: 'Game Hook', purpose: 'Can you score 6/6 on this ultimate quiz challenge?', shotRecipeId: 'KINETIC_HOOK', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Question 1', purpose: 'Question 1 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 6.5 },
+      { stepName: 'Countdown 1', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 1 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 2', purpose: 'Question 2 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 2', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 2 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 3', purpose: 'Question 3 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 3', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 3 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 4', purpose: 'Question 4 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 4', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 4 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 5', purpose: 'Question 5 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 5', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 5 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 6', purpose: 'Climax question card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 6', purpose: 'Final dynamic countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 6 Reveal', purpose: 'Final answer reveal and explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Scoreboard Outro', purpose: 'How many did you get right? Comment score and subscribe', shotRecipeId: 'OUTRO_CTA', recommendedDurationSeconds: 3.5 }
+    ],
+    inputContract: {
+      variables: [
+        { name: 'topic', type: 'string', label: 'Quiz Topic / Subject', required: true, default: 'General Knowledge', description: 'Subject area (e.g. Geography, Science, History, AI, or custom)' },
+        { name: 'questionCount', type: 'number', label: 'Question Count', required: false, default: 6, description: 'Number of questions (default 6)' }
+      ],
+      promptSeed: 'Generate 6 challenging, fact-checked multiple-choice questions for {topic} with exactly 4 options and verified explanations.'
+    },
+    visualPolicy: {
+      colorPalette: ['#081228', '#050A14', '#00AAFF', '#22C55E', '#FFFFFF'],
+      typography: { headerFont: 'Inter-Black', bodyFont: 'Inter-Bold', accentColor: '#00AAFF' },
+      motionIntensity: 'HIGH'
+    },
+    captionPolicy: {
+      style: 'QuizBouncy',
+      defaultPosition: 'LOWER_THIRD',
+      maxWordsPerLine: 3,
+      highlightColor: '#22C55E'
+    },
+    voicePolicy: {
+      paceMultiplier: 1.10,
+      tone: 'energetic, sharp, professional game-show host',
+      suggestedVoices: ['en-US-Neural2-F', 'en-US-Journey-O']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.20, pausePolicy: 'GRAMMAR' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
+    },
+    outputPolicy: {
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      targetDurationRange: [115, 145]
+    },
+    capabilityStatus: 'READY',
+    statusReason: 'Universal interactive quiz template with dynamic category tokens, verified 4-option cards, and audio-first synchronization.'
+  },
+
+  // 10b2. Universal Cinematic Interactive Quiz (Quiz Template V2)
+  {
+    identity: {
+      id: 'quiz.universal.cinematic.v2',
+      version: '2.0.0',
+      name: 'Universal Cinematic Interactive Quiz (Quiz Template V2)',
+      slug: 'quiz-universal-cinematic-v2',
+      author: 'FactoryOS Core',
+      isSystem: true
+    },
+    category: 'QUIZ',
+    formatFamily: 'Universal Interactive Quiz',
+    description: 'Upgraded flagship interactive quiz template featuring six distinct Backblaze B2 photographic backdrops, dynamic animated countdown progress bar, emerald punch answer reveal, and soft female narration.',
+    tags: ['quiz', 'trivia', 'game-show', 'challenge', 'interactive', 'universal', 'cinematic', 'v2'],
+    storyStructure: [
+      { stepName: 'Game Hook', purpose: 'Can you score 6/6 on this ultimate quiz challenge?', shotRecipeId: 'KINETIC_HOOK', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Question 1', purpose: 'Question 1 card with 4 options and B2 backdrop', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 6.5 },
+      { stepName: 'Countdown 1', purpose: 'Dynamic animated countdown timer and progress bar', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 1 Reveal', purpose: 'Highlight correct option, dim wrong options, and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 2', purpose: 'Question 2 card with 4 options and B2 backdrop', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 2', purpose: 'Dynamic animated countdown timer and progress bar', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 2 Reveal', purpose: 'Highlight correct option, dim wrong options, and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 3', purpose: 'Question 3 card with 4 options and B2 backdrop', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 3', purpose: 'Dynamic animated countdown timer and progress bar', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 3 Reveal', purpose: 'Highlight correct option, dim wrong options, and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 4', purpose: 'Question 4 card with 4 options and B2 backdrop', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 4', purpose: 'Dynamic animated countdown timer and progress bar', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 4 Reveal', purpose: 'Highlight correct option, dim wrong options, and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 5', purpose: 'Question 5 card with 4 options and B2 backdrop', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 5', purpose: 'Dynamic animated countdown timer and progress bar', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 5 Reveal', purpose: 'Highlight correct option, dim wrong options, and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 6', purpose: 'Climax question card with 4 options and B2 backdrop', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 8.5 },
+      { stepName: 'Countdown 6', purpose: 'Final dynamic animated countdown timer and progress bar', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 6 Reveal', purpose: 'Final answer reveal and explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Scoreboard Outro', purpose: 'How many did you get right? Comment score and subscribe', shotRecipeId: 'OUTRO_CTA', recommendedDurationSeconds: 3.5 }
+    ],
+    inputContract: {
+      variables: [
+        { name: 'topic', type: 'string', label: 'Quiz Topic / Subject', required: true, default: 'General Knowledge', description: 'Subject area (e.g. Geography, Science, History, AI, or custom)' },
+        { name: 'questionCount', type: 'number', label: 'Question Count', required: false, default: 6, description: 'Number of questions (default 6)' }
+      ],
+      promptSeed: 'Generate 6 challenging, fact-checked multiple-choice questions for {topic} with exactly 4 options, verified explanations, and 6 distinct B2 backdrops.'
+    },
+    visualPolicy: {
+      colorPalette: ['#081228', '#050A14', '#00AAFF', '#22C55E', '#FFFFFF'],
+      typography: { headerFont: 'Inter-Black', bodyFont: 'Inter-Bold', accentColor: '#00AAFF' },
+      motionIntensity: 'HIGH'
+    },
+    captionPolicy: {
+      style: 'QuizBouncy',
+      defaultPosition: 'LOWER_THIRD',
+      maxWordsPerLine: 3,
+      highlightColor: '#22C55E'
+    },
+    voicePolicy: {
+      paceMultiplier: 1.05,
+      tone: 'soft, natural, friendly female educator and game-show host',
+      suggestedVoices: ['Kore', 'en-US-Neural2-F']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.20, pausePolicy: 'GRAMMAR' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
+    },
+    outputPolicy: {
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      targetDurationRange: [115, 145]
+    },
+    capabilityStatus: 'READY',
+    statusReason: 'Production qualified Quiz V2 template featuring 6 distinct Backblaze B2 backgrounds, animated countdown bar, emerald punch, and soft Kore female narration.'
+  },
+
+  // 10c. Quiz - Universal Game Show (QuizShow v1) - Backwards Compatibility Alias
+
+  {
+    identity: {
+      id: 'quiz.quizshow.v1',
+      version: '1.0.0',
+      name: 'QuizShow Interactive Shorts (8-Question)',
+      slug: 'quizshow',
+      author: 'FactoryOS Core',
+      isSystem: true
+    },
+    category: 'QUIZ',
+    formatFamily: 'Universal Interactive Quiz',
+    description: 'Flagship 8-question mobile game-show quiz challenge with dynamic countdown, verified options, and explanation cards',
+    tags: ['quiz', 'trivia', 'game-show', 'challenge', 'interactive', 'quizshow'],
+    storyStructure: [
+      { stepName: 'Game Hook', purpose: 'Can you score 8/8 on this ultimate quiz challenge?', shotRecipeId: 'KINETIC_HOOK', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Question 1', purpose: 'Question 1 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 6.5 },
+      { stepName: 'Countdown 1', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 4.0 },
+      { stepName: 'Answer 1 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 8.0 },
+      { stepName: 'Question 2', purpose: 'Question 2 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 2', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 2 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 3', purpose: 'Question 3 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 3', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 3 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 4', purpose: 'Question 4 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 4', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 4 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 5', purpose: 'Question 5 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 5', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 5 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 6', purpose: 'Question 6 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 6', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 6 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 7', purpose: 'Question 7 card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 7', purpose: 'Dynamic 3-5s countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 7 Reveal', purpose: 'Highlight correct option and teaching explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Question 8', purpose: 'Climax question card with 4 options', shotRecipeId: 'QUESTION_CARD', recommendedDurationSeconds: 10.5 },
+      { stepName: 'Countdown 8', purpose: 'Final dynamic countdown timer', shotRecipeId: 'COUNTDOWN', recommendedDurationSeconds: 3.5 },
+      { stepName: 'Answer 8 Reveal', purpose: 'Final answer reveal and explanation', shotRecipeId: 'ANSWER_REVEAL', recommendedDurationSeconds: 7.0 },
+      { stepName: 'Scoreboard Outro', purpose: 'How many did you get right? Comment score and subscribe', shotRecipeId: 'OUTRO_CTA', recommendedDurationSeconds: 3.5 }
+    ],
+    inputContract: {
+      variables: [
+        { name: 'topic', type: 'string', label: 'Quiz Topic / Subject', required: true, default: 'General Knowledge', description: 'Subject area (e.g. Geography, Science, History, AI)' },
+        { name: 'questionCount', type: 'number', label: 'Question Count', required: false, default: 8, description: 'Number of questions (default 8)' }
+      ],
+      promptSeed: 'Generate 8 challenging, fact-checked multiple-choice questions for {topic} with exactly 4 options and verified explanations.'
+    },
+    visualPolicy: {
+      colorPalette: ['#081228', '#050A14', '#00AAFF', '#22C55E', '#FFFFFF'],
+      typography: { headerFont: 'Inter-Black', bodyFont: 'Inter-Bold', accentColor: '#00AAFF' },
+      motionIntensity: 'HIGH'
+    },
+    captionPolicy: {
+      style: 'QuizBouncy',
+      defaultPosition: 'LOWER_THIRD',
+      maxWordsPerLine: 3,
+      highlightColor: '#22C55E'
+    },
+    voicePolicy: {
+      paceMultiplier: 1.10,
+      tone: 'energetic, sharp, professional game-show host',
+      suggestedVoices: ['en-US-Neural2-F', 'en-US-Journey-O']
+    },
+    temporalPolicy: {
+      video: { toleranceMs: 50, quantization: 'FRAME', fpsRef: 'TEMPLATE_OUTPUT_FPS' },
+      narration: { allocation: 'BEAT', timingMode: 'BOUNDED' },
+      pacing: { minRateMultiplier: 0.85, maxRateMultiplier: 1.20, pausePolicy: 'GRAMMAR' },
+      alignment: { granularity: 'WORD', required: true },
+      correction: { maxResynthesisPasses: 2, allowRateCorrection: true, allowTextRepair: true, allowTimeStretch: true, allowPadding: false, maxStretchRatio: 1.05 },
+      quality: { preservePitch: true, rejectClipping: true, rejectCorruption: true }
+    },
+    outputPolicy: {
+      width: 1080,
+      height: 1920,
+      fps: 30,
+      targetDurationRange: [140, 172]
+    },
+    capabilityStatus: 'READY',
+    statusReason: 'Production qualified with 8-question game-show composition, countdown, and explanation cards.'
+  },
+
   // 11. Story - Micro Horror Twist
   {
     identity: {

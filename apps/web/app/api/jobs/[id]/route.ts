@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/auth";
 import { isAdminUser } from "@/lib/auth/roles";
 import { readJobManifest, saveJobManifest } from "@/lib/jobs-history";
+import { safeEqual } from "@/lib/auth/safe-equal";
 import { TreasuryQuotaAdmission } from "@/factoryos/core/treasury/TreasuryQuotaAdmission";
 import { getTreasuryRuntime } from "@/factoryos/core/treasury/TreasuryRuntime";
 import { releaseLegacyGenerationSlot } from "@/factoryos/core/treasury/TreasuryQuotaCompatibility";
@@ -12,12 +13,26 @@ interface RouteContext {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const { user } = await verifySession(request);
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json({ success: false, error: "Missing job ID" }, { status: 400 });
     }
+
+    // 🔒 Render-worker authorization. The runner dispatches with the job-scoped execution token
+    // and no session cookie, so that token grants access to exactly the job it was issued for —
+    // never to another job, and never an ambient manifest read.
+    const presented =
+      (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim() ||
+      (request.headers.get("x-execution-token") || "").trim();
+    if (presented) {
+      const workerJob = await readJobManifest(id);
+      if (workerJob && safeEqual(presented, workerJob.executionToken || "")) {
+        return NextResponse.json({ success: true, job: workerJob });
+      }
+    }
+
+    const { user } = await verifySession(request);
 
     const job = await readJobManifest(id);
     if (!job) {

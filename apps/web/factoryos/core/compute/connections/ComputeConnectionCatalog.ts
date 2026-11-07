@@ -113,26 +113,6 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     description: "Colab runtime control API.",
   },
   {
-    providerId: "notebook_paperspace",
-    providerFamily: "NOTEBOOK",
-    displayName: "Paperspace",
-    authMethod: "CREDENTIAL_BUNDLE",
-    connectionExperience: "GUIDED_MANUAL",
-    credentialKeys: [
-      "PAPERSPACE_API_KEY",
-      "PAPERSPACE_TEMPLATE_ID",
-      "PAPERSPACE_MACHINE_TYPE",
-      "PAPERSPACE_REGION",
-    ],
-    configurableKeys: [
-      "PAPERSPACE_DISK_GB",
-      "PAPERSPACE_STARTUP_SCRIPT_ID",
-    ],
-    roles: ["BASIC", "ADMIN"],
-    implemented: true,
-    description: "Paperspace machine-backed notebook.",
-  },
-  {
     providerId: "notebook_lightning",
     providerFamily: "NOTEBOOK",
     displayName: "Lightning AI",
@@ -207,28 +187,6 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     description: "Hosted sandbox execution through the Daytona TypeScript SDK.",
   },
   {
-    providerId: "sandbox_modal_hosted",
-    providerFamily: "SANDBOX",
-    displayName: "Modal Hosted",
-    authMethod: "CREDENTIAL_BUNDLE",
-    connectionExperience: "GUIDED_MANUAL",
-    credentialKeys: ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"],
-    configurableKeys: ["MODAL_SANDBOX_APP_NAME", "MODAL_SANDBOX_IMAGE"],
-    setupUrl: "https://modal.com/docs/sdk/js/latest/intro",
-    roles: ["ADMIN"],
-    implemented: true,
-    onboarding: {
-      summary:
-        "Connect Modal using a token ID and secret. The credentials stay encrypted in ShortForge and are used only server-side.",
-      steps: [
-        "Open Modal Dashboard → Workspace Settings → API Tokens and create a token.",
-        "Copy both the token ID and token secret when Modal displays them.",
-        "Paste both values into ShortForge and choose Connect and verify. Leave the optional sandbox app/image settings at their defaults unless you need a custom workspace setup.",
-      ],
-    },
-    description: "Hosted sandbox execution through the Modal JavaScript SDK.",
-  },
-  {
     providerId: "sandbox_vibengine", providerFamily: "SANDBOX", displayName: "Vibengine", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["VIBENGINE_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted sandbox backend; admin-only in v1 until the real adapter is wired.",
   },
   {
@@ -255,13 +213,55 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
       "Hosted Firecracker microVM sandbox with session-bound command execution and physical artifact transfer; admin-only in V1 and never an F06 worker authority.",
   },
   {
+    providerId: "sandbox_github_codespaces",
+    providerFamily: "SANDBOX",
+    displayName: "GitHub Codespaces",
+    authMethod: "API_KEY",
+    connectionExperience: "GUIDED_MANUAL",
+    credentialKeys: ["GITHUB_CODESAPCES_TOKEN"],
+    configurableKeys: ["GITHUB_CODESAPCES_BASE_URL"],
+    setupUrl: "https://docs.github.com/en/rest/codespaces/codespaces",
+    roles: ["ADMIN"],
+    implemented: true,
+    onboarding: {
+      summary:
+        "Provision a persistent Linux VM from GitHub Codespaces (up to 120 core-hours/month free, no credit card required). The VM boots with FFmpeg pre-installed and executes commands over SSH; used for isolated rendering behind the Execution Plane.",
+      steps: [
+        "Create a fine-grained personal access token at github.com/settings/tokens with repo and codespaces scopes.",
+        "Paste the token into ShortForge under GitHub Codespaces connection settings.",
+        "Choose Connect and verify. ShortForge probes the GitHub Codespaces API and keeps the credential encrypted server-side.",
+      ],
+    },
+    description:
+      "GitHub Codespaces microVM sandbox — persistent Linux VM with FFmpeg, 120 free core-hours/month; admin-only in V1 and never an F06 worker authority.",
+  },
+  {
+    providerId: "sandbox_codesandbox",
+    providerFamily: "SANDBOX",
+    displayName: "CodeSandbox / VibEngine",
+    authMethod: "API_KEY",
+    connectionExperience: "MANUAL",
+    credentialKeys: ["CODESANDBOX_API_KEY"],
+    configurableKeys: ["CODESANDBOX_BASE_URL", "CODESANDBOX_REGION"],
+    roles: ["ADMIN"],
+    implemented: true,
+    onboarding: {
+      summary:
+        "Burst a Firecracker microVM sandbox via the CodeSandbox/VibEngine API. FFmpeg is pre-installed at bootstrap; ephemeral GPU and CPU bursts are available.",
+      steps: [
+        "Create an API key at the CodeSandbox/VibEngine dashboard.",
+        "Paste the API key into ShortForge. Leave API URL and region at their defaults unless your organization runs a private cluster.",
+        "Choose Connect and verify. ShortForge probes the sandbox API and stores the credential encrypted server-side.",
+      ],
+    },
+    description:
+      "Firecracker microVM sandbox slot (CodeSandbox/VibEngine) for isolated rendering; admin-only in V1 and never an F06 worker authority.",
+  },
+  {
     providerId: "sandbox_leap0", providerFamily: "SANDBOX", displayName: "Leap0", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["LEAP0_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted Firecracker sandbox backend; admin-only in v1 until the real adapter is wired.",
   },
   {
     providerId: "sandbox_blaxel", providerFamily: "SANDBOX", displayName: "Blaxel", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["BLAXEL_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted persistent sandbox backend; admin-only in v1 until the real adapter is wired.",
-  },
-  {
-    providerId: "sandbox_opencomputer", providerFamily: "SANDBOX", displayName: "OpenComputer", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["OPENCOMPUTER_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted Linux sandbox backend; admin-only until the real adapter is wired.",
   },
   {
     providerId: "sandbox_freestyle", providerFamily: "SANDBOX", displayName: "Freestyle VMs", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["FREESTYLE_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Hosted VM backend; admin-only until the real adapter is wired.",
@@ -273,19 +273,7 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     providerId: "sandbox_temps", providerFamily: "SANDBOX", displayName: "Temps", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["TEMPS_API_KEY"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Container/microVM backend; admin-only until the real adapter is wired.",
   },
   {
-    providerId: "api_vast", providerFamily: "API_GPU", displayName: "Vast.ai", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["VAST_API_KEY"], configurableKeys: ["VAST_API_BASE_URL"], roles: ["ADMIN"], implemented: false, description: "Remote GPU API provider; admin-only in v1.",
-  },
-  {
-    providerId: "api_runpod_v2", providerFamily: "API_GPU", displayName: "RunPod", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["RUNPOD_API_KEY"], configurableKeys: ["RUNPOD_API_BASE_URL"], roles: ["ADMIN"], implemented: false, description: "Remote GPU API provider; admin-only in v1.",
-  },
-  {
     providerId: "api_daytona", providerFamily: "API_GPU", displayName: "Daytona", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["DAYTONA_API_KEY"], configurableKeys: ["DAYTONA_API_BASE_URL"], roles: ["ADMIN"], implemented: false, description: "Remote sandbox/GPU control API; admin-only in v1.",
-  },
-  {
-    providerId: "api_paperspace", providerFamily: "API_GPU", displayName: "Paperspace API", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["PAPERSPACE_API_KEY"], configurableKeys: ["PAPERSPACE_API_BASE_URL"], roles: ["ADMIN"], implemented: false, description: "Remote machine control API; admin-only in v1.",
-  },
-  {
-    providerId: "api_modal", providerFamily: "API_GPU", displayName: "Modal", authMethod: "API_KEY", connectionExperience: "MANUAL", credentialKeys: ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"], configurableKeys: [], roles: ["ADMIN"], implemented: false, description: "Remote compute control API; admin-only in v1.",
   },
 ];
 

@@ -13,7 +13,6 @@ function credentialsFor(provider: NotebookProviderType): NotebookCredentialBundl
   const keysByProvider: Record<NotebookProviderType, string[]> = {
     KAGGLE: ["KAGGLE_USERNAME", "KAGGLE_KEY"],
     COLAB: ["COLAB_ACCESS_TOKEN"],
-    PAPERSPACE: ["PAPERSPACE_API_KEY"],
     LIGHTNING: ["LIGHTNING_USER_ID", "LIGHTNING_API_KEY"],
     HF_ZEROGPU: ["HF_ZEROGPU_SPACE", "HF_ZEROGPU_API_NAME", "HF_TOKEN"],
   };
@@ -273,7 +272,6 @@ async function main() {
   const valid: NotebookProviderType[] = [
     "KAGGLE",
     "COLAB",
-    "PAPERSPACE",
     "LIGHTNING",
     "HF_ZEROGPU",
   ];

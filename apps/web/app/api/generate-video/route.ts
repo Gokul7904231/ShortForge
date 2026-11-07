@@ -65,7 +65,7 @@ const GenerateVideoRequestSchema = z.object({
   thumbnailStyle: z.string().optional(),
   retention: z.number().optional(),
   providerOverride: z.string().optional(),
-  // YouTube Shorts target duration (clamped server-side to 30–60 s)
+  // YouTube Shorts target duration (clamped server-side up to 178 s for QuizShow / extended Shorts)
   durationSeconds: z.number().optional(),
 });
 
@@ -213,13 +213,11 @@ export async function POST(req: Request) {
     if (!controller) {
       const { AutonomousFactoryController } =
         await import("../../../factoryos/core/controller/AutonomousFactoryController");
+      const mongoUri = process.env.FACTORYOS_MONGO_URI || process.env.MONGODB_URI;
       controller = new AutonomousFactoryController({
-        storageType: production ? "mongo" : "memory",
-        mongoUri:
-          process.env.FACTORYOS_MONGO_URI ||
-          process.env.MONGODB_URI ||
-          "mongodb://localhost:27017",
-        strictPersistence: production,
+        storageType: mongoUri ? (production ? "mongo" : "memory") : "memory",
+        mongoUri: mongoUri || undefined,
+        strictPersistence: false,
       });
       await controller.boot();
       (global as any).__factoryOSController = controller;
@@ -398,10 +396,10 @@ export async function POST(req: Request) {
 
     const targetWorkerPool = process.env.DEFAULT_RENDER_WORKER_POOL || (tier === "ADMIN" ? "github-actions" : "basic-fastapi");
 
-    // Clamp duration to YouTube Shorts range (30–60 s)
+    // Clamp duration to YouTube Shorts range (30–178 s; hard guard at 178 s)
     const rawDuration = configuredDuration;
     const durationSeconds = Math.min(
-      60,
+      178,
       Math.max(30, Number.isFinite(rawDuration) ? rawDuration : 45)
     );
 

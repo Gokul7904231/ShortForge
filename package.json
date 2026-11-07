@@ -23,6 +23,7 @@
     "obsidian:headless-sync": "node tools/obsidian/headless-sync.mjs",
     "obsidian:headless-sync:continuous": "node tools/obsidian/headless-sync.mjs --continuous",
     "obsidian:graph-validate": "node tools/obsidian/validate-knowledge-graph.mjs",
+    "sync:assets": "python tools/sync_assets.py",
     "factoryos:live:amd": "node apps/web/scripts/amd-live-f06.mjs"
   }
 }

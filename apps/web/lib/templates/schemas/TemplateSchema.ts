@@ -197,6 +197,11 @@ export const TemplateDefinitionSchema = z.object({
     targetDurationRange: z.tuple([z.number(), z.number()]).default([30, 58])
   }),
   capabilityStatus: CapabilityStatusSchema.default('BETA'),
-  statusReason: z.string().optional()
+  statusReason: z.string().optional(),
+  designPack: z.object({
+    packId: z.string(),
+    sourceProvenance: z.string().optional(),
+    assetBindings: z.record(z.string(), z.string()).optional()
+  }).optional()
 });
 export type TemplateDefinition = z.infer<typeof TemplateDefinitionSchema>;

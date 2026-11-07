@@ -97,13 +97,13 @@ const quizConfiguration = {
       label: "Duration",
       type: "number" as const,
       section: "media" as const,
-      defaultValue: 45,
+      defaultValue: 175,
       min: 30,
-      max: 60,
+      max: 178,
       step: 1,
       advanced: true,
       binding: "generation" as const,
-      helpText: "Current Shorts path clamps execution to 30-60 seconds.",
+      helpText: "QuizShow v1 supports up to 178 seconds (8 questions) within YouTube 3-minute Shorts boundary.",
     },
     {
       key: "platforms",
@@ -203,7 +203,7 @@ const quizContracts = {
   },
   timeline: {
     mapping: "Quiz scene template -> TimelineIR",
-    durationRules: ["Duration must remain inside the configured 30-60 second Shorts range."],
+    durationRules: ["Duration must remain between 30 and 178 seconds; hard Shorts ceiling at 178s."],
   },
   render: {
     profile: "FAST_QUIZ",

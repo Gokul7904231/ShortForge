@@ -17,17 +17,14 @@ import { ComputeRouter, RoutingDecision, type GlideRoutingMode } from "../router
 import { GlideWorkerSelectionAdvisor } from "../router/GlideWorkerSelectionAdvisor";
 import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionAdapter";
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
-import { AmdComputeProvider } from "../providers/AmdComputeProvider";
 import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
-import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
 import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
 import { KaggleNotebookComputeProvider } from "../providers/KaggleNotebookComputeProvider";
 import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeProvider";
 import {
   DaytonaSandboxAdapter,
   InstaVMSandboxAdapter,
-  ModalSandboxAdapter,
 } from "../sandboxes";
 import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
@@ -75,7 +72,6 @@ export class ComputeGateway {
     this.router.bindWorkerPool(this.pool);
 
     this.registerPoolProvider(new LocalComputeProvider(), "LOCAL");
-    this.registerPoolProvider(new AmdComputeProvider(), "API_GPU");
     this.registerPoolProvider(new KaggleNotebookComputeProvider(), "NOTEBOOK");
 
     // Hosted sandboxes are real workers only when their render command/output
@@ -84,12 +80,6 @@ export class ComputeGateway {
     this.registerPoolProvider(
       new HostedSandboxComputeProvider({
         adapter: new DaytonaSandboxAdapter(),
-      }),
-      "SANDBOX",
-    );
-    this.registerPoolProvider(
-      new HostedSandboxComputeProvider({
-        adapter: new ModalSandboxAdapter(),
       }),
       "SANDBOX",
     );
@@ -105,7 +95,6 @@ export class ComputeGateway {
     // become render candidates.
     this.router.registerProvider(new PersistentWorkerComputeProvider());
     this.router.registerProvider(new LightningComputeProvider());
-    this.router.registerProvider(new GitHubActionsComputeProvider());
     this.router.registerProvider(new KaggleComputeProvider());
   }
 

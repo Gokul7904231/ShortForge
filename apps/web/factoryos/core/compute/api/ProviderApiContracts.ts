@@ -6,12 +6,7 @@
  * certify F07 artifacts.
  */
 
-export type ApiProviderType =
-  | "VAST"
-  | "RUNPOD"
-  | "DAYTONA"
-  | "PAPERSPACE"
-  | "MODAL";
+export type ApiProviderType = "DAYTONA";
 
 export type ProviderDiscoveryKind =
   | "DYNAMIC_MARKETPLACE"

@@ -1,0 +1,312 @@
+{
+  "schemaVersion": "ShortForgeTemplatePack/v1",
+  "identity": {
+    "id": "quiz.canva.v1",
+    "version": "1.0.0",
+    "name": "6-Question Canva Flagship Quiz",
+    "slug": "quiz-canva-v1",
+    "author": "Canva Pro Lite Creator",
+    "isSystem": false
+  },
+  "category": "QUIZ",
+  "formatFamily": "Canva Hybrid Quiz",
+  "description": "Production 6-question Canva design pack with 6 distinct question background cards, 3s countdown think gates, and emerald answer reveals.",
+  "sourceProvenance": {
+    "provider": "CANVA",
+    "designer": "Owner Canva Pro Lite",
+    "externalDesignId": "DAF12345678",
+    "exportedAt": "2026-11-06T15:00:00Z",
+    "softwareVersion": "Canva Pro Lite 2026"
+  },
+  "outputPolicy": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "targetDurationRange": [
+      60,
+      120
+    ]
+  },
+  "storyStructure": [
+    {
+      "stepName": "Hook",
+      "purpose": "High-energy 6-question challenge hook",
+      "shotRecipeId": "KINETIC_HOOK",
+      "recommendedDurationSeconds": 2.5
+    },
+    {
+      "stepName": "Question 1",
+      "purpose": "Question 1 challenge card with 4 choices",
+      "shotRecipeId": "QUESTION_CARD",
+      "recommendedDurationSeconds": 4.0
+    },
+    {
+      "stepName": "Countdown 1",
+      "purpose": "3-second thinking gate with digital silence",
+      "shotRecipeId": "COUNTDOWN",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Answer 1 Reveal",
+      "purpose": "Highlight correct answer 1",
+      "shotRecipeId": "ANSWER_REVEAL",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Question 2",
+      "purpose": "Question 2 challenge card with 4 choices",
+      "shotRecipeId": "QUESTION_CARD",
+      "recommendedDurationSeconds": 4.0
+    },
+    {
+      "stepName": "Countdown 2",
+      "purpose": "3-second thinking gate with digital silence",
+      "shotRecipeId": "COUNTDOWN",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Answer 2 Reveal",
+      "purpose": "Highlight correct answer 2",
+      "shotRecipeId": "ANSWER_REVEAL",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Question 3",
+      "purpose": "Question 3 challenge card with 4 choices",
+      "shotRecipeId": "QUESTION_CARD",
+      "recommendedDurationSeconds": 4.0
+    },
+    {
+      "stepName": "Countdown 3",
+      "purpose": "3-second thinking gate with digital silence",
+      "shotRecipeId": "COUNTDOWN",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Answer 3 Reveal",
+      "purpose": "Highlight correct answer 3",
+      "shotRecipeId": "ANSWER_REVEAL",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Question 4",
+      "purpose": "Question 4 challenge card with 4 choices",
+      "shotRecipeId": "QUESTION_CARD",
+      "recommendedDurationSeconds": 4.0
+    },
+    {
+      "stepName": "Countdown 4",
+      "purpose": "3-second thinking gate with digital silence",
+      "shotRecipeId": "COUNTDOWN",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Answer 4 Reveal",
+      "purpose": "Highlight correct answer 4",
+      "shotRecipeId": "ANSWER_REVEAL",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Question 5",
+      "purpose": "Question 5 challenge card with 4 choices",
+      "shotRecipeId": "QUESTION_CARD",
+      "recommendedDurationSeconds": 4.0
+    },
+    {
+      "stepName": "Countdown 5",
+      "purpose": "3-second thinking gate with digital silence",
+      "shotRecipeId": "COUNTDOWN",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Answer 5 Reveal",
+      "purpose": "Highlight correct answer 5",
+      "shotRecipeId": "ANSWER_REVEAL",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Question 6",
+      "purpose": "Question 6 challenge card with 4 choices",
+      "shotRecipeId": "QUESTION_CARD",
+      "recommendedDurationSeconds": 4.0
+    },
+    {
+      "stepName": "Countdown 6",
+      "purpose": "3-second thinking gate with digital silence",
+      "shotRecipeId": "COUNTDOWN",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Answer 6 Reveal",
+      "purpose": "Highlight correct answer 6",
+      "shotRecipeId": "ANSWER_REVEAL",
+      "recommendedDurationSeconds": 3.0
+    },
+    {
+      "stepName": "Outro",
+      "purpose": "Score comment CTA",
+      "shotRecipeId": "OUTRO_CTA",
+      "recommendedDurationSeconds": 2.5
+    }
+  ],
+  "editableVariables": [
+    {
+      "name": "subject",
+      "type": "select",
+      "label": "Quiz Subject",
+      "required": true,
+      "default": "Geography",
+      "options": [
+        "Geography",
+        "Science",
+        "History",
+        "AI"
+      ],
+      "description": "Target topic area for the 6 questions"
+    },
+    {
+      "name": "difficulty",
+      "type": "select",
+      "label": "Difficulty",
+      "required": true,
+      "default": "Medium",
+      "options": [
+        "Easy",
+        "Medium",
+        "Hard"
+      ],
+      "description": "Trivia difficulty"
+    }
+  ],
+  "assetBindings": [
+    {
+      "assetId": "bg_question_01",
+      "role": "BACKGROUND",
+      "fileName": "assets/question-01.png",
+      "mimeType": "image/png",
+      "sha256": "b2c4b06b95bd66a609ddbc4cd2e49c8977d65fa835dbc17ef3ffa75c2c07751b",
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "stepMapping": "Question 1"
+    },
+    {
+      "assetId": "bg_question_02",
+      "role": "BACKGROUND",
+      "fileName": "assets/question-02.png",
+      "mimeType": "image/png",
+      "sha256": "66f094cd8abfe7d8c27896862363497d58acb460aea4f8955fb594e50336833a",
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "stepMapping": "Question 2"
+    },
+    {
+      "assetId": "bg_question_03",
+      "role": "BACKGROUND",
+      "fileName": "assets/question-03.png",
+      "mimeType": "image/png",
+      "sha256": "662bd04a8ec12b2f8086bbcc46fe8c4d6aab3ab287c47aa163eae7cf375cca50",
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "stepMapping": "Question 3"
+    },
+    {
+      "assetId": "bg_question_04",
+      "role": "BACKGROUND",
+      "fileName": "assets/question-04.png",
+      "mimeType": "image/png",
+      "sha256": "b688a4da5cc4b25fe797a16717331b68dcf11807ef1b2cc055fc009d5199c13d",
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "stepMapping": "Question 4"
+    },
+    {
+      "assetId": "bg_question_05",
+      "role": "BACKGROUND",
+      "fileName": "assets/question-05.png",
+      "mimeType": "image/png",
+      "sha256": "e849efe1707b406db893f401c58a350419bb49560c060ed5cc5dc5367fdff85b",
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "stepMapping": "Question 5"
+    },
+    {
+      "assetId": "bg_question_06",
+      "role": "BACKGROUND",
+      "fileName": "assets/question-06.png",
+      "mimeType": "image/png",
+      "sha256": "bab23d7febb0323cadb7f6f9d330566bb0f6242142751a45a138590c8d9c0b8f",
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "stepMapping": "Question 6"
+    },
+    {
+      "assetId": "shortforge_watermark",
+      "role": "WATERMARK",
+      "fileName": "assets/shortforge-watermark.png",
+      "mimeType": "image/png",
+      "sha256": "788ccb1a91b8d86070498c835bbfab31c0daeb3e3c93ee1580567b8d22e1c6f0",
+      "dimensions": {
+        "width": 120,
+        "height": 40
+      }
+    }
+  ],
+  "textOverlays": [
+    {
+      "overlayId": "category_badge",
+      "normalizedCoordinates": {
+        "x": 0.25,
+        "y": 0.14,
+        "width": 0.5,
+        "height": 0.04
+      },
+      "typography": {
+        "fontFamily": "Inter-Bold",
+        "fontSizePixels": 28,
+        "fontWeight": "700",
+        "alignment": "center",
+        "color": "#FFFFFF",
+        "maxLines": 1
+      },
+      "safeAreaConstraints": true
+    },
+    {
+      "overlayId": "question_text",
+      "normalizedCoordinates": {
+        "x": 0.1,
+        "y": 0.2,
+        "width": 0.8,
+        "height": 0.12
+      },
+      "typography": {
+        "fontFamily": "Inter-Black",
+        "fontSizePixels": 38,
+        "fontWeight": "900",
+        "alignment": "center",
+        "color": "#FFFFFF",
+        "maxLines": 3
+      },
+      "safeAreaConstraints": true
+    }
+  ],
+  "license": {
+    "licenseType": "CANVA_PRO",
+    "author": "ShortForge Owner",
+    "redistributionPermitted": false,
+    "commercialUsePermitted": true,
+    "notes": "Exported from Canva Pro Lite. Owner private rendering only; public redistribution blocked."
+  },
+  "previewImage": "preview/preview.png"
+}

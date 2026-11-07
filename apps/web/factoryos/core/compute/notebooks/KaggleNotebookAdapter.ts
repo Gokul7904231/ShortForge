@@ -17,6 +17,15 @@ import { fileEvidence, runProcess } from "./NotebookUtils";
 
 const DEFAULT_TIMEOUT_MS = 900_000;
 
+/**
+ * The single Kaggle credential predicate. A modern API token authenticates on its own; the
+ * legacy username/key pair is the fallback. The adapter and the compute provider both read
+ * this so their notions of "configured" cannot drift apart.
+ */
+export function kaggleCredentialKeys(env: Record<string, string | undefined>): string[] {
+  return env.KAGGLE_API_TOKEN ? ["KAGGLE_API_TOKEN"] : ["KAGGLE_USERNAME", "KAGGLE_KEY"];
+}
+
 export class KaggleNotebookAdapter implements NotebookProviderAdapter {
   readonly metadata: NotebookProviderMetadata = {
     providerId: "notebook_kaggle",
@@ -50,14 +59,10 @@ export class KaggleNotebookAdapter implements NotebookProviderAdapter {
 
   async validateCredentials(credentials?: NotebookCredentialBundle): Promise<NotebookCredentialValidation> {
     const env = { ...process.env, ...(credentials || {}) };
-    const hasModernToken = Boolean(env.KAGGLE_API_TOKEN);
-    const hasLegacyKeys = Boolean(env.KAGGLE_USERNAME && env.KAGGLE_KEY);
-    const requiredKeys = hasModernToken
-      ? ["KAGGLE_API_TOKEN"]
-      : ["KAGGLE_USERNAME", "KAGGLE_KEY"];
+    const requiredKeys = kaggleCredentialKeys(env);
     const missingKeys = requiredKeys.filter((key) => !env[key]);
 
-    if (!hasModernToken && !hasLegacyKeys) {
+    if (missingKeys.length > 0) {
       return {
         configured: false,
         authenticated: false,

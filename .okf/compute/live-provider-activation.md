@@ -10,17 +10,17 @@ manual workflow -> provider credentials -> real RenderFabric -> ComputePool -> C
 
 | Provider | Required secrets | Required runtime configuration | Physical proof |
 |---|---|---|---|
-| AMD | AMD_WORKER_URL, AMD_WORKER_SECRET | Existing AMD worker endpoint/secret | RenderFabric -> AMD -> CAS -> F07 |
 | Kaggle | KAGGLE_USERNAME, KAGGLE_KEY | KAGGLE_RENDER_COMMAND | RenderFabric -> Kaggle -> CAS -> F07 |
 | Daytona | DAYTONA_API_KEY | DAYTONA_SANDBOX_IMAGE optional; SHORTFORGE_SANDBOX_RENDER_COMMAND; SHORTFORGE_SANDBOX_OUTPUT_PATH | RenderFabric -> Daytona -> CAS -> F07 |
-| Modal | MODAL_TOKEN_ID, MODAL_TOKEN_SECRET | MODAL_SANDBOX_IMAGE optional; SHORTFORGE_SANDBOX_RENDER_COMMAND; SHORTFORGE_SANDBOX_OUTPUT_PATH | RenderFabric -> Modal -> CAS -> F07 |
 | InstaVM | INSTAVM_API_KEY | INSTAVM_SNAPSHOT_ID optional; SHORTFORGE_SANDBOX_RENDER_COMMAND; SHORTFORGE_SANDBOX_OUTPUT_PATH | RenderFabric -> InstaVM -> CAS -> F07 |
+
+AMD and Modal were removed from the compute fabric on 2026-11-07 (see `.okf/decisions.md`, "Dead Provider Purge"). They were never physically qualified — AMD's live admission stayed `PENDING fresh live-run evidence` — so no qualification evidence is lost.
 
 ## Manual procedure
 
 1. Add only the selected provider's secrets to the GitHub repository/environment.
 2. For Kaggle, set a command that creates `/kaggle/working/shortforge-output.mp4`.
-3. For Daytona/Modal, use a sandbox image that contains or can install FFmpeg. For InstaVM, the standard hosted runtime already passed the ShortForge FFmpeg probe; use INSTAVM_SNAPSHOT_ID only for a prebuilt runtime. The workflow command fails closed when FFmpeg is unavailable and package installation is not possible.
+3. For Daytona, use a sandbox image that contains or can install FFmpeg. For InstaVM, the standard hosted runtime already passed the ShortForge FFmpeg probe; use INSTAVM_SNAPSHOT_ID only for a prebuilt runtime. The workflow command fails closed when FFmpeg is unavailable and package installation is not possible.
 4. Open GitHub Actions -> `Live Multi-Provider Render`.
 5. Select exactly one provider.
 6. Run the workflow.
