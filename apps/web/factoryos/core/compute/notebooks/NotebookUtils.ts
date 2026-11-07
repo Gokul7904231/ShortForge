@@ -37,7 +37,7 @@ export async function runProcess(
       cwd: options.cwd,
       // A caller that supplies an env owns it outright; there is no implicit merge with
       // process.env, so a bridge given only its own variables cannot inherit server secrets.
-      env: options.env ?? process.env,
+      env: (options.env ?? process.env) as any,
       stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -56,8 +56,8 @@ export async function runProcess(
       });
     }, options.timeoutMs);
 
-    child.stdout.on("data", (chunk) => { stdout += chunk.toString(); });
-    child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
+    child.stdout?.on("data", (chunk) => { stdout += chunk.toString(); });
+    child.stderr?.on("data", (chunk) => { stderr += chunk.toString(); });
 
     child.once("error", (error) => {
       if (settled) return;
