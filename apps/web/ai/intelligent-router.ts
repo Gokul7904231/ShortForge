@@ -71,7 +71,7 @@ class IntelligentRouterClass {
     service: TreasuryService,
     required = process.env.NODE_ENV === "production",
   ): void {
-    if (this.treasuryService && this.treasuryService !== service) {
+    if (this.treasuryService && this.treasuryService !== service && process.env.NODE_ENV === "production") {
       throw new Error(
         "[IntelligentRouter] Treasury service is already bound; refusing to replace economic authority",
       );
