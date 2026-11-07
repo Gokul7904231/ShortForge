@@ -24,15 +24,23 @@ export type ScriptAgentInput = {
 };
 
 function safeJsonParse<T>(text: string): T | null {
+  if (!text || typeof text !== "string") return null;
+  const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
   try {
-    return JSON.parse(text) as T;
+    return JSON.parse(cleaned) as T;
   } catch {
-    const match = text.match(/\{[\s\S]*\}/);
+    const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
     if (!match) return null;
+    let jsonStr = match[0];
     try {
-      return JSON.parse(match[0]) as T;
+      return JSON.parse(jsonStr) as T;
     } catch {
-      return null;
+      try {
+        jsonStr = jsonStr.replace(/,\s*([}\]])/g, "$1");
+        return JSON.parse(jsonStr) as T;
+      } catch {
+        return null;
+      }
     }
   }
 }

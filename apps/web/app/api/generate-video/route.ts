@@ -416,7 +416,14 @@ export async function POST(req: Request) {
       Math.max(30, Number.isFinite(rawDuration) ? rawDuration : 45)
     );
 
-    if (parsed.data.contentType === "QUIZ_SHORTS") {
+    const isQuizContent =
+      parsed.data.contentType === "QUIZ_SHORTS" ||
+      parsed.data.engineId === "quiz" ||
+      parsed.data.style === "quiz" ||
+      parsed.data.formatFamily === "quiz" ||
+      (Array.isArray(parsed.data.questions) && parsed.data.questions.length > 0);
+
+    if (isQuizContent) {
       let quizHook = parsed.data.hook ?? "";
       let quizQuestions = parsed.data.questions ?? [];
       let quizTitle = parsed.data.title ?? "";
