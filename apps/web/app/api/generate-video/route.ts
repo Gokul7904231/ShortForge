@@ -213,13 +213,11 @@ export async function POST(req: Request) {
     if (!controller) {
       const { AutonomousFactoryController } =
         await import("../../../factoryos/core/controller/AutonomousFactoryController");
+      const mongoUri = process.env.FACTORYOS_MONGO_URI || process.env.MONGODB_URI;
       controller = new AutonomousFactoryController({
-        storageType: production ? "mongo" : "memory",
-        mongoUri:
-          process.env.FACTORYOS_MONGO_URI ||
-          process.env.MONGODB_URI ||
-          "mongodb://localhost:27017",
-        strictPersistence: production,
+        storageType: mongoUri ? (production ? "mongo" : "memory") : "memory",
+        mongoUri: mongoUri || undefined,
+        strictPersistence: false,
       });
       await controller.boot();
       (global as any).__factoryOSController = controller;

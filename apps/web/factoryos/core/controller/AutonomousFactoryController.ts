@@ -58,6 +58,9 @@ import {
   createTreasuryAccount,
   createMongoTreasuryService,
   TreasuryService,
+  InMemoryTreasuryLedger,
+  TreasuryKernel,
+  TreasuryPriceRegistry,
 } from "../treasury";
 import {
   TreasuryEconomicIntelligence,
@@ -183,6 +186,15 @@ export class AutonomousFactoryController {
 
     if (this.mongoClient?.connected() && this.mongoClient.getDb()) {
       this.treasuryService = createMongoTreasuryService(this.mongoClient);
+    } else {
+      const ledger = new InMemoryTreasuryLedger();
+      this.treasuryService = new TreasuryService(
+        new TreasuryKernel(ledger, new TreasuryPriceRegistry()),
+      );
+      await this.treasuryService.initialize();
+    }
+
+    if (this.treasuryService) {
       const accountId = process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos";
       const budgetUsd = Math.max(0, Number(process.env.FACTORYOS_TREASURY_BUDGET_USD || "25"));
       const capacityUnits = Math.max(
