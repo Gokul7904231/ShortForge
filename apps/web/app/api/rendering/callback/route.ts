@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { db } from "@/lib/firebase-admin";
@@ -14,16 +13,9 @@ import { ArtifactResolver } from "@/factoryos/core/rendering/ArtifactResolver";
 import { VerificationEngine } from "@/factoryos/core/verification/VerificationEngine";
 
 import { readJobManifest, saveJobManifest } from "@/lib/jobs-history";
+import { safeEqual } from "@/lib/auth/safe-equal";
 
 const RENDER_WORKER_SECRET = process.env.RENDER_WORKER_SECRET || process.env.INTERNAL_API_SECRET_KEY;
-
-function safeEqual(a: string, b: string): boolean {
-  if (!a || !b) return false;
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  if (ab.length !== bb.length) return false;
-  return crypto.timingSafeEqual(ab, bb);
-}
 
 export async function GET() {
   return NextResponse.json({

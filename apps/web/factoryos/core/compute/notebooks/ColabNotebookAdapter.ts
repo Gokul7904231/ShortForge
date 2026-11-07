@@ -737,7 +737,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
         {
           timeoutMs,
           env: {
-            SHORTFORGE_COLAB_BASE_URL: connection.url,
+            ...process.env, SHORTFORGE_COLAB_BASE_URL: connection.url,
             SHORTFORGE_COLAB_RUNTIME_TOKEN: connection.token,
             SHORTFORGE_COLAB_CODE_B64: codeB64,
             SHORTFORGE_COLAB_TIMEOUT_MS: String(timeoutMs),
@@ -752,7 +752,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
         {
           timeoutMs,
           env: {
-            SHORTFORGE_COLAB_BASE_URL: connection.url,
+            ...process.env, SHORTFORGE_COLAB_BASE_URL: connection.url,
             SHORTFORGE_COLAB_RUNTIME_TOKEN: connection.token,
             SHORTFORGE_COLAB_CODE_B64: codeB64,
             SHORTFORGE_COLAB_TIMEOUT_MS: String(timeoutMs),

@@ -9,7 +9,6 @@ import {
   LocalComputeProvider,
   KaggleComputeProvider,
   LightningComputeProvider,
-  GitHubActionsComputeProvider,
   PersistentWorkerComputeProvider,
   ComputeJob,
   ComputePolicy,
@@ -90,18 +89,16 @@ describe('FactoryOS Distributed Compute Fabric', () => {
   });
 
   describe('Provider Capabilities & Health Models', () => {
-    it('exposes accurate capability profiles across all 5 canonical providers', async () => {
+    it('exposes accurate capability profiles across all 4 canonical providers', async () => {
       const local = new LocalComputeProvider();
       const kaggle = new KaggleComputeProvider();
       const lightning = new LightningComputeProvider();
-      const gha = new GitHubActionsComputeProvider();
       const persistent = new PersistentWorkerComputeProvider();
 
-      const [capLocal, capKaggle, capLightning, capGha, capPersistent] = await Promise.all([
+      const [capLocal, capKaggle, capLightning, capPersistent] = await Promise.all([
         local.getCapability(),
         kaggle.getCapability(),
         lightning.getCapability(),
-        gha.getCapability(),
         persistent.getCapability(),
       ]);
 
@@ -125,12 +122,6 @@ describe('FactoryOS Distributed Compute Fabric', () => {
       expect(capLightning.gpuAvailable).toBe(true);
       expect(capLightning.gpuType).toContain('NVIDIA A10G');
       expect(capLightning.isCredentialConfigured).toBe(false);
-
-      // GitHub Actions
-      expect(capGha.providerType).toBe('GITHUB_ACTIONS');
-      expect(capGha.executionModel).toBe('EPHEMERAL_WORKFLOW');
-      expect(capGha.gpuAvailable).toBe(false);
-      expect(capGha.isCredentialConfigured).toBe(false);
 
       // Persistent Worker
       expect(capPersistent.providerType).toBe('PERSISTENT_WORKER');
@@ -321,13 +312,12 @@ describe('FactoryOS Distributed Compute Fabric', () => {
 
       const router = gateway.getRouter();
       const providers = router.getProviders();
-      expect(providers.length).toBeGreaterThanOrEqual(5);
+      expect(providers.length).toBeGreaterThanOrEqual(6);
 
       const types = providers.map((p) => p.type);
       expect(types).toContain('LOCAL');
       expect(types).toContain('KAGGLE');
       expect(types).toContain('LIGHTNING');
-      expect(types).toContain('GITHUB_ACTIONS');
       expect(types).toContain('PERSISTENT_WORKER');
     });
 

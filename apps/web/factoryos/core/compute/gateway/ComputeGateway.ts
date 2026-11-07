@@ -19,7 +19,6 @@ import { GlideDecisionAdapter } from "../../intelligence/decision/GlideDecisionA
 import { LocalComputeProvider } from "../providers/LocalComputeProvider";
 import { KaggleComputeProvider } from "../providers/KaggleComputeProvider";
 import { LightningComputeProvider } from "../providers/LightningComputeProvider";
-import { GitHubActionsComputeProvider } from "../providers/GitHubActionsComputeProvider";
 import { PersistentWorkerComputeProvider } from "../providers/PersistentWorkerComputeProvider";
 import { KaggleNotebookComputeProvider } from "../providers/KaggleNotebookComputeProvider";
 import { HostedSandboxComputeProvider } from "../providers/HostedSandboxComputeProvider";
@@ -96,7 +95,6 @@ export class ComputeGateway {
     // become render candidates.
     this.router.registerProvider(new PersistentWorkerComputeProvider());
     this.router.registerProvider(new LightningComputeProvider());
-    this.router.registerProvider(new GitHubActionsComputeProvider());
     this.router.registerProvider(new KaggleComputeProvider());
   }
 
