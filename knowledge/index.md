@@ -100,6 +100,8 @@ sf_provenance:
 
 The `knowledge/` directory is now the canonical Obsidian-compatible cognitive memory surface.
 
+- [ShortForge Memory Fabric (ChatGPT Migrated)](Shortforge%20mem/00%20-%20ShortForge%20Master%20Index.md)
+
 - [Obsidian integration](obsidian/README.md)
 - [Memory schema](obsidian/MEMORY_SCHEMA.md)
 - [Operations](obsidian/OPERATIONS.md)

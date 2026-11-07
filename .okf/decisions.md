@@ -1703,6 +1703,8 @@ Removed surface, verified by repository scan of `apps/web/factoryos/core/compute
 
 Surviving fleet, as locked by `DEFAULT_COMPUTE_POLICY` (`allowedProviders: LOCAL, KAGGLE, DAYTONA, INSTAVM`; `preferredOrder: LOCAL, DAYTONA, INSTAVM, KAGGLE`) and the `ComputeGateway` pool bindings (LOCAL, NOTEBOOK, SANDBOX): LOCAL, LIGHTNING, GITHUB_ACTIONS, KAGGLE, DAYTONA, INSTAVM. `LIGHTNING`, `GITHUB_ACTIONS`, and `PERSISTENT_WORKER` stay registered on the router but unbound from the pool, so they cannot become render candidates.
 
+> **Amended 2026-11-07** (see "Kaggle Credential Reconciliation, Hub Honesty & GitHub Actions Manifest-Fetch Repair"). The `GITHUB_ACTIONS` entry in this list is superseded: `GitHubActionsComputeProvider` was **deleted**. Unbinding it from the pool was not sufficient, because `executeJob` returned a fabricated `COMPLETED` receipt with `outputArtifacts: []` — the fabrication `.okf/decisions.md` L742 forbids — and it was latent only for as long as nothing could route to it. `LIGHTNING` and `PERSISTENT_WORKER` are unaffected and remain router-registered, pool-unbound.
+
 **Qualification evidence is the only promotion path.** Daytona (GA run 37205564715) and InstaVM (GA run 37893345664) hold physical-artifact + CAS + F07 evidence and are `implemented: true`. Kaggle and Daytona remain gated on live credential plus physical MP4 verification. Sandbox adapters keep `productionWorkerEligible: false`; a sandbox connection never grants F06 render authority.
 
 **Rejected on evidence, not preference:** the originating proposal asked to promote Blaxel to `implemented: true`. That promotion is refused. No Blaxel adapter exists anywhere in the repository, `SandboxConnectionService` has no provider-type mapping for it, `.okf` records no qualification run for it, and `factoryos/tests/compute-connection-hub.test.ts` asserts the opposite in two places (catalog `implemented` is `false`, and creation throws `COMPUTE_PROVIDER_NOT_IMPLEMENTED:sandbox_blaxel`). Flipping the flag would declare a provider live with no adapter — the fabrication this codebase's own boundary rules forbid. Blaxel stays `implemented: false` until a real adapter and a live physical proof exist.
@@ -1715,3 +1717,60 @@ GitHub Codespaces and CodeSandbox/VibEngine were added as qualification-gated sl
 
 **Rollback:** revert the deletion commit; nothing in the surviving fleet depends on the removed types, so the revert is mechanical. Do not reintroduce a provider without qualification evidence.
 
+
+## Kaggle Credential Reconciliation, Hub Honesty & GitHub Actions Manifest-Fetch Repair — 2026-11-07
+
+**Decision:** Three connected corrections to the compute fabric's provider surfaces.
+
+1. **Kaggle has one credential predicate.** `KaggleNotebookAdapter.kaggleCredentialKeys()` is exported as the single source of truth for what "Kaggle is configured" means — `KAGGLE_API_TOKEN` alone, or the legacy `KAGGLE_USERNAME` + `KAGGLE_KEY` pair. `KaggleNotebookComputeProvider.validateConfiguration()` now reads it instead of restating the rule. `KaggleNotebookComputeProvider.getCapability()` no longer derives `gpuAvailable` and `supportedWorkloads` from one combined flag, so a missing `KAGGLE_RENDER_COMMAND` names itself in `missingKeys` rather than reporting "no GPU and no workloads".
+2. **The Connection Hub is documented as what it is.** A `notebook_kaggle` connection is a validated, encrypted credential store for notebook operations. It does not supply render credentials and does not authorise rendering. Credentials remain server-owned; no per-user credential ever reaches a provider instance.
+3. **`GitHubActionsComputeProvider` is deleted**, and the real GitHub Actions render path's manifest fetch is repaired.
+
+**Classification:** contradicts existing rule (deletes a provider `.okf` recorded as deliberately retained; changes a recorded pool-binding status) + extends existing rule (credential ownership, job-scoped worker authority) + bug fix (two defects).
+
+**Existing .okf rules considered:**
+- `.okf/compute/connection-hub.md` L10, L97 — credentials never belong to workers or enter F06 worker payloads; L50, L139 — connection does not grant F06 worker authority; L64 — credentials pass to adapters out-of-band per operation; L85-95 — the Hub is *declared* to feed execution via `provider adapter → ComputeRouter`.
+- `.okf/compute/notebook-fabric.md` L25, L83-95 — a notebook provider is never production-render eligible because a runtime can be created.
+- `.okf/security/worker-permissions.md` §22 rules 1-2, 8-9 — least privilege, no ambient authority, no physical success claims without verification, no secrets in worker memory; §26 step 12 — worker-capability changes must be recorded here.
+- `.okf/decisions.md` L742 — a provider cannot be treated as completed when it returns `COMPLETED` without a physical artifact receipt.
+- `.okf/audits/f06-azure-retirement.md` L63 — the retained-adapters text, now superseded for the GitHub Actions adapter specifically.
+- `.okf/decision-protocol.md` §5 (classification), §8 (record fields), §9 (no silent drift), §10 (current-vs-target).
+- `.okf/compute/live-provider-activation.md` L13 — Kaggle requires `KAGGLE_USERNAME`, `KAGGLE_KEY`, and `KAGGLE_RENDER_COMMAND`.
+
+**Relevant repo mappings:**
+- `apps/web/factoryos/core/compute/notebooks/KaggleNotebookAdapter.ts`
+- `apps/web/factoryos/core/compute/providers/KaggleNotebookComputeProvider.ts`
+- `apps/web/factoryos/core/compute/connections/ComputeConnectionCatalog.ts`
+- `apps/web/factoryos/core/compute/gateway/ComputeGateway.ts`
+- `apps/web/factoryos/core/compute/index.ts`
+- `apps/web/app/api/jobs/[id]/route.ts`, `apps/web/app/api/rendering/callback/route.ts`, `apps/web/lib/auth/safe-equal.ts`
+- `apps/web/testing` suite: `testing/tests/provider-qualification.test.ts`, `testing/tests/compute-fabric.test.ts`
+
+**Affected hierarchy nodes:** F06 rendering provider surface; Compute Connection Hub (notebook family); Control Plane job-manifest read route.
+
+**Affected workers / permissions:** No worker gains authority. `KaggleNotebookAdapter.productionWorkerEligible` remains `false`. The render runner receives read access to exactly one job manifest — the job its execution token was issued for — which is job-scoped, not ambient. `RENDER_WORKER_SECRET` is deliberately **not** accepted on the manifest route.
+
+**Affected contracts:** none removed. `ProviderType` (`ComputeContracts.ts:14`) and `FabricProviderType` (`RenderFabricContracts.ts:34`) both still carry `"GITHUB_ACTIONS"`, and this record leaves them: the deploy artifact — `.github/workflows/factoryos-basic-render.yml` — is live and the type name is the fabric's vocabulary for it, not a claim that a provider instance exists. Removing the member would be a cosmetic diff across two contract surfaces with no behavioural effect. Registered as a named residual, not an oversight. `GET /api/jobs/{id}` gains a second, narrower authorization path.
+
+**Security impact:** positive. Deletion removes `executeJob`'s fabricated `COMPLETED` receipt with `outputArtifacts: []`, which contradicted `.okf/decisions.md` L742 and was latent only because the provider was never pool-bound. The manifest route previously rejected the render runner outright (401) and now authorises it with a constant-time comparison (`safeEqual`, extracted to `lib/auth/safe-equal.ts` so the callback route and this route cannot drift) against the token persisted for that job. Unauthenticated requests without a token still receive 401; ownership of unrelated jobs is still enforced for session callers. Cross-job reads are rejected.
+
+**Performance impact:** negligible — one manifest read on the worker path, and it is skipped entirely when no token is presented.
+
+**Evidence of the two defects (before):**
+- `KaggleNotebookAdapter.validateCredentials` accepted `KAGGLE_API_TOKEN`; `KaggleNotebookComputeProvider.validateConfiguration` accepted only `KAGGLE_USERNAME` + `KAGGLE_KEY`. The catalog's primary profile and the OAuth callback (`app/api/compute/connections/oauth/kaggle/callback/route.ts:70-74`) both write token-shaped credentials, so every token connection reported `isConfigured: false`.
+- `.github/workflows/factoryos-basic-render.yml:90` sent a job-scoped execution token to `GET /api/jobs/{jobId}`, which authenticated solely via `verifySession` — a session cookie or `Bearer ${INTERNAL_API_SECRET_KEY}` (`lib/auth/auth.ts:24`). The step `sys.exit(1)`s on failure (`:103`), so the job died before rendering. No route read `x-execution-token` except `/api/rendering/callback:73`.
+
+**Verification:**
+- `npm run factoryos:typecheck` passes; `npx tsc --noEmit` passes.
+- `factoryos/tests/job-manifest-worker-fetch-auth.test.ts` (new, 7 tests) — token accepted, cross-job token rejected, mismatched token rejected, unauthenticated rejected, non-owner rejected, owner unaffected.
+- `factoryos/tests/kaggle-provider-config.test.ts` (new, 6 tests) — token path configured, legacy path configured, missing render command names itself without erasing credentials, absent credentials unconfigured, half-pair names its counterpart, shared predicate precedence.
+- `testing/tests/provider-qualification.test.ts` and `testing/tests/compute-fabric.test.ts` updated for the deleted provider.
+- Pre-existing suite failures (`real-render-vertical-slice`, `render-fabric-core`, `render-fabric-providers-and-chaos`, `treasury-economic-admission`) derive from `LocalRenderAdapter.healthCheck()` and predate this change; they are not attributable to it.
+
+**Implementation status:** IMPLEMENTED (code + tests). Live Kaggle physical-render verification remains gated on credentials and is NOT claimed.
+
+**Rollback / rejection condition:** revert the commit. Reject the deletion if a genuine provider-neutral GitHub Actions compute adapter is later required — reinstating it demands a real `executeJob` that returns a physical artifact and a fresh decision record, never the fabricated receipt. Reject the Kaggle predicate change if a future Kaggle auth mode is added that the adapter does not recognise; extend `kaggleCredentialKeys()` instead of writing a second predicate.
+
+**Provenance:** user-reported "why kaggle and github actions not connected properly?" → "how to make them work?"; diagnosis by repository trace; `.okf` sweep before implementation per CLAUDE.md.
+
+**Date / revision:** 2026-11-07.

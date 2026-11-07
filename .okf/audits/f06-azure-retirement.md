@@ -62,6 +62,8 @@ Eligible providers are selected from capability, health, policy, permission, lea
 
 Generic persistent-worker and GitHub Actions adapters remain because they are provider-neutral compute mechanisms.
 
+> **Amended 2026-11-07.** The GitHub Actions half of this sentence no longer holds for the compute fabric. `GitHubActionsComputeProvider` was deleted, not retained: its `executeJob` returned a fabricated `COMPLETED` receipt with no physical artifact. The **GitHub Actions render path is unchanged and remains live** — `RenderQueueManager` → `GitHubActionsRenderManager` → `.github/workflows/factoryos-basic-render.yml` is a Control Plane render mechanism, not a compute-fabric provider. Only the latter was removed. See `.okf/decisions.md`, "Kaggle Credential Reconciliation, Hub Honesty & GitHub Actions Manifest-Fetch Repair — 2026-11-07". The generic persistent-worker adapter is unaffected.
+
 Some historical audit/report files may still contain the string Azure. Those records are retained for provenance and are not executable architecture or active provider configuration.
 
 ## Validation required before merge
