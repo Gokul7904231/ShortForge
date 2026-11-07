@@ -98,7 +98,7 @@ export const COMPUTE_PROVIDER_CATALOG: ComputeProviderDefinition[] = [
     setupUrl: "https://www.kaggle.com/settings/api",
     roles: ["BASIC", "ADMIN"],
     implemented: true,
-    description: "Kaggle notebook/kernel execution with one-click delegated connection when OAuth is enabled.",
+    description: "Kaggle notebook/kernel execution with one-click delegated connection when OAuth is enabled. This connection stores and validates your Kaggle credentials for notebook operations; it does not by itself authorise rendering, which additionally requires operator-configured server credentials.",
   },
   {
     providerId: "notebook_colab",
