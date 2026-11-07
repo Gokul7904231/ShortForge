@@ -25,7 +25,7 @@
     "obsidian:graph-validate": "node tools/obsidian/validate-knowledge-graph.mjs",
     "sync:assets": "python tools/sync_assets.py",
     "factoryos:live:amd": "node apps/web/scripts/amd-live-f06.mjs",
-    "build": "npm --prefix apps/web run build",
+    "build": "npm --prefix apps/web install && npm --prefix apps/web run build",
     "start": "npm --prefix apps/web start"
   }
 }
