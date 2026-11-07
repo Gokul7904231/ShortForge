@@ -385,7 +385,7 @@ export async function POST(req: Request) {
 
     // Gracefully filter submitted fields to those declared in the engine configuration schema
     const declaredSchemaKeys = new Set(
-      (engineDef as any).configurationSchema?.fields?.map((f: any) => f.key) ?? []
+      (engineDef.configuration?.fields ?? (engineDef as any).configurationSchema?.fields)?.map((f: any) => f.key) ?? []
     );
     const filteredConfig: Record<string, any> = {};
     for (const [k, v] of Object.entries(submittedConfig)) {
