@@ -577,6 +577,22 @@ export class OverseerControlPlane {
       this.worldState.removeActiveRun(run.runId);
     }
 
+    if (completedDag.status !== "COMPLETED") {
+      try {
+        const { saveJobManifest } = await import("../../../lib/jobs-history");
+        const mission = missionId && this.missionManager ? await this.missionManager.getMission(missionId) : null;
+        const targetJobId = (mission?.scope as any)?.jobId;
+        if (targetJobId) {
+          await saveJobManifest(targetJobId, {
+            status: "failed",
+            error: `Autonomous DAG execution finished with status: ${completedDag.status}`,
+          } as any);
+        }
+      } catch (err: any) {
+        console.warn(`[OverseerControlPlane] Failed to record DAG failure manifest: ${err?.message}`);
+      }
+    }
+
     // Complete mission upon successful DAG execution
     if (missionId && this.missionManager && completedDag.status === "COMPLETED") {
       try {
