@@ -645,7 +645,7 @@ export async function POST(req: Request) {
     // Execution token: strong crypto — never jobId fallback (const-time compared in callback)
     const executionToken = crypto.randomBytes(32).toString("hex");
     finalPayload.executionToken = executionToken;
-    finalPayload.status = "processing";
+    finalPayload.status = "queued";
     finalPayload.dispatchedAt = new Date().toISOString();
 
     finalPayload.missionId = missionId;
