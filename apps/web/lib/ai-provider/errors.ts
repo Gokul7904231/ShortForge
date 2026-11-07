@@ -73,7 +73,7 @@ export function classifyProviderError(err: any, provider: string): ProviderBaseE
     return new ProviderRateLimitError(`Rate limit exceeded for ${provider}: ${err.message}`, provider, status || 429);
   }
 
-  if (status === 401 || status === 403 || msg.includes("401") || msg.includes("403") || msg.includes("unauthorized") || msg.includes("invalid api key") || msg.includes("permission denied")) {
+  if (status === 401 || status === 402 || status === 403 || msg.includes("401") || msg.includes("402") || msg.includes("insufficient credits") || msg.includes("payment required") || msg.includes("403") || msg.includes("unauthorized") || msg.includes("invalid api key") || msg.includes("permission denied")) {
     return new ProviderAuthenticationError(`Authentication failed for ${provider} (verify server .env configuration): ${err.message}`, provider, status);
   }
 

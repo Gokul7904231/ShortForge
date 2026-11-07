@@ -169,7 +169,11 @@ class IntelligentRouterClass {
 
     const inputTokens = Math.max(0, Math.ceil(params.prompt.length / 4));
     const outputTokenCeiling = Math.max(1, params.maxTokens ?? 2048);
-    const maxAttempts = Math.max(1, (normalizedContext.maxRetries ?? 0) + 1);
+    // Allow failover across available candidate models (up to candidate count or 5 attempts)
+    const maxAttempts = Math.min(
+      candidates.length,
+      Math.max(candidates.length > 1 ? 3 : 1, (normalizedContext.maxRetries ?? 0) + 1),
+    );
 
     const scopeFingerprint =
       normalizedContext.scopeFingerprint ??
@@ -519,7 +523,22 @@ class IntelligentRouterClass {
             }
           }
 
-          health.errorRate = health.errorRate * 0.9 + 0.1;
+          const errStr = String(err?.message || err || "");
+          const isFatalAuthOrCredit =
+            err?.status === 401 ||
+            err?.status === 402 ||
+            errStr.includes("401") ||
+            errStr.includes("402") ||
+            errStr.includes("Insufficient credits") ||
+            errStr.includes("API key not valid") ||
+            errStr.includes("API_KEY_INVALID");
+
+          if (isFatalAuthOrCredit) {
+            health.errorRate = 1.0;
+            health.state = "QUOTA EXCEEDED";
+          } else {
+            health.errorRate = health.errorRate * 0.9 + 0.1;
+          }
           health.retries += 1;
           health.lastChecked = Date.now();
 
@@ -661,6 +680,11 @@ class IntelligentRouterClass {
     const isFree = pricing.free || isLocal;
     const costRating = isFree ? 100 : Math.max(0, 100 - (pricing.input + pricing.output) * 10);
     score += costRating * weights.costWeight;
+
+    // Deprioritize providers with zero credits or failed auth
+    if (health && (health.errorRate >= 0.85 || health.state === "QUOTA EXCEEDED" || health.state === "AUTH FAILED")) {
+      score -= 5000;
+    }
 
     // 4. Availability / Success rate component
     const successRate = health ? (1.0 - health.errorRate) * 100 : 98;
