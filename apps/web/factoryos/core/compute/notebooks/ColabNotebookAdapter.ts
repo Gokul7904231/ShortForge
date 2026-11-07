@@ -47,7 +47,7 @@ export function colabBridgeEnv(
   codeB64: string,
   timeoutMs: number,
 ): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env };
+  const env: NodeJS.ProcessEnv = {} as NodeJS.ProcessEnv;
   for (const key of BRIDGE_ENV_ALLOWLIST) {
     const value = process.env[key];
     if (value) env[key] = value;

@@ -29,13 +29,15 @@ export async function fileEvidence(filePath: string) {
 export async function runProcess(
   command: string,
   args: string[],
-  options: { cwd?: string; timeoutMs: number; env?: NodeJS.ProcessEnv },
+  options: { cwd?: string; timeoutMs: number; env?: NodeJS.ProcessEnv | Record<string, string | undefined> },
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const { spawn } = await import("node:child_process");
   return await new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
-      env: { ...process.env, ...(options.env || {}) },
+      // A caller that supplies an env owns it outright; there is no implicit merge with
+      // process.env, so a bridge given only its own variables cannot inherit server secrets.
+      env: options.env ?? process.env,
       stdio: ["ignore", "pipe", "pipe"],
     });
 

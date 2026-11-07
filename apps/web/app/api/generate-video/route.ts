@@ -383,12 +383,23 @@ export async function POST(req: Request) {
       submittedConfig.providerOverride = parsed.data.provider;
     }
 
+    // Gracefully filter submitted fields to those declared in the engine configuration schema
+    const declaredSchemaKeys = new Set(
+      (engineDef as any).configurationSchema?.fields?.map((f: any) => f.key) ?? []
+    );
+    const filteredConfig: Record<string, any> = {};
+    for (const [k, v] of Object.entries(submittedConfig)) {
+      if (declaredSchemaKeys.size === 0 || declaredSchemaKeys.has(k)) {
+        filteredConfig[k] = v;
+      }
+    }
+
     let productionSpec;
     try {
       productionSpec = compileProductionSpec({
         jobId,
         engine: engineDef,
-        userConfig: submittedConfig,
+        userConfig: filteredConfig,
       }).spec;
     } catch (specError: any) {
       await releaseGenerationAdmission();
