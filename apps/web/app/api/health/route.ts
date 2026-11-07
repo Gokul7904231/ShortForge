@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const report = await HealthManager.check();
-    return NextResponse.json({ success: true, ...report });
+    return NextResponse.json({ success: true, buildTag: "cloud-resilient-v3", ...report });
   } catch (err: any) {
     console.error("[/api/health] Check crashed:", err.message);
     return NextResponse.json(

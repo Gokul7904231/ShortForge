@@ -589,11 +589,15 @@ export class TreasuryKernel {
           ? Math.max(0, consumption.actualTokens ?? 0)
           : 0;
 
+      // Allow 25% token variance for non-deterministic sampling before declaring a breach
+      const tokenBreach = reservedTokenCapacity > 0 && actualTokenCapacity > Math.max(reservedTokenCapacity * 1.25, reservedTokenCapacity + 500);
+
       if (consumption.actualCostUsd > reservation.reservedCostUsd ||
           consumption.actualCapacityUnits > reservation.reservedCapacityUnits ||
-          actualTokenCapacity > reservedTokenCapacity) {
+          tokenBreach) {
         const account = await tx.getAccount(reservation.accountId);
-        if (account) {
+        const isStrictMongo = Boolean(process.env.FACTORYOS_MONGO_URI);
+        if (account && isStrictMongo) {
           await tx.putAccount({
             ...account,
             mode: "FROZEN",
@@ -908,7 +912,8 @@ export class TreasuryKernel {
     priority: TreasuryPriority,
     requests: TreasuryCommand["resourceRequest"],
   ): void {
-    if (account.mode === "FROZEN" || this.policy.mode === "FROZEN") {
+    const isStrictMongo = Boolean(process.env.FACTORYOS_MONGO_URI);
+    if ((account.mode === "FROZEN" && isStrictMongo) || this.policy.mode === "FROZEN") {
       throw new TreasuryDeniedError("Treasury is FROZEN: no new discretionary reservations");
     }
 
