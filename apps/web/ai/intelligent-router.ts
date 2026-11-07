@@ -451,73 +451,12 @@ class IntelligentRouterClass {
             reservation?.reservation?.reservationId &&
             this.treasuryService
           ) {
-            const usage = executionId
-              ? plugin.getExecutionUsage?.(executionId)
-              : undefined;
-
-            if (usage) {
-              const actualTokens =
-                Math.max(0, usage.inputTokens) +
-                Math.max(0, usage.outputTokens);
-
-              const measured = isPaid
-                ? this.treasuryService
-                    .getPriceRegistry()
-                    .estimateModelInvocation(
-                      pluginId,
-                      candidate.modelId,
-                      usage.inputTokens,
-                      usage.outputTokens,
-                    )
-                : {
-                    priced: true,
-                    totalCostUsd: 0,
-                  };
-
-              if (measured.priced) {
-                await this.treasuryService
-                  .settle(reservation.reservation.reservationId, {
-                    reservationId:
-                      reservation.reservation.reservationId,
-                    actualCostUsd: Math.max(
-                      0,
-                      measured.totalCostUsd,
-                    ),
-                    actualCapacityUnits: 0,
-                    actualTokens,
-                    actualDurationMs: undefined,
-                    executionEvidenceId:
-                      executionId ??
-                      "treasury-model-failure:" +
-                        taskId +
-                        ":" +
-                        attemptNumber,
-                    verified: false,
-                    measuredAt: new Date().toISOString(),
-                  })
-                  .catch(() => {});
-              }
-            } else {
-              // No physical usage measurement exists. A definitive auth/bad-request
-              // rejection is non-billable and can release safely. Network/server/
-              // timeout/unknown failures remain held for reconciliation because the
-              // provider may have accepted work before the caller lost the response.
-              const classified = classifyProviderError(
-                err,
-                pluginId,
-              );
-              if (
-                classified instanceof ProviderAuthenticationError ||
-                classified instanceof ProviderBadRequestError
-              ) {
-                await this.treasuryService
-                  .release(
-                    reservation.reservation.reservationId,
-                    "MODEL_REQUEST_REJECTED_BEFORE_ACCEPTANCE",
-                  )
-                  .catch(() => {});
-              }
-            }
+            await this.treasuryService
+              .release(
+                reservation.reservation.reservationId,
+                "MODEL_EXECUTION_FAILED",
+              )
+              .catch(() => {});
           }
 
           const errStr = String(err?.message || err || "");

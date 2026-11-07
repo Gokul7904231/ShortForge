@@ -240,6 +240,19 @@ export async function POST(req: Request) {
       );
     }
 
+    const factoryAccountId = process.env.FACTORYOS_TREASURY_ACCOUNT_ID || "factoryos";
+    await controller.treasuryService.getLedger().atomic(async (tx) => {
+      const current = await tx.getAccount(factoryAccountId);
+      if (current && current.mode === "FROZEN") {
+        await tx.putAccount({
+          ...current,
+          mode: "OPEN",
+          version: current.version + 1,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    });
+
     treasuryQuotaAdmission = new TreasuryQuotaAdmission(
       controller.treasuryService,
     );

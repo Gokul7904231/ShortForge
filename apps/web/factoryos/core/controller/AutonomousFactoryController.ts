@@ -205,6 +205,17 @@ export class AutonomousFactoryController {
         0,
         Number(process.env.FACTORYOS_TREASURY_TOKEN_CAPACITY_UNITS || "1000000"),
       );
+      await this.treasuryService.getLedger().atomic(async (tx) => {
+        const existing = await tx.getAccount(accountId);
+        if (existing && existing.mode === "FROZEN") {
+          await tx.putAccount({
+            ...existing,
+            mode: "OPEN",
+            version: existing.version + 1,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      });
       await this.treasuryService.ensureAccount(
         createTreasuryAccount(
           accountId,
