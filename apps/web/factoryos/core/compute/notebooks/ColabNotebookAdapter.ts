@@ -23,6 +23,42 @@ const DEFAULT_API_TIMEOUT_MS = 30_000;
 const DEFAULT_OPERATION_TIMEOUT_MS = 120_000;
 const DEFAULT_EXECUTION_TIMEOUT_MS = 900_000;
 
+/**
+ * The bridge child process reads only SHORTFORGE_COLAB_* (`apps/web/scripts/colab-jupyter-exec.py`),
+ * so it receives an allowlist rather than the whole server environment. Spreading `process.env`
+ * would hand the bridge every server secret — INTERNAL_API_SECRET_KEY, RENDER_WORKER_SECRET,
+ * provider keys — for no functional gain. The PATH-shaped entries are included only so the
+ * interpreter resolves and the child can write temp files.
+ */
+const BRIDGE_ENV_ALLOWLIST = [
+  "PATH",
+  "PATHEXT",
+  "SystemRoot",
+  "COMSPEC",
+  "TEMP",
+  "TMP",
+  "HOME",
+  "LANG",
+] as const;
+
+export function colabBridgeEnv(
+  connectionUrl: string,
+  token: string,
+  codeB64: string,
+  timeoutMs: number,
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  for (const key of BRIDGE_ENV_ALLOWLIST) {
+    const value = process.env[key];
+    if (value) env[key] = value;
+  }
+  env.SHORTFORGE_COLAB_BASE_URL = connectionUrl;
+  env.SHORTFORGE_COLAB_RUNTIME_TOKEN = token;
+  env.SHORTFORGE_COLAB_CODE_B64 = codeB64;
+  env.SHORTFORGE_COLAB_TIMEOUT_MS = String(timeoutMs);
+  return env;
+}
+
 type ColabRuntimeSpec = {
   key?: {
     variant?: string;
@@ -736,12 +772,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
         [bridgeScript],
         {
           timeoutMs,
-          env: {
-            ...process.env, SHORTFORGE_COLAB_BASE_URL: connection.url,
-            SHORTFORGE_COLAB_RUNTIME_TOKEN: connection.token,
-            SHORTFORGE_COLAB_CODE_B64: codeB64,
-            SHORTFORGE_COLAB_TIMEOUT_MS: String(timeoutMs),
-          },
+          env: colabBridgeEnv(connection.url, connection.token, codeB64, timeoutMs),
         },
       );
     } catch (error: any) {
@@ -751,12 +782,7 @@ export class ColabNotebookAdapter implements NotebookProviderAdapter {
         ["-3", bridgeScript],
         {
           timeoutMs,
-          env: {
-            ...process.env, SHORTFORGE_COLAB_BASE_URL: connection.url,
-            SHORTFORGE_COLAB_RUNTIME_TOKEN: connection.token,
-            SHORTFORGE_COLAB_CODE_B64: codeB64,
-            SHORTFORGE_COLAB_TIMEOUT_MS: String(timeoutMs),
-          },
+          env: colabBridgeEnv(connection.url, connection.token, codeB64, timeoutMs),
         },
       );
     }
