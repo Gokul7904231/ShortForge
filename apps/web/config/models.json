@@ -29,7 +29,8 @@
       "type": "text",
       "capabilities": [
         "critic",
-        "reasoning"
+        "reasoning",
+        "script"
       ],
       "providers": [
         "groq"

@@ -169,11 +169,8 @@ class IntelligentRouterClass {
 
     const inputTokens = Math.max(0, Math.ceil(params.prompt.length / 4));
     const outputTokenCeiling = Math.max(1, params.maxTokens ?? 2048);
-    // Allow failover across available candidate models (up to candidate count or 5 attempts)
-    const maxAttempts = Math.min(
-      candidates.length,
-      Math.max(candidates.length > 1 ? 3 : 1, (normalizedContext.maxRetries ?? 0) + 1),
-    );
+    // Try all available candidate models until success or candidates exhausted
+    const maxAttempts = Math.max(candidates.length, (normalizedContext.maxRetries ?? 0) + 1);
 
     const scopeFingerprint =
       normalizedContext.scopeFingerprint ??
@@ -717,13 +714,15 @@ class IntelligentRouterClass {
       else if (provider.id === "groq") score += 300;
       else if (provider.id === "openrouter") score += 200;
     } else if (capabilityUpper === "JSON" || subtaskLower === "json") {
-      if (modelId === "meta-llama/llama-3.1-8b-instruct") score += 600;
-      else if (modelId === "gemini-2.5-flash") score += 500;
+      if (modelId === "gemini-2.5-flash") score += 600;
+      else if (modelId === "llama-3.3-70b-versatile" || provider.id === "groq") score += 550;
+      else if (modelId === "meta-llama/llama-3.1-8b-instruct") score += 300;
       else if (modelId === "glm-4.7-flash") score += 400;
       else if (provider.id === "groq") score += 300;
     } else if (capabilityUpper === "SCRIPT" || capabilityUpper === "SCRIPT_GENERATION") {
-      if (modelId === "meta-llama/llama-3.1-8b-instruct") score += 600;
-      else if (modelId === "gemini-2.5-flash") score += 500;
+      if (modelId === "gemini-2.5-flash") score += 600;
+      else if (modelId === "llama-3.3-70b-versatile" || provider.id === "groq") score += 550;
+      else if (modelId === "meta-llama/llama-3.1-8b-instruct") score += 300;
       else if (modelId === "glm-4.7-flash") score += 400;
       else if (provider.id === "openrouter") score += 300;
     }

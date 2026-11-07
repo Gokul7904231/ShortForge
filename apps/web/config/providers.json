@@ -4,7 +4,7 @@
     {
       "id": "google-ai",
       "name": "Google AI Studio",
-      "enabled": false,
+      "enabled": true,
       "type": "native",
       "baseUrl": "https://generativelanguage.googleapis.com",
       "apiKey": "",
