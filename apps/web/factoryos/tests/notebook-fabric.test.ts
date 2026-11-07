@@ -6,7 +6,6 @@ import { NotebookRegistry } from "../core/compute/notebooks/NotebookRegistry";
 import { NotebookOperationJournal } from "../core/compute/notebooks/NotebookOperationJournal";
 import { KaggleNotebookAdapter } from "../core/compute/notebooks/KaggleNotebookAdapter";
 import { ColabNotebookAdapter } from "../core/compute/notebooks/ColabNotebookAdapter";
-import { PaperspaceNotebookAdapter } from "../core/compute/notebooks/PaperspaceNotebookAdapter";
 import { LightningNotebookAdapter } from "../core/compute/notebooks/LightningNotebookAdapter";
 import { HuggingFaceZeroGPUAdapter } from "../core/compute/notebooks/HuggingFaceZeroGPUAdapter";
 import { NotebookRouter } from "../core/compute/notebooks/NotebookRouter";
@@ -21,21 +20,19 @@ afterEach(() => {
 });
 
 describe("Notebook & Interactive Compute Fabric", () => {
-  it("registers all five canonical notebook/interactive providers without network calls", () => {
+  it("registers all four canonical notebook/interactive providers without network calls", () => {
     const journal = new NotebookOperationJournal(":memory:");
     const registry = new NotebookRegistry(journal);
 
     registry.register(new KaggleNotebookAdapter());
     registry.register(new ColabNotebookAdapter());
-    registry.register(new PaperspaceNotebookAdapter());
     registry.register(new LightningNotebookAdapter());
     registry.register(new HuggingFaceZeroGPUAdapter());
 
-    expect(registry.list()).toHaveLength(5);
+    expect(registry.list()).toHaveLength(4);
     expect(registry.metadata().map((m) => m.providerType)).toEqual([
       "KAGGLE",
       "COLAB",
-      "PAPERSPACE",
       "LIGHTNING",
       "HF_ZEROGPU",
     ]);
@@ -291,27 +288,23 @@ describe("Notebook & Interactive Compute Fabric", () => {
     );
   });
 
-  it("models Paperspace as a machine-backed notebook rather than a legacy notebook API", () => {
-    const paperspace = new PaperspaceNotebookAdapter();
+  it("models Lightning Studio as a persistent studio-backed notebook rather than ephemeral execution", () => {
+    const lightning = new LightningNotebookAdapter();
 
-    expect(paperspace.metadata.runtimeKind).toBe(
-      "PAPERSPACE_MACHINE_BACKED_NOTEBOOK",
-    );
-    expect(paperspace.metadata.capabilities.canProvision).toBe(true);
-    expect(paperspace.metadata.capabilities.canExecuteCode).toBe(false);
+    expect(lightning.metadata.runtimeKind).toBe("LIGHTNING_STUDIO");
+    expect(lightning.metadata.capabilities.canProvision).toBe(true);
+    expect(lightning.metadata.capabilities.canExecuteCode).toBe(true);
   });
 
   it("records no-card status as evidence, not as an unsupported claim", () => {
     const adapters = [
       new KaggleNotebookAdapter(),
       new ColabNotebookAdapter(),
-      new PaperspaceNotebookAdapter(),
       new LightningNotebookAdapter(),
       new HuggingFaceZeroGPUAdapter(),
     ];
 
     expect(adapters.map((a) => a.metadata.paymentRequirement)).toEqual([
-      "NO_CARD_NOT_ESTABLISHED",
       "NO_CARD_NOT_ESTABLISHED",
       "NO_CARD_NOT_ESTABLISHED",
       "NO_CARD_STATED",
@@ -323,7 +316,6 @@ describe("Notebook & Interactive Compute Fabric", () => {
     const router = new NotebookRouter([
       new KaggleNotebookAdapter(),
       new ColabNotebookAdapter(),
-      new PaperspaceNotebookAdapter(),
       new LightningNotebookAdapter(),
       new HuggingFaceZeroGPUAdapter(),
     ]);

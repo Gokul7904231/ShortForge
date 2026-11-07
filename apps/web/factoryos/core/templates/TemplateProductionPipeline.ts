@@ -341,7 +341,7 @@ export class TemplateProductionPipeline {
         const explanation = q.explanation || `The correct answer is ${answerVal}.`;
         const optionLetters = ['A', 'B', 'C', 'D'];
         const qImage = q.image_path || q.imageRef || q.image || (userInputs.images && userInputs.images[qIdx]);
-        const categoryBadge = userInputs.categoryBadge || `${upperTopic} • Q${qNum}/${totalQStr}`;
+        const categoryBadge = userInputs.categoryBadge || `${upperTopic} | Q${qNum}/${totalQStr}`;
 
         beats.push({
           beatId: `beat_q${qNum}_card`,
@@ -365,35 +365,37 @@ export class TemplateProductionPipeline {
         });
 
         if (isUniversal) {
-        // Each option is independently narrated so the five-second think gate can be
-        // anchored to the physical end of the last option's audio.
-        for (let oIdx = 0; oIdx < 4; oIdx++) {
-          const letter = optionLetters[oIdx];
-          beats.push({
-            beatId: `beat_q${qNum}_option_${letter.toLowerCase()}`,
-            type: `OPTION_${letter}`,
-            narration: `${letter}. ${String(options[oIdx]).replace(/[.!?]+$/, '')}.`,
-            visualIntent: `Question card highlighting option ${letter} while it is narrated`,
-            shotRecipeId: 'QUESTION_CARD',
-            durationSeconds: 1.5,
-            provenance: q.provenance || { source: topic },
-            props: {
-              question: qText,
-              options,
-              answerIndex: answerIdx,
-              categoryBadge,
-              headline: `QUESTION ${qNum} / ${totalQStr}`,
-              topic,
-              highlightOptionIndex: oIdx,
-              // The last option ends exactly at its audio end so the think gate
-              // starts at the physical end of the final spoken option.
-              ...(oIdx === 3 ? { audioTailSeconds: 0 } : {}),
-              ...(userInputs.accentColor ? { accentColor: userInputs.accentColor } : {}),
-              ...(userInputs.themeToken ? { themeToken: userInputs.themeToken } : {}),
-              ...(qImage ? { image_path: qImage } : {})
+          // Dictate options when requested or by default; can be disabled with dictateOptions: false
+          const dictateOptions = userInputs.dictateOptions !== false;
+          if (dictateOptions) {
+            for (let oIdx = 0; oIdx < 4; oIdx++) {
+              const letter = optionLetters[oIdx];
+              beats.push({
+                beatId: `beat_q${qNum}_option_${letter.toLowerCase()}`,
+                type: `OPTION_${letter}`,
+                narration: `${letter}. ${String(options[oIdx]).replace(/[.!?]+$/, '')}.`,
+                visualIntent: `Question card highlighting option ${letter} while it is narrated`,
+                shotRecipeId: 'QUESTION_CARD',
+                durationSeconds: 1.5,
+                provenance: q.provenance || { source: topic },
+                props: {
+                  question: qText,
+                  options,
+                  answerIndex: answerIdx,
+                  categoryBadge,
+                  headline: `QUESTION ${qNum} / ${totalQStr}`,
+                  topic,
+                  highlightOptionIndex: oIdx,
+                  // The last option ends exactly at its audio end so the think gate
+                  // starts at the physical end of the final spoken option.
+                  ...(oIdx === 3 ? { audioTailSeconds: 0 } : {}),
+                  ...(userInputs.accentColor ? { accentColor: userInputs.accentColor } : {}),
+                  ...(userInputs.themeToken ? { themeToken: userInputs.themeToken } : {}),
+                  ...(qImage ? { image_path: qImage } : {})
+                }
+              });
             }
-          });
-        }
+          }
 
         beats.push({
           beatId: `beat_q${qNum}_think`,
@@ -589,7 +591,7 @@ export class TemplateProductionPipeline {
             question: qText,
             options,
             answerIndex: answerIdx,
-            categoryBadge: `${topic.toUpperCase()} • Q${qNum}`,
+            categoryBadge: `${topic.toUpperCase()} | Q${qNum}`,
             headline: `QUESTION ${qNum}`
           }
         });
@@ -607,7 +609,7 @@ export class TemplateProductionPipeline {
             options,
             answerIndex: answerIdx,
             seconds: 3,
-            categoryBadge: `${topic.toUpperCase()} • Q${qNum}`,
+            categoryBadge: `${topic.toUpperCase()} | Q${qNum}`,
             headline: `QUESTION ${qNum}`
           }
         });
@@ -625,7 +627,7 @@ export class TemplateProductionPipeline {
             answerIndex: answerIdx,
             correctOption: answerVal,
             explanation,
-            categoryBadge: `${topic.toUpperCase()} • Q${qNum}`,
+            categoryBadge: `${topic.toUpperCase()} | Q${qNum}`,
             headline: 'CORRECT ANSWER'
           }
         });

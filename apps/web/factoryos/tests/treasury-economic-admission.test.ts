@@ -50,9 +50,9 @@ function makeTreasury(): TreasuryService {
 
 function offer(): ComputeOffer {
   return {
-    offerId: "offer-runpod-1",
-    providerId: "provider-runpod",
-    providerType: "RUNPOD",
+    offerId: "offer-daytona-1",
+    providerId: "provider-daytona",
+    providerType: "DAYTONA",
     discoveryKind: "DYNAMIC_MARKETPLACE",
     capacityConfidence: "LIVE",
     observedAt: new Date().toISOString(),
@@ -72,8 +72,8 @@ function offer(): ComputeOffer {
 
 function reference(): ResourceReference {
   return {
-    providerId: "provider-runpod",
-    providerType: "RUNPOD",
+    providerId: "provider-daytona",
+    providerType: "DAYTONA",
     resourceId: "resource-1",
     idempotencyKey: "provision-1",
     operationId: "op-1",
@@ -250,8 +250,8 @@ describe("Treasury model/API and ComputeOffer admission", () => {
 
     const adapter: ProviderControlAdapter = {
       metadata: {
-        providerId: "provider-runpod",
-        providerType: "RUNPOD",
+        providerId: "provider-daytona",
+        providerType: "DAYTONA",
         apiVersion: "v1",
         discoveryKind: "DYNAMIC_MARKETPLACE",
         baseUrl: "https://example.invalid",
@@ -278,7 +278,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
         checkedAt: new Date().toISOString(),
       })),
       getAccountContext: vi.fn<() => Promise<ProviderAccountContext>>(async () => ({
-        providerId: "provider-runpod",
+        providerId: "provider-daytona",
         metadata: {},
       })),
       getQuota: vi.fn<() => Promise<ProviderQuota>>(async () => ({
@@ -301,7 +301,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
     registry.register(adapter);
 
     const result = await registry.provisionWithTreasury(
-      "RUNPOD",
+      "DAYTONA",
       {
         factoryExecutionId: "factory-economic-1",
         missionId: "mission-economic-1",
@@ -327,7 +327,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
 
     await expect(
       registry.provisionWithTreasury(
-        "RUNPOD",
+        "DAYTONA",
         {
           factoryExecutionId: "factory-economic-2",
           missionId: "mission-economic-1",
@@ -354,8 +354,8 @@ describe("Treasury model/API and ComputeOffer admission", () => {
 
     const adapter: ProviderControlAdapter = {
       metadata: {
-        providerId: "provider-runpod",
-        providerType: "RUNPOD",
+        providerId: "provider-daytona",
+        providerType: "DAYTONA",
         apiVersion: "v1",
         discoveryKind: "DYNAMIC_MARKETPLACE",
         baseUrl: "https://example.invalid",
@@ -377,7 +377,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
         configured: true, authenticated: true, providerReachable: true,
         requiredKeys: [], missingKeys: [], checkedAt: new Date().toISOString(),
       })),
-      getAccountContext: vi.fn(async () => ({ providerId: "provider-runpod", metadata: {} })),
+      getAccountContext: vi.fn(async () => ({ providerId: "provider-daytona", metadata: {} })),
       getQuota: vi.fn(async () => ({ known: true, observedAt: new Date().toISOString(), source: "PROVIDER_API" as const })),
       discoverOffers: vi.fn(async () => [offer()]),
       provision: vi.fn(async () => {
@@ -397,7 +397,7 @@ describe("Treasury model/API and ComputeOffer admission", () => {
 
     await expect(
       registry.provisionWithTreasury(
-        "RUNPOD",
+        "DAYTONA",
         {
           factoryExecutionId: "factory-economic-3",
           missionId: "mission-economic-1",

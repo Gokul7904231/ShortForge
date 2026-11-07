@@ -3,8 +3,4 @@ export * from "./ProviderApiTransport";
 export * from "./ProviderApiOperationJournal";
 export * from "./ProviderApiRegistry";
 export * from "./BaseProviderControlAdapter";
-export * from "./providers/VastProviderControl";
-export * from "./providers/RunPodV2ProviderControl";
 export * from "./providers/DaytonaProviderControl";
-export * from "./providers/PaperspaceProviderControl";
-export * from "./providers/ModalProviderControl";

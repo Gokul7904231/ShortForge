@@ -85,6 +85,9 @@ export interface VoiceArtifact {
   readonly fallbackReason?: string;
   readonly sha256: string;
   readonly producedAt: string;
+  readonly transcript?: string;
+  readonly wordTimings?: any[];
+  readonly audioRole?: "narration" | "speech" | "music" | "sfx" | "ambient";
 }
 
 export class ArtifactProbeError extends Error {
@@ -324,11 +327,45 @@ export class GeminiVoiceEngine implements IVoiceEngine {
     }
 
     const dir = outputDir || path.join(process.cwd(), "data", "audio");
-    const ext = result.mimeType?.includes("wav") ? "wav" : "mp3";
+    let finalBuffer = result.audioBuffer;
+    let ext: "wav" | "mp3" = "mp3";
+    const mime = (result.mimeType || "").toLowerCase();
+
+    if (mime.includes("l16") || mime.includes("pcm") || mime.includes("raw")) {
+      ext = "wav";
+      if (finalBuffer.toString("ascii", 0, 4) !== "RIFF") {
+        const sampleRate = 24000;
+        const numChannels = 1;
+        const bitsPerSample = 16;
+        const blockAlign = (numChannels * bitsPerSample) / 8;
+        const byteRate = sampleRate * blockAlign;
+        const dataSize = finalBuffer.length;
+        const header = Buffer.alloc(44);
+
+        header.write("RIFF", 0, "ascii");
+        header.writeUInt32LE(36 + dataSize, 4);
+        header.write("WAVE", 8, "ascii");
+        header.write("fmt ", 12, "ascii");
+        header.writeUInt32LE(16, 16);
+        header.writeUInt16LE(1, 20);
+        header.writeUInt16LE(numChannels, 22);
+        header.writeUInt32LE(sampleRate, 24);
+        header.writeUInt32LE(byteRate, 28);
+        header.writeUInt16LE(blockAlign, 32);
+        header.writeUInt16LE(bitsPerSample, 34);
+        header.write("data", 36, "ascii");
+        header.writeUInt32LE(dataSize, 40);
+
+        finalBuffer = Buffer.concat([header, finalBuffer]);
+      }
+    } else if (mime.includes("wav") || finalBuffer.toString("ascii", 0, 4) === "RIFF") {
+      ext = "wav";
+    }
+
     const baseName = `voice_gemini_${randomUUID().substring(0, 8)}`;
     const latency = Date.now() - startTime;
 
-    return verifyAndPublishAudioArtifact(result.audioBuffer, dir, baseName, {
+    return verifyAndPublishAudioArtifact(finalBuffer, dir, baseName, {
       provider: "GEMINI",
       expectedFormat: ext,
       qualityClass: "PRIMARY",
@@ -670,6 +707,84 @@ export class AudexumTTSVoiceEngine implements IVoiceEngine {
   }
 }
 
+export class SystemVoiceEngine implements IVoiceEngine {
+  readonly id = "SYSTEM";
+  readonly name = "System Local Speech Synthesizer (SAPI)";
+  readonly isProductionReady = true;
+  readonly isPrimaryRoutable = true;
+  readonly isEmergencyFallback = false;
+
+  getCredentialState(): CredentialState {
+    return process.platform === "win32" ? "PRESENT" : "MISSING";
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return process.platform === "win32";
+  }
+
+  async synthesize(text: string, profile: VoiceProfile, outputDir?: string): Promise<VoiceArtifact> {
+    const startTime = Date.now();
+    const dir = outputDir || path.join(process.cwd(), "data", "audio");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    const fileName = `voice_system_${randomUUID().substring(0, 8)}.wav`;
+    const filePath = path.join(dir, fileName);
+
+    const pyScript = `import sys, win32com.client
+text, out_path = sys.argv[1], sys.argv[2]
+speaker = win32com.client.Dispatch("SAPI.SpVoice")
+stream = win32com.client.Dispatch("SAPI.SpFileStream")
+stream.Open(out_path, 3, False)
+speaker.AudioOutputStream = stream
+speaker.Rate = 1
+speaker.Speak(text)
+stream.Close()
+`;
+    const pyFile = path.join(dir, `sapi_worker_${randomUUID().substring(0, 6)}.py`);
+    fs.writeFileSync(pyFile, pyScript, "utf-8");
+
+    try {
+      const { spawnSync } = await import("node:child_process");
+      const res = spawnSync("python", [pyFile, text, filePath], { windowsHide: true });
+      if (res.status !== 0 || !fs.existsSync(filePath)) {
+        throw new Error(`SAPI synthesis failed: ${res.stderr?.toString()}`);
+      }
+    } finally {
+      if (fs.existsSync(pyFile)) {
+        try { fs.unlinkSync(pyFile); } catch {}
+      }
+    }
+
+    const probe = await VoiceFabric.probeAudioFile(filePath);
+    const buffer = fs.readFileSync(filePath);
+    const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+    const latency = Date.now() - startTime;
+
+    return {
+      artifactId: `art_voice_system_${randomUUID().substring(0, 8)}`,
+      localPath: filePath,
+      audioUrl: filePath,
+      format: "wav",
+      success: true,
+      storageUri: `file://${filePath}`,
+      qualityClass: "PRIMARY",
+      provider: "SYSTEM_SAPI",
+      factoryExecutionId: `fexec_voice_${randomUUID().substring(0, 8)}`,
+      providerRequestId: undefined,
+      synthesisLatencyMs: latency,
+      byteLength: buffer.length,
+      codec: "pcm_s16le",
+      sampleRate: probe.sampleRate,
+      channels: probe.channels,
+      durationSeconds: probe.durationSeconds,
+      durationSource: "PHYSICAL_FFPROBE",
+      isFallback: false,
+      sha256,
+      producedAt: new Date().toISOString(),
+    };
+  }
+}
+
 export class SilentWavVoiceEngine implements IVoiceEngine {
   readonly id = "SILENT_WAV_FALLBACK";
   readonly name = "Deterministic Silent PCM WAV Fallback";
@@ -821,11 +936,141 @@ export class SilentWavVoiceEngine implements IVoiceEngine {
 
 export interface VoiceSynthesisOptions {
   allowFallback?: boolean;
+  allowSilentFallback?: boolean;
+  allowSystemFallback?: boolean;
   outputDir?: string;
+  isProduction?: boolean;
 }
 
 export class VoiceFabric {
   static _spawnFn: any = null;
+
+  /**
+   * Forensic Physical Audio Audibility Validator:
+   * Inspects physical audio samples to guarantee non-zero energy and audible speech.
+   * Deterministic zero-filled buffers (SilentWavVoiceEngine) or muted tracks fail immediately.
+   */
+  static validateAudibleAudio(filePath: string): {
+    isAudible: boolean;
+    peakAmplitude: number;
+    rms: number;
+    sampleCount: number;
+    silenceRatio: number;
+    error?: string;
+  } {
+    if (!filePath || !fs.existsSync(filePath)) {
+      return { isAudible: false, peakAmplitude: 0, rms: 0, sampleCount: 0, silenceRatio: 1.0, error: `File not found: ${filePath}` };
+    }
+
+    const stat = fs.statSync(filePath);
+    if (stat.size === 0) {
+      return { isAudible: false, peakAmplitude: 0, rms: 0, sampleCount: 0, silenceRatio: 1.0, error: `File size is 0 bytes: ${filePath}` };
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.wav') {
+      const buffer = fs.readFileSync(filePath);
+      if (buffer.length < 44) {
+        return { isAudible: false, peakAmplitude: 0, rms: 0, sampleCount: 0, silenceRatio: 1.0, error: `WAV file too short (< 44 bytes)` };
+      }
+
+      let dataOffset = -1;
+      let dataSize = 0;
+      for (let i = 12; i < buffer.length - 8; i++) {
+        if (buffer.toString('ascii', i, i + 4) === 'data') {
+          dataOffset = i + 8;
+          dataSize = buffer.readUInt32LE(i + 4);
+          break;
+        }
+      }
+
+      if (dataOffset === -1 || dataOffset >= buffer.length) {
+        return { isAudible: false, peakAmplitude: 0, rms: 0, sampleCount: 0, silenceRatio: 1.0, error: `No data chunk found in WAV` };
+      }
+
+      const availableBytes = Math.min(dataSize, buffer.length - dataOffset);
+      const sampleCount = Math.floor(availableBytes / 2);
+      if (sampleCount === 0) {
+        return { isAudible: false, peakAmplitude: 0, rms: 0, sampleCount: 0, silenceRatio: 1.0, error: `Zero audio samples in data chunk` };
+      }
+
+      let peak = 0;
+      let sumSquares = 0;
+      let zeroCount = 0;
+
+      for (let i = 0; i < sampleCount; i++) {
+        const val = buffer.readInt16LE(dataOffset + i * 2);
+        const absVal = Math.abs(val);
+        if (absVal > peak) peak = absVal;
+        sumSquares += val * val;
+        if (absVal === 0) zeroCount++;
+      }
+
+      const rms = Math.sqrt(sumSquares / sampleCount);
+      const silenceRatio = zeroCount / sampleCount;
+
+      const isAudible = peak >= 100 && rms >= 20 && silenceRatio < 0.999;
+      return {
+        isAudible,
+        peakAmplitude: peak,
+        rms: Number(rms.toFixed(2)),
+        sampleCount,
+        silenceRatio: Number(silenceRatio.toFixed(4)),
+        error: isAudible ? undefined : `Audio contains zero or inaudible samples (peak: ${peak}, RMS: ${rms.toFixed(2)}, zero ratio: ${(silenceRatio * 100).toFixed(1)}%)`
+      };
+    }
+
+    try {
+      const { spawnSync } = require('node:child_process');
+      const ffmpegPath = process.env.FACTORYOS_FFMPEG_PATH || 'ffmpeg';
+      const res = spawnSync(ffmpegPath, ['-hide_banner', '-i', filePath, '-af', 'volumedetect', '-f', 'null', '-'], {
+        encoding: 'utf-8',
+        windowsHide: true,
+      });
+      const combined = (res.stdout || '') + '\n' + (res.stderr || '');
+
+      const maxVolMatch = combined.match(/max_volume:\s*([-0-9.]+)\s*dB/);
+      const meanVolMatch = combined.match(/mean_volume:\s*([-0-9.]+)\s*dB/);
+      const maxVol = maxVolMatch ? parseFloat(maxVolMatch[1]) : -999;
+      const meanVol = meanVolMatch ? parseFloat(meanVolMatch[1]) : -999;
+
+      const isAudible = maxVol > -55 && meanVol > -70;
+      return {
+        isAudible,
+        peakAmplitude: maxVol,
+        rms: meanVol,
+        sampleCount: 1,
+        silenceRatio: isAudible ? 0 : 1,
+        error: isAudible ? undefined : `FFmpeg volumedetect measured max_volume: ${maxVol}dB, mean_volume: ${meanVol}dB (inaudible)`
+      };
+    } catch (err: any) {
+      return { isAudible: false, peakAmplitude: 0, rms: 0, sampleCount: 0, silenceRatio: 1.0, error: err.message };
+    }
+  }
+
+  static assertAudibleAudio(filePath: string): void {
+    const probe = VoiceFabric.validateAudibleAudio(filePath);
+    if (!probe.isAudible) {
+      throw new Error(`[VoiceFabric:AudioSilenceDetectedError] Physical audio verification failed for '${filePath}': ${probe.error}`);
+    }
+  }
+
+  static assertProductionNarrationIntegrity(artifact: VoiceArtifact, expectedFilePath?: string): void {
+    if (artifact.success !== true) {
+      throw new Error(`[VoiceFabric:ProductionNarrationIntegrityError] Artifact ${artifact.artifactId} marked success=false`);
+    }
+    if (artifact.qualityClass === 'DEGRADED_FALLBACK' || artifact.isFallback === true || artifact.provider === 'SILENT_WAV_FALLBACK') {
+      throw new Error(`[VoiceFabric:ProductionNarrationIntegrityError] Silent or degraded fallback narration artifact is strictly rejected in production (provider: ${artifact.provider}, qualityClass: ${artifact.qualityClass})`);
+    }
+    if (artifact.transcript !== undefined && artifact.transcript.trim().length === 0) {
+      throw new Error(`[VoiceFabric:ProductionNarrationIntegrityError] Artifact ${artifact.artifactId} has empty narration transcript. Ambient noise or music tracks alone cannot satisfy narration integrity.`);
+    }
+    if (artifact.audioRole && artifact.audioRole !== 'narration' && artifact.audioRole !== 'speech') {
+      throw new Error(`[VoiceFabric:ProductionNarrationIntegrityError] Audio artifact role is '${artifact.audioRole}'. Only 'narration' or 'speech' roles satisfy narration verification.`);
+    }
+    assertPrimaryAudioArtifact(artifact, expectedFilePath);
+    VoiceFabric.assertAudibleAudio(expectedFilePath || artifact.localPath);
+  }
   private engines: Map<string, IVoiceEngine> = new Map();
   private profiles: Map<string, VoiceProfile> = new Map();
 
@@ -835,6 +1080,7 @@ export class VoiceFabric {
     this.engines.set("EDGE", new EdgeVoiceEngine());
     this.engines.set("IBM_TTS", new IBMWatsonTTSVoiceEngine());
     this.engines.set("AUDEXUM", new AudexumTTSVoiceEngine());
+    this.engines.set("SYSTEM", new SystemVoiceEngine());
     this.engines.set("SILENT_WAV_FALLBACK", new SilentWavVoiceEngine());
 
     this.registerDefaultProfiles();
@@ -1032,8 +1278,13 @@ export class VoiceFabric {
       : (profileIdOrProfile ? this.getProfile(profileIdOrProfile) : this.getProfile("profile_narrator_dramatic"));
 
     const options: VoiceSynthesisOptions = typeof optionsOrOutputDir === "string"
-      ? { outputDir: optionsOrOutputDir, allowFallback: true }
-      : { allowFallback: true, ...optionsOrOutputDir };
+      ? { outputDir: optionsOrOutputDir, allowFallback: true, isProduction: false }
+      : { allowFallback: false, isProduction: false, ...optionsOrOutputDir };
+
+    if (options.isProduction === true) {
+      options.allowFallback = false;
+      options.allowSilentFallback = false;
+    }
 
     const preferredId = profile?.preferredEngine || "GEMINI";
     const primaryEngine = this.engines.get(preferredId);
@@ -1054,11 +1305,29 @@ export class VoiceFabric {
       }
     }
 
-    if (options.allowFallback === false) {
-      throw primaryFailure || new Error(`[VoiceFabric] LIVE_PROVIDER_REQUIRED: Primary engine ${preferredId} failed and fallback is disabled.`);
+    // Production paths strictly refuse any degraded fallback
+    if (options.allowFallback === false || options.isProduction === true) {
+      const detail = primaryFailure ? primaryFailure.message : `Primary engine ${preferredId} credentials not configured`;
+      throw new Error(
+        `[VoiceFabric:LIVE_PROVIDER_REQUIRED] ${detail} (silent fallback is disabled on production synthesis path).`
+      );
     }
 
-    // Explicitly marked DEGRADED_FALLBACK
+    // Optional system speech fallback if explicitly requested
+    if (options.allowSystemFallback === true) {
+      const systemEngine = this.engines.get("SYSTEM");
+      if (systemEngine && await systemEngine.isAvailable()) {
+        try {
+          const sysArtifact = await systemEngine.synthesize(text, profile, options.outputDir);
+          VoiceFabric.assertAudibleAudio(sysArtifact.localPath);
+          return sysArtifact;
+        } catch (sysErr: any) {
+          console.warn(`[VoiceFabric] System voice engine failed: ${sysErr.message}`);
+        }
+      }
+    }
+
+    // Explicitly marked DEGRADED_FALLBACK for test/development opt-in only
     const fallbackEngine = this.engines.get("SILENT_WAV_FALLBACK") as SilentWavVoiceEngine;
     return fallbackEngine.synthesize(
       text,
@@ -1230,4 +1499,9 @@ export async function verifyLiveProviderExecution(
       reason: `Live synthesis execution failed: ${err.message}`,
     };
   }
+}
+
+
+export function assertProductionNarrationIntegrity(artifact: VoiceArtifact, expectedFilePath?: string): void {
+  VoiceFabric.assertProductionNarrationIntegrity(artifact, expectedFilePath);
 }

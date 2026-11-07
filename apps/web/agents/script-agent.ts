@@ -99,10 +99,10 @@ export async function scriptAgent(
     // Resolve expected question count based on mode
     let expectedCount = 6;
     const normProfile = String(input.renderProfile || "AUTO").toUpperCase();
-    if (normProfile.includes("60") || normProfile === "FAST_QUIZ") {
-      expectedCount = 6;
-    } else if (normProfile.includes("120") || normProfile === "EXTENDED") {
+    if (normProfile.includes("QUIZSHOW") || normProfile.includes("175") || normProfile.includes("120") || normProfile === "EXTENDED") {
       expectedCount = 8;
+    } else if (normProfile.includes("60") || normProfile === "FAST_QUIZ") {
+      expectedCount = 6;
     } else {
       // Auto Mode: Resolve baseline based on style/difficulty, defaults to 6
       const diffLower = String(input.style || "medium").toLowerCase();
@@ -154,7 +154,7 @@ The hook must create strong curiosity and encourage completion. Use or adapt one
 Every question MUST contain exactly:
 - "difficulty": "easy" or "medium" or "hard"
 - "question": "Question text"
-- "options": ["Option A text", "Option B text", "Option C text"]
+- "options": ["Option A text", "Option B text", "Option C text", "Option D text"] (MUST be exactly 4 distinct options)
 - "answer": "The correct option text exactly (must match one of the options)"
 - "explanation": "A short 1-sentence educational explanation or fun fact about the correct answer (max 15 words)"
 - "topicId": "${input.topics && input.topics.length > 0 ? "one of the requested topicIds" : "topic"}"

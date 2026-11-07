@@ -4,7 +4,11 @@
  * Sandboxes are an isolated execution plane. They are not notebook runtimes,
  * are not F06 workers, and do not become production workers implicitly.
  */
-export type SandboxProviderType = "DAYTONA" | "MODAL" | "INSTAVM";
+export type SandboxProviderType =
+  | "DAYTONA"
+  | "INSTAVM"
+  | "GITHUB_CODESAPCES"
+  | "CODESANDBOX";
 
 export type SandboxRuntimeState =
   | "REQUESTED"
@@ -20,7 +24,11 @@ export type SandboxRuntimeState =
 export interface SandboxProviderMetadata {
   providerId: string;
   providerType: SandboxProviderType;
-  runtimeKind: "DAYTONA_SANDBOX" | "MODAL_SANDBOX" | "INSTAVM_SANDBOX";
+  runtimeKind:
+    | "DAYTONA_SANDBOX"
+    | "INSTAVM_SANDBOX"
+    | "GITHUB_CODESAPCES_VM"
+    | "CODESANDBOX_MICROVM";
   apiVersion: string;
   documentationUrl: string;
   capabilities: {

@@ -318,11 +318,15 @@ export class GeminiTTSProvider {
 
       const wordCount = options.transcript.split(/\s+/).filter(Boolean).length;
       const estimatedDuration = Math.max(1.5, parseFloat((wordCount / 2.5).toFixed(2)));
+      const isPcm = mimeType.toLowerCase().includes("l16") || mimeType.toLowerCase().includes("pcm") || mimeType.toLowerCase().includes("wav");
+      const durationSeconds = isPcm && audioBuffer.byteLength > 0
+        ? Number((audioBuffer.byteLength / 48000).toFixed(2))
+        : estimatedDuration;
 
       return {
         audioBuffer,
         audioBase64: sanitizedBase64,
-        durationSeconds: estimatedDuration,
+        durationSeconds,
         mimeType,
         provider: "google_gemini_tts",
         model: selectedModel,

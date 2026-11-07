@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://shortforge.gokul.software/">
-    <img src="https://kommodo.ai/i/WCF405NiQ1FyxzBdLT39" alt="ShortForge Logo" width="96" />
+    <img src="assets/branding/logo.png" alt="ShortForge Logo" width="96" />
   </a>
 </p>
 <p align="center">

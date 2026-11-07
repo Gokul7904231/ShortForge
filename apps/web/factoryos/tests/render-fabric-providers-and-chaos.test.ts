@@ -1,14 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import * as path from "node:path";
 import * as fs from "node:fs";
-import { AmdRenderWorkerAdapter } from "../core/fabric/adapters/AmdRenderWorkerAdapter";
 import { LocalRenderWorkerAdapter } from "../core/fabric/adapters/LocalRenderWorkerAdapter";
 import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore";
 import { FabricReconciler } from "../core/fabric/reconciler/FabricReconciler";
 import { RenderJobStateMachine } from "../core/fabric/state/RenderJobStateMachine";
 import { FabricEventJournal } from "../core/fabric/events/FabricEventJournal";
 import { WorkerFleetManager } from "../core/fabric/worker/WorkerFleetManager";
-import type { RenderJob, RenderAttempt } from "../core/fabric/contracts/RenderFabricContracts";
 
 describe("Render Fabric Providers, Chaos & Zero Duplicate Render Verification", () => {
   let cas: ContentAddressedStore;
@@ -26,61 +24,9 @@ describe("Render Fabric Providers, Chaos & Zero Duplicate Render Verification", 
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 1. AMD Hardware Qualification (Truthful / Fail-Closed)
+  // 1. The Classic Failure: Upload Succeeds, Callback Drops -> Zero Duplicate Render
   // ───────────────────────────────────────────────────────────────────────────
-  describe("1. Real AMD Qualification & Truthful Hardware Boundary", () => {
-    it("truthfully detects missing ROCm / AMD hardware or credentials and fails closed (No synthetic claims)", async () => {
-      // Initialize AMD worker adapter in unconfigured host environment
-      const amdAdapter = new AmdRenderWorkerAdapter("amd_worker_01");
-
-      const caps = await amdAdapter.getCapabilities();
-
-      // In this environment, NVIDIA GeForce RTX 3050 is present, but AMD ROCm is absent.
-      // The adapter MUST truthfully report AMD hardware status.
-      expect(caps.gpuVendor).toBe("AMD");
-
-      const dummyJob: RenderJob = {
-        jobId: "job_amd_probe_01",
-        missionId: "mis_amd_001",
-        idempotencyKey: "idem_amd_01",
-        state: "CLAIMED",
-        activeWorkerId: "amd_worker_01",
-        activeAttemptId: 1,
-        activeFencingToken: 1001,
-        requirements: {
-          minVramMb: 4096,
-          gpuRequired: true,
-          requiresFfmpeg: true,
-          supportedWorkloads: ["video.render"],
-        },
-        manifest: { topic: "AMD GPU Benchmark" },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const attempt: RenderAttempt = {
-        attemptId: 1,
-        jobId: dummyJob.jobId,
-        workerId: "amd_worker_01",
-        fencingToken: 1001,
-        state: "CLAIMED",
-        startedAt: new Date().toISOString(),
-      };
-
-      // When attempting execution without physical AMD ROCm / DigitalOcean cluster, it MUST fail closed.
-      const execResult = await amdAdapter.execute(dummyJob, attempt);
-      expect(execResult.success).toBe(false);
-      expect(execResult.error).toMatch(/AMD ROCm GPU hardware.*not configured/);
-
-      // Invariant: Zero synthetic "PRODUCTION_VERIFIED" claims manufactured
-      expect((execResult as any).artifactReference).toBeUndefined();
-    });
-  });
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // 2. The Classic Failure: Upload Succeeds, Callback Drops -> Zero Duplicate Render
-  // ───────────────────────────────────────────────────────────────────────────
-  describe("2. The Classic Failure: Zero Duplicate Rendering Proof", () => {
+  describe("1. The Classic Failure: Zero Duplicate Rendering Proof", () => {
     it("demonstrates with an execution counter that a lost callback reconciles from disk with ZERO duplicate rendering", async () => {
       const localWorker = new LocalRenderWorkerAdapter("local_worker_counter_01");
       expect(localWorker.renderInvocationCount).toBe(0);
@@ -163,9 +109,9 @@ describe("Render Fabric Providers, Chaos & Zero Duplicate Render Verification", 
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 3. Chaos Matrix: Worker Process Crash & Recovery
+  // 2. Chaos Matrix: Worker Process Crash & Recovery
   // ───────────────────────────────────────────────────────────────────────────
-  describe("3. Chaos Matrix: Worker Process Death & Bounded Recovery", () => {
+  describe("2. Chaos Matrix: Worker Process Death & Bounded Recovery", () => {
     it("handles worker disappearance during rendering, marks attempt lost, and allows bounded retry", async () => {
       const jobId = `job_chaos_death_${Date.now()}`;
 

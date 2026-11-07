@@ -1,0 +1,10 @@
+adapters:
+  web:
+    port: 8080
+    auth_token: "my-super-secret-password"
+
+services:
+  llm:
+    provider: antigravity-local
+    model: "Claude Sonnet 4.6 (Thinking)"
+    fallback: "Gemini 3.8 Flash Medium"

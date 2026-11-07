@@ -49,7 +49,6 @@ describe("compute connection hub", () => {
       "notebook_hf_zerogpu",
       "notebook_kaggle",
       "notebook_lightning",
-      "notebook_paperspace",
     ]);
   });
 
@@ -156,20 +155,20 @@ describe("compute connection hub", () => {
   it("does not let a basic user attach an admin-only provider", async () => {
     await expect(
       computeConnectionService.create(basicUser, {
-        providerId: "api_vast",
-        credentials: { VAST_API_KEY: "secret-value" },
+        providerId: "sandbox_blaxel",
+        credentials: { BLAXEL_API_KEY: "secret-value" },
       }),
-    ).rejects.toThrow("COMPUTE_PROVIDER_FORBIDDEN:api_vast");
+    ).rejects.toThrow("COMPUTE_PROVIDER_FORBIDDEN:sandbox_blaxel");
   });
 
   it("rejects providers that are catalogued but not implemented", async () => {
-    expect(getComputeProviderDefinition("api_vast")?.implemented).toBe(false);
+    expect(getComputeProviderDefinition("sandbox_blaxel")?.implemented).toBe(false);
     await expect(
       computeConnectionService.create(adminUser, {
-        providerId: "api_vast",
-        credentials: { VAST_API_KEY: "secret-value" },
+        providerId: "sandbox_blaxel",
+        credentials: { BLAXEL_API_KEY: "secret-value" },
       }),
-    ).rejects.toThrow("COMPUTE_PROVIDER_NOT_IMPLEMENTED:api_vast");
+    ).rejects.toThrow("COMPUTE_PROVIDER_NOT_IMPLEMENTED:sandbox_blaxel");
   });
 
   it("exposes only hosted sandbox providers to admins", () => {
@@ -180,33 +179,33 @@ describe("compute connection hub", () => {
       .filter((p) => p.providerFamily === "SANDBOX")
       .map((p) => p.providerId);
     expect(sandboxIds).toContain("sandbox_daytona_hosted");
-    expect(sandboxIds).toContain("sandbox_modal_hosted");
     expect(sandboxIds).toContain("sandbox_instavm");
+    expect(sandboxIds).toContain("sandbox_github_codespaces");
+    expect(sandboxIds).toContain("sandbox_codesandbox");
     expect(sandboxIds).not.toContain("sandbox_pandastack_hosted");
   });
 
-  it("validates a hosted Modal connection without exposing its secret", async () => {
+  it("validates a hosted GitHub Codespaces connection without exposing its secret", async () => {
     const connection = await computeConnectionService.create(adminUser, {
-      providerId: "sandbox_modal_hosted",
+      providerId: "sandbox_github_codespaces",
       credentials: {
-        MODAL_TOKEN_ID: "ak_test_id",
-        MODAL_TOKEN_SECRET: "as_test_secret",
+        GITHUB_CODESAPCES_TOKEN: "ghp_test_secret",
       },
     });
-    const adapter = sandboxRegistry.get("MODAL");
+    const adapter = sandboxRegistry.get("GITHUB_CODESAPCES");
     expect(adapter).toBeDefined();
     vi.spyOn(adapter!, "validateCredentials").mockResolvedValue({
       configured: true,
       authenticated: true,
       providerReachable: true,
-      requiredKeys: ["MODAL_TOKEN_ID", "MODAL_TOKEN_SECRET"],
+      requiredKeys: ["GITHUB_CODESAPCES_TOKEN"],
       missingKeys: [],
       checkedAt: new Date().toISOString(),
       evidence: ["mocked hosted validation"],
     });
     const result = await validateSandboxConnection(adminUser.uid, connection.connectionId);
     expect(result.authenticated).toBe(true);
-    expect(result.providerType).toBe("MODAL");
+    expect(result.providerType).toBe("GITHUB_CODESAPCES");
     expect((await computeConnectionStore.getForUser(adminUser.uid, connection.connectionId))?.status).toBe("CONNECTED");
   });
 

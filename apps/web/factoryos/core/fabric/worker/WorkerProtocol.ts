@@ -1,8 +1,8 @@
 /**
  * FactoryOS Distributed Compute Fabric — Provider-Independent Worker Protocol
  *
- * Defines the canonical protocol for all rendering workers (Kaggle, RunPod,
- * Vast, Modal, Local) decoupling compute execution from physical hosting.
+ * Defines the canonical protocol for all rendering workers (Kaggle, Lightning,
+ * GitHub Actions, Local) decoupling compute execution from physical hosting.
  */
 
 import { GpuVendor, RenderJob, WorkerCapability, WorkerState } from "../contracts/RenderFabricContracts";
@@ -25,7 +25,7 @@ export type WorkerProtocolAction =
 
 export interface WorkerRegisterRequest {
   readonly workerId: string;
-  readonly providerId: string; // e.g. "provider_kaggle_batch", "provider_runpod"
+  readonly providerId: string; // e.g. "provider_kaggle_batch", "provider_local"
   readonly hostname: string;
   readonly ipAddress?: string;
   readonly gpuVendor: GpuVendor;

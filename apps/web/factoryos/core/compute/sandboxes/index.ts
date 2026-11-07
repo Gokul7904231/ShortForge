@@ -1,20 +1,25 @@
 export * from "./SandboxContracts";
 export * from "./DaytonaSandboxAdapter";
-export * from "./ModalSandboxAdapter";
 export * from "./InstaVMSandboxAdapter";
+export * from "./GitHubCodespacesAdapter";
+export * from "./CodeSandboxAdapter";
 export * from "./SandboxRegistry";
 
 import { DaytonaSandboxAdapter } from "./DaytonaSandboxAdapter";
-import { ModalSandboxAdapter } from "./ModalSandboxAdapter";
 import { InstaVMSandboxAdapter } from "./InstaVMSandboxAdapter";
+import { GitHubCodespacesAdapter } from "./GitHubCodespacesAdapter";
+import { CodeSandboxAdapter } from "./CodeSandboxAdapter";
 import { sandboxRegistry } from "./SandboxRegistry";
 
 if (!sandboxRegistry.get("DAYTONA")) {
   sandboxRegistry.register(new DaytonaSandboxAdapter());
 }
-if (!sandboxRegistry.get("MODAL")) {
-  sandboxRegistry.register(new ModalSandboxAdapter());
-}
 if (!sandboxRegistry.get("INSTAVM")) {
   sandboxRegistry.register(new InstaVMSandboxAdapter());
+}
+if (!sandboxRegistry.get("GITHUB_CODESAPCES")) {
+  sandboxRegistry.register(new GitHubCodespacesAdapter());
+}
+if (!sandboxRegistry.get("CODESANDBOX")) {
+  sandboxRegistry.register(new CodeSandboxAdapter());
 }

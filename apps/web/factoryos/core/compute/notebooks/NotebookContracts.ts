@@ -8,14 +8,12 @@
 export type NotebookProviderType =
   | "KAGGLE"
   | "COLAB"
-  | "PAPERSPACE"
   | "LIGHTNING"
   | "HF_ZEROGPU";
 
 export type NotebookRuntimeKind =
   | "KAGGLE_KERNEL"
   | "COLAB_RUNTIME"
-  | "PAPERSPACE_MACHINE_BACKED_NOTEBOOK"
   | "LIGHTNING_STUDIO"
   | "ZEROGPU_SPACE";
 

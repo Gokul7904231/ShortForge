@@ -172,6 +172,27 @@ export const SHORTFORGE_CANONICAL_COMPONENTS: Record<string, ComponentDefinition
   }
 };
 
+
+// Unified Master Implementation Packet Aliases
+SHORTFORGE_CANONICAL_COMPONENTS['sf.intro.opening_challenge_card'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.hook.kinetic_stack'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.stage.b2_semantic_background'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.stage.semantic_b2_bg'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.quiz.persistent_glass_stage'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.quiz.question_glass_card'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.quiz.option_row'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.quiz.option_matrix_4x1'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.quiz.thinking_timer'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.timer.countdown_ring_5s'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.quiz.inline_explanation'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.payoff.explanation_drawer'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.outro.completion_cta_card'] = SHORTFORGE_CANONICAL_COMPONENTS['sf.outro.scoreboard_cta'];
+SHORTFORGE_CANONICAL_COMPONENTS['sf.captions.accessibility_lane'] = {
+  id: 'sf.captions.accessibility_lane',
+  name: 'Guarded Accessibility Subtitle Lane',
+  version: '2.0.0',
+  zIndex: 35,
+  safeZone: { x: 120, y: 1720, width: 840, height: 70 },
+  contrastContract: { minRatio: 7.0, foregroundHex: '#FEF08A', backgroundScrimHex: '#000000CC' },
+  supportedStates: ['IDLE', 'VISIBLE'],
+  singleton: true,
+  description: 'Confined single small dedicated subtitle lane outside glass panel and away from watermark.'
+};
+
 export class ShortForgeComponentRegistry {
   private static instance: ShortForgeComponentRegistry | null = null;
 

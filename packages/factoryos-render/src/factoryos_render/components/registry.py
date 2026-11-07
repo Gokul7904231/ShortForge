@@ -75,6 +75,24 @@ CANONICAL_COMPONENTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
+
+# Unified Master Implementation Packet Aliases
+CANONICAL_COMPONENTS['sf.intro.opening_challenge_card'] = CANONICAL_COMPONENTS['sf.hook.kinetic_stack']
+CANONICAL_COMPONENTS['sf.stage.b2_semantic_background'] = CANONICAL_COMPONENTS['sf.stage.semantic_b2_bg']
+CANONICAL_COMPONENTS['sf.quiz.persistent_glass_stage'] = CANONICAL_COMPONENTS['sf.quiz.question_glass_card']
+CANONICAL_COMPONENTS['sf.quiz.option_row'] = CANONICAL_COMPONENTS['sf.quiz.option_matrix_4x1']
+CANONICAL_COMPONENTS['sf.quiz.thinking_timer'] = CANONICAL_COMPONENTS['sf.timer.countdown_ring_5s']
+CANONICAL_COMPONENTS['sf.quiz.inline_explanation'] = CANONICAL_COMPONENTS['sf.payoff.explanation_drawer']
+CANONICAL_COMPONENTS['sf.outro.completion_cta_card'] = CANONICAL_COMPONENTS['sf.outro.scoreboard_cta']
+CANONICAL_COMPONENTS['sf.captions.accessibility_lane'] = {
+    'id': 'sf.captions.accessibility_lane',
+    'name': 'Guarded Accessibility Subtitle Lane',
+    'z_index': 35,
+    'safe_zone': {'x': 120, 'y': 1720, 'width': 840, 'height': 70},
+    'contrast_min': 7.0,
+    'singleton': True,
+}
+
 def calculate_auto_font_size(text: str, max_chars_per_line: int = 34, default_size: int = 42, min_size: int = 34) -> int:
     """
     Auto-scales question font size (56px -> 40px/34px) if text exceeds 3 lines.

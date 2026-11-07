@@ -49,6 +49,8 @@ client_secret*.json
 **/client_secret*.json
 credentials/
 **/credentials/
+data/canva/
+**/data/canva/
 
 # misc / logs
 .DS_Store
@@ -114,6 +116,10 @@ apps/web/local-ai/output/
 graphify-out/
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
+latest_user_request.txt
+step*.json
 
 
 # development & audit tools
@@ -161,3 +167,11 @@ production-helper/.venv/
 
 # runtime lock for the floor03 asset memory store
 **/asset_memory.lock
+
+knowledge/obsidian/
+shortforge-mem/
+knowledge/Shortforge*/
+
+apps/web/.test-vault*/
+
+tools/dsh-superagent-prototype/

@@ -7,7 +7,7 @@
  *
  * Live mode:
  *   SHORTFORGE_LIVE_API_PROBE=1
- *   SHORTFORGE_API_PROVIDER=VAST|RUNPOD|DAYTONA|PAPERSPACE|MODAL
+ *   SHORTFORGE_API_PROVIDER=DAYTONA
  *   SHORTFORGE_RENDER_PROBE_IMAGE=<container image>
  *
  * Live probes provision real cloud resources and terminate them when the
@@ -19,18 +19,10 @@ import {
   type ApiProviderType,
   ProviderApiRegistry,
 } from "../factoryos/core/compute/api";
-import { VastProviderControl } from "../factoryos/core/compute/api/providers/VastProviderControl";
-import { RunPodV2ProviderControl } from "../factoryos/core/compute/api/providers/RunPodV2ProviderControl";
 import { DaytonaProviderControl } from "../factoryos/core/compute/api/providers/DaytonaProviderControl";
-import { PaperspaceProviderControl } from "../factoryos/core/compute/api/providers/PaperspaceProviderControl";
-import { ModalProviderControl } from "../factoryos/core/compute/api/providers/ModalProviderControl";
 
 const registry = new ProviderApiRegistry();
-registry.register(new VastProviderControl());
-registry.register(new RunPodV2ProviderControl());
 registry.register(new DaytonaProviderControl());
-registry.register(new PaperspaceProviderControl());
-registry.register(new ModalProviderControl());
 
 async function main(): Promise<void> {
   const providerArg = String(process.env.SHORTFORGE_API_PROVIDER || "").toUpperCase() as ApiProviderType | "";
@@ -69,18 +61,12 @@ async function main(): Promise<void> {
     );
   }
 
-  if (
-    providerArg !== "PAPERSPACE" &&
-    !process.env.SHORTFORGE_RENDER_PROBE_IMAGE
-  ) {
+  if (!process.env.SHORTFORGE_RENDER_PROBE_IMAGE) {
     throw new Error("SHORTFORGE_RENDER_PROBE_IMAGE is required for this provider.");
-  }
-  if (providerArg === "PAPERSPACE" && !process.env.PAPERSPACE_TEMPLATE_ID) {
-    throw new Error("PAPERSPACE_TEMPLATE_ID is required for a Paperspace live render probe.");
   }
 
   const result = await registry.renderProbe(providerArg, {
-    image: process.env.SHORTFORGE_RENDER_PROBE_IMAGE || "paperspace-template-controlled",
+    image: process.env.SHORTFORGE_RENDER_PROBE_IMAGE,
     gpuType: process.env.SHORTFORGE_RENDER_PROBE_GPU,
     gpuCount: Number(process.env.SHORTFORGE_RENDER_PROBE_GPU_COUNT || 1),
     cpuCores: Number(process.env.SHORTFORGE_RENDER_PROBE_CPU || 2),

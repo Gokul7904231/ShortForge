@@ -1,79 +1,79 @@
 {
   "benchmarkName": "FactoryOS 50-Query IR Benchmark",
-  "timestamp": "2026-09-22T07:16:16.826Z",
+  "timestamp": "2026-11-07T06:53:52.809Z",
   "totalQueries": 50,
   "metrics": {
-    "precisionAtK": 0.289,
-    "recallAtK": 0.42,
-    "meanReciprocalRankMRR": 0.376,
-    "ndcgAtK": 0.653,
-    "evidenceCoverage": 0.84,
+    "precisionAtK": 0.227,
+    "recallAtK": 0.343,
+    "meanReciprocalRankMRR": 0.292,
+    "ndcgAtK": 0.496,
+    "evidenceCoverage": 0.86,
     "secretLeakageRate": 0,
     "latencyMs": {
-      "p50": 180,
-      "p95": 239
+      "p50": 355,
+      "p95": 679
     }
   },
   "detailedResults": [
     {
       "id": "Q-STR-01",
-      "precisionAtK": 1,
-      "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 2.42,
-      "evidenceCoverage": 1,
+      "precisionAtK": 0,
+      "recallAtK": 0,
+      "reciprocalRank": 0,
+      "ndcgAtK": 0,
+      "evidenceCoverage": 0.5,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 26,
-      "estimatedTokens": 1628
+      "latencyMs": 6,
+      "estimatedTokens": 130
     },
     {
       "id": "Q-STR-02",
-      "precisionAtK": 1,
-      "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 2.42,
+      "precisionAtK": 0,
+      "recallAtK": 0,
+      "reciprocalRank": 0,
+      "ndcgAtK": 0,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 8,
-      "estimatedTokens": 1532
+      "latencyMs": 0,
+      "estimatedTokens": 132
     },
     {
       "id": "Q-STR-03",
-      "precisionAtK": 1,
-      "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 2.42,
+      "precisionAtK": 0,
+      "recallAtK": 0,
+      "reciprocalRank": 0,
+      "ndcgAtK": 0,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 11,
-      "estimatedTokens": 1486
+      "latencyMs": 1,
+      "estimatedTokens": 126
     },
     {
       "id": "Q-STR-04",
-      "precisionAtK": 0.13,
-      "recallAtK": 0.5,
-      "reciprocalRank": 1,
-      "ndcgAtK": 0.61,
+      "precisionAtK": 0,
+      "recallAtK": 0,
+      "reciprocalRank": 0,
+      "ndcgAtK": 0,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 17,
-      "estimatedTokens": 1387
+      "latencyMs": 0,
+      "estimatedTokens": 125
     },
     {
       "id": "Q-STR-05",
-      "precisionAtK": 0.38,
-      "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 1.07,
+      "precisionAtK": 0,
+      "recallAtK": 0,
+      "reciprocalRank": 0,
+      "ndcgAtK": 0,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 18,
-      "estimatedTokens": 1415
+      "latencyMs": 1,
+      "estimatedTokens": 125
     },
     {
       "id": "Q-DEC-01",
@@ -84,20 +84,20 @@
       "evidenceCoverage": 0.33,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 3,
-      "estimatedTokens": 1452
+      "latencyMs": 108,
+      "estimatedTokens": 1867
     },
     {
       "id": "Q-DEC-02",
-      "precisionAtK": 0,
-      "recallAtK": 0,
-      "reciprocalRank": 0,
-      "ndcgAtK": 0,
+      "precisionAtK": 0.88,
+      "recallAtK": 1,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 1.81,
       "evidenceCoverage": 0.33,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 1,
-      "estimatedTokens": 545
+      "latencyMs": 125,
+      "estimatedTokens": 2050
     },
     {
       "id": "Q-DEC-03",
@@ -108,32 +108,32 @@
       "evidenceCoverage": 0.33,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 1,
-      "estimatedTokens": 1009
+      "latencyMs": 95,
+      "estimatedTokens": 2007
     },
     {
       "id": "Q-DEC-04",
       "precisionAtK": 1,
       "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 2.23,
+      "ndcgAtK": 2.42,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 2,
-      "estimatedTokens": 1691
+      "latencyMs": 125,
+      "estimatedTokens": 1947
     },
     {
       "id": "Q-DEC-05",
-      "precisionAtK": 0.13,
-      "recallAtK": 0.5,
+      "precisionAtK": 0.63,
+      "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 0.61,
+      "ndcgAtK": 1.81,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 6,
-      "estimatedTokens": 2120
+      "latencyMs": 111,
+      "estimatedTokens": 1960
     },
     {
       "id": "Q-TMP-01",
@@ -144,7 +144,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 166,
+      "latencyMs": 306,
       "estimatedTokens": 132
     },
     {
@@ -156,7 +156,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 164,
+      "latencyMs": 298,
       "estimatedTokens": 131
     },
     {
@@ -168,7 +168,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 164,
+      "latencyMs": 274,
       "estimatedTokens": 133
     },
     {
@@ -180,7 +180,7 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 155,
+      "latencyMs": 301,
       "estimatedTokens": 135
     },
     {
@@ -192,44 +192,44 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 157,
+      "latencyMs": 310,
       "estimatedTokens": 130
     },
     {
       "id": "Q-RUN-01",
       "precisionAtK": 0.13,
       "recallAtK": 0.5,
-      "reciprocalRank": 0.33,
-      "ndcgAtK": 0.31,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 0.39,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 178,
-      "estimatedTokens": 1579
+      "latencyMs": 567,
+      "estimatedTokens": 1849
     },
     {
       "id": "Q-RUN-02",
       "precisionAtK": 0.13,
       "recallAtK": 0.5,
-      "reciprocalRank": 0.33,
-      "ndcgAtK": 0.31,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 0.39,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 188,
-      "estimatedTokens": 1679
+      "latencyMs": 480,
+      "estimatedTokens": 1845
     },
     {
       "id": "Q-RUN-03",
-      "precisionAtK": 0.88,
-      "recallAtK": 1,
+      "precisionAtK": 0.13,
+      "recallAtK": 0.5,
       "reciprocalRank": 0.5,
-      "ndcgAtK": 1.81,
+      "ndcgAtK": 0.39,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 178,
-      "estimatedTokens": 1406
+      "latencyMs": 877,
+      "estimatedTokens": 1959
     },
     {
       "id": "Q-RUN-04",
@@ -247,37 +247,37 @@
       "id": "Q-RUN-05",
       "precisionAtK": 0.13,
       "recallAtK": 0.5,
-      "reciprocalRank": 0.33,
-      "ndcgAtK": 0.31,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 0.39,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 180,
-      "estimatedTokens": 1618
+      "latencyMs": 421,
+      "estimatedTokens": 1919
     },
     {
       "id": "Q-SYN-01",
-      "precisionAtK": 0,
-      "recallAtK": 0,
-      "reciprocalRank": 0,
-      "ndcgAtK": 0,
-      "evidenceCoverage": 0,
+      "precisionAtK": 0.13,
+      "recallAtK": 0.33,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 0.3,
+      "evidenceCoverage": 0.5,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 180,
-      "estimatedTokens": 1671
+      "latencyMs": 376,
+      "estimatedTokens": 1856
     },
     {
       "id": "Q-SYN-02",
-      "precisionAtK": 0.75,
+      "precisionAtK": 0.88,
       "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 1.88,
+      "ndcgAtK": 2.04,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 241,
-      "estimatedTokens": 1710
+      "latencyMs": 384,
+      "estimatedTokens": 1970
     },
     {
       "id": "Q-SYN-03",
@@ -288,44 +288,44 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 3,
-      "estimatedTokens": 2105
+      "latencyMs": 118,
+      "estimatedTokens": 1975
     },
     {
       "id": "Q-SYN-04",
-      "precisionAtK": 0.5,
-      "recallAtK": 1,
-      "reciprocalRank": 0.33,
-      "ndcgAtK": 0.97,
+      "precisionAtK": 0.13,
+      "recallAtK": 0.5,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 0.39,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 211,
-      "estimatedTokens": 1517
+      "latencyMs": 444,
+      "estimatedTokens": 1857
     },
     {
       "id": "Q-SYN-05",
-      "precisionAtK": 0.38,
+      "precisionAtK": 0.5,
       "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 1.31,
+      "reciprocalRank": 0.33,
+      "ndcgAtK": 0.92,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 184,
-      "estimatedTokens": 1739
+      "latencyMs": 371,
+      "estimatedTokens": 1931
     },
     {
       "id": "Q-CNF-01",
       "precisionAtK": 0.13,
       "recallAtK": 0.5,
-      "reciprocalRank": 0.33,
-      "ndcgAtK": 0.31,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 0.39,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 201,
-      "estimatedTokens": 1592
+      "latencyMs": 401,
+      "estimatedTokens": 1860
     },
     {
       "id": "Q-CNF-02",
@@ -336,44 +336,44 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 202,
-      "estimatedTokens": 1694
+      "latencyMs": 397,
+      "estimatedTokens": 1858
     },
     {
       "id": "Q-CNF-03",
-      "precisionAtK": 0.75,
-      "recallAtK": 1,
+      "precisionAtK": 0.13,
+      "recallAtK": 0.33,
       "reciprocalRank": 0.5,
-      "ndcgAtK": 1.24,
+      "ndcgAtK": 0.3,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 229,
-      "estimatedTokens": 1507
+      "latencyMs": 385,
+      "estimatedTokens": 1846
     },
     {
       "id": "Q-CNF-04",
       "precisionAtK": 0.25,
       "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 0.81,
+      "reciprocalRank": 0.25,
+      "ndcgAtK": 0.48,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 230,
-      "estimatedTokens": 1740
+      "latencyMs": 484,
+      "estimatedTokens": 1870
     },
     {
       "id": "Q-CNF-05",
-      "precisionAtK": 0.25,
-      "recallAtK": 1,
-      "reciprocalRank": 0.14,
-      "ndcgAtK": 0.4,
+      "precisionAtK": 0,
+      "recallAtK": 0,
+      "reciprocalRank": 0,
+      "ndcgAtK": 0,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 228,
-      "estimatedTokens": 1559
+      "latencyMs": 455,
+      "estimatedTokens": 1870
     },
     {
       "id": "Q-STL-01",
@@ -384,20 +384,20 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 213,
-      "estimatedTokens": 1605
+      "latencyMs": 720,
+      "estimatedTokens": 2004
     },
     {
       "id": "Q-STL-02",
-      "precisionAtK": 0.13,
-      "recallAtK": 0.5,
+      "precisionAtK": 0.88,
+      "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 0.61,
+      "ndcgAtK": 2.04,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 196,
-      "estimatedTokens": 1555
+      "latencyMs": 556,
+      "estimatedTokens": 1905
     },
     {
       "id": "Q-STL-03",
@@ -408,20 +408,20 @@
       "evidenceCoverage": 0,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 214,
-      "estimatedTokens": 1573
+      "latencyMs": 426,
+      "estimatedTokens": 1892
     },
     {
       "id": "Q-STL-04",
-      "precisionAtK": 0,
-      "recallAtK": 0,
-      "reciprocalRank": 0,
-      "ndcgAtK": 0,
-      "evidenceCoverage": 0,
+      "precisionAtK": 0.38,
+      "recallAtK": 1,
+      "reciprocalRank": 1,
+      "ndcgAtK": 1.1,
+      "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 186,
-      "estimatedTokens": 1416
+      "latencyMs": 509,
+      "estimatedTokens": 1905
     },
     {
       "id": "Q-STL-05",
@@ -432,44 +432,44 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 43,
-      "estimatedTokens": 1703
+      "latencyMs": 0,
+      "estimatedTokens": 141
     },
     {
       "id": "Q-AMB-01",
       "precisionAtK": 0.88,
       "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 2.16,
+      "ndcgAtK": 2.12,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 179,
-      "estimatedTokens": 1491
+      "latencyMs": 347,
+      "estimatedTokens": 1173
     },
     {
       "id": "Q-AMB-02",
-      "precisionAtK": 1,
+      "precisionAtK": 0.88,
       "recallAtK": 1,
       "reciprocalRank": 1,
-      "ndcgAtK": 2.42,
+      "ndcgAtK": 2.22,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 169,
-      "estimatedTokens": 1636
+      "latencyMs": 341,
+      "estimatedTokens": 1619
     },
     {
       "id": "Q-AMB-03",
       "precisionAtK": 0.75,
       "recallAtK": 1,
       "reciprocalRank": 0.5,
-      "ndcgAtK": 1.55,
+      "ndcgAtK": 1.5,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 183,
-      "estimatedTokens": 1350
+      "latencyMs": 361,
+      "estimatedTokens": 1146
     },
     {
       "id": "Q-AMB-04",
@@ -480,20 +480,20 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 186,
-      "estimatedTokens": 1317
+      "latencyMs": 323,
+      "estimatedTokens": 1099
     },
     {
       "id": "Q-AMB-05",
-      "precisionAtK": 0.88,
+      "precisionAtK": 0.5,
       "recallAtK": 1,
-      "reciprocalRank": 1,
-      "ndcgAtK": 2.04,
+      "reciprocalRank": 0.5,
+      "ndcgAtK": 1,
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 191,
-      "estimatedTokens": 1641
+      "latencyMs": 326,
+      "estimatedTokens": 1396
     },
     {
       "id": "Q-NOE-01",
@@ -504,8 +504,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 31,
-      "estimatedTokens": 1657
+      "latencyMs": 1,
+      "estimatedTokens": 135
     },
     {
       "id": "Q-NOE-02",
@@ -516,8 +516,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 4,
-      "estimatedTokens": 2085
+      "latencyMs": 98,
+      "estimatedTokens": 2114
     },
     {
       "id": "Q-NOE-03",
@@ -528,8 +528,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 205,
-      "estimatedTokens": 1595
+      "latencyMs": 355,
+      "estimatedTokens": 1834
     },
     {
       "id": "Q-NOE-04",
@@ -540,8 +540,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 239,
-      "estimatedTokens": 1569
+      "latencyMs": 415,
+      "estimatedTokens": 1998
     },
     {
       "id": "Q-NOE-05",
@@ -552,8 +552,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 252,
-      "estimatedTokens": 1592
+      "latencyMs": 468,
+      "estimatedTokens": 1871
     },
     {
       "id": "Q-SEC-01",
@@ -564,8 +564,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 211,
-      "estimatedTokens": 1713
+      "latencyMs": 549,
+      "estimatedTokens": 1849
     },
     {
       "id": "Q-SEC-02",
@@ -576,8 +576,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 208,
-      "estimatedTokens": 1572
+      "latencyMs": 482,
+      "estimatedTokens": 1845
     },
     {
       "id": "Q-SEC-03",
@@ -588,8 +588,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 34,
-      "estimatedTokens": 1412
+      "latencyMs": 0,
+      "estimatedTokens": 139
     },
     {
       "id": "Q-SEC-04",
@@ -600,8 +600,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 209,
-      "estimatedTokens": 1629
+      "latencyMs": 609,
+      "estimatedTokens": 1637
     },
     {
       "id": "Q-SEC-05",
@@ -612,8 +612,8 @@
       "evidenceCoverage": 1,
       "secretLeakage": 0,
       "unsupportedClaims": 0,
-      "latencyMs": 216,
-      "estimatedTokens": 1573
+      "latencyMs": 679,
+      "estimatedTokens": 1895
     }
   ]
 }

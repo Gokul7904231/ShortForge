@@ -212,7 +212,7 @@ describe('ShortForge Exclusive Component Registry & Crafters V2 Suite', () => {
         timingLedger: ledger
       });
 
-      expect(intent.scenes.length).toBe(50); // 1 hook + 6 * 8 + 1 outro
+      expect(intent.scenes.length).toBe(26); // 1 hook + 6 * 4 + 1 outro (options not narrated)
       const totalDur = intent.scenes.reduce((sum, s) => sum + s.duration_seconds, 0);
       expect(totalDur).toBeLessThanOrEqual(180.0);
       expect(totalDur).toBeGreaterThan(60.0);

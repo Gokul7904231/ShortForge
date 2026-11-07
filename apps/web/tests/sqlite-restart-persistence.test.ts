@@ -97,7 +97,7 @@ d("restart persistence with real SQLite", () => {
     const j1 = new ProviderApiOperationJournal(dbPath);
     const record = j1.start({
       providerId: "probe-provider",
-      providerType: "VAST" as const,
+      providerType: "DAYTONA" as const,
       operation: "AUTH_VALIDATE" as const,
       idempotencyKey: key,
       requestPayload: { probe: true },

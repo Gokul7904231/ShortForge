@@ -1,6 +1,6 @@
 /**
  * FactoryOS Render Fabric — Render Worker Contract
- * Semantic interface implemented by local, AMD, and ephemeral remote workers.
+ * Semantic interface implemented by local and ephemeral remote workers.
  */
 
 import {

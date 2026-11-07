@@ -52,7 +52,7 @@ export class TemplateCrafter {
   public compileAudioLockedIntent(input: TemplateCrafterInput): LocalRenderIntent {
     const { templateDef, jobId, outputPath, topic, questions, timingLedger } = input;
     const accentColor = input.accentColor || [0, 170, 255];
-    const categoryBadge = input.categoryBadge || `${topic.toUpperCase()} • QUIZ`;
+    const categoryBadge = input.categoryBadge || `${topic.toUpperCase()} | QUIZ`;
     const themeToken = input.themeToken || 'QUIZ_UNIVERSAL';
 
     if (questions.length !== 6) {
@@ -111,7 +111,8 @@ export class TemplateCrafter {
             template_id: templateDef.identity.id,
             templateId: templateDef.identity.id,
             design_pack: 'quiz.universal.cinematic.v1',
-            canva_design_pack: 'quiz.universal.cinematic.v1'
+            canva_design_pack: 'quiz.universal.cinematic.v1',
+            ...(questions[0]?.image_path ? { image_path: questions[0].image_path } : {})
           }
         }
       ]
@@ -169,58 +170,7 @@ export class TemplateCrafter {
         ]
       });
 
-      // Options A..D
-      const optionLetters = ['a', 'b', 'c', 'd'];
-      for (let oIdx = 0; oIdx < 4; oIdx++) {
-        const letter = optionLetters[oIdx];
-        const optKey = Object.keys(timingLedger.segments).find((k) => k.includes(`q${qNum}_option_${letter}`));
-        const optSegment = optKey ? timingLedger.segments[optKey] : undefined;
-        const tailSec = oIdx === 3 ? 0.05 : 0.15;
-        const rawOptSec = optSegment ? optSegment.finalAudioDurationMs / 1000 : 1.5;
-        const optDurSec = optSegment ? Math.max(rawOptSec, Number((rawOptSec + tailSec).toFixed(2))) : 1.5;
-
-        scenes.push({
-          scene_id: `scene_${String(scenes.length + 1).padStart(2, '0')}_beat_q${qNum}_option_${letter}`,
-          template_id: templateDef.identity.id,
-          narration_text: optSegment?.narrationText || `${letter.toUpperCase()}. ${q.options[oIdx]}`,
-          duration_seconds: optDurSec,
-          audio_track: optSegment
-            ? {
-                track_id: `track_q${qNum}_opt_${letter}`,
-                audio_path: optSegment.audioPath,
-                start_seconds: 0.0,
-                source_in_seconds: 0.0,
-                duration_seconds: optSegment.finalAudioDurationMs / 1000,
-                volume: 1.0
-              }
-            : undefined,
-          shots: [
-            {
-              id: `shot_q${qNum}_opt_${letter}`,
-              recipe_id: 'QUESTION_CARD',
-              start_seconds: 0.0,
-              duration_seconds: optDurSec,
-              props: {
-                component_id: 'sf.quiz.option_matrix_4x1',
-                question: q.question,
-                options: q.options,
-                answerIndex: q.answerIndex,
-                highlightOptionIndex: oIdx,
-                categoryBadge,
-                headline: `QUESTION ${qNum} / 06`,
-                topic,
-                accentColor,
-                themeToken,
-                template_id: templateDef.identity.id,
-                templateId: templateDef.identity.id,
-                design_pack: 'quiz.universal.cinematic.v1',
-                canva_design_pack: 'quiz.universal.cinematic.v1',
-                ...(b2Bg ? { image_path: b2Bg } : {})
-              }
-            }
-          ]
-        });
-      }
+      // Options appear visually in QUESTION_CARD and COUNTDOWN but are NOT narrated individually
 
       // Thinking Window: Exactly 5.000s countdown timer
       const thinkLayoutCheck = this.registry.validateActiveLayout([
@@ -245,6 +195,7 @@ export class TemplateCrafter {
             recipe_id: 'COUNTDOWN',
             start_seconds: 0.0,
             duration_seconds: 5.0,
+            motion: { animated: true, type: 'DYNAMIC' },
             props: {
               component_id: 'sf.timer.countdown_ring_5s',
               question: q.question,
@@ -302,7 +253,7 @@ export class TemplateCrafter {
               correctOption: q.options[q.answerIndex],
               explanation: q.explanation,
               categoryBadge,
-              headline: 'CORRECT ANSWER',
+              headline: `QUESTION ${qNum} / 06`,
               topic,
               accentColor,
               themeToken,
@@ -361,7 +312,7 @@ export class TemplateCrafter {
               correctOption: q.options[q.answerIndex],
               explanation: q.explanation,
               categoryBadge,
-              headline: 'EXPLANATION',
+              headline: `QUESTION ${qNum} / 06`,
               topic,
               accentColor,
               themeToken,
@@ -422,7 +373,8 @@ export class TemplateCrafter {
             template_id: templateDef.identity.id,
             templateId: templateDef.identity.id,
             design_pack: 'quiz.universal.cinematic.v1',
-            canva_design_pack: 'quiz.universal.cinematic.v1'
+            canva_design_pack: 'quiz.universal.cinematic.v1',
+            ...(questions[questions.length - 1]?.image_path ? { image_path: questions[questions.length - 1].image_path } : {})
           }
         }
       ]

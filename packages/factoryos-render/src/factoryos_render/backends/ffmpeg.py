@@ -259,6 +259,8 @@ class FFmpegBackend:
         cmd.extend(self._video_encode_args(preset=preset, crf=crf) + [
             "-c:a", "aac",
             "-b:a", "192k",
+            "-ar", "44100",
+            "-ac", "2",
         ])
         if duration > 0:
             cmd.extend(["-t", f"{duration:.6f}"])
@@ -304,6 +306,8 @@ class FFmpegBackend:
             "-r", str(fps),
             "-c:a", "aac",
             "-b:a", "192k",
+            "-ar", "44100",
+            "-ac", "2",
             "-t", f"{duration:.6f}",
             output_temp_path,
         ])

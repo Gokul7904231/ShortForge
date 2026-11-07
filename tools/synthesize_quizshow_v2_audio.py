@@ -102,17 +102,19 @@ def main():
         # - Equalizer 250Hz +2.5dB (vocal chest warmth and presence)
         # - Equalizer 3200Hz -2dB (eliminates sibilant bite)
         # - Tempo 1.05 (clean, engaged delivery)
-        # - Strip leading dead air > 50ms trimmed to 0ms
+        # - Strip leading dead air > 20ms (never cut mid-sentence or internal pauses)
+        # - Explicit 44.1kHz stereo audio format
         # - Loudness normalization to -14 LUFS (YouTube Shorts standard)
-        # - Explicit 250ms zero-amplitude safety tail padding
+        # - Explicit 350ms zero-amplitude safety tail padding (prevents final consonant clipping)
         af_filter = (
             "highpass=f=80,lowpass=f=8200,"
             "equalizer=f=250:width_type=o:width=1.2:g=2.5,"
             "equalizer=f=3200:width_type=o:width=1:g=-2,"
             "atempo=1.05,"
-            "silenceremove=start_periods=1:start_duration=0.05:start_threshold=-45dB:stop_periods=1:stop_duration=0.10:stop_threshold=-45dB:stop_silence=0.10,"
+            "silenceremove=start_periods=1:start_duration=0.02:start_threshold=-50dB,"
+            "aformat=sample_rates=44100:channel_layouts=stereo,"
             "loudnorm=I=-14:TP=-1.5:LRA=7,"
-            "apad=pad_dur=0.25"
+            "apad=pad_dur=0.35"
         )
         cmd = [
             "ffmpeg", "-y", "-i", temp_raw_path,

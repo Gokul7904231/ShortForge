@@ -8,6 +8,7 @@
 import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs";
+import { execSync } from "node:child_process";
 import { BaseComputeProvider } from "./ComputeProvider";
 import {
   ProviderType,
@@ -49,6 +50,7 @@ export class LocalComputeProvider extends BaseComputeProvider {
   public async getCapability(): Promise<ProviderCapability> {
     const cpus = os.cpus();
     const memMb = Math.round(os.totalmem() / (1024 * 1024));
+    const gpuModel = detectLocalGpuModel();
 
     return {
       providerId: this.id,
@@ -56,8 +58,8 @@ export class LocalComputeProvider extends BaseComputeProvider {
       executionModel: this.executionModel,
       cpuCores: cpus.length,
       memoryMb: memMb,
-      gpuAvailable: true,
-      gpuType: "NVIDIA GeForce RTX 3050 Laptop GPU (h264_nvenc)",
+      gpuAvailable: gpuModel !== null,
+      gpuType: gpuModel ? `${gpuModel} (h264_nvenc)` : undefined,
       operatingSystem: `${os.platform()} ${os.release()}`,
       supportedWorkloads: ["RENDER", "AUDIO", "INFERENCE", "VERIFICATION"],
       estimatedStartupSeconds: 0.5,
@@ -185,5 +187,18 @@ export class LocalComputeProvider extends BaseComputeProvider {
     } finally {
       this.activeJobCount = Math.max(0, this.activeJobCount - 1);
     }
+  }
+}
+
+function detectLocalGpuModel(): string | null {
+  try {
+    const smi = execSync(
+      "nvidia-smi --query-gpu=name,memory.total --format=csv,noheader",
+      { encoding: "utf8", timeout: 2000 },
+    );
+    const name = smi.trim().split(",")[0]?.trim();
+    return name ? name : null;
+  } catch {
+    return null;
   }
 }

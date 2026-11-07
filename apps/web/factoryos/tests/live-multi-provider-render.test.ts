@@ -10,8 +10,6 @@ const provider = (process.env.LIVE_COMPUTE_PROVIDER_TYPE || "").trim().toUpperCa
 
 const credentialsPresent = (() => {
   switch (provider) {
-    case "AMD":
-      return Boolean(process.env.AMD_WORKER_URL && process.env.AMD_WORKER_SECRET);
     case "KAGGLE":
       return Boolean(process.env.KAGGLE_USERNAME && process.env.KAGGLE_KEY);
     case "DAYTONA":
@@ -25,7 +23,7 @@ const credentialsPresent = (() => {
   }
 })();
 
-const supported = new Set<ProviderType>(["AMD", "KAGGLE", "DAYTONA", "MODAL", "INSTAVM"]);
+const supported = new Set<ProviderType>(["KAGGLE", "DAYTONA", "MODAL", "INSTAVM"]);
 
 describe("live multi-provider compute", () => {
   it("runs a physical render through the selected non-local provider and verifies CAS + F07", async () => {

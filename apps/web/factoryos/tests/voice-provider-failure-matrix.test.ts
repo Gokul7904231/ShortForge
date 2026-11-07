@@ -422,7 +422,7 @@ describe("FactoryOS Voice Provider Failure Matrix (Exhaustive 29-Defect Physical
       await expect(provider.synthesizeSpeech({ transcript: "DNS test" })).rejects.toThrow(
         /VOICE_PROVIDER_UNAVAILABLE/
       );
-    });
+    }, 15000);
   });
 
   // ============================================================

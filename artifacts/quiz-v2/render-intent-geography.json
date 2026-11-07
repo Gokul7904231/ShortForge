@@ -1,0 +1,1241 @@
+{
+  "project_id": "SF-QUIZ-V2-GEO-6Q",
+  "title": "World Geography Challenge Universal Quiz",
+  "output_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\artifacts\\quiz-v2\\quiz-v2-geography-6q.mp4",
+  "scenes": [
+    {
+      "scene_id": "scene_01_beat_01_hook",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Only three percent of people get all 6 questions right. Can you ace this ultimate World Geography Challenge challenge?",
+      "duration_seconds": 3.66,
+      "audio_track": {
+        "track_id": "track_hook",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_01_beat_01_hook.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 3.407,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_hook",
+          "recipe_id": "KINETIC_HOOK",
+          "start_seconds": 0,
+          "duration_seconds": 3.66,
+          "props": {
+            "component_id": "sf.hook.kinetic_stack",
+            "headline": "WORLD GEOGRAPHY CHALLENGE",
+            "subtitle": "Only three percent of people get all 6 questions right. Can you ace this ultimate World Geography Challenge challenge?",
+            "highlightWord": "QUIZ",
+            "tag": "6-QUESTION SHOW",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_02_beat_q1_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 1: Which oceanic abyss is the deepest measured point on planet Earth?",
+      "duration_seconds": 1.34,
+      "audio_track": {
+        "track_id": "track_q1_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_02_beat_q1_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.19,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q1_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.34,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which oceanic abyss is the deepest measured point on planet Earth?",
+            "options": [
+              "Mariana Trench",
+              "Tonga Trench",
+              "Puerto Rico Trench",
+              "Java Trench"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mariana_trench.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_03_beat_q1_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q1_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which oceanic abyss is the deepest measured point on planet Earth?",
+            "options": [
+              "Mariana Trench",
+              "Tonga Trench",
+              "Puerto Rico Trench",
+              "Java Trench"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mariana_trench.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_04_beat_q1_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Mariana Trench!",
+      "duration_seconds": 1.24,
+      "audio_track": {
+        "track_id": "track_q1_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_04_beat_q1_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.989,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q1_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.24,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which oceanic abyss is the deepest measured point on planet Earth?",
+            "options": [
+              "Mariana Trench",
+              "Tonga Trench",
+              "Puerto Rico Trench",
+              "Java Trench"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Mariana Trench",
+            "explanation": "The Mariana Trench plunges approximately 10,994 meters below sea level, reaching the deepest point on Earth.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mariana_trench.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_05_beat_q1_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "The Mariana Trench plunges approximately 10,994 meters below sea level, reaching the deepest point on Earth.",
+      "duration_seconds": 6.12,
+      "audio_track": {
+        "track_id": "track_q1_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_05_beat_q1_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 5.819,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q1_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 6.12,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which oceanic abyss is the deepest measured point on planet Earth?",
+            "options": [
+              "Mariana Trench",
+              "Tonga Trench",
+              "Puerto Rico Trench",
+              "Java Trench"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Mariana Trench",
+            "explanation": "The Mariana Trench plunges approximately 10,994 meters below sea level, reaching the deepest point on Earth.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 1 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mariana_trench.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_06_beat_q2_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 2: Which country contains the largest number of natural freshwater lakes in the world?",
+      "duration_seconds": 1.32,
+      "audio_track": {
+        "track_id": "track_q2_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_06_beat_q2_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.172,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q2_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.32,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which country contains the largest number of natural freshwater lakes in the world?",
+            "options": [
+              "Canada",
+              "Russia",
+              "United States",
+              "Finland"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/freshwater_lakes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_07_beat_q2_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q2_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which country contains the largest number of natural freshwater lakes in the world?",
+            "options": [
+              "Canada",
+              "Russia",
+              "United States",
+              "Finland"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/freshwater_lakes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_08_beat_q2_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Canada!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q2_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_08_beat_q2_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.983,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q2_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which country contains the largest number of natural freshwater lakes in the world?",
+            "options": [
+              "Canada",
+              "Russia",
+              "United States",
+              "Finland"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Canada",
+            "explanation": "Canada contains over two million lakes, holding more natural lake area than the rest of the world combined.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/freshwater_lakes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_09_beat_q2_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Canada contains over two million lakes, holding more natural lake area than the rest of the world combined.",
+      "duration_seconds": 2.82,
+      "audio_track": {
+        "track_id": "track_q2_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_09_beat_q2_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 2.517,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q2_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 2.82,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which country contains the largest number of natural freshwater lakes in the world?",
+            "options": [
+              "Canada",
+              "Russia",
+              "United States",
+              "Finland"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Canada",
+            "explanation": "Canada contains over two million lakes, holding more natural lake area than the rest of the world combined.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 2 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/freshwater_lakes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_10_beat_q3_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 3: What is the highest mountain peak above sea level on Earth?",
+      "duration_seconds": 1.39,
+      "audio_track": {
+        "track_id": "track_q3_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_10_beat_q3_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.243,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q3_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.39,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "What is the highest mountain peak above sea level on Earth?",
+            "options": [
+              "Mount Everest",
+              "K2",
+              "Kangchenjunga",
+              "Lhotse"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mount_everest_himalayas.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_11_beat_q3_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q3_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "What is the highest mountain peak above sea level on Earth?",
+            "options": [
+              "Mount Everest",
+              "K2",
+              "Kangchenjunga",
+              "Lhotse"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mount_everest_himalayas.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_12_beat_q3_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Mount Everest!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q3_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_12_beat_q3_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.983,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q3_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "What is the highest mountain peak above sea level on Earth?",
+            "options": [
+              "Mount Everest",
+              "K2",
+              "Kangchenjunga",
+              "Lhotse"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Mount Everest",
+            "explanation": "Mount Everest in the Himalayas reaches an official elevation of 8,848 meters above sea level.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mount_everest_himalayas.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_13_beat_q3_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Mount Everest in the Himalayas reaches an official elevation of 8,848 meters above sea level.",
+      "duration_seconds": 6.71,
+      "audio_track": {
+        "track_id": "track_q3_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_13_beat_q3_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 6.41,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q3_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 6.71,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "What is the highest mountain peak above sea level on Earth?",
+            "options": [
+              "Mount Everest",
+              "K2",
+              "Kangchenjunga",
+              "Lhotse"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Mount Everest",
+            "explanation": "Mount Everest in the Himalayas reaches an official elevation of 8,848 meters above sea level.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 3 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/mount_everest_himalayas.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_14_beat_q4_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 4: Which river basin contains the largest tropical rainforest in the world?",
+      "duration_seconds": 1.39,
+      "audio_track": {
+        "track_id": "track_q4_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_14_beat_q4_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.237,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q4_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.39,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which river basin contains the largest tropical rainforest in the world?",
+            "options": [
+              "Amazon Basin",
+              "Congo Basin",
+              "Mekong Basin",
+              "Ganges Basin"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/amazon_rainforest_basin.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_15_beat_q4_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q4_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which river basin contains the largest tropical rainforest in the world?",
+            "options": [
+              "Amazon Basin",
+              "Congo Basin",
+              "Mekong Basin",
+              "Ganges Basin"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/amazon_rainforest_basin.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_16_beat_q4_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Amazon Basin!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q4_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_16_beat_q4_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.981,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q4_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which river basin contains the largest tropical rainforest in the world?",
+            "options": [
+              "Amazon Basin",
+              "Congo Basin",
+              "Mekong Basin",
+              "Ganges Basin"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Amazon Basin",
+            "explanation": "The Amazon rainforest covers over 5.5 million square kilometers across South America.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/amazon_rainforest_basin.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_17_beat_q4_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "The Amazon rainforest covers over 5.5 million square kilometers across South America.",
+      "duration_seconds": 3.19,
+      "audio_track": {
+        "track_id": "track_q4_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_17_beat_q4_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 2.888,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q4_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 3.19,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which river basin contains the largest tropical rainforest in the world?",
+            "options": [
+              "Amazon Basin",
+              "Congo Basin",
+              "Mekong Basin",
+              "Ganges Basin"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Amazon Basin",
+            "explanation": "The Amazon rainforest covers over 5.5 million square kilometers across South America.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 4 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/amazon_rainforest_basin.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_18_beat_q5_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 5: What is the largest subtropical hot desert on planet Earth?",
+      "duration_seconds": 1.38,
+      "audio_track": {
+        "track_id": "track_q5_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_18_beat_q5_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.233,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q5_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.38,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "What is the largest subtropical hot desert on planet Earth?",
+            "options": [
+              "Sahara Desert",
+              "Arabian Desert",
+              "Gobi Desert",
+              "Kalahari Desert"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/sahara_desert_dunes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_19_beat_q5_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q5_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "What is the largest subtropical hot desert on planet Earth?",
+            "options": [
+              "Sahara Desert",
+              "Arabian Desert",
+              "Gobi Desert",
+              "Kalahari Desert"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/sahara_desert_dunes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_20_beat_q5_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Sahara Desert!",
+      "duration_seconds": 1.24,
+      "audio_track": {
+        "track_id": "track_q5_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_20_beat_q5_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.989,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q5_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.24,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "What is the largest subtropical hot desert on planet Earth?",
+            "options": [
+              "Sahara Desert",
+              "Arabian Desert",
+              "Gobi Desert",
+              "Kalahari Desert"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Sahara Desert",
+            "explanation": "The Sahara spans roughly 9.2 million square kilometers across Northern Africa.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/sahara_desert_dunes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_21_beat_q5_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "The Sahara spans roughly 9.2 million square kilometers across Northern Africa.",
+      "duration_seconds": 5.43,
+      "audio_track": {
+        "track_id": "track_q5_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_21_beat_q5_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 5.13,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q5_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 5.43,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "What is the largest subtropical hot desert on planet Earth?",
+            "options": [
+              "Sahara Desert",
+              "Arabian Desert",
+              "Gobi Desert",
+              "Kalahari Desert"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Sahara Desert",
+            "explanation": "The Sahara spans roughly 9.2 million square kilometers across Northern Africa.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 5 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/sahara_desert_dunes.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_22_beat_q6_card",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Question 6: Which metropolitan area is the most populous megacity in the world?",
+      "duration_seconds": 1.43,
+      "audio_track": {
+        "track_id": "track_q6_stem",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_22_beat_q6_card.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 1.282,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q6_card",
+          "recipe_id": "QUESTION_CARD",
+          "start_seconds": 0,
+          "duration_seconds": 1.43,
+          "props": {
+            "component_id": "sf.quiz.question_glass_card",
+            "question": "Which metropolitan area is the most populous megacity in the world?",
+            "options": [
+              "Tokyo",
+              "Delhi",
+              "Shanghai",
+              "Sao Paulo"
+            ],
+            "answerIndex": 0,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/tokyo_megacity_urban.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_23_beat_q6_think",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "",
+      "duration_seconds": 5,
+      "shots": [
+        {
+          "id": "shot_q6_think",
+          "recipe_id": "COUNTDOWN",
+          "start_seconds": 0,
+          "duration_seconds": 5,
+          "motion": {
+            "animated": true,
+            "type": "DYNAMIC"
+          },
+          "props": {
+            "component_id": "sf.timer.countdown_ring_5s",
+            "question": "Which metropolitan area is the most populous megacity in the world?",
+            "options": [
+              "Tokyo",
+              "Delhi",
+              "Shanghai",
+              "Sao Paulo"
+            ],
+            "answerIndex": 0,
+            "seconds": 5,
+            "thinkGate": true,
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/tokyo_megacity_urban.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_24_beat_q6_reveal",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Option A: Tokyo!",
+      "duration_seconds": 1.23,
+      "audio_track": {
+        "track_id": "track_q6_reveal",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_24_beat_q6_reveal.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 0.983,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q6_reveal",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 1.23,
+          "props": {
+            "component_id": "sf.quiz.option_matrix_4x1",
+            "state": "ANSWER_REVEAL",
+            "question": "Which metropolitan area is the most populous megacity in the world?",
+            "options": [
+              "Tokyo",
+              "Delhi",
+              "Shanghai",
+              "Sao Paulo"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Tokyo",
+            "explanation": "Greater Tokyo is home to approximately 37 million residents across its metropolitan region.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/tokyo_megacity_urban.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_25_beat_q6_explanation",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "Greater Tokyo is home to approximately 37 million residents across its metropolitan region.",
+      "duration_seconds": 5.91,
+      "audio_track": {
+        "track_id": "track_q6_explanation",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_25_beat_q6_explanation.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 5.606,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_q6_explanation",
+          "recipe_id": "ANSWER_REVEAL",
+          "start_seconds": 0,
+          "duration_seconds": 5.91,
+          "props": {
+            "component_id": "sf.payoff.explanation_drawer",
+            "question": "Which metropolitan area is the most populous megacity in the world?",
+            "options": [
+              "Tokyo",
+              "Delhi",
+              "Shanghai",
+              "Sao Paulo"
+            ],
+            "answerIndex": 0,
+            "correctOption": "Tokyo",
+            "explanation": "Greater Tokyo is home to approximately 37 million residents across its metropolitan region.",
+            "categoryBadge": "GEOGRAPHY | QUIZ",
+            "headline": "QUESTION 6 / 06",
+            "topic": "World Geography Challenge",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1",
+            "image_path": "data/visual-assets-store/b2/shortsfactory-assets/quiz-v2/tokyo_megacity_urban.png"
+          }
+        }
+      ]
+    },
+    {
+      "scene_id": "scene_26_beat_outro_cta",
+      "template_id": "quiz.universal.cinematic.v2",
+      "narration_text": "How many did you get right out of 6? Comment your score below and subscribe!",
+      "duration_seconds": 2.78,
+      "audio_track": {
+        "track_id": "track_outro_cta",
+        "audio_path": "C:\\Users\\ASUS\\OneDrive\\Desktop\\123\\aishorts\\data\\audio\\quiz_v2_geography\\scene_26_beat_outro_cta.wav",
+        "start_seconds": 0,
+        "source_in_seconds": 0,
+        "duration_seconds": 2.278,
+        "volume": 1
+      },
+      "shots": [
+        {
+          "id": "shot_outro_cta",
+          "recipe_id": "OUTRO_CTA",
+          "start_seconds": 0,
+          "duration_seconds": 2.78,
+          "props": {
+            "component_id": "sf.outro.scoreboard_cta",
+            "cta": "SCOREBOARD",
+            "subtitle": "How many did you get right out of 6? Comment your score below and subscribe!",
+            "accentColor": [
+              6,
+              182,
+              212
+            ],
+            "themeToken": "QUIZ_GEOGRAPHY",
+            "template_id": "quiz.universal.cinematic.v2",
+            "templateId": "quiz.universal.cinematic.v2",
+            "design_pack": "quiz.universal.cinematic.v1",
+            "canva_design_pack": "quiz.universal.cinematic.v1"
+          }
+        }
+      ]
+    }
+  ],
+  "output": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "video_codec": "libx264",
+    "audio_codec": "aac"
+  },
+  "metadata": {
+    "templateId": "quiz.universal.cinematic.v2",
+    "totalDurationSeconds": 82.27000000000001,
+    "timingLedgerSignature": "cad05481f8636cb56e8d5ae28b5da04e9d6aeddb6045fe7e2a4dde4118a8f2f3"
+  }
+}

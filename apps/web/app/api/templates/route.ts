@@ -100,7 +100,17 @@ export async function POST(req: Request) {
         existingCustom = JSON.parse(fs.readFileSync(customFilePath, "utf-8"));
       } catch {}
     }
-    existingCustom.push(templateDef);
+    const targetKey = `${templateDef.identity.id}@${templateDef.identity.version}`;
+    const existingIndex = existingCustom.findIndex((t: any) => {
+      const id = t.identity?.id || t.id;
+      const ver = t.identity?.version || t.version || '1.0.0';
+      return `${id}@${ver}` === targetKey;
+    });
+    if (existingIndex >= 0) {
+      existingCustom[existingIndex] = templateDef;
+    } else {
+      existingCustom.push(templateDef);
+    }
     fs.writeFileSync(customFilePath, JSON.stringify(existingCustom, null, 2), "utf-8");
 
     return NextResponse.json({

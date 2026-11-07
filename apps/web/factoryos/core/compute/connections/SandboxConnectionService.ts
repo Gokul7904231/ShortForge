@@ -8,8 +8,9 @@ import { computeConnectionStore } from "./ComputeConnectionStore";
 
 const PROVIDER_TYPE_BY_ID: Record<string, SandboxProviderType> = {
   sandbox_daytona_hosted: "DAYTONA",
-  sandbox_modal_hosted: "MODAL",
   sandbox_instavm: "INSTAVM",
+  sandbox_github_codespaces: "GITHUB_CODESAPCES",
+  sandbox_codesandbox: "CODESANDBOX",
 };
 
 function adapterFor(providerId: string) {

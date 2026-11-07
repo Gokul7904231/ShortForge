@@ -76,7 +76,6 @@ function requestIdFromHeaders(headers: Headers): string | undefined {
   return (
     headers.get("x-request-id") ||
     headers.get("x-requestid") ||
-    headers.get("runpod-request-id") ||
     headers.get("cf-ray") ||
     undefined
   );
