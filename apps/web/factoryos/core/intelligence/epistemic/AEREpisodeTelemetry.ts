@@ -1,3 +1,7 @@
+import * as fs from "node:fs";
+import { open } from "node:fs/promises";
+import * as path from "node:path";
+
 export type AEREpisodeEventName =
   | "aer.assessment"
   | "aer.decision"
@@ -16,22 +20,35 @@ export interface AEREpisodeTelemetryEvent {
   readonly attributes: Readonly<Record<string, string | number | boolean | null>>;
 }
 
-/**
- * Stable telemetry vocabulary aligned with the current OpenTelemetry GenAI
- * model/tool observability shape without coupling AER to an exporter.
- */
-export interface AEREpisodeTelemetrySink {
-  append(event: AEREpisodeTelemetryEvent): void | Promise<void>;
+export interface AEREpisodeTelemetryHealth {
+  readonly appendCount: number;
+  readonly failureCount: number;
+  readonly lastFailureCode: string | null;
 }
 
-import * as fs from "node:fs";
-import * as path from "node:path";
+export interface AEREpisodeTelemetrySink {
+  append(event: AEREpisodeTelemetryEvent): void | Promise<void>;
+  health?(): AEREpisodeTelemetryHealth;
+}
 
+/**
+ * Local append-only shadow telemetry adapter.
+ *
+ * Each event is written with restrictive file permissions and fdatasync.
+ * This provides a crash-durable local log, not distributed/replicated storage.
+ * It deliberately contains metadata only; prompts and raw model content are
+ * not persisted. Write failures are visible through health() but do not affect
+ * runtime authority or routing.
+ */
 export class JsonlAEREpisodeTelemetrySink implements AEREpisodeTelemetrySink {
   private readonly filePath: string;
+  private appendCount = 0;
+  private failureCount = 0;
+  private lastFailureCode: string | null = null;
+  private writeTail: Promise<void> = Promise.resolve();
 
   public constructor(filePath?: string) {
-    const root =
+    this.filePath =
       filePath ??
       path.join(
         process.cwd(),
@@ -40,22 +57,43 @@ export class JsonlAEREpisodeTelemetrySink implements AEREpisodeTelemetrySink {
         "aer",
         "episodes.jsonl",
       );
-    this.filePath = root;
-    fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
+    fs.mkdirSync(path.dirname(this.filePath), { recursive: true, mode: 0o700 });
   }
 
-  public append(event: AEREpisodeTelemetryEvent): void {
-    // Telemetry is deliberately metadata-only: prompts, credentials and raw
-    // model content are not persisted by this sink.
-    try {
-      fs.appendFileSync(
-        this.filePath,
-        JSON.stringify(event) + "\n",
-        "utf8",
-      );
-    } catch {
-      // Observability must not become an execution-authority or availability
-      // dependency. The runtime can continue if the local telemetry sink fails.
-    }
+  public append(event: AEREpisodeTelemetryEvent): Promise<void> {
+    const operation = this.writeTail.then(async () => {
+      let handle: Awaited<ReturnType<typeof open>> | null = null;
+      try {
+        handle = await open(this.filePath, "a", 0o600);
+        await handle.chmod(0o600);
+        await handle.writeFile(JSON.stringify(event) + "\n", "utf8");
+        await handle.datasync();
+        this.appendCount += 1;
+        this.lastFailureCode = null;
+      } catch (error) {
+        this.failureCount += 1;
+        this.lastFailureCode =
+          error instanceof Error ? error.name : "UNKNOWN_WRITE_FAILURE";
+      } finally {
+        if (handle) {
+          try {
+            await handle.close();
+          } catch {
+            this.failureCount += 1;
+            this.lastFailureCode = "FILE_CLOSE_FAILURE";
+          }
+        }
+      }
+    });
+    this.writeTail = operation.catch(() => undefined);
+    return operation;
+  }
+
+  public health(): AEREpisodeTelemetryHealth {
+    return {
+      appendCount: this.appendCount,
+      failureCount: this.failureCount,
+      lastFailureCode: this.lastFailureCode,
+    };
   }
 }

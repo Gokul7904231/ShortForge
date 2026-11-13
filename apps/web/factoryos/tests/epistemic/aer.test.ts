@@ -497,7 +497,19 @@ describe("AER — Ascalon Epistemic Runtime", () => {
   });
 
   it("tracks cost per resolved uncertainty and routing efficiency", () => {
-    const metrics = new AERMetricsRecorder();
+    const independentlyVerifiedRefs = new Set([
+      "validator:uncertainty-01",
+      "baseline-replay:01",
+      "hash:1",
+    ]);
+    const metrics = new AERMetricsRecorder(undefined, {
+      verifyOutcome: (receipt) =>
+        receipt.verificationRef.length > 0 &&
+        receipt.evidenceRefs.every((reference) => independentlyVerifiedRefs.has(reference)) &&
+        (receipt.necessityAssessment?.evidenceRefs.every((reference) =>
+          independentlyVerifiedRefs.has(reference),
+        ) ?? true),
+    });
     metrics.recordEvent({ episodeId: "skipped", aerInvoked: false });
 
     const aer = new AEREngine(metrics);
