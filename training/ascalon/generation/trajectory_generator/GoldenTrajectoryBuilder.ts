@@ -1,9 +1,9 @@
 /**
  * Project Ascalon — Golden Trajectory Builder
  *
- * Constructs authoritative, verified operational trajectories covering core ShortForge
+ * Constructs deterministic synthetic test/curriculum fixtures covering core ShortForge
  * scenarios: recovery, worker selection, CAS validation, fencing, and policy enforcement.
- * All golden examples have full provenance and verified outcomes.
+ * These records contain illustrative evidence references and are never operational ground truth.
  */
 
 export class GoldenTrajectoryBuilder {
@@ -301,6 +301,27 @@ export class GoldenTrajectoryBuilder {
       },
     });
 
-    return trajectories;
+    // Historical "golden" fixtures contain illustrative evidence IDs and outcomes.
+    // Make their synthetic nature explicit so they cannot enter the operational lane.
+    return trajectories.map((trajectory) => ({
+      ...trajectory,
+      environment: {
+        ...trajectory.environment,
+        environmentType: "SIMULATION",
+      },
+      observation: {
+        ...trajectory.observation,
+        environmentType: "SIMULATION",
+      },
+      provenance: {
+        ...trajectory.provenance,
+        labelSource: "SIMULATION_PSEUDO",
+        trainingEligible: true,
+        humanReviewed: false,
+        simulation: true,
+        synthetic: true,
+      },
+    }));
+
   }
 }
