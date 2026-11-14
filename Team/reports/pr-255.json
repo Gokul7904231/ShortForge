@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR255-SpecKitReleaseReadinessGate",
+  "pullRequest": 255,
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/release-sdlc-spec-kit-20261029",
+  "objective": "Adopt Spec Kit in the existing ShortForge repository and add Agent 1's release-readiness specification, plan, checklist, task ledger, and cross-artifact analysis. Preserve .okf authority and block unsupported production-readiness claims.",
+  "classification": "extends existing rule",
+  "linkedIssues": [],
+  "sourceRefs": [
+    ".okf/decision-protocol.md",
+    ".okf/index.md",
+    ".okf/principles.md",
+    ".okf/decisions.md",
+    "Team/workflow/change-gate.md",
+    "Team/scripts/validate-team-report.mjs",
+    ".specify/memory/constitution.md",
+    "specs/001-release-readiness-gate/spec.md",
+    "specs/001-release-readiness-gate/plan.md",
+    "specs/001-release-readiness-gate/checklist.md",
+    "specs/001-release-readiness-gate/tasks.md",
+    "specs/001-release-readiness-gate/analysis.md"
+  ],
+  "okf": {
+    "sweepStatus": "INCIDENT_FOLLOWUP",
+    "sourceRefs": [
+      ".okf/decision-protocol.md",
+      ".okf/index.md",
+      ".okf/principles.md",
+      ".okf/decisions.md",
+      "Team/workflow/change-gate.md"
+    ],
+    "notes": "Relevant authority and change-gate documents were inspected for this SDLC follow-up. This report does not claim a complete repository-wide .okf sweep or domain/security proof; live production acceptance remains blocked."
+  },
+  "forgers": [
+    "Forge Builder",
+    "Forge Sentinel",
+    "Forge Release"
+  ],
+  "security": {
+    "required": true,
+    "status": "TRIAGED",
+    "semgrep": "NOT_RUN_IN_GITHUB_INTERFACE",
+    "strix": "UNPROVEN",
+    "zap": "NOT_RUN_IN_GITHUB_INTERFACE",
+    "notes": "This PR primarily adds Spec Kit scaffolding and governance artifacts. No claim is made that Semgrep, Strix, or ZAP ran locally. Production physical-render and dependency-readiness blockers remain."
+  },
+  "conflicts": [],
+  "changes": [
+    "Added the Spec Kit project scaffolding, integration manifests, skill documents, and templates on a dedicated feature branch.",
+    "Added a constitution that is additive to .okf and records evidence-first reporting, health truth, agent boundaries, bounded repair, and production acceptance gates.",
+    "Added release-readiness spec, clarifications, plan, checklist, task ledger, and cross-artifact consistency analysis.",
+    "Removed the copied Team/reports/pr-253.json from this branch so PR 253's report remains scoped to PR 253; this PR has its own report."
+  ],
+  "evidence": [
+    "Agent 1 execution record reports `specify` CLI v1.2.4.dev0 and the `agy`, `claude`, and `codex` integrations configured in the local Windows environment.",
+    "Agent 1 execution record reports Anti-Slop core v3.2.20 with mode `during` enabled in that environment; separate Agent 2 and Agent 3 sessions must independently prove load before coding.",
+    "Context Fabric Architecture workflow for commit 95f916ae7f8046a996f5d7888a12e1d29b24e06b completed successfully: https://github.com/Gokul7904231/ShortForge/actions/runs/40837246391",
+    "The supplied PR 253 evidence records Lightning physical proof run 40824025739 failing authentication and producing no proof artifact; see https://github.com/Gokul7904231/ShortForge/actions/runs/40824025739",
+    "The supplied live readiness evidence records HTTP 200 with application status degraded; Drive key path and YouTube refresh token were missing."
+  ],
+  "evidenceRefs": [
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/40837246391",
+    "https://github.com/Gokul7904231/ShortForge/actions/runs/40824025739",
+    "https://github.com/Gokul7904231/ShortForge/pull/253"
+  ],
+  "verification": {
+    "typecheck": "NOT_APPLICABLE_TO_DOCUMENTATION_AND_SPECKIT_SCAFFOLD_ONLY; CI STILL REQUIRED",
+    "tests": "Context Fabric Architecture workflow succeeded; full project tests and actual agent-session skill-load checks remain separate gates.",
+    "criterion": "The repository contains traceable Spec Kit artifacts, its Team report passes the repository validator, and no evidence is mislabeled as production acceptance."
+  },
+  "verificationResults": {
+    "specKitArtifacts": "ADDED; CROSS-ARTIFACT ANALYSIS RECORDED; CI REVIEW REQUIRED",
+    "teamReport": "PASS_ON_CANDIDATE_SHA_2ea23dfef6d3538f4f577e050348761acfd0ce9c: Team Change Gate run 40838010672 completed successfully (https://github.com/Gokul7904231/ShortForge/actions/runs/40838010672); final-head validation is required after this evidence update.",
+    "agentSkillLoad": "AGENT 1 LOCAL ENVIRONMENT REPORTED; AGENT 2 AND AGENT 3 NOT YET PROVEN",
+    "endToEndProductionRender": "NOT_PROVEN",
+    "disposition": "BLOCKED_PENDING_REQUIRED_REVIEW_AND_CONTROLLED_STAGING_RENDER"
+  },
+  "disposition": "BLOCKED",
+  "blockedReason": "This SDLC PR does not prove a real distributed staging render. Production acceptance still requires healthy live readiness, owner-approved credentials, the intended worker dispatch target, physical MP4/ffprobe verification, real CAS bytes, F07 acceptance, Google Drive metadata/download identity, post-restart retrieval, and evidence that the actual Agent 2 and Agent 3 sessions loaded the required skills."
+}
