@@ -42,7 +42,7 @@ jobs:
           echo "Initiating keepalive request to FactoryOS health endpoint..."
 
           # 3. Execute HTTP Check with Retries for Cold Start
-          # Using --max-time 45 and retries to accommodate sleeping free-tier Render instances
+          # A warm-up request is useful, but HTTP 200 alone does not prove application readiness.
           HTTP_RESPONSE=$(curl -sSL \
             --max-time 45 \
             --retry 3 \
@@ -55,7 +55,7 @@ jobs:
               exit 1
             }
 
-          # 4. Extract Metrics
+          # 4. Extract Metrics and Response Body
           HTTP_STATUS=$(echo "$HTTP_RESPONSE" | sed -n 's/^HTTP_STATUS_CODE://p' | tail -n1)
           TIME_TOTAL=$(echo "$HTTP_RESPONSE" | sed -n 's/^TIME_TOTAL://p' | tail -n1)
           BODY=$(echo "$HTTP_RESPONSE" | sed '/^HTTP_STATUS_CODE:/,$d')
@@ -63,12 +63,18 @@ jobs:
           echo "Response Time: ${TIME_TOTAL}s"
           echo "HTTP Status Code: ${HTTP_STATUS}"
 
-          # 5. Validate Success
-          if [ -n "$HTTP_STATUS" ] && [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-            echo "✅ FactoryOS Render service is warm and healthy (HTTP ${HTTP_STATUS})."
-            echo "Response payload: $(echo "$BODY" | head -n 5)"
-          else
-            echo "::error::FactoryOS Render keepalive probe failed with HTTP status: ${HTTP_STATUS:-unknown}"
-            echo "Response payload: $BODY"
+          # 5. Validate both transport and application readiness.
+          # Never label a degraded/offline JSON response as healthy just because HTTP returned 200.
+          if ! printf '%s' "$BODY" | jq -e 'type == "object" and .success == true and .status == "healthy"' >/dev/null 2>&1; then
+            HEALTH_STATUS=$(printf '%s' "$BODY" | jq -r 'if type == "object" then (.status // "missing") else "invalid-json" end' 2>/dev/null || echo "invalid-json")
+            UNHEALTHY_DEPS=$(printf '%s' "$BODY" | jq -r 'if (.dependencies | type) == "object" then (.dependencies | to_entries | map(select(.value.status != "healthy") | "\(.key)=\(.value.status // "unknown")") | join(", ")) else "dependency details unavailable" end' 2>/dev/null || echo "dependency details unavailable")
+            echo "::error::FactoryOS readiness failed: HTTP ${HTTP_STATUS:-unknown}, app status=${HEALTH_STATUS}, dependencies=[${UNHEALTHY_DEPS}]."
             exit 1
           fi
+
+          if [ -z "$HTTP_STATUS" ] || [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 400 ]; then
+            echo "::error::FactoryOS keepalive probe failed with HTTP status: ${HTTP_STATUS:-unknown}"
+            exit 1
+          fi
+
+          echo "✅ FactoryOS Render service is reachable and application readiness is healthy (HTTP ${HTTP_STATUS})."
