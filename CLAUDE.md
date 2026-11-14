@@ -164,3 +164,14 @@ Mandatory references:
 - `.okf/devourer.md`
 
 Do not introduce a new abstraction, repository pattern, worker capability, renderer, or model behavior merely because it is novel or useful in isolation. Reconcile it against the current `.okf` and existing repo mappings first.
+
+
+## CRITICAL: Reverse Features operating rule
+
+For any task that investigates, compares, or upgrades an existing ShortForge concept, invoke the dedicated `reverse-features` skill and the applicable phase skills: `reverse-feature-investigation`, `reverse-feature-challenge`, and `reverse-feature-implementation`.
+
+The order is mandatory: inspect current ShortForge implementation and tests; complete the current `.okf` review and OKF machine sweep required by `.okf/decision-protocol.md`; open every relevant `.okf/research/repo-mappings/` document and the research/provenance ledger; reverse-engineer the external concept where REA is appropriate; construct a candidate set including the incumbent and plausible alternatives/hybrids; compare all viable candidates pairwise under equivalent criteria; record a reasoned, evidence-supported winner; only then implement it on an isolated branch and verify it.
+
+**Absolute rule:** reverse-engineer the existing concept, challenge the incumbent and every viable alternative against each other, prove which design wins, and implement only that winner. Novelty, popularity, and model confidence do not constitute proof. Retain the incumbent when no alternative demonstrates sufficient improvement; report unknowns rather than inventing certainty. Use clean-room implementation and record licenses/provenance. Do not bypass Human/Overseer authority, Guardian policy, Treasurer economics, existing canonical contracts, F07 verification, or active-PR conflict review.
+
+Canonical program records: `.okf/reverse-features/README.md`, `domain-registry.md`, `evaluation-protocol.md`, `decision-record-template.md`, and `.okf/research/repo-mappings/morluto-rea.md`. These supplement, and never supersede, the locked `.okf/decision-protocol.md` and executable implementation/tests.
