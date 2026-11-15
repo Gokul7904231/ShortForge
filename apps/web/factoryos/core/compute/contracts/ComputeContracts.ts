@@ -14,7 +14,8 @@ export type ProviderType =
   | "GITHUB_ACTIONS"
   | "PERSISTENT_WORKER"
   | "DAYTONA"
-  | "INSTAVM";
+  | "INSTAVM"
+  | "INSTABOX";
 
 export type ProviderExecutionModel =
   | "LOCAL_PROCESS"
@@ -206,8 +207,8 @@ export interface ComputePolicy {
 
 export const DEFAULT_COMPUTE_POLICY: ComputePolicy = {
   policyVersion: "1.0.0",
-  allowedProviders: ["LOCAL", "KAGGLE", "DAYTONA", "INSTAVM"],
-  preferredOrder: ["LOCAL", "DAYTONA", "INSTAVM", "KAGGLE"],
+  allowedProviders: ["LOCAL", "KAGGLE", "DAYTONA", "INSTAVM", "INSTABOX"],
+  preferredOrder: ["LOCAL", "DAYTONA", "INSTAVM", "KAGGLE", "INSTABOX"],
   maxRetries: 2,
   failoverAllowed: true,
   preferLocalForShortVideos: true,

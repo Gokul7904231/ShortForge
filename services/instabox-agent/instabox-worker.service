@@ -1,0 +1,29 @@
+[Unit]
+Description=FactoryOS InstaBox Distributed Render Worker
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/instabox-agent
+EnvironmentFile=/etc/instabox/worker.env
+ExecStart=/usr/bin/python3 /opt/instabox-agent/agent.py
+Restart=always
+RestartSec=5s
+TimeoutStopSec=30s
+KillMode=mixed
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=instabox-worker
+
+# Sandboxing and security boundaries
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/tmp/instabox_workspace /var/log/instabox
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

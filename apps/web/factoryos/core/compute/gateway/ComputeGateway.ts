@@ -26,6 +26,7 @@ import {
   DaytonaSandboxAdapter,
   InstaVMSandboxAdapter,
 } from "../sandboxes";
+import { InstaBoxFleetRegistry } from "../instabox";
 import { ComputePool, type ComputeSurface } from "../pool";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
 import type { TreasuryEconomicPermit } from "../../treasury/TreasuryContracts";
@@ -90,6 +91,12 @@ export class ComputeGateway {
       "SANDBOX",
     );
 
+    // Register genuine InstaBox fleet node providers into both ComputePool and ComputeRouter.
+    // They are surface: "INSTABOX", and fail closed (BLOCKED) until real worker nodes register and heartbeat.
+    for (const nodeProvider of InstaBoxFleetRegistry.getInstance().getAllNodeProviders()) {
+      this.registerPoolProvider(nodeProvider, "INSTABOX");
+    }
+
     // Legacy/control-plane providers remain discoverable for existing control
     // surfaces, but because they are not bound into the ComputePool they cannot
     // become render candidates.
@@ -102,6 +109,11 @@ export class ComputeGateway {
     if (!ComputeGateway.instance) {
       ComputeGateway.instance = new ComputeGateway(policy);
     }
+    return ComputeGateway.instance;
+  }
+
+  public static resetInstanceForTesting(policy?: ComputePolicy): ComputeGateway {
+    ComputeGateway.instance = new ComputeGateway(policy);
     return ComputeGateway.instance;
   }
 
