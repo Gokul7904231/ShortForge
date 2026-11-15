@@ -14,15 +14,14 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization") || "";
     const customHeader = request.headers.get("x-instabox-secret") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "") || customHeader;
+    const workerId = request.headers.get("x-instabox-worker-id") || "";
 
-    if (!token || !registry.authenticateWorker(token)) {
+    if (!token || !registry.authenticateWorker(token, workerId)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Invalid InstaBox worker credentials." },
         { status: 401 },
       );
     }
-
-    const workerId = request.headers.get("x-instabox-worker-id") || "";
     const executionToken = request.headers.get("x-execution-token") || "";
     const expectedSha256 = (request.headers.get("x-artifact-sha256") || "").toLowerCase().trim();
     const expectedByteLengthStr = request.headers.get("x-artifact-byte-length");

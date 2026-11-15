@@ -18,20 +18,20 @@ export async function POST(request: NextRequest) {
   try {
     const registry = InstaBoxFleetRegistry.getInstance();
 
-    // 1. Authenticate worker
     const authHeader = request.headers.get("authorization") || "";
     const customHeader = request.headers.get("x-instabox-secret") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "") || customHeader;
 
-    if (!token || !registry.authenticateWorker(token)) {
+    const body = await request.json().catch(() => ({}));
+    const workerId = body.workerId || request.headers.get("x-instabox-worker-id");
+
+    // 1. Authenticate worker
+    if (!token || !registry.authenticateWorker(token, workerId)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Invalid InstaBox worker credentials." },
         { status: 401 },
       );
     }
-
-    const body = await request.json().catch(() => ({}));
-    const workerId = body.workerId || request.headers.get("x-instabox-worker-id");
     const parsedNodeId = parseInstaBoxNodeId(workerId || "");
 
     if (!parsedNodeId || !isAllowedInstaBoxWorkerNode(parsedNodeId)) {

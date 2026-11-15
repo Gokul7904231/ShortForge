@@ -19,20 +19,21 @@ export async function POST(request: NextRequest) {
   try {
     const registry = InstaBoxFleetRegistry.getInstance();
 
-    // 1. Authenticate worker
     const authHeader = request.headers.get("authorization") || "";
     const customHeader = request.headers.get("x-instabox-secret") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "") || customHeader;
 
-    if (!token || !registry.authenticateWorker(token)) {
+    const body = await request.json().catch(() => ({}));
+    const workerId = body.workerId || request.headers.get("x-instabox-worker-id");
+
+    // 1. Authenticate worker (with per-worker secret support)
+    if (!token || !registry.authenticateWorker(token, workerId)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Invalid InstaBox worker credentials." },
         { status: 401 },
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const workerId = body.workerId || request.headers.get("x-instabox-worker-id");
     const parsedNodeId = parseInstaBoxNodeId(workerId || "") || body.nodeId;
 
     if (!parsedNodeId || !isAllowedInstaBoxWorkerNode(parsedNodeId)) {
@@ -45,17 +46,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Record heartbeat and live metrics
-    const metrics = body.metrics || {
-      cpuCores: 4,
-      cpuUsagePercent: 0,
-      memoryTotalMb: 7980,
-      memoryAvailableMb: 7000,
-      diskTotalMb: 20480,
-      diskAvailableMb: 15000,
-      operatingSystem: "Linux",
-      activeJobs: 0,
-    };
+    // 2. Record heartbeat and live metrics (Strictly require authentic metrics)
+    if (!body.metrics) {
+      return NextResponse.json(
+        { success: false, error: "Heartbeat rejected: missing authentic hardware telemetry." },
+        { status: 400 },
+      );
+    }
+
+    const metrics = body.metrics;
 
     const res = registry.recordHeartbeat({
       workerId: `instabox-${parsedNodeId}`,

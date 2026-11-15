@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
+import * as path from "node:path";
 import { InstaBoxFleetRegistry } from "@/factoryos/core/compute/instabox/InstaBoxFleetRegistry";
 import { RenderArtifactVerifier } from "@/factoryos/core/fabric/verification/RenderArtifactVerifier";
 import { VerificationEngine } from "@/factoryos/core/verification/VerificationEngine";
@@ -8,21 +9,17 @@ export async function POST(request: NextRequest) {
   try {
     const registry = InstaBoxFleetRegistry.getInstance();
 
-    // 1. Authenticate worker
-    const authHeader = request.headers.get("authorization") || "";
-    const customHeader = request.headers.get("x-instabox-secret") || "";
-    const token = authHeader.replace(/^Bearer\s+/i, "") || customHeader;
+    const body = await request.json().catch(() => ({}));
+    const workerId = body.workerId || request.headers.get("x-instabox-worker-id");
+    const executionToken = body.executionToken || request.headers.get("x-execution-token");
 
-    if (!token || !registry.authenticateWorker(token)) {
+    // 1. Authenticate worker (supporting per-worker secret)
+    if (!token || !registry.authenticateWorker(token, workerId)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Invalid InstaBox worker credentials." },
         { status: 401 },
       );
     }
-
-    const body = await request.json().catch(() => ({}));
-    const workerId = body.workerId || request.headers.get("x-instabox-worker-id");
-    const executionToken = body.executionToken || request.headers.get("x-execution-token");
     const {
       jobId,
       status,
