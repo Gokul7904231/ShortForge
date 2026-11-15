@@ -132,9 +132,11 @@ export class InstaBoxFleetRegistry {
           try {
             const a = Buffer.from(token);
             const b = Buffer.from(perWorkerSecret);
-            return a.length === b.length && crypto.timingSafeEqual(a, b);
+            if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+              return true;
+            }
           } catch {
-            return false;
+            // fall through to fleet credentials
           }
         }
       }
