@@ -758,23 +758,34 @@ def main():
     log("Startup", f"Workspace base: {WORKSPACE_BASE}")
 
     last_heartbeat = 0.0
+    draining = False
 
     while not SHUTDOWN_REQUESTED:
         now = time.time()
         if now - last_heartbeat >= HEARTBEAT_INTERVAL_SECONDS:
-            hb_resp = send_heartbeat()
+            hb_resp = send_heartbeat(status="DRAINING" if draining else "HEALTHY")
             last_heartbeat = now
-            if hb_resp and hb_resp.get("action") == "DRAIN":
-                log("Lifecycle", "Control plane requested DRAIN. No new jobs will be accepted.")
-                break
+            if hb_resp:
+                action = hb_resp.get("action")
+                if action == "DRAIN":
+                    if not draining:
+                        log("Lifecycle", "Control plane requested DRAIN. Halting job claims.")
+                        draining = True
+                elif action == "POLL":
+                    if draining:
+                        log("Lifecycle", "Control plane cleared DRAIN. Resuming job claims.")
+                        draining = False
 
-        job_claim = claim_job()
-        if job_claim:
-            execute_render_job(job_claim)
+        if not draining:
+            job_claim = claim_job()
+            if job_claim:
+                execute_render_job(job_claim)
+            else:
+                time.sleep(POLL_INTERVAL_SECONDS)
         else:
             time.sleep(POLL_INTERVAL_SECONDS)
 
-    log("Shutdown", "Worker draining finished. Sending final shutdown heartbeat.")
+    log("Shutdown", "Shutdown requested. Sending final shutdown heartbeat.")
     send_heartbeat(status="DRAINING")
     log("Shutdown", "InstaBox daemon stopped.")
 

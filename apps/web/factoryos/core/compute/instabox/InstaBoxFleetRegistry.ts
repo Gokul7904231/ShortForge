@@ -44,6 +44,7 @@ export interface InstaBoxNodeRecord {
   successfulExecutions: number;
   failedExecutions: number;
   isDraining: boolean;
+  adminDraining?: boolean;
   activeLease?: InstaBoxActiveJobLease;
   pendingJobs: Array<{
     job: ComputeJob;
@@ -178,8 +179,12 @@ export class InstaBoxFleetRegistry {
     record.lastHeartbeatAt = new Date().toISOString();
     record.consecutiveFailures = 0;
 
-    if (request.status === "DRAINING") {
+    if (record.adminDraining) {
       record.isDraining = true;
+    } else if (request.status === "DRAINING") {
+      record.isDraining = true;
+    } else {
+      record.isDraining = false;
     }
 
     return {
@@ -192,6 +197,7 @@ export class InstaBoxFleetRegistry {
     const record = this.nodes.get(nodeId);
     if (record) {
       record.isDraining = draining;
+      record.adminDraining = draining;
     }
   }
 
