@@ -121,16 +121,18 @@ export class InstaBoxFleetRegistry {
 
   public authenticateWorker(token: string, workerId?: string): boolean {
     if (!token) return false;
+    const cleanToken = token.trim();
+    if (!cleanToken) return false;
 
     // 1. Check per-worker specific secret if workerId is supplied
     if (workerId) {
       const nodeId = parseInstaBoxNodeId(workerId);
       if (nodeId) {
         const perWorkerEnvKey = `INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`;
-        const perWorkerSecret = process.env[perWorkerEnvKey];
+        const perWorkerSecret = process.env[perWorkerEnvKey]?.trim();
         if (perWorkerSecret) {
           try {
-            const a = Buffer.from(token);
+            const a = Buffer.from(cleanToken);
             const b = Buffer.from(perWorkerSecret);
             if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
               return true;
@@ -143,14 +145,16 @@ export class InstaBoxFleetRegistry {
     }
 
     // 2. Check shared fleet credentials
-    const expected =
+    const expected = (
       process.env.INSTABOX_WORKER_SECRET ||
       process.env.RENDER_WORKER_SECRET ||
-      process.env.INTERNAL_API_SECRET_KEY;
+      process.env.INTERNAL_API_SECRET_KEY ||
+      ""
+    ).trim();
     if (!expected) return false;
 
     try {
-      const a = Buffer.from(token);
+      const a = Buffer.from(cleanToken);
       const b = Buffer.from(expected);
       return a.length === b.length && crypto.timingSafeEqual(a, b);
     } catch {

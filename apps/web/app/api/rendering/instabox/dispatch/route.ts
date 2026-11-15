@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     const authHeader = request.headers.get("authorization") || "";
     const customHeader = request.headers.get("x-instabox-secret") || "";
-    const token = authHeader.replace(/^Bearer\s+/i, "") || customHeader;
+    const token = (authHeader.replace(/^Bearer\s+/i, "") || customHeader).trim();
 
     const body = await request.json().catch(() => ({}));
     const targetNodeId = body.targetNodeId as InstaBoxWorkerNodeId | undefined;
