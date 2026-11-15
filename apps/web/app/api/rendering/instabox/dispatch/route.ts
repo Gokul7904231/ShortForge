@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { InstaBoxFleetRegistry } from "@/factoryos/core/compute/instabox/InstaBoxFleetRegistry";
 import { ComputeGateway } from "@/factoryos/core/compute/gateway/ComputeGateway";
-import { ContentAddressedStore } from "@/factoryos/core/cas/ContentAddressedStore";
+import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import { RenderArtifactVerifier } from "@/factoryos/core/fabric/verification/RenderArtifactVerifier";
 import { VerificationEngine } from "@/factoryos/core/verification/VerificationEngine";
 import type { ComputeJob, ExecutionReceipt } from "@/factoryos/core/compute/contracts/ComputeContracts";
