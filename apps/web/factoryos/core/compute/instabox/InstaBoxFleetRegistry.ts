@@ -83,15 +83,19 @@ export class InstaBoxFleetRegistry {
   }
 
   public static getInstance(): InstaBoxFleetRegistry {
-    if (!InstaBoxFleetRegistry.instance) {
-      InstaBoxFleetRegistry.instance = new InstaBoxFleetRegistry();
+    const globalKey = Symbol.for("factoryos.instabox.fleet_registry");
+    const globalObj = globalThis as unknown as { [key: symbol]: InstaBoxFleetRegistry };
+    if (!globalObj[globalKey]) {
+      globalObj[globalKey] = new InstaBoxFleetRegistry();
     }
-    return InstaBoxFleetRegistry.instance;
+    return globalObj[globalKey];
   }
 
   public static resetInstanceForTesting(): InstaBoxFleetRegistry {
-    InstaBoxFleetRegistry.instance = new InstaBoxFleetRegistry();
-    return InstaBoxFleetRegistry.instance;
+    const globalKey = Symbol.for("factoryos.instabox.fleet_registry");
+    const globalObj = globalThis as unknown as { [key: symbol]: InstaBoxFleetRegistry };
+    globalObj[globalKey] = new InstaBoxFleetRegistry();
+    return globalObj[globalKey];
   }
 
   public getAllNodeIds(): readonly InstaBoxWorkerNodeId[] {

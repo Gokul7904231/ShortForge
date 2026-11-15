@@ -106,15 +106,19 @@ export class ComputeGateway {
   }
 
   public static getInstance(policy?: ComputePolicy): ComputeGateway {
-    if (!ComputeGateway.instance) {
-      ComputeGateway.instance = new ComputeGateway(policy);
+    const globalKey = Symbol.for("factoryos.compute.gateway");
+    const globalObj = globalThis as unknown as { [key: symbol]: ComputeGateway };
+    if (!globalObj[globalKey]) {
+      globalObj[globalKey] = new ComputeGateway(policy);
     }
-    return ComputeGateway.instance;
+    return globalObj[globalKey];
   }
 
   public static resetInstanceForTesting(policy?: ComputePolicy): ComputeGateway {
-    ComputeGateway.instance = new ComputeGateway(policy);
-    return ComputeGateway.instance;
+    const globalKey = Symbol.for("factoryos.compute.gateway");
+    const globalObj = globalThis as unknown as { [key: symbol]: ComputeGateway };
+    globalObj[globalKey] = new ComputeGateway(policy);
+    return globalObj[globalKey];
   }
 
   private parseGlideMode(value: string): GlideRoutingMode {

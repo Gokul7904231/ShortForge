@@ -24,15 +24,19 @@ export class ContentAddressedStore {
   }
 
   public static getInstance(customDir?: string): ContentAddressedStore {
-    if (!ContentAddressedStore.instance || (customDir && ContentAddressedStore.instance.storageDir !== customDir)) {
-      ContentAddressedStore.instance = new ContentAddressedStore(customDir);
+    const globalKey = Symbol.for("factoryos.compute.cas");
+    const globalObj = globalThis as unknown as { [key: symbol]: ContentAddressedStore };
+    if (!globalObj[globalKey] || (customDir && globalObj[globalKey].storageDir !== customDir)) {
+      globalObj[globalKey] = new ContentAddressedStore(customDir);
     }
-    return ContentAddressedStore.instance;
+    return globalObj[globalKey];
   }
 
   public static resetInstanceForTesting(customDir?: string): ContentAddressedStore {
-    ContentAddressedStore.instance = new ContentAddressedStore(customDir);
-    return ContentAddressedStore.instance;
+    const globalKey = Symbol.for("factoryos.compute.cas");
+    const globalObj = globalThis as unknown as { [key: symbol]: ContentAddressedStore };
+    globalObj[globalKey] = new ContentAddressedStore(customDir);
+    return globalObj[globalKey];
   }
 
   /**
