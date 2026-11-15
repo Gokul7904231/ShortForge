@@ -20,8 +20,8 @@ SyslogIdentifier=instabox-worker
 
 # Sandboxing and security boundaries
 ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=/tmp/instabox_workspace /var/log/instabox
+ProtectHome=true
+ReadWritePaths=/data/shortforge/workspace /data/shortforge/logs /tmp
 PrivateTmp=true
 NoNewPrivileges=true
 

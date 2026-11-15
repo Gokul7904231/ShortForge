@@ -1,0 +1,392 @@
+"""
+Main FactoryOS Render Engine.
+Consumes canonical RenderIntent, resolves physical audio timing, manages scene graphs,
+executes frame composition, persists checkpoints, and atomically commits verified MP4.
+"""
+
+import os
+import sys
+import time
+import uuid
+import hashlib
+import json
+from dataclasses import asdict
+from pathlib import Path
+from typing import Optional, Callable, Dict, Any, List
+
+from ..version import __version__
+from ..contracts.render_intent import RenderIntent, SceneIntent
+from ..contracts.composition import CompositionIR, CompositionScene, CompositionShot
+from ..contracts.receipt import RenderReceipt, RenderValidationResult
+from ..contracts.checkpoint import CheckpointState
+from ..timing.frame_clock import FrameClock
+from ..timing.audio_sync import AudioSync
+from ..backends.ffmpeg import FFmpegBackend
+from .scene_engine import SceneEngine
+from .frame_engine import FrameEngine
+from ..persistence.checkpoint_store import CheckpointStore
+from ..assets.cache import ContentAddressedCache
+
+class Renderer:
+    def __init__(self, ffmpeg_path: Optional[str] = None, cache_dir: str = ".factoryos_render_cache"):
+        self.ffmpeg = FFmpegBackend(ffmpeg_path)
+        self.cache_dir = os.path.abspath(cache_dir)
+        self.checkpoints = CheckpointStore(os.path.join(self.cache_dir, "checkpoints"))
+        self.cache = ContentAddressedCache(os.path.join(self.cache_dir, "content"))
+
+    def compile_composition(self, intent: RenderIntent) -> CompositionIR:
+        """
+        Compiles RenderIntent into deterministic CompositionIR.
+        Resolves audio-first scene durations.
+        """
+        fps = intent.output.fps
+        clock = FrameClock(fps)
+
+        scenes_ir: List[CompositionScene] = []
+        current_frame = 0
+        total_duration = 0.0
+
+        for s in intent.scenes:
+            audio_tracks_source = list(s.audio_tracks)
+            if not audio_tracks_source and s.audio_track:
+                audio_tracks_source = [s.audio_track]
+            audio_path = audio_tracks_source[0].audio_path if audio_tracks_source else None
+            # Authoritative audio-first timing.
+            dur_sec = float(s.duration_seconds) if (s.duration_seconds and s.duration_seconds >= 0.5) else AudioSync.synchronize_scene_duration(
+                s.duration_seconds,
+                audio_path,
+                self.ffmpeg.ffmpeg_path,
+            )
+            dur_frames = clock.duration_to_frames(dur_sec)
+
+            start_f = current_frame
+            end_f = current_frame + dur_frames - 1
+
+            shots_ir: List[CompositionShot] = []
+            if s.shots:
+                for sh in s.shots:
+                    start_seconds = max(0.0, float(sh.start_seconds))
+                    end_seconds = max(start_seconds + 0.001, start_seconds + float(sh.duration_seconds))
+                    sh_start = min(dur_frames - 1, clock.time_to_frame(start_seconds))
+                    sh_end = min(dur_frames - 1, max(sh_start, clock.time_to_frame(end_seconds) - 1))
+                    props = dict(sh.props or {})
+                    props.setdefault("sourceInSeconds", sh.source_in_seconds)
+                    props.setdefault("sourceDurationSeconds", sh.source_duration_seconds)
+                    props.setdefault("playbackRate", sh.playback_rate)
+                    shots_ir.append(
+                        CompositionShot(
+                            shot_id=sh.id,
+                            recipe_id=sh.recipe_id,
+                            start_frame=sh_start,
+                            end_frame=sh_end,
+                            duration_frames=sh_end - sh_start + 1,
+                            props=props,
+                            motion=sh.motion,
+                            assets=sh.assets,
+                        )
+                    )
+            else:
+                shots_ir.append(
+                    CompositionShot(
+                        shot_id="default_shot",
+                        recipe_id="IMAGE_WITH_CAPTION",
+                        start_frame=0,
+                        end_frame=dur_frames - 1,
+                        duration_frames=dur_frames,
+                        props={"caption": s.narration_text},
+                        motion={},
+                        assets=[],
+                    )
+                )
+
+            scenes_ir.append(
+                CompositionScene(
+                    scene_id=s.scene_id,
+                    template_id=s.template_id,
+                    start_frame=start_f,
+                    end_frame=end_f,
+                    duration_frames=dur_frames,
+                    duration_seconds=dur_sec,
+                    shots=shots_ir,
+                    narration_text=s.narration_text,
+                    audio_path=audio_path,
+                    audio_start_seconds=audio_tracks_source[0].start_seconds if audio_tracks_source else 0.0,
+                    audio_tracks=[a.__dict__ if hasattr(a, "__dict__") else a for a in audio_tracks_source],
+                    captions=[c.__dict__ if hasattr(c, "__dict__") else c for c in s.captions],
+                    background=s.background or intent.background or {},
+                    is_locked=s.is_locked,
+                )
+            )
+
+            current_frame += dur_frames
+            total_duration += dur_sec
+
+        # Deterministic composition hash must bind every lowered feature,
+        # otherwise cache identity could collide across different edits.
+        composition_payload = {
+            "width": intent.output.width,
+            "height": intent.output.height,
+            "fps": fps,
+            "total_frames": current_frame,
+            "total_duration_seconds": total_duration,
+            "background": intent.background,
+            "scenes": [asdict(scene) for scene in scenes_ir],
+        }
+        comp_hash = hashlib.sha256(
+            json.dumps(
+                composition_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                default=str,
+            ).encode("utf-8"),
+        ).hexdigest()
+
+        return CompositionIR(
+            composition_id=f"comp_{comp_hash[:12]}",
+            width=intent.output.width,
+            height=intent.output.height,
+            fps=fps,
+            total_frames=current_frame,
+            total_duration_seconds=total_duration,
+            scenes=scenes_ir,
+            audio_mix=[],
+            output_path=os.path.abspath(intent.output_path),
+            render_mode=intent.render_mode,
+            composition_hash=comp_hash
+        )
+
+    def preview(
+        self,
+        intent: RenderIntent,
+        output_path: str,
+        timestamp_seconds: float = 0.0,
+    ) -> Dict[str, Any]:
+        """Render one deterministic preview frame using the same feature-lowering engine."""
+        comp = self.compile_composition(intent)
+        if not comp.scenes:
+            raise RuntimeError("Preview requires at least one scene.")
+
+        target = max(0.0, min(float(timestamp_seconds), max(0.0, comp.total_duration_seconds - 1.0 / max(1, comp.fps))))
+        target_frame = int(round(target * comp.fps))
+
+        scene = comp.scenes[-1]
+        relative_frame = scene.duration_frames - 1
+        for candidate in comp.scenes:
+            if candidate.start_frame <= target_frame <= candidate.end_frame:
+                scene = candidate
+                relative_frame = target_frame - candidate.start_frame
+                break
+
+        from PIL import Image
+        frame_engine = FrameEngine(comp.width, comp.height, comp.fps)
+        raw = frame_engine.render_scene_frame(
+            scene,
+            relative_frame,
+            intent.safe_area.top,
+            intent.safe_area.bottom,
+        )
+        image = Image.frombytes("RGBA", (comp.width, comp.height), raw)
+        destination = os.path.abspath(output_path)
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        image.save(destination, format="PNG")
+        output_sha256 = hashlib.sha256(Path(destination).read_bytes()).hexdigest()
+        return {
+            "output_path": destination,
+            "output_sha256": output_sha256,
+            "width": comp.width,
+            "height": comp.height,
+            "fps": comp.fps,
+            "timestamp_seconds": target,
+        }
+
+    def render(
+        self,
+        intent: RenderIntent,
+        run_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[str, int, int], None]] = None
+    ) -> RenderReceipt:
+        """
+        Executes complete production render.
+        Follows checkpoint -> scene renders -> concat -> validation -> atomic commit.
+        """
+        start_time = time.time()
+        if not run_id:
+            run_id = f"run_{uuid.uuid4().hex[:12]}"
+
+        # Intent hash binds the complete serialized render request.
+        intent_h = hashlib.sha256(
+            json.dumps(asdict(intent), sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str).encode("utf-8")
+        ).hexdigest()
+        comp = self.compile_composition(intent)
+
+        # Initialize or load checkpoint
+        state = self.checkpoints.load(run_id)
+        if not state:
+            state = CheckpointState(
+                run_id=run_id,
+                project_id=intent.project_id,
+                intent_hash=intent_h,
+                composition_hash=comp.composition_hash,
+                total_scenes=len(comp.scenes),
+                stage="SCENES_RENDERING"
+            )
+            self.checkpoints.save(state)
+
+        scene_engine = SceneEngine(
+            ffmpeg=self.ffmpeg,
+            width=comp.width,
+            height=comp.height,
+            fps=comp.fps
+        )
+
+        rendered_scene_paths: List[str] = []
+        cache_hits = 0
+        cache_misses = 0
+        rebuilt_scene_ids: List[str] = []
+        forced_scene_ids = set(intent.repair_scope.force_scene_ids) if intent.repair_scope else set()
+
+        # Step 1: Render individual scenes
+        for i, scene in enumerate(comp.scenes):
+            if progress_callback:
+                progress_callback(f"Rendering scene {i+1}/{len(comp.scenes)} ({scene.scene_id})", i + 1, len(comp.scenes))
+
+            scene_h = scene_engine.calculate_scene_hash(scene)
+
+            # ReMaker forced targets deliberately bypass prior checkpoints and cache.
+            force_rebuild = scene.scene_id in forced_scene_ids
+
+            # Check if already completed in checkpoint
+            if not force_rebuild and scene.scene_id in state.completed_scenes and scene.scene_id in state.scene_artifacts:
+                cached_path = state.scene_artifacts[scene.scene_id]
+                if os.path.exists(cached_path) and os.path.getsize(cached_path) > 1024:
+                    rendered_scene_paths.append(cached_path)
+                    cache_hits += 1
+                    continue
+
+            # Check content-addressed cache
+            cached_scene = None if force_rebuild else self.cache.get_scene_artifact(scene_h)
+            if cached_scene:
+                rendered_scene_paths.append(cached_scene)
+                state.completed_scenes.append(scene.scene_id)
+                state.scene_artifacts[scene.scene_id] = cached_scene
+                self.checkpoints.save(state)
+                cache_hits += 1
+                continue
+
+            cache_misses += 1
+            # Render new scene artifact to temp file
+            temp_scene_dir = os.path.join(self.cache_dir, "temp", run_id)
+            os.makedirs(temp_scene_dir, exist_ok=True)
+            scene_tmp_path = os.path.join(temp_scene_dir, f"{scene.scene_id}.mp4")
+
+            scene_engine.render_scene(
+                scene=scene,
+                output_mp4_path=scene_tmp_path,
+                safe_top=intent.safe_area.top,
+                safe_bottom=intent.safe_area.bottom
+            )
+
+            # Store in cache
+            cached_dest = self.cache.store_scene_artifact(scene_h, scene_tmp_path)
+            rebuilt_scene_ids.append(scene.scene_id)
+            rendered_scene_paths.append(cached_dest)
+
+            if scene.scene_id not in state.completed_scenes:
+                state.completed_scenes.append(scene.scene_id)
+            state.scene_artifacts[scene.scene_id] = cached_dest
+            self.checkpoints.save(state)
+
+        # Step 2: Atomic Final Output Concatenation
+        if progress_callback:
+            progress_callback("Composing final video stream", len(comp.scenes), len(comp.scenes))
+
+        state.stage = "COMPOSITING"
+        self.checkpoints.save(state)
+
+        final_dest = os.path.abspath(intent.output_path)
+        os.makedirs(os.path.dirname(final_dest), exist_ok=True)
+        final_temp = final_dest + f".{uuid.uuid4().hex[:6]}.tmp.mp4"
+
+        try:
+            if len(rendered_scene_paths) == 1:
+                # Single scene: copy directly
+                import shutil
+                shutil.copyfile(rendered_scene_paths[0], final_temp)
+            else:
+                self.ffmpeg.concatenate_scenes(rendered_scene_paths, final_temp)
+
+            # Step 3: Validate physical MP4 output before committing
+            state.stage = "VALIDATING"
+            self.checkpoints.save(state)
+
+            validation = self.ffmpeg.validate_mp4(final_temp)
+            if not validation.is_valid:
+                raise RuntimeError(f"Render validation failed: {'; '.join(validation.errors)}")
+
+            # Atomic rename to final output with Windows retry
+            committed = False
+            for attempt in range(5):
+                try:
+                    if os.path.exists(final_dest):
+                        try:
+                            os.remove(final_dest)
+                        except Exception:
+                            pass
+                    os.replace(final_temp, final_dest)
+                    committed = True
+                    break
+                except (PermissionError, OSError):
+                    time.sleep(0.08)
+
+            if not committed:
+                import shutil
+                shutil.copyfile(final_temp, final_dest)
+                try:
+                    os.remove(final_temp)
+                except Exception:
+                    pass
+
+            out_sha256 = self.ffmpeg.calculate_sha256(final_dest)
+
+            state.stage = "COMPLETED"
+            self.checkpoints.save(state)
+
+            render_duration_ms = int((time.time() - start_time) * 1000)
+
+            receipt = RenderReceipt(
+                run_id=run_id,
+                renderer_version=__version__,
+                intent_hash=intent_h,
+                composition_hash=comp.composition_hash,
+                output_path=final_dest,
+                output_sha256=out_sha256,
+                width=comp.width,
+                height=comp.height,
+                fps=comp.fps,
+                duration_seconds=validation.duration_seconds,
+                total_frames=comp.total_frames,
+                render_time_ms=render_duration_ms,
+                render_mode=intent.render_mode,
+                ffmpeg_version=self.ffmpeg.get_version(),
+                cache_hits=cache_hits,
+                cache_misses=cache_misses,
+                validation=validation,
+                scenes_rendered=[s.scene_id for s in comp.scenes],
+                scenes_rebuilt=rebuilt_scene_ids,
+                repair_mode=intent.repair_scope.mode if intent.repair_scope else None,
+                forced_scene_ids=sorted(forced_scene_ids),
+            )
+
+            return receipt
+
+        except Exception as e:
+            if os.path.exists(final_temp):
+                try:
+                    os.remove(final_temp)
+                except Exception:
+                    pass
+            state.stage = "FAILED"
+            state.error = str(e)
+            self.checkpoints.save(state)
+            raise e

@@ -48,29 +48,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Receive bytes
-    const arrayBuffer = await request.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    // 3. Receive and stream bytes directly to disk with bounded memory
+    if (!request.body) {
+      return NextResponse.json(
+        { success: false, error: "Upload rejected: empty request body." },
+        { status: 400 },
+      );
+    }
 
-    if (buffer.length === 0) {
+    const tempDir = path.join(process.cwd(), "data", "cas_storage", "tmp");
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    tempFilePath = path.join(tempDir, `upload_${lease.jobId}_${Date.now()}.mp4`);
+    const fileWriteStream = fs.createWriteStream(tempFilePath);
+    const hash = crypto.createHash("sha256");
+
+    let totalBytesReceived = 0;
+    const MAX_UPLOAD_BYTES = 500 * 1024 * 1024; // 500 MB bound
+
+    const reader = request.body.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          totalBytesReceived += value.length;
+          if (totalBytesReceived > MAX_UPLOAD_BYTES) {
+            fileWriteStream.close();
+            throw new Error(`Upload payload exceeds maximum allowable limit (${MAX_UPLOAD_BYTES} bytes).`);
+          }
+          hash.update(value);
+          fileWriteStream.write(Buffer.from(value));
+        }
+      }
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        fileWriteStream.end(() => resolve());
+        fileWriteStream.on("error", reject);
+      });
+    }
+
+    if (totalBytesReceived === 0) {
       return NextResponse.json(
         { success: false, error: "Upload rejected: 0 bytes received." },
         { status: 400 },
       );
     }
 
-    if (expectedByteLength !== undefined && buffer.length !== expectedByteLength) {
+    if (expectedByteLength !== undefined && totalBytesReceived !== expectedByteLength) {
       return NextResponse.json(
         {
           success: false,
-          error: `Byte-length mismatch: expected ${expectedByteLength}, received ${buffer.length}.`,
+          error: `Byte-length mismatch: expected ${expectedByteLength}, received ${totalBytesReceived}.`,
         },
         { status: 422 },
       );
     }
 
     // 4. Compute physical SHA-256 over received bytes
-    const actualSha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+    const actualSha256 = hash.digest("hex");
     if (actualSha256 !== expectedSha256) {
       return NextResponse.json(
         {
@@ -81,14 +118,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Stage into local temporary file, then commit to CAS
-    const tempDir = path.join(process.cwd(), "data", "cas_storage", "tmp");
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-    tempFilePath = path.join(tempDir, `upload_${lease.jobId}_${Date.now()}.mp4`);
-    fs.writeFileSync(tempFilePath, buffer);
-
+    // 5. Commit staged temporary file to CAS
     const cas = ContentAddressedStore.getInstance();
     const artifactRef = await cas.putFile(tempFilePath, "output_mp4", "video/mp4", {
       jobId: lease.jobId,
