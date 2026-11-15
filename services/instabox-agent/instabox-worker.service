@@ -5,11 +5,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=ubuntu
-Group=ubuntu
+User=instabox
+Group=instabox
 WorkingDirectory=/opt/instabox-agent
 EnvironmentFile=/etc/instabox/worker.env
-ExecStart=/usr/bin/python3 /opt/instabox-agent/agent.py
+ExecStart=/opt/instabox-agent/venv/bin/python3 /opt/instabox-agent/agent.py
 Restart=always
 RestartSec=5s
 TimeoutStopSec=30s
