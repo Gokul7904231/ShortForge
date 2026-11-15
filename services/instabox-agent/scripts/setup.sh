@@ -75,14 +75,16 @@ fi
 
 echo "=== [4/5] Configuring Node Environment (Idempotent Secret Preservation) ==="
 if [[ ! -f /etc/instabox/worker.env ]]; then
-  # Cryptographically generate random 32-byte hex secret
+  # Cryptographically generate random 32-byte hex secret if not passed in environment
   GENERATED_SECRET=$(openssl rand -hex 32 2>/dev/null || python3 -c "import secrets; print(secrets.token_hex(32))")
+  CP_URL="${CONTROL_PLANE_URL:-https://3000-agq3mvsv7rj7orgrsuc3v2zwea.instabox.tech}"
+  SECRET_VAL="${INSTABOX_WORKER_SECRET:-$GENERATED_SECRET}"
 
   cat <<EOF > /etc/instabox/worker.env
 # FactoryOS InstaBox Production Node Configuration
 # Generated automatically during provisioning - root-owned with mode 640
-CONTROL_PLANE_URL=https://controlplane.shortforge.internal
-INSTABOX_WORKER_SECRET=${GENERATED_SECRET}
+CONTROL_PLANE_URL=${CP_URL}
+INSTABOX_WORKER_SECRET=${SECRET_VAL}
 WORKER_ID=instabox-${NODE_ID}
 HEARTBEAT_INTERVAL_SECONDS=15.0
 POLL_INTERVAL_SECONDS=5.0
