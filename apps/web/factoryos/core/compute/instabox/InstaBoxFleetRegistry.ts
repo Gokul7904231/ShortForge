@@ -193,15 +193,13 @@ export class InstaBoxFleetRegistry {
 
     if (record.adminDraining) {
       record.isDraining = true;
-    } else if (request.status === "DRAINING") {
-      record.isDraining = true;
     } else {
       record.isDraining = false;
     }
 
     return {
       acknowledged: true,
-      action: record.isDraining ? "DRAIN" : "POLL",
+      action: record.adminDraining ? "DRAIN" : "POLL",
     };
   }
 
