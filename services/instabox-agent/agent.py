@@ -652,7 +652,11 @@ def execute_render_job(job_claim: Dict[str, Any]):
         lease_renewer.update(45, "Encoding ShortForge frames and audio tracks")
 
         render_start = time.time()
-        receipt = fo_render(intent, ffmpeg_path="ffmpeg")
+        job_cache_dir = str(workspace / ".factoryos_render_cache")
+        os.makedirs(job_cache_dir, exist_ok=True)
+        os.environ["HOME"] = str(workspace)
+        os.environ["CACHE_DIR"] = job_cache_dir
+        receipt = fo_render(intent, ffmpeg_path="ffmpeg", cache_dir=job_cache_dir)
         render_duration_ms = int((time.time() - render_start) * 1000)
 
         if lease_renewer.revoked:
