@@ -631,6 +631,12 @@ def execute_render_job(job_claim: Dict[str, Any]):
     workspace.mkdir(parents=True, exist_ok=True)
     output_mp4 = workspace / "output.mp4"
 
+    orig_cwd = os.getcwd()
+    try:
+        os.chdir(workspace)
+    except Exception:
+        pass
+
     lease_renewer = BackgroundLeaseRenewer(job_id, execution_token, interval_seconds=10.0)
     lease_renewer.start()
 
@@ -742,6 +748,10 @@ def execute_render_job(job_claim: Dict[str, Any]):
     finally:
         lease_renewer.stop()
         ACTIVE_JOB_RUNNING = False
+        try:
+            os.chdir(orig_cwd)
+        except Exception:
+            pass
         try:
             if workspace.exists():
                 shutil.rmtree(workspace)

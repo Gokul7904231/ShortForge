@@ -195,6 +195,7 @@ export async function POST(request: NextRequest) {
       sha256: sha256Proof,
     });
   } catch (err: any) {
+    console.error("[Callback Error]", err);
     return NextResponse.json(
       { success: false, error: err.message || "Internal server error" },
       { status: 500 },
