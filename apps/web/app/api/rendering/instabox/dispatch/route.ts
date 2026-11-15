@@ -97,6 +97,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (body.action === "drain" || body.action === "undrain") {
+      if (!targetNodeId) {
+        return NextResponse.json(
+          { success: false, error: "targetNodeId required for drain/undrain action." },
+          { status: 400 },
+        );
+      }
+      const draining = body.action === "drain";
+      registry.setNodeDraining(targetNodeId, draining);
+      return NextResponse.json({
+        success: true,
+        action: body.action,
+        nodeId: targetNodeId,
+        isDraining: draining,
+        health: registry.getNodeHealth(targetNodeId),
+      });
+    }
+
     const durationSeconds = Math.max(1, Math.min(30, Number(body.duration || 2)));
     const jobId = body.jobId || `instabox-job-${targetNodeId || "fleet"}-${Date.now().toString(36)}`;
     const topic = body.topic || "ShortForge FactoryOS Distributed Render";
