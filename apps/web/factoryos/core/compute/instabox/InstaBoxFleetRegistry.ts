@@ -132,8 +132,10 @@ export class InstaBoxFleetRegistry {
     if (workerId) {
       const nodeId = parseInstaBoxNodeId(workerId);
       if (nodeId) {
-        const perWorkerEnvKey = `INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`;
-        const perWorkerSecret = process.env[perWorkerEnvKey]?.trim();
+        const perWorkerSecret = (
+          process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] ||
+          process.env[`INSTABOX_WORKER_SECRET_${nodeId}`]
+        )?.trim();
         if (perWorkerSecret) {
           try {
             const a = Buffer.from(cleanToken);
