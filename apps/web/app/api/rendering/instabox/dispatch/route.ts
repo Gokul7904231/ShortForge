@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
 
     // Resolve local physical CAS file path
     const cas = ContentAddressedStore.getInstance();
-    const localPhysicalPath = cas.resolvePath(artifactRef.uri);
+    const localPhysicalPath = artifactRef.uri;
 
     if (!fs.existsSync(localPhysicalPath)) {
       return NextResponse.json(
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
     const verifier = new RenderArtifactVerifier();
     const verifierResult = await verifier.verify({
       artifact: artifactRef,
-      approvedRoots: [cas.getStorageRoot(), process.cwd()],
+      approvedRoots: [cas.storageDir, process.cwd()],
       expected: {
         width: 1080,
         height: 1920,
