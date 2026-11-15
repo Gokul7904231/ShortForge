@@ -144,7 +144,20 @@ export async function POST(request: NextRequest) {
         localRenderIntent,
         targetNodeId,
       },
+      inputArtifacts: {
+        bundleId: `bundle_${jobId}`,
+        artifacts: [],
+        createdTimestamp: Date.now(),
+      },
+      requirements: {
+        workloadType: "RENDER",
+        gpuRequired: false,
+        minCpuCores: 2,
+        minMemoryMb: 4000,
+      },
+      priority: "HIGH",
       timeoutMs: 300_000,
+      createdAt: new Date().toISOString(),
     };
 
     const gateway = ComputeGateway.getInstance();
