@@ -64,10 +64,14 @@ export async function POST(request: NextRequest) {
     const customHeader = request.headers.get("x-instabox-secret") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "") || customHeader;
 
+    const body = await request.json().catch(() => ({}));
+    const targetNodeId = body.targetNodeId as InstaBoxWorkerNodeId | undefined;
+
     const isInternalValid =
       process.env.INTERNAL_API_SECRET_KEY &&
       token === process.env.INTERNAL_API_SECRET_KEY;
-    const isWorkerSecretValid = registry.authenticateWorker(token);
+    const workerId = body.workerId || (targetNodeId ? `instabox-${targetNodeId}` : undefined);
+    const isWorkerSecretValid = registry.authenticateWorker(token, workerId);
 
     if (!token || (!isInternalValid && !isWorkerSecretValid)) {
       return NextResponse.json(
@@ -75,9 +79,6 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       );
     }
-
-    const body = await request.json().catch(() => ({}));
-    const targetNodeId = body.targetNodeId as InstaBoxWorkerNodeId | undefined;
 
     if (targetNodeId && !isAllowedInstaBoxWorkerNode(targetNodeId)) {
       return NextResponse.json(
