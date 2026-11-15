@@ -68,10 +68,20 @@ export async function POST(request: NextRequest) {
     const targetNodeId = body.targetNodeId as InstaBoxWorkerNodeId | undefined;
 
     const isInternalValid =
-      process.env.INTERNAL_API_SECRET_KEY &&
+      Boolean(process.env.INTERNAL_API_SECRET_KEY) &&
       token === process.env.INTERNAL_API_SECRET_KEY;
     const workerId = body.workerId || (targetNodeId ? `instabox-${targetNodeId}` : undefined);
     const isWorkerSecretValid = registry.authenticateWorker(token, workerId);
+
+    console.log("[Dispatch Auth Debug]", {
+      tokenSnippet: token.substring(0, 10),
+      tokenLen: token.length,
+      workerId,
+      isWorkerSecretValid,
+      isInternalValid,
+      envFleetSecretSnippet: (process.env.INSTABOX_WORKER_SECRET || "").substring(0, 10),
+      envFleetSecretLen: (process.env.INSTABOX_WORKER_SECRET || "").length,
+    });
 
     if (!token || (!isInternalValid && !isWorkerSecretValid)) {
       return NextResponse.json(
