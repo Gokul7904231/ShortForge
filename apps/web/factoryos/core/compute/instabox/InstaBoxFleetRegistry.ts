@@ -11,6 +11,8 @@
  */
 
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import {
   INSTABOX_WORKER_NODE_IDS,
   INSTABOX_EXCLUDED_NODES,
@@ -59,12 +61,23 @@ export class InstaBoxFleetRegistry {
   private static instance: InstaBoxFleetRegistry | null = null;
   private readonly nodes = new Map<InstaBoxWorkerNodeId, InstaBoxNodeRecord>();
   private readonly cas = ContentAddressedStore.getInstance();
+  private readonly stateFilePath: string;
 
   public static readonly HEARTBEAT_DEGRADED_THRESHOLD_MS = 45_000; // 45 seconds (3 missed heartbeats)
   public static readonly HEARTBEAT_BLOCKED_THRESHOLD_MS = 90_000; // 90 seconds
   public static readonly DEFAULT_LEASE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
-  private constructor() {
+  private constructor(customStatePath?: string) {
+    this.stateFilePath =
+      customStatePath ||
+      process.env.INSTABOX_STATE_FILE ||
+      path.join(
+        process.cwd(),
+        "data",
+        "factoryos_state",
+        "instabox_fleet_state.json",
+      );
+
     for (const nodeId of INSTABOX_WORKER_NODE_IDS) {
       const workerId = formatInstaBoxWorkerId(nodeId);
       const provider = new InstaBoxComputeProvider(this, nodeId, workerId);
@@ -80,6 +93,104 @@ export class InstaBoxFleetRegistry {
         pendingJobs: [],
       });
     }
+
+    this.loadPersistedState();
+  }
+
+  private loadPersistedState(): void {
+    try {
+      if (fs.existsSync(this.stateFilePath)) {
+        const raw = fs.readFileSync(this.stateFilePath, "utf8");
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.nodes)) {
+          for (const nodeData of data.nodes) {
+            const record = this.nodes.get(nodeData.nodeId);
+            if (record) {
+              if (nodeData.metrics) record.metrics = nodeData.metrics;
+              if (nodeData.lastHeartbeatAt) record.lastHeartbeatAt = nodeData.lastHeartbeatAt;
+              if (typeof nodeData.consecutiveFailures === "number") {
+                record.consecutiveFailures = nodeData.consecutiveFailures;
+              }
+              if (typeof nodeData.totalAttempts === "number") {
+                record.totalAttempts = nodeData.totalAttempts;
+              }
+              if (typeof nodeData.successfulExecutions === "number") {
+                record.successfulExecutions = nodeData.successfulExecutions;
+              }
+              if (typeof nodeData.failedExecutions === "number") {
+                record.failedExecutions = nodeData.failedExecutions;
+              }
+              if (typeof nodeData.isDraining === "boolean") {
+                record.isDraining = nodeData.isDraining;
+              }
+              if (typeof nodeData.adminDraining === "boolean") {
+                record.adminDraining = nodeData.adminDraining;
+              }
+              if (nodeData.activeLease && nodeData.activeLease.leaseExpiresAt) {
+                const expiresAt = new Date(nodeData.activeLease.leaseExpiresAt).getTime();
+                if (Date.now() < expiresAt) {
+                  record.activeLease = {
+                    ...nodeData.activeLease,
+                    resolveReceipt: () => {},
+                    rejectReceipt: () => {},
+                  };
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // Graceful fallback on corrupt state
+    }
+  }
+
+  private persistState(): void {
+    try {
+      const dir = path.dirname(this.stateFilePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      const nodesData = Array.from(this.nodes.values()).map((n) => ({
+        nodeId: n.nodeId,
+        workerId: n.workerId,
+        metrics: n.metrics,
+        lastHeartbeatAt: n.lastHeartbeatAt,
+        consecutiveFailures: n.consecutiveFailures,
+        totalAttempts: n.totalAttempts,
+        successfulExecutions: n.successfulExecutions,
+        failedExecutions: n.failedExecutions,
+        isDraining: n.isDraining,
+        adminDraining: n.adminDraining,
+        activeLease: n.activeLease
+          ? {
+              jobId: n.activeLease.jobId,
+              executionId: n.activeLease.executionId,
+              executionToken: n.activeLease.executionToken,
+              attemptId: n.activeLease.attemptId,
+              workerId: n.activeLease.workerId,
+              nodeId: n.activeLease.nodeId,
+              claimedAt: n.activeLease.claimedAt,
+              lastProgressAt: n.activeLease.lastProgressAt,
+              leaseExpiresAt: n.activeLease.leaseExpiresAt,
+              timeoutMs: n.activeLease.timeoutMs,
+              job: n.activeLease.job,
+            }
+          : undefined,
+      }));
+
+      const payload = {
+        updatedAt: new Date().toISOString(),
+        nodes: nodesData,
+      };
+
+      const tmp = `${this.stateFilePath}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), "utf8");
+      fs.renameSync(tmp, this.stateFilePath);
+    } catch {
+      // Best-effort atomic persist
+    }
   }
 
   public static getInstance(): InstaBoxFleetRegistry {
@@ -91,10 +202,18 @@ export class InstaBoxFleetRegistry {
     return globalObj[globalKey];
   }
 
-  public static resetInstanceForTesting(): InstaBoxFleetRegistry {
+  public static resetInstanceForTesting(customStatePath?: string): InstaBoxFleetRegistry {
     const globalKey = Symbol.for("factoryos.instabox.fleet_registry");
     const globalObj = globalThis as unknown as { [key: symbol]: InstaBoxFleetRegistry };
-    globalObj[globalKey] = new InstaBoxFleetRegistry();
+    const stateFile =
+      customStatePath ||
+      path.join(
+        process.cwd(),
+        "data",
+        "factoryos_state",
+        `test_fleet_state_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.json`,
+      );
+    globalObj[globalKey] = new InstaBoxFleetRegistry(stateFile);
     return globalObj[globalKey];
   }
 
@@ -140,17 +259,15 @@ export class InstaBoxFleetRegistry {
           try {
             const a = Buffer.from(cleanToken);
             const b = Buffer.from(perWorkerSecret);
-            if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
-              return true;
-            }
+            return a.length === b.length && crypto.timingSafeEqual(a, b);
           } catch {
-            // fall through to fleet credentials
+            return false;
           }
         }
       }
     }
 
-    // 2. Check shared fleet credentials
+    // 2. Check shared fleet credentials (only if per-worker secret is not configured)
     const expected = (
       process.env.INSTABOX_WORKER_SECRET ||
       process.env.RENDER_WORKER_SECRET ||
@@ -197,6 +314,8 @@ export class InstaBoxFleetRegistry {
       record.isDraining = false;
     }
 
+    this.persistState();
+
     return {
       acknowledged: true,
       action: record.adminDraining ? "DRAIN" : "POLL",
@@ -208,6 +327,7 @@ export class InstaBoxFleetRegistry {
     if (record) {
       record.isDraining = draining;
       record.adminDraining = draining;
+      this.persistState();
     }
   }
 
@@ -420,6 +540,7 @@ export class InstaBoxFleetRegistry {
     };
 
     nextPending.onProgress?.(`Job ${nextPending.job.jobId} claimed by InstaBox worker ${workerId}.`);
+    this.persistState();
 
     return {
       claimed: true,
@@ -457,6 +578,8 @@ export class InstaBoxFleetRegistry {
     lease.onProgress?.(
       `[${workerId}] Progress ${progressPercent}%: ${message || "rendering"}`,
     );
+
+    this.persistState();
 
     return true;
   }
@@ -533,6 +656,7 @@ export class InstaBoxFleetRegistry {
     record.activeLease = undefined;
     record.successfulExecutions++;
     record.consecutiveFailures = 0;
+    this.persistState();
 
     lease.resolveReceipt(receipt);
     return receipt;
@@ -579,6 +703,7 @@ export class InstaBoxFleetRegistry {
     record.activeLease = undefined;
     record.failedExecutions++;
     record.consecutiveFailures++;
+    this.persistState();
 
     lease.resolveReceipt(receipt);
     return receipt;

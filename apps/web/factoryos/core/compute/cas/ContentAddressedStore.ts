@@ -39,6 +39,10 @@ export class ContentAddressedStore {
     return globalObj[globalKey];
   }
 
+  public getStorageDir(): string {
+    return this.storageDir;
+  }
+
   /**
    * Rebuilds in-memory index from physical disk truth on startup/restart
    */

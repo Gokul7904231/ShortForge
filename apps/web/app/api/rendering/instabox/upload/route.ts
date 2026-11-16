@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
             throw new Error(`Upload payload exceeds maximum allowable limit (${MAX_UPLOAD_BYTES} bytes).`);
           }
           hash.update(value);
-          fileWriteStream.write(Buffer.from(value));
+          if (!fileWriteStream.write(Buffer.from(value))) {
+            await new Promise((r) => fileWriteStream.once("drain", r));
+          }
         }
       }
     } finally {

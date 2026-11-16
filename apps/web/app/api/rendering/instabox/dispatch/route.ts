@@ -73,16 +73,6 @@ export async function POST(request: NextRequest) {
     const workerId = body.workerId || (targetNodeId ? `instabox-${targetNodeId}` : undefined);
     const isWorkerSecretValid = registry.authenticateWorker(token, workerId);
 
-    console.log("[Dispatch Auth Debug]", {
-      tokenSnippet: token.substring(0, 10),
-      tokenLen: token.length,
-      workerId,
-      isWorkerSecretValid,
-      isInternalValid,
-      envFleetSecretSnippet: (process.env.INSTABOX_WORKER_SECRET || "").substring(0, 10),
-      envFleetSecretLen: (process.env.INSTABOX_WORKER_SECRET || "").length,
-    });
-
     if (!token || (!isInternalValid && !isWorkerSecretValid)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Invalid control plane dispatch secret." },
@@ -119,35 +109,51 @@ export async function POST(request: NextRequest) {
     const jobId = body.jobId || `instabox-job-${targetNodeId || "fleet"}-${Date.now().toString(36)}`;
     const topic = body.topic || "ShortForge FactoryOS Distributed Render";
 
+    const nodeIndex = targetNodeId ? parseInt(targetNodeId.replace(/\D/g, "") || "1", 10) : 1;
+    const audioFreq = 220 + ((nodeIndex * 55) % 880);
+
     const localRenderIntent = body.localRenderIntent || {
+      project_id: `proj_${jobId}`,
+      title: topic,
       output: {
         width: 1080,
         height: 1920,
         fps: 30,
         duration_seconds: durationSeconds,
-        video_codec: "h264",
+        video_codec: "libx264",
         audio_codec: "aac",
       },
+      safe_area: { top: 160, bottom: 320, left: 60, right: 120 },
       scenes: [
         {
-          id: "scene_001",
+          scene_id: "scene_01",
+          template_id: "facts.rapid-facts.v1",
+          narration_text: topic,
           duration_seconds: durationSeconds,
-          recipe_id: "KINETIC_HEADLINE",
-          headline: topic,
-          subtext: `FactoryOS InstaBox Node: ${targetNodeId || "Distributed Fleet"}`,
-          safe_area: { top: 120, bottom: 160 },
+          shots: [
+            {
+              id: "shot_01",
+              recipe_id: "KINETIC_HOOK",
+              start_seconds: 0.0,
+              duration_seconds: durationSeconds,
+              props: {
+                headline: topic,
+                subtext: `Verified on ${targetNodeId || "InstaBox Fleet"}`,
+                background_type: nodeIndex % 2 === 0 ? "DEEP_INDIGO" : "AMBER_HISTORY",
+              },
+            },
+          ],
+          audio_tracks: [
+            {
+              track_id: `audio_tone_${nodeIndex}`,
+              frequency: audioFreq,
+              duration_seconds: durationSeconds,
+              volume: 0.8,
+              is_narration: true,
+            },
+          ],
         },
       ],
-      audio: {
-        tracks: [
-          {
-            type: "TONE",
-            frequency: 440,
-            duration_seconds: durationSeconds,
-            volume: 0.5,
-          },
-        ],
-      },
     };
 
     const computeJob: ComputeJob = {
@@ -231,16 +237,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Compute independent SHA-256
-    const fileBytes = fs.readFileSync(localPhysicalPath);
-    const computedSha256 = crypto.createHash("sha256").update(fileBytes).digest("hex");
+    // Compute independent SHA-256 via streaming to avoid loading large files into RAM
+    const computedSha256 = await new Promise<string>((resolve, reject) => {
+      const hash = crypto.createHash("sha256");
+      const stream = fs.createReadStream(localPhysicalPath);
+      stream.on("data", (chunk) => hash.update(chunk));
+      stream.on("end", () => resolve(hash.digest("hex")));
+      stream.on("error", (err) => reject(err));
+    });
     const sha256Match = computedSha256 === artifactRef.sha256;
 
     // Run RenderArtifactVerifier
     const verifier = new RenderArtifactVerifier();
     const verifierResult = await verifier.verify({
       artifact: artifactRef,
-      approvedRoots: [cas.storageDir, process.cwd()],
+      approvedRoots: [cas.getStorageDir(), process.cwd()],
       expected: {
         width: 1080,
         height: 1920,
