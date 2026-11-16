@@ -114,9 +114,10 @@ describe("InstaBox Fleet Integration & Physical Verification", () => {
 
   // 2. Invalid worker authentication
   it("Scenario 2: rejects invalid worker authentication", () => {
-    expect(registry.authenticateWorker("wrong-secret")).toBe(false);
-    expect(registry.authenticateWorker("")).toBe(false);
-    expect(registry.authenticateWorker(TEST_SECRET)).toBe(true);
+    expect(registry.authenticateWorker("wrong-secret", "instabox-box2")).toBe(false);
+    expect(registry.authenticateWorker("", "instabox-box2")).toBe(false);
+    expect(registry.authenticateWorker(TEST_SECRET)).toBe(false); // missing workerId fails closed
+    expect(registry.authenticateWorker(TEST_SECRET, "instabox-box2")).toBe(true);
   });
 
   // 3. Worker health degradation
