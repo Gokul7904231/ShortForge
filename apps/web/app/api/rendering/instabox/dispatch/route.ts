@@ -70,10 +70,12 @@ export async function POST(request: NextRequest) {
     const isInternalValid =
       Boolean(process.env.INTERNAL_API_SECRET_KEY) &&
       token === process.env.INTERNAL_API_SECRET_KEY;
-    const workerId = body.workerId || (targetNodeId ? `instabox-${targetNodeId}` : undefined);
-    const isWorkerSecretValid = registry.authenticateWorker(token, workerId);
+    const isFleetSecretValid = registry.authenticateWorker(token);
+    const isWorkerSecretValid = body.workerId
+      ? registry.authenticateWorker(token, body.workerId)
+      : false;
 
-    if (!token || (!isInternalValid && !isWorkerSecretValid)) {
+    if (!token || (!isInternalValid && !isFleetSecretValid && !isWorkerSecretValid)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Invalid control plane dispatch secret." },
         { status: 401 },
