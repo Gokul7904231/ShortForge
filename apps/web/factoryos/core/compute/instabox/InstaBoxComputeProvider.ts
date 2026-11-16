@@ -33,8 +33,11 @@ export class InstaBoxComputeProvider extends BaseComputeProvider {
   }
 
   public validateConfiguration(): ProviderConfigValidationResult {
-    const isConfigured = this.registry.isCredentialConfigured();
-    const requiredKeys = ["INSTABOX_WORKER_SECRET"];
+    const isConfigured = this.registry.isCredentialConfigured(this.nodeId);
+    const requiredKeys = [
+      `INSTABOX_WORKER_SECRET_${this.nodeId.toUpperCase()}`,
+      "INSTABOX_WORKER_SECRET",
+    ];
     const missingKeys = isConfigured ? [] : requiredKeys;
 
     return {

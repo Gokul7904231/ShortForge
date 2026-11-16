@@ -5,7 +5,7 @@ import time
 import os
 import sys
 
-FLEET_SECRET = os.environ.get("INSTABOX_FLEET_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY") or os.environ.get("INSTABOX_WORKER_SECRET")
+FLEET_SECRET = os.environ.get("INSTABOX_CONTROL_PLANE_ADMIN_SECRET") or os.environ.get("INSTABOX_FLEET_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY")
 if not FLEET_SECRET:
     print("ERROR: INSTABOX_FLEET_SECRET environment variable is required to run concurrency benchmark.", file=sys.stderr)
     sys.exit(1)
@@ -36,7 +36,7 @@ def submit_node_render(node, custom_payload=None):
         "targetNodeId": node,
         "jobId": job_id,
         "topic": prof["topic"],
-        "duration": 2,
+        "duration": 4.5,
         "localRenderIntent": {
             "project_id": f"proj_{job_id}",
             "title": prof["topic"],
@@ -47,24 +47,41 @@ def submit_node_render(node, custom_payload=None):
                     "scene_id": "scene_01",
                     "template_id": "facts.rapid-facts.v1",
                     "narration_text": prof["topic"],
-                    "duration_seconds": 2.0,
+                    "duration_seconds": 1.5,
                     "shots": [
                         {
                             "id": "shot_01",
                             "recipe_id": "KINETIC_HOOK",
                             "start_seconds": 0.0,
-                            "duration_seconds": 1.0,
+                            "duration_seconds": 1.5,
                             "props": {
                                 "headline": prof["topic"],
                                 "subtext": f"Rendered on {node.upper()}",
                                 "background_type": prof["bg"]
                             }
-                        },
+                        }
+                    ],
+                    "audio_tracks": [
+                        {
+                            "track_id": f"audio_hook_{node}",
+                            "frequency": prof["freq"],
+                            "duration_seconds": 1.5,
+                            "volume": 0.8,
+                            "is_narration": True
+                        }
+                    ]
+                },
+                {
+                    "scene_id": "scene_02",
+                    "template_id": "facts.rapid-facts.v1",
+                    "narration_text": f"{prof['num']} {prof['lbl']}",
+                    "duration_seconds": 1.5,
+                    "shots": [
                         {
                             "id": "shot_02",
                             "recipe_id": "BIG_NUMBER",
-                            "start_seconds": 1.0,
-                            "duration_seconds": 1.0,
+                            "start_seconds": 0.0,
+                            "duration_seconds": 1.5,
                             "props": {
                                 "number": prof["num"],
                                 "label": prof["lbl"],
@@ -74,9 +91,37 @@ def submit_node_render(node, custom_payload=None):
                     ],
                     "audio_tracks": [
                         {
-                            "track_id": f"audio_{node}",
-                            "frequency": prof["freq"],
-                            "duration_seconds": 2.0,
+                            "track_id": f"audio_num_{node}",
+                            "frequency": prof["freq"] + 55,
+                            "duration_seconds": 1.5,
+                            "volume": 0.8,
+                            "is_narration": True
+                        }
+                    ]
+                },
+                {
+                    "scene_id": "scene_03",
+                    "template_id": "facts.rapid-facts.v1",
+                    "narration_text": "Follow for daily verified intelligence",
+                    "duration_seconds": 1.5,
+                    "shots": [
+                        {
+                            "id": "shot_03",
+                            "recipe_id": "OUTRO_CTA",
+                            "start_seconds": 0.0,
+                            "duration_seconds": 1.5,
+                            "props": {
+                                "cta": "FOLLOW FOR MORE",
+                                "subtitle": f"Verified on FactoryOS {node.upper()}",
+                                "background_type": prof["bg"]
+                            }
+                        }
+                    ],
+                    "audio_tracks": [
+                        {
+                            "track_id": f"audio_outro_{node}",
+                            "frequency": prof["freq"] + 110,
+                            "duration_seconds": 1.5,
                             "volume": 0.8,
                             "is_narration": True
                         }

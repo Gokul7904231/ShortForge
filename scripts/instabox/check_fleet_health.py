@@ -3,7 +3,7 @@ import sys
 import json
 import urllib.request
 
-FLEET_SECRET = os.environ.get("INSTABOX_FLEET_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY") or os.environ.get("INSTABOX_WORKER_SECRET")
+FLEET_SECRET = os.environ.get("INSTABOX_CONTROL_PLANE_ADMIN_SECRET") or os.environ.get("INSTABOX_FLEET_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY")
 if not FLEET_SECRET:
     print("ERROR: INSTABOX_FLEET_SECRET environment variable is required to query fleet health.", file=sys.stderr)
     sys.exit(1)

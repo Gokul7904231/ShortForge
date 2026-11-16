@@ -205,6 +205,14 @@ export class InstaBoxFleetRegistry {
   public static resetInstanceForTesting(customStatePath?: string): InstaBoxFleetRegistry {
     const globalKey = Symbol.for("factoryos.instabox.fleet_registry");
     const globalObj = globalThis as unknown as { [key: symbol]: InstaBoxFleetRegistry };
+    if (globalObj[globalKey]) {
+      for (const node of globalObj[globalKey].nodes.values()) {
+        for (const pending of node.pendingJobs) {
+          clearTimeout(pending.timeoutHandle);
+        }
+        node.pendingJobs = [];
+      }
+    }
     const stateFile =
       customStatePath ||
       path.join(
@@ -234,12 +242,56 @@ export class InstaBoxFleetRegistry {
     return Array.from(this.nodes.values()).map((n) => n.provider);
   }
 
-  public isCredentialConfigured(): boolean {
-    return Boolean(
+  public isCredentialConfigured(nodeId?: InstaBoxWorkerNodeId): boolean {
+    if (nodeId) {
+      const perWorker = (
+        process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] ||
+        process.env[`INSTABOX_WORKER_SECRET_${nodeId}`]
+      )?.trim();
+      if (perWorker && perWorker.length >= 16) return true;
+      const general = (
+        process.env.INSTABOX_WORKER_SECRET ||
+        process.env.RENDER_WORKER_SECRET
+      )?.trim();
+      return Boolean(general && general.length >= 16);
+    }
+
+    const general = (
       process.env.INSTABOX_WORKER_SECRET ||
-        process.env.RENDER_WORKER_SECRET ||
-        process.env.INTERNAL_API_SECRET_KEY,
-    );
+      process.env.RENDER_WORKER_SECRET
+    )?.trim();
+    if (general && general.length >= 16) return true;
+
+    // Check if all configured worker nodes have secrets
+    return INSTABOX_WORKER_NODE_IDS.every((id) => {
+      const s = (
+        process.env[`INSTABOX_WORKER_SECRET_${id.toUpperCase()}`] ||
+        process.env[`INSTABOX_WORKER_SECRET_${id}`]
+      )?.trim();
+      return Boolean(s && s.length >= 16);
+    });
+  }
+
+  public authenticateControlPlaneAdmin(token: string): boolean {
+    if (!token) return false;
+    const cleanToken = token.trim();
+    if (!cleanToken) return false;
+
+    const adminSecret = (
+      process.env.INSTABOX_CONTROL_PLANE_ADMIN_SECRET ||
+      process.env.INTERNAL_API_SECRET_KEY ||
+      ""
+    ).trim();
+
+    if (!adminSecret) return false;
+
+    try {
+      const a = Buffer.from(cleanToken);
+      const b = Buffer.from(adminSecret);
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+      return false;
+    }
   }
 
   public authenticateWorker(token: string, workerId?: string): boolean {
@@ -247,31 +299,34 @@ export class InstaBoxFleetRegistry {
     const cleanToken = token.trim();
     if (!cleanToken) return false;
 
-    // 1. Check per-worker specific secret if workerId is supplied
-    if (workerId) {
-      const nodeId = parseInstaBoxNodeId(workerId);
-      if (nodeId) {
-        const perWorkerSecret = (
-          process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] ||
-          process.env[`INSTABOX_WORKER_SECRET_${nodeId}`]
-        )?.trim();
-        if (perWorkerSecret) {
-          try {
-            const a = Buffer.from(cleanToken);
-            const b = Buffer.from(perWorkerSecret);
-            return a.length === b.length && crypto.timingSafeEqual(a, b);
-          } catch {
-            return false;
-          }
-        }
+    // Strict worker identity: workerId is required and must map to an allowed worker node
+    if (!workerId) return false;
+
+    const nodeId = parseInstaBoxNodeId(workerId);
+    if (!nodeId || !isAllowedInstaBoxWorkerNode(nodeId)) {
+      return false; // box9 or unregistered node fails closed
+    }
+
+    // 1. Check per-worker specific secret if configured
+    const perWorkerSecret = (
+      process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] ||
+      process.env[`INSTABOX_WORKER_SECRET_${nodeId}`]
+    )?.trim();
+
+    if (perWorkerSecret) {
+      try {
+        const a = Buffer.from(cleanToken);
+        const b = Buffer.from(perWorkerSecret);
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+      } catch {
+        return false;
       }
     }
 
-    // 2. Check shared fleet credentials (only if per-worker secret is not configured)
+    // 2. Check fallback general worker credentials (only worker credentials, never admin credentials)
     const expected = (
       process.env.INSTABOX_WORKER_SECRET ||
       process.env.RENDER_WORKER_SECRET ||
-      process.env.INTERNAL_API_SECRET_KEY ||
       ""
     ).trim();
     if (!expected) return false;

@@ -67,17 +67,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const targetNodeId = body.targetNodeId as InstaBoxWorkerNodeId | undefined;
 
-    const isInternalValid =
-      Boolean(process.env.INTERNAL_API_SECRET_KEY) &&
-      token === process.env.INTERNAL_API_SECRET_KEY;
-    const isFleetSecretValid = registry.authenticateWorker(token);
-    const isWorkerSecretValid = body.workerId
-      ? registry.authenticateWorker(token, body.workerId)
-      : false;
-
-    if (!token || (!isInternalValid && !isFleetSecretValid && !isWorkerSecretValid)) {
+    // Strict control plane admin authentication
+    const isAdminValid = registry.authenticateControlPlaneAdmin(token);
+    if (!token || !isAdminValid) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized: Invalid control plane dispatch secret." },
+        { success: false, error: "Unauthorized: Invalid control plane admin dispatch secret." },
         { status: 401 },
       );
     }
@@ -248,8 +242,20 @@ export async function POST(request: NextRequest) {
       stream.on("error", (err) => reject(err));
     });
     const sha256Match = computedSha256 === artifactRef.sha256;
+    if (!sha256Match) {
+      return NextResponse.json(
+        {
+          success: false,
+          receipt,
+          error: `Physical CAS SHA-256 digest mismatch: expected ${artifactRef.sha256}, got ${computedSha256}`,
+          computedSha256,
+          expectedSha256: artifactRef.sha256,
+        },
+        { status: 422 },
+      );
+    }
 
-    // Run RenderArtifactVerifier
+    // Run RenderArtifactVerifier (F06)
     const verifier = new RenderArtifactVerifier();
     const verifierResult = await verifier.verify({
       artifact: artifactRef,
@@ -264,13 +270,38 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (verifierResult.status !== "PASS") {
+      return NextResponse.json(
+        {
+          success: false,
+          receipt,
+          verifierResult,
+          error: `F06 physical container verification rejected: ${verifierResult.failureReason || "Container check failed"}`,
+        },
+        { status: 422 },
+      );
+    }
+
     // Run F07 VerificationEngine Media Audit
+    const sceneCount = Array.isArray(localRenderIntent.scenes) ? localRenderIntent.scenes.length : 1;
     const f07Audit = await VerificationEngine.auditMediaArtifact({
       jobId,
       videoUrl: artifactRef.uri,
       scriptText: topic,
-      sceneCount: 1,
+      sceneCount,
     });
+
+    if (!f07Audit.passed || f07Audit.overallStatus !== "PASSED") {
+      return NextResponse.json(
+        {
+          success: false,
+          receipt,
+          f07Audit,
+          error: `F07 media verification gate failed: ${f07Audit.failures?.join("; ") || "Hard gate check failed"}`,
+        },
+        { status: 422 },
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -280,7 +311,7 @@ export async function POST(request: NextRequest) {
         ...artifactRef,
         localPhysicalPath,
         computedSha256,
-        sha256Match,
+        sha256Match: true,
       },
       verifierResult,
       f07Audit: {
