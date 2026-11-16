@@ -44,24 +44,36 @@ The following backups were created on `box1` prior to any code or service modifi
 
 ---
 
-## 3. Unit & Integration Test Verification (Executed on `box1`)
+## 3. Test & Diagnostic Verification Breakdown
 
-All test suites executed against live code on `box1` with Vitest passed 100%:
+> [!IMPORTANT]
+> **Production Acceptance Status:** `PRODUCTION_BLOCKED`
+> **Physical Worker Acceptance Status:** `NO PHYSICAL ACCEPTANCE ACHIEVED`
+> All tests below were executed as **Local Simulations** or **Local Route Integration Tests** running via Vitest directly on controller `box1`. No worker machine was dispatched via live physical SSH execution for these tests. Live physical workers currently show heartbeat timeout (`BLOCKED`).
 
-| Test Suite | Tests | Result | Notes |
-| :--- | :--- | :--- | :--- |
-| `apps/web/factoryos/tests/instabox-security-matrix.test.ts` | 10 | **PASSED** | Admin/worker secret segregation, per-worker secrets, box9 rejection |
-| `apps/web/factoryos/tests/instabox-verification-gates.test.ts` | 3 | **PASSED** | Corrupt container, missing artifact, SHA-256 mismatch rejection |
-| `apps/web/factoryos/tests/instabox-box2-pilot-acceptance.test.ts` | 1 | **PASSED** | End-to-end pilot render, F06 verification, F07 media audit |
-| `apps/web/factoryos/tests/instabox-render-provider.test.ts` | 18 | **PASSED** | Health degradation, atomic claims, timeout recovery, stale callbacks |
+### Diagnostic & Simulation Results (Executed on `box1`):
+
+| Test Suite | Tests | Category | Result | Description / Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| `factoryos/tests/instabox-security-matrix.test.ts` | 10 | **Local Unit / Security Matrix** | **PASSED** | Strict admin/worker secret segregation, per-worker credential isolation, removal of generic fallback, `box9` permanent exclusion |
+| `factoryos/tests/instabox-callback-fencing.test.ts` | 8 | **Local Route Fencing** | **PASSED** | Missing/non-integer attemptId rejected (400), lower attempt rejected (409 stale), higher attempt rejected (409), expired lease rejected (409), duplicate callback rejected (409) |
+| `factoryos/tests/instabox-verification-gates.test.ts` | 3 | **Local Quality Gate** | **PASSED** | Corrupt container, missing physical artifact, SHA-256 mismatch rejection |
+| `factoryos/tests/instabox-box2-pilot-acceptance.test.ts` | 1 | **Local FFmpeg Integration Simulation** | **PASSED** | Simulates Box2 lifecycle via local process FFmpeg generation and authoritative F07 audit. **NOT a physical worker test.** |
+| `factoryos/tests/instabox-render-provider.test.ts` | 18 | **Local Compute Fabric Integration** | **PASSED** | Health degradation, atomic claims, timeout recovery, stale callbacks |
+
+### Infrastructure Access Log:
+* **Controller `box1` SSH Access:** Attempt 1 failed with transient host wake-up latency (`machine is waking up`). Subsequent retry succeeded with 15s connection timeout.
+* **Storage Mounts:** Confirmed persistent storage at `/data` (13GB available) and CAS at `/data/workspace/ShortForge/apps/web/data/cas_storage`.
+* **Worker Service State:** Worker nodes `box2`–`box13` (excl. `box9`) are running existing service processes but are currently reporting `BLOCKED` due to heartbeat timeouts ($>300$s without heartbeat). Direct execution without operator-approved service update is blocked.
 
 ---
 
 ## 4. Current State & Safety Hold Points
 
-Under operator safety rules, the following actions are strictly staged and await operator confirmation:
+* **Production Acceptance State:** `PRODUCTION_BLOCKED`
+* **Rationale:** While all code-level security hardening, strict per-worker credential isolation, callback fencing, and multi-scene verification gates are implemented and pass 100% of local integration tests on `box1`, live physical acceptance is held pending operator approval for service restarts, credential provisioning, and canary deployment.
 * **Service Restarts:** Neither `shortforge-controlplane.service` on `box1` nor `instabox-worker.service` on worker nodes has been restarted.
-* **Live Fleet State:** No live fleet credentials rotated, no CAS artifacts deleted, no active leases cleared.
+* **Live Fleet State:** No live fleet credentials rotated, no CAS artifacts deleted, no active leases cleared. Live worker nodes remain in `BLOCKED` heartbeat-timeout status.
 
 ---
 

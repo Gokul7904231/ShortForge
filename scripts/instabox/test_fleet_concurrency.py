@@ -143,22 +143,36 @@ def submit_node_render(node, custom_payload=None):
         with urllib.request.urlopen(req, timeout=180) as resp:
             data = json.loads(resp.read().decode())
             dur = time.time() - t0
-            receipt = data.get("receipt", {})
-            artifact = data.get("artifact", {})
-            f07 = data.get("f07Audit", {})
+            receipt = data.get("receipt") or {}
+            artifact = data.get("artifact") or {}
+            verifier = data.get("verifierResult") or {}
+            f07 = data.get("f07Audit") or {}
+            output_artifacts = receipt.get("outputArtifacts") or []
+            first_output = output_artifacts[0] if output_artifacts else {}
+
+            cas_uri = artifact.get("uri") or artifact.get("localPhysicalPath") or first_output.get("uri")
+            byte_length = artifact.get("byteLength") or first_output.get("byteLength") or 0
+            computed_sha256 = artifact.get("computedSha256") or artifact.get("sha256") or first_output.get("sha256")
+            provider_id = receipt.get("providerId")
+
             return {
                 "node": node,
                 "jobId": payload["jobId"],
-                "success": data.get("success"),
+                "success": bool(data.get("success")),
                 "status": receipt.get("status"),
+                "workerId": provider_id,
                 "receiptId": receipt.get("receiptId"),
-                "executionDurationMs": receipt.get("durationMs"),
+                "executionDurationMs": (receipt.get("metrics") or {}).get("totalTimeMs"),
+                "f06Status": verifier.get("status"),
+                "f07Passed": bool(f07.get("passed")),
+                "f07OverallStatus": f07.get("overallStatus"),
                 "f07Score": f07.get("overallScore"),
-                "f07HardGates": f07.get("hardGates"),
-                "f07Passed": f07.get("passed"),
-                "sha256": artifact.get("computedSha256"),
-                "casUri": artifact.get("casUri"),
-                "sizeBytes": artifact.get("sizeBytes"),
+                "f07HardGates": f07.get("hardGates") or {},
+                "sha256": computed_sha256,
+                "sha256Match": artifact.get("sha256Match", False),
+                "casUri": cas_uri,
+                "localPhysicalPath": artifact.get("localPhysicalPath"),
+                "byteLength": byte_length,
                 "roundtripDurationSec": round(dur, 2)
             }
     except Exception as e:
@@ -185,24 +199,104 @@ if __name__ == "__main__":
             res = future.result()
             results.append(res)
             if res.get("success"):
-                print(f"[{res['node']}] OK ({res['roundtripDurationSec']}s) | status={res['status']} | F07={res['f07Score']} | sha256={str(res['sha256'])[:16]}... | receipt={res['receiptId']}", flush=True)
+                print(f"[{res['node']}] OK ({res['roundtripDurationSec']}s) | status={res['status']} | worker={res.get('workerId')} | F06={res.get('f06Status')} | F07_passed={res.get('f07Passed')} (score={res.get('f07Score')}) | sha256={str(res.get('sha256'))[:16]}... | bytes={res.get('byteLength')} | receipt={res.get('receiptId')}", flush=True)
             else:
                 print(f"[{res['node']}] FAILED ({res['roundtripDurationSec']}s) | error={res.get('error')}", flush=True)
 
     wall_total = round(time.time() - wall_start, 2)
     print("\n==================================================================", flush=True)
-    print("=== Fleet Concurrency Test Complete ===", flush=True)
-    print(f"Total Dispatched: {len(NODES)} nodes", flush=True)
-    all_success = all(r.get("success") and r.get("status") == "COMPLETED" and r.get("f07Score", 0) >= 90 for r in results)
-    print(f"All 11 Nodes Succeeded & Passed F07: {all_success}", flush=True)
+    print("=== Fleet Concurrency Acceptance Verification ===", flush=True)
+    print(f"Total Dispatched: {len(NODES)} nodes | Received: {len(results)} results", flush=True)
 
+    passed_all_conditions = True
+    failure_reasons = []
+
+    # 1. Exactly eleven results
+    if len(results) != len(NODES):
+        passed_all_conditions = False
+        failure_reasons.append(f"Expected exactly {len(NODES)} results, got {len(results)}")
+
+    # 2. Eleven distinct physical worker identities
+    worker_ids = [r.get("workerId") for r in results if r.get("workerId")]
+    expected_workers = {f"instabox-{node}" for node in NODES}
+    actual_workers = set(worker_ids)
+    if len(actual_workers) != len(NODES) or actual_workers != expected_workers:
+        passed_all_conditions = False
+        failure_reasons.append(f"Worker identities mismatch. Expected {expected_workers}, got {actual_workers}")
+
+    # 3. All returned success: true and status: COMPLETED
+    non_completed = [r["node"] for r in results if not r.get("success") or r.get("status") != "COMPLETED"]
+    if non_completed:
+        passed_all_conditions = False
+        failure_reasons.append(f"Nodes failed execution: {non_completed}")
+
+    # 4. F06 PASS for every artifact
+    f06_failures = [r["node"] for r in results if r.get("f06Status") != "PASS"]
+    if f06_failures:
+        passed_all_conditions = False
+        failure_reasons.append(f"F06 container verification failed for nodes: {f06_failures}")
+
+    # 5. F07 passed for every artifact (do not confuse score with pass)
+    f07_failures = [r["node"] for r in results if not r.get("f07Passed") or r.get("f07OverallStatus") != "PASSED"]
+    if f07_failures:
+        passed_all_conditions = False
+        failure_reasons.append(f"F07 media verification gate failed for nodes: {f07_failures}")
+
+    # 6. All nine hard gates passed for every artifact
+    REQUIRED_HARD_GATES = [
+        "artifactExists",
+        "validContainer",
+        "videoStreamPresent",
+        "audioStreamPresent",
+        "exact9x16Geometry",
+        "compliantCodecs",
+        "durationWithinBounds",
+        "audioVideoSyncValid",
+        "decodeSmokePassed"
+    ]
+    gate_failures = []
+    for r in results:
+        node_gates = r.get("f07HardGates") or {}
+        missing_gates = [g for g in REQUIRED_HARD_GATES if not node_gates.get(g)]
+        if missing_gates:
+            gate_failures.append(f"{r['node']} missing: {missing_gates}")
+    if gate_failures:
+        passed_all_conditions = False
+        failure_reasons.append(f"F07 hard gate failures: {gate_failures}")
+
+    # 7. Eleven non-empty SHA-256 digests
+    empty_hashes = [r["node"] for r in results if not r.get("sha256") or len(str(r.get("sha256"))) != 64]
+    if empty_hashes:
+        passed_all_conditions = False
+        failure_reasons.append(f"Invalid/empty SHA-256 digests on nodes: {empty_hashes}")
+
+    # 8. Eleven distinct SHA-256 digests
     sha256_set = set(r.get("sha256") for r in results if r.get("sha256"))
-    unique_hashes = len(sha256_set) == len(NODES)
-    print(f"All 11 Nodes Produced Unique SHA-256 Hashes: {unique_hashes} ({len(sha256_set)} unique of {len(NODES)})", flush=True)
-    if not unique_hashes:
-        print("ERROR: Duplicate SHA-256 hashes detected across fleet nodes!", file=sys.stderr)
+    if len(sha256_set) != len(NODES):
+        passed_all_conditions = False
+        failure_reasons.append(f"Duplicate SHA-256 digests detected! ({len(sha256_set)} unique of {len(NODES)})")
 
-    print(f"Total Concurrency Wall-Clock: {wall_total}s", flush=True)
+    # 9. Verify actual CAS URI and non-zero byte length
+    invalid_artifacts = [r["node"] for r in results if not r.get("casUri") or (r.get("byteLength") or 0) <= 0]
+    if invalid_artifacts:
+        passed_all_conditions = False
+        failure_reasons.append(f"Invalid CAS URI or zero byteLength on nodes: {invalid_artifacts}")
+
+    print(f"Results Count: {len(results)}/{len(NODES)}")
+    print(f"Distinct Physical Workers: {len(actual_workers)}/{len(NODES)}")
+    print(f"F06 Container Verification (PASS): {len(NODES) - len(f06_failures)}/{len(NODES)}")
+    print(f"F07 Media Acceptance (passed): {len(NODES) - len(f07_failures)}/{len(NODES)}")
+    print(f"F07 9-Hard-Gate Compliance: {len(NODES) - len(gate_failures)}/{len(NODES)}")
+    print(f"Unique Verified SHA-256 Digests: {len(sha256_set)}/{len(NODES)}")
+    print(f"CAS URI & Byte Length Verified: {len(NODES) - len(invalid_artifacts)}/{len(NODES)}")
+    print(f"Total Concurrency Wall-Clock: {wall_total}s")
+
+    if not passed_all_conditions:
+        print("\n❌ CONCURRENCY ACCEPTANCE FAILED:", file=sys.stderr)
+        for reason in failure_reasons:
+            print(f"  - {reason}", file=sys.stderr)
+    else:
+        print("\n✅ ALL 11 NODES PASSED FULL CONCURRENCY ACCEPTANCE GATES")
     print("==================================================================", flush=True)
 
     out_path = os.environ.get("CONCURRENCY_RESULTS_PATH", "/tmp/fleet_concurrency_results.json")
@@ -211,13 +305,15 @@ if __name__ == "__main__":
             json.dump({
                 "timestamp": time.time(),
                 "wallClockDurationSec": wall_total,
-                "allSuccess": all_success,
-                "uniqueSha256": unique_hashes,
+                "passedAllConditions": passed_all_conditions,
+                "failureReasons": failure_reasons,
+                "distinctWorkers": list(actual_workers),
+                "uniqueSha256": len(sha256_set) == len(NODES),
                 "results": sorted(results, key=lambda x: x["node"])
             }, f, indent=2)
         print(f"Detailed results saved to {out_path}", flush=True)
     except Exception as e:
         print(f"Could not save JSON output: {e}", file=sys.stderr)
 
-    if not all_success or not unique_hashes:
+    if not passed_all_conditions:
         sys.exit(1)

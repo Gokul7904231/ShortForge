@@ -38,22 +38,40 @@ export async function POST(request: NextRequest) {
       failureReason,
     } = body;
 
-    if (!workerId || !executionToken || !jobId || !status) {
+    if (
+      !workerId ||
+      !executionToken ||
+      !jobId ||
+      !status ||
+      typeof attemptId !== "number" ||
+      !Number.isInteger(attemptId) ||
+      attemptId <= 0
+    ) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: workerId, executionToken, jobId, and status.",
+          error: "Missing or invalid required fields: workerId, executionToken, jobId, status, and positive integer attemptId.",
         },
         { status: 400 },
       );
     }
 
-    // 2. Validate active lease and attempt token
+    // 2. Validate active lease, execution token, and identity
     const record = registry.getNodeRecordByWorkerId(workerId);
     const lease = record?.activeLease;
     if (!lease || lease.executionToken !== executionToken) {
       return NextResponse.json(
-        { success: false, error: "Stale or unauthorized execution token." },
+        { success: false, error: "Stale, duplicate, or unauthorized execution token." },
+        { status: 409 },
+      );
+    }
+
+    if (lease.workerId !== workerId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Worker identity mismatch: lease assigned to ${lease.workerId}, received ${workerId}.`,
+        },
         { status: 409 },
       );
     }
@@ -68,11 +86,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (typeof attemptId === "number" && attemptId < lease.attemptId) {
+    // Verify execution identity if provided
+    const executionId = body.executionId || request.headers.get("x-execution-id");
+    if (executionId && lease.executionId && executionId !== lease.executionId) {
       return NextResponse.json(
         {
           success: false,
-          error: `Stale callback attempt ${attemptId} rejected; current attempt is ${lease.attemptId}.`,
+          error: `Execution ID mismatch: lease is for ${lease.executionId}, received ${executionId}.`,
+        },
+        { status: 409 },
+      );
+    }
+
+    // Check lease expiration
+    if (lease.leaseExpiresAt) {
+      const expiresAt = new Date(lease.leaseExpiresAt).getTime();
+      if (Date.now() > expiresAt) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Lease expired at ${lease.leaseExpiresAt}. Current time is ${new Date().toISOString()}.`,
+          },
+          { status: 409 },
+        );
+      }
+    }
+
+    // Require exact attempt ID equality (rejects stale, superseded, or mismatched attempts)
+    if (attemptId !== lease.attemptId) {
+      const relation = attemptId < lease.attemptId ? "stale" : "superseded/invalid";
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Callback attempt ${attemptId} rejected (${relation}); exact expected attempt ID is ${lease.attemptId}.`,
         },
         { status: 409 },
       );

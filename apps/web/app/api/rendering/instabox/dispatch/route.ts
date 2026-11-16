@@ -15,12 +15,28 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const registry = InstaBoxFleetRegistry.getInstance();
+
+    const authHeader = request.headers.get("authorization") || "";
+    const customHeader = request.headers.get("x-instabox-secret") || "";
+    const token = (authHeader.replace(/^Bearer\s+/i, "") || customHeader).trim();
+
+    // Strict control plane admin authentication to protect sensitive fleet metadata
+    if (!token || !registry.authenticateControlPlaneAdmin(token)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized: Control plane admin secret required to inspect fleet metadata.",
+        },
+        { status: 401 },
+      );
+    }
+
     const gateway = ComputeGateway.getInstance();
     const pool = gateway.getPool();
     const snapshot = await pool.snapshot();
-    const registry = InstaBoxFleetRegistry.getInstance();
 
     const instaboxNodes = registry.getAllNodeIds().map((nodeId) => {
       const record = registry.getNodeRecord(nodeId);

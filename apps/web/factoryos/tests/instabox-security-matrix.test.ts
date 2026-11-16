@@ -58,17 +58,25 @@ describe("InstaBox Security & Worker Identity Matrix", () => {
       expect(registry.authenticateWorker(BOX2_SECRET)).toBe(false);
     });
 
-    it("enforces node-specific credentials when configured", () => {
+    it("enforces node-specific credentials and rejects generic worker secret across all nodes", () => {
       // box2 has BOX2_SECRET configured
       expect(registry.authenticateWorker(BOX2_SECRET, "instabox-box2")).toBe(true);
       expect(registry.authenticateWorker(BOX2_SECRET, "box2")).toBe(true);
 
-      // box2 rejects the general worker secret when specific secret is set
+      // box2 strictly rejects the general worker secret
       expect(registry.authenticateWorker(WORKER_SECRET, "instabox-box2")).toBe(false);
 
-      // box3 does not have specific secret, accepts general worker secret
-      expect(registry.authenticateWorker(WORKER_SECRET, "instabox-box3")).toBe(true);
+      // box3 does not have specific secret: MUST REJECT general worker secret (fail closed)
+      expect(registry.authenticateWorker(WORKER_SECRET, "instabox-box3")).toBe(false);
       expect(registry.authenticateWorker(BOX2_SECRET, "instabox-box3")).toBe(false);
+
+      // Every worker node without an individual secret strictly rejects the shared generic secret
+      for (const nodeId of INSTABOX_WORKER_NODE_IDS) {
+        if (nodeId !== "box2") {
+          expect(registry.authenticateWorker(WORKER_SECRET, `instabox-${nodeId}`)).toBe(false);
+          expect(registry.authenticateWorker(WORKER_SECRET, nodeId)).toBe(false);
+        }
+      }
     });
 
     it("permanently rejects excluded node box9", () => {
@@ -88,8 +96,27 @@ describe("InstaBox Security & Worker Identity Matrix", () => {
       expect(registry.isCredentialConfigured("box2")).toBe(true);
     });
 
-    it("reports configured for node with fallback worker secret", () => {
-      expect(registry.isCredentialConfigured("box3")).toBe(true);
+    it("reports unconfigured for node without per-worker secret, even if generic worker secret exists", () => {
+      // box3 has no per-worker secret; fallback to generic secret is removed
+      expect(registry.isCredentialConfigured("box3")).toBe(false);
+    });
+
+    it("requires all eleven individual worker secrets for fleet readiness", () => {
+      // With only box2 configured, fleet readiness must be false
+      expect(registry.isCredentialConfigured()).toBe(false);
+
+      // Configure all 11 worker node secrets
+      for (const nodeId of INSTABOX_WORKER_NODE_IDS) {
+        process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] = `secret-for-${nodeId}-32chars-long!`;
+      }
+      expect(registry.isCredentialConfigured()).toBe(true);
+
+      // If any single worker secret is missing or short, fleet readiness fails
+      delete process.env.INSTABOX_WORKER_SECRET_BOX13;
+      expect(registry.isCredentialConfigured()).toBe(false);
+
+      process.env.INSTABOX_WORKER_SECRET_BOX13 = "too-short";
+      expect(registry.isCredentialConfigured()).toBe(false);
     });
 
     it("reports unconfigured when secrets are missing or under 16 characters", () => {
@@ -102,7 +129,7 @@ describe("InstaBox Security & Worker Identity Matrix", () => {
       expect(registry.isCredentialConfigured()).toBe(false);
 
       // Placeholder or short secrets fail closed
-      process.env.INSTABOX_WORKER_SECRET = "short";
+      process.env.INSTABOX_WORKER_SECRET_BOX2 = "short";
       expect(registry.isCredentialConfigured("box2")).toBe(false);
     });
   });

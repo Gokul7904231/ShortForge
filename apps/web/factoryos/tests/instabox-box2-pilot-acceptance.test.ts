@@ -9,13 +9,13 @@ import { ContentAddressedStore } from "../core/compute/cas/ContentAddressedStore
 import { VerificationEngine } from "../core/verification/VerificationEngine";
 import type { ComputeJob } from "../core/compute/contracts/ComputeContracts";
 
-describe("InstaBox Box2 Pilot Acceptance Pipeline", () => {
-  const originalSecret = process.env.INSTABOX_WORKER_SECRET;
+describe("InstaBox Box2 Pilot Pipeline — Local Integration Simulation", () => {
+  const originalSecret = process.env.INSTABOX_WORKER_SECRET_BOX2;
   let registry: InstaBoxFleetRegistry;
   let tempDir: string;
 
   beforeEach(() => {
-    process.env.INSTABOX_WORKER_SECRET = "pilot-box2-secret-2026";
+    process.env.INSTABOX_WORKER_SECRET_BOX2 = "pilot-box2-secret-2026";
     registry = InstaBoxFleetRegistry.resetInstanceForTesting();
     ComputeGateway.resetInstanceForTesting();
     tempDir = path.join(process.cwd(), "data", "test_pilot_box2_" + Date.now());
@@ -23,7 +23,11 @@ describe("InstaBox Box2 Pilot Acceptance Pipeline", () => {
   });
 
   afterEach(() => {
-    process.env.INSTABOX_WORKER_SECRET = originalSecret;
+    if (originalSecret !== undefined) {
+      process.env.INSTABOX_WORKER_SECRET_BOX2 = originalSecret;
+    } else {
+      delete process.env.INSTABOX_WORKER_SECRET_BOX2;
+    }
     if (fs.existsSync(tempDir)) {
       try {
         fs.rmSync(tempDir, { recursive: true, force: true });
@@ -31,7 +35,7 @@ describe("InstaBox Box2 Pilot Acceptance Pipeline", () => {
     }
   });
 
-  it("Executes end-to-end pilot render on Box2 with genuine physical artifact and F07 audit", async () => {
+  it("Executes end-to-end simulated pilot render using local FFmpeg generation and authoritative F07 audit", async () => {
     // 1. Box2 registers via live heartbeat
     const hb = registry.recordHeartbeat({
       workerId: "instabox-box2",

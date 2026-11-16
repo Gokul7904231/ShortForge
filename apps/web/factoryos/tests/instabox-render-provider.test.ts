@@ -58,6 +58,9 @@ describe("InstaBox Fleet Integration & Physical Verification", () => {
 
   beforeEach(() => {
     process.env.INSTABOX_WORKER_SECRET = TEST_SECRET;
+    INSTABOX_WORKER_NODE_IDS.forEach((id) => {
+      process.env[`INSTABOX_WORKER_SECRET_${id.toUpperCase()}`] = TEST_SECRET;
+    });
     registry = InstaBoxFleetRegistry.resetInstanceForTesting();
     tempTestDir = path.join(process.cwd(), "data", "test_instabox_" + Date.now());
     fs.mkdirSync(tempTestDir, { recursive: true });
@@ -65,6 +68,9 @@ describe("InstaBox Fleet Integration & Physical Verification", () => {
 
   afterEach(() => {
     process.env.INSTABOX_WORKER_SECRET = originalEnvSecret;
+    INSTABOX_WORKER_NODE_IDS.forEach((id) => {
+      delete process.env[`INSTABOX_WORKER_SECRET_${id.toUpperCase()}`];
+    });
     if (fs.existsSync(tempTestDir)) {
       try {
         fs.rmSync(tempTestDir, { recursive: true, force: true });

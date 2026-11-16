@@ -248,21 +248,10 @@ export class InstaBoxFleetRegistry {
         process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] ||
         process.env[`INSTABOX_WORKER_SECRET_${nodeId}`]
       )?.trim();
-      if (perWorker && perWorker.length >= 16) return true;
-      const general = (
-        process.env.INSTABOX_WORKER_SECRET ||
-        process.env.RENDER_WORKER_SECRET
-      )?.trim();
-      return Boolean(general && general.length >= 16);
+      return Boolean(perWorker && perWorker.length >= 16);
     }
 
-    const general = (
-      process.env.INSTABOX_WORKER_SECRET ||
-      process.env.RENDER_WORKER_SECRET
-    )?.trim();
-    if (general && general.length >= 16) return true;
-
-    // Check if all configured worker nodes have secrets
+    // Require all eleven individual worker credentials for fleet readiness (no general fallback)
     return INSTABOX_WORKER_NODE_IDS.every((id) => {
       const s = (
         process.env[`INSTABOX_WORKER_SECRET_${id.toUpperCase()}`] ||
@@ -307,33 +296,19 @@ export class InstaBoxFleetRegistry {
       return false; // box9 or unregistered node fails closed
     }
 
-    // 1. Check per-worker specific secret if configured
+    // Require exact per-worker specific secret (fail closed: no general worker fallback permitted)
     const perWorkerSecret = (
       process.env[`INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}`] ||
       process.env[`INSTABOX_WORKER_SECRET_${nodeId}`]
     )?.trim();
 
-    if (perWorkerSecret) {
-      try {
-        const a = Buffer.from(cleanToken);
-        const b = Buffer.from(perWorkerSecret);
-        return a.length === b.length && crypto.timingSafeEqual(a, b);
-      } catch {
-        return false;
-      }
+    if (!perWorkerSecret) {
+      return false; // fail closed: individual per-worker secret is strictly required
     }
-
-    // 2. Check fallback general worker credentials (only worker credentials, never admin credentials)
-    const expected = (
-      process.env.INSTABOX_WORKER_SECRET ||
-      process.env.RENDER_WORKER_SECRET ||
-      ""
-    ).trim();
-    if (!expected) return false;
 
     try {
       const a = Buffer.from(cleanToken);
-      const b = Buffer.from(expected);
+      const b = Buffer.from(perWorkerSecret);
       return a.length === b.length && crypto.timingSafeEqual(a, b);
     } catch {
       return false;
