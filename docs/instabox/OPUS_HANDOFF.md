@@ -4,7 +4,7 @@
 **Date:** 2026-11-16  
 **Repository:** `Gokul7904231/ShortForge`  
 **Active Branch:** `feat/instabox-render-provider`  
-**Current HEAD:** `3a9ecdb1a5e0037564d60da5443ca20536750058`  
+**Current HEAD:** `754a0be124fc8b5443fa4922ca00fc9257dcce53`  
 **Target Environment:** 12-node InstaBox Fleet (`box1` controller, `box2`–`box8`, `box10`–`box13` workers; `box9` excluded)  
 
 ---
@@ -24,23 +24,30 @@ The following backups were created on `box1` prior to any code or service modifi
 ### Commits:
 * `648c15f3`: `feature(compute): enforce admin secret segregation and strict verification gates`
 * `3a9ecdb1`: `bug(compute): allow normalized node IDs in parseInstaBoxNodeId`
+* `b0011030`: `docs(compute): add handoff state protocol`
+* `dd760512`: `bug(compute): enforce strict per-worker credentials and callback fencing`
+* `99a9aa6b`: `bug(compute): pass nodeId to isCredentialConfigured in node health check`
+* `754a0be1`: `bug(compute): update test Scenario 2 to enforce strict workerId requirement`
 
 ### Key Architectural & Security Fixes:
-1. **Admin Secret vs. Worker Secret Segregation:**
-   * Introduced `INSTABOX_CONTROL_PLANE_ADMIN_SECRET` and `registry.authenticateControlPlaneAdmin(token)`.
-   * Administrative routes (`/dispatch`, `drain`, `undrain`) strictly require control plane admin credentials. Worker tokens are rejected with HTTP 401.
-2. **Strict Worker Identity Enforcement:**
-   * `registry.authenticateWorker(token, workerId)` strictly requires a valid `workerId`. Missing or unregistered IDs fail closed.
-   * Node `box9` is permanently rejected.
-   * Validates per-worker credentials (`INSTABOX_WORKER_SECRET_<NODE>`), preventing worker credential spoofing.
-3. **Fail-Closed Artifact Verification in Dispatch:**
-   * Enforces streaming SHA-256 digest match (returns HTTP 422 if mismatched).
-   * Enforces F06 container check (`RenderArtifactVerifier`, returns HTTP 422 if `status !== "PASS"`).
-   * Enforces F07 Media Audit (`VerificationEngine.auditMediaArtifact`, returns HTTP 422 if any of the 9 hard gates fail).
-   * Dynamically audits scene counts based on validated composition manifests.
-4. **Authentic Multi-Scene Composition in Fleet Concurrency Benchmark:**
-   * Upgraded `scripts/instabox/test_fleet_concurrency.py` to dispatch authentic 3-scene compositions (`KINETIC_HOOK` + `BIG_NUMBER` + `OUTRO_CTA`) with unique audio frequencies and typography across all 11 nodes.
-   * Asserts 9/9 F07 hard gates and 11 unique SHA-256 digests.
+1. **Strict Worker Credential Isolation (Zero Generic Fallback):**
+   * Removed all generic worker-secret fallbacks (`INSTABOX_WORKER_SECRET`, `RENDER_WORKER_SECRET`) from `isCredentialConfigured()` and `authenticateWorker()`.
+   * Enforced exact per-worker secrets (`INSTABOX_WORKER_SECRET_<NODE>`) for worker authentication.
+   * Required all 11 individual worker credentials configured for whole-fleet readiness.
+2. **Lease & Callback Fencing:**
+   * Required positive integer `attemptId` on all callbacks (returns HTTP 400 if missing or invalid).
+   * Enforced exact `attemptId === lease.attemptId` equality, rejecting lower attempts (HTTP 409 stale) and higher attempts (HTTP 409 superseded).
+   * Enforced lease expiration verification (`Date.now() < leaseExpiresAt`, returns HTTP 409 if expired).
+   * Enforced worker identity and execution ID consistency against the active lease.
+   * Duplicate callbacks after job settlement rejected with HTTP 409.
+3. **Dispatch GET Protection:**
+   * Protected `/api/rendering/instabox/dispatch` GET endpoint with control plane admin secret verification (`authenticateControlPlaneAdmin(token)`). Unauthenticated calls fail closed (HTTP 401).
+4. **Authoritative Concurrency Verification Script:**
+   * Upgraded `scripts/instabox/test_fleet_concurrency.py` to reconcile actual response fields (`uri`, `byteLength`, `computedSha256`, `localPhysicalPath`, `sha256Match`).
+   * Enforces 11 results, 11 distinct worker identities, F06 PASS, F07 media pass (not score), all 9 F07 hard gates, and 11 distinct SHA-256 digests.
+   * Exits non-zero on any failure.
+5. **Canary Box2 Non-Destructive Verification Script:**
+   * Added `scripts/instabox/canary_box2_acceptance.py` to run against live infrastructure without modifying systemd units or production secrets. Staged for operator approval.
 
 ---
 
@@ -55,7 +62,7 @@ The following backups were created on `box1` prior to any code or service modifi
 
 | Test Suite | Tests | Category | Result | Description / Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `factoryos/tests/instabox-security-matrix.test.ts` | 10 | **Local Unit / Security Matrix** | **PASSED** | Strict admin/worker secret segregation, per-worker credential isolation, removal of generic fallback, `box9` permanent exclusion |
+| `factoryos/tests/instabox-security-matrix.test.ts` | 11 | **Local Unit / Security Matrix** | **PASSED** | Strict admin/worker secret segregation, per-worker credential isolation, removal of generic fallback, `box9` permanent exclusion |
 | `factoryos/tests/instabox-callback-fencing.test.ts` | 8 | **Local Route Fencing** | **PASSED** | Missing/non-integer attemptId rejected (400), lower attempt rejected (409 stale), higher attempt rejected (409), expired lease rejected (409), duplicate callback rejected (409) |
 | `factoryos/tests/instabox-verification-gates.test.ts` | 3 | **Local Quality Gate** | **PASSED** | Corrupt container, missing physical artifact, SHA-256 mismatch rejection |
 | `factoryos/tests/instabox-box2-pilot-acceptance.test.ts` | 1 | **Local FFmpeg Integration Simulation** | **PASSED** | Simulates Box2 lifecycle via local process FFmpeg generation and authoritative F07 audit. **NOT a physical worker test.** |
