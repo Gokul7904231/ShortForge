@@ -36,7 +36,8 @@ export function formatInstaBoxWorkerId(nodeId: InstaBoxWorkerNodeId): string {
 }
 
 export function parseInstaBoxNodeId(workerId: string): InstaBoxWorkerNodeId | undefined {
-  const match = workerId.match(/^instabox-(box(?:2|3|4|5|6|7|8|10|11|12|13))$/);
+  const normalized = workerId.startsWith("instabox-") ? workerId : `instabox-${workerId}`;
+  const match = normalized.match(/^instabox-(box(?:2|3|4|5|6|7|8|10|11|12|13))$/);
   return match ? (match[1] as InstaBoxWorkerNodeId) : undefined;
 }
 
