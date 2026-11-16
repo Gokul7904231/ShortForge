@@ -375,7 +375,7 @@ export class InstaBoxFleetRegistry {
       };
     }
 
-    if (!this.isCredentialConfigured()) {
+    if (!this.isCredentialConfigured(nodeId)) {
       return {
         state: "BLOCKED",
         lastCheckedAt: new Date().toISOString(),
@@ -383,7 +383,7 @@ export class InstaBoxFleetRegistry {
         activeJobs: 0,
         successRate: 0.0,
         avgLatencyMs: 0,
-        failureReason: "InstaBox worker credential (INSTABOX_WORKER_SECRET) is not configured.",
+        failureReason: `InstaBox worker credential for ${nodeId} (INSTABOX_WORKER_SECRET_${nodeId.toUpperCase()}) is not configured.`,
       };
     }
 
@@ -454,7 +454,7 @@ export class InstaBoxFleetRegistry {
       transferBandwidthMbps: 500,
       maxConcurrency: 1, // Conservative initial render concurrency
       maxJobDurationSeconds: 1800,
-      isCredentialConfigured: this.isCredentialConfigured(),
+      isCredentialConfigured: this.isCredentialConfigured(nodeId),
     };
   }
 

@@ -50,6 +50,7 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
   });
 
   afterEach(() => {
+    InstaBoxFleetRegistry.resetInstanceForTesting();
     process.env = { ...originalEnv };
   });
 
@@ -66,8 +67,9 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects callback with 400 when attemptId is missing or undefined", async () => {
     const job = makeJob("job-missing-attempt");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     const req = makeRequest({
       workerId: WORKER_ID,
@@ -87,8 +89,9 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects callback with 400 when attemptId is non-numeric or float or zero", async () => {
     const job = makeJob("job-invalid-attempt");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     for (const badAttempt of ["1", 1.5, 0, -1, null, NaN]) {
       const req = makeRequest({
@@ -106,11 +109,13 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects callback with 409 when attemptId is lower than active lease attemptId (stale attempt)", async () => {
     const job = makeJob("job-lower-attempt");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     // Simulate that the active lease has advanced to attempt 2
     const record = registry.getNodeRecord(NODE_ID)!;
+    expect(record.activeLease).toBeDefined();
     record.activeLease!.attemptId = 2;
 
     const req = makeRequest({
@@ -129,8 +134,9 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects callback with 409 when attemptId is higher than active lease attemptId (superseded/invalid attempt)", async () => {
     const job = makeJob("job-higher-attempt");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     const req = makeRequest({
       workerId: WORKER_ID,
@@ -148,11 +154,13 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects callback with 409 when active lease has expired", async () => {
     const job = makeJob("job-expired-lease");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     // Expire the lease in the past
     const record = registry.getNodeRecord(NODE_ID)!;
+    expect(record.activeLease).toBeDefined();
     record.activeLease!.leaseExpiresAt = new Date(Date.now() - 5000).toISOString();
 
     const req = makeRequest({
@@ -171,8 +179,9 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects callback with 409 when executionId does not match lease executionId", async () => {
     const job = makeJob("job-mismatched-execid");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     const req = makeRequest({
       workerId: WORKER_ID,
@@ -191,8 +200,9 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("rejects duplicate callback after job is already settled", async () => {
     const job = makeJob("job-dup-callback");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     const payload = {
       workerId: WORKER_ID,
@@ -217,8 +227,9 @@ describe("InstaBox Callback Fencing & Lease Expiration Regression Suite", () => 
 
   it("accepts valid callback with exact attemptId and active unexpired lease", async () => {
     const job = makeJob("job-valid-fencing");
-    void registry.dispatchJobToNode(NODE_ID, job);
+    registry.dispatchJobToNode(NODE_ID, job).catch(() => {});
     const claim = registry.claimJob(WORKER_ID);
+    expect(claim.claimed).toBe(true);
 
     const req = makeRequest({
       workerId: WORKER_ID,
