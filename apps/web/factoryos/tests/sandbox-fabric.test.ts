@@ -62,4 +62,126 @@ describe("sandbox fabric", () => {
     expect(codespaces.metadata.capabilities.productionWorkerEligible).toBe(false);
     expect(codesandbox.metadata.capabilities.productionWorkerEligible).toBe(false);
   });
+
+  describe("InstaVM pre-flight credit check", () => {
+    const adapter = new InstaVMSandboxAdapter();
+    const dummyRequest = {
+      idempotencyKey: "test-budget-check",
+      ttlSeconds: 300,
+    };
+    const credentials = { INSTAVM_API_KEY: "test-key-budget" } as const;
+
+    it("rejects provisioning when credits are depleted (zero)", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ remaining_credits: 0 }),
+        headers: new Headers(),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(adapter.provision(dummyRequest, credentials)).rejects.toThrow(
+        "SANDBOX_BUDGET_EXHAUSTED",
+      );
+      // Must never reach VM creation — only the usage endpoint call
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toContain("/v1/usage");
+    });
+
+    it("rejects provisioning when credits are negative", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ remaining_credits: -5 }),
+        headers: new Headers(),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(adapter.provision(dummyRequest, credentials)).rejects.toThrow(
+        "SANDBOX_BUDGET_EXHAUSTED",
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects provisioning when usage endpoint is unreachable (fail closed)", async () => {
+      const fetchMock = vi.fn().mockRejectedValue(new Error("connect ECONNREFUSED"));
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(adapter.provision(dummyRequest, credentials)).rejects.toThrow(
+        "SANDBOX_BUDGET_EXHAUSTED",
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects provisioning when usage response has no credit field (fail closed)", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ account: "active" }),
+        headers: new Headers(),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(adapter.provision(dummyRequest, credentials)).rejects.toThrow(
+        "SANDBOX_BUDGET_EXHAUSTED",
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects provisioning when usage endpoint returns HTTP error (fail closed)", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => "Internal Server Error",
+        headers: new Headers(),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(adapter.provision(dummyRequest, credentials)).rejects.toThrow(
+        "SANDBOX_BUDGET_EXHAUSTED",
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows provisioning when credits are sufficient", async () => {
+      let callIndex = 0;
+      const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+        callIndex++;
+        if (callIndex === 1) {
+          // Usage check — sufficient credits
+          expect(url).toContain("/v1/usage");
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({ remaining_credits: 100 }),
+            headers: new Headers(),
+          };
+        }
+        // VM creation — return a valid session
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({ session_id: "sess-budget-ok", vm_id: "vm-1" }),
+          headers: new Headers(),
+        };
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      // provision will succeed past the credit check but then fail at bootstrap
+      // (the third fetch for bootstrap execution). That's fine — we're testing
+      // the credit gate, not the full provisioning flow.
+      try {
+        await adapter.provision(dummyRequest, credentials);
+      } catch (error: any) {
+        // Expected: bootstrap will fail because our mock doesn't handle it.
+        // The critical assertion is that we got PAST the credit check.
+        expect(error.message).not.toContain("SANDBOX_BUDGET_EXHAUSTED");
+      }
+      // Credit check + VM creation = at least 2 fetch calls
+      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect(fetchMock.mock.calls[0][0]).toContain("/v1/usage");
+      expect(fetchMock.mock.calls[1][0]).toContain("/v1/vms");
+    });
+  });
 });

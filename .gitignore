@@ -175,3 +175,6 @@ knowledge/Shortforge*/
 apps/web/.test-vault*/
 
 tools/dsh-superagent-prototype/
+# ShortForge media & scratch hygiene
+.tmp/
+*.wav
