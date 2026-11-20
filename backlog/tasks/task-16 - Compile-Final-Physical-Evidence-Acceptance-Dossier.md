@@ -1,11 +1,11 @@
 ---
 id: TASK-16
 title: Compile Final Physical Evidence Acceptance Dossier
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-20T08:49:00Z'
+updated_date: '2026-11-20T15:19:00Z'
 labels:
-  - phase/spec
   - docs
 milestone: m-4
 dependencies:
@@ -23,6 +23,6 @@ Record hardware receipts, SHA-256 digests, and F07 reports in instabox_final_pro
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Complete traceability matrix
-- [ ] #2 Official sign-off recorded
+- [x] #1 Complete traceability matrix
+- [x] #2 Official sign-off recorded
 <!-- AC:END -->

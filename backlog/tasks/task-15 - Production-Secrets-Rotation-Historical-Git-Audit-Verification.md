@@ -1,11 +1,11 @@
 ---
 id: TASK-15
 title: Production Secrets Rotation & Historical Git Audit Verification
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-20T08:49:00Z'
+updated_date: '2026-11-20T15:17:00Z'
 labels:
-  - phase/spec
   - security
 milestone: m-1
 dependencies: []
@@ -22,6 +22,6 @@ Rotate exposed fleet credentials on controller and worker envs; verify clean aut
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 New 32-character random secrets provisioned
-- [ ] #2 Git history audit completed
+- [x] #1 New 32-character random secrets provisioned
+- [x] #2 Git history audit completed
 <!-- AC:END -->

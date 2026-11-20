@@ -1,11 +1,11 @@
 ---
 id: TASK-14
 title: Execute Fleet Resilience & Chaos Recovery Run
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-20T08:49:00Z'
+updated_date: '2026-11-20T15:14:00Z'
 labels:
-  - phase/spec
   - resilience
 milestone: m-4
 dependencies:
@@ -23,6 +23,6 @@ Run test_fleet_resilience.py injecting worker failure and verifying auto-failove
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Failed node quarantined
-- [ ] #2 Zero corrupted CAS outputs
+- [x] #1 Failed node quarantined
+- [x] #2 Zero corrupted CAS outputs
 <!-- AC:END -->
