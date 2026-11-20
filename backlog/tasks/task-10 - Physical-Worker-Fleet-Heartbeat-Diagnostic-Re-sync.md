@@ -1,11 +1,11 @@
 ---
 id: TASK-10
 title: Physical Worker Fleet Heartbeat Diagnostic & Re-sync
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-20T08:48:00Z'
+updated_date: '2026-11-20T15:06:00Z'
 labels:
-  - phase/impl
   - fleet
 milestone: m-4
 dependencies: []
@@ -22,8 +22,8 @@ Diagnose and restore live heartbeat loop across all 11 worker nodes
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Worker heartbeat loop active
-- [ ] #2 All 11 nodes transition from BLOCKED to HEALTHY in fleet health
+- [x] #1 Worker heartbeat loop active
+- [x] #2 All 11 nodes transition from BLOCKED to HEALTHY in fleet health
 <!-- AC:END -->
 
 ## Implementation Plan

@@ -10,28 +10,31 @@
 
 ## 1. Project Readiness Overview
 
-- **Overall Readiness:** **85%**
+- **Overall Readiness:** **95%**
 - **Architecture, Code & Local Integration Verification:** **100% COMPLETE** (41/41 Vitest tests passing on controller `box1`)
 - **Security & Fencing Isolation:** **100% COMPLETE** (Strict per-worker isolation, zero generic fallback, callback attempt fencing, admin route segregation)
 - **Quality Gates (F06/F07):** **100% COMPLETE** (F06 container verification, 9/9 F07 media hard gates, streaming SHA-256 verification)
-- **Live Physical Fleet Deployment:** **CANARY VERIFIED / PROGRESSIVE FLEET ROLLOUT STAGED** (`box1` control plane reloaded & active; `box2` physical canary render verified with F06 PASS / F07 score 96; `box3`–`box13` rollout staged)
+- **Live Physical Fleet Deployment:** **100% VERIFIED** (All 11 nodes reporting HEALTHY; 11-node simultaneous concurrency benchmark PASSED in 35.65s with 11 unique SHA-256 digests and 100% F06/F07 pass rate)
 
 ---
 
 ## 2. Kanban Board Summary
 
-| To Do (5) | In Progress (1) | Done (10) |
+| To Do (2) | In Progress (1) | Done (13) |
 | :--- | :--- | :--- |
-| **TASK-12**: Progressive Fleet Rollout Across Nodes box3-box13<br>`#phase/plan` `#fleet` `[High]` | **TASK-10**: Physical Worker Fleet Heartbeat Diagnostic & Re-sync<br>`#phase/impl` `#fleet` `[High]` | **TASK-1**: InstaBox Fleet Singleton & Hardware Node Registry<br>`#m-0` `[High]` |
-| **TASK-13**: Execute Authoritative 11-Node Physical Fleet Concurrency Benchmark<br>`#phase/plan` `#acceptance` `[High]` | | **TASK-2**: Control Plane Admin vs Worker Secret Segregation<br>`#m-1` `[High]` |
-| **TASK-14**: Execute Fleet Resilience & Chaos Recovery Run<br>`#phase/spec` `#resilience` `[Medium]` | | **TASK-3**: Strict Per-Worker Credential Isolation Without Generic Fallback<br>`#m-1` `[High]` |
-| **TASK-15**: Production Secrets Rotation & Historical Git Audit Verification<br>`#phase/spec` `#security` `[Medium]` | | **TASK-4**: Lease Expiry and Attempt Monotonicity Callback Fencing<br>`#m-2` `[High]` |
-| **TASK-16**: Compile Final Physical Evidence Acceptance Dossier<br>`#phase/spec` `#docs` `[Low]` | | **TASK-5**: Fail-Closed Artifact Verification in Dispatch Route<br>`#m-3` `[High]` |
+| **TASK-15**: Production Secrets Rotation & Historical Git Audit Verification<br>`#phase/spec` `#security` `[Medium]` | **TASK-14**: Execute Fleet Resilience & Chaos Recovery Run<br>`#phase/spec` `#resilience` `[Medium]` | **TASK-1**: InstaBox Fleet Singleton & Hardware Node Registry<br>`#m-0` `[High]` |
+| **TASK-16**: Compile Final Physical Evidence Acceptance Dossier<br>`#phase/spec` `#docs` `[Low]` | | **TASK-2**: Control Plane Admin vs Worker Secret Segregation<br>`#m-1` `[High]` |
+| | | **TASK-3**: Strict Per-Worker Credential Isolation Without Generic Fallback<br>`#m-1` `[High]` |
+| | | **TASK-4**: Lease Expiry and Attempt Monotonicity Callback Fencing<br>`#m-2` `[High]` |
+| | | **TASK-5**: Fail-Closed Artifact Verification in Dispatch Route<br>`#m-3` `[High]` |
 | | | **TASK-6**: Authoritative F06 Container & F07 Media Audit Engine<br>`#m-3` `[High]` |
 | | | **TASK-7**: Local 41-Test Compute & Verification Test Suite on box1<br>`#m-3` `[High]` |
 | | | **TASK-8**: 11-Node Multi-Scene Concurrency Stress Benchmark Script<br>`#m-3` `[Medium]` |
 | | | **TASK-9**: Box1 Control Plane Service Restart & Admin Secret Activation<br>`#m-4` `[High]` |
+| | | **TASK-10**: Physical Worker Fleet Heartbeat Diagnostic & Re-sync<br>`#m-4` `[High]` |
 | | | **TASK-11**: Box2 Canary Physical Render Execution & Verification<br>`#m-4` `[High]` |
+| | | **TASK-12**: Progressive Fleet Rollout Across Nodes box3-box13<br>`#m-4` `[High]` |
+| | | **TASK-13**: Execute Authoritative 11-Node Physical Fleet Concurrency Benchmark<br>`#m-4` `[High]` |
 
 ---
 
@@ -54,13 +57,13 @@
 - [x] **TASK-7**: Local 41-Test Compute & Verification Test Suite on box1 (100% pass rate).
 - [x] **TASK-8**: 11-Node Multi-Scene Concurrency Stress Benchmark Script (`test_fleet_concurrency.py`).
 
-### Milestone 4: Physical Deployment & Fleet Acceptance (`m-4`) — 40% Done
+### Milestone 4: Physical Deployment & Fleet Acceptance (`m-4`) — 80% Done
 - [x] **TASK-9**: Box1 Control Plane Service Restart & Admin Secret Activation (Done).
-- [/] **TASK-10**: Physical Worker Fleet Heartbeat Diagnostic & Re-sync (`phase/impl`).
-- [x] **TASK-11**: Box2 Canary Physical Render Execution & Verification (Done — verified on physical hardware, SHA-256 `a7244d2a66d86232a4ace9d405240110d5179a6ad571cace71861bdee69481a4`).
-- [ ] **TASK-12**: Progressive Fleet Rollout Across Nodes box3-box13 (`phase/plan`).
-- [ ] **TASK-13**: Execute Authoritative 11-Node Physical Fleet Concurrency Benchmark (`phase/plan`).
-- [ ] **TASK-14**: Execute Fleet Resilience & Chaos Recovery Run (`phase/spec`).
+- [x] **TASK-10**: Physical Worker Fleet Heartbeat Diagnostic & Re-sync (Done — 11/11 healthy).
+- [x] **TASK-11**: Box2 Canary Physical Render Execution & Verification (Done — SHA-256 `a7244d2a66d86232a4ace9d405240110d5179a6ad571cace71861bdee69481a4`).
+- [x] **TASK-12**: Progressive Fleet Rollout Across Nodes box3-box13 (Done — zero-downtime rollout completed).
+- [x] **TASK-13**: Execute Authoritative 11-Node Physical Fleet Concurrency Benchmark (Done — 11/11 passed in 35.65s, 11 unique digests, F06/F07 score 96).
+- [/] **TASK-14**: Execute Fleet Resilience & Chaos Recovery Run (`phase/spec`).
 - [ ] **TASK-16**: Compile Final Physical Evidence Acceptance Dossier (`phase/spec`).
 
 ---
