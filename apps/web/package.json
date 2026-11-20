@@ -44,6 +44,7 @@
     "@google/genai": "^2.9.0",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query": "^5.101.2",
+    "@travisvn/edge-tts": "^1.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.9.1",
     "@types/nodemailer": "^8.0.1",
@@ -53,12 +54,14 @@
     "babel-plugin-react-compiler": "1.0.0",
     "better-auth": "^1.7.1",
     "better-sqlite3": "^12.11.1",
+    "bson": "^7.3.4",
     "cloudinary": "^2.5.0",
     "firebase": "^12.15.0",
     "firebase-admin": "^13.0.2",
     "framer-motion": "^12.42.2",
     "googleapis": "^173.0.0",
     "groq-sdk": "^1.2.1",
+    "instavm": "0.2.2",
     "jose": "^6.2.10",
     "lucide-react": "^1.21.0",
     "mongodb": "^7.5.0",
@@ -72,9 +75,7 @@
     "tailwindcss": "^4",
     "typescript": "^6.0.3",
     "zod": "^4.4.3",
-    "zustand": "^5.0.14",
-    "@travisvn/edge-tts": "^1.0.2",
-    "instavm": "0.2.2"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.20.2",

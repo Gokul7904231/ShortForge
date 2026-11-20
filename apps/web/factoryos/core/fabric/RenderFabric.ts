@@ -361,7 +361,9 @@ export class RenderFabric {
       artifactId: artifactRef.artifactId,
       jobId: intent.jobId,
       missionId: intent.missionId,
-      location: { kind: "LOCAL", path: artifactRef.uri },
+      location: artifactRef.uri.startsWith("http://") || artifactRef.uri.startsWith("https://")
+        ? { kind: "REMOTE", uri: artifactRef.uri, provider: receipt.providerType }
+        : { kind: "LOCAL", path: artifactRef.uri },
       sha256: artifactRef.sha256,
       mimeType: artifactRef.mimeType === "video/webm" ? "video/webm" : "video/mp4",
       byteLength: artifactRef.byteLength,

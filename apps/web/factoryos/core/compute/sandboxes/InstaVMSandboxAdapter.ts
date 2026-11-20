@@ -73,6 +73,85 @@ function normalizedBaseUrl(): string {
   return String(process.env.INSTAVM_BASE_URL || "https://api.instavm.io").replace(/\/+$/, "");
 }
 
+const INSTAVM_MIN_CREDIT_THRESHOLD = Math.max(
+  0,
+  Number(process.env.INSTAVM_MIN_CREDIT_THRESHOLD) || 0,
+);
+
+async function getInstaVMJson(
+  apiKey: string,
+  route: string,
+  timeoutMs: number,
+): Promise<any> {
+  const response = await fetch(normalizedBaseUrl() + route, {
+    method: "GET",
+    headers: { "X-API-Key": apiKey },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  const raw = await response.text();
+  let payload: any = {};
+  if (raw) {
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      if (response.ok) throw new Error("INSTAVM_API_INVALID_JSON");
+      payload = { raw: raw.slice(0, 500) };
+    }
+  }
+
+  if (!response.ok) {
+    const detail =
+      payload?.detail ?? payload?.error ?? payload?.message ?? payload?.raw ?? raw.slice(0, 500);
+    const safeDetail =
+      typeof detail === "string" ? detail : JSON.stringify(detail);
+    throw new Error(
+      "INSTAVM_HTTP_" +
+        response.status +
+        ":" +
+        redactProviderMessage(safeDetail, apiKey),
+    );
+  }
+
+  return payload;
+}
+
+async function assertSufficientCredit(apiKey: string): Promise<void> {
+  let usage: any;
+  try {
+    usage = await getInstaVMJson(apiKey, "/v1/usage", 15_000);
+  } catch (error: any) {
+    // Fail closed: if we cannot verify credits, reject provisioning.
+    throw new Error(
+      "SANDBOX_BUDGET_EXHAUSTED:INSTAVM — Unable to verify credit balance. " +
+        redactProviderMessage(error?.message || "Usage endpoint unreachable.", apiKey),
+    );
+  }
+
+  const remaining =
+    usage?.remaining_credits ??
+    usage?.remainingCredits ??
+    usage?.credits_remaining ??
+    usage?.balance;
+
+  if (remaining === undefined || remaining === null) {
+    // Fail closed: response did not include a recognizable credit field.
+    throw new Error(
+      "SANDBOX_BUDGET_EXHAUSTED:INSTAVM — Usage response missing credit balance field.",
+    );
+  }
+
+  const credits = Number(remaining);
+  if (!Number.isFinite(credits) || credits <= INSTAVM_MIN_CREDIT_THRESHOLD) {
+    throw new Error(
+      "SANDBOX_BUDGET_EXHAUSTED:INSTAVM — Remaining credits (" +
+        credits +
+        ") at or below minimum threshold (" +
+        INSTAVM_MIN_CREDIT_THRESHOLD +
+        ").",
+    );
+  }
+}
 
 type InstaVMApiExecution = {
   exitCode: number;
@@ -365,6 +444,7 @@ export class InstaVMSandboxAdapter implements SandboxProviderAdapter {
     credentials?: SandboxCredentialBundle,
   ): Promise<SandboxProvisionResult> {
     const apiKey = apiKeyFor(credentials);
+    await assertSufficientCredit(apiKey);
     const created = await createInstaVMVm(apiKey, request);
     const sessionId = created.sessionId;
     let vmId = created.vmId;

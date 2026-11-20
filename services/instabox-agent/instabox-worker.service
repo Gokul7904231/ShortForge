@@ -1,0 +1,31 @@
+[Unit]
+Description=FactoryOS InstaBox Distributed Render Worker
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=instabox
+Group=instabox
+WorkingDirectory=/data/shortforge/workspace
+EnvironmentFile=/etc/instabox/worker.env
+Environment=HOME=/data/shortforge/workspace
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/instabox-agent/venv/bin/python3 -u /opt/instabox-agent/agent.py
+Restart=always
+RestartSec=5s
+TimeoutStopSec=30s
+KillMode=mixed
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=instabox-worker
+
+# Sandboxing and security boundaries
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/shortforge/workspace /data/shortforge/logs /tmp /opt/instabox-agent
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

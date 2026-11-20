@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "factoryos-render"
+version = "0.1.0"
+description = "Deterministic local video execution and render engine for FactoryOS V3"
+readme = "README.md"
+authors = [{ name = "FactoryOS Core Engineering" }]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Video",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+gpu = ["torch", "opencv-python"]
+bundle = ["imageio-ffmpeg"]
+
+[project.scripts]
+factoryos-render = "factoryos_render.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

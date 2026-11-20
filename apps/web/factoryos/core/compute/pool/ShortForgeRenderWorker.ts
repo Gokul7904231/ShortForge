@@ -12,7 +12,8 @@ export type ComputeSurface =
   | "API_GPU"
   | "NOTEBOOK"
   | "SANDBOX"
-  | "PERSISTENT_WORKER";
+  | "PERSISTENT_WORKER"
+  | "INSTABOX";
 
 export interface WorkerPreflight {
   admitted: boolean;

@@ -188,6 +188,12 @@ export class ComputeRouter {
         continue;
       }
 
+      const targetNodeId = (job.manifest as any)?.targetNodeId;
+      if (targetNodeId && provider.type === "INSTABOX" && provider.id !== `instabox-${targetNodeId}`) {
+        rejectionReasons[provider.id] = `Excluded by explicit targetNodeId constraint '${targetNodeId}'.`;
+        continue;
+      }
+
       // 1. Policy check: is provider type allowed?
       if (!this.policy.allowedProviders.includes(provider.type)) {
         rejectionReasons[provider.id] = `Provider type ${provider.type} not permitted by ComputePolicy.`;

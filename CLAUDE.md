@@ -164,3 +164,11 @@ Mandatory references:
 - `.okf/devourer.md`
 
 Do not introduce a new abstraction, repository pattern, worker capability, renderer, or model behavior merely because it is novel or useful in isolation. Reconcile it against the current `.okf` and existing repo mappings first.
+
+## Workflow system (managed by super-backlog)
+
+This project uses the combined Backlog.md + Superpowers workflow. Read the
+integration block in AGENTS.md (section between SUPER-BACKLOG markers) and follow
+it. Tasks are managed exclusively through the `backlog` CLI. Distribute subagent
+work by the block's "Model tiers and delegation" section and always pass
+the Agent tool's `model` explicitly.
