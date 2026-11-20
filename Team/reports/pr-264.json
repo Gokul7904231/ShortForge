@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR264-InstaBox-Hardened-Fleet-And-DUP01",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/instabox-render-provider",
+  "objective": "Complete 11-node physical InstaBox fleet acceptance, fail-closed InstaVM credit guard, and consolidate video generation core (DUP-01).",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Physical compute workers require strict per-worker credential isolation with zero generic fallback.",
+      "Job dispatch and callbacks must enforce monotonic fencing and lease expiration checks.",
+      "Content-Addressed Storage (CAS) requires SHA-256 and byte-length integrity verification.",
+      "F06 Container Verification and F07 9-gate media audit remain authoritative production truth.",
+      "Hosted sandboxes must fail closed on credit or quota exhaustion before microVM provisioning.",
+      "No secrets, private keys, or tokens may be committed to repository history."
+    ]
+  },
+  "forensicFindings": [
+    "OPS-01 was blocked pending control plane credential reload on box1 and physical canary execution on box2.",
+    "DUP-01: Two drifting 2,100+ line Python rendering pipelines coexisted across services/rendering-engine and hybrid-video.",
+    "InstaVM sandbox adapter required pre-flight credit assertions before VM allocation.",
+    "Fleet nodes box2-box13 required zero-downtime progressive rollout and authoritative 11-node concurrency benchmarking."
+  ],
+  "changes": [
+    "Verified box2 physical canary render (7.98s, CAS SHA-256 a7244d2a66d86232a4ace9d405240110d5179a6ad571cace71861bdee69481a4, 77,409 bytes, F06 PASS, F07 96/100).",
+    "Completed zero-downtime fleet rollout across nodes box2..box13 (box9 permanently excluded due to hardware defect).",
+    "Executed authoritative 11-node simultaneous physical concurrency stress benchmark (35.65s wall-clock, 11/11 passed, 11 unique SHA-256 digests, 100% F06 PASS, 100% F07 score 96/100).",
+    "Verified chaos resilience: node drain/undrain rejection and worker daemon restart recovery.",
+    "Implemented fail-closed InstaVM pre-flight credit guard with typed SANDBOX_BUDGET_EXHAUSTED error.",
+    "Consolidated video generation core (DUP-01): repathed apps/web/lib/python-runner.ts to canonical services/rendering-engine/scripts/create_short.py and retired hybrid-video/scripts/create_short.py (-2,106 lines).",
+    "Audited git history confirming zero secrets committed, and documented final acceptance dossier in docs/instabox/instabox_final_production_acceptance.md."
+  ],
+  "security": {
+    "required": true,
+    "status": "PASS",
+    "semgrep": "PASS — 0 findings",
+    "strix": "NOT_APPLICABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Zero credentials committed. All per-worker HMAC tokens and control plane admin secret are strictly segregated in environment files. InstaVM credit pre-flight guard prevents runaway spend."
+  },
+  "evidenceRefs": [
+    "docs/instabox/instabox_final_production_acceptance.md",
+    "TECH_DEBT_AUDIT.md",
+    "Backlog.md",
+    "apps/web/tests/python-runner-canonical.test.ts",
+    "apps/web/factoryos/tests/sandbox-fabric.test.ts",
+    "apps/web/factoryos/tests/basic-fastapi-render.test.ts"
+  ],
+  "verificationPlan": [
+    "Run targeted Vitest suite on runner, fastapi render, and sandbox fabric.",
+    "Verify node Team/scripts/validate-team-report.mjs on Team/reports/pr-264.json.",
+    "Verify python -m tools.okf.validate_report on Team/reports/pr-264.json.",
+    "Push pr-264.json to feat/instabox-render-provider to unblock Team Change Gate."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "READY_FOR_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "vitest": "PASS — 22/22 tests across python-runner-canonical, basic-fastapi-render, and sandbox-fabric",
+    "physicalCanary": "PASS — box2 7.98s (F06 PASS, F07 score 96/100)",
+    "physicalConcurrency": "PASS — 11/11 physical nodes in 35.65s (11 unique SHA-256 digests, F06 PASS, F07 score 96/100)",
+    "teamChangeGate": "VALIDATED_LOCAL",
+    "gitSecretAudit": "PASS — 0 secrets in git history"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "Authoritative acceptance dossier published in docs/instabox/instabox_final_production_acceptance.md.",
+    "All 16 tasks in Backlog.md completed and settled to Done (100% Production Ready)."
+  ]
+}
