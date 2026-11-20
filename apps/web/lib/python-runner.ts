@@ -2,19 +2,20 @@ import fs from "fs";
 import { spawn } from "child_process";
 import path from "path";
 
-// ── Local hybrid-video environment ───────────────────────────────────────────
-// Resolve hybrid-video relative to this repo (apps/web/ is a subfolder).
-function getHybridRoot(): string {
+// ── Canonical rendering-engine environment ──────────────────────────────────
+// Resolve canonical rendering-engine relative to this repo (apps/web/ is a subfolder).
+function getRepoRoot(): string {
   // __dirname: <repo>/apps/web/lib
-  // hybrid-video: <repo>/hybrid-video
-  return path.join(/*turbopackIgnore: true*/ __dirname, "..", "..", "..", "hybrid-video");
+  return path.join(/*turbopackIgnore: true*/ __dirname, "..", "..", "..");
 }
 
-function resolveHybridPython(): string {
-  const hybridRoot = getHybridRoot();
+function resolveEnginePython(): string {
+  const repoRoot = getRepoRoot();
   const candidates = [
-    path.join(/*turbopackIgnore: true*/ hybridRoot, "venv", "Scripts", "python.exe"),
-    path.join(/*turbopackIgnore: true*/ hybridRoot, "venv", "bin", "python"),
+    path.join(/*turbopackIgnore: true*/ repoRoot, "services", "rendering-engine", "venv", "Scripts", "python.exe"),
+    path.join(/*turbopackIgnore: true*/ repoRoot, "services", "rendering-engine", "venv", "bin", "python"),
+    path.join(/*turbopackIgnore: true*/ repoRoot, "hybrid-video", "venv", "Scripts", "python.exe"),
+    path.join(/*turbopackIgnore: true*/ repoRoot, "hybrid-video", "venv", "bin", "python"),
   ];
   for (const c of candidates) {
     if (fs.existsSync(c)) {
@@ -27,15 +28,21 @@ function resolveHybridPython(): string {
   return "python";
 }
 
-function resolveHybridScript(): string {
-  const hybridRoot = getHybridRoot();
-  const candidate = path.join(/*turbopackIgnore: true*/ hybridRoot, "scripts", "create_short.py");
+function resolveCanonicalScript(): string {
+  const repoRoot = getRepoRoot();
+  const candidate = path.join(
+    /*turbopackIgnore: true*/ repoRoot,
+    "services",
+    "rendering-engine",
+    "scripts",
+    "create_short.py"
+  );
 
   if (fs.existsSync(candidate)) return candidate;
 
   // Fail fast (no silent fallback) so Next.js logs show the missing runtime.
   throw new Error(
-    `Hybrid runtime script not found at: ${candidate}. Expected hybrid-video/scripts/create_short.py.`
+    `Canonical rendering engine script not found at: ${candidate}. Expected services/rendering-engine/scripts/create_short.py.`
   );
 }
 
@@ -43,8 +50,8 @@ function resolveHybridScript(): string {
 
 // ── Fallback resolution ───────────────────────────────────────────────────────
 function resolvePythonExecutable(): string {
-  const hybridPython = resolveHybridPython();
-  if (hybridPython !== "python") return hybridPython;
+  const enginePython = resolveEnginePython();
+  if (enginePython !== "python") return enginePython;
 
   // local-ai venv beside the Next.js project (legacy)
   const localVenv = path.join(
@@ -63,7 +70,7 @@ function resolvePythonExecutable(): string {
 }
 
 function resolveScript(): string {
-  return resolveHybridScript();
+  return resolveCanonicalScript();
 }
 
 
