@@ -22,12 +22,16 @@ import { EventBus } from "../../../../ai/event-bus";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  // Security gate
+  // Security gate: require CRON_SECRET or INTERNAL_API_SECRET_KEY
   const authHeader = req.headers.get("authorization");
-  const expectedKey = process.env.INTERNAL_API_SECRET_KEY;
+  const expectedKey = process.env.CRON_SECRET || process.env.INTERNAL_API_SECRET_KEY;
+
+  if (!expectedKey) {
+    console.error("[CronCleanup] Security gate rejected: neither CRON_SECRET nor INTERNAL_API_SECRET_KEY is configured.");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
 
   if (
-    expectedKey &&
     authHeader !== `Bearer ${expectedKey}` &&
     new URL(req.url).searchParams.get("key") !== expectedKey
   ) {
@@ -102,4 +106,8 @@ export async function GET(req: Request) {
   );
 
   return NextResponse.json({ success: true, ...report });
+}
+
+export async function POST(req: Request) {
+  return GET(req);
 }

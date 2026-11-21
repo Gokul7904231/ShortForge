@@ -63,8 +63,8 @@ export class InstaBoxFleetRegistry {
   private readonly cas = ContentAddressedStore.getInstance();
   private readonly stateFilePath: string;
 
-  public static readonly HEARTBEAT_DEGRADED_THRESHOLD_MS = 45_000; // 45 seconds (3 missed heartbeats)
-  public static readonly HEARTBEAT_BLOCKED_THRESHOLD_MS = 90_000; // 90 seconds
+  public static readonly HEARTBEAT_DEGRADED_THRESHOLD_MS = 150_000; // 150 seconds (3 missed 50s heartbeats)
+  public static readonly HEARTBEAT_BLOCKED_THRESHOLD_MS = 300_000; // 300 seconds
   public static readonly DEFAULT_LEASE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
   private constructor(customStatePath?: string) {

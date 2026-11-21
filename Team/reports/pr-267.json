@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR267-Vercel-Hobby-Guard-And-Cron",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/vercel-hobby-guard-and-cron",
+  "objective": "Enforce 50s idle polling and 3s active polling across InstaBox fleet to guard Vercel Hobby 1M monthly invocation limit, adjust heartbeat degraded threshold to 150s, configure once-daily cron fallback in vercel.json, and establish 6-hour external cleanup via GitHub Actions.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Vercel Hobby serverless invocations must be conserved by enforcing >= 45s and <= 60s idle polling on bare-metal worker fleets.",
+      "Vercel Hobby multi-daily crons must be decoupled to external schedulers to prevent platform deployment rejections.",
+      "Fleet heartbeat degradation thresholds must maintain at least 3x the worker idle heartbeat interval to avoid state flapping.",
+      "Endpoints invoked by automated schedulers must enforce fail-closed token authorization.",
+      "No secrets, private keys, or tokens may be committed to repository history."
+    ]
+  },
+  "forensicFindings": [
+    "11 bare-metal workers polling at sub-15s intervals would exceed Vercel Hobby's 1M monthly function invocation limit (~1.9M to 6.3M calls/month).",
+    "Vercel Hobby rejects multi-daily cron expressions (such as 0 */6 * * *) during project deployment, enforcing a maximum frequency of once per day.",
+    "With 50s worker heartbeats, a 45s heartbeat degradation threshold on the control plane caused worker state flapping to DEGRADED between normal heartbeat cycles."
+  ],
+  "changes": [
+    "Updated services/instabox-agent/agent.py: configured IDLE_POLL_INTERVAL_SECONDS=50.0, ACTIVE_POLL_INTERVAL_SECONDS=3.0, and HEARTBEAT_INTERVAL_SECONDS=50.0; updated main loop to sleep 50s when idle and 3s while active until queue drains.",
+    "Updated services/rendering-engine/worker_daemon.py: aligned IDLE_POLL_INTERVAL_SECONDS=50.0 and ACTIVE_POLL_INTERVAL_SECONDS=3.0 with fast loop recovery.",
+    "Updated apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts: increased HEARTBEAT_DEGRADED_THRESHOLD_MS to 150_000 (150s, 3x 50s interval) and HEARTBEAT_BLOCKED_THRESHOLD_MS to 300_000 (300s).",
+    "Updated apps/web/vercel.json: adjusted cron schedule to once-daily (0 2 * * *) to strictly comply with Vercel Hobby platform limits.",
+    "Updated apps/web/app/api/cron/cleanup/route.ts: added support for CRON_SECRET || INTERNAL_API_SECRET_KEY, fail-closed 500 when neither key is configured, and exported POST handler.",
+    "Created .github/workflows/vercel-cron.yml: external 6-hour cron workflow (cron: 13 */6 * * *) invoking /api/cron/cleanup with Bearer auth and cold-start retries.",
+    "Deployed updated agent.py to /opt/instabox-agent/agent.py across all 11 active nodes (box2..box8, box10..box13), restarted instabox-worker.service, and verified all 11 nodes reporting HEALTHY (box9 quarantined).",
+    "Updated services/rendering-engine/tests/test_instabox_agent_backoff.py and apps/web/factoryos/tests/instabox-render-provider.test.ts; verified all 3 pytest tests and 29 Vitest tests pass cleanly."
+  ],
+  "security": {
+    "required": true,
+    "status": "PASS",
+    "semgrep": "PASS — 0 findings",
+    "strix": "NOT_APPLICABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Zero credentials committed. CRON_SECRET verified fail-closed."
+  },
+  "evidenceRefs": [
+    "services/instabox-agent/agent.py",
+    "services/rendering-engine/worker_daemon.py",
+    "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+    "apps/web/vercel.json",
+    "apps/web/app/api/cron/cleanup/route.ts",
+    ".github/workflows/vercel-cron.yml",
+    "services/rendering-engine/tests/test_instabox_agent_backoff.py",
+    "apps/web/factoryos/tests/instabox-render-provider.test.ts"
+  ],
+  "verificationPlan": [
+    "Run python -m pytest services/rendering-engine/tests/test_instabox_agent_backoff.py",
+    "Run vitest factoryos/tests/instabox-render-provider.test.ts factoryos/tests/instabox-security-matrix.test.ts",
+    "Verify 11/11 healthy workers on box1 via check_fleet_status.py",
+    "Run node Team/scripts/validate-team-report.mjs Team/reports/pr-267.json",
+    "Run python tools/okf/validate_report.py Team/reports/pr-267.json"
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "READY_FOR_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "pytest": "PASS — 3/3 tests passed in 0.05s",
+    "vitest": "PASS — 29/29 tests passed across 2 suites in 2.45s",
+    "fleetHealth": "PASS — 11/11 healthy workers reporting fresh heartbeats, box9 quarantined",
+    "teamChangeGate": "VALIDATED_LOCAL",
+    "gitSecretAudit": "PASS — 0 secrets in git history"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "Guarantees InstaBox fleet consumes ~570k invocations/month, comfortably within Vercel Hobby 1M free allowance.",
+    "Decouples multi-daily cleanup to GitHub Actions while retaining daily fallback in Vercel configuration."
+  ]
+}

@@ -143,13 +143,13 @@ describe("InstaBox Fleet Integration & Physical Verification", () => {
     });
     expect(registry.getNodeHealth("box3").state).toBe("HEALTHY");
 
-    // Simulate elapsed time > 45s -> DEGRADED
+    // Simulate elapsed time > 150s (3 missed 50s heartbeats) -> DEGRADED
     const record = registry.getNodeRecord("box3")!;
-    record.lastHeartbeatAt = new Date(Date.now() - 50_000).toISOString();
+    record.lastHeartbeatAt = new Date(Date.now() - 160_000).toISOString();
     expect(registry.getNodeHealth("box3").state).toBe("DEGRADED");
 
-    // Simulate elapsed time > 90s -> BLOCKED
-    record.lastHeartbeatAt = new Date(Date.now() - 100_000).toISOString();
+    // Simulate elapsed time > 300s -> BLOCKED
+    record.lastHeartbeatAt = new Date(Date.now() - 320_000).toISOString();
     expect(registry.getNodeHealth("box3").state).toBe("BLOCKED");
   });
 
