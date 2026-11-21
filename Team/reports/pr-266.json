@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR266-CloudRun-Stateless-Persistence",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "feat/cloudrun-stateless-persistence",
+  "objective": "Prepare stateless Cloud Run persistence with Next.js standalone build target, Firestore-backed fleet registry state, and cloud object storage backend adapters (GCS and Backblaze B2) for ContentAddressedStore.",
+  "classification": "new capability",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Container deployment on Cloud Run requires minimal standalone output without copying full node_modules.",
+      "Control plane state in serverless cloud environments must persist to durable cloud datastores (Firestore instabox_fleet_state).",
+      "Production environments must fail closed if required cloud persistence credentials are missing.",
+      "CAS storage must support streaming cloud object storage (GCS and Backblaze B2) to prevent unbounded local disk exhaustion.",
+      "Local CAS filesystem should act as a bounded cache with automated cache pruning.",
+      "No secrets, private keys, or tokens may be committed to repository history."
+    ]
+  },
+  "forensicFindings": [
+    "Next.js build in apps/web previously generated standard Next.js server output which bundles unnecessary build assets rather than a standalone container target.",
+    "InstaBoxFleetRegistry relied exclusively on local JSON disk storage (data/factoryos_state/instabox_fleet_state.json), which would be lost upon container recycling in Cloud Run.",
+    "ContentAddressedStore only supported local POSIX disk storage, risking local disk exhaustion on ephemeral container disks without cloud replication."
+  ],
+  "changes": [
+    "Added output: 'standalone' to apps/web/next.config.mjs to generate optimized container builds for Cloud Run.",
+    "Enhanced InstaBoxFleetRegistry with Firestore persistence adapter (collection 'instabox_fleet_state', doc 'current') with loadPersistedStateFromFirestore() and persistStateToFirestore().",
+    "Added InstaBoxPersistenceError typed error and enforced fail-closed validation in NODE_ENV === 'production' when Firestore credentials are missing.",
+    "Preserved local JSON persistence fallback for development and test environments.",
+    "Added CasCloudBackend interface to ContentAddressedStore along with GcsCasBackend (streaming upload via write stream) and B2CasBackend (native fetch Backblaze B2 adapter).",
+    "Implemented bounded local CAS cache management (pruneLocalCache) and on-demand cloud re-hydration (ensureLocalFile) to keep local storage bounded on Cloud Run.",
+    "Authored comprehensive unit test suite in apps/web/factoryos/tests/cloudrun-stateless-persistence.test.ts (8/8 passing, 100% mocked, zero live cloud calls)."
+  ],
+  "security": {
+    "required": true,
+    "status": "PASS",
+    "semgrep": "PASS — 0 findings",
+    "strix": "NOT_APPLICABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Zero credentials committed. All Firestore and cloud storage credentials are dynamically read from standard environment variables."
+  },
+  "evidenceRefs": [
+    "apps/web/next.config.mjs",
+    "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+    "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+    "apps/web/factoryos/tests/cloudrun-stateless-persistence.test.ts"
+  ],
+  "verificationPlan": [
+    "Run cd apps/web && npx vitest run factoryos/tests/cloudrun-stateless-persistence.test.ts.",
+    "Verify node Team/scripts/validate-team-report.mjs on Team/reports/pr-266.json.",
+    "Verify python tools/okf/validate_report.py on Team/reports/pr-266.json.",
+    "Commit and push pr-266.json to feat/cloudrun-stateless-persistence to unblock Team Change Gate."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "READY_FOR_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "vitest": "PASS — 8/8 tests passed in cloudrun-stateless-persistence.test.ts, 42/42 in instabox & sandbox suites",
+    "teamChangeGate": "VALIDATED_LOCAL",
+    "gitSecretAudit": "PASS — 0 secrets in git history"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "Enables seamless Cloud Run container deployment with stateless persistence.",
+    "Maintains 100% backward compatibility for local development."
+  ]
+}

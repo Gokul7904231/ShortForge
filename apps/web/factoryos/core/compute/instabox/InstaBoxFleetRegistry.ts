@@ -34,6 +34,15 @@ import type {
 } from "../contracts/ComputeContracts";
 import { InstaBoxComputeProvider } from "./InstaBoxComputeProvider";
 import { ContentAddressedStore } from "../cas/ContentAddressedStore";
+import { db } from "@/lib/firebase-admin";
+
+export class InstaBoxPersistenceError extends Error {
+  public readonly code = "INSTABOX_PERSISTENCE_CONFIG_ERROR";
+  constructor(message: string) {
+    super(message);
+    this.name = "InstaBoxPersistenceError";
+  }
+}
 
 export interface InstaBoxNodeRecord {
   readonly nodeId: InstaBoxWorkerNodeId;
@@ -67,7 +76,28 @@ export class InstaBoxFleetRegistry {
   public static readonly HEARTBEAT_BLOCKED_THRESHOLD_MS = 90_000; // 90 seconds
   public static readonly DEFAULT_LEASE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
+  public static readonly FIRESTORE_COLLECTION = "instabox_fleet_state";
+  public static readonly FIRESTORE_DOC_ID = "current";
+
+  public static isFirestoreConfigured(): boolean {
+    return Boolean(
+      (process.env.FIREBASE_PROJECT_ID &&
+        (process.env.FIREBASE_PRIVATE_KEY ||
+          process.env.FIREBASE_CLIENT_EMAIL ||
+          process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+          process.env.K_SERVICE)) ||
+      (process.env.GOOGLE_CLOUD_PROJECT &&
+        (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.K_SERVICE))
+    );
+  }
+
   private constructor(customStatePath?: string) {
+    if (process.env.NODE_ENV === "production" && !InstaBoxFleetRegistry.isFirestoreConfigured()) {
+      throw new InstaBoxPersistenceError(
+        "Firestore credentials missing in production environment. Cloud Run requires durable Firestore persistence for instabox_fleet_state."
+      );
+    }
+
     this.stateFilePath =
       customStatePath ||
       process.env.INSTABOX_STATE_FILE ||
@@ -97,93 +127,139 @@ export class InstaBoxFleetRegistry {
     this.loadPersistedState();
   }
 
+  public serializeFleetState(): { updatedAt: string; nodes: any[] } {
+    const nodesData = Array.from(this.nodes.values()).map((n) => ({
+      nodeId: n.nodeId,
+      workerId: n.workerId,
+      metrics: n.metrics,
+      lastHeartbeatAt: n.lastHeartbeatAt,
+      consecutiveFailures: n.consecutiveFailures,
+      totalAttempts: n.totalAttempts,
+      successfulExecutions: n.successfulExecutions,
+      failedExecutions: n.failedExecutions,
+      isDraining: n.isDraining,
+      adminDraining: n.adminDraining,
+      activeLease: n.activeLease
+        ? {
+            jobId: n.activeLease.jobId,
+            executionId: n.activeLease.executionId,
+            executionToken: n.activeLease.executionToken,
+            attemptId: n.activeLease.attemptId,
+            workerId: n.activeLease.workerId,
+            nodeId: n.activeLease.nodeId,
+            claimedAt: n.activeLease.claimedAt,
+            lastProgressAt: n.activeLease.lastProgressAt,
+            leaseExpiresAt: n.activeLease.leaseExpiresAt,
+            timeoutMs: n.activeLease.timeoutMs,
+            job: n.activeLease.job,
+          }
+        : undefined,
+    }));
+
+    return {
+      updatedAt: new Date().toISOString(),
+      nodes: nodesData,
+    };
+  }
+
+  public applyPersistedNodeData(nodesData: any[]): void {
+    if (!Array.isArray(nodesData)) return;
+    for (const nodeData of nodesData) {
+      const record = this.nodes.get(nodeData.nodeId);
+      if (record) {
+        if (nodeData.metrics) record.metrics = nodeData.metrics;
+        if (nodeData.lastHeartbeatAt) record.lastHeartbeatAt = nodeData.lastHeartbeatAt;
+        if (typeof nodeData.consecutiveFailures === "number") {
+          record.consecutiveFailures = nodeData.consecutiveFailures;
+        }
+        if (typeof nodeData.totalAttempts === "number") {
+          record.totalAttempts = nodeData.totalAttempts;
+        }
+        if (typeof nodeData.successfulExecutions === "number") {
+          record.successfulExecutions = nodeData.successfulExecutions;
+        }
+        if (typeof nodeData.failedExecutions === "number") {
+          record.failedExecutions = nodeData.failedExecutions;
+        }
+        if (typeof nodeData.isDraining === "boolean") {
+          record.isDraining = nodeData.isDraining;
+        }
+        if (typeof nodeData.adminDraining === "boolean") {
+          record.adminDraining = nodeData.adminDraining;
+        }
+        if (nodeData.activeLease && nodeData.activeLease.leaseExpiresAt) {
+          const expiresAt = new Date(nodeData.activeLease.leaseExpiresAt).getTime();
+          if (Date.now() < expiresAt) {
+            record.activeLease = {
+              ...nodeData.activeLease,
+              resolveReceipt: () => {},
+              rejectReceipt: () => {},
+            };
+          }
+        }
+      }
+    }
+  }
+
   private loadPersistedState(): void {
     try {
       if (fs.existsSync(this.stateFilePath)) {
         const raw = fs.readFileSync(this.stateFilePath, "utf8");
         const data = JSON.parse(raw);
         if (data && Array.isArray(data.nodes)) {
-          for (const nodeData of data.nodes) {
-            const record = this.nodes.get(nodeData.nodeId);
-            if (record) {
-              if (nodeData.metrics) record.metrics = nodeData.metrics;
-              if (nodeData.lastHeartbeatAt) record.lastHeartbeatAt = nodeData.lastHeartbeatAt;
-              if (typeof nodeData.consecutiveFailures === "number") {
-                record.consecutiveFailures = nodeData.consecutiveFailures;
-              }
-              if (typeof nodeData.totalAttempts === "number") {
-                record.totalAttempts = nodeData.totalAttempts;
-              }
-              if (typeof nodeData.successfulExecutions === "number") {
-                record.successfulExecutions = nodeData.successfulExecutions;
-              }
-              if (typeof nodeData.failedExecutions === "number") {
-                record.failedExecutions = nodeData.failedExecutions;
-              }
-              if (typeof nodeData.isDraining === "boolean") {
-                record.isDraining = nodeData.isDraining;
-              }
-              if (typeof nodeData.adminDraining === "boolean") {
-                record.adminDraining = nodeData.adminDraining;
-              }
-              if (nodeData.activeLease && nodeData.activeLease.leaseExpiresAt) {
-                const expiresAt = new Date(nodeData.activeLease.leaseExpiresAt).getTime();
-                if (Date.now() < expiresAt) {
-                  record.activeLease = {
-                    ...nodeData.activeLease,
-                    resolveReceipt: () => {},
-                    rejectReceipt: () => {},
-                  };
-                }
-              }
-            }
-          }
+          this.applyPersistedNodeData(data.nodes);
         }
       }
     } catch {
-      // Graceful fallback on corrupt state
+      // Graceful fallback on corrupt local state
+    }
+  }
+
+  public async loadPersistedStateFromFirestore(): Promise<boolean> {
+    try {
+      const doc = await db
+        .collection(InstaBoxFleetRegistry.FIRESTORE_COLLECTION)
+        .doc(InstaBoxFleetRegistry.FIRESTORE_DOC_ID)
+        .get();
+      if (doc.exists) {
+        const data = doc.data();
+        if (data && Array.isArray(data.nodes)) {
+          this.applyPersistedNodeData(data.nodes);
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      if (process.env.NODE_ENV === "production") {
+        throw new InstaBoxPersistenceError(`Failed to load fleet state from Firestore: ${err}`);
+      }
+      return false;
+    }
+  }
+
+  public async persistStateToFirestore(): Promise<boolean> {
+    try {
+      const payload = this.serializeFleetState();
+      await db
+        .collection(InstaBoxFleetRegistry.FIRESTORE_COLLECTION)
+        .doc(InstaBoxFleetRegistry.FIRESTORE_DOC_ID)
+        .set(payload, { merge: true });
+      return true;
+    } catch (err) {
+      if (process.env.NODE_ENV === "production") {
+        throw new InstaBoxPersistenceError(`Failed to persist fleet state to Firestore: ${err}`);
+      }
+      return false;
     }
   }
 
   private persistState(): void {
+    const payload = this.serializeFleetState();
     try {
       const dir = path.dirname(this.stateFilePath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-
-      const nodesData = Array.from(this.nodes.values()).map((n) => ({
-        nodeId: n.nodeId,
-        workerId: n.workerId,
-        metrics: n.metrics,
-        lastHeartbeatAt: n.lastHeartbeatAt,
-        consecutiveFailures: n.consecutiveFailures,
-        totalAttempts: n.totalAttempts,
-        successfulExecutions: n.successfulExecutions,
-        failedExecutions: n.failedExecutions,
-        isDraining: n.isDraining,
-        adminDraining: n.adminDraining,
-        activeLease: n.activeLease
-          ? {
-              jobId: n.activeLease.jobId,
-              executionId: n.activeLease.executionId,
-              executionToken: n.activeLease.executionToken,
-              attemptId: n.activeLease.attemptId,
-              workerId: n.activeLease.workerId,
-              nodeId: n.activeLease.nodeId,
-              claimedAt: n.activeLease.claimedAt,
-              lastProgressAt: n.activeLease.lastProgressAt,
-              leaseExpiresAt: n.activeLease.leaseExpiresAt,
-              timeoutMs: n.activeLease.timeoutMs,
-              job: n.activeLease.job,
-            }
-          : undefined,
-      }));
-
-      const payload = {
-        updatedAt: new Date().toISOString(),
-        nodes: nodesData,
-      };
 
       const tmp = `${this.stateFilePath}.tmp`;
       fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), "utf8");
@@ -191,6 +267,9 @@ export class InstaBoxFleetRegistry {
     } catch {
       // Best-effort atomic persist
     }
+
+    // Trigger async Firestore persist in background or cloud runtime
+    this.persistStateToFirestore().catch(() => {});
   }
 
   public static getInstance(): InstaBoxFleetRegistry {
