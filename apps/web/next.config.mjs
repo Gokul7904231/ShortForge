@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   reactCompiler: true,
   typescript: {
     // Separate type-checking from Next.js build for Render Free 512MB RAM compatibility
