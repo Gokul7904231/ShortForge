@@ -79,6 +79,11 @@ HEARTBEAT_INTERVAL_SECONDS = float(os.environ.get("HEARTBEAT_INTERVAL_SECONDS", 
 POLL_INTERVAL_SECONDS = float(os.environ.get("POLL_INTERVAL_SECONDS", "5.0"))
 MAX_JOB_DURATION_SECONDS = int(os.environ.get("MAX_JOB_DURATION_SECONDS", "1800"))
 MIN_DISK_AVAILABLE_MB = int(os.environ.get("MIN_DISK_AVAILABLE_MB", "2048"))
+MAX_BACKOFF_SECONDS = float(os.environ.get("MAX_BACKOFF_SECONDS", "15.0"))
+HEARTBEAT_TIMEOUT_SECONDS = float(os.environ.get("HEARTBEAT_TIMEOUT_SECONDS", "5.0"))
+CLAIM_TIMEOUT_SECONDS = float(os.environ.get("CLAIM_TIMEOUT_SECONDS", "10.0"))
+PROGRESS_TIMEOUT_SECONDS = float(os.environ.get("PROGRESS_TIMEOUT_SECONDS", "10.0"))
+CALLBACK_TIMEOUT_SECONDS = float(os.environ.get("CALLBACK_TIMEOUT_SECONDS", "15.0"))
 
 # Storage resolution: Prefer /data/shortforge/workspace, fallback to /tmp/instabox_workspace
 configured_workspace = os.environ.get("WORKSPACE_BASE")
@@ -273,7 +278,7 @@ def send_heartbeat(status: str = "HEALTHY") -> Optional[Dict[str, Any]]:
             headers=headers,
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=HEARTBEAT_TIMEOUT_SECONDS) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data
     except Exception as e:
@@ -307,7 +312,7 @@ def claim_job() -> Optional[Dict[str, Any]]:
             headers=headers,
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=CLAIM_TIMEOUT_SECONDS) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             if data.get("claimed"):
                 return data
@@ -340,7 +345,7 @@ def report_progress(job_id: str, execution_token: str, percent: int, message: st
             headers=headers,
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=PROGRESS_TIMEOUT_SECONDS) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data.get("acknowledged", False)
     except Exception as e:
@@ -480,7 +485,7 @@ def send_callback_with_retry(
     for attempt in range(1, max_retries + 1):
         try:
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=CALLBACK_TIMEOUT_SECONDS) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 acknowledged = data.get("success", False) is True and data.get("status") == status
                 if acknowledged:
@@ -491,7 +496,7 @@ def send_callback_with_retry(
             log("Callback", f"Callback delivery attempt {attempt}/{max_retries} failed: {e}")
 
         if attempt < max_retries:
-            backoff_sleep = 2 ** (attempt - 1)
+            backoff_sleep = min(MAX_BACKOFF_SECONDS, float(2 ** (attempt - 1)))
             time.sleep(backoff_sleep)
 
     return False
@@ -859,9 +864,9 @@ def main():
             if job_claim:
                 execute_render_job(job_claim)
             else:
-                time.sleep(POLL_INTERVAL_SECONDS)
+                time.sleep(min(MAX_BACKOFF_SECONDS, POLL_INTERVAL_SECONDS))
         else:
-            time.sleep(POLL_INTERVAL_SECONDS)
+            time.sleep(min(MAX_BACKOFF_SECONDS, POLL_INTERVAL_SECONDS))
 
     log("Shutdown", "Shutdown requested. Sending final shutdown heartbeat.")
     send_heartbeat(status="DRAINING")
