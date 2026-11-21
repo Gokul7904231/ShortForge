@@ -34,6 +34,9 @@ def test_agent_syntax_and_constants():
     assert constants.get("CLAIM_TIMEOUT_SECONDS") == 10.0
     assert constants.get("PROGRESS_TIMEOUT_SECONDS") == 10.0
     assert constants.get("CALLBACK_TIMEOUT_SECONDS") == 15.0
+    assert 45.0 <= constants.get("IDLE_POLL_INTERVAL_SECONDS") <= 60.0
+    assert constants.get("ACTIVE_POLL_INTERVAL_SECONDS") == 3.0
+    assert 45.0 <= constants.get("HEARTBEAT_INTERVAL_SECONDS") <= 60.0
 
 
 def test_worker_daemon_backoff_cap():

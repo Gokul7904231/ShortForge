@@ -1,0 +1,67 @@
+name: Vercel External 6-Hour Cron Cleanup
+
+on:
+  schedule:
+    # Trigger external cleanup every 6 hours at :13 past the hour to avoid top-of-the-hour stampedes
+    - cron: "13 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-cron-cleanup
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    name: Trigger Vercel Scheduled Storage Cleanup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Cleanup Endpoint
+        env:
+          VERCEL_APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${VERCEL_APP_URL:-}" ]; then
+            echo "::warning::GitHub repository secret 'VERCEL_APP_URL' is not set. Skipping external cron invocation."
+            exit 0
+          fi
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::GitHub repository secret 'CRON_SECRET' is not configured."
+            echo "Please configure 'CRON_SECRET' in repository Secrets to authorize cleanup calls."
+            exit 1
+          fi
+
+          BASE_URL="${VERCEL_APP_URL%/}"
+          TARGET_URL="${BASE_URL}/api/cron/cleanup"
+
+          echo "Triggering Vercel storage cleanup at: ${TARGET_URL}"
+
+          HTTP_CODE=$(curl -sSL \
+            -o /tmp/cron_response.json \
+            -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 45 \
+            --retry 3 \
+            --retry-delay 5 \
+            --retry-connrefused \
+            "${TARGET_URL}")
+
+          echo "HTTP response status: ${HTTP_CODE}"
+          if [ -f /tmp/cron_response.json ]; then
+            echo "Response payload:"
+            cat /tmp/cron_response.json
+            echo ""
+          fi
+
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+            echo "Vercel storage cleanup completed successfully."
+          else
+            echo "::error::Vercel storage cleanup returned error HTTP ${HTTP_CODE}"
+            exit 1
+          fi

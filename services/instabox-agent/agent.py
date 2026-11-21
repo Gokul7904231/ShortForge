@@ -75,8 +75,10 @@ ALLOW_PRIVATE_ASSET_NETWORKS = os.environ.get("ALLOW_PRIVATE_ASSET_NETWORKS", "f
 
 INSTABOX_WORKER_SECRET = os.environ.get("INSTABOX_WORKER_SECRET") or os.environ.get("RENDER_WORKER_SECRET")
 WORKER_ID = os.environ.get("WORKER_ID", "instabox-box2")
-HEARTBEAT_INTERVAL_SECONDS = float(os.environ.get("HEARTBEAT_INTERVAL_SECONDS", "15.0"))
-POLL_INTERVAL_SECONDS = float(os.environ.get("POLL_INTERVAL_SECONDS", "5.0"))
+HEARTBEAT_INTERVAL_SECONDS = float(os.environ.get("HEARTBEAT_INTERVAL_SECONDS", "50.0"))
+IDLE_POLL_INTERVAL_SECONDS = float(os.environ.get("IDLE_POLL_INTERVAL_SECONDS", "50.0"))
+ACTIVE_POLL_INTERVAL_SECONDS = float(os.environ.get("ACTIVE_POLL_INTERVAL_SECONDS", "3.0"))
+POLL_INTERVAL_SECONDS = IDLE_POLL_INTERVAL_SECONDS
 MAX_JOB_DURATION_SECONDS = int(os.environ.get("MAX_JOB_DURATION_SECONDS", "1800"))
 MIN_DISK_AVAILABLE_MB = int(os.environ.get("MIN_DISK_AVAILABLE_MB", "2048"))
 MAX_BACKOFF_SECONDS = float(os.environ.get("MAX_BACKOFF_SECONDS", "15.0"))
@@ -842,6 +844,7 @@ def main():
 
     last_heartbeat = 0.0
     draining = False
+    just_finished_job = False
 
     while not SHUTDOWN_REQUESTED:
         now = time.time()
@@ -863,10 +866,15 @@ def main():
             job_claim = claim_job()
             if job_claim:
                 execute_render_job(job_claim)
+                just_finished_job = True
+                time.sleep(ACTIVE_POLL_INTERVAL_SECONDS)
             else:
-                time.sleep(min(MAX_BACKOFF_SECONDS, POLL_INTERVAL_SECONDS))
+                if just_finished_job:
+                    log("Poll", "Active job queue drained. Reverting to idle polling.")
+                    just_finished_job = False
+                time.sleep(IDLE_POLL_INTERVAL_SECONDS)
         else:
-            time.sleep(min(MAX_BACKOFF_SECONDS, POLL_INTERVAL_SECONDS))
+            time.sleep(IDLE_POLL_INTERVAL_SECONDS)
 
     log("Shutdown", "Shutdown requested. Sending final shutdown heartbeat.")
     send_heartbeat(status="DRAINING")

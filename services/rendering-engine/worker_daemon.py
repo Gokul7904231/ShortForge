@@ -36,7 +36,9 @@ RENDER_WORKER_SECRET = os.environ.get("RENDER_WORKER_SECRET") or os.environ.get(
 WORKER_POOL = os.environ.get("WORKER_POOL", "persistent-worker")
 WORKER_ID = os.environ.get("WORKER_ID", "render-worker-01")
 WORKER_CREDENTIAL_VERSION = os.environ.get("WORKER_CREDENTIAL_VERSION", "2026-08-23-v2")
-POLL_INTERVAL_SECONDS = float(os.environ.get("POLL_INTERVAL_SECONDS", "3.0"))
+POLL_INTERVAL_SECONDS = float(os.environ.get("POLL_INTERVAL_SECONDS", "50.0"))
+IDLE_POLL_INTERVAL_SECONDS = float(os.environ.get("IDLE_POLL_INTERVAL_SECONDS", "50.0"))
+ACTIVE_POLL_INTERVAL_SECONDS = float(os.environ.get("ACTIVE_POLL_INTERVAL_SECONDS", "3.0"))
 MAX_POLL_INTERVAL_SECONDS = float(os.environ.get("MAX_POLL_INTERVAL_SECONDS", "15.0"))
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -639,7 +641,7 @@ def process_single_job(job: dict):
 
 def main_loop():
     log("Worker", f"started workerId={WORKER_ID} pool={WORKER_POOL} version={WORKER_CREDENTIAL_VERSION} endpoint={CONTROL_PLANE_URL}")
-    current_interval = POLL_INTERVAL_SECONDS
+    current_interval = IDLE_POLL_INTERVAL_SECONDS
 
     while True:
         try:
@@ -648,9 +650,9 @@ def main_loop():
 
             if job:
                 process_single_job(job)
-                current_interval = POLL_INTERVAL_SECONDS
+                current_interval = ACTIVE_POLL_INTERVAL_SECONDS
             else:
-                current_interval = min(current_interval * 1.25, MAX_POLL_INTERVAL_SECONDS)
+                current_interval = IDLE_POLL_INTERVAL_SECONDS
                 time.sleep(current_interval)
 
         except KeyboardInterrupt:
@@ -658,7 +660,7 @@ def main_loop():
             break
         except Exception as e:
             log("Worker", f"Unexpected error in daemon loop: {e}")
-            time.sleep(POLL_INTERVAL_SECONDS)
+            time.sleep(min(MAX_POLL_INTERVAL_SECONDS, 15.0))
 
 if __name__ == "__main__":
     main_loop()
