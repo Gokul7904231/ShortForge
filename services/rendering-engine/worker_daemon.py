@@ -261,14 +261,14 @@ class GoogleDriveDeliveryProvider:
                 elif status in [429, 500, 502, 503] and attempt < max_retries:
                     log("Delivery", f"Transient Drive error HTTP {status}. Retrying in {backoff_sec}s (Attempt {attempt}/{max_retries})...")
                     time.sleep(backoff_sec)
-                    backoff_sec *= 2
+                    backoff_sec = min(15.0, backoff_sec * 2)
                 else:
                     raise DriveDeliveryError(f"Google Drive API failed: HTTP {status}", http_status=status, retryable=(status in [429, 500, 503]))
             except Exception as ex:
                 if attempt < max_retries:
                     log("Delivery", f"Network error during upload: {ex}. Retrying in {backoff_sec}s...")
                     time.sleep(backoff_sec)
-                    backoff_sec *= 2
+                    backoff_sec = min(15.0, backoff_sec * 2)
                 else:
                     raise DriveDeliveryError(f"Google Drive network error: {ex}", retryable=True)
 
@@ -402,7 +402,7 @@ def claim_job() -> dict | None:
     req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             if data.get("success") and data.get("claimed") and "job" in data:
                 return data["job"]
@@ -437,7 +437,7 @@ def send_callback(job_id: str, execution_token: str, status: str, payload: dict)
     req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data.get("success", False)
     except Exception as e:

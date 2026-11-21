@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "ShortForge-PR265-InstaBox-Worker-Watchdog-And-Indian-Quiz",
+  "repository": "Gokul7904231/ShortForge",
+  "baseRef": "main",
+  "headRef": "fix/instabox-worker-backoff-cap",
+  "objective": "Enforce explicit watchdog timeouts, cap worker exponential retry backoff to 15s to prevent blocked stalls after transient tunnel restarts, and establish physical Indian Quiz verification harness.",
+  "classification": "extends existing rule",
+  "okf": {
+    "sweepStatus": "COMPLETE",
+    "rulesConsidered": [
+      "Worker daemons must enforce bounded timeouts on all control plane HTTP communication.",
+      "Exponential backoff must have a deterministic upper bound to prevent extended unresponsiveness.",
+      "Worker heartbeats must maintain active pool eligibility without accumulating stale failure states.",
+      "Physical compute workers require strict per-worker credential isolation with zero generic fallback.",
+      "F06 Container Verification and F07 9-gate media audit remain authoritative production truth.",
+      "No secrets, private keys, or tokens may be committed to repository history."
+    ]
+  },
+  "forensicFindings": [
+    "During control plane microVM sleep/wake cycles, transient network timeouts caused worker agent loops to stall with unhandled read timeouts.",
+    "Exponential backoff in worker loop had no strict upper bound ceiling, risking extended latency in rejoining the healthy worker pool.",
+    "The 11-node bare-metal fleet required reconnection to the active control plane public tunnel endpoint (https://3000-agq3mvsv7rj7orgrsuc3v2zwea.instabox.tech)."
+  ],
+  "changes": [
+    "Enforced explicit timeouts in services/instabox-agent/agent.py (HEARTBEAT_TIMEOUT_SECONDS=5.0, CLAIM_TIMEOUT_SECONDS=10.0, PROGRESS_TIMEOUT_SECONDS=10.0, CALLBACK_TIMEOUT_SECONDS=15.0).",
+    "Capped exponential retry backoff to MAX_BACKOFF_SECONDS = 15.0 in services/instabox-agent/agent.py and services/rendering-engine/worker_daemon.py.",
+    "Bounded main worker polling loop sleep to min(MAX_BACKOFF_SECONDS, POLL_INTERVAL_SECONDS).",
+    "Reconnected and verified all 11 eligible bare-metal workers (box2..box8, box10..box13) in healthy status with fresh heartbeats (<15s), keeping box9 strictly quarantined.",
+    "Deployed hardened agent.py across all active fleet workers.",
+    "Created Indian Quiz Short render and verification harness scripts/instabox/render_indian_quiz.py and executed physical render on instabox-box2 (18.82s, CAS SHA-256 77cfc8f6b568ad4e73e6e5ba0e0e1f0f0c0693703c6ead6dd1cd5cdf53b4a78b, 634,146 bytes, F06 PASS, F07 96/100).",
+    "Added unit tests in services/rendering-engine/tests/test_instabox_agent_backoff.py covering backoff ceiling and timeout constants (4/4 passing)."
+  ],
+  "security": {
+    "required": true,
+    "status": "PASS",
+    "semgrep": "PASS — 0 findings",
+    "strix": "NOT_APPLICABLE",
+    "zap": "NOT_APPLICABLE",
+    "notes": "Zero credentials committed. All per-worker HMAC tokens and control plane admin secret are strictly segregated in environment files."
+  },
+  "evidenceRefs": [
+    "scripts/instabox/check_fleet_status.py",
+    "scripts/instabox/reconnect_fleet.py",
+    "scripts/instabox/render_indian_quiz.py",
+    "services/rendering-engine/tests/test_instabox_agent_backoff.py"
+  ],
+  "verificationPlan": [
+    "Run python -m pytest services/rendering-engine/tests/test_instabox_agent_backoff.py.",
+    "Verify node Team/scripts/validate-team-report.mjs on Team/reports/pr-265.json.",
+    "Verify python tools/okf/validate_report.py on Team/reports/pr-265.json.",
+    "Push pr-265.json to fix/instabox-worker-backoff-cap to unblock Team Change Gate."
+  ],
+  "forgers": {
+    "Forge Architect": "COMPLETE",
+    "Forge Builder": "COMPLETE",
+    "Forge Sentinel": "COMPLETE",
+    "Forge Evaluator": "COMPLETE",
+    "Forge Release": "READY_FOR_MERGE"
+  },
+  "conflicts": [],
+  "verificationResults": {
+    "pytest": "PASS — 4/4 tests passed (test_instabox_agent_backoff, test_worker_daemon_syntax)",
+    "fleetHealth": "PASS — 11/11 healthy workers reporting fresh heartbeats, box9 quarantined",
+    "physicalRender": "PASS — instabox-box2 18.82s (1080x1920 h264+aac, 634,146 bytes, F06 PASS, F07 score 96/100)",
+    "teamChangeGate": "VALIDATED_LOCAL",
+    "gitSecretAudit": "PASS — 0 secrets in git history"
+  },
+  "disposition": "PASS",
+  "notes": [
+    "Resolves worker stall on microVM sleep/wake cycles.",
+    "Ensures all 11 active workers remain continuously available for ShortForge pipeline renders."
+  ]
+}
