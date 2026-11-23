@@ -1,160 +1,489 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "schema": "shortforge://okf/architecture/authority-registry/v1",
-  "status": "ACTIVE",
-  "version": "1.0.0",
-  "effectiveAt": "2026-10-06",
-  "principle": "Exactly one sovereign canonical owner per authority domain; all other stores are projections, caches, evidence, or compatibility adapters.",
-  "domains": [
+  "schemaVersion": "2.0.0-charter",
+  "generatedFrom": ".okf/charter.md",
+  "charter": {
+    "path": ".okf/charter.md",
+    "version": "1.0.0",
+    "sha256": "ce765cf848db7c8868267c85f205746dde958ea8be532a00cf15250439b6a78e"
+  },
+  "supremeAuthority": {
+    "id": "human-co-leads",
+    "name": "Human Co-Leads",
+    "sovereign": true,
+    "scope": "factory",
+    "powers": [
+      "policy",
+      "budget",
+      "emergency-stop",
+      "appointments",
+      "charter-amendment"
+    ]
+  },
+  "floorSet": [
+    "F00",
+    "F01",
+    "F02",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07"
+  ],
+  "parallelBranches": [
+    [
+      "F03",
+      "F04"
+    ]
+  ],
+  "convergenceFloor": "F05",
+  "laws": [
     {
-      "domainId": "governance",
-      "authorityType": "NORMATIVE_POLICY",
-      "canonicalOwner": ".okf",
-      "runtimeBinding": null,
-      "persistence": "git",
-      "writeMode": "reviewed-repository-change",
-      "allowedWriters": ["Human", "Overseer"],
-      "forbiddenResponsibilities": ["runtime_execution", "artifact_mutation", "economic_admission"]
+      "id": "L1",
+      "text": "Human Co-Leads > Overseer > all execution. Emergency stop beats everything."
     },
     {
-      "domainId": "production_topology",
-      "authorityType": "CANONICAL_CONTRACT",
-      "canonicalOwner": "FloorRegistry",
-      "runtimeBinding": "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
-      "persistence": "git",
-      "writeMode": "reviewed-repository-change",
-      "allowedWriters": ["Engineering"],
-      "forbiddenResponsibilities": ["runtime_job_state", "release_authorization"]
+      "id": "L2",
+      "text": "Overseer commands and coordinates but never executes production work and never bypasses a regulator veto."
     },
     {
-      "domainId": "operational_state",
-      "authorityType": "OPERATIONAL_TRUTH",
-      "canonicalOwner": "MongoDB",
-      "runtimeBinding": "apps/web/factoryos/core/database/MongoDBClient.ts",
-      "persistence": "mongodb",
-      "writeMode": "transactional",
-      "allowedWriters": ["FactoryOS runtime repositories", "authorized control-plane services"],
-      "forbiddenResponsibilities": ["normative_policy", "physical_artifact_bytes", "learned_memory_semantics"]
+      "id": "L3",
+      "text": "Factory-wide roles are co-equal, domain-sovereign, and are never production floors."
     },
     {
-      "domainId": "learned_memory",
-      "authorityType": "COGNITIVE_MEMORY",
-      "canonicalOwner": "Memory Fabric",
-      "runtimeBinding": "apps/web/factoryos/core/intelligence/memory/",
-      "persistence": "Mongo operational ledger + KnowledgeStore/derived projections",
-      "writeMode": "gated-promotion",
-      "allowedWriters": ["Memory Fabric services"],
-      "forbiddenResponsibilities": ["execution_authority", "release_authorization", "capability_grant"]
+      "id": "L4",
+      "text": "Guardian is per-floor sovereign; a single global capability Guardian replacing per-floor command is drift."
     },
     {
-      "domainId": "working_context",
-      "authorityType": "ACTIVE_WORKING_CONTEXT",
-      "canonicalOwner": "ContextFabric",
-      "runtimeBinding": "apps/web/factoryos/core/cognitive/context/ContextFabric.ts",
-      "persistence": "runtime state; durable persistence is a later migration wave",
-      "writeMode": "validated-context-edits",
-      "allowedWriters": ["ContextFabric", "future CLM through ContextFabric"],
-      "forbiddenResponsibilities": ["capability_grant", "lease_issuance", "treasury_admission", "f07_verification", "artifact_identity"]
+      "id": "L5",
+      "text": "Auditor is not F07. Auditor examines evidence; F07 establishes release integrity. Neither replaces the other."
     },
     {
-      "domainId": "external_context",
-      "authorityType": "EXTERNAL_CONTEXT_SUBSTRATE",
-      "canonicalOwner": "RLM ContextIndexer/PersistentContextStore",
-      "runtimeBinding": "apps/web/factoryos/core/cognitive/rlm/",
-      "persistence": "persistent context store",
-      "writeMode": "index-and-dereference",
-      "allowedWriters": ["RLM context services"],
-      "forbiddenResponsibilities": ["working_context_authority", "execution_authority", "release_authorization"]
+      "id": "L6",
+      "text": "Slayer primary verb is investigate, not kill. Containment is bounded and capability-granted."
     },
     {
-      "domainId": "artifacts",
-      "authorityType": "ARTIFACT_IDENTITY",
-      "canonicalOwner": "ContentAddressedStore",
-      "runtimeBinding": "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
-      "persistence": "content-addressed filesystem/object storage",
-      "writeMode": "immutable",
-      "allowedWriters": ["artifact writers through CAS"],
-      "forbiddenResponsibilities": ["policy_decision", "execution_authority", "economic_admission"]
+      "id": "L7",
+      "text": "Treasurer obeys only Overseer for discretionary commands; immutable economic rules always apply. Guardian and Treasurer are independent gates."
     },
     {
-      "domainId": "physical_verification",
-      "authorityType": "VERIFICATION_TRUTH",
-      "canonicalOwner": "F07 Verification / VerificationReceipt",
-      "runtimeBinding": "apps/web/factoryos/core/verification/",
-      "persistence": "verification evidence",
-      "writeMode": "evidence-producing",
-      "allowedWriters": ["F07 verification services"],
-      "forbiddenResponsibilities": ["working_context_authority", "policy_authoring", "model_training_authority"]
+      "id": "L8",
+      "text": "Ascalon thinks for the Guardian, per-floor, advisory only; never a second Overseer."
     },
     {
-      "domainId": "epistemic_state",
-      "authorityType": "EPISTEMIC_ADVISORY",
-      "canonicalOwner": "AER",
-      "runtimeBinding": "apps/web/factoryos/core/intelligence/aer/",
-      "persistence": "runtime/evidence references",
-      "writeMode": "advisory",
-      "allowedWriters": ["AER"],
-      "forbiddenResponsibilities": ["execution", "lease_issuance", "release", "economic_admission"]
+      "id": "L9",
+      "text": "Comms transports events; never commands, authorizes, spends, repairs, or verifies."
     },
     {
-      "domainId": "decisions",
-      "authorityType": "TYPED_DECISION",
-      "canonicalOwner": "JEV / Decision Engine",
-      "runtimeBinding": "apps/web/factoryos/core/decision/",
-      "persistence": "decision records",
-      "writeMode": "typed-decision",
-      "allowedWriters": ["Decision Engine"],
-      "forbiddenResponsibilities": ["direct_tool_execution", "capability_grant", "f07_verification"]
+      "id": "L10",
+      "text": "Advisor recommends; Instructor teaches; BDA inspects and records to Auditor; FG-Healer joints with global Healer. None self-grants authority."
     },
     {
-      "domainId": "reasoning",
-      "authorityType": "DEEP_COGNITION",
-      "canonicalOwner": "Ascalon",
-      "runtimeBinding": "future model runtime; current adapters remain bounded",
-      "persistence": "model artifacts and governed trajectories",
-      "writeMode": "bounded-inference",
-      "allowedWriters": ["Ascalon inference/training pipeline"],
-      "forbiddenResponsibilities": ["sovereign_authority", "release_authorization", "economic_admission"]
+      "id": "L11",
+      "text": "F03 and F04 run in parallel and converge at F05; otherwise floors are sequential F00 to F07. Workers execute only."
     },
     {
-      "domainId": "execution",
-      "authorityType": "EXECUTION_AUTHORITY",
-      "canonicalOwner": "Guardian + authorized workers",
-      "runtimeBinding": "apps/web/factoryos/core/security/ and agent runtime",
-      "persistence": "Mongo operational state + audit evidence",
-      "writeMode": "capability-and-lease-gated",
-      "allowedWriters": ["Guardian", "authorized workers"],
-      "forbiddenResponsibilities": ["policy_authoring", "memory_promotion", "model_training"]
+      "id": "L12",
+      "text": "No accretion: no new sovereign role without a Human-approved charter amendment."
     },
     {
-      "domainId": "economics",
-      "authorityType": "ECONOMIC_ADMISSION",
-      "canonicalOwner": "Treasury",
-      "runtimeBinding": "apps/web/factoryos/core/economics/ and treasurer boundary",
-      "persistence": "Mongo treasury collections + ledger",
-      "writeMode": "reservation-and-settlement",
-      "allowedWriters": ["Treasury"],
-      "forbiddenResponsibilities": ["normative_policy", "f07_verification", "working_context_authority"]
-    },
-    {
-      "domainId": "knowledge_projection",
-      "authorityType": "HUMAN_KNOWLEDGE_PROJECTION",
-      "canonicalOwner": "Obsidian projection",
-      "runtimeBinding": "knowledge/obsidian/",
-      "persistence": "markdown/Git",
-      "writeMode": "derived-projection",
-      "allowedWriters": ["knowledge compiler/projection"],
-      "forbiddenResponsibilities": ["capability_grant", "operational_truth", "memory_promotion_without_gate"]
-    },
-    {
-      "domainId": "user_projection",
-      "authorityType": "USER_FACING_PROJECTION",
-      "canonicalOwner": "Firestore projection/read models",
-      "runtimeBinding": "apps/web/lib/firebase-admin.ts",
-      "persistence": "firestore",
-      "writeMode": "projection-and-compatibility",
-      "allowedWriters": ["projection services", "compatibility adapters"],
-      "forbiddenResponsibilities": ["hot_path_economic_admission", "distributed_lease_authority", "f07_verification"]
+      "id": "L13",
+      "text": "CLAIM <= EVIDENCE and LEARNING != PROOF at every layer. Execution success is not verified success."
     }
-  ]
+  ],
+  "sovereigns": [
+    {
+      "id": "overseer",
+      "ordinal": 1,
+      "name": "Overseer",
+      "scope": "factory",
+      "primaryVerb": "command",
+      "reportsTo": "human-co-leads",
+      "perFloor": false,
+      "contract": ".okf/hierarchy/overseer.md",
+      "vetoes": [],
+      "doesNotOwn": [
+        "capability-authorization",
+        "economic-approval",
+        "physical-execution",
+        "release-verification"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "treasurer",
+      "ordinal": 2,
+      "name": "Treasurer",
+      "scope": "factory",
+      "primaryVerb": "allocate",
+      "reportsTo": "human-co-leads",
+      "perFloor": false,
+      "discretionaryCommander": "overseer",
+      "contract": ".okf/hierarchy/treasurer.md",
+      "vetoes": [
+        "economic-admission"
+      ],
+      "doesNotOwn": [
+        "mission-strategy",
+        "floor-command",
+        "capability-authorization",
+        "release-verification"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "slayer",
+      "ordinal": 3,
+      "name": "Slayer",
+      "scope": "factory",
+      "primaryVerb": "investigate",
+      "reportsTo": "overseer",
+      "perFloor": false,
+      "contract": ".okf/hierarchy/slayer.md",
+      "vetoes": [
+        "bounded-containment"
+      ],
+      "doesNotOwn": [
+        "production-dispatch",
+        "resource-spend",
+        "recovery-execution",
+        "reconstruction",
+        "xp-ledger-mutation"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "healer",
+      "ordinal": 4,
+      "name": "Healer",
+      "scope": "factory",
+      "primaryVerb": "recover",
+      "reportsTo": "overseer",
+      "perFloor": false,
+      "contract": ".okf/hierarchy/healer.md",
+      "vetoes": [],
+      "doesNotOwn": [
+        "capability-self-grant",
+        "scope-expansion",
+        "structural-reconstruction"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "remaker",
+      "ordinal": 5,
+      "name": "ReMaker",
+      "scope": "factory",
+      "primaryVerb": "reconstruct",
+      "reportsTo": "overseer",
+      "perFloor": false,
+      "requiredCapability": "CAP_REMAKER_REPAIR",
+      "contract": ".okf/hierarchy/remaker.md",
+      "vetoes": [],
+      "doesNotOwn": [
+        "mission-strategy",
+        "budget-authority",
+        "physical-rendering",
+        "publishing",
+        "release-verification"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "comms",
+      "ordinal": 6,
+      "name": "Comms",
+      "scope": "factory",
+      "primaryVerb": "transport",
+      "reportsTo": "overseer",
+      "perFloor": false,
+      "contract": ".okf/hierarchy/comms.md",
+      "vetoes": [],
+      "doesNotOwn": [
+        "command",
+        "authorization",
+        "spend",
+        "repair",
+        "verification"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "guardian",
+      "ordinal": 7,
+      "name": "Guardian",
+      "scope": "floor",
+      "primaryVerb": "command-floor",
+      "reportsTo": "overseer",
+      "perFloor": true,
+      "contract": ".okf/hierarchy/guardian.md",
+      "vetoes": [
+        "capability-authorization"
+      ],
+      "doesNotOwn": [
+        "human-policy-override",
+        "cross-floor-authority",
+        "treasurer-bypass",
+        "independent-audit-replacement"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "auditor",
+      "ordinal": 8,
+      "name": "Auditor",
+      "scope": "floor",
+      "primaryVerb": "examine",
+      "reportsTo": "human-co-leads",
+      "perFloor": true,
+      "independentOf": [
+        "guardian",
+        "healer",
+        "remaker",
+        "worker",
+        "bda",
+        "f07"
+      ],
+      "contract": ".okf/hierarchy/auditor.md",
+      "vetoes": [
+        "integrity-finding"
+      ],
+      "doesNotOwn": [
+        "release-verification",
+        "floor-command",
+        "execution"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "advisor",
+      "ordinal": 9,
+      "name": "Advisor",
+      "scope": "floor",
+      "primaryVerb": "recommend",
+      "reportsTo": "guardian",
+      "perFloor": true,
+      "contract": ".okf/hierarchy/advisor.md",
+      "vetoes": [],
+      "doesNotOwn": [
+        "command",
+        "capability-authorization",
+        "spend",
+        "state-mutation"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "instructor",
+      "ordinal": 10,
+      "name": "Instructor",
+      "scope": "floor",
+      "primaryVerb": "teach",
+      "reportsTo": "guardian",
+      "perFloor": true,
+      "contract": ".okf/hierarchy/instructor.md",
+      "vetoes": [],
+      "doesNotOwn": [
+        "global-security-policy",
+        "operational-authority",
+        "command"
+      ],
+      "enforcementTests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    }
+  ],
+  "subsystems": [
+    {
+      "id": "ascalon",
+      "name": "Ascalon",
+      "sovereign": false,
+      "kind": "cognition",
+      "parent": "guardian",
+      "scope": "floor",
+      "mode": "advisory",
+      "contract": ".okf/intelligence/ascalon-model.md"
+    },
+    {
+      "id": "bda",
+      "name": "Border Defence Agent",
+      "sovereign": false,
+      "kind": "boundary-inspection",
+      "parent": "guardian",
+      "scope": "floor",
+      "mode": "records-to-auditor",
+      "contract": ".okf/hierarchy/bda.md"
+    },
+    {
+      "id": "fg-healer",
+      "name": "FG-Healer",
+      "sovereign": false,
+      "kind": "recovery",
+      "parent": "guardian",
+      "scope": "floor",
+      "mode": "joints-with-global-healer",
+      "contract": ".okf/hierarchy/fg-healer.md"
+    },
+    {
+      "id": "f07",
+      "name": "F07 Release Integrity Boundary",
+      "sovereign": false,
+      "kind": "release-boundary",
+      "parent": "independent",
+      "scope": "factory",
+      "mode": "fail-closed",
+      "replaceableBy": [],
+      "contract": ".okf/hierarchy/auditor.md"
+    },
+    {
+      "id": "devourer",
+      "name": "Devourer",
+      "sovereign": false,
+      "kind": "improvement-program",
+      "parent": "instructor",
+      "coGovernor": "overseer",
+      "scope": "factory",
+      "mode": "propose-only",
+      "contract": ".okf/devourer.md"
+    },
+    {
+      "id": "aer",
+      "name": "Ascalon Epistemic Runtime",
+      "sovereign": false,
+      "kind": "cognition",
+      "parent": "ascalon",
+      "scope": "floor",
+      "mode": "shadow-only",
+      "contract": ".okf/intelligence/aer.md"
+    },
+    {
+      "id": "glide",
+      "name": "GLiDE",
+      "sovereign": false,
+      "kind": "cognition",
+      "parent": "ascalon",
+      "scope": "floor",
+      "mode": "advisory",
+      "contract": ".okf/decisions/glide-decision-system-20261002.md"
+    },
+    {
+      "id": "scl",
+      "name": "ShortForge Cognitive Layer",
+      "sovereign": false,
+      "kind": "cognition",
+      "parent": "ascalon",
+      "scope": "floor",
+      "mode": "advisory",
+      "contract": ".okf/cognitive/layer-contract.md"
+    },
+    {
+      "id": "worker",
+      "name": "Production Worker",
+      "sovereign": false,
+      "kind": "execution",
+      "parent": "guardian",
+      "scope": "floor",
+      "mode": "bounded-authorized",
+      "contract": ".okf/hierarchy/worker.md"
+    },
+    {
+      "id": "fencing",
+      "name": "Leases & Fencing",
+      "sovereign": false,
+      "kind": "infrastructure",
+      "parent": "guardian",
+      "scope": "factory",
+      "mode": "enforcement",
+      "contract": ".okf/security/worker-permissions.md"
+    },
+    {
+      "id": "cas",
+      "name": "Content-Addressed Storage",
+      "sovereign": false,
+      "kind": "infrastructure",
+      "parent": "guardian",
+      "scope": "factory",
+      "mode": "immutable",
+      "contract": ".okf/artifacts/artifact-model.md"
+    },
+    {
+      "id": "renderfabric",
+      "name": "RenderFabric",
+      "sovereign": false,
+      "kind": "infrastructure",
+      "parent": "guardian",
+      "scope": "factory",
+      "mode": "execution",
+      "contract": ".okf/rendering/render-fabric.md"
+    },
+    {
+      "id": "computerouter",
+      "name": "ComputeRouter",
+      "sovereign": false,
+      "kind": "infrastructure",
+      "parent": "guardian",
+      "scope": "factory",
+      "mode": "placement",
+      "contract": ".okf/rendering/compute-policy.md"
+    }
+  ],
+  "commandPaths": {
+    "production": [
+      "human-co-leads",
+      "overseer",
+      "guardian",
+      "worker",
+      "auditor",
+      "f07"
+    ],
+    "economic": [
+      "overseer",
+      "treasurer",
+      "guardian",
+      "computerouter",
+      "worker",
+      "f07",
+      "treasurer"
+    ],
+    "failure": [
+      "worker",
+      "comms",
+      "slayer",
+      "overseer",
+      "healer",
+      "auditor",
+      "guardian"
+    ],
+    "reconstruction": [
+      "overseer",
+      "guardian",
+      "remaker",
+      "renderfabric",
+      "cas",
+      "f07",
+      "auditor"
+    ]
+  },
+  "meta": {
+    "sovereignCount": 10,
+    "accretionPolicy": "charter-amendment-required",
+    "driftTest": "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+  }
 }

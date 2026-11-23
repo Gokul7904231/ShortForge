@@ -1,1 +1,1 @@
-# pre-commit: add checks here if needed (kept empty so it never blocks on missing npm test)
+node scripts/okf/sync-charter-hash.mjs && npm run okf:authority

@@ -13,6 +13,7 @@
   },
   "scripts": {
     "prepare": "husky",
+    "okf:authority": "npm --prefix apps/web test factoryos/tests/authority-charter-drift.test.ts",
     "test:mission": "npx tsx testing/cli/mission.ts",
     "test:all": "npx tsx testing/cli/test.ts",
     "obsidian:lint": "node tools/obsidian/lint-vault.mjs knowledge",

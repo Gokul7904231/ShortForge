@@ -14,9 +14,9 @@ Autonomous video production quantities, cadence, target niches, and freshness wi
 
 ## 2. Decoupled Hierarchy: Control Plane vs. Production Pipeline
 The sovereign control hierarchy (authority, supervision, lease management, circuit breaking) is strictly segregated from the physical production pipeline (sequential media generation).
-- **Control Entities**: Overseer (L1), Guardian (L2 Gate), Slayer (L2 Eviction), Healer (L2 Circuit Doctor).
-- **Production Floors**: Floors 00 through 07.
-- **Invariant**: Control entities are never pipeline floors. Guardian is not Floor 07.
+- **Control Entities**: Overseer (L1 command), Guardian (L2 per-floor sovereign), Treasurer (economic gate), Slayer (investigator), Healer (recovery), ReMaker (reconstruction), Comms (event transport).
+- **Production Floors**: Floors 00 through 07 (F03 ∥ F04 converge at F05).
+- **Invariant**: Control entities are never pipeline floors. Guardian is per-floor sovereign commander (Floor 00 Guardian … Floor 07 Guardian); F07 is a separate, independent physical release-integrity boundary.
 
 ---
 

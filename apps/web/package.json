@@ -11,6 +11,7 @@
     "build": "next build",
     "build:render": "next build",
     "typecheck": "tsc --noEmit",
+    "okf:authority": "vitest run factoryos/tests/authority-charter-drift.test.ts",
     "test": "vitest run --config vitest.config.ts",
     "verify:ci": "npm run typecheck && npm test",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
