@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://shortforge.ai/schemas/ascalon/decision.schema.json",
+  "title": "AscalonDecision",
+  "type": "object",
+  "description": "Structured operational decision proposal schema for Project Ascalon",
+  "required": [
+    "decisionId",
+    "decisionType",
+    "selectedAction",
+    "uncertainty",
+    "reasoningSource",
+    "status"
+  ],
+  "properties": {
+    "decisionId": {
+      "type": "string",
+      "pattern": "^dec_[a-zA-Z0-9_-]+$"
+    },
+    "decisionType": {
+      "type": "string",
+      "enum": ["NOUL", "CHOICE", "SCORE", "CAPABILITY_SELECTION", "RECOVERY_PLAN"]
+    },
+    "selectedAction": {
+      "type": "object",
+      "required": ["actionType", "targetEntity"],
+      "properties": {
+        "actionType": { "type": "string" },
+        "targetEntity": { "type": "string" },
+        "capabilityId": { "type": "string" },
+        "parameters": { "type": "object" }
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["actionType", "probability"],
+        "properties": {
+          "actionType": { "type": "string" },
+          "probability": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "rejectionReason": { "type": "string" }
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "required": ["epistemicConfidence", "calibrationStatus"],
+      "properties": {
+        "modelProbability": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "epistemicConfidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "calibrationStatus": {
+          "type": "string",
+          "enum": ["CALIBRATED", "UNCALIBRATED", "ESTIMATED", "UNKNOWN"]
+        },
+        "uncertaintyReason": { "type": "string" }
+      }
+    },
+    "reasoningSource": {
+      "type": "object",
+      "required": ["mode", "provider", "trainingEligible"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["REAL_MODEL", "LOCAL_MODEL", "TEST_HEURISTIC", "DISABLED", "DETERMINISTIC_RULE"]
+        },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "trainingEligible": { "type": "boolean" },
+        "fallbackApplied": { "type": "boolean" },
+        "fallbackReason": { "type": "string" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["VALID", "INVALID", "UNRESOLVED", "ESCALATED"]
+    },
+    "validationErrorCode": {
+      "type": "string",
+      "enum": [
+        "INVALID_JSON",
+        "MISSING_FIELD",
+        "INVALID_ENUM",
+        "INVALID_PROBABILITY",
+        "INVALID_DISTRIBUTION",
+        "INVALID_CONFIDENCE",
+        "INVALID_RUBRIC_LEVEL",
+        "UNKNOWN_QUESTION",
+        "DUPLICATE_QUESTION",
+        "MISSING_QUESTION"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

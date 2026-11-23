@@ -1,0 +1,484 @@
+{
+  "batch_id": "batch_047",
+  "batch_index": 47,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d04_015",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_015",
+        "content_engine": "story",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pipeline state observation: F03 executed before F02 completed (ScriptIR missing or unverified).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "FloorRegistry.ts:validateFloorTransition"
+          },
+          {
+            "fact": "Canonical Floor Topology: F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07. Floors F03 and F04 run in parallel, cannot call each other, and cannot bypass F05.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 3 (Single Authoritative Source of Truth - Topology)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Topology check for ACT_HALT_AWAIT_F02",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Strictly obey DAG floor dependencies.",
+          "Never bypass intermediate composition stages."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_EXECUTE_F03_PARALLEL",
+          "label": "Execute F03 asset realization concurrently with F04 using immutable F02 ScriptIR inputs"
+        },
+        {
+          "id": "ACT_REJECT_CROSS_FLOOR_CALL",
+          "label": "Block direct F03->F04 cross-floor call; delegate parallel coordination to Overseer/Runtime"
+        },
+        {
+          "id": "ACT_REJECT_UPSTREAM_MUTATION",
+          "label": "Reject in-place mutation of F02 ScriptIR from visual floor F03"
+        },
+        {
+          "id": "ACT_HANDOFF_TO_F05",
+          "label": "Package AssetPlanIR with durable handoff store and notify F05 Composition stage"
+        },
+        {
+          "id": "ACT_HALT_AWAIT_F02",
+          "label": "Halt F03 until upstream F02 ScriptIR is verified and signed"
+        },
+        {
+          "id": "ACT_ENFORCE_TOPOLOGY_GATE",
+          "label": "Block attempt to skip F05 Composition and route directly to F06 render workers"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_HALT_AWAIT_F02",
+        "rejected_reasons": {
+          "ACT_EXECUTE_F03_PARALLEL": "TOPOLOGY_VIOLATION: Action 'ACT_EXECUTE_F03_PARALLEL' contradicts the canonical floor transition rule for this state.",
+          "ACT_REJECT_CROSS_FLOOR_CALL": "TOPOLOGY_VIOLATION: Action 'ACT_REJECT_CROSS_FLOOR_CALL' contradicts the canonical floor transition rule for this state.",
+          "ACT_REJECT_UPSTREAM_MUTATION": "TOPOLOGY_VIOLATION: Action 'ACT_REJECT_UPSTREAM_MUTATION' contradicts the canonical floor transition rule for this state.",
+          "ACT_HANDOFF_TO_F05": "TOPOLOGY_VIOLATION: Action 'ACT_HANDOFF_TO_F05' contradicts the canonical floor transition rule for this state.",
+          "ACT_ENFORCE_TOPOLOGY_GATE": "TOPOLOGY_VIOLATION: Action 'ACT_ENFORCE_TOPOLOGY_GATE' contradicts the canonical floor transition rule for this state."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_016",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_016",
+        "content_engine": "story",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pipeline state observation: F03 attempting to directly invoke F06 video render engine.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "FloorRegistry.ts:validateFloorTransition"
+          },
+          {
+            "fact": "Canonical Floor Topology: F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07. Floors F03 and F04 run in parallel, cannot call each other, and cannot bypass F05.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 3 (Single Authoritative Source of Truth - Topology)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Topology check for ACT_ENFORCE_TOPOLOGY_GATE",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Strictly obey DAG floor dependencies.",
+          "Never bypass intermediate composition stages."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_EXECUTE_F03_PARALLEL",
+          "label": "Execute F03 asset realization concurrently with F04 using immutable F02 ScriptIR inputs"
+        },
+        {
+          "id": "ACT_REJECT_CROSS_FLOOR_CALL",
+          "label": "Block direct F03->F04 cross-floor call; delegate parallel coordination to Overseer/Runtime"
+        },
+        {
+          "id": "ACT_REJECT_UPSTREAM_MUTATION",
+          "label": "Reject in-place mutation of F02 ScriptIR from visual floor F03"
+        },
+        {
+          "id": "ACT_HANDOFF_TO_F05",
+          "label": "Package AssetPlanIR with durable handoff store and notify F05 Composition stage"
+        },
+        {
+          "id": "ACT_HALT_AWAIT_F02",
+          "label": "Halt F03 until upstream F02 ScriptIR is verified and signed"
+        },
+        {
+          "id": "ACT_ENFORCE_TOPOLOGY_GATE",
+          "label": "Block attempt to skip F05 Composition and route directly to F06 render workers"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ENFORCE_TOPOLOGY_GATE",
+        "rejected_reasons": {
+          "ACT_EXECUTE_F03_PARALLEL": "TOPOLOGY_VIOLATION: Action 'ACT_EXECUTE_F03_PARALLEL' contradicts the canonical floor transition rule for this state.",
+          "ACT_REJECT_CROSS_FLOOR_CALL": "TOPOLOGY_VIOLATION: Action 'ACT_REJECT_CROSS_FLOOR_CALL' contradicts the canonical floor transition rule for this state.",
+          "ACT_REJECT_UPSTREAM_MUTATION": "TOPOLOGY_VIOLATION: Action 'ACT_REJECT_UPSTREAM_MUTATION' contradicts the canonical floor transition rule for this state.",
+          "ACT_HANDOFF_TO_F05": "TOPOLOGY_VIOLATION: Action 'ACT_HANDOFF_TO_F05' contradicts the canonical floor transition rule for this state.",
+          "ACT_HALT_AWAIT_F02": "TOPOLOGY_VIOLATION: Action 'ACT_HALT_AWAIT_F02' contradicts the canonical floor transition rule for this state."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_019",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_019",
+        "content_engine": "story",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Continuity analysis: Scene 4 returns to 'Detective Vance' after an intermediate B-roll shot.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "asset_plan_ir.py:ContinuityMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Continuity mode signal: REANCHOR",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Preserve visual continuity across scene boundaries.",
+          "Ensure character identity anchors are invariant."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR",
+          "label": "Lock Scene 1 character seed and IP-Adapter reference embedding for Scene 2"
+        },
+        {
+          "id": "ACT_SET_INDEPENDENT_BROLL",
+          "label": "Mark scene as ContinuityMode.INDEPENDENT for general atmospheric B-roll"
+        },
+        {
+          "id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+          "label": "Re-anchor character reference embedding from canonical character sheet"
+        },
+        {
+          "id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+          "label": "Reject drifting image and regenerate with reference_image conditioning"
+        },
+        {
+          "id": "ACT_APPROVE_CONTINUITY_PASS",
+          "label": "Approve character continuity as conforming to identity threshold (> 0.82 similarity)"
+        },
+        {
+          "id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+          "label": "Inject shared negative prompt and style conditioning token across all scenes"
+        },
+        {
+          "id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+          "label": "Condition image generator on the last frame of previous clip to guarantee seamless cut"
+        },
+        {
+          "id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+          "label": "Apply regional prompting masks to preserve distinct character features"
+        },
+        {
+          "id": "ACT_DISREGARD_CHARACTER_IDENTITY",
+          "label": "Allow characters to randomly transform between scenes without consistency check"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+        "rejected_reasons": {
+          "ACT_DISREGARD_CHARACTER_IDENTITY": "QUALITY_VIOLATION_CHARACTER_JUMP: Inconsistent character faces destroy suspension of disbelief and violate production specs.",
+          "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_LOCK_CHARACTER_IDENTITY_ANCHOR' does not resolve specific state 'REANCHOR'.",
+          "ACT_SET_INDEPENDENT_BROLL": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_SET_INDEPENDENT_BROLL' does not resolve specific state 'REANCHOR'.",
+          "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REGENERATE_WITH_REFERENCE_CONDITIONING' does not resolve specific state 'REANCHOR'.",
+          "ACT_APPROVE_CONTINUITY_PASS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPROVE_CONTINUITY_PASS' does not resolve specific state 'REANCHOR'.",
+          "ACT_ENFORCE_GLOBAL_STYLE_PROMPT": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_ENFORCE_GLOBAL_STYLE_PROMPT' does not resolve specific state 'REANCHOR'.",
+          "ACT_CHAIN_LAST_FRAME_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_CHAIN_LAST_FRAME_CONDITIONING' does not resolve specific state 'REANCHOR'.",
+          "ACT_APPLY_MULTI_IDENTITY_MASKS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPLY_MULTI_IDENTITY_MASKS' does not resolve specific state 'REANCHOR'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_020",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_020",
+        "content_engine": "story",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Continuity analysis: Scene 2 generated Detective Vance with different hair color and clothing style.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "asset_plan_ir.py:ContinuityMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Continuity mode signal: CONTINUITY_BREAK",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Visual drift anomaly: CONTINUITY_BREAK"
+        ],
+        "constraints": [
+          "Preserve visual continuity across scene boundaries.",
+          "Ensure character identity anchors are invariant."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR",
+          "label": "Lock Scene 1 character seed and IP-Adapter reference embedding for Scene 2"
+        },
+        {
+          "id": "ACT_SET_INDEPENDENT_BROLL",
+          "label": "Mark scene as ContinuityMode.INDEPENDENT for general atmospheric B-roll"
+        },
+        {
+          "id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+          "label": "Re-anchor character reference embedding from canonical character sheet"
+        },
+        {
+          "id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+          "label": "Reject drifting image and regenerate with reference_image conditioning"
+        },
+        {
+          "id": "ACT_APPROVE_CONTINUITY_PASS",
+          "label": "Approve character continuity as conforming to identity threshold (> 0.82 similarity)"
+        },
+        {
+          "id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+          "label": "Inject shared negative prompt and style conditioning token across all scenes"
+        },
+        {
+          "id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+          "label": "Condition image generator on the last frame of previous clip to guarantee seamless cut"
+        },
+        {
+          "id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+          "label": "Apply regional prompting masks to preserve distinct character features"
+        },
+        {
+          "id": "ACT_DISREGARD_CHARACTER_IDENTITY",
+          "label": "Allow characters to randomly transform between scenes without consistency check"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+        "rejected_reasons": {
+          "ACT_DISREGARD_CHARACTER_IDENTITY": "QUALITY_VIOLATION_CHARACTER_JUMP: Inconsistent character faces destroy suspension of disbelief and violate production specs.",
+          "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_LOCK_CHARACTER_IDENTITY_ANCHOR' does not resolve specific state 'CONTINUITY_BREAK'.",
+          "ACT_SET_INDEPENDENT_BROLL": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_SET_INDEPENDENT_BROLL' does not resolve specific state 'CONTINUITY_BREAK'.",
+          "ACT_REANCHOR_PRIMARY_IDENTITY": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REANCHOR_PRIMARY_IDENTITY' does not resolve specific state 'CONTINUITY_BREAK'.",
+          "ACT_APPROVE_CONTINUITY_PASS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPROVE_CONTINUITY_PASS' does not resolve specific state 'CONTINUITY_BREAK'.",
+          "ACT_ENFORCE_GLOBAL_STYLE_PROMPT": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_ENFORCE_GLOBAL_STYLE_PROMPT' does not resolve specific state 'CONTINUITY_BREAK'.",
+          "ACT_CHAIN_LAST_FRAME_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_CHAIN_LAST_FRAME_CONDITIONING' does not resolve specific state 'CONTINUITY_BREAK'.",
+          "ACT_APPLY_MULTI_IDENTITY_MASKS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPLY_MULTI_IDENTITY_MASKS' does not resolve specific state 'CONTINUITY_BREAK'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_021",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_021",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Continuity analysis: Character identity reference embedding extracted and verified against anchor image.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "asset_plan_ir.py:ContinuityMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Continuity mode signal: EMBEDDING_PASS",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Preserve visual continuity across scene boundaries.",
+          "Ensure character identity anchors are invariant."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR",
+          "label": "Lock Scene 1 character seed and IP-Adapter reference embedding for Scene 2"
+        },
+        {
+          "id": "ACT_SET_INDEPENDENT_BROLL",
+          "label": "Mark scene as ContinuityMode.INDEPENDENT for general atmospheric B-roll"
+        },
+        {
+          "id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+          "label": "Re-anchor character reference embedding from canonical character sheet"
+        },
+        {
+          "id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+          "label": "Reject drifting image and regenerate with reference_image conditioning"
+        },
+        {
+          "id": "ACT_APPROVE_CONTINUITY_PASS",
+          "label": "Approve character continuity as conforming to identity threshold (> 0.82 similarity)"
+        },
+        {
+          "id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+          "label": "Inject shared negative prompt and style conditioning token across all scenes"
+        },
+        {
+          "id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+          "label": "Condition image generator on the last frame of previous clip to guarantee seamless cut"
+        },
+        {
+          "id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+          "label": "Apply regional prompting masks to preserve distinct character features"
+        },
+        {
+          "id": "ACT_DISREGARD_CHARACTER_IDENTITY",
+          "label": "Allow characters to randomly transform between scenes without consistency check"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_CONTINUITY_PASS",
+        "rejected_reasons": {
+          "ACT_DISREGARD_CHARACTER_IDENTITY": "QUALITY_VIOLATION_CHARACTER_JUMP: Inconsistent character faces destroy suspension of disbelief and violate production specs.",
+          "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_LOCK_CHARACTER_IDENTITY_ANCHOR' does not resolve specific state 'EMBEDDING_PASS'.",
+          "ACT_SET_INDEPENDENT_BROLL": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_SET_INDEPENDENT_BROLL' does not resolve specific state 'EMBEDDING_PASS'.",
+          "ACT_REANCHOR_PRIMARY_IDENTITY": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REANCHOR_PRIMARY_IDENTITY' does not resolve specific state 'EMBEDDING_PASS'.",
+          "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REGENERATE_WITH_REFERENCE_CONDITIONING' does not resolve specific state 'EMBEDDING_PASS'.",
+          "ACT_ENFORCE_GLOBAL_STYLE_PROMPT": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_ENFORCE_GLOBAL_STYLE_PROMPT' does not resolve specific state 'EMBEDDING_PASS'.",
+          "ACT_CHAIN_LAST_FRAME_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_CHAIN_LAST_FRAME_CONDITIONING' does not resolve specific state 'EMBEDDING_PASS'.",
+          "ACT_APPLY_MULTI_IDENTITY_MASKS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPLY_MULTI_IDENTITY_MASKS' does not resolve specific state 'EMBEDDING_PASS'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

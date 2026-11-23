@@ -1,0 +1,406 @@
+{
+  "batch_id": "batch_020",
+  "batch_index": 20,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D10-AER-009",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_OR_F05_COGNITION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-micro-009",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Calibrated Ascalon VOI is 0.002 (minimumNetValue threshold is 0.01)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Single hypothesis pending with low consequence score",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context: Background card gradient variant selection among 3 approved tokens, calculated_voi: 0.002",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Minor uncertainty: Background card gradient variant selection among 3 approved tokens"
+        ],
+        "constraints": [
+          "When VOI < minimumNetValue (0.01), escalation to Ascalon DEEP is strictly forbidden"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_MICRO_DECISION",
+          "label": "Dispatch to CLM 1.5B micro-decision head under bounded latency"
+        },
+        {
+          "id": "ACT_ESCALATE_DEEP_ASCALON",
+          "label": "Escalate to Ascalon 4B Deep cognition"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Fail-closed pipeline termination"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBES_BATCH",
+          "label": "Spawn 5 parallel sensor probes"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MICRO_DECISION",
+        "rejected_reasons": {
+          "ACT_ESCALATE_DEEP_ASCALON": "INVARIANT_VIOLATION_VOI_NEGATIVE: Ascalon VOI (0.00X) is below 0.01 minimum net value threshold; escalating wastes deep call budget",
+          "ACT_ABORT_PIPELINE": "POLICY_VIOLATION_PREMATURE_ABORT: Minor bounded uncertainty can be safely resolved by CLM micro head",
+          "ACT_DISPATCH_PROBES_BATCH": "BUDGET_EXCEEDED_PROBE_COUNT: Spawning batch probes for sub-threshold VOI violates epistemic budget allocation"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-010",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_OR_F05_COGNITION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-micro-010",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Calibrated Ascalon VOI is 0.007 (minimumNetValue threshold is 0.01)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Single hypothesis pending with low consequence score",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context: Slight 2% vertical offset for face landmark centering, calculated_voi: 0.007",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Minor uncertainty: Slight 2% vertical offset for face landmark centering"
+        ],
+        "constraints": [
+          "When VOI < minimumNetValue (0.01), escalation to Ascalon DEEP is strictly forbidden"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_MICRO_DECISION",
+          "label": "Dispatch to CLM 1.5B micro-decision head under bounded latency"
+        },
+        {
+          "id": "ACT_ESCALATE_DEEP_ASCALON",
+          "label": "Escalate to Ascalon 4B Deep cognition"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Fail-closed pipeline termination"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBES_BATCH",
+          "label": "Spawn 5 parallel sensor probes"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MICRO_DECISION",
+        "rejected_reasons": {
+          "ACT_ESCALATE_DEEP_ASCALON": "INVARIANT_VIOLATION_VOI_NEGATIVE: Ascalon VOI (0.00X) is below 0.01 minimum net value threshold; escalating wastes deep call budget",
+          "ACT_ABORT_PIPELINE": "POLICY_VIOLATION_PREMATURE_ABORT: Minor bounded uncertainty can be safely resolved by CLM micro head",
+          "ACT_DISPATCH_PROBES_BATCH": "BUDGET_EXCEEDED_PROBE_COUNT: Spawning batch probes for sub-threshold VOI violates epistemic budget allocation"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-011",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_F04_F06_SYNTHESIS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-deep-011",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Ascalon VOI is 0.35 (exceeds 0.01 threshold significantly)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Deep call budget status: 0 of 2 calls consumed (budget available)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "unresolved_conflict: Script pacing and claim grounding failed F02 check across 3 scenes, voi: 0.35",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Multi-hypothesis structural conflict: Script pacing and claim grounding failed F02 check across 3 scenes"
+        ],
+        "constraints": [
+          "Deep call budget must not exceed 2 calls per mission",
+          "Ascalon coarse-to-fine structure must be enforced"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ESCALATE_ASCALON_DEEP",
+          "label": "Escalate to Ascalon 4B Deep cognitive synthesizer via coarse-to-fine planning"
+        },
+        {
+          "id": "ACT_FORCE_MICRO_HEURISTIC",
+          "label": "Force CLM 1.5B micro heuristic decision"
+        },
+        {
+          "id": "ACT_SKIP_SYNTHESIS",
+          "label": "Skip scene synthesis and proceed with corrupted layout"
+        },
+        {
+          "id": "ACT_SPAWN_UNBOUNDED_RETRIES",
+          "label": "Loop 10 times attempting random mutations"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ESCALATE_ASCALON_DEEP",
+        "rejected_reasons": {
+          "ACT_FORCE_MICRO_HEURISTIC": "CAPABILITY_MISMATCH_ERROR: Complex multi-hypothesis structural contradiction exceeds CLM 1.5B decision capacity and risks catastrophic generation failure",
+          "ACT_SKIP_SYNTHESIS": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Proceeding with corrupted layout violates Floor verification invariants",
+          "ACT_SPAWN_UNBOUNDED_RETRIES": "BUDGET_EXCEEDED_MAX_RETRIES: Random retry loops violate deterministic budget bounds"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-012",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_F04_F06_SYNTHESIS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-deep-012",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Ascalon VOI is 0.48 (exceeds 0.01 threshold significantly)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Deep call budget status: 0 of 2 calls consumed (budget available)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "unresolved_conflict: Character face vector distance is 0.72 across Scene 1 and Scene 4, voi: 0.48",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Multi-hypothesis structural conflict: Character face vector distance is 0.72 across Scene 1 and Scene 4"
+        ],
+        "constraints": [
+          "Deep call budget must not exceed 2 calls per mission",
+          "Ascalon coarse-to-fine structure must be enforced"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ESCALATE_ASCALON_DEEP",
+          "label": "Escalate to Ascalon 4B Deep cognitive synthesizer via coarse-to-fine planning"
+        },
+        {
+          "id": "ACT_FORCE_MICRO_HEURISTIC",
+          "label": "Force CLM 1.5B micro heuristic decision"
+        },
+        {
+          "id": "ACT_SKIP_SYNTHESIS",
+          "label": "Skip scene synthesis and proceed with corrupted layout"
+        },
+        {
+          "id": "ACT_SPAWN_UNBOUNDED_RETRIES",
+          "label": "Loop 10 times attempting random mutations"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ESCALATE_ASCALON_DEEP",
+        "rejected_reasons": {
+          "ACT_FORCE_MICRO_HEURISTIC": "CAPABILITY_MISMATCH_ERROR: Complex multi-hypothesis structural contradiction exceeds CLM 1.5B decision capacity and risks catastrophic generation failure",
+          "ACT_SKIP_SYNTHESIS": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Proceeding with corrupted layout violates Floor verification invariants",
+          "ACT_SPAWN_UNBOUNDED_RETRIES": "BUDGET_EXCEEDED_MAX_RETRIES: Random retry loops violate deterministic budget bounds"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-013",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_F04_F06_SYNTHESIS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-deep-013",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Ascalon VOI is 0.28 (exceeds 0.01 threshold significantly)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Deep call budget status: 0 of 2 calls consumed (budget available)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "unresolved_conflict: Multiple overlapping animated layers cause bounding box occlusion, voi: 0.28",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Multi-hypothesis structural conflict: Multiple overlapping animated layers cause bounding box occlusion"
+        ],
+        "constraints": [
+          "Deep call budget must not exceed 2 calls per mission",
+          "Ascalon coarse-to-fine structure must be enforced"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ESCALATE_ASCALON_DEEP",
+          "label": "Escalate to Ascalon 4B Deep cognitive synthesizer via coarse-to-fine planning"
+        },
+        {
+          "id": "ACT_FORCE_MICRO_HEURISTIC",
+          "label": "Force CLM 1.5B micro heuristic decision"
+        },
+        {
+          "id": "ACT_SKIP_SYNTHESIS",
+          "label": "Skip scene synthesis and proceed with corrupted layout"
+        },
+        {
+          "id": "ACT_SPAWN_UNBOUNDED_RETRIES",
+          "label": "Loop 10 times attempting random mutations"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ESCALATE_ASCALON_DEEP",
+        "rejected_reasons": {
+          "ACT_FORCE_MICRO_HEURISTIC": "CAPABILITY_MISMATCH_ERROR: Complex multi-hypothesis structural contradiction exceeds CLM 1.5B decision capacity and risks catastrophic generation failure",
+          "ACT_SKIP_SYNTHESIS": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Proceeding with corrupted layout violates Floor verification invariants",
+          "ACT_SPAWN_UNBOUNDED_RETRIES": "BUDGET_EXCEEDED_MAX_RETRIES: Random retry loops violate deterministic budget bounds"
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

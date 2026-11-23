@@ -1,0 +1,382 @@
+{
+  "batch_id": "batch_011",
+  "batch_index": 11,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d06_009",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_009",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Canvas framerate declaration: fps=30 (Integer 30 fps).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "TimelineIR.ts:frameRateFromFps"
+          },
+          {
+            "fact": "F05 Framerate Invariant: Canvas framerate must be a standard rational number (24/1, 25/1, 30/1, 60/1, 24000/1001, 30000/1001, 60000/1001). Arbitrary variable framerates are rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "TimelineIR.ts:frameRateFromFps"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Rational framerate check: valid=True, ratio=30/1",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Enforce standard broadcast/web rational framerates."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_RATIONAL_FRAMERATE",
+          "label": "Approve rational framerate 30/1 for CompositionIR canvas"
+        },
+        {
+          "id": "ACT_REJECT_INVALID_FRAMERATE",
+          "label": "Reject non-standard framerate 30 fps and enforce fallback to standard 30/1 fps"
+        },
+        {
+          "id": "ACT_ACCEPT_VARIABLE_FRAMERATE",
+          "label": "Accept variable framerate without validation risking stuttering playback in player"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_RATIONAL_FRAMERATE",
+        "rejected_reasons": {
+          "ACT_ACCEPT_VARIABLE_FRAMERATE": "CONTAINER_VIOLATION_VFR: Variable framerates cause audio drift and rendering desync in FFmpeg pipeline.",
+          "ACT_REJECT_INVALID_FRAMERATE": "FRAMERATE_CLASSIFICATION_MISMATCH: Decision does not match rational validity."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_010",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_010",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Canvas framerate declaration: fps=60 (Integer 60 fps).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "TimelineIR.ts:frameRateFromFps"
+          },
+          {
+            "fact": "F05 Framerate Invariant: Canvas framerate must be a standard rational number (24/1, 25/1, 30/1, 60/1, 24000/1001, 30000/1001, 60000/1001). Arbitrary variable framerates are rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "TimelineIR.ts:frameRateFromFps"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Rational framerate check: valid=True, ratio=60/1",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Enforce standard broadcast/web rational framerates."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_RATIONAL_FRAMERATE",
+          "label": "Approve rational framerate 60/1 for CompositionIR canvas"
+        },
+        {
+          "id": "ACT_REJECT_INVALID_FRAMERATE",
+          "label": "Reject non-standard framerate 60 fps and enforce fallback to standard 30/1 fps"
+        },
+        {
+          "id": "ACT_ACCEPT_VARIABLE_FRAMERATE",
+          "label": "Accept variable framerate without validation risking stuttering playback in player"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_RATIONAL_FRAMERATE",
+        "rejected_reasons": {
+          "ACT_ACCEPT_VARIABLE_FRAMERATE": "CONTAINER_VIOLATION_VFR: Variable framerates cause audio drift and rendering desync in FFmpeg pipeline.",
+          "ACT_REJECT_INVALID_FRAMERATE": "FRAMERATE_CLASSIFICATION_MISMATCH: Decision does not match rational validity."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_011",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_011",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Canvas framerate declaration: fps=24 (Integer 24 cinema fps).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "TimelineIR.ts:frameRateFromFps"
+          },
+          {
+            "fact": "F05 Framerate Invariant: Canvas framerate must be a standard rational number (24/1, 25/1, 30/1, 60/1, 24000/1001, 30000/1001, 60000/1001). Arbitrary variable framerates are rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "TimelineIR.ts:frameRateFromFps"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Rational framerate check: valid=True, ratio=24/1",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Enforce standard broadcast/web rational framerates."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_RATIONAL_FRAMERATE",
+          "label": "Approve rational framerate 24/1 for CompositionIR canvas"
+        },
+        {
+          "id": "ACT_REJECT_INVALID_FRAMERATE",
+          "label": "Reject non-standard framerate 24 fps and enforce fallback to standard 30/1 fps"
+        },
+        {
+          "id": "ACT_ACCEPT_VARIABLE_FRAMERATE",
+          "label": "Accept variable framerate without validation risking stuttering playback in player"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_RATIONAL_FRAMERATE",
+        "rejected_reasons": {
+          "ACT_ACCEPT_VARIABLE_FRAMERATE": "CONTAINER_VIOLATION_VFR: Variable framerates cause audio drift and rendering desync in FFmpeg pipeline.",
+          "ACT_REJECT_INVALID_FRAMERATE": "FRAMERATE_CLASSIFICATION_MISMATCH: Decision does not match rational validity."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_021",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_021",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Composition assembly inspection: F05 received VisualTracks from F03 revision 2, but AudioTracks from F04 revision 1 (stale voice).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "CompositionIR.ts:validateCompositionLineage"
+          },
+          {
+            "fact": "F05 Lineage Invariant: Composition must assemble only identical script revision assets from F03 and F04. Stale or desynchronized revisions must be rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 3 (Single Authoritative Source of Truth - Lineage)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Lineage verification: is_aligned=False",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Assembly defect: F05 received VisualTracks from F03 revision 2, but AudioTracks from F04 revision 1 (stale voice)"
+        ],
+        "constraints": [
+          "Assemble only synchronized, revision-locked visual and audio tracks."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_COMPOSITION_LINEAGE",
+          "label": "Approve composition assembly as fully synchronized with matching revision digests"
+        },
+        {
+          "id": "ACT_REJECT_LINEAGE_MISMATCH",
+          "label": "Reject composition with LineageMismatchError and request F04 voice re-sync to current F03 revision"
+        },
+        {
+          "id": "ACT_REJECT_MISSING_CAS_ASSET",
+          "label": "Reject composition due to missing CAS visual asset and trigger re-hydration"
+        },
+        {
+          "id": "ACT_REJECT_DURATION_OVERHANG",
+          "label": "Reject composition due to audio overhang and request timeline trim"
+        },
+        {
+          "id": "ACT_PROCEED_DESYNC_BLIND",
+          "label": "Render video with mismatched visual and audio revisions hoping viewer does not notice"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_LINEAGE_MISMATCH",
+        "rejected_reasons": {
+          "ACT_PROCEED_DESYNC_BLIND": "INTEGRITY_VIOLATION_DESYNC: Rendering mismatched revisions produces broken audio-visual desync and fails quality gates.",
+          "ACT_APPROVE_COMPOSITION_LINEAGE": "LINEAGE_ACTION_MISMATCH: Action 'ACT_APPROVE_COMPOSITION_LINEAGE' contradicts lineage evaluation.",
+          "ACT_REJECT_MISSING_CAS_ASSET": "LINEAGE_ACTION_MISMATCH: Action 'ACT_REJECT_MISSING_CAS_ASSET' contradicts lineage evaluation.",
+          "ACT_REJECT_DURATION_OVERHANG": "LINEAGE_ACTION_MISMATCH: Action 'ACT_REJECT_DURATION_OVERHANG' contradicts lineage evaluation."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_022",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_022",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Composition assembly inspection: F05 received VisualTracks from F03 revision 3 and AudioTracks from F04 revision 3 (both bound to F02 rev 3).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "CompositionIR.ts:validateCompositionLineage"
+          },
+          {
+            "fact": "F05 Lineage Invariant: Composition must assemble only identical script revision assets from F03 and F04. Stale or desynchronized revisions must be rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 3 (Single Authoritative Source of Truth - Lineage)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Lineage verification: is_aligned=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Assemble only synchronized, revision-locked visual and audio tracks."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_COMPOSITION_LINEAGE",
+          "label": "Approve composition assembly as fully synchronized with matching revision digests"
+        },
+        {
+          "id": "ACT_REJECT_LINEAGE_MISMATCH",
+          "label": "Reject composition with LineageMismatchError and request F04 voice re-sync to current F03 revision"
+        },
+        {
+          "id": "ACT_REJECT_MISSING_CAS_ASSET",
+          "label": "Reject composition due to missing CAS visual asset and trigger re-hydration"
+        },
+        {
+          "id": "ACT_REJECT_DURATION_OVERHANG",
+          "label": "Reject composition due to audio overhang and request timeline trim"
+        },
+        {
+          "id": "ACT_PROCEED_DESYNC_BLIND",
+          "label": "Render video with mismatched visual and audio revisions hoping viewer does not notice"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_COMPOSITION_LINEAGE",
+        "rejected_reasons": {
+          "ACT_PROCEED_DESYNC_BLIND": "INTEGRITY_VIOLATION_DESYNC: Rendering mismatched revisions produces broken audio-visual desync and fails quality gates.",
+          "ACT_REJECT_LINEAGE_MISMATCH": "LINEAGE_ACTION_MISMATCH: Action 'ACT_REJECT_LINEAGE_MISMATCH' contradicts lineage evaluation.",
+          "ACT_REJECT_MISSING_CAS_ASSET": "LINEAGE_ACTION_MISMATCH: Action 'ACT_REJECT_MISSING_CAS_ASSET' contradicts lineage evaluation.",
+          "ACT_REJECT_DURATION_OVERHANG": "LINEAGE_ACTION_MISMATCH: Action 'ACT_REJECT_DURATION_OVERHANG' contradicts lineage evaluation."
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

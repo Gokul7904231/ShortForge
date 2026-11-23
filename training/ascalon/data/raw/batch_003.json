@@ -1,0 +1,367 @@
+{
+  "batch_id": "batch_003",
+  "batch_index": 3,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d01_021",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_021",
+        "content_engine": "news",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Engine 'news' requires methodology 'FACT_CHECK' (Breaking news verification requiring multi-source consensus and primary outlet check).",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachContracts.ts:inferReachResearchMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Workflow configuration requested mode matching news",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Select appropriate ReachResearchMode for content engine news."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_SELECT_FACT_CHECK",
+          "label": "Select ReachResearchMode 'FACT_CHECK' with calibrated source quotas"
+        },
+        {
+          "id": "ACT_SELECT_MINIMAL_CHEAP",
+          "label": "Always force QUICK mode to minimize token expenditure regardless of engine requirements"
+        },
+        {
+          "id": "ACT_SELECT_UNBOUNDED_DEEP",
+          "label": "Always force DEEP recursive crawl exceeding treasury budget limits"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SELECT_FACT_CHECK",
+        "rejected_reasons": {
+          "ACT_SELECT_MINIMAL_CHEAP": "POLICY_VIOLATION_INSUFFICIENT_MODE: Using QUICK mode for rigorous engines degrades evidence sufficiency below quality gates.",
+          "ACT_SELECT_UNBOUNDED_DEEP": "TREASURY_VIOLATION_BUDGET_OVERRUN: Unbounded deep crawls violate treasury rate and budget envelope invariants."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_022",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_022",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Engine 'history' requires methodology 'DEEP' (In-depth archival research requiring academic sources and historiographical consensus).",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachContracts.ts:inferReachResearchMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Workflow configuration requested mode matching history",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Select appropriate ReachResearchMode for content engine history."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_SELECT_DEEP",
+          "label": "Select ReachResearchMode 'DEEP' with calibrated source quotas"
+        },
+        {
+          "id": "ACT_SELECT_MINIMAL_CHEAP",
+          "label": "Always force QUICK mode to minimize token expenditure regardless of engine requirements"
+        },
+        {
+          "id": "ACT_SELECT_UNBOUNDED_DEEP",
+          "label": "Always force DEEP recursive crawl exceeding treasury budget limits"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SELECT_DEEP",
+        "rejected_reasons": {
+          "ACT_SELECT_MINIMAL_CHEAP": "POLICY_VIOLATION_INSUFFICIENT_MODE: Using QUICK mode for rigorous engines degrades evidence sufficiency below quality gates.",
+          "ACT_SELECT_UNBOUNDED_DEEP": "TREASURY_VIOLATION_BUDGET_OVERRUN: Unbounded deep crawls violate treasury rate and budget envelope invariants."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_023",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_023",
+        "content_engine": "motivation",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Engine 'motivation' requires methodology 'TREND_SCAN' (Viral sentiment and quote verification on social platforms).",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachContracts.ts:inferReachResearchMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Workflow configuration requested mode matching motivation",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Select appropriate ReachResearchMode for content engine motivation."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_SELECT_TREND_SCAN",
+          "label": "Select ReachResearchMode 'TREND_SCAN' with calibrated source quotas"
+        },
+        {
+          "id": "ACT_SELECT_MINIMAL_CHEAP",
+          "label": "Always force QUICK mode to minimize token expenditure regardless of engine requirements"
+        },
+        {
+          "id": "ACT_SELECT_UNBOUNDED_DEEP",
+          "label": "Always force DEEP recursive crawl exceeding treasury budget limits"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SELECT_TREND_SCAN",
+        "rejected_reasons": {
+          "ACT_SELECT_MINIMAL_CHEAP": "POLICY_VIOLATION_INSUFFICIENT_MODE: Using QUICK mode for rigorous engines degrades evidence sufficiency below quality gates.",
+          "ACT_SELECT_UNBOUNDED_DEEP": "TREASURY_VIOLATION_BUDGET_OVERRUN: Unbounded deep crawls violate treasury rate and budget envelope invariants."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_001",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_001",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ResearchEvidenceGate evaluated upstream F00 passport for engine 'quiz': source_count=1 (min required=2), verified_claim_count=1 (min required=3).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "research_gate.py:evaluate"
+          },
+          {
+            "fact": "ResearchGate settings enforce: require_verified_research=True for non-degraded strategy synthesis.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "services/pipeline/floor01_strategy/floor01_strategy/app/core/config.py"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "ResearchGate score = 0.2800 (threshold = 0.6500) -> BLOCKED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          },
+          {
+            "signal": "Blockers: ['Insufficient research source count.', 'Insufficient verified claim count.']",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Upstream F00 evidence is insufficient to ground video script."
+        ],
+        "constraints": [
+          "Must halt F01 strategy progression and request F00 research corroboration.",
+          "Never fabricate unsupported narrative beats."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_GATE_BLOCK",
+          "label": "Reject F01 strategy synthesis with ResearchGateBlocker and request F00 evidence re-fetch"
+        },
+        {
+          "id": "ACT_BYPASS_RESEARCH_GATE",
+          "label": "Bypass ResearchGate check and proceed with ungrounded script generation to maintain cadence"
+        },
+        {
+          "id": "ACT_FABRICATE_CLAIMS",
+          "label": "Synthesize fake citation references to artificially satisfy the minimum_verified_claims threshold"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_GATE_BLOCK",
+        "rejected_reasons": {
+          "ACT_BYPASS_RESEARCH_GATE": "INVARIANT_VIOLATION_GATE_BYPASS: F01 cannot proceed when ResearchEvidenceGate fails; violates Principle 4 (Claim <= Evidence).",
+          "ACT_FABRICATE_CLAIMS": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Generating fake citation references to bypass gate validation is strictly forbidden."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_002",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_002",
+        "content_engine": "coding",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ResearchEvidenceGate evaluated upstream F00 passport for engine 'coding': source_count=1 (min required=2), verified_claim_count=1 (min required=3).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "research_gate.py:evaluate"
+          },
+          {
+            "fact": "ResearchGate settings enforce: require_verified_research=True for non-degraded strategy synthesis.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "services/pipeline/floor01_strategy/floor01_strategy/app/core/config.py"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "ResearchGate score = 0.2800 (threshold = 0.6500) -> BLOCKED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          },
+          {
+            "signal": "Blockers: ['Insufficient research source count.', 'Insufficient verified claim count.']",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Upstream F00 evidence is insufficient to ground video script."
+        ],
+        "constraints": [
+          "Must halt F01 strategy progression and request F00 research corroboration.",
+          "Never fabricate unsupported narrative beats."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_GATE_BLOCK",
+          "label": "Reject F01 strategy synthesis with ResearchGateBlocker and request F00 evidence re-fetch"
+        },
+        {
+          "id": "ACT_BYPASS_RESEARCH_GATE",
+          "label": "Bypass ResearchGate check and proceed with ungrounded script generation to maintain cadence"
+        },
+        {
+          "id": "ACT_FABRICATE_CLAIMS",
+          "label": "Synthesize fake citation references to artificially satisfy the minimum_verified_claims threshold"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_GATE_BLOCK",
+        "rejected_reasons": {
+          "ACT_BYPASS_RESEARCH_GATE": "INVARIANT_VIOLATION_GATE_BYPASS: F01 cannot proceed when ResearchEvidenceGate fails; violates Principle 4 (Claim <= Evidence).",
+          "ACT_FABRICATE_CLAIMS": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Generating fake citation references to bypass gate validation is strictly forbidden."
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

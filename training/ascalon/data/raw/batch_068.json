@@ -1,0 +1,399 @@
+{
+  "batch_id": "batch_068",
+  "batch_index": 68,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D11-EDIT-017",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_ENVELOPE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-act-017",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "EditorActor kind='AGENT', id='agent_ascalon_4b'",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "Command envelope digest status: sig_valid",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "actor_envelope: AGENT:agent_ascalon_4b, digest_status: sig_valid",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Every editor command MUST be signed and attributed to a verified Actor"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ACCEPT_AUTHENTICATED_COMMAND",
+          "label": "Process command envelope (ACT_ACCEPT_AUTHENTICATED_COMMAND)"
+        },
+        {
+          "id": "ACT_ACCEPT_UNAUTHENTICATED",
+          "label": "Accept command without validating actor authentication"
+        },
+        {
+          "id": "ACT_REGENERATE_FAKE_SIGNATURE",
+          "label": "Forge internal signature to bypass digest check"
+        },
+        {
+          "id": "ACT_CRASH_EDITOR_SESSION",
+          "label": "Crash WebSocket session with unhandled exception"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ACCEPT_AUTHENTICATED_COMMAND",
+        "rejected_reasons": {
+          "ACT_ACCEPT_UNAUTHENTICATED": "SECURITY_VIOLATION_UNATTRIBUTED_MUTATION: Accepting unverified or tampered editor envelopes creates an arbitrary code/timeline injection vulnerability",
+          "ACT_REGENERATE_FAKE_SIGNATURE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating signatures violates non-repudiation and cryptographic integrity",
+          "ACT_CRASH_EDITOR_SESSION": "RESILIENCE_VIOLATION_UNHANDLED_CRASH: Staged command failures must return structured EditorReceipt, not crash the editor process"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-018",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_ENVELOPE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-act-018",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "EditorActor kind='SYSTEM', id='cron_watchdog'",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "Command envelope digest status: sig_valid",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "actor_envelope: SYSTEM:cron_watchdog, digest_status: sig_valid",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Every editor command MUST be signed and attributed to a verified Actor"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ACCEPT_AUTHENTICATED_COMMAND",
+          "label": "Process command envelope (ACT_ACCEPT_AUTHENTICATED_COMMAND)"
+        },
+        {
+          "id": "ACT_ACCEPT_UNAUTHENTICATED",
+          "label": "Accept command without validating actor authentication"
+        },
+        {
+          "id": "ACT_REGENERATE_FAKE_SIGNATURE",
+          "label": "Forge internal signature to bypass digest check"
+        },
+        {
+          "id": "ACT_CRASH_EDITOR_SESSION",
+          "label": "Crash WebSocket session with unhandled exception"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ACCEPT_AUTHENTICATED_COMMAND",
+        "rejected_reasons": {
+          "ACT_ACCEPT_UNAUTHENTICATED": "SECURITY_VIOLATION_UNATTRIBUTED_MUTATION: Accepting unverified or tampered editor envelopes creates an arbitrary code/timeline injection vulnerability",
+          "ACT_REGENERATE_FAKE_SIGNATURE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating signatures violates non-repudiation and cryptographic integrity",
+          "ACT_CRASH_EDITOR_SESSION": "RESILIENCE_VIOLATION_UNHANDLED_CRASH: Staged command failures must return structured EditorReceipt, not crash the editor process"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-019",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_ENVELOPE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-act-019",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "EditorActor kind='ANONYMOUS', id=''",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "Command envelope digest status: sig_missing",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "actor_envelope: ANONYMOUS:, digest_status: sig_missing",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Envelope integrity failure: sig_missing"
+        ],
+        "constraints": [
+          "Every editor command MUST be signed and attributed to a verified Actor"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_UNATTRIBUTED_ACTOR",
+          "label": "Process command envelope (ACT_REJECT_UNATTRIBUTED_ACTOR)"
+        },
+        {
+          "id": "ACT_ACCEPT_UNAUTHENTICATED",
+          "label": "Accept command without validating actor authentication"
+        },
+        {
+          "id": "ACT_REGENERATE_FAKE_SIGNATURE",
+          "label": "Forge internal signature to bypass digest check"
+        },
+        {
+          "id": "ACT_CRASH_EDITOR_SESSION",
+          "label": "Crash WebSocket session with unhandled exception"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_UNATTRIBUTED_ACTOR",
+        "rejected_reasons": {
+          "ACT_ACCEPT_UNAUTHENTICATED": "SECURITY_VIOLATION_UNATTRIBUTED_MUTATION: Accepting unverified or tampered editor envelopes creates an arbitrary code/timeline injection vulnerability",
+          "ACT_REGENERATE_FAKE_SIGNATURE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating signatures violates non-repudiation and cryptographic integrity",
+          "ACT_CRASH_EDITOR_SESSION": "RESILIENCE_VIOLATION_UNHANDLED_CRASH: Staged command failures must return structured EditorReceipt, not crash the editor process"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-020",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_ENVELOPE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-act-020",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "EditorActor kind='AGENT', id='agent_malicious'",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "Command envelope digest status: digest_mismatch",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "actor_envelope: AGENT:agent_malicious, digest_status: digest_mismatch",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Envelope integrity failure: digest_mismatch"
+        ],
+        "constraints": [
+          "Every editor command MUST be signed and attributed to a verified Actor"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_TAMPERED_ENVELOPE",
+          "label": "Process command envelope (ACT_REJECT_TAMPERED_ENVELOPE)"
+        },
+        {
+          "id": "ACT_ACCEPT_UNAUTHENTICATED",
+          "label": "Accept command without validating actor authentication"
+        },
+        {
+          "id": "ACT_REGENERATE_FAKE_SIGNATURE",
+          "label": "Forge internal signature to bypass digest check"
+        },
+        {
+          "id": "ACT_CRASH_EDITOR_SESSION",
+          "label": "Crash WebSocket session with unhandled exception"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_TAMPERED_ENVELOPE",
+        "rejected_reasons": {
+          "ACT_ACCEPT_UNAUTHENTICATED": "SECURITY_VIOLATION_UNATTRIBUTED_MUTATION: Accepting unverified or tampered editor envelopes creates an arbitrary code/timeline injection vulnerability",
+          "ACT_REGENERATE_FAKE_SIGNATURE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating signatures violates non-repudiation and cryptographic integrity",
+          "ACT_CRASH_EDITOR_SESSION": "RESILIENCE_VIOLATION_UNHANDLED_CRASH: Staged command failures must return structured EditorReceipt, not crash the editor process"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-021",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-bnd-021",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Target duration or split time in ticks: -500",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          },
+          {
+            "fact": "Timebase is 120,000 ticks/second; duration must be strictly positive finite integer",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command_parameter_ticks: -500",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Boundary violation: duration=-500"
+        ],
+        "constraints": [
+          "Clips with non-positive or corrupted durations must be rejected"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_NEGATIVE_DURATION",
+          "label": "Validate clip timing boundaries (ACT_REJECT_NEGATIVE_DURATION)"
+        },
+        {
+          "id": "ACT_ACCEPT_CORRUPTED_CLIP",
+          "label": "Accept clip with negative/zero duration into timeline"
+        },
+        {
+          "id": "ACT_CLAMP_TO_ZERO",
+          "label": "Silently clamp negative clip duration to 0 and render black frames"
+        },
+        {
+          "id": "ACT_REVERSE_TIMELINE_FLOW",
+          "label": "Invert timeline arrow of time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_NEGATIVE_DURATION",
+        "rejected_reasons": {
+          "ACT_ACCEPT_CORRUPTED_CLIP": "TIMING_VIOLATION_SUBFRAME_DRIFT: Non-positive clip duration corrupts timeline playback engine and causes renderer crash",
+          "ACT_CLAMP_TO_ZERO": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Zero duration clips produce black-frame glitches and desynchronize audio-video muxer",
+          "ACT_REVERSE_TIMELINE_FLOW": "PHYSICAL_VIOLATION_CAUSALITY: Inverting timeline flow is not an authorized time transformation"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

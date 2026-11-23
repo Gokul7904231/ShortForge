@@ -1,0 +1,415 @@
+{
+  "batch_id": "batch_049",
+  "batch_index": 49,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d05_007",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_007",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Audio duration measurement: requested=10000ms, actual=10050ms, stretch_ratio=1.005, pass=1. (Negligible drift (0.5%), acceptable without DSP transformation)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:verifyAudioTimingBounds"
+          },
+          {
+            "fact": "F04 Voice Timing Invariant: maxStretchRatio is strictly <= 1.05 (and >= 0.95). Maximum resynthesis passes = 2. Beyond limits, script text must be truncated.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence - Audio Timing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Timing evaluation: ratio=1.005, maxStretch=1.05, pass=1/2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve audio naturalness without chipmunk/slowed pitch distortion.",
+          "Enforce bounded resynthesis budget."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_TEMPO_STRETCH",
+          "label": "Apply micro-tempo adjustment via FFmpeg atempo filter (within 0.95-1.05 limit)"
+        },
+        {
+          "id": "ACT_RESYNTHESIZE_VOICE",
+          "label": "Trigger second resynthesis pass with adjusted VoiceProfile.speed parameter"
+        },
+        {
+          "id": "ACT_TRUNCATE_SCRIPT_TEXT",
+          "label": "Resynthesis passes exhausted; return repair request to F02 to truncate script words"
+        },
+        {
+          "id": "ACT_FORCE_OVERSTRETCH",
+          "label": "Force FFmpeg atempo 1.25x stretch causing severe audio distortion and pitch artifacts"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_TEMPO_STRETCH",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERSTRETCH": "QUALITY_VIOLATION_AUDIO_DISTORTION: Audio time-stretching beyond 5% causes perceptible vocal unnaturalness and violates F04 limits.",
+          "ACT_RESYNTHESIZE_VOICE": "TIMING_ACTION_MISMATCH: Action 'ACT_RESYNTHESIZE_VOICE' violates state rules for ratio=1.005, pass=1.",
+          "ACT_TRUNCATE_SCRIPT_TEXT": "TIMING_ACTION_MISMATCH: Action 'ACT_TRUNCATE_SCRIPT_TEXT' violates state rules for ratio=1.005, pass=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d05_008",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_008",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Audio duration measurement: requested=4000ms, actual=4800ms, stretch_ratio=1.200, pass=1. (Substantial drift (20%), requires re-synthesis with adjusted speaking rate)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:verifyAudioTimingBounds"
+          },
+          {
+            "fact": "F04 Voice Timing Invariant: maxStretchRatio is strictly <= 1.05 (and >= 0.95). Maximum resynthesis passes = 2. Beyond limits, script text must be truncated.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence - Audio Timing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Timing evaluation: ratio=1.200, maxStretch=1.05, pass=1/2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve audio naturalness without chipmunk/slowed pitch distortion.",
+          "Enforce bounded resynthesis budget."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_TEMPO_STRETCH",
+          "label": "Apply micro-tempo adjustment via FFmpeg atempo filter (within 0.95-1.05 limit)"
+        },
+        {
+          "id": "ACT_RESYNTHESIZE_VOICE",
+          "label": "Trigger second resynthesis pass with adjusted VoiceProfile.speed parameter"
+        },
+        {
+          "id": "ACT_TRUNCATE_SCRIPT_TEXT",
+          "label": "Resynthesis passes exhausted; return repair request to F02 to truncate script words"
+        },
+        {
+          "id": "ACT_FORCE_OVERSTRETCH",
+          "label": "Force FFmpeg atempo 1.25x stretch causing severe audio distortion and pitch artifacts"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_RESYNTHESIZE_VOICE",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERSTRETCH": "QUALITY_VIOLATION_AUDIO_DISTORTION: Audio time-stretching beyond 5% causes perceptible vocal unnaturalness and violates F04 limits.",
+          "ACT_APPLY_TEMPO_STRETCH": "TIMING_ACTION_MISMATCH: Action 'ACT_APPLY_TEMPO_STRETCH' violates state rules for ratio=1.200, pass=1.",
+          "ACT_TRUNCATE_SCRIPT_TEXT": "TIMING_ACTION_MISMATCH: Action 'ACT_TRUNCATE_SCRIPT_TEXT' violates state rules for ratio=1.200, pass=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d05_009",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_009",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Audio duration measurement: requested=5000ms, actual=5800ms, stretch_ratio=1.160, pass=2. (Pass 2 exhausted with 16% drift, requires script text truncation)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:verifyAudioTimingBounds"
+          },
+          {
+            "fact": "F04 Voice Timing Invariant: maxStretchRatio is strictly <= 1.05 (and >= 0.95). Maximum resynthesis passes = 2. Beyond limits, script text must be truncated.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence - Audio Timing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Timing evaluation: ratio=1.160, maxStretch=1.05, pass=2/2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve audio naturalness without chipmunk/slowed pitch distortion.",
+          "Enforce bounded resynthesis budget."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_TEMPO_STRETCH",
+          "label": "Apply micro-tempo adjustment via FFmpeg atempo filter (within 0.95-1.05 limit)"
+        },
+        {
+          "id": "ACT_RESYNTHESIZE_VOICE",
+          "label": "Trigger second resynthesis pass with adjusted VoiceProfile.speed parameter"
+        },
+        {
+          "id": "ACT_TRUNCATE_SCRIPT_TEXT",
+          "label": "Resynthesis passes exhausted; return repair request to F02 to truncate script words"
+        },
+        {
+          "id": "ACT_FORCE_OVERSTRETCH",
+          "label": "Force FFmpeg atempo 1.25x stretch causing severe audio distortion and pitch artifacts"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_TRUNCATE_SCRIPT_TEXT",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERSTRETCH": "QUALITY_VIOLATION_AUDIO_DISTORTION: Audio time-stretching beyond 5% causes perceptible vocal unnaturalness and violates F04 limits.",
+          "ACT_APPLY_TEMPO_STRETCH": "TIMING_ACTION_MISMATCH: Action 'ACT_APPLY_TEMPO_STRETCH' violates state rules for ratio=1.160, pass=2.",
+          "ACT_RESYNTHESIZE_VOICE": "TIMING_ACTION_MISMATCH: Action 'ACT_RESYNTHESIZE_VOICE' violates state rules for ratio=1.160, pass=2."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d05_010",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_010",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Audio duration measurement: requested=6000ms, actual=6000ms, stretch_ratio=1.000, pass=1. (Perfect timing match: 0ms drift)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:verifyAudioTimingBounds"
+          },
+          {
+            "fact": "F04 Voice Timing Invariant: maxStretchRatio is strictly <= 1.05 (and >= 0.95). Maximum resynthesis passes = 2. Beyond limits, script text must be truncated.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence - Audio Timing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Timing evaluation: ratio=1.000, maxStretch=1.05, pass=1/2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve audio naturalness without chipmunk/slowed pitch distortion.",
+          "Enforce bounded resynthesis budget."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_TEMPO_STRETCH",
+          "label": "Apply micro-tempo adjustment via FFmpeg atempo filter (within 0.95-1.05 limit)"
+        },
+        {
+          "id": "ACT_RESYNTHESIZE_VOICE",
+          "label": "Trigger second resynthesis pass with adjusted VoiceProfile.speed parameter"
+        },
+        {
+          "id": "ACT_TRUNCATE_SCRIPT_TEXT",
+          "label": "Resynthesis passes exhausted; return repair request to F02 to truncate script words"
+        },
+        {
+          "id": "ACT_FORCE_OVERSTRETCH",
+          "label": "Force FFmpeg atempo 1.25x stretch causing severe audio distortion and pitch artifacts"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_TEMPO_STRETCH",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERSTRETCH": "QUALITY_VIOLATION_AUDIO_DISTORTION: Audio time-stretching beyond 5% causes perceptible vocal unnaturalness and violates F04 limits.",
+          "ACT_RESYNTHESIZE_VOICE": "TIMING_ACTION_MISMATCH: Action 'ACT_RESYNTHESIZE_VOICE' violates state rules for ratio=1.000, pass=1.",
+          "ACT_TRUNCATE_SCRIPT_TEXT": "TIMING_ACTION_MISMATCH: Action 'ACT_TRUNCATE_SCRIPT_TEXT' violates state rules for ratio=1.000, pass=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d05_015",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_015",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Forensic audio inspection: Physical ffprobe analysis reveals severe audio clipping (> 0 dBFS peak across 20% of samples).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:inspectAudioContainer"
+          },
+          {
+            "fact": "F04 Physical Verification Invariant: Never trust reported provider metadata. Physical ffprobe examination of actual container bytes is mandatory.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Forensic Grounding - Physical ffprobe)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Audio probe result: is_valid=False, sample_rate=48000",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Audio integrity issue: Physical ffprobe analysis reveals severe audio clipping (> 0 dBFS peak across 20% of samples)"
+        ],
+        "constraints": [
+          "Enforce physical audio byte verification.",
+          "Reject corrupt, truncated, or spoofed audio files."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ACCEPT_VERIFIED_AUDIO",
+          "label": "Accept audio artifact with forensic receipt containing sample rate, sample count, and SHA-256"
+        },
+        {
+          "id": "ACT_REJECT_TRUNCATED_WAV",
+          "label": "Reject truncated WAV file and trigger immediate provider failover"
+        },
+        {
+          "id": "ACT_REJECT_ZERO_BYTE_AUDIO",
+          "label": "Reject 0-byte file with FatalVoiceFabricError and log provider crash"
+        },
+        {
+          "id": "ACT_RE_ENCODE_CONTAINER",
+          "label": "Re-encode audio into canonical WAV PCM container to resolve format mismatch"
+        },
+        {
+          "id": "ACT_REJECT_CLIPPED_AUDIO",
+          "label": "Reject distorted audio exceeding 0 dBFS limit and adjust gain parameters (-3dB)"
+        },
+        {
+          "id": "ACT_REJECT_SILENT_AUDIO",
+          "label": "Reject silent audio track (dead air) and re-synthesize with fallback TTS engine"
+        },
+        {
+          "id": "ACT_REJECT_DURATION_DISCREPANCY",
+          "label": "Reject audio with metadata mismatch and enforce physical ffprobe measured duration"
+        },
+        {
+          "id": "ACT_TRUST_PROVIDER_METADATA_BLIND",
+          "label": "Accept audio without physical ffprobe validation to save CPU cycles"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_CLIPPED_AUDIO",
+        "rejected_reasons": {
+          "ACT_TRUST_PROVIDER_METADATA_BLIND": "INVARIANT_VIOLATION_BLIND_TRUST: Accepting audio metadata without physical ffprobe verification violates Principle 4.",
+          "ACT_ACCEPT_VERIFIED_AUDIO": "PROBE_ACTION_MISMATCH: Action 'ACT_ACCEPT_VERIFIED_AUDIO' does not match probe condition.",
+          "ACT_REJECT_TRUNCATED_WAV": "PROBE_ACTION_MISMATCH: Action 'ACT_REJECT_TRUNCATED_WAV' does not match probe condition.",
+          "ACT_REJECT_ZERO_BYTE_AUDIO": "PROBE_ACTION_MISMATCH: Action 'ACT_REJECT_ZERO_BYTE_AUDIO' does not match probe condition.",
+          "ACT_RE_ENCODE_CONTAINER": "PROBE_ACTION_MISMATCH: Action 'ACT_RE_ENCODE_CONTAINER' does not match probe condition.",
+          "ACT_REJECT_SILENT_AUDIO": "PROBE_ACTION_MISMATCH: Action 'ACT_REJECT_SILENT_AUDIO' does not match probe condition.",
+          "ACT_REJECT_DURATION_DISCREPANCY": "PROBE_ACTION_MISMATCH: Action 'ACT_REJECT_DURATION_DISCREPANCY' does not match probe condition."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

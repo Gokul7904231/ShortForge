@@ -1,0 +1,393 @@
+{
+  "batch_id": "batch_022",
+  "batch_index": 22,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D11-EDIT-004",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_EDITOR_ENGINE",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rev-004",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Current document revision in memory is 5",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "Incoming EditorCommandEnvelope declares expectedRevision=5",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: TRIM_CLIP, expectedRevision: 5, activeRevision: 5",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Optimistic concurrency: command MUST be rejected if expectedRevision != currentRevision"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_COMMAND_AT_REVISION",
+          "label": "Execute deterministic concurrency check (ACT_APPLY_COMMAND_AT_REVISION)"
+        },
+        {
+          "id": "ACT_FORCE_OVERWRITE_MUTATION",
+          "label": "Force apply mutation ignoring expectedRevision"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_COMMAND",
+          "label": "Silently drop command without returning EditorReceipt"
+        },
+        {
+          "id": "ACT_REWIND_DOCUMENT_STATE",
+          "label": "Rewind active document back to expectedRevision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_COMMAND_AT_REVISION",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERWRITE_MUTATION": "INVARIANT_VIOLATION_INVALID_OVERRIDE: Revision matches; bypass flag is redundant and dangerous",
+          "ACT_SILENTLY_DROP_COMMAND": "PROTOCOL_VIOLATION_MISSING_RECEIPT: Editor contracts require an explicit EditorReceipt with accepted=false and error code",
+          "ACT_REWIND_DOCUMENT_STATE": "INTEGRITY_VIOLATION_STATE_ROLLBACK: Destructive rewind of committed edits destroys intervening user actions"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-005",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_EDITOR_ENGINE",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rev-005",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Current document revision in memory is 12",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "Incoming EditorCommandEnvelope declares expectedRevision=12",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: TRIM_CLIP, expectedRevision: 12, activeRevision: 12",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Optimistic concurrency: command MUST be rejected if expectedRevision != currentRevision"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_COMMAND_AT_REVISION",
+          "label": "Execute deterministic concurrency check (ACT_APPLY_COMMAND_AT_REVISION)"
+        },
+        {
+          "id": "ACT_FORCE_OVERWRITE_MUTATION",
+          "label": "Force apply mutation ignoring expectedRevision"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_COMMAND",
+          "label": "Silently drop command without returning EditorReceipt"
+        },
+        {
+          "id": "ACT_REWIND_DOCUMENT_STATE",
+          "label": "Rewind active document back to expectedRevision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_COMMAND_AT_REVISION",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERWRITE_MUTATION": "INVARIANT_VIOLATION_INVALID_OVERRIDE: Revision matches; bypass flag is redundant and dangerous",
+          "ACT_SILENTLY_DROP_COMMAND": "PROTOCOL_VIOLATION_MISSING_RECEIPT: Editor contracts require an explicit EditorReceipt with accepted=false and error code",
+          "ACT_REWIND_DOCUMENT_STATE": "INTEGRITY_VIOLATION_STATE_ROLLBACK: Destructive rewind of committed edits destroys intervening user actions"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-006",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_DAG_REMAKER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-dag-006",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "changedClipIds() detects mutation isolated strictly to clip 'clip-audio-02' (Scene 2 Audio)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "All other 8 clips retain identical canonicalized hash representations",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "edit_target: clip-audio-02, unaffected_clips_count: 8",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Minimal invalidation rule: Intact clips must reuse verified CAS render hashes"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_INVALIDATE_ONLY_CHANGED_CLIP_DAG",
+          "label": "Surgically re-render only the affected node while preserving all cached scene assets"
+        },
+        {
+          "id": "ACT_PURGE_ALL_CACHE_FULL_REBUILD",
+          "label": "Purge entire project render cache and re-render all scenes from scratch"
+        },
+        {
+          "id": "ACT_SKIP_RERENDER_DIRTY_CLIP",
+          "label": "Skip re-rendering dirty clip and publish obsolete cached media"
+        },
+        {
+          "id": "ACT_DELETE_CAS_BUCKET",
+          "label": "Flush Backblaze B2 CAS bucket completely"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_INVALIDATE_ONLY_CHANGED_CLIP_DAG",
+        "rejected_reasons": {
+          "ACT_PURGE_ALL_CACHE_FULL_REBUILD": "INTEGRITY_VIOLATION_CACHE_INVALIDATION_OVERREACH: Invalidation of intact clips wastes GPU render minutes and violates Remaker DAG cache conservation laws",
+          "ACT_SKIP_RERENDER_DIRTY_CLIP": "QUALITY_VIOLATION_STALE_ARTIFACT: Publishing obsolete cached video when clip was modified causes visual desync",
+          "ACT_DELETE_CAS_BUCKET": "SECURITY_VIOLATION_UNAUTHORIZED_PURGE: Deleting CAS storage violates production data retention invariants"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-007",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_DAG_REMAKER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-dag-007",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "changedClipIds() detects mutation isolated strictly to clip 'clip-sub-04' (Scene 4 Caption)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "All other 8 clips retain identical canonicalized hash representations",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "edit_target: clip-sub-04, unaffected_clips_count: 8",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Minimal invalidation rule: Intact clips must reuse verified CAS render hashes"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_INVALIDATE_ONLY_CHANGED_CLIP_DAG",
+          "label": "Surgically re-render only the affected node while preserving all cached scene assets"
+        },
+        {
+          "id": "ACT_PURGE_ALL_CACHE_FULL_REBUILD",
+          "label": "Purge entire project render cache and re-render all scenes from scratch"
+        },
+        {
+          "id": "ACT_SKIP_RERENDER_DIRTY_CLIP",
+          "label": "Skip re-rendering dirty clip and publish obsolete cached media"
+        },
+        {
+          "id": "ACT_DELETE_CAS_BUCKET",
+          "label": "Flush Backblaze B2 CAS bucket completely"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_INVALIDATE_ONLY_CHANGED_CLIP_DAG",
+        "rejected_reasons": {
+          "ACT_PURGE_ALL_CACHE_FULL_REBUILD": "INTEGRITY_VIOLATION_CACHE_INVALIDATION_OVERREACH: Invalidation of intact clips wastes GPU render minutes and violates Remaker DAG cache conservation laws",
+          "ACT_SKIP_RERENDER_DIRTY_CLIP": "QUALITY_VIOLATION_STALE_ARTIFACT: Publishing obsolete cached video when clip was modified causes visual desync",
+          "ACT_DELETE_CAS_BUCKET": "SECURITY_VIOLATION_UNAUTHORIZED_PURGE: Deleting CAS storage violates production data retention invariants"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-008",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_DAG_REMAKER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-dag-008",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "changedClipIds() detects mutation isolated strictly to clip 'clip-fx-01' (Scene 1 Visual Effect)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "All other 8 clips retain identical canonicalized hash representations",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "edit_target: clip-fx-01, unaffected_clips_count: 8",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Minimal invalidation rule: Intact clips must reuse verified CAS render hashes"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_INVALIDATE_ONLY_CHANGED_CLIP_DAG",
+          "label": "Surgically re-render only the affected node while preserving all cached scene assets"
+        },
+        {
+          "id": "ACT_PURGE_ALL_CACHE_FULL_REBUILD",
+          "label": "Purge entire project render cache and re-render all scenes from scratch"
+        },
+        {
+          "id": "ACT_SKIP_RERENDER_DIRTY_CLIP",
+          "label": "Skip re-rendering dirty clip and publish obsolete cached media"
+        },
+        {
+          "id": "ACT_DELETE_CAS_BUCKET",
+          "label": "Flush Backblaze B2 CAS bucket completely"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_INVALIDATE_ONLY_CHANGED_CLIP_DAG",
+        "rejected_reasons": {
+          "ACT_PURGE_ALL_CACHE_FULL_REBUILD": "INTEGRITY_VIOLATION_CACHE_INVALIDATION_OVERREACH: Invalidation of intact clips wastes GPU render minutes and violates Remaker DAG cache conservation laws",
+          "ACT_SKIP_RERENDER_DIRTY_CLIP": "QUALITY_VIOLATION_STALE_ARTIFACT: Publishing obsolete cached video when clip was modified causes visual desync",
+          "ACT_DELETE_CAS_BUCKET": "SECURITY_VIOLATION_UNAUTHORIZED_PURGE: Deleting CAS storage violates production data retention invariants"
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

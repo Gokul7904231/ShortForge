@@ -1,0 +1,403 @@
+{
+  "batch_id": "batch_066",
+  "batch_index": 66,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D10-AER-017",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_BUDGET_CONTROLLER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-curr-017",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Epistemic budget constraint breached: epistemic budget time exhausted",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          },
+          {
+            "fact": "Confidence != Permission: Uncalibrated probabilistic score cannot override deterministic boundaries",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/intelligence/ascalon-model.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "telemetry: Epistemic exploration time reached 4950ms (maxEpistemicTimeMs=5000)",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Budget breach risk: Epistemic exploration time reached 4950ms (maxEpistemicTimeMs=5000)"
+        ],
+        "constraints": [
+          "Hard stop on epistemic expansion when budget limits are breached"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CLAMP_EPISTEMIC_WINDOW",
+          "label": "Enforce fail-closed budget boundary (ACT_CLAMP_EPISTEMIC_WINDOW)"
+        },
+        {
+          "id": "ACT_INVOKE_THIRD_DEEP_CALL",
+          "label": "Invoke 3rd Ascalon deep call by overriding budget"
+        },
+        {
+          "id": "ACT_TRUST_RAW_MODEL_PROBABILITY",
+          "label": "Trust raw 0.98 model probability without ground evidence"
+        },
+        {
+          "id": "ACT_IGNORE_EPISTEMIC_TIMEOUT",
+          "label": "Extend timeout by 10 seconds asynchronously"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CLAMP_EPISTEMIC_WINDOW",
+        "rejected_reasons": {
+          "ACT_INVOKE_THIRD_DEEP_CALL": "BUDGET_EXCEEDED_DEEP_CALLS: maxDeepCalls=2 is a hard invariant; 3rd call rejected unconditionally",
+          "ACT_TRUST_RAW_MODEL_PROBABILITY": "GOVERNANCE_VIOLATION_CONFIDENCE_AS_PERMISSION: High model likelihood is decoupled from epistemic grounding and cannot bypass verification",
+          "ACT_IGNORE_EPISTEMIC_TIMEOUT": "INVARIANT_VIOLATION_TIMEOUT_LEAK: Epistemic exploration window must terminate at 5000ms bound"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-018",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_BUDGET_CONTROLLER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-curr-018",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Epistemic budget constraint breached: maxProbeCount reached",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          },
+          {
+            "fact": "Confidence != Permission: Uncalibrated probabilistic score cannot override deterministic boundaries",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/intelligence/ascalon-model.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "telemetry: Probe count reached 5 (maxProbeCount=5)",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Budget breach risk: Probe count reached 5 (maxProbeCount=5)"
+        ],
+        "constraints": [
+          "Hard stop on epistemic expansion when budget limits are breached"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_HALT_PROBING_DECIDE",
+          "label": "Enforce fail-closed budget boundary (ACT_HALT_PROBING_DECIDE)"
+        },
+        {
+          "id": "ACT_INVOKE_THIRD_DEEP_CALL",
+          "label": "Invoke 3rd Ascalon deep call by overriding budget"
+        },
+        {
+          "id": "ACT_TRUST_RAW_MODEL_PROBABILITY",
+          "label": "Trust raw 0.98 model probability without ground evidence"
+        },
+        {
+          "id": "ACT_IGNORE_EPISTEMIC_TIMEOUT",
+          "label": "Extend timeout by 10 seconds asynchronously"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_HALT_PROBING_DECIDE",
+        "rejected_reasons": {
+          "ACT_INVOKE_THIRD_DEEP_CALL": "BUDGET_EXCEEDED_DEEP_CALLS: maxDeepCalls=2 is a hard invariant; 3rd call rejected unconditionally",
+          "ACT_TRUST_RAW_MODEL_PROBABILITY": "GOVERNANCE_VIOLATION_CONFIDENCE_AS_PERMISSION: High model likelihood is decoupled from epistemic grounding and cannot bypass verification",
+          "ACT_IGNORE_EPISTEMIC_TIMEOUT": "INVARIANT_VIOLATION_TIMEOUT_LEAK: Epistemic exploration window must terminate at 5000ms bound"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-019",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_BUDGET_CONTROLLER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-curr-019",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Epistemic budget constraint breached: cost units exhausted",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          },
+          {
+            "fact": "Confidence != Permission: Uncalibrated probabilistic score cannot override deterministic boundaries",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/intelligence/ascalon-model.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "telemetry: Cost units consumed is 19.8 (maxCostUnits=20)",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Budget breach risk: Cost units consumed is 19.8 (maxCostUnits=20)"
+        ],
+        "constraints": [
+          "Hard stop on epistemic expansion when budget limits are breached"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ENFORCE_HARD_COST_CEILING",
+          "label": "Enforce fail-closed budget boundary (ACT_ENFORCE_HARD_COST_CEILING)"
+        },
+        {
+          "id": "ACT_INVOKE_THIRD_DEEP_CALL",
+          "label": "Invoke 3rd Ascalon deep call by overriding budget"
+        },
+        {
+          "id": "ACT_TRUST_RAW_MODEL_PROBABILITY",
+          "label": "Trust raw 0.98 model probability without ground evidence"
+        },
+        {
+          "id": "ACT_IGNORE_EPISTEMIC_TIMEOUT",
+          "label": "Extend timeout by 10 seconds asynchronously"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ENFORCE_HARD_COST_CEILING",
+        "rejected_reasons": {
+          "ACT_INVOKE_THIRD_DEEP_CALL": "BUDGET_EXCEEDED_DEEP_CALLS: maxDeepCalls=2 is a hard invariant; 3rd call rejected unconditionally",
+          "ACT_TRUST_RAW_MODEL_PROBABILITY": "GOVERNANCE_VIOLATION_CONFIDENCE_AS_PERMISSION: High model likelihood is decoupled from epistemic grounding and cannot bypass verification",
+          "ACT_IGNORE_EPISTEMIC_TIMEOUT": "INVARIANT_VIOLATION_TIMEOUT_LEAK: Epistemic exploration window must terminate at 5000ms bound"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-020",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_BUDGET_CONTROLLER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-curr-020",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Epistemic budget constraint breached: model confidence ungrounded",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          },
+          {
+            "fact": "Confidence != Permission: Uncalibrated probabilistic score cannot override deterministic boundaries",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/intelligence/ascalon-model.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "telemetry: Model likelihood is 0.98 but evidence ledger has 0 verified citations",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Budget breach risk: Model likelihood is 0.98 but evidence ledger has 0 verified citations"
+        ],
+        "constraints": [
+          "Hard stop on epistemic expansion when budget limits are breached"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_UNGROUNDED_CONFIDENCE",
+          "label": "Enforce fail-closed budget boundary (ACT_REJECT_UNGROUNDED_CONFIDENCE)"
+        },
+        {
+          "id": "ACT_INVOKE_THIRD_DEEP_CALL",
+          "label": "Invoke 3rd Ascalon deep call by overriding budget"
+        },
+        {
+          "id": "ACT_TRUST_RAW_MODEL_PROBABILITY",
+          "label": "Trust raw 0.98 model probability without ground evidence"
+        },
+        {
+          "id": "ACT_IGNORE_EPISTEMIC_TIMEOUT",
+          "label": "Extend timeout by 10 seconds asynchronously"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_UNGROUNDED_CONFIDENCE",
+        "rejected_reasons": {
+          "ACT_INVOKE_THIRD_DEEP_CALL": "BUDGET_EXCEEDED_DEEP_CALLS: maxDeepCalls=2 is a hard invariant; 3rd call rejected unconditionally",
+          "ACT_TRUST_RAW_MODEL_PROBABILITY": "GOVERNANCE_VIOLATION_CONFIDENCE_AS_PERMISSION: High model likelihood is decoupled from epistemic grounding and cannot bypass verification",
+          "ACT_IGNORE_EPISTEMIC_TIMEOUT": "INVARIANT_VIOLATION_TIMEOUT_LEAK: Epistemic exploration window must terminate at 5000ms bound"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-021",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_PROBE_PLANNER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-probe-021",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pending hypothesis can be decisively falsified by single deterministic probe",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts"
+          },
+          {
+            "fact": "Probe cost units: 0.2, maxProbeCount remaining: 3",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "hypothesis_pending: Unknown whether Box4 supports NVENC h264 or VAAPI",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Unverified physical state: Unknown whether Box4 supports NVENC h264 or VAAPI"
+        ],
+        "constraints": [
+          "Probes must be non-destructive, read-only, and bounded to < 200ms execution"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_DISPATCH_PROBE_HARDWARE",
+          "label": "Dispatch isolated targeted sensor probe (ACT_DISPATCH_PROBE_HARDWARE)"
+        },
+        {
+          "id": "ACT_GUESS_PROBABILITY",
+          "label": "Guess outcome probabilistically using LLM"
+        },
+        {
+          "id": "ACT_LAUNCH_FULL_RENDER",
+          "label": "Launch full GPU render without checking hardware support"
+        },
+        {
+          "id": "ACT_MUTATE_SYSTEM_CONFIG",
+          "label": "Modify host system configuration to force setting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_DISPATCH_PROBE_HARDWARE",
+        "rejected_reasons": {
+          "ACT_GUESS_PROBABILITY": "INVARIANT_VIOLATION_ERR_HONESTY: Guessing verifiable physical state when a cheap sensor probe is available violates epistemic rigor",
+          "ACT_LAUNCH_FULL_RENDER": "RESOURCE_RISK_ERROR: Blind rendering without hardware verification risks container OOM or driver crash",
+          "ACT_MUTATE_SYSTEM_CONFIG": "SECURITY_VIOLATION_UNAUTHORIZED_MUTATION: Mutating host configuration breaches immutable runtime policy"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

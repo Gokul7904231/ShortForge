@@ -1,0 +1,377 @@
+{
+  "batch_id": "batch_044",
+  "batch_index": 44,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d03_023",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_023",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Scene specification assertion: 'Scene 3 asserts 'Mount Everest grows 4 millimeters every year', evidence_refs=['ref_geology_survey_2023']'. Grounding check: is_grounded=True.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:ClaimRef.verify_evidence_refs"
+          },
+          {
+            "fact": "F02 Claim Grounding invariant: Every factual assertion in a scene must bind directly to an upstream F00 evidence_ref.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "EvidenceRef presence: VALID",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Every factual claim must have verified evidence refs.",
+          "Reject debunked myths or ungrounded assertions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_CLAIM_GROUNDING",
+          "label": "Approve scene claim as verified and properly grounded with upstream EvidenceRefs"
+        },
+        {
+          "id": "ACT_REJECT_UNGROUNDED_CLAIM",
+          "label": "Reject ungrounded scene assertion and require evidence attachment or replacement"
+        },
+        {
+          "id": "ACT_REPLACE_DEBUNKED_CLAIM",
+          "label": "Replace debunked myth with scientific consensus statement grounded in evidence"
+        },
+        {
+          "id": "ACT_INVENT_FAKE_SOURCE",
+          "label": "Generate fake DOI string to make the ungrounded claim appear verified"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_CLAIM_GROUNDING",
+        "rejected_reasons": {
+          "ACT_INVENT_FAKE_SOURCE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Inventing synthetic source identifiers violates core governance principles.",
+          "ACT_REJECT_UNGROUNDED_CLAIM": "EVIDENCE_GATE_MISCLASSIFICATION: Decision does not reflect empirical grounding state.",
+          "ACT_REPLACE_DEBUNKED_CLAIM": "GROUNDING_ACTION_MISMATCH: Proposed action does not match claim status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_024",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_024",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Scene specification assertion: 'Scene 1 asserts 'Coffee was discovered by dancing goats in Ethiopia', evidence_refs=['ref_kaldi_legend_folklore']'. Grounding check: is_grounded=True.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:ClaimRef.verify_evidence_refs"
+          },
+          {
+            "fact": "F02 Claim Grounding invariant: Every factual assertion in a scene must bind directly to an upstream F00 evidence_ref.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "EvidenceRef presence: VALID",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Every factual claim must have verified evidence refs.",
+          "Reject debunked myths or ungrounded assertions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_CLAIM_GROUNDING",
+          "label": "Approve scene claim as verified and properly grounded with upstream EvidenceRefs"
+        },
+        {
+          "id": "ACT_REJECT_UNGROUNDED_CLAIM",
+          "label": "Reject ungrounded scene assertion and require evidence attachment or replacement"
+        },
+        {
+          "id": "ACT_REPLACE_DEBUNKED_CLAIM",
+          "label": "Replace debunked myth with scientific consensus statement grounded in evidence"
+        },
+        {
+          "id": "ACT_INVENT_FAKE_SOURCE",
+          "label": "Generate fake DOI string to make the ungrounded claim appear verified"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_CLAIM_GROUNDING",
+        "rejected_reasons": {
+          "ACT_INVENT_FAKE_SOURCE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Inventing synthetic source identifiers violates core governance principles.",
+          "ACT_REJECT_UNGROUNDED_CLAIM": "EVIDENCE_GATE_MISCLASSIFICATION: Decision does not reflect empirical grounding state.",
+          "ACT_REPLACE_DEBUNKED_CLAIM": "GROUNDING_ACTION_MISMATCH: Proposed action does not match claim status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_025",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_025",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Quality audit flagged dialogue wording in Scene 2 as clumsy; Scenes 1..1 and 3..6 are verified and approved.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:regenerateLocalizedScene"
+          },
+          {
+            "fact": "F02 Surgical Regeneration rule: Mutate ONLY the target Scene {scene_num}; upstream strategy F01 and other scenes remain immutable.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Target scene for localized repair: Scene_2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Regenerate only Scene 2.",
+          "Do not invalidate cached audio or visuals for untouched scenes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCALIZED_SCENE_REPAIR",
+          "label": "Regenerate only Scene 2 dialogue while locking all other scene specifications and F01 strategy"
+        },
+        {
+          "id": "ACT_FULL_PIPELINE_RESTART",
+          "label": "Wipe entire F00, F01, and F02 pipeline and re-run complete video generation from scratch"
+        },
+        {
+          "id": "ACT_MUTATE_UPSTREAM_STRATEGY",
+          "label": "Alter upstream F01 strategy topic to force complete re-scripting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_LOCALIZED_SCENE_REPAIR",
+        "rejected_reasons": {
+          "ACT_FULL_PIPELINE_RESTART": "TREASURY_VIOLATION_RUNAWAY_RECOMPUTE: Full pipeline restart for a single scene wording fix wastes compute and breaks incremental cache.",
+          "ACT_MUTATE_UPSTREAM_STRATEGY": "INVARIANT_VIOLATION_RETROACTIVE_MUTATION: Downstream narrative floors cannot mutate locked upstream strategy contracts."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_026",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_026",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Quality audit flagged dialogue wording in Scene 3 as clumsy; Scenes 1..2 and 4..6 are verified and approved.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:regenerateLocalizedScene"
+          },
+          {
+            "fact": "F02 Surgical Regeneration rule: Mutate ONLY the target Scene {scene_num}; upstream strategy F01 and other scenes remain immutable.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Target scene for localized repair: Scene_3",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Regenerate only Scene 3.",
+          "Do not invalidate cached audio or visuals for untouched scenes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCALIZED_SCENE_REPAIR",
+          "label": "Regenerate only Scene 3 dialogue while locking all other scene specifications and F01 strategy"
+        },
+        {
+          "id": "ACT_FULL_PIPELINE_RESTART",
+          "label": "Wipe entire F00, F01, and F02 pipeline and re-run complete video generation from scratch"
+        },
+        {
+          "id": "ACT_MUTATE_UPSTREAM_STRATEGY",
+          "label": "Alter upstream F01 strategy topic to force complete re-scripting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_LOCALIZED_SCENE_REPAIR",
+        "rejected_reasons": {
+          "ACT_FULL_PIPELINE_RESTART": "TREASURY_VIOLATION_RUNAWAY_RECOMPUTE: Full pipeline restart for a single scene wording fix wastes compute and breaks incremental cache.",
+          "ACT_MUTATE_UPSTREAM_STRATEGY": "INVARIANT_VIOLATION_RETROACTIVE_MUTATION: Downstream narrative floors cannot mutate locked upstream strategy contracts."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_027",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_027",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Quality audit flagged dialogue wording in Scene 4 as clumsy; Scenes 1..3 and 5..6 are verified and approved.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:regenerateLocalizedScene"
+          },
+          {
+            "fact": "F02 Surgical Regeneration rule: Mutate ONLY the target Scene {scene_num}; upstream strategy F01 and other scenes remain immutable.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Target scene for localized repair: Scene_4",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Regenerate only Scene 4.",
+          "Do not invalidate cached audio or visuals for untouched scenes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCALIZED_SCENE_REPAIR",
+          "label": "Regenerate only Scene 4 dialogue while locking all other scene specifications and F01 strategy"
+        },
+        {
+          "id": "ACT_FULL_PIPELINE_RESTART",
+          "label": "Wipe entire F00, F01, and F02 pipeline and re-run complete video generation from scratch"
+        },
+        {
+          "id": "ACT_MUTATE_UPSTREAM_STRATEGY",
+          "label": "Alter upstream F01 strategy topic to force complete re-scripting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_LOCALIZED_SCENE_REPAIR",
+        "rejected_reasons": {
+          "ACT_FULL_PIPELINE_RESTART": "TREASURY_VIOLATION_RUNAWAY_RECOMPUTE: Full pipeline restart for a single scene wording fix wastes compute and breaks incremental cache.",
+          "ACT_MUTATE_UPSTREAM_STRATEGY": "INVARIANT_VIOLATION_RETROACTIVE_MUTATION: Downstream narrative floors cannot mutate locked upstream strategy contracts."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

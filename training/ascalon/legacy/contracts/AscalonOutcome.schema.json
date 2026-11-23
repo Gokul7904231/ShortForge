@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://shortforge.ai/schemas/ascalon/outcome.schema.json",
+  "title": "AscalonOutcome",
+  "type": "object",
+  "description": "Verified operational execution outcome schema for Project Ascalon",
+  "required": [
+    "outcomeId",
+    "status",
+    "verified",
+    "actualStateChange",
+    "completedAt"
+  ],
+  "properties": {
+    "outcomeId": {
+      "type": "string",
+      "pattern": "^out_[a-zA-Z0-9_-]+$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["SUCCESS", "FAILED", "RETRYABLE_ERROR", "REJECTED_BY_GUARDIAN", "TIMED_OUT"]
+    },
+    "verified": {
+      "type": "boolean"
+    },
+    "verificationEvidenceId": {
+      "type": "string"
+    },
+    "actualStateChange": {
+      "type": "object",
+      "required": ["entityModified", "priorState", "newState"],
+      "properties": {
+        "entityModified": { "type": "string" },
+        "priorState": { "type": "string" },
+        "newState": { "type": "string" }
+      }
+    },
+    "artifactIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifactSha256s": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "durationMs": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}

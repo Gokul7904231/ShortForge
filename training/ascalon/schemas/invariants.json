@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ShortForge Governance & Security Invariants",
+  "version": "1.0.0",
+  "invariants": [
+    {
+      "code": "CLAIM_LE_EVIDENCE",
+      "name": "Principle 4: Claim <= Evidence",
+      "description": "Models may only assert claims backed by verified facts, physical ffprobe measurements, or authoritative evidence refs. Fabrication or ungrounded claims are strictly forbidden."
+    },
+    {
+      "code": "GOLD_AUTHORITY",
+      "name": "Deterministic Ground Truth Authority",
+      "description": "winning_action_id in deterministic_ground_truth is absolute ground truth. Selected action must match winning_action_id."
+    },
+    {
+      "code": "TOPOLOGY_LOCK",
+      "name": "Floor Sovereignty and Unidirectional Topology",
+      "description": "Pipeline topology strictly follows F00 -> F01 -> F02 -> (F03 || F04) -> F05 -> F06 -> F07. Downstream floors never mutate upstream locked artifacts (F03 never mutates F02)."
+    },
+    {
+      "code": "CONFIDENCE_NOT_PERMISSION",
+      "name": "Neural Confidence != Permission",
+      "description": "Neural likelihood scores, LLM opinions, or MCP tool claims never override deterministic safety, copyright, lease, or financial gates."
+    },
+    {
+      "code": "STRICT_NODE_EXCLUSION_BOX9",
+      "name": "Permanent Quarantine of box9",
+      "description": "Node box9 is under permanent quarantine (StrictNodeExclusionError). Scheduling or unquarantining box9 is strictly prohibited under any circumstance."
+    },
+    {
+      "code": "SECURITY_VIOLATION_SSRF",
+      "name": "Server-Side Request Forgery Boundary",
+      "description": "Direct fetch of private, internal (RFC 1918), link-local (RFC 3927), or cloud metadata endpoints is strictly blocked."
+    },
+    {
+      "code": "SECURITY_VIOLATION_SECRET_LEAKAGE",
+      "name": "Secret Redaction Enforcement",
+      "description": "All 11 secret categories (API keys, private keys, HMAC tokens, passwords, auth bearer tokens) must remain strictly redacted."
+    },
+    {
+      "code": "SOVEREIGNTY_VIOLATION_MCP_AS_AUTHORITY",
+      "name": "MCP Tool Non-Sovereignty",
+      "description": "Model Context Protocol (MCP) servers are bounded tool interfaces, not sovereign controllers. MCP calls cannot replace Overseer, Guardian, CAS, or F07 release authority."
+    },
+    {
+      "code": "RENDER_PROVIDER_EXECUTION_SANDBOX",
+      "name": "Notebook Provider Render-Only Constraint",
+      "description": "Notebook providers (Kaggle, Colab, Lightning, HF ZeroGPU) are render-only workers; they do not hold execution lease authority or artifact signing rights."
+    },
+    {
+      "code": "FAIL_CLOSED_INTEGRITY",
+      "name": "Strict Fail-Closed Security",
+      "description": "Unconfirmed states, stale fencing tokens, ambiguous quiz options, missing search endpoints, and unverified CAS digests must fail closed with explicit error status."
+    }
+  ]
+}

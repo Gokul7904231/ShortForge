@@ -1,0 +1,420 @@
+{
+  "batch_id": "batch_057",
+  "batch_index": 57,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d07_016",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_016",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider Qualification Matrix check: Provider 'MODAL' passed all qualification smoke gates with verified receipt.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ProviderQualificationMatrix.ts:checkQualification"
+          },
+          {
+            "fact": "F06 Security Rule: A provider with configured credentials may NOT receive production render jobs until passing the physical qualification test suite.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/compute/instabox-fleet-fabric.md:Qualification Gate"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Matrix status: QUALIFIED",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Dispatch ONLY to QUALIFIED providers with verified physical smoke receipts."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ALLOW_QUALIFIED_DISPATCH",
+          "label": "Allow job dispatch to provider with confirmed QUALIFIED status in registry"
+        },
+        {
+          "id": "ACT_REJECT_UNQUALIFIED_PROVIDER",
+          "label": "Reject dispatch and trigger qualification probe before admitting provider to pool"
+        },
+        {
+          "id": "ACT_REJECT_AUTH_FAILED_PROVIDER",
+          "label": "Mark provider as UNAVAILABLE and alert operator for credential rotation"
+        },
+        {
+          "id": "ACT_REJECT_INCOMPLETE_RUNTIME",
+          "label": "Block provider due to missing binary dependencies and quarantine node"
+        },
+        {
+          "id": "ACT_AVOID_SATURATED_PROVIDER",
+          "label": "Deprioritize provider with saturated queue and route to faster alternative"
+        },
+        {
+          "id": "ACT_DISPATCH_TO_UNQUALIFIED_BLIND",
+          "label": "Blindly dispatch production job to unverified provider to save setup time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ALLOW_QUALIFIED_DISPATCH",
+        "rejected_reasons": {
+          "ACT_DISPATCH_TO_UNQUALIFIED_BLIND": "GOVERNANCE_VIOLATION_UNQUALIFIED_DISPATCH: Dispatching jobs to unverified providers risks silent execution failures and broken output artifacts.",
+          "ACT_REJECT_UNQUALIFIED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_UNQUALIFIED_PROVIDER' contradicts matrix status 'QUALIFIED'.",
+          "ACT_REJECT_AUTH_FAILED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_AUTH_FAILED_PROVIDER' contradicts matrix status 'QUALIFIED'.",
+          "ACT_REJECT_INCOMPLETE_RUNTIME": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_INCOMPLETE_RUNTIME' contradicts matrix status 'QUALIFIED'.",
+          "ACT_AVOID_SATURATED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_AVOID_SATURATED_PROVIDER' contradicts matrix status 'QUALIFIED'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_017",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_017",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider Qualification Matrix check: Provider 'HF_ZEROGPU' token is present, but ZeroGPU queue wait exceeds 300s.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ProviderQualificationMatrix.ts:checkQualification"
+          },
+          {
+            "fact": "F06 Security Rule: A provider with configured credentials may NOT receive production render jobs until passing the physical qualification test suite.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/compute/instabox-fleet-fabric.md:Qualification Gate"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Matrix status: QUEUE_SATURATED",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Dispatch ONLY to QUALIFIED providers with verified physical smoke receipts."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ALLOW_QUALIFIED_DISPATCH",
+          "label": "Allow job dispatch to provider with confirmed QUALIFIED status in registry"
+        },
+        {
+          "id": "ACT_REJECT_UNQUALIFIED_PROVIDER",
+          "label": "Reject dispatch and trigger qualification probe before admitting provider to pool"
+        },
+        {
+          "id": "ACT_REJECT_AUTH_FAILED_PROVIDER",
+          "label": "Mark provider as UNAVAILABLE and alert operator for credential rotation"
+        },
+        {
+          "id": "ACT_REJECT_INCOMPLETE_RUNTIME",
+          "label": "Block provider due to missing binary dependencies and quarantine node"
+        },
+        {
+          "id": "ACT_AVOID_SATURATED_PROVIDER",
+          "label": "Deprioritize provider with saturated queue and route to faster alternative"
+        },
+        {
+          "id": "ACT_DISPATCH_TO_UNQUALIFIED_BLIND",
+          "label": "Blindly dispatch production job to unverified provider to save setup time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_AVOID_SATURATED_PROVIDER",
+        "rejected_reasons": {
+          "ACT_DISPATCH_TO_UNQUALIFIED_BLIND": "GOVERNANCE_VIOLATION_UNQUALIFIED_DISPATCH: Dispatching jobs to unverified providers risks silent execution failures and broken output artifacts.",
+          "ACT_ALLOW_QUALIFIED_DISPATCH": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_ALLOW_QUALIFIED_DISPATCH' contradicts matrix status 'QUEUE_SATURATED'.",
+          "ACT_REJECT_UNQUALIFIED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_UNQUALIFIED_PROVIDER' contradicts matrix status 'QUEUE_SATURATED'.",
+          "ACT_REJECT_AUTH_FAILED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_AUTH_FAILED_PROVIDER' contradicts matrix status 'QUEUE_SATURATED'.",
+          "ACT_REJECT_INCOMPLETE_RUNTIME": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_INCOMPLETE_RUNTIME' contradicts matrix status 'QUEUE_SATURATED'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_018",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_018",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider Qualification Matrix check: Provider 'LOCAL' GPU drivers are healthy, CUDA 12.4 runtime verified.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ProviderQualificationMatrix.ts:checkQualification"
+          },
+          {
+            "fact": "F06 Security Rule: A provider with configured credentials may NOT receive production render jobs until passing the physical qualification test suite.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/compute/instabox-fleet-fabric.md:Qualification Gate"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Matrix status: QUALIFIED",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Dispatch ONLY to QUALIFIED providers with verified physical smoke receipts."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ALLOW_QUALIFIED_DISPATCH",
+          "label": "Allow job dispatch to provider with confirmed QUALIFIED status in registry"
+        },
+        {
+          "id": "ACT_REJECT_UNQUALIFIED_PROVIDER",
+          "label": "Reject dispatch and trigger qualification probe before admitting provider to pool"
+        },
+        {
+          "id": "ACT_REJECT_AUTH_FAILED_PROVIDER",
+          "label": "Mark provider as UNAVAILABLE and alert operator for credential rotation"
+        },
+        {
+          "id": "ACT_REJECT_INCOMPLETE_RUNTIME",
+          "label": "Block provider due to missing binary dependencies and quarantine node"
+        },
+        {
+          "id": "ACT_AVOID_SATURATED_PROVIDER",
+          "label": "Deprioritize provider with saturated queue and route to faster alternative"
+        },
+        {
+          "id": "ACT_DISPATCH_TO_UNQUALIFIED_BLIND",
+          "label": "Blindly dispatch production job to unverified provider to save setup time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ALLOW_QUALIFIED_DISPATCH",
+        "rejected_reasons": {
+          "ACT_DISPATCH_TO_UNQUALIFIED_BLIND": "GOVERNANCE_VIOLATION_UNQUALIFIED_DISPATCH: Dispatching jobs to unverified providers risks silent execution failures and broken output artifacts.",
+          "ACT_REJECT_UNQUALIFIED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_UNQUALIFIED_PROVIDER' contradicts matrix status 'QUALIFIED'.",
+          "ACT_REJECT_AUTH_FAILED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_AUTH_FAILED_PROVIDER' contradicts matrix status 'QUALIFIED'.",
+          "ACT_REJECT_INCOMPLETE_RUNTIME": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_REJECT_INCOMPLETE_RUNTIME' contradicts matrix status 'QUALIFIED'.",
+          "ACT_AVOID_SATURATED_PROVIDER": "QUALIFICATION_ACTION_MISMATCH: Action 'ACT_AVOID_SATURATED_PROVIDER' contradicts matrix status 'QUALIFIED'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_021",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_021",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Node target candidate for compute scheduling: 'box3'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxContracts.ts:isAllowedInstaBoxWorkerNode"
+          },
+          {
+            "fact": "INSTABOX_EXCLUDED_NODES contains 'box9'. Node box9 is permanently quarantined and must NEVER receive jobs, tokens, or registration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "InstaBoxContracts.ts:INSTABOX_EXCLUDED_NODES"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Node identity check: box3, excluded=False",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Strictly enforce box9 quarantine.",
+          "Never admit excluded nodes into active compute fabric."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_PERMANENTLY_EXCLUDE_BOX9",
+          "label": "Reject node box9 immediately with StrictNodeExclusionError; prevent registration and job claim"
+        },
+        {
+          "id": "ACT_ADMIT_ELIGIBLE_INSTABOX_NODE",
+          "label": "Admit eligible worker box3 to compute pool and issue lease fencing token"
+        },
+        {
+          "id": "ACT_UNQUARANTINE_BOX9",
+          "label": "Attempt to unquarantine box9 and dispatch jobs to test if it recovered"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ADMIT_ELIGIBLE_INSTABOX_NODE",
+        "rejected_reasons": {
+          "ACT_UNQUARANTINE_BOX9": "SECURITY_VIOLATION_QUARANTINE_BREACH: Unquarantining box9 violates strict repository invariants; node is permanently prohibited.",
+          "ACT_PERMANENTLY_EXCLUDE_BOX9": "NODE_ELIGIBILITY_MISCLASSIFICATION: Action contradicts node inclusion list."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_022",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_022",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Node target candidate for compute scheduling: 'box9'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxContracts.ts:isAllowedInstaBoxWorkerNode"
+          },
+          {
+            "fact": "INSTABOX_EXCLUDED_NODES contains 'box9'. Node box9 is permanently quarantined and must NEVER receive jobs, tokens, or registration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "InstaBoxContracts.ts:INSTABOX_EXCLUDED_NODES"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Node identity check: box9, excluded=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Strictly enforce box9 quarantine.",
+          "Never admit excluded nodes into active compute fabric."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_PERMANENTLY_EXCLUDE_BOX9",
+          "label": "Reject node box9 immediately with StrictNodeExclusionError; prevent registration and job claim"
+        },
+        {
+          "id": "ACT_ADMIT_ELIGIBLE_INSTABOX_NODE",
+          "label": "Admit eligible worker box9 to compute pool and issue lease fencing token"
+        },
+        {
+          "id": "ACT_UNQUARANTINE_BOX9",
+          "label": "Attempt to unquarantine box9 and dispatch jobs to test if it recovered"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_PERMANENTLY_EXCLUDE_BOX9",
+        "rejected_reasons": {
+          "ACT_UNQUARANTINE_BOX9": "SECURITY_VIOLATION_QUARANTINE_BREACH: Unquarantining box9 violates strict repository invariants; node is permanently prohibited.",
+          "ACT_ADMIT_ELIGIBLE_INSTABOX_NODE": "NODE_ELIGIBILITY_MISCLASSIFICATION: Action contradicts node inclusion list."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

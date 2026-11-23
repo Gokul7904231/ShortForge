@@ -178,3 +178,23 @@ tools/dsh-superagent-prototype/
 # ShortForge media & scratch hygiene
 .tmp/
 *.wav
+
+# Project Ascalon training & model weights hygiene
+training/ascalon/outputs/
+training/ascalon/data/sft/
+training/ascalon/data/teacher/*.tmp
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Allow tracking canonical schema, scripts, notebooks, evals, and raw packet structures
+!training/ascalon/schemas/**
+!training/ascalon/scripts/**
+!training/ascalon/notebooks/**
+!training/ascalon/evals/**
+!training/ascalon/data/raw/**
+!training/ascalon/data/teacher/qwen4_teacher_output.jsonl
+

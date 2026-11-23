@@ -1,0 +1,443 @@
+{
+  "batch_id": "batch_064",
+  "batch_index": 64,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d09_020",
+      "domain": "D09",
+      "floor_id": "F07",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G00_G02_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts",
+        "apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts",
+        "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d09_020",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "IRREVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Artifact storage path declared for YouTube release: '/data/cas_storage/ab/abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.mp4'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "F07PhysicalArtifactVerifier.ts:verifyStoragePlacement"
+          },
+          {
+            "fact": "F07 CAS Storage Rule: Release artifacts must be stored in immutable two-level content-addressed storage (/cas_storage/xx/xxhash.mp4). Temporary directories (/tmp/, /var/tmp/) are strictly rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 2 (Temporary & Generated Artifacts Hygiene)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "CAS path format check: is_valid_two_level=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Reject /tmp/ paths.",
+          "Verify two-level directory sharding matching SHA-256 prefix."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TWO_LEVEL_CAS_PATH",
+          "label": "Approve verified two-level CAS path matching computed artifact SHA-256 digest"
+        },
+        {
+          "id": "ACT_REJECT_TMP_PATH",
+          "label": "Reject temporary path with TemporaryStorageLocationError; require staging into CAS"
+        },
+        {
+          "id": "ACT_REJECT_SYSTEM_TEMP_PATH",
+          "label": "Reject Windows/system temp path; require relocation to content-addressed storage"
+        },
+        {
+          "id": "ACT_REJECT_FLAT_NON_DIGEST_PATH",
+          "label": "Reject flat directory path lacking SHA-256 two-level directory sharding"
+        },
+        {
+          "id": "ACT_PUBLISH_FROM_TMP_BLIND",
+          "label": "Upload video directly from /tmp/ before it gets purged by cron cleaner"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_TWO_LEVEL_CAS_PATH",
+        "rejected_reasons": {
+          "ACT_PUBLISH_FROM_TMP_BLIND": "STORAGE_VIOLATION_TMP_PUBLISH: Publishing from temporary scratch paths violates CAS immutability and risks uploading incomplete files.",
+          "ACT_REJECT_TMP_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_TMP_PATH' contradicts storage path state '/data/cas_storage/ab/abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.mp4'.",
+          "ACT_REJECT_SYSTEM_TEMP_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_SYSTEM_TEMP_PATH' contradicts storage path state '/data/cas_storage/ab/abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.mp4'.",
+          "ACT_REJECT_FLAT_NON_DIGEST_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_FLAT_NON_DIGEST_PATH' contradicts storage path state '/data/cas_storage/ab/abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890.mp4'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d09_021",
+      "domain": "D09",
+      "floor_id": "F07",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G00_G02_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts",
+        "apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts",
+        "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d09_021",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "IRREVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Artifact storage path declared for YouTube release: '/tmp/scratch/output.mp4'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "F07PhysicalArtifactVerifier.ts:verifyStoragePlacement"
+          },
+          {
+            "fact": "F07 CAS Storage Rule: Release artifacts must be stored in immutable two-level content-addressed storage (/cas_storage/xx/xxhash.mp4). Temporary directories (/tmp/, /var/tmp/) are strictly rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 2 (Temporary & Generated Artifacts Hygiene)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "CAS path format check: is_valid_two_level=False",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Reject /tmp/ paths.",
+          "Verify two-level directory sharding matching SHA-256 prefix."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TWO_LEVEL_CAS_PATH",
+          "label": "Approve verified two-level CAS path matching computed artifact SHA-256 digest"
+        },
+        {
+          "id": "ACT_REJECT_TMP_PATH",
+          "label": "Reject temporary path with TemporaryStorageLocationError; require staging into CAS"
+        },
+        {
+          "id": "ACT_REJECT_SYSTEM_TEMP_PATH",
+          "label": "Reject Windows/system temp path; require relocation to content-addressed storage"
+        },
+        {
+          "id": "ACT_REJECT_FLAT_NON_DIGEST_PATH",
+          "label": "Reject flat directory path lacking SHA-256 two-level directory sharding"
+        },
+        {
+          "id": "ACT_PUBLISH_FROM_TMP_BLIND",
+          "label": "Upload video directly from /tmp/ before it gets purged by cron cleaner"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_TMP_PATH",
+        "rejected_reasons": {
+          "ACT_PUBLISH_FROM_TMP_BLIND": "STORAGE_VIOLATION_TMP_PUBLISH: Publishing from temporary scratch paths violates CAS immutability and risks uploading incomplete files.",
+          "ACT_APPROVE_TWO_LEVEL_CAS_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_APPROVE_TWO_LEVEL_CAS_PATH' contradicts storage path state '/tmp/scratch/output.mp4'.",
+          "ACT_REJECT_SYSTEM_TEMP_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_SYSTEM_TEMP_PATH' contradicts storage path state '/tmp/scratch/output.mp4'.",
+          "ACT_REJECT_FLAT_NON_DIGEST_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_FLAT_NON_DIGEST_PATH' contradicts storage path state '/tmp/scratch/output.mp4'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d09_022",
+      "domain": "D09",
+      "floor_id": "F07",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G00_G02_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts",
+        "apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts",
+        "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d09_022",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "IRREVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Artifact storage path declared for YouTube release: '/var/tmp/shortforge.mp4'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "F07PhysicalArtifactVerifier.ts:verifyStoragePlacement"
+          },
+          {
+            "fact": "F07 CAS Storage Rule: Release artifacts must be stored in immutable two-level content-addressed storage (/cas_storage/xx/xxhash.mp4). Temporary directories (/tmp/, /var/tmp/) are strictly rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 2 (Temporary & Generated Artifacts Hygiene)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "CAS path format check: is_valid_two_level=False",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Reject /tmp/ paths.",
+          "Verify two-level directory sharding matching SHA-256 prefix."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TWO_LEVEL_CAS_PATH",
+          "label": "Approve verified two-level CAS path matching computed artifact SHA-256 digest"
+        },
+        {
+          "id": "ACT_REJECT_TMP_PATH",
+          "label": "Reject temporary path with TemporaryStorageLocationError; require staging into CAS"
+        },
+        {
+          "id": "ACT_REJECT_SYSTEM_TEMP_PATH",
+          "label": "Reject Windows/system temp path; require relocation to content-addressed storage"
+        },
+        {
+          "id": "ACT_REJECT_FLAT_NON_DIGEST_PATH",
+          "label": "Reject flat directory path lacking SHA-256 two-level directory sharding"
+        },
+        {
+          "id": "ACT_PUBLISH_FROM_TMP_BLIND",
+          "label": "Upload video directly from /tmp/ before it gets purged by cron cleaner"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_TMP_PATH",
+        "rejected_reasons": {
+          "ACT_PUBLISH_FROM_TMP_BLIND": "STORAGE_VIOLATION_TMP_PUBLISH: Publishing from temporary scratch paths violates CAS immutability and risks uploading incomplete files.",
+          "ACT_APPROVE_TWO_LEVEL_CAS_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_APPROVE_TWO_LEVEL_CAS_PATH' contradicts storage path state '/var/tmp/shortforge.mp4'.",
+          "ACT_REJECT_SYSTEM_TEMP_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_SYSTEM_TEMP_PATH' contradicts storage path state '/var/tmp/shortforge.mp4'.",
+          "ACT_REJECT_FLAT_NON_DIGEST_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_FLAT_NON_DIGEST_PATH' contradicts storage path state '/var/tmp/shortforge.mp4'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d09_023",
+      "domain": "D09",
+      "floor_id": "F07",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G00_G02_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts",
+        "apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts",
+        "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d09_023",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "IRREVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Artifact storage path declared for YouTube release: '/data/cas_storage/cd/cdef567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.mp4'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "F07PhysicalArtifactVerifier.ts:verifyStoragePlacement"
+          },
+          {
+            "fact": "F07 CAS Storage Rule: Release artifacts must be stored in immutable two-level content-addressed storage (/cas_storage/xx/xxhash.mp4). Temporary directories (/tmp/, /var/tmp/) are strictly rejected.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 2 (Temporary & Generated Artifacts Hygiene)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "CAS path format check: is_valid_two_level=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Reject /tmp/ paths.",
+          "Verify two-level directory sharding matching SHA-256 prefix."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TWO_LEVEL_CAS_PATH",
+          "label": "Approve verified two-level CAS path matching computed artifact SHA-256 digest"
+        },
+        {
+          "id": "ACT_REJECT_TMP_PATH",
+          "label": "Reject temporary path with TemporaryStorageLocationError; require staging into CAS"
+        },
+        {
+          "id": "ACT_REJECT_SYSTEM_TEMP_PATH",
+          "label": "Reject Windows/system temp path; require relocation to content-addressed storage"
+        },
+        {
+          "id": "ACT_REJECT_FLAT_NON_DIGEST_PATH",
+          "label": "Reject flat directory path lacking SHA-256 two-level directory sharding"
+        },
+        {
+          "id": "ACT_PUBLISH_FROM_TMP_BLIND",
+          "label": "Upload video directly from /tmp/ before it gets purged by cron cleaner"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_TWO_LEVEL_CAS_PATH",
+        "rejected_reasons": {
+          "ACT_PUBLISH_FROM_TMP_BLIND": "STORAGE_VIOLATION_TMP_PUBLISH: Publishing from temporary scratch paths violates CAS immutability and risks uploading incomplete files.",
+          "ACT_REJECT_TMP_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_TMP_PATH' contradicts storage path state '/data/cas_storage/cd/cdef567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.mp4'.",
+          "ACT_REJECT_SYSTEM_TEMP_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_SYSTEM_TEMP_PATH' contradicts storage path state '/data/cas_storage/cd/cdef567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.mp4'.",
+          "ACT_REJECT_FLAT_NON_DIGEST_PATH": "STORAGE_ACTION_MISMATCH: Action 'ACT_REJECT_FLAT_NON_DIGEST_PATH' contradicts storage path state '/data/cas_storage/cd/cdef567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.mp4'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d09_026",
+      "domain": "D09",
+      "floor_id": "F07",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G00_G02_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/gates/G12_G14_Gates.ts",
+        "apps/web/factoryos/core/verification/youtube/crypto/F07CryptoSigner.ts",
+        "apps/web/factoryos/core/verification/youtube/contracts/F07ReleaseContracts.ts",
+        "apps/web/factoryos/core/verification/youtube/VerificationReceipt.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d09_026",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "IRREVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Cryptographic publication authorization evaluation: Release authorization attempted, but publication intent has expired (timestamp > 24 hours old).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "F07CryptoSigner.ts:verifyReleaseSignature"
+          },
+          {
+            "fact": "F07 Publication Invariant: NO VALID F07 RELEASE AUTHORIZATION = NO PUBLICATION. Replay of consumed authorizations or invalid cryptographic signatures must fail closed.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "F07ReleaseContracts.ts:AuthorizedPublication"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Crypto gate status: AUTH_EXPIRED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never upload without valid active Ed25519 ReleaseAuthorization.",
+          "Prevent replay attacks."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ISSUE_RELEASE_AUTHORIZATION",
+          "label": "Issue active signed ReleaseAuthorization with Ed25519 signature, nonce, and 1-hour expiration"
+        },
+        {
+          "id": "ACT_DISPATCH_AUTHORIZED_UPLOAD",
+          "label": "Execute streaming upload to YouTube API authenticated by active ReleaseAuthorization"
+        },
+        {
+          "id": "ACT_REJECT_INVALID_SIGNATURE",
+          "label": "Reject publication with CryptographicVerificationFailedError and log tamper event"
+        },
+        {
+          "id": "ACT_REJECT_EXPIRED_INTENT",
+          "label": "Reject expired intent and require complete re-verification pass across all gates"
+        },
+        {
+          "id": "ACT_REJECT_CHANNEL_MISMATCH",
+          "label": "Reject publication due to channel scope mismatch to prevent cross-channel leakage"
+        },
+        {
+          "id": "ACT_REJECT_REPLAY_ATTACK",
+          "label": "Reject consumed authorization token with TokenAlreadyConsumedError"
+        },
+        {
+          "id": "ACT_BLOCK_UNAUTHORIZED_UPLOAD",
+          "label": "Block upload immediately: missing required ReleaseAuthorization object"
+        },
+        {
+          "id": "ACT_UPLOAD_UNAUTHORIZED_DIRECT",
+          "label": "Upload video directly using raw stored YouTube OAuth refresh token without F07 authorization"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_EXPIRED_INTENT",
+        "rejected_reasons": {
+          "ACT_UPLOAD_UNAUTHORIZED_DIRECT": "SECURITY_VIOLATION_UNAUTHORIZED_PUBLISH: Bypassing F07 release authorization to upload directly destroys safety invariants.",
+          "ACT_ISSUE_RELEASE_AUTHORIZATION": "AUTH_ACTION_MISMATCH: Action 'ACT_ISSUE_RELEASE_AUTHORIZATION' contradicts state 'AUTH_EXPIRED'.",
+          "ACT_DISPATCH_AUTHORIZED_UPLOAD": "AUTH_ACTION_MISMATCH: Action 'ACT_DISPATCH_AUTHORIZED_UPLOAD' contradicts state 'AUTH_EXPIRED'.",
+          "ACT_REJECT_INVALID_SIGNATURE": "AUTH_ACTION_MISMATCH: Action 'ACT_REJECT_INVALID_SIGNATURE' contradicts state 'AUTH_EXPIRED'.",
+          "ACT_REJECT_CHANNEL_MISMATCH": "AUTH_ACTION_MISMATCH: Action 'ACT_REJECT_CHANNEL_MISMATCH' contradicts state 'AUTH_EXPIRED'.",
+          "ACT_REJECT_REPLAY_ATTACK": "AUTH_ACTION_MISMATCH: Action 'ACT_REJECT_REPLAY_ATTACK' contradicts state 'AUTH_EXPIRED'.",
+          "ACT_BLOCK_UNAUTHORIZED_UPLOAD": "AUTH_ACTION_MISMATCH: Action 'ACT_BLOCK_UNAUTHORIZED_UPLOAD' contradicts state 'AUTH_EXPIRED'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

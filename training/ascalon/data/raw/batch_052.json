@@ -1,0 +1,417 @@
+{
+  "batch_id": "batch_052",
+  "batch_index": 52,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d05_026",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_026",
+        "content_engine": "motivation",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "TTS engine routing condition: VoiceFabric budget exhausted for the mission; fallback to pre-rendered silent audio with caption focus.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:resolveEngineFallback"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Voice engine router event: ACT_APPLY_EMERGENCY_SILENT_FALLBACK",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve voice delivery contracts.",
+          "Never mask fallback tier as PRIMARY in telemetry."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_FALLOVER_TO_EDGE_TTS",
+          "label": "Switch to EdgeTTS and tag output artifact qualityClass as FALLBACK"
+        },
+        {
+          "id": "ACT_FALLOVER_TO_SYSTEM_TTS",
+          "label": "Switch to local System TTS and tag qualityClass as DEGRADED_FALLBACK"
+        },
+        {
+          "id": "ACT_FALLOVER_TO_GEMINI_TTS",
+          "label": "Failover to GeminiTTS provider and record ElevenLabs latency breach"
+        },
+        {
+          "id": "ACT_USE_LOCAL_OFFLINE_TTS",
+          "label": "Route voice synthesis to local offline Piper neural engine"
+        },
+        {
+          "id": "ACT_FAILOVER_DEGRADED_AUDIO",
+          "label": "Reject degraded audio stream and re-route to secondary high-fidelity engine"
+        },
+        {
+          "id": "ACT_RECORD_PRIMARY_SUCCESS",
+          "label": "Accept audio as PRIMARY qualityClass with verified cryptographic provenance"
+        },
+        {
+          "id": "ACT_REQUIRE_CAPABLE_VOICE_CLONE_PROVIDER",
+          "label": "Route specifically to provider supporting voice clone embedding"
+        },
+        {
+          "id": "ACT_APPLY_EMERGENCY_SILENT_FALLBACK",
+          "label": "Apply deterministic silent baseline audio with amplified kinetic captions"
+        },
+        {
+          "id": "ACT_DISGUISE_FALLBACK_AS_PRIMARY",
+          "label": "Tag EdgeTTS fallback audio as PRIMARY in telemetry to hide degradation"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_EMERGENCY_SILENT_FALLBACK",
+        "rejected_reasons": {
+          "ACT_DISGUISE_FALLBACK_AS_PRIMARY": "INVARIANT_VIOLATION_ERR_HONESTY: Falsifying qualityClass in telemetry violates Principle 5 (Absolute Telemetry Honesty).",
+          "ACT_FALLOVER_TO_EDGE_TTS": "ROUTING_ACTION_MISMATCH: Action 'ACT_FALLOVER_TO_EDGE_TTS' does not match TTS condition.",
+          "ACT_FALLOVER_TO_SYSTEM_TTS": "ROUTING_ACTION_MISMATCH: Action 'ACT_FALLOVER_TO_SYSTEM_TTS' does not match TTS condition.",
+          "ACT_FALLOVER_TO_GEMINI_TTS": "ROUTING_ACTION_MISMATCH: Action 'ACT_FALLOVER_TO_GEMINI_TTS' does not match TTS condition.",
+          "ACT_USE_LOCAL_OFFLINE_TTS": "ROUTING_ACTION_MISMATCH: Action 'ACT_USE_LOCAL_OFFLINE_TTS' does not match TTS condition.",
+          "ACT_FAILOVER_DEGRADED_AUDIO": "ROUTING_ACTION_MISMATCH: Action 'ACT_FAILOVER_DEGRADED_AUDIO' does not match TTS condition.",
+          "ACT_RECORD_PRIMARY_SUCCESS": "ROUTING_ACTION_MISMATCH: Action 'ACT_RECORD_PRIMARY_SUCCESS' does not match TTS condition.",
+          "ACT_REQUIRE_CAPABLE_VOICE_CLONE_PROVIDER": "ROUTING_ACTION_MISMATCH: Action 'ACT_REQUIRE_CAPABLE_VOICE_CLONE_PROVIDER' does not match TTS condition."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_004",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_004",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Timeline node timebase check: fps=30.0, duration=33ms, calculated_ticks=3960. (33ms at 30fps is not frame-aligned (33.333ms required, leaves remainder))",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "CompositionIR.ts:validateMediaTimeAlignment"
+          },
+          {
+            "fact": "F05 Integer Timebase Invariant: MEDIA_TIMEBASE = 120,000 ticks/sec. All clip start/duration values must snap to exact frame boundaries without floating point rounding error.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "CompositionIR.ts:MEDIA_TIMEBASE"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Frame alignment status: is_aligned=False, remainder=3960",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Fractional frame drift: 33ms at 30fps is not frame-aligned (33.333ms required, leaves remainder)"
+        ],
+        "constraints": [
+          "Ensure zero sub-frame jitter across tracks.",
+          "All timestamps must be integers divisible by frame tick quantum."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TIMEBASE_ALIGNMENT",
+          "label": "Approve timeline clip duration as perfectly frame-aligned in 120,000 ticks/sec timebase"
+        },
+        {
+          "id": "ACT_SNAP_TO_NEAREST_FRAME",
+          "label": "Snap fractional timestamp to the nearest integer frame boundary tick"
+        },
+        {
+          "id": "ACT_ALLOW_FLOATING_POINT_DRIFT",
+          "label": "Permit floating point millisecond offsets causing progressive audio-video desync"
+        },
+        {
+          "id": "ACT_ROUND_ROUGHLY_TO_SECOND",
+          "label": "Coarsely round timestamp to the nearest whole second discarding precision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SNAP_TO_NEAREST_FRAME",
+        "rejected_reasons": {
+          "ACT_ALLOW_FLOATING_POINT_DRIFT": "TIMING_VIOLATION_SUBFRAME_DRIFT: Permitting unaligned floating point times accumulates jitter and breaks audio-video lip sync.",
+          "ACT_ROUND_ROUGHLY_TO_SECOND": "RESOLUTION_LOSS_COARSE_ROUNDING: Rounding to full seconds truncates micro-edits and destroys rhythm.",
+          "ACT_APPROVE_TIMEBASE_ALIGNMENT": "ALIGNMENT_STATE_MISMATCH: Decision does not reflect mathematical frame alignment status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_005",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_005",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Timeline node timebase check: fps=60.0, duration=16ms, calculated_ticks=1920. (16ms at 60fps is not frame-aligned (16.666ms required))",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "CompositionIR.ts:validateMediaTimeAlignment"
+          },
+          {
+            "fact": "F05 Integer Timebase Invariant: MEDIA_TIMEBASE = 120,000 ticks/sec. All clip start/duration values must snap to exact frame boundaries without floating point rounding error.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "CompositionIR.ts:MEDIA_TIMEBASE"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Frame alignment status: is_aligned=False, remainder=1920",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Fractional frame drift: 16ms at 60fps is not frame-aligned (16.666ms required)"
+        ],
+        "constraints": [
+          "Ensure zero sub-frame jitter across tracks.",
+          "All timestamps must be integers divisible by frame tick quantum."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TIMEBASE_ALIGNMENT",
+          "label": "Approve timeline clip duration as perfectly frame-aligned in 120,000 ticks/sec timebase"
+        },
+        {
+          "id": "ACT_SNAP_TO_NEAREST_FRAME",
+          "label": "Snap fractional timestamp to the nearest integer frame boundary tick"
+        },
+        {
+          "id": "ACT_ALLOW_FLOATING_POINT_DRIFT",
+          "label": "Permit floating point millisecond offsets causing progressive audio-video desync"
+        },
+        {
+          "id": "ACT_ROUND_ROUGHLY_TO_SECOND",
+          "label": "Coarsely round timestamp to the nearest whole second discarding precision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SNAP_TO_NEAREST_FRAME",
+        "rejected_reasons": {
+          "ACT_ALLOW_FLOATING_POINT_DRIFT": "TIMING_VIOLATION_SUBFRAME_DRIFT: Permitting unaligned floating point times accumulates jitter and breaks audio-video lip sync.",
+          "ACT_ROUND_ROUGHLY_TO_SECOND": "RESOLUTION_LOSS_COARSE_ROUNDING: Rounding to full seconds truncates micro-edits and destroys rhythm.",
+          "ACT_APPROVE_TIMEBASE_ALIGNMENT": "ALIGNMENT_STATE_MISMATCH: Decision does not reflect mathematical frame alignment status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_006",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_006",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Timeline node timebase check: fps=23.976, duration=2002ms, calculated_ticks=240240. (2002ms at 23.976fps aligns with 24000/1001 rational framerate)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "CompositionIR.ts:validateMediaTimeAlignment"
+          },
+          {
+            "fact": "F05 Integer Timebase Invariant: MEDIA_TIMEBASE = 120,000 ticks/sec. All clip start/duration values must snap to exact frame boundaries without floating point rounding error.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "CompositionIR.ts:MEDIA_TIMEBASE"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Frame alignment status: is_aligned=True, remainder=0",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Ensure zero sub-frame jitter across tracks.",
+          "All timestamps must be integers divisible by frame tick quantum."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TIMEBASE_ALIGNMENT",
+          "label": "Approve timeline clip duration as perfectly frame-aligned in 120,000 ticks/sec timebase"
+        },
+        {
+          "id": "ACT_SNAP_TO_NEAREST_FRAME",
+          "label": "Snap fractional timestamp to the nearest integer frame boundary tick"
+        },
+        {
+          "id": "ACT_ALLOW_FLOATING_POINT_DRIFT",
+          "label": "Permit floating point millisecond offsets causing progressive audio-video desync"
+        },
+        {
+          "id": "ACT_ROUND_ROUGHLY_TO_SECOND",
+          "label": "Coarsely round timestamp to the nearest whole second discarding precision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_TIMEBASE_ALIGNMENT",
+        "rejected_reasons": {
+          "ACT_ALLOW_FLOATING_POINT_DRIFT": "TIMING_VIOLATION_SUBFRAME_DRIFT: Permitting unaligned floating point times accumulates jitter and breaks audio-video lip sync.",
+          "ACT_ROUND_ROUGHLY_TO_SECOND": "RESOLUTION_LOSS_COARSE_ROUNDING: Rounding to full seconds truncates micro-edits and destroys rhythm.",
+          "ACT_SNAP_TO_NEAREST_FRAME": "ALIGNMENT_STATE_MISMATCH: Decision does not reflect mathematical frame alignment status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d06_007",
+      "domain": "D06",
+      "floor_id": "F05",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d06_007",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Timeline node timebase check: fps=25.0, duration=40ms, calculated_ticks=4800. (40ms at 25fps aligns to exactly 1 frame (4,800 ticks))",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "CompositionIR.ts:validateMediaTimeAlignment"
+          },
+          {
+            "fact": "F05 Integer Timebase Invariant: MEDIA_TIMEBASE = 120,000 ticks/sec. All clip start/duration values must snap to exact frame boundaries without floating point rounding error.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "CompositionIR.ts:MEDIA_TIMEBASE"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Frame alignment status: is_aligned=True, remainder=0",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Ensure zero sub-frame jitter across tracks.",
+          "All timestamps must be integers divisible by frame tick quantum."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_TIMEBASE_ALIGNMENT",
+          "label": "Approve timeline clip duration as perfectly frame-aligned in 120,000 ticks/sec timebase"
+        },
+        {
+          "id": "ACT_SNAP_TO_NEAREST_FRAME",
+          "label": "Snap fractional timestamp to the nearest integer frame boundary tick"
+        },
+        {
+          "id": "ACT_ALLOW_FLOATING_POINT_DRIFT",
+          "label": "Permit floating point millisecond offsets causing progressive audio-video desync"
+        },
+        {
+          "id": "ACT_ROUND_ROUGHLY_TO_SECOND",
+          "label": "Coarsely round timestamp to the nearest whole second discarding precision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_TIMEBASE_ALIGNMENT",
+        "rejected_reasons": {
+          "ACT_ALLOW_FLOATING_POINT_DRIFT": "TIMING_VIOLATION_SUBFRAME_DRIFT: Permitting unaligned floating point times accumulates jitter and breaks audio-video lip sync.",
+          "ACT_ROUND_ROUGHLY_TO_SECOND": "RESOLUTION_LOSS_COARSE_ROUNDING: Rounding to full seconds truncates micro-edits and destroys rhythm.",
+          "ACT_SNAP_TO_NEAREST_FRAME": "ALIGNMENT_STATE_MISMATCH: Decision does not reflect mathematical frame alignment status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

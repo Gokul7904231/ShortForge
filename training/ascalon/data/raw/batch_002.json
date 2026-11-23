@@ -1,0 +1,351 @@
+{
+  "batch_id": "batch_002",
+  "batch_index": 2,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d01_012",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_012",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Candidate claim: 'NASA confirmed James Webb detected water vapor on exoplanet WASP-18b'. Context: Peer-reviewed NASA paper with DOI and 3 corroborating news sources",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "DocumentNormalizer.ts:normalizeClaims"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Claim verification pipeline evaluated sources: result matches VERIFIED_FACT",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Claim classification uncertainty: verifying against VERIFIED_FACT"
+        ],
+        "constraints": [
+          "Classify claim strictly according to factual hierarchy: VERIFIED_FACT > SOURCE_CLAIM > UNVERIFIED_ASSERTION."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CLASSIFY_VERIFIED_FACT",
+          "label": "Classify claim as VERIFIED_FACT and tag confidence accordingly"
+        },
+        {
+          "id": "ACT_CLASSIFY_VERIFIED_BLIND",
+          "label": "Promote unconditionally to VERIFIED_FACT to increase yield"
+        },
+        {
+          "id": "ACT_DISCARD_SILENTLY",
+          "label": "Drop claim from pipeline without provenance or ledger entry"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CLASSIFY_VERIFIED_FACT",
+        "rejected_reasons": {
+          "ACT_CLASSIFY_VERIFIED_BLIND": "INVARIANT_VIOLATION_UNGROUNDED_PROMOTION: Unverified or contradicted claims cannot be promoted to VERIFIED_FACT without empirical corroboration.",
+          "ACT_DISCARD_SILENTLY": "INVARIANT_VIOLATION_PROVENANCE_LOSS: Dropping claims without recording the classification state destroys forensic lineage."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_013",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_013",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Candidate claim: 'Ancient Romans used electric batteries 2000 years ago'. Context: Archaeological consensus rejects Baghdad battery as electrical; classified as fringe theory",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "DocumentNormalizer.ts:normalizeClaims"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Claim verification pipeline evaluated sources: result matches CONTRADICTED_CLAIM",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Claim classification uncertainty: verifying against CONTRADICTED_CLAIM"
+        ],
+        "constraints": [
+          "Classify claim strictly according to factual hierarchy: VERIFIED_FACT > SOURCE_CLAIM > UNVERIFIED_ASSERTION."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CLASSIFY_CONTRADICTED_CLAIM",
+          "label": "Classify claim as CONTRADICTED_CLAIM and tag confidence accordingly"
+        },
+        {
+          "id": "ACT_CLASSIFY_VERIFIED_BLIND",
+          "label": "Promote unconditionally to VERIFIED_FACT to increase yield"
+        },
+        {
+          "id": "ACT_DISCARD_SILENTLY",
+          "label": "Drop claim from pipeline without provenance or ledger entry"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CLASSIFY_CONTRADICTED_CLAIM",
+        "rejected_reasons": {
+          "ACT_CLASSIFY_VERIFIED_BLIND": "INVARIANT_VIOLATION_UNGROUNDED_PROMOTION: Unverified or contradicted claims cannot be promoted to VERIFIED_FACT without empirical corroboration.",
+          "ACT_DISCARD_SILENTLY": "INVARIANT_VIOLATION_PROVENANCE_LOSS: Dropping claims without recording the classification state destroys forensic lineage."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_014",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_014",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Candidate claim: 'A new battery breakthrough will increase EV range to 3000 miles by next year'. Context: Single anonymous forum post without primary technical source",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "DocumentNormalizer.ts:normalizeClaims"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Claim verification pipeline evaluated sources: result matches UNVERIFIED_ASSERTION",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Claim classification uncertainty: verifying against UNVERIFIED_ASSERTION"
+        ],
+        "constraints": [
+          "Classify claim strictly according to factual hierarchy: VERIFIED_FACT > SOURCE_CLAIM > UNVERIFIED_ASSERTION."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CLASSIFY_UNVERIFIED_ASSERTION",
+          "label": "Classify claim as UNVERIFIED_ASSERTION and tag confidence accordingly"
+        },
+        {
+          "id": "ACT_CLASSIFY_VERIFIED_BLIND",
+          "label": "Promote unconditionally to VERIFIED_FACT to increase yield"
+        },
+        {
+          "id": "ACT_DISCARD_SILENTLY",
+          "label": "Drop claim from pipeline without provenance or ledger entry"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CLASSIFY_UNVERIFIED_ASSERTION",
+        "rejected_reasons": {
+          "ACT_CLASSIFY_VERIFIED_BLIND": "INVARIANT_VIOLATION_UNGROUNDED_PROMOTION: Unverified or contradicted claims cannot be promoted to VERIFIED_FACT without empirical corroboration.",
+          "ACT_DISCARD_SILENTLY": "INVARIANT_VIOLATION_PROVENANCE_LOSS: Dropping claims without recording the classification state destroys forensic lineage."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_015",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_015",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Candidate claim: 'Model asserts that Abraham Lincoln invented the fax machine in 1860'. Context: Model hallucination without source citation or historical evidence",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "DocumentNormalizer.ts:normalizeClaims"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Claim verification pipeline evaluated sources: result matches MODEL_CLAIM",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Claim classification uncertainty: verifying against MODEL_CLAIM"
+        ],
+        "constraints": [
+          "Classify claim strictly according to factual hierarchy: VERIFIED_FACT > SOURCE_CLAIM > UNVERIFIED_ASSERTION."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CLASSIFY_MODEL_CLAIM",
+          "label": "Classify claim as MODEL_CLAIM and tag confidence accordingly"
+        },
+        {
+          "id": "ACT_CLASSIFY_VERIFIED_BLIND",
+          "label": "Promote unconditionally to VERIFIED_FACT to increase yield"
+        },
+        {
+          "id": "ACT_DISCARD_SILENTLY",
+          "label": "Drop claim from pipeline without provenance or ledger entry"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CLASSIFY_MODEL_CLAIM",
+        "rejected_reasons": {
+          "ACT_CLASSIFY_VERIFIED_BLIND": "INVARIANT_VIOLATION_UNGROUNDED_PROMOTION: Unverified or contradicted claims cannot be promoted to VERIFIED_FACT without empirical corroboration.",
+          "ACT_DISCARD_SILENTLY": "INVARIANT_VIOLATION_PROVENANCE_LOSS: Dropping claims without recording the classification state destroys forensic lineage."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_020",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_020",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Engine 'quiz' requires methodology 'QUICK' (Fast multiple-choice question generation with canonical trivia retrieval).",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachContracts.ts:inferReachResearchMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Workflow configuration requested mode matching quiz",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Select appropriate ReachResearchMode for content engine quiz."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_SELECT_QUICK",
+          "label": "Select ReachResearchMode 'QUICK' with calibrated source quotas"
+        },
+        {
+          "id": "ACT_SELECT_MINIMAL_CHEAP",
+          "label": "Always force QUICK mode to minimize token expenditure regardless of engine requirements"
+        },
+        {
+          "id": "ACT_SELECT_UNBOUNDED_DEEP",
+          "label": "Always force DEEP recursive crawl exceeding treasury budget limits"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SELECT_QUICK",
+        "rejected_reasons": {
+          "ACT_SELECT_MINIMAL_CHEAP": "POLICY_VIOLATION_INSUFFICIENT_MODE: Using QUICK mode for rigorous engines degrades evidence sufficiency below quality gates.",
+          "ACT_SELECT_UNBOUNDED_DEEP": "TREASURY_VIOLATION_BUDGET_OVERRUN: Unbounded deep crawls violate treasury rate and budget envelope invariants."
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

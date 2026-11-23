@@ -1,0 +1,399 @@
+{
+  "batch_id": "batch_024",
+  "batch_index": 24,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D11-EDIT-014",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_TRANSFORMS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rip-014",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Timeline contains locked voiceover track and synchronous subtitle track (includeCaptions=True)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "RippleScope specifies whether time deletion shifts downstream items on linked tracks",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/TimelineTransforms.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: RIPPLE_DELETE, start: 12.0s, end: 15.0s, includeCaptions: True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Ripple operations that decouple audio/subtitle sync must be rejected fail-closed"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_EXECUTE_BOUNDED_RIPPLE",
+          "label": "Execute verified ripple operation (ACT_EXECUTE_BOUNDED_RIPPLE)"
+        },
+        {
+          "id": "ACT_FORCE_DESYNC_RIPPLE",
+          "label": "Ripple delete video track only, leaving subtitles and audio misaligned"
+        },
+        {
+          "id": "ACT_OVERWRITE_WITH_SILENCE",
+          "label": "Replace deleted section with blank silence without shifting timeline"
+        },
+        {
+          "id": "ACT_DELETE_ALL_TRACKS",
+          "label": "Wipe all tracks across the entire timeline"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_EXECUTE_BOUNDED_RIPPLE",
+        "rejected_reasons": {
+          "ACT_FORCE_DESYNC_RIPPLE": "INTEGRITY_VIOLATION_DESYNC: Deleting video time without shifting linked subtitle/audio tracks causes permanent audio/caption desync",
+          "ACT_OVERWRITE_WITH_SILENCE": "NARRATIVE_VIOLATION_PACING_GAP: Inserting 3.0s dead air creates catastrophic audience retention drop",
+          "ACT_DELETE_ALL_TRACKS": "INTEGRITY_VIOLATION_CORRUPTED_PIPELINE: Blanket track deletion destroys project timeline"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-015",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_TRANSFORMS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rip-015",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Timeline contains locked voiceover track and synchronous subtitle track (includeCaptions=True)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "RippleScope specifies whether time deletion shifts downstream items on linked tracks",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/TimelineTransforms.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: RIPPLE_DELETE, start: 12.0s, end: 15.0s, includeCaptions: True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Ripple operations that decouple audio/subtitle sync must be rejected fail-closed"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_EXECUTE_ISOLATED_TRACK_RIPPLE",
+          "label": "Execute verified ripple operation (ACT_EXECUTE_ISOLATED_TRACK_RIPPLE)"
+        },
+        {
+          "id": "ACT_FORCE_DESYNC_RIPPLE",
+          "label": "Ripple delete video track only, leaving subtitles and audio misaligned"
+        },
+        {
+          "id": "ACT_OVERWRITE_WITH_SILENCE",
+          "label": "Replace deleted section with blank silence without shifting timeline"
+        },
+        {
+          "id": "ACT_DELETE_ALL_TRACKS",
+          "label": "Wipe all tracks across the entire timeline"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_EXECUTE_ISOLATED_TRACK_RIPPLE",
+        "rejected_reasons": {
+          "ACT_FORCE_DESYNC_RIPPLE": "INTEGRITY_VIOLATION_DESYNC: Deleting video time without shifting linked subtitle/audio tracks causes permanent audio/caption desync",
+          "ACT_OVERWRITE_WITH_SILENCE": "NARRATIVE_VIOLATION_PACING_GAP: Inserting 3.0s dead air creates catastrophic audience retention drop",
+          "ACT_DELETE_ALL_TRACKS": "INTEGRITY_VIOLATION_CORRUPTED_PIPELINE: Blanket track deletion destroys project timeline"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D12-GOV-001",
+      "domain": "D12_GOVERNANCE_HEALER_SLAYER",
+      "floor_id": "GUARDIAN_QUIZ_AMBIGUITY",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts",
+        "apps/web/factoryos/core/guardian/BorderDefenseAgent.ts",
+        "apps/web/factoryos/core/guardian/SlayerPrimeEngine.ts",
+        "apps/web/factoryos/tests/slayer-prime.test.ts",
+        "apps/web/factoryos/tests/slayer-swarm.test.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d12-qiz-001",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "QuizAmbiguityDetector inspection result: Answer 'Paris' missing from options ['London', 'Berlin', 'Madrid', 'Rome']",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts"
+          },
+          {
+            "fact": "Quiz questions must have answer in options, zero positional phrases, and strictly unique choices",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "quiz_audit: issue_code=ANSWER_NOT_IN_OPTIONS",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Quiz validity issue: ANSWER_NOT_IN_OPTIONS"
+        ],
+        "constraints": [
+          "Ambiguous or ungrounded quiz questions must be rejected fail-closed before rendering"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_ANSWER_MISSING_FROM_OPTIONS",
+          "label": "Execute deterministic quiz governance gate (ACT_REJECT_ANSWER_MISSING_FROM_OPTIONS)"
+        },
+        {
+          "id": "ACT_APPROVE_DESPITE_AMBIGUITY",
+          "label": "Approve quiz and publish ambiguous question to YouTube"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_OPTIONS",
+          "label": "Delete options at runtime leaving blank buttons"
+        },
+        {
+          "id": "ACT_INVENT_CORRECT_ANSWER",
+          "label": "Let an LLM guess and fabricate a replacement answer without verification"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_ANSWER_MISSING_FROM_OPTIONS",
+        "rejected_reasons": {
+          "ACT_APPROVE_DESPITE_AMBIGUITY": "POLICY_VIOLATION_AMBIGUOUS_QUIZ: Releasing quiz with ANSWER_NOT_IN_OPTIONS damages channel authority and triggers viewer backlash",
+          "ACT_SILENTLY_DROP_OPTIONS": "UI_VIOLATION_MALFORMED_COMPONENT: Dropping options creates broken layout and rendering crash",
+          "ACT_INVENT_CORRECT_ANSWER": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating answers without evidence source ref violates truth-first grounding laws"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D12-GOV-002",
+      "domain": "D12_GOVERNANCE_HEALER_SLAYER",
+      "floor_id": "GUARDIAN_QUIZ_AMBIGUITY",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts",
+        "apps/web/factoryos/core/guardian/BorderDefenseAgent.ts",
+        "apps/web/factoryos/core/guardian/SlayerPrimeEngine.ts",
+        "apps/web/factoryos/tests/slayer-prime.test.ts",
+        "apps/web/factoryos/tests/slayer-swarm.test.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d12-qiz-002",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "QuizAmbiguityDetector inspection result: Option 4 is 'All of the above' which breaks dynamic option shuffling",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts"
+          },
+          {
+            "fact": "Quiz questions must have answer in options, zero positional phrases, and strictly unique choices",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "quiz_audit: issue_code=TRIVIAL_OPTION_PATTERN",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Quiz validity issue: TRIVIAL_OPTION_PATTERN"
+        ],
+        "constraints": [
+          "Ambiguous or ungrounded quiz questions must be rejected fail-closed before rendering"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_POSITIONAL_OPTION_PATTERN",
+          "label": "Execute deterministic quiz governance gate (ACT_REJECT_POSITIONAL_OPTION_PATTERN)"
+        },
+        {
+          "id": "ACT_APPROVE_DESPITE_AMBIGUITY",
+          "label": "Approve quiz and publish ambiguous question to YouTube"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_OPTIONS",
+          "label": "Delete options at runtime leaving blank buttons"
+        },
+        {
+          "id": "ACT_INVENT_CORRECT_ANSWER",
+          "label": "Let an LLM guess and fabricate a replacement answer without verification"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_POSITIONAL_OPTION_PATTERN",
+        "rejected_reasons": {
+          "ACT_APPROVE_DESPITE_AMBIGUITY": "POLICY_VIOLATION_AMBIGUOUS_QUIZ: Releasing quiz with TRIVIAL_OPTION_PATTERN damages channel authority and triggers viewer backlash",
+          "ACT_SILENTLY_DROP_OPTIONS": "UI_VIOLATION_MALFORMED_COMPONENT: Dropping options creates broken layout and rendering crash",
+          "ACT_INVENT_CORRECT_ANSWER": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating answers without evidence source ref violates truth-first grounding laws"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D12-GOV-003",
+      "domain": "D12_GOVERNANCE_HEALER_SLAYER",
+      "floor_id": "GUARDIAN_QUIZ_AMBIGUITY",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts",
+        "apps/web/factoryos/core/guardian/BorderDefenseAgent.ts",
+        "apps/web/factoryos/core/guardian/SlayerPrimeEngine.ts",
+        "apps/web/factoryos/tests/slayer-prime.test.ts",
+        "apps/web/factoryos/tests/slayer-swarm.test.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d12-qiz-003",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "QuizAmbiguityDetector inspection result: Option 4 is 'None of the above' which invalidates randomized presentation",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts"
+          },
+          {
+            "fact": "Quiz questions must have answer in options, zero positional phrases, and strictly unique choices",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "quiz_audit: issue_code=TRIVIAL_OPTION_PATTERN",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Quiz validity issue: TRIVIAL_OPTION_PATTERN"
+        ],
+        "constraints": [
+          "Ambiguous or ungrounded quiz questions must be rejected fail-closed before rendering"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_POSITIONAL_OPTION_PATTERN",
+          "label": "Execute deterministic quiz governance gate (ACT_REJECT_POSITIONAL_OPTION_PATTERN)"
+        },
+        {
+          "id": "ACT_APPROVE_DESPITE_AMBIGUITY",
+          "label": "Approve quiz and publish ambiguous question to YouTube"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_OPTIONS",
+          "label": "Delete options at runtime leaving blank buttons"
+        },
+        {
+          "id": "ACT_INVENT_CORRECT_ANSWER",
+          "label": "Let an LLM guess and fabricate a replacement answer without verification"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_POSITIONAL_OPTION_PATTERN",
+        "rejected_reasons": {
+          "ACT_APPROVE_DESPITE_AMBIGUITY": "POLICY_VIOLATION_AMBIGUOUS_QUIZ: Releasing quiz with TRIVIAL_OPTION_PATTERN damages channel authority and triggers viewer backlash",
+          "ACT_SILENTLY_DROP_OPTIONS": "UI_VIOLATION_MALFORMED_COMPONENT: Dropping options creates broken layout and rendering crash",
+          "ACT_INVENT_CORRECT_ANSWER": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating answers without evidence source ref violates truth-first grounding laws"
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

@@ -1,0 +1,428 @@
+{
+  "batch_id": "batch_043",
+  "batch_index": 43,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d03_015",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_015",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ScriptIR causal validator analyzed narrative graph: Scene 2 state_after contradicts Scene 3 state_before regarding object possession.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:NarrativeBeat.validate_causal_graph"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Causal graph status: Inconsistent NarrativeState across boundary",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Causal consistency issue: Inconsistent NarrativeState across boundary"
+        ],
+        "constraints": [
+          "Preserve strict chronological and causal monotonicity.",
+          "Ensure every narrative beat has verifiable preconditions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REORDER_CAUSAL_BEATS",
+          "label": "Re-order narrative beats so cause events strictly precede effect events in the DAG"
+        },
+        {
+          "id": "ACT_RESTORE_INTRO_BEAT",
+          "label": "Inject prerequisite character establishment beat into scene sequence"
+        },
+        {
+          "id": "ACT_APPROVE_CAUSAL_GRAPH",
+          "label": "Approve ScriptIR causal graph as logically sound and monotonic"
+        },
+        {
+          "id": "ACT_INJECT_EVIDENCE_BEAT",
+          "label": "Insert necessary evidentiary clue beat into exposition to ground the climax"
+        },
+        {
+          "id": "ACT_REPAIR_PAYOFF_BEAT",
+          "label": "Close open narrative loop by adding resolving payoff beat in final scene"
+        },
+        {
+          "id": "ACT_RELINK_EXISTING_CAUSAL_EVENT",
+          "label": "Repair dangling causal foreign key by referencing valid upstream event"
+        },
+        {
+          "id": "ACT_RECONCILE_STATE_TRANSITION",
+          "label": "Reconcile world_facts and state_before to align with preceding scene outcome"
+        },
+        {
+          "id": "ACT_IGNORE_CAUSAL_BREAK",
+          "label": "Ignore causal incoherence and proceed to render video with disordered narrative"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_RECONCILE_STATE_TRANSITION",
+        "rejected_reasons": {
+          "ACT_IGNORE_CAUSAL_BREAK": "NARRATIVE_VIOLATION_INCOHERENCE: Proceeding with broken causal graph produces nonsensical video that fails audience retention.",
+          "ACT_REORDER_CAUSAL_BEATS": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_REORDER_CAUSAL_BEATS' does not resolve specific defect 'Inconsistent NarrativeState across boundary'.",
+          "ACT_RESTORE_INTRO_BEAT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_RESTORE_INTRO_BEAT' does not resolve specific defect 'Inconsistent NarrativeState across boundary'.",
+          "ACT_APPROVE_CAUSAL_GRAPH": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_APPROVE_CAUSAL_GRAPH' does not resolve specific defect 'Inconsistent NarrativeState across boundary'.",
+          "ACT_INJECT_EVIDENCE_BEAT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_INJECT_EVIDENCE_BEAT' does not resolve specific defect 'Inconsistent NarrativeState across boundary'.",
+          "ACT_REPAIR_PAYOFF_BEAT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_REPAIR_PAYOFF_BEAT' does not resolve specific defect 'Inconsistent NarrativeState across boundary'.",
+          "ACT_RELINK_EXISTING_CAUSAL_EVENT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_RELINK_EXISTING_CAUSAL_EVENT' does not resolve specific defect 'Inconsistent NarrativeState across boundary'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_016",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_016",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ScriptIR causal validator analyzed narrative graph: Valid 4-beat quiz progression: Hook -> Question -> Countdown -> Answer Reveal.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:NarrativeBeat.validate_causal_graph"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Causal graph status: Compliant Quiz Beat Structure",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Causal consistency issue: Compliant Quiz Beat Structure"
+        ],
+        "constraints": [
+          "Preserve strict chronological and causal monotonicity.",
+          "Ensure every narrative beat has verifiable preconditions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REORDER_CAUSAL_BEATS",
+          "label": "Re-order narrative beats so cause events strictly precede effect events in the DAG"
+        },
+        {
+          "id": "ACT_RESTORE_INTRO_BEAT",
+          "label": "Inject prerequisite character establishment beat into scene sequence"
+        },
+        {
+          "id": "ACT_APPROVE_CAUSAL_GRAPH",
+          "label": "Approve ScriptIR causal graph as logically sound and monotonic"
+        },
+        {
+          "id": "ACT_INJECT_EVIDENCE_BEAT",
+          "label": "Insert necessary evidentiary clue beat into exposition to ground the climax"
+        },
+        {
+          "id": "ACT_REPAIR_PAYOFF_BEAT",
+          "label": "Close open narrative loop by adding resolving payoff beat in final scene"
+        },
+        {
+          "id": "ACT_RELINK_EXISTING_CAUSAL_EVENT",
+          "label": "Repair dangling causal foreign key by referencing valid upstream event"
+        },
+        {
+          "id": "ACT_RECONCILE_STATE_TRANSITION",
+          "label": "Reconcile world_facts and state_before to align with preceding scene outcome"
+        },
+        {
+          "id": "ACT_IGNORE_CAUSAL_BREAK",
+          "label": "Ignore causal incoherence and proceed to render video with disordered narrative"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_CAUSAL_GRAPH",
+        "rejected_reasons": {
+          "ACT_IGNORE_CAUSAL_BREAK": "NARRATIVE_VIOLATION_INCOHERENCE: Proceeding with broken causal graph produces nonsensical video that fails audience retention.",
+          "ACT_REORDER_CAUSAL_BEATS": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_REORDER_CAUSAL_BEATS' does not resolve specific defect 'Compliant Quiz Beat Structure'.",
+          "ACT_RESTORE_INTRO_BEAT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_RESTORE_INTRO_BEAT' does not resolve specific defect 'Compliant Quiz Beat Structure'.",
+          "ACT_INJECT_EVIDENCE_BEAT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_INJECT_EVIDENCE_BEAT' does not resolve specific defect 'Compliant Quiz Beat Structure'.",
+          "ACT_REPAIR_PAYOFF_BEAT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_REPAIR_PAYOFF_BEAT' does not resolve specific defect 'Compliant Quiz Beat Structure'.",
+          "ACT_RELINK_EXISTING_CAUSAL_EVENT": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_RELINK_EXISTING_CAUSAL_EVENT' does not resolve specific defect 'Compliant Quiz Beat Structure'.",
+          "ACT_RECONCILE_STATE_TRANSITION": "CAUSAL_REPAIR_MISMATCH: Action 'ACT_RECONCILE_STATE_TRANSITION' does not resolve specific defect 'Compliant Quiz Beat Structure'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_020",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_020",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Scene specification assertion: 'Scene 3 asserts 'Humans use only 10 percent of their brain', evidence_refs=['ref_debunked_myth_neuroscience']'. Grounding check: is_grounded=False.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:ClaimRef.verify_evidence_refs"
+          },
+          {
+            "fact": "F02 Claim Grounding invariant: Every factual assertion in a scene must bind directly to an upstream F00 evidence_ref.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "EvidenceRef presence: MISSING_OR_CONTRADICTED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Assertion lack of evidence: Scene 3 asserts 'Humans use only 10 percent of their brain', evidence_refs=['ref_debunked_myth_neuroscience']"
+        ],
+        "constraints": [
+          "Every factual claim must have verified evidence refs.",
+          "Reject debunked myths or ungrounded assertions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_CLAIM_GROUNDING",
+          "label": "Approve scene claim as verified and properly grounded with upstream EvidenceRefs"
+        },
+        {
+          "id": "ACT_REJECT_UNGROUNDED_CLAIM",
+          "label": "Reject ungrounded scene assertion and require evidence attachment or replacement"
+        },
+        {
+          "id": "ACT_REPLACE_DEBUNKED_CLAIM",
+          "label": "Replace debunked myth with scientific consensus statement grounded in evidence"
+        },
+        {
+          "id": "ACT_INVENT_FAKE_SOURCE",
+          "label": "Generate fake DOI string to make the ungrounded claim appear verified"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REPLACE_DEBUNKED_CLAIM",
+        "rejected_reasons": {
+          "ACT_INVENT_FAKE_SOURCE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Inventing synthetic source identifiers violates core governance principles.",
+          "ACT_APPROVE_CLAIM_GROUNDING": "EVIDENCE_GATE_MISCLASSIFICATION: Decision does not reflect empirical grounding state.",
+          "ACT_REJECT_UNGROUNDED_CLAIM": "GROUNDING_ACTION_MISMATCH: Proposed action does not match claim status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_021",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_021",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Scene specification assertion: 'Scene 5 asserts 'Water boils at 100C at sea level', evidence_refs=['ref_physics_handbook']'. Grounding check: is_grounded=True.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:ClaimRef.verify_evidence_refs"
+          },
+          {
+            "fact": "F02 Claim Grounding invariant: Every factual assertion in a scene must bind directly to an upstream F00 evidence_ref.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "EvidenceRef presence: VALID",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Every factual claim must have verified evidence refs.",
+          "Reject debunked myths or ungrounded assertions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_CLAIM_GROUNDING",
+          "label": "Approve scene claim as verified and properly grounded with upstream EvidenceRefs"
+        },
+        {
+          "id": "ACT_REJECT_UNGROUNDED_CLAIM",
+          "label": "Reject ungrounded scene assertion and require evidence attachment or replacement"
+        },
+        {
+          "id": "ACT_REPLACE_DEBUNKED_CLAIM",
+          "label": "Replace debunked myth with scientific consensus statement grounded in evidence"
+        },
+        {
+          "id": "ACT_INVENT_FAKE_SOURCE",
+          "label": "Generate fake DOI string to make the ungrounded claim appear verified"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_CLAIM_GROUNDING",
+        "rejected_reasons": {
+          "ACT_INVENT_FAKE_SOURCE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Inventing synthetic source identifiers violates core governance principles.",
+          "ACT_REJECT_UNGROUNDED_CLAIM": "EVIDENCE_GATE_MISCLASSIFICATION: Decision does not reflect empirical grounding state.",
+          "ACT_REPLACE_DEBUNKED_CLAIM": "GROUNDING_ACTION_MISMATCH: Proposed action does not match claim status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_022",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_022",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Scene specification assertion: 'Scene 2 asserts 'Drinking hot water cures viral infections', evidence_refs=[]'. Grounding check: is_grounded=False.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "script_ir.py:ClaimRef.verify_evidence_refs"
+          },
+          {
+            "fact": "F02 Claim Grounding invariant: Every factual assertion in a scene must bind directly to an upstream F00 evidence_ref.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "EvidenceRef presence: MISSING_OR_CONTRADICTED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Assertion lack of evidence: Scene 2 asserts 'Drinking hot water cures viral infections', evidence_refs=[]"
+        ],
+        "constraints": [
+          "Every factual claim must have verified evidence refs.",
+          "Reject debunked myths or ungrounded assertions."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_CLAIM_GROUNDING",
+          "label": "Approve scene claim as verified and properly grounded with upstream EvidenceRefs"
+        },
+        {
+          "id": "ACT_REJECT_UNGROUNDED_CLAIM",
+          "label": "Reject ungrounded scene assertion and require evidence attachment or replacement"
+        },
+        {
+          "id": "ACT_REPLACE_DEBUNKED_CLAIM",
+          "label": "Replace debunked myth with scientific consensus statement grounded in evidence"
+        },
+        {
+          "id": "ACT_INVENT_FAKE_SOURCE",
+          "label": "Generate fake DOI string to make the ungrounded claim appear verified"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_UNGROUNDED_CLAIM",
+        "rejected_reasons": {
+          "ACT_INVENT_FAKE_SOURCE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Inventing synthetic source identifiers violates core governance principles.",
+          "ACT_APPROVE_CLAIM_GROUNDING": "EVIDENCE_GATE_MISCLASSIFICATION: Decision does not reflect empirical grounding state.",
+          "ACT_REPLACE_DEBUNKED_CLAIM": "GROUNDING_ACTION_MISMATCH: Proposed action does not match claim status."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

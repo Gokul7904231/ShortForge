@@ -1,0 +1,399 @@
+{
+  "batch_id": "batch_072",
+  "batch_index": 72,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D13-ECON-017",
+      "domain": "D13_TREASURY_CONTEXT_ECON",
+      "floor_id": "CONTEXT_COMPILER_REDACTOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/tests/treasury-kernel.test.ts",
+        "apps/web/factoryos/tests/treasury-economic-admission.test.ts",
+        "apps/web/factoryos/core/intelligence/ContextCompiler.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d13-rdc-017",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ContextCapsule scanner detected pattern: JWT_TOKEN",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/intelligence/ContextCompiler.ts"
+          },
+          {
+            "fact": "Strict Invariant: All 11 secret categories (API keys, private keys, HMAC tokens, db creds) MUST be redacted to [REDACTED] before model dispatch",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context_scan: secret_type=JWT_TOKEN, detected=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Secret leakage hazard: JWT_TOKEN"
+        ],
+        "constraints": [
+          "Zero credential leakage into LLM prompts or synthetic training sets"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REDACT_SECRET_BEFORE_PROMPT",
+          "label": "Process context text with strict secret scrubber (ACT_REDACT_SECRET_BEFORE_PROMPT)"
+        },
+        {
+          "id": "ACT_DISPATCH_RAW_SECRET_TO_LLM",
+          "label": "Send raw credentials in prompt to external LLM provider"
+        },
+        {
+          "id": "ACT_ENCODE_SECRET_BASE64",
+          "label": "Base64 encode the secret and send it to LLM anyway"
+        },
+        {
+          "id": "ACT_STORE_SECRET_IN_PUBLIC_LOG",
+          "label": "Log raw credential into public application logs"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REDACT_SECRET_BEFORE_PROMPT",
+        "rejected_reasons": {
+          "ACT_DISPATCH_RAW_SECRET_TO_LLM": "SECURITY_VIOLATION_UNREDACTED_CONTEXT: Leaking credentials to external models or logs creates a catastrophic production compromise",
+          "ACT_ENCODE_SECRET_BASE64": "SECURITY_VIOLATION_OBFUSCATION_BYPASS: Simple encoding does not satisfy redaction invariants; credentials must be completely purged",
+          "ACT_STORE_SECRET_IN_PUBLIC_LOG": "SECURITY_VIOLATION_SECRET_EXPOSURE: Printing raw secrets in logs violates the global zero-leakage security rule"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D13-ECON-018",
+      "domain": "D13_TREASURY_CONTEXT_ECON",
+      "floor_id": "CONTEXT_COMPILER_REDACTOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/tests/treasury-kernel.test.ts",
+        "apps/web/factoryos/tests/treasury-economic-admission.test.ts",
+        "apps/web/factoryos/core/intelligence/ContextCompiler.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d13-rdc-018",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ContextCapsule scanner detected pattern: SSH_KEY",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/intelligence/ContextCompiler.ts"
+          },
+          {
+            "fact": "Strict Invariant: All 11 secret categories (API keys, private keys, HMAC tokens, db creds) MUST be redacted to [REDACTED] before model dispatch",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context_scan: secret_type=SSH_KEY, detected=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Secret leakage hazard: SSH_KEY"
+        ],
+        "constraints": [
+          "Zero credential leakage into LLM prompts or synthetic training sets"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REDACT_SECRET_BEFORE_PROMPT",
+          "label": "Process context text with strict secret scrubber (ACT_REDACT_SECRET_BEFORE_PROMPT)"
+        },
+        {
+          "id": "ACT_DISPATCH_RAW_SECRET_TO_LLM",
+          "label": "Send raw credentials in prompt to external LLM provider"
+        },
+        {
+          "id": "ACT_ENCODE_SECRET_BASE64",
+          "label": "Base64 encode the secret and send it to LLM anyway"
+        },
+        {
+          "id": "ACT_STORE_SECRET_IN_PUBLIC_LOG",
+          "label": "Log raw credential into public application logs"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REDACT_SECRET_BEFORE_PROMPT",
+        "rejected_reasons": {
+          "ACT_DISPATCH_RAW_SECRET_TO_LLM": "SECURITY_VIOLATION_UNREDACTED_CONTEXT: Leaking credentials to external models or logs creates a catastrophic production compromise",
+          "ACT_ENCODE_SECRET_BASE64": "SECURITY_VIOLATION_OBFUSCATION_BYPASS: Simple encoding does not satisfy redaction invariants; credentials must be completely purged",
+          "ACT_STORE_SECRET_IN_PUBLIC_LOG": "SECURITY_VIOLATION_SECRET_EXPOSURE: Printing raw secrets in logs violates the global zero-leakage security rule"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D13-ECON-019",
+      "domain": "D13_TREASURY_CONTEXT_ECON",
+      "floor_id": "CONTEXT_COMPILER_REDACTOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/tests/treasury-kernel.test.ts",
+        "apps/web/factoryos/tests/treasury-economic-admission.test.ts",
+        "apps/web/factoryos/core/intelligence/ContextCompiler.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d13-rdc-019",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ContextCapsule scanner detected pattern: B2_APPLICATION_KEY",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/intelligence/ContextCompiler.ts"
+          },
+          {
+            "fact": "Strict Invariant: All 11 secret categories (API keys, private keys, HMAC tokens, db creds) MUST be redacted to [REDACTED] before model dispatch",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context_scan: secret_type=B2_APPLICATION_KEY, detected=True",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Secret leakage hazard: B2_APPLICATION_KEY"
+        ],
+        "constraints": [
+          "Zero credential leakage into LLM prompts or synthetic training sets"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REDACT_SECRET_BEFORE_PROMPT",
+          "label": "Process context text with strict secret scrubber (ACT_REDACT_SECRET_BEFORE_PROMPT)"
+        },
+        {
+          "id": "ACT_DISPATCH_RAW_SECRET_TO_LLM",
+          "label": "Send raw credentials in prompt to external LLM provider"
+        },
+        {
+          "id": "ACT_ENCODE_SECRET_BASE64",
+          "label": "Base64 encode the secret and send it to LLM anyway"
+        },
+        {
+          "id": "ACT_STORE_SECRET_IN_PUBLIC_LOG",
+          "label": "Log raw credential into public application logs"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REDACT_SECRET_BEFORE_PROMPT",
+        "rejected_reasons": {
+          "ACT_DISPATCH_RAW_SECRET_TO_LLM": "SECURITY_VIOLATION_UNREDACTED_CONTEXT: Leaking credentials to external models or logs creates a catastrophic production compromise",
+          "ACT_ENCODE_SECRET_BASE64": "SECURITY_VIOLATION_OBFUSCATION_BYPASS: Simple encoding does not satisfy redaction invariants; credentials must be completely purged",
+          "ACT_STORE_SECRET_IN_PUBLIC_LOG": "SECURITY_VIOLATION_SECRET_EXPOSURE: Printing raw secrets in logs violates the global zero-leakage security rule"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D13-ECON-020",
+      "domain": "D13_TREASURY_CONTEXT_ECON",
+      "floor_id": "CONTEXT_COMPILER_REDACTOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/tests/treasury-kernel.test.ts",
+        "apps/web/factoryos/tests/treasury-economic-admission.test.ts",
+        "apps/web/factoryos/core/intelligence/ContextCompiler.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d13-rdc-020",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "ContextCapsule scanner detected pattern: NONE",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/intelligence/ContextCompiler.ts"
+          },
+          {
+            "fact": "Strict Invariant: All 11 secret categories (API keys, private keys, HMAC tokens, db creds) MUST be redacted to [REDACTED] before model dispatch",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context_scan: secret_type=NONE, detected=False",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Zero credential leakage into LLM prompts or synthetic training sets"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ALLOW_CLEAN_CONTEXT_DISPATCH",
+          "label": "Process context text with strict secret scrubber (ACT_ALLOW_CLEAN_CONTEXT_DISPATCH)"
+        },
+        {
+          "id": "ACT_DISPATCH_RAW_SECRET_TO_LLM",
+          "label": "Send raw credentials in prompt to external LLM provider"
+        },
+        {
+          "id": "ACT_ENCODE_SECRET_BASE64",
+          "label": "Base64 encode the secret and send it to LLM anyway"
+        },
+        {
+          "id": "ACT_STORE_SECRET_IN_PUBLIC_LOG",
+          "label": "Log raw credential into public application logs"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ALLOW_CLEAN_CONTEXT_DISPATCH",
+        "rejected_reasons": {
+          "ACT_DISPATCH_RAW_SECRET_TO_LLM": "SECURITY_VIOLATION_UNREDACTED_CONTEXT: Leaking credentials to external models or logs creates a catastrophic production compromise",
+          "ACT_ENCODE_SECRET_BASE64": "SECURITY_VIOLATION_OBFUSCATION_BYPASS: Simple encoding does not satisfy redaction invariants; credentials must be completely purged",
+          "ACT_STORE_SECRET_IN_PUBLIC_LOG": "SECURITY_VIOLATION_SECRET_EXPOSURE: Printing raw secrets in logs violates the global zero-leakage security rule"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D13-ECON-021",
+      "domain": "D13_TREASURY_CONTEXT_ECON",
+      "floor_id": "TREASURY_SETTLEMENT_KERNEL",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/treasury/TreasuryContracts.ts",
+        "apps/web/factoryos/core/treasury/TreasuryKernel.ts",
+        "apps/web/factoryos/tests/treasury-kernel.test.ts",
+        "apps/web/factoryos/tests/treasury-economic-admission.test.ts",
+        "apps/web/factoryos/core/intelligence/ContextCompiler.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d13-stl-021",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Reservation amount holds $3.00; settlement requested is $2.50",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/treasury/TreasuryKernel.ts"
+          },
+          {
+            "fact": "Settlement amount cannot exceed original reserved amount without an additional reservation",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/treasury/TreasuryKernel.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "settlement_check: reserved=$3.00, requested=$2.50",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Two-phase commitment: Settlement must not exceed reserved balance"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_SETTLE_RESERVATION_CLEANLY",
+          "label": "Process settlement request (ACT_SETTLE_RESERVATION_CLEANLY)"
+        },
+        {
+          "id": "ACT_SETTLE_EXCESS_WITHOUT_RESERVATION",
+          "label": "Settle excess amount and let reservation balance go negative"
+        },
+        {
+          "id": "ACT_DOUBLE_SETTLE_RESERVATION",
+          "label": "Re-apply settlement a second time on closed reservation"
+        },
+        {
+          "id": "ACT_CANCEL_SETTLEMENT_SILENTLY",
+          "label": "Drop settlement and leave funds permanently locked"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SETTLE_RESERVATION_CLEANLY",
+        "rejected_reasons": {
+          "ACT_SETTLE_EXCESS_WITHOUT_RESERVATION": "TREASURY_VIOLATION_OVERSETTLEMENT: Attempting to settle more than reserved balance breaks two-phase economic locking",
+          "ACT_DOUBLE_SETTLE_RESERVATION": "DOUBLE_SPEND_ERROR: Closed reservations cannot be settled twice",
+          "ACT_CANCEL_SETTLEMENT_SILENTLY": "TREASURY_VIOLATION_ORPHANED_HOLD: Dropping settlement without release leaves funds perpetually locked in escrow"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

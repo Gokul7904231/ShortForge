@@ -1,0 +1,405 @@
+{
+  "batch_id": "batch_021",
+  "batch_index": 21,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D10-AER-014",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_F04_F06_SYNTHESIS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-deep-014",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Ascalon VOI is 0.42 (exceeds 0.01 threshold significantly)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Deep call budget status: 0 of 2 calls consumed (budget available)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "unresolved_conflict: Quiz options have semantic overlap requiring question restructuring, voi: 0.42",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Multi-hypothesis structural conflict: Quiz options have semantic overlap requiring question restructuring"
+        ],
+        "constraints": [
+          "Deep call budget must not exceed 2 calls per mission",
+          "Ascalon coarse-to-fine structure must be enforced"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ESCALATE_ASCALON_DEEP",
+          "label": "Escalate to Ascalon 4B Deep cognitive synthesizer via coarse-to-fine planning"
+        },
+        {
+          "id": "ACT_FORCE_MICRO_HEURISTIC",
+          "label": "Force CLM 1.5B micro heuristic decision"
+        },
+        {
+          "id": "ACT_SKIP_SYNTHESIS",
+          "label": "Skip scene synthesis and proceed with corrupted layout"
+        },
+        {
+          "id": "ACT_SPAWN_UNBOUNDED_RETRIES",
+          "label": "Loop 10 times attempting random mutations"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ESCALATE_ASCALON_DEEP",
+        "rejected_reasons": {
+          "ACT_FORCE_MICRO_HEURISTIC": "CAPABILITY_MISMATCH_ERROR: Complex multi-hypothesis structural contradiction exceeds CLM 1.5B decision capacity and risks catastrophic generation failure",
+          "ACT_SKIP_SYNTHESIS": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Proceeding with corrupted layout violates Floor verification invariants",
+          "ACT_SPAWN_UNBOUNDED_RETRIES": "BUDGET_EXCEEDED_MAX_RETRIES: Random retry loops violate deterministic budget bounds"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-015",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_F04_F06_SYNTHESIS",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-deep-015",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Ascalon VOI is 0.31 (exceeds 0.01 threshold significantly)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Deep call budget status: 0 of 2 calls consumed (budget available)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "unresolved_conflict: Audio beat drops misaligned with caption keyframe animation by 800ms, voi: 0.31",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Multi-hypothesis structural conflict: Audio beat drops misaligned with caption keyframe animation by 800ms"
+        ],
+        "constraints": [
+          "Deep call budget must not exceed 2 calls per mission",
+          "Ascalon coarse-to-fine structure must be enforced"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ESCALATE_ASCALON_DEEP",
+          "label": "Escalate to Ascalon 4B Deep cognitive synthesizer via coarse-to-fine planning"
+        },
+        {
+          "id": "ACT_FORCE_MICRO_HEURISTIC",
+          "label": "Force CLM 1.5B micro heuristic decision"
+        },
+        {
+          "id": "ACT_SKIP_SYNTHESIS",
+          "label": "Skip scene synthesis and proceed with corrupted layout"
+        },
+        {
+          "id": "ACT_SPAWN_UNBOUNDED_RETRIES",
+          "label": "Loop 10 times attempting random mutations"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ESCALATE_ASCALON_DEEP",
+        "rejected_reasons": {
+          "ACT_FORCE_MICRO_HEURISTIC": "CAPABILITY_MISMATCH_ERROR: Complex multi-hypothesis structural contradiction exceeds CLM 1.5B decision capacity and risks catastrophic generation failure",
+          "ACT_SKIP_SYNTHESIS": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Proceeding with corrupted layout violates Floor verification invariants",
+          "ACT_SPAWN_UNBOUNDED_RETRIES": "BUDGET_EXCEEDED_MAX_RETRIES: Random retry loops violate deterministic budget bounds"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-001",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_EDITOR_ENGINE",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rev-001",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Current document revision in memory is 5",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "Incoming EditorCommandEnvelope declares expectedRevision=4",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: TRIM_CLIP, expectedRevision: 4, activeRevision: 5",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Revision delta: -1"
+        ],
+        "constraints": [
+          "Optimistic concurrency: command MUST be rejected if expectedRevision != currentRevision"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_STALE_REVISION",
+          "label": "Execute deterministic concurrency check (ACT_REJECT_STALE_REVISION)"
+        },
+        {
+          "id": "ACT_FORCE_OVERWRITE_MUTATION",
+          "label": "Force apply mutation ignoring expectedRevision"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_COMMAND",
+          "label": "Silently drop command without returning EditorReceipt"
+        },
+        {
+          "id": "ACT_REWIND_DOCUMENT_STATE",
+          "label": "Rewind active document back to expectedRevision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_STALE_REVISION",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERWRITE_MUTATION": "INVARIANT_VIOLATION_STALE_REVISION: Applying edits on stale revision causes lost updates and corrupts collaborative timeline state",
+          "ACT_SILENTLY_DROP_COMMAND": "PROTOCOL_VIOLATION_MISSING_RECEIPT: Editor contracts require an explicit EditorReceipt with accepted=false and error code",
+          "ACT_REWIND_DOCUMENT_STATE": "INTEGRITY_VIOLATION_STATE_ROLLBACK: Destructive rewind of committed edits destroys intervening user actions"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-002",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_EDITOR_ENGINE",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rev-002",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Current document revision in memory is 3",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "Incoming EditorCommandEnvelope declares expectedRevision=1",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: TRIM_CLIP, expectedRevision: 1, activeRevision: 3",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Revision delta: -2"
+        ],
+        "constraints": [
+          "Optimistic concurrency: command MUST be rejected if expectedRevision != currentRevision"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_STALE_REVISION",
+          "label": "Execute deterministic concurrency check (ACT_REJECT_STALE_REVISION)"
+        },
+        {
+          "id": "ACT_FORCE_OVERWRITE_MUTATION",
+          "label": "Force apply mutation ignoring expectedRevision"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_COMMAND",
+          "label": "Silently drop command without returning EditorReceipt"
+        },
+        {
+          "id": "ACT_REWIND_DOCUMENT_STATE",
+          "label": "Rewind active document back to expectedRevision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_STALE_REVISION",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERWRITE_MUTATION": "INVARIANT_VIOLATION_STALE_REVISION: Applying edits on stale revision causes lost updates and corrupts collaborative timeline state",
+          "ACT_SILENTLY_DROP_COMMAND": "PROTOCOL_VIOLATION_MISSING_RECEIPT: Editor contracts require an explicit EditorReceipt with accepted=false and error code",
+          "ACT_REWIND_DOCUMENT_STATE": "INTEGRITY_VIOLATION_STATE_ROLLBACK: Destructive rewind of committed edits destroys intervening user actions"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-003",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_EDITOR_ENGINE",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-rev-003",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Current document revision in memory is 5",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          },
+          {
+            "fact": "Incoming EditorCommandEnvelope declares expectedRevision=8",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command: TRIM_CLIP, expectedRevision: 8, activeRevision: 5",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Revision delta: 3"
+        ],
+        "constraints": [
+          "Optimistic concurrency: command MUST be rejected if expectedRevision != currentRevision"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_FUTURE_REVISION_DESYNC",
+          "label": "Execute deterministic concurrency check (ACT_REJECT_FUTURE_REVISION_DESYNC)"
+        },
+        {
+          "id": "ACT_FORCE_OVERWRITE_MUTATION",
+          "label": "Force apply mutation ignoring expectedRevision"
+        },
+        {
+          "id": "ACT_SILENTLY_DROP_COMMAND",
+          "label": "Silently drop command without returning EditorReceipt"
+        },
+        {
+          "id": "ACT_REWIND_DOCUMENT_STATE",
+          "label": "Rewind active document back to expectedRevision"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_FUTURE_REVISION_DESYNC",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERWRITE_MUTATION": "INVARIANT_VIOLATION_STALE_REVISION: Applying edits on stale revision causes lost updates and corrupts collaborative timeline state",
+          "ACT_SILENTLY_DROP_COMMAND": "PROTOCOL_VIOLATION_MISSING_RECEIPT: Editor contracts require an explicit EditorReceipt with accepted=false and error code",
+          "ACT_REWIND_DOCUMENT_STATE": "INTEGRITY_VIOLATION_STATE_ROLLBACK: Destructive rewind of committed edits destroys intervening user actions"
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

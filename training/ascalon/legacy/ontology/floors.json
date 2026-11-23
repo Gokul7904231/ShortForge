@@ -1,0 +1,336 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "AscalonCanonicalFloors",
+  "version": "1.5.2",
+  "description": "Authoritative canonical registry of ShortForge / FactoryOS assembly line floors; semantic floor names and responsibilities are aligned with executable runtime contracts and Ascalon training ontology.",
+  "floors": [
+    {
+      "floorId": "floor00_analyst",
+      "number": 0,
+      "canonicalName": "Analyst & Research Ingestion",
+      "shortName": "Analyst",
+      "category": "RESEARCH",
+      "responsibility": "Acquires bounded external evidence, formulates claim-level research findings, produces a cryptographically signed ResearchPassport, and returns an AnalystReport for Floor 01.",
+      "parent": "overseer",
+      "predecessors": [],
+      "successors": [
+        "floor01_strategy"
+      ],
+      "runtimeOwner": "apps/web/factoryos/core/research/ResearchRuntime.ts",
+      "sourceLocations": [
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/ReachSubsystem.ts",
+        "apps/web/factoryos/core/integrations/AgentReachAdapter.ts",
+        "apps/web/factoryos/core/research/DailySlateGenerator.ts",
+        "apps/web/factoryos/core/contracts/ResearchPassportContracts.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": [
+        "topic"
+      ],
+      "expectedOutputs": [
+        "analystReport",
+        "passport"
+      ],
+      "requiredMetadataKeys": [
+        "reportId",
+        "topic"
+      ],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Uses an injected Reach test provider for deterministic fixtures; production Reach must not fabricate sources when external retrieval is unavailable."
+    },
+    {
+      "floorId": "floor01_strategy",
+      "number": 1,
+      "canonicalName": "Strategic Direction & Research",
+      "shortName": "Strategy",
+      "category": "PLANNING",
+      "responsibility": "Synthesizes audience resonance hypotheses, selects hook archetypes, pacing profiles, and topic narrative strategy.",
+      "parent": "overseer",
+      "predecessors": [
+        "floor00_analyst"
+      ],
+      "successors": [
+        "floor02_scripting"
+      ],
+      "runtimeOwner": "services/pipeline/floor01_strategy/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor01_strategy/",
+        "apps/web/factoryos/core/state/FactoryStateService.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": [
+        "topic",
+        "analystReport"
+      ],
+      "expectedOutputs": [
+        "strategyPayload"
+      ],
+      "requiredMetadataKeys": [
+        "hookArchetype",
+        "pacingProfile"
+      ],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Generates synthetic strategy payloads with controlled hook parameters."
+    },
+    {
+      "floorId": "floor02_scripting",
+      "number": 2,
+      "canonicalName": "Cognitive Scripting & Structure",
+      "shortName": "Scripting",
+      "category": "CREATIVE",
+      "responsibility": "Compiles a trusted Floor 01 strategy into a production-grade ScriptIR using hierarchical beat planning, viewer state, causal events, candidate search, parallel critics, bounded revision, evidence lineage, pacing gates, semantic regeneration, and typed F03/F04 handoffs.",
+      "parent": "overseer",
+      "predecessors": [
+        "floor01_strategy"
+      ],
+      "successors": [
+        "floor03_asset_realization",
+        "floor04_media_synthesis"
+      ],
+      "runtimeOwner": "services/pipeline/floor02_scripting/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor02_scripting/",
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/logical_workers/narrative_engine.py",
+        "testing/contracts/floor.contract.ts",
+        "apps/web/agents/script-agent.ts"
+      ],
+      "expectedInputs": [
+        "strategyPayload"
+      ],
+      "expectedOutputs": [
+        "script",
+        "scenes",
+        "scriptIR"
+      ],
+      "requiredMetadataKeys": [
+        "script",
+        "wordCount",
+        "estimatedDurationSeconds",
+        "schemaVersion",
+        "qualityGates"
+      ],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Uses bounded deterministic candidates only when explicitly configured for tests/simulation; production requires a real model provider."
+    },
+    {
+      "floorId": "floor03_asset_realization",
+      "number": 3,
+      "canonicalName": "Visual Asset Realization & Blueprints",
+      "shortName": "Asset Realization",
+      "category": "MEDIA",
+      "responsibility": "Compiles trusted Floor 02 scenes into a provider-neutral, versioned visual asset plan with self-contained node identity, semantic plan/node fingerprints, explicit upstream lineage, typed shot/camera structure, normalized safe zones, cinematic coverage roles, logical asset references with version and trait hints, typed generation conditionings, dependency fingerprints, dependency last-frame references, continuity strategy, temporal motion beats, evidence lineage, and bounded surgical-repair impact. F03 plans assets; it does not generate physical media, select providers, or own secrets/capabilities.",
+      "parent": "overseer",
+      "predecessors": [
+        "floor02_scripting"
+      ],
+      "successors": [
+        "floor05_timeline_composition"
+      ],
+      "runtimeOwner": "services/pipeline/floor03_asset_realization/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor03_asset_realization/",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/logical_workers/image_prompt_worker.py",
+        "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
+        "testing/contracts/floor.contract.ts",
+        "services/pipeline/floor03_asset_realization/app/core/identity.py",
+        "services/pipeline/floor03_asset_realization/tests/test_floor03_scene_regeneration.py"
+      ],
+      "expectedInputs": [
+        "floor02Handoff"
+      ],
+      "expectedOutputs": [
+        "assetPlan",
+        "assetPlanIR",
+        "assetManifest"
+      ],
+      "requiredMetadataKeys": [
+        "assetPlanId",
+        "assetPlanVersion",
+        "planFingerprint",
+        "sourceFingerprint",
+        "lineage",
+        "platform",
+        "aspectRatio",
+        "resolution",
+        "schemaVersion",
+        "provenance"
+      ],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Deterministically compiles provider-neutral AssetPlanIR 1.4.0; canonical Overseer production execution enters through Floor03RuntimeAdapter, validates the F02 handoff, persists the immutable F03 handoff in the distributed control-plane store, and exposes only declarative asset planning. Physical generation and provider execution remain outside F03."
+    },
+    {
+      "floorId": "floor04_media_synthesis",
+      "number": 4,
+      "canonicalName": "Media Synthesis & Provider Execution",
+      "shortName": "Media Synthesis",
+      "category": "MEDIA",
+      "responsibility": "Physically realizes trusted media requirements declared by upstream planning: visual assets, voice/narration, and background audio; performs provider selection within authorized capabilities, physical media validation, rights/provenance registration, crash-safe persistence, and emits a verified media package for Floor 05.",
+      "parent": "overseer",
+      "predecessors": [
+        "floor02_scripting"
+      ],
+      "successors": [
+        "floor05_timeline_composition"
+      ],
+      "runtimeOwner": "services/pipeline/floor04_media_synthesis/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor04_media_synthesis/",
+        "services/pipeline/floor04_media_synthesis/app/domain/handoff.py",
+        "services/pipeline/floor04_media_synthesis/app/services/pipeline.py",
+        "services/pipeline/floor04_media_synthesis/app/services/provider_registry.py",
+        "services/pipeline/floor04_media_synthesis/app/services/validator.py",
+        "services/pipeline/guardian/floors/floor04_guardian.py",
+        "apps/web/factoryos/core/hierarchy/FloorRegistry.ts",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": [
+        "floor03Handoff"
+      ],
+      "expectedOutputs": [
+        "mediaPackage",
+        "visualAssets",
+        "audioAssets",
+        "backgroundAudio"
+      ],
+      "requiredMetadataKeys": [
+        "sourceAssetPlanFingerprint",
+        "providerExecutions",
+        "provenanceHash",
+        "mediaManifest",
+        "sha256",
+        "byteLength",
+        "durationSeconds"
+      ],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Uses deterministic physical PNG/WAV fallbacks for test/simulation only; production provider execution remains Guardian-gated and physical outputs remain subject to independent validation."
+    },
+    {
+      "floorId": "floor05_timeline_composition",
+      "number": 5,
+      "canonicalName": "Timeline Composition & Motion",
+      "shortName": "Timeline",
+      "category": "COMPOSITION",
+      "responsibility": "Converges the validated Floor 03 AssetPlanIR and physically verified Floor 04 media into a deterministic frame-aligned TimelineSpec, produces a bounded reference render for physical evidence, validates timing/lineage/artifact integrity, and emits a committed provenance-bound handoff for Floor 06.",
+      "parent": "overseer",
+      "predecessors": [
+        "floor03_asset_realization",
+        "floor04_media_synthesis"
+      ],
+      "successors": [
+        "floor06_rendering"
+      ],
+      "runtimeOwner": "services/pipeline/floor05_timeline_composition/main.py",
+      "sourceLocations": [
+        "services/pipeline/floor05_timeline_composition/",
+        "services/pipeline/floor05_timeline_composition/app/domain/handoff.py",
+        "services/pipeline/floor05_timeline_composition/app/brain/proposal.py",
+        "services/pipeline/floor05_timeline_composition/app/services/validators.py",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": [
+        "floor03Handoff",
+        "floor04Handoff"
+      ],
+      "expectedOutputs": [
+        "timelineSpec",
+        "committedRenderArtifact",
+        "floor05Handoff"
+      ],
+      "requiredMetadataKeys": [
+        "timelineId",
+        "timelineFingerprint",
+        "renderInputHash",
+        "artifactSha256",
+        "artifactSizeBytes",
+        "provenanceHash"
+      ],
+      "authority": "overseer",
+      "trainingEligible": true,
+      "simulationRole": "Constructs typed TimelineSpec/TimelineProposalIR test objects, applies deterministic transition and frame rules, and simulates Guardian-gated reference rendering without acquiring distributed render authority."
+    },
+    {
+      "floorId": "floor06_rendering",
+      "number": 6,
+      "canonicalName": "GPU Video Rendering Engine",
+      "shortName": "Rendering",
+      "category": "RENDER",
+      "responsibility": "Consumes committed Floor 05 render contracts, admits qualified heterogeneous compute, records provider admission evidence, dispatches rendering with bounded failover, physically verifies the returned MP4 bytes with SHA-256/ffprobe/FFmpeg decode evidence, stores the verified artifact in CAS, and emits a provenance-bound handoff for Floor 07. Provider claims alone never establish completion.",
+      "parent": "overseer",
+      "predecessors": [
+        "floor05_timeline_composition"
+      ],
+      "successors": [
+        "floor07_compliance"
+      ],
+      "runtimeOwner": "services/rendering-engine/main.py",
+      "sourceLocations": [
+        "services/rendering-engine/",
+        "apps/web/factoryos/core/compute/",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": [
+        "renderIntent"
+      ],
+      "expectedOutputs": [
+        "artifact",
+        "videoUrl",
+        "sha256"
+      ],
+      "requiredMetadataKeys": [
+        "sha256",
+        "byteLength",
+        "width",
+        "height",
+        "duration"
+      ],
+      "authority": "guardian",
+      "trainingEligible": true,
+      "simulationRole": "Executes mocked render job or returns pre-rendered test video bytes."
+    },
+    {
+      "floorId": "floor07_compliance",
+      "number": 7,
+      "canonicalName": "QA Gate & Social Compliance",
+      "shortName": "Compliance",
+      "category": "VERIFICATION",
+      "responsibility": "Executes 15 concrete verification gates (G00-G14), validates FFprobe physical media, checks YouTube monetization policies, and issues Ed25519 ReleaseAuthorization.",
+      "parent": "guardian",
+      "predecessors": [
+        "floor06_rendering"
+      ],
+      "successors": [],
+      "runtimeOwner": "apps/web/factoryos/core/verification/youtube/F07ReleaseGuardian.ts",
+      "sourceLocations": [
+        "apps/web/factoryos/core/verification/youtube/",
+        "services/pipeline/guardian/",
+        "testing/contracts/floor.contract.ts"
+      ],
+      "expectedInputs": [
+        "artifact",
+        "script",
+        "metadata"
+      ],
+      "expectedOutputs": [
+        "verificationReport",
+        "releaseAuthorization"
+      ],
+      "requiredMetadataKeys": [
+        "overallScore",
+        "hardGates",
+        "publishAllowed",
+        "signature"
+      ],
+      "authority": "guardian",
+      "trainingEligible": true,
+      "simulationRole": "Evaluates mock compliance rules in dry-run mode with explicit SIMULATED tag."
+    }
+  ]
+}

@@ -1,0 +1,370 @@
+{
+  "batch_id": "batch_041",
+  "batch_index": 41,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d02_029",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_029",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Prompt intent analysis maps 'User prompt asks for an unsolved mystery narrative from 19th century' to content engine 'history' with profile 'ArchivalDocumentaryProfile'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "workflow-runtime.ts:resolveEngineProfile"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Engine router matched intent score: 0.98 for history",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Route intent to engine history with valid profile ArchivalDocumentaryProfile."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_HISTORY",
+          "label": "Route to history engine and instantiate ArchivalDocumentaryProfile"
+        },
+        {
+          "id": "ACT_ROUTE_GENERIC_STORY",
+          "label": "Fallback to generic story engine discarding specialized engine UI structures"
+        },
+        {
+          "id": "ACT_REJECT_UNRECOGNIZED",
+          "label": "Reject intent as unparseable despite high confidence match"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_HISTORY",
+        "rejected_reasons": {
+          "ACT_ROUTE_GENERIC_STORY": "ENGINE_MISMATCH_DEGRADED_EXPERIENCE: Routing specialized format (quiz/code) to generic story loses critical UI components.",
+          "ACT_REJECT_UNRECOGNIZED": "ROUTING_ERROR_FALSE_REJECTION: Rejecting a clearly classified intent degrades system reliability."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_030",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_030",
+        "content_engine": "psychology",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Prompt intent analysis maps 'User prompt asks for a personality quiz about cognitive biases' to content engine 'psychology' with profile 'CognitiveBiasEvaluationProfile'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "workflow-runtime.ts:resolveEngineProfile"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Engine router matched intent score: 0.98 for psychology",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Route intent to engine psychology with valid profile CognitiveBiasEvaluationProfile."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_PSYCHOLOGY",
+          "label": "Route to psychology engine and instantiate CognitiveBiasEvaluationProfile"
+        },
+        {
+          "id": "ACT_ROUTE_GENERIC_STORY",
+          "label": "Fallback to generic story engine discarding specialized engine UI structures"
+        },
+        {
+          "id": "ACT_REJECT_UNRECOGNIZED",
+          "label": "Reject intent as unparseable despite high confidence match"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_PSYCHOLOGY",
+        "rejected_reasons": {
+          "ACT_ROUTE_GENERIC_STORY": "ENGINE_MISMATCH_DEGRADED_EXPERIENCE: Routing specialized format (quiz/code) to generic story loses critical UI components.",
+          "ACT_REJECT_UNRECOGNIZED": "ROUTING_ERROR_FALSE_REJECTION: Rejecting a clearly classified intent degrades system reliability."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_004",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_004",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Script text contains 80 words for a 30s target duration (normalized 160.0 words/60s).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:validateScriptPacing"
+          },
+          {
+            "fact": "F02 Pacing contract requires 130 to 160 words per 60 seconds (2.16 - 2.67 words/sec) to ensure intelligible narration without audio clipping or dead air.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "services/pipeline/floor02_scripting/app/domain/script_ir.py:PacingContract"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Pacing metric: 160.0 WPM, bounds=[130, 160], status=VALID",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Enforce strict pacing boundaries [130, 160] WPM.",
+          "Refuse ungrounded script expansion or over-compression."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_PACING",
+          "label": "Approve script pacing as compliant with the 130-160 words/60s standard"
+        },
+        {
+          "id": "ACT_CONDENSE_SCRIPT",
+          "label": "Trigger targeted scene condensation to prune non-essential adjectives and trim word count to 145 words"
+        },
+        {
+          "id": "ACT_EXPAND_SCRIPT",
+          "label": "Expand exposition with additional contextual evidence to raise pacing into the 130-160 range"
+        },
+        {
+          "id": "ACT_SPEEDUP_AUDIO_BLIND",
+          "label": "Rely on audio stretch (> 1.25x) downstream in F04 to fit bloated script into timeline"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPROVE_PACING",
+        "rejected_reasons": {
+          "ACT_SPEEDUP_AUDIO_BLIND": "TIMING_VIOLATION_AUDIO_DISTORTION: Relying on downstream voice stretching > 1.05x causes chipmunk pitch distortion and violates F04 limits.",
+          "ACT_CONDENSE_SCRIPT": "PACING_ERROR_MISCLASSIFICATION: Action does not match evaluated script pacing status.",
+          "ACT_EXPAND_SCRIPT": "PACING_ERROR_WRONG_DIRECTION: Expansion requested on an already overflowing or valid script."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_005",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_005",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Script text contains 120 words for a 30s target duration (normalized 240.0 words/60s).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:validateScriptPacing"
+          },
+          {
+            "fact": "F02 Pacing contract requires 130 to 160 words per 60 seconds (2.16 - 2.67 words/sec) to ensure intelligible narration without audio clipping or dead air.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "services/pipeline/floor02_scripting/app/domain/script_ir.py:PacingContract"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Pacing metric: 240.0 WPM, bounds=[130, 160], status=VIOLATION",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Enforce strict pacing boundaries [130, 160] WPM.",
+          "Refuse ungrounded script expansion or over-compression."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_PACING",
+          "label": "Approve script pacing as compliant with the 130-160 words/60s standard"
+        },
+        {
+          "id": "ACT_CONDENSE_SCRIPT",
+          "label": "Trigger targeted scene condensation to prune non-essential adjectives and trim word count to 145 words"
+        },
+        {
+          "id": "ACT_EXPAND_SCRIPT",
+          "label": "Expand exposition with additional contextual evidence to raise pacing into the 130-160 range"
+        },
+        {
+          "id": "ACT_SPEEDUP_AUDIO_BLIND",
+          "label": "Rely on audio stretch (> 1.25x) downstream in F04 to fit bloated script into timeline"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CONDENSE_SCRIPT",
+        "rejected_reasons": {
+          "ACT_SPEEDUP_AUDIO_BLIND": "TIMING_VIOLATION_AUDIO_DISTORTION: Relying on downstream voice stretching > 1.05x causes chipmunk pitch distortion and violates F04 limits.",
+          "ACT_APPROVE_PACING": "PACING_ERROR_MISCLASSIFICATION: Action does not match evaluated script pacing status.",
+          "ACT_EXPAND_SCRIPT": "PACING_ERROR_WRONG_DIRECTION: Expansion requested on an already overflowing or valid script."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_006",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_006",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Script text contains 40 words for a 30s target duration (normalized 80.0 words/60s).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:validateScriptPacing"
+          },
+          {
+            "fact": "F02 Pacing contract requires 130 to 160 words per 60 seconds (2.16 - 2.67 words/sec) to ensure intelligible narration without audio clipping or dead air.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "services/pipeline/floor02_scripting/app/domain/script_ir.py:PacingContract"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Pacing metric: 80.0 WPM, bounds=[130, 160], status=VIOLATION",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Enforce strict pacing boundaries [130, 160] WPM.",
+          "Refuse ungrounded script expansion or over-compression."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPROVE_PACING",
+          "label": "Approve script pacing as compliant with the 130-160 words/60s standard"
+        },
+        {
+          "id": "ACT_CONDENSE_SCRIPT",
+          "label": "Trigger targeted scene condensation to prune non-essential adjectives and trim word count to 145 words"
+        },
+        {
+          "id": "ACT_EXPAND_SCRIPT",
+          "label": "Expand exposition with additional contextual evidence to raise pacing into the 130-160 range"
+        },
+        {
+          "id": "ACT_SPEEDUP_AUDIO_BLIND",
+          "label": "Rely on audio stretch (> 1.25x) downstream in F04 to fit bloated script into timeline"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_EXPAND_SCRIPT",
+        "rejected_reasons": {
+          "ACT_SPEEDUP_AUDIO_BLIND": "TIMING_VIOLATION_AUDIO_DISTORTION: Relying on downstream voice stretching > 1.05x causes chipmunk pitch distortion and violates F04 limits.",
+          "ACT_APPROVE_PACING": "PACING_ERROR_MISCLASSIFICATION: Action does not match evaluated script pacing status.",
+          "ACT_CONDENSE_SCRIPT": "PACING_ERROR_WRONG_DIRECTION: Expansion requested on an already overflowing or valid script."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

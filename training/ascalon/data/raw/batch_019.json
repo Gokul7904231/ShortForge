@@ -1,0 +1,399 @@
+{
+  "batch_id": "batch_019",
+  "batch_index": 19,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D10-AER-004",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F01_TO_F07_ORCHESTRATION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-det-004",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "sig_valid: true",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts"
+          },
+          {
+            "fact": "Epistemic state is CONFIRMED with zero unresolved contradictions",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "epistemic_mode_requested: Ed25519 signature on F07 receipt validated against verified authority pubkey",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Deterministic / confirmed state MUST bypass deep cognitive invocation entirely"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_DETERMINISTIC_ALLOW",
+          "label": "Route deterministically without invoking neural models (ACT_ROUTE_DETERMINISTIC_ALLOW)"
+        },
+        {
+          "id": "ACT_ROUTE_DEEP_ASCALON",
+          "label": "Invoke Ascalon 4B Deep cognitive synthesizer"
+        },
+        {
+          "id": "ACT_ROUTE_MICRO_CLM",
+          "label": "Invoke CLM 1.5B fast classifier head"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBE",
+          "label": "Dispatch targeted sensor probe"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_DETERMINISTIC_ALLOW",
+        "rejected_reasons": {
+          "ACT_ROUTE_DEEP_ASCALON": "INVARIANT_VIOLATION_CONFIRMED_ROUTED_TO_DEEP: Epistemic state is already CONFIRMED; invoking 4B deep cognition violates zero-waste compute law",
+          "ACT_ROUTE_MICRO_CLM": "INVARIANT_VIOLATION_UNNECESSARY_MODEL_CALL: State is mathematically verified; neural classifier invocation is redundant and ungrounded",
+          "ACT_DISPATCH_PROBE": "INVARIANT_VIOLATION_SUPERFLUOUS_PROBE: No hypotheses are pending falsification"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-005",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F01_TO_F07_ORCHESTRATION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-det-005",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "codec: h264",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts"
+          },
+          {
+            "fact": "Epistemic state is CONFIRMED with zero unresolved contradictions",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "epistemic_mode_requested: Target codec is H.264 High Profile 1080x1920 30fps without ambiguity",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Deterministic / confirmed state MUST bypass deep cognitive invocation entirely"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_DETERMINISTIC_TRANSCODE",
+          "label": "Route deterministically without invoking neural models (ACT_ROUTE_DETERMINISTIC_TRANSCODE)"
+        },
+        {
+          "id": "ACT_ROUTE_DEEP_ASCALON",
+          "label": "Invoke Ascalon 4B Deep cognitive synthesizer"
+        },
+        {
+          "id": "ACT_ROUTE_MICRO_CLM",
+          "label": "Invoke CLM 1.5B fast classifier head"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBE",
+          "label": "Dispatch targeted sensor probe"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_DETERMINISTIC_TRANSCODE",
+        "rejected_reasons": {
+          "ACT_ROUTE_DEEP_ASCALON": "INVARIANT_VIOLATION_CONFIRMED_ROUTED_TO_DEEP: Epistemic state is already CONFIRMED; invoking 4B deep cognition violates zero-waste compute law",
+          "ACT_ROUTE_MICRO_CLM": "INVARIANT_VIOLATION_UNNECESSARY_MODEL_CALL: State is mathematically verified; neural classifier invocation is redundant and ungrounded",
+          "ACT_DISPATCH_PROBE": "INVARIANT_VIOLATION_SUPERFLUOUS_PROBE: No hypotheses are pending falsification"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-006",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_OR_F05_COGNITION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-micro-006",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Calibrated Ascalon VOI is 0.005 (minimumNetValue threshold is 0.01)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Single hypothesis pending with low consequence score",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context: Audio timing discrepancy is 42ms (below 100ms threshold), calculated_voi: 0.005",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Minor uncertainty: Audio timing discrepancy is 42ms (below 100ms threshold)"
+        ],
+        "constraints": [
+          "When VOI < minimumNetValue (0.01), escalation to Ascalon DEEP is strictly forbidden"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_MICRO_DECISION",
+          "label": "Dispatch to CLM 1.5B micro-decision head under bounded latency"
+        },
+        {
+          "id": "ACT_ESCALATE_DEEP_ASCALON",
+          "label": "Escalate to Ascalon 4B Deep cognition"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Fail-closed pipeline termination"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBES_BATCH",
+          "label": "Spawn 5 parallel sensor probes"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MICRO_DECISION",
+        "rejected_reasons": {
+          "ACT_ESCALATE_DEEP_ASCALON": "INVARIANT_VIOLATION_VOI_NEGATIVE: Ascalon VOI (0.00X) is below 0.01 minimum net value threshold; escalating wastes deep call budget",
+          "ACT_ABORT_PIPELINE": "POLICY_VIOLATION_PREMATURE_ABORT: Minor bounded uncertainty can be safely resolved by CLM micro head",
+          "ACT_DISPATCH_PROBES_BATCH": "BUDGET_EXCEEDED_PROBE_COUNT: Spawning batch probes for sub-threshold VOI violates epistemic budget allocation"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-007",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_OR_F05_COGNITION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-micro-007",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Calibrated Ascalon VOI is 0.008 (minimumNetValue threshold is 0.01)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Single hypothesis pending with low consequence score",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context: Minor aesthetic subtitle weight selection with known design tokens, calculated_voi: 0.008",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Minor uncertainty: Minor aesthetic subtitle weight selection with known design tokens"
+        ],
+        "constraints": [
+          "When VOI < minimumNetValue (0.01), escalation to Ascalon DEEP is strictly forbidden"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_MICRO_DECISION",
+          "label": "Dispatch to CLM 1.5B micro-decision head under bounded latency"
+        },
+        {
+          "id": "ACT_ESCALATE_DEEP_ASCALON",
+          "label": "Escalate to Ascalon 4B Deep cognition"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Fail-closed pipeline termination"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBES_BATCH",
+          "label": "Spawn 5 parallel sensor probes"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MICRO_DECISION",
+        "rejected_reasons": {
+          "ACT_ESCALATE_DEEP_ASCALON": "INVARIANT_VIOLATION_VOI_NEGATIVE: Ascalon VOI (0.00X) is below 0.01 minimum net value threshold; escalating wastes deep call budget",
+          "ACT_ABORT_PIPELINE": "POLICY_VIOLATION_PREMATURE_ABORT: Minor bounded uncertainty can be safely resolved by CLM micro head",
+          "ACT_DISPATCH_PROBES_BATCH": "BUDGET_EXCEEDED_PROBE_COUNT: Spawning batch probes for sub-threshold VOI violates epistemic budget allocation"
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-008",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "F02_OR_F05_COGNITION",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-micro-008",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Calibrated Ascalon VOI is 0.003 (minimumNetValue threshold is 0.01)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/tests/epistemic/aer.test.ts"
+          },
+          {
+            "fact": "Single hypothesis pending with low consequence score",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "context: Pacing speed adjustment between 145 and 150 WPM, calculated_voi: 0.003",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Minor uncertainty: Pacing speed adjustment between 145 and 150 WPM"
+        ],
+        "constraints": [
+          "When VOI < minimumNetValue (0.01), escalation to Ascalon DEEP is strictly forbidden"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_MICRO_DECISION",
+          "label": "Dispatch to CLM 1.5B micro-decision head under bounded latency"
+        },
+        {
+          "id": "ACT_ESCALATE_DEEP_ASCALON",
+          "label": "Escalate to Ascalon 4B Deep cognition"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Fail-closed pipeline termination"
+        },
+        {
+          "id": "ACT_DISPATCH_PROBES_BATCH",
+          "label": "Spawn 5 parallel sensor probes"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MICRO_DECISION",
+        "rejected_reasons": {
+          "ACT_ESCALATE_DEEP_ASCALON": "INVARIANT_VIOLATION_VOI_NEGATIVE: Ascalon VOI (0.00X) is below 0.01 minimum net value threshold; escalating wastes deep call budget",
+          "ACT_ABORT_PIPELINE": "POLICY_VIOLATION_PREMATURE_ABORT: Minor bounded uncertainty can be safely resolved by CLM micro head",
+          "ACT_DISPATCH_PROBES_BATCH": "BUDGET_EXCEEDED_PROBE_COUNT: Spawning batch probes for sub-threshold VOI violates epistemic budget allocation"
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

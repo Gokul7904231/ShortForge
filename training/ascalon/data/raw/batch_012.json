@@ -1,0 +1,528 @@
+{
+  "batch_id": "batch_012",
+  "batch_index": 12,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d07_001",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_001",
+        "content_engine": "coding",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Compute requirements and hardware telemetry: Job requires 8GB VRAM for 1080p 60fps Blender 3D render; LOCAL has only 4GB VRAM (RTX 3050).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ComputeRouter.ts:selectOptimalProvider"
+          },
+          {
+            "fact": "Compute Routing Invariant: Select the utility-optimal provider matching VRAM, duration, and hardware requirements. Never assign a job to a provider lacking necessary VRAM or hardware acceleration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Compute Routing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider router evaluation code: KAGGLE_GPU",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Honor VRAM and hardware capability constraints.",
+          "Enforce session expiry and quota boundaries."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_KAGGLE_T4",
+          "label": "Route batch render job to Kaggle T4x2 (32GB VRAM, notebook worker)"
+        },
+        {
+          "id": "ACT_ROUTE_LOCAL_PROCESS",
+          "label": "Route job to Local RTX 3050 NVENC accelerated process (0 queue latency)"
+        },
+        {
+          "id": "ACT_ROUTE_INSTABOX_WORKER",
+          "label": "Dispatch CPU-bound FFmpeg job to bare-metal InstaBox worker box2"
+        },
+        {
+          "id": "ACT_ROUTE_RUNPOD_GPU",
+          "label": "Dispatch high-memory neural workload to qualified RunPod RTX 4090 instance"
+        },
+        {
+          "id": "ACT_ROUTE_MODAL_SERVERLESS",
+          "label": "Route ephemeral function to Modal serverless container with fast spin-up"
+        },
+        {
+          "id": "ACT_ROUTE_HF_ZEROGPU",
+          "label": "Failover to HuggingFace ZeroGPU (RTX Pro 6000) after Kaggle quota exhaustion"
+        },
+        {
+          "id": "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY",
+          "label": "Enforce immediate CAS artifact download and lease release before InstaVM expiry"
+        },
+        {
+          "id": "ACT_ROUTE_AMD_MI300X",
+          "label": "Dispatch high-throughput FP16 workload to AMD MI300X cluster"
+        },
+        {
+          "id": "ACT_FORCE_LOCAL_OOM",
+          "label": "Force render on Local RTX 3050 4GB causing CUDA Out-of-Memory crash"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_KAGGLE_T4",
+        "rejected_reasons": {
+          "ACT_FORCE_LOCAL_OOM": "HARDWARE_VIOLATION_OOM: Forcing 8GB+ render on 4GB GPU causes catastrophic CUDA Out-Of-Memory failure.",
+          "ACT_ROUTE_LOCAL_PROCESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_LOCAL_PROCESS' does not satisfy requirement profile 'KAGGLE_GPU'.",
+          "ACT_ROUTE_INSTABOX_WORKER": "ROUTING_MISMATCH: Action 'ACT_ROUTE_INSTABOX_WORKER' does not satisfy requirement profile 'KAGGLE_GPU'.",
+          "ACT_ROUTE_RUNPOD_GPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_RUNPOD_GPU' does not satisfy requirement profile 'KAGGLE_GPU'.",
+          "ACT_ROUTE_MODAL_SERVERLESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_MODAL_SERVERLESS' does not satisfy requirement profile 'KAGGLE_GPU'.",
+          "ACT_ROUTE_HF_ZEROGPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_HF_ZEROGPU' does not satisfy requirement profile 'KAGGLE_GPU'.",
+          "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY": "ROUTING_MISMATCH: Action 'ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY' does not satisfy requirement profile 'KAGGLE_GPU'.",
+          "ACT_ROUTE_AMD_MI300X": "ROUTING_MISMATCH: Action 'ACT_ROUTE_AMD_MI300X' does not satisfy requirement profile 'KAGGLE_GPU'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_002",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_002",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Compute requirements and hardware telemetry: Standard 1080x1920 30s 2D FFmpeg overlay render; LOCAL RTX 3050 4GB is idle with NVENC.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ComputeRouter.ts:selectOptimalProvider"
+          },
+          {
+            "fact": "Compute Routing Invariant: Select the utility-optimal provider matching VRAM, duration, and hardware requirements. Never assign a job to a provider lacking necessary VRAM or hardware acceleration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Compute Routing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider router evaluation code: LOCAL_GPU",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Honor VRAM and hardware capability constraints.",
+          "Enforce session expiry and quota boundaries."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_KAGGLE_T4",
+          "label": "Route batch render job to Kaggle T4x2 (32GB VRAM, notebook worker)"
+        },
+        {
+          "id": "ACT_ROUTE_LOCAL_PROCESS",
+          "label": "Route job to Local RTX 3050 NVENC accelerated process (0 queue latency)"
+        },
+        {
+          "id": "ACT_ROUTE_INSTABOX_WORKER",
+          "label": "Dispatch CPU-bound FFmpeg job to bare-metal InstaBox worker box2"
+        },
+        {
+          "id": "ACT_ROUTE_RUNPOD_GPU",
+          "label": "Dispatch high-memory neural workload to qualified RunPod RTX 4090 instance"
+        },
+        {
+          "id": "ACT_ROUTE_MODAL_SERVERLESS",
+          "label": "Route ephemeral function to Modal serverless container with fast spin-up"
+        },
+        {
+          "id": "ACT_ROUTE_HF_ZEROGPU",
+          "label": "Failover to HuggingFace ZeroGPU (RTX Pro 6000) after Kaggle quota exhaustion"
+        },
+        {
+          "id": "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY",
+          "label": "Enforce immediate CAS artifact download and lease release before InstaVM expiry"
+        },
+        {
+          "id": "ACT_ROUTE_AMD_MI300X",
+          "label": "Dispatch high-throughput FP16 workload to AMD MI300X cluster"
+        },
+        {
+          "id": "ACT_FORCE_LOCAL_OOM",
+          "label": "Force render on Local RTX 3050 4GB causing CUDA Out-of-Memory crash"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_LOCAL_PROCESS",
+        "rejected_reasons": {
+          "ACT_FORCE_LOCAL_OOM": "HARDWARE_VIOLATION_OOM: Forcing 8GB+ render on 4GB GPU causes catastrophic CUDA Out-Of-Memory failure.",
+          "ACT_ROUTE_KAGGLE_T4": "ROUTING_MISMATCH: Action 'ACT_ROUTE_KAGGLE_T4' does not satisfy requirement profile 'LOCAL_GPU'.",
+          "ACT_ROUTE_INSTABOX_WORKER": "ROUTING_MISMATCH: Action 'ACT_ROUTE_INSTABOX_WORKER' does not satisfy requirement profile 'LOCAL_GPU'.",
+          "ACT_ROUTE_RUNPOD_GPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_RUNPOD_GPU' does not satisfy requirement profile 'LOCAL_GPU'.",
+          "ACT_ROUTE_MODAL_SERVERLESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_MODAL_SERVERLESS' does not satisfy requirement profile 'LOCAL_GPU'.",
+          "ACT_ROUTE_HF_ZEROGPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_HF_ZEROGPU' does not satisfy requirement profile 'LOCAL_GPU'.",
+          "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY": "ROUTING_MISMATCH: Action 'ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY' does not satisfy requirement profile 'LOCAL_GPU'.",
+          "ACT_ROUTE_AMD_MI300X": "ROUTING_MISMATCH: Action 'ACT_ROUTE_AMD_MI300X' does not satisfy requirement profile 'LOCAL_GPU'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_003",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_003",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Compute requirements and hardware telemetry: CPU-only FFmpeg video concat and audio muxing; InstaBox worker box2 is HEALTHY and idle.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ComputeRouter.ts:selectOptimalProvider"
+          },
+          {
+            "fact": "Compute Routing Invariant: Select the utility-optimal provider matching VRAM, duration, and hardware requirements. Never assign a job to a provider lacking necessary VRAM or hardware acceleration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Compute Routing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider router evaluation code: INSTABOX_CPU",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Honor VRAM and hardware capability constraints.",
+          "Enforce session expiry and quota boundaries."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_KAGGLE_T4",
+          "label": "Route batch render job to Kaggle T4x2 (32GB VRAM, notebook worker)"
+        },
+        {
+          "id": "ACT_ROUTE_LOCAL_PROCESS",
+          "label": "Route job to Local RTX 3050 NVENC accelerated process (0 queue latency)"
+        },
+        {
+          "id": "ACT_ROUTE_INSTABOX_WORKER",
+          "label": "Dispatch CPU-bound FFmpeg job to bare-metal InstaBox worker box2"
+        },
+        {
+          "id": "ACT_ROUTE_RUNPOD_GPU",
+          "label": "Dispatch high-memory neural workload to qualified RunPod RTX 4090 instance"
+        },
+        {
+          "id": "ACT_ROUTE_MODAL_SERVERLESS",
+          "label": "Route ephemeral function to Modal serverless container with fast spin-up"
+        },
+        {
+          "id": "ACT_ROUTE_HF_ZEROGPU",
+          "label": "Failover to HuggingFace ZeroGPU (RTX Pro 6000) after Kaggle quota exhaustion"
+        },
+        {
+          "id": "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY",
+          "label": "Enforce immediate CAS artifact download and lease release before InstaVM expiry"
+        },
+        {
+          "id": "ACT_ROUTE_AMD_MI300X",
+          "label": "Dispatch high-throughput FP16 workload to AMD MI300X cluster"
+        },
+        {
+          "id": "ACT_FORCE_LOCAL_OOM",
+          "label": "Force render on Local RTX 3050 4GB causing CUDA Out-of-Memory crash"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_INSTABOX_WORKER",
+        "rejected_reasons": {
+          "ACT_FORCE_LOCAL_OOM": "HARDWARE_VIOLATION_OOM: Forcing 8GB+ render on 4GB GPU causes catastrophic CUDA Out-Of-Memory failure.",
+          "ACT_ROUTE_KAGGLE_T4": "ROUTING_MISMATCH: Action 'ACT_ROUTE_KAGGLE_T4' does not satisfy requirement profile 'INSTABOX_CPU'.",
+          "ACT_ROUTE_LOCAL_PROCESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_LOCAL_PROCESS' does not satisfy requirement profile 'INSTABOX_CPU'.",
+          "ACT_ROUTE_RUNPOD_GPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_RUNPOD_GPU' does not satisfy requirement profile 'INSTABOX_CPU'.",
+          "ACT_ROUTE_MODAL_SERVERLESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_MODAL_SERVERLESS' does not satisfy requirement profile 'INSTABOX_CPU'.",
+          "ACT_ROUTE_HF_ZEROGPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_HF_ZEROGPU' does not satisfy requirement profile 'INSTABOX_CPU'.",
+          "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY": "ROUTING_MISMATCH: Action 'ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY' does not satisfy requirement profile 'INSTABOX_CPU'.",
+          "ACT_ROUTE_AMD_MI300X": "ROUTING_MISMATCH: Action 'ACT_ROUTE_AMD_MI300X' does not satisfy requirement profile 'INSTABOX_CPU'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_004",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_004",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Compute requirements and hardware telemetry: Ultra-heavy AI neural upscaling (ComfyUI model) requiring 24GB+ VRAM; RunPod RTX 4090 available.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ComputeRouter.ts:selectOptimalProvider"
+          },
+          {
+            "fact": "Compute Routing Invariant: Select the utility-optimal provider matching VRAM, duration, and hardware requirements. Never assign a job to a provider lacking necessary VRAM or hardware acceleration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Compute Routing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider router evaluation code: RUNPOD_HEAVY",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Honor VRAM and hardware capability constraints.",
+          "Enforce session expiry and quota boundaries."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_KAGGLE_T4",
+          "label": "Route batch render job to Kaggle T4x2 (32GB VRAM, notebook worker)"
+        },
+        {
+          "id": "ACT_ROUTE_LOCAL_PROCESS",
+          "label": "Route job to Local RTX 3050 NVENC accelerated process (0 queue latency)"
+        },
+        {
+          "id": "ACT_ROUTE_INSTABOX_WORKER",
+          "label": "Dispatch CPU-bound FFmpeg job to bare-metal InstaBox worker box2"
+        },
+        {
+          "id": "ACT_ROUTE_RUNPOD_GPU",
+          "label": "Dispatch high-memory neural workload to qualified RunPod RTX 4090 instance"
+        },
+        {
+          "id": "ACT_ROUTE_MODAL_SERVERLESS",
+          "label": "Route ephemeral function to Modal serverless container with fast spin-up"
+        },
+        {
+          "id": "ACT_ROUTE_HF_ZEROGPU",
+          "label": "Failover to HuggingFace ZeroGPU (RTX Pro 6000) after Kaggle quota exhaustion"
+        },
+        {
+          "id": "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY",
+          "label": "Enforce immediate CAS artifact download and lease release before InstaVM expiry"
+        },
+        {
+          "id": "ACT_ROUTE_AMD_MI300X",
+          "label": "Dispatch high-throughput FP16 workload to AMD MI300X cluster"
+        },
+        {
+          "id": "ACT_FORCE_LOCAL_OOM",
+          "label": "Force render on Local RTX 3050 4GB causing CUDA Out-of-Memory crash"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_RUNPOD_GPU",
+        "rejected_reasons": {
+          "ACT_FORCE_LOCAL_OOM": "HARDWARE_VIOLATION_OOM: Forcing 8GB+ render on 4GB GPU causes catastrophic CUDA Out-Of-Memory failure.",
+          "ACT_ROUTE_KAGGLE_T4": "ROUTING_MISMATCH: Action 'ACT_ROUTE_KAGGLE_T4' does not satisfy requirement profile 'RUNPOD_HEAVY'.",
+          "ACT_ROUTE_LOCAL_PROCESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_LOCAL_PROCESS' does not satisfy requirement profile 'RUNPOD_HEAVY'.",
+          "ACT_ROUTE_INSTABOX_WORKER": "ROUTING_MISMATCH: Action 'ACT_ROUTE_INSTABOX_WORKER' does not satisfy requirement profile 'RUNPOD_HEAVY'.",
+          "ACT_ROUTE_MODAL_SERVERLESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_MODAL_SERVERLESS' does not satisfy requirement profile 'RUNPOD_HEAVY'.",
+          "ACT_ROUTE_HF_ZEROGPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_HF_ZEROGPU' does not satisfy requirement profile 'RUNPOD_HEAVY'.",
+          "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY": "ROUTING_MISMATCH: Action 'ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY' does not satisfy requirement profile 'RUNPOD_HEAVY'.",
+          "ACT_ROUTE_AMD_MI300X": "ROUTING_MISMATCH: Action 'ACT_ROUTE_AMD_MI300X' does not satisfy requirement profile 'RUNPOD_HEAVY'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d07_005",
+      "domain": "D07",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/gateway/ComputeGateway.ts",
+        "apps/web/factoryos/core/compute/pool/ComputePool.ts",
+        "apps/web/factoryos/core/compute/contracts/ComputeContracts.ts",
+        "apps/web/factoryos/core/compute/instabox/InstaBoxContracts.ts",
+        "apps/web/factoryos/core/compute/sandboxes/InstaVMSandboxAdapter.ts",
+        "apps/web/factoryos/core/compute/notebooks/NotebookContracts.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d07_005",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Compute requirements and hardware telemetry: Interactive session requiring ephemeral Python runtime; Modal serverless container configured.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ComputeRouter.ts:selectOptimalProvider"
+          },
+          {
+            "fact": "Compute Routing Invariant: Select the utility-optimal provider matching VRAM, duration, and hardware requirements. Never assign a job to a provider lacking necessary VRAM or hardware acceleration.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Compute Routing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider router evaluation code: MODAL_SERVERLESS",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Honor VRAM and hardware capability constraints.",
+          "Enforce session expiry and quota boundaries."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_KAGGLE_T4",
+          "label": "Route batch render job to Kaggle T4x2 (32GB VRAM, notebook worker)"
+        },
+        {
+          "id": "ACT_ROUTE_LOCAL_PROCESS",
+          "label": "Route job to Local RTX 3050 NVENC accelerated process (0 queue latency)"
+        },
+        {
+          "id": "ACT_ROUTE_INSTABOX_WORKER",
+          "label": "Dispatch CPU-bound FFmpeg job to bare-metal InstaBox worker box2"
+        },
+        {
+          "id": "ACT_ROUTE_RUNPOD_GPU",
+          "label": "Dispatch high-memory neural workload to qualified RunPod RTX 4090 instance"
+        },
+        {
+          "id": "ACT_ROUTE_MODAL_SERVERLESS",
+          "label": "Route ephemeral function to Modal serverless container with fast spin-up"
+        },
+        {
+          "id": "ACT_ROUTE_HF_ZEROGPU",
+          "label": "Failover to HuggingFace ZeroGPU (RTX Pro 6000) after Kaggle quota exhaustion"
+        },
+        {
+          "id": "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY",
+          "label": "Enforce immediate CAS artifact download and lease release before InstaVM expiry"
+        },
+        {
+          "id": "ACT_ROUTE_AMD_MI300X",
+          "label": "Dispatch high-throughput FP16 workload to AMD MI300X cluster"
+        },
+        {
+          "id": "ACT_FORCE_LOCAL_OOM",
+          "label": "Force render on Local RTX 3050 4GB causing CUDA Out-of-Memory crash"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MODAL_SERVERLESS",
+        "rejected_reasons": {
+          "ACT_FORCE_LOCAL_OOM": "HARDWARE_VIOLATION_OOM: Forcing 8GB+ render on 4GB GPU causes catastrophic CUDA Out-Of-Memory failure.",
+          "ACT_ROUTE_KAGGLE_T4": "ROUTING_MISMATCH: Action 'ACT_ROUTE_KAGGLE_T4' does not satisfy requirement profile 'MODAL_SERVERLESS'.",
+          "ACT_ROUTE_LOCAL_PROCESS": "ROUTING_MISMATCH: Action 'ACT_ROUTE_LOCAL_PROCESS' does not satisfy requirement profile 'MODAL_SERVERLESS'.",
+          "ACT_ROUTE_INSTABOX_WORKER": "ROUTING_MISMATCH: Action 'ACT_ROUTE_INSTABOX_WORKER' does not satisfy requirement profile 'MODAL_SERVERLESS'.",
+          "ACT_ROUTE_RUNPOD_GPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_RUNPOD_GPU' does not satisfy requirement profile 'MODAL_SERVERLESS'.",
+          "ACT_ROUTE_HF_ZEROGPU": "ROUTING_MISMATCH: Action 'ACT_ROUTE_HF_ZEROGPU' does not satisfy requirement profile 'MODAL_SERVERLESS'.",
+          "ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY": "ROUTING_MISMATCH: Action 'ACT_ENFORCE_INSTAVM_ARTIFACT_DOWNLOAD_BEFORE_EXPIRY' does not satisfy requirement profile 'MODAL_SERVERLESS'.",
+          "ACT_ROUTE_AMD_MI300X": "ROUTING_MISMATCH: Action 'ACT_ROUTE_AMD_MI300X' does not satisfy requirement profile 'MODAL_SERVERLESS'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

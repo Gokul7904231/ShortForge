@@ -1,0 +1,462 @@
+{
+  "batch_id": "batch_048",
+  "batch_index": 48,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d04_022",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_022",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Continuity analysis: Animated mascot in educational quiz changes design style between Question 1 and Question 2.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "asset_plan_ir.py:ContinuityMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Continuity mode signal: STYLE_DRIFT",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Visual drift anomaly: STYLE_DRIFT"
+        ],
+        "constraints": [
+          "Preserve visual continuity across scene boundaries.",
+          "Ensure character identity anchors are invariant."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR",
+          "label": "Lock Scene 1 character seed and IP-Adapter reference embedding for Scene 2"
+        },
+        {
+          "id": "ACT_SET_INDEPENDENT_BROLL",
+          "label": "Mark scene as ContinuityMode.INDEPENDENT for general atmospheric B-roll"
+        },
+        {
+          "id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+          "label": "Re-anchor character reference embedding from canonical character sheet"
+        },
+        {
+          "id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+          "label": "Reject drifting image and regenerate with reference_image conditioning"
+        },
+        {
+          "id": "ACT_APPROVE_CONTINUITY_PASS",
+          "label": "Approve character continuity as conforming to identity threshold (> 0.82 similarity)"
+        },
+        {
+          "id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+          "label": "Inject shared negative prompt and style conditioning token across all scenes"
+        },
+        {
+          "id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+          "label": "Condition image generator on the last frame of previous clip to guarantee seamless cut"
+        },
+        {
+          "id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+          "label": "Apply regional prompting masks to preserve distinct character features"
+        },
+        {
+          "id": "ACT_DISREGARD_CHARACTER_IDENTITY",
+          "label": "Allow characters to randomly transform between scenes without consistency check"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+        "rejected_reasons": {
+          "ACT_DISREGARD_CHARACTER_IDENTITY": "QUALITY_VIOLATION_CHARACTER_JUMP: Inconsistent character faces destroy suspension of disbelief and violate production specs.",
+          "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_LOCK_CHARACTER_IDENTITY_ANCHOR' does not resolve specific state 'STYLE_DRIFT'.",
+          "ACT_SET_INDEPENDENT_BROLL": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_SET_INDEPENDENT_BROLL' does not resolve specific state 'STYLE_DRIFT'.",
+          "ACT_REANCHOR_PRIMARY_IDENTITY": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REANCHOR_PRIMARY_IDENTITY' does not resolve specific state 'STYLE_DRIFT'.",
+          "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REGENERATE_WITH_REFERENCE_CONDITIONING' does not resolve specific state 'STYLE_DRIFT'.",
+          "ACT_APPROVE_CONTINUITY_PASS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPROVE_CONTINUITY_PASS' does not resolve specific state 'STYLE_DRIFT'.",
+          "ACT_CHAIN_LAST_FRAME_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_CHAIN_LAST_FRAME_CONDITIONING' does not resolve specific state 'STYLE_DRIFT'.",
+          "ACT_APPLY_MULTI_IDENTITY_MASKS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPLY_MULTI_IDENTITY_MASKS' does not resolve specific state 'STYLE_DRIFT'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_023",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_023",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Continuity analysis: Scene 5 continuous camera pan following character walking down hallway.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "asset_plan_ir.py:ContinuityMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Continuity mode signal: CHAIN_FROM_PREVIOUS",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Preserve visual continuity across scene boundaries.",
+          "Ensure character identity anchors are invariant."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR",
+          "label": "Lock Scene 1 character seed and IP-Adapter reference embedding for Scene 2"
+        },
+        {
+          "id": "ACT_SET_INDEPENDENT_BROLL",
+          "label": "Mark scene as ContinuityMode.INDEPENDENT for general atmospheric B-roll"
+        },
+        {
+          "id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+          "label": "Re-anchor character reference embedding from canonical character sheet"
+        },
+        {
+          "id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+          "label": "Reject drifting image and regenerate with reference_image conditioning"
+        },
+        {
+          "id": "ACT_APPROVE_CONTINUITY_PASS",
+          "label": "Approve character continuity as conforming to identity threshold (> 0.82 similarity)"
+        },
+        {
+          "id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+          "label": "Inject shared negative prompt and style conditioning token across all scenes"
+        },
+        {
+          "id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+          "label": "Condition image generator on the last frame of previous clip to guarantee seamless cut"
+        },
+        {
+          "id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+          "label": "Apply regional prompting masks to preserve distinct character features"
+        },
+        {
+          "id": "ACT_DISREGARD_CHARACTER_IDENTITY",
+          "label": "Allow characters to randomly transform between scenes without consistency check"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+        "rejected_reasons": {
+          "ACT_DISREGARD_CHARACTER_IDENTITY": "QUALITY_VIOLATION_CHARACTER_JUMP: Inconsistent character faces destroy suspension of disbelief and violate production specs.",
+          "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_LOCK_CHARACTER_IDENTITY_ANCHOR' does not resolve specific state 'CHAIN_FROM_PREVIOUS'.",
+          "ACT_SET_INDEPENDENT_BROLL": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_SET_INDEPENDENT_BROLL' does not resolve specific state 'CHAIN_FROM_PREVIOUS'.",
+          "ACT_REANCHOR_PRIMARY_IDENTITY": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REANCHOR_PRIMARY_IDENTITY' does not resolve specific state 'CHAIN_FROM_PREVIOUS'.",
+          "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REGENERATE_WITH_REFERENCE_CONDITIONING' does not resolve specific state 'CHAIN_FROM_PREVIOUS'.",
+          "ACT_APPROVE_CONTINUITY_PASS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPROVE_CONTINUITY_PASS' does not resolve specific state 'CHAIN_FROM_PREVIOUS'.",
+          "ACT_ENFORCE_GLOBAL_STYLE_PROMPT": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_ENFORCE_GLOBAL_STYLE_PROMPT' does not resolve specific state 'CHAIN_FROM_PREVIOUS'.",
+          "ACT_APPLY_MULTI_IDENTITY_MASKS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPLY_MULTI_IDENTITY_MASKS' does not resolve specific state 'CHAIN_FROM_PREVIOUS'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_024",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_024",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Continuity analysis: Multi-character scene: Scene 3 must maintain visual distinction between 2 protagonists.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "asset_plan_ir.py:ContinuityMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Continuity mode signal: MULTI_CHARACTER_ANCHOR",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Preserve visual continuity across scene boundaries.",
+          "Ensure character identity anchors are invariant."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR",
+          "label": "Lock Scene 1 character seed and IP-Adapter reference embedding for Scene 2"
+        },
+        {
+          "id": "ACT_SET_INDEPENDENT_BROLL",
+          "label": "Mark scene as ContinuityMode.INDEPENDENT for general atmospheric B-roll"
+        },
+        {
+          "id": "ACT_REANCHOR_PRIMARY_IDENTITY",
+          "label": "Re-anchor character reference embedding from canonical character sheet"
+        },
+        {
+          "id": "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING",
+          "label": "Reject drifting image and regenerate with reference_image conditioning"
+        },
+        {
+          "id": "ACT_APPROVE_CONTINUITY_PASS",
+          "label": "Approve character continuity as conforming to identity threshold (> 0.82 similarity)"
+        },
+        {
+          "id": "ACT_ENFORCE_GLOBAL_STYLE_PROMPT",
+          "label": "Inject shared negative prompt and style conditioning token across all scenes"
+        },
+        {
+          "id": "ACT_CHAIN_LAST_FRAME_CONDITIONING",
+          "label": "Condition image generator on the last frame of previous clip to guarantee seamless cut"
+        },
+        {
+          "id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+          "label": "Apply regional prompting masks to preserve distinct character features"
+        },
+        {
+          "id": "ACT_DISREGARD_CHARACTER_IDENTITY",
+          "label": "Allow characters to randomly transform between scenes without consistency check"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_MULTI_IDENTITY_MASKS",
+        "rejected_reasons": {
+          "ACT_DISREGARD_CHARACTER_IDENTITY": "QUALITY_VIOLATION_CHARACTER_JUMP: Inconsistent character faces destroy suspension of disbelief and violate production specs.",
+          "ACT_LOCK_CHARACTER_IDENTITY_ANCHOR": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_LOCK_CHARACTER_IDENTITY_ANCHOR' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'.",
+          "ACT_SET_INDEPENDENT_BROLL": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_SET_INDEPENDENT_BROLL' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'.",
+          "ACT_REANCHOR_PRIMARY_IDENTITY": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REANCHOR_PRIMARY_IDENTITY' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'.",
+          "ACT_REGENERATE_WITH_REFERENCE_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_REGENERATE_WITH_REFERENCE_CONDITIONING' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'.",
+          "ACT_APPROVE_CONTINUITY_PASS": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_APPROVE_CONTINUITY_PASS' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'.",
+          "ACT_ENFORCE_GLOBAL_STYLE_PROMPT": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_ENFORCE_GLOBAL_STYLE_PROMPT' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'.",
+          "ACT_CHAIN_LAST_FRAME_CONDITIONING": "CONTINUITY_ACTION_MISMATCH: Action 'ACT_CHAIN_LAST_FRAME_CONDITIONING' does not resolve specific state 'MULTI_CHARACTER_ANCHOR'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d05_005",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_005",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Audio duration measurement: requested=3000ms, actual=2900ms, stretch_ratio=0.967, pass=1. (Minor negative drift (-3.3%), within compression limit (0.95 - 1.05))",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:verifyAudioTimingBounds"
+          },
+          {
+            "fact": "F04 Voice Timing Invariant: maxStretchRatio is strictly <= 1.05 (and >= 0.95). Maximum resynthesis passes = 2. Beyond limits, script text must be truncated.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence - Audio Timing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Timing evaluation: ratio=0.967, maxStretch=1.05, pass=1/2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve audio naturalness without chipmunk/slowed pitch distortion.",
+          "Enforce bounded resynthesis budget."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_TEMPO_STRETCH",
+          "label": "Apply micro-tempo adjustment via FFmpeg atempo filter (within 0.95-1.05 limit)"
+        },
+        {
+          "id": "ACT_RESYNTHESIZE_VOICE",
+          "label": "Trigger second resynthesis pass with adjusted VoiceProfile.speed parameter"
+        },
+        {
+          "id": "ACT_TRUNCATE_SCRIPT_TEXT",
+          "label": "Resynthesis passes exhausted; return repair request to F02 to truncate script words"
+        },
+        {
+          "id": "ACT_FORCE_OVERSTRETCH",
+          "label": "Force FFmpeg atempo 1.25x stretch causing severe audio distortion and pitch artifacts"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_TEMPO_STRETCH",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERSTRETCH": "QUALITY_VIOLATION_AUDIO_DISTORTION: Audio time-stretching beyond 5% causes perceptible vocal unnaturalness and violates F04 limits.",
+          "ACT_RESYNTHESIZE_VOICE": "TIMING_ACTION_MISMATCH: Action 'ACT_RESYNTHESIZE_VOICE' violates state rules for ratio=0.967, pass=1.",
+          "ACT_TRUNCATE_SCRIPT_TEXT": "TIMING_ACTION_MISMATCH: Action 'ACT_TRUNCATE_SCRIPT_TEXT' violates state rules for ratio=0.967, pass=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d05_006",
+      "domain": "D05",
+      "floor_id": "F04",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/voice/VoiceFabric.ts",
+        "apps/web/factoryos/core/voice/GeminiTTSProvider.ts",
+        "apps/web/factoryos/core/voice/NarrationCrafter.ts",
+        "apps/web/factoryos/core/timeline/TimelineIR.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d05_006",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Audio duration measurement: requested=3000ms, actual=2600ms, stretch_ratio=0.867, pass=1. (Excessive negative drift (-13.3%), compression ratio 0.867 exceeds 0.95 limit)",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VoiceFabric.ts:verifyAudioTimingBounds"
+          },
+          {
+            "fact": "F04 Voice Timing Invariant: maxStretchRatio is strictly <= 1.05 (and >= 0.95). Maximum resynthesis passes = 2. Beyond limits, script text must be truncated.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 4 (Claim <= Evidence - Audio Timing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Timing evaluation: ratio=0.867, maxStretch=1.05, pass=1/2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Preserve audio naturalness without chipmunk/slowed pitch distortion.",
+          "Enforce bounded resynthesis budget."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_TEMPO_STRETCH",
+          "label": "Apply micro-tempo adjustment via FFmpeg atempo filter (within 0.95-1.05 limit)"
+        },
+        {
+          "id": "ACT_RESYNTHESIZE_VOICE",
+          "label": "Trigger second resynthesis pass with adjusted VoiceProfile.speed parameter"
+        },
+        {
+          "id": "ACT_TRUNCATE_SCRIPT_TEXT",
+          "label": "Resynthesis passes exhausted; return repair request to F02 to truncate script words"
+        },
+        {
+          "id": "ACT_FORCE_OVERSTRETCH",
+          "label": "Force FFmpeg atempo 1.25x stretch causing severe audio distortion and pitch artifacts"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_RESYNTHESIZE_VOICE",
+        "rejected_reasons": {
+          "ACT_FORCE_OVERSTRETCH": "QUALITY_VIOLATION_AUDIO_DISTORTION: Audio time-stretching beyond 5% causes perceptible vocal unnaturalness and violates F04 limits.",
+          "ACT_APPLY_TEMPO_STRETCH": "TIMING_ACTION_MISMATCH: Action 'ACT_APPLY_TEMPO_STRETCH' violates state rules for ratio=0.867, pass=1.",
+          "ACT_TRUNCATE_SCRIPT_TEXT": "TIMING_ACTION_MISMATCH: Action 'ACT_TRUNCATE_SCRIPT_TEXT' violates state rules for ratio=0.867, pass=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

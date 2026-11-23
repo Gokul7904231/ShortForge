@@ -1,0 +1,1154 @@
+{
+  "total_packets": 374,
+  "batch_size": 5,
+  "total_batches": 75,
+  "batches": [
+    {
+      "batch_id": "batch_001",
+      "file": "training/ascalon/data/raw/batch_001.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d01_001",
+        "sf_d01_002",
+        "sf_d01_006",
+        "sf_d01_007",
+        "sf_d01_008"
+      ],
+      "domains": [
+        "D01"
+      ]
+    },
+    {
+      "batch_id": "batch_002",
+      "file": "training/ascalon/data/raw/batch_002.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d01_012",
+        "sf_d01_013",
+        "sf_d01_014",
+        "sf_d01_015",
+        "sf_d01_020"
+      ],
+      "domains": [
+        "D01"
+      ]
+    },
+    {
+      "batch_id": "batch_003",
+      "file": "training/ascalon/data/raw/batch_003.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d01_021",
+        "sf_d01_022",
+        "sf_d01_023",
+        "sf_d02_001",
+        "sf_d02_002"
+      ],
+      "domains": [
+        "D01",
+        "D02"
+      ]
+    },
+    {
+      "batch_id": "batch_004",
+      "file": "training/ascalon/data/raw/batch_004.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_003",
+        "sf_d02_012",
+        "sf_d02_013",
+        "sf_d02_014",
+        "sf_d02_020"
+      ],
+      "domains": [
+        "D02"
+      ]
+    },
+    {
+      "batch_id": "batch_005",
+      "file": "training/ascalon/data/raw/batch_005.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_021",
+        "sf_d03_001",
+        "sf_d03_002",
+        "sf_d03_003",
+        "sf_d03_009"
+      ],
+      "domains": [
+        "D02",
+        "D03"
+      ]
+    },
+    {
+      "batch_id": "batch_006",
+      "file": "training/ascalon/data/raw/batch_006.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d03_010",
+        "sf_d03_011",
+        "sf_d03_017",
+        "sf_d03_018",
+        "sf_d03_019"
+      ],
+      "domains": [
+        "D03"
+      ]
+    },
+    {
+      "batch_id": "batch_007",
+      "file": "training/ascalon/data/raw/batch_007.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d04_001",
+        "sf_d04_002",
+        "sf_d04_003",
+        "sf_d04_004",
+        "sf_d04_005"
+      ],
+      "domains": [
+        "D04"
+      ]
+    },
+    {
+      "batch_id": "batch_008",
+      "file": "training/ascalon/data/raw/batch_008.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d04_011",
+        "sf_d04_012",
+        "sf_d04_017",
+        "sf_d04_018",
+        "sf_d05_001"
+      ],
+      "domains": [
+        "D04",
+        "D05"
+      ]
+    },
+    {
+      "batch_id": "batch_009",
+      "file": "training/ascalon/data/raw/batch_009.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d05_002",
+        "sf_d05_003",
+        "sf_d05_004",
+        "sf_d05_011",
+        "sf_d05_012"
+      ],
+      "domains": [
+        "D05"
+      ]
+    },
+    {
+      "batch_id": "batch_010",
+      "file": "training/ascalon/data/raw/batch_010.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d05_013",
+        "sf_d05_014",
+        "sf_d06_001",
+        "sf_d06_002",
+        "sf_d06_003"
+      ],
+      "domains": [
+        "D05",
+        "D06"
+      ]
+    },
+    {
+      "batch_id": "batch_011",
+      "file": "training/ascalon/data/raw/batch_011.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d06_009",
+        "sf_d06_010",
+        "sf_d06_011",
+        "sf_d06_021",
+        "sf_d06_022"
+      ],
+      "domains": [
+        "D06"
+      ]
+    },
+    {
+      "batch_id": "batch_012",
+      "file": "training/ascalon/data/raw/batch_012.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d07_001",
+        "sf_d07_002",
+        "sf_d07_003",
+        "sf_d07_004",
+        "sf_d07_005"
+      ],
+      "domains": [
+        "D07"
+      ]
+    },
+    {
+      "batch_id": "batch_013",
+      "file": "training/ascalon/data/raw/batch_013.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d07_011",
+        "sf_d07_012",
+        "sf_d07_013",
+        "sf_d07_014",
+        "sf_d07_019"
+      ],
+      "domains": [
+        "D07"
+      ]
+    },
+    {
+      "batch_id": "batch_014",
+      "file": "training/ascalon/data/raw/batch_014.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d07_020",
+        "sf_d08_001",
+        "sf_d08_002",
+        "sf_d08_003",
+        "sf_d08_004"
+      ],
+      "domains": [
+        "D07",
+        "D08"
+      ]
+    },
+    {
+      "batch_id": "batch_015",
+      "file": "training/ascalon/data/raw/batch_015.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d08_005",
+        "sf_d08_011",
+        "sf_d08_012",
+        "sf_d08_013",
+        "sf_d08_014"
+      ],
+      "domains": [
+        "D08"
+      ]
+    },
+    {
+      "batch_id": "batch_016",
+      "file": "training/ascalon/data/raw/batch_016.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d09_001",
+        "sf_d09_002",
+        "sf_d09_003",
+        "sf_d09_004",
+        "sf_d09_005"
+      ],
+      "domains": [
+        "D09"
+      ]
+    },
+    {
+      "batch_id": "batch_017",
+      "file": "training/ascalon/data/raw/batch_017.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d09_006",
+        "sf_d09_016",
+        "sf_d09_017",
+        "sf_d09_018",
+        "sf_d09_019"
+      ],
+      "domains": [
+        "D09"
+      ]
+    },
+    {
+      "batch_id": "batch_018",
+      "file": "training/ascalon/data/raw/batch_018.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d09_024",
+        "sf_d09_025",
+        "D10-AER-001",
+        "D10-AER-002",
+        "D10-AER-003"
+      ],
+      "domains": [
+        "D09",
+        "D10_AER_EPISTEMIC_LADDER"
+      ]
+    },
+    {
+      "batch_id": "batch_019",
+      "file": "training/ascalon/data/raw/batch_019.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D10-AER-004",
+        "D10-AER-005",
+        "D10-AER-006",
+        "D10-AER-007",
+        "D10-AER-008"
+      ],
+      "domains": [
+        "D10_AER_EPISTEMIC_LADDER"
+      ]
+    },
+    {
+      "batch_id": "batch_020",
+      "file": "training/ascalon/data/raw/batch_020.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D10-AER-009",
+        "D10-AER-010",
+        "D10-AER-011",
+        "D10-AER-012",
+        "D10-AER-013"
+      ],
+      "domains": [
+        "D10_AER_EPISTEMIC_LADDER"
+      ]
+    },
+    {
+      "batch_id": "batch_021",
+      "file": "training/ascalon/data/raw/batch_021.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D10-AER-014",
+        "D10-AER-015",
+        "D11-EDIT-001",
+        "D11-EDIT-002",
+        "D11-EDIT-003"
+      ],
+      "domains": [
+        "D10_AER_EPISTEMIC_LADDER",
+        "D11_STUDIO_REMAKER_EDIT"
+      ]
+    },
+    {
+      "batch_id": "batch_022",
+      "file": "training/ascalon/data/raw/batch_022.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D11-EDIT-004",
+        "D11-EDIT-005",
+        "D11-EDIT-006",
+        "D11-EDIT-007",
+        "D11-EDIT-008"
+      ],
+      "domains": [
+        "D11_STUDIO_REMAKER_EDIT"
+      ]
+    },
+    {
+      "batch_id": "batch_023",
+      "file": "training/ascalon/data/raw/batch_023.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D11-EDIT-009",
+        "D11-EDIT-010",
+        "D11-EDIT-011",
+        "D11-EDIT-012",
+        "D11-EDIT-013"
+      ],
+      "domains": [
+        "D11_STUDIO_REMAKER_EDIT"
+      ]
+    },
+    {
+      "batch_id": "batch_024",
+      "file": "training/ascalon/data/raw/batch_024.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D11-EDIT-014",
+        "D11-EDIT-015",
+        "D12-GOV-001",
+        "D12-GOV-002",
+        "D12-GOV-003"
+      ],
+      "domains": [
+        "D11_STUDIO_REMAKER_EDIT",
+        "D12_GOVERNANCE_HEALER_SLAYER"
+      ]
+    },
+    {
+      "batch_id": "batch_025",
+      "file": "training/ascalon/data/raw/batch_025.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D12-GOV-004",
+        "D12-GOV-005",
+        "D12-GOV-006",
+        "D12-GOV-007",
+        "D12-GOV-008"
+      ],
+      "domains": [
+        "D12_GOVERNANCE_HEALER_SLAYER"
+      ]
+    },
+    {
+      "batch_id": "batch_026",
+      "file": "training/ascalon/data/raw/batch_026.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D12-GOV-009",
+        "D12-GOV-010",
+        "D12-GOV-011",
+        "D12-GOV-012",
+        "D12-GOV-013"
+      ],
+      "domains": [
+        "D12_GOVERNANCE_HEALER_SLAYER"
+      ]
+    },
+    {
+      "batch_id": "batch_027",
+      "file": "training/ascalon/data/raw/batch_027.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D12-GOV-014",
+        "D12-GOV-015",
+        "D13-ECON-001",
+        "D13-ECON-002",
+        "D13-ECON-003"
+      ],
+      "domains": [
+        "D12_GOVERNANCE_HEALER_SLAYER",
+        "D13_TREASURY_CONTEXT_ECON"
+      ]
+    },
+    {
+      "batch_id": "batch_028",
+      "file": "training/ascalon/data/raw/batch_028.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D13-ECON-004",
+        "D13-ECON-005",
+        "D13-ECON-006",
+        "D13-ECON-007",
+        "D13-ECON-008"
+      ],
+      "domains": [
+        "D13_TREASURY_CONTEXT_ECON"
+      ]
+    },
+    {
+      "batch_id": "batch_029",
+      "file": "training/ascalon/data/raw/batch_029.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D13-ECON-009",
+        "D13-ECON-010",
+        "D13-ECON-011",
+        "D13-ECON-012",
+        "D13-ECON-013"
+      ],
+      "domains": [
+        "D13_TREASURY_CONTEXT_ECON"
+      ]
+    },
+    {
+      "batch_id": "batch_030",
+      "file": "training/ascalon/data/raw/batch_030.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D13-ECON-014",
+        "D13-ECON-015",
+        "D14-MCP-001",
+        "D14-MCP-002",
+        "D14-MCP-003"
+      ],
+      "domains": [
+        "D13_TREASURY_CONTEXT_ECON",
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    },
+    {
+      "batch_id": "batch_031",
+      "file": "training/ascalon/data/raw/batch_031.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D14-MCP-004",
+        "D14-MCP-005",
+        "D14-MCP-006",
+        "D14-MCP-007",
+        "D14-MCP-008"
+      ],
+      "domains": [
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    },
+    {
+      "batch_id": "batch_032",
+      "file": "training/ascalon/data/raw/batch_032.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D14-MCP-009",
+        "D14-MCP-010",
+        "D14-MCP-011",
+        "D14-MCP-012",
+        "D14-MCP-013"
+      ],
+      "domains": [
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    },
+    {
+      "batch_id": "batch_033",
+      "file": "training/ascalon/data/raw/batch_033.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D14-MCP-014",
+        "D14-MCP-015",
+        "sf_d01_003",
+        "sf_d01_004",
+        "sf_d01_005"
+      ],
+      "domains": [
+        "D01",
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    },
+    {
+      "batch_id": "batch_034",
+      "file": "training/ascalon/data/raw/batch_034.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d01_009",
+        "sf_d01_010",
+        "sf_d01_011",
+        "sf_d01_016",
+        "sf_d01_017"
+      ],
+      "domains": [
+        "D01"
+      ]
+    },
+    {
+      "batch_id": "batch_035",
+      "file": "training/ascalon/data/raw/batch_035.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d01_018",
+        "sf_d01_019",
+        "sf_d01_024",
+        "sf_d01_025",
+        "sf_d01_026"
+      ],
+      "domains": [
+        "D01"
+      ]
+    },
+    {
+      "batch_id": "batch_036",
+      "file": "training/ascalon/data/raw/batch_036.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d01_027",
+        "sf_d01_028",
+        "sf_d01_029",
+        "sf_d01_030",
+        "sf_d01_031"
+      ],
+      "domains": [
+        "D01"
+      ]
+    },
+    {
+      "batch_id": "batch_037",
+      "file": "training/ascalon/data/raw/batch_037.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_004",
+        "sf_d02_005",
+        "sf_d02_006",
+        "sf_d02_007",
+        "sf_d02_008"
+      ],
+      "domains": [
+        "D02"
+      ]
+    },
+    {
+      "batch_id": "batch_038",
+      "file": "training/ascalon/data/raw/batch_038.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_009",
+        "sf_d02_010",
+        "sf_d02_011",
+        "sf_d02_015",
+        "sf_d02_016"
+      ],
+      "domains": [
+        "D02"
+      ]
+    },
+    {
+      "batch_id": "batch_039",
+      "file": "training/ascalon/data/raw/batch_039.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_017",
+        "sf_d02_018",
+        "sf_d02_019",
+        "sf_d02_022",
+        "sf_d02_023"
+      ],
+      "domains": [
+        "D02"
+      ]
+    },
+    {
+      "batch_id": "batch_040",
+      "file": "training/ascalon/data/raw/batch_040.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_024",
+        "sf_d02_025",
+        "sf_d02_026",
+        "sf_d02_027",
+        "sf_d02_028"
+      ],
+      "domains": [
+        "D02"
+      ]
+    },
+    {
+      "batch_id": "batch_041",
+      "file": "training/ascalon/data/raw/batch_041.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d02_029",
+        "sf_d02_030",
+        "sf_d03_004",
+        "sf_d03_005",
+        "sf_d03_006"
+      ],
+      "domains": [
+        "D02",
+        "D03"
+      ]
+    },
+    {
+      "batch_id": "batch_042",
+      "file": "training/ascalon/data/raw/batch_042.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d03_007",
+        "sf_d03_008",
+        "sf_d03_012",
+        "sf_d03_013",
+        "sf_d03_014"
+      ],
+      "domains": [
+        "D03"
+      ]
+    },
+    {
+      "batch_id": "batch_043",
+      "file": "training/ascalon/data/raw/batch_043.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d03_015",
+        "sf_d03_016",
+        "sf_d03_020",
+        "sf_d03_021",
+        "sf_d03_022"
+      ],
+      "domains": [
+        "D03"
+      ]
+    },
+    {
+      "batch_id": "batch_044",
+      "file": "training/ascalon/data/raw/batch_044.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d03_023",
+        "sf_d03_024",
+        "sf_d03_025",
+        "sf_d03_026",
+        "sf_d03_027"
+      ],
+      "domains": [
+        "D03"
+      ]
+    },
+    {
+      "batch_id": "batch_045",
+      "file": "training/ascalon/data/raw/batch_045.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d03_028",
+        "sf_d03_029",
+        "sf_d03_030",
+        "sf_d04_006",
+        "sf_d04_007"
+      ],
+      "domains": [
+        "D03",
+        "D04"
+      ]
+    },
+    {
+      "batch_id": "batch_046",
+      "file": "training/ascalon/data/raw/batch_046.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d04_008",
+        "sf_d04_009",
+        "sf_d04_010",
+        "sf_d04_013",
+        "sf_d04_014"
+      ],
+      "domains": [
+        "D04"
+      ]
+    },
+    {
+      "batch_id": "batch_047",
+      "file": "training/ascalon/data/raw/batch_047.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d04_015",
+        "sf_d04_016",
+        "sf_d04_019",
+        "sf_d04_020",
+        "sf_d04_021"
+      ],
+      "domains": [
+        "D04"
+      ]
+    },
+    {
+      "batch_id": "batch_048",
+      "file": "training/ascalon/data/raw/batch_048.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d04_022",
+        "sf_d04_023",
+        "sf_d04_024",
+        "sf_d05_005",
+        "sf_d05_006"
+      ],
+      "domains": [
+        "D04",
+        "D05"
+      ]
+    },
+    {
+      "batch_id": "batch_049",
+      "file": "training/ascalon/data/raw/batch_049.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d05_007",
+        "sf_d05_008",
+        "sf_d05_009",
+        "sf_d05_010",
+        "sf_d05_015"
+      ],
+      "domains": [
+        "D05"
+      ]
+    },
+    {
+      "batch_id": "batch_050",
+      "file": "training/ascalon/data/raw/batch_050.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d05_016",
+        "sf_d05_017",
+        "sf_d05_018",
+        "sf_d05_019",
+        "sf_d05_020"
+      ],
+      "domains": [
+        "D05"
+      ]
+    },
+    {
+      "batch_id": "batch_051",
+      "file": "training/ascalon/data/raw/batch_051.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d05_021",
+        "sf_d05_022",
+        "sf_d05_023",
+        "sf_d05_024",
+        "sf_d05_025"
+      ],
+      "domains": [
+        "D05"
+      ]
+    },
+    {
+      "batch_id": "batch_052",
+      "file": "training/ascalon/data/raw/batch_052.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d05_026",
+        "sf_d06_004",
+        "sf_d06_005",
+        "sf_d06_006",
+        "sf_d06_007"
+      ],
+      "domains": [
+        "D05",
+        "D06"
+      ]
+    },
+    {
+      "batch_id": "batch_053",
+      "file": "training/ascalon/data/raw/batch_053.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d06_008",
+        "sf_d06_012",
+        "sf_d06_013",
+        "sf_d06_014",
+        "sf_d06_015"
+      ],
+      "domains": [
+        "D06"
+      ]
+    },
+    {
+      "batch_id": "batch_054",
+      "file": "training/ascalon/data/raw/batch_054.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d06_016",
+        "sf_d06_017",
+        "sf_d06_018",
+        "sf_d06_019",
+        "sf_d06_020"
+      ],
+      "domains": [
+        "D06"
+      ]
+    },
+    {
+      "batch_id": "batch_055",
+      "file": "training/ascalon/data/raw/batch_055.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d06_023",
+        "sf_d06_024",
+        "sf_d06_025",
+        "sf_d06_026",
+        "sf_d07_006"
+      ],
+      "domains": [
+        "D06",
+        "D07"
+      ]
+    },
+    {
+      "batch_id": "batch_056",
+      "file": "training/ascalon/data/raw/batch_056.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d07_007",
+        "sf_d07_008",
+        "sf_d07_009",
+        "sf_d07_010",
+        "sf_d07_015"
+      ],
+      "domains": [
+        "D07"
+      ]
+    },
+    {
+      "batch_id": "batch_057",
+      "file": "training/ascalon/data/raw/batch_057.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d07_016",
+        "sf_d07_017",
+        "sf_d07_018",
+        "sf_d07_021",
+        "sf_d07_022"
+      ],
+      "domains": [
+        "D07"
+      ]
+    },
+    {
+      "batch_id": "batch_058",
+      "file": "training/ascalon/data/raw/batch_058.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d07_023",
+        "sf_d07_024",
+        "sf_d07_025",
+        "sf_d07_026",
+        "sf_d08_006"
+      ],
+      "domains": [
+        "D07",
+        "D08"
+      ]
+    },
+    {
+      "batch_id": "batch_059",
+      "file": "training/ascalon/data/raw/batch_059.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d08_007",
+        "sf_d08_008",
+        "sf_d08_009",
+        "sf_d08_010",
+        "sf_d08_015"
+      ],
+      "domains": [
+        "D08"
+      ]
+    },
+    {
+      "batch_id": "batch_060",
+      "file": "training/ascalon/data/raw/batch_060.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d08_016",
+        "sf_d08_017",
+        "sf_d08_018",
+        "sf_d08_019",
+        "sf_d08_020"
+      ],
+      "domains": [
+        "D08"
+      ]
+    },
+    {
+      "batch_id": "batch_061",
+      "file": "training/ascalon/data/raw/batch_061.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d08_021",
+        "sf_d08_022",
+        "sf_d08_023",
+        "sf_d08_024",
+        "sf_d08_025"
+      ],
+      "domains": [
+        "D08"
+      ]
+    },
+    {
+      "batch_id": "batch_062",
+      "file": "training/ascalon/data/raw/batch_062.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d08_026",
+        "sf_d09_007",
+        "sf_d09_008",
+        "sf_d09_009",
+        "sf_d09_010"
+      ],
+      "domains": [
+        "D08",
+        "D09"
+      ]
+    },
+    {
+      "batch_id": "batch_063",
+      "file": "training/ascalon/data/raw/batch_063.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d09_011",
+        "sf_d09_012",
+        "sf_d09_013",
+        "sf_d09_014",
+        "sf_d09_015"
+      ],
+      "domains": [
+        "D09"
+      ]
+    },
+    {
+      "batch_id": "batch_064",
+      "file": "training/ascalon/data/raw/batch_064.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d09_020",
+        "sf_d09_021",
+        "sf_d09_022",
+        "sf_d09_023",
+        "sf_d09_026"
+      ],
+      "domains": [
+        "D09"
+      ]
+    },
+    {
+      "batch_id": "batch_065",
+      "file": "training/ascalon/data/raw/batch_065.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "sf_d09_027",
+        "sf_d09_028",
+        "sf_d09_029",
+        "sf_d09_030",
+        "D10-AER-016"
+      ],
+      "domains": [
+        "D09",
+        "D10_AER_EPISTEMIC_LADDER"
+      ]
+    },
+    {
+      "batch_id": "batch_066",
+      "file": "training/ascalon/data/raw/batch_066.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D10-AER-017",
+        "D10-AER-018",
+        "D10-AER-019",
+        "D10-AER-020",
+        "D10-AER-021"
+      ],
+      "domains": [
+        "D10_AER_EPISTEMIC_LADDER"
+      ]
+    },
+    {
+      "batch_id": "batch_067",
+      "file": "training/ascalon/data/raw/batch_067.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D10-AER-022",
+        "D10-AER-023",
+        "D10-AER-024",
+        "D10-AER-025",
+        "D11-EDIT-016"
+      ],
+      "domains": [
+        "D10_AER_EPISTEMIC_LADDER",
+        "D11_STUDIO_REMAKER_EDIT"
+      ]
+    },
+    {
+      "batch_id": "batch_068",
+      "file": "training/ascalon/data/raw/batch_068.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D11-EDIT-017",
+        "D11-EDIT-018",
+        "D11-EDIT-019",
+        "D11-EDIT-020",
+        "D11-EDIT-021"
+      ],
+      "domains": [
+        "D11_STUDIO_REMAKER_EDIT"
+      ]
+    },
+    {
+      "batch_id": "batch_069",
+      "file": "training/ascalon/data/raw/batch_069.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D11-EDIT-022",
+        "D11-EDIT-023",
+        "D11-EDIT-024",
+        "D11-EDIT-025",
+        "D12-GOV-016"
+      ],
+      "domains": [
+        "D11_STUDIO_REMAKER_EDIT",
+        "D12_GOVERNANCE_HEALER_SLAYER"
+      ]
+    },
+    {
+      "batch_id": "batch_070",
+      "file": "training/ascalon/data/raw/batch_070.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D12-GOV-017",
+        "D12-GOV-018",
+        "D12-GOV-019",
+        "D12-GOV-020",
+        "D12-GOV-021"
+      ],
+      "domains": [
+        "D12_GOVERNANCE_HEALER_SLAYER"
+      ]
+    },
+    {
+      "batch_id": "batch_071",
+      "file": "training/ascalon/data/raw/batch_071.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D12-GOV-022",
+        "D12-GOV-023",
+        "D12-GOV-024",
+        "D12-GOV-025",
+        "D13-ECON-016"
+      ],
+      "domains": [
+        "D12_GOVERNANCE_HEALER_SLAYER",
+        "D13_TREASURY_CONTEXT_ECON"
+      ]
+    },
+    {
+      "batch_id": "batch_072",
+      "file": "training/ascalon/data/raw/batch_072.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D13-ECON-017",
+        "D13-ECON-018",
+        "D13-ECON-019",
+        "D13-ECON-020",
+        "D13-ECON-021"
+      ],
+      "domains": [
+        "D13_TREASURY_CONTEXT_ECON"
+      ]
+    },
+    {
+      "batch_id": "batch_073",
+      "file": "training/ascalon/data/raw/batch_073.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D13-ECON-022",
+        "D13-ECON-023",
+        "D13-ECON-024",
+        "D13-ECON-025",
+        "D14-MCP-016"
+      ],
+      "domains": [
+        "D13_TREASURY_CONTEXT_ECON",
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    },
+    {
+      "batch_id": "batch_074",
+      "file": "training/ascalon/data/raw/batch_074.json",
+      "packet_count": 5,
+      "packet_ids": [
+        "D14-MCP-017",
+        "D14-MCP-018",
+        "D14-MCP-019",
+        "D14-MCP-020",
+        "D14-MCP-021"
+      ],
+      "domains": [
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    },
+    {
+      "batch_id": "batch_075",
+      "file": "training/ascalon/data/raw/batch_075.json",
+      "packet_count": 4,
+      "packet_ids": [
+        "D14-MCP-022",
+        "D14-MCP-023",
+        "D14-MCP-024",
+        "D14-MCP-025"
+      ],
+      "domains": [
+        "D14_GOVERNED_MCP_GATEWAY"
+      ]
+    }
+  ]
+}

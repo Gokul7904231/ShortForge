@@ -1,0 +1,483 @@
+{
+  "batch_id": "batch_015",
+  "batch_index": 15,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d08_005",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_005",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Recovery state inspection: Control plane restarted during long render job; worker still holding valid lease fencing token.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxFleetRegistry.ts:recoverOrReconcileLease"
+          },
+          {
+            "fact": "RFC 9110 & F06 Recovery Invariant: If a side-effect status is UNKNOWN following a network timeout, the system MUST inspect the CAS digest for idempotent reconciliation before attempting retry. Blind duplicate execution is strictly forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 6 (Deterministic Replayability & Monotonic Fencing)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Recovery situation telemetry: state_code=CONTROL_PLANE_RESTART_RECONNECT",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Prevent split-brain duplicate rendering.",
+          "Enforce monotonic fencing tokens."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_RECONCILE_EXISTING_CAS",
+          "label": "Verify physical CAS artifact on disk, mark job COMPLETED idempotently, and skip re-render"
+        },
+        {
+          "id": "ACT_QUERY_WORKER_HEARTBEAT",
+          "label": "Ping active worker daemon to verify whether FFmpeg process is still running"
+        },
+        {
+          "id": "ACT_FAILOVER_NEW_WORKER_INCREMENT_EPOCH",
+          "label": "Revoke expired lease, increment fencing epoch, and re-assign job to a healthy worker"
+        },
+        {
+          "id": "ACT_RECONNECT_RUNNING_LEASE",
+          "label": "Acknowledge running worker's heartbeat and re-attach active lease in registry"
+        },
+        {
+          "id": "ACT_CLEANUP_WORKSPACE_RETRY",
+          "label": "Purge corrupt temporary files from worker workspace and trigger clean single retry"
+        },
+        {
+          "id": "ACT_REJECT_STALE_FENCING_CALLBACK",
+          "label": "Reject callback with StaleFencingTokenError to prevent zombie write collisions"
+        },
+        {
+          "id": "ACT_REJECT_CORRUPT_ARTIFACT_RETRY",
+          "label": "Quarantine corrupt file and re-render on alternate qualified worker"
+        },
+        {
+          "id": "ACT_FENCE_ATOMIC_SINGLE_CLAIM",
+          "label": "Enforce atomic compare-and-swap on job lease to permit only one winner"
+        },
+        {
+          "id": "ACT_BLIND_RETRY_IMMEDIATE",
+          "label": "Blindly fire duplicate render job to another worker without checking CAS or fencing token"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_RECONNECT_RUNNING_LEASE",
+        "rejected_reasons": {
+          "ACT_BLIND_RETRY_IMMEDIATE": "DISTRIBUTED_SYSTEMS_VIOLATION_SPLIT_BRAIN: Blind retries without fencing cause duplicate rendering, wasted GPU cycles, and race condition overwrites.",
+          "ACT_RECONCILE_EXISTING_CAS": "RECOVERY_ACTION_MISMATCH: Action 'ACT_RECONCILE_EXISTING_CAS' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'.",
+          "ACT_QUERY_WORKER_HEARTBEAT": "RECOVERY_ACTION_MISMATCH: Action 'ACT_QUERY_WORKER_HEARTBEAT' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'.",
+          "ACT_FAILOVER_NEW_WORKER_INCREMENT_EPOCH": "RECOVERY_ACTION_MISMATCH: Action 'ACT_FAILOVER_NEW_WORKER_INCREMENT_EPOCH' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'.",
+          "ACT_CLEANUP_WORKSPACE_RETRY": "RECOVERY_ACTION_MISMATCH: Action 'ACT_CLEANUP_WORKSPACE_RETRY' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'.",
+          "ACT_REJECT_STALE_FENCING_CALLBACK": "RECOVERY_ACTION_MISMATCH: Action 'ACT_REJECT_STALE_FENCING_CALLBACK' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'.",
+          "ACT_REJECT_CORRUPT_ARTIFACT_RETRY": "RECOVERY_ACTION_MISMATCH: Action 'ACT_REJECT_CORRUPT_ARTIFACT_RETRY' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'.",
+          "ACT_FENCE_ATOMIC_SINGLE_CLAIM": "RECOVERY_ACTION_MISMATCH: Action 'ACT_FENCE_ATOMIC_SINGLE_CLAIM' contradicts state 'CONTROL_PLANE_RESTART_RECONNECT'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_011",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_011",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Heartbeat telemetry evaluation: Worker box3 missed heartbeats for 160 seconds (exceeds HEARTBEAT_DEGRADED_THRESHOLD_MS = 150s).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxFleetRegistry.ts:recordHeartbeat"
+          },
+          {
+            "fact": "InstaBox Fleet Health Rules: Nodes with missed heartbeats > 150s are DEGRADED; > 300s are BLOCKED. Active jobs on BLOCKED nodes must be evicted and recovered.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "InstaBoxFleetRegistry.ts:HEARTBEAT_DEGRADED_THRESHOLD_MS"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Fleet heartbeat telemetry state: DEGRADED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Worker health uncertainty: Worker box3 missed heartbeats for 160 seconds (exceeds HEARTBEAT_DEGRADED_THRESHOLD_MS = 150s)"
+        ],
+        "constraints": [
+          "Maintain accurate pool eligibility.",
+          "Protect active jobs from orphaned nodes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_MARK_NODE_DEGRADED",
+          "label": "Mark node status as DEGRADED and pause dispatch of new speculative jobs"
+        },
+        {
+          "id": "ACT_MARK_NODE_BLOCKED_EVICT_JOBS",
+          "label": "Mark node BLOCKED, evict all pending/active leases, and schedule failover"
+        },
+        {
+          "id": "ACT_RESTORE_NODE_HEALTHY",
+          "label": "Mark node HEALTHY, reset consecutive failures counter, and enable job dispatch"
+        },
+        {
+          "id": "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION",
+          "label": "Mark node UNAVAILABLE due to disk/RAM starvation and trigger alert"
+        },
+        {
+          "id": "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH",
+          "label": "Set node isDraining=True and allow existing jobs to complete without dispatching new ones"
+        },
+        {
+          "id": "ACT_REJECT_UNAUTHORIZED_HEARTBEAT",
+          "label": "Reject heartbeat with 401 Unauthorized and increment failure counter"
+        },
+        {
+          "id": "ACT_IGNORE_MISSED_HEARTBEATS",
+          "label": "Ignore missed heartbeats and keep dispatching jobs to unresponsive worker"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_MARK_NODE_DEGRADED",
+        "rejected_reasons": {
+          "ACT_IGNORE_MISSED_HEARTBEATS": "RESILIENCE_VIOLATION_ZOMBIE_DISPATCH: Dispatching jobs to unresponsive nodes causes job queue stalls and silent timeouts.",
+          "ACT_MARK_NODE_BLOCKED_EVICT_JOBS": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_BLOCKED_EVICT_JOBS' contradicts heartbeat state 'DEGRADED'.",
+          "ACT_RESTORE_NODE_HEALTHY": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESTORE_NODE_HEALTHY' contradicts heartbeat state 'DEGRADED'.",
+          "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION' contradicts heartbeat state 'DEGRADED'.",
+          "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH' contradicts heartbeat state 'DEGRADED'.",
+          "ACT_REJECT_UNAUTHORIZED_HEARTBEAT": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_REJECT_UNAUTHORIZED_HEARTBEAT' contradicts heartbeat state 'DEGRADED'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_012",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_012",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Heartbeat telemetry evaluation: Worker box4 missed heartbeats for 320 seconds (exceeds HEARTBEAT_BLOCKED_THRESHOLD_MS = 300s).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxFleetRegistry.ts:recordHeartbeat"
+          },
+          {
+            "fact": "InstaBox Fleet Health Rules: Nodes with missed heartbeats > 150s are DEGRADED; > 300s are BLOCKED. Active jobs on BLOCKED nodes must be evicted and recovered.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "InstaBoxFleetRegistry.ts:HEARTBEAT_DEGRADED_THRESHOLD_MS"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Fleet heartbeat telemetry state: BLOCKED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Worker health uncertainty: Worker box4 missed heartbeats for 320 seconds (exceeds HEARTBEAT_BLOCKED_THRESHOLD_MS = 300s)"
+        ],
+        "constraints": [
+          "Maintain accurate pool eligibility.",
+          "Protect active jobs from orphaned nodes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_MARK_NODE_DEGRADED",
+          "label": "Mark node status as DEGRADED and pause dispatch of new speculative jobs"
+        },
+        {
+          "id": "ACT_MARK_NODE_BLOCKED_EVICT_JOBS",
+          "label": "Mark node BLOCKED, evict all pending/active leases, and schedule failover"
+        },
+        {
+          "id": "ACT_RESTORE_NODE_HEALTHY",
+          "label": "Mark node HEALTHY, reset consecutive failures counter, and enable job dispatch"
+        },
+        {
+          "id": "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION",
+          "label": "Mark node UNAVAILABLE due to disk/RAM starvation and trigger alert"
+        },
+        {
+          "id": "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH",
+          "label": "Set node isDraining=True and allow existing jobs to complete without dispatching new ones"
+        },
+        {
+          "id": "ACT_REJECT_UNAUTHORIZED_HEARTBEAT",
+          "label": "Reject heartbeat with 401 Unauthorized and increment failure counter"
+        },
+        {
+          "id": "ACT_IGNORE_MISSED_HEARTBEATS",
+          "label": "Ignore missed heartbeats and keep dispatching jobs to unresponsive worker"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_MARK_NODE_BLOCKED_EVICT_JOBS",
+        "rejected_reasons": {
+          "ACT_IGNORE_MISSED_HEARTBEATS": "RESILIENCE_VIOLATION_ZOMBIE_DISPATCH: Dispatching jobs to unresponsive nodes causes job queue stalls and silent timeouts.",
+          "ACT_MARK_NODE_DEGRADED": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_DEGRADED' contradicts heartbeat state 'BLOCKED'.",
+          "ACT_RESTORE_NODE_HEALTHY": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESTORE_NODE_HEALTHY' contradicts heartbeat state 'BLOCKED'.",
+          "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION' contradicts heartbeat state 'BLOCKED'.",
+          "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH' contradicts heartbeat state 'BLOCKED'.",
+          "ACT_REJECT_UNAUTHORIZED_HEARTBEAT": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_REJECT_UNAUTHORIZED_HEARTBEAT' contradicts heartbeat state 'BLOCKED'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_013",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_013",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Heartbeat telemetry evaluation: Worker box3 was DEGRADED, but fresh heartbeat received with healthy metrics (< 10s old).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxFleetRegistry.ts:recordHeartbeat"
+          },
+          {
+            "fact": "InstaBox Fleet Health Rules: Nodes with missed heartbeats > 150s are DEGRADED; > 300s are BLOCKED. Active jobs on BLOCKED nodes must be evicted and recovered.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "InstaBoxFleetRegistry.ts:HEARTBEAT_DEGRADED_THRESHOLD_MS"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Fleet heartbeat telemetry state: RECOVERED",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Maintain accurate pool eligibility.",
+          "Protect active jobs from orphaned nodes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_MARK_NODE_DEGRADED",
+          "label": "Mark node status as DEGRADED and pause dispatch of new speculative jobs"
+        },
+        {
+          "id": "ACT_MARK_NODE_BLOCKED_EVICT_JOBS",
+          "label": "Mark node BLOCKED, evict all pending/active leases, and schedule failover"
+        },
+        {
+          "id": "ACT_RESTORE_NODE_HEALTHY",
+          "label": "Mark node HEALTHY, reset consecutive failures counter, and enable job dispatch"
+        },
+        {
+          "id": "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION",
+          "label": "Mark node UNAVAILABLE due to disk/RAM starvation and trigger alert"
+        },
+        {
+          "id": "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH",
+          "label": "Set node isDraining=True and allow existing jobs to complete without dispatching new ones"
+        },
+        {
+          "id": "ACT_REJECT_UNAUTHORIZED_HEARTBEAT",
+          "label": "Reject heartbeat with 401 Unauthorized and increment failure counter"
+        },
+        {
+          "id": "ACT_IGNORE_MISSED_HEARTBEATS",
+          "label": "Ignore missed heartbeats and keep dispatching jobs to unresponsive worker"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_RESTORE_NODE_HEALTHY",
+        "rejected_reasons": {
+          "ACT_IGNORE_MISSED_HEARTBEATS": "RESILIENCE_VIOLATION_ZOMBIE_DISPATCH: Dispatching jobs to unresponsive nodes causes job queue stalls and silent timeouts.",
+          "ACT_MARK_NODE_DEGRADED": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_DEGRADED' contradicts heartbeat state 'RECOVERED'.",
+          "ACT_MARK_NODE_BLOCKED_EVICT_JOBS": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_BLOCKED_EVICT_JOBS' contradicts heartbeat state 'RECOVERED'.",
+          "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION' contradicts heartbeat state 'RECOVERED'.",
+          "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH' contradicts heartbeat state 'RECOVERED'.",
+          "ACT_REJECT_UNAUTHORIZED_HEARTBEAT": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_REJECT_UNAUTHORIZED_HEARTBEAT' contradicts heartbeat state 'RECOVERED'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_014",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_014",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Heartbeat telemetry evaluation: Worker sends heartbeat with CPU usage 99.8% and memory available 40MB (< 2048MB min).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "InstaBoxFleetRegistry.ts:recordHeartbeat"
+          },
+          {
+            "fact": "InstaBox Fleet Health Rules: Nodes with missed heartbeats > 150s are DEGRADED; > 300s are BLOCKED. Active jobs on BLOCKED nodes must be evicted and recovered.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "InstaBoxFleetRegistry.ts:HEARTBEAT_DEGRADED_THRESHOLD_MS"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Fleet heartbeat telemetry state: RESOURCE_EXHAUSTION",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          ""
+        ],
+        "constraints": [
+          "Maintain accurate pool eligibility.",
+          "Protect active jobs from orphaned nodes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_MARK_NODE_DEGRADED",
+          "label": "Mark node status as DEGRADED and pause dispatch of new speculative jobs"
+        },
+        {
+          "id": "ACT_MARK_NODE_BLOCKED_EVICT_JOBS",
+          "label": "Mark node BLOCKED, evict all pending/active leases, and schedule failover"
+        },
+        {
+          "id": "ACT_RESTORE_NODE_HEALTHY",
+          "label": "Mark node HEALTHY, reset consecutive failures counter, and enable job dispatch"
+        },
+        {
+          "id": "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION",
+          "label": "Mark node UNAVAILABLE due to disk/RAM starvation and trigger alert"
+        },
+        {
+          "id": "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH",
+          "label": "Set node isDraining=True and allow existing jobs to complete without dispatching new ones"
+        },
+        {
+          "id": "ACT_REJECT_UNAUTHORIZED_HEARTBEAT",
+          "label": "Reject heartbeat with 401 Unauthorized and increment failure counter"
+        },
+        {
+          "id": "ACT_IGNORE_MISSED_HEARTBEATS",
+          "label": "Ignore missed heartbeats and keep dispatching jobs to unresponsive worker"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_MARK_NODE_UNAVAILABLE_RESOURCE_EXHAUSTION",
+        "rejected_reasons": {
+          "ACT_IGNORE_MISSED_HEARTBEATS": "RESILIENCE_VIOLATION_ZOMBIE_DISPATCH: Dispatching jobs to unresponsive nodes causes job queue stalls and silent timeouts.",
+          "ACT_MARK_NODE_DEGRADED": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_DEGRADED' contradicts heartbeat state 'RESOURCE_EXHAUSTION'.",
+          "ACT_MARK_NODE_BLOCKED_EVICT_JOBS": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_MARK_NODE_BLOCKED_EVICT_JOBS' contradicts heartbeat state 'RESOURCE_EXHAUSTION'.",
+          "ACT_RESTORE_NODE_HEALTHY": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESTORE_NODE_HEALTHY' contradicts heartbeat state 'RESOURCE_EXHAUSTION'.",
+          "ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_RESPECT_DRAINING_HALT_JOB_DISPATCH' contradicts heartbeat state 'RESOURCE_EXHAUSTION'.",
+          "ACT_REJECT_UNAUTHORIZED_HEARTBEAT": "HEARTBEAT_ACTION_MISMATCH: Action 'ACT_REJECT_UNAUTHORIZED_HEARTBEAT' contradicts heartbeat state 'RESOURCE_EXHAUSTION'."
+        },
+        "provenance_tier": "GOLD"
+      }
+    }
+  ]
+}

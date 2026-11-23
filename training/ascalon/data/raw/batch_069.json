@@ -1,0 +1,397 @@
+{
+  "batch_id": "batch_069",
+  "batch_index": 69,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D11-EDIT-022",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-bnd-022",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Target duration or split time in ticks: 0",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          },
+          {
+            "fact": "Timebase is 120,000 ticks/second; duration must be strictly positive finite integer",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command_parameter_ticks: 0",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Boundary violation: duration=0"
+        ],
+        "constraints": [
+          "Clips with non-positive or corrupted durations must be rejected"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_ZERO_DURATION",
+          "label": "Validate clip timing boundaries (ACT_REJECT_ZERO_DURATION)"
+        },
+        {
+          "id": "ACT_ACCEPT_CORRUPTED_CLIP",
+          "label": "Accept clip with negative/zero duration into timeline"
+        },
+        {
+          "id": "ACT_CLAMP_TO_ZERO",
+          "label": "Silently clamp negative clip duration to 0 and render black frames"
+        },
+        {
+          "id": "ACT_REVERSE_TIMELINE_FLOW",
+          "label": "Invert timeline arrow of time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_ZERO_DURATION",
+        "rejected_reasons": {
+          "ACT_ACCEPT_CORRUPTED_CLIP": "TIMING_VIOLATION_SUBFRAME_DRIFT: Non-positive clip duration corrupts timeline playback engine and causes renderer crash",
+          "ACT_CLAMP_TO_ZERO": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Zero duration clips produce black-frame glitches and desynchronize audio-video muxer",
+          "ACT_REVERSE_TIMELINE_FLOW": "PHYSICAL_VIOLATION_CAUSALITY: Inverting timeline flow is not an authorized time transformation"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-023",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-bnd-023",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Target duration or split time in ticks: 72000",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          },
+          {
+            "fact": "Timebase is 120,000 ticks/second; duration must be strictly positive finite integer",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command_parameter_ticks: 72000",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Clips with non-positive or corrupted durations must be rejected"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REJECT_EXCESSIVE_DURATION",
+          "label": "Validate clip timing boundaries (ACT_REJECT_EXCESSIVE_DURATION)"
+        },
+        {
+          "id": "ACT_ACCEPT_CORRUPTED_CLIP",
+          "label": "Accept clip with negative/zero duration into timeline"
+        },
+        {
+          "id": "ACT_CLAMP_TO_ZERO",
+          "label": "Silently clamp negative clip duration to 0 and render black frames"
+        },
+        {
+          "id": "ACT_REVERSE_TIMELINE_FLOW",
+          "label": "Invert timeline arrow of time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_EXCESSIVE_DURATION",
+        "rejected_reasons": {
+          "ACT_ACCEPT_CORRUPTED_CLIP": "TIMING_VIOLATION_SUBFRAME_DRIFT: Non-positive clip duration corrupts timeline playback engine and causes renderer crash",
+          "ACT_CLAMP_TO_ZERO": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Zero duration clips produce black-frame glitches and desynchronize audio-video muxer",
+          "ACT_REVERSE_TIMELINE_FLOW": "PHYSICAL_VIOLATION_CAUSALITY: Inverting timeline flow is not an authorized time transformation"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-024",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-bnd-024",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Target duration or split time in ticks: 360000",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          },
+          {
+            "fact": "Timebase is 120,000 ticks/second; duration must be strictly positive finite integer",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command_parameter_ticks: 360000",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Clips with non-positive or corrupted durations must be rejected"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_VALID_TRIM",
+          "label": "Validate clip timing boundaries (ACT_APPLY_VALID_TRIM)"
+        },
+        {
+          "id": "ACT_ACCEPT_CORRUPTED_CLIP",
+          "label": "Accept clip with negative/zero duration into timeline"
+        },
+        {
+          "id": "ACT_CLAMP_TO_ZERO",
+          "label": "Silently clamp negative clip duration to 0 and render black frames"
+        },
+        {
+          "id": "ACT_REVERSE_TIMELINE_FLOW",
+          "label": "Invert timeline arrow of time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_VALID_TRIM",
+        "rejected_reasons": {
+          "ACT_ACCEPT_CORRUPTED_CLIP": "TIMING_VIOLATION_SUBFRAME_DRIFT: Non-positive clip duration corrupts timeline playback engine and causes renderer crash",
+          "ACT_CLAMP_TO_ZERO": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Zero duration clips produce black-frame glitches and desynchronize audio-video muxer",
+          "ACT_REVERSE_TIMELINE_FLOW": "PHYSICAL_VIOLATION_CAUSALITY: Inverting timeline flow is not an authorized time transformation"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-025",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_TIMELINE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-bnd-025",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Target duration or split time in ticks: 180000",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          },
+          {
+            "fact": "Timebase is 120,000 ticks/second; duration must be strictly positive finite integer",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/timeline/CompositionIR.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "command_parameter_ticks: 180000",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Clips with non-positive or corrupted durations must be rejected"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_APPLY_VALID_SPLIT",
+          "label": "Validate clip timing boundaries (ACT_APPLY_VALID_SPLIT)"
+        },
+        {
+          "id": "ACT_ACCEPT_CORRUPTED_CLIP",
+          "label": "Accept clip with negative/zero duration into timeline"
+        },
+        {
+          "id": "ACT_CLAMP_TO_ZERO",
+          "label": "Silently clamp negative clip duration to 0 and render black frames"
+        },
+        {
+          "id": "ACT_REVERSE_TIMELINE_FLOW",
+          "label": "Invert timeline arrow of time"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_APPLY_VALID_SPLIT",
+        "rejected_reasons": {
+          "ACT_ACCEPT_CORRUPTED_CLIP": "TIMING_VIOLATION_SUBFRAME_DRIFT: Non-positive clip duration corrupts timeline playback engine and causes renderer crash",
+          "ACT_CLAMP_TO_ZERO": "QUALITY_VIOLATION_CORRUPTED_PIPELINE: Zero duration clips produce black-frame glitches and desynchronize audio-video muxer",
+          "ACT_REVERSE_TIMELINE_FLOW": "PHYSICAL_VIOLATION_CAUSALITY: Inverting timeline flow is not an authorized time transformation"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D12-GOV-016",
+      "domain": "D12_GOVERNANCE_HEALER_SLAYER",
+      "floor_id": "BORDER_DEFENSE_SENTINEL",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/guardian/QuizAmbiguityDetector.ts",
+        "apps/web/factoryos/core/guardian/BorderDefenseAgent.ts",
+        "apps/web/factoryos/core/guardian/SlayerPrimeEngine.ts",
+        "apps/web/factoryos/tests/slayer-prime.test.ts",
+        "apps/web/factoryos/tests/slayer-swarm.test.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d12-brd-016",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "BorderDefenseAgent observed 5 instances of anomaly 'TRANSCODE_ERROR' within 60s sliding window",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/guardian/BorderDefenseAgent.ts"
+          },
+          {
+            "fact": "Anomaly threshold breached (limit is 3 instances per 60s)",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/guardian/BorderDefenseAgent.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "anomaly_burst: count=5, type=TRANSCODE_ERROR",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Systemic anomaly detected: TRANSCODE_ERROR"
+        ],
+        "constraints": [
+          "Circuit breaker must trip immediately when anomaly threshold is exceeded"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_TRIGGER_CIRCUIT_BREAKER_DRAIN",
+          "label": "Trip circuit breaker and isolate fault boundary (ACT_TRIGGER_CIRCUIT_BREAKER_DRAIN)"
+        },
+        {
+          "id": "ACT_IGNORE_BURST_FAILURES",
+          "label": "Ignore failure burst and continue pounding downstream services"
+        },
+        {
+          "id": "ACT_DELETE_ERROR_LOGS",
+          "label": "Clear error log buffers to make monitoring dashboard green"
+        },
+        {
+          "id": "ACT_RETRY_IMMEDIATELY_UNTHROTTLED",
+          "label": "Fire 50 immediate concurrent retry requests"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_TRIGGER_CIRCUIT_BREAKER_DRAIN",
+        "rejected_reasons": {
+          "ACT_IGNORE_BURST_FAILURES": "RESILIENCE_VIOLATION_CASCADING_FAILURE: Ignoring anomaly bursts triggers cascading collapse across all worker nodes",
+          "ACT_DELETE_ERROR_LOGS": "SECURITY_VIOLATION_AUDIT_TAMPERING: Deleting error logs destroys forensic evidence and conceals systemic faults",
+          "ACT_RETRY_IMMEDIATELY_UNTHROTTLED": "RESILIENCE_VIOLATION_THUNDERING_HERD: Unthrottled immediate retries turn transient errors into permanent denial of service"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

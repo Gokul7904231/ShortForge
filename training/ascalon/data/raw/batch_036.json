@@ -1,0 +1,371 @@
+{
+  "batch_id": "batch_036",
+  "batch_index": 36,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d01_027",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_027",
+        "content_engine": "reddit",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Engine 'reddit' requires methodology 'CORROBORATION' (Community story plausibility check and removal of doxxing / PII).",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachContracts.ts:inferReachResearchMode"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Workflow configuration requested mode matching reddit",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Select appropriate ReachResearchMode for content engine reddit."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_SELECT_CORROBORATION",
+          "label": "Select ReachResearchMode 'CORROBORATION' with calibrated source quotas"
+        },
+        {
+          "id": "ACT_SELECT_MINIMAL_CHEAP",
+          "label": "Always force QUICK mode to minimize token expenditure regardless of engine requirements"
+        },
+        {
+          "id": "ACT_SELECT_UNBOUNDED_DEEP",
+          "label": "Always force DEEP recursive crawl exceeding treasury budget limits"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_SELECT_CORROBORATION",
+        "rejected_reasons": {
+          "ACT_SELECT_MINIMAL_CHEAP": "POLICY_VIOLATION_INSUFFICIENT_MODE: Using QUICK mode for rigorous engines degrades evidence sufficiency below quality gates.",
+          "ACT_SELECT_UNBOUNDED_DEEP": "TREASURY_VIOLATION_BUDGET_OVERRUN: Unbounded deep crawls violate treasury rate and budget envelope invariants."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_028",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_028",
+        "content_engine": "news",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider returned rate limit condition 'SEARXNG_QUOTA' (HTTP 429).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ReachBudgetGovernor.ts:trackRateLimits"
+          },
+          {
+            "fact": "Circuit breaker policy requires transitioning provider state to DEGRADED and routing to secondary provider.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachProviderRouter.ts:handleProviderFailure"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider circuit breaker opened: condition SEARXNG_QUOTA",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Primary provider currently throttled."
+        ],
+        "constraints": [
+          "Failover to secondary provider without dropping query intent or violating budget limits."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CIRCUIT_FAILOVER",
+          "label": "Trip circuit breaker to DEGRADED and dispatch query to secondary qualified provider"
+        },
+        {
+          "id": "ACT_SPAM_RETRY",
+          "label": "Immediately execute tight retry loop on same throttled endpoint without backoff"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Terminate entire mission pipeline immediately upon first provider rate limit"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CIRCUIT_FAILOVER",
+        "rejected_reasons": {
+          "ACT_SPAM_RETRY": "RESILIENCE_VIOLATION_HAMMERING: Retrying a 429 without backoff causes permanent IP bans and violates RFC 6585.",
+          "ACT_ABORT_PIPELINE": "RESILIENCE_VIOLATION_PREMATURE_ABORT: Aborting without consulting qualified fallback providers causes unnecessary pipeline failure."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_029",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_029",
+        "content_engine": "news",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider returned rate limit condition 'PERPLEXITY_RATE_LIMIT' (HTTP 429).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ReachBudgetGovernor.ts:trackRateLimits"
+          },
+          {
+            "fact": "Circuit breaker policy requires transitioning provider state to DEGRADED and routing to secondary provider.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachProviderRouter.ts:handleProviderFailure"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider circuit breaker opened: condition PERPLEXITY_RATE_LIMIT",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Primary provider currently throttled."
+        ],
+        "constraints": [
+          "Failover to secondary provider without dropping query intent or violating budget limits."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CIRCUIT_FAILOVER",
+          "label": "Trip circuit breaker to DEGRADED and dispatch query to secondary qualified provider"
+        },
+        {
+          "id": "ACT_SPAM_RETRY",
+          "label": "Immediately execute tight retry loop on same throttled endpoint without backoff"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Terminate entire mission pipeline immediately upon first provider rate limit"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CIRCUIT_FAILOVER",
+        "rejected_reasons": {
+          "ACT_SPAM_RETRY": "RESILIENCE_VIOLATION_HAMMERING: Retrying a 429 without backoff causes permanent IP bans and violates RFC 6585.",
+          "ACT_ABORT_PIPELINE": "RESILIENCE_VIOLATION_PREMATURE_ABORT: Aborting without consulting qualified fallback providers causes unnecessary pipeline failure."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_030",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_030",
+        "content_engine": "news",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider returned rate limit condition 'ARXIV_BURST' (HTTP 429).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ReachBudgetGovernor.ts:trackRateLimits"
+          },
+          {
+            "fact": "Circuit breaker policy requires transitioning provider state to DEGRADED and routing to secondary provider.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachProviderRouter.ts:handleProviderFailure"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider circuit breaker opened: condition ARXIV_BURST",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Primary provider currently throttled."
+        ],
+        "constraints": [
+          "Failover to secondary provider without dropping query intent or violating budget limits."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CIRCUIT_FAILOVER",
+          "label": "Trip circuit breaker to DEGRADED and dispatch query to secondary qualified provider"
+        },
+        {
+          "id": "ACT_SPAM_RETRY",
+          "label": "Immediately execute tight retry loop on same throttled endpoint without backoff"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Terminate entire mission pipeline immediately upon first provider rate limit"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CIRCUIT_FAILOVER",
+        "rejected_reasons": {
+          "ACT_SPAM_RETRY": "RESILIENCE_VIOLATION_HAMMERING: Retrying a 429 without backoff causes permanent IP bans and violates RFC 6585.",
+          "ACT_ABORT_PIPELINE": "RESILIENCE_VIOLATION_PREMATURE_ABORT: Aborting without consulting qualified fallback providers causes unnecessary pipeline failure."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d01_031",
+      "domain": "D01",
+      "floor_id": "F00",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/research/ReachContracts.ts",
+        "apps/web/factoryos/core/research/ReachProviderRouter.ts",
+        "apps/web/factoryos/core/research/ReachBudgetGovernor.ts",
+        "apps/web/factoryos/core/research/ResearchRuntime.ts",
+        "apps/web/factoryos/core/research/DocumentNormalizer.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d01_031",
+        "content_engine": "news",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Provider returned rate limit condition 'CROSSREF_TIMEOUT' (HTTP 429).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "ReachBudgetGovernor.ts:trackRateLimits"
+          },
+          {
+            "fact": "Circuit breaker policy requires transitioning provider state to DEGRADED and routing to secondary provider.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "ReachProviderRouter.ts:handleProviderFailure"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Provider circuit breaker opened: condition CROSSREF_TIMEOUT",
+            "evidence_type": "OBSERVED_PROVIDER"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Primary provider currently throttled."
+        ],
+        "constraints": [
+          "Failover to secondary provider without dropping query intent or violating budget limits."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_CIRCUIT_FAILOVER",
+          "label": "Trip circuit breaker to DEGRADED and dispatch query to secondary qualified provider"
+        },
+        {
+          "id": "ACT_SPAM_RETRY",
+          "label": "Immediately execute tight retry loop on same throttled endpoint without backoff"
+        },
+        {
+          "id": "ACT_ABORT_PIPELINE",
+          "label": "Terminate entire mission pipeline immediately upon first provider rate limit"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_CIRCUIT_FAILOVER",
+        "rejected_reasons": {
+          "ACT_SPAM_RETRY": "RESILIENCE_VIOLATION_HAMMERING: Retrying a 429 without backoff causes permanent IP bans and violates RFC 6585.",
+          "ACT_ABORT_PIPELINE": "RESILIENCE_VIOLATION_PREMATURE_ABORT: Aborting without consulting qualified fallback providers causes unnecessary pipeline failure."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

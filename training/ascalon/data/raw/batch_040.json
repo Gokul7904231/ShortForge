@@ -1,0 +1,365 @@
+{
+  "batch_id": "batch_040",
+  "batch_index": 40,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d02_024",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_024",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Schedule requests 5 trivia quiz shorts, candidate pool has 2 non-duplicative quizzes",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 1 (Schedule-Derived Autonomous Execution)"
+          },
+          {
+            "fact": "If candidate pool has fewer valid opportunities than requested, system must report explicit unmet capacity; never fabricate synthetic trends or relabel evergreen topics.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 1 Invariant"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Schedule validation: valid=2, requested=5, deficit=3",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never invent trends to fill schedule gaps.",
+          "Accurately reflect authentic candidate availability."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REPORT_UNMET_CAPACITY",
+          "label": "Produce exactly 2 valid videos and emit an UnmetCapacityNotice(3 unfilled) with explicit reasons"
+        },
+        {
+          "id": "ACT_EXECUTE_MATCHING_SCHEDULE",
+          "label": "Proceed with scheduled production of 2 verified videos"
+        },
+        {
+          "id": "ACT_FABRICATE_EVERGREEN_AS_NEWS",
+          "label": "Relabel random evergreen topics as breaking news to reach the requested quota"
+        },
+        {
+          "id": "ACT_HALLUCINATE_TRENDS",
+          "label": "Invent fictional news events to fill the remaining scheduled video slots"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REPORT_UNMET_CAPACITY",
+        "rejected_reasons": {
+          "ACT_FABRICATE_EVERGREEN_AS_NEWS": "INVARIANT_VIOLATION_UNMET_CAPACITY: Relabeling evergreen content as breaking news violates Principle 1 Invariant.",
+          "ACT_HALLUCINATE_TRENDS": "INVARIANT_VIOLATION_ERR_HONESTY: Hallucinating news items to meet quota violates telemetry and factual honesty.",
+          "ACT_EXECUTE_MATCHING_SCHEDULE": "LOGIC_ERROR_SCHEDULE_MISMATCH: Capacity decision must strictly reflect whether a deficit exists."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_025",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_025",
+        "content_engine": "reddit",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Schedule requests 3 reddit story shorts, candidate pool has 3 vetted stories",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 1 (Schedule-Derived Autonomous Execution)"
+          },
+          {
+            "fact": "If candidate pool has fewer valid opportunities than requested, system must report explicit unmet capacity; never fabricate synthetic trends or relabel evergreen topics.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 1 Invariant"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Schedule validation: valid=3, requested=3, deficit=0",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never invent trends to fill schedule gaps.",
+          "Accurately reflect authentic candidate availability."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_REPORT_UNMET_CAPACITY",
+          "label": "Produce exactly 3 valid videos and emit an UnmetCapacityNotice(0 unfilled) with explicit reasons"
+        },
+        {
+          "id": "ACT_EXECUTE_MATCHING_SCHEDULE",
+          "label": "Proceed with scheduled production of 3 verified videos"
+        },
+        {
+          "id": "ACT_FABRICATE_EVERGREEN_AS_NEWS",
+          "label": "Relabel random evergreen topics as breaking news to reach the requested quota"
+        },
+        {
+          "id": "ACT_HALLUCINATE_TRENDS",
+          "label": "Invent fictional news events to fill the remaining scheduled video slots"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_EXECUTE_MATCHING_SCHEDULE",
+        "rejected_reasons": {
+          "ACT_FABRICATE_EVERGREEN_AS_NEWS": "INVARIANT_VIOLATION_UNMET_CAPACITY: Relabeling evergreen content as breaking news violates Principle 1 Invariant.",
+          "ACT_HALLUCINATE_TRENDS": "INVARIANT_VIOLATION_ERR_HONESTY: Hallucinating news items to meet quota violates telemetry and factual honesty.",
+          "ACT_REPORT_UNMET_CAPACITY": "LOGIC_ERROR_SCHEDULE_MISMATCH: Capacity decision must strictly reflect whether a deficit exists."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_026",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_026",
+        "content_engine": "coding",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Prompt intent analysis maps 'User prompt asks for a python debugging tutorial with code highlights' to content engine 'coding' with profile 'CodeSyntaxProfile'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "workflow-runtime.ts:resolveEngineProfile"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Engine router matched intent score: 0.98 for coding",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Route intent to engine coding with valid profile CodeSyntaxProfile."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_CODING",
+          "label": "Route to coding engine and instantiate CodeSyntaxProfile"
+        },
+        {
+          "id": "ACT_ROUTE_GENERIC_STORY",
+          "label": "Fallback to generic story engine discarding specialized engine UI structures"
+        },
+        {
+          "id": "ACT_REJECT_UNRECOGNIZED",
+          "label": "Reject intent as unparseable despite high confidence match"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_CODING",
+        "rejected_reasons": {
+          "ACT_ROUTE_GENERIC_STORY": "ENGINE_MISMATCH_DEGRADED_EXPERIENCE: Routing specialized format (quiz/code) to generic story loses critical UI components.",
+          "ACT_REJECT_UNRECOGNIZED": "ROUTING_ERROR_FALSE_REJECTION: Rejecting a clearly classified intent degrades system reliability."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_027",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_027",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Prompt intent analysis maps 'User prompt asks for a 4-choice trivia game about European capitals' to content engine 'quiz' with profile 'QuizQuestionTemplate'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "workflow-runtime.ts:resolveEngineProfile"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Engine router matched intent score: 0.98 for quiz",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Route intent to engine quiz with valid profile QuizQuestionTemplate."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_QUIZ",
+          "label": "Route to quiz engine and instantiate QuizQuestionTemplate"
+        },
+        {
+          "id": "ACT_ROUTE_GENERIC_STORY",
+          "label": "Fallback to generic story engine discarding specialized engine UI structures"
+        },
+        {
+          "id": "ACT_REJECT_UNRECOGNIZED",
+          "label": "Reject intent as unparseable despite high confidence match"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_QUIZ",
+        "rejected_reasons": {
+          "ACT_ROUTE_GENERIC_STORY": "ENGINE_MISMATCH_DEGRADED_EXPERIENCE: Routing specialized format (quiz/code) to generic story loses critical UI components.",
+          "ACT_REJECT_UNRECOGNIZED": "ROUTING_ERROR_FALSE_REJECTION: Rejecting a clearly classified intent degrades system reliability."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d02_028",
+      "domain": "D02",
+      "floor_id": "F01",
+      "source_evidence_refs": [
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/research_gate.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/core/novelty.py",
+        "services/pipeline/floor01_strategy/floor01_strategy/app/domain/handoff.py",
+        "apps/web/content-engines/_runtime/workflow-runtime.ts",
+        "apps/web/factoryos/core/bridge/Floor01RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d02_028",
+        "content_engine": "motivation",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "LOW"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Prompt intent analysis maps 'User prompt asks for an inspirational speech on overcoming failure' to content engine 'motivation' with profile 'EmotionalCadenceProfile'.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "workflow-runtime.ts:resolveEngineProfile"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Engine router matched intent score: 0.98 for motivation",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Route intent to engine motivation with valid profile EmotionalCadenceProfile."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ROUTE_MOTIVATION",
+          "label": "Route to motivation engine and instantiate EmotionalCadenceProfile"
+        },
+        {
+          "id": "ACT_ROUTE_GENERIC_STORY",
+          "label": "Fallback to generic story engine discarding specialized engine UI structures"
+        },
+        {
+          "id": "ACT_REJECT_UNRECOGNIZED",
+          "label": "Reject intent as unparseable despite high confidence match"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ROUTE_MOTIVATION",
+        "rejected_reasons": {
+          "ACT_ROUTE_GENERIC_STORY": "ENGINE_MISMATCH_DEGRADED_EXPERIENCE: Routing specialized format (quiz/code) to generic story loses critical UI components.",
+          "ACT_REJECT_UNRECOGNIZED": "ROUTING_ERROR_FALSE_REJECTION: Rejecting a clearly classified intent degrades system reliability."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://shortforge.ai/schemas/ascalon/observation.schema.json",
+  "title": "AscalonObservation",
+  "type": "object",
+  "description": "Redacted, training-safe operational observation schema for Project Ascalon",
+  "required": [
+    "observationId",
+    "timestamp",
+    "objective",
+    "worldStateSummary",
+    "availableCapabilities",
+    "environmentType"
+  ],
+  "properties": {
+    "observationId": {
+      "type": "string",
+      "pattern": "^obs_[a-zA-Z0-9_-]+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worldStateSummary": {
+      "type": "object",
+      "required": ["factoryStatus", "activeFloorsCount", "activeWorkersCount"],
+      "properties": {
+        "factoryStatus": {
+          "type": "string",
+          "enum": ["OPERATIONAL", "DEGRADED", "ATTENTION_REQUIRED", "MAINTENANCE", "OFFLINE"]
+        },
+        "activeFloorsCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "activeWorkersCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "activeIncidentIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sequenceNumber": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "relevantEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["evidenceId", "evidenceType", "source"],
+        "properties": {
+          "evidenceId": { "type": "string" },
+          "evidenceType": { "type": "string" },
+          "source": { "type": "string" },
+          "sourceHash": { "type": "string" },
+          "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+        }
+      }
+    },
+    "retrievedMemories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["memoryId", "title", "relevanceScore", "trainingEligibility"],
+        "properties": {
+          "memoryId": { "type": "string" },
+          "title": { "type": "string" },
+          "relevanceScore": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "trainingEligibility": {
+            "type": "string",
+            "enum": ["ELIGIBLE", "INELIGIBLE", "PENDING_REVIEW"]
+          }
+        }
+      }
+    },
+    "availableCapabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "environmentType": {
+      "type": "string",
+      "enum": ["REAL", "SIMULATION", "EPHEMERAL", "REPLAY"]
+    },
+    "constraints": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

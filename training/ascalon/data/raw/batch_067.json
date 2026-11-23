@@ -1,0 +1,401 @@
+{
+  "batch_id": "batch_067",
+  "batch_index": 67,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "D10-AER-022",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_PROBE_PLANNER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-probe-022",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pending hypothesis can be decisively falsified by single deterministic probe",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts"
+          },
+          {
+            "fact": "Probe cost units: 0.2, maxProbeCount remaining: 3",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "hypothesis_pending: Asset URL Reachability unconfirmed in Wikimedia cache",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Unverified physical state: Asset URL Reachability unconfirmed in Wikimedia cache"
+        ],
+        "constraints": [
+          "Probes must be non-destructive, read-only, and bounded to < 200ms execution"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_DISPATCH_PROBE_HEAD_REQUEST",
+          "label": "Dispatch isolated targeted sensor probe (ACT_DISPATCH_PROBE_HEAD_REQUEST)"
+        },
+        {
+          "id": "ACT_GUESS_PROBABILITY",
+          "label": "Guess outcome probabilistically using LLM"
+        },
+        {
+          "id": "ACT_LAUNCH_FULL_RENDER",
+          "label": "Launch full GPU render without checking hardware support"
+        },
+        {
+          "id": "ACT_MUTATE_SYSTEM_CONFIG",
+          "label": "Modify host system configuration to force setting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_DISPATCH_PROBE_HEAD_REQUEST",
+        "rejected_reasons": {
+          "ACT_GUESS_PROBABILITY": "INVARIANT_VIOLATION_ERR_HONESTY: Guessing verifiable physical state when a cheap sensor probe is available violates epistemic rigor",
+          "ACT_LAUNCH_FULL_RENDER": "RESOURCE_RISK_ERROR: Blind rendering without hardware verification risks container OOM or driver crash",
+          "ACT_MUTATE_SYSTEM_CONFIG": "SECURITY_VIOLATION_UNAUTHORIZED_MUTATION: Mutating host configuration breaches immutable runtime policy"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-023",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_PROBE_PLANNER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-probe-023",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pending hypothesis can be decisively falsified by single deterministic probe",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts"
+          },
+          {
+            "fact": "Probe cost units: 0.2, maxProbeCount remaining: 3",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "hypothesis_pending: Synthesized TTS WAV file byte length needs exact FFprobe duration",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Unverified physical state: Synthesized TTS WAV file byte length needs exact FFprobe duration"
+        ],
+        "constraints": [
+          "Probes must be non-destructive, read-only, and bounded to < 200ms execution"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_DISPATCH_PROBE_FFPROBE",
+          "label": "Dispatch isolated targeted sensor probe (ACT_DISPATCH_PROBE_FFPROBE)"
+        },
+        {
+          "id": "ACT_GUESS_PROBABILITY",
+          "label": "Guess outcome probabilistically using LLM"
+        },
+        {
+          "id": "ACT_LAUNCH_FULL_RENDER",
+          "label": "Launch full GPU render without checking hardware support"
+        },
+        {
+          "id": "ACT_MUTATE_SYSTEM_CONFIG",
+          "label": "Modify host system configuration to force setting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_DISPATCH_PROBE_FFPROBE",
+        "rejected_reasons": {
+          "ACT_GUESS_PROBABILITY": "INVARIANT_VIOLATION_ERR_HONESTY: Guessing verifiable physical state when a cheap sensor probe is available violates epistemic rigor",
+          "ACT_LAUNCH_FULL_RENDER": "RESOURCE_RISK_ERROR: Blind rendering without hardware verification risks container OOM or driver crash",
+          "ACT_MUTATE_SYSTEM_CONFIG": "SECURITY_VIOLATION_UNAUTHORIZED_MUTATION: Mutating host configuration breaches immutable runtime policy"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-024",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_PROBE_PLANNER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-probe-024",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pending hypothesis can be decisively falsified by single deterministic probe",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts"
+          },
+          {
+            "fact": "Probe cost units: 0.2, maxProbeCount remaining: 3",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "hypothesis_pending: Composition track layer cache validity requires CAS hash query",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Unverified physical state: Composition track layer cache validity requires CAS hash query"
+        ],
+        "constraints": [
+          "Probes must be non-destructive, read-only, and bounded to < 200ms execution"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_DISPATCH_PROBE_CAS_LOOKUP",
+          "label": "Dispatch isolated targeted sensor probe (ACT_DISPATCH_PROBE_CAS_LOOKUP)"
+        },
+        {
+          "id": "ACT_GUESS_PROBABILITY",
+          "label": "Guess outcome probabilistically using LLM"
+        },
+        {
+          "id": "ACT_LAUNCH_FULL_RENDER",
+          "label": "Launch full GPU render without checking hardware support"
+        },
+        {
+          "id": "ACT_MUTATE_SYSTEM_CONFIG",
+          "label": "Modify host system configuration to force setting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_DISPATCH_PROBE_CAS_LOOKUP",
+        "rejected_reasons": {
+          "ACT_GUESS_PROBABILITY": "INVARIANT_VIOLATION_ERR_HONESTY: Guessing verifiable physical state when a cheap sensor probe is available violates epistemic rigor",
+          "ACT_LAUNCH_FULL_RENDER": "RESOURCE_RISK_ERROR: Blind rendering without hardware verification risks container OOM or driver crash",
+          "ACT_MUTATE_SYSTEM_CONFIG": "SECURITY_VIOLATION_UNAUTHORIZED_MUTATION: Mutating host configuration breaches immutable runtime policy"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D10-AER-025",
+      "domain": "D10_AER_EPISTEMIC_LADDER",
+      "floor_id": "EPISTEMIC_PROBE_PLANNER",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/intelligence/epistemic/AEREngine.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts",
+        "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts",
+        "apps/web/factoryos/tests/epistemic/aer.test.ts",
+        ".okf/intelligence/aer.md",
+        ".okf/intelligence/ascalon-model.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d10-probe-025",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Pending hypothesis can be decisively falsified by single deterministic probe",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/ProbePlanner.ts"
+          },
+          {
+            "fact": "Probe cost units: 0.2, maxProbeCount remaining: 3",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": "apps/web/factoryos/core/intelligence/epistemic/EpistemicBudgetController.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "hypothesis_pending: Keyframe position requires subframe rational clock computation",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [
+          "Unverified physical state: Keyframe position requires subframe rational clock computation"
+        ],
+        "constraints": [
+          "Probes must be non-destructive, read-only, and bounded to < 200ms execution"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_DISPATCH_PROBE_TIMEBASE_CHECK",
+          "label": "Dispatch isolated targeted sensor probe (ACT_DISPATCH_PROBE_TIMEBASE_CHECK)"
+        },
+        {
+          "id": "ACT_GUESS_PROBABILITY",
+          "label": "Guess outcome probabilistically using LLM"
+        },
+        {
+          "id": "ACT_LAUNCH_FULL_RENDER",
+          "label": "Launch full GPU render without checking hardware support"
+        },
+        {
+          "id": "ACT_MUTATE_SYSTEM_CONFIG",
+          "label": "Modify host system configuration to force setting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_DISPATCH_PROBE_TIMEBASE_CHECK",
+        "rejected_reasons": {
+          "ACT_GUESS_PROBABILITY": "INVARIANT_VIOLATION_ERR_HONESTY: Guessing verifiable physical state when a cheap sensor probe is available violates epistemic rigor",
+          "ACT_LAUNCH_FULL_RENDER": "RESOURCE_RISK_ERROR: Blind rendering without hardware verification risks container OOM or driver crash",
+          "ACT_MUTATE_SYSTEM_CONFIG": "SECURITY_VIOLATION_UNAUTHORIZED_MUTATION: Mutating host configuration breaches immutable runtime policy"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "D11-EDIT-016",
+      "domain": "D11_STUDIO_REMAKER_EDIT",
+      "floor_id": "STUDIO_ENVELOPE_VALIDATOR",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/editor/EditorContracts.ts",
+        "apps/web/factoryos/core/editor/EditorCommandEngine.ts",
+        "apps/web/factoryos/core/timeline/CompositionIR.ts",
+        "apps/web/factoryos/core/timeline/TimelineTransforms.ts",
+        "apps/web/factoryos/core/editor/DurableEditor.ts",
+        ".okf/architecture.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis-d11-act-016",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "CRITICAL"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "EditorActor kind='HUMAN', id='user_auth_789'",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorContracts.ts"
+          },
+          {
+            "fact": "Command envelope digest status: sig_valid",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "apps/web/factoryos/core/editor/EditorCommandEngine.ts"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "actor_envelope: HUMAN:user_auth_789, digest_status: sig_valid",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Every editor command MUST be signed and attributed to a verified Actor"
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_ACCEPT_AUTHENTICATED_COMMAND",
+          "label": "Process command envelope (ACT_ACCEPT_AUTHENTICATED_COMMAND)"
+        },
+        {
+          "id": "ACT_ACCEPT_UNAUTHENTICATED",
+          "label": "Accept command without validating actor authentication"
+        },
+        {
+          "id": "ACT_REGENERATE_FAKE_SIGNATURE",
+          "label": "Forge internal signature to bypass digest check"
+        },
+        {
+          "id": "ACT_CRASH_EDITOR_SESSION",
+          "label": "Crash WebSocket session with unhandled exception"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_ACCEPT_AUTHENTICATED_COMMAND",
+        "rejected_reasons": {
+          "ACT_ACCEPT_UNAUTHENTICATED": "SECURITY_VIOLATION_UNATTRIBUTED_MUTATION: Accepting unverified or tampered editor envelopes creates an arbitrary code/timeline injection vulnerability",
+          "ACT_REGENERATE_FAKE_SIGNATURE": "SECURITY_VIOLATION_EVIDENCE_FORGERY: Fabricating signatures violates non-repudiation and cryptographic integrity",
+          "ACT_CRASH_EDITOR_SESSION": "RESILIENCE_VIOLATION_UNHANDLED_CRASH: Staged command failures must return structured EditorReceipt, not crash the editor process"
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

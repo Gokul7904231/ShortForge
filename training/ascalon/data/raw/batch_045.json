@@ -1,0 +1,437 @@
+{
+  "batch_id": "batch_045",
+  "batch_index": 45,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d03_028",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_028",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Quality audit flagged dialogue wording in Scene 1 as clumsy; Scenes 1..0 and 2..6 are verified and approved.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:regenerateLocalizedScene"
+          },
+          {
+            "fact": "F02 Surgical Regeneration rule: Mutate ONLY the target Scene {scene_num}; upstream strategy F01 and other scenes remain immutable.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Target scene for localized repair: Scene_1",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Regenerate only Scene 1.",
+          "Do not invalidate cached audio or visuals for untouched scenes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCALIZED_SCENE_REPAIR",
+          "label": "Regenerate only Scene 1 dialogue while locking all other scene specifications and F01 strategy"
+        },
+        {
+          "id": "ACT_FULL_PIPELINE_RESTART",
+          "label": "Wipe entire F00, F01, and F02 pipeline and re-run complete video generation from scratch"
+        },
+        {
+          "id": "ACT_MUTATE_UPSTREAM_STRATEGY",
+          "label": "Alter upstream F01 strategy topic to force complete re-scripting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_LOCALIZED_SCENE_REPAIR",
+        "rejected_reasons": {
+          "ACT_FULL_PIPELINE_RESTART": "TREASURY_VIOLATION_RUNAWAY_RECOMPUTE: Full pipeline restart for a single scene wording fix wastes compute and breaks incremental cache.",
+          "ACT_MUTATE_UPSTREAM_STRATEGY": "INVARIANT_VIOLATION_RETROACTIVE_MUTATION: Downstream narrative floors cannot mutate locked upstream strategy contracts."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_029",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_029",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Quality audit flagged dialogue wording in Scene 5 as clumsy; Scenes 1..4 and 6..6 are verified and approved.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:regenerateLocalizedScene"
+          },
+          {
+            "fact": "F02 Surgical Regeneration rule: Mutate ONLY the target Scene {scene_num}; upstream strategy F01 and other scenes remain immutable.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Target scene for localized repair: Scene_5",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Regenerate only Scene 5.",
+          "Do not invalidate cached audio or visuals for untouched scenes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCALIZED_SCENE_REPAIR",
+          "label": "Regenerate only Scene 5 dialogue while locking all other scene specifications and F01 strategy"
+        },
+        {
+          "id": "ACT_FULL_PIPELINE_RESTART",
+          "label": "Wipe entire F00, F01, and F02 pipeline and re-run complete video generation from scratch"
+        },
+        {
+          "id": "ACT_MUTATE_UPSTREAM_STRATEGY",
+          "label": "Alter upstream F01 strategy topic to force complete re-scripting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_LOCALIZED_SCENE_REPAIR",
+        "rejected_reasons": {
+          "ACT_FULL_PIPELINE_RESTART": "TREASURY_VIOLATION_RUNAWAY_RECOMPUTE: Full pipeline restart for a single scene wording fix wastes compute and breaks incremental cache.",
+          "ACT_MUTATE_UPSTREAM_STRATEGY": "INVARIANT_VIOLATION_RETROACTIVE_MUTATION: Downstream narrative floors cannot mutate locked upstream strategy contracts."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d03_030",
+      "domain": "D03",
+      "floor_id": "F02",
+      "source_evidence_refs": [
+        "services/pipeline/floor02_scripting/app/domain/script_ir.py",
+        "services/pipeline/floor02_scripting/app/domain/script_models.py",
+        "apps/web/factoryos/core/adapters/Floor02RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d03_030",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Quality audit flagged dialogue wording in Scene 6 as clumsy; Scenes 1..5 and 7..6 are verified and approved.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "Floor02RuntimeAdapter.ts:regenerateLocalizedScene"
+          },
+          {
+            "fact": "F02 Surgical Regeneration rule: Mutate ONLY the target Scene {scene_num}; upstream strategy F01 and other scenes remain immutable.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Target scene for localized repair: Scene_6",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Regenerate only Scene 6.",
+          "Do not invalidate cached audio or visuals for untouched scenes."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_LOCALIZED_SCENE_REPAIR",
+          "label": "Regenerate only Scene 6 dialogue while locking all other scene specifications and F01 strategy"
+        },
+        {
+          "id": "ACT_FULL_PIPELINE_RESTART",
+          "label": "Wipe entire F00, F01, and F02 pipeline and re-run complete video generation from scratch"
+        },
+        {
+          "id": "ACT_MUTATE_UPSTREAM_STRATEGY",
+          "label": "Alter upstream F01 strategy topic to force complete re-scripting"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_LOCALIZED_SCENE_REPAIR",
+        "rejected_reasons": {
+          "ACT_FULL_PIPELINE_RESTART": "TREASURY_VIOLATION_RUNAWAY_RECOMPUTE: Full pipeline restart for a single scene wording fix wastes compute and breaks incremental cache.",
+          "ACT_MUTATE_UPSTREAM_STRATEGY": "INVARIANT_VIOLATION_RETROACTIVE_MUTATION: Downstream narrative floors cannot mutate locked upstream strategy contracts."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_006",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_006",
+        "content_engine": "facts",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Visual asset resolution state: Asset in CAS has corrupted SHA-256 header (byte mismatch).",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VisualPipeline.ts:resolveVisualAsset"
+          },
+          {
+            "fact": "F03 Retrieval-First Hierarchy: Local CAS -> B2 Object Store -> Wikimedia/Openverse -> Vertex AI Imagen -> Deterministic Geometric Canvas. Skipping earlier tiers is forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Economics)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Tier evaluation signal: CORRUPT_CAS_PULL_B2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Follow strict retrieval-first cascade.",
+          "Minimize metered cloud spend whenever cached or free assets exist."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_USE_LOCAL_CAS",
+          "label": "Mount verified local CAS artifact directly (0 latency, $0 cost)"
+        },
+        {
+          "id": "ACT_PULL_B2_ARCHIVE",
+          "label": "Download artifact from Backblaze B2 and populate local CAS"
+        },
+        {
+          "id": "ACT_FETCH_WIKIMEDIA_COMMONS",
+          "label": "Download verified Creative Commons CC-BY/Public Domain asset from Wikimedia with attribution"
+        },
+        {
+          "id": "ACT_INVOKE_VERTEX_IMAGEN",
+          "label": "Dispatch image synthesis request to Vertex AI Imagen 3 under approved treasury budget"
+        },
+        {
+          "id": "ACT_USE_DETERMINISTIC_PLACEHOLDER",
+          "label": "Render deterministic styled typographic placeholder canvas with gradient backdrop"
+        },
+        {
+          "id": "ACT_INVALIDATE_CAS_PULL_B2",
+          "label": "Invalidate corrupted local CAS entry and re-fetch authentic copy from B2 archive"
+        },
+        {
+          "id": "ACT_REJECT_CC_NONCOMMERCIAL",
+          "label": "Reject non-commercial image to preserve YouTube monetization and fallback to Imagen"
+        },
+        {
+          "id": "ACT_FAILOVER_OPENVERSE",
+          "label": "Failover to Openverse public domain repository after B2 timeout"
+        },
+        {
+          "id": "ACT_RETRY_IMAGEN_OR_FALLBACK",
+          "label": "Reject blurry generated image and trigger single retry with adjusted prompt"
+        },
+        {
+          "id": "ACT_BYPASS_TO_IMAGEN",
+          "label": "Directly generate new image via Vertex Imagen, completely skipping cache inspection"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_INVALIDATE_CAS_PULL_B2",
+        "rejected_reasons": {
+          "ACT_BYPASS_TO_IMAGEN": "TREASURY_VIOLATION_CACHE_BYPASS: Generating new images when valid cached or open assets exist wastes metered cloud budget.",
+          "ACT_USE_LOCAL_CAS": "TIER_CASCADE_MISMATCH: Action 'ACT_USE_LOCAL_CAS' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_PULL_B2_ARCHIVE": "TIER_CASCADE_MISMATCH: Action 'ACT_PULL_B2_ARCHIVE' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_FETCH_WIKIMEDIA_COMMONS": "TIER_CASCADE_MISMATCH: Action 'ACT_FETCH_WIKIMEDIA_COMMONS' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_INVOKE_VERTEX_IMAGEN": "TIER_CASCADE_MISMATCH: Action 'ACT_INVOKE_VERTEX_IMAGEN' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_USE_DETERMINISTIC_PLACEHOLDER": "TIER_CASCADE_MISMATCH: Action 'ACT_USE_DETERMINISTIC_PLACEHOLDER' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_REJECT_CC_NONCOMMERCIAL": "TIER_CASCADE_MISMATCH: Action 'ACT_REJECT_CC_NONCOMMERCIAL' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_FAILOVER_OPENVERSE": "TIER_CASCADE_MISMATCH: Action 'ACT_FAILOVER_OPENVERSE' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'.",
+          "ACT_RETRY_IMAGEN_OR_FALLBACK": "TIER_CASCADE_MISMATCH: Action 'ACT_RETRY_IMAGEN_OR_FALLBACK' does not match the active evaluation condition 'CORRUPT_CAS_PULL_B2'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d04_007",
+      "domain": "D04",
+      "floor_id": "F03",
+      "source_evidence_refs": [
+        "services/pipeline/floor03_asset_realization/app/domain/asset_plan_ir.py",
+        "services/pipeline/floor03_asset_realization/app/domain/asset_models.py",
+        "apps/web/lib/visual-assets/VisualPipeline.ts",
+        "apps/web/lib/visual-assets/VisualPackBuilder.ts",
+        "apps/web/factoryos/core/bridge/Floor03RuntimeAdapter.ts",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d04_007",
+        "content_engine": "history",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 60,
+        "reversibility": "REVERSIBLE",
+        "risk_level": "MEDIUM"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Visual asset resolution state: Wikimedia image has non-commercial license restricting monetized Shorts.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": "VisualPipeline.ts:resolveVisualAsset"
+          },
+          {
+            "fact": "F03 Retrieval-First Hierarchy: Local CAS -> B2 Object Store -> Wikimedia/Openverse -> Vertex AI Imagen -> Deterministic Geometric Canvas. Skipping earlier tiers is forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 8 (Capability-First Abstraction & Economics)"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Tier evaluation signal: LICENSE_RESTRICTION",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Follow strict retrieval-first cascade.",
+          "Minimize metered cloud spend whenever cached or free assets exist."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_USE_LOCAL_CAS",
+          "label": "Mount verified local CAS artifact directly (0 latency, $0 cost)"
+        },
+        {
+          "id": "ACT_PULL_B2_ARCHIVE",
+          "label": "Download artifact from Backblaze B2 and populate local CAS"
+        },
+        {
+          "id": "ACT_FETCH_WIKIMEDIA_COMMONS",
+          "label": "Download verified Creative Commons CC-BY/Public Domain asset from Wikimedia with attribution"
+        },
+        {
+          "id": "ACT_INVOKE_VERTEX_IMAGEN",
+          "label": "Dispatch image synthesis request to Vertex AI Imagen 3 under approved treasury budget"
+        },
+        {
+          "id": "ACT_USE_DETERMINISTIC_PLACEHOLDER",
+          "label": "Render deterministic styled typographic placeholder canvas with gradient backdrop"
+        },
+        {
+          "id": "ACT_INVALIDATE_CAS_PULL_B2",
+          "label": "Invalidate corrupted local CAS entry and re-fetch authentic copy from B2 archive"
+        },
+        {
+          "id": "ACT_REJECT_CC_NONCOMMERCIAL",
+          "label": "Reject non-commercial image to preserve YouTube monetization and fallback to Imagen"
+        },
+        {
+          "id": "ACT_FAILOVER_OPENVERSE",
+          "label": "Failover to Openverse public domain repository after B2 timeout"
+        },
+        {
+          "id": "ACT_RETRY_IMAGEN_OR_FALLBACK",
+          "label": "Reject blurry generated image and trigger single retry with adjusted prompt"
+        },
+        {
+          "id": "ACT_BYPASS_TO_IMAGEN",
+          "label": "Directly generate new image via Vertex Imagen, completely skipping cache inspection"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_REJECT_CC_NONCOMMERCIAL",
+        "rejected_reasons": {
+          "ACT_BYPASS_TO_IMAGEN": "TREASURY_VIOLATION_CACHE_BYPASS: Generating new images when valid cached or open assets exist wastes metered cloud budget.",
+          "ACT_USE_LOCAL_CAS": "TIER_CASCADE_MISMATCH: Action 'ACT_USE_LOCAL_CAS' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_PULL_B2_ARCHIVE": "TIER_CASCADE_MISMATCH: Action 'ACT_PULL_B2_ARCHIVE' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_FETCH_WIKIMEDIA_COMMONS": "TIER_CASCADE_MISMATCH: Action 'ACT_FETCH_WIKIMEDIA_COMMONS' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_INVOKE_VERTEX_IMAGEN": "TIER_CASCADE_MISMATCH: Action 'ACT_INVOKE_VERTEX_IMAGEN' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_USE_DETERMINISTIC_PLACEHOLDER": "TIER_CASCADE_MISMATCH: Action 'ACT_USE_DETERMINISTIC_PLACEHOLDER' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_INVALIDATE_CAS_PULL_B2": "TIER_CASCADE_MISMATCH: Action 'ACT_INVALIDATE_CAS_PULL_B2' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_FAILOVER_OPENVERSE": "TIER_CASCADE_MISMATCH: Action 'ACT_FAILOVER_OPENVERSE' does not match the active evaluation condition 'LICENSE_RESTRICTION'.",
+          "ACT_RETRY_IMAGEN_OR_FALLBACK": "TIER_CASCADE_MISMATCH: Action 'ACT_RETRY_IMAGEN_OR_FALLBACK' does not match the active evaluation condition 'LICENSE_RESTRICTION'."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}

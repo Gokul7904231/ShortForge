@@ -1,0 +1,388 @@
+{
+  "batch_id": "batch_061",
+  "batch_index": 61,
+  "total_batches": 75,
+  "packet_count": 5,
+  "system_prompt": "You are acting as an Expert Teacher Model for ShortForge / FactoryOS cognitive distillation.\nYour task is to evaluate and solve complex distributed decision situations and generate training targets for two downstream specialist models simultaneously:\n1. Ascalon (Qwen3.5-4B): Deep cognitive planner & IR synthesizer using coarse-to-fine reasoning (ascalon schema).\n2. CLM / AER-Core (Qwen2.5-1.5B): Fast, permutation-invariant decision scoring head (clm schema).\n\nCORE GOVERNANCE INVARIANTS:\n1. Zero ungrounded facts or invented contracts. All decisions must strictly respect verified facts, deterministic rules, and physical evidence refs.\n2. Model Confidence != Permission. Neural likelihood scores never override deterministic safety, copyright, or financial gates.\n3. Strict Fail-Closed Security. Unconfirmed states, stale fencing tokens, ambiguous quiz options, and unverified CAS digests must be rejected.\n4. box9 is under strict permanent quarantine and must NEVER be scheduled or unquarantined.\n5. All 11 secret categories (API keys, private keys, HMAC tokens, passwords) must remain strictly redacted.\n\nCRITICAL OUTPUT ENFORCEMENT:\n- Do NOT wrap your output in markdown code fences (such as ```json or ```).\n- Emit ONLY a raw, parseable JSON array starting with '[' and ending with ']'.\n- Do NOT prepend or append any conversational pleasantries, intros, thoughts, or commentary.\n- Your entire response MUST be valid JSON parseable directly by json.loads().\n\nOUTPUT SCHEMA SPECIFICATION:\nEmit a JSON array containing exactly one object per input packet in the exact order received:\n[\n  {\n    \"packet_id\": \"<ID>\",\n    \"ascalon\": {\n      \"coarse_analysis\": {\n        \"domain\": \"<DOMAIN>\",\n        \"active_floor\": \"<FLOOR_ID>\",\n        \"governing_invariants\": [\"<LIST_OF_APPLICABLE_INVARIANT_CODES>\"],\n        \"epistemic_mode\": \"DETERMINISTIC | MICRO | PROBE | DEEP\"\n      },\n      \"deliberate_plan\": [\n        \"<STEP_1_CHECK_VERIFIED_FACTS>\",\n        \"<STEP_2_EVALUATE_CANDIDATE_TRAPS>\",\n        \"<STEP_3_CONFIRM_DETERMINISTIC_GATE>\"\n      ],\n      \"decision_ir\": {\n        \"selected_action_id\": \"<ACTION_ID>\",\n        \"action_label\": \"<ACTION_LABEL>\",\n        \"falsification_proof\": \"<PROOF_WHY_CHOSEN_ACTION_SATISFIES_ALL_CONSTRAINTS>\",\n        \"hard_negative_rejections\": {\n          \"<REJECTED_ACTION_ID>\": \"<EXACT_INVARIANT_CODE: concrete reason why this candidate is invalid>\"\n        }\n      }\n    },\n    \"clm\": {\n      \"state_fp\": \"<32_char_hex_fingerprint_or_sha256_prefix>\",\n      \"q_type\": \"CHOICE | NOUL | SCORE\",\n      \"probs\": {\n        \"<SELECTED_ACTION_ID>\": 0.98,\n        \"<REJECTED_ACTION_1>\": 0.01,\n        \"<REJECTED_ACTION_2>\": 0.01\n      },\n      \"epistemic_conf\": 1.0,\n      \"hard_neg\": [\"<REJECTED_ACTION_1>\", \"<REJECTED_ACTION_2>\"]\n    }\n  }\n]",
+  "evaluation_rubric": {
+    "criteria": [
+      {
+        "name": "Deterministic Alignment",
+        "weight": 0.35,
+        "description": "Selected action must strictly match winning_action_id in deterministic_ground_truth. Hard negative rejections must match the canonical INVARIANT_CODE."
+      },
+      {
+        "name": "Dual Target Completeness (Ascalon + CLM)",
+        "weight": 0.25,
+        "description": "Must output both 'ascalon' (coarse_analysis, deliberate_plan, decision_ir) and 'clm' (state_fp, q_type, probs, epistemic_conf, hard_neg) blocks."
+      },
+      {
+        "name": "Grounding Rigor",
+        "weight": 0.2,
+        "description": "Zero hallucinated rules or external assumptions; reasoning strictly cites provided verified_facts, telemetry, and constraints."
+      },
+      {
+        "name": "Format & Secret Discipline",
+        "weight": 0.2,
+        "description": "Raw JSON array without markdown code fences; zero leakage of secret tokens, ungrounded unquarantine requests, or gate overrides."
+      }
+    ]
+  },
+  "packets": [
+    {
+      "packet_id": "sf_d08_021",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_021",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Repair attempt counter: attempt=3. Defect: Third attempt failed with same codec error; repair budget (max=2) exhausted.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          },
+          {
+            "fact": "F06 Bounded Repair Invariant: Automated healing attempts are strictly capped at 2. If repair attempts are exhausted, the pipeline must fail closed and roll back to the last-known-good baseline; infinite retry loops are forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Repair loop evaluation: attempt=3, max_allowed=2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never exceed maximum repair budget (2 retries).",
+          "Preserve last-known-good baseline."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+          "label": "Trigger repair attempt 1 with adjusted render parameters"
+        },
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_2",
+          "label": "Trigger repair attempt 2 (final allowable attempt) on alternate node"
+        },
+        {
+          "id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+          "label": "Budget exhausted (attempt >= 3); halt repair loop and roll back to last-known-good baseline"
+        },
+        {
+          "id": "ACT_INFINITE_RETRY_LOOP",
+          "label": "Keep retrying indefinitely (attempt 4, 5, 6...) consuming unbounded compute"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+        "rejected_reasons": {
+          "ACT_INFINITE_RETRY_LOOP": "TREASURY_VIOLATION_INFINITE_RETRY: Infinite retry loops violate Principle 7 and cause unbounded budget burn.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_1": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_1' contradicts attempt counter rules for attempt=3.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_2": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_2' contradicts attempt counter rules for attempt=3."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_022",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_022",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Repair attempt counter: attempt=1. Defect: CAS artifact download timed out on transient socket reset.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          },
+          {
+            "fact": "F06 Bounded Repair Invariant: Automated healing attempts are strictly capped at 2. If repair attempts are exhausted, the pipeline must fail closed and roll back to the last-known-good baseline; infinite retry loops are forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Repair loop evaluation: attempt=1, max_allowed=2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never exceed maximum repair budget (2 retries).",
+          "Preserve last-known-good baseline."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+          "label": "Trigger repair attempt 1 with adjusted render parameters"
+        },
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_2",
+          "label": "Trigger repair attempt 2 (final allowable attempt) on alternate node"
+        },
+        {
+          "id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+          "label": "Budget exhausted (attempt >= 3); halt repair loop and roll back to last-known-good baseline"
+        },
+        {
+          "id": "ACT_INFINITE_RETRY_LOOP",
+          "label": "Keep retrying indefinitely (attempt 4, 5, 6...) consuming unbounded compute"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+        "rejected_reasons": {
+          "ACT_INFINITE_RETRY_LOOP": "TREASURY_VIOLATION_INFINITE_RETRY: Infinite retry loops violate Principle 7 and cause unbounded budget burn.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_2": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_2' contradicts attempt counter rules for attempt=1.",
+          "ACT_FAIL_CLOSED_ROLLBACK_BASELINE": "REPAIR_BUDGET_MISMATCH: Action 'ACT_FAIL_CLOSED_ROLLBACK_BASELINE' contradicts attempt counter rules for attempt=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_023",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_023",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Repair attempt counter: attempt=2. Defect: CAS artifact download timed out again on secondary mirror.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          },
+          {
+            "fact": "F06 Bounded Repair Invariant: Automated healing attempts are strictly capped at 2. If repair attempts are exhausted, the pipeline must fail closed and roll back to the last-known-good baseline; infinite retry loops are forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Repair loop evaluation: attempt=2, max_allowed=2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never exceed maximum repair budget (2 retries).",
+          "Preserve last-known-good baseline."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+          "label": "Trigger repair attempt 1 with adjusted render parameters"
+        },
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_2",
+          "label": "Trigger repair attempt 2 (final allowable attempt) on alternate node"
+        },
+        {
+          "id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+          "label": "Budget exhausted (attempt >= 3); halt repair loop and roll back to last-known-good baseline"
+        },
+        {
+          "id": "ACT_INFINITE_RETRY_LOOP",
+          "label": "Keep retrying indefinitely (attempt 4, 5, 6...) consuming unbounded compute"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_2",
+        "rejected_reasons": {
+          "ACT_INFINITE_RETRY_LOOP": "TREASURY_VIOLATION_INFINITE_RETRY: Infinite retry loops violate Principle 7 and cause unbounded budget burn.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_1": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_1' contradicts attempt counter rules for attempt=2.",
+          "ACT_FAIL_CLOSED_ROLLBACK_BASELINE": "REPAIR_BUDGET_MISMATCH: Action 'ACT_FAIL_CLOSED_ROLLBACK_BASELINE' contradicts attempt counter rules for attempt=2."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_024",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_024",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Repair attempt counter: attempt=3. Defect: Download failed 3 consecutive times; budget exhausted.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          },
+          {
+            "fact": "F06 Bounded Repair Invariant: Automated healing attempts are strictly capped at 2. If repair attempts are exhausted, the pipeline must fail closed and roll back to the last-known-good baseline; infinite retry loops are forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Repair loop evaluation: attempt=3, max_allowed=2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never exceed maximum repair budget (2 retries).",
+          "Preserve last-known-good baseline."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+          "label": "Trigger repair attempt 1 with adjusted render parameters"
+        },
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_2",
+          "label": "Trigger repair attempt 2 (final allowable attempt) on alternate node"
+        },
+        {
+          "id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+          "label": "Budget exhausted (attempt >= 3); halt repair loop and roll back to last-known-good baseline"
+        },
+        {
+          "id": "ACT_INFINITE_RETRY_LOOP",
+          "label": "Keep retrying indefinitely (attempt 4, 5, 6...) consuming unbounded compute"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+        "rejected_reasons": {
+          "ACT_INFINITE_RETRY_LOOP": "TREASURY_VIOLATION_INFINITE_RETRY: Infinite retry loops violate Principle 7 and cause unbounded budget burn.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_1": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_1' contradicts attempt counter rules for attempt=3.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_2": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_2' contradicts attempt counter rules for attempt=3."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    },
+    {
+      "packet_id": "sf_d08_025",
+      "domain": "D08",
+      "floor_id": "F06",
+      "source_evidence_refs": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts",
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/worker_daemon.py",
+        ".okf/principles.md"
+      ],
+      "mission_context": {
+        "mission_id": "mis_d08_025",
+        "content_engine": "quiz",
+        "target_resolution": "1080x1920",
+        "target_duration_sec": 30,
+        "reversibility": "COMPENSATABLE",
+        "risk_level": "HIGH"
+      },
+      "epistemic_state": {
+        "verified_facts": [
+          {
+            "fact": "Repair attempt counter: attempt=1. Defect: Worker disk space dropped below minimum threshold during render.",
+            "evidence_type": "VERIFIED_FACT",
+            "ref": ".okf/principles.md:Principle 7 (Bounded Repair & Last-Known-Good Baseline)"
+          },
+          {
+            "fact": "F06 Bounded Repair Invariant: Automated healing attempts are strictly capped at 2. If repair attempts are exhausted, the pipeline must fail closed and roll back to the last-known-good baseline; infinite retry loops are forbidden.",
+            "evidence_type": "DETERMINISTIC_RULE",
+            "ref": ".okf/principles.md:Principle 7"
+          }
+        ],
+        "telemetry_observations": [
+          {
+            "signal": "Repair loop evaluation: attempt=1, max_allowed=2",
+            "evidence_type": "OBSERVED_MEASUREMENT"
+          }
+        ],
+        "unknowns_and_contradictions": [],
+        "constraints": [
+          "Never exceed maximum repair budget (2 retries).",
+          "Preserve last-known-good baseline."
+        ]
+      },
+      "candidate_actions": [
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+          "label": "Trigger repair attempt 1 with adjusted render parameters"
+        },
+        {
+          "id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_2",
+          "label": "Trigger repair attempt 2 (final allowable attempt) on alternate node"
+        },
+        {
+          "id": "ACT_FAIL_CLOSED_ROLLBACK_BASELINE",
+          "label": "Budget exhausted (attempt >= 3); halt repair loop and roll back to last-known-good baseline"
+        },
+        {
+          "id": "ACT_INFINITE_RETRY_LOOP",
+          "label": "Keep retrying indefinitely (attempt 4, 5, 6...) consuming unbounded compute"
+        }
+      ],
+      "deterministic_ground_truth": {
+        "winning_action_id": "ACT_TRIGGER_BOUNDED_RETRY_PASS_1",
+        "rejected_reasons": {
+          "ACT_INFINITE_RETRY_LOOP": "TREASURY_VIOLATION_INFINITE_RETRY: Infinite retry loops violate Principle 7 and cause unbounded budget burn.",
+          "ACT_TRIGGER_BOUNDED_RETRY_PASS_2": "REPAIR_BUDGET_MISMATCH: Action 'ACT_TRIGGER_BOUNDED_RETRY_PASS_2' contradicts attempt counter rules for attempt=1.",
+          "ACT_FAIL_CLOSED_ROLLBACK_BASELINE": "REPAIR_BUDGET_MISMATCH: Action 'ACT_FAIL_CLOSED_ROLLBACK_BASELINE' contradicts attempt counter rules for attempt=1."
+        },
+        "provenance_tier": "CURRICULUM_GOLD"
+      }
+    }
+  ]
+}
