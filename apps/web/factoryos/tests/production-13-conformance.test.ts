@@ -71,6 +71,21 @@ describe("P4 Production-13 Conformance & Zero Sovereign Accretion", () => {
         expect(Array.isArray(layer.evidence) && layer.evidence.length > 0).toBe(true);
         expect(Array.isArray(layer.tests) && layer.tests.length > 0).toBe(true);
       }
+
+      for (const evPath of layer.evidence || []) {
+        const cleanPath = String(evPath).split("#")[0];
+        expect(
+          fs.existsSync(path.join(REPO_ROOT, cleanPath)),
+          `Layer ${layer.id} cites nonexistent evidence path: ${cleanPath}`
+        ).toBe(true);
+      }
+      for (const testPath of layer.tests || []) {
+        const cleanPath = String(testPath).split("#")[0];
+        expect(
+          fs.existsSync(path.join(REPO_ROOT, cleanPath)),
+          `Layer ${layer.id} cites nonexistent test path: ${cleanPath}`
+        ).toBe(true);
+      }
     }
   });
 

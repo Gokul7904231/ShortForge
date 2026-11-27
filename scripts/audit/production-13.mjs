@@ -38,7 +38,7 @@ for (const layer of p13.layers) {
     partialCount++;
   }
   rows.push(
-    `| ${layer.id} | ${layer.name} | ${layer.ownerRoles.join(", ")} | **${layer.status}** | ${layer.evidence.join("<br>")} | ${layer.tests.join("<br>")} |`
+    `| ${layer.id} | ${layer.name} | ${layer.ownerRoles.join(", ")} | **${layer.status}** | ${layer.evidence.join(", ")} | ${layer.tests.join(", ")} |`
   );
 }
 

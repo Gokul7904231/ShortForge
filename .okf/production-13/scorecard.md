@@ -14,7 +14,7 @@
 | L07 | CI/CD & Version Control | `auditor`, `devourer` | `PASS` | `ci.yml`, `.husky/pre-commit`, `rule-to-test-matrix.md` |
 | L08 | Security & RLS | `guardian`, `bda` | `PASS` | `create_short.py`, `RenderArtifactVerifier.ts`, `instabox-security-matrix.test.ts` |
 | L09 | Rate Limiting & Quotas | `treasurer` | `PARTIAL` | `treasurer-operating-contract.md` |
-| L10 | Caching & CDN | `cas` | `PASS` | `create_short.py`, `toolchain_manifest.json` |
-| L11 | Load Balancing & Scaling | `computerouter`, `slayer`, `healer` | `PARTIAL` | `InstaBoxFleetRegistry.ts` (1,000-job soak pending P5) |
+| L10 | Caching & CDN | `cas` | `PARTIAL` | `create_short.py`, `toolchain_manifest.json` (TTL/CDN metrics pending) |
+| L11 | Load Balancing & Scaling | `computerouter`, `slayer`, `healer` | `PARTIAL` | `InstaBoxFleetRegistry.ts` (1,000-job soak pending P6) |
 | L12 | Error Tracking & Logs | `comms`, `auditor` | `PARTIAL` | `VerificationEngine.ts` |
-| L13 | Availability & Recovery | `slayer`, `healer`, `remaker`, `f07` | `PASS` | `RenderArtifactVerifier.ts`, `test_p3_1_hotfix.py`, `p2-render-gates.test.ts` |
+| L13 | Availability & Recovery | `slayer`, `healer`, `remaker`, `f07` | `PARTIAL` | `RenderArtifactVerifier.ts`, `test_p3_1_hotfix.py` (backups/restore/RPO-RTO pending) |

@@ -149,8 +149,8 @@
       "name": "Caching & CDN",
       "ownerRoles": ["cas"],
       "docPath": ".okf/production-13/L10.md",
-      "status": "PASS",
-      "definitionOfDone": "Image cache keys include model + dimensions + steps + toolchain hash; pinned hashed fonts manifest verified at preflight.",
+      "status": "PARTIAL",
+      "definitionOfDone": "Versioned cache keys (model + params + toolchain), explicit TTLs, Cloudinary/CDN distribution verified, cache hit/miss metrics exported, and prompt caching evaluated.",
       "evidence": [
         "services/rendering-engine/scripts/create_short.py",
         "services/rendering-engine/assets/fonts/toolchain_manifest.json"
@@ -193,8 +193,8 @@
       "name": "Availability & Recovery",
       "ownerRoles": ["slayer", "healer", "remaker", "f07"],
       "docPath": ".okf/production-13/L13.md",
-      "status": "PASS",
-      "definitionOfDone": "Fail-closed worker/upload/preflight/FLUX handling; 12 unconditional F06 gates + F07 audit prevent silent degraded shipping.",
+      "status": "PARTIAL",
+      "definitionOfDone": "Automated backups, tested restore drill, written & tested RPO/RTO, bounded healing/DLQ with no silent degraded shipping, incident runbook, and status page.",
       "evidence": [
         "apps/web/factoryos/core/fabric/verification/RenderArtifactVerifier.ts",
         "services/rendering-engine/scripts/create_short.py"
