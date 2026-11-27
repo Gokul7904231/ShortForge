@@ -117,7 +117,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const durationSeconds = Math.max(1, Math.min(30, Number(body.duration || 2)));
+    const maxDurationSeconds = Math.max(30, Number(process.env.MAX_RENDER_DURATION_SECONDS || 180));
+    const durationSeconds = Math.max(1, Math.min(maxDurationSeconds, Number(body.duration || 2)));
     const jobId = body.jobId || `instabox-job-${targetNodeId || "fleet"}-${Date.now().toString(36)}`;
     const topic = body.topic || "ShortForge FactoryOS Distributed Render";
 

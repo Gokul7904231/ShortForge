@@ -8,8 +8,20 @@ import math
 import socket
 import ipaddress
 import urllib.parse
+import sys
+import hashlib
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+
+_ENGINE_ROOT = Path(__file__).resolve().parent.parent
+if str(_ENGINE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ENGINE_ROOT))
+
+from core.commit import compute_file_sha256, emit_staged_result, post_fenced_callback
+
+_TOOLCHAIN_HASH = os.environ.get("SHORTFORGE_TOOLCHAIN_HASH") or hashlib.sha256(
+    Path(__file__).read_bytes()
+).hexdigest()[:16]
 
 # Load .env from render engine root (for standalone execution)
 try:
@@ -20,8 +32,6 @@ try:
 except ImportError:
     pass
 
-import firebase_admin
-from firebase_admin import credentials, firestore
 import cloudinary
 import cloudinary.uploader
 
@@ -259,81 +269,90 @@ def _finalize_render_and_upload(
     country: str = "default",
     video_url: str | None = None,
 ) -> None:
-    total_execution_seconds = int(time.time() - start_time)
     video_size_mb = 0.0
     if out_final.exists():
         video_size_mb = round(os.path.getsize(out_final) / (1024 * 1024), 2)
-        
-    _init_firebase()
-    
+
     thumbnail_url = None
     subtitles_url = None
-    cloudinary_public_id = None
-    cloudinary_thumb_id = None
-    cloudinary_srt_id = None
 
     country_folder = country.lower().strip().replace(" ", "_")
     folder_path = f"ai_shorts/quizzes/{country_folder}/{job_id}" if is_quiz else f"ai_shorts/{job_id}"
-    
-    local_only = os.getenv("BASIC_RENDER_LOCAL_ONLY", "").strip().lower() in {"1", "true", "yes"}
 
     try:
-        if local_only:
-            print(f"[Render] BASIC_RENDER_LOCAL_ONLY=1 active. Skipping Cloudinary upload for {job_id}...")
-            if not video_url:
-                video_url = f"https://storage.factoryos.app/renders/{job_id}/final.mp4"
-            thumbnail_url = f"https://storage.factoryos.app/renders/{job_id}/thumb.jpg"
-            subtitles_url = f"https://storage.factoryos.app/renders/{job_id}/subtitles.srt"
-            cloudinary_public_id = f"local/{job_id}"
+        if not video_url:
+            print(f"[Cloudinary] Uploading {out_final} as video to {folder_path}...")
+            video_upload = cloudinary.uploader.upload(
+                str(out_final),
+                resource_type="video",
+                folder=folder_path,
+                overwrite=True
+            )
+            video_url = video_upload.get("secure_url")
+            print(f"[Cloudinary] Video uploaded. URL: {video_url}")
         else:
-            if not video_url:
-                print(f"[Cloudinary] Uploading {out_final} as video to {folder_path}...")
-                video_upload = cloudinary.uploader.upload(
-                    str(out_final),
-                    resource_type="video",
-                    folder=folder_path,
-                    overwrite=True
-                )
-                video_url = video_upload.get("secure_url")
-                cloudinary_public_id = video_upload.get("public_id")
-                print(f"[Cloudinary] Video uploaded. URL: {video_url}, Public ID: {cloudinary_public_id}")
-            else:
-                cloudinary_public_id = f"{folder_path}/final"
-                print(f"[Cloudinary] Using pre-streamed Video URL: {video_url}")
-            
-            if out_thumbnail.exists():
-                print(f"[Cloudinary] Uploading {out_thumbnail} as image to {folder_path}...")
-                thumb_upload = cloudinary.uploader.upload(
-                    str(out_thumbnail),
-                    resource_type="image",
-                    folder=folder_path,
-                    overwrite=True
-                )
-                thumbnail_url = thumb_upload.get("secure_url")
-                cloudinary_thumb_id = thumb_upload.get("public_id")
-                print(f"[Cloudinary] Thumbnail uploaded. URL: {thumbnail_url}, Public ID: {cloudinary_thumb_id}")
-                
-            if out_srt.exists():
-                print(f"[Cloudinary] Uploading {out_srt} as raw file to {folder_path}...")
-                srt_upload = cloudinary.uploader.upload(
-                    str(out_srt),
-                    resource_type="raw",
-                    folder=folder_path,
-                    overwrite=True
-                )
-                subtitles_url = srt_upload.get("secure_url")
-                cloudinary_srt_id = srt_upload.get("public_id")
-                print(f"[Cloudinary] Subtitles uploaded. URL: {subtitles_url}, Public ID: {cloudinary_srt_id}")
-            
+            print(f"[Cloudinary] Using pre-streamed Video URL: {video_url}")
+
+        if out_thumbnail.exists():
+            print(f"[Cloudinary] Uploading {out_thumbnail} as image to {folder_path}...")
+            thumb_upload = cloudinary.uploader.upload(
+                str(out_thumbnail),
+                resource_type="image",
+                folder=folder_path,
+                overwrite=True
+            )
+            thumbnail_url = thumb_upload.get("secure_url")
+            print(f"[Cloudinary] Thumbnail uploaded. URL: {thumbnail_url}")
+
+        if out_srt.exists():
+            print(f"[Cloudinary] Uploading {out_srt} as raw file to {folder_path}...")
+            srt_upload = cloudinary.uploader.upload(
+                str(out_srt),
+                resource_type="raw",
+                folder=folder_path,
+                overwrite=True
+            )
+            subtitles_url = srt_upload.get("secure_url")
+            print(f"[Cloudinary] Subtitles uploaded. URL: {subtitles_url}")
+
         dur = video_duration if video_duration is not None else probe.get("duration", 0.0)
-        
-        # Write local result.json for caller/worker to read completion metadata
+        staged = emit_staged_result(
+            job_id=job_id,
+            out_dir=out_dir,
+            artifact_path=out_final,
+            probe=probe,
+            timings=timings,
+            extra={
+                "videoUrl": video_url,
+                "thumbnailUrl": thumbnail_url,
+                "subtitlesUrl": subtitles_url,
+                "renderProfile": subtitle_meta.get("renderProfile", "STANDARD_SHORTS"),
+                "fps": subtitle_meta.get("fps", 24),
+                "resolution": subtitle_meta.get("resolution", "720x1280"),
+                "cache": {"hits": cache_hits, "misses": cache_misses},
+                "videoDuration": dur,
+                "videoSizeMb": video_size_mb,
+                "playable": probe.get("playable", True),
+                "audioDetected": probe.get("audioDetected", True),
+            },
+        )
+        nested_res = out_dir / job_id / "result.json"
+        nested_res.parent.mkdir(parents=True, exist_ok=True)
+        nested_res.write_text(json.dumps(staged, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"[Worker] Wrote staging metadata to {out_dir / 'result.json'}")
+    except Exception as e:
+        print(f"[ERROR][Upload] Upload failed: {e}")
+        if not out_final.exists() or out_final.stat().st_size < 1024:
+            raise RuntimeError(f"Rendering failed and artifact not produced: {e}") from e
+
+        dur = video_duration if video_duration is not None else probe.get("duration", 0.0)
+        final_sha256 = compute_file_sha256(out_final)
         result_payload = {
             "jobId": job_id,
-            "status": "completed",
-            "videoUrl": video_url,
-            "thumbnailUrl": thumbnail_url,
-            "subtitlesUrl": subtitles_url,
+            "status": "upload_failed",
+            "error": str(e),
+            "artifactSha256": final_sha256,
+            "byteLength": out_final.stat().st_size,
             "renderProfile": subtitle_meta.get("renderProfile", "STANDARD_SHORTS"),
             "fps": subtitle_meta.get("fps", 24),
             "resolution": subtitle_meta.get("resolution", "720x1280"),
@@ -341,74 +360,12 @@ def _finalize_render_and_upload(
             "cache": {"hits": cache_hits, "misses": cache_misses},
             "videoDuration": dur,
             "videoSizeMb": video_size_mb,
-            "playable": probe.get("playable", True),
-            "audioDetected": probe.get("audioDetected", True),
         }
-        for res_path in [out_dir / "result.json", out_dir / job_id / "result.json"]:
-            try:
-                res_path.parent.mkdir(parents=True, exist_ok=True)
-                res_path.write_text(json.dumps(result_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-                print(f"[Worker] Wrote completion metadata to {res_path}")
-            except Exception as json_err:
-                print(f"[Worker] Warning: Failed to write {res_path}: {json_err}")
-
         try:
-            db = firestore.client()
-            doc_ref = db.collection("videos").document(job_id)
-            update_payload = {
-                "status": "completed",
-                "videoUrl": video_url,
-                "thumbnailUrl": thumbnail_url,
-                "subtitlesUrl": subtitles_url,
-                "cloudinaryPublicId": cloudinary_public_id,
-                "cloudinaryThumbnailPublicId": cloudinary_thumb_id,
-                "cloudinarySubtitlesPublicId": cloudinary_srt_id,
-                "renderDurationSeconds": total_execution_seconds,
-                "videoSizeMb": video_size_mb,
-                "fps": subtitle_meta.get("fps", 18 if is_quiz else 24),
-                "resolution": subtitle_meta.get("resolution", "1080x1920" if is_quiz else "720x1280"),
-                "timings": timings,
-                "cache": {"hits": cache_hits, "misses": cache_misses},
-                "playable": probe.get("playable", True),
-                "audioDetected": probe.get("audioDetected", True),
-                "videoDuration": dur,
-            }
-            print(f"[Firebase] Updating Firestore document {job_id}...")
-            doc_ref.set(update_payload, merge=True)
-            print("[Firebase] Firestore update complete.")
-        except Exception as fbe:
-            print(f"[Firebase] Non-fatal Firestore update notice: {fbe}")
-    except Exception as e:
-        print(f"[ERROR][Cloudinary/Firebase] Upload or Firestore update failed: {e}")
-        # If output MP4 is valid, do not fail the entire job on upload error
-        if out_final.exists() and out_final.stat().st_size >= 1024:
-            print(f"[Worker] Valid local final.mp4 ({video_size_mb} MB) exists. Treating upload error as non-fatal.")
-            dur = video_duration if video_duration is not None else probe.get("duration", 0.0)
-            if not video_url:
-                video_url = f"https://storage.factoryos.app/renders/{job_id}/final.mp4"
-            result_payload = {
-                "jobId": job_id,
-                "status": "completed",
-                "videoUrl": video_url,
-                "renderProfile": subtitle_meta.get("renderProfile", "STANDARD_SHORTS"),
-                "fps": subtitle_meta.get("fps", 24),
-                "resolution": subtitle_meta.get("resolution", "720x1280"),
-                "timings": timings,
-                "cache": {"hits": cache_hits, "misses": cache_misses},
-                "videoDuration": dur,
-                "videoSizeMb": video_size_mb,
-            }
-            try:
-                (out_dir / "result.json").write_text(json.dumps(result_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            except Exception:
-                pass
-        else:
-            try:
-                db = firestore.client()
-                db.collection("videos").document(job_id).set({"status": "failed", "error": str(e)}, merge=True)
-            except Exception:
-                pass
-            raise
+            (out_dir / "result.json").write_text(json.dumps(result_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+        raise RuntimeError(f"Artifact upload failed for {job_id}: {e}") from e
         
     print("[Cleanup] Dropping temporary WAV cuts and local assets...")
     temp_dir = out_dir / "temp"
@@ -438,6 +395,9 @@ def _finalize_render_and_upload(
                     pass
     else:
         print(f"[Cleanup] Preserved final render artifacts ({out_final}) in {out_dir}")
+    # Under Charter Invariant P1.4 / O7, local artifacts are NEVER unlinked by the worker.
+    # Preserved for F07 verifier, CAS reconciliation, and fenced callback confirmation.
+    print(f"[Worker] Preserved final render artifacts ({out_final}) for verifier and CAS reconciliation.")
 
 def _run(cmd: list[str], *, cwd: Path | None = None) -> None:
     print("Running:", " ".join(cmd))
@@ -583,6 +543,16 @@ def _build_flux_scene_prompt(topic: str, scene_text: str, scene_image_prompt: st
     return prompt[:2000]
 
 
+def _compute_file_sha256(file_path: Path) -> str:
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _sha256_text(s: str) -> str:
     import hashlib
 
@@ -660,6 +630,17 @@ def _flux_generate_image_url(
     return str(image_url)
 
 
+def _compute_image_cache_key(
+    prompt: str,
+    model: str = "black-forest-labs/FLUX.1-schnell",
+    width: int = 1024,
+    height: int = 1024,
+    steps: int = 4,
+    toolchain_hash: str = _TOOLCHAIN_HASH,
+) -> str:
+    return _sha256_text(f"{model}:{width}x{height}:{steps}:{toolchain_hash}:{prompt}")
+
+
 def _generate_or_load_cached_image(
     prompt: str,
     out_png: Path,
@@ -668,7 +649,7 @@ def _generate_or_load_cached_image(
     height: int = 1024,
     steps: int = 4,
 ) -> None:
-    cache_key = _sha256_text(prompt)
+    cache_key = _compute_image_cache_key(prompt, model=model, width=width, height=height, steps=steps)
     cache_img_path, cache_meta_path = _cache_paths(cache_key)
 
     try:
@@ -706,14 +687,11 @@ def _generate_or_load_cached_image(
 
 
 def _download_image(url: str, out_path: Path) -> None:
-    import requests
-
+    if not _is_safe_http_url(url):
+        raise ValueError(f"SSRF blocked: Disallowed or unsafe image URL '{url}'")
+    data = _safe_fetch_image_bytes(url, timeout=120)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    resp = requests.get(url, timeout=120)
-    if resp.status_code >= 300:
-        raise RuntimeError(f"Image download failed: HTTP {resp.status_code}")
-
-    out_path.write_bytes(resp.content)
+    out_path.write_bytes(data)
 
 
 def _seconds_from_srt_time(ts: str) -> float:
@@ -1831,16 +1809,6 @@ def main() -> None:
     scenes = job.get("scenes", [])
     job_id = str(job.get("jobId") or job_path.stem)
 
-    # Update status to processing in Firestore
-    try:
-        _init_firebase()
-        from firebase_admin import firestore
-        db = firestore.client()
-        db.collection("videos").document(job_id).set({"status": "processing"}, merge=True)
-        print(f"[Firebase] Marked job {job_id} as processing.")
-    except Exception as e:
-        print(f"[Firebase] Warning: Failed to set processing status: {e}")
-
     script_parent = Path(__file__).resolve().parent
     engine_root = script_parent.parent
     if "rendering-engine" in str(script_parent.resolve()):
@@ -1867,42 +1835,24 @@ def main() -> None:
             out_dir.mkdir(parents=True, exist_ok=True)
             result = run_quiz_shorts(job, out_dir, out_audio, out_srt, out_final, out_thumbnail, timings)
 
-            # Quiz already streams directly to Cloudinary — do NOT call _finalize_render_and_upload
-            # (it would try to re-upload a non-existent local file).
-            # Instead write result.json directly here.
-            result_payload = {
-                "jobId": job_id,
-                "status": "completed",
-                "videoUrl": result.get("videoUrl"),
-                "thumbnailUrl": result.get("thumbnailUrl"),
-                "subtitlesUrl": result.get("subtitlesUrl"),
-                "renderProfile": result.get("renderProfile", "FAST_QUIZ"),
-                "fps": result.get("fps", 18),
-                "resolution": result.get("resolution", "1080x1920"),
-                "timings": timings,
-                "cache": {"hits": 0, "misses": 0},
-            }
-            result_json_path = out_dir / "result.json"
-            result_json_path.write_text(
-                json.dumps(result_payload, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
-            print(f"[Worker] Wrote quiz result.json to {result_json_path}")
-
-            # Update Firestore to completed
-            try:
-                _init_firebase()
-                from firebase_admin import firestore as _fs
-                _db = _fs.client()
-                _db.collection("videos").document(job_id).set({
-                    "status": "completed",
+            # Worker writes staging metadata — never self-declares completed.
+            emit_staged_result(
+                job_id=job_id,
+                out_dir=out_dir,
+                artifact_path=out_final,
+                probe={"duration": result.get("videoDuration"), "playable": True, "audioDetected": True},
+                timings=timings,
+                extra={
                     "videoUrl": result.get("videoUrl"),
-                    "renderProfile": "FAST_QUIZ",
-                    "fps": 18,
-                    "resolution": "1080x1920",
-                }, merge=True)
-            except Exception as _fe:
-                print(f"[Firebase] Warning: could not mark job completed: {_fe}")
-
+                    "thumbnailUrl": result.get("thumbnailUrl"),
+                    "subtitlesUrl": result.get("subtitlesUrl"),
+                    "renderProfile": result.get("renderProfile", "FAST_QUIZ"),
+                    "fps": result.get("fps", 18),
+                    "resolution": result.get("resolution", "1080x1920"),
+                    "cache": {"hits": 0, "misses": 0},
+                },
+            )
+            print(f"[Worker] Wrote quiz staging result.json to {out_dir / 'result.json'}")
             return
 
         scenes_list = scenes if isinstance(scenes, list) else []
@@ -2076,22 +2026,8 @@ def main() -> None:
         )
     except Exception as e:
         print(f"[ERROR][GLOBAL] Rendering failed: {e}")
-        try:
-            _init_firebase()
-            from firebase_admin import firestore
-            db = firestore.client()
-            db.collection("videos").document(job_id).set({"status": "failed", "error": str(e)}, merge=True)
-            print(f"[Firebase] Successfully set failed status for job {job_id}")
-        except Exception as fe:
-            print(f"[Firebase] Warning: Failed to set failed status: {fe}")
         raise
     finally:
-        local_only = os.getenv("BASIC_RENDER_LOCAL_ONLY", "").strip().lower() in {"1", "true", "yes"}
-        keep_artifacts = (
-            os.getenv("KEEP_RENDER_ARTIFACT", "").lower() in {"1", "true", "yes"}
-            or local_only
-            or bool(os.getenv("OUTPUT_DIR"))
-        )
         temp_dir = out_dir / "temp"
         if temp_dir.exists():
             try:
@@ -2104,20 +2040,9 @@ def main() -> None:
                 shutil.rmtree(str(images_dir), ignore_errors=True)
             except Exception:
                 pass
-        if not keep_artifacts:
-            for local_file in [out_final, out_thumbnail, out_srt, out_audio]:
-                if local_file.exists():
-                    try:
-                        local_file.unlink()
-                    except Exception:
-                        pass
-            if out_dir.exists():
-                try:
-                    os.rmdir(out_dir)
-                except Exception:
-                    pass
-        else:
-            print(f"[Cleanup] KEEP_RENDER_ARTIFACT=true: Preserved final render artifacts in {out_dir}")
+        # Final render artifacts (out_final, out_thumbnail, out_srt, result.json)
+        # must be preserved in out_dir for CAS and F07 verifier inspection.
+        print(f"[Artifacts] Preserving output artifacts in {out_dir} for F07 verifier")
 
 
 if __name__ == "__main__":

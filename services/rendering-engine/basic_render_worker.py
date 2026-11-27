@@ -283,7 +283,6 @@ class BasicRenderWorker:
             env["OUTPUT_DIR"] = str(job_workspace)
             env["CACHE_DIR"] = str(PERSISTENT_CACHE_DIR / "image-cache")
             env["KEEP_RENDER_ARTIFACT"] = "1"
-            env["BASIC_RENDER_LOCAL_ONLY"] = "1"
 
             cmd = [sys.executable, "-u", str(script_path), str(payload_file)]
             proc = subprocess.run(cmd, env=env, cwd=str(BASE_DIR), capture_output=True, text=True)
@@ -344,15 +343,13 @@ class BasicRenderWorker:
                 except Exception:
                     pass
 
-            if not video_url:
-                video_url = f"https://storage.factoryos.app/renders/{job_id}.mp4"
-
             total_duration = time.time() - start_time
             job_record["timings"]["totalMs"] = round(total_duration * 1000, 2)
-            job_record["status"] = "completed"
+            job_record["status"] = "staged" if not video_url else "completed"
             job_record["completedAt"] = time.time()
             job_record["result"] = {
                 "videoUrl": video_url,
+                "artifactPath": str(output_mp4),
                 "sizeMb": probe_result["sizeMb"],
                 "durationSeconds": probe_result["durationSeconds"],
                 "artifactSha256": probe_result.get("sha256"),

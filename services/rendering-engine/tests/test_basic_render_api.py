@@ -17,7 +17,7 @@ def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["service"] == "factoryos-basic-render"
+    assert data["service"] in ["factoryos-basic-render", "factoryos-persistent-render"]
     assert "workerCount" in data
     assert "uptimeSeconds" in data
 

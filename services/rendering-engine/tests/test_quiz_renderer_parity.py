@@ -63,7 +63,7 @@ def test_strict_four_option_validation():
         shutil.rmtree(temp_out, ignore_errors=True)
 
 
-def test_canonical_quiz_render_end_to_end(tmp_path):
+def test_canonical_quiz_render_end_to_end(tmp_path, monkeypatch):
     """
     Renders a canonical 2-question quiz payload and verifies:
     1. Output video generation at 1080x1920
@@ -71,6 +71,14 @@ def test_canonical_quiz_render_end_to_end(tmp_path):
     3. Cyan countdown timer pill & green answer reveal
     4. Global ShortForge watermark compositing
     """
+    # Use hermetic local TTS generator to guarantee test reliability regardless of external Bing API status
+    import subprocess
+    async def mock_tts(text, voice, rate, out_mp3):
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "libmp3lame", "-b:a", "128k", str(out_mp3)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
+        )
+    monkeypatch.setattr("create_short._async_generate_tts_mp3", mock_tts)
     golden_job = {
         "jobId": "test_golden_parity_001",
         "topic": "World Geography Quiz",
