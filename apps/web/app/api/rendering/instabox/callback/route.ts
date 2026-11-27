@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Handle FAILED status
-    if (status !== "COMPLETED") {
+    if (status !== "RENDER_SUCCEEDED" && status !== "COMPLETED") {
       const reason = failureReason || `Worker reported failure with exit code ${exitCode ?? 1}`;
       const failReceipt = registry.failActiveJob(workerId, executionToken, reason);
       return NextResponse.json({
@@ -177,9 +177,9 @@ export async function POST(request: NextRequest) {
         path.join(process.cwd(), "apps", "web", "data"),
       ],
       expected: {
-        width: Number(output.width || manifest.width || 1080),
-        height: Number(output.height || manifest.height || 1920),
-        fps: Number(output.fps || manifest.fps || 30),
+        width: 1080,
+        height: 1920,
+        fps: 30,
         videoCodec: "h264",
         audioCodec: "aac",
         requireAudio: true,

@@ -125,7 +125,7 @@ def test_canonical_quiz_render_end_to_end(tmp_path, monkeypatch):
 
     # 1. Verify result structure
     assert result["resolution"] == "1080x1920"
-    assert result["fps"] == 18
+    assert result["fps"] == 30
     assert result["videoDuration"] > 5.0
     assert out_final.exists()
     assert out_final.stat().st_size > 10000

@@ -59,10 +59,10 @@ describe("P1 Live E2E Quiz Commit Path (Dispatch -> Worker -> Staged -> Callback
     });
     const dispatchPromise = dispatchHandler(dispatchReq);
     let claim: any = null;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
       claim = registry.claimJob(WORKER_ID);
       if (claim?.claimed) break;
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 100));
     }
     expect(claim?.claimed).toBe(true);
     const lease = registry.getNodeRecordByWorkerId(WORKER_ID)?.activeLease;
@@ -93,7 +93,7 @@ describe("P1 Live E2E Quiz Commit Path (Dispatch -> Worker -> Staged -> Callback
           output: {
             width: 1080,
             height: 1920,
-            fps: 18,
+            fps: 30,
             duration_seconds: 10.33,
             video_codec: "libx264",
             audio_codec: "aac",
@@ -166,7 +166,7 @@ staged = emit_staged_result(
     artifact_path=out_final,
     probe={"duration": res.get("videoDuration"), "playable": True, "audioDetected": True},
     timings=timings,
-    extra={"fps": res.get("fps", 18), "resolution": res.get("resolution", "1080x1920")}
+    extra={"fps": res.get("fps", 30), "resolution": res.get("resolution", "1080x1920")}
 )
 print("STAGED_JSON=" + json.dumps(staged))
 `;
@@ -193,7 +193,7 @@ print("STAGED_JSON=" + json.dumps(staged))
         executionToken: lease!.executionToken,
         executionId: lease!.executionId,
         jobId,
-        status: "COMPLETED",
+        status: "RENDER_SUCCEEDED",
         attemptId: lease!.attemptId,
         exitCode: 0,
         sha256Proof: staged.artifactSha256,
@@ -210,7 +210,7 @@ print("STAGED_JSON=" + json.dumps(staged))
     console.log(
       "[P1-E2E-TRACE]",
       JSON.stringify({
-        dispatch: { status: dispatchRes.status, jobId, duration: 45, attemptId: lease!.attemptId, error: dispatchJson.error, artifactSha256: dispatchJson.artifact?.computedSha256, verifier: dispatchJson.verifierResult?.status, f07: dispatchJson.f07Audit?.overallStatus },
+        dispatch: { status: dispatchRes.status, jobId, duration: 10.33, attemptId: lease!.attemptId, error: dispatchJson.error, artifactSha256: dispatchJson.artifact?.computedSha256, verifier: dispatchJson.verifierResult?.status, f07: dispatchJson.f07Audit?.overallStatus },
         staged: { status: staged.status, artifactSha256: staged.artifactSha256, byteLength: staged.byteLength },
         callback: callbackJson,
       }),
@@ -225,4 +225,73 @@ print("STAGED_JSON=" + json.dumps(staged))
     expect(dispatchJson.success).toBe(true);
     expect(pyOut).toContain("STAGED_JSON=");
   }, 240000);
+
+  it("rejects non-doctrine 18fps artifact at F06 callback even if producer declared fps=18", async () => {
+    const jobId = "p20-reject-18fps";
+    const dispatchReq = new NextRequest("http://localhost:3000/api/rendering/instabox/dispatch", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: "Bearer admin-e2e-secret",
+      },
+      body: JSON.stringify({
+        nodeId: NODE_ID,
+        jobId,
+        topic: "Non-doctrine 18fps rejection test",
+        duration: 2,
+        localRenderIntent: {
+          project_id: `proj_${jobId}`,
+          title: "18fps test",
+          output: { width: 1080, height: 1920, fps: 18, duration_seconds: 2 },
+        },
+      }),
+    });
+
+    const dispatchPromise = dispatchHandler(dispatchReq);
+    let claim: any = null;
+    for (let i = 0; i < 60; i++) {
+      claim = registry.claimJob(WORKER_ID);
+      if (claim?.claimed) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(claim?.claimed).toBe(true);
+    const lease = registry.getNodeRecordByWorkerId(WORKER_ID)?.activeLease!;
+
+    const badMp4 = path.join(workDir, "bad_18fps.mp4");
+    execFileSync("ffmpeg", [
+      "-y", "-f", "lavfi", "-i", "color=c=0x0a0f1d:s=1080x1920:d=2:r=18",
+      "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
+      "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+      "-c:a", "aac", "-b:a", "128k", "-shortest", badMp4,
+    ], { stdio: "ignore" });
+    const crypto = await import("node:crypto");
+    const badSha = crypto.createHash("sha256").update(fs.readFileSync(badMp4)).digest("hex");
+
+    const callbackReq = new NextRequest("http://localhost:3000/api/rendering/instabox/callback", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${BOX2_SECRET}`,
+      },
+      body: JSON.stringify({
+        workerId: WORKER_ID,
+        executionToken: lease.executionToken,
+        executionId: lease.executionId,
+        jobId,
+        status: "RENDER_SUCCEEDED",
+        attemptId: lease.attemptId,
+        exitCode: 0,
+        sha256Proof: badSha,
+        byteLength: fs.statSync(badMp4).size,
+        casUri: badMp4,
+      }),
+    });
+
+    const callbackRes = await callbackHandler(callbackReq);
+    const callbackJson = await callbackRes.json();
+    expect(callbackRes.status).toBe(422);
+    expect(callbackJson.success).toBe(false);
+    expect(callbackJson.error).toContain("F06 physical artifact rejected");
+    await dispatchPromise;
+  }, 60000);
 });

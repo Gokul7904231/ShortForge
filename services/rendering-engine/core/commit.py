@@ -79,7 +79,7 @@ def post_fenced_callback(
         "executionToken": execution_token,
         "executionId": execution_id,
         "jobId": staged_result["jobId"],
-        "status": "COMPLETED",
+        "status": "RENDER_SUCCEEDED",
         "attemptId": attempt_id,
         "exitCode": 0,
         "sha256Proof": staged_result["artifactSha256"],

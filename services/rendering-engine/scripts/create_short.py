@@ -1412,7 +1412,7 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         created_files.add(filter_complex_file)
 
         # 6. Render Frames via Canonical Glassmorphism Specification
-        fps = 18
+        fps = 30
         total_frames = int(total_duration * fps)
         frames_dir = temp_dir / "frames"
         frames_dir.mkdir(parents=True, exist_ok=True)
@@ -1770,7 +1770,7 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         return {
             "subtitleOverlay": "WORKING",
             "renderProfile": "FAST_QUIZ",
-            "fps": 18,
+            "fps": 30,
             "resolution": "1080x1920",
             "videoDuration": total_duration,
             "videoUrl": video_url,
@@ -1847,7 +1847,7 @@ def main() -> None:
                     "thumbnailUrl": result.get("thumbnailUrl"),
                     "subtitlesUrl": result.get("subtitlesUrl"),
                     "renderProfile": result.get("renderProfile", "FAST_QUIZ"),
-                    "fps": result.get("fps", 18),
+                    "fps": result.get("fps", 30),
                     "resolution": result.get("resolution", "1080x1920"),
                     "cache": {"hits": 0, "misses": 0},
                 },

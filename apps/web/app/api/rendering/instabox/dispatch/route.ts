@@ -278,9 +278,9 @@ export async function POST(request: NextRequest) {
       artifact: artifactRef,
       approvedRoots: [cas.getStorageDir(), process.cwd()],
       expected: {
-        width: Number(localRenderIntent?.output?.width || 1080),
-        height: Number(localRenderIntent?.output?.height || 1920),
-        fps: Number(localRenderIntent?.output?.fps || 30),
+        width: 1080,
+        height: 1920,
+        fps: 30,
         videoCodec: "h264",
         audioCodec: "aac",
         requireAudio: true,
