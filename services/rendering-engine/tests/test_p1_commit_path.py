@@ -131,6 +131,8 @@ def test_commit_module_emits_result_and_posts_fenced_callback(tmp_path, monkeypa
         staged_result=staged,
     )
     assert ack["success"] is True
+    assert captured["json"]["status"] == "COMPLETED"
+    assert captured["json"]["metrics"]["stagedStatus"] == "staged"
     assert captured["json"]["attemptId"] == 1
     assert captured["json"]["sha256Proof"] == staged["artifactSha256"]
     assert captured["json"]["executionToken"] == "tok-123"
