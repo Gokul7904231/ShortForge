@@ -79,6 +79,10 @@ def test_canonical_quiz_render_end_to_end(tmp_path, monkeypatch):
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
         )
     monkeypatch.setattr("create_short._async_generate_tts_mp3", mock_tts)
+    monkeypatch.setattr(
+        "create_short.cloudinary.uploader.upload",
+        lambda fp, **kw: {"secure_url": f"https://res.cloudinary.com/demo/video/upload/{Path(fp).name}"},
+    )
     golden_job = {
         "jobId": "test_golden_parity_001",
         "topic": "World Geography Quiz",

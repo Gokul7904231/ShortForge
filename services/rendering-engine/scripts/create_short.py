@@ -34,6 +34,20 @@ from core.assemble import (
     measure_loudnorm_pass1,
 )
 from core.frames import render_pil_frame_to_rgb24
+from core.timeline import ScenePlan, TimelinePlan
+
+
+class VisualAssetGenerationError(RuntimeError):
+    """Typed permanent-input/generation error when visual acquisition fails (no placeholders)."""
+
+
+def validate_motivational_preflight(scenes_list: list) -> None:
+    """Enforce <50ms lexical & safe-area budget on motivational scenes before rendering."""
+    preflight_scenes = [
+        {"text": str(sc.get("text") or sc.get("contactText") or "") if isinstance(sc, dict) else str(sc)}
+        for sc in scenes_list
+    ]
+    run_preflight_budget(preflight_scenes, font_size=52, max_lines=6, max_width_px=840)
 
 _TOOLCHAIN_HASH = os.environ.get("SHORTFORGE_TOOLCHAIN_HASH") or hashlib.sha256(
     Path(__file__).read_bytes()
@@ -201,58 +215,6 @@ def _resolve_allowed_local_path(raw: str, allowed_bases: list[Path]) -> Optional
     except Exception:
         return None
 
-def _init_firebase() -> None:
-    if firebase_admin._apps:
-        return
-        
-    bucket_name = os.environ.get("FIREBASE_STORAGE_BUCKET")
-    sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
-    
-    sa_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-    if sa_file and Path(sa_file).exists():
-        try:
-            cred = credentials.Certificate(sa_file)
-            firebase_admin.initialize_app(cred, {"storageBucket": bucket_name})
-            print("[Firebase] Initialized with GOOGLE_APPLICATION_CREDENTIALS file.")
-            return
-        except Exception as e:
-            print(f"[Firebase] GOOGLE_APPLICATION_CREDENTIALS init failed: {e}")
-
-    if sa_json:
-        try:
-            cred = credentials.Certificate(json.loads(sa_json))
-            firebase_admin.initialize_app(cred, {"storageBucket": bucket_name})
-            print("[Firebase] Initialized with Service Account JSON.")
-            return
-        except Exception as e:
-            print(f"[Firebase] Service Account JSON init failed: {e}")
-            
-    private_key = os.environ.get("FIREBASE_PRIVATE_KEY")
-    client_email = os.environ.get("FIREBASE_CLIENT_EMAIL")
-    project_id = os.environ.get("FIREBASE_PROJECT_ID")
-    
-    if private_key and client_email and project_id:
-        try:
-            cred_dict = {
-                "type": "service_account",
-                "project_id": project_id,
-                "private_key": private_key.replace("\\n", "\n"),
-                "client_email": client_email,
-                "token_uri": "https://oauth2.googleapis.com/token"
-            }
-            cred = credentials.Certificate(cred_dict)
-            firebase_admin.initialize_app(cred, {"storageBucket": bucket_name})
-            print("[Firebase] Initialized with individual parameters.")
-            return
-        except Exception as e:
-            print(f"[Firebase] Individual parameters init failed: {e}")
-            
-    try:
-        firebase_admin.initialize_app(options={"storageBucket": bucket_name})
-        print("[Firebase] Initialized with default credentials.")
-    except Exception as e:
-        print(f"[Firebase] Fallback initialization failed: {e}")
-
 
 def _cover_crop_image(img_path: Path, target_w: int = 1080, target_h: int = 1920) -> None:
     from PIL import Image, ImageOps
@@ -395,21 +357,6 @@ def _finalize_render_and_upload(
             shutil.rmtree(str(images_dir), ignore_errors=True)
         except Exception:
             pass
-
-    keep_artifacts = (
-        os.getenv("KEEP_RENDER_ARTIFACT", "").lower() in {"1", "true", "yes"}
-        or local_only
-        or bool(os.getenv("OUTPUT_DIR"))
-    )
-    if not keep_artifacts:
-        for local_file in [out_final, out_thumbnail, out_srt, out_dir / "audio.wav"]:
-            if local_file.exists():
-                try:
-                    local_file.unlink()
-                except Exception:
-                    pass
-    else:
-        print(f"[Cleanup] Preserved final render artifacts ({out_final}) in {out_dir}")
     # Under Charter Invariant P1.4 / O7, local artifacts are NEVER unlinked by the worker.
     # Preserved for F07 verifier, CAS reconciliation, and fenced callback confirmation.
     print(f"[Worker] Preserved final render artifacts ({out_final}) for verifier and CAS reconciliation.")
@@ -496,37 +443,6 @@ def _edge_tts(text: str, out_wav: Path, voice: str = "en-US-ChristopherNeural", 
             except Exception as clean_err:
                 print(f"[Cleanup] Error unlinking temp file {temp_audio}: {clean_err}")
 
-
-
-def _write_placeholder_image(out_png: Path, title: str) -> None:
-    from PIL import Image, ImageDraw, ImageFont
-
-    w, h = 1080, 1920
-    img = Image.new("RGB", (w, h), color=(18, 18, 18))
-    draw = ImageDraw.Draw(img)
-
-    pinned_fp = str(get_pinned_font_path())
-    font_title = ImageFont.truetype(pinned_fp, 40)
-    font_sub = ImageFont.truetype(pinned_fp, 26)
-
-    title = (title or "").strip() or "Scene"
-
-    max_chars = 24
-    lines = [title[i : i + max_chars] for i in range(0, len(title), max_chars)]
-    lines = lines[:6]
-
-    y = 120
-    for line in lines:
-        tw = draw.textlength(line, font=font_title)
-        draw.text(((w - tw) / 2, y), line, font=font_title, fill=(240, 240, 240))
-        y += 60
-
-    footer = "Generated placeholder"
-    tw = draw.textlength(footer, font=font_sub)
-    draw.text(((w - tw) / 2, h - 140), footer, font=font_sub, fill=(150, 150, 150))
-
-    out_png.parent.mkdir(parents=True, exist_ok=True)
-    img.save(out_png)
 
 
 def _build_flux_scene_prompt(topic: str, scene_text: str, scene_image_prompt: str, style: str, i: int) -> str:
@@ -1011,12 +927,20 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
     created_files = set()
 
-    def get_audio_duration(path: Path) -> float:
-        _pcm, dur = decode_audio_to_pcm48k(path)
-        return dur
+    def get_audio_samples_and_frames(path: Path) -> tuple[int, int, float]:
+        pcm, dur = decode_audio_to_pcm48k(path)
+        return len(pcm), frames_for_samples(len(pcm)), dur
 
     def get_ffmpeg_font() -> str:
         return str(get_pinned_font_path())
+
+    # Preflight lexical & safe-area budget check BEFORE any TTS or rendering
+    preflight_items = [{"text": str(quiz_data.get("hook", ""))}]
+    for q in questions:
+        preflight_items.append({"text": str(q.get("question", ""))})
+        for opt in q.get("options", []):
+            preflight_items.append({"text": str(opt)})
+    run_preflight_budget(preflight_items, font_size=48, max_lines=6, max_width_px=800)
 
     try:
         script_parent = Path(__file__).resolve().parent
@@ -1184,12 +1108,27 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         asyncio.run(run_concurrent_tts())
         print(f"[PERF METRIC - TTS]: Concurrency completed in {time.perf_counter() - tts_start:.2f} seconds.")
 
-        # Calculate exact timeline schedule
-        t = 0.0
+        # Calculate exact integer-frame timeline schedule using core.timeline.TimelinePlan
+        scene_plans: list[ScenePlan] = []
+        cursor_frame = 0
+        gap_frames = 3  # 0.1s at 30fps
+
         hook_req = tts_requests[0]
-        hook_req["start_time"] = t
-        hook_req["duration"] = get_audio_duration(hook_req["mp3"])
-        t += hook_req["duration"] + 0.1
+        h_samples, h_frames, _ = get_audio_samples_and_frames(hook_req["mp3"])
+        hook_req["start_frame"] = cursor_frame
+        hook_req["frame_count"] = h_frames
+        hook_req["start_time"] = cursor_frame / float(FPS)
+        hook_req["duration"] = h_frames / float(FPS)
+        scene_plans.append(
+            ScenePlan(
+                scene_id="hook",
+                start_frame=cursor_frame,
+                end_frame=cursor_frame + h_frames + gap_frames,
+                text=str(quiz_data.get("hook", "")),
+                audio_samples=h_samples,
+            )
+        )
+        cursor_frame += h_frames + gap_frames
 
         req_idx = 1
         pop_delays = []
@@ -1197,39 +1136,99 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
         for idx, q in enumerate(questions):
             q_req = tts_requests[req_idx]
-            q_req["start_time"] = t
-            q_req["duration"] = get_audio_duration(q_req["mp3"])
-            t += q_req["duration"]
+            q_samples, q_frames, _ = get_audio_samples_and_frames(q_req["mp3"])
+            q_req["start_frame"] = cursor_frame
+            q_req["frame_count"] = q_frames
+            q_req["start_time"] = cursor_frame / float(FPS)
+            q_req["duration"] = q_frames / float(FPS)
+            scene_plans.append(
+                ScenePlan(
+                    scene_id=f"q_{idx + 1}",
+                    start_frame=cursor_frame,
+                    end_frame=cursor_frame + q_frames,
+                    text=str(q.get("question", "")),
+                    audio_samples=q_samples,
+                )
+            )
+            cursor_frame += q_frames
             req_idx += 1
 
-            pop_delays.append(int(t * 1000))
-            q["think_start"] = t
-            q["think_duration"] = 2.0 if is_rapid else float(q.get("duration", 3.5))
-            q["think_end"] = q["think_start"] + q["think_duration"]
-            t = q["think_end"]
-            ding_delays.append(int(t * 1000))
+            pop_delays.append(int(round((cursor_frame / float(FPS)) * 1000)))
+            think_sec = 2.0 if is_rapid else float(q.get("duration", 3.5))
+            think_frames = max(1, int(round(think_sec * FPS)))
+            q["think_start"] = cursor_frame / float(FPS)
+            q["think_duration"] = think_frames / float(FPS)
+            q["think_end"] = (cursor_frame + think_frames) / float(FPS)
+            scene_plans.append(
+                ScenePlan(
+                    scene_id=f"q_{idx + 1}_think",
+                    start_frame=cursor_frame,
+                    end_frame=cursor_frame + think_frames,
+                    text="",
+                    audio_samples=0,
+                )
+            )
+            cursor_frame += think_frames
+            ding_delays.append(int(round((cursor_frame / float(FPS)) * 1000)))
 
             a_req = tts_requests[req_idx]
-            a_req["start_time"] = t
-            a_req["duration"] = get_audio_duration(a_req["mp3"])
-            t += a_req["duration"]
+            a_samples, a_frames, _ = get_audio_samples_and_frames(a_req["mp3"])
+            a_req["start_frame"] = cursor_frame
+            a_req["frame_count"] = a_frames
+            a_req["start_time"] = cursor_frame / float(FPS)
+            a_req["duration"] = a_frames / float(FPS)
+            exp_narr = q.get("explanation", "").strip() if not is_rapid else ""
+            a_pad = gap_frames if exp_narr else gap_frames
+            scene_plans.append(
+                ScenePlan(
+                    scene_id=f"a_{idx + 1}",
+                    start_frame=cursor_frame,
+                    end_frame=cursor_frame + a_frames + a_pad,
+                    text="",
+                    audio_samples=a_samples,
+                )
+            )
+            cursor_frame += a_frames + a_pad
             req_idx += 1
 
-            exp_narr = q.get("explanation", "").strip() if not is_rapid else ""
             if exp_narr:
-                t += 0.1
                 exp_req = tts_requests[req_idx]
-                exp_req["start_time"] = t
-                exp_req["duration"] = get_audio_duration(exp_req["mp3"])
-                t += exp_req["duration"]
+                e_samples, e_frames, _ = get_audio_samples_and_frames(exp_req["mp3"])
+                exp_req["start_frame"] = cursor_frame
+                exp_req["frame_count"] = e_frames
+                exp_req["start_time"] = cursor_frame / float(FPS)
+                exp_req["duration"] = e_frames / float(FPS)
+                scene_plans.append(
+                    ScenePlan(
+                        scene_id=f"exp_{idx + 1}",
+                        start_frame=cursor_frame,
+                        end_frame=cursor_frame + e_frames + gap_frames,
+                        text=exp_narr,
+                        audio_samples=e_samples,
+                    )
+                )
+                cursor_frame += e_frames + gap_frames
                 req_idx += 1
-            t += 0.1
 
         outro_req = tts_requests[req_idx]
-        outro_req["start_time"] = t
-        outro_req["duration"] = get_audio_duration(outro_req["mp3"])
-        t += outro_req["duration"]
-        total_duration = t
+        o_samples, o_frames, _ = get_audio_samples_and_frames(outro_req["mp3"])
+        outro_req["start_frame"] = cursor_frame
+        outro_req["frame_count"] = o_frames
+        outro_req["start_time"] = cursor_frame / float(FPS)
+        outro_req["duration"] = o_frames / float(FPS)
+        scene_plans.append(
+            ScenePlan(
+                scene_id="outro",
+                start_frame=cursor_frame,
+                end_frame=cursor_frame + o_frames,
+                text="",
+                audio_samples=o_samples,
+            )
+        )
+
+        timeline_plan = TimelinePlan(scenes=scene_plans)
+        total_frames = timeline_plan.total_frames
+        total_duration = total_frames / float(FPS)
 
         # Write subtitles.srt
         step3_start = time.time()
@@ -1318,7 +1317,6 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
         # 6. Render Frames via Canonical Glassmorphism Specification (Rawvideo Pipe, Zero PNGs)
         fps = FPS
-        total_frames = max(1, int(math.ceil(total_duration * fps)))
         pinned_font_path = get_pinned_font_path()
         font_path = str(pinned_font_path)
         font_pill = get_font(font_path, 34)
@@ -1673,7 +1671,22 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
             video_url = upload_res.get("secure_url")
             print(f"[Cloudinary] Video uploaded: {video_url}")
         except Exception as cu_err:
-            print(f"[Cloudinary] Video upload failed: {cu_err}. Falling back to static serve.")
+            print(f"[ERROR][Cloudinary] Quiz video upload failed: {cu_err}")
+            fail_payload = {
+                "jobId": job_id,
+                "status": "upload_failed",
+                "error": str(cu_err),
+                "artifactSha256": compute_file_sha256(out_final) if out_final.exists() else None,
+                "byteLength": out_final.stat().st_size if out_final.exists() else 0,
+                "renderProfile": "FAST_QUIZ",
+                "fps": FPS,
+                "resolution": "1080x1920",
+                "timings": timings,
+            }
+            (out_dir / "result.json").write_text(
+                json.dumps(fail_payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            raise RuntimeError(f"Quiz artifact upload failed for {job_id}: {cu_err}") from cu_err
 
         try:
             if out_thumbnail.exists():
@@ -1783,6 +1796,8 @@ def main() -> None:
         if not scenes_list:
             scenes_list = [{"text": "Scene 1"}, {"text": "Scene 2"}]
 
+        validate_motivational_preflight(scenes_list)
+
         # Ensure output and images directories exist
         out_dir.mkdir(parents=True, exist_ok=True)
         images_dir.mkdir(parents=True, exist_ok=True)
@@ -1842,8 +1857,9 @@ def main() -> None:
                     _cover_crop_image(out_png, 1080, 1920)
                 except Exception as e:
                     print(f"[STEP 1][IMAGE] FLUX failed for scene {i}: {e}")
-                    _write_placeholder_image(out_png, title)
-                    _cover_crop_image(out_png, 1080, 1920)
+                    raise VisualAssetGenerationError(
+                        f"FLUX visual asset acquisition failed for scene {i}: {e}"
+                    ) from e
 
                 image_paths.append(out_png)
 

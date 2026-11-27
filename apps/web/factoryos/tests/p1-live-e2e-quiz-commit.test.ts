@@ -135,6 +135,7 @@ async def hermetic_tts(text, voice, rate, out_mp3):
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
     )
 create_short._async_generate_tts_mp3 = hermetic_tts
+create_short.cloudinary.uploader.upload = lambda fp, **kw: {"secure_url": f"https://res.cloudinary.com/demo/video/upload/{Path(fp).name}"}
 
 out_dir = Path(r"${workDir.replace(/\\/g, "\\\\")}")
 out_audio = out_dir / "audio.wav"
