@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "1.0.0-production-13",
+  "subordinateTo": ".okf/charter.md",
+  "sovereignRolesCreated": false,
+  "layers": [
+    {
+      "id": "L01",
+      "name": "Frontend Foundations",
+      "ownerRoles": ["guardian", "auditor"],
+      "docPath": ".okf/production-13/L01.md",
+      "status": "PARTIAL",
+      "definitionOfDone": "No secrets in client bundle; all AI/render calls go through ShortForge control plane; QuickGenerate decomposed; streaming/polling states active.",
+      "evidence": [
+        ".okf/production/13-layer-production-truth.md#L01"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/production-13-conformance.test.ts"
+      ]
+    },
+    {
+      "id": "L02",
+      "name": "APIs & Backend Logic",
+      "ownerRoles": ["guardian", "auditor"],
+      "docPath": ".okf/production-13/L02.md",
+      "status": "PASS",
+      "definitionOfDone": "Single fenced commit path (worker -> result.json + sha256 -> fenced callback -> verifier -> CAS -> control plane); zero worker Firestore writes; zero synthetic URLs.",
+      "evidence": [
+        "services/rendering-engine/core/commit.py",
+        "apps/web/app/api/rendering/instabox/callback/route.ts",
+        "apps/web/app/api/rendering/instabox/dispatch/route.ts"
+      ],
+      "tests": [
+        "services/rendering-engine/tests/test_p1_commit_path.py",
+        "apps/web/factoryos/tests/p1-live-e2e-quiz-commit.test.ts"
+      ]
+    },
+    {
+      "id": "L03",
+      "name": "Database & Storage",
+      "ownerRoles": ["guardian", "cas"],
+      "docPath": ".okf/production-13/L03.md",
+      "status": "PASS",
+      "definitionOfDone": "Artifact bytes live in SHA-256 CAS and object storage; DB stores hashes/metadata; CAS publish only after F06/F07 verification.",
+      "evidence": [
+        "apps/web/factoryos/core/compute/cas/ContentAddressedStore.ts",
+        "services/rendering-engine/core/commit.py"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/p1-live-e2e-quiz-commit.test.ts",
+        "apps/web/factoryos/tests/instabox-verification-gates.test.ts"
+      ]
+    },
+    {
+      "id": "L04",
+      "name": "Auth & Permissions",
+      "ownerRoles": ["guardian", "bda"],
+      "docPath": ".okf/production-13/L04.md",
+      "status": "PASS",
+      "definitionOfDone": "Per-worker HMAC secrets, timing-safe auth, attemptId equality fencing, lease expiry, and runtime authority registry enforcement.",
+      "evidence": [
+        "apps/web/factoryos/core/authority/AuthorityRegistryRuntime.ts",
+        "apps/web/app/api/rendering/instabox/callback/route.ts"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/instabox-callback-fencing.test.ts",
+        "apps/web/factoryos/tests/authority-runtime.test.ts"
+      ]
+    },
+    {
+      "id": "L05",
+      "name": "Hosting & Deployment",
+      "ownerRoles": ["overseer", "guardian"],
+      "docPath": ".okf/production-13/L05.md",
+      "status": "PARTIAL",
+      "definitionOfDone": "Separate dev/preview/prod environments, long renders decoupled from serverless timeouts, documented rollback, and repo outside OneDrive sync.",
+      "evidence": [
+        ".okf/production/13-layer-production-truth.md#L05"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/production-13-conformance.test.ts"
+      ]
+    },
+    {
+      "id": "L06",
+      "name": "Cloud & Compute",
+      "ownerRoles": ["treasurer", "computerouter"],
+      "docPath": ".okf/production-13/L06.md",
+      "status": "PASS",
+      "definitionOfDone": "All renders (including 138s+ quizzes) traverse fenced ComputeRouter/InstaBox routing with deterministic 48k/30fps media core and zero forbidden patterns.",
+      "evidence": [
+        "services/rendering-engine/core/assemble.py",
+        "services/rendering-engine/core/lattice.py",
+        "apps/web/app/api/rendering/instabox/dispatch/route.ts"
+      ],
+      "tests": [
+        "services/rendering-engine/tests/test_p3_media_core.py",
+        "apps/web/factoryos/tests/p1-live-e2e-quiz-commit.test.ts"
+      ]
+    },
+    {
+      "id": "L07",
+      "name": "CI/CD & Version Control",
+      "ownerRoles": ["auditor", "devourer"],
+      "docPath": ".okf/production-13/L07.md",
+      "status": "PASS",
+      "definitionOfDone": "CI and pre-commit enforce okf:authority charter drift lock, ruff F821/F811/F401 undefined-name gate, and P2 media gate suite.",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        ".husky/pre-commit",
+        ".okf/verification/rule-to-test-matrix.md"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts",
+        "apps/web/factoryos/tests/p2-render-gates.test.ts"
+      ]
+    },
+    {
+      "id": "L08",
+      "name": "Security & RLS",
+      "ownerRoles": ["guardian", "bda"],
+      "docPath": ".okf/production-13/L08.md",
+      "status": "PASS",
+      "definitionOfDone": "All external fetches SSRF-guarded (including _download_image), path containment enforced at F06, and zero hardcoded secrets.",
+      "evidence": [
+        "services/rendering-engine/scripts/create_short.py",
+        "apps/web/factoryos/core/fabric/verification/RenderArtifactVerifier.ts"
+      ],
+      "tests": [
+        "services/rendering-engine/tests/test_p1_commit_path.py",
+        "apps/web/factoryos/tests/instabox-security-matrix.test.ts"
+      ]
+    },
+    {
+      "id": "L09",
+      "name": "Rate Limiting & Quotas",
+      "ownerRoles": ["treasurer"],
+      "docPath": ".okf/production-13/L09.md",
+      "status": "PARTIAL",
+      "definitionOfDone": "Treasurer reserve/settle/freeze enforced on all compute/model admissions; bounded backoff; hard spend caps evidenced.",
+      "evidence": [
+        ".okf/economics/treasurer-operating-contract.md"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/authority-charter-drift.test.ts"
+      ]
+    },
+    {
+      "id": "L10",
+      "name": "Caching & CDN",
+      "ownerRoles": ["cas"],
+      "docPath": ".okf/production-13/L10.md",
+      "status": "PASS",
+      "definitionOfDone": "Image cache keys include model + dimensions + steps + toolchain hash; pinned hashed fonts manifest verified at preflight.",
+      "evidence": [
+        "services/rendering-engine/scripts/create_short.py",
+        "services/rendering-engine/assets/fonts/toolchain_manifest.json"
+      ],
+      "tests": [
+        "services/rendering-engine/tests/test_p1_commit_path.py",
+        "services/rendering-engine/tests/test_p3_media_core.py"
+      ]
+    },
+    {
+      "id": "L11",
+      "name": "Load Balancing & Scaling",
+      "ownerRoles": ["computerouter", "slayer", "healer"],
+      "docPath": ".okf/production-13/L11.md",
+      "status": "PARTIAL",
+      "definitionOfDone": "11-node fleet concurrency verified; 1,000-job unified-path soak (S1 >= 99.9%) evidenced.",
+      "evidence": [
+        "apps/web/factoryos/core/compute/instabox/InstaBoxFleetRegistry.ts"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/instabox-box2-pilot-acceptance.test.ts"
+      ]
+    },
+    {
+      "id": "L12",
+      "name": "Error Tracking & Logs",
+      "ownerRoles": ["comms", "auditor"],
+      "docPath": ".okf/production-13/L12.md",
+      "status": "PARTIAL",
+      "definitionOfDone": "Structured correlationId/jobId/executionId logs across Python and Next.js; telemetry on yield, escape rate, loudness, drift, and spend.",
+      "evidence": [
+        "apps/web/factoryos/core/verification/VerificationEngine.ts"
+      ],
+      "tests": [
+        "apps/web/factoryos/tests/p2-render-gates.test.ts"
+      ]
+    },
+    {
+      "id": "L13",
+      "name": "Availability & Recovery",
+      "ownerRoles": ["slayer", "healer", "remaker", "f07"],
+      "docPath": ".okf/production-13/L13.md",
+      "status": "PASS",
+      "definitionOfDone": "Fail-closed worker/upload/preflight/FLUX handling; 12 unconditional F06 gates + F07 audit prevent silent degraded shipping.",
+      "evidence": [
+        "apps/web/factoryos/core/fabric/verification/RenderArtifactVerifier.ts",
+        "services/rendering-engine/scripts/create_short.py"
+      ],
+      "tests": [
+        "services/rendering-engine/tests/test_p3_1_hotfix.py",
+        "apps/web/factoryos/tests/p2-render-gates.test.ts"
+      ]
+    }
+  ]
+}
