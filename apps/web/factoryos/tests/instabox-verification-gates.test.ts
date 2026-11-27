@@ -69,6 +69,14 @@ describe("InstaBox Strict Verification & F07 Hard Gates", () => {
         uri: dummyFile,
       },
       approvedRoots: [tempDir, process.cwd()],
+      expected: {
+        width: 1080,
+        height: 1920,
+        fps: 30,
+        videoCodec: "h264",
+        audioCodec: "aac",
+        requireAudio: true,
+      },
     });
 
     expect(result.status).toBe("FAIL");
