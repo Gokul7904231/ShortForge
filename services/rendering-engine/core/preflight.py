@@ -13,7 +13,7 @@ import hashlib
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from fontTools.ttLib import TTFont
 from PIL import ImageFont
@@ -63,6 +63,11 @@ def _load_cmap(font_path_str: str) -> set[int]:
     cmap = tt.getBestCmap() or {}
     return set(cmap.keys())
 
+@lru_cache(maxsize=32)
+def _load_pil_font(font_path_str: str, size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.truetype(font_path_str, size)
+
+
 # Warm default font + cmap at module load so run_preflight_budget stays <50ms even on first call.
 try:
     _warm_fp = get_pinned_font_path(DEFAULT_FONT_NAME)
@@ -70,11 +75,6 @@ try:
     _load_pil_font(str(_warm_fp), 56)
 except Exception:
     pass
-
-
-@lru_cache(maxsize=32)
-def _load_pil_font(font_path_str: str, size: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(font_path_str, size)
 
 
 def strip_uncovered_glyphs(text: str, font_path: Optional[Path] = None) -> str:

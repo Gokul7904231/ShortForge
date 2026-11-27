@@ -5,7 +5,6 @@ Unit and Integration Tests for Basic Render FastAPI Service
 Tests authentication, validation, health/readiness, metrics, and job submission.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 from basic_render_api import app, RENDER_WORKER_SECRET
 

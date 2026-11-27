@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict
 
 from core.lattice import FPS, SR
 

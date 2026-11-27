@@ -3,7 +3,6 @@ import sys
 import time
 import random
 import json
-import re
 import argparse
 import requests
 from pathlib import Path

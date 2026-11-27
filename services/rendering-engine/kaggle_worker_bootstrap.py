@@ -21,7 +21,7 @@ import urllib.request
 import urllib.error
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 CONTROL_PLANE_URL = os.environ.get("CONTROL_PLANE_URL", "http://localhost:3000").rstrip("/")
 RENDER_WORKER_SECRET = os.environ.get("RENDER_WORKER_SECRET") or os.environ.get("INTERNAL_API_SECRET_KEY", "dev_secret")

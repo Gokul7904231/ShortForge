@@ -22,10 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 from worker_daemon import (
-    GoogleDriveDeliveryProvider,
     handle_delivery,
     compute_sha256,
-    DeliveryError,
     DriveAuthenticationError,
     DriveFolderError,
     DriveQuotaError,

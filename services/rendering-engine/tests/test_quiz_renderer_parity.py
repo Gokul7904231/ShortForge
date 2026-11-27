@@ -13,7 +13,6 @@ adheres strictly to the canonical ShortForge Quiz Specification (docs/design/qui
 """
 
 import sys
-import json
 import shutil
 import pytest
 from pathlib import Path

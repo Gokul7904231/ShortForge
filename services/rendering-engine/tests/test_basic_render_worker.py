@@ -6,8 +6,6 @@ Tests worker queue lifecycle, persistent caching, ffprobe validation, and error 
 """
 
 import pytest
-import asyncio
-from pathlib import Path
 from basic_render_worker import BasicRenderWorker, compute_sha256
 
 @pytest.mark.asyncio

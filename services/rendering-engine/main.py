@@ -3,7 +3,6 @@ import sys
 import uuid
 import json
 import time
-import shutil
 import logging
 import asyncio
 import threading
@@ -20,7 +19,7 @@ try:
 except ImportError:
     pass  # python-dotenv not installed; rely on shell environment
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles

@@ -5,7 +5,6 @@ in InstaBox worker daemon and agent.
 
 import ast
 from pathlib import Path
-import pytest
 
 
 def test_agent_syntax_and_constants():

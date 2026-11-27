@@ -19,7 +19,7 @@ import urllib.request
 import urllib.error
 import subprocess
 from pathlib import Path
-from typing import Tuple, Dict, Any, Optional
+from typing import Optional
 
 # Load environment variables from .env if present (Local Development)
 try:

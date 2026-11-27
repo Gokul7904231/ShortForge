@@ -11,13 +11,13 @@ import urllib.parse
 import sys
 import hashlib
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional
 
 _ENGINE_ROOT = Path(__file__).resolve().parent.parent
 if str(_ENGINE_ROOT) not in sys.path:
     sys.path.insert(0, str(_ENGINE_ROOT))
 
-from core.commit import compute_file_sha256, emit_staged_result, post_fenced_callback
+from core.commit import compute_file_sha256, emit_staged_result
 from core.lattice import FPS, SAMPLES_PER_FRAME, SR, frames_for_samples
 from core.audio_truth import decode_audio_to_pcm48k, write_pcm48k_wav
 from core.preflight import (
@@ -861,16 +861,13 @@ def _ensure_audio_assets(engine_root: Path) -> dict:
     }
 
 def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, out_final: Path, out_thumbnail: Path, timings: dict) -> dict:
-    import wave
     import numpy as np
-    from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+    from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
     import os
     import time
     import shutil
     import asyncio
     import subprocess
-    import textwrap
-    import uuid
     import cloudinary.uploader
 
     total_start = time.perf_counter()
@@ -1178,7 +1175,7 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
             a_req["start_time"] = cursor_frame / float(FPS)
             a_req["duration"] = a_frames / float(FPS)
             exp_narr = q.get("explanation", "").strip() if not is_rapid else ""
-            a_pad = gap_frames if exp_narr else gap_frames
+            a_pad = gap_frames
             scene_plans.append(
                 ScenePlan(
                     scene_id=f"a_{idx + 1}",
@@ -1707,7 +1704,7 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         return {
             "subtitleOverlay": "WORKING",
             "renderProfile": "FAST_QUIZ",
-            "fps": 30,
+            "fps": FPS,
             "resolution": "1080x1920",
             "videoDuration": total_duration,
             "videoUrl": video_url,
@@ -1914,17 +1911,12 @@ def main() -> None:
             thumbnail_scene_img = image_paths[0] if image_paths else None
 
         out_thumbnail = out_dir / "thumbnail.png"
-        try:
-            if thumbnail_scene_img and thumbnail_scene_img.exists():
-                shutil.copyfile(str(thumbnail_scene_img), str(out_thumbnail))
-            else:
-                _write_placeholder_image(out_thumbnail, "Thumbnail")
-        except Exception as e:
-            print(f"[WARN][THUMBNAIL] Failed to write thumbnail.png: {e}")
-            try:
-                _write_placeholder_image(out_thumbnail, "Thumbnail")
-            except Exception:
-                pass
+        if thumbnail_scene_img and thumbnail_scene_img.exists():
+            shutil.copyfile(str(thumbnail_scene_img), str(out_thumbnail))
+        else:
+            raise VisualAssetGenerationError(
+                f"No scene image available for thumbnail; refusing degraded artifact for {job_id}"
+            )
 
         step4_start = time.time()
         subtitle_meta = {"subtitleOverlay": "FALLBACK"}
@@ -1947,7 +1939,8 @@ def main() -> None:
         if not out_final.exists() or out_final.stat().st_size < 1024:
             raise RuntimeError(f"Movie render produced no valid final.mp4: {out_final}")
 
-        probe = _probe_with_ffprobe(out_final)
+        _pcm_probe, probed_dur = decode_audio_to_pcm48k(out_final)
+        probe = {"playable": out_final.exists() and out_final.stat().st_size > 0, "duration": probed_dur, "audioDetected": len(_pcm_probe) > 0}
 
         _finalize_render_and_upload(
             job_id=job_id,

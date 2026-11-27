@@ -1,5 +1,4 @@
 import os
-import sys
 from pathlib import Path
 
 def load_env():

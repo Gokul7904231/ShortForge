@@ -27,6 +27,11 @@ jobs:
       - name: TypeScript TypeCheck (strict, fails CI on error)
         run: cd apps/web && npm run typecheck
 
+      - name: Python Undefined-Name & Lint Gate (F821, F811, F401)
+        run: |
+          python3 -m pip install --quiet ruff
+          python3 -m ruff check services/rendering-engine --select F821,F811,F401
+
       - name: Floor 01 Runtime Adapter Contract Tests
         run: cd apps/web && npx vitest run factoryos/tests/floor01-runtime-adapter.test.ts
         env:

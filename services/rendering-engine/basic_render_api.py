@@ -14,7 +14,7 @@ from typing import Optional, Dict, Any
 
 JOB_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{8,64}$")
 
-from fastapi import FastAPI, HTTPException, Header, Depends, status, Request
+from fastapi import FastAPI, HTTPException, Header, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 

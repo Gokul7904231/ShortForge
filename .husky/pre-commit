@@ -1,1 +1,1 @@
-node scripts/okf/sync-charter-hash.mjs && npm run okf:authority
+node scripts/okf/sync-charter-hash.mjs && npm run okf:authority && python -m ruff check services/rendering-engine --select F821,F811,F401

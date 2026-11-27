@@ -174,3 +174,42 @@ def test_quiz_upload_failure_writes_upload_failed_and_raises(tmp_path, monkeypat
         )
     res = json.loads((out_dir / "result.json").read_text(encoding="utf-8"))
     assert res["status"] == "upload_failed"
+
+
+def test_zero_placeholder_references_in_create_short_source():
+    """Static source grep: _write_placeholder_image must not appear anywhere in create_short.py."""
+    src = (SCRIPTS_DIR / "create_short.py").read_text(encoding="utf-8")
+    assert "_write_placeholder_image" not in src
+
+
+def test_motivational_missing_thumbnail_fails_closed(tmp_path, monkeypatch):
+    """Missing thumbnail source image must raise VisualAssetGenerationError with no result.json staged."""
+    import create_short
+
+    # _generate_or_load_cached_image succeeds without creating out_png (simulating missing scene image)
+    monkeypatch.setattr(create_short, "_generate_or_load_cached_image", lambda *a, **kw: None)
+    # Minimal valid TTS + SRT stubs so execution reaches the thumbnail gate
+    async def mock_tts(*a, **kw):
+        return None
+    monkeypatch.setattr(create_short, "_async_generate_tts_mp3", mock_tts)
+    monkeypatch.setattr(create_short, "_edge_tts", lambda text, wav, **kw: subprocess.run(
+        ["ffmpeg", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-c:a", "pcm_s16le", "-ar", "48000", "-ac", "1", str(wav)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True,
+    ))
+    monkeypatch.setattr(create_short, "_transcribe_to_srt", lambda wav, srt: srt.write_text("1\n00:00:00,000 --> 00:00:01,000\nTest\n", encoding="utf-8"))
+
+    job_file = tmp_path / "job_missing_thumb.json"
+    job_file.write_text(
+        json.dumps({
+            "jobId": "job_missing_thumb",
+            "topic": "Focus",
+            "script": "Stay focused.",
+            "scenes": [{"text": "Stay focused."}],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "argv", ["create_short.py", str(job_file)])
+    with pytest.raises(create_short.VisualAssetGenerationError, match="thumbnail"):
+        create_short.main()
+
+    assert not (tmp_path / "job_missing_thumb" / "result.json").exists()

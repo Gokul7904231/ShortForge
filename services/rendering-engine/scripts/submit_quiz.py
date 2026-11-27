@@ -11,7 +11,6 @@ import json
 import urllib.request
 import urllib.parse
 import http.cookiejar
-from pathlib import Path
 
 BASE_URL = os.environ.get("CONTROL_PLANE_URL", "http://localhost:3000").rstrip("/")
 ADMIN_EMAIL = os.environ.get("FACTORYOS_ADMIN_EMAIL", "gokul32499@gmail.com")

@@ -98,7 +98,7 @@ def test_audio_truth_decodes_mp3_named_wav_and_trims_silence(tmp_path):
 
 def test_timeline_ir_pydantic_mirror():
     """core/timeline.py mirrors CompositionIR ticks with integer start_frame/end_frame."""
-    from core.timeline import ScenePlan, TimelinePlan, compile_from_composition_ir
+    from core.timeline import TimelinePlan, compile_from_composition_ir
 
     ir = {
         "schemaVersion": "2.0.0",

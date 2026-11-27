@@ -12,7 +12,6 @@ from core.lexical import (
     syllables,
     predict_frames,
     validate_and_compile_scenes,
-    GlyphCoverageError,
     PixelOverflowError,
     MIN_SCENE_FRAMES,
 )
