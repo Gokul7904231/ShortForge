@@ -18,6 +18,22 @@ if str(_ENGINE_ROOT) not in sys.path:
     sys.path.insert(0, str(_ENGINE_ROOT))
 
 from core.commit import compute_file_sha256, emit_staged_result, post_fenced_callback
+from core.lattice import FPS, SAMPLES_PER_FRAME, SR, frames_for_samples
+from core.audio_truth import decode_audio_to_pcm48k, write_pcm48k_wav
+from core.preflight import (
+    get_pinned_font_path,
+    run_preflight_budget,
+    strip_uncovered_glyphs,
+    wrap_lines_pixel_exact,
+)
+from core.assemble import (
+    BT709_SETPARAMS_VF,
+    COVER_CROP_VF,
+    assemble_canonical_mp4,
+    build_two_pass_audio_filter,
+    measure_loudnorm_pass1,
+)
+from core.frames import render_pil_frame_to_rgb24
 
 _TOOLCHAIN_HASH = os.environ.get("SHORTFORGE_TOOLCHAIN_HASH") or hashlib.sha256(
     Path(__file__).read_bytes()
@@ -238,18 +254,17 @@ def _init_firebase() -> None:
         print(f"[Firebase] Fallback initialization failed: {e}")
 
 
-def _preprocess_resize_image(img_path: Path, target_w: int = 1080, target_h: int = 1920) -> None:
-    from PIL import Image
+def _cover_crop_image(img_path: Path, target_w: int = 1080, target_h: int = 1920) -> None:
+    from PIL import Image, ImageOps
     try:
         if not img_path.exists() or img_path.stat().st_size <= 0:
             return
         with Image.open(img_path) as im:
             if im.size != (target_w, target_h):
-                print(f"[PIL] Resizing image {img_path.name} from {im.size} to {(target_w, target_h)}")
-                resized = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
-                resized.save(img_path)
+                cropped = ImageOps.fit(im, (target_w, target_h), method=Image.Resampling.LANCZOS)
+                cropped.save(img_path)
     except Exception as e:
-        print(f"[PIL] Error resizing image {img_path}: {e}")
+        print(f"[PIL] Error cover-cropping image {img_path}: {e}")
 
 
 def _finalize_render_and_upload(
@@ -490,12 +505,9 @@ def _write_placeholder_image(out_png: Path, title: str) -> None:
     img = Image.new("RGB", (w, h), color=(18, 18, 18))
     draw = ImageDraw.Draw(img)
 
-    try:
-        font_title = ImageFont.truetype("arial.ttf", 40)
-        font_sub = ImageFont.truetype("arial.ttf", 26)
-    except Exception:
-        font_title = ImageFont.load_default()
-        font_sub = ImageFont.load_default()
+    pinned_fp = str(get_pinned_font_path())
+    font_title = ImageFont.truetype(pinned_fp, 40)
+    font_sub = ImageFont.truetype(pinned_fp, 26)
 
     title = (title or "").strip() or "Scene"
 
@@ -735,76 +747,6 @@ def _transcribe_to_srt(audio_wav: Path, out_srt: Path) -> None:
             idx += 1
 
 
-def _load_total_duration_from_srt(srt_path: Path) -> float:
-    if not srt_path.exists():
-        return 10.0
-
-    lines = srt_path.read_text(encoding="utf-8").splitlines()
-    times: list[float] = []
-    for line in lines:
-        if " --> " in line:
-            parts = line.split(" --> ")
-            if len(parts) == 2:
-                times.append(_seconds_from_srt_time(parts[1].strip()))
-
-    return max(times) if times else 10.0
-
-
-def _probe_with_ffprobe(out_mp4: Path) -> dict:
-    ffprobe = shutil.which("ffprobe")
-    if not ffprobe:
-        return {"playable": False, "duration": None, "audioDetected": False}
-
-    try:
-        cmd = [
-            ffprobe,
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-show_streams",
-            "-of",
-            "json",
-            str(out_mp4),
-        ]
-        p = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        if p.returncode != 0:
-            return {"playable": False, "duration": None, "audioDetected": False}
-
-        data = json.loads(p.stdout)
-        duration = None
-        if "format" in data and "duration" in data["format"]:
-            try:
-                duration = float(data["format"]["duration"])
-            except Exception:
-                duration = None
-
-        audioDetected = False
-        for s in data.get("streams", []) or []:
-            if s.get("codec_type") == "audio":
-                audioDetected = True
-                break
-
-        playable = duration is not None and duration > 0
-        return {"playable": playable, "duration": duration, "audioDetected": audioDetected}
-    except Exception:
-        return {"playable": False, "duration": None, "audioDetected": False}
-
-
-def _get_windows_font_candidates() -> list[str | None]:
-    candidates: list[str | None] = [
-        None,
-        "Arial.ttf",
-        "arial.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-        "C:/Windows/Fonts/Arial.ttf",
-        "C:/Windows/Fonts/tahoma.ttf",
-        "C:/Windows/Fonts/verdana.ttf",
-        "C:/Windows/Fonts/calibri.ttf",
-    ]
-    return candidates
-
-
 def _assemble_video(
     job_id: str,
     render_profile: str,
@@ -813,71 +755,85 @@ def _assemble_video(
     subtitles_srt: Path,
     out_mp4: Path,
 ) -> dict:
-    # Resolve profile
-    RENDER_PROFILES = {
-        "FAST_PREVIEW": {"fps": 18, "width": 540, "height": 960},
-        "LOW_MEMORY": {"fps": 18, "width": 540, "height": 960},
-        "STANDARD_SHORTS": {"fps": 24, "width": 720, "height": 1280},
-        "STANDARD": {"fps": 24, "width": 720, "height": 1280},
-        "HIGH_QUALITY": {"fps": 30, "width": 1080, "height": 1920},
-    }
-    profile_key = str(render_profile or "STANDARD_SHORTS").strip() or "STANDARD_SHORTS"
-    profile = RENDER_PROFILES.get(profile_key, RENDER_PROFILES["STANDARD_SHORTS"])
-    
-    total_duration = _load_total_duration_from_srt(subtitles_srt)
-    
-    # Pre-resize images to target width/height
-    target_w, target_h = int(profile["width"]), int(profile["height"])
+    import numpy as np
+
+    # Audio is the master clock: decode physical audio truth to 48kHz mono PCM
+    pcm, _ = decode_audio_to_pcm48k(audio_wav)
+    total_frames = max(1, frames_for_samples(len(pcm)))
+    target_samples = total_frames * SAMPLES_PER_FRAME
+    if len(pcm) < target_samples:
+        pcm = np.concatenate([pcm, np.zeros(target_samples - len(pcm), dtype=np.int16)])
+    else:
+        pcm = pcm[:target_samples]
+    assert len(pcm) == total_frames * SAMPLES_PER_FRAME
+
+    master_wav = out_mp4.parent / f"{job_id}_master_48k.wav"
+    write_pcm48k_wav(pcm, master_wav)
+
+    target_w, target_h = 1080, 1920
     for img in images:
-        _preprocess_resize_image(img, target_w, target_h)
-        
+        _cover_crop_image(img, target_w, target_h)
+
     ffmpeg_exe = os.environ.get("IMAGEIO_FFMPEG_EXE", "ffmpeg")
-    
-    # Construct slideshow inputs
     n = max(1, len(images))
-    per = total_duration / n
-    
-    cmd = [ffmpeg_exe, "-y"]
+    frames_per_img = max(1, total_frames // n)
+
+    cmd = [ffmpeg_exe, "-y", "-v", "error"]
     filter_concat = ""
     for idx, img in enumerate(images):
-        cmd.extend(["-loop", "1", "-t", f"{per:.3f}", "-i", str(img)])
-        filter_concat += f"[{idx}:v]"
-        
-    # Add audio input
+        img_dur = (total_frames - (frames_per_img * (n - 1)) if idx == n - 1 else frames_per_img) / float(FPS)
+        cmd.extend(["-loop", "1", "-t", f"{img_dur:.6f}", "-i", str(img)])
+        filter_concat += f"[{idx}:v]{COVER_CROP_VF}[v{idx}];"
+
     audio_idx = len(images)
-    cmd.extend(["-i", str(audio_wav)])
-    
-    # Escape subtitles path
-    sub_path_escaped = str(subtitles_srt.resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "'\\''")
-    
-    # Build filter complex
-    if len(images) > 1:
-        filter_concat += f"concat=n={len(images)}:v=1:a=0[v_slideshow];"
-        sub_input = "[v_slideshow]"
-    else:
-        sub_input = "[0:v]"
-        
-    filter_complex = f"{filter_concat}{sub_input}subtitles='{sub_path_escaped}':force_style='FontSize=16'[v_final]"
-    
+    cmd.extend(["-i", str(master_wav)])
+
+    measured = measure_loudnorm_pass1(master_wav)
+    af_chain = build_two_pass_audio_filter(measured)
+
+    v_inputs = "".join(f"[v{i}]" for i in range(n))
+    v_chain = (
+        f"{filter_concat}{v_inputs}concat=n={n}:v=1:a=0,{BT709_SETPARAMS_VF}[v_final]"
+        if n > 1
+        else f"{filter_concat}[v0]{BT709_SETPARAMS_VF}[v_final]"
+    )
+
     cmd.extend([
-        "-filter_complex", filter_complex,
+        "-filter_complex", v_chain,
         "-map", "[v_final]",
         "-map", f"{audio_idx}:a",
+        "-af", af_chain,
         "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-r", str(profile["fps"]),
+        "-preset", "medium",
+        "-crf", "18",
+        "-pix_fmt", "yuv420p",
+        "-r", str(FPS),
+        "-fps_mode", "cfr",
+        "-g", "60",
+        "-keyint_min", "60",
+        "-sc_threshold", "0",
+        "-threads", "4",
+        "-frames:v", str(total_frames),
+        "-video_track_timescale", "15360",
+        "-colorspace", "bt709",
+        "-color_primaries", "bt709",
+        "-color_trc", "bt709",
+        "-color_range", "tv",
         "-c:a", "aac",
-        "-y",
-        str(out_mp4)
+        "-b:a", "192k",
+        "-ar", str(SR),
+        "-ac", "2",
+        "-movflags", "+faststart+write_colr",
+        "-flags", "+bitexact",
+        "-fflags", "+bitexact",
+        str(out_mp4),
     ])
-    
-    print("Running FFmpeg assemble:", " ".join(cmd))
+
     subprocess.run(cmd, check=True)
-    
     return {
         "subtitleOverlay": "WORKING",
-        "renderProfile": profile_key,
-        "fps": profile["fps"],
+        "renderProfile": "HIGH_QUALITY",
+        "fps": FPS,
         "resolution": f"{target_w}x{target_h}",
     }
 
@@ -893,10 +849,7 @@ def get_font(font_name: str, size: int):
     try:
         return ImageFont.truetype(font_name, size)
     except Exception:
-        try:
-            return ImageFont.truetype("arial.ttf", size)
-        except Exception:
-            return ImageFont.load_default()
+        return ImageFont.truetype(str(get_pinned_font_path()), size)
 
 
 def _process_flag_background(flag_url: str, out_path: Path) -> bool:
@@ -1059,61 +1012,11 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
     created_files = set()
 
     def get_audio_duration(path: Path) -> float:
-        try:
-            from mutagen.mp3 import MP3
-            audio = MP3(str(path))
-            dur = audio.info.length
-            if dur and dur > 0.0:
-                return dur
-        except Exception:
-            pass
-
-        ffprobe = shutil.which("ffprobe")
-        if ffprobe:
-            try:
-                cmd = [
-                    ffprobe,
-                    "-v", "error",
-                    "-show_entries", "format=duration",
-                    "-of", "default=noprint_wrappers=1:nokey=1",
-                    str(path)
-                ]
-                res = subprocess.run(cmd, capture_output=True, text=True, check=True)
-                return float(res.stdout.strip())
-            except Exception as e:
-                print(f"[get_audio_duration] ffprobe check failed: {e}")
-
-        ffmpeg_exe = os.environ.get("IMAGEIO_FFMPEG_EXE", "ffmpeg")
-        temp_wav = path.parent / f"temp_{path.stem}_dur.wav"
-        try:
-            cmd = [ffmpeg_exe, "-y", "-i", str(path), "-ac", "1", "-ar", "24000", str(temp_wav)]
-            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-            with wave.open(str(temp_wav), 'rb') as f:
-                return f.getnframes() / float(f.getframerate())
-        except Exception as e:
-            print(f"[get_audio_duration] Fallback failed: {e}")
-            return 5.0
-        finally:
-            if temp_wav.exists():
-                try:
-                    temp_wav.unlink()
-                except Exception:
-                    pass
+        _pcm, dur = decode_audio_to_pcm48k(path)
+        return dur
 
     def get_ffmpeg_font() -> str:
-        candidates = [
-            "C:/Windows/Fonts/segoeui.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/ariblk.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-            "arial.ttf",
-            "Arial"
-        ]
-        for c in candidates:
-            if Path(c).exists():
-                return c
-        return "Arial"
+        return str(get_pinned_font_path())
 
     try:
         script_parent = Path(__file__).resolve().parent
@@ -1380,12 +1283,12 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
         timings["step3_subtitles_sec"] = time.time() - step3_start
 
-        # 5. Build Audio Mix in FFmpeg
+        # 5. Build Audio Mix in FFmpeg (normalize=0)
         filter_parts = []
         for idx, req in enumerate(tts_requests):
             inp_idx = idx + 1
             delay_ms = int(req["start_time"] * 1000)
-            filter_parts.append(f"[{inp_idx}:a]volume=3.0,adelay={delay_ms}|{delay_ms}:all=1[a_delayed_{inp_idx}]")
+            filter_parts.append(f"[{inp_idx}:a]adelay={delay_ms}|{delay_ms}:all=1[a_delayed_{inp_idx}]")
 
         delayed_labels = "".join(f"[a_delayed_{i+1}]" for i in range(len(tts_requests)))
 
@@ -1405,19 +1308,19 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
         filter_parts.append(f"[{bgm_idx}:a]volume=0.08[bgm_vol]")
         total_audio_inputs = len(tts_requests) + (num_q * 2) + 1
-        filter_parts.append(f"{delayed_labels}{sfx_mix_labels}[bgm_vol]amix=inputs={total_audio_inputs}:duration=longest:dropout_transition=0[a_amix_out];[a_amix_out]volume=4.0[a_mixed]")
+        filter_parts.append(
+            f"{delayed_labels}{sfx_mix_labels}[bgm_vol]amix=inputs={total_audio_inputs}:duration=longest:dropout_transition=0:normalize=0,aresample={SR}[a_mixed]"
+        )
 
         filter_complex_file = shm_dir / f"quiz_{job_id}_filter.txt"
         filter_complex_file.write_text(";".join(filter_parts), encoding="utf-8")
         created_files.add(filter_complex_file)
 
-        # 6. Render Frames via Canonical Glassmorphism Specification
-        fps = 30
-        total_frames = int(total_duration * fps)
-        frames_dir = temp_dir / "frames"
-        frames_dir.mkdir(parents=True, exist_ok=True)
-
-        font_path = get_ffmpeg_font()
+        # 6. Render Frames via Canonical Glassmorphism Specification (Rawvideo Pipe, Zero PNGs)
+        fps = FPS
+        total_frames = max(1, int(math.ceil(total_duration * fps)))
+        pinned_font_path = get_pinned_font_path()
+        font_path = str(pinned_font_path)
         font_pill = get_font(font_path, 34)
         font_header = get_font(font_path, 34)
         font_question = get_font(font_path, 48)
@@ -1430,13 +1333,14 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
         topic_clean = topic.strip()
         if "india" in topic_lower:
-            topic_header = "🧠 INDIA GEOGRAPHY QUIZ"
+            topic_header = "INDIA GEOGRAPHY QUIZ"
         elif "japan" in topic_lower:
-            topic_header = "🧠 JAPAN GEOGRAPHY QUIZ"
+            topic_header = "JAPAN GEOGRAPHY QUIZ"
         elif "geography" in topic_lower or "country" in topic_lower:
-            topic_header = f"🧠 {topic_clean.upper()} QUIZ" if "quiz" not in topic_lower else f"🧠 {topic_clean.upper()}"
+            topic_header = f"{topic_clean.upper()} QUIZ" if "quiz" not in topic_lower else topic_clean.upper()
         else:
-            topic_header = f"🧠 {topic_clean.upper()} QUIZ" if "quiz" not in topic_lower else topic_clean.upper()
+            topic_header = f"{topic_clean.upper()} QUIZ" if "quiz" not in topic_lower else topic_clean.upper()
+        topic_header = strip_uncovered_glyphs(topic_header, pinned_font_path)
 
         opt_labels = ["A", "B", "C", "D"]
 
@@ -1458,14 +1362,15 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
             draw.text((540 - hw / 2, 490), topic_header, font=font_header, fill=(0, 170, 255, 255))
             draw.line([(160, 545), (920, 545)], fill=(255, 255, 255, 31), width=1)
 
-            # Question Text
-            q_lines = textwrap.wrap(q.get("question", ""), width=26)
+            # Question Text (pixel-exact wrapping, no silent [:4] truncation)
+            q_clean = strip_uncovered_glyphs(str(q.get("question", "")), pinned_font_path)
+            q_lines = wrap_lines_pixel_exact(q_clean, font_question, 800)
             curr_qy = 580
-            for ql in q_lines[:4]:
+            for ql in q_lines:
                 ql_w = draw.textlength(ql, font=font_question)
                 draw.text((540 - ql_w / 2 + 2, curr_qy + 2), ql, font=font_question, fill=(0, 0, 0, 153))
                 draw.text((540 - ql_w / 2, curr_qy), ql, font=font_question, fill=(255, 255, 255, 255))
-                curr_qy += 60
+                curr_qy += 56
 
             # Divider 2
             draw.line([(160, 840), (920, 840)], fill=(255, 255, 255, 31), width=1)
@@ -1523,13 +1428,14 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
                 btw = draw.textlength(b_text, font=font_badge)
                 draw.text((180 - btw / 2, opt_y + 55 - 16), b_text, font=font_badge, fill=b_color)
 
-                opt_val = options[oidx] if oidx < len(options) else ""
-                opt_val_clean = textwrap.shorten(opt_val, width=35, placeholder="...")
+                opt_val = strip_uncovered_glyphs(str(options[oidx] if oidx < len(options) else ""), pinned_font_path)
+                opt_lines = wrap_lines_pixel_exact(opt_val, font_option, 680)
+                opt_val_clean = opt_lines[0] if opt_lines else ""
                 draw.text((230, opt_y + 36), opt_val_clean, font=font_option, fill=t_color)
 
             frame_comp = Image.alpha_composite(frame, overlay)
             if global_watermark_img:
-                frame_comp.paste(global_watermark_img, (940, 1800), global_watermark_img)
+                frame_comp.paste(global_watermark_img, (820, 1460), global_watermark_img)
             return frame_comp
 
         def render_canonical_hook_frame(bg_img: Image.Image, hook_text: str) -> Image.Image:
@@ -1542,7 +1448,7 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
             draw.text((540 - hw / 2, 600), topic_header, font=font_header, fill=(0, 170, 255, 255))
             draw.line([(160, 650), (920, 650)], fill=(255, 255, 255, 31), width=1)
 
-            h_lines = textwrap.wrap(hook_text, width=26)
+            h_lines = wrap_lines_pixel_exact(strip_uncovered_glyphs(hook_text, pinned_font_path), font_hook, 800)
             total_h = len(h_lines) * 65
             start_y = 900 - total_h / 2
             for hl in h_lines:
@@ -1553,7 +1459,7 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
             frame_comp = Image.alpha_composite(frame, overlay)
             if global_watermark_img:
-                frame_comp.paste(global_watermark_img, (940, 1800), global_watermark_img)
+                frame_comp.paste(global_watermark_img, (820, 1460), global_watermark_img)
             return frame_comp
 
         def render_canonical_outro_frame(bg_img: Image.Image) -> Image.Image:
@@ -1572,30 +1478,40 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
             draw.text((540 - hlw / 2, 750), hl, font=font_outro_headline, fill=(255, 255, 255, 255))
 
             draw.rounded_rectangle([150, 880, 930, 990], radius=22, fill=(255, 255, 255, 15), outline=(255, 255, 255, 31), width=1)
-            c1 = "💬 Comment your score below!"
+            c1 = strip_uncovered_glyphs("Comment your score below!", pinned_font_path)
             c1w = draw.textlength(c1, font=font_outro_cta)
             draw.text((540 - c1w / 2, 915), c1, font=font_outro_cta, fill=(0, 170, 255, 255))
 
             draw.rounded_rectangle([150, 1020, 930, 1130], radius=22, fill=(255, 255, 255, 15), outline=(255, 255, 255, 31), width=1)
-            c2 = "➕ Follow for more daily quizzes!"
+            c2 = strip_uncovered_glyphs("Follow for more daily quizzes!", pinned_font_path)
             c2w = draw.textlength(c2, font=font_outro_cta)
             draw.text((540 - c2w / 2, 1055), c2, font=font_outro_cta, fill=(255, 255, 255, 255))
 
             frame_comp = Image.alpha_composite(frame, overlay)
             if global_watermark_img:
-                frame_comp.paste(global_watermark_img, (940, 1800), global_watermark_img)
+                frame_comp.paste(global_watermark_img, (820, 1460), global_watermark_img)
             return frame_comp
 
-        print(f"[Pillow] Rendering {total_frames} canonical frames in memory...")
+        print(f"[Pillow] Preparing {total_frames} canonical frames for rawvideo pipe (zero PNG disk writes)...")
         render_frames_start = time.perf_counter()
+        _frame_rgb_cache: dict[tuple, bytes] = {}
 
-        for f_idx in range(total_frames):
-            t = f_idx / fps
-
+        def quiz_frame_generator(f_idx: int) -> bytes:
+            t = f_idx / float(fps)
             if t <= hook_req["duration"]:
-                frame_img = render_canonical_hook_frame(hook_bg_img, quiz_data.get("hook", ""))
+                key = ("hook",)
+                if key not in _frame_rgb_cache:
+                    _frame_rgb_cache[key] = render_pil_frame_to_rgb24(
+                        render_canonical_hook_frame(hook_bg_img, quiz_data.get("hook", ""))
+                    )
+                return _frame_rgb_cache[key]
             elif t >= outro_req["start_time"]:
-                frame_img = render_canonical_outro_frame(outro_bg_img)
+                key = ("outro",)
+                if key not in _frame_rgb_cache:
+                    _frame_rgb_cache[key] = render_pil_frame_to_rgb24(
+                        render_canonical_outro_frame(outro_bg_img)
+                    )
+                return _frame_rgb_cache[key]
             else:
                 active_q_idx = 0
                 q_req_idx = 1
@@ -1620,84 +1536,92 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
 
                 active_q = questions[active_q_idx]
                 bg_for_q = question_bg_imgs[active_q_idx] if active_q_idx < len(question_bg_imgs) else hook_bg_img
-
                 is_think = active_q["think_start"] <= t <= active_q["think_end"]
                 is_answer = t > active_q["think_end"]
 
                 if is_answer:
-                    frame_img = render_canonical_question_frame(
-                        bg_for_q, active_q, phase="reveal", timer_text="✓", timer_color=(34, 197, 94, 255)
-                    )
+                    key = ("q", active_q_idx, "reveal", 0)
+                    if key not in _frame_rgb_cache:
+                        _frame_rgb_cache[key] = render_pil_frame_to_rgb24(
+                            render_canonical_question_frame(
+                                bg_for_q, active_q, phase="reveal", timer_text="OK", timer_color=(34, 197, 94, 255)
+                            )
+                        )
+                    return _frame_rgb_cache[key]
                 elif is_think:
-                    cnt_num = int(math.ceil(active_q["think_end"] - t))
-                    if cnt_num < 1: cnt_num = 1
-                    frame_img = render_canonical_question_frame(
-                        bg_for_q, active_q, phase="think", timer_text=f"{cnt_num}s", timer_color=(0, 170, 255, 255)
-                    )
+                    cnt_num = max(1, int(math.ceil(active_q["think_end"] - t)))
+                    key = ("q", active_q_idx, "think", cnt_num)
+                    if key not in _frame_rgb_cache:
+                        _frame_rgb_cache[key] = render_pil_frame_to_rgb24(
+                            render_canonical_question_frame(
+                                bg_for_q, active_q, phase="think", timer_text=f"{cnt_num}s", timer_color=(0, 170, 255, 255)
+                            )
+                        )
+                    return _frame_rgb_cache[key]
                 else:
                     countdown_total = int(math.ceil(active_q.get("think_duration", 2.0)))
-                    frame_img = render_canonical_question_frame(
-                        bg_for_q, active_q, phase="read", timer_text=f"{countdown_total}s", timer_color=(0, 170, 255, 255)
-                    )
+                    key = ("q", active_q_idx, "read", countdown_total)
+                    if key not in _frame_rgb_cache:
+                        _frame_rgb_cache[key] = render_pil_frame_to_rgb24(
+                            render_canonical_question_frame(
+                                bg_for_q, active_q, phase="read", timer_text=f"{countdown_total}s", timer_color=(0, 170, 255, 255)
+                            )
+                        )
+                    return _frame_rgb_cache[key]
 
-            out_frame_path = frames_dir / f"frame_{f_idx:05d}.png"
-            frame_img.convert("RGB").save(out_frame_path, "PNG")
-            created_files.add(out_frame_path)
-
-        print(f"[PERF METRIC - PILLOW]: Rendered {total_frames} canonical frames in {time.perf_counter() - render_frames_start:.2f} seconds.")
-
-        # 7. Generate thumbnail from first question / hook frame
+        # 7. Generate thumbnail from frame 0
         try:
-            first_frame = frames_dir / "frame_00000.png"
-            if first_frame.exists():
-                shutil.copyfile(str(first_frame), str(out_thumbnail))
-            else:
-                hook_bg_img.convert("RGB").save(str(out_thumbnail))
+            frame0 = quiz_frame_generator(0)
+            Image.frombytes("RGB", (1080, 1920), frame0).save(str(out_thumbnail))
             print(f"[Thumbnail] Generated canonical thumbnail at {out_thumbnail}")
         except Exception as thumb_err:
             print(f"[Thumbnail] Warning: Failed to save thumbnail: {thumb_err}")
 
-        # 8. Assemble MP4 via FFmpeg
+        # 8. Build sample-exact master audio WAV (len == total_frames * 1600) and assemble via canonical pipe
         ffmpeg_start = time.perf_counter()
-        ffmpeg_cmd = [
-            ffmpeg_exe,
-            "-y",
-            "-framerate", str(fps),
-            "-i", str(frames_dir / "frame_%05d.png"),
-        ]
+        import numpy as np
+
+        mix_cmd = [ffmpeg_exe, "-y", "-v", "error"]
         for req in tts_requests:
-            ffmpeg_cmd.extend(["-i", str(req["mp3"])])
+            mix_cmd.extend(["-i", str(req["mp3"])])
+        mix_cmd.extend(["-i", str(audio_assets["pop"])])
+        mix_cmd.extend(["-i", str(audio_assets["ding"])])
+        mix_cmd.extend(["-stream_loop", "-1", "-i", str(audio_assets["bgm"])])
+        # Shift input indices by -1 since rawvideo is no longer input 0
+        shifted_filter = ";".join(filter_parts)
+        for i in range(len(tts_requests) + 3, 0, -1):
+            shifted_filter = shifted_filter.replace(f"[{i}:a]", f"[{i - 1}:a]")
+        shifted_filter_file = shm_dir / f"quiz_{job_id}_audio_filter.txt"
+        shifted_filter_file.write_text(shifted_filter, encoding="utf-8")
+        created_files.add(shifted_filter_file)
 
-        ffmpeg_cmd.extend(["-i", str(audio_assets["pop"])])
-        ffmpeg_cmd.extend(["-i", str(audio_assets["ding"])])
-        ffmpeg_cmd.extend(["-stream_loop", "-1", "-i", str(audio_assets["bgm"])])
-
-        ffmpeg_cmd.extend([
-            "-filter_complex_script", str(filter_complex_file),
-            "-map", "0:v",
+        mix_cmd.extend([
+            "-filter_complex_script", str(shifted_filter_file),
             "-map", "[a_mixed]",
-            "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-pix_fmt", "yuv420p",
-            "-threads", "0",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-t", f"{total_duration:.3f}",
-            "-shortest",
-            str(out_final)
+            "-ac", "1",
+            "-ar", str(SR),
+            "-c:a", "pcm_s16le",
+            "-t", f"{total_frames / float(fps):.6f}",
+            str(out_audio),
         ])
+        subprocess.run(mix_cmd, check=True)
 
-        print(f"[FFmpeg] Rendering canonical quiz video to: {out_final}")
-        result_proc = subprocess.run(
-            ffmpeg_cmd,
-            capture_output=True,
-            text=True,
+        master_pcm, _ = decode_audio_to_pcm48k(out_audio)
+        target_samples = total_frames * SAMPLES_PER_FRAME
+        if len(master_pcm) < target_samples:
+            master_pcm = np.concatenate([master_pcm, np.zeros(target_samples - len(master_pcm), dtype=np.int16)])
+        else:
+            master_pcm = master_pcm[:target_samples]
+        assert len(master_pcm) == total_frames * SAMPLES_PER_FRAME
+        write_pcm48k_wav(master_pcm, out_audio)
+
+        assemble_canonical_mp4(
+            frame_generator=quiz_frame_generator,
+            master_audio_wav=out_audio,
+            total_frames=total_frames,
+            out_mp4=out_final,
         )
-        if result_proc.returncode != 0:
-            print(f"[FFmpeg] Error:\n{result_proc.stderr[-3000:]}")
-            raise RuntimeError(f"FFmpeg exited with code {result_proc.returncode}")
-
-        print(f"[FFmpeg] Render complete. File size: {out_final.stat().st_size / (1024*1024):.2f} MB")
+        print(f"[PERF METRIC - PILLOW+FFMPEG]: Rendered {total_frames} frames in {time.perf_counter() - render_frames_start:.2f}s")
         timings["step4_render_sec"] = time.perf_counter() - ffmpeg_start
 
         # 9. Cloudinary Upload
@@ -1915,11 +1839,11 @@ def main() -> None:
                         height=1024,
                         steps=4,
                     )
-                    _preprocess_resize_image(out_png, 1080, 1920)
+                    _cover_crop_image(out_png, 1080, 1920)
                 except Exception as e:
                     print(f"[STEP 1][IMAGE] FLUX failed for scene {i}: {e}")
                     _write_placeholder_image(out_png, title)
-                    _preprocess_resize_image(out_png, 1080, 1920)
+                    _cover_crop_image(out_png, 1080, 1920)
 
                 image_paths.append(out_png)
 

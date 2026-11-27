@@ -86,7 +86,7 @@ describe("P1 Live E2E Quiz Commit Path (Dispatch -> Worker -> Staged -> Callback
         nodeId: NODE_ID,
         jobId,
         topic: "P1 E2E Geography Quiz",
-        duration: 10.33,
+        duration: 10.2,
         localRenderIntent: {
           project_id: `proj_${jobId}`,
           title: "P1 E2E Geography Quiz",
@@ -94,7 +94,7 @@ describe("P1 Live E2E Quiz Commit Path (Dispatch -> Worker -> Staged -> Callback
             width: 1080,
             height: 1920,
             fps: 30,
-            duration_seconds: 10.33,
+            duration_seconds: 10.2,
             video_codec: "libx264",
             audio_codec: "aac",
           },
@@ -210,7 +210,7 @@ print("STAGED_JSON=" + json.dumps(staged))
     console.log(
       "[P1-E2E-TRACE]",
       JSON.stringify({
-        dispatch: { status: dispatchRes.status, jobId, duration: 10.33, attemptId: lease!.attemptId, error: dispatchJson.error, artifactSha256: dispatchJson.artifact?.computedSha256, verifier: dispatchJson.verifierResult?.status, f07: dispatchJson.f07Audit?.overallStatus },
+        dispatch: { status: dispatchRes.status, jobId, duration: 10.2, attemptId: lease!.attemptId, error: dispatchJson.error, artifactSha256: dispatchJson.artifact?.computedSha256, verifier: dispatchJson.verifierResult?.status, f07: dispatchJson.f07Audit?.overallStatus },
         staged: { status: staged.status, artifactSha256: staged.artifactSha256, byteLength: staged.byteLength },
         callback: callbackJson,
       }),
