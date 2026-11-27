@@ -60,6 +60,10 @@ export interface InstaBoxNodeRecord {
 export class InstaBoxFleetRegistry {
   private static instance: InstaBoxFleetRegistry | null = null;
   private readonly nodes = new Map<InstaBoxWorkerNodeId, InstaBoxNodeRecord>();
+  private readonly dlqJobs = new Map<
+    string,
+    { jobId: string; workerId: string; reason: string; dlqBundle: Record<string, unknown>; recordedAt: string }
+  >();
   private readonly cas = ContentAddressedStore.getInstance();
   private readonly stateFilePath: string;
 
@@ -737,5 +741,26 @@ export class InstaBoxFleetRegistry {
 
     lease.resolveReceipt(receipt);
     return receipt;
+  }
+
+  public dlqActiveJob(
+    workerId: string,
+    executionToken: string,
+    reason: string,
+    dlqBundle: Record<string, unknown> = {},
+  ): ExecutionReceipt {
+    const receipt = this.failActiveJob(workerId, executionToken, reason);
+    this.dlqJobs.set(receipt.jobId, {
+      jobId: receipt.jobId,
+      workerId,
+      reason,
+      dlqBundle,
+      recordedAt: new Date().toISOString(),
+    });
+    return receipt;
+  }
+
+  public getDlqRecord(jobId: string) {
+    return this.dlqJobs.get(jobId);
   }
 }

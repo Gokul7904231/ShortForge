@@ -1,0 +1,39 @@
+name: InstaBox 15-Minute Golden Canary Gate
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: instabox-canary-cron
+  cancel-in-progress: true
+
+jobs:
+  canary:
+    name: Run Fleet Golden Canary Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Canary Endpoint
+        env:
+          VERCEL_APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_APP_URL:-}" ]; then
+            echo "::warning::VERCEL_APP_URL not set. Skipping canary trigger."
+            exit 0
+          fi
+          BASE_URL="${VERCEL_APP_URL%/}"
+          HTTP_CODE=$(curl -sSL -o /tmp/canary_response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET:-}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 \
+            "${BASE_URL}/api/cron/canary")
+          cat /tmp/canary_response.json
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
+            exit 1
+          fi

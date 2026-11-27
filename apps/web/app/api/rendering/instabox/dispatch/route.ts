@@ -3,6 +3,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { InstaBoxFleetRegistry } from "@/factoryos/core/compute/instabox/InstaBoxFleetRegistry";
+import { ControlPlaneCircuitBreaker } from "@/factoryos/core/compute/instabox/ControlPlaneCircuitBreaker";
 import { ComputeGateway } from "@/factoryos/core/compute/gateway/ComputeGateway";
 import { ContentAddressedStore } from "@/factoryos/core/compute/cas/ContentAddressedStore";
 import { RenderArtifactVerifier } from "@/factoryos/core/fabric/verification/RenderArtifactVerifier";
@@ -97,6 +98,22 @@ export async function POST(request: NextRequest) {
         { success: false, error: `Invalid or excluded target node: ${targetNodeId}` },
         { status: 400 },
       );
+    }
+
+    const breaker = ControlPlaneCircuitBreaker.getInstance();
+    if (body.action !== "drain" && body.action !== "undrain") {
+      const intake = breaker.allowIntake();
+      if (!intake.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Systemic circuit breaker OPEN: intake-paused",
+            code: "INTAKE_PAUSED",
+            breaker: intake.snapshot,
+          },
+          { status: 503 },
+        );
+      }
     }
 
     if (body.action === "drain" || body.action === "undrain") {
@@ -208,6 +225,7 @@ export async function POST(request: NextRequest) {
 
     const receipt = dispatchResult.receipt;
     if (receipt.status !== "COMPLETED") {
+      breaker.recordFailure();
       return NextResponse.json(
         {
           success: false,
@@ -319,6 +337,8 @@ export async function POST(request: NextRequest) {
         { status: 422 },
       );
     }
+
+    breaker.recordSuccess();
 
     return NextResponse.json({
       success: true,

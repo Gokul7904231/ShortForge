@@ -102,3 +102,44 @@ def post_fenced_callback(
         return resp.json()
     except Exception:
         return {"success": True, "statusCode": resp.status_code}
+
+
+def post_fenced_dlq_callback(
+    *,
+    callback_url: str,
+    worker_id: str,
+    worker_secret: str,
+    execution_token: str,
+    execution_id: str,
+    attempt_id: int,
+    job_id: str,
+    failure_reason: str,
+    dlq_bundle: Dict[str, Any],
+    timeout: int = 30,
+) -> Dict[str, Any]:
+    """Emit a terminal DLQ bundle through the fenced callback so control plane transitions job to DLQ."""
+    if not isinstance(attempt_id, int) or attempt_id <= 0:
+        raise ValueError(f"attempt_id must be a positive integer, got {attempt_id!r}")
+
+    body = {
+        "workerId": worker_id,
+        "executionToken": execution_token,
+        "executionId": execution_id,
+        "jobId": job_id,
+        "status": "DLQ",
+        "attemptId": attempt_id,
+        "exitCode": 1,
+        "failureReason": failure_reason,
+        "dlqBundle": dlq_bundle,
+    }
+    headers = {
+        "Authorization": f"Bearer {worker_secret}",
+        "Content-Type": "application/json",
+    }
+    resp = requests.post(callback_url, json=body, headers=headers, timeout=timeout)
+    if resp.status_code >= 400:
+        raise RuntimeError(f"Fenced DLQ callback rejected with HTTP {resp.status_code}: {resp.text}")
+    try:
+        return resp.json()
+    except Exception:
+        return {"success": True, "statusCode": resp.status_code, "status": "DLQ"}

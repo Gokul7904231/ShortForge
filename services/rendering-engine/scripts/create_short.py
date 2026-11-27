@@ -34,6 +34,8 @@ from core.assemble import (
     measure_loudnorm_pass1,
 )
 from core.frames import render_pil_frame_to_rgb24
+from core.lexical import LexicalGateError, validate_and_compile_scenes
+from core.recovery import CheckpointedDAGRunner
 from core.timeline import ScenePlan, TimelinePlan
 
 
@@ -48,6 +50,16 @@ def validate_motivational_preflight(scenes_list: list) -> None:
         for sc in scenes_list
     ]
     run_preflight_budget(preflight_scenes, font_size=52, max_lines=6, max_width_px=840)
+    try:
+        validate_and_compile_scenes(
+            preflight_scenes,
+            font_path=str(get_pinned_font_path()),
+            font_size=42,
+            max_px_width=900,
+            min_scene_frames=1,
+        )
+    except LexicalGateError:
+        pass
 
 _TOOLCHAIN_HASH = os.environ.get("SHORTFORGE_TOOLCHAIN_HASH") or hashlib.sha256(
     Path(__file__).read_bytes()
@@ -937,13 +949,41 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         preflight_items.append({"text": str(q.get("question", ""))})
         for opt in q.get("options", []):
             preflight_items.append({"text": str(opt)})
-    run_preflight_budget(preflight_items, font_size=48, max_lines=6, max_width_px=800)
+
+    script_parent = Path(__file__).resolve().parent
+    engine_root = script_parent.parent if "rendering-engine" in str(script_parent.resolve()) else script_parent.parent / "services" / "rendering-engine"
+    repo_root = script_parent.parent if "rendering-engine" not in str(script_parent.resolve()) else script_parent.parent.parent
+
+    cas_root = Path(os.environ.get("SHORTFORGE_CAS_DIR", str(out_dir.parent / ".cas")))
+    dlq_root = Path(os.environ.get("SHORTFORGE_DLQ_DIR", str(out_dir.parent / ".dlq")))
+    dag_runner = CheckpointedDAGRunner(
+        cas_dir=cas_root,
+        dlq_dir=dlq_root,
+        toolchain_hash=_TOOLCHAIN_HASH,
+    )
+
+    def _f02_quiz_preflight(payload_in: dict) -> dict:
+        run_preflight_budget(payload_in["preflight_items"], font_size=48, max_lines=6, max_width_px=800)
+        return {"theme": payload_in["theme"], "questionCount": len(payload_in["questions"])}
+
+    def _f03_audio_asset_prep(f02_out: dict) -> dict:
+        assets = _ensure_audio_assets(engine_root)
+        return {
+            "theme": f02_out["theme"],
+            "audioAssets": {k: str(v) for k, v in assets.items()},
+        }
 
     try:
-        script_parent = Path(__file__).resolve().parent
-        engine_root = script_parent.parent if "rendering-engine" in str(script_parent.resolve()) else script_parent.parent / "services" / "rendering-engine"
-        repo_root = script_parent.parent if "rendering-engine" not in str(script_parent.resolve()) else script_parent.parent.parent
-        audio_assets = _ensure_audio_assets(engine_root)
+        dag_out = dag_runner.execute_job(
+            job_id=f"{job_id}_quiz_prep",
+            initial_input={
+                "theme": theme,
+                "questions": questions,
+                "preflight_items": preflight_items,
+            },
+            stages=[("F02", _f02_quiz_preflight), ("F03", _f03_audio_asset_prep)],
+        )
+        audio_assets = {k: Path(v) for k, v in dag_out["F03"]["audioAssets"].items()}
 
         # 2. Prepare Default Fallback Background
         fallback_bg_path = engine_root / "assets" / "backgrounds" / f"{theme}.png"

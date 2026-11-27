@@ -21,6 +21,8 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+from core.recovery import DiskQuotaManager
+
 # Load environment variables from .env if present (Local Development)
 try:
     from dotenv import load_dotenv
@@ -386,6 +388,12 @@ def deliver_to_cloudinary(job: dict, mp4_path: Path) -> dict:
 def claim_job() -> dict | None:
     if not RENDER_WORKER_SECRET:
         log("Worker", "Fatal: RENDER_WORKER_SECRET is not configured in worker environment.")
+        return None
+
+    scratch_root = Path(os.environ.get("SHORTFORGE_SCRATCH_ROOT", str(Path(tempfile.gettempdir()) / "factoryos-render")))
+    disk_status = DiskQuotaManager(scratch_root=scratch_root).check_and_enforce()
+    if disk_status.get("refuse_new_leases"):
+        log("DiskQuota", f"DEGRADED: disk usage {disk_status['usage_ratio']:.1%} >= 90%; refusing new leases")
         return None
 
     url = f"{CONTROL_PLANE_URL}/api/rendering/claim"

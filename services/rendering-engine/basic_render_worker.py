@@ -22,6 +22,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
+from core.recovery import DiskQuotaManager
+
 # Load environment variables
 try:
     from dotenv import load_dotenv
@@ -131,6 +133,11 @@ class BasicRenderWorker:
         if not self.is_running:
             return False, "Worker loop is not running."
 
+        # 4. Check scratch disk quota watermark
+        disk_status = DiskQuotaManager(scratch_root=EPHEMERAL_WORKSPACE_ROOT).check_and_enforce()
+        if disk_status.get("refuse_new_leases"):
+            return False, f"DEGRADED: scratch disk usage {disk_status['usage_ratio']:.1%} >= 90%"
+
         return True, None
 
     async def enqueue_job(self, job_payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -143,6 +150,10 @@ class BasicRenderWorker:
             raise ValueError("jobId is required")
         if not JOB_ID_RE.match(job_id):
             raise ValueError("Invalid jobId format — must match ^[a-zA-Z0-9_-]{8,64}$")
+
+        disk_status = DiskQuotaManager(scratch_root=EPHEMERAL_WORKSPACE_ROOT).check_and_enforce()
+        if disk_status.get("refuse_new_leases"):
+            raise RuntimeError(f"DEGRADED: refusing new lease for {job_id} (disk usage {disk_status['usage_ratio']:.1%})")
 
         # Idempotency check
         if job_id in self.active_jobs:

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { InstaBoxFleetRegistry } from "@/factoryos/core/compute/instabox/InstaBoxFleetRegistry";
+import { ControlPlaneCircuitBreaker } from "@/factoryos/core/compute/instabox/ControlPlaneCircuitBreaker";
 import { RenderArtifactVerifier } from "@/factoryos/core/fabric/verification/RenderArtifactVerifier";
 import { VerificationEngine } from "@/factoryos/core/verification/VerificationEngine";
 
@@ -124,10 +125,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Handle FAILED status
+    // 3. Handle DLQ and FAILED status
+    const breaker = ControlPlaneCircuitBreaker.getInstance();
+    if (status === "DLQ") {
+      const reason = failureReason || "Worker exhausted retry budget and routed job to DLQ";
+      const dlqReceipt = registry.dlqActiveJob(
+        workerId,
+        executionToken,
+        reason,
+        (body.dlqBundle && typeof body.dlqBundle === "object" ? body.dlqBundle : {}) as Record<string, unknown>,
+      );
+      breaker.recordFailure();
+      return NextResponse.json({
+        success: true,
+        jobId,
+        status: "DLQ",
+        failureReason: reason,
+        receiptId: dlqReceipt.receiptId,
+        dlqRecorded: Boolean(registry.getDlqRecord(jobId)),
+      });
+    }
+
     if (status !== "RENDER_SUCCEEDED" && status !== "COMPLETED") {
       const reason = failureReason || `Worker reported failure with exit code ${exitCode ?? 1}`;
       const failReceipt = registry.failActiveJob(workerId, executionToken, reason);
+      breaker.recordFailure();
       return NextResponse.json({
         success: true,
         jobId,
@@ -226,6 +248,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Verification Succeeded: Authoritatively Mark COMPLETED
+    breaker.recordSuccess();
     const receipt = registry.completeActiveJob(workerId, executionToken, {
       exitCode: exitCode ?? 0,
       sha256Proof,
