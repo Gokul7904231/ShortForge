@@ -432,3 +432,7 @@ Gstack is an engineering workflow reference and optional developer toolchain. It
 ShortForge retains Chrome DevTools MCP as the canonical local browser evidence provider and production-helper as the canonical security evidence station.
 
 Any gstack-derived mechanism must pass the existing .okf decision protocol and source-of-truth precedence.
+
+---
+
+For the production-readiness truth matrix, see [`./production/13-layer-production-truth.md`](./production/13-layer-production-truth.md).
