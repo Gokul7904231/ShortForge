@@ -227,6 +227,32 @@ def test_lexical_gate_and_preflight_rejects_over_budget_motivational_script() ->
         create_short.validate_motivational_preflight([{"text": "Hello 🚀"}])
 
 
+def test_lexical_rejects_pixel_overflow() -> None:
+    """Text exceeding DEFAULT_MAX_PX_WIDTH (864px) must raise PixelOverflowError."""
+    scripts_dir = ENGINE_ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import create_short
+    from core.lexical import PixelOverflowError
+
+    # Multi-word text wraps cleanly in run_preflight_budget, but exceeds 864px in validate_and_compile_scenes
+    with pytest.raises(PixelOverflowError):
+        create_short.validate_motivational_preflight([{"text": "Hello world this is a wide sentence overflowing 864px"}])
+
+
+def test_lexical_rejects_short_scene_below_floor() -> None:
+    """Short scenes below MIN_SCENE_FRAMES (45) are merged and floored >= 45 frames."""
+    scripts_dir = ENGINE_ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import create_short
+    from core.lexical import MIN_SCENE_FRAMES
+
+    compiled = create_short.validate_motivational_preflight([{"text": "Hi"}, {"text": "Go"}])
+    assert len(compiled) == 1
+    assert compiled[0].predicted_frames >= MIN_SCENE_FRAMES
+
+
 def test_dlq_callback_fires_when_budget_exhausted_in_create_short(tmp_path: Path, monkeypatch) -> None:
     """Budget exhaustion in create_short.run_quiz_shorts fires post_fenced_dlq_callback with status=DLQ and re-raises."""
     scripts_dir = ENGINE_ROOT / "scripts"

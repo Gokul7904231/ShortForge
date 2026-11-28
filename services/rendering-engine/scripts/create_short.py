@@ -34,7 +34,7 @@ from core.assemble import (
     measure_loudnorm_pass1,
 )
 from core.frames import render_pil_frame_to_rgb24
-from core.lexical import validate_and_compile_scenes
+from core.lexical import DEFAULT_MAX_PX_WIDTH, MIN_SCENE_FRAMES, validate_and_compile_scenes
 from core.recovery import (
     CheckpointedDAGRunner,
     GlobalBudgetExhaustedError,
@@ -58,8 +58,8 @@ def validate_motivational_preflight(scenes_list: list) -> list:
         preflight_scenes,
         font_path=str(get_pinned_font_path()),
         font_size=42,
-        max_px_width=840 * 6,
-        min_scene_frames=1,
+        max_px_width=DEFAULT_MAX_PX_WIDTH,
+        min_scene_frames=MIN_SCENE_FRAMES,
     )
 
 
@@ -106,6 +106,11 @@ def _notify_dlq_if_configured(
             job_id=job_id,
             failure_reason=str(exc),
             dlq_bundle=dlq_bundle,
+        )
+    else:
+        print(
+            f"[WARN][DLQ] Skipping fenced DLQ callback for job={job_id}: missing callback_url, worker_secret, or execution_token",
+            flush=True,
         )
 
 _TOOLCHAIN_HASH = os.environ.get("SHORTFORGE_TOOLCHAIN_HASH") or hashlib.sha256(

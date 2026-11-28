@@ -168,7 +168,7 @@ def validate_and_compile_scenes(
             # Re-verify merged text fits within safe line budget or wraps cleanly
             w, h = measure_px(merged_text, font_path, font_size)
             merged_syl = curr["syllable_count"] + next_sc["syllable_count"]
-            merged_pf = predict_frames(merged_text)
+            merged_pf = max(min_scene_frames, predict_frames(merged_text))
 
             merged_scene = {
                 "scene_id": curr["scene_id"],
