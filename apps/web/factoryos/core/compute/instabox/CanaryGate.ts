@@ -30,22 +30,44 @@ export const FLEET_GOLDEN_CANARY_SHA256: string =
     .update(JSON.stringify(FLEET_GOLDEN_CANARY_INTENT))
     .digest("hex");
 
+export type FleetCanaryStatus = "HEALTHY" | "DRAINED" | "UNVERIFIED";
+
 export interface FleetCanaryResult {
   nodeId: InstaBoxWorkerNodeId;
   healthy: boolean;
   shouldDrain: boolean;
-  status: "HEALTHY" | "DRAINED";
+  status: FleetCanaryStatus;
   isDraining: boolean;
-  observedSha256: string;
+  observedSha256: string | null;
   expectedSha256: string;
+}
+
+export function reportUnverifiedCanary(
+  registry: InstaBoxFleetRegistry,
+  nodeId: InstaBoxWorkerNodeId,
+  expectedSha256: string = FLEET_GOLDEN_CANARY_SHA256,
+): FleetCanaryResult {
+  const record = registry.getNodeRecord(nodeId);
+  return {
+    nodeId,
+    healthy: false,
+    shouldDrain: false,
+    status: "UNVERIFIED",
+    isDraining: Boolean(record?.isDraining),
+    observedSha256: null,
+    expectedSha256,
+  };
 }
 
 export function evaluateFleetCanary(
   registry: InstaBoxFleetRegistry,
   nodeId: InstaBoxWorkerNodeId,
-  observedSha256: string,
+  observedSha256: string | undefined | null,
   expectedSha256: string = FLEET_GOLDEN_CANARY_SHA256,
 ): FleetCanaryResult {
+  if (!observedSha256 || !observedSha256.trim()) {
+    return reportUnverifiedCanary(registry, nodeId, expectedSha256);
+  }
   const match = observedSha256.trim().toLowerCase() === expectedSha256.trim().toLowerCase();
   if (!match) {
     registry.setNodeDraining(nodeId, true);

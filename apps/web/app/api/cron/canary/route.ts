@@ -4,6 +4,7 @@ import {
   evaluateFleetCanary,
   FLEET_GOLDEN_CANARY_INTENT,
   FLEET_GOLDEN_CANARY_SHA256,
+  reportUnverifiedCanary,
 } from "@/factoryos/core/compute/instabox/CanaryGate";
 import type { InstaBoxWorkerNodeId } from "@/factoryos/core/compute/instabox/InstaBoxContracts";
 
@@ -21,7 +22,10 @@ export async function POST(request: NextRequest) {
   const observations = (body.observations || {}) as Partial<Record<InstaBoxWorkerNodeId, string>>;
 
   const results = registry.getAllNodeIds().map((nodeId) => {
-    const observed = observations[nodeId] || FLEET_GOLDEN_CANARY_SHA256;
+    const observed = observations[nodeId];
+    if (!observed) {
+      return reportUnverifiedCanary(registry, nodeId, FLEET_GOLDEN_CANARY_SHA256);
+    }
     return evaluateFleetCanary(registry, nodeId, observed, FLEET_GOLDEN_CANARY_SHA256);
   });
 
@@ -29,6 +33,8 @@ export async function POST(request: NextRequest) {
     success: true,
     goldenIntentId: FLEET_GOLDEN_CANARY_INTENT.project_id,
     goldenSha256: FLEET_GOLDEN_CANARY_SHA256,
+    healthyNodes: results.filter((r) => r.healthy).length,
+    unverifiedNodes: results.filter((r) => r.status === "UNVERIFIED").map((r) => r.nodeId),
     drainedNodes: results.filter((r) => r.shouldDrain).map((r) => r.nodeId),
     results,
   });

@@ -29,7 +29,21 @@ const SHIPPING_ENTRYPOINTS = [
   path.join(ENGINE_ROOT, "main.py"),
 ];
 
-describe("P5.1 No Orphan Core Modules Guard", () => {
+function collectFiles(dir: string, ext: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...collectFiles(full, ext));
+    } else if (entry.name.endsWith(ext)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+describe("P5.1 / P5.2 No Orphan Core Modules & Rejection-Test Guard", () => {
   it("every services/rendering-engine/core/*.py is imported by at least one shipping-path entrypoint", () => {
     const coreModules = fs
       .readdirSync(CORE_DIR)
@@ -58,6 +72,36 @@ describe("P5.1 No Orphan Core Modules Guard", () => {
     expect(
       orphans,
       `Orphan core modules not imported by any shipping-path file: ${orphans.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("every guard module has at least one *_rejects_* or *_drains_* rejection test", () => {
+    const pyTests = collectFiles(path.join(ENGINE_ROOT, "tests"), ".py").map((p) =>
+      fs.readFileSync(p, "utf-8"),
+    );
+    const tsTests = collectFiles(path.join(REPO_ROOT, "apps", "web", "factoryos", "tests"), ".ts").map(
+      (p) => fs.readFileSync(p, "utf-8"),
+    );
+    const allTestCorpus = [...pyTests, ...tsTests].join("\n");
+
+    const requiredGuardRejectionTests: Array<{ guard: string; pattern: RegExp }> = [
+      { guard: "lexical", pattern: /def\s+test_[^\n]*lexical[^\n]*(?:rejects|drains)/i },
+      { guard: "preflight", pattern: /def\s+test_[^\n]*preflight[^\n]*(?:rejects|drains)/i },
+      { guard: "recovery", pattern: /def\s+test_[^\n]*recovery[^\n]*(?:rejects|drains)/i },
+      { guard: "CanaryGate", pattern: /(?:it|test)\(\s*["'][^"']*canary[^"']*(?:rejects|drains)/i },
+      {
+        guard: "ControlPlaneCircuitBreaker",
+        pattern: /(?:it|test)\(\s*["'][^"']*breaker[^"']*(?:rejects|drains)/i,
+      },
+    ];
+
+    const missing = requiredGuardRejectionTests
+      .filter(({ pattern }) => !pattern.test(allTestCorpus))
+      .map(({ guard }) => guard);
+
+    expect(
+      missing,
+      `Guard modules missing a *_rejects_* or *_drains_* test: ${missing.join(", ")}`,
     ).toEqual([]);
   });
 });

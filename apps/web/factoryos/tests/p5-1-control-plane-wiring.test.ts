@@ -20,7 +20,7 @@ describe("P5.1 Control-Plane Wiring (Breaker, Canary Drain, DLQ)", () => {
     process.env.CRON_SECRET = "test-cron-secret";
   });
 
-  it("opens breaker at >20% failure across 50 jobs and returns 503 intake-paused on dispatch", async () => {
+  it("breaker_rejects_dispatch_with_503_when_failure_rate_exceeds_20pct", async () => {
     const dbPath = path.join(tmpDir, "breaker.sqlite3");
     const breaker = ControlPlaneCircuitBreaker.resetInstanceForTesting(dbPath);
 
@@ -44,9 +44,24 @@ describe("P5.1 Control-Plane Wiring (Breaker, Canary Drain, DLQ)", () => {
     expect(body.code).toBe("INTAKE_PAUSED");
   });
 
-  it("drains node when canary hash mismatches fleet golden hash", async () => {
+  it("canary_drains_node_when_hash_mismatches_and_canary_rejects_empty_body_as_unverified", async () => {
     const stateFile = path.join(tmpDir, "fleet.json");
     const registry = InstaBoxFleetRegistry.resetInstanceForTesting(stateFile);
+
+    // Empty body POST -> zero nodes reported healthy (all UNVERIFIED)
+    const emptyReq = new NextRequest("http://localhost/api/cron/canary", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer test-cron-secret",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+    const emptyRes = await canaryCronPost(emptyReq);
+    const emptyBody = await emptyRes.json();
+    expect(emptyRes.status).toBe(200);
+    expect(emptyBody.healthyNodes).toBe(0);
+    expect(emptyBody.results.every((r: { healthy: boolean; status: string }) => !r.healthy && r.status === "UNVERIFIED")).toBe(true);
 
     const ok = evaluateFleetCanary(registry, "box2", FLEET_GOLDEN_CANARY_SHA256);
     expect(ok.healthy).toBe(true);

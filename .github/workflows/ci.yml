@@ -37,6 +37,11 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
+      - name: No-Orphan & Guard Rejection-Test Enforcement
+        run: cd apps/web && npx vitest run factoryos/tests/no-orphan-core-modules.test.ts factoryos/tests/p5-1-control-plane-wiring.test.ts
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
       - name: Notebook Fabric Contract Tests
         run: cd apps/web && npx vitest run factoryos/tests/notebook-fabric.test.ts
         env:

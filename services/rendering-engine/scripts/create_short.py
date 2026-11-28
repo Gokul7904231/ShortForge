@@ -17,7 +17,7 @@ _ENGINE_ROOT = Path(__file__).resolve().parent.parent
 if str(_ENGINE_ROOT) not in sys.path:
     sys.path.insert(0, str(_ENGINE_ROOT))
 
-from core.commit import compute_file_sha256, emit_staged_result
+from core.commit import compute_file_sha256, emit_staged_result, post_fenced_dlq_callback
 from core.lattice import FPS, SAMPLES_PER_FRAME, SR, frames_for_samples
 from core.audio_truth import decode_audio_to_pcm48k, write_pcm48k_wav
 from core.preflight import (
@@ -34,8 +34,12 @@ from core.assemble import (
     measure_loudnorm_pass1,
 )
 from core.frames import render_pil_frame_to_rgb24
-from core.lexical import LexicalGateError, validate_and_compile_scenes
-from core.recovery import CheckpointedDAGRunner
+from core.lexical import validate_and_compile_scenes
+from core.recovery import (
+    CheckpointedDAGRunner,
+    GlobalBudgetExhaustedError,
+    StageBudgetExhaustedError,
+)
 from core.timeline import ScenePlan, TimelinePlan
 
 
@@ -43,23 +47,66 @@ class VisualAssetGenerationError(RuntimeError):
     """Typed permanent-input/generation error when visual acquisition fails (no placeholders)."""
 
 
-def validate_motivational_preflight(scenes_list: list) -> None:
+def validate_motivational_preflight(scenes_list: list) -> list:
     """Enforce <50ms lexical & safe-area budget on motivational scenes before rendering."""
     preflight_scenes = [
         {"text": str(sc.get("text") or sc.get("contactText") or "") if isinstance(sc, dict) else str(sc)}
         for sc in scenes_list
     ]
     run_preflight_budget(preflight_scenes, font_size=52, max_lines=6, max_width_px=840)
-    try:
-        validate_and_compile_scenes(
-            preflight_scenes,
-            font_path=str(get_pinned_font_path()),
-            font_size=42,
-            max_px_width=900,
-            min_scene_frames=1,
+    return validate_and_compile_scenes(
+        preflight_scenes,
+        font_path=str(get_pinned_font_path()),
+        font_size=42,
+        max_px_width=840 * 6,
+        min_scene_frames=1,
+    )
+
+
+def _notify_dlq_if_configured(
+    job: dict,
+    job_id: str,
+    dag_runner: CheckpointedDAGRunner,
+    exc: Exception,
+) -> None:
+    """Emit a typed DLQ bundle through the fenced callback when budget is exhausted."""
+    bundle_file = dag_runner.dlq_dir / job_id / "bundle.json"
+    if bundle_file.exists():
+        dlq_bundle = json.loads(bundle_file.read_text(encoding="utf-8"))
+    else:
+        dlq_bundle = dag_runner.write_dlq_bundle(job_id, {"logs": [str(exc)]})["bundle"]
+
+    callback_url = str(
+        job.get("callbackUrl")
+        or os.environ.get("INSTABOX_CALLBACK_URL")
+        or (
+            f"{os.environ['CONTROL_PLANE_URL'].rstrip('/')}/api/rendering/instabox/callback"
+            if os.environ.get("CONTROL_PLANE_URL")
+            else ""
         )
-    except LexicalGateError:
-        pass
+    ).strip()
+    worker_secret = str(
+        os.environ.get("RENDER_WORKER_SECRET")
+        or os.environ.get("INSTABOX_WORKER_SECRET")
+        or ""
+    ).strip()
+    execution_token = str(job.get("executionToken") or os.environ.get("EXECUTION_TOKEN") or "").strip()
+    worker_id = str(job.get("workerId") or os.environ.get("WORKER_ID") or "instabox-box2").strip()
+    execution_id = str(job.get("executionId") or f"exec_{job_id}").strip()
+    attempt_id = int(job.get("attemptId") or 1)
+
+    if callback_url and worker_secret and execution_token:
+        post_fenced_dlq_callback(
+            callback_url=callback_url,
+            worker_id=worker_id,
+            worker_secret=worker_secret,
+            execution_token=execution_token,
+            execution_id=execution_id,
+            attempt_id=attempt_id,
+            job_id=job_id,
+            failure_reason=str(exc),
+            dlq_bundle=dlq_bundle,
+        )
 
 _TOOLCHAIN_HASH = os.environ.get("SHORTFORGE_TOOLCHAIN_HASH") or hashlib.sha256(
     Path(__file__).read_bytes()
@@ -974,15 +1021,19 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         }
 
     try:
-        dag_out = dag_runner.execute_job(
-            job_id=f"{job_id}_quiz_prep",
-            initial_input={
-                "theme": theme,
-                "questions": questions,
-                "preflight_items": preflight_items,
-            },
-            stages=[("F02", _f02_quiz_preflight), ("F03", _f03_audio_asset_prep)],
-        )
+        try:
+            dag_out = dag_runner.execute_job(
+                job_id=f"{job_id}_quiz_prep",
+                initial_input={
+                    "theme": theme,
+                    "questions": questions,
+                    "preflight_items": preflight_items,
+                },
+                stages=[("F02", _f02_quiz_preflight), ("F03", _f03_audio_asset_prep)],
+            )
+        except (GlobalBudgetExhaustedError, StageBudgetExhaustedError) as budget_err:
+            _notify_dlq_if_configured(job, job_id, dag_runner, budget_err)
+            raise
         audio_assets = {k: Path(v) for k, v in dag_out["F03"]["audioAssets"].items()}
 
         # 2. Prepare Default Fallback Background
@@ -1142,7 +1193,25 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
                 if isinstance(res, Exception):
                     raise RuntimeError(f"Concurrent TTS failed for segment text '{req['text']}': {res}")
 
-        asyncio.run(run_concurrent_tts())
+        def _f03_tts_stage(_inp: dict) -> dict:
+            asyncio.run(run_concurrent_tts())
+            return {"mp3s": [str(r["mp3"]) for r in tts_requests]}
+
+        try:
+            dag_runner.execute_job(
+                job_id=f"{job_id}_quiz_tts",
+                initial_input={
+                    "voice": voice_code,
+                    "segments": [{"text": r["text"], "rate": r["rate"], "mp3": str(r["mp3"])} for r in tts_requests],
+                },
+                stages=[("F03_TTS", _f03_tts_stage)],
+                stage_kinds={"F03_TTS": "voice"},
+            )
+        except (GlobalBudgetExhaustedError, StageBudgetExhaustedError) as budget_err:
+            _notify_dlq_if_configured(job, job_id, dag_runner, budget_err)
+            raise
+        for req in tts_requests:
+            created_files.add(req["mp3"])
         print(f"[PERF METRIC - TTS]: Concurrency completed in {time.perf_counter() - tts_start:.2f} seconds.")
 
         # Calculate exact integer-frame timeline schedule using core.timeline.TimelinePlan
@@ -1650,12 +1719,24 @@ def run_quiz_shorts(job: dict, out_dir: Path, out_audio: Path, out_srt: Path, ou
         assert len(master_pcm) == total_frames * SAMPLES_PER_FRAME
         write_pcm48k_wav(master_pcm, out_audio)
 
-        assemble_canonical_mp4(
-            frame_generator=quiz_frame_generator,
-            master_audio_wav=out_audio,
-            total_frames=total_frames,
-            out_mp4=out_final,
-        )
+        def _f05_encode_stage(_inp: dict) -> dict:
+            assemble_canonical_mp4(
+                frame_generator=quiz_frame_generator,
+                master_audio_wav=out_audio,
+                total_frames=total_frames,
+                out_mp4=out_final,
+            )
+            return {"finalMp4": str(out_final), "totalFrames": total_frames}
+
+        try:
+            dag_runner.execute_job(
+                job_id=f"{job_id}_quiz_encode",
+                initial_input={"outAudio": str(out_audio), "totalFrames": total_frames, "outFinal": str(out_final)},
+                stages=[("F05_ENCODE", _f05_encode_stage)],
+            )
+        except (GlobalBudgetExhaustedError, StageBudgetExhaustedError) as budget_err:
+            _notify_dlq_if_configured(job, job_id, dag_runner, budget_err)
+            raise
         print(f"[PERF METRIC - PILLOW+FFMPEG]: Rendered {total_frames} frames in {time.perf_counter() - render_frames_start:.2f}s")
         timings["step4_render_sec"] = time.perf_counter() - ffmpeg_start
 
@@ -1833,7 +1914,16 @@ def main() -> None:
         if not scenes_list:
             scenes_list = [{"text": "Scene 1"}, {"text": "Scene 2"}]
 
-        validate_motivational_preflight(scenes_list)
+        compiled_scenes = validate_motivational_preflight(scenes_list)
+        if compiled_scenes:
+            scenes_list = [
+                {
+                    **(sc.metadata if isinstance(sc.metadata, dict) else {}),
+                    "text": sc.text,
+                    "scene_id": sc.scene_id,
+                }
+                for sc in compiled_scenes
+            ]
 
         # Ensure output and images directories exist
         out_dir.mkdir(parents=True, exist_ok=True)

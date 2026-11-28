@@ -192,7 +192,7 @@ def test_p5_canary_and_real_disk_quota_worker_refusal(tmp_path: Path) -> None:
         assert worker_daemon.claim_job() is None
 
 
-def test_p5_fenced_dlq_callback_emits_dlq_status() -> None:
+def test_fenced_dlq_callback_emits_dlq_status_and_recovery_rejects_exhausted_budget() -> None:
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     mock_resp.json.return_value = {"success": True, "status": "DLQ"}
@@ -212,3 +212,130 @@ def test_p5_fenced_dlq_callback_emits_dlq_status() -> None:
         sent_json = post_mock.call_args.kwargs["json"]
         assert sent_json["status"] == "DLQ"
         assert sent_json["dlqBundle"]["jobId"] == "job-dlq-1"
+
+
+def test_lexical_gate_and_preflight_rejects_over_budget_motivational_script() -> None:
+    """Over-budget or uncovered-glyph motivational script must raise, never swallow."""
+    scripts_dir = ENGINE_ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import create_short
+    from core.lexical import LexicalGateError
+
+    # Uncovered glyph (e.g. emoji) -> LexicalGateError propagates from validate_and_compile_scenes
+    with pytest.raises(LexicalGateError):
+        create_short.validate_motivational_preflight([{"text": "Hello 🚀"}])
+
+
+def test_dlq_callback_fires_when_budget_exhausted_in_create_short(tmp_path: Path, monkeypatch) -> None:
+    """Budget exhaustion in create_short.run_quiz_shorts fires post_fenced_dlq_callback with status=DLQ and re-raises."""
+    scripts_dir = ENGINE_ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import create_short
+
+    monkeypatch.setenv("CONTROL_PLANE_URL", "http://localhost:3000")
+    monkeypatch.setenv("RENDER_WORKER_SECRET", "worker-sec-123")
+    monkeypatch.setenv("SHORTFORGE_CAS_DIR", str(tmp_path / "cas"))
+    monkeypatch.setenv("SHORTFORGE_DLQ_DIR", str(tmp_path / "dlq"))
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"success": True, "status": "DLQ"}
+
+    def always_fail(*_args, **_kwargs):
+        raise TimeoutError("transient failure")
+
+    monkeypatch.setattr(create_short, "_ensure_audio_assets", always_fail)
+    monkeypatch.setattr("core.recovery.time.sleep", lambda _s: None)
+
+    quiz_job = {
+        "jobId": "quiz-dlq-e2e-1",
+        "executionToken": "exec-tok-1",
+        "workerId": "instabox-box2",
+        "topic": "Science",
+        "quizData": {
+            "hook": "Quick quiz!",
+            "questions": [{"question": "Q1?", "options": ["A", "B", "C", "D"], "answerIndex": 0}],
+        },
+    }
+
+    with patch("core.commit.requests.post", return_value=mock_resp) as post_mock:
+        with pytest.raises(StageBudgetExhaustedError):
+            create_short.run_quiz_shorts(
+                quiz_job,
+                tmp_path / "out",
+                tmp_path / "a.wav",
+                tmp_path / "s.srt",
+                tmp_path / "f.mp4",
+                tmp_path / "t.png",
+                {},
+            )
+        assert post_mock.called
+        assert post_mock.call_args.kwargs["json"]["status"] == "DLQ"
+
+
+def test_quiz_resume_after_tts_does_not_recall_tts(tmp_path: Path, monkeypatch) -> None:
+    """When quiz fails after TTS (at encode), resuming from CAS checkpoint does not re-call TTS."""
+    scripts_dir = ENGINE_ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import numpy as np
+    import create_short
+
+    monkeypatch.setenv("SHORTFORGE_CAS_DIR", str(tmp_path / "cas"))
+    monkeypatch.setenv("SHORTFORGE_DLQ_DIR", str(tmp_path / "dlq"))
+
+    tts_calls = {"n": 0}
+
+    async def fake_tts(*, text: str, voice: str, rate: str, out_mp3: Path) -> None:
+        tts_calls["n"] += 1
+        out_mp3.parent.mkdir(parents=True, exist_ok=True)
+        out_mp3.write_bytes(b"fake-mp3")
+
+    monkeypatch.setattr(create_short, "_async_generate_tts_mp3", fake_tts)
+    monkeypatch.setattr(create_short, "decode_audio_to_pcm48k", lambda _p: (np.zeros(4800, dtype=np.int16), 0.1))
+    monkeypatch.setattr(create_short, "write_pcm48k_wav", lambda _pcm, p: p.write_bytes(b"RIFF"))
+    monkeypatch.setattr(create_short, "_ensure_audio_assets", lambda _r: {"pop": tmp_path / "pop.wav", "ding": tmp_path / "ding.wav", "bgm": tmp_path / "bgm.wav"})
+    for f in ("pop.wav", "ding.wav", "bgm.wav"):
+        (tmp_path / f).write_bytes(b"RIFF")
+
+    # Mock ffmpeg subprocess.run calls and encode failure on run 1
+    encode_calls = {"n": 0}
+
+    def fake_encode(**kwargs):
+        encode_calls["n"] += 1
+        if encode_calls["n"] == 1:
+            raise TimeoutError("encode killed mid-run")
+        kwargs["out_mp4"].write_bytes(b"MP4")
+
+    monkeypatch.setattr(create_short, "assemble_canonical_mp4", fake_encode)
+    monkeypatch.setattr("subprocess.run", lambda *a, **kw: MagicMock(returncode=0))
+    monkeypatch.setattr("cloudinary.uploader.upload", lambda *a, **kw: {"secure_url": "https://example.com/v.mp4"})
+    monkeypatch.setattr("core.recovery.time.sleep", lambda _s: None)
+
+    quiz_job = {
+        "jobId": "quiz-resume-tts-1",
+        "topic": "Science",
+        "quizData": {
+            "hook": "Quick quiz!",
+            "questions": [{"question": "Q1?", "options": ["A", "B", "C", "D"], "answerIndex": 0}],
+        },
+    }
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    res = create_short.run_quiz_shorts(
+        quiz_job, out_dir, out_dir / "a.wav", out_dir / "s.srt", out_dir / "f.mp4", out_dir / "t.png", {}
+    )
+    # Run 1 failed at encode once, retried encode via DAG -> TTS was ONLY called in initial pass (4 segments), never re-called on encode retry!
+    assert tts_calls["n"] == 4
+    assert encode_calls["n"] == 2
+    assert res["videoUrl"] == "https://example.com/v.mp4"
+
+    # Second full run (resumed job): TTS is served from CAS -> tts_calls stays 4!
+    res2 = create_short.run_quiz_shorts(
+        quiz_job, out_dir, out_dir / "a.wav", out_dir / "s.srt", out_dir / "f.mp4", out_dir / "t.png", {}
+    )
+    assert tts_calls["n"] == 4
+    assert res2["videoUrl"] == "https://example.com/v.mp4"
